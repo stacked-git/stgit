@@ -1,0 +1,27 @@
+The TODO list for the short term:
+
+- tag (snapshot) command
+- pull command (no longer rely on cogito or plain git)
+- log command (it should also show the log per single patch)
+- import command to import a series of patches or a single patch or a
+  patch from a different branch in the same tree
+- better help for commands
+- bug reporting tool
+
+
+Other things after the list above is completed:
+
+- fold command (to merge 2 patches into one)
+- automatic e-mail sending with the patches
+- release 1.0
+
+
+The future, when time allows or someone else does it:
+
+- patches command to show the patches modifying a file
+- patch dependency tracking
+- multiple heads in a patch - useful for forking a patch,
+  synchronising with other patches (diff format or in other
+  repositories)
+- remove the old base of the patch if there are no references to it
+- write bash-completion script for the StGIT commands

@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+
+from distutils.core import setup
+
+from stgit.version import version
+
+setup(name = 'stgit',
+      version = version,
+      license = 'GPLv2',
+      author = 'Catalin Marinas',
+      author_email = 'catalin.marinas@gmail.org',
+      url = 'http://www.procode.org/stgit/',
+      description = 'Stacked GIT',
+      long_description = 'Push/pop utility on top of GIT',
+      scripts = ['stg', 'gitmergeonefile.py'],
+      packages = ['stgit'],
+      data_files = [('/etc', ['stgitrc'])],
+      )

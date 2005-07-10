@@ -1,0 +1,29 @@
+[stgit]
+# Default author/committer details
+#authname:  Your Name
+#authemail: your.name@yourcompany.com
+#commname:  Your Name
+#commemail: your.name@yourcompany.com
+
+# Set to 'yes' if you don't want to use the 'resolved' command.
+# 'refresh' will automatically mark the conflicts as resolved
+autoresolved: no
+
+
+[gitmergeonefile]
+# Different three-way merge tools below. Uncomment the preferred one.
+# Note that the 'output' file contains the same data as 'branch1'. This
+# is useful for tools that do not take an output parameter
+
+merger: diff3 -L local -L older -L remote -m -E \
+	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
+
+#merger: xxdiff --title1 local --title2 older --title3 remote \
+#	--show-merged-pane -m -E -O -X -M "%(output)s" \
+#	"%(branch1)s" "%(ancestor)s" "%(branch2)s"
+
+#merger: emacs --eval '(ediff-merge-files-with-ancestor
+#	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
+
+# Leave the original files in the working tree in case of a merge conflict
+keeporig: yes

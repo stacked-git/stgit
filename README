@@ -1,0 +1,171 @@
+Stacked GIT
+-----------
+
+StGIT is a Python application providing similar functionality to Quilt
+(i.e. pushing/poping patches to a stack) on top of GIT. These
+operations are performed using the GIT merge algorithms.
+
+Note that StGIT is not an SCM interface for GIT. Use the GIT commands
+or some other tools like Cogito for this.
+
+For the latest version see http://www.procode.org/stgit/
+
+
+Basic Operations
+----------------
+
+For a full list of commands:
+
+	stg help
+
+For help on individual commands:
+
+	stg <cmd> (-h | --help)
+
+To initialise a tree (the tree must have been previously initialised
+with GIT):
+
+	stg init
+
+To add/delete files:
+
+	stg add [<file>*]
+	stg rm [<file>*]
+
+To inspect the tree status:
+
+	stg status
+
+To get a diff between 2 revisions:
+
+	stg diff [-r rev1[:[rev2]]]
+
+A revision name can be of the form '([patch]/[bottom | top]) | <tree-ish>'
+If the patch name is not specified but '/' is passed, the topmost
+patch is considered. If neither 'bottom' or 'top' follows the '/', the
+whole patch diff is displayed (this does not include the local
+changes).
+
+Note than when the first patch is pushed to the stack, the current
+HEAD is saved in the .git/refs/heads/base file for easy reference.
+
+To create/delete a patch:
+
+	stg new <name>
+	stg delete [<name or topmost>]
+
+The 'new' command also sets the topmost patch to the newly created
+one.
+
+To push/pop a patch to/from the stack:
+
+	stg push [<name or first unapplied>]
+	stg pop [<name or topmost>]
+
+Note that the 'push' command can apply any patch in the unapplied
+list. This is useful if you want to reorder the patches.
+
+To add the patch changes to the tree:
+
+	stg refresh
+
+To inspect the patches applied:
+
+	stg series
+	stg applied
+	stg unapplied
+	stg top
+
+To export a patch series:
+
+	stg export [<dir-name or 'patches'>]
+
+The 'export' command supports options to automatically number the
+patches (-n) or add the '.diff' extension (-d).
+
+StGIT does not yet provide support for cloning or pulling changes from
+a different repository. Until this becomes available, run the
+following commands:
+
+	stg pop -a
+	your-git-script-for-pulling-and-merging
+	stg push -a
+
+You can also look in the TODO file for what's planned to be
+implemented in the future.
+
+
+Directory Structure
+-------------------
+
+.git/
+  objects/
+    ??/
+
+refs/
+  heads/
+    master		- the master commit id
+    ...
+  bases/
+    master		- the bottom id of the stack (to get a big diff)
+    ...
+  tags/
+    ...
+  branches/
+    ...
+  patches/
+    master/
+      applied		- list of applied patches
+      unapplied		- list of not-yet applied patches
+      current		- name of the topmost patch
+      patch1/
+        first		- the initial id of the patch (used for log)
+        bottom		- the bottom id of the patch
+        top		- the top id of the patch
+      patch2/
+      ...
+    ...
+
+HEAD			-> refs/heads/<something>
+
+
+A Bit of StGIT Patch Theory
+---------------------------
+
+We assume that a patch is a diff between two nodes - bottom and top. A
+node is a commit SHA1 id or tree SHA1 id in the GIT terminology:
+
+P - patch
+N - node
+
+P = diff(Nt, Nb)
+
+	Nb - bottom (start) node
+	Nt - top (end) node
+	Nf - first node (for log generation)
+
+For an ordered stack of patches:
+
+P1 = diff(N1, N0)
+P2 = diff(N2, N1)
+...
+
+Ps = P1 + P2 + P3 + ... = diff(Nst, Nsb)
+
+	Ps  - the big patch of the whole stack
+	Nsb - bottom stack node (= N0)
+	Nst - top stack node (= Nn)
+
+Applying (pushing) a patch on the stack (Nst can differ from Nb) is
+done by diff3 merging. The new patch becomes:
+
+P' = diff(Nt', Nb')
+Nb' = Nst
+Nt' = diff3(Nst, Nb, Nt)
+
+(note that the diff3 parameters order is: branch1, ancestor, branch2)
+
+The above operation allows easy patch re-ordering.
+
+Removing (popping) a patch from the stack is done by simply setting
+the Nst to Nb.

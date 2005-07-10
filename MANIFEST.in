@@ -1,0 +1,2 @@
+include README MANIFEST.in AUTHORS COPYING INSTALL ChangeLog TODO stgitrc
+include examples/*.tmpl

@@ -1,0 +1,153 @@
+2005-07-09  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Release 0.4
+
+2005-07-09  Peter Osterlund <petero2@telia.com>
+
+	* Fix spelling errors
+
+2005-07-08  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (diff): Add '--stat' option to 'diff'
+	(files): 'files' command implemented
+
+2005-07-08  Peter Osterlund <petero2@telia.com>
+
+	* stgit/git.py (diffstat): %(diffstat)s variable support in the
+	patch export template
+
+2005-07-07  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (resolved): Implemented a 'resolved' command to
+	mark conflicts as solved. The 'status' command now shows the
+	conflicts as well. 'refresh' fails if there are conflicts
+
+2005-07-06  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/stack.py (edit_file): Added support for patchdescr.tmpl
+
+	* stgit/main.py (export): Added support for more variables in the
+	patchexport.tmpl file
+
+	* stgit/stack.py (Patch): Add support for author/comitter default
+	details configuration
+
+	* stgit/main.py (push): '--undo' option added to push. This option
+	allows one to undo the last push operation and restores the old
+	boundaries of the patch (prior to the push operation)
+	(pop): pop optimised to switch directly to the last patch to be
+	popped
+
+2005-07-05  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (pop): add '--to' option to 'pop'
+	(push): add '--to' and '--reverse' options to 'push'
+
+	* gitmergeonefile.py: Added support for 'keeporig' option which
+	selects whether to delete or not the original files after a failed
+	merge
+
+2005-07-04  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Add support for configurable merge tool via stgitrc
+
+	* Add support for configuration file (/etc/stgitrc, ~/.stgitrc,
+	.git/stgitrc)
+
+2005-07-02  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (export): Added support for the patch description
+	template. At the moment, only the '%(description)s' variable is
+	supported
+
+2005-07-01  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (refresh): Now it also checks for head != top
+	(export): Add the patch description to the exported patch files
+
+2005-06-30  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Fix exception reporting when the .git/HEAD link is not valid
+
+	* Empty patches are now marked
+
+2005-06-28  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Release 0.3
+
+	* stgit/stack.py (Series.push_patch): if the merge with the new
+	base failed, inform the user that "refresh" should be run after
+	fixing the conflicts
+
+	* stgit/main.py (new): checks for local changes and head != top
+	added
+
+	* StGIT is now closer to Quilt in functionality. The 'commit'
+	command was removed ('refresh' is used instead).
+
+2005-06-25  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stack.py modified to include all the series functions the Series
+	class
+
+2005-06-24  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/git.py (commit): commit tells before invoking the editor
+	and shows the return error code but without exiting if it is
+	non-zero
+
+2005-06-23  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (push): --number option added to push
+	(pop): --number option added to push
+
+2005-06-22  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* gitmergeonefile.py: temporary files are placed in <path>.local,
+	<path>.older and <path>.remote and only removed if the merge
+	succeeded
+
+2005-06-21  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (delete): 'delete' now requires the explicit patch
+	name as a safety measure
+
+	* stgit/stack.py (pop_patch): sys.stdout.flush() added after the
+	first print
+	(push_patch): fix bug with 'push' not warning for empty patches
+
+	* stgit/stack.py (push_patch): sys.stdout.flush() added after the
+	first print
+
+2005-06-20  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Release 0.2
+
+	* stgit/stack.py (delete_patch): bug when deleting the topmost
+	patch fixed
+
+	* top/bottom files are backed up to top.old/bottom.old
+	automatically. The 'diff' command supports them as well
+
+	* stg-upgrade.sh: upgrades the .git structure from stgit-0.1 to
+	stgit-0.2
+
+2005-06-19  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Multiple heads and bases are now supported. A different series
+	is available for each head
+
+	* gitmergeonefile.py: fix bug caused by not updating the cache
+	when merging with diff3
+
+	* stgit/stack.py: 'push' command reports a warning if the patch is
+	empty
+
+	* stgit/git.py: commit supports an 'allowempty' parameter
+
+	* os.path.join() used instead '+' for concatenating path names
+
+2005-06-15  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* Release 0.1
+

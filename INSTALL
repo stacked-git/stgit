@@ -1,0 +1,7 @@
+For basic installation:
+
+	python setup.py install
+
+For more information:
+
+	http://docs.python.org/inst/inst.html
