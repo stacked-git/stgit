@@ -1,3 +1,8 @@
+2005-07-11  Catalin Marinas  <catalin.marinas@gmail.com>
+
+	* stgit/main.py (export): Add --template option to use a different
+	file as the export template rather than the default one
+
 2005-07-09  Catalin Marinas  <catalin.marinas@gmail.com>
 
 	* Release 0.4

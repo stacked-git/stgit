@@ -684,7 +684,10 @@ def export(parser, options, args):
         print >> series, pname
 
         # get the template
-        patch_tmpl = os.path.join(git.base_dir, 'patchexport.tmpl')
+        if options.template:
+            patch_tmpl = options.template
+        else:
+            patch_tmpl = os.path.join(git.base_dir, 'patchexport.tmpl')
         if os.path.isfile(patch_tmpl):
             tmpl = file(patch_tmpl).read()
         else:
@@ -734,7 +737,9 @@ export_cmd = \
                                 action = 'store_true'),
                     make_option('-d', '--diff',
                                 help = 'append .diff to the patch names',
-                                action = 'store_true')])
+                                action = 'store_true'),
+                    make_option('-t', '--template', metavar = 'FILE',
+                                help = 'Use FILE as a template')])
 
 #
 # The commands map
