@@ -74,17 +74,17 @@ def __checkout_files():
         orig = '%s.older' % path
         tmp = __output('git-unpack-file %s' % orig_hash)
         os.chmod(tmp, int(orig_mode, 8))
-        os.rename(tmp, orig)
+        os.renames(tmp, orig)
     if file1_hash:
         src1 = '%s.local' % path
         tmp = __output('git-unpack-file %s' % file1_hash)
         os.chmod(tmp, int(file1_mode, 8))
-        os.rename(tmp, src1)
+        os.renames(tmp, src1)
     if file2_hash:
         src2 = '%s.remote' % path
         tmp = __output('git-unpack-file %s' % file2_hash)
         os.chmod(tmp, int(file2_mode, 8))
-        os.rename(tmp, src2)
+        os.renames(tmp, src2)
 
 def __remove_files():
     """Remove any temporary files
@@ -111,7 +111,9 @@ def __conflict():
 #   $5 - orignal file mode (or empty)
 #   $6 - file in branch1 mode (or empty)
 #   $7 - file in branch2 mode (or empty)
-#print 'gitmerge.py "%s" "%s" "%s" "%s" "%s" "%s" "%s"' % tuple(sys.argv[1:8])
+#
+#print 'gitmergeonefile.py "%s" "%s" "%s" "%s" "%s" "%s" "%s"' \
+#      % tuple(sys.argv[1:8])
 orig_hash, file1_hash, file2_hash, path, orig_mode, file1_mode, file2_mode = \
            [__str2none(x) for x in sys.argv[1:8]]
 
@@ -146,7 +148,7 @@ if orig_hash:
                                            'output': path }) == 0
 
             if merge_ok:
-                os.system('git-update-cache %s' % path)
+                os.system('git-update-cache -- %s' % path)
                 __remove_files()
                 sys.exit(0)
             else:
@@ -164,7 +166,7 @@ if orig_hash:
         if os.path.exists(path):
             os.remove(path)
         __remove_files()
-        sys.exit(os.system('git-update-cache --remove %s' % path))
+        sys.exit(os.system('git-update-cache --remove -- %s' % path))
 # file does not exist in origin
 else:
     # file added in both
@@ -205,6 +207,6 @@ else:
 
 # Un-handled case
 print >> sys.stderr, 'Error: Un-handled merge conflict'
-print >> sys.stderr, 'gitmerge.py "%s" "%s" "%s" "%s" "%s" "%s" "%s"' \
+print >> sys.stderr, 'gitmergeonefile.py "%s" "%s" "%s" "%s" "%s" "%s" "%s"' \
       % tuple(sys.argv[1:8])
 __conflict()
