@@ -1,5 +1,8 @@
 2005-07-11  Catalin Marinas  <catalin.marinas@gmail.com>
 
+	* stgit/main.py (__resolved): Run git-update-cache for the
+	resolved files
+
 	* gitmergeonefile.py: Fix the os.rename exception occurring when
 	the checkout directory is not present
 

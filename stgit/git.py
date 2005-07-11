@@ -210,6 +210,15 @@ def rm(files, force = False):
             if os.system('git-update-cache --remove -- %s' % f) != 0:
                 raise GitException, 'Unable to remove %s' % f
 
+def update_cache(files):
+    """Update the cache information for the given files
+    """
+    for f in files:
+        if os.path.exists(f):
+            os.system('git-update-cache -- %s' % f)
+        else:
+            os.system('git-update-cache --remove -- %s' % f)
+
 def commit(message, files = [], parents = [], allowempty = False,
            author_name = None, author_email = None, author_date = None,
            committer_name = None, committer_email = None):

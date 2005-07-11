@@ -527,6 +527,7 @@ pop_cmd = \
 
 
 def __resolved(filename):
+    git.update_cache([filename])
     for ext in ['.local', '.older', '.remote']:
         fn = filename + ext
         if os.path.isfile(fn):
