@@ -363,9 +363,10 @@ def delete(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    __check_local_changes()
-    __check_conflicts()
-    __check_head_top_equal()
+    if args[0] == crt_series.get_current():
+        __check_local_changes()
+        __check_conflicts()
+        __check_head_top_equal()
 
     crt_series.delete_patch(args[0])
     print 'Patch "%s" successfully deleted' % args[0]

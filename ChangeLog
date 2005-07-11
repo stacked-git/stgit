@@ -2,6 +2,8 @@
 
 	* stgit/main.py (export): Add --template option to use a different
 	file as the export template rather than the default one
+	(delete): Check for local changes only of the current patch is
+	removed
 
 2005-07-09  Catalin Marinas  <catalin.marinas@gmail.com>
 
