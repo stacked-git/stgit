@@ -13,6 +13,6 @@ setup(name = 'stgit',
       description = 'Stacked GIT',
       long_description = 'Push/pop utility on top of GIT',
       scripts = ['stg', 'gitmergeonefile.py'],
-      packages = ['stgit'],
+      packages = ['stgit', 'stgit.commands'],
       data_files = [('/etc', ['stgitrc'])],
       )
