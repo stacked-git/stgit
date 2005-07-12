@@ -669,7 +669,42 @@ def export(parser, options, args):
         os.makedirs(dirname)
     series = file(os.path.join(dirname, 'series'), 'w+')
 
-    patches = crt_series.get_applied()
+    applied = crt_series.get_applied()
+
+    if options.range:
+        boundaries = options.range.split(':')
+        if len(boundaries) == 1:
+            start = boundaries[0]
+            stop = boundaries[0]
+        if len(boundaries) == 2:
+            if boundaries[0] == '':
+                start = applied[0]
+            else:
+                start = boundaries[0]
+            if boundaries[1] == '':
+                stop = applied[-1]
+            else:
+                stop = boundaries[1]
+        else:
+            raise MainException, 'incorrect parameters to "--range"'
+
+        if start in applied:
+            start_idx = applied.index(start)
+        else:
+            raise MainException, 'Patch "%s" not applied' % start
+        if stop in applied:
+            stop_idx = applied.index(stop) + 1
+        else:
+            raise MainException, 'Patch "%s" not applied' % stop
+
+        if start_idx >= stop_idx:
+            raise MainException, 'Incorrect patch range order'
+    else:
+        start_idx = 0
+        stop_idx = -1
+
+    patches = applied[start_idx:stop_idx]
+
     num = len(patches)
     zpadding = len(str(num))
     if zpadding < 2:
@@ -741,7 +776,11 @@ export_cmd = \
                                 help = 'append .diff to the patch names',
                                 action = 'store_true'),
                     make_option('-t', '--template', metavar = 'FILE',
-                                help = 'Use FILE as a template')])
+                                help = 'Use FILE as a template'),
+                    make_option('-r', '--range',
+                                metavar = '[PATCH1][:[PATCH2]]',
+                                help = 'export patches between ' \
+                                'PATCH1 and PATCH2')])
 
 #
 # The commands map
