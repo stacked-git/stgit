@@ -31,7 +31,11 @@ class CmdException(Exception):
 
 
 # Global variables
-crt_series = stack.Series()
+try:
+    crt_series = stack.Series()
+except (IOError, stack.StackException, git.GitException), err:
+    print >> sys.stderr, err
+    sys.exit(2)
 
 
 # Utility functions
