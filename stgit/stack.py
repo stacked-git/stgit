@@ -384,6 +384,8 @@ class Series:
             descr = edit_file(None, \
                               'Please enter the description for patch "%s" ' \
                               'above.' % name)
+        else:
+            descr = message
 
         head = git.get_head()
 
