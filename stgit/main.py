@@ -118,6 +118,11 @@ def main():
                           option_list = command.options)
     options, args = parser.parse_args()
     try:
+        # the lines below are a simple way to avoid an exception when
+        # stgit is run outside an initialised tree
+        stgit.commands.common.crt_series = stack.Series()
+        setattr(command, 'crt_series', stgit.commands.common.crt_series)
+
         command.func(parser, options, args)
     except (IOError, CmdException, stack.StackException, git.GitException), \
                err:

@@ -30,14 +30,6 @@ class CmdException(Exception):
     pass
 
 
-# Global variables
-try:
-    crt_series = stack.Series()
-except (IOError, stack.StackException, git.GitException), err:
-    print >> sys.stderr, err
-    sys.exit(2)
-
-
 # Utility functions
 def git_id(string):
     """Return the GIT id
