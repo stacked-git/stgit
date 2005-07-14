@@ -144,12 +144,12 @@ def func(parser, options, args):
                   'supported in the patch template'
         f = open(pfile, 'w+')
         f.write(descr)
-        f.close()
 
         # write the diff
         git.diff(rev1 = git_id('%s/bottom' % p),
                  rev2 = git_id('%s/top' % p),
-                 output = pfile, append = True)
+                 out_fd = f)
+        f.close()
         patch_no += 1
 
     series.close()
