@@ -90,7 +90,7 @@ def func(parser, options, args):
             raise MainException, 'Incorrect patch range order'
     else:
         start_idx = 0
-        stop_idx = -1
+        stop_idx = len(applied)
 
     patches = applied[start_idx:stop_idx]
 
