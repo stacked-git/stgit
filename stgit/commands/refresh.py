@@ -39,6 +39,8 @@ options = [make_option('-f', '--force',
            make_option('-m', '--message',
                        help = 'use MESSAGE as the patch ' \
                        'description'),
+           make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
+                       help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
                        help = 'use AUTHNAME as the author name'),
            make_option('--authemail',
@@ -70,6 +72,9 @@ def func(parser, options, args):
 
     if not options.force:
         check_head_top_equal()
+
+    if options.author:
+        options.authname, options.authemail = name_email(options.author)
 
     if git.local_changes() \
            or not crt_series.head_top_equal() \

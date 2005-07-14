@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys, os, re
 from optparse import OptionParser, make_option
 
 from stgit.utils import *
@@ -116,3 +116,13 @@ def resolved_all():
         for filename in conflicts:
             resolved(filename)
         os.remove(os.path.join(git.base_dir, 'conflicts'))
+
+def name_email(string):
+    """Return a tuple consisting of the name and email parsed from a
+    standard 'name <email>' string
+    """
+    names = re.split('([^<>]*)<([^<>]*)>', string)
+    if len(names) != 4:
+        raise CmdException, 'Incorrect "name <email>" string: %s' % string
+
+    return tuple([names[1].strip(), names[2].strip()])

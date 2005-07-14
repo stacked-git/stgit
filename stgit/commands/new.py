@@ -29,6 +29,8 @@ usage = '%prog [options] <name>'
 
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
+           make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
+                       help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
                        help = 'use AUTHNAME as the author name'),
            make_option('--authemail',
@@ -50,6 +52,9 @@ def func(parser, options, args):
     check_local_changes()
     check_conflicts()
     check_head_top_equal()
+
+    if options.author:
+        options.authname, options.authemail = name_email(options.author)
 
     crt_series.new_patch(args[0], message = options.message,
                          author_name = options.authname,
