@@ -29,6 +29,9 @@ usage = '%prog [options] <name>'
 
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
+           make_option('--force',
+                       help = 'proceed even if there are local changes',
+                       action = 'store_true'),
            make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
                        help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
@@ -49,9 +52,10 @@ def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
+    if not options.force:
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)
