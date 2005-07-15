@@ -32,6 +32,7 @@ import stgit.commands.add
 import stgit.commands.applied
 import stgit.commands.delete
 import stgit.commands.diff
+import stgit.commands.clean
 import stgit.commands.export
 import stgit.commands.files
 import stgit.commands.init
@@ -55,6 +56,7 @@ commands = {
     'applied':  stgit.commands.applied,
     'delete':   stgit.commands.delete,
     'diff':     stgit.commands.diff,
+    'clean':    stgit.commands.clean,
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
     'init':     stgit.commands.init,
