@@ -65,7 +65,7 @@ def func(parser, options, args):
         if len(boundaries) == 1:
             start = boundaries[0]
             stop = boundaries[0]
-        if len(boundaries) == 2:
+        elif len(boundaries) == 2:
             if boundaries[0] == '':
                 start = applied[0]
             else:
@@ -75,19 +75,19 @@ def func(parser, options, args):
             else:
                 stop = boundaries[1]
         else:
-            raise MainException, 'incorrect parameters to "--range"'
+            raise CmdException, 'incorrect parameters to "--range"'
 
         if start in applied:
             start_idx = applied.index(start)
         else:
-            raise MainException, 'Patch "%s" not applied' % start
+            raise CmdException, 'Patch "%s" not applied' % start
         if stop in applied:
             stop_idx = applied.index(stop) + 1
         else:
-            raise MainException, 'Patch "%s" not applied' % stop
+            raise CmdException, 'Patch "%s" not applied' % stop
 
         if start_idx >= stop_idx:
-            raise MainException, 'Incorrect patch range order'
+            raise CmdException, 'Incorrect patch range order'
     else:
         start_idx = 0
         stop_idx = len(applied)
@@ -137,10 +137,10 @@ def func(parser, options, args):
         try:
             descr = tmpl % tmpl_dict
         except KeyError, err:
-            raise MainException, 'Unknown patch template variable: %s' \
+            raise CmdException, 'Unknown patch template variable: %s' \
                   % err
         except TypeError:
-            raise MainException, 'Only "%(name)s" variables are ' \
+            raise CmdException, 'Only "%(name)s" variables are ' \
                   'supported in the patch template'
         f = open(pfile, 'w+')
         f.write(descr)
