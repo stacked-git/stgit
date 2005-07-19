@@ -371,15 +371,20 @@ def status(files = [], modified = False, new = False, deleted = False,
         else:
             print '%s' % fs[1]
 
-def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = sys.stdout):
+def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = None):
     """Show the diff between rev1 and rev2
     """
     os.system('git-update-cache --refresh > /dev/null')
 
     if rev2:
-        out_fd.write(_output(['git-diff-tree', '-p', rev1, rev2]+files))
+        diff_str = _output(['git-diff-tree', '-p', rev1, rev2] + files)
     else:
-        out_fd.write(_output(['git-diff-cache', '-p', rev1]+files))
+        diff_str = _output(['git-diff-cache', '-p', rev1] + files)
+
+    if out_fd:
+        out_fd.write(diff_str)
+    else:
+        return diff_str
 
 def diffstat(files = [], rev1 = 'HEAD', rev2 = None):
     """Return the diffstat between rev1 and rev2

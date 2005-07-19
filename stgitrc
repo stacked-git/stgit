@@ -9,6 +9,8 @@
 # 'refresh' will automatically mark the conflicts as resolved
 autoresolved: no
 
+smtpserver: localhost:25
+
 
 [gitmergeonefile]
 # Different three-way merge tools below. Uncomment the preferred one.

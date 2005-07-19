@@ -64,4 +64,4 @@ def func(parser, options, args):
     if options.stat:
         print git.diffstat(args, git_id(rev1), git_id(rev2))
     else:
-        git.diff(args, git_id(rev1), git_id(rev2))
+        git.diff(args, git_id(rev1), git_id(rev2), sys.stdout)

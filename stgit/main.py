@@ -36,6 +36,7 @@ import stgit.commands.clean
 import stgit.commands.export
 import stgit.commands.files
 import stgit.commands.init
+import stgit.commands.mail
 import stgit.commands.new
 import stgit.commands.pop
 import stgit.commands.push
@@ -60,6 +61,7 @@ commands = {
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
     'init':     stgit.commands.init,
+    'mail':     stgit.commands.mail,
     'new':      stgit.commands.new,
     'pop':      stgit.commands.pop,
     'push':     stgit.commands.push,
