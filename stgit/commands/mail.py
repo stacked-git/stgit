@@ -26,13 +26,16 @@ from stgit.config import config
 
 
 help = 'send a patch or series of patches by e-mail'
-usage = """%prog [options]"""
+usage = """%prog [options] [<patch>]"""
 
-options = [make_option('-t', '--template', metavar = 'FILE',
-                       help = 'use FILE as the message template'),
+options = [make_option('-a', '--all',
+                       help = 'e-mail all the applied patches',
+                       action = 'store_true'),
            make_option('-r', '--range',
                        metavar = '[PATCH1][:[PATCH2]]',
                        help = 'e-mail patches between PATCH1 and PATCH2'),
+           make_option('-t', '--template', metavar = 'FILE',
+                       help = 'use FILE as the message template'),
            make_option('-f', '--first', metavar = 'FILE',
                        help = 'send FILE as the first message'),
            make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
@@ -158,7 +161,7 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    if len(args) != 0:
+    if len(args) > 1:
         parser.error('incorrect number of arguments')
 
     if not config.has_option('stgit', 'smtpserver'):
@@ -167,7 +170,14 @@ def func(parser, options, args):
 
     applied = crt_series.get_applied()
 
-    if options.range:
+    if len(args) == 1:
+        if args[0] in applied:
+            patches = [args[0]]
+        else:
+            raise CmdException, 'Patch "%s" not applied' % args[0]
+    elif options.all:
+        patches = applied
+    elif options.range:
         boundaries = options.range.split(':')
         if len(boundaries) == 1:
             start = boundaries[0]
@@ -195,12 +205,14 @@ def func(parser, options, args):
 
         if start_idx >= stop_idx:
             raise CmdException, 'Incorrect patch range order'
-    else:
-        start_idx = 0
-        stop_idx = len(applied)
 
-    patches = applied[start_idx:stop_idx]
+        patches = applied[start_idx:stop_idx]
+    else:
+        raise CmdException, 'Incorrect options. Unknown patches to send'
+
     total_nr = len(patches)
+    if total_nr == 0:
+        raise CmdException, 'No patches to send'
 
     ref_id = options.refid
 
