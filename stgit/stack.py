@@ -284,18 +284,15 @@ class Series:
         """
         if len(self.get_applied()) == 0:
             head = git.get_head()
-            if os.path.exists(self.__base_file):
-                raise StackException, 'stack empty but the base file exists'
             write_string(self.__base_file, head)
 
     def __end_stack_check(self):
-        """Remove .git/refs/heads/base if the stack is empty
+        """Remove .git/refs/heads/base if the stack is empty.
+        This warning should never happen
         """
-        if len(self.get_applied()) == 0:
-            if not os.path.exists(self.__base_file):
-                print 'Warning: stack empty but the base file is missing'
-            else:
-                os.remove(self.__base_file)
+        if len(self.get_applied()) == 0 \
+           and read_string(self.__base_file) != git.get_head():
+            print 'Warning: stack empty but the HEAD and base are different'
 
     def head_top_equal(self):
         """Return true if the head and the top are the same

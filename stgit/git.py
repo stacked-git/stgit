@@ -438,3 +438,18 @@ def switch(tree_id):
     # checkout doesn't remove files
     for fs in to_delete:
         os.remove(fs[1])
+
+def fetch(location, head = None, tag = None):
+    """Fetch changes from the remote repository. At the moment, just
+    use the 'git fetch' scripts
+    """
+    args = [location]
+    if head:
+        args += [head]
+    elif tag:
+        args += ['tag', tag]
+
+    if __run('git fetch', args) != 0:
+        raise GitException, 'Failed "git fetch %s"' % location
+
+    return read_string(os.path.join(base_dir, 'FETCH_HEAD'))

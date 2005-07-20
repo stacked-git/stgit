@@ -39,6 +39,7 @@ import stgit.commands.init
 import stgit.commands.mail
 import stgit.commands.new
 import stgit.commands.pop
+import stgit.commands.pull
 import stgit.commands.push
 import stgit.commands.refresh
 import stgit.commands.resolved
@@ -64,6 +65,7 @@ commands = {
     'mail':     stgit.commands.mail,
     'new':      stgit.commands.new,
     'pop':      stgit.commands.pop,
+    'pull':     stgit.commands.pull,
     'push':     stgit.commands.push,
     'refresh':  stgit.commands.refresh,
     'resolved': stgit.commands.resolved,
