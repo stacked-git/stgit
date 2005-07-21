@@ -41,7 +41,11 @@ options = [make_option('-a', '--all',
            make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
                        help = 'sleep for SECONDS between e-mails sending'),
            make_option('--refid',
-                       help = 'Use REFID as the reference id')]
+                       help = 'Use REFID as the reference id'),
+           make_option('-u', '--smtp-user', metavar = 'USER',
+                       help = 'username for SMTP authentication'),
+           make_option('-p', '--smtp-password', metavar = 'PASSWORD',
+                       help = 'username for SMTP authentication')]
 
 
 def __parse_addresses(string):
@@ -65,7 +69,8 @@ def __parse_addresses(string):
 
     return (from_addr_list[0], to_addr_list)
 
-def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep):
+def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
+                   smtpuser, smtppassword):
     """Send the message using the given SMTP server
     """
     try:
@@ -75,6 +80,10 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep):
 
     s.set_debuglevel(0)
     try:
+        if smtpuser and smtppassword:
+            s.ehlo()
+            s.login(smtpuser, smtppassword)
+
         s.sendmail(from_addr, to_addr_list, msg)
         # give recipients a chance of receiving patches in the correct order
         time.sleep(sleep)
@@ -168,6 +177,13 @@ def func(parser, options, args):
         raise CmdException, 'smtpserver not defined'
     smtpserver = config.get('stgit', 'smtpserver')
 
+    smtpuser = None
+    smtppassword = None
+    if config.has_option('stgit', 'smtpuser'):
+        smtpuser = config.get('stgit', 'smtpuser')
+    if config.has_option('stgit', 'smtppassword'):
+        smtppassword = config.get('stgit', 'smtppassword')
+
     applied = crt_series.get_applied()
 
     if len(args) == 1:
@@ -210,6 +226,17 @@ def func(parser, options, args):
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
 
+    if options.smtp_password:
+        smtppassword = options.smtp_password
+
+    if options.smtp_user:
+        smtpuser = options.smtp_user
+
+    if (smtppassword and not smtpuser):
+        raise CmdException, 'SMTP password supplied, username needed'
+    if (smtpuser and not smtppassword):
+        raise CmdException, 'SMTP username supplied, password needed'
+
     total_nr = len(patches)
     if total_nr == 0:
         raise CmdException, 'No patches to send'
@@ -235,7 +262,8 @@ def func(parser, options, args):
         print 'Sending file "%s"...' % options.first,
         sys.stdout.flush()
 
-        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep)
+        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
+                       smtpuser, smtppassword)
 
         print 'done'
 
@@ -258,6 +286,7 @@ def func(parser, options, args):
         print 'Sending patch "%s"...' % p,
         sys.stdout.flush()
 
-        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep)
+        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
+                       smtpuser, smtppassword)
 
         print 'done'
