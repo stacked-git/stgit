@@ -26,7 +26,45 @@ from stgit.config import config
 
 
 help = 'send a patch or series of patches by e-mail'
-usage = """%prog [options] [<patch>]"""
+usage = """%prog [options] [<patch>]
+
+Send a patch or a range of patches (defaulting to the applied patches)
+by e-mail using the 'smtpserver' configuration option. The From/To/Cc
+addresses and the e-mail format are generated from the template file
+passed as argument to '--template' (defaulting to
+.git/patchmail.tmpl). A preamble e-mail can also be sent using the
+'--first' option (no default template).
+
+All the subsequent e-mails appear as replies to the first e-mail sent
+(either the preamble or the first patch). E-mails can be seen as
+replies to a different e-mail by using the '--refid' option.
+
+SMTP authentication is also possible with '--smtp-user' and
+'--smtp-password' options, also available as configuration settings:
+'smtpuser' and 'smtppassword'.
+
+The template e-mail headers and body must be separated by
+'%(endofheaders)s' variable, which is replaced by StGIT with
+additional headers and a blank line. The patch e-mail template accepts
+the following variables:
+
+  %(patch)s        - patch name
+  %(shortdescr)s   - the first line of the patch description
+  %(longdescr)s    - the rest of the patch description, after the first line
+  %(endofheaders)s - delimiter between e-mail headers and body
+  %(diff)s         - unified diff of the patch
+  %(diffstat)s     - diff statistics
+  %(date)s         - current date/time
+  %(patchnr)s      - patch number
+  %(totalnr)s      - total number of patches to be sent
+  %(authname)s     - author's name
+  %(authemail)s    - author's email
+  %(authdate)s     - patch creation date
+  %(commname)s     - committer's name
+  %(commemail)s    - committer's e-mail
+
+For the preamble e-mail template, only the %(date)s, %(endofheaders)s
+and %(totalnr)s variables are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',

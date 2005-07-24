@@ -25,7 +25,11 @@ from stgit import stack, git
 
 
 help = 'pop the top of the series'
-usage = '%prog [options]'
+usage = """%prog [options]
+
+Pop the topmost patch or a range of patches starting with the topmost
+one from the stack. The command fails if there are local changes or
+conflicts."""
 
 options = [make_option('-a', '--all',
                        help = 'pop all the applied patches',

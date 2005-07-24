@@ -26,7 +26,15 @@ from stgit.config import config
 
 
 help = 'generate a new commit for the current patch'
-usage = '%prog [options]'
+usage = """%prog [options]
+
+Include the latest tree changes in the current patch. This command
+generates a new GIT commit object with the patch details, the previous
+one no longer being visible. The patch attributes like author,
+committer and description can be changed with the command line
+options. The '--force' option is useful when a commit object was
+created with a different tool but the changes need to be included in
+the current patch."""
 
 options = [make_option('-f', '--force',
                        help = 'force the refresh even if HEAD and '\

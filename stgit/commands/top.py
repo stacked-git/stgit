@@ -25,7 +25,9 @@ from stgit import stack, git
 
 
 help = 'print the name of the top patch'
-usage = '%prog'
+usage = """%prog [options]
+
+Print the name of the current (topmost) patch."""
 
 options = []
 

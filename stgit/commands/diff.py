@@ -27,7 +27,18 @@ from stgit import stack, git
 help = 'show the tree diff'
 usage = """%prog [options] [<files...>]
 
-The revision format is '([patch]/[bottom | top]) | <tree-ish>'"""
+Show the diff (default) or diffstat between the current working copy
+or a tree-ish object and another tree-ish object. File names can also
+be given to restrict the diff output. The tree-ish object can be a
+standard git commit, tag or tree. In addition to these, the command
+also supports 'base', representing the bottom of the current stack,
+and '[patch]/[bottom | top]' for the patch boundaries (defaulting to
+the current one):
+
+rev = '([patch]/[bottom | top]) | <tree-ish> | base'
+
+If neither bottom or top are given but a '/' is present, the command
+shows the specified patch (defaulting to the current one)."""
 
 options = [make_option('-r', metavar = 'rev1[:[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),

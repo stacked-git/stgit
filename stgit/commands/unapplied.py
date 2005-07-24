@@ -25,7 +25,10 @@ from stgit import stack, git
 
 
 help = 'print the unapplied patches'
-usage = '%prog'
+usage = """%prog [options]
+
+List the patches from the series which are not pushed onto the stack.
+They are listed in the reverse order in which they were popped."""
 
 options = []
 

@@ -25,7 +25,10 @@ from stgit import stack, git
 
 
 help = 'remove files from the repository'
-usage = '%prog [options] <files...>'
+usage = """%prog [options] <files...>
+
+Remove given files from the repository. The command doesn't remove the
+working copy of the file."""
 
 options = [make_option('-f', '--force',
                        help = 'force removing even if the file exists',

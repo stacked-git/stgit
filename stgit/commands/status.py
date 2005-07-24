@@ -25,7 +25,20 @@ from stgit import stack, git
 
 
 help = 'show the tree status'
-usage = '%prog [options] [<files...>]'
+usage = """%prog [options] [<files...>]
+
+Show the status of the whole working copy or the given files. The
+command also shows the files in the current directory which are not
+under revision control. The files are prefixed as follows:
+
+  M - locally modified
+  N - newly added to the repository
+  D - deleted from the repository
+  C - conflict
+  ? - unknown
+
+A 'refresh' command clears the status of the modified, new and deleted
+files."""
 
 options = [make_option('-m', '--modified',
                        help = 'show modified files only',

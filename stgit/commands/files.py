@@ -25,7 +25,13 @@ from stgit import stack, git
 
 
 help = 'show the files modified by a patch (or the current patch)'
-usage = '%prog [options] [<patch>]'
+usage = """%prog [options] [<patch>]
+
+List the files modified by the given patch (defaulting to the current
+one). Passing the '--stat' option shows the diff statistics for the
+given patch. Note that this command doesn't show the files modified in
+the working tree and not yet included in the patch by a 'refresh'
+command. Use the 'diff' or 'status' commands for these files."""
 
 options = [make_option('-s', '--stat',
                        help = 'show the diff stat',

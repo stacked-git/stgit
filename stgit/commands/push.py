@@ -25,7 +25,18 @@ from stgit import stack, git
 
 
 help = 'push a patch on top of the series'
-usage = '%prog [options] [<name>]'
+usage = """%prog [options] [<name>]
+
+Push a patch (defaulting to the first unapplied one) or range of
+patches to the stack. The 'push' operation allows patch reordering by
+commuting them with the three-way merge algorithm. If the result of
+the 'push' operation is not acceptable or if there are too many
+conflicts, the '--undo' option can be used to revert the patch and the
+tree to the state before the operation. Conflicts raised during the
+push operation have to be fixed and the 'resolved' command run.
+
+The 'push' command also notifies when the patch becomes empty after
+the merge operation (i.e. it was fully merged upstream)."""
 
 options = [make_option('-a', '--all',
                        help = 'push all the unapplied patches',

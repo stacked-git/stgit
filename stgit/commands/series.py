@@ -25,7 +25,11 @@ from stgit import stack, git
 
 
 help = 'print the patch series'
-usage = '%prog'
+usage = """%prog [options]
+
+Show all the patches in the series. The applied patches are prefixed
+with a '+' and the unapplied ones with a '-'. The current patch is
+prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = []
 

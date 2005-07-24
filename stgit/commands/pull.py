@@ -24,7 +24,19 @@ from stgit import stack, git
 
 
 help = 'pull the changes from the remote repository'
-usage = '%prog [options]'
+usage = """%prog [options]
+
+Pull the latest changes from the parent repository. This command works
+by popping all the patches from the stack, pulling the changes in the
+parent repository, setting the base of the stack to the latest parent
+HEAD and pusing the patches back (unless '--nopush' is specified). The
+'push' operation can fail if there are conflicts. They need to be
+resolved and the patch pushed again. The URL of the parent repository
+is specified in the .git/branches/<head> file.
+
+Note that this command doesn't perform any merge operation for the
+base of the stack, it only performs merges with the patches being
+pushed."""
 
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after pulling',

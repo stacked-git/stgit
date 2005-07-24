@@ -25,7 +25,11 @@ from stgit import stack, git
 
 
 help = 'mark a file conflict as solved'
-usage = '%prog [options] [<file>[ <file>]]'
+usage = """%prog [options] [<files...>]
+
+Mark a merge conflict as resolved. The conflicts can be seen with the
+'status' command, the corresponding files being prefixed with a
+'C'. This command also removes any <file>.{local,remote,older} files."""
 
 options = [make_option('-a', '--all',
                        help = 'mark all conflicts as solved',

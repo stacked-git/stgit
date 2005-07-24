@@ -25,7 +25,12 @@ from stgit import stack, git
 
 
 help = 'remove the topmost or any unapplied patch'
-usage = '%prog <name>'
+usage = """%prog [options] <patch>
+
+Delete the patch passed as argument. The patch to be deleted can only
+be part of the unapplied list or be the topmost one, in the latter
+case the command also popping it from the stack. Note that the
+'delete' operation is irreversible."""
 
 options = []
 

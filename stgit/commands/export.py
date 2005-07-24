@@ -27,10 +27,25 @@ from stgit import stack, git
 
 
 help = 'exports a series of patches to <dir> (or patches)'
-usage = """%prog [options] [<dir>]"""
+usage = """%prog [options] [<dir>]
+
+Export the applied patches into a given directory (defaults to
+'patches') in a standard unified GNU diff format. A file (defaulting
+to '.git/patchexport.tmpl') can be used as a template for the patch
+format. The following variables are supported in the template file:
+
+  %(description)s - patch description
+  %(diffstat)s    - the diff statistics
+  %(authname)s    - author's name
+  %(authemail)s   - author's e-mail
+  %(authdate)s    - patch creation date
+  %(commname)s    - committer's name
+  %(commemail)s   - committer's e-mail
+
+'export' can also generate a diff for a range of patches."""
 
 options = [make_option('-n', '--numbered',
-                       help = 'number the patch names',
+                       help = 'prefix the patch names with order numbers',
                        action = 'store_true'),
            make_option('-d', '--diff',
                        help = 'append .diff to the patch names',

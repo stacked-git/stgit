@@ -24,7 +24,11 @@ from stgit import stack, git
 
 
 help = 'delete the empty patches in the series'
-usage = """%prog [options]"""
+usage = """%prog [options]
+
+Delete the empty patches in the whole series or only those applied or
+unapplied. A patch is considered empty if the two commit objects
+representing its boundaries refer to the same tree object."""
 
 options = [make_option('-a', '--applied',
                        help = 'delete the empty applied patches',

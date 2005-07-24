@@ -25,7 +25,11 @@ from stgit import stack, git
 
 
 help = 'add files or directories to the repository'
-usage = """%prog <files/dirs...>"""
+usage = """%prog [options] <files/dirs...>
+
+Add a the files or directories passed as arguments to the
+repository. When a directory name is given, all the files and
+subdirectories are recursively added."""
 
 options = []
 
