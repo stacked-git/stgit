@@ -356,6 +356,7 @@ def status(files = [], modified = False, new = False, deleted = False,
         if modified:
             filestat.append('M')
         if new:
+            filestat.append('A')
             filestat.append('N')
         if deleted:
             filestat.append('D')
