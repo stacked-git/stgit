@@ -115,6 +115,13 @@ class Patch:
     def get_name(self):
         return self.__name
 
+    def rename(self, newname):
+        olddir = self.__dir
+        self.__name = newname
+        self.__dir = os.path.join(self.__patch_dir, self.__name)
+
+        os.rename(olddir, self.__dir)
+
     def __get_field(self, name, multiline = False):
         id_file = os.path.join(self.__dir, name)
         if os.path.isfile(id_file):
@@ -532,3 +539,30 @@ class Series:
             return True
 
         return False
+
+    def rename_patch(self, oldname, newname):
+        applied = self.get_applied()
+        unapplied = self.get_unapplied()
+
+        if newname in applied or newname in unapplied:
+            raise StackException, 'Patch "%s" already exists' % newname
+
+        if oldname in unapplied:
+            Patch(oldname, self.__patch_dir).rename(newname)
+            unapplied[unapplied.index(oldname)] = newname
+
+            f = file(self.__unapplied_file, 'w+')
+            f.writelines([line + '\n' for line in unapplied])
+            f.close()
+        elif oldname in applied:
+            Patch(oldname, self.__patch_dir).rename(newname)
+            if oldname == self.get_current():
+                self.__set_current(newname)
+
+            applied[applied.index(oldname)] = newname
+
+            f = file(self.__applied_file, 'w+')
+            f.writelines([line + '\n' for line in applied])
+            f.close()
+        else:
+            raise StackException, 'Unknown patch "%s"' % oldname

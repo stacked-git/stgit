@@ -42,6 +42,7 @@ import stgit.commands.pop
 import stgit.commands.pull
 import stgit.commands.push
 import stgit.commands.refresh
+import stgit.commands.rename
 import stgit.commands.resolved
 import stgit.commands.rm
 import stgit.commands.series
@@ -68,6 +69,7 @@ commands = {
     'pull':     stgit.commands.pull,
     'push':     stgit.commands.push,
     'refresh':  stgit.commands.refresh,
+    'rename':   stgit.commands.rename,
     'resolved': stgit.commands.resolved,
     'rm':       stgit.commands.rm,
     'series':   stgit.commands.series,
