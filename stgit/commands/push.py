@@ -117,6 +117,9 @@ def func(parser, options, args):
         patches.reverse()
 
     for p in patches:
+        if p not in unapplied:
+            raise CmdException, 'Patch "%s" not unapplied' % p
+
         print 'Pushing patch "%s"...' % p,
         sys.stdout.flush()
 
