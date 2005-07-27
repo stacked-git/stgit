@@ -53,6 +53,9 @@ def git_id(string):
             id_file = os.path.join(path, git_id)
             if os.path.isfile(id_file):
                 return read_string(id_file)
+
+        # maybe GIT know more about this id
+        return git_id
     elif len(string_list) == 2:
         patch_name = string_list[0]
         if patch_name == '':
