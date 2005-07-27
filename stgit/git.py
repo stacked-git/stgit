@@ -91,6 +91,15 @@ def get_conflicts():
     else:
         return None
 
+def _input(cmd, file_desc):
+    p = popen2.Popen3(cmd)
+    for line in file_desc:
+        print line
+        p.tochild.write(line)
+    p.tochild.close()
+    if p.wait():
+        raise GitException, '%s failed' % str(cmd)
+
 def _output(cmd):
     p=popen2.Popen3(cmd)
     string = p.fromchild.read()
@@ -454,3 +463,15 @@ def fetch(location, head = None, tag = None):
         raise GitException, 'Failed "git fetch %s"' % location
 
     return read_string(os.path.join(base_dir, 'FETCH_HEAD'))
+
+def apply_patch(filename = None):
+    """Apply a patch onto the current index. There must not be any
+    local changes in the tree, otherwise the command fails
+    """
+    os.system('git-update-cache --refresh > /dev/null')
+
+    if filename:
+        if __run('git-apply --index', [filename]) != 0:
+            raise GitException, 'Patch does not apply cleanly'
+    else:
+        _input('git-apply --index', sys.stdin)
