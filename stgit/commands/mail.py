@@ -29,15 +29,17 @@ help = 'send a patch or series of patches by e-mail'
 usage = """%prog [options] [<patch>]
 
 Send a patch or a range of patches (defaulting to the applied patches)
-by e-mail using the 'smtpserver' configuration option. The From/To/Cc
-addresses and the e-mail format are generated from the template file
-passed as argument to '--template' (defaulting to
-.git/patchmail.tmpl). A preamble e-mail can also be sent using the
-'--first' option (no default template).
+by e-mail using the 'smtpserver' configuration option. The From
+address and the e-mail format are generated from the template file
+passed as argument to '--template' (defaulting to .git/patchmail.tmpl
+or /usr/share/stgit/templates/patchmail.tmpl). The To/Cc/Bcc addresses
+can either be added to the template file or passed via the
+corresponding command line options.
 
-All the subsequent e-mails appear as replies to the first e-mail sent
-(either the preamble or the first patch). E-mails can be seen as
-replies to a different e-mail by using the '--refid' option.
+A preamble e-mail can be sent using the '--first' option. All the
+subsequent e-mails appear as replies to the first e-mail sent (either
+the preamble or the first patch). E-mails can be seen as replies to a
+different e-mail by using the '--refid' option.
 
 SMTP authentication is also possible with '--smtp-user' and
 '--smtp-password' options, also available as configuration settings:
@@ -72,6 +74,12 @@ options = [make_option('-a', '--all',
            make_option('-r', '--range',
                        metavar = '[PATCH1][:[PATCH2]]',
                        help = 'e-mail patches between PATCH1 and PATCH2'),
+           make_option('--to',
+                       help = 'Add TO to the To: list'),
+           make_option('--cc',
+                       help = 'Add CC to the Cc: list'),
+           make_option('--bcc',
+                       help = 'Add BCC to the Bcc: list'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'use FILE as the message template'),
            make_option('-f', '--first', metavar = 'FILE',
@@ -130,10 +138,18 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
 
     s.quit()
 
-def __build_first(tmpl, total_nr, msg_id):
+def __build_first(tmpl, total_nr, msg_id, options):
     """Build the first message (series description) to be sent via SMTP
     """
-    headers_end = 'Message-Id: %s\n' % (msg_id)
+    headers_end = ''
+    if options.to:
+        headers_end += 'To: %s\n' % options.to
+    if options.cc:
+        headers_end += 'Cc: %s\n' % options.cc
+    if options.bcc:
+        headers_end += 'Bcc: %s\n' % options.bcc
+    headers_end += 'Message-Id: %s\n' % msg_id
+
     total_nr_str = str(total_nr)
 
     tmpl_dict = {'endofheaders': headers_end,
@@ -152,7 +168,7 @@ def __build_first(tmpl, total_nr, msg_id):
     return msg
 
 
-def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id = None):
+def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """Build the message to be sent via SMTP
     """
     p = crt_series.get_patch(patch)
@@ -164,10 +180,17 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id = None):
     long_descr = reduce(lambda x, y: x + '\n' + y,
                         descr_lines[1:], '').lstrip()
 
-    headers_end = 'Message-Id: %s\n' % (msg_id)
+    headers_end = ''
+    if options.to:
+        headers_end += 'To: %s\n' % options.to
+    if options.cc:
+        headers_end += 'Cc: %s\n' % options.cc
+    if options.bcc:
+        headers_end += 'Bcc: %s\n' % options.bcc
+    headers_end += 'Message-Id: %s\n' % msg_id
     if ref_id:
-        headers_end += "In-Reply-To: %s\n" % (ref_id)
-        headers_end += "References: %s\n" % (ref_id)
+        headers_end += "In-Reply-To: %s\n" % ref_id
+        headers_end += "References: %s\n" % ref_id
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
@@ -289,10 +312,10 @@ def func(parser, options, args):
     # send the first message (if any)
     if options.first:
         tmpl = file(options.first).read()
-        from_addr, to_addr_list = __parse_addresses(tmpl)
 
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_first(tmpl, total_nr, msg_id)
+        msg = __build_first(tmpl, total_nr, msg_id, options)
+        from_addr, to_addr_list = __parse_addresses(msg)
 
         # subsequent e-mails are seen as replies to the first one
         ref_id = msg_id
@@ -307,16 +330,28 @@ def func(parser, options, args):
 
     # send the patches
     if options.template:
-        tfile = options.template
+        tfile_list = [options.template]
     else:
-        tfile = os.path.join(git.base_dir, 'patchmail.tmpl')
-    tmpl = file(tfile).read()
+        tfile_list = []
 
-    from_addr, to_addr_list = __parse_addresses(tmpl)
+    tfile_list += [os.path.join(git.base_dir, 'patchmail.tmpl'),
+                   os.path.join(sys.prefix,
+                                'share/stgit/templates/patchmail.tmpl')]
+    tmpl = None
+    for tfile in tfile_list:
+        if os.path.isfile(tfile):
+            tmpl = file(tfile).read()
+            break
+    if not tmpl:
+        raise CmdException, 'No e-mail template file: %s or %s' \
+              % (tfile_list[-1], tfile_list[-2])
 
     for (p, patch_nr) in zip(patches, range(1, len(patches) + 1)):
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_message(tmpl, p, patch_nr, total_nr, msg_id, ref_id)
+        msg = __build_message(tmpl, p, patch_nr, total_nr, msg_id, ref_id,
+                              options)
+        from_addr, to_addr_list = __parse_addresses(msg)
+
         # subsequent e-mails are seen as replies to the first one
         if not ref_id:
             ref_id = msg_id
