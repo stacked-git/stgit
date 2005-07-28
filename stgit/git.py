@@ -274,7 +274,7 @@ def commit(message, files = [], parents = [], allowempty = False,
         raise GitException, 'No changes to commit'
 
     # check for unresolved conflicts
-    if not first and len(filter(lambda x: x[0] not in ['M', 'N', 'D'],
+    if not first and len(filter(lambda x: x[0] not in ['M', 'N', 'A', 'D'],
                                 cache_files)) != 0:
         raise GitException, 'Commit failed: unresolved conflicts'
 
@@ -292,7 +292,7 @@ def commit(message, files = [], parents = [], allowempty = False,
         rm_files=[]
         m_files=[]
         for f in cache_files:
-            if f[0] == 'N':
+            if f[0] in ['N', 'A']:
                 add_files.append(f[1])
             elif f[0] == 'D':
                 rm_files.append(f[1])
@@ -437,7 +437,8 @@ def checkout(files = [], force = False):
 def switch(tree_id):
     """Switch the tree to the given id
     """
-    to_delete = filter(lambda x: x[0] == 'N', __tree_status(tree_id = tree_id))
+    to_delete = filter(lambda x: x[0] in ['N', 'A'],
+                       __tree_status(tree_id = tree_id))
 
     if __run('git-read-tree -m', [tree_id]) != 0:
         raise GitException, 'Failed git-read-tree -m %s' % tree_id
