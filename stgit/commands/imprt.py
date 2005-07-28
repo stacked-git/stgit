@@ -81,10 +81,9 @@ def __parse_mail(filename = None):
             # end of headers
             break
 
-    # remove extra '[*PATCH]', 'name:' in the subject
+    # remove the '[*PATCH*]' expression in the subject
     if descr:
-        descr = re.findall('^(\[[^\s]*PATCH.*?\])?\s*([^\s]*:)?\s*(.*)$',
-                           descr)[0][2]
+        descr = re.findall('^(\[[^\s]*PATCH.*?\])?\s*(.*)$', descr)[0][1]
         descr += '\n\n'
     else:
         raise CmdException, 'Subject: line not found'
