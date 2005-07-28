@@ -30,9 +30,11 @@ help = 'exports a series of patches to <dir> (or patches)'
 usage = """%prog [options] [<dir>]
 
 Export the applied patches into a given directory (defaults to
-'patches') in a standard unified GNU diff format. A file (defaulting
-to '.git/patchexport.tmpl') can be used as a template for the patch
-format. The following variables are supported in the template file:
+'patches') in a standard unified GNU diff format. A template file
+(defaulting to '.git/patchexport.tmpl or
+/usr/share/stgit/templates/patchexport.tmpl') can be used for the
+patch format. The following variables are supported in the template
+file:
 
   %(description)s - patch description
   %(diffstat)s    - the diff statistics
@@ -114,6 +116,21 @@ def func(parser, options, args):
     if zpadding < 2:
         zpadding = 2
 
+    # get the template
+    if options.template:
+        patch_tmpl_list = [options.template]
+    else:
+        patch_tmpl_list = []
+
+    patch_tmpl_list += [os.path.join(git.base_dir, 'patchexport.tmpl'),
+                        os.path.join(sys.prefix,
+                                     'share/stgit/templates/patchexport.tmpl')]
+    tmpl = ''
+    for patch_tmpl in patch_tmpl_list:
+        if os.path.isfile(patch_tmpl):
+            tmpl = file(patch_tmpl).read()
+            break
+
     patch_no = 1;
     for p in patches:
         pname = p
@@ -123,16 +140,6 @@ def func(parser, options, args):
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
         pfile = os.path.join(dirname, pname)
         print >> series, pname
-
-        # get the template
-        if options.template:
-            patch_tmpl = options.template
-        else:
-            patch_tmpl = os.path.join(git.base_dir, 'patchexport.tmpl')
-        if os.path.isfile(patch_tmpl):
-            tmpl = file(patch_tmpl).read()
-        else:
-            tmpl = ''
 
         # get the patch description
         patch = crt_series.get_patch(p)
