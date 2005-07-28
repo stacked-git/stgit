@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import glob
 from distutils.core import setup
 
 from stgit.version import version
@@ -14,5 +15,7 @@ setup(name = 'stgit',
       long_description = 'Push/pop utility on top of GIT',
       scripts = ['stg', 'gitmergeonefile.py'],
       packages = ['stgit', 'stgit.commands'],
-      data_files = [('/etc', ['stgitrc'])],
+      data_files = [('/etc', ['stgitrc']),
+                    ('share/stgit/templates', glob.glob('templates/*.tmpl')),
+                    ('share/stgit/examples', glob.glob('examples/*.tmpl'))]
       )
