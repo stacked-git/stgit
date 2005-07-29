@@ -51,6 +51,7 @@ additional headers and a blank line. The patch e-mail template accepts
 the following variables:
 
   %(patch)s        - patch name
+  %(maintainer)s   - 'authname <authemail>' as read from the config file
   %(shortdescr)s   - the first line of the patch description
   %(longdescr)s    - the rest of the patch description, after the first line
   %(endofheaders)s - delimiter between e-mail headers and body
@@ -65,8 +66,8 @@ the following variables:
   %(commname)s     - committer's name
   %(commemail)s    - committer's e-mail
 
-For the preamble e-mail template, only the %(date)s, %(endofheaders)s
-and %(totalnr)s variables are supported."""
+For the preamble e-mail template, only the %(maintainer)s, %(date)s,
+%(endofheaders)s and %(totalnr)s variables are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -93,6 +94,17 @@ options = [make_option('-a', '--all',
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
                        help = 'username for SMTP authentication')]
 
+
+def __get_maintainer():
+    """Return the 'authname <authemail>' string as read from the
+    configuration file
+    """
+    if config.has_option('stgit', 'authname') \
+           and config.has_option('stgit', 'authemail'):
+        return '%s <%s>' % (config.get('stgit', 'authname'),
+                            config.get('stgit', 'authemail'))
+    else:
+        return None
 
 def __parse_addresses(string):
     """Return a two elements tuple: (from, [to])
@@ -141,6 +153,10 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
 def __build_first(tmpl, total_nr, msg_id, options):
     """Build the first message (series description) to be sent via SMTP
     """
+    maintainer = __get_maintainer()
+    if not maintainer:
+        maintainer = ''
+
     headers_end = ''
     if options.to:
         headers_end += 'To: %s\n' % options.to
@@ -152,7 +168,8 @@ def __build_first(tmpl, total_nr, msg_id, options):
 
     total_nr_str = str(total_nr)
 
-    tmpl_dict = {'endofheaders': headers_end,
+    tmpl_dict = {'maintainer':   maintainer,
+                 'endofheaders': headers_end,
                  'date':         email.Utils.formatdate(localtime = True),
                  'totalnr':      total_nr_str}
 
@@ -167,7 +184,6 @@ def __build_first(tmpl, total_nr, msg_id, options):
 
     return msg
 
-
 def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """Build the message to be sent via SMTP
     """
@@ -179,6 +195,10 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     short_descr = descr_lines[0].rstrip()
     long_descr = reduce(lambda x, y: x + '\n' + y,
                         descr_lines[1:], '').lstrip()
+
+    maintainer = __get_maintainer()
+    if not maintainer:
+        maintainer = '%s <%s>' % (p.get_commname(), p.get_commemail())
 
     headers_end = ''
     if options.to:
@@ -196,6 +216,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
 
     tmpl_dict = {'patch':        patch,
+                 'maintainer':   maintainer,
                  'shortdescr':   short_descr,
                  'longdescr':    long_descr,
                  'endofheaders': headers_end,
@@ -225,7 +246,6 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
               'supported in the patch template'
 
     return msg
-
 
 def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
