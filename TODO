@@ -1,17 +1,11 @@
-The TODO list for the short term:
+The TODO list until 1.0:
 
 - tag (snapshot) command
 - log command (it should also show the log per single patch)
 - clone command
-- import command to import a series of patches or a single patch or a
-  patch from a different branch in the same tree
-- better help for commands
-- tutorial
-- bug reporting tool
-
-
-Other things after the list above is completed:
-
+- improved import command to import patches from a different branch in
+  the same tree
+- tutorial, man page
 - fold command (to merge 2 patches into one)
 - regression tests
 - release 1.0
