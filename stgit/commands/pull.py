@@ -24,15 +24,15 @@ from stgit import stack, git
 
 
 help = 'pull the changes from the remote repository'
-usage = """%prog [options]
+usage = """%prog [options] [<location>]
 
-Pull the latest changes from the parent repository. This command works
-by popping all the patches from the stack, pulling the changes in the
-parent repository, setting the base of the stack to the latest parent
-HEAD and pusing the patches back (unless '--nopush' is specified). The
-'push' operation can fail if there are conflicts. They need to be
-resolved and the patch pushed again. The URL of the parent repository
-is specified in the .git/branches/<head> file.
+Pull the latest changes from the given URL or branch (defaulting to
+'origin'). This command works by popping all the patches from the
+stack, pulling the changes in the parent repository, setting the base
+of the stack to the latest parent HEAD and pusing the patches back
+(unless '--nopush' is specified). The 'push' operation can fail if
+there are conflicts. They need to be resolved and the patch pushed
+again.
 
 Note that this command doesn't perform any merge operation for the
 base of the stack, it only performs merges with the patches being
@@ -50,15 +50,21 @@ options = [make_option('-n', '--nopush',
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
-    if len(args) != 0:
+    if len(args) == 0:
+        location = read_string(os.path.join(git.base_dir, 'branches',
+                                            'origin'))
+    elif len(args) == 1:
+        location = args[0]
+        branch = os.path.join(git.base_dir, 'branches', location)
+        if os.path.isfile(branch):
+            location = read_string(branch)
+    else:
         parser.error('incorrect number of arguments')
 
     check_local_changes()
     check_conflicts()
     check_head_top_equal()
 
-    branch = git.get_head_file()
-    location = read_string(os.path.join(git.base_dir, 'branches', branch))
     orig_head = git_id('base')
 
     print 'Pulling from "%s"...' % location
