@@ -33,6 +33,7 @@ import stgit.commands.applied
 import stgit.commands.delete
 import stgit.commands.diff
 import stgit.commands.clean
+import stgit.commands.clone
 import stgit.commands.export
 import stgit.commands.files
 import stgit.commands.imprt
@@ -61,6 +62,7 @@ commands = {
     'delete':   stgit.commands.delete,
     'diff':     stgit.commands.diff,
     'clean':    stgit.commands.clean,
+    'clone':    stgit.commands.clone,
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
     'import':   stgit.commands.imprt,
@@ -128,9 +130,13 @@ def main():
                           option_list = command.options)
     options, args = parser.parse_args()
     try:
-        # the lines below are a simple way to avoid an exception when
+        # 'clone' doesn't expect an already initialised GIT tree
+        if cmd == 'clone':
+            stgit.commands.common.crt_series = stack.Series('master')
+        else:
+            stgit.commands.common.crt_series = stack.Series()
+        # the line below is a simple way to avoid an exception when
         # stgit is run outside an initialised tree
-        stgit.commands.common.crt_series = stack.Series()
         setattr(command, 'crt_series', stgit.commands.common.crt_series)
 
         command.func(parser, options, args)

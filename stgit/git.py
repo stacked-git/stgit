@@ -420,18 +420,21 @@ def files(rev1, rev2):
 
     return str.rstrip()
 
-def checkout(files = [], force = False):
+def checkout(files = [], tree_id = None, force = False):
     """Check out the given or all files
     """
-    git_flags = 'git-checkout-cache -q -u'
-    if force:
-        git_flags += ' -f'
-    if len(files) == 0:
-        git_flags += ' -a'
-    else:
-        git_flags += ' --'
+    if tree_id and __run('git-read-tree -m', [tree_id]) != 0:
+        raise GitException, 'Failed git-read-tree -m %s' % tree_id
 
-    if __run(git_flags, files) != 0:
+    checkout_cmd = 'git-checkout-cache -q -u'
+    if force:
+        checkout_cmd += ' -f'
+    if len(files) == 0:
+        checkout_cmd += ' -a'
+    else:
+        checkout_cmd += ' --'
+
+    if __run(checkout_cmd, files) != 0:
         raise GitException, 'Failed git-checkout-cache'
 
 def switch(tree_id):
@@ -440,10 +443,7 @@ def switch(tree_id):
     to_delete = filter(lambda x: x[0] in ['N', 'A'],
                        __tree_status(tree_id = tree_id))
 
-    if __run('git-read-tree -m', [tree_id]) != 0:
-        raise GitException, 'Failed git-read-tree -m %s' % tree_id
-
-    checkout(force = True)
+    checkout(tree_id = tree_id, force = True)
     __set_head(tree_id)
 
     # checkout doesn't remove files
@@ -476,3 +476,11 @@ def apply_patch(filename = None):
             raise GitException, 'Patch does not apply cleanly'
     else:
         _input('git-apply --index', sys.stdin)
+
+def clone(repository, local_dir):
+    """Clone a remote repository. At the moment, just use the
+    'git clone' script
+    """
+    if __run('git clone', [repository, local_dir]) != 0:
+        raise GitException, 'Failed "git clone %s %s"' \
+              % (repository, local_dir)
