@@ -90,7 +90,7 @@ def __parse_mail(filename = None):
 
     # the rest of the patch description
     for line in f:
-        if re.match('----*\s*$', line) or re.match('diff -', line):
+        if re.match('---\s*$', line) or re.match('diff -', line):
             break
         else:
             descr += line
@@ -119,7 +119,7 @@ def __parse_patch(filename = None):
             auth = re.findall('^.*?:\s+(.*)$', line)[0]
             authname, authemail = name_email(auth)
 
-        if re.match('----*\s*$', line) or re.match('diff -', line):
+        if re.match('---\s*$', line) or re.match('diff -', line):
             break
         else:
             descr += line
