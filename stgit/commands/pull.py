@@ -59,14 +59,17 @@ def func(parser, options, args):
 
     branch = git.get_head_file()
     location = read_string(os.path.join(git.base_dir, 'branches', branch))
+    orig_head = git_id('base')
 
     print 'Pulling from "%s"...' % location
     new_head = git.fetch(location, options.head, options.tag)
     print 'done'
 
-    if new_head == git_id('base'):
+    if new_head == orig_head:
         print 'Branch already up-to-date'
     else:
+        write_string(os.path.join(git.base_dir, 'ORIG_HEAD'), orig_head)
+
         applied = crt_series.get_applied()
 
         if len(applied) > 0:
