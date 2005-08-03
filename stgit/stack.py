@@ -324,6 +324,7 @@ class Series:
 
         create_empty_file(self.__applied_file)
         create_empty_file(self.__unapplied_file)
+        self.__begin_stack_check()
 
     def refresh_patch(self, message = None, edit = False,
                       author_name = None, author_email = None,
