@@ -60,6 +60,7 @@ the following variables:
   %(date)s         - current date/time
   %(patchnr)s      - patch number
   %(totalnr)s      - total number of patches to be sent
+  %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
   %(authname)s     - author's name
   %(authemail)s    - author's email
   %(authdate)s     - patch creation date
@@ -67,7 +68,8 @@ the following variables:
   %(commemail)s    - committer's e-mail
 
 For the preamble e-mail template, only the %(maintainer)s, %(date)s,
-%(endofheaders)s and %(totalnr)s variables are supported."""
+%(endofheaders)s, %(patchnr)s, %(totalnr)s and %(number)s variables
+are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -167,11 +169,18 @@ def __build_first(tmpl, total_nr, msg_id, options):
     headers_end += 'Message-Id: %s\n' % msg_id
 
     total_nr_str = str(total_nr)
+    patch_nr_str = '0'.zfill(len(total_nr_str))
+    if total_nr > 1:
+        number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
+    else:
+        number_str = ''
 
     tmpl_dict = {'maintainer':   maintainer,
                  'endofheaders': headers_end,
                  'date':         email.Utils.formatdate(localtime = True),
-                 'totalnr':      total_nr_str}
+                 'patchnr':      patch_nr_str,
+                 'totalnr':      total_nr_str,
+                 'number':       number_str}
 
     try:
         msg = tmpl % tmpl_dict
@@ -214,6 +223,10 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
+    if total_nr > 1:
+        number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
+    else:
+        number_str = ''
 
     tmpl_dict = {'patch':        patch,
                  'maintainer':   maintainer,
@@ -227,6 +240,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'date':         email.Utils.formatdate(localtime = True),
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
+                 'number':       number_str,
                  'authname':     p.get_authname(),
                  'authemail':    p.get_authemail(),
                  'authdate':     p.get_authdate(),
