@@ -145,10 +145,13 @@ def func(parser, options, args):
 
     if len(args) == 1:
         filename = args[0]
-        patch = os.path.basename(filename)
-    elif options.name:
+    else:
         filename = None
+
+    if options.name:
         patch = options.name
+    elif filename:
+        patch = os.path.basename(filename)
     else:
         raise CmdException, 'Unkown patch name'
 
