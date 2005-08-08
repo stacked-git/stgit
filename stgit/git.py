@@ -94,7 +94,6 @@ def get_conflicts():
 def _input(cmd, file_desc):
     p = popen2.Popen3(cmd)
     for line in file_desc:
-        print line
         p.tochild.write(line)
     p.tochild.close()
     if p.wait():
