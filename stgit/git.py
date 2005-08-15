@@ -449,7 +449,7 @@ def switch(tree_id):
     for fs in to_delete:
         os.remove(fs[1])
 
-def fetch(location, head = None, tag = None):
+def pull(location, head = None, tag = None):
     """Fetch changes from the remote repository. At the moment, just
     use the 'git fetch' scripts
     """
@@ -459,10 +459,8 @@ def fetch(location, head = None, tag = None):
     elif tag:
         args += ['tag', tag]
 
-    if __run('git fetch', args) != 0:
+    if __run('git pull', args) != 0:
         raise GitException, 'Failed "git fetch %s"' % location
-
-    return read_string(os.path.join(base_dir, 'FETCH_HEAD'))
 
 def apply_patch(filename = None):
     """Apply a patch onto the current index. There must not be any

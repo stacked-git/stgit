@@ -65,36 +65,29 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    orig_head = git_id('base')
+    # pop all patches
+    applied = crt_series.get_applied()
+    if len(applied) > 0:
+        print 'Popping all patches...',
+        sys.stdout.flush()
+        crt_series.pop_patch(applied[0])
+        print 'done'
 
+    # pull the remote changes
     print 'Pulling from "%s"...' % location
-    new_head = git.fetch(location, options.head, options.tag)
+    git.pull(location, options.head, options.tag)
     print 'done'
 
-    if new_head == orig_head:
-        print 'Branch already up-to-date'
-    else:
-        write_string(os.path.join(git.base_dir, 'ORIG_HEAD'), orig_head)
-
-        applied = crt_series.get_applied()
-
-        if len(applied) > 0:
-            print 'Popping all patches...',
-            sys.stdout.flush()
-            crt_series.pop_patch(applied[0])
+    # push the patches back
+    if options.nopush:
+        applied = []
+    for p in applied:
+        print 'Pushing patch "%s"...' % p,
+        sys.stdout.flush()
+        crt_series.push_patch(p)
+        if crt_series.empty_patch(p):
+            print 'done (empty patch)'
+        else:
             print 'done'
-
-        git.switch(new_head)
-
-        if options.nopush:
-            applied = []
-        for p in applied:
-            print 'Pushing patch "%s"...' % p,
-            sys.stdout.flush()
-            crt_series.push_patch(p)
-            if crt_series.empty_patch(p):
-                print 'done (empty patch)'
-            else:
-                print 'done'
 
     print_crt_patch()
