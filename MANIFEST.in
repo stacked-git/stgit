@@ -1,3 +1,4 @@
-include README MANIFEST.in AUTHORS COPYING INSTALL ChangeLog TODO stgitrc
-include examples/*.tmpl
+include README MANIFEST.in AUTHORS COPYING INSTALL ChangeLog TODO
 include templates/*.tmpl
+include examples/*.tmpl
+include examples/stgitrc

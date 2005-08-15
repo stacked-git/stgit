@@ -15,7 +15,7 @@ setup(name = 'stgit',
       long_description = 'Push/pop utility on top of GIT',
       scripts = ['stg', 'gitmergeonefile.py'],
       packages = ['stgit', 'stgit.commands'],
-      data_files = [('/etc', ['stgitrc']),
-                    ('share/stgit/templates', glob.glob('templates/*.tmpl')),
-                    ('share/stgit/examples', glob.glob('examples/*.tmpl'))]
+      data_files = [('share/stgit/templates', glob.glob('templates/*.tmpl')),
+                    ('share/stgit/examples', glob.glob('examples/*.tmpl')),
+                    ('share/stgit/examples', ['examples/stgitrc'])]
       )

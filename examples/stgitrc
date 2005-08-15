@@ -1,3 +1,7 @@
+# StGIT configuration file. Copy it to any of /etc/stgitrc, ~/.stgitrc
+# or .git/stgitrc and modify as needed. Note that the latter overrides
+# the former.
+
 [stgit]
 # Default author/committer details
 #authname:  Your Name
