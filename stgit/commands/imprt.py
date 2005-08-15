@@ -42,6 +42,9 @@ options = [make_option('-m', '--mail',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
+           make_option('-e', '--edit',
+                       help = 'invoke an editor for the patch description',
+                       action = 'store_true'),
            make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
                        help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
@@ -192,7 +195,7 @@ def func(parser, options, args):
     sys.stdout.flush()
 
     git.apply_patch(filename)
-    crt_series.refresh_patch()
+    crt_series.refresh_patch(edit = options.edit)
 
     print 'done'
     print_crt_patch()
