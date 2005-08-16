@@ -20,6 +20,18 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
+
+# Try to detect where it is run from and set prefix and the search path.
+# It is assumed that the user installed StGIT using the --prefix= option
+prefix, bin = os.path.split(sys.path[0])
+
+if bin == 'bin' and prefix != sys.prefix:
+    major, minor = sys.version_info[0:2]
+    sys.path += [os.path.join(prefix, 'lib', 'python'),
+                 os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
+                 os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
+                              'site-packages')]
+
 from stgit.config import config
 from stgit.utils import append_string
 
