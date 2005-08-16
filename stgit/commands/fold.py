@@ -28,7 +28,7 @@ usage = """%prog [options] [<file>]
 
 Apply the given GNU diff file (or the standard input) onto the top of
 the current patch. With the '--threeway' option, the patch is applied
-onto the bottom of the current patch and a three-way merged is
+onto the bottom of the current patch and a three-way merge is
 performed with the current top."""
 
 options = [make_option('-t', '--threeway',
