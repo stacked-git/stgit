@@ -24,140 +24,139 @@ See the help on individual commands for the full set of options.
 Help
 ----
 
-  For a full list of commands:
+For a full list of commands:
 
 	stg help
 
-  For help on individual commands:
+For help on individual commands:
 
 	stg <cmd> (-h | --help)
 
 Repository initialisation/updating
 ----------------------------------
 
-  To clone a repository (all the GIT repository types are accepted):
+To clone a repository (all the GIT repository types are accepted):
 
 	stg clone <repository> <local-dir>
 
-  To initialise an existing GIT repository to be used with StGIT (not
-  needed if the cloning was done using StGIT):
+To initialise an existing GIT repository to be used with StGIT (not
+needed if the cloning was done using StGIT):
 
 	stg init
 
-  For people switching between multiple branches in the same
-  repository, the 'init' command needs to be run for all the branches
-  intended to be used with StGIT.
+For people switching between multiple branches in the same repository,
+the 'init' command needs to be run for all the branches intended to be
+used with StGIT.
 
-  To pull the latest changes from the remote repository (defaulting to
-  the value in .git/branches/origin):
+To pull the latest changes from the remote repository (defaulting to
+the value in .git/branches/origin):
 
 	stg pull [<branch> or 'origin']
 
-  The 'pull' command takes care of updating all the patches in the
-  stack so that they apply cleanly (the user is notified of the
-  possible conflicts).
+The 'pull' command takes care of updating all the patches in the stack
+so that they apply cleanly (the user is notified of the possible
+conflicts).
 
 Stack manipulation
 ------------------
 
-  To create/delete a patch:
+To create/delete a patch:
 
 	stg new <name>
 	stg delete <name>
 
-  The 'new' command also sets the topmost patch to the newly created
-  one.
+The 'new' command also sets the topmost patch to the newly created
+one.
 
-  To automatically delete the empty patches:
+To automatically delete the empty patches:
 
 	stg clean
 
-  To push/pop a patch to/from the stack:
+To push/pop a patch to/from the stack:
 
 	stg push [--all | <name or first unapplied>]
 	stg pop [--all | <name or topmost>]
 
-  Note that the 'push' command can apply any patch in the unapplied
-  list. This is useful if one wants to reorder the patches. If there
-  are conflicts, they need to be fixed and 'stg resolved' run. The
-  'push' operation can also be reverted with 'stg push --undo'.
+Note that the 'push' command can apply any patch in the unapplied
+list. This is useful if one wants to reorder the patches. If there are
+conflicts, they need to be fixed and 'stg resolved' run. The 'push'
+operation can also be reverted with 'stg push --undo'.
 
-  To rename a patch:
+To rename a patch:
 
 	stg rename <old-name> <new-name>
 
-  To import an existing GNU diff patch file (defaulting to the
-  standard input):
+To import an existing GNU diff patch file (defaulting to the standard
+input):
 
 	stg import [<file>]
 
-  To inspect the stack status:
+To inspect the stack status:
 
 	stg series
 	stg applied
 	stg unapplied
 	stg top
 
-  To export a patch series (or a range of patches):
+To export a patch series (or a range of patches):
 
 	stg export [--range=[<patch1>[:<patch2>]]] [<dir-name or 'patches'>]
 
-  The 'export' command supports options to automatically number the
-  patches (-n) or add the '.diff' extension (-d).
+The 'export' command supports options to automatically number the
+patches (-n) or add the '.diff' extension (-d).
 
-  To e-mail a patch or range of patches:
+To e-mail a patch or range of patches:
 
 	stg mail [--to=...] (--all | --range=[<patch1>[:<patch2>]] | <patch>)
 
 Changes to the topmost patch
 ----------------------------
 
-  Any modified file already under revision control will automatically
-  be included in the topmost patch.
+Any modified file already under revision control will automatically be
+included in the topmost patch.
 
-  To add/delete files to/from the topmost patch:
+To add/delete files to/from the topmost patch:
 
 	stg add [<file>*]
 	stg rm [<file>*]
 
-  To inspect the tree status:
+To inspect the tree status:
 
 	stg status
 
-  To get a diff between 2 revisions:
+To get a diff between 2 revisions:
 
 	stg diff [-r rev1[:[rev2]]]
 
-  A revision name can be of the form '([patch]/[bottom | top]) | base
-  | <tree-ish>' If the patch name is not specified but '/' is passed,
-  the topmost patch is used. If neither 'bottom' nor 'top' follows the
-  '/', the whole patch diff is displayed (this does not include the
-  local changes).
+A revision name can be of the form '([patch]/[bottom | top]) | base |
+<tree-ish>' If the patch name is not specified but '/' is passed, the
+topmost patch is used. If neither 'bottom' nor 'top' follows the '/',
+the whole patch diff is displayed (this does not include the local
+changes).
 
-  Note than when the first patch is pushed on the stack, the current
-  HEAD is saved in the .git/refs/heads/base file for easy reference to
-  the base of the stack.
+Note than when the first patch is pushed on the stack, the current
+HEAD is saved in the .git/refs/heads/base file for easy reference to
+the base of the stack.
 
-  To save the tree changes to the current patch and the GIT
-  repository:
+To save the tree changes to the current patch and the GIT repository:
 
 	stg refresh
 
-  The 'refresh' command also allows the modification of the patch
-  description and the author/maintainer information.
+The 'refresh' command also allows the modification of the patch
+description and the author/maintainer information.
 
-  To display the files modified by a patch (defaulting to the topmost
-  one):
+To display the files modified by a patch (defaulting to the topmost
+one):
 
 	stg files [<patch>]
 
-  To merge a GNU diff file (defaulting to the standard input) into the
-  topmost patch:
+To merge a GNU diff file (defaulting to the standard input) into the
+topmost patch:
 
 	stg fold [<file>]
 
-  This command supports a '--threeway' option which applies the patch
-  onto the bottom of the topmost one and performs a three-way merge.
+This command supports a '--threeway' option which applies the patch
+onto the bottom of the topmost one and performs a three-way merge.
 
 
 Advanced Usage
