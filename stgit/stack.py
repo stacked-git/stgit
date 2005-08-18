@@ -540,7 +540,8 @@ class Series:
 
         if bottom == top:
             return True
-        elif git.Commit(top).get_tree() == git.Commit(bottom).get_tree():
+        elif git.get_commit(top).get_tree() \
+                 == git.get_commit(bottom).get_tree():
             return True
 
         return False

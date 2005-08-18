@@ -75,10 +75,23 @@ class Commit:
     def get_committer(self):
         return self.__committer
 
+# dictionary of Commit objects, used to avoid multiple calls to git
+__commits = dict()
 
 #
 # Functions
 #
+def get_commit(id_hash):
+    """Commit objects factory. Save/look-up them in the __commits
+    dictionary
+    """
+    if id_hash in __commits:
+        return __commits[id_hash]
+    else:
+        commit = Commit(id_hash)
+        __commits[id_hash] = commit
+        return commit
+
 def get_conflicts():
     """Return the list of file conflicts
     """
