@@ -2,6 +2,10 @@ For basic installation:
 
 	python setup.py install
 
+By default, the above command installs StGIT in the
+$HOME/{bin,lib,share} directories. For a different location, use the
+--prefix option.
+
 For more information:
 
 	http://docs.python.org/inst/inst.html
