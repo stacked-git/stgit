@@ -117,7 +117,7 @@ def main():
         print_help()
         sys.exit(0)
     if cmd in ['-v', '--version']:
-        print '%s %s' % (prog, version)
+        print 'Stacked GIT %s' % version
         sys.exit(0)
     if not cmd in commands:
         print >> sys.stderr, 'Unknown command: %s' % cmd
