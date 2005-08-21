@@ -27,10 +27,11 @@ prefix, bin = os.path.split(sys.path[0])
 
 if bin == 'bin' and prefix != sys.prefix:
     major, minor = sys.version_info[0:2]
-    sys.path += [os.path.join(prefix, 'lib', 'python'),
-                 os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
-                 os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
-                              'site-packages')]
+    local_path = [os.path.join(prefix, 'lib', 'python'),
+                  os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
+                  os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
+                               'site-packages')]
+    sys.path = local_path + sys.path
 
 from stgit.config import config
 from stgit.utils import append_string
