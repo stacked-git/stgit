@@ -481,11 +481,13 @@ class Series:
 
         self.__set_current(name)
 
-        if not ex:
-            # if the merge was OK and no conflicts, just refresh the patch
-            self.refresh_patch()
-        else:
-            raise StackException, str(ex)
+        # head == bottom case doesn't need to refresh the patch
+        if head != bottom:
+            if not ex:
+                # if the merge was OK and no conflicts, just refresh the patch
+                self.refresh_patch()
+            else:
+                raise StackException, str(ex)
 
     def undo_push(self):
         name = self.get_current()
