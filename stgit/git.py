@@ -452,15 +452,10 @@ def checkout(files = [], tree_id = None, force = False):
 def switch(tree_id):
     """Switch the tree to the given id
     """
-    to_delete = filter(lambda x: x[0] in ['N', 'A'],
-                       __tree_status(tree_id = tree_id))
+    if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
+        raise GitException, 'git-read-tree failed (local changes maybe?)'
 
-    checkout(tree_id = tree_id, force = True)
     __set_head(tree_id)
-
-    # checkout doesn't remove files
-    for fs in to_delete:
-        os.remove(fs[1])
 
 def pull(location, head = None, tag = None):
     """Fetch changes from the remote repository. At the moment, just
