@@ -100,7 +100,7 @@ def print_crt_patch():
         print 'No patches applied'
 
 def resolved(filename):
-    git.update_cache([filename])
+    git.update_cache([filename], force = True)
     for ext in ['.local', '.older', '.remote']:
         fn = filename + ext
         if os.path.isfile(fn):

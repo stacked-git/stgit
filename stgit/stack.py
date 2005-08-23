@@ -326,7 +326,7 @@ class Series:
         create_empty_file(self.__unapplied_file)
         self.__begin_stack_check()
 
-    def refresh_patch(self, message = None, edit = False,
+    def refresh_patch(self, message = None, edit = False, cache_update = True,
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
@@ -363,6 +363,7 @@ class Series:
             committer_email = patch.get_commemail()
 
         commit_id = git.commit(message = descr, parents = [patch.get_bottom()],
+                               cache_update = cache_update,
                                allowempty = True,
                                author_name = author_name,
                                author_email = author_email,
@@ -485,7 +486,8 @@ class Series:
         if head != bottom:
             if not ex:
                 # if the merge was OK and no conflicts, just refresh the patch
-                self.refresh_patch()
+                # The GIT cache was already updated by the merge operation
+                self.refresh_patch(cache_update = False)
             else:
                 raise StackException, str(ex)
 

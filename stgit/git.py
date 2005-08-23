@@ -254,41 +254,45 @@ def rm(files, force = False):
         if files:
             __run('git-update-cache --force-remove --', files)
 
-def update_cache(files):
+def update_cache(files = [], force = False):
     """Update the cache information for the given files
     """
-    files_here = []
-    files_gone = []
+    cache_files = __tree_status(files)
 
-    for f in files:
-        if os.path.exists(f):
-            files_here.append(f)
-        else:
-            files_gone.append(f)
+    # everything is up-to-date
+    if len(cache_files) == 0:
+        return False
 
-    if files_here:
-        __run('git-update-cache --', files_here)
-    if files_gone:
-        __run('git-update-cache --remove --', files_gone)
+    # check for unresolved conflicts
+    if not force and [x for x in cache_files
+                      if x[0] not in ['M', 'N', 'A', 'D']]:
+        raise GitException, 'Updating cache failed: unresolved conflicts'
+
+    # update the cache
+    add_files = [x[1] for x in cache_files if x[0] in ['N', 'A']]
+    rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
+    m_files =   [x[1] for x in cache_files if x[0] in ['M']]
+
+    if add_files and __run('git-update-cache --add --', add_files) != 0:
+        raise GitException, 'Failed git-update-cache --add'
+    if rm_files and __run('git-update-cache --force-remove --', rm_files) != 0:
+        raise GitException, 'Failed git-update-cache --rm'
+    if m_files and __run('git-update-cache --', m_files) != 0:
+        raise GitException, 'Failed git-update-cache'
+
+    return True
 
 def commit(message, files = [], parents = [], allowempty = False,
+           cache_update = True,
            author_name = None, author_email = None, author_date = None,
            committer_name = None, committer_email = None):
     """Commit the current tree to repository
     """
-    first = (parents == [])
-
     # Get the tree status
-    if not first:
-        cache_files = __tree_status(files)
-
-    if not first and len(cache_files) == 0 and not allowempty:
-        raise GitException, 'No changes to commit'
-
-    # check for unresolved conflicts
-    if not first and len(filter(lambda x: x[0] not in ['M', 'N', 'A', 'D'],
-                                cache_files)) != 0:
-        raise GitException, 'Commit failed: unresolved conflicts'
+    if cache_update and parents != []:
+        changes = update_cache(files)
+        if not changes and not allowempty:
+            raise GitException, 'No changes to commit'
 
     # get the commit message
     f = file('.commitmsg', 'w+')
@@ -297,29 +301,6 @@ def commit(message, files = [], parents = [], allowempty = False,
     else:
         print >> f, message
     f.close()
-
-    # update the cache
-    if not first:
-        add_files=[]
-        rm_files=[]
-        m_files=[]
-        for f in cache_files:
-            if f[0] in ['N', 'A']:
-                add_files.append(f[1])
-            elif f[0] == 'D':
-                rm_files.append(f[1])
-            else:
-                m_files.append(f[1])
-
-    if add_files:
-        if __run('git-update-cache --add --', add_files):
-            raise GitException, 'Failed git-update-cache --add'
-    if rm_files:
-        if __run('git-update-cache --force-remove --', rm_files):
-            raise GitException, 'Failed git-update-cache --rm'
-    if m_files:
-        if __run('git-update-cache --', m_files):
-            raise GitException, 'Failed git-update-cache'
 
     # write the index to repository
     tree_id = _output_one_line('git-write-tree')
@@ -361,10 +342,6 @@ def merge(base, head1, head2):
     if os.system('git-merge-cache -o gitmergeonefile.py -a') != 0:
         raise GitException, 'git-merge-cache failed (possible conflicts)'
 
-    # this should not fail
-    if os.system('git-checkout-cache -f -a') != 0:
-        raise GitException, 'Failed git-checkout-cache'
-
 def status(files = [], modified = False, new = False, deleted = False,
            conflict = False, unknown = False):
     """Show the tree status
@@ -385,7 +362,7 @@ def status(files = [], modified = False, new = False, deleted = False,
             filestat.append('C')
         if unknown:
             filestat.append('?')
-        cache_files = filter(lambda x: x[0] in filestat, cache_files)
+        cache_files = [x for x in cache_files if x[0] in filestat]
 
     for fs in cache_files:
         if all:
