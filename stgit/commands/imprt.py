@@ -172,6 +172,10 @@ def func(parser, options, args):
         message, author_name, author_email, author_date = \
                  __parse_patch(filename)
 
+    # new_patch() will invoke the editor in this case
+    if not message:
+        edit = False
+
     # override the automatically parsed settings
     if options.authname:
         author_name = options.authname
