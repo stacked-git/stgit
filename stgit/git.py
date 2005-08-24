@@ -434,6 +434,22 @@ def switch(tree_id):
 
     __set_head(tree_id)
 
+def reset(tree_id = None):
+    """Revert the tree changes relative to the given tree_id. It removes
+    any local changes
+    """
+    if not tree_id:
+        tree_id = get_head()
+
+    cache_files = __tree_status(tree_id = tree_id)
+    rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
+
+    checkout(tree_id = tree_id, force = True)
+    __set_head(tree_id)
+
+    # checkout doesn't remove files
+    map(os.remove, rm_files)
+
 def pull(location, head = None, tag = None):
     """Fetch changes from the remote repository. At the moment, just
     use the 'git fetch' scripts

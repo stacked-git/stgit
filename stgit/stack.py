@@ -496,6 +496,7 @@ class Series:
         assert(name)
 
         patch = Patch(name, self.__patch_dir)
+        git.reset()
         self.pop_patch(name)
         patch.restore_old_boundaries()
 
