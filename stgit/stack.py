@@ -406,7 +406,7 @@ class Series:
 
         return commit_id
 
-    def new_patch(self, name, message = None, edit = False, show_patch = False,
+    def new_patch(self, name, message = None, can_edit = True, show_patch = False,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None):
         """Creates a new patch
@@ -414,7 +414,7 @@ class Series:
         if self.__patch_applied(name) or self.__patch_unapplied(name):
             raise StackException, 'Patch "%s" already exists' % name
 
-        if not message:
+        if not message and can_edit:
             descr = edit_file(self, None, \
                               'Please enter the description for patch "%s" ' \
                               'above.' % name, show_patch)

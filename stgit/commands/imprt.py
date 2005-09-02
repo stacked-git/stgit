@@ -175,9 +175,10 @@ def func(parser, options, args):
         message, author_name, author_email, author_date = \
                  __parse_patch(filename)
 
-    # new_patch() will invoke the editor in this case
+    # refresh_patch() will invoke the editor in this case, with correct
+    # patch content
     if not message:
-        edit = False
+        can_edit = False
 
     # override the automatically parsed settings
     if options.authname:
@@ -191,7 +192,7 @@ def func(parser, options, args):
     if options.commemail:
         committer_email = options.commemail
 
-    crt_series.new_patch(patch, message = message,
+    crt_series.new_patch(patch, message = message, can_edit = False,
                          author_name = author_name,
                          author_email = author_email,
                          author_date = author_date,
