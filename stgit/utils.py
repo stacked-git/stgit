@@ -39,6 +39,14 @@ def write_string(filename, string, multiline = False):
         print >> f, string
     f.close()
 
+def append_strings(filename, strings):
+    """Appends string sequence to file
+    """
+    f = file(filename, 'a+')
+    for string in strings:
+        print >> f, string
+    f.close()
+
 def append_string(filename, string):
     """Appends string to file
     """

@@ -460,6 +460,53 @@ class Series:
         f.writelines([line + '\n' for line in unapplied])
         f.close()
 
+    def forward_patches(self, names):
+        """Try to fast-forward an array of patches.
+
+        On return, patches in names[0:returned_value] have been pushed on the
+        stack. Apply the rest with push_patch
+        """
+        unapplied = self.get_unapplied()
+        self.__begin_stack_check()
+
+        forwarded = 0
+        top = git.get_head()
+
+        for name in names:
+            assert(name in unapplied)
+
+            patch = Patch(name, self.__patch_dir)
+
+            head = top
+            bottom = patch.get_bottom()
+            top = patch.get_top()
+
+            # top != bottom always since we have a commit for each patch
+            if head == bottom:
+                # reset the backup information
+                patch.set_bottom(bottom, backup = True)
+                patch.set_top(top, backup = True)
+
+            else:
+                top = head
+                # stop the fast-forwarding, must do a real merge
+                break
+
+            forwarded+=1
+            unapplied.remove(name)
+
+        git.switch(top)
+
+        append_strings(self.__applied_file, names[0:forwarded])
+
+        f = file(self.__unapplied_file, 'w+')
+        f.writelines([line + '\n' for line in unapplied])
+        f.close()
+
+        self.__set_current(name)
+
+        return forwarded
+
     def push_patch(self, name):
         """Pushes a patch on the stack
         """

@@ -116,7 +116,18 @@ def func(parser, options, args):
     if options.reverse:
         patches.reverse()
 
-    for p in patches:
+    print 'Trying fast-forward...'
+
+    forwarded = crt_series.forward_patches(patches)
+    if forwarded > 1:
+        print 'Fast-forwarded patches "%s" - "%s"' % (patches[0],
+                                                      patches[forwarded - 1])
+    elif forwarded == 1:
+        print 'Fast-forwarded patch "%s"' % patches[0]
+    else:
+        print 'Fast-forwarding failed, using normal pushing'
+
+    for p in patches[forwarded:]:
         if p not in unapplied:
             raise CmdException, 'Patch "%s" not unapplied' % p
 
