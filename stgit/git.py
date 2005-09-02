@@ -299,7 +299,7 @@ def commit(message, files = [], parents = [], allowempty = False,
 
     # get the commit message
     f = file('.commitmsg', 'w+')
-    if message[-1] == '\n':
+    if message[-1:] == '\n':
         f.write(message)
     else:
         print >> f, message
