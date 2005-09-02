@@ -29,10 +29,21 @@ from stgit.config import config
 class StackException(Exception):
     pass
 
+class FilterUntil:
+    def __init__(self):
+        self.should_print = True
+    def __call__(self, x, until_test, prefix):
+        if until_test(x):
+            self.should_print = False
+        if self.should_print:
+            return x[0:len(prefix)] != prefix
+        return False
+
 #
 # Functions
 #
 __comment_prefix = 'STG:'
+__patch_prefix = 'STG_PATCH:'
 
 def __clean_comments(f):
     """Removes lines marked for status in a commit file
@@ -40,8 +51,12 @@ def __clean_comments(f):
     f.seek(0)
 
     # remove status-prefixed lines
-    lines = filter(lambda x: x[0:len(__comment_prefix)] != __comment_prefix,
-                   f.readlines())
+    lines = f.readlines()
+
+    patch_filter = FilterUntil()
+    until_test = lambda t: t == (__patch_prefix + '\n')
+    lines = [l for l in lines if patch_filter(l, until_test, __comment_prefix)]
+
     # remove empty lines at the end
     while len(lines) != 0 and lines[-1] == '\n':
         del lines[-1]
@@ -49,7 +64,7 @@ def __clean_comments(f):
     f.seek(0); f.truncate()
     f.writelines(lines)
 
-def edit_file(string, comment):
+def edit_file(series, string, comment, show_patch = True):
     fname = '.stgit.msg'
     tmpl = os.path.join(git.base_dir, 'patchdescr.tmpl')
 
@@ -66,6 +81,14 @@ def edit_file(string, comment):
           % __comment_prefix
     print >> f, __comment_prefix, \
           'Trailing empty lines will be automatically removed.'
+
+    if show_patch:
+       print >> f, __patch_prefix
+       # series.get_patch(series.get_current()).get_top()
+       git.diff([], series.get_patch(series.get_current()).get_bottom(), None, f)
+
+    #Vim modeline must be near the end.
+    print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff:'
     f.close()
 
     # the editor
@@ -326,7 +349,8 @@ class Series:
         create_empty_file(self.__unapplied_file)
         self.__begin_stack_check()
 
-    def refresh_patch(self, message = None, edit = False, cache_update = True,
+    def refresh_patch(self, message = None, edit = False, show_patch = False,
+                      cache_update = True,
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
@@ -347,9 +371,9 @@ class Series:
             descr = message
 
         if not message and edit:
-            descr = edit_file(descr.rstrip(), \
+            descr = edit_file(self, descr.rstrip(), \
                               'Please edit the description for patch "%s" ' \
-                              'above.' % name)
+                              'above.' % name, show_patch)
 
         if not author_name:
             author_name = patch.get_authname()
@@ -382,7 +406,7 @@ class Series:
 
         return commit_id
 
-    def new_patch(self, name, message = None, edit = False,
+    def new_patch(self, name, message = None, edit = False, show_patch = False,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None):
         """Creates a new patch
@@ -391,9 +415,9 @@ class Series:
             raise StackException, 'Patch "%s" already exists' % name
 
         if not message:
-            descr = edit_file(None, \
+            descr = edit_file(self, None, \
                               'Please enter the description for patch "%s" ' \
-                              'above.' % name)
+                              'above.' % name, show_patch)
         else:
             descr = message
 

@@ -44,6 +44,9 @@ options = [make_option('-f', '--force',
                        help = 'invoke an editor for the patch '\
                        'description',
                        action = 'store_true'),
+           make_option('-s', '--showpatch',
+                       help = 'show the patch content in the editor buffer',
+                       action = 'store_true'),
            make_option('-m', '--message',
                        help = 'use MESSAGE as the patch ' \
                        'description'),
@@ -96,6 +99,7 @@ def func(parser, options, args):
             resolved_all()
         crt_series.refresh_patch(message = options.message,
                                  edit = options.edit,
+                                 show_patch = options.showpatch,
                                  author_name = options.authname,
                                  author_email = options.authemail,
                                  author_date = options.authdate,

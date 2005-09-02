@@ -39,6 +39,9 @@ options = [make_option('-m', '--message',
            make_option('--force',
                        help = 'proceed even if there are local changes',
                        action = 'store_true'),
+           make_option('-s', '--showpatch',
+                       help = 'show the patch content in the editor buffer',
+                       action = 'store_true'),
            make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
                        help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
@@ -63,11 +66,14 @@ def func(parser, options, args):
         check_local_changes()
         check_conflicts()
         check_head_top_equal()
+        # No local changes -> no patch to show
+        options.showpatch = False
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
     crt_series.new_patch(args[0], message = options.message,
+                         show_patch = options.showpatch,
                          author_name = options.authname,
                          author_email = options.authemail,
                          author_date = options.authdate,
