@@ -155,7 +155,7 @@ def __run(cmd, args=None):
 def __check_base_dir():
     return os.path.isdir(base_dir)
 
-def __tree_status(files = [], tree_id = 'HEAD', unknown = False):
+def __tree_status(files = [], tree_id = 'HEAD', unknown = False, noexclude = True):
     """Returns a list of pairs - [status, filename]
     """
     os.system('git-update-cache --refresh > /dev/null')
@@ -165,13 +165,16 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False):
     # unknown files
     if unknown:
         exclude_file = os.path.join(base_dir, 'exclude')
+        base_exclude = [ '--exclude=*.[ao]', '--exclude=.*' '--exclude=TAGS',
+                        '--exclude=tags', '--exclude=*~', '--exclude=#*',
+                        '--exclude-per-directory=.gitignore' ]
         extra_exclude = []
         if os.path.exists(exclude_file):
             extra_exclude.append('--exclude-from=%s' % exclude_file)
-        lines = _output_lines(['git-ls-files', '--others',
-                        '--exclude=*.[ao]', '--exclude=.*'
-                        '--exclude=TAGS', '--exclude=tags', '--exclude=*~',
-                        '--exclude=#*'] + extra_exclude)
+        if noexclude:
+            extra_exclude = base_exclude = []
+        lines = _output_lines(['git-ls-files', '--others' ] + base_exclude
+                        + extra_exclude)
         cache_files += [('?', line.strip()) for line in lines]
 
     # conflicted files
@@ -343,10 +346,10 @@ def merge(base, head1, head2):
         raise GitException, 'git-merge-cache failed (possible conflicts)'
 
 def status(files = [], modified = False, new = False, deleted = False,
-           conflict = False, unknown = False):
+           conflict = False, unknown = False, noexclude = False):
     """Show the tree status
     """
-    cache_files = __tree_status(files, unknown = True)
+    cache_files = __tree_status(files, unknown = True, noexclude = noexclude)
     all = not (modified or new or deleted or conflict or unknown)
 
     if not all:
