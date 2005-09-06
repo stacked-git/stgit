@@ -91,6 +91,8 @@ def print_help():
     print
     print 'commands:'
     print '  help        print this message'
+    print '  version     display version information'
+    print
 
     cmds = commands.keys()
     cmds.sort()
@@ -116,8 +118,9 @@ def main():
     if cmd in ['-h', '--help', 'help']:
         print_help()
         sys.exit(0)
-    if cmd in ['-v', '--version']:
+    if cmd in ['-v', '--version', 'version']:
         print 'Stacked GIT %s' % version
+        print 'Python version %s' % sys.version
         sys.exit(0)
     if not cmd in commands:
         print >> sys.stderr, 'Unknown command: %s' % cmd
