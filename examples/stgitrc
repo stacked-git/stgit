@@ -17,6 +17,10 @@ smtpserver: localhost:25
 #smtpuser: username
 #smtppassword: password
 
+# stg will look for this first, then look for the EDITOR environmental
+# variable, then default to using 'vi'
+#editor: /usr/bin/vi
+
 
 [gitmergeonefile]
 # Different three-way merge tools below. Uncomment the preferred one.
