@@ -170,7 +170,7 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
                   noexclude = True):
     """Returns a list of pairs - [status, filename]
     """
-    os.system('git-update-cache --refresh > /dev/null')
+    os.system('git-update-index --refresh > /dev/null')
 
     cache_files = []
 
@@ -199,7 +199,7 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
     cache_files += [('C', filename) for filename in conflicts]
 
     # the rest
-    for line in _output_lines(['git-diff-cache', '-r', tree_id] + files):
+    for line in _output_lines(['git-diff-index', '-r', tree_id] + files):
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
@@ -251,7 +251,7 @@ def add(names):
             raise GitException, '%s is not a file or directory' % i
 
     if files:
-        if __run('git-update-cache --add --', files):
+        if __run('git-update-index --add --', files):
             raise GitException, 'Unable to add file'
 
 def rm(files, force = False):
@@ -267,10 +267,10 @@ def rm(files, force = False):
             if os.path.exists(f):
                 raise GitException, '%s exists. Remove it first' %f
         if files:
-            __run('git-update-cache --remove --', files)
+            __run('git-update-index --remove --', files)
     else:
         if files:
-            __run('git-update-cache --force-remove --', files)
+            __run('git-update-index --force-remove --', files)
 
 def update_cache(files = [], force = False):
     """Update the cache information for the given files
@@ -291,12 +291,12 @@ def update_cache(files = [], force = False):
     rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
     m_files =   [x[1] for x in cache_files if x[0] in ['M']]
 
-    if add_files and __run('git-update-cache --add --', add_files) != 0:
-        raise GitException, 'Failed git-update-cache --add'
-    if rm_files and __run('git-update-cache --force-remove --', rm_files) != 0:
-        raise GitException, 'Failed git-update-cache --rm'
-    if m_files and __run('git-update-cache --', m_files) != 0:
-        raise GitException, 'Failed git-update-cache'
+    if add_files and __run('git-update-index --add --', add_files) != 0:
+        raise GitException, 'Failed git-update-index --add'
+    if rm_files and __run('git-update-index --force-remove --', rm_files) != 0:
+        raise GitException, 'Failed git-update-index --rm'
+    if m_files and __run('git-update-index --', m_files) != 0:
+        raise GitException, 'Failed git-update-index'
 
     return True
 
@@ -355,7 +355,7 @@ def merge(base, head1, head2):
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     # this can fail if there are conflicts
-    if os.system('git-merge-cache -o -q gitmergeonefile.py -a') != 0:
+    if os.system('git-merge-index -o -q gitmergeonefile.py -a') != 0:
         raise GitException, 'git-merge-cache failed (possible conflicts)'
 
 def status(files = [], modified = False, new = False, deleted = False,
@@ -393,8 +393,8 @@ def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = None):
     if rev2:
         diff_str = _output(['git-diff-tree', '-p', rev1, rev2] + files)
     else:
-        os.system('git-update-cache --refresh > /dev/null')
-        diff_str = _output(['git-diff-cache', '-p', rev1] + files)
+        os.system('git-update-index --refresh > /dev/null')
+        diff_str = _output(['git-diff-index', '-p', rev1] + files)
 
     if out_fd:
         out_fd.write(diff_str)
@@ -439,7 +439,7 @@ def checkout(files = [], tree_id = None, force = False):
     if tree_id and __run('git-read-tree -m', [tree_id]) != 0:
         raise GitException, 'Failed git-read-tree -m %s' % tree_id
 
-    checkout_cmd = 'git-checkout-cache -q -u'
+    checkout_cmd = 'git-checkout-index -q -u'
     if force:
         checkout_cmd += ' -f'
     if len(files) == 0:
@@ -448,7 +448,7 @@ def checkout(files = [], tree_id = None, force = False):
         checkout_cmd += ' --'
 
     if __run(checkout_cmd, files) != 0:
-        raise GitException, 'Failed git-checkout-cache'
+        raise GitException, 'Failed git-checkout-index'
 
 def switch(tree_id):
     """Switch the tree to the given id
@@ -489,7 +489,7 @@ def apply_patch(filename = None):
     """Apply a patch onto the current index. There must not be any
     local changes in the tree, otherwise the command fails
     """
-    os.system('git-update-cache --refresh > /dev/null')
+    os.system('git-update-index --refresh > /dev/null')
 
     if filename:
         if __run('git-apply --index', [filename]) != 0:

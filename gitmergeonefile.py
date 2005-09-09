@@ -142,12 +142,12 @@ if orig_hash:
     if file1_hash and file2_hash:
         # if modes are the same (git-read-tree probably dealed with it)
         if file1_hash == file2_hash:
-            if os.system('git-update-cache --cacheinfo %s %s %s'
+            if os.system('git-update-index --cacheinfo %s %s %s'
                          % (file1_mode, file1_hash, path)) != 0:
-                print >> sys.stderr, 'Error: git-update-cache failed'
+                print >> sys.stderr, 'Error: git-update-index failed'
                 __conflict()
-            if os.system('git-checkout-cache -u -f -- %s' % path):
-                print >> sys.stderr, 'Error: git-checkout-cache failed'
+            if os.system('git-checkout-index -u -f -- %s' % path):
+                print >> sys.stderr, 'Error: git-checkout-index failed'
                 __conflict()
             if file1_mode != file2_mode:
                 print >> sys.stderr, \
@@ -161,14 +161,14 @@ if orig_hash:
                                            'output': path }) == 0
 
             if merge_ok:
-                os.system('git-update-cache -- %s' % path)
+                os.system('git-update-index -- %s' % path)
                 __remove_files()
                 sys.exit(0)
             else:
                 print >> sys.stderr, \
                       'Error: three-way merge tool failed for file "%s"' % path
                 # reset the cache to the first branch
-                os.system('git-update-cache --cacheinfo %s %s %s'
+                os.system('git-update-index --cacheinfo %s %s %s'
                           % (file1_mode, file1_hash, path))
                 if keeporig != 'yes':
                     __remove_files()
@@ -179,19 +179,19 @@ if orig_hash:
         if os.path.exists(path):
             os.remove(path)
         __remove_files()
-        sys.exit(os.system('git-update-cache --remove -- %s' % path))
+        sys.exit(os.system('git-update-index --remove -- %s' % path))
 # file does not exist in origin
 else:
     # file added in both
     if file1_hash and file2_hash:
         # files are the same
         if file1_hash == file2_hash:
-            if os.system('git-update-cache --add --cacheinfo %s %s %s'
+            if os.system('git-update-index --add --cacheinfo %s %s %s'
                          % (file1_mode, file1_hash, path)) != 0:
-                print >> sys.stderr, 'Error: git-update-cache failed'
+                print >> sys.stderr, 'Error: git-update-index failed'
                 __conflict()
-            if os.system('git-checkout-cache -u -f -- %s' % path):
-                print >> sys.stderr, 'Error: git-checkout-cache failed'
+            if os.system('git-checkout-index -u -f -- %s' % path):
+                print >> sys.stderr, 'Error: git-checkout-index failed'
                 __conflict()
             if file1_mode != file2_mode:
                 print >> sys.stderr, \
@@ -211,12 +211,12 @@ else:
         else:
             mode = file2_mode
             obj = file2_hash
-        if os.system('git-update-cache --add --cacheinfo %s %s %s'
+        if os.system('git-update-index --add --cacheinfo %s %s %s'
                      % (mode, obj, path)) != 0:
-            print >> sys.stderr, 'Error: git-update-cache failed'
+            print >> sys.stderr, 'Error: git-update-index failed'
             __conflict()
         __remove_files()
-        sys.exit(os.system('git-checkout-cache -u -f -- %s' % path))
+        sys.exit(os.system('git-checkout-index -u -f -- %s' % path))
 
 # Un-handled case
 print >> sys.stderr, 'Error: Un-handled merge conflict'
