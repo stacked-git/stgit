@@ -155,7 +155,8 @@ def __run(cmd, args=None):
 def __check_base_dir():
     return os.path.isdir(base_dir)
 
-def __tree_status(files = [], tree_id = 'HEAD', unknown = False, noexclude = True):
+def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
+                  noexclude = True):
     """Returns a list of pairs - [status, filename]
     """
     os.system('git-update-cache --refresh > /dev/null')
@@ -164,16 +165,19 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False, noexclude = Tru
 
     # unknown files
     if unknown:
-        exclude_file = os.path.join(base_dir, 'exclude')
-        base_exclude = [ '--exclude=*.[ao]', '--exclude=.*' '--exclude=TAGS',
-                        '--exclude=tags', '--exclude=*~', '--exclude=#*',
-                        '--exclude-per-directory=.gitignore' ]
-        extra_exclude = []
+        exclude_file = os.path.join(base_dir, 'info', 'exclude')
+        base_exclude = ['--exclude=%s' % s for s in
+                        ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
+        base_exclude.append('--exclude-per-directory=.gitignore')
+
         if os.path.exists(exclude_file):
-            extra_exclude.append('--exclude-from=%s' % exclude_file)
+            extra_exclude = '--exclude-from=%s' % exclude_file
+        else:
+            extra_exclude = []
         if noexclude:
             extra_exclude = base_exclude = []
-        lines = _output_lines(['git-ls-files', '--others' ] + base_exclude
+
+        lines = _output_lines(['git-ls-files', '--others'] + base_exclude
                         + extra_exclude)
         cache_files += [('?', line.strip()) for line in lines]
 
