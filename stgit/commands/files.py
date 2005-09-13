@@ -35,7 +35,9 @@ command. Use the 'diff' or 'status' commands for these files."""
 
 options = [make_option('-s', '--stat',
                        help = 'show the diff stat',
-                       action = 'store_true')]
+                       action = 'store_true'),
+           make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):

@@ -29,7 +29,8 @@ usage = """%prog [options]
 
 Print the name of the current (topmost) patch."""
 
-options = []
+options = [make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):

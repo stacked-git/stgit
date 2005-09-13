@@ -56,7 +56,9 @@ options = [make_option('-n', '--numbered',
                        help = 'Use FILE as a template'),
            make_option('-r', '--range',
                        metavar = '[PATCH1][:[PATCH2]]',
-                       help = 'export patches between PATCH1 and PATCH2')]
+                       help = 'export patches between PATCH1 and PATCH2'),
+           make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):
@@ -67,7 +69,7 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    if git.local_changes():
+    if not options.branch and git.local_changes():
         print 'Warning: local changes in the tree. ' \
               'You might want to commit them first'
 

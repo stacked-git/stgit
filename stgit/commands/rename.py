@@ -28,7 +28,8 @@ usage = """%prog [options] <oldpatch> <newpatch>
 
 Rename <oldpatch> into <newpatch> in a series."""
 
-options = []
+options = [make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):

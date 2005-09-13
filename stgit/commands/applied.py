@@ -31,7 +31,8 @@ List the patches from the series which were already pushed onto the
 stack.  They are listed in the order in which they were pushed, the
 last one being the current (topmost) patch."""
 
-options = []
+options = [make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):

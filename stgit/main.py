@@ -128,8 +128,8 @@ def main():
         sys.exit(0)
     if not cmd in commands:
         print >> sys.stderr, 'Unknown command: %s' % cmd
-        print >> sys.stderr, '  Try "%s help" for a list of supported commands' \
-              % prog
+        print >> sys.stderr, '  Try "%s help" for a list of supported ' \
+              'commands' % prog
         sys.exit(1)
 
     # re-build the command line arguments
@@ -144,6 +144,8 @@ def main():
         # 'clone' doesn't expect an already initialised GIT tree
         if cmd == 'clone':
             stgit.commands.common.crt_series = stack.Series('master')
+        elif hasattr(options, 'branch') and options.branch:
+            stgit.commands.common.crt_series = stack.Series(options.branch)
         else:
             stgit.commands.common.crt_series = stack.Series()
         # the line below is a simple way to avoid an exception when

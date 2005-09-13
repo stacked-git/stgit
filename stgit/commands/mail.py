@@ -97,7 +97,9 @@ options = [make_option('-a', '--all',
            make_option('-u', '--smtp-user', metavar = 'USER',
                        help = 'username for SMTP authentication'),
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
-                       help = 'username for SMTP authentication')]
+                       help = 'username for SMTP authentication'),
+           make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def __get_maintainer():

@@ -30,7 +30,8 @@ Print the hash value of a GIT id (defaulting to HEAD). In addition to
 the standard GIT id's like heads and tags, this command also accepts
 'base' and '[<patch>]/(bottom | top)'."""
 
-options = []
+options = [make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 
 def func(parser, options, args):
