@@ -6,6 +6,8 @@ By default, the above command installs StGIT in the
 $HOME/{bin,lib,share} directories. For a different location, use the
 --prefix option.
 
+	python setup.py install --prefix=/usr
+
 For more information:
 
 	http://docs.python.org/inst/inst.html
