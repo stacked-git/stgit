@@ -58,6 +58,7 @@ the following variables:
   %(diff)s         - unified diff of the patch
   %(diffstat)s     - diff statistics
   %(date)s         - current date/time
+  %(version)s      - ' version' string passed on the command line (or empty)
   %(patchnr)s      - patch number
   %(totalnr)s      - total number of patches to be sent
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
@@ -68,8 +69,8 @@ the following variables:
   %(commemail)s    - committer's e-mail
 
 For the preamble e-mail template, only the %(maintainer)s, %(date)s,
-%(endofheaders)s, %(patchnr)s, %(totalnr)s and %(number)s variables
-are supported."""
+%(endofheaders)s, %(version)s, %(patchnr)s, %(totalnr)s and %(number)s
+variables are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -78,11 +79,13 @@ options = [make_option('-a', '--all',
                        metavar = '[PATCH1][:[PATCH2]]',
                        help = 'e-mail patches between PATCH1 and PATCH2'),
            make_option('--to',
-                       help = 'Add TO to the To: list'),
+                       help = 'add TO to the To: list'),
            make_option('--cc',
-                       help = 'Add CC to the Cc: list'),
+                       help = 'add CC to the Cc: list'),
            make_option('--bcc',
-                       help = 'Add BCC to the Bcc: list'),
+                       help = 'add BCC to the Bcc: list'),
+           make_option('-v', '--version', metavar = 'VERSION',
+                       help = 'add VERSION to the [PATCH ...] prefix'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'use FILE as the message template'),
            make_option('-f', '--first', metavar = 'FILE',
@@ -90,7 +93,7 @@ options = [make_option('-a', '--all',
            make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
                        help = 'sleep for SECONDS between e-mails sending'),
            make_option('--refid',
-                       help = 'Use REFID as the reference id'),
+                       help = 'use REFID as the reference id'),
            make_option('-u', '--smtp-user', metavar = 'USER',
                        help = 'username for SMTP authentication'),
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
@@ -168,6 +171,9 @@ def __build_first(tmpl, total_nr, msg_id, options):
         headers_end += 'Bcc: %s\n' % options.bcc
     headers_end += 'Message-Id: %s\n' % msg_id
 
+    if options.version:
+        version_str = ' %s' % options.version
+
     total_nr_str = str(total_nr)
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if total_nr > 1:
@@ -178,6 +184,7 @@ def __build_first(tmpl, total_nr, msg_id, options):
     tmpl_dict = {'maintainer':   maintainer,
                  'endofheaders': headers_end,
                  'date':         email.Utils.formatdate(localtime = True),
+                 'version':      version_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str}
@@ -221,6 +228,9 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         headers_end += "In-Reply-To: %s\n" % ref_id
         headers_end += "References: %s\n" % ref_id
 
+    if options.version:
+        version_str = ' %s' % options.version
+
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
     if total_nr > 1:
@@ -238,6 +248,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'diffstat':     git.diffstat(rev1 = git_id('%s/bottom'%patch),
                                               rev2 = git_id('%s/top' % patch)),
                  'date':         email.Utils.formatdate(localtime = True),
+                 'version':      version_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
