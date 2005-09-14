@@ -346,7 +346,7 @@ def merge(base, head1, head2):
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     # this can fail if there are conflicts
-    if os.system('git-merge-cache -o gitmergeonefile.py -a') != 0:
+    if os.system('git-merge-cache -o -q gitmergeonefile.py -a') != 0:
         raise GitException, 'git-merge-cache failed (possible conflicts)'
 
 def status(files = [], modified = False, new = False, deleted = False,
