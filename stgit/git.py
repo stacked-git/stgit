@@ -457,18 +457,16 @@ def reset(tree_id = None):
     # checkout doesn't remove files
     map(os.remove, rm_files)
 
-def pull(location, head = None, tag = None):
-    """Fetch changes from the remote repository. At the moment, just
-    use the 'git fetch' scripts
+def pull(repository = 'origin', refspec = None):
+    """Pull changes from the remote repository. At the moment, just
+    use the 'git pull' command
     """
-    args = [location]
-    if head:
-        args += [head]
-    elif tag:
-        args += ['tag', tag]
+    args = [repository]
+    if refspec:
+        args.append(refspec)
 
     if __run('git pull', args) != 0:
-        raise GitException, 'Failed "git fetch %s"' % location
+        raise GitException, 'Failed "git pull %s"' % repository
 
 def apply_patch(filename = None):
     """Apply a patch onto the current index. There must not be any
