@@ -63,7 +63,7 @@ options = [make_option('-n', '--numbered',
 
 def func(parser, options, args):
     if len(args) == 0:
-        dirname = 'patches'
+        dirname = 'patches-%s' % crt_series.get_branch()
     elif len(args) == 1:
         dirname = args[0]
     else:

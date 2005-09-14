@@ -257,6 +257,11 @@ class Series:
             self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
             self.__current_file = os.path.join(self.__patch_dir, 'current')
 
+    def get_branch(self):
+        """Return the branch name for the Series object
+        """
+        return self.__name
+
     def __set_current(self, name):
         """Sets the topmost patch
         """
