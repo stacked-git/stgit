@@ -57,7 +57,7 @@ class Commit:
                 self.__parents.append(field[1])
             if field[0] == 'author':
                 self.__author = field[1]
-            if field[0] == 'comitter':
+            if field[0] == 'committer':
                 self.__committer = field[1]
         self.__log = ''.join(lines[i:])
 
