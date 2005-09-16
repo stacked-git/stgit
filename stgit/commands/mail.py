@@ -127,7 +127,7 @@ def __parse_addresses(string):
         elif re.match('(to|cc|bcc):\s+', line, re.I):
             to_addr_list += __addr_list(line)
 
-    if len(from_addr_list) != 1:
+    if len(from_addr_list) == 0:
         raise CmdException, 'No "From" address'
     if len(to_addr_list) == 0:
         raise CmdException, 'No "To/Cc/Bcc" addresses'
