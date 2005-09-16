@@ -517,13 +517,40 @@ class Series:
             # top != bottom always since we have a commit for each patch
             if head == bottom:
                 # reset the backup information
-                patch.set_bottom(bottom, backup = True)
+                patch.set_bottom(head, backup = True)
                 patch.set_top(top, backup = True)
 
             else:
-                top = head
-                # stop the fast-forwarding, must do a real merge
-                break
+                head_tree = git.get_commit(head).get_tree()
+                bottom_tree = git.get_commit(bottom).get_tree()
+                if head_tree == bottom_tree:
+                    # We must just reparent this patch and create a new commit
+                    # for it
+                    descr = patch.get_description()
+                    author_name = patch.get_authname()
+                    author_email = patch.get_authemail()
+                    author_date = patch.get_authdate()
+                    committer_name = patch.get_commname()
+                    committer_email = patch.get_commemail()
+
+                    top_tree = git.get_commit(top).get_tree()
+
+                    top = git.commit(message = descr, parents = [head],
+                                     cache_update = False,
+                                     tree_id = top_tree,
+                                     allowempty = True,
+                                     author_name = author_name,
+                                     author_email = author_email,
+                                     author_date = author_date,
+                                     committer_name = committer_name,
+                                     committer_email = committer_email)
+
+                    patch.set_bottom(head, backup = True)
+                    patch.set_top(top, backup = True)
+                else:
+                    top = head
+                    # stop the fast-forwarding, must do a real merge
+                    break
 
             forwarded+=1
             unapplied.remove(name)

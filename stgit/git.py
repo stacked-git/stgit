@@ -126,8 +126,12 @@ def _output(cmd):
         raise GitException, '%s failed' % str(cmd)
     return string
 
-def _output_one_line(cmd):
+def _output_one_line(cmd, file_desc = None):
     p=popen2.Popen3(cmd)
+    if file_desc != None:
+        for line in file_desc:
+            p.tochild.write(line)
+        p.tochild.close()
     string = p.fromchild.readline().strip()
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
@@ -297,7 +301,7 @@ def update_cache(files = [], force = False):
     return True
 
 def commit(message, files = [], parents = [], allowempty = False,
-           cache_update = True,
+           cache_update = True, tree_id = None,
            author_name = None, author_email = None, author_date = None,
            committer_name = None, committer_email = None):
     """Commit the current tree to repository
@@ -309,15 +313,15 @@ def commit(message, files = [], parents = [], allowempty = False,
             raise GitException, 'No changes to commit'
 
     # get the commit message
-    f = file('.commitmsg', 'w+')
-    if message[-1:] == '\n':
-        f.write(message)
-    else:
-        print >> f, message
-    f.close()
+    if message[-1:] != '\n':
+        message += '\n'
 
+    must_switch = True
     # write the index to repository
-    tree_id = _output_one_line('git-write-tree')
+    if tree_id == None:
+        tree_id = _output_one_line('git-write-tree')
+    else:
+        must_switch = False
 
     # the commit
     cmd = ''
@@ -337,11 +341,9 @@ def commit(message, files = [], parents = [], allowempty = False,
     for p in parents:
         cmd += ' -p %s' % p
 
-    cmd += ' < .commitmsg'
-
-    commit_id = _output_one_line(cmd)
-    __set_head(commit_id)
-    os.remove('.commitmsg')
+    commit_id = _output_one_line(cmd, message)
+    if must_switch:
+        __set_head(commit_id)
 
     return commit_id
 
