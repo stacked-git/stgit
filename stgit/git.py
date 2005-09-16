@@ -421,6 +421,16 @@ def files(rev1, rev2):
 
     return str.rstrip()
 
+def barefiles(rev1, rev2):
+    """Return the files modified between rev1 and rev2, without status info
+    """
+
+    str = ''
+    for line in _output_lines('git-diff-tree -r %s %s' % (rev1, rev2)):
+        str += '%s\n' % line.rstrip().split(' ',4)[-1].split('\t',1)[-1]
+
+    return str.rstrip()
+
 def checkout(files = [], tree_id = None, force = False):
     """Check out the given or all files
     """

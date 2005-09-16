@@ -38,6 +38,10 @@ options = [make_option('-s', '--stat',
                        action = 'store_true'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
+                       action = 'store_true'),
+           make_option('--bare',
+                       help = 'bare file names (useful for scripting)',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -55,5 +59,7 @@ def func(parser, options, args):
 
     if options.stat:
         print git.diffstat(rev1 = rev1, rev2 = rev2)
+    elif options.bare:
+        print git.barefiles(rev1, rev2)
     else:
         print git.files(rev1, rev2)
