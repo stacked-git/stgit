@@ -170,7 +170,11 @@ class Patch:
 
     def set_bottom(self, string, backup = False):
         if backup:
-            self.__set_field('bottom.old', self.__get_field('bottom'))
+            curr = self.__get_field('bottom')
+            if curr != string:
+                self.__set_field('bottom.old', curr)
+            else:
+                self.__set_field('bottom.old', None)
         self.__set_field('bottom', string)
 
     def get_top(self):
@@ -178,7 +182,11 @@ class Patch:
 
     def set_top(self, string, backup = False):
         if backup:
-            self.__set_field('top.old', self.__get_field('top'))
+            curr = self.__get_field('top')
+            if curr != string:
+                self.__set_field('top.old', curr)
+            else:
+                self.__set_field('top.old', None)
         self.__set_field('top', string)
 
     def restore_old_boundaries(self):
@@ -188,8 +196,9 @@ class Patch:
         if top and bottom:
             self.__set_field('bottom', bottom)
             self.__set_field('top', top)
+            return True
         else:
-            raise StackException, 'No patch undo information'
+            return False
 
     def get_description(self):
         return self.__get_field('description', True)
@@ -593,7 +602,7 @@ class Series:
         patch = Patch(name, self.__patch_dir)
         git.reset()
         self.pop_patch(name)
-        patch.restore_old_boundaries()
+        return patch.restore_old_boundaries()
 
     def pop_patch(self, name):
         """Pops the top patch from the stack

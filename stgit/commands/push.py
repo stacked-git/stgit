@@ -66,8 +66,10 @@ def func(parser, options, args):
         print 'Undoing the "%s" push...' % patch,
         sys.stdout.flush()
         resolved_all()
-        crt_series.undo_push()
-        print 'done'
+        if crt_series.undo_push():
+            print 'done'
+        else:
+            print 'done (patch unchanged)'
         print_crt_patch()
 
         return
