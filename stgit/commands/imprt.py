@@ -24,21 +24,32 @@ from stgit import stack, git
 
 
 help = 'import a GNU diff file as a new patch'
-usage = """%prog [options] [<file>]
+usage = """%prog [options] [<file>|<commit>]
 
-Create a new patch and apply the given GNU diff file (or the standard
-input). By default, the file name is used as the patch name but this
-can be overriden with the '--name' option. The patch can either be a
-normal file with the description at the top or it can have standard
-mail format, the Subject, From and Date headers being used for
-generating the patch information.
+Create a new patch and import the given GNU diff file (defaulting to
+the standard input) or a given commit object into it. By default, the
+file name is used as the patch name but this can be overriden with the
+'--name' option.
 
-The patch description has to be separated from the data with a '---'
-line. For a normal file, if no author information is given, the first
-'Signed-off-by:' line is used."""
+The patch file can either be a normal file with the description at the
+top or it can have standard mail format, the Subject, From and Date
+headers being used for generating the patch information. The patch
+description has to be separated from the data with a '---' line. For a
+normal file, if no author information is given, the first
+'Signed-off-by:' line is used.
+
+When a commit object is imported, the log and author information are
+those of the commit object. Passing the '--reverse' option will cancel
+an existing commit object."""
 
 options = [make_option('-m', '--mail',
                        help = 'import the patch from a standard e-mail file',
+                       action = 'store_true'),
+           make_option('-c', '--commit',
+                       help = 'import a commit object as a patch',
+                       action = 'store_true'),
+           make_option('--reverse',
+                       help = 'reverse the commit object before importing',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
@@ -139,17 +150,12 @@ def __parse_patch(filename = None):
 
     return (descr, authname, authemail, authdate)
 
-def func(parser, options, args):
+def import_file(parser, options, args):
     """Import a GNU diff file as a new patch
     """
     if len(args) > 1:
         parser.error('incorrect number of arguments')
-
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
-
-    if len(args) == 1:
+    elif len(args) == 1:
         filename = args[0]
     else:
         filename = None
@@ -208,3 +214,54 @@ def func(parser, options, args):
 
     print 'done'
     print_crt_patch()
+
+def import_commit(parser, options, args):
+    """Import a commit object as a new patch
+    """
+    if len(args) != 1:
+        parser.error('incorrect number of arguments')
+
+    commit_id = args[0]
+
+    if options.name:
+        patch = options.name
+    else:
+        raise CmdException, 'Unkown patch name'
+
+    commit = git.Commit(commit_id)
+
+    if not options.reverse:
+        bottom = commit.get_parent()
+        top = commit_id
+    else:
+        bottom = commit_id
+        top = commit.get_parent()
+
+    message = commit.get_log()
+    author_name, author_email, author_date = \
+                 name_email_date(commit.get_author())
+
+    print 'Importing commit %s...' % commit_id,
+    sys.stdout.flush()
+
+    crt_series.new_patch(patch, message = message, can_edit = False,
+                         unapplied = True, bottom = bottom, top = top,
+                         author_name = author_name,
+                         author_email = author_email,
+                         author_date = author_date)
+    crt_series.push_patch(patch)
+
+    print 'done'
+    print_crt_patch()
+
+def func(parser, options, args):
+    """Import a GNU diff file or a commit object as a new patch
+    """
+    check_local_changes()
+    check_conflicts()
+    check_head_top_equal()
+
+    if options.commit:
+        import_commit(parser, options, args)
+    else:
+        import_file(parser, options, args)

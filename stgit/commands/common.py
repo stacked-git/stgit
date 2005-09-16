@@ -117,8 +117,18 @@ def name_email(string):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' string
     """
-    names = re.split('([^<>]*)<([^<>]*)>', string)
-    if len(names) != 4:
+    str_list = re.findall('^(.*)\s+<(.*)>$', string)
+    if not str_list:
         raise CmdException, 'Incorrect "name <email>" string: %s' % string
 
-    return tuple([names[1].strip(), names[2].strip()])
+    return str_list[0]
+
+def name_email_date(string):
+    """Return a tuple consisting of the name, email and date parsed
+    from a 'name <email> date' string
+    """
+    str_list = re.findall('^(.*)\s+<(.*)>\s+(.*)$', string)
+    if not str_list:
+        raise CmdException, 'Incorrect "name <email> date" string: %s' % string
+
+    return str_list[0]

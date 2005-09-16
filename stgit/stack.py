@@ -413,7 +413,9 @@ class Series:
 
         return commit_id
 
-    def new_patch(self, name, message = None, can_edit = True, show_patch = False,
+    def new_patch(self, name, message = None, can_edit = True,
+                  unapplied = False, show_patch = False,
+                  top = None, bottom = None,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None):
         """Creates a new patch
@@ -434,8 +436,16 @@ class Series:
 
         patch = Patch(name, self.__patch_dir)
         patch.create()
-        patch.set_bottom(head)
-        patch.set_top(head)
+
+        if bottom:
+            patch.set_bottom(bottom)
+        else:
+            patch.set_bottom(head)
+        if top:
+            patch.set_top(top)
+        else:
+            patch.set_top(head)
+
         patch.set_description(descr)
         patch.set_authname(author_name)
         patch.set_authemail(author_email)
@@ -443,8 +453,15 @@ class Series:
         patch.set_commname(committer_name)
         patch.set_commemail(committer_email)
 
-        append_string(self.__applied_file, patch.get_name())
-        self.__set_current(name)
+        if unapplied:
+            patches = [patch.get_name()] + self.get_unapplied()
+
+            f = file(self.__unapplied_file, 'w+')
+            f.writelines([line + '\n' for line in patches])
+            f.close()
+        else:
+            append_string(self.__applied_file, patch.get_name())
+            self.__set_current(name)
 
     def delete_patch(self, name):
         """Deletes a patch

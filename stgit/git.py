@@ -45,6 +45,7 @@ class Commit:
         self.__id_hash = id_hash
 
         lines = _output_lines('git-cat-file commit %s' % id_hash)
+        self.__parents = []
         for i in range(len(lines)):
             line = lines[i]
             if line == '\n':
@@ -53,7 +54,7 @@ class Commit:
             if field[0] == 'tree':
                 self.__tree = field[1]
             elif field[0] == 'parent':
-                self.__parent = field[1]
+                self.__parents.append(field[1])
             if field[0] == 'author':
                 self.__author = field[1]
             if field[0] == 'comitter':
@@ -67,13 +68,19 @@ class Commit:
         return self.__tree
 
     def get_parent(self):
-        return self.__parent
+        return self.__parents[0]
+
+    def get_parents(self):
+        return self.__parents
 
     def get_author(self):
         return self.__author
 
     def get_committer(self):
         return self.__committer
+
+    def get_log(self):
+        return self.__log
 
 # dictionary of Commit objects, used to avoid multiple calls to git
 __commits = dict()
