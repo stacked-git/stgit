@@ -108,7 +108,8 @@ def __parse_mail(filename = None):
 
     # the rest of the patch description
     for line in f:
-        if re.match('---\s*$', line) or re.match('diff -', line):
+        if re.match('---\s*$', line) or re.match('diff -', line) or \
+                re.match('^Index: ', line):
             break
         else:
             descr += line

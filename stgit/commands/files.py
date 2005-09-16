@@ -37,8 +37,7 @@ options = [make_option('-s', '--stat',
                        help = 'show the diff stat',
                        action = 'store_true'),
            make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
-                       action = 'store_true'),
+                       help = 'use BRANCH instead of the default one'),
            make_option('--bare',
                        help = 'bare file names (useful for scripting)',
                        action = 'store_true')]
