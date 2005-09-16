@@ -26,7 +26,7 @@ from stgit.config import config
 
 
 help = 'send a patch or series of patches by e-mail'
-usage = """%prog [options] [<patch>]
+usage = """%prog [options] [<patch> [<patch2...]]
 
 Send a patch or a range of patches (defaulting to the applied patches)
 by e-mail using the 'smtpserver' configuration option. The From
@@ -278,9 +278,6 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    if len(args) > 1:
-        parser.error('incorrect number of arguments')
-
     if not config.has_option('stgit', 'smtpserver'):
         raise CmdException, 'smtpserver not defined'
     smtpserver = config.get('stgit', 'smtpserver')
@@ -294,11 +291,11 @@ def func(parser, options, args):
 
     applied = crt_series.get_applied()
 
-    if len(args) == 1:
-        if args[0] in applied:
-            patches = [args[0]]
-        else:
-            raise CmdException, 'Patch "%s" not applied' % args[0]
+    if len(args) >= 1:
+        for patch in args:
+            if not patch in applied:
+                raise CmdException, 'Patch "%s" not applied' % patch
+            patches = args
     elif options.all:
         patches = applied
     elif options.range:
