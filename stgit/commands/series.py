@@ -33,6 +33,10 @@ prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
+options = [make_option('-e', '--empty',
+                       help = 'check whether patches are empty '
+                       '(much slower)',
+                       action = 'store_true') ]
 
 
 def func(parser, options, args):
@@ -44,19 +48,19 @@ def func(parser, options, args):
     applied = crt_series.get_applied()
     if len(applied) > 0:
         for p in applied [0:-1]:
-            if crt_series.empty_patch(p):
+            if options.empty and crt_series.empty_patch(p):
                 print '0', p
             else:
                 print '+', p
         p = applied[-1]
 
-        if crt_series.empty_patch(p):
+        if options.empty and crt_series.empty_patch(p):
             print '0>%s' % p
         else:
             print '> %s' % p
 
     for p in crt_series.get_unapplied():
-        if crt_series.empty_patch(p):
+        if options.empty and crt_series.empty_patch(p):
             print '0', p
         else:
             print '-', p
