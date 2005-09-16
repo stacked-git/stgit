@@ -65,7 +65,8 @@ def func(parser, options, args):
 
     if options.applied:
         applied = crt_series.get_applied()
-        crt_series.pop_patch(applied[0])
+        if applied != []:
+            crt_series.pop_patch(applied[0])
         __delete_empty(applied, True)
 
     if options.unapplied:
