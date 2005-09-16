@@ -117,7 +117,7 @@ def __parse_addresses(string):
     """Return a two elements tuple: (from, [to])
     """
     def __addr_list(string):
-        return re.split('.*?([\w\.]+@[\w\.]+)', string)[1:-1:2]
+        return re.split('.*?([-\w\.]+@[-\w\.]+)', string)[1:-1:2]
 
     from_addr_list = []
     to_addr_list = []
