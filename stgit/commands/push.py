@@ -108,7 +108,9 @@ def func(parser, options, args):
     elif len(args) == 0:
         patches = [unapplied[0]]
     elif len(args) == 1:
-        patches = [args[0]]
+        patches = args
+        if patches[0] not in unapplied:
+            raise CmdException, 'Patch "%s" not unapplied' % patches[0]
     else:
         parser.error('incorrect number of arguments')
 
