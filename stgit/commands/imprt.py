@@ -100,7 +100,8 @@ def __parse_mail(filename = None):
 
     # remove the '[*PATCH*]' expression in the subject
     if descr:
-        descr = re.findall('^(\[[^\s]*PATCH.*?\])?\s*(.*)$', descr)[0][1]
+        descr = re.findall('^(\[[^\s]*[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
+                           descr)[0][1]
         descr += '\n\n'
     else:
         raise CmdException, 'Subject: line not found'
