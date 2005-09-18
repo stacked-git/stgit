@@ -53,6 +53,8 @@ options = [make_option('-m', '--mail',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
+           make_option('--base',
+                       help = 'use BASE instead of HEAD for file importing'),
            make_option('-e', '--edit',
                        help = 'invoke an editor for the patch description',
                        action = 'store_true'),
@@ -210,7 +212,23 @@ def import_file(parser, options, args):
     print 'Importing patch %s...' % patch,
     sys.stdout.flush()
 
-    git.apply_patch(filename)
+    if options.base:
+        orig_head = git.get_head()
+        git.switch(options.base)
+
+        try:
+            git.apply_patch(filename)
+        except git.GitException, ex:
+            print >> sys.stderr, '"git apply" failed'
+            git.switch(orig_head)
+            raise
+
+        top = crt_series.refresh_patch(commit_only = True)
+        git.switch(orig_head)
+        git.merge(options.base, orig_head, top)
+    else:
+        git.apply_patch(filename)
+
     crt_series.refresh_patch(edit = options.edit,
                              show_patch = options.showpatch)
 
