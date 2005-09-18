@@ -182,7 +182,7 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
         base_exclude.append('--exclude-per-directory=.gitignore')
 
         if os.path.exists(exclude_file):
-            extra_exclude = '--exclude-from=%s' % exclude_file
+            extra_exclude = ['--exclude-from=%s' % exclude_file]
         else:
             extra_exclude = []
         if noexclude:
