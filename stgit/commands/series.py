@@ -32,8 +32,8 @@ with a '+' and the unapplied ones with a '-'. The current patch is
 prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
-options = [make_option('-e', '--empty',
+                       help = 'use BRANCH instead of the default one'),
+           make_option('-e', '--empty',
                        help = 'check whether patches are empty '
                        '(much slower)',
                        action = 'store_true') ]
