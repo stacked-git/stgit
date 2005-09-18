@@ -194,6 +194,8 @@ def __build_first(tmpl, total_nr, msg_id, options):
 
     if options.version:
         version_str = ' %s' % options.version
+    else:
+        version_str = ''
 
     total_nr_str = str(total_nr)
     patch_nr_str = '0'.zfill(len(total_nr_str))
@@ -245,6 +247,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
 
     if options.version:
         version_str = ' %s' % options.version
+    else:
+        version_str = ''
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
