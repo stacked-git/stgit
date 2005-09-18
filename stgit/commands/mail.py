@@ -79,11 +79,14 @@ options = [make_option('-a', '--all',
                        metavar = '[PATCH1][:[PATCH2]]',
                        help = 'e-mail patches between PATCH1 and PATCH2'),
            make_option('--to',
-                       help = 'add TO to the To: list'),
+                       help = 'add TO to the To: list',
+                       action = 'append'),
            make_option('--cc',
-                       help = 'add CC to the Cc: list'),
+                       help = 'add CC to the Cc: list',
+                       action = 'append'),
            make_option('--bcc',
-                       help = 'add BCC to the Bcc: list'),
+                       help = 'add BCC to the Bcc: list',
+                       action = 'append'),
            make_option('-v', '--version', metavar = 'VERSION',
                        help = 'add VERSION to the [PATCH ...] prefix'),
            make_option('-t', '--template', metavar = 'FILE',
@@ -117,7 +120,10 @@ def __parse_addresses(string):
     """Return a two elements tuple: (from, [to])
     """
     def __addr_list(string):
-        return re.split('.*?([-\w\.]+@[-\w\.]+)', string)[1:-1:2]
+    	m = re.search('[^@\s<,]+@[^>\s,]+', string);
+    	if (m == None):
+    		return []
+    	return [ m.group() ] + __addr_list(string[m.end():])
 
     from_addr_list = []
     to_addr_list = []
@@ -157,6 +163,25 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
 
     s.quit()
 
+def __build_address_headers(options):
+    headers_end = ''
+    if options.to:
+    	headers_end += 'To: '
+    	for to in options.to:
+	        headers_end += '%s,' % to
+	headers_end = headers_end[:-1] + '\n'
+    if options.cc:
+    	headers_end += 'Cc: '
+    	for cc in options.cc:
+	        headers_end += '%s,' % cc
+	headers_end = headers_end[:-1] + '\n'
+    if options.bcc:
+    	headers_end += 'Bcc: '
+    	for bcc in options.bcc:
+	        headers_end += '%s,' % bcc
+	headers_end = headers_end[:-1] + '\n'
+    return headers_end
+
 def __build_first(tmpl, total_nr, msg_id, options):
     """Build the first message (series description) to be sent via SMTP
     """
@@ -164,13 +189,7 @@ def __build_first(tmpl, total_nr, msg_id, options):
     if not maintainer:
         maintainer = ''
 
-    headers_end = ''
-    if options.to:
-        headers_end += 'To: %s\n' % options.to
-    if options.cc:
-        headers_end += 'Cc: %s\n' % options.cc
-    if options.bcc:
-        headers_end += 'Bcc: %s\n' % options.bcc
+    headers_end = __build_address_headers(options)
     headers_end += 'Message-Id: %s\n' % msg_id
 
     if options.version:
@@ -218,13 +237,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     if not maintainer:
         maintainer = '%s <%s>' % (p.get_commname(), p.get_commemail())
 
-    headers_end = ''
-    if options.to:
-        headers_end += 'To: %s\n' % options.to
-    if options.cc:
-        headers_end += 'Cc: %s\n' % options.cc
-    if options.bcc:
-        headers_end += 'Bcc: %s\n' % options.bcc
+    headers_end = __build_address_headers(options)
     headers_end += 'Message-Id: %s\n' % msg_id
     if ref_id:
         headers_end += "In-Reply-To: %s\n" % ref_id
