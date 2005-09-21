@@ -249,8 +249,7 @@ class Series:
     """Class including the operations on series
     """
     def __init__(self, name = None):
-        """Takes a series name as the parameter. A valid .git/patches/name
-        directory should exist
+        """Takes a series name as the parameter.
         """
         if name:
             self.__name = name
@@ -297,12 +296,18 @@ class Series:
             return name
 
     def get_applied(self):
+        if not os.path.isfile(self.__applied_file):
+            raise StackException, \
+                  'No StGIT metadata found. Try "stg init" first'
         f = file(self.__applied_file)
         names = [line.strip() for line in f.readlines()]
         f.close()
         return names
 
     def get_unapplied(self):
+        if not os.path.isfile(self.__unapplied_file):
+            raise StackException, \
+                  'No StGIT metadata found. Try "stg init" first'
         f = file(self.__unapplied_file)
         names = [line.strip() for line in f.readlines()]
         f.close()
