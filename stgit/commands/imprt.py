@@ -87,7 +87,10 @@ def __parse_mail(filename = None):
     descr = authname = authemail = authdate = None
 
     # parse the headers
-    for line in f:
+    while True:
+        line = f.readline()
+        if not line:
+            break
         line = line.strip()
         if re.match('from:\s+', line, re.I):
             auth = re.findall('^.*?:\s+(.*)$', line)[0]
@@ -109,7 +112,10 @@ def __parse_mail(filename = None):
         raise CmdException, 'Subject: line not found'
 
     # the rest of the patch description
-    for line in f:
+    while True:
+        line = f.readline()
+        if not line:
+            break
         if re.match('---\s*$', line) or re.match('diff -', line) or \
                 re.match('^Index: ', line):
             break
@@ -134,7 +140,11 @@ def __parse_patch(filename = None):
     authname = authemail = authdate = None
 
     descr = ''
-    for line in f:
+    while True:
+        line = f.readline()
+        if not line:
+            break
+
         # the first 'Signed-of-by:' is the author
         if not authname and re.match('signed-off-by:\s+', line, re.I):
             auth = re.findall('^.*?:\s+(.*)$', line)[0]
