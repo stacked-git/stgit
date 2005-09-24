@@ -75,6 +75,10 @@ options = [make_option('-m', '--mail',
                        help = 'use COMMEMAIL as the committer e-mail')]
 
 
+def __end_descr(line):
+    return re.match('---\s*$', line) or re.match('diff -', line) or \
+            re.match('Index: ', line)
+    
 def __parse_mail(filename = None):
     """Parse the input file in a mail format and return (description,
     authname, authemail, authdate)
@@ -116,8 +120,7 @@ def __parse_mail(filename = None):
         line = f.readline()
         if not line:
             break
-        if re.match('---\s*$', line) or re.match('diff -', line) or \
-                re.match('^Index: ', line):
+        if __end_descr(line):
             break
         else:
             descr += line
@@ -150,7 +153,7 @@ def __parse_patch(filename = None):
             auth = re.findall('^.*?:\s+(.*)$', line)[0]
             authname, authemail = name_email(auth)
 
-        if re.match('---\s*$', line) or re.match('diff -', line):
+        if __end_descr(line):
             break
         else:
             descr += line
