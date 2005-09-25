@@ -179,7 +179,10 @@ the examples/ directory. Most users would probably only define the
 
 The gitmergeonefile.py script does the three-way merging on individual
 files using the tool specified by the 'merger' option. The user can
-specify a smarter tool to be used.  Templates
+specify a smarter tool to be used.
+
+Templates
+---------
 
 The 'export' and 'mail' commands use templates for generating the
 patch files or e-mails. The default templates are installed under
@@ -195,7 +198,10 @@ file can be used as an example.
 
 A default description for new patches can be defined in the
 .git/patchdescr.tmpl file. This is useful for things like
-signed-off-by lines.  Dealing with conflicts
+signed-off-by lines.
+
+Dealing with conflicts
+----------------------
 
 Pushing a patch on the stack can fail if the patch cannot be applied
 cleanly. This usually happens if there are overlapping changes in the
