@@ -34,6 +34,7 @@ import stgit.commands.delete
 import stgit.commands.diff
 import stgit.commands.clean
 import stgit.commands.clone
+import stgit.commands.commit
 import stgit.commands.export
 import stgit.commands.files
 import stgit.commands.fold
@@ -66,6 +67,7 @@ commands = {
     'diff':     stgit.commands.diff,
     'clean':    stgit.commands.clean,
     'clone':    stgit.commands.clone,
+    'commit':   stgit.commands.commit,
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
     'fold':     stgit.commands.fold,
