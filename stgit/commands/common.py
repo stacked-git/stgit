@@ -56,7 +56,7 @@ def git_id(string, strict = False):
 
         # maybe GIT knows more about this id
         if not strict:
-            return git_id
+            return git.rev_parse(git_id)
     elif len(string_list) == 2:
         patch_name = string_list[0]
         if patch_name == '':
