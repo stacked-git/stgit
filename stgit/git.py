@@ -59,7 +59,7 @@ class Commit:
                 self.__author = field[1]
             if field[0] == 'committer':
                 self.__committer = field[1]
-        self.__log = ''.join(lines[i:])
+        self.__log = ''.join(lines[i+1:])
 
     def get_id_hash(self):
         return self.__id_hash

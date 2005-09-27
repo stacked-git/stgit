@@ -42,6 +42,7 @@ import stgit.commands.imprt
 import stgit.commands.init
 import stgit.commands.mail
 import stgit.commands.new
+import stgit.commands.pick
 import stgit.commands.pop
 import stgit.commands.pull
 import stgit.commands.push
@@ -73,6 +74,7 @@ commands = {
     'init':     stgit.commands.init,
     'mail':     stgit.commands.mail,
     'new':      stgit.commands.new,
+    'pick':     stgit.commands.pick,
     'pop':      stgit.commands.pop,
     'pull':     stgit.commands.pull,
     'push':     stgit.commands.push,
