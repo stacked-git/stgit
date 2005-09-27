@@ -297,8 +297,7 @@ class Series:
 
     def get_applied(self):
         if not os.path.isfile(self.__applied_file):
-            raise StackException, \
-                  'No StGIT metadata found. Try "stg init" first'
+            raise StackException, 'Branch "%s" not initialised' % self.__name
         f = file(self.__applied_file)
         names = [line.strip() for line in f.readlines()]
         f.close()
@@ -306,8 +305,7 @@ class Series:
 
     def get_unapplied(self):
         if not os.path.isfile(self.__unapplied_file):
-            raise StackException, \
-                  'No StGIT metadata found. Try "stg init" first'
+            raise StackException, 'Branch "%s" not initialised' % self.__name
         f = file(self.__unapplied_file)
         names = [line.strip() for line in f.readlines()]
         f.close()

@@ -28,7 +28,9 @@ usage = """%prog [options] [id]
 
 Print the hash value of a GIT id (defaulting to HEAD). In addition to
 the standard GIT id's like heads and tags, this command also accepts
-'base' and '[<patch>]/(bottom | top)'."""
+'base[@<branch>]' and '[<patch>[@<branch>]][/(bottom | top)]'. If no
+'top' or 'bottom' are passed and <patch> is a valid patch name, 'top'
+will be used by default."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
@@ -44,4 +46,4 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    print git_id(id_str, strict = True)
+    print git_id(id_str)

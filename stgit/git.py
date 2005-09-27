@@ -236,7 +236,7 @@ def __set_head(val):
 def rev_parse(git_id):
     """Parse the string and return an SHA1 id
     """
-    _output(['git-rev-parse', git_id])
+    return _output(['git-rev-parse', git_id]).strip()
 
 def add(names):
     """Add the files or recursively add the directory contents

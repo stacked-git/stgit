@@ -31,50 +31,50 @@ class CmdException(Exception):
 
 
 # Utility functions
-def git_id(string, strict = False):
+def git_id(string):
     """Return the GIT id
     """
     if not string:
         return None
     
     string_list = string.split('/')
+    if len(string_list) == 2:
+        patch_id = string_list[1]
+        if not patch_id:
+            patch_id = 'top'
+    elif len(string_list) == 1:
+        patch_id = 'top'
+    else:
+        patch_id = None
 
-    if len(string_list) == 1:
-        patch_name = None
-        git_id = string_list[0]
+    patch_branch = string_list[0].split('@')
+    if len(patch_branch) == 1:
+        series = crt_series
+    elif len(patch_branch) == 2:
+        series = stack.Series(patch_branch[1])
+    else:
+        raise CmdException, 'Unknown id: %s' % string
 
-        if git_id == 'HEAD':
-            return git.get_head()
-        if git_id == 'base':
-            return read_string(crt_series.get_base_file())
-
-        for path in [os.path.join(git.base_dir, 'refs', 'heads'),
-                     os.path.join(git.base_dir, 'refs', 'tags')]:
-            id_file = os.path.join(path, git_id)
-            if os.path.isfile(id_file):
-                return read_string(id_file)
-
-        # maybe GIT knows more about this id
-        if not strict:
-            return git.rev_parse(git_id)
-    elif len(string_list) == 2:
-        patch_name = string_list[0]
-        if patch_name == '':
-            patch_name = crt_series.get_current()
-        git_id = string_list[1]
-
+    patch_name = patch_branch[0]
+    if not patch_name:
+        patch_name = series.get_current()
         if not patch_name:
             raise CmdException, 'No patches applied'
-        elif not (patch_name in crt_series.get_applied()
-                + crt_series.get_unapplied()):
-            raise CmdException, 'Unknown patch "%s"' % patch_name
 
-        if git_id == 'bottom':
-            return crt_series.get_patch(patch_name).get_bottom()
-        if git_id == 'top':
-            return crt_series.get_patch(patch_name).get_top()
+    # patch
+    if patch_name in series.get_applied() \
+           or patch_name in series.get_unapplied():
+        if patch_id == 'top':
+            return series.get_patch(patch_name).get_top()
+        elif patch_id == 'bottom':
+            return series.get_patch(patch_name).get_bottom()
 
-    raise CmdException, 'Unknown id: %s' % string
+    # base
+    if patch_name == 'base' and len(string_list) == 1:
+        return read_string(series.get_base_file())
+
+    # anything else failed
+    return git.rev_parse(string)
 
 def check_local_changes():
     if git.local_changes():
