@@ -1,8 +1,9 @@
 The TODO list until 1.0:
 
+- branch control command
 - tag (snapshot) command
 - log command (it should also show the log per single patch)
-- tutorial, man page
+- man page
 - regression tests
 - release 1.0
 
@@ -14,5 +15,5 @@ The future, when time allows or someone else does it:
 - multiple heads in a patch - useful for forking a patch,
   synchronising with other patches (diff format or in other
   repositories)
-- remove the old base of the patch if there are no references to it
+- prune the old base of the patch if there are no references to it
 - write bash-completion script for the StGIT commands
