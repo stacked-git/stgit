@@ -215,28 +215,25 @@ def local_changes():
     return len(__tree_status()) != 0
 
 def get_head():
-    """Returns a string representing the HEAD
+    """Verifies the HEAD and returns the SHA1 id that represents it
     """
-    return read_string(head_link)
+    return rev_parse('HEAD')
 
 def get_head_file():
     """Returns the name of the file pointed to by the HEAD link
     """
-    # valid link
-    if os.path.islink(head_link) and os.path.isfile(head_link):
-        return os.path.basename(os.readlink(head_link))
-    else:
-        raise GitException, 'Invalid .git/HEAD link. Git tree not initialised?'
+    return os.path.basename(_output_one_line('git-symbolic-ref HEAD'))
 
 def __set_head(val):
     """Sets the HEAD value
     """
-    write_string(head_link, val)
+    if __run('git-update-ref HEAD', [val]) != 0:
+        raise GitException, 'Could not update HEAD to "%s".' % val
 
 def rev_parse(git_id):
-    """Parse the string and return an SHA1 id
+    """Parse the string and return a verified SHA1 id
     """
-    return _output(['git-rev-parse', git_id]).strip()
+    return _output_one_line(['git-rev-parse', '--verify', git_id])
 
 def add(names):
     """Add the files or recursively add the directory contents
