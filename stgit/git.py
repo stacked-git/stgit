@@ -355,6 +355,15 @@ def commit(message, files = [], parents = [], allowempty = False,
 
     return commit_id
 
+def apply_diff(rev1, rev2):
+    """Apply the diff between rev1 and rev2 onto the current
+    index. This function doesn't need to raise an exception since it
+    is only used for fast-pushing a patch. If this operation fails,
+    the pushing would fall back to the three-way merge.
+    """
+    return os.system('git-diff-tree -p %s %s | git-apply --index 2> /dev/null'
+                     % (rev1, rev2)) == 0
+
 def merge(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
     local tree

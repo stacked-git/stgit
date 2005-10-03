@@ -598,14 +598,17 @@ class Series:
             # The current patch is empty after merge.
             patch.set_bottom(head, backup = True)
             patch.set_top(head, backup = True)
-            # merge/refresh can fail but the patch needs to be pushed
-            try:
-                git.merge(bottom, head, top)
-            except git.GitException, ex:
-                print >> sys.stderr, \
-                      'The merge failed during "push". ' \
-                      'Use "refresh" after fixing the conflicts'
-                pass
+
+            # Try the fast applying first. If this fails, fall back to the
+            # three-way merge
+            if not git.apply_diff(bottom, top):
+                # merge can fail but the patch needs to be pushed
+                try:
+                    git.merge(bottom, head, top)
+                except git.GitException, ex:
+                    print >> sys.stderr, \
+                          'The merge failed during "push". ' \
+                          'Use "refresh" after fixing the conflicts'
 
         append_string(self.__applied_file, name)
 
