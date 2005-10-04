@@ -214,10 +214,17 @@ def local_changes():
     """
     return len(__tree_status()) != 0
 
+# HEAD value cached
+__head = None
+
 def get_head():
     """Verifies the HEAD and returns the SHA1 id that represents it
     """
-    return rev_parse('HEAD')
+    global __head
+
+    if not __head:
+        __head = rev_parse('HEAD')
+    return __head
 
 def get_head_file():
     """Returns the name of the file pointed to by the HEAD link
@@ -227,6 +234,9 @@ def get_head_file():
 def __set_head(val):
     """Sets the HEAD value
     """
+    global __head
+
+    __head = val
     if __run('git-update-ref HEAD', [val]) != 0:
         raise GitException, 'Could not update HEAD to "%s".' % val
 
