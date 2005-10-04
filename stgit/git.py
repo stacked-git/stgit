@@ -92,6 +92,8 @@ def get_commit(id_hash):
     """Commit objects factory. Save/look-up them in the __commits
     dictionary
     """
+    global __commits
+
     if id_hash in __commits:
         return __commits[id_hash]
     else:
