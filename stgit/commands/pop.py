@@ -57,7 +57,10 @@ def func(parser, options, args):
 
     if options.to:
         if options.to not in applied:
-            raise CmdException, 'Patch "%s" not applied' % options.to
+            if options.to in crt_series.get_unapplied():
+                raise CmdException, 'Patch "%s" is not currently applied.' % options.to
+            else:
+                raise CmdException, 'Patch "%s" does not exist.' % options.to
         patches = applied[:applied.index(options.to)]
     elif options.number:
         patches = applied[:options.number]

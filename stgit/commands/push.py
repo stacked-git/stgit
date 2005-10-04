@@ -54,9 +54,19 @@ options = [make_option('-a', '--all',
                        action = 'store_true')]
 
 
+def is_patch_appliable(p):
+    """See if patch exists, or is already applied.
+    """
+    if p in applied:
+        raise CmdException, 'Patch "%s" is already applied.' % p
+    if p not in unapplied:
+        raise CmdException, 'Patch "%s" does not exist.' % p
+
 def func(parser, options, args):
     """Pushes the given patch or all onto the series
     """
+    global applied, unapplied
+
     # If --undo is passed, do the work and exit
     if options.undo:
         patch = crt_series.get_current()
@@ -78,6 +88,7 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
+    applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
     if not unapplied:
         raise CmdException, 'No more patches to push'
@@ -85,14 +96,11 @@ def func(parser, options, args):
     if options.to:
         boundaries = options.to.split(':')
         if len(boundaries) == 1:
-            if boundaries[0] not in unapplied:
-                raise CmdException, 'Patch "%s" not unapplied' % boundaries[0]
+            is_patch_appliable(boundaries[0])
             patches = unapplied[:unapplied.index(boundaries[0])+1]
         elif len(boundaries) == 2:
-            if boundaries[0] not in unapplied:
-                raise CmdException, 'Patch "%s" not unapplied' % boundaries[0]
-            if boundaries[1] not in unapplied:
-                raise CmdException, 'Patch "%s" not unapplied' % boundaries[1]
+            is_patch_appliable(boundaries[0])
+            is_patch_appliable(boundaries[1])
             lb = unapplied.index(boundaries[0])
             hb = unapplied.index(boundaries[1])
             if lb > hb:
@@ -109,8 +117,7 @@ def func(parser, options, args):
         patches = [unapplied[0]]
     elif len(args) == 1:
         patches = args
-        if patches[0] not in unapplied:
-            raise CmdException, 'Patch "%s" not unapplied' % patches[0]
+        is_patch_appliable(patches[0])
     else:
         parser.error('incorrect number of arguments')
 
@@ -128,8 +135,7 @@ def func(parser, options, args):
         print 'Fast-forwarded patch "%s"' % patches[0]
 
     for p in patches[forwarded:]:
-        if p not in unapplied:
-            raise CmdException, 'Patch "%s" not unapplied' % p
+        is_patch_appliable(p)
 
         print 'Pushing patch "%s"...' % p,
         sys.stdout.flush()
