@@ -57,11 +57,17 @@ options = [make_option('-m', '--modified',
                        action = 'store_true'),
            make_option('-x', '--noexclude',
                        help = 'do not exclude any files from listing',
+                       action = 'store_true'),
+           make_option('--reset',
+                       help = 'reset the current tree changes',
                        action = 'store_true')]
 
 
 def func(parser, options, args):
     """Show the tree status
     """
-    git.status(args, options.modified, options.new, options.deleted,
-               options.conflict, options.unknown, options.noexclude)
+    if options.reset:
+        git.reset()
+    else:
+        git.status(args, options.modified, options.new, options.deleted,
+                   options.conflict, options.unknown, options.noexclude)
