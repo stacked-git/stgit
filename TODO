@@ -1,6 +1,7 @@
 The TODO list until 1.0:
 
 - branch control command
+- prune command which preserves the unapplied patches as well
 - tag (snapshot) command
 - log command (it should also show the log per single patch)
 - man page
