@@ -29,14 +29,15 @@ usage = """%prog [options] [<file>]
 Apply the given GNU diff file (or the standard input) onto the top of
 the current patch. With the '--threeway' option, the patch is applied
 onto the bottom of the current patch and a three-way merge is
-performed with the current top."""
+performed with the current top. With the --base option, the patch is
+applied onto the specified base and a three-way merged is performed
+with the current top."""
 
 options = [make_option('-t', '--threeway',
                        help = 'perform a three-way merge with the current patch',
                        action = 'store_true'),
-           make_option('-n', '--norefresh',
-                       help = 'do not refresh the current patch',
-                       action = 'store_true')]
+           make_option('-b', '--base',
+                       help = 'use BASE instead of HEAD applying the patch')]
 
 
 def func(parser, options, args):
@@ -67,24 +68,10 @@ def func(parser, options, args):
     if options.threeway:
         crt_patch = crt_series.get_patch(current)
         bottom = crt_patch.get_bottom()
-        top = crt_patch.get_top()
-
-        git.switch(bottom)
-        git.apply_patch(filename)
-        fold_head = crt_series.refresh_patch(commit_only = True)
-        git.switch(top)
-
-        git.merge(bottom, top, fold_head)
+        git.apply_patch(filename, bottom)
+    elif options.base:
+        git.apply_patch(filename, git.rev_parse(options.base))
     else:
         git.apply_patch(filename)
 
-    # no merge conflicts at this point, exception would have been raised
-    modified = git.local_changes()
-
-    if not options.norefresh and modified:
-        crt_series.refresh_patch()
-
-    if modified:
-        print 'done'
-    else:
-        print 'done (unchanged)'
+    print 'done'

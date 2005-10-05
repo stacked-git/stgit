@@ -220,19 +220,7 @@ def func(parser, options, args):
     sys.stdout.flush()
 
     if options.base:
-        orig_head = git.get_head()
-        git.switch(options.base)
-
-        try:
-            git.apply_patch(filename)
-        except git.GitException, ex:
-            print >> sys.stderr, '"git apply" failed'
-            git.switch(orig_head)
-            raise
-
-        top = crt_series.refresh_patch(commit_only = True)
-        git.switch(orig_head)
-        git.merge(options.base, orig_head, top)
+        git.apply_patch(filename, git.rev_parse(options.base))
     else:
         git.apply_patch(filename)
 

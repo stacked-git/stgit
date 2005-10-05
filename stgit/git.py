@@ -245,7 +245,10 @@ def __set_head(val):
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
     """
-    return _output_one_line(['git-rev-parse', '--verify', git_id])
+    try:
+        return _output_one_line(['git-rev-parse', '--verify', git_id])
+    except GitException:
+        raise GitException, 'Unknown revision: %s' % git_id
 
 def add(names):
     """Add the files or recursively add the directory contents
@@ -511,17 +514,35 @@ def pull(repository = 'origin', refspec = None):
     if __run('git pull', args) != 0:
         raise GitException, 'Failed "git pull %s"' % repository
 
-def apply_patch(filename = None):
-    """Apply a patch onto the current index. There must not be any
-    local changes in the tree, otherwise the command fails
+def apply_patch(filename = None, base = None):
+    """Apply a patch onto the current or given index. There must not
+    be any local changes in the tree, otherwise the command fails
     """
+    def __apply_patch():
+        if filename:
+            return __run('git-apply --index', [filename]) == 0
+        else:
+            try:
+                _input('git-apply --index', sys.stdin)
+            except GitException:
+                return False
+            return True
+
     os.system('git-update-index --refresh > /dev/null')
 
-    if filename:
-        if __run('git-apply --index', [filename]) != 0:
-            raise GitException, 'Patch does not apply cleanly'
-    else:
-        _input('git-apply --index', sys.stdin)
+    if base:
+        orig_head = get_head()
+        switch(base)
+
+    if not __apply_patch():
+        if base:
+            switch(orig_head)
+        raise GitException, 'Patch does not apply cleanly'
+    elif base:
+        top = commit(message = 'temporary commit used for applying a patch',
+                     parents = [base])
+        switch(orig_head)
+        merge(base, orig_head, top)
 
 def clone(repository, local_dir):
     """Clone a remote repository. At the moment, just use the

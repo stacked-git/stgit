@@ -372,8 +372,7 @@ class Series:
                       cache_update = True,
                       author_name = None, author_email = None,
                       author_date = None,
-                      committer_name = None, committer_email = None,
-                      commit_only = False):
+                      committer_name = None, committer_email = None):
         """Generates a new commit for the given patch
         """
         name = self.get_current()
@@ -414,14 +413,13 @@ class Series:
                                committer_name = committer_name,
                                committer_email = committer_email)
 
-        if not commit_only:
-            patch.set_top(commit_id)
-            patch.set_description(descr)
-            patch.set_authname(author_name)
-            patch.set_authemail(author_email)
-            patch.set_authdate(author_date)
-            patch.set_commname(committer_name)
-            patch.set_commemail(committer_email)
+        patch.set_top(commit_id)
+        patch.set_description(descr)
+        patch.set_authname(author_name)
+        patch.set_authemail(author_email)
+        patch.set_authdate(author_date)
+        patch.set_commname(committer_name)
+        patch.set_commemail(committer_email)
 
         return commit_id
 
