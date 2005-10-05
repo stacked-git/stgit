@@ -36,6 +36,9 @@ options = [make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
            make_option('-r', '--reverse',
                        help = 'reverse the commit object before importing',
+                       action = 'store_true'),
+           make_option('--fold',
+                       help = 'fold the commit object into the current patch',
                        action = 'store_true')]
 
 
@@ -50,14 +53,18 @@ def func(parser, options, args):
     check_head_top_equal()
 
     commit_str = args[0]
-    patch_branch = commit_str.split('@')
 
-    if len(patch_branch) == 2:
-        patch = patch_branch[0]
-    elif options.name:
-        patch = options.name
+    if options.fold:
+        if not crt_series.get_current():
+            raise CmdException, 'No patches applied'
     else:
-        raise CmdException, 'Unkown patch name'
+        patch_branch = commit_str.split('@')
+        if len(patch_branch) == 2:
+            patch = patch_branch[0]
+        elif options.name:
+            patch = options.name
+        else:
+            raise CmdException, 'Unkown patch name'
 
     commit_id = git_id(commit_str)
     commit = git.Commit(commit_id)
@@ -69,19 +76,26 @@ def func(parser, options, args):
         bottom = commit_id
         top = commit.get_parent()
 
-    message = commit.get_log()
-    author_name, author_email, author_date = \
-                 name_email_date(commit.get_author())
+    if options.fold:
+        print 'Folding commit %s...' % commit_id,
+        sys.stdout.flush()
 
-    print 'Importing commit %s...' % commit_id,
-    sys.stdout.flush()
+        git.merge(bottom, git.get_head(), top)
+    else:
+        message = commit.get_log()
+        author_name, author_email, author_date = \
+                     name_email_date(commit.get_author())
 
-    crt_series.new_patch(patch, message = message, can_edit = False,
-                         unapplied = True, bottom = bottom, top = top,
-                         author_name = author_name,
-                         author_email = author_email,
-                         author_date = author_date)
-    crt_series.push_patch(patch)
+        print 'Importing commit %s...' % commit_id,
+        sys.stdout.flush()
+
+        crt_series.new_patch(patch, message = message, can_edit = False,
+                             unapplied = True, bottom = bottom, top = top,
+                             author_name = author_name,
+                             author_email = author_email,
+                             author_date = author_date)
+        crt_series.push_patch(patch)
 
     print 'done'
+        
     print_crt_patch()
