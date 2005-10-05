@@ -33,14 +33,19 @@ Mark a merge conflict as resolved. The conflicts can be seen with the
 
 options = [make_option('-a', '--all',
                        help = 'mark all conflicts as solved',
-                       action = 'store_true')]
+                       action = 'store_true'),
+           make_option('-r', '--reset', metavar = '(local|remote|older)',
+                       help = 'reset the file(s) to the given state')]
 
 
 def func(parser, options, args):
     """Mark the conflict as resolved
     """
+    if options.reset and options.reset not in ['local', 'remote', 'older']:
+        raise CmdException, 'Unknown reset state: %s' % options.reset
+
     if options.all:
-        resolved_all()
+        resolved_all(options.reset)
         return
 
     if len(args) == 0:
@@ -55,7 +60,7 @@ def func(parser, options, args):
             raise CmdException, 'No conflicts for "%s"' % filename
     # resolved
     for filename in args:
-        resolved(filename)
+        resolved(filename, options.reset)
         del conflicts[conflicts.index(filename)]
 
     # save or remove the conflicts file

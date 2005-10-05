@@ -99,18 +99,26 @@ def print_crt_patch():
     else:
         print 'No patches applied'
 
-def resolved(filename):
+def resolved(filename, reset = None):
+    if reset:
+        reset_file = filename + '.' + reset
+        if os.path.isfile(reset_file):
+            if os.path.isfile(filename):
+                os.remove(filename)
+            os.rename(reset_file, filename)
+
     git.update_cache([filename], force = True)
+
     for ext in ['.local', '.older', '.remote']:
         fn = filename + ext
         if os.path.isfile(fn):
             os.remove(fn)
 
-def resolved_all():
+def resolved_all(reset = None):
     conflicts = git.get_conflicts()
     if conflicts:
         for filename in conflicts:
-            resolved(filename)
+            resolved(filename, reset)
         os.remove(os.path.join(git.base_dir, 'conflicts'))
 
 def name_email(string):
