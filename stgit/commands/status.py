@@ -67,6 +67,7 @@ def func(parser, options, args):
     """Show the tree status
     """
     if options.reset:
+        resolved_all()
         git.reset()
     else:
         git.status(args, options.modified, options.new, options.deleted,
