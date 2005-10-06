@@ -285,7 +285,7 @@ def create_branch(new_branch, tree_id = None):
 
     # a checkout isn't needed if new branch points to the current head
     if tree_id:
-        git.switch(tree_id)
+        switch(tree_id)
 
     if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
         os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
