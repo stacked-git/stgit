@@ -233,6 +233,12 @@ def get_head_file():
     """
     return os.path.basename(_output_one_line('git-symbolic-ref HEAD'))
 
+def set_head_file(ref):
+    """Resets HEAD to point to a new ref
+    """
+    if __run('git-symbolic-ref HEAD', [ref]) != 0:
+        raise GitException, 'Could not set head to "%s"' % ref
+
 def __set_head(val):
     """Sets the HEAD value
     """
