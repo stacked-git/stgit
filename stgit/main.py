@@ -30,6 +30,7 @@ from stgit.commands.common import *
 # The commands
 import stgit.commands.add
 import stgit.commands.applied
+import stgit.commands.branch
 import stgit.commands.delete
 import stgit.commands.diff
 import stgit.commands.clean
@@ -63,6 +64,7 @@ import stgit.commands.unapplied
 commands = {
     'add':      stgit.commands.add,
     'applied':  stgit.commands.applied,
+    'branch':   stgit.commands.branch,
     'delete':   stgit.commands.delete,
     'diff':     stgit.commands.diff,
     'clean':    stgit.commands.clean,
