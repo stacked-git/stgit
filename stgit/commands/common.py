@@ -92,8 +92,12 @@ def check_conflicts():
     if os.path.exists(os.path.join(git.base_dir, 'conflicts')):
         raise CmdException, 'Unsolved conflicts. Please resolve them first'
 
-def print_crt_patch():
-    patch = crt_series.get_current()
+def print_crt_patch(branch = None):
+    if not branch:
+        patch = crt_series.get_current()
+    else:
+        patch = stack.Series(branch).get_current()
+
     if patch:
         print 'Now at patch "%s"' % patch
     else:
