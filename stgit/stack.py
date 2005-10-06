@@ -368,6 +368,32 @@ class Series:
         create_empty_file(self.__unapplied_file)
         self.__begin_stack_check()
 
+    def delete(self, force = False):
+        """Deletes an stgit series
+        """
+        if os.path.isdir(self.__patch_dir):
+            patches = self.get_unapplied() + self.get_applied()
+            if not force and patches:
+                raise StackException, \
+                      'Cannot delete: the series still contains patches'
+            patches.reverse()
+            for p in patches:
+                self.delete_patch(p)
+
+            if os.path.isfile(self.__applied_file):
+                os.remove(self.__applied_file)
+            if os.path.isfile(self.__unapplied_file):
+                os.remove(self.__unapplied_file)
+            if os.path.isfile(self.__current_file):
+                os.remove(self.__current_file)
+            if not os.listdir(self.__patch_dir):
+                os.rmdir(self.__patch_dir)
+            else:
+                print 'Series directory %s is not empty.' % self.__name
+
+        if os.path.isfile(self.__base_file):
+            os.remove(self.__base_file)
+
     def refresh_patch(self, message = None, edit = False, show_patch = False,
                       cache_update = True,
                       author_name = None, author_email = None,
