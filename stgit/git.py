@@ -315,6 +315,20 @@ def delete_branch(name):
         raise GitException, 'Branch "%s" does not exist' % name
     os.remove(os.path.join(base_dir, branch_head))
 
+def rename_branch(from_name, to_name):
+    """Rename a git branch
+    """
+    from_head = os.path.join(base_dir, 'refs', 'heads', from_name)
+    if not branch_exists(from_head):
+        raise GitException, 'Branch "%s" does not exist' % from_name
+    to_head = os.path.join(base_dir, 'refs', 'heads', to_name)
+    if branch_exists(to_head):
+        raise GitException, 'Branch "%s" already exists' % to_name
+
+    if get_head_file() == from_name:
+        set_head_file(os.path.join('refs', 'heads', to_name))
+    os.rename(from_head, to_head)
+
 def add(names):
     """Add the files or recursively add the directory contents
     """
