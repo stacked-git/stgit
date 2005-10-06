@@ -307,6 +307,14 @@ def switch_branch(name):
     if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
         os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
 
+def delete_branch(name):
+    """Delete a git branch
+    """
+    branch_head = os.path.join('refs', 'heads', name)
+    if not branch_exists(branch_head):
+        raise GitException, 'Branch "%s" does not exist' % name
+    os.remove(os.path.join(base_dir, branch_head))
+
 def add(names):
     """Add the files or recursively add the directory contents
     """
