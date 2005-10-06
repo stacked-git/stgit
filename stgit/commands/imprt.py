@@ -220,7 +220,7 @@ def func(parser, options, args):
     sys.stdout.flush()
 
     if options.base:
-        git.apply_patch(filename, git.rev_parse(options.base))
+        git.apply_patch(filename, git_id(options.base))
     else:
         git.apply_patch(filename)
 

@@ -70,7 +70,7 @@ def func(parser, options, args):
         bottom = crt_patch.get_bottom()
         git.apply_patch(filename, bottom)
     elif options.base:
-        git.apply_patch(filename, git.rev_parse(options.base))
+        git.apply_patch(filename, git_id(options.base))
     else:
         git.apply_patch(filename)
 
