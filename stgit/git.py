@@ -290,6 +290,23 @@ def create_branch(new_branch, tree_id = None):
     if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
         os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
 
+def switch_branch(name):
+    """Switch to a git branch
+    """
+    new_head = os.path.join('refs', 'heads', name)
+    if not branch_exists(new_head):
+        raise GitException, 'Branch "%s" does not exist' % name
+
+    tree_id = rev_parse(new_head + '^0')
+    if tree_id != get_head():
+        if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
+            raise GitException, 'git-read-tree failed (local changes maybe?)'
+        __head = tree_id
+    set_head_file(new_head)
+
+    if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
+        os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
+
 def add(names):
     """Add the files or recursively add the directory contents
     """
