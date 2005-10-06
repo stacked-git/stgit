@@ -314,6 +314,19 @@ class Series:
     def get_base_file(self):
         return self.__base_file
 
+    def get_protected(self):
+        return os.path.isfile(os.path.join(self.__patch_dir, 'protected'))
+
+    def protect(self):
+        protect_file = os.path.join(self.__patch_dir, 'protected')
+        if not os.path.isfile(protect_file):
+            create_empty_file(protect_file)
+
+    def unprotect(self):
+        protect_file = os.path.join(self.__patch_dir, 'protected')
+        if os.path.isfile(protect_file):
+            os.remove(protect_file)
+
     def __patch_is_current(self, patch):
         return patch.get_name() == read_string(self.__current_file)
 

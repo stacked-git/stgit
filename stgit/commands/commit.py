@@ -49,6 +49,9 @@ def func(parser, options, args):
     if not applied:
         raise CmdException, 'No patches applied'
 
+    if crt_series.get_protected():
+        raise CmdException, 'This branch is protected.  Commit is not permitted'
+
     crt_head = git.get_head()
 
     print 'Committing %d patches...' % len(applied),

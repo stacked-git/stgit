@@ -49,8 +49,14 @@ options = [make_option('-c', '--create',
            make_option('-l', '--list',
                        help = 'list branches contained in this repository',
                        action = 'store_true'),
+           make_option('-p', '--protect',
+                       help = 'prevent "stg pull" from modifying this branch',
+                       action = 'store_true'),
            make_option('-r', '--rename',
                        help = 'rename an existing development branch',
+                       action = 'store_true'),
+           make_option('-u', '--unprotect',
+                       help = 'allow "stg pull" to modify this branch',
                        action = 'store_true')]
 
 
@@ -60,13 +66,19 @@ def is_current_branch(branch_name):
 def print_branch(branch_name):
     initialized = ' '
     current = ' '
+    protected = ' '
     if os.path.isdir(os.path.join(git.base_dir, 'patches', branch_name)):
         initialized = 's'
     if is_current_branch(branch_name):
         current = '>'
-    print '%s %s\t%s' % (current, initialized, branch_name)
+    if stack.Series(branch_name).get_protected():
+        protected = 'p'
+    print '%s %s%s\t%s' % (current, initialized, protected, branch_name)
 
 def delete_branch(doomed_name, force = False):
+    if stack.Series(doomed_name).get_protected():
+        raise CmdException, 'This branch is protected. Delete is not permitted'
+
     if is_current_branch(doomed_name) and doomed_name != 'master':
         git.switch_branch('master')
 
@@ -135,11 +147,45 @@ def func(parser, options, args):
             print_branch(i)
         return
 
+    elif options.protect:
+
+        if len(args) == 0:
+            branch = git.get_head_file()
+        elif len(args) == 1:
+            branch = args[0]
+        else:
+            parser.error('incorrect number of arguments')
+
+        base = os.path.join(git.base_dir, 'refs', 'bases', branch)
+        if not os.path.isfile(base):
+            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
+
+        print 'Protecting branch "%s"...' % branch
+        stack.Series(branch).protect()
+        return
+
     elif options.rename:
 
         if len(args) != 2:
             parser.error('incorrect number of arguments')
         rename_branch(args[0], args[1])
+        return
+
+    elif options.unprotect:
+
+        if len(args) == 0:
+            branch = git.get_head_file()
+        elif len(args) == 1:
+            branch = args[0]
+        else:
+            parser.error('incorrect number of arguments')
+
+        base = os.path.join(git.base_dir, 'refs', 'bases', branch)
+        if not os.path.isfile(base):
+            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
+
+        print 'Unprotecting branch "%s"...' % branch
+        stack.Series(branch).unprotect()
         return
 
     elif len(args) == 1:

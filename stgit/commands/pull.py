@@ -54,6 +54,9 @@ def func(parser, options, args):
     if len(args) == 2:
         refspec = args[1]
 
+    if crt_series.get_protected():
+        raise CmdException, 'This branch is protected. Pulls are not permitted'
+
     check_local_changes()
     check_conflicts()
     check_head_top_equal()
