@@ -264,6 +264,7 @@ class Series:
             self.__applied_file = os.path.join(self.__patch_dir, 'applied')
             self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
             self.__current_file = os.path.join(self.__patch_dir, 'current')
+            self.__descr_file = os.path.join(self.__patch_dir, 'description')
 
     def get_branch(self):
         """Return the branch name for the Series object
@@ -327,6 +328,12 @@ class Series:
         if os.path.isfile(protect_file):
             os.remove(protect_file)
 
+    def get_description(self):
+        if os.path.isfile(self.__descr_file):
+            return read_string(self.__descr_file)
+        else:
+            return ''
+
     def __patch_is_current(self, patch):
         return patch.get_name() == read_string(self.__current_file)
 
@@ -379,6 +386,7 @@ class Series:
 
         create_empty_file(self.__applied_file)
         create_empty_file(self.__unapplied_file)
+        create_empty_file(self.__descr_file)
         self.__begin_stack_check()
 
     def delete(self, force = False):
@@ -399,6 +407,8 @@ class Series:
                 os.remove(self.__unapplied_file)
             if os.path.isfile(self.__current_file):
                 os.remove(self.__current_file)
+            if os.path.isfile(self.__descr_file):
+                os.remove(self.__descr_file)
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:

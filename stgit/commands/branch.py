@@ -73,7 +73,8 @@ def print_branch(branch_name):
         current = '>'
     if stack.Series(branch_name).get_protected():
         protected = 'p'
-    print '%s %s%s\t%s' % (current, initialized, protected, branch_name)
+    print '%s %s%s\t%s\t%s' % (current, initialized, protected, branch_name, \
+                               stack.Series(branch_name).get_description())
 
 def delete_branch(doomed_name, force = False):
     if stack.Series(doomed_name).get_protected():
