@@ -264,6 +264,32 @@ def rev_parse(git_id):
     except GitException:
         raise GitException, 'Unknown revision: %s' % git_id
 
+def branch_exists(branch):
+    """Existance check for the named branch
+    """
+    for line in _output_lines(['git-rev-parse', '--symbolic', '--all']):
+        if line.strip() == branch:
+            return True
+    return False
+
+def create_branch(new_branch, tree_id = None):
+    """Create a new branch in the git repository
+    """
+    new_head = os.path.join('refs', 'heads', new_branch)
+    if branch_exists(new_head):
+        raise GitException, 'Branch "%s" already exists' % new_branch
+
+    current_head = get_head()
+    set_head_file(new_head)
+    __set_head(current_head)
+
+    # a checkout isn't needed if new branch points to the current head
+    if tree_id:
+        git.switch(tree_id)
+
+    if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
+        os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
+
 def add(names):
     """Add the files or recursively add the directory contents
     """
