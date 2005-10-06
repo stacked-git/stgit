@@ -238,9 +238,17 @@ def __set_head(val):
     """
     global __head
 
-    __head = val
-    if __run('git-update-ref HEAD', [val]) != 0:
-        raise GitException, 'Could not update HEAD to "%s".' % val
+    if not __head or __head != val:
+        if __run('git-update-ref HEAD', [val]) != 0:
+            raise GitException, 'Could not update HEAD to "%s".' % val
+        __head = val
+
+def __clear_head_cache():
+    """Sets the __head to None so that a re-read is forced
+    """
+    global __head
+
+    __head = None
 
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
@@ -507,6 +515,9 @@ def pull(repository = 'origin', refspec = None):
     """Pull changes from the remote repository. At the moment, just
     use the 'git pull' command
     """
+    # 'git pull' updates the HEAD
+    __clear_head_cache()
+
     args = [repository]
     if refspec:
         args.append(refspec)
