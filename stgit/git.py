@@ -236,6 +236,9 @@ def get_head_file():
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
     """
+    # head cache flushing is needed since we might have a different value
+    # in the new head
+    __clear_head_cache()
     if __run('git-symbolic-ref HEAD', [ref]) != 0:
         raise GitException, 'Could not set head to "%s"' % ref
 
