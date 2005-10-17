@@ -161,8 +161,11 @@ def func(parser, options, args):
         if not os.path.isfile(base):
             raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
 
-        print 'Protecting branch "%s"...' % branch
+        print 'Protecting branch "%s"...' % branch,
+        sys.stdout.flush()
         stack.Series(branch).protect()
+        print 'done'
+
         return
 
     elif options.rename:
@@ -185,8 +188,11 @@ def func(parser, options, args):
         if not os.path.isfile(base):
             raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
 
-        print 'Unprotecting branch "%s"...' % branch
+        print 'Unprotecting branch "%s"...' % branch,
+        sys.stdout.flush()
         stack.Series(branch).unprotect()
+        print 'done'
+
         return
 
     elif len(args) == 1:
