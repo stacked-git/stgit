@@ -36,10 +36,15 @@ or /usr/share/stgit/templates/patchmail.tmpl). The To/Cc/Bcc addresses
 can either be added to the template file or passed via the
 corresponding command line options.
 
-A preamble e-mail can be sent using the '--first' option. All the
-subsequent e-mails appear as replies to the first e-mail sent (either
-the preamble or the first patch). E-mails can be seen as replies to a
-different e-mail by using the '--refid' option.
+A preamble e-mail can be sent using the '--cover' and/or '--edit'
+options. The first allows the user to specify a file to be used as a
+template. The latter option will invoke the editor on the specified
+file (defaulting to .git/covermail.tmpl or
+/usr/share/stgit/templates/covermail.tmpl).
+
+All the subsequent e-mails appear as replies to the first e-mail sent
+(either the preamble or the first patch). E-mails can be seen as
+replies to a different e-mail by using the '--refid' option.
 
 SMTP authentication is also possible with '--smtp-user' and
 '--smtp-password' options, also available as configuration settings:
@@ -91,8 +96,11 @@ options = [make_option('-a', '--all',
                        help = 'add VERSION to the [PATCH ...] prefix'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'use FILE as the message template'),
-           make_option('-f', '--first', metavar = 'FILE',
-                       help = 'send FILE as the first message'),
+           make_option('-c', '--cover', metavar = 'FILE',
+                       help = 'send FILE as the cover message'),
+           make_option('-e', '--edit',
+                       help = 'edit the cover message before sending',
+                       action = 'store_true'),
            make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
                        help = 'sleep for SECONDS between e-mails sending'),
            make_option('--refid',
@@ -182,8 +190,8 @@ def __build_address_headers(options):
 	headers_end = headers_end[:-1] + '\n'
     return headers_end
 
-def __build_first(tmpl, total_nr, msg_id, options):
-    """Build the first message (series description) to be sent via SMTP
+def __build_cover(tmpl, total_nr, msg_id, options):
+    """Build the cover message (series description) to be sent via SMTP
     """
     maintainer = __get_maintainer()
     if not maintainer:
@@ -220,6 +228,32 @@ def __build_first(tmpl, total_nr, msg_id, options):
     except TypeError:
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
+
+    if options.edit:
+        fname = '.stgitmail.txt'
+
+        # create the initial file
+        f = file(fname, 'w+')
+        f.write(msg)
+        f.close()
+
+        # the editor
+        if config.has_option('stgit', 'editor'):
+            editor = config.get('stgit', 'editor')
+        elif 'EDITOR' in os.environ:
+            editor = os.environ['EDITOR']
+        else:
+            editor = 'vi'
+        editor += ' %s' % fname
+
+        print 'Invoking the editor: "%s"...' % editor,
+        sys.stdout.flush()
+        print 'done (exit code: %d)' % os.system(editor)
+
+        # read the message back
+        f = file(fname)
+        msg = f.read()
+        f.close()
 
     return msg
 
@@ -370,18 +404,32 @@ def func(parser, options, args):
     else:
         sleep = 2
 
-    # send the first message (if any)
-    if options.first:
-        tmpl = file(options.first).read()
+    # send the cover message (if any)
+    if options.cover or options.edit:
+        # find the template file
+        if options.cover:
+            tfile_list = [options.cover]
+        else:
+            tfile_list = [os.path.join(git.base_dir, 'covermail.tmpl'),
+                          os.path.join(sys.prefix,
+                                       'share/stgit/templates/covermail.tmpl')]
+
+        tmpl = None
+        for tfile in tfile_list:
+            if os.path.isfile(tfile):
+                tmpl = file(tfile).read()
+                break
+        if not tmpl:
+            raise CmdException, 'No cover message template file found'
 
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_first(tmpl, total_nr, msg_id, options)
+        msg = __build_cover(tmpl, total_nr, msg_id, options)
         from_addr, to_addr_list = __parse_addresses(msg)
 
         # subsequent e-mails are seen as replies to the first one
         ref_id = msg_id
 
-        print 'Sending file "%s"...' % options.first,
+        print 'Sending the cover message...',
         sys.stdout.flush()
 
         __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
@@ -393,19 +441,16 @@ def func(parser, options, args):
     if options.template:
         tfile_list = [options.template]
     else:
-        tfile_list = []
-
-    tfile_list += [os.path.join(git.base_dir, 'patchmail.tmpl'),
-                   os.path.join(sys.prefix,
-                                'share/stgit/templates/patchmail.tmpl')]
+        tfile_list = [os.path.join(git.base_dir, 'patchmail.tmpl'),
+                      os.path.join(sys.prefix,
+                                   'share/stgit/templates/patchmail.tmpl')]
     tmpl = None
     for tfile in tfile_list:
         if os.path.isfile(tfile):
             tmpl = file(tfile).read()
             break
     if not tmpl:
-        raise CmdException, 'No e-mail template file: %s or %s' \
-              % (tfile_list[-1], tfile_list[-2])
+        raise CmdException, 'No e-mail template file found'
 
     for (p, patch_nr) in zip(patches, range(1, len(patches) + 1)):
         msg_id = email.Utils.make_msgid('stgit')
