@@ -197,6 +197,9 @@ def func(parser, options, args):
 
     elif len(args) == 1:
 
+        if args[0] == git.get_head_file():
+            raise CmdException, 'Branch "%s" is already the current branch' % args[0]
+
         print 'Switching to branch "%s"...' % args[0],
         sys.stdout.flush()
 
