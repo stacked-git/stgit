@@ -341,12 +341,15 @@ def func(parser, options, args):
         smtppassword = config.get('stgit', 'smtppassword')
 
     applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
 
     if len(args) >= 1:
         for patch in args:
-            if not patch in applied:
+            if patch in unapplied:
                 raise CmdException, 'Patch "%s" not applied' % patch
-            patches = args
+            if not patch in applied:
+                raise CmdException, 'Patch "%s" does not exist' % patch
+        patches = args
     elif options.all:
         patches = applied
     elif options.range:
@@ -369,11 +372,17 @@ def func(parser, options, args):
         if start in applied:
             start_idx = applied.index(start)
         else:
-            raise CmdException, 'Patch "%s" not applied' % start
+            if start in unapplied:
+                raise CmdException, 'Patch "%s" not applied' % start
+            else:
+                raise CmdException, 'Patch "%s" does not exist' % start
         if stop in applied:
             stop_idx = applied.index(stop) + 1
         else:
-            raise CmdException, 'Patch "%s" not applied' % stop
+            if stop in unapplied:
+                raise CmdException, 'Patch "%s" not applied' % stop
+            else:
+                raise CmdException, 'Patch "%s" does not exist' % stop
 
         if start_idx >= stop_idx:
             raise CmdException, 'Incorrect patch range order'
