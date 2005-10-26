@@ -127,6 +127,7 @@ def main():
         sys.exit(0)
     if cmd in ['-v', '--version', 'version']:
         print 'Stacked GIT %s' % version
+        os.system('git --version')
         print 'Python version %s' % sys.version
         sys.exit(0)
     if cmd in ['copyright']:
