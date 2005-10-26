@@ -24,6 +24,8 @@ from optparse import OptionParser, make_option
 from stgit.utils import *
 from stgit import stack, git
 
+crt_series = None
+
 
 # Command exception class
 class CmdException(Exception):
