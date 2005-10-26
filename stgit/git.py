@@ -114,7 +114,7 @@ def get_conflicts():
         return None
 
 def _input(cmd, file_desc):
-    p = popen2.Popen3(cmd)
+    p = popen2.Popen3(cmd, True)
     while True:
         line = file_desc.readline()
         if not line:
@@ -125,14 +125,14 @@ def _input(cmd, file_desc):
         raise GitException, '%s failed' % str(cmd)
 
 def _output(cmd):
-    p=popen2.Popen3(cmd)
+    p=popen2.Popen3(cmd, True)
     string = p.fromchild.read()
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
     return string
 
 def _output_one_line(cmd, file_desc = None):
-    p=popen2.Popen3(cmd)
+    p=popen2.Popen3(cmd, True)
     if file_desc != None:
         for line in file_desc:
             p.tochild.write(line)
@@ -143,7 +143,7 @@ def _output_one_line(cmd, file_desc = None):
     return string
 
 def _output_lines(cmd):
-    p=popen2.Popen3(cmd)
+    p=popen2.Popen3(cmd, True)
     lines = p.fromchild.readlines()
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
