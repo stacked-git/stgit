@@ -464,7 +464,7 @@ def merge(base, head1, head2):
 
     # this can fail if there are conflicts
     if os.system('git-merge-index -o -q gitmergeonefile.py -a') != 0:
-        raise GitException, 'git-merge-cache failed (possible conflicts)'
+        raise GitException, 'git-merge-index failed (possible conflicts)'
 
 def status(files = [], modified = False, new = False, deleted = False,
            conflict = False, unknown = False, noexclude = False):
