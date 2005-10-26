@@ -296,6 +296,8 @@ def create_branch(new_branch, tree_id = None):
 def switch_branch(name):
     """Switch to a git branch
     """
+    global __head
+
     new_head = os.path.join('refs', 'heads', name)
     if not branch_exists(new_head):
         raise GitException, 'Branch "%s" does not exist' % name
