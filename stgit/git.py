@@ -361,11 +361,6 @@ def add(names):
 def rm(files, force = False):
     """Remove a file from the repository
     """
-    if force:
-        git_opt = '--force-remove'
-    else:
-        git_opt = '--remove'
-
     if not force:
         for f in files:
             if os.path.exists(f):
