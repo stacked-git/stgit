@@ -67,23 +67,28 @@ def print_branch(branch_name):
     initialized = ' '
     current = ' '
     protected = ' '
+
+    branch = stack.Series(branch_name)
+
     if os.path.isdir(os.path.join(git.base_dir, 'patches', branch_name)):
         initialized = 's'
     if is_current_branch(branch_name):
         current = '>'
-    if stack.Series(branch_name).get_protected():
+    if branch.get_protected():
         protected = 'p'
     print '%s %s%s\t%s\t%s' % (current, initialized, protected, branch_name, \
-                               stack.Series(branch_name).get_description())
+                               branch.get_description())
 
 def delete_branch(doomed_name, force = False):
-    if stack.Series(doomed_name).get_protected():
+    doomed = stack.Series(doomed_name)
+
+    if doomed.get_protected():
         raise CmdException, 'This branch is protected. Delete is not permitted'
 
     if is_current_branch(doomed_name) and doomed_name != 'master':
         git.switch_branch('master')
 
-    stack.Series(doomed_name).delete(force)
+    doomed.delete(force)
 
     if doomed_name != 'master':
         git.delete_branch(doomed_name)
