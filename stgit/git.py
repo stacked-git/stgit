@@ -171,12 +171,14 @@ def __run(cmd, args=None):
 def __check_base_dir():
     return os.path.isdir(base_dir)
 
-def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
+def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True):
     """Returns a list of pairs - [status, filename]
     """
     refresh_index()
 
+    if not files:
+        files = []
     cache_files = []
 
     # unknown files
@@ -377,9 +379,12 @@ def rm(files, force = False):
         if files:
             __run('git-update-index --force-remove --', files)
 
-def update_cache(files = [], force = False):
+def update_cache(files = None, force = False):
     """Update the cache information for the given files
     """
+    if not files:
+        files = []
+
     cache_files = __tree_status(files)
 
     # everything is up-to-date
@@ -405,12 +410,17 @@ def update_cache(files = [], force = False):
 
     return True
 
-def commit(message, files = [], parents = [], allowempty = False,
+def commit(message, files = None, parents = None, allowempty = False,
            cache_update = True, tree_id = None,
            author_name = None, author_email = None, author_date = None,
            committer_name = None, committer_email = None):
     """Commit the current tree to repository
     """
+    if not files:
+        files = []
+    if not parents:
+        parents = []
+
     # Get the tree status
     if cache_update and parents != []:
         changes = update_cache(files)
@@ -473,10 +483,13 @@ def merge(base, head1, head2):
     if __run('git-merge-index -o -q gitmergeonefile.py -a') != 0:
         raise GitException, 'git-merge-index failed (possible conflicts)'
 
-def status(files = [], modified = False, new = False, deleted = False,
+def status(files = None, modified = False, new = False, deleted = False,
            conflict = False, unknown = False, noexclude = False):
     """Show the tree status
     """
+    if not files:
+        files = []
+
     cache_files = __tree_status(files, unknown = True, noexclude = noexclude)
     all = not (modified or new or deleted or conflict or unknown)
 
@@ -501,9 +514,11 @@ def status(files = [], modified = False, new = False, deleted = False,
         else:
             print '%s' % fs[1]
 
-def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = None):
+def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None):
     """Show the diff between rev1 and rev2
     """
+    if not files:
+        files = []
 
     if rev2:
         diff_str = _output(['git-diff-tree', '-p', rev1, rev2] + files)
@@ -516,9 +531,11 @@ def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = None):
     else:
         return diff_str
 
-def diffstat(files = [], rev1 = 'HEAD', rev2 = None):
+def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
     """Return the diffstat between rev1 and rev2
     """
+    if not files:
+        files = []
 
     p=popen2.Popen3('git-apply --stat')
     diff(files, rev1, rev2, p.tochild)
@@ -548,9 +565,12 @@ def barefiles(rev1, rev2):
 
     return str.rstrip()
 
-def checkout(files = [], tree_id = None, force = False):
+def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
     """
+    if not files:
+        files = None
+
     if tree_id and __run('git-read-tree -m', [tree_id]) != 0:
         raise GitException, 'Failed git-read-tree -m %s' % tree_id
 
