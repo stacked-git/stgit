@@ -175,7 +175,7 @@ def __tree_status(files = [], tree_id = 'HEAD', unknown = False,
                   noexclude = True):
     """Returns a list of pairs - [status, filename]
     """
-    os.system('git-update-index --refresh > /dev/null')
+    refresh_index()
 
     cache_files = []
 
@@ -259,6 +259,11 @@ def __clear_head_cache():
 
     __head = None
 
+def refresh_index():
+    """Refresh index with stat() information from the working directory.
+    """
+    __run('git-update-index -q --unmerged --refresh')
+
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
     """
@@ -304,6 +309,7 @@ def switch_branch(name):
 
     tree_id = rev_parse(new_head + '^0')
     if tree_id != get_head():
+        refresh_index()
         if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
             raise GitException, 'git-read-tree failed (local changes maybe?)'
         __head = tree_id
@@ -459,6 +465,7 @@ def merge(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
     local tree
     """
+    refresh_index()
     if __run('git-read-tree -u -m', [base, head1, head2]) != 0:
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
@@ -501,7 +508,7 @@ def diff(files = [], rev1 = 'HEAD', rev2 = None, out_fd = None):
     if rev2:
         diff_str = _output(['git-diff-tree', '-p', rev1, rev2] + files)
     else:
-        os.system('git-update-index --refresh > /dev/null')
+        refresh_index()
         diff_str = _output(['git-diff-index', '-p', rev1] + files)
 
     if out_fd:
@@ -561,6 +568,7 @@ def checkout(files = [], tree_id = None, force = False):
 def switch(tree_id):
     """Switch the tree to the given id
     """
+    refresh_index()
     if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
@@ -610,7 +618,7 @@ def apply_patch(filename = None, base = None):
                 return False
             return True
 
-    os.system('git-update-index --refresh > /dev/null')
+    refresh_index()
 
     if base:
         orig_head = get_head()
