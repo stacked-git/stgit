@@ -164,5 +164,7 @@ def main():
                err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         sys.exit(2)
+    except KeyboardInterrupt:
+        sys.exit(1)
 
     sys.exit(0)
