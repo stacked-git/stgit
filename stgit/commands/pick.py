@@ -81,6 +81,8 @@ def func(parser, options, args):
         sys.stdout.flush()
 
         git.merge(bottom, git.get_head(), top)
+
+        print 'done'
     else:
         message = commit.get_log()
         author_name, author_email, author_date = \
@@ -94,8 +96,13 @@ def func(parser, options, args):
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date)
-        crt_series.push_patch(patch)
+        modified = crt_series.push_patch(patch)
 
-    print 'done'
+        if crt_series.empty_patch(patch):
+            print 'done (empty patch)'
+        elif modified:
+            print 'done (modified)'
+        else:
+            print 'done'
         
     print_crt_patch()
