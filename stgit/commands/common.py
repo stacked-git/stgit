@@ -68,6 +68,11 @@ def git_id(string):
             return series.get_patch(patch_name).get_top()
         elif patch_id == 'bottom':
             return series.get_patch(patch_name).get_bottom()
+        # Note we can return None here.
+        elif patch_id == 'top.old':
+            return series.get_patch(patch_name).get_old_top()
+        elif patch_id == 'bottom.old':
+            return series.get_patch(patch_name).get_old_bottom()
 
     # base
     if patch_name == 'base' and len(string_list) == 1:

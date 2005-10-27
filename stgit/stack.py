@@ -165,6 +165,9 @@ class Patch:
         elif os.path.isfile(fname):
             os.remove(fname)
 
+    def get_old_bottom(self):
+        return self.__get_field('bottom.old')
+
     def get_bottom(self):
         return self.__get_field('bottom')
 
@@ -176,6 +179,9 @@ class Patch:
             else:
                 self.__set_field('bottom.old', None)
         self.__set_field('bottom', string)
+
+    def get_old_top(self):
+        return self.__get_field('top.old')
 
     def get_top(self):
         return self.__get_field('top')
