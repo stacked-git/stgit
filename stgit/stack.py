@@ -638,6 +638,7 @@ class Series:
         top = patch.get_top()
 
         ex = None
+        modified = False
 
         # top != bottom always since we have a commit for each patch
         if head == bottom:
@@ -655,6 +656,10 @@ class Series:
             # Try the fast applying first. If this fails, fall back to the
             # three-way merge
             if not git.apply_diff(bottom, top):
+                # if git.apply_diff() fails, the patch requires a diff3
+                # merge and can be reported as modified
+                modified = True
+
                 # merge can fail but the patch needs to be pushed
                 try:
                     git.merge(bottom, head, top)
@@ -680,6 +685,8 @@ class Series:
                 self.refresh_patch(cache_update = False)
             else:
                 raise StackException, str(ex)
+
+        return modified
 
     def undo_push(self):
         name = self.get_current()

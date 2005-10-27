@@ -35,8 +35,8 @@ conflicts, the '--undo' option can be used to revert the patch and the
 tree to the state before the operation. Conflicts raised during the
 push operation have to be fixed and the 'resolved' command run.
 
-The 'push' command also notifies when the patch becomes empty after
-the merge operation (i.e. it was fully merged upstream)."""
+The command also notifies when the patch becomes empty (fully merged
+upstream) or is modified (three-way merged) by the 'push' operation."""
 
 options = [make_option('-a', '--all',
                        help = 'push all the unapplied patches',
@@ -140,10 +140,12 @@ def func(parser, options, args):
         print 'Pushing patch "%s"...' % p,
         sys.stdout.flush()
 
-        crt_series.push_patch(p)
+        modified = crt_series.push_patch(p)
 
         if crt_series.empty_patch(p):
             print 'done (empty patch)'
+        elif modified:
+            print 'done (modified)'
         else:
             print 'done'
     print_crt_patch()
