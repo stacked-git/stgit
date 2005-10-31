@@ -32,8 +32,8 @@ be part of the unapplied list or be the topmost one, in the latter
 case the command also popping it from the stack. Note that the
 'delete' operation is irreversible."""
 
-options = []
-
+options = [make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
     """Deletes a patch
@@ -48,4 +48,6 @@ def func(parser, options, args):
 
     crt_series.delete_patch(args[0])
     print 'Patch "%s" successfully deleted' % args[0]
-    print_crt_patch()
+
+    if not options.branch:
+        print_crt_patch()
