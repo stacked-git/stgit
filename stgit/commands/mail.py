@@ -124,18 +124,18 @@ def __get_maintainer():
     else:
         return None
 
-def __parse_addresses(string):
+def __parse_addresses(addresses):
     """Return a two elements tuple: (from, [to])
     """
-    def __addr_list(string):
-        m = re.search('[^@\s<,]+@[^>\s,]+', string);
+    def __addr_list(addrs):
+        m = re.search('[^@\s<,]+@[^>\s,]+', addrs);
         if (m == None):
             return []
-        return [ m.group() ] + __addr_list(string[m.end():])
+        return [ m.group() ] + __addr_list(addrs[m.end():])
 
     from_addr_list = []
     to_addr_list = []
-    for line in string.split('\n'):
+    for line in addresses.split('\n'):
         if re.match('from:\s+', line, re.I):
             from_addr_list += __addr_list(line)
         elif re.match('(to|cc|bcc):\s+', line, re.I):

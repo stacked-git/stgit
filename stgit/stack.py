@@ -64,13 +64,13 @@ def __clean_comments(f):
     f.seek(0); f.truncate()
     f.writelines(lines)
 
-def edit_file(series, string, comment, show_patch = True):
+def edit_file(series, line, comment, show_patch = True):
     fname = '.stgit.msg'
     tmpl = os.path.join(git.base_dir, 'patchdescr.tmpl')
 
     f = file(fname, 'w+')
-    if string:
-        print >> f, string
+    if line:
+        print >> f, line
     elif os.path.isfile(tmpl):
         print >> f, file(tmpl).read().rstrip()
     else:
@@ -108,12 +108,12 @@ def edit_file(series, string, comment, show_patch = True):
 
     __clean_comments(f)
     f.seek(0)
-    string = f.read()
+    result = f.read()
 
     f.close()
     os.remove(fname)
 
-    return string
+    return result
 
 #
 # Classes
@@ -150,18 +150,18 @@ class Patch:
     def __get_field(self, name, multiline = False):
         id_file = os.path.join(self.__dir, name)
         if os.path.isfile(id_file):
-            string = read_string(id_file, multiline)
-            if string == '':
+            line = read_string(id_file, multiline)
+            if line == '':
                 return None
             else:
-                return string
+                return line
         else:
             return None
 
-    def __set_field(self, name, string, multiline = False):
+    def __set_field(self, name, value, multiline = False):
         fname = os.path.join(self.__dir, name)
-        if string and string != '':
-            write_string(fname, string, multiline)
+        if value and value != '':
+            write_string(fname, value, multiline)
         elif os.path.isfile(fname):
             os.remove(fname)
 
@@ -171,14 +171,14 @@ class Patch:
     def get_bottom(self):
         return self.__get_field('bottom')
 
-    def set_bottom(self, string, backup = False):
+    def set_bottom(self, value, backup = False):
         if backup:
             curr = self.__get_field('bottom')
-            if curr != string:
+            if curr != value:
                 self.__set_field('bottom.old', curr)
             else:
                 self.__set_field('bottom.old', None)
-        self.__set_field('bottom', string)
+        self.__set_field('bottom', value)
 
     def get_old_top(self):
         return self.__get_field('top.old')
@@ -186,14 +186,14 @@ class Patch:
     def get_top(self):
         return self.__get_field('top')
 
-    def set_top(self, string, backup = False):
+    def set_top(self, value, backup = False):
         if backup:
             curr = self.__get_field('top')
-            if curr != string:
+            if curr != value:
                 self.__set_field('top.old', curr)
             else:
                 self.__set_field('top.old', None)
-        self.__set_field('top', string)
+        self.__set_field('top', value)
 
     def restore_old_boundaries(self):
         bottom = self.__get_field('bottom.old')
@@ -209,46 +209,46 @@ class Patch:
     def get_description(self):
         return self.__get_field('description', True)
 
-    def set_description(self, string):
-        self.__set_field('description', string, True)
+    def set_description(self, line):
+        self.__set_field('description', line, True)
 
     def get_authname(self):
         return self.__get_field('authname')
 
-    def set_authname(self, string):
-        if not string and config.has_option('stgit', 'authname'):
-            string = config.get('stgit', 'authname')
-        self.__set_field('authname', string)
+    def set_authname(self, name):
+        if not name and config.has_option('stgit', 'authname'):
+            name = config.get('stgit', 'authname')
+        self.__set_field('authname', name)
 
     def get_authemail(self):
         return self.__get_field('authemail')
 
-    def set_authemail(self, string):
-        if not string and config.has_option('stgit', 'authemail'):
-            string = config.get('stgit', 'authemail')
-        self.__set_field('authemail', string)
+    def set_authemail(self, address):
+        if not address and config.has_option('stgit', 'authemail'):
+            address = config.get('stgit', 'authemail')
+        self.__set_field('authemail', address)
 
     def get_authdate(self):
         return self.__get_field('authdate')
 
-    def set_authdate(self, string):
-        self.__set_field('authdate', string)
+    def set_authdate(self, authdate):
+        self.__set_field('authdate', authdate)
 
     def get_commname(self):
         return self.__get_field('commname')
 
-    def set_commname(self, string):
-        if not string and config.has_option('stgit', 'commname'):
-            string = config.get('stgit', 'commname')
-        self.__set_field('commname', string)
+    def set_commname(self, name):
+        if not name and config.has_option('stgit', 'commname'):
+            name = config.get('stgit', 'commname')
+        self.__set_field('commname', name)
 
     def get_commemail(self):
         return self.__get_field('commemail')
 
-    def set_commemail(self, string):
-        if not string and config.has_option('stgit', 'commemail'):
-            string = config.get('stgit', 'commemail')
-        self.__set_field('commemail', string)
+    def set_commemail(self, address):
+        if not address and config.has_option('stgit', 'commemail'):
+            address = config.get('stgit', 'commemail')
+        self.__set_field('commemail', address)
 
 
 class Series:

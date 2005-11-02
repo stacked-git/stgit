@@ -23,44 +23,44 @@ def read_string(filename, multiline = False):
     """
     f = file(filename, 'r')
     if multiline:
-        string = f.read()
+        result = f.read()
     else:
-        string = f.readline().strip()
+        result = f.readline().strip()
     f.close()
-    return string
+    return result
 
-def write_string(filename, string, multiline = False):
-    """Writes string to file and truncates it
+def write_string(filename, line, multiline = False):
+    """Writes 'line' to file and truncates it
     """
     f = file(filename, 'w+')
     if multiline:
-        f.write(string)
+        f.write(line)
     else:
-        print >> f, string
+        print >> f, line
     f.close()
 
-def append_strings(filename, strings):
-    """Appends string sequence to file
+def append_strings(filename, lines):
+    """Appends 'lines' sequence to file
     """
     f = file(filename, 'a+')
-    for string in strings:
-        print >> f, string
+    for line in lines:
+        print >> f, line
     f.close()
 
-def append_string(filename, string):
-    """Appends string to file
+def append_string(filename, line):
+    """Appends 'line' to file
     """
     f = file(filename, 'a+')
-    print >> f, string
+    print >> f, line
     f.close()
 
-def insert_string(filename, string):
-    """Inserts a string at the beginning of the file
+def insert_string(filename, line):
+    """Inserts 'line' at the beginning of the file
     """
     f = file(filename, 'r+')
     lines = f.readlines()
     f.seek(0); f.truncate()
-    print >> f, string
+    print >> f, line
     f.writelines(lines)
     f.close()
 

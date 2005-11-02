@@ -126,10 +126,10 @@ def _input(cmd, file_desc):
 
 def _output(cmd):
     p=popen2.Popen3(cmd, True)
-    string = p.fromchild.read()
+    output = p.fromchild.read()
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
-    return string
+    return output
 
 def _output_one_line(cmd, file_desc = None):
     p=popen2.Popen3(cmd, True)
@@ -137,10 +137,10 @@ def _output_one_line(cmd, file_desc = None):
         for line in file_desc:
             p.tochild.write(line)
         p.tochild.close()
-    string = p.fromchild.readline().strip()
+    output = p.fromchild.readline().strip()
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
-    return string
+    return output
 
 def _output_lines(cmd):
     p=popen2.Popen3(cmd, True)
@@ -540,30 +540,30 @@ def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
     p=popen2.Popen3('git-apply --stat')
     diff(files, rev1, rev2, p.tochild)
     p.tochild.close()
-    str = p.fromchild.read().rstrip()
+    diff_str = p.fromchild.read().rstrip()
     if p.wait():
         raise GitException, 'git.diffstat failed'
-    return str
+    return diff_str
 
 def files(rev1, rev2):
     """Return the files modified between rev1 and rev2
     """
 
-    str = ''
+    result = ''
     for line in _output_lines('git-diff-tree -r %s %s' % (rev1, rev2)):
-        str += '%s %s\n' % tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+        result += '%s %s\n' % tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
 
-    return str.rstrip()
+    return result.rstrip()
 
 def barefiles(rev1, rev2):
     """Return the files modified between rev1 and rev2, without status info
     """
 
-    str = ''
+    result = ''
     for line in _output_lines('git-diff-tree -r %s %s' % (rev1, rev2)):
-        str += '%s\n' % line.rstrip().split(' ',4)[-1].split('\t',1)[-1]
+        result += '%s\n' % line.rstrip().split(' ',4)[-1].split('\t',1)[-1]
 
-    return str.rstrip()
+    return result.rstrip()
 
 def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files

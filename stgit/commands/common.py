@@ -33,29 +33,29 @@ class CmdException(Exception):
 
 
 # Utility functions
-def git_id(string):
+def git_id(rev):
     """Return the GIT id
     """
-    if not string:
+    if not rev:
         return None
     
-    string_list = string.split('/')
-    if len(string_list) == 2:
-        patch_id = string_list[1]
+    rev_list = rev.split('/')
+    if len(rev_list) == 2:
+        patch_id = rev_list[1]
         if not patch_id:
             patch_id = 'top'
-    elif len(string_list) == 1:
+    elif len(rev_list) == 1:
         patch_id = 'top'
     else:
         patch_id = None
 
-    patch_branch = string_list[0].split('@')
+    patch_branch = rev_list[0].split('@')
     if len(patch_branch) == 1:
         series = crt_series
     elif len(patch_branch) == 2:
         series = stack.Series(patch_branch[1])
     else:
-        raise CmdException, 'Unknown id: %s' % string
+        raise CmdException, 'Unknown id: %s' % rev
 
     patch_name = patch_branch[0]
     if not patch_name:
@@ -77,11 +77,11 @@ def git_id(string):
             return series.get_patch(patch_name).get_old_bottom()
 
     # base
-    if patch_name == 'base' and len(string_list) == 1:
+    if patch_name == 'base' and len(rev_list) == 1:
         return read_string(series.get_base_file())
 
     # anything else failed
-    return git.rev_parse(string)
+    return git.rev_parse(rev)
 
 def check_local_changes():
     if git.local_changes():
@@ -132,24 +132,24 @@ def resolved_all(reset = None):
             resolved(filename, reset)
         os.remove(os.path.join(git.base_dir, 'conflicts'))
 
-def name_email(string):
+def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' string
     """
-    string = re.sub('([^\w\s<>@.])', '\\\\\\1', string)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*$', string)
+    address = re.sub('([^\w\s<>@.])', '\\\\\\1', address)
+    str_list = re.findall('^(.*)\s*<(.*)>\s*$', address)
     if not str_list:
-        raise CmdException, 'Incorrect "name <email>" string: %s' % string
+        raise CmdException, 'Incorrect "name <email>" string: %s' % address
 
     return str_list[0]
 
-def name_email_date(string):
+def name_email_date(address):
     """Return a tuple consisting of the name, email and date parsed
     from a 'name <email> date' string
     """
-    string = re.sub('([^\w\s<>@.])', '\\\\\\1', string)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', string)
+    address = re.sub('([^\w\s<>@.])', '\\\\\\1', address)
+    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
     if not str_list:
-        raise CmdException, 'Incorrect "name <email> date" string: %s' % string
+        raise CmdException, 'Incorrect "name <email> date" string: %s' % address
 
     return str_list[0]
