@@ -638,11 +638,11 @@ def apply_patch(filename = None, base = None):
                 return False
             return True
 
-    refresh_index()
-
     if base:
         orig_head = get_head()
         switch(base)
+    else:
+        refresh_index()         # needed since __apply_patch() doesn't do it
 
     if not __apply_patch():
         if base:
