@@ -70,7 +70,7 @@ def print_branch(branch_name):
 
     branch = stack.Series(branch_name)
 
-    if os.path.isdir(os.path.join(git.base_dir, 'patches', branch_name)):
+    if branch.is_initialised():
         initialized = 's'
     if is_current_branch(branch_name):
         current = '>'
@@ -156,19 +156,19 @@ def func(parser, options, args):
     elif options.protect:
 
         if len(args) == 0:
-            branch = git.get_head_file()
+            branch_name = git.get_head_file()
         elif len(args) == 1:
-            branch = args[0]
+            branch_name = args[0]
         else:
             parser.error('incorrect number of arguments')
+        branch = stack.Series(branch_name)
 
-        base = os.path.join(git.base_dir, 'refs', 'bases', branch)
-        if not os.path.isfile(base):
-            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
+        if not branch.is_initialised():
+            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch_name
 
-        print 'Protecting branch "%s"...' % branch,
+        print 'Protecting branch "%s"...' % branch_name,
         sys.stdout.flush()
-        stack.Series(branch).protect()
+        branch.protect()
         print 'done'
 
         return
@@ -183,19 +183,19 @@ def func(parser, options, args):
     elif options.unprotect:
 
         if len(args) == 0:
-            branch = git.get_head_file()
+            branch_name = git.get_head_file()
         elif len(args) == 1:
-            branch = args[0]
+            branch_name = args[0]
         else:
             parser.error('incorrect number of arguments')
+        branch = stack.Series(branch_name)
 
-        base = os.path.join(git.base_dir, 'refs', 'bases', branch)
-        if not os.path.isfile(base):
-            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch
+        if not branch.is_initialised():
+            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch_name
 
-        print 'Unprotecting branch "%s"...' % branch,
+        print 'Unprotecting branch "%s"...' % branch_name,
         sys.stdout.flush()
-        stack.Series(branch).unprotect()
+        branch.unprotect()
         print 'done'
 
         return

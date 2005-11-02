@@ -378,12 +378,17 @@ class Series:
             return True
         return git.get_head() == Patch(crt, self.__patch_dir).get_top()
 
+    def is_initialised(self):
+        """Checks if series is already initialised
+        """
+        return os.path.isdir(self.__patch_dir)
+
     def init(self):
         """Initialises the stgit series
         """
         bases_dir = os.path.join(git.base_dir, 'refs', 'bases')
 
-        if os.path.isdir(self.__patch_dir):
+        if self.is_initialised():
             raise StackException, self.__patch_dir + ' already exists'
         os.makedirs(self.__patch_dir)
 
@@ -398,7 +403,7 @@ class Series:
     def delete(self, force = False):
         """Deletes an stgit series
         """
-        if os.path.isdir(self.__patch_dir):
+        if self.is_initialised():
             patches = self.get_unapplied() + self.get_applied()
             if not force and patches:
                 raise StackException, \
