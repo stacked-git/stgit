@@ -23,7 +23,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'pull the changes from the remote repository'
+help = 'clone a remote repository into local storage'
 usage = """%prog [options] <repository> <dir>
 
 Clone a GIT <repository> into the local <dir> and initialise the
