@@ -147,8 +147,8 @@ def func(parser, options, args):
         patch = crt_series.get_patch(p)
 
         tmpl_dict = {'description': patch.get_description().rstrip(),
-                     'diffstat': git.diffstat(rev1 = git_id('%s/bottom' % p),
-                                              rev2 = git_id('%s/top' % p)),
+                     'diffstat': git.diffstat(rev1 = patch.get_bottom(),
+                                              rev2 = patch.get_top()),
                      'authname': patch.get_authname(),
                      'authemail': patch.get_authemail(),
                      'authdate': patch.get_authdate(),
@@ -170,8 +170,8 @@ def func(parser, options, args):
         f.write(descr)
 
         # write the diff
-        git.diff(rev1 = git_id('%s/bottom' % p),
-                 rev2 = git_id('%s/top' % p),
+        git.diff(rev1 = patch.get_bottom(),
+                 rev2 = patch.get_top(),
                  out_fd = f)
         f.close()
         patch_no += 1
