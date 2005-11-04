@@ -661,3 +661,11 @@ def clone(repository, local_dir):
     if __run('git clone', [repository, local_dir]) != 0:
         raise GitException, 'Failed "git clone %s %s"' \
               % (repository, local_dir)
+
+def modifying_revs(files, base_rev):
+    """Return the revisions from the list modifying the given files
+    """
+    cmd = ['git-rev-list', '%s..' % base_rev, '--']
+    revs = [line.strip() for line in _output_lines(cmd + files)]
+
+    return revs
