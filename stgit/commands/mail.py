@@ -128,10 +128,10 @@ def __parse_addresses(string):
     """Return a two elements tuple: (from, [to])
     """
     def __addr_list(string):
-    	m = re.search('[^@\s<,]+@[^>\s,]+', string);
-    	if (m == None):
-    		return []
-    	return [ m.group() ] + __addr_list(string[m.end():])
+        m = re.search('[^@\s<,]+@[^>\s,]+', string);
+        if (m == None):
+            return []
+        return [ m.group() ] + __addr_list(string[m.end():])
 
     from_addr_list = []
     to_addr_list = []
@@ -174,20 +174,20 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
 def __build_address_headers(options):
     headers_end = ''
     if options.to:
-    	headers_end += 'To: '
-    	for to in options.to:
-	        headers_end += '%s,' % to
-	headers_end = headers_end[:-1] + '\n'
+        headers_end += 'To: '
+        for to in options.to:
+            headers_end += '%s, ' % to
+        headers_end = headers_end[:-2] + '\n'
     if options.cc:
-    	headers_end += 'Cc: '
-    	for cc in options.cc:
-	        headers_end += '%s,' % cc
-	headers_end = headers_end[:-1] + '\n'
+        headers_end += 'Cc: '
+        for cc in options.cc:
+            headers_end += '%s, ' % cc
+        headers_end = headers_end[:-2] + '\n'
     if options.bcc:
-    	headers_end += 'Bcc: '
-    	for bcc in options.bcc:
-	        headers_end += '%s,' % bcc
-	headers_end = headers_end[:-1] + '\n'
+        headers_end += 'Bcc: '
+        for bcc in options.bcc:
+            headers_end += '%s, ' % bcc
+        headers_end = headers_end[:-2] + '\n'
     return headers_end
 
 def __build_cover(tmpl, total_nr, msg_id, options):
