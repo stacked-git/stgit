@@ -569,7 +569,7 @@ def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
     """
     if not files:
-        files = None
+        files = []
 
     if tree_id and __run('git-read-tree -m', [tree_id]) != 0:
         raise GitException, 'Failed git-read-tree -m %s' % tree_id
