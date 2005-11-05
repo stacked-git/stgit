@@ -400,6 +400,24 @@ class Series:
         create_empty_file(self.__descr_file)
         self.__begin_stack_check()
 
+    def rename(self, to_name):
+        """Renames a series
+        """
+        to_stack = Series(to_name)
+        if os.path.isdir(to_stack.__patch_dir):
+            raise StackException, '"%s" already exists' % to_stack.__patch_dir
+        if os.path.isfile(to_stack.__base_file):
+            raise StackException, '"%s" already exists' % to_stack.__base_file
+
+        git.rename_branch(self.__name, to_name)
+
+        if os.path.isdir(self.__patch_dir):
+            os.rename(self.__patch_dir, to_stack.__patch_dir)
+        if os.path.isfile(self.__base_file):
+            os.rename(self.__base_file, to_stack.__base_file)
+
+        self.__init__(to_name)
+
     def delete(self, force = False):
         """Deletes an stgit series
         """

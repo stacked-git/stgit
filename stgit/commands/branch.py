@@ -95,28 +95,6 @@ def delete_branch(doomed_name, force = False):
 
     print 'Branch "%s" has been deleted.' % doomed_name
 
-def rename_branch(from_name, to_name):
-    if from_name == 'master':
-        raise CmdException, 'Renaming the master branch is not allowed'
-
-    to_patchdir = os.path.join(git.base_dir, 'patches', to_name)
-    if os.path.isdir(to_patchdir):
-        raise CmdException, '"%s" already exists' % to_patchdir
-    to_base = os.path.join(git.base_dir, 'refs', 'bases', to_name)
-    if os.path.isfile(to_base):
-        raise CmdException, '"%s" already exists' % to_base
-
-    git.rename_branch(from_name, to_name)
-
-    from_patchdir = os.path.join(git.base_dir, 'patches', from_name)
-    if os.path.isdir(from_patchdir):
-        os.rename(from_patchdir, to_patchdir)
-    from_base = os.path.join(git.base_dir, 'refs', 'bases', from_name)
-    if os.path.isfile(from_base):
-        os.rename(from_base, to_base)
-
-    print 'Renamed branch "%s" as "%s".' % (from_name, to_name)
-
 def func(parser, options, args):
 
     if options.create:
@@ -177,7 +155,11 @@ def func(parser, options, args):
 
         if len(args) != 2:
             parser.error('incorrect number of arguments')
-        rename_branch(args[0], args[1])
+
+        stack.Series(args[0]).rename(args[1])
+
+        print 'Renamed branch "%s" as "%s".' % (args[0], args[1])
+
         return
 
     elif options.unprotect:
