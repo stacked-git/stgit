@@ -60,10 +60,10 @@ options = [make_option('-c', '--create',
                        action = 'store_true')]
 
 
-def is_current_branch(branch_name):
-    return git.get_head_file() == branch_name
+def __is_current_branch(branch_name):
+    return crt_series.get_branch() == branch_name
 
-def print_branch(branch_name):
+def __print_branch(branch_name):
     initialized = ' '
     current = ' '
     protected = ' '
@@ -72,28 +72,36 @@ def print_branch(branch_name):
 
     if branch.is_initialised():
         initialized = 's'
-    if is_current_branch(branch_name):
+    if __is_current_branch(branch_name):
         current = '>'
     if branch.get_protected():
         protected = 'p'
     print '%s %s%s\t%s\t%s' % (current, initialized, protected, branch_name, \
                                branch.get_description())
 
-def delete_branch(doomed_name, force = False):
+def __delete_branch(doomed_name, force = False):
     doomed = stack.Series(doomed_name)
 
     if doomed.get_protected():
         raise CmdException, 'This branch is protected. Delete is not permitted'
 
-    if is_current_branch(doomed_name) and doomed_name != 'master':
-        git.switch_branch('master')
+    print 'Deleting branch "%s"...' % doomed_name,
+    sys.stdout.flush()
+
+    if __is_current_branch(doomed_name):
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
+
+        if doomed_name != 'master':
+            git.switch_branch('master')
 
     doomed.delete(force)
 
     if doomed_name != 'master':
         git.delete_branch(doomed_name)
 
-    print 'Branch "%s" has been deleted.' % doomed_name
+    print 'done'
 
 def func(parser, options, args):
 
@@ -101,6 +109,11 @@ def func(parser, options, args):
 
         if len(args) == 0 or len(args) > 2:
             parser.error('incorrect number of arguments')
+
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
+
         tree_id = None
         if len(args) == 2:
             tree_id = args[1]
@@ -115,7 +128,7 @@ def func(parser, options, args):
 
         if len(args) != 1:
             parser.error('incorrect number of arguments')
-        delete_branch(args[0], options.force)
+        __delete_branch(args[0], options.force)
         return
 
     elif options.list:
@@ -128,7 +141,7 @@ def func(parser, options, args):
 
         print 'Available branches:'
         for i in branches:
-            print_branch(i)
+            __print_branch(i)
         return
 
     elif options.protect:
@@ -142,7 +155,8 @@ def func(parser, options, args):
         branch = stack.Series(branch_name)
 
         if not branch.is_initialised():
-            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch_name
+            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
+                  % branch_name
 
         print 'Protecting branch "%s"...' % branch_name,
         sys.stdout.flush()
@@ -155,6 +169,9 @@ def func(parser, options, args):
 
         if len(args) != 2:
             parser.error('incorrect number of arguments')
+
+        if __is_current_branch(args[0]):
+            raise CmdException, 'Renaming the current branch is not supported'
 
         stack.Series(args[0]).rename(args[1])
 
@@ -173,7 +190,8 @@ def func(parser, options, args):
         branch = stack.Series(branch_name)
 
         if not branch.is_initialised():
-            raise CmdException, 'Branch "%s" is not controlled by StGit' % branch_name
+            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
+                  % branch_name
 
         print 'Unprotecting branch "%s"...' % branch_name,
         sys.stdout.flush()
@@ -184,8 +202,13 @@ def func(parser, options, args):
 
     elif len(args) == 1:
 
-        if args[0] == git.get_head_file():
-            raise CmdException, 'Branch "%s" is already the current branch' % args[0]
+        if __is_current_branch(args[0]):
+            raise CmdException, 'Branch "%s" is already the current branch' \
+                  % args[0]
+
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
 
         print 'Switching to branch "%s"...' % args[0],
         sys.stdout.flush()
