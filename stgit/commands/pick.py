@@ -80,7 +80,9 @@ def func(parser, options, args):
         print 'Folding commit %s...' % commit_id,
         sys.stdout.flush()
 
-        git.merge(bottom, git.get_head(), top)
+        # try a direct git-apply first
+        if not git.apply_diff(bottom, top):
+            git.merge(bottom, git.get_head(), top)
 
         print 'done'
     else:
