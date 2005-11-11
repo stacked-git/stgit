@@ -59,10 +59,10 @@ def func(parser, options, args):
             raise CmdException, 'No patches applied'
     else:
         patch_branch = commit_str.split('@')
-        if len(patch_branch) == 2:
-            patch = patch_branch[0]
-        elif options.name:
+        if options.name:
             patch = options.name
+        elif len(patch_branch) == 2:
+            patch = patch_branch[0]
         else:
             raise CmdException, 'Unkown patch name'
 
