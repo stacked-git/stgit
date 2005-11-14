@@ -64,7 +64,7 @@ def func(parser, options, args):
         elif len(patch_branch) == 2:
             patch = patch_branch[0]
         else:
-            raise CmdException, 'Unkown patch name'
+            raise CmdException, 'Unknown patch name'
 
     commit_id = git_id(commit_str)
     commit = git.Commit(commit_id)
