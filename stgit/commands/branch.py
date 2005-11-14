@@ -147,7 +147,7 @@ def func(parser, options, args):
     elif options.protect:
 
         if len(args) == 0:
-            branch_name = git.get_head_file()
+            branch_name = crt_series.get_branch()
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -182,7 +182,7 @@ def func(parser, options, args):
     elif options.unprotect:
 
         if len(args) == 0:
-            branch_name = git.get_head_file()
+            branch_name = crt_series.get_branch()
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -222,4 +222,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    print git.get_head_file()
+    print crt_series.get_branch()
