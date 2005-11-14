@@ -775,6 +775,9 @@ class Series:
         applied = self.get_applied()
         unapplied = self.get_unapplied()
 
+        if oldname == newname:
+            raise StackException, '"To" name and "from" name are the same'
+
         if newname in applied or newname in unapplied:
             raise StackException, 'Patch "%s" already exists' % newname
 
