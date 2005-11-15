@@ -64,8 +64,6 @@ def func(parser, options, args):
         elif rev_list_len == 2:
             rev1 = rev_list[0]
             rev2 = rev_list[1]
-            if rev2 == '':
-                rev2 = 'HEAD'
         else:
             parser.error('incorrect parameters to -r')
     else:

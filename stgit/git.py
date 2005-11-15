@@ -519,11 +519,16 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None):
     if not files:
         files = []
 
-    if rev2:
+    if rev1 and rev2:
         diff_str = _output(['git-diff-tree', '-p', rev1, rev2] + files)
-    else:
+    elif rev1 or rev2:
         refresh_index()
-        diff_str = _output(['git-diff-index', '-p', rev1] + files)
+        if rev2:
+            diff_str = _output(['git-diff-index', '-p', '-R', rev2] + files)
+        else:
+            diff_str = _output(['git-diff-index', '-p', rev1] + files)
+    else:
+        diff_str = ''
 
     if out_fd:
         out_fd.write(diff_str)
