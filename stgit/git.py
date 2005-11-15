@@ -33,7 +33,6 @@ if 'GIT_DIR' in os.environ:
 else:
     base_dir = '.git'
 
-head_link = os.path.join(base_dir, 'HEAD')
 
 #
 # Classes
