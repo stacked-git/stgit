@@ -404,16 +404,17 @@ class Series:
         """Renames a series
         """
         to_stack = Series(to_name)
-        if os.path.isdir(to_stack.__patch_dir):
-            raise StackException, '"%s" already exists' % to_stack.__patch_dir
-        if os.path.isfile(to_stack.__base_file):
-            raise StackException, '"%s" already exists' % to_stack.__base_file
+
+        if to_stack.is_initialised():
+            raise StackException, '"%s" already exists' % to_stack.get_branch()
+        if os.path.exists(to_stack.__base_file):
+            os.remove(to_stack.__base_file)
 
         git.rename_branch(self.__name, to_name)
 
         if os.path.isdir(self.__patch_dir):
             os.rename(self.__patch_dir, to_stack.__patch_dir)
-        if os.path.isfile(self.__base_file):
+        if os.path.exists(self.__base_file):
             os.rename(self.__base_file, to_stack.__base_file)
 
         self.__init__(to_name)
@@ -430,20 +431,20 @@ class Series:
             for p in patches:
                 self.delete_patch(p)
 
-            if os.path.isfile(self.__applied_file):
+            if os.path.exists(self.__applied_file):
                 os.remove(self.__applied_file)
-            if os.path.isfile(self.__unapplied_file):
+            if os.path.exists(self.__unapplied_file):
                 os.remove(self.__unapplied_file)
-            if os.path.isfile(self.__current_file):
+            if os.path.exists(self.__current_file):
                 os.remove(self.__current_file)
-            if os.path.isfile(self.__descr_file):
+            if os.path.exists(self.__descr_file):
                 os.remove(self.__descr_file)
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:
                 print 'Series directory %s is not empty.' % self.__name
 
-        if os.path.isfile(self.__base_file):
+        if os.path.exists(self.__base_file):
             os.remove(self.__base_file)
 
     def refresh_patch(self, message = None, edit = False, show_patch = False,
