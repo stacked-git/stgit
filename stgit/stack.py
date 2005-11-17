@@ -427,9 +427,8 @@ class Series:
             if not force and patches:
                 raise StackException, \
                       'Cannot delete: the series still contains patches'
-            patches.reverse()
             for p in patches:
-                self.delete_patch(p)
+                Patch(p, self.__patch_dir).delete()
 
             if os.path.exists(self.__applied_file):
                 os.remove(self.__applied_file)
