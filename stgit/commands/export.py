@@ -78,6 +78,7 @@ def func(parser, options, args):
     series = file(os.path.join(dirname, 'series'), 'w+')
 
     applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
 
     if options.range:
         boundaries = options.range.split(':')
