@@ -39,6 +39,9 @@ options = [make_option('-b', '--branch',
            make_option('-e', '--empty',
                        help = 'check whether patches are empty '
                        '(much slower)',
+                       action = 'store_true'),
+           make_option('-s', '--short',
+                       help = 'list just the patches around the topmost patch',
                        action = 'store_true') ]
 
 
@@ -66,6 +69,13 @@ def func(parser, options, args):
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
+
+    if options.short:
+        if len(applied) > 5:
+            applied = applied[-6:]
+        if len(unapplied) > 5:
+            unapplied = unapplied[:5]
+
     patches = applied + unapplied
 
     max_len = 0
