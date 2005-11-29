@@ -66,7 +66,7 @@ def __clean_comments(f):
 
 def edit_file(series, line, comment, show_patch = True):
     fname = '.stgit.msg'
-    tmpl = os.path.join(git.base_dir, 'patchdescr.tmpl')
+    tmpl = os.path.join(git.get_base_dir(), 'patchdescr.tmpl')
 
     f = file(fname, 'w+')
     if line:
@@ -263,9 +263,10 @@ class Series:
             self.__name = git.get_head_file()
 
         if self.__name:
-            self.__patch_dir = os.path.join(git.base_dir, 'patches',
+            base_dir = git.get_base_dir()
+            self.__patch_dir = os.path.join(base_dir, 'patches',
                                             self.__name)
-            self.__base_file = os.path.join(git.base_dir, 'refs', 'bases',
+            self.__base_file = os.path.join(base_dir, 'refs', 'bases',
                                             self.__name)
             self.__applied_file = os.path.join(self.__patch_dir, 'applied')
             self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
@@ -386,7 +387,7 @@ class Series:
     def init(self):
         """Initialises the stgit series
         """
-        bases_dir = os.path.join(git.base_dir, 'refs', 'bases')
+        bases_dir = os.path.join(git.get_base_dir(), 'refs', 'bases')
 
         if self.is_initialised():
             raise StackException, self.__patch_dir + ' already exists'

@@ -132,7 +132,7 @@ def func(parser, options, args):
     else:
         patch_tmpl_list = []
 
-    patch_tmpl_list += [os.path.join(git.base_dir, 'patchexport.tmpl'),
+    patch_tmpl_list += [os.path.join(git.get_base_dir(), 'patchexport.tmpl'),
                         os.path.join(sys.prefix,
                                      'share/stgit/templates/patchexport.tmpl')]
     tmpl = ''

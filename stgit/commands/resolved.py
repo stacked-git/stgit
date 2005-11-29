@@ -65,8 +65,8 @@ def func(parser, options, args):
 
     # save or remove the conflicts file
     if conflicts == []:
-        os.remove(os.path.join(git.base_dir, 'conflicts'))
+        os.remove(os.path.join(git.get_base_dir(), 'conflicts'))
     else:
-        f = file(os.path.join(git.base_dir, 'conflicts'), 'w+')
+        f = file(os.path.join(git.get_base_dir(), 'conflicts'), 'w+')
         f.writelines([line + '\n' for line in conflicts])
         f.close()

@@ -136,7 +136,7 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('incorrect number of arguments')
 
-        branches = os.listdir(os.path.join(git.base_dir, 'refs', 'heads'))
+        branches = os.listdir(os.path.join(git.get_base_dir(), 'refs', 'heads'))
         branches.sort()
         max_len = max([len(i) for i in branches])
 

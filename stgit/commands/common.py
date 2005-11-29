@@ -96,7 +96,7 @@ def check_head_top_equal():
               '  are doing, use the "refresh -f" command'
 
 def check_conflicts():
-    if os.path.exists(os.path.join(git.base_dir, 'conflicts')):
+    if os.path.exists(os.path.join(git.get_base_dir(), 'conflicts')):
         raise CmdException, 'Unsolved conflicts. Please resolve them first'
 
 def print_crt_patch(branch = None):
@@ -130,7 +130,7 @@ def resolved_all(reset = None):
     if conflicts:
         for filename in conflicts:
             resolved(filename, reset)
-        os.remove(os.path.join(git.base_dir, 'conflicts'))
+        os.remove(os.path.join(git.get_base_dir(), 'conflicts'))
 
 def name_email(address):
     """Return a tuple consisting of the name and email parsed from a

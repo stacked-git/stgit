@@ -27,12 +27,6 @@ class GitException(Exception):
     pass
 
 
-# Different start-up variables read from the environment
-if 'GIT_DIR' in os.environ:
-    base_dir = os.environ['GIT_DIR']
-else:
-    base_dir = '.git'
-
 
 #
 # Classes
@@ -87,6 +81,15 @@ __commits = dict()
 #
 # Functions
 #
+
+def get_base_dir():
+    """Different start-up variables read from the environment
+    """
+    if 'GIT_DIR' in os.environ:
+        return os.environ['GIT_DIR']
+    else:
+        return _output_one_line('git-rev-parse --git-dir')
+
 def get_commit(id_hash):
     """Commit objects factory. Save/look-up them in the __commits
     dictionary
@@ -103,7 +106,7 @@ def get_commit(id_hash):
 def get_conflicts():
     """Return the list of file conflicts
     """
-    conflicts_file = os.path.join(base_dir, 'conflicts')
+    conflicts_file = os.path.join(get_base_dir(), 'conflicts')
     if os.path.isfile(conflicts_file):
         f = file(conflicts_file)
         names = [line.strip() for line in f.readlines()]
@@ -167,9 +170,6 @@ def __run(cmd, args=None):
         return r
     return 0
 
-def __check_base_dir():
-    return os.path.isdir(base_dir)
-
 def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True):
     """Returns a list of pairs - [status, filename]
@@ -182,7 +182,7 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # unknown files
     if unknown:
-        exclude_file = os.path.join(base_dir, 'info', 'exclude')
+        exclude_file = os.path.join(get_base_dir(), 'info', 'exclude')
         base_exclude = ['--exclude=%s' % s for s in
                         ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
         base_exclude.append('--exclude-per-directory=.gitignore')
@@ -296,8 +296,8 @@ def create_branch(new_branch, tree_id = None):
     if tree_id:
         switch(tree_id)
 
-    if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
-        os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
+    if os.path.isfile(os.path.join(get_base_dir(), 'MERGE_HEAD')):
+        os.remove(os.path.join(get_base_dir(), 'MERGE_HEAD'))
 
 def switch_branch(name):
     """Switch to a git branch
@@ -316,8 +316,8 @@ def switch_branch(name):
         __head = tree_id
     set_head_file(new_head)
 
-    if os.path.isfile(os.path.join(base_dir, 'MERGE_HEAD')):
-        os.remove(os.path.join(base_dir, 'MERGE_HEAD'))
+    if os.path.isfile(os.path.join(get_base_dir(), 'MERGE_HEAD')):
+        os.remove(os.path.join(get_base_dir(), 'MERGE_HEAD'))
 
 def delete_branch(name):
     """Delete a git branch
@@ -325,7 +325,7 @@ def delete_branch(name):
     branch_head = os.path.join('refs', 'heads', name)
     if not branch_exists(branch_head):
         raise GitException, 'Branch "%s" does not exist' % name
-    os.remove(os.path.join(base_dir, branch_head))
+    os.remove(os.path.join(get_base_dir(), branch_head))
 
 def rename_branch(from_name, to_name):
     """Rename a git branch
@@ -339,7 +339,8 @@ def rename_branch(from_name, to_name):
 
     if get_head_file() == from_name:
         set_head_file(to_head)
-    os.rename(os.path.join(base_dir, from_head), os.path.join(base_dir, to_head))
+    os.rename(os.path.join(get_base_dir(), from_head), \
+              os.path.join(get_base_dir(), to_head))
 
 def add(names):
     """Add the files or recursively add the directory contents
