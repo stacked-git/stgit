@@ -63,7 +63,7 @@ options = [make_option('-c', '--create',
 def __is_current_branch(branch_name):
     return crt_series.get_branch() == branch_name
 
-def __print_branch(branch_name):
+def __print_branch(branch_name, length):
     initialized = ' '
     current = ' '
     protected = ' '
@@ -76,8 +76,8 @@ def __print_branch(branch_name):
         current = '>'
     if branch.get_protected():
         protected = 'p'
-    print '%s %s%s\t%s\t%s' % (current, initialized, protected, branch_name, \
-                               branch.get_description())
+    print current + ' ' + initialized + protected + '\t' + \
+          branch_name.ljust(length) + '  | ' + branch.get_description()
 
 def __delete_branch(doomed_name, force = False):
     doomed = stack.Series(doomed_name)
@@ -138,10 +138,11 @@ def func(parser, options, args):
 
         branches = os.listdir(os.path.join(git.base_dir, 'refs', 'heads'))
         branches.sort()
+        max_len = max([len(i) for i in branches])
 
         print 'Available branches:'
         for i in branches:
-            __print_branch(i)
+            __print_branch(i, max_len)
         return
 
     elif options.protect:
