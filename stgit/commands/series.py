@@ -33,11 +33,30 @@ prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('-d', '--description',
+                       help = 'show a show description for each patch',
+                       action = 'store_true'),
            make_option('-e', '--empty',
                        help = 'check whether patches are empty '
                        '(much slower)',
                        action = 'store_true') ]
 
+
+def __get_description(patch):
+    """Extract and return a patch's short description
+    """
+    p = crt_series.get_patch(patch)
+    descr = p.get_description().strip()
+    descr_lines = descr.split('\n')
+    return descr_lines[0].rstrip()
+
+def __print_patch(patch, prefix, empty_prefix, length, options):
+    if options.empty and crt_series.empty_patch(patch):
+        prefix = empty_prefix
+    if options.description:
+        print prefix + patch.ljust(length) + '  | ' + __get_description(patch)
+    else:
+        print prefix + patch
 
 def func(parser, options, args):
     """Show the patch series
@@ -46,21 +65,18 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
+    patches = applied + unapplied
+
+    max_len = 0
+    if len(patches) > 0:
+        max_len = max([len(i) for i in patches])
+
     if len(applied) > 0:
         for p in applied [0:-1]:
-            if options.empty and crt_series.empty_patch(p):
-                print '0', p
-            else:
-                print '+', p
-        p = applied[-1]
+            __print_patch(p, '+ ', '0 ', max_len, options)
 
-        if options.empty and crt_series.empty_patch(p):
-            print '0>%s' % p
-        else:
-            print '> %s' % p
+        __print_patch(applied[-1], '> ', '0>', max_len, options)
 
-    for p in crt_series.get_unapplied():
-        if options.empty and crt_series.empty_patch(p):
-            print '0', p
-        else:
-            print '-', p
+    for p in unapplied:
+        __print_patch(p, '- ', '0 ', max_len, options)
