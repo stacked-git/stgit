@@ -141,6 +141,10 @@ def func(parser, options, args):
             tmpl = file(patch_tmpl).read()
             break
 
+    # note the base commit for this series
+    base_commit = crt_series.get_patch(patches[0]).get_bottom()
+    print >> series, '# This series applies on GIT commit %s' % base_commit
+
     patch_no = 1;
     for p in patches:
         pname = p
