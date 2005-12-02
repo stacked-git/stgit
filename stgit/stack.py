@@ -635,6 +635,9 @@ class Series:
             forwarded+=1
             unapplied.remove(name)
 
+        if forwarded == 0:
+            return 0
+
         git.switch(top)
 
         append_strings(self.__applied_file, names[0:forwarded])
