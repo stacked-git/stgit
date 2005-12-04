@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys, os, time
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -29,16 +29,19 @@ from stgit import stack, git
 help = 'manage development branches'
 usage = """%prog [options] branch-name [commit-id]
 
-Create, list, switch between, rename, or delete development branches
+Create, clone, switch between, rename, or delete development branches
 within a git repository.  By default, a single branch called 'master'
 is always created in a new repository.  This subcommand allows you to
-manage several patch series in the same repository.
+manage several patch series in the same repository via GIT branches.
 
 When displaying the branches, the names can be prefixed with
 's' (StGIT managed) or 'p' (protected)."""
 
 options = [make_option('-c', '--create',
                        help = 'create a new development branch',
+                       action = 'store_true'),
+           make_option('--clone',
+                       help = 'clone the contents of the current branch',
                        action = 'store_true'),
            make_option('--delete',
                        help = 'delete an existing development branch',
@@ -122,6 +125,27 @@ def func(parser, options, args):
         stack.Series(args[0]).init()
 
         print 'Branch "%s" created.' % args[0]
+        return
+
+    elif options.clone:
+
+        if len(args) == 0:
+            clone = crt_series.get_branch() + \
+                    time.strftime('-%C%y%m%d-%H%M%S')
+        elif len(args) == 1:
+            clone = args[0]
+        else:
+            parser.error('incorrect number of arguments')
+
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
+
+        print 'Cloning current branch to "%s"...' % clone,
+        sys.stdout.flush()
+        crt_series.clone(clone)
+        print 'done'
+
         return
 
     elif options.delete:

@@ -420,6 +420,33 @@ class Series:
 
         self.__init__(to_name)
 
+    def clone(self, target_series):
+        """Clones a series
+        """
+        base = read_string(self.get_base_file())
+        git.create_branch(target_series, tree_id = base)
+        Series(target_series).init()
+        new_series = Series(target_series)
+
+        # generate an artificial description file
+        write_string(new_series.__descr_file, 'clone of "%s"' % self.__name)
+
+        # clone self's entire series as unapplied patches
+        patches = self.get_applied() + self.get_unapplied()
+        patches.reverse()
+        for p in patches:
+            patch = self.get_patch(p)
+            new_series.new_patch(p, message = patch.get_description(),
+                                 can_edit = False, unapplied = True,
+                                 bottom = patch.get_bottom(),
+                                 top = patch.get_top(),
+                                 author_name = patch.get_authname(),
+                                 author_email = patch.get_authemail(),
+                                 author_date = patch.get_authdate())
+
+        # fast forward the cloned series to self's top
+        new_series.forward_patches(self.get_applied())
+
     def delete(self, force = False):
         """Deletes an stgit series
         """
