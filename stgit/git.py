@@ -205,7 +205,7 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
     cache_files += [('C', filename) for filename in conflicts]
 
     # the rest
-    for line in _output_lines(['git-diff-index', '-r', tree_id] + files):
+    for line in _output_lines(['git-diff-index', tree_id] + files):
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
