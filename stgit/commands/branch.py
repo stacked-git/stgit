@@ -35,7 +35,9 @@ is always created in a new repository.  This subcommand allows you to
 manage several patch series in the same repository via GIT branches.
 
 When displaying the branches, the names can be prefixed with
-'s' (StGIT managed) or 'p' (protected)."""
+'s' (StGIT managed) or 'p' (protected).
+
+If not given any options, switch to the named branch."""
 
 options = [make_option('-c', '--create',
                        help = 'create a new development branch',
