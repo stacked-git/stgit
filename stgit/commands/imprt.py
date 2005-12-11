@@ -34,8 +34,7 @@ mail format, the Subject, From and Date headers being used for
 generating the patch information.
 
 The patch description has to be separated from the data with a '---'
-line. For a normal file, if no author information is given, the first
-'Signed-off-by:' line is used."""
+line."""
 
 options = [make_option('-m', '--mail',
                        help = 'import the patch from a standard e-mail file',
@@ -67,7 +66,43 @@ options = [make_option('-m', '--mail',
 def __end_descr(line):
     return re.match('---\s*$', line) or re.match('diff -', line) or \
             re.match('Index: ', line)
-    
+
+def __parse_description(descr):
+    """Parse the patch description and return the new description and
+    author information (if any).
+    """
+    subject = body = ''
+    authname = authemail = None
+
+    descr_lines = [line.strip() for line in descr.split('\n')]
+    if not descr_lines:
+        raise CmdException, "Empty patch description"
+
+    pos = 1
+    end = len(descr_lines)
+
+    # get the subject
+    subject = descr_lines[0]
+
+    # ignore the empty lines after subject
+    while pos < end and descr_lines[pos] == '':
+        pos += 1
+
+    # check for a "From:" line
+    if pos < end and re.match('from:\s+', descr_lines[pos], re.I):
+        auth = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+        authname, authemail = name_email(auth)
+        pos += 1
+
+        # ignore the empty lines
+        while pos < end and descr_lines[pos] == '':
+            pos += 1
+
+    # get the body
+    body = reduce(lambda x, y: x + '\n' + y, descr_lines[pos:], '').strip()
+
+    return (subject + '\n\n' + body, authname, authemail)
+
 def __parse_mail(filename = None):
     """Parse the input file in a mail format and return (description,
     authname, authemail, authdate)
@@ -118,6 +153,13 @@ def __parse_mail(filename = None):
     if filename:
         f.close()
 
+    # parse the description for author information
+    descr, descr_authname, descr_authemail = __parse_description(descr)
+    if descr_authname:
+        authname = descr_authname
+    if descr_authemail:
+        authemail = descr_authemail
+
     return (descr, authname, authemail, authdate)
 
 def __parse_patch(filename = None):
@@ -129,18 +171,11 @@ def __parse_patch(filename = None):
     else:
         f = sys.stdin
 
-    authname = authemail = authdate = None
-
     descr = ''
     while True:
         line = f.readline()
         if not line:
             break
-
-        # the first 'Signed-of-by:' is the author
-        if not authname and re.match('signed-off-by:\s+', line, re.I):
-            auth = re.findall('^.*?:\s+(.*)$', line)[0]
-            authname, authemail = name_email(auth)
 
         if __end_descr(line):
             break
@@ -148,13 +183,14 @@ def __parse_patch(filename = None):
             descr += line
     descr.rstrip()
 
-    if descr == '':
-        descr = None
-
     if filename:
         f.close()
 
-    return (descr, authname, authemail, authdate)
+    descr, authname, authemail = __parse_description(descr)
+
+    # we don't yet have an agreed place for the creation date.
+    # Just return None
+    return (descr, authname, authemail, None)
 
 def func(parser, options, args):
     """Import a GNU diff file as a new patch

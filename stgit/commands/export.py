@@ -37,6 +37,8 @@ patch format. The following variables are supported in the template
 file:
 
   %(description)s - patch description
+  %(shortdescr)s  - the first line of the patch description
+  %(longdescr)s   - the rest of the patch description, after the first line
   %(diffstat)s    - the diff statistics
   %(authname)s    - author's name
   %(authemail)s   - author's e-mail
@@ -158,7 +160,16 @@ def func(parser, options, args):
         # get the patch description
         patch = crt_series.get_patch(p)
 
+        descr = patch.get_description().strip()
+        descr_lines = descr.split('\n')
+
+        short_descr = descr_lines[0].rstrip()
+        long_descr = reduce(lambda x, y: x + '\n' + y,
+                            descr_lines[1:], '').strip()
+
         tmpl_dict = {'description': patch.get_description().rstrip(),
+                     'shortdescr': short_descr,
+                     'longdescr': long_descr,
                      'diffstat': git.diffstat(rev1 = patch.get_bottom(),
                                               rev2 = patch.get_top()),
                      'authname': patch.get_authname(),
