@@ -1,7 +1,9 @@
 The TODO list until 1.0:
 
-- prune command which preserves the unapplied patches as well
-- tag (snapshot) command
+- patch revisions support
+- make StGIT repositories safe against the 'git prune' command
+- better handling of file renaming
+- use same configuration file as GIT
 - log command (it should also show the log per single patch)
 - man page
 - regression tests
