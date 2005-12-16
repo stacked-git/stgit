@@ -1,272 +1,337 @@
-			    StGIT Tutorial
-
+StGIT Tutorial
+==============
 
 Introduction
-============
+------------
 
-StGIT is a Python application providing similar functionality to Quilt
-(i.e. pushing/popping patches to/from a stack) on top of GIT. These
-operations are performed using GIT commands and the patches are stored
-as GIT commit objects, allowing easy merging of the StGIT patches into
-other repositories using standard GIT functionality.
-
-Note that StGIT is not an SCM interface on top of GIT and it expects a
-previously initialised GIT repository (unless it is cloned using StGIT
-directly). For standard SCM operations, either use plain GIT commands
-or the Cogito tool but it is not recommended to mix them with the
-StGIT commands.
-
-For the latest version see http://www.procode.org/stgit/
+StGIT is a Python application that provides functionality similar to
+quilt (i.e. pushing/popping patches to/from a stack) using GIT instead
+of 'diff' and 'patch'. StGIT stores its patches in a GIT repository as
+normal GIT commit objects.
+StGIT is not an SCM interface on top of GIT. For standard SCM
+operations, either use GIT's porcelain commands or the Cogito tool.
+StGIT is available for download at http://www.procode.org/stgit/ .
+This tutorial assumes you are already familiar with GIT. For more
+information on GIT, see the GIT_tutorial or git(7) .
 
 
-Basic Operations
-================
-
-See the help on individual commands for the full set of options.
+Basic Operation
+===============
 
 Help
 ----
 
-For a full list of commands:
+For a full list of StGIT commands:
 
   stg help
 
-For help on individual commands:
+For help on individual subcommands:
 
   stg <cmd> (-h | --help)
 
-Repository initialisation/updating
-----------------------------------
 
-To clone a repository (all the GIT repository types are accepted):
+Repository initialisation
+-------------------------
 
-  stg clone <repository> <local-dir>
-
-To initialise an existing GIT repository to be used with StGIT (not
-needed if the cloning was done using StGIT):
+In stand-alone mode, StGIT is used in conjunction with a GIT repository
+that is already initialised (using 'git-init-db'). StGIT cannot be used
+outside of a GIT repository.
+Any branch in a GIT repository may be managed by StGIT. Each branch
+managed by StGIT contains an independent series of StGIT patches.
+To initialise an existing GIT branch to be managed by StGIT, cd into the
+top of your GIT repository, check out the branch you'd like to manage
+with StGIT, and type:
 
   stg init
 
-For people switching between multiple branches in the same repository,
-the 'init' command needs to be run for all the branches intended to be
-used with StGIT.
+Run the 'stg init' command for any pre-existing GIT branches intended to
+be used with StGIT.
+You can switch between GIT branches with:
 
-To pull the latest changes from the remote repository (defaulting to
-the value in .git/branches/origin):
+  stg branch [<branch name>]
+
+This checks out the named branch and places you at the topmost applied
+StGIT patch in that branch.
+Alternately, you can create branches using only StGIT commands, which
+will automatically prepare them for use with StGIT:
+
+  stg branch --create <new branch>
+
+
+Working with remote repositories
+--------------------------------
+
+With a single command, StGIT can create and initialize a GIT repository
+which mirrors a remote GIT repository. This is known as cloning. All GIT
+transports are supported.
+To clone a repository, use:
+
+  stg clone <repository> <local-dir>
+
+This creates a fresh local repository, initialises a GIT database in it,
+pulls the latest version of the remote, and creates and initialises a
+'master' branch for use with StGIT.
+At any time you can pull the latest changes from the remote repository.
+By default, StGIT pulls from the location stored in .git/branches/
+origin, and updates the base of the current branch.
+To pull the latest changes from a remote repository, use:
 
   stg pull [<branch> or 'origin']
 
-The 'pull' command takes care of updating all the patches in the stack
-so that they apply cleanly (the user is notified of the possible
-conflicts).
-
-Stack manipulation
-------------------
-
-To create/delete a patch:
-
-  stg new <name>
-  stg delete <name>
-
-The 'new' command also sets the topmost patch to the newly created
-one.
-
-To automatically delete the empty patches:
+This command removes all applied StGIT patches from the current branch,
+updates the branch's base commit, then attempts to re-apply the patches.
+Any merge conflicts will halt this process, allowing you to clean up the
+conflicts and continue (see below).
+If the maintainer of the remote repository includes one of your patches
+in the published repository that you pull from, StGIT can usually
+recognize that an incoming patch from the remote matches one of yours,
+and it turns your local version into an empty patch.
+To automatically delete empty patches after a pull, use:
 
   stg clean
 
-To push/pop a patch to/from the stack:
+As a convention, you should avoid working in the 'master' branch and use
+it only as a reference, since it reflects someone else's work. If you
+decide to publish your GIT repository, you'll want your own work
+separated into its own branch to make it convenient for others to pull
+just your patches.
 
-  stg push [--all | <name or first unapplied>]
-  stg pop [--all | <name or topmost>]
+Getting started: creating a patch
+---------------------------------
 
-Note that the 'push' command can apply any patch in the unapplied
-list. This is useful if one wants to reorder the patches. If there are
-conflicts, they need to be fixed and 'stg resolved' run. The 'push'
-operation can also be reverted with 'stg push --undo'.
+Changes to your working directory are saved in a patch. An StGIT patch
+is simply a saved set of modifications to your working directory, plus a
+saved description. To create an empty StGIT patch in the current branch:
 
-To rename a patch:
+  stg new <name>
 
-  stg rename <old-name> <new-name>
+To save the changes you've made (that is, to refresh a patch), use:
 
-To import an existing GNU diff patch file (defaulting to the standard
-input):
+  stg refresh
 
-  stg import [<file>]
+To discard changes in your working directory, use:
 
-To inspect the stack status:
+  git checkout -f
 
-  stg series
-  stg applied
-  stg unapplied
-  stg top
+This restores your working directory to the state it was in the last
+time the patch was refreshed.
+Modified files that haven't been saved via a refresh operation can be
+viewed with:
 
-To export a patch series (or a range of patches):
+  stg status
 
-  stg export [--range=[<patch1>[:<patch2>]]] [<dir-name or 'patches'>]
+You can view modified files that have already been saved into a patch:
 
-The 'export' command supports options to automatically number the
-patches (-n) or add the '.diff' extension (-d).
+  stg files
 
-To e-mail a patch or range of patches:
-
-  stg mail [--to=...] (--all | --range=[<patch1>[:<patch2>]] | <patch>)
-
-Changes to the topmost patch
-----------------------------
-
-Any modified file already under revision control will automatically be
-included in the topmost patch.
-
-To add/delete files to/from the topmost patch:
+The 'stg refresh' command automatically notes changes to files that
+already exist in the working directory, but you have to tell StGIT
+explicitly if you add, remove, or rename files.
+To record the addition or deletion of files in your new patch:
 
   stg add [<file>*]
   stg rm [<file>*]
 
-To inspect the tree status:
+To record the renaming of a file in your new patch, issue both of these
+commands:
 
-  stg status
+  stg rm <oldfilename>
+  stg add <newfilename>
 
-To get a diff between 2 revisions:
 
-  stg diff [-r rev1[:[rev2]]]
+Stack manipulation: managing multiple patches
+---------------------------------------------
 
-A revision name can be of the form '([patch]/[bottom | top]) | base |
-<tree-ish>' If the patch name is not specified but '/' is passed, the
-topmost patch is used. If neither 'bottom' nor 'top' follows the '/',
-the whole patch diff is displayed (this does not include the local
-changes).
+StGIT can manage more than one patch at a time. A series of StGIT
+patches in a GIT branch are known collectively as a stack. The new patch
+you created above is now the topmost patch in your stack. You can always
+see the name of the topmost (current) patch with:
 
-Note than when the first patch is pushed on the stack, the current
-HEAD is saved in the .git/refs/heads/base file for easy reference to
-the base of the stack.
+  stg top
 
-To save the tree changes to the current patch and the GIT repository:
+The topmost patch is used as the default patch for most StGIT
+operations. It is the default target of the 'stg refresh' command, for
+example.
+Patches that are pushed onto the stack are referred to as applied, and
+patches that are popped off the stack are referred to as unapplied.
+To push/pop a patch to/from a stack:
 
-  stg refresh
+  stg push [--all | <name>]
+  stg pop [--all]
 
-The 'refresh' command also allows the modification of the patch
-description and the author/maintainer information.
+The last patch you pushed is the topmost patch. This patch is always in
+the applied list; StGIT can't operate on an unapplied patch unless you
+apply it first.
+You can display the order of patches in a stack with one of these
+commands:
 
-To display the files modified by a patch (defaulting to the topmost
-one):
+  stg series
+  stg applied
+  stg unapplied
 
-  stg files [<patch>]
+By default the 'stg push' command applies the first patch in the
+unapplied list, but you can push any patch in the unapplied list by
+giving the name of the patch. This is useful if you want to reorder the
+patches in a stack.
+During a push operation, merge conflicts can occur (especially if you
+are changing the order of the patches in your stack). If the push causes
+merge conflicts, they need to be fixed and 'stg resolved' run (see
+below). A 'push' operation can also be reverted with 'stg push --undo'.
+A few more stack basics; to rename a patch:
 
+  stg rename <old-name> <new-name>
+
+To delete a patch:
+
+  stg delete <name>
+
+This permanently discards the named patch. In other words, the patch no
+longer appears in either the applied or unapplied lists, and cannot be
+reapplied to the series.
+You may want to make patches in your stack a permanent part of your GIT
+repository, for example if you are publishing your repository to others.
+To do this, use:
+
+  stg commit
+
+This merges all applied patches in your patch series into the GIT
+repository and removes them from your stack. Use this command only if
+you want to permanently store the applied patches and no longer manage
+them with StGIT.
+
+Converting between StGIT patches and text diffs
+-----------------------------------------------
+
+As mentioned in the introduction, StGIT stores modifications to your
+working tree in the form of GIT commits. This means if you want to apply
+your changes to a tree not managed by GIT, or send your changes to
+someone else in e-mail, you need to convert your StGIT patches into
+normal textual diffs that can be applied with the GNU 'patch' command.
+The 'stg diff' command is a powerful way to generate and view textual
+diffs of patches managed by StGIT.
+To view a diff of the topmost patch:
+
+  stg diff -r /
+
+Observe that this does not show any changes in the working directory
+that have not been saved by a 'refresh'. To view just the changes you've
+made since the last refresh, use:
+
+  stg diff -r /top
+
+If you want to see the changes made by the patch combined with any
+unsaved changes in the working directory, try:
+
+  stg diff -r /bottom
+
+You can also show the changes to any patch in your stack with:
+
+  stg diff -r <patch>/
+
+Use this command to view all the changes in your stack up through the
+current patch:
+
+  stg diff -r base
+
+The 'stg diff' command supports a number of other features that are very
+useful. Be sure to take a look at the help information for this command.
+To convert your StGIT patches into patch files:
+
+  stg export [--range=[<patch1>[:<patch2>]]] [<dir-name>]
+
+The 'export' command supports options to automatically number the
+patches (-n) or add the '.diff' extension (-d). If you don't tell "stg
+export" where to put the patches, it will create directory named "patch-
+branchname" in your current directory, and store the patches there.
+To e-mail a patch or range of patches:
+
+  stg mail [--to=...] (--all | --range=[<patch1>[:<patch2>]] | <patch>)
+
+"stg mail" has a lot of options, so read the output of "stg mail -h" for
+more information.
+You can also import an existing GNU diff patch file as a new StGIT patch
+with a single command. "stg import" will automatically parse through the
+patch file and extract a patch description. Use:
+
+  stg import [<file>]
+
+This is the equivalent of "stg new" followed by "patch -i <file>", then
+"stg refresh -e".
+Sometimes the patch file won't apply cleanly. In that case, "stg import"
+will leave you with an empty StGIT patch, to which you then apply the
+patch file by hand using "patch -i" and your favorite editor.
 To merge a GNU diff file (defaulting to the standard input) into the
 topmost patch:
 
   stg fold [<file>]
 
-This command supports a '--threeway' option which applies the patch
-onto the bottom of the topmost one and performs a three-way merge.
+This command supports a '--threeway' option which applies the patch onto
+the bottom of the topmost one and performs a three-way merge.
 
 
 Advanced Usage
 ==============
 
+Handling merge conflicts
+------------------------
+
+Pushing a patch on the stack can fail if the patch cannot be applied
+cleanly. This usually happens if there are overlapping changes in the
+tree, the patch depends on another patch which is not applied, or if a
+patch was not merged upstream in the exact form it was sent.
+The 'push' operation stops after the first patch with conflicts. The
+'status' command shows the conflict files by marking them with a 'C'. If
+the 'keeporig' options is set to 'yes' (the default), the original files
+involved in the merge operations are left in the tree as <file>.older,
+<file>.local and <file>.remote for better analysis of the conflict. If
+'diff3' is used as the merger (the default), markers are added to the
+conflicted files as well.
+Run the 'resolved' command to mark the conflicts resolved and remove the
+temporary merge files from the working tree. Then run the 'refresh'
+command to update the StGIT patch with the modifications you made to
+resolve the conflict.
+
+
 Configuration file
 ------------------
 
-StGIT tries to read the configuration options from the following
-files: /etc/stgitrc, ~/.stgitrc and .git/stgitrc. The latter overrides
-the options in the former files. If no file is found, the defaults are
-used.
-
+StGIT tries to read the configuration options from the following files:
+/etc/stgitrc, ~/.stgitrc and .git/stgitrc. The latter overrides the
+options in the former files. If no file is found, the defaults are used.
 An example configuration file with options description can be found in
 the examples/ directory. Most users would probably only define the
 'smtpserver' option used by the 'mail' command.
-
 The gitmergeonefile.py script does the three-way merging on individual
 files using the tool specified by the 'merger' option. The user can
 specify a smarter tool to be used.
 
+
 Templates
 ---------
 
-The 'export' and 'mail' commands use templates for generating the
-patch files or e-mails. The default templates are installed under
-<prefix>/share/stgit/templates/ and, combined with the extra options
-available for the commands, should be enough for most users. The
-template format uses the standard Python string formatting rules. The
-variables available are shown in the the help message for the
-commands.
+The 'export' and 'mail' commands use templates for generating the patch
+files or e-mails. The default templates are installed under <prefix>/
+share/stgit/templates/ and, combined with the extra options available
+for the commands, should be enough for most users. The template format
+uses the standard Python string formatting rules. The variables
+available are shown in the the help message for the commands.
+The 'mail' command can also send an initial e-mail for which there is no
+default template. The <prefix>/share/stgit/examples/firstmail.tmpl file
+can be used as an example.
+A default description for new patches can be defined in the .git/
+patchdescr.tmpl file. This is useful for things like signed-off-by
+lines.
 
-The 'mail' command can also send an initial e-mail for which there is
-no default template. The <prefix>/share/stgit/examples/firstmail.tmpl
-file can be used as an example.
-
-A default description for new patches can be defined in the
-.git/patchdescr.tmpl file. This is useful for things like
-signed-off-by lines.
-
-Dealing with conflicts
-----------------------
-
-Pushing a patch on the stack can fail if the patch cannot be applied
-cleanly. This usually happens if there are overlapping changes in the
-tree, the patch depends on other patch which is not applied or if a
-patch was not merged upstream in the exact form it was sent.
-
-The 'push' operation will stop after the first patch with
-conflicts. The 'status' command shows the conflict files by marking
-them with a 'C'. If the 'keeporig' options is set to 'yes' (the
-default), the original files involved in the merge operations are left
-in the tree as <file>.older, <file>.local and <file>.remote for a
-better analysis by the user. If 'diff3' is used as the merger (the
-default), conflict markers can be found in the corresponding files as
-well.
-
-Once the conflict is fixed, the 'resolved' command has to be run to
-clear the conflict state. This command also removes the original files
-involved in the merge for a given file.
 
 Merging two patches into one
 ----------------------------
 
-There is no command to do this directly at the moment but one can
-export the patch to be merged and use the 'stg fold' command on the
-generated diff file. Assuming that the merged patch was not already
-applied, the operation will succeed. Pushing the merged patch onto the
-stack will result in an empty patch (StGIT notifying the user) that
-can be safely deleted.
-
-
-.git/ Directory Structure
-=========================
-
-HEAD			-> refs/heads/<something>
-objects/
-  ??/
-  ...
-refs/
-  heads/
-    master		- the master commit id
-    ...
-  bases/
-    master		- the bottom id of the stack (to get a big diff)
-    ...
-  tags/
-    ...
-  branches/
-    ...
-  patches/
-    master/
-      applied		- list of applied patches
-      unapplied		- list of not-yet applied patches
-      current		- name of the topmost patch
-      patch1/
-        bottom		- the bottom id of the patch
-        top		- the top id of the patch
-	description	- the patch description
-	authname	- author's name
-	authemail	- author's e-mail
-	commname	- committer's name
-	commemail	- committer's e-mail
-      patch2/
-        ...
-      ...
-    ...
+There is no command to do this directly at the moment but one can export
+the patch to be merged and use the 'stg fold' command on the generated
+diff file. Assuming that the merged patch was not already applied, the
+operation will succeed. Pushing the merged patch onto the stack will
+result in an empty patch (StGIT notifying the user) that can be safely
+deleted.
 
 
 A Bit of StGIT Patch Theory
@@ -280,9 +345,9 @@ node is a commit SHA1 id or tree SHA1 id in the GIT terminology:
 
   P = diff(Nt, Nb)
 
-	Nb - bottom (start) node
-	Nt - top (end) node
-	Nf - first node (for log generation)
+  	Nb - bottom (start) node
+  	Nt - top (end) node
+  	Nf - first node (for log generation)
 
 For an ordered stack of patches:
 
@@ -290,22 +355,57 @@ For an ordered stack of patches:
   P2 = diff(N2, N1)
   ...
 
+
   Ps = P1 + P2 + P3 + ... = diff(Nst, Nsb)
 
-	Ps  - the big patch of the whole stack
-	Nsb - bottom stack node (= N0)
-	Nst - top stack node (= Nn)
+  	Ps  - the big patch of the whole stack
+  	Nsb - bottom stack node (= N0)
+  	Nst - top stack node (= Nn)
 
-Applying (pushing) a patch on the stack (Nst can differ from Nb) is
-done by diff3 merging. The new patch becomes:
+Applying (pushing) a patch on the stack (Nst can differ from Nb) is done
+by diff3 merging. The new patch becomes:
 
   P' = diff(Nt', Nb')
   Nb' = Nst
   Nt' = diff3(Nst, Nb, Nt)
 
 (note that the diff3 parameters order is: branch1, ancestor, branch2)
-
 The above operation allows easy patch re-ordering.
+Removing (popping) a patch from the stack is done by simply setting the
+Nst to Nb.
 
-Removing (popping) a patch from the stack is done by simply setting
-the Nst to Nb.
+.git/ Directory Structure
+
+
+  HEAD			-> refs/heads/<something>
+  objects/
+    ??/
+    ...
+  refs/
+    heads/
+      master		- the master commit id
+      ...
+    bases/
+      master		- the bottom id of the stack (to get a big diff)
+      ...
+    tags/
+      ...
+    branches/
+      ...
+    patches/
+      master/
+        applied		- list of applied patches
+        unapplied		- list of not-yet applied patches
+        current		- name of the topmost patch
+        patch1/
+          bottom		- the bottom id of the patch
+          top		- the top id of the patch
+  	description	- the patch description
+  	authname	- author's name
+  	authemail	- author's e-mail
+  	commname	- committer's name
+  	commemail	- committer's e-mail
+        patch2/
+          ...
+        ...
+      ...
