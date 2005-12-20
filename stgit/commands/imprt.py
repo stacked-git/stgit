@@ -78,13 +78,11 @@ def __parse_description(descr):
     if not descr_lines:
         raise CmdException, "Empty patch description"
 
-    pos = -1
     lasthdr = 0
     end = len(descr_lines)
 
     # Parse the patch header
-    while pos < end:
-        pos += 1
+    for pos in range(0, end):
         if not descr_lines[pos]:
            continue
         # check for a "From|Author:" line
