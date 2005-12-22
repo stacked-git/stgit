@@ -603,18 +603,10 @@ def reset(files = None, tree_id = None):
     """Revert the tree changes relative to the given tree_id. It removes
     any local changes
     """
-    if not tree_id:
-        tree_id = get_head()
-
-    cache_files = __tree_status(files, tree_id)
-    rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
-
     checkout(files, tree_id, True)
-    # checkout doesn't remove files
-    map(os.remove, rm_files)
 
     # if the reset refers to the whole tree, switch the HEAD as well
-    if not files:
+    if tree_id and not files:
         __set_head(tree_id)
 
 def pull(repository = 'origin', refspec = None):
