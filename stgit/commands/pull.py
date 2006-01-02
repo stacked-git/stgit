@@ -29,7 +29,7 @@ usage = """%prog [options] [<repository>] [<refspec>]
 Pull the latest changes from the given repository (defaulting to
 'origin'). This command works by popping all the patches from the
 stack, pulling the changes in the parent repository, setting the base
-of the stack to the latest parent HEAD and pusing the patches back
+of the stack to the latest parent HEAD and pushing the patches back
 (unless '--nopush' is specified). The 'push' operation can fail if
 there are conflicts. They need to be resolved and the patch pushed
 again.
