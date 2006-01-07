@@ -34,7 +34,7 @@ prefixed with a '>'. Empty patches are prefixed with a '0'."""
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-d', '--description',
-                       help = 'show a show description for each patch',
+                       help = 'show a short description for each patch',
                        action = 'store_true'),
            make_option('-e', '--empty',
                        help = 'check whether patches are empty '

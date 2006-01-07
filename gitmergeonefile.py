@@ -180,6 +180,30 @@ if orig_hash:
             os.remove(path)
         __remove_files()
         sys.exit(os.system('git-update-index --remove -- %s' % path))
+    # file deleted in one and changed in the other
+    else:
+        # Do something here - we must at least merge the entry in the cache,
+        # instead of leaving it in U(nmerged) state. In fact, stg resolved
+        # does not handle that.
+
+        # Do the same thing cogito does - remove the file in any case.
+        os.system('git-update-index --remove -- %s' % path)
+
+        #if file1_hash:
+            ## file deleted upstream and changed in the patch. The patch is
+            ## probably going to move the changes elsewhere.
+
+            #os.system('git-update-index --remove -- %s' % path)
+        #else:
+            ## file deleted in the patch and changed upstream. We could re-delete
+            ## it, but for now leave it there - and let the user check if he
+            ## still wants to remove the file.
+
+            ## reset the cache to the first branch
+            #os.system('git-update-index --cacheinfo %s %s %s'
+                      #% (file1_mode, file1_hash, path))
+        __conflict()
+
 # file does not exist in origin
 else:
     # file added in both
