@@ -121,7 +121,7 @@ def __conflict():
 #   $2 - file in branch1 SHA1 (or empty)
 #   $3 - file in branch2 SHA1 (or empty)
 #   $4 - pathname in repository
-#   $5 - orignal file mode (or empty)
+#   $5 - original file mode (or empty)
 #   $6 - file in branch1 mode (or empty)
 #   $7 - file in branch2 mode (or empty)
 #
@@ -140,7 +140,7 @@ __checkout_files()
 if orig_hash:
     # modified in both
     if file1_hash and file2_hash:
-        # if modes are the same (git-read-tree probably dealed with it)
+        # if modes are the same (git-read-tree probably dealt with it)
         if file1_hash == file2_hash:
             if os.system('git-update-index --cacheinfo %s %s %s'
                          % (file1_mode, file1_hash, path)) != 0:
@@ -242,8 +242,8 @@ else:
         __remove_files()
         sys.exit(os.system('git-checkout-index -u -f -- %s' % path))
 
-# Un-handled case
-print >> sys.stderr, 'Error: Un-handled merge conflict'
+# Unhandled case
+print >> sys.stderr, 'Error: Unhandled merge conflict'
 print >> sys.stderr, 'gitmergeonefile.py "%s" "%s" "%s" "%s" "%s" "%s" "%s"' \
       % tuple(sys.argv[1:8])
 __conflict()

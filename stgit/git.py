@@ -274,7 +274,7 @@ def rev_parse(git_id):
         raise GitException, 'Unknown revision: %s' % git_id
 
 def branch_exists(branch):
-    """Existance check for the named branch
+    """Existence check for the named branch
     """
     for line in _output_lines(['git-rev-parse', '--symbolic', '--all']):
         if line.strip() == branch:
