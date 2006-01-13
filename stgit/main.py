@@ -150,16 +150,14 @@ def main():
                           option_list = command.options)
     options, args = parser.parse_args()
     try:
-        # 'clone' doesn't expect an already initialised GIT tree
-        if cmd == 'clone':
-            stgit.commands.common.crt_series = stack.Series('master')
-        elif hasattr(options, 'branch') and options.branch:
-            stgit.commands.common.crt_series = stack.Series(options.branch)
-        else:
-            stgit.commands.common.crt_series = stack.Series()
-        # the line below is a simple way to avoid an exception when
-        # stgit is run outside an initialised tree
-        setattr(command, 'crt_series', stgit.commands.common.crt_series)
+        # 'clone' doesn't expect an already initialised GIT tree. A Series
+        # object will be created after the GIT tree is cloned
+        if cmd != 'clone':
+            if hasattr(options, 'branch') and options.branch:
+                command.crt_series = stack.Series(options.branch)
+            else:
+                command.crt_series = stack.Series()
+            stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
     except (IOError, CmdException, stack.StackException, git.GitException), \

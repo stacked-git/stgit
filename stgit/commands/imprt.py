@@ -28,7 +28,7 @@ usage = """%prog [options] [<file>]
 
 Create a new patch and apply the given GNU diff file (or the standard
 input). By default, the file name is used as the patch name but this
-can be overriden with the '--name' option. The patch can either be a
+can be overridden with the '--name' option. The patch can either be a
 normal file with the description at the top or it can have standard
 mail format, the Subject, From and Date headers being used for
 generating the patch information.
@@ -219,7 +219,7 @@ def func(parser, options, args):
     elif filename:
         patch = os.path.basename(filename)
     else:
-        raise CmdException, 'Unkown patch name'
+        raise CmdException, 'Unknown patch name'
 
     # the defaults
     message = author_name = author_email = author_date = committer_name = \

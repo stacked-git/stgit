@@ -51,6 +51,6 @@ def func(parser, options, args):
     os.chdir(local_dir)
     git.checkout(tree_id = 'HEAD')
 
-    crt_series.init()
+    stack.Series().init()
 
     print 'done'

@@ -1,4 +1,4 @@
-"""Function/variables commmon to all the commands
+"""Function/variables common to all the commands
 """
 
 __copyright__ = """
@@ -92,7 +92,7 @@ def check_head_top_equal():
     if not crt_series.head_top_equal():
         raise CmdException, \
               'HEAD and top are not the same. You probably committed\n' \
-              '  changes to the tree ouside of StGIT. If you know what you\n' \
+              '  changes to the tree outside of StGIT. If you know what you\n' \
               '  are doing, use the "refresh -f" command'
 
 def check_conflicts():

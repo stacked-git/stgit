@@ -257,21 +257,23 @@ class Series:
     def __init__(self, name = None):
         """Takes a series name as the parameter.
         """
-        if name:
-            self.__name = name
-        else:
-            self.__name = git.get_head_file()
-
-        if self.__name:
+        try:
+            if name:
+                self.__name = name
+            else:
+                self.__name = git.get_head_file()
             base_dir = git.get_base_dir()
-            self.__patch_dir = os.path.join(base_dir, 'patches',
-                                            self.__name)
-            self.__base_file = os.path.join(base_dir, 'refs', 'bases',
-                                            self.__name)
-            self.__applied_file = os.path.join(self.__patch_dir, 'applied')
-            self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
-            self.__current_file = os.path.join(self.__patch_dir, 'current')
-            self.__descr_file = os.path.join(self.__patch_dir, 'description')
+        except git.GitException, ex:
+            raise StackException, 'GIT tree not initialised: %s' % ex
+
+        self.__patch_dir = os.path.join(base_dir, 'patches',
+                                        self.__name)
+        self.__base_file = os.path.join(base_dir, 'refs', 'bases',
+                                        self.__name)
+        self.__applied_file = os.path.join(self.__patch_dir, 'applied')
+        self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
+        self.__current_file = os.path.join(self.__patch_dir, 'current')
+        self.__descr_file = os.path.join(self.__patch_dir, 'description')
 
     def get_branch(self):
         """Return the branch name for the Series object

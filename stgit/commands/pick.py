@@ -28,7 +28,7 @@ usage = """%prog [options] [<patch@branch>|<commit>]
 
 Import a patch from a different branch or a commit object into the
 current series. By default, the name of the imported patch is used as
-the name of the current patch. It can be overriden with the '--name'
+the name of the current patch. It can be overridden with the '--name'
 option. A commit object can be reverted with the '--reverse'
 option. The log and author information are those of the commit object."""
 
