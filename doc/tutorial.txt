@@ -1,8 +1,6 @@
 StGIT Tutorial
-==============
+##############
 
-Introduction
-------------
 
 StGIT is a Python application that provides functionality similar to
 quilt (i.e. pushing/popping patches to/from a stack) using GIT instead
@@ -334,8 +332,11 @@ result in an empty patch (StGIT notifying the user) that can be safely
 deleted.
 
 
-A Bit of StGIT Patch Theory
-===========================
+Technical Information
+=====================
+
+A bit of StGIT patch theory
+---------------------------
 
 We assume that a patch is a diff between two nodes - bottom and top. A
 node is a commit SHA1 id or tree SHA1 id in the GIT terminology:
@@ -374,8 +375,9 @@ The above operation allows easy patch re-ordering.
 Removing (popping) a patch from the stack is done by simply setting the
 Nst to Nb.
 
-.git/ Directory Structure
 
+Layout of the .git directory
+----------------------------
 
   HEAD			-> refs/heads/<something>
   objects/
