@@ -30,15 +30,11 @@ usage = """%prog [options] <name>
 Create a new, empty patch and make it the topmost one. If the
 '--message' option is not passed, an editor is invoked with the
 .git/patchdescr.tmpl file used a as template, together with generated
-lines. By default, if there are local changes in the working tree, the
-command fails and a 'refresh' command is needed. This behaviour can be
-overridden with the '--force' option."""
+lines. By default, the local changes in the working tree are not included
+in the patch. A 'refresh' command is needed for this."""
 
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
-           make_option('--force',
-                       help = 'proceed even if there are local changes',
-                       action = 'store_true'),
            make_option('-s', '--showpatch',
                        help = 'show the patch content in the editor buffer',
                        action = 'store_true'),
@@ -62,12 +58,8 @@ def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    if not options.force:
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal()
-        # No local changes -> no patch to show
-        options.showpatch = False
+    check_conflicts()
+    check_head_top_equal()
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)
