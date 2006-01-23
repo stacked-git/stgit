@@ -26,7 +26,7 @@ from stgit.config import config
 
 
 help = 'generate a new commit for the current patch'
-usage = """%prog [options]
+usage = """%prog [options] [<files...>]
 
 Include the latest tree changes in the current patch. This command
 generates a new GIT commit object with the patch details, the previous
@@ -66,9 +66,6 @@ options = [make_option('-f', '--force',
 
 
 def func(parser, options, args):
-    if len(args) != 0:
-        parser.error('incorrect number of arguments')
-
     if config.has_option('stgit', 'autoresolved'):
         autoresolved = config.get('stgit', 'autoresolved')
     else:
@@ -97,7 +94,8 @@ def func(parser, options, args):
 
         if autoresolved == 'yes':
             resolved_all()
-        crt_series.refresh_patch(message = options.message,
+        crt_series.refresh_patch(files = args,
+                                 message = options.message,
                                  edit = options.edit,
                                  show_patch = options.showpatch,
                                  author_name = options.authname,

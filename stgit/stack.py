@@ -476,7 +476,8 @@ class Series:
         if os.path.exists(self.__base_file):
             os.remove(self.__base_file)
 
-    def refresh_patch(self, message = None, edit = False, show_patch = False,
+    def refresh_patch(self, files = None, message = None, edit = False,
+                      show_patch = False,
                       cache_update = True,
                       author_name = None, author_email = None,
                       author_date = None,
@@ -512,7 +513,8 @@ class Series:
         if not committer_email:
             committer_email = patch.get_commemail()
 
-        commit_id = git.commit(message = descr, parents = [patch.get_bottom()],
+        commit_id = git.commit(files = files,
+                               message = descr, parents = [patch.get_bottom()],
                                cache_update = cache_update,
                                allowempty = True,
                                author_name = author_name,
