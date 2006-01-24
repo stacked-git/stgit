@@ -124,6 +124,9 @@ def func(parser, options, args):
     patches = applied[start_idx:stop_idx]
 
     num = len(patches)
+    if num == 0:
+        raise CmdException, 'No patches applied'
+
     zpadding = len(str(num))
     if zpadding < 2:
         zpadding = 2
