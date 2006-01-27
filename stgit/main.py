@@ -125,8 +125,12 @@ def main():
     cmd = sys.argv[1]
 
     if cmd in ['-h', '--help', 'help']:
-        print_help()
-        sys.exit(0)
+        if len(sys.argv) == 3 and sys.argv[2] in commands:
+            cmd = sys.argv[2]
+            sys.argv[2] = '--help';
+        else:
+            print_help()
+            sys.exit(0)
     if cmd in ['-v', '--version', 'version']:
         print 'Stacked GIT %s' % version
         os.system('git --version')
