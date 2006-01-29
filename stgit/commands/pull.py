@@ -64,7 +64,7 @@ def func(parser, options, args):
     # pop all patches
     applied = crt_series.get_applied()
     if len(applied) > 0:
-        print 'Popping all patches...',
+        print 'Popping all applied patches...',
         sys.stdout.flush()
         crt_series.pop_patch(applied[0])
         print 'done'
