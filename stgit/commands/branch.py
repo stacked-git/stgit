@@ -45,6 +45,9 @@ options = [make_option('-c', '--create',
            make_option('--clone',
                        help = 'clone the contents of the current branch',
                        action = 'store_true'),
+           make_option('--convert',
+                       help = 'switch between old and new format branches',
+                       action = 'store_true'),
            make_option('--delete',
                        help = 'delete an existing development branch',
                        action = 'store_true'),
@@ -148,6 +151,14 @@ def func(parser, options, args):
         crt_series.clone(clone)
         print 'done'
 
+        return
+
+    elif options.convert:
+
+        if len(args) != 0:
+            parser.error('incorrect number of arguments')
+
+        crt_series.convert()
         return
 
     elif options.delete:

@@ -410,6 +410,42 @@ class Series:
         os.makedirs(os.path.join(self.__series_dir, 'patches'))
         self.__begin_stack_check()
 
+    def convert(self):
+        """Either convert to use a separate patch directory, or
+        unconvert to place the patches in the same directory with
+        series control files
+        """
+        if self.__patch_dir == self.__series_dir:
+            print 'Converting old-style to new-style...',
+            sys.stdout.flush()
+
+            self.__patch_dir = os.path.join(self.__series_dir, 'patches')
+            os.makedirs(self.__patch_dir)
+
+            for p in self.get_applied() + self.get_unapplied():
+                src = os.path.join(self.__series_dir, p)
+                dest = os.path.join(self.__patch_dir, p)
+                os.rename(src, dest)
+
+            print 'done'
+
+        else:
+            print 'Converting new-style to old-style...',
+            sys.stdout.flush()
+
+            for p in self.get_applied() + self.get_unapplied():
+                src = os.path.join(self.__patch_dir, p)
+                dest = os.path.join(self.__series_dir, p)
+                os.rename(src, dest)
+
+            if not os.listdir(self.__patch_dir):
+                os.rmdir(self.__patch_dir)
+                print 'done'
+            else:
+                print 'Patch directory %s is not empty.' % self.__name
+
+            self.__patch_dir = self.__series_dir
+
     def rename(self, to_name):
         """Renames a series
         """
