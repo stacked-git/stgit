@@ -122,10 +122,10 @@ def edit_file(series, line, comment, show_patch = True):
 class Patch:
     """Basic patch implementation
     """
-    def __init__(self, name, patch_dir):
-        self.__patch_dir = patch_dir
+    def __init__(self, name, series_dir):
+        self.__series_dir = series_dir
         self.__name = name
-        self.__dir = os.path.join(self.__patch_dir, self.__name)
+        self.__dir = os.path.join(self.__series_dir, self.__name)
 
     def create(self):
         os.mkdir(self.__dir)
@@ -143,7 +143,7 @@ class Patch:
     def rename(self, newname):
         olddir = self.__dir
         self.__name = newname
-        self.__dir = os.path.join(self.__patch_dir, self.__name)
+        self.__dir = os.path.join(self.__series_dir, self.__name)
 
         os.rename(olddir, self.__dir)
 
@@ -266,14 +266,20 @@ class Series:
         except git.GitException, ex:
             raise StackException, 'GIT tree not initialised: %s' % ex
 
-        self.__patch_dir = os.path.join(base_dir, 'patches',
-                                        self.__name)
+        self.__series_dir = os.path.join(base_dir, 'patches',
+                                         self.__name)
         self.__base_file = os.path.join(base_dir, 'refs', 'bases',
                                         self.__name)
-        self.__applied_file = os.path.join(self.__patch_dir, 'applied')
-        self.__unapplied_file = os.path.join(self.__patch_dir, 'unapplied')
-        self.__current_file = os.path.join(self.__patch_dir, 'current')
-        self.__descr_file = os.path.join(self.__patch_dir, 'description')
+
+        self.__applied_file = os.path.join(self.__series_dir, 'applied')
+        self.__unapplied_file = os.path.join(self.__series_dir, 'unapplied')
+        self.__current_file = os.path.join(self.__series_dir, 'current')
+        self.__descr_file = os.path.join(self.__series_dir, 'description')
+
+        # where this series keeps its patches
+        self.__patch_dir = os.path.join(self.__series_dir, 'patches')
+        if not os.path.isdir(self.__patch_dir):
+            self.__patch_dir = self.__series_dir
 
     def get_branch(self):
         """Return the branch name for the Series object
@@ -325,15 +331,15 @@ class Series:
         return self.__base_file
 
     def get_protected(self):
-        return os.path.isfile(os.path.join(self.__patch_dir, 'protected'))
+        return os.path.isfile(os.path.join(self.__series_dir, 'protected'))
 
     def protect(self):
-        protect_file = os.path.join(self.__patch_dir, 'protected')
+        protect_file = os.path.join(self.__series_dir, 'protected')
         if not os.path.isfile(protect_file):
             create_empty_file(protect_file)
 
     def unprotect(self):
-        protect_file = os.path.join(self.__patch_dir, 'protected')
+        protect_file = os.path.join(self.__series_dir, 'protected')
         if os.path.isfile(protect_file):
             os.remove(protect_file)
 
@@ -401,6 +407,7 @@ class Series:
         create_empty_file(self.__applied_file)
         create_empty_file(self.__unapplied_file)
         create_empty_file(self.__descr_file)
+        os.makedirs(os.path.join(self.__series_dir, 'patches'))
         self.__begin_stack_check()
 
     def rename(self, to_name):
@@ -415,8 +422,8 @@ class Series:
 
         git.rename_branch(self.__name, to_name)
 
-        if os.path.isdir(self.__patch_dir):
-            os.rename(self.__patch_dir, to_stack.__patch_dir)
+        if os.path.isdir(self.__series_dir):
+            os.rename(self.__series_dir, to_stack.__series_dir)
         if os.path.exists(self.__base_file):
             os.rename(self.__base_file, to_stack.__base_file)
 
@@ -470,6 +477,10 @@ class Series:
                 os.remove(self.__descr_file)
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
+            else:
+                print 'Patch directory %s is not empty.' % self.__name
+            if not os.listdir(self.__series_dir):
+                os.rmdir(self.__series_dir)
             else:
                 print 'Series directory %s is not empty.' % self.__name
 
