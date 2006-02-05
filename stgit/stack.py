@@ -216,38 +216,52 @@ class Patch:
         return self.__get_field('authname')
 
     def set_authname(self, name):
-        if not name and config.has_option('stgit', 'authname'):
-            name = config.get('stgit', 'authname')
+        if not name:
+            if config.has_option('stgit', 'authname'):
+                name = config.get('stgit', 'authname')
+            elif 'GIT_AUTHOR_NAME' in os.environ:
+                name = os.environ['GIT_AUTHOR_NAME']
         self.__set_field('authname', name)
 
     def get_authemail(self):
         return self.__get_field('authemail')
 
     def set_authemail(self, address):
-        if not address and config.has_option('stgit', 'authemail'):
-            address = config.get('stgit', 'authemail')
+        if not address:
+            if config.has_option('stgit', 'authemail'):
+                address = config.get('stgit', 'authemail')
+            elif 'GIT_AUTHOR_EMAIL' in os.environ:
+                address = os.environ['GIT_AUTHOR_EMAIL']
         self.__set_field('authemail', address)
 
     def get_authdate(self):
         return self.__get_field('authdate')
 
-    def set_authdate(self, authdate):
-        self.__set_field('authdate', authdate)
+    def set_authdate(self, date):
+        if not date and 'GIT_AUTHOR_DATE' in os.environ:
+            date = os.environ['GIT_AUTHOR_DATE']
+        self.__set_field('authdate', date)
 
     def get_commname(self):
         return self.__get_field('commname')
 
     def set_commname(self, name):
-        if not name and config.has_option('stgit', 'commname'):
-            name = config.get('stgit', 'commname')
+        if not name:
+            if config.has_option('stgit', 'commname'):
+                name = config.get('stgit', 'commname')
+            elif 'GIT_COMMITTER_NAME' in os.environ:
+                name = os.environ['GIT_COMMITTER_NAME']
         self.__set_field('commname', name)
 
     def get_commemail(self):
         return self.__get_field('commemail')
 
     def set_commemail(self, address):
-        if not address and config.has_option('stgit', 'commemail'):
-            address = config.get('stgit', 'commemail')
+        if not address:
+            if config.has_option('stgit', 'commemail'):
+                address = config.get('stgit', 'commemail')
+            elif 'GIT_COMMITTER_EMAIL' in os.environ:
+                address = os.environ['GIT_COMMITTER_EMAIL']
         self.__set_field('commemail', address)
 
 
