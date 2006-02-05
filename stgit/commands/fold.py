@@ -60,7 +60,10 @@ def func(parser, options, args):
         raise CmdException, 'No patches applied'
 
     if filename:
-        print 'Folding patch "%s"...' % filename,
+        if os.path.exists(filename):
+            print 'Folding patch "%s"...' % filename,
+        else:
+            raise CmdException, 'No such file: %s' % filename
     else:
         print 'Folding patch from stdin...',
     sys.stdout.flush()
