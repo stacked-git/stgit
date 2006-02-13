@@ -122,10 +122,12 @@ def edit_file(series, line, comment, show_patch = True):
 class Patch:
     """Basic patch implementation
     """
-    def __init__(self, name, series_dir):
+    def __init__(self, name, series_dir, refs_dir):
         self.__series_dir = series_dir
         self.__name = name
         self.__dir = os.path.join(self.__series_dir, self.__name)
+        self.__refs_dir = refs_dir
+        self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
 
     def create(self):
         os.mkdir(self.__dir)
@@ -136,16 +138,28 @@ class Patch:
         for f in os.listdir(self.__dir):
             os.remove(os.path.join(self.__dir, f))
         os.rmdir(self.__dir)
+        os.remove(self.__top_ref_file)
 
     def get_name(self):
         return self.__name
 
     def rename(self, newname):
         olddir = self.__dir
+        old_ref_file = self.__top_ref_file
         self.__name = newname
         self.__dir = os.path.join(self.__series_dir, self.__name)
+        self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
 
         os.rename(olddir, self.__dir)
+        os.rename(old_ref_file, self.__top_ref_file)
+
+    def __update_top_ref(self, ref):
+        write_string(self.__top_ref_file, ref)
+
+    def update_top_ref(self):
+        top = self.get_top()
+        if top:
+            self.__update_top_ref(top)
 
     def __get_field(self, name, multiline = False):
         id_file = os.path.join(self.__dir, name)
@@ -194,6 +208,7 @@ class Patch:
             else:
                 self.__set_field('top.old', None)
         self.__set_field('top', value)
+        self.__update_top_ref(value)
 
     def restore_old_boundaries(self):
         bottom = self.__get_field('bottom.old')
@@ -202,6 +217,7 @@ class Patch:
         if top and bottom:
             self.__set_field('bottom', bottom)
             self.__set_field('top', top)
+            self.__update_top_ref(top)
             return True
         else:
             return False
@@ -276,13 +292,15 @@ class Series:
                 self.__name = name
             else:
                 self.__name = git.get_head_file()
-            base_dir = git.get_base_dir()
+            self.__base_dir = git.get_base_dir()
         except git.GitException, ex:
             raise StackException, 'GIT tree not initialised: %s' % ex
 
-        self.__series_dir = os.path.join(base_dir, 'patches',
+        self.__series_dir = os.path.join(self.__base_dir, 'patches',
                                          self.__name)
-        self.__base_file = os.path.join(base_dir, 'refs', 'bases',
+        self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
+                                       self.__name)
+        self.__base_file = os.path.join(self.__base_dir, 'refs', 'bases',
                                         self.__name)
 
         self.__applied_file = os.path.join(self.__series_dir, 'applied')
@@ -294,6 +312,12 @@ class Series:
         self.__patch_dir = os.path.join(self.__series_dir, 'patches')
         if not os.path.isdir(self.__patch_dir):
             self.__patch_dir = self.__series_dir
+
+        # if no __refs_dir, create and populate it (upgrade old repositories)
+        if self.is_initialised() and not os.path.isdir(self.__refs_dir):
+            os.makedirs(self.__refs_dir)
+            for patch in self.get_applied() + self.get_unapplied():
+                self.get_patch(patch).update_top_ref()
 
     def get_branch(self):
         """Return the branch name for the Series object
@@ -311,7 +335,7 @@ class Series:
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
-        return Patch(name, self.__patch_dir)
+        return Patch(name, self.__patch_dir, self.__refs_dir)
 
     def get_current(self):
         """Return a Patch object representing the topmost patch
@@ -399,7 +423,8 @@ class Series:
         if not crt:
             # we don't care, no patches applied
             return True
-        return git.get_head() == Patch(crt, self.__patch_dir).get_top()
+        return git.get_head() == Patch(crt, self.__patch_dir,
+                                       self.__refs_dir).get_top()
 
     def is_initialised(self):
         """Checks if series is already initialised
@@ -409,7 +434,7 @@ class Series:
     def init(self):
         """Initialises the stgit series
         """
-        bases_dir = os.path.join(git.get_base_dir(), 'refs', 'bases')
+        bases_dir = os.path.join(self.__base_dir, 'refs', 'bases')
 
         if self.is_initialised():
             raise StackException, self.__patch_dir + ' already exists'
@@ -422,6 +447,7 @@ class Series:
         create_empty_file(self.__unapplied_file)
         create_empty_file(self.__descr_file)
         os.makedirs(os.path.join(self.__series_dir, 'patches'))
+        os.makedirs(self.__refs_dir)
         self.__begin_stack_check()
 
     def convert(self):
@@ -515,7 +541,7 @@ class Series:
                 raise StackException, \
                       'Cannot delete: the series still contains patches'
             for p in patches:
-                Patch(p, self.__patch_dir).delete()
+                Patch(p, self.__patch_dir, self.__refs_dir).delete()
 
             if os.path.exists(self.__applied_file):
                 os.remove(self.__applied_file)
@@ -533,6 +559,10 @@ class Series:
                 os.rmdir(self.__series_dir)
             else:
                 print 'Series directory %s is not empty.' % self.__name
+            if not os.listdir(self.__refs_dir):
+                os.rmdir(self.__refs_dir)
+            else:
+                print 'Refs directory %s is not empty.' % self.__refs_dir
 
         if os.path.exists(self.__base_file):
             os.remove(self.__base_file)
@@ -549,7 +579,7 @@ class Series:
         if not name:
             raise StackException, 'No patches applied'
 
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
         descr = patch.get_description()
         if not (message or descr):
@@ -615,7 +645,7 @@ class Series:
 
         self.__begin_stack_check()
 
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
         patch.create()
 
         if bottom:
@@ -647,7 +677,7 @@ class Series:
     def delete_patch(self, name):
         """Deletes a patch
         """
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
         if self.__patch_is_current(patch):
             self.pop_patch(name)
@@ -680,7 +710,7 @@ class Series:
         for name in names:
             assert(name in unapplied)
 
-            patch = Patch(name, self.__patch_dir)
+            patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
             head = top
             bottom = patch.get_bottom()
@@ -750,7 +780,7 @@ class Series:
 
         self.__begin_stack_check()
 
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
         head = git.get_head()
         bottom = patch.get_bottom()
@@ -811,7 +841,7 @@ class Series:
         name = self.get_current()
         assert(name)
 
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
         git.reset()
         self.pop_patch(name)
         return patch.restore_old_boundaries()
@@ -823,7 +853,7 @@ class Series:
         applied.reverse()
         assert(name in applied)
 
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
         git.switch(patch.get_bottom())
 
@@ -855,7 +885,7 @@ class Series:
     def empty_patch(self, name):
         """Returns True if the patch is empty
         """
-        patch = Patch(name, self.__patch_dir)
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
         bottom = patch.get_bottom()
         top = patch.get_top()
 
@@ -878,14 +908,14 @@ class Series:
             raise StackException, 'Patch "%s" already exists' % newname
 
         if oldname in unapplied:
-            Patch(oldname, self.__patch_dir).rename(newname)
+            Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
 
             f = file(self.__unapplied_file, 'w+')
             f.writelines([line + '\n' for line in unapplied])
             f.close()
         elif oldname in applied:
-            Patch(oldname, self.__patch_dir).rename(newname)
+            Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
             if oldname == self.get_current():
                 self.__set_current(newname)
 
