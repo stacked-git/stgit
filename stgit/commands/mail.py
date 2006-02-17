@@ -199,6 +199,9 @@ def __build_cover(tmpl, total_nr, msg_id, options):
 
     headers_end = __build_address_headers(options)
     headers_end += 'Message-Id: %s\n' % msg_id
+    if options.refid:
+        headers_end += "In-Reply-To: %s\n" % options.refid
+        headers_end += "References: %s\n" % options.refid
 
     if options.version:
         version_str = ' %s' % options.version
