@@ -366,6 +366,7 @@ class Series:
         return names
 
     def get_base_file(self):
+        self.__begin_stack_check()
         return self.__base_file
 
     def get_protected(self):
@@ -694,6 +695,7 @@ class Series:
         f = file(self.__unapplied_file, 'w+')
         f.writelines([line + '\n' for line in unapplied])
         f.close()
+        self.__begin_stack_check()
 
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
