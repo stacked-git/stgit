@@ -60,7 +60,10 @@ options = [make_option('-n', '--numbered',
                        metavar = '[PATCH1][:[PATCH2]]',
                        help = 'export patches between PATCH1 and PATCH2'),
            make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
+                       help = 'use BRANCH instead of the default one'),
+           make_option('-s', '--stdout',
+                       help = 'dump the patches to the standard output',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -75,9 +78,10 @@ def func(parser, options, args):
         print 'Warning: local changes in the tree. ' \
               'You might want to commit them first'
 
-    if not os.path.isdir(dirname):
-        os.makedirs(dirname)
-    series = file(os.path.join(dirname, 'series'), 'w+')
+    if not options.stdout:
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
+        series = file(os.path.join(dirname, 'series'), 'w+')
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
@@ -147,8 +151,9 @@ def func(parser, options, args):
             break
 
     # note the base commit for this series
-    base_commit = crt_series.get_patch(patches[0]).get_bottom()
-    print >> series, '# This series applies on GIT commit %s' % base_commit
+    if not options.stdout:
+        base_commit = crt_series.get_patch(patches[0]).get_bottom()
+        print >> series, '# This series applies on GIT commit %s' % base_commit
 
     patch_no = 1;
     for p in patches:
@@ -158,7 +163,8 @@ def func(parser, options, args):
         if options.numbered:
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
         pfile = os.path.join(dirname, pname)
-        print >> series, pname
+        if not options.stdout:
+            print >> series, pname
 
         # get the patch description
         patch = crt_series.get_patch(p)
@@ -192,14 +198,26 @@ def func(parser, options, args):
         except TypeError:
             raise CmdException, 'Only "%(name)s" variables are ' \
                   'supported in the patch template'
-        f = open(pfile, 'w+')
-        f.write(descr)
 
+        if options.stdout:
+            f = sys.stdout
+        else:
+            f = open(pfile, 'w+')
+
+        if options.stdout and num > 1:
+            print '-------------------------------------------------------------------------------'
+            print patch.get_name()
+            print '-------------------------------------------------------------------------------'
+
+        # write description
+        f.write(descr)
         # write the diff
         git.diff(rev1 = patch.get_bottom(),
                  rev2 = patch.get_top(),
                  out_fd = f)
-        f.close()
+        if not options.stdout:
+            f.close()
         patch_no += 1
 
-    series.close()
+    if not options.stdout:
+        series.close()
