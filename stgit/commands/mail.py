@@ -15,9 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, re, time, smtplib, email.Utils
+import sys, os, re, time, datetime, smtplib, email.Utils
 from optparse import OptionParser, make_option
-from time import gmtime, strftime
 
 from stgit.commands.common import *
 from stgit.utils import *
@@ -110,7 +109,10 @@ options = [make_option('-a', '--all',
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
                        help = 'username for SMTP authentication'),
            make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
+                       help = 'use BRANCH instead of the default one'),
+           make_option('-m', '--mbox',
+                       help = 'generate an mbox file instead of sending',
+                       action = 'store_true')]
 
 
 def __get_maintainer():
@@ -170,6 +172,16 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
         raise CmdException, str(err)
 
     s.quit()
+
+def __write_mbox(from_addr, msg):
+    """Write an mbox like file to the standard output
+    """
+    r = re.compile('^From ', re.M)
+    msg = r.sub('>\g<0>', msg)
+
+    print 'From %s %s' % (from_addr, datetime.datetime.today().ctime())
+    print msg
+    print
 
 def __build_address_headers(options):
     headers_end = ''
@@ -258,7 +270,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         msg = f.read()
         f.close()
 
-    return msg
+    return msg.strip('\n')
 
 def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """Build the message to be sent via SMTP
@@ -326,7 +338,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
-    return msg
+    return msg.strip('\n')
 
 def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
@@ -441,13 +453,14 @@ def func(parser, options, args):
         # subsequent e-mails are seen as replies to the first one
         ref_id = msg_id
 
-        print 'Sending the cover message...',
-        sys.stdout.flush()
-
-        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
-                       smtpuser, smtppassword)
-
-        print 'done'
+        if options.mbox:
+            __write_mbox(from_addr, msg)
+        else:
+            print 'Sending the cover message...',
+            sys.stdout.flush()
+            __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
+                           smtpuser, smtppassword)
+            print 'done'
 
     # send the patches
     if options.template:
@@ -474,10 +487,11 @@ def func(parser, options, args):
         if not ref_id:
             ref_id = msg_id
 
-        print 'Sending patch "%s"...' % p,
-        sys.stdout.flush()
-
-        __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
-                       smtpuser, smtppassword)
-
-        print 'done'
+        if options.mbox:
+            __write_mbox(from_addr, msg)
+        else:
+            print 'Sending patch "%s"...' % p,
+            sys.stdout.flush()
+            __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
+                           smtpuser, smtppassword)
+            print 'done'
