@@ -308,7 +308,7 @@ def switch_branch(name):
     if not branch_exists(new_head):
         raise GitException, 'Branch "%s" does not exist' % name
 
-    tree_id = rev_parse(new_head + '^0')
+    tree_id = rev_parse(new_head + '^{commit}')
     if tree_id != get_head():
         refresh_index()
         if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:

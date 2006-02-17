@@ -124,7 +124,7 @@ def func(parser, options, args):
 
         tree_id = None
         if len(args) == 2:
-            tree_id = args[1]
+            tree_id = git_id(args[1])
 
         git.create_branch(args[0], tree_id)
         stack.Series(args[0]).init()

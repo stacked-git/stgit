@@ -81,7 +81,7 @@ def git_id(rev):
         return read_string(series.get_base_file())
 
     # anything else failed
-    return git.rev_parse(rev)
+    return git.rev_parse(rev + '^{commit}')
 
 def check_local_changes():
     if git.local_changes():
