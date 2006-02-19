@@ -57,6 +57,7 @@ import stgit.commands.series
 import stgit.commands.status
 import stgit.commands.top
 import stgit.commands.unapplied
+import stgit.commands.uncommit
 
 
 #
@@ -92,6 +93,7 @@ commands = {
     'status':   stgit.commands.status,
     'top':      stgit.commands.top,
     'unapplied':stgit.commands.unapplied,
+    'uncommit': stgit.commands.uncommit,
     }
 
 def print_help():

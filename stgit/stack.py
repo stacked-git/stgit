@@ -629,7 +629,8 @@ class Series:
                   unapplied = False, show_patch = False,
                   top = None, bottom = None,
                   author_name = None, author_email = None, author_date = None,
-                  committer_name = None, committer_email = None):
+                  committer_name = None, committer_email = None,
+                  before_existing = False):
         """Creates a new patch
         """
         if self.__patch_applied(name) or self.__patch_unapplied(name):
@@ -672,8 +673,13 @@ class Series:
             f.writelines([line + '\n' for line in patches])
             f.close()
         else:
-            append_string(self.__applied_file, patch.get_name())
-            self.__set_current(name)
+            if before_existing:
+                insert_string(self.__applied_file, patch.get_name())
+                if not self.get_current():
+                    self.__set_current(name)
+            else:
+                append_string(self.__applied_file, patch.get_name())
+                self.__set_current(name)
 
     def delete_patch(self, name):
         """Deletes a patch
