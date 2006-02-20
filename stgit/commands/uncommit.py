@@ -25,17 +25,20 @@ from stgit import stack, git
 help = 'turn regular git commits into StGIT patches'
 usage = """%prog [options] <patchname1> [<patchname2> ... ]
 
-Takes one or more git commits at the base of the current stack, and
-turns them into StGIT patches. These new patches are alreay applied,
-at the bottom of the stack. This is the exact opposite of 'stg
-commit'.
+Take one or more git commits at the base of the current stack and turn
+them into StGIT patches. The new patches are created as applied patches
+at the bottom of the stack. This is the exact opposite of 'stg commit'.
 
-You can either give one patch name for each commit you wish to
-uncommit, or use the --number option and exactly one patch name; StGIT
-will then create numbered patches with the given patch name as prefix.
+By default, the number of the patches to uncommit is determined by the
+number of patch names provided on the command line. First name is used
+for the first patch to uncommit, i.e. for the newest patch.
+
+The --number option specifies the number of patches to uncommit.  In
+this case, only one patch name may be specified. It is used as prefix to
+which the patch number is appended.
 
 Only commits with exactly one parent can be uncommitted; in other
-words, you can't uncommmit a merge."""
+words, you can't uncommit a merge."""
 
 options = [make_option('-n', '--number', type = 'int',
                        help = 'uncommit the specified number of commits')]
