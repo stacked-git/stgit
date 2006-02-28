@@ -253,6 +253,9 @@ def __set_head(val):
             raise GitException, 'Could not update HEAD to "%s".' % val
         __head = val
 
+    # only allow SHA1 hashes
+    assert(len(__head) == 40)
+
 def __clear_head_cache():
     """Sets the __head to None so that a re-read is forced
     """
@@ -599,14 +602,17 @@ def switch(tree_id):
 
     __set_head(tree_id)
 
-def reset(files = None, tree_id = 'HEAD'):
+def reset(files = None, tree_id = None):
     """Revert the tree changes relative to the given tree_id. It removes
     any local changes
     """
+    if not tree_id:
+        tree_id = get_head()
+
     checkout(files, tree_id, True)
 
     # if the reset refers to the whole tree, switch the HEAD as well
-    if tree_id and not files:
+    if not files:
         __set_head(tree_id)
 
 def pull(repository = 'origin', refspec = None):
