@@ -100,7 +100,7 @@ def print_help():
     print 'usage: %s <command> [options]' % os.path.basename(sys.argv[0])
     print
     print 'commands:'
-    print '  help        print this message'
+    print '  help        print the detailed command usage'
     print '  version     display version information'
     print '  copyright   display copyright information'
     print
@@ -121,18 +121,35 @@ def main():
     if len(sys.argv) < 2:
         print >> sys.stderr, 'Unknown command'
         print >> sys.stderr, \
-              '  Try "%s help" for a list of supported commands' % prog
+              '  Try "%s --help" for a list of supported commands' % prog
         sys.exit(1)
 
     cmd = sys.argv[1]
 
-    if cmd in ['-h', '--help', 'help']:
+    if cmd in ['-h', '--help']:
         if len(sys.argv) == 3 and sys.argv[2] in commands:
             cmd = sys.argv[2]
-            sys.argv[2] = '--help';
+            sys.argv[2] = '--help'
         else:
             print_help()
             sys.exit(0)
+    if cmd == 'help':
+        if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
+            cmd = sys.argv[2]
+            if not cmd in commands:
+                print >> sys.stderr, '%s help: "%s" command unknown' \
+                      % (prog, cmd)
+                sys.exit(1)
+
+            sys.argv[0] += ' %s' % cmd
+            command = commands[cmd]
+            parser = OptionParser(usage = command.usage,
+                                  option_list = command.options)
+            parser.print_help()
+        else:
+            print 'usage: %s help <command>' % prog
+
+        sys.exit(0)
     if cmd in ['-v', '--version', 'version']:
         print 'Stacked GIT %s' % version
         os.system('git --version')
@@ -152,8 +169,8 @@ def main():
     del(sys.argv[1])
 
     command = commands[cmd]
-    parser = OptionParser(usage = command.usage,
-                          option_list = command.options)
+    usage = command.usage.split('\n')[0].strip()
+    parser = OptionParser(usage = usage, option_list = command.options)
     options, args = parser.parse_args()
     try:
         # 'clone' doesn't expect an already initialised GIT tree. A Series
