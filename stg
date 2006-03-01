@@ -39,4 +39,5 @@ if bin == 'bin' and prefix != sys.prefix:
 
 from stgit.main import main
 
-main()
+if __name__ == '__main__':
+    main()
