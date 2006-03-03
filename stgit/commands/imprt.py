@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys, os, re
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -41,12 +41,18 @@ options = [make_option('-m', '--mail',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
+           make_option('-s', '--series',
+                       help = 'import a series of patches',
+                       action = 'store_true'),
+           make_option('-i', '--ignore',
+                       help = 'ignore the applied patches in the series',
+                       action = 'store_true'),
            make_option('-b', '--base',
                        help = 'use BASE instead of HEAD for file importing'),
            make_option('-e', '--edit',
                        help = 'invoke an editor for the patch description',
                        action = 'store_true'),
-           make_option('-s', '--showpatch',
+           make_option('-p', '--showpatch',
                        help = 'show the patch content in the editor buffer',
                        action = 'store_true'),
            make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
@@ -199,28 +205,9 @@ def __parse_patch(filename = None):
     # Just return None
     return (descr, authname, authemail, authdate)
 
-def func(parser, options, args):
-    """Import a GNU diff file as a new patch
+def __import_patch(patch, filename, options):
+    """Import a patch from a file or standard input
     """
-    if len(args) > 1:
-        parser.error('incorrect number of arguments')
-
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
-
-    if len(args) == 1:
-        filename = args[0]
-    else:
-        filename = None
-
-    if options.name:
-        patch = options.name
-    elif filename:
-        patch = os.path.basename(filename)
-    else:
-        raise CmdException, 'Unknown patch name'
-
     # the defaults
     message = author_name = author_email = author_date = committer_name = \
               committer_email = None
@@ -259,7 +246,7 @@ def func(parser, options, args):
                          committer_name = committer_name,
                          committer_email = committer_email)
 
-    print 'Importing patch %s...' % patch,
+    print 'Importing patch "%s"...' % patch,
     sys.stdout.flush()
 
     if options.base:
@@ -271,4 +258,55 @@ def func(parser, options, args):
                              show_patch = options.showpatch)
 
     print 'done'
+
+def __import_series(filename, options):
+    """Import a series of patches
+    """
+    applied = crt_series.get_applied()
+
+    if filename:
+        f = file(filename)
+        patchdir = os.path.dirname(filename)
+    else:
+        f = sys.stdin
+        patchdir = ''
+
+    for line in f:
+        patch = re.sub('#.*$', '', line).strip()
+        if not patch:
+            continue
+        if options.ignore and patch in applied:
+            print 'Ignoring already applied patch "%s"' % patch
+            continue
+
+        patchfile = os.path.join(patchdir, patch)
+        __import_patch(patch, patchfile, options)
+
+def func(parser, options, args):
+    """Import a GNU diff file as a new patch
+    """
+    if len(args) > 1:
+        parser.error('incorrect number of arguments')
+
+    check_local_changes()
+    check_conflicts()
+    check_head_top_equal()
+
+    if len(args) == 1:
+        filename = args[0]
+    else:
+        filename = None
+
+    if options.series:
+        __import_series(filename, options)
+    else:
+        if options.name:
+            patch = options.name
+        elif filename:
+            patch = os.path.basename(filename)
+        else:
+            raise CmdException, 'Unknown patch name'
+
+        __import_patch(patch, filename, options)
+
     print_crt_patch()
