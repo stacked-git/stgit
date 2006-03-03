@@ -465,14 +465,20 @@ def commit(message, files = None, parents = None, allowempty = False,
 
     return commit_id
 
-def apply_diff(rev1, rev2):
+def apply_diff(rev1, rev2, check_index = True):
     """Apply the diff between rev1 and rev2 onto the current
     index. This function doesn't need to raise an exception since it
     is only used for fast-pushing a patch. If this operation fails,
     the pushing would fall back to the three-way merge.
     """
-    return os.system('git-diff-tree -p %s %s | git-apply --index 2> /dev/null'
-                     % (rev1, rev2)) == 0
+    if check_index:
+        index_opt = '--index'
+    else:
+        index_opt = ''
+    cmd = 'git-diff-tree -p %s %s | git-apply %s 2> /dev/null' \
+          % (rev1, rev2, index_opt)
+
+    return os.system(cmd) == 0
 
 def merge(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the

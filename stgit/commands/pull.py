@@ -39,6 +39,9 @@ format."""
 
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after pulling',
+                       action = 'store_true'),
+           make_option('-m', '--merged',
+                       help = 'check for patches merged upstream',
                        action = 'store_true')]
 
 def func(parser, options, args):
@@ -75,15 +78,7 @@ def func(parser, options, args):
     print 'done'
 
     # push the patches back
-    if options.nopush:
-        applied = []
-    for p in applied:
-        print 'Pushing patch "%s"...' % p,
-        sys.stdout.flush()
-        crt_series.push_patch(p)
-        if crt_series.empty_patch(p):
-            print 'done (empty patch)'
-        else:
-            print 'done'
+    if not options.nopush:
+        push_patches(applied, options.merged)
 
     print_crt_patch()

@@ -49,6 +49,9 @@ options = [make_option('-a', '--all',
            make_option('--reverse',
                        help = 'push the patches in reverse order',
                        action = 'store_true'),
+           make_option('-m', '--merged',
+                       help = 'check for patches merged upstream',
+                       action = 'store_true'),
            make_option('--undo',
                        help = 'undo the last push operation',
                        action = 'store_true')]
@@ -58,9 +61,9 @@ def is_patch_appliable(p):
     """See if patch exists, or is already applied.
     """
     if p in applied:
-        raise CmdException, 'Patch "%s" is already applied.' % p
+        raise CmdException, 'Patch "%s" is already applied' % p
     if p not in unapplied:
-        raise CmdException, 'Patch "%s" does not exist.' % p
+        raise CmdException, 'Patch "%s" does not exist' % p
 
 def func(parser, options, args):
     """Pushes the given patch or all onto the series
@@ -127,25 +130,6 @@ def func(parser, options, args):
     if options.reverse:
         patches.reverse()
 
-    forwarded = crt_series.forward_patches(patches)
-    if forwarded > 1:
-        print 'Fast-forwarded patches "%s" - "%s"' % (patches[0],
-                                                      patches[forwarded - 1])
-    elif forwarded == 1:
-        print 'Fast-forwarded patch "%s"' % patches[0]
+    push_patches(patches, options.merged)
 
-    for p in patches[forwarded:]:
-        is_patch_appliable(p)
-
-        print 'Pushing patch "%s"...' % p,
-        sys.stdout.flush()
-
-        modified = crt_series.push_patch(p)
-
-        if crt_series.empty_patch(p):
-            print 'done (empty patch)'
-        elif modified:
-            print 'done (modified)'
-        else:
-            print 'done'
     print_crt_patch()

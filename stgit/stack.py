@@ -780,7 +780,27 @@ class Series:
 
         return forwarded
 
-    def push_patch(self, name):
+    def merged_patches(self, names):
+        """Test which patches were merged upstream by reverse-applying
+        them in reverse order. The function returns the list of
+        patches detected to have been applied. The state of the tree
+        is restored to the original one
+        """
+        patches = [Patch(name, self.__patch_dir, self.__refs_dir)
+                   for name in names]
+        patches.reverse()
+
+        merged = []
+        for p in patches:
+            if git.apply_diff(p.get_top(), p.get_bottom(), False):
+                merged.append(p.get_name())
+        merged.reverse()
+
+        git.reset()
+
+        return merged
+
+    def push_patch(self, name, empty = False):
         """Pushes a patch on the stack
         """
         unapplied = self.get_unapplied()
@@ -798,7 +818,15 @@ class Series:
         modified = False
 
         # top != bottom always since we have a commit for each patch
-        if head == bottom:
+        if empty:
+            # just make an empty patch (top = bottom = HEAD). This
+            # option is useful to allow undoing already merged
+            # patches. The top is updated by refresh_patch since we
+            # need an empty commit
+            patch.set_bottom(head, backup = True)
+            patch.set_top(head, backup = True)
+            modified = True
+        elif head == bottom:
             # reset the backup information
             patch.set_bottom(bottom, backup = True)
             patch.set_top(top, backup = True)
@@ -835,7 +863,7 @@ class Series:
         self.__set_current(name)
 
         # head == bottom case doesn't need to refresh the patch
-        if head != bottom:
+        if empty or head != bottom:
             if not ex:
                 # if the merge was OK and no conflicts, just refresh the patch
                 # The GIT cache was already updated by the merge operation

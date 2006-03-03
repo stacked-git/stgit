@@ -132,6 +132,47 @@ def resolved_all(reset = None):
             resolved(filename, reset)
         os.remove(os.path.join(git.get_base_dir(), 'conflicts'))
 
+def push_patches(patches, check_merged = False):
+    """Push multiple patches onto the stack. This function is shared
+    between the push and pull commands
+    """
+    forwarded = crt_series.forward_patches(patches)
+    if forwarded > 1:
+        print 'Fast-forwarded patches "%s" - "%s"' % (patches[0],
+                                                      patches[forwarded - 1])
+    elif forwarded == 1:
+        print 'Fast-forwarded patch "%s"' % patches[0]
+
+    names = patches[forwarded:]
+
+    # check for patches merged upstream
+    if check_merged:
+        print 'Checking for patches merged upstream...',
+        sys.stdout.flush()
+
+        merged = crt_series.merged_patches(names)
+
+        print 'done (%d found)' % len(merged)
+    else:
+        merged = []
+
+    for p in names:
+        print 'Pushing patch "%s"...' % p,
+        sys.stdout.flush()
+
+        if p in merged:
+            crt_series.push_patch(p, empty = True)
+            print 'done (merged upstream)'
+        else:
+            modified = crt_series.push_patch(p)
+
+            if crt_series.empty_patch(p):
+                print 'done (empty patch)'
+            elif modified:
+                print 'done (modified)'
+            else:
+                print 'done'
+
 def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' string
