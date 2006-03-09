@@ -175,12 +175,15 @@ def push_patches(patches, check_merged = False):
 
 def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
-    standard 'name <email>' string
+    standard 'name <email>' or 'email (name)' string
     """
     address = re.sub('[\\\\"]', '\\\\\g<0>', address)
     str_list = re.findall('^(.*)\s*<(.*)>\s*$', address)
     if not str_list:
-        raise CmdException, 'Incorrect "name <email>" string: %s' % address
+        str_list = re.findall('^(.*)\s*\((.*)\)\s*$', address)
+        if not str_list:
+            raise CmdException, 'Incorrect "name <email>"/"email (name)" string: %s' % address
+        return ( str_list[0][1], str_list[0][0] )
 
     return str_list[0]
 
