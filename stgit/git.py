@@ -493,7 +493,7 @@ def merge(base, head1, head2):
     local tree
     """
     refresh_index()
-    if __run('git-read-tree -u -m', [base, head1, head2]) != 0:
+    if __run('git-read-tree -u -m --aggressive', [base, head1, head2]) != 0:
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     # this can fail if there are conflicts
