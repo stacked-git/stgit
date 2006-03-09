@@ -82,13 +82,21 @@ __commits = dict()
 # Functions
 #
 
+# GIT_DIR value cached
+__base_dir = None
+
 def get_base_dir():
     """Different start-up variables read from the environment
     """
-    if 'GIT_DIR' in os.environ:
-        return os.environ['GIT_DIR']
-    else:
-        return _output_one_line('git-rev-parse --git-dir')
+    global __base_dir
+
+    if not __base_dir:
+        if 'GIT_DIR' in os.environ:
+            __base_dir = os.environ['GIT_DIR']
+        else:
+            __base_dir = _output_one_line('git-rev-parse --git-dir')
+
+    return __base_dir
 
 def get_commit(id_hash):
     """Commit objects factory. Save/look-up them in the __commits
