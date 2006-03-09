@@ -35,6 +35,7 @@ if bin == 'bin' and prefix != sys.prefix:
 
 from stgit.config import config
 from stgit.utils import append_string
+from stgit.git import get_base_dir
 
 
 #
@@ -50,15 +51,6 @@ if config.has_option('gitmergeonefile', 'keeporig'):
     keeporig = config.get('gitmergeonefile', 'keeporig')
 else:
     keeporig = 'yes'
-
-
-#
-# Global variables
-#
-if 'GIT_DIR' in os.environ:
-    base_dir = os.environ['GIT_DIR']
-else:
-    base_dir = '.git'
 
 
 #
@@ -113,7 +105,7 @@ def __remove_files():
 def __conflict():
     """Write the conflict file for the 'path' variable and exit
     """
-    append_string(os.path.join(base_dir, 'conflicts'), path)
+    append_string(os.path.join(get_base_dir(), 'conflicts'), path)
     sys.exit(1)
 
 
