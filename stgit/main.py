@@ -22,7 +22,7 @@ import sys, os
 from optparse import OptionParser, make_option
 
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, gitmergeonefile
 from stgit.version import version
 from stgit.config import config
 from stgit.commands.common import *
@@ -183,8 +183,8 @@ def main():
             stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
-    except (IOError, CmdException, stack.StackException, git.GitException), \
-               err:
+    except (IOError, CmdException, stack.StackException, git.GitException,
+            gitmergeonefile.GitMergeException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         sys.exit(2)
     except KeyboardInterrupt:

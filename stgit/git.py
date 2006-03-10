@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, popen2
+import sys, os, popen2, re, gitmergeonefile
 
 from stgit.utils import *
 
@@ -496,9 +496,35 @@ def merge(base, head1, head2):
     if __run('git-read-tree -u -m --aggressive', [base, head1, head2]) != 0:
         raise GitException, 'git-read-tree failed (local changes maybe?)'
 
-    # this can fail if there are conflicts
-    if __run('git-merge-index -o -q gitmergeonefile.py -a') != 0:
-        raise GitException, 'git-merge-index failed (possible conflicts)'
+    # check the index for unmerged entries
+    files = {}
+    stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
+
+    for line in _output('git-ls-files --unmerged --stage -z').split('\0'):
+        if not line:
+            continue
+
+        mode, hash, stage, path = stages_re.findall(line)[0]
+
+        if not path in files:
+            files[path] = {}
+            files[path]['1'] = ('', '')
+            files[path]['2'] = ('', '')
+            files[path]['3'] = ('', '')
+
+        files[path][stage] = (mode, hash)
+
+    # merge the unmerged files
+    errors = False
+    for path in files:
+        stages = files[path]
+        if gitmergeonefile.merge(stages['1'][1], stages['2'][1],
+                                 stages['3'][1], path, stages['1'][0],
+                                 stages['2'][0], stages['3'][0]) != 0:
+            errors = True
+
+    if errors:
+        raise GitException, 'GIT index merging failed (possible conflicts)'
 
 def status(files = None, modified = False, new = False, deleted = False,
            conflict = False, unknown = False, noexclude = False):
