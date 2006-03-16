@@ -41,6 +41,9 @@ options = [make_option('-m', '--mail',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
+           make_option('-t', '--strip',
+                       help = 'strip numbering and extension from patch name',
+                       action = 'store_true'),
            make_option('-s', '--series',
                        help = 'import a series of patches',
                        action = 'store_true'),
@@ -72,6 +75,9 @@ options = [make_option('-m', '--mail',
 def __end_descr(line):
     return re.match('---\s*$', line) or re.match('diff -', line) or \
             re.match('Index: ', line)
+
+def __strip_patch_name(name):
+    return re.sub('^[0-9]+-(.*)\.(diff|patch)$', '\g<1>', name)
 
 def __parse_description(descr):
     """Parse the patch description and return the new description and
@@ -275,6 +281,8 @@ def __import_series(filename, options):
         patch = re.sub('#.*$', '', line).strip()
         if not patch:
             continue
+        if options.strip:
+            patch = __strip_patch_name(patch)
         if options.ignore and patch in applied:
             print 'Ignoring already applied patch "%s"' % patch
             continue
@@ -306,6 +314,8 @@ def func(parser, options, args):
             patch = os.path.basename(filename)
         else:
             raise CmdException, 'Unknown patch name'
+        if options.strip:
+            patch = __strip_patch_name(patch)
 
         __import_patch(patch, filename, options)
 
