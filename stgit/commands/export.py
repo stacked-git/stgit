@@ -54,6 +54,9 @@ options = [make_option('-n', '--numbered',
            make_option('-d', '--diff',
                        help = 'append .diff to the patch names',
                        action = 'store_true'),
+           make_option('-p', '--patch',
+                       help = 'append .patch to the patch names',
+                       action = 'store_true'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'Use FILE as a template'),
            make_option('-r', '--range',
@@ -160,6 +163,8 @@ def func(parser, options, args):
         pname = p
         if options.diff:
             pname = '%s.diff' % pname
+        elif options.patch:
+            pname = '%s.patch' % pname
         if options.numbered:
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
         pfile = os.path.join(dirname, pname)
