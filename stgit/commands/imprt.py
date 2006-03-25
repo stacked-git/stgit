@@ -77,7 +77,10 @@ def __end_descr(line):
             re.match('Index: ', line)
 
 def __strip_patch_name(name):
-    return re.sub('^[0-9]+-(.*)\.(diff|patch)$', '\g<1>', name)
+    stripped = re.sub('^[0-9]+-(.*)$', '\g<1>', name)
+    stripped = re.sub('^(.*)\.(diff|patch)$', '\g<1>', stripped)
+
+    return stripped
 
 def __parse_description(descr):
     """Parse the patch description and return the new description and
@@ -281,13 +284,14 @@ def __import_series(filename, options):
         patch = re.sub('#.*$', '', line).strip()
         if not patch:
             continue
+        patchfile = os.path.join(patchdir, patch)
+
         if options.strip:
             patch = __strip_patch_name(patch)
         if options.ignore and patch in applied:
             print 'Ignoring already applied patch "%s"' % patch
             continue
 
-        patchfile = os.path.join(patchdir, patch)
         __import_patch(patch, patchfile, options)
 
 def func(parser, options, args):
