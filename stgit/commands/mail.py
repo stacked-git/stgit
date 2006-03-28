@@ -20,7 +20,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git, basedir
+from stgit import stack, git, basedir, version
 from stgit.config import config
 
 
@@ -202,6 +202,15 @@ def __build_address_headers(options):
         headers_end = headers_end[:-2] + '\n'
     return headers_end
 
+def __build_extra_headers():
+    """Build extra headers like content-type etc.
+    """
+    headers  = 'Content-Type: text/plain; charset=utf-8; format=fixed\n'
+    headers += 'Content-Transfer-Encoding: 8bit\n'
+    headers += 'User-Agent: StGIT/%s\n' % version.version
+
+    return headers
+
 def __build_cover(tmpl, total_nr, msg_id, options):
     """Build the cover message (series description) to be sent via SMTP
     """
@@ -214,6 +223,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     if options.refid:
         headers_end += "In-Reply-To: %s\n" % options.refid
         headers_end += "References: %s\n" % options.refid
+    headers_end += __build_extra_headers()
 
     if options.version:
         version_str = ' %s' % options.version
@@ -293,6 +303,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     if ref_id:
         headers_end += "In-Reply-To: %s\n" % ref_id
         headers_end += "References: %s\n" % ref_id
+    headers_end += __build_extra_headers()
 
     if options.version:
         version_str = ' %s' % options.version
