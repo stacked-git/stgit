@@ -344,8 +344,6 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    if not config.has_option('stgit', 'smtpserver'):
-        raise CmdException, 'smtpserver not defined'
     smtpserver = config.get('stgit', 'smtpserver')
 
     smtpuser = None
