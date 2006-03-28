@@ -31,14 +31,10 @@ class GitMergeException(Exception):
 # Options
 #
 try:
-    merger = config.get('gitmergeonefile', 'merger')
+    merger = config.get('stgit', 'merger')
+    keeporig = config.get('stgit', 'keeporig')
 except Exception, err:
     raise GitMergeException, 'Configuration error: %s' % err
-
-if config.has_option('gitmergeonefile', 'keeporig'):
-    keeporig = config.get('gitmergeonefile', 'keeporig')
-else:
-    keeporig = 'yes'
 
 
 #

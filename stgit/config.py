@@ -32,14 +32,18 @@ config = ConfigParser.RawConfigParser()
 config.add_section('stgit')
 config.set('stgit', 'autoresolved', 'no')
 config.set('stgit', 'smtpserver', 'localhost:25')
-
-config.add_section('gitmergeonefile')
-config.set('gitmergeonefile', 'merger',
+config.set('stgit', 'merger',
            'diff3 -L local -L older -L remote -m -E ' \
            '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
-config.set('gitmergeonefile', 'keeporig', 'yes')
+config.set('stgit', 'keeporig', 'yes')
 
 # Read the configuration files (if any) and override the default settings
 config.read('/etc/stgitrc')
 config.read(os.path.expanduser('~/.stgitrc'))
 config.read(os.path.join(__git_dir, 'stgitrc'))
+
+# [gitmergeonefile] section is deprecated. In case it exists copy the
+# options/values to the [stgit] one
+if config.has_section('gitmergeonefile'):
+    for option, value in config.items('gitmergeonefile'):
+        config.set('stgit', option, value)
