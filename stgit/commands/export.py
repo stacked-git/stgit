@@ -23,7 +23,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, basedir
 
 
 help = 'exports a series of patches to <dir> (or patches)'
@@ -144,7 +144,7 @@ def func(parser, options, args):
     else:
         patch_tmpl_list = []
 
-    patch_tmpl_list += [os.path.join(git.get_base_dir(), 'patchexport.tmpl'),
+    patch_tmpl_list += [os.path.join(basedir.get(), 'patchexport.tmpl'),
                         os.path.join(sys.prefix,
                                      'share/stgit/templates/patchexport.tmpl')]
     tmpl = ''

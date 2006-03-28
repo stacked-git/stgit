@@ -20,11 +20,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os, ConfigParser
 
+from stgit import basedir
 
-if 'GIT_DIR' in os.environ:
-    __git_dir = os.environ['GIT_DIR']
-else:
-    __git_dir = '.git'
 
 config = ConfigParser.RawConfigParser()
 
@@ -41,7 +38,7 @@ config.set('stgit', 'keeporig', 'yes')
 # Read the configuration files (if any) and override the default settings
 config.read('/etc/stgitrc')
 config.read(os.path.expanduser('~/.stgitrc'))
-config.read(os.path.join(__git_dir, 'stgitrc'))
+config.read(os.path.join(basedir.get(), 'stgitrc'))
 
 # [gitmergeonefile] section is deprecated. In case it exists copy the
 # options/values to the [stgit] one

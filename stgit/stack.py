@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 
 from stgit.utils import *
-from stgit import git
+from stgit import git, basedir
 from stgit.config import config
 
 
@@ -66,7 +66,7 @@ def __clean_comments(f):
 
 def edit_file(series, line, comment, show_patch = True):
     fname = '.stgit.msg'
-    tmpl = os.path.join(git.get_base_dir(), 'patchdescr.tmpl')
+    tmpl = os.path.join(basedir.get(), 'patchdescr.tmpl')
 
     f = file(fname, 'w+')
     if line:
@@ -292,7 +292,7 @@ class Series:
                 self.__name = name
             else:
                 self.__name = git.get_head_file()
-            self.__base_dir = git.get_base_dir()
+            self.__base_dir = basedir.get()
         except git.GitException, ex:
             raise StackException, 'GIT tree not initialised: %s' % ex
 

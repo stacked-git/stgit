@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
+from stgit import basedir
 from stgit.config import config
 from stgit.utils import append_string
 
@@ -87,21 +88,10 @@ def __remove_files(orig_hash, file1_hash, file2_hash):
         os.remove(src2)
     pass
 
-# GIT_DIR value cached
-__base_dir = None
-
 def __conflict(path):
     """Write the conflict file for the 'path' variable and exit
     """
-    global __base_dir
-
-    if not __base_dir:
-        if 'GIT_DIR' in os.environ:
-            __base_dir = os.environ['GIT_DIR']
-        else:
-            __base_dir = __output('git-rev-parse --git-dir')
-
-    append_string(os.path.join(__base_dir, 'conflicts'), path)
+    append_string(os.path.join(basedir.get(), 'conflicts'), path)
 
 
 #

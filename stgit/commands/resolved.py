@@ -21,7 +21,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, basedir
 
 
 help = 'mark a file conflict as solved'
@@ -65,8 +65,8 @@ def func(parser, options, args):
 
     # save or remove the conflicts file
     if conflicts == []:
-        os.remove(os.path.join(git.get_base_dir(), 'conflicts'))
+        os.remove(os.path.join(basedir.get(), 'conflicts'))
     else:
-        f = file(os.path.join(git.get_base_dir(), 'conflicts'), 'w+')
+        f = file(os.path.join(basedir.get(), 'conflicts'), 'w+')
         f.writelines([line + '\n' for line in conflicts])
         f.close()

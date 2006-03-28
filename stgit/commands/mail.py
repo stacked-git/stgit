@@ -20,7 +20,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, basedir
 from stgit.config import config
 
 
@@ -434,7 +434,7 @@ def func(parser, options, args):
         if options.cover:
             tfile_list = [options.cover]
         else:
-            tfile_list = [os.path.join(git.get_base_dir(), 'covermail.tmpl'),
+            tfile_list = [os.path.join(basedir.get(), 'covermail.tmpl'),
                           os.path.join(sys.prefix,
                                        'share/stgit/templates/covermail.tmpl')]
 
@@ -466,7 +466,7 @@ def func(parser, options, args):
     if options.template:
         tfile_list = [options.template]
     else:
-        tfile_list = [os.path.join(git.get_base_dir(), 'patchmail.tmpl'),
+        tfile_list = [os.path.join(basedir.get(), 'patchmail.tmpl'),
                       os.path.join(sys.prefix,
                                    'share/stgit/templates/patchmail.tmpl')]
     tmpl = None

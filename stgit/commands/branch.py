@@ -23,7 +23,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, basedir
 
 
 help = 'manage development branches'
@@ -173,7 +173,7 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('incorrect number of arguments')
 
-        branches = os.listdir(os.path.join(git.get_base_dir(), 'refs', 'heads'))
+        branches = os.listdir(os.path.join(basedir.get(), 'refs', 'heads'))
         branches.sort()
         max_len = max([len(i) for i in branches])
 

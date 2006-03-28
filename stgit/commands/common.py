@@ -22,7 +22,7 @@ import sys, os, re
 from optparse import OptionParser, make_option
 
 from stgit.utils import *
-from stgit import stack, git
+from stgit import stack, git, basedir
 
 crt_series = None
 
@@ -96,7 +96,7 @@ def check_head_top_equal():
               '  are doing, use the "refresh -f" command'
 
 def check_conflicts():
-    if os.path.exists(os.path.join(git.get_base_dir(), 'conflicts')):
+    if os.path.exists(os.path.join(basedir.get(), 'conflicts')):
         raise CmdException, 'Unsolved conflicts. Please resolve them first'
 
 def print_crt_patch(branch = None):
@@ -130,7 +130,7 @@ def resolved_all(reset = None):
     if conflicts:
         for filename in conflicts:
             resolved(filename, reset)
-        os.remove(os.path.join(git.get_base_dir(), 'conflicts'))
+        os.remove(os.path.join(basedir.get(), 'conflicts'))
 
 def push_patches(patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared
