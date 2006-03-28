@@ -426,7 +426,7 @@ def func(parser, options, args):
     if options.sleep != None:
         sleep = options.sleep
     else:
-        sleep = 2
+        sleep = config.getint('stgit', 'smtpdelay')
 
     # send the cover message (if any)
     if options.cover or options.edit:

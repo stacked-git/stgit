@@ -17,6 +17,9 @@ smtpserver: localhost:25
 #smtpuser: username
 #smtppassword: password
 
+# delay between messages in seconds (defaults to 2)
+#smtpdelay: 2
+
 # stg will look for this first, then look for the EDITOR environmental
 # variable, then default to using 'vi'
 #editor: /usr/bin/vi
