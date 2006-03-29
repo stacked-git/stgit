@@ -187,8 +187,8 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
         if noexclude:
             extra_exclude = base_exclude = []
 
-        lines = _output_lines(['git-ls-files', '--others'] + base_exclude
-                        + extra_exclude)
+        lines = _output_lines(['git-ls-files', '--others', '--directory']
+                        + base_exclude + extra_exclude)
         cache_files += [('?', line.strip()) for line in lines]
 
     # conflicted files
