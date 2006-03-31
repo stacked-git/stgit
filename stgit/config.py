@@ -40,6 +40,10 @@ config.read('/etc/stgitrc')
 config.read(os.path.expanduser('~/.stgitrc'))
 config.read(os.path.join(basedir.get(), 'stgitrc'))
 
+# Set the PAGER environment to the config value (if any)
+if config.has_option('stgit', 'pager'):
+    os.environ['PAGER'] = config.get('stgit', 'pager')
+
 # [gitmergeonefile] section is deprecated. In case it exists copy the
 # options/values to the [stgit] one
 if config.has_section('gitmergeonefile'):

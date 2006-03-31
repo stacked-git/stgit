@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from optparse import OptionParser, make_option
+from pydoc import pager
 
 from stgit.commands.common import *
 from stgit.utils import *
@@ -73,4 +74,4 @@ def func(parser, options, args):
     if options.stat:
         print git.diffstat(args, git_id(rev1), git_id(rev2))
     else:
-        git.diff(args, git_id(rev1), git_id(rev2), sys.stdout)
+        pager(git.diff(args, git_id(rev1), git_id(rev2)))

@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from optparse import OptionParser, make_option
+from pydoc import pager
 
 from stgit.commands.common import *
 from stgit import git
@@ -42,4 +43,4 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     commit_id = git_id(patch)
-    sys.stdout.write(git.pretty_commit(commit_id))
+    pager(git.pretty_commit(commit_id))

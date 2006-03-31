@@ -24,6 +24,9 @@ smtpserver: localhost:25
 # variable, then default to using 'vi'
 #editor: /usr/bin/vi
 
+# this value overrides the default PAGER environment variable
+#pager: less -S
+
 # Different three-way merge tools below. Uncomment the preferred one.
 # Note that the 'output' file contains the same data as 'branch1'. This
 # is useful for tools that do not take an output parameter
