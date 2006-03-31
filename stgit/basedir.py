@@ -20,14 +20,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os
 
-class BaseDirException(Exception):
-    pass
-
 def __output(cmd):
     f = os.popen(cmd, 'r')
     string = f.readline().rstrip()
     if f.close():
-        raise BaseDirException, 'Error: failed to execute "%s"' % cmd
+        return ''
     return string
 
 # GIT_DIR value cached
@@ -42,6 +39,6 @@ def get():
         if 'GIT_DIR' in os.environ:
             __base_dir = os.environ['GIT_DIR']
         else:
-            __base_dir = __output('git-rev-parse --git-dir')
+            __base_dir = __output('git-rev-parse --git-dir 2> /dev/null')
 
     return __base_dir
