@@ -598,6 +598,12 @@ def barefiles(rev1, rev2):
 
     return result.rstrip()
 
+def pretty_commit(commit_id = 'HEAD'):
+    """Return a given commit (log + diff)
+    """
+    return _output(['git-diff-tree', '--cc', '--always', '--pretty', '-r',
+                    commit_id])
+
 def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
     """

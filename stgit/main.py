@@ -54,6 +54,7 @@ import stgit.commands.rename
 import stgit.commands.resolved
 import stgit.commands.rm
 import stgit.commands.series
+import stgit.commands.show
 import stgit.commands.status
 import stgit.commands.top
 import stgit.commands.unapplied
@@ -90,6 +91,7 @@ commands = {
     'resolved': stgit.commands.resolved,
     'rm':       stgit.commands.rm,
     'series':   stgit.commands.series,
+    'show':     stgit.commands.show,
     'status':   stgit.commands.status,
     'top':      stgit.commands.top,
     'unapplied':stgit.commands.unapplied,
