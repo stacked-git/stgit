@@ -188,10 +188,7 @@ class Patch:
     def set_bottom(self, value, backup = False):
         if backup:
             curr = self.__get_field('bottom')
-            if curr != value:
-                self.__set_field('bottom.old', curr)
-            else:
-                self.__set_field('bottom.old', None)
+            self.__set_field('bottom.old', curr)
         self.__set_field('bottom', value)
 
     def get_old_top(self):
@@ -203,10 +200,7 @@ class Patch:
     def set_top(self, value, backup = False):
         if backup:
             curr = self.__get_field('top')
-            if curr != value:
-                self.__set_field('top.old', curr)
-            else:
-                self.__set_field('top.old', None)
+            self.__set_field('top.old', curr)
         self.__set_field('top', value)
         self.__update_top_ref(value)
 
@@ -573,7 +567,8 @@ class Series:
                       cache_update = True,
                       author_name = None, author_email = None,
                       author_date = None,
-                      committer_name = None, committer_email = None):
+                      committer_name = None, committer_email = None,
+                      backup = False):
         """Generates a new commit for the given patch
         """
         name = self.get_current()
@@ -605,8 +600,10 @@ class Series:
         if not committer_email:
             committer_email = patch.get_commemail()
 
+        bottom = patch.get_bottom()
+
         commit_id = git.commit(files = files,
-                               message = descr, parents = [patch.get_bottom()],
+                               message = descr, parents = [bottom],
                                cache_update = cache_update,
                                allowempty = True,
                                author_name = author_name,
@@ -615,7 +612,8 @@ class Series:
                                committer_name = committer_name,
                                committer_email = committer_email)
 
-        patch.set_top(commit_id)
+        patch.set_bottom(bottom, backup = backup)
+        patch.set_top(commit_id, backup = backup)
         patch.set_description(descr)
         patch.set_authname(author_name)
         patch.set_authemail(author_email)
@@ -624,6 +622,25 @@ class Series:
         patch.set_commemail(committer_email)
 
         return commit_id
+
+    def undo_refresh(self):
+        """Undo the patch boundaries changes caused by 'refresh'
+        """
+        name = self.get_current()
+        assert(name)
+
+        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        old_bottom = patch.get_old_bottom()
+        old_top = patch.get_old_top()
+
+        # the bottom of the patch is not changed by refresh. If the
+        # old_bottom is different, there wasn't any previous 'refresh'
+        # command (probably only a 'push')
+        if old_bottom != patch.get_bottom() or old_top == patch.get_top():
+            raise StackException, 'No refresh undo information available'
+
+        git.reset(tree_id = old_top, check_out = False)
+        patch.restore_old_boundaries()
 
     def new_patch(self, name, message = None, can_edit = True,
                   unapplied = False, show_patch = False,
@@ -878,6 +895,16 @@ class Series:
         assert(name)
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        old_bottom = patch.get_old_bottom()
+        old_top = patch.get_old_top()
+
+        # the top of the patch is changed by a push operation only
+        # together with the bottom (otherwise the top was probably
+        # modified by 'refresh'). If they are both unchanged, there
+        # was a fast forward
+        if old_bottom == patch.get_bottom() and old_top != patch.get_top():
+            raise StackException, 'No push undo information available'
+
         git.reset()
         self.pop_patch(name)
         return patch.restore_old_boundaries()

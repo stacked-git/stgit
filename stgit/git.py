@@ -627,14 +627,15 @@ def switch(tree_id):
 
     __set_head(tree_id)
 
-def reset(files = None, tree_id = None):
+def reset(files = None, tree_id = None, check_out = True):
     """Revert the tree changes relative to the given tree_id. It removes
     any local changes
     """
     if not tree_id:
         tree_id = get_head()
 
-    checkout(files, tree_id, True)
+    if check_out:
+        checkout(files, tree_id, True)
 
     # if the reset refers to the whole tree, switch the HEAD as well
     if not files:
