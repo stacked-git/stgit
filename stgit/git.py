@@ -649,17 +649,17 @@ def reset(files = None, tree_id = None, check_out = True):
 
 def pull(repository = 'origin', refspec = None):
     """Pull changes from the remote repository. At the moment, just
-    use the 'git pull' command
+    use the 'git-pull' command
     """
-    # 'git pull' updates the HEAD
+    # 'git-pull' updates the HEAD
     __clear_head_cache()
 
     args = [repository]
     if refspec:
         args.append(refspec)
 
-    if __run('git pull', args) != 0:
-        raise GitException, 'Failed "git pull %s"' % repository
+    if __run('git-pull', args) != 0:
+        raise GitException, 'Failed "git-pull %s"' % repository
 
 def apply_patch(filename = None, base = None):
     """Apply a patch onto the current or given index. There must not
@@ -693,10 +693,10 @@ def apply_patch(filename = None, base = None):
 
 def clone(repository, local_dir):
     """Clone a remote repository. At the moment, just use the
-    'git clone' script
+    'git-clone' script
     """
-    if __run('git clone', [repository, local_dir]) != 0:
-        raise GitException, 'Failed "git clone %s %s"' \
+    if __run('git-clone', [repository, local_dir]) != 0:
+        raise GitException, 'Failed "git-clone %s %s"' \
               % (repository, local_dir)
 
 def modifying_revs(files, base_rev):
