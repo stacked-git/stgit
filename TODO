@@ -7,6 +7,7 @@ The TODO list until 1.0:
 - man page
 - code execution allowed from templates
 - more regression tests
+- stg help should probably pipe through the $PAGER
 - release 1.0
 
 
@@ -17,3 +18,17 @@ The future, when time allows or if someone else does it:
   synchronising with other patches (diff format or in other
   repositories)
 - write bash-completion script for the StGIT commands
+- support for branches with / in names
+  (ml: "Handle branch names with slashes")
+- "pull" argument should default to a sane value, "origin" is wrong in
+  many cases
+
+Bugs:
+
+- the following commands break in subdirs:
+  - refresh (ml: "Running StGIT in subdirectories")
+- "stg show" on empty patch shows previous patch
+- "stg add" is accepted when no patch is applied, then any push says
+  one must refresh first, which is obviously wrong
+- "stg add" on files already added should print a notice, so that the
+  user can catch a possible typo
