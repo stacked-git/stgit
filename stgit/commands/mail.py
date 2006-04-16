@@ -30,16 +30,18 @@ usage = """%prog [options] [<patch> [<patch2...]]
 Send a patch or a range of patches (defaulting to the applied patches)
 by e-mail using the 'smtpserver' configuration option. The From
 address and the e-mail format are generated from the template file
-passed as argument to '--template' (defaulting to .git/patchmail.tmpl
-or /usr/share/stgit/templates/patchmail.tmpl). The To/Cc/Bcc addresses
+passed as argument to '--template' (defaulting to
+'.git/patchmail.tmpl' or '~/.stgit/templates/patchmail.tmpl' or or
+'/usr/share/stgit/templates/patchmail.tmpl'). The To/Cc/Bcc addresses
 can either be added to the template file or passed via the
 corresponding command line options.
 
 A preamble e-mail can be sent using the '--cover' and/or '--edit'
 options. The first allows the user to specify a file to be used as a
 template. The latter option will invoke the editor on the specified
-file (defaulting to .git/covermail.tmpl or
-/usr/share/stgit/templates/covermail.tmpl).
+file (defaulting to '.git/covermail.tmpl' or
+'~/.stgit/templates/covermail.tmpl' or
+'/usr/share/stgit/templates/covermail.tmpl').
 
 All the subsequent e-mails appear as replies to the first e-mail sent
 (either the preamble or the first patch). E-mails can be seen as
@@ -444,8 +446,10 @@ def func(parser, options, args):
             tfile_list = [options.cover]
         else:
             tfile_list = [os.path.join(basedir.get(), 'covermail.tmpl'),
+                          os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
+                                       'covermail.tmpl'),
                           os.path.join(sys.prefix,
-                                       'share/stgit/templates/covermail.tmpl')]
+                                       'share', 'stgit', 'templates', 'covermail.tmpl')]
 
         tmpl = None
         for tfile in tfile_list:
@@ -476,8 +480,10 @@ def func(parser, options, args):
         tfile_list = [options.template]
     else:
         tfile_list = [os.path.join(basedir.get(), 'patchmail.tmpl'),
+                      os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
+                                   'patchmail.tmpl'),
                       os.path.join(sys.prefix,
-                                   'share/stgit/templates/patchmail.tmpl')]
+                                   'share', 'stgit', 'templates', 'patchmail.tmpl')]
     tmpl = None
     for tfile in tfile_list:
         if os.path.isfile(tfile):

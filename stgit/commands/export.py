@@ -31,8 +31,9 @@ usage = """%prog [options] [<dir>]
 
 Export the applied patches into a given directory (defaults to
 'patches') in a standard unified GNU diff format. A template file
-(defaulting to '.git/patchexport.tmpl or
-/usr/share/stgit/templates/patchexport.tmpl') can be used for the
+(defaulting to '.git/patchexport.tmpl' or
+'~/.stgit/templates/patchexport.tmpl' or
+'/usr/share/stgit/templates/patchexport.tmpl') can be used for the
 patch format. The following variables are supported in the template
 file:
 
@@ -145,8 +146,10 @@ def func(parser, options, args):
         patch_tmpl_list = []
 
     patch_tmpl_list += [os.path.join(basedir.get(), 'patchexport.tmpl'),
+                        os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
+                                     'patchexport.tmpl'),
                         os.path.join(sys.prefix,
-                                     'share/stgit/templates/patchexport.tmpl')]
+                                     'share', 'stgit', 'templates', 'patchexport.tmpl')]
     tmpl = ''
     for patch_tmpl in patch_tmpl_list:
         if os.path.isfile(patch_tmpl):
