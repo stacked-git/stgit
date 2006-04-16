@@ -51,6 +51,9 @@ def func(parser, options, args):
     os.chdir(local_dir)
     git.checkout(tree_id = 'HEAD')
 
+    # be sure to forget any cached value for .git, since we're going
+    # to work on a brand new repository
+    basedir.clear_cache()
     stack.Series().init()
 
     print 'done'

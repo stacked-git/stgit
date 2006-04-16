@@ -42,3 +42,9 @@ def get():
             __base_dir = __output('git-rev-parse --git-dir 2> /dev/null')
 
     return __base_dir
+
+def clear_cache():
+    """Clear the cached location of .git
+    """
+    global __base_dir
+    __base_dir = None
