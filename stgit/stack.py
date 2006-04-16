@@ -505,6 +505,8 @@ class Series:
             os.rename(self.__series_dir, to_stack.__series_dir)
         if os.path.exists(self.__base_file):
             os.rename(self.__base_file, to_stack.__base_file)
+        if os.path.exists(self.__refs_dir):
+            os.rename(self.__refs_dir, to_stack.__refs_dir)
 
         self.__init__(to_name)
 
