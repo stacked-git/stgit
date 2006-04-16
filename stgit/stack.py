@@ -431,8 +431,13 @@ class Series:
         """
         bases_dir = os.path.join(self.__base_dir, 'refs', 'bases')
 
-        if self.is_initialised():
+        if os.path.exists(self.__patch_dir):
             raise StackException, self.__patch_dir + ' already exists'
+        if os.path.exists(self.__refs_dir):
+            raise StackException, self.__refs_dir + ' already exists'
+        if os.path.exists(self.__base_file):
+            raise StackException, self.__base_file + ' already exists'
+
         os.makedirs(self.__patch_dir)
 
         if not os.path.isdir(bases_dir):

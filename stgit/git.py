@@ -272,9 +272,11 @@ def rev_parse(git_id):
 def branch_exists(branch):
     """Existence check for the named branch
     """
-    for line in _output_lines(['git-rev-parse', '--symbolic', '--all']):
+    for line in _output_lines('git-rev-parse --symbolic --all 2>&1'):
         if line.strip() == branch:
             return True
+        if re.compile('[ |/]'+branch+' ').search(line):
+            raise GitException, 'Bogus branch: %s' % line
     return False
 
 def create_branch(new_branch, tree_id = None):
