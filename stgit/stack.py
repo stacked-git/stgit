@@ -426,7 +426,7 @@ class Series:
         """
         return os.path.isdir(self.__patch_dir)
 
-    def init(self):
+    def init(self, create_at=False):
         """Initialises the stgit series
         """
         bases_dir = os.path.join(self.__base_dir, 'refs', 'bases')
@@ -437,6 +437,9 @@ class Series:
             raise StackException, self.__refs_dir + ' already exists'
         if os.path.exists(self.__base_file):
             raise StackException, self.__base_file + ' already exists'
+
+        if (create_at!=False):
+            git.create_branch(self.__name, create_at)
 
         os.makedirs(self.__patch_dir)
 
@@ -509,8 +512,7 @@ class Series:
         """Clones a series
         """
         base = read_string(self.get_base_file())
-        git.create_branch(target_series, tree_id = base)
-        Series(target_series).init()
+        Series(target_series).init(create_at = base)
         new_series = Series(target_series)
 
         # generate an artificial description file

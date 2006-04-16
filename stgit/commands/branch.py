@@ -125,12 +125,8 @@ def func(parser, options, args):
         tree_id = None
         if len(args) == 2:
             tree_id = git_id(args[1])
-
-        if git.branch_exists(args[0]):
-            raise CmdException, 'Branch "%s" already exists' % args[0]
         
-        stack.Series(args[0]).init()
-        git.create_branch(args[0], tree_id)
+        stack.Series(args[0]).init(create_at = tree_id)
 
         print 'Branch "%s" created.' % args[0]
         return
