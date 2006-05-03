@@ -612,7 +612,7 @@ def checkout(files = None, tree_id = None, force = False):
     if not files:
         files = []
 
-    if tree_id and __run('git-read-tree -m', [tree_id]) != 0:
+    if tree_id and __run('git-read-tree', [tree_id]) != 0:
         raise GitException, 'Failed git-read-tree -m %s' % tree_id
 
     checkout_cmd = 'git-checkout-index -q -u'
