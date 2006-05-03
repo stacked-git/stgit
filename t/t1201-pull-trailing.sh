@@ -35,8 +35,20 @@ test_expect_success \
 "
 
 test_expect_success \
+    'Pull those patches applied upstream, without pushing' \
+    "(cd bar && stg pull --nopush
+     )
+"
+
+test_expect_failure \
+    'Try to push those patches without merge detection' \
+    "(cd bar && stg push --all
+     )
+"
+
+test_expect_success \
     'Pull those patches applied upstream' \
-    "(cd bar && stg pull
+    "(cd bar && stg push --all --merged
      )
 "
 
