@@ -205,6 +205,8 @@ def merge(orig_hash, file1_hash, file2_hash,
                     return 1
             # files are different
             else:
+                # reset the index to the current file
+                os.system('git-update-index -- %s' % path)
                 print >> sys.stderr, \
                       'Error: File "%s" added in branches but different' % path
                 __conflict(path)
