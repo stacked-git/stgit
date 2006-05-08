@@ -818,7 +818,7 @@ class Series:
 
         merged = []
         for p in patches:
-            if git.apply_diff(p.get_top(), p.get_bottom(), False):
+            if git.apply_diff(p.get_top(), p.get_bottom()):
                 merged.append(p.get_name())
         merged.reverse()
 

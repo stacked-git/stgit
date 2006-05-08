@@ -612,8 +612,8 @@ def checkout(files = None, tree_id = None, force = False):
     if not files:
         files = []
 
-    if tree_id and __run('git-read-tree', [tree_id]) != 0:
-        raise GitException, 'Failed git-read-tree -m %s' % tree_id
+    if tree_id and __run('git-read-tree --reset', [tree_id]) != 0:
+        raise GitException, 'Failed git-read-tree --reset %s' % tree_id
 
     checkout_cmd = 'git-checkout-index -q -u'
     if force:
@@ -643,7 +643,13 @@ def reset(files = None, tree_id = None, check_out = True):
         tree_id = get_head()
 
     if check_out:
+        cache_files = __tree_status(files, tree_id)
+        # files which were added but need to be removed
+        rm_files =  [x[1] for x in cache_files if x[0] in ['A']]
+
         checkout(files, tree_id, True)
+        # checkout doesn't remove files
+        map(os.remove, rm_files)
 
     # if the reset refers to the whole tree, switch the HEAD as well
     if not files:
