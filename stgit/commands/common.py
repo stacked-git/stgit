@@ -23,6 +23,7 @@ from optparse import OptionParser, make_option
 
 from stgit.utils import *
 from stgit import stack, git, basedir
+from stgit.config import config, file_extensions
 
 crt_series = None
 
@@ -112,7 +113,7 @@ def print_crt_patch(branch = None):
 
 def resolved(filename, reset = None):
     if reset:
-        reset_file = filename + '.' + reset
+        reset_file = filename + file_extensions()[reset]
         if os.path.isfile(reset_file):
             if os.path.isfile(filename):
                 os.remove(filename)
@@ -120,7 +121,7 @@ def resolved(filename, reset = None):
 
     git.update_cache([filename], force = True)
 
-    for ext in ['.local', '.older', '.remote']:
+    for ext in file_extensions().values():
         fn = filename + ext
         if os.path.isfile(fn):
             os.remove(fn)

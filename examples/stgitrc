@@ -30,10 +30,10 @@ smtpserver: localhost:25
 # Different three-way merge tools below. Uncomment the preferred one.
 # Note that the 'output' file contains the same data as 'branch1'. This
 # is useful for tools that do not take an output parameter
-merger: diff3 -L local -L older -L remote -m -E \
+merger: diff3 -L current -L ancestor -L patched -m -E \
 	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
 
-#merger: xxdiff --title1 local --title2 older --title3 remote \
+#merger: xxdiff --title1 current --title2 ancestor --title3 patched \
 #	--show-merged-pane -m -E -O -X -M "%(output)s" \
 #	"%(branch1)s" "%(ancestor)s" "%(branch2)s"
 
@@ -42,3 +42,7 @@ merger: diff3 -L local -L older -L remote -m -E \
 
 # Leave the original files in the working tree in case of a merge conflict
 keeporig: yes
+
+# Extensions for the files involved in a three-way merge (ancestor,
+# current, patched)
+#extensions: .ancestor .current .patched

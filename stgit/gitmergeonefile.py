@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from stgit import basedir
-from stgit.config import config
+from stgit.config import config, file_extensions
 from stgit.utils import append_string
 
 
@@ -62,17 +62,17 @@ def __checkout_files(orig_hash, file1_hash, file2_hash,
     global orig, src1, src2
 
     if orig_hash:
-        orig = '%s.older' % path
+        orig = path + file_extensions()['ancestor']
         tmp = __output('git-unpack-file %s' % orig_hash)
         os.chmod(tmp, int(orig_mode, 8))
         os.renames(tmp, orig)
     if file1_hash:
-        src1 = '%s.local' % path
+        src1 = path + file_extensions()['current']
         tmp = __output('git-unpack-file %s' % file1_hash)
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, src1)
     if file2_hash:
-        src2 = '%s.remote' % path
+        src2 = path + file_extensions()['patched']
         tmp = __output('git-unpack-file %s' % file2_hash)
         os.chmod(tmp, int(file2_mode, 8))
         os.renames(tmp, src2)

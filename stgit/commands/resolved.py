@@ -22,6 +22,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git, basedir
+from stgit.config import file_extensions
 
 
 help = 'mark a file conflict as solved'
@@ -29,19 +30,21 @@ usage = """%prog [options] [<files...>]
 
 Mark a merge conflict as resolved. The conflicts can be seen with the
 'status' command, the corresponding files being prefixed with a
-'C'. This command also removes any <file>.{local,remote,older} files."""
+'C'. This command also removes any <file>.{ancestor,current,patched}
+files."""
 
 options = [make_option('-a', '--all',
                        help = 'mark all conflicts as solved',
                        action = 'store_true'),
-           make_option('-r', '--reset', metavar = '(local|remote|older)',
+           make_option('-r', '--reset', metavar = '(ancestor|current|patched)',
                        help = 'reset the file(s) to the given state')]
 
 
 def func(parser, options, args):
     """Mark the conflict as resolved
     """
-    if options.reset and options.reset not in ['local', 'remote', 'older']:
+    if options.reset \
+           and options.reset not in file_extensions():
         raise CmdException, 'Unknown reset state: %s' % options.reset
 
     if options.all:
