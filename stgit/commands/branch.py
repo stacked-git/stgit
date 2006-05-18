@@ -174,11 +174,14 @@ def func(parser, options, args):
 
         branches = os.listdir(os.path.join(basedir.get(), 'refs', 'heads'))
         branches.sort()
-        max_len = max([len(i) for i in branches])
 
-        print 'Available branches:'
-        for i in branches:
-            __print_branch(i, max_len)
+        if branches:
+            print 'Available branches:'
+            max_len = max([len(i) for i in branches])
+            for i in branches:
+                __print_branch(i, max_len)
+        else:
+            print 'No branches'
         return
 
     elif options.protect:
