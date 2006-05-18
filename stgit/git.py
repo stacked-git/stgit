@@ -225,7 +225,8 @@ def get_head():
 def get_head_file():
     """Returns the name of the file pointed to by the HEAD link
     """
-    return os.path.basename(_output_one_line('git-symbolic-ref HEAD'))
+    return strip_prefix('refs/heads/',
+                        _output_one_line('git-symbolic-ref HEAD'))
 
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
@@ -233,7 +234,8 @@ def set_head_file(ref):
     # head cache flushing is needed since we might have a different value
     # in the new head
     __clear_head_cache()
-    if __run('git-symbolic-ref HEAD', [ref]) != 0:
+    if __run('git-symbolic-ref HEAD',
+             [os.path.join('refs', 'heads', ref)]) != 0:
         raise GitException, 'Could not set head to "%s"' % ref
 
 def __set_head(val):
@@ -272,6 +274,7 @@ def rev_parse(git_id):
 def branch_exists(branch):
     """Existence check for the named branch
     """
+    branch = os.path.join('refs', 'heads', branch)
     for line in _output_lines('git-rev-parse --symbolic --all 2>&1'):
         if line.strip() == branch:
             return True
@@ -282,12 +285,11 @@ def branch_exists(branch):
 def create_branch(new_branch, tree_id = None):
     """Create a new branch in the git repository
     """
-    new_head = os.path.join('refs', 'heads', new_branch)
-    if branch_exists(new_head):
+    if branch_exists(new_branch):
         raise GitException, 'Branch "%s" already exists' % new_branch
 
     current_head = get_head()
-    set_head_file(new_head)
+    set_head_file(new_branch)
     __set_head(current_head)
 
     # a checkout isn't needed if new branch points to the current head
@@ -297,22 +299,22 @@ def create_branch(new_branch, tree_id = None):
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))
 
-def switch_branch(name):
+def switch_branch(new_branch):
     """Switch to a git branch
     """
     global __head
 
-    new_head = os.path.join('refs', 'heads', name)
-    if not branch_exists(new_head):
-        raise GitException, 'Branch "%s" does not exist' % name
+    if not branch_exists(new_branch):
+        raise GitException, 'Branch "%s" does not exist' % new_branch
 
-    tree_id = rev_parse(new_head + '^{commit}')
+    tree_id = rev_parse(os.path.join('refs', 'heads', new_branch)
+                        + '^{commit}')
     if tree_id != get_head():
         refresh_index()
         if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
             raise GitException, 'git-read-tree failed (local changes maybe?)'
         __head = tree_id
-    set_head_file(new_head)
+    set_head_file(new_branch)
 
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))
@@ -320,25 +322,23 @@ def switch_branch(name):
 def delete_branch(name):
     """Delete a git branch
     """
-    branch_head = os.path.join('refs', 'heads', name)
-    if not branch_exists(branch_head):
+    if not branch_exists(name):
         raise GitException, 'Branch "%s" does not exist' % name
-    os.remove(os.path.join(basedir.get(), branch_head))
+    remove_file_and_dirs(os.path.join(basedir.get(), 'refs', 'heads'),
+                         name)
 
 def rename_branch(from_name, to_name):
     """Rename a git branch
     """
-    from_head = os.path.join('refs', 'heads', from_name)
-    if not branch_exists(from_head):
+    if not branch_exists(from_name):
         raise GitException, 'Branch "%s" does not exist' % from_name
-    to_head = os.path.join('refs', 'heads', to_name)
-    if branch_exists(to_head):
+    if branch_exists(to_name):
         raise GitException, 'Branch "%s" already exists' % to_name
 
     if get_head_file() == from_name:
-        set_head_file(to_head)
-    os.rename(os.path.join(basedir.get(), from_head), \
-              os.path.join(basedir.get(), to_head))
+        set_head_file(to_name)
+    rename(os.path.join(basedir.get(), 'refs', 'heads'),
+           from_name, to_name)
 
 def add(names):
     """Add the files or recursively add the directory contents

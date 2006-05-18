@@ -443,8 +443,7 @@ class Series:
 
         os.makedirs(self.__patch_dir)
 
-        if not os.path.isdir(bases_dir):
-            os.makedirs(bases_dir)
+        create_dirs(bases_dir)
 
         create_empty_file(self.__applied_file)
         create_empty_file(self.__unapplied_file)
@@ -502,11 +501,14 @@ class Series:
         git.rename_branch(self.__name, to_name)
 
         if os.path.isdir(self.__series_dir):
-            os.rename(self.__series_dir, to_stack.__series_dir)
+            rename(os.path.join(self.__base_dir, 'patches'),
+                   self.__name, to_stack.__name)
         if os.path.exists(self.__base_file):
-            os.rename(self.__base_file, to_stack.__base_file)
+            rename(os.path.join(self.__base_dir, 'refs', 'bases'),
+                   self.__name, to_stack.__name)
         if os.path.exists(self.__refs_dir):
-            os.rename(self.__refs_dir, to_stack.__refs_dir)
+            rename(os.path.join(self.__base_dir, 'refs', 'patches'),
+                   self.__name, to_stack.__name)
 
         self.__init__(to_name)
 
@@ -560,16 +562,19 @@ class Series:
             else:
                 print 'Patch directory %s is not empty.' % self.__name
             if not os.listdir(self.__series_dir):
-                os.rmdir(self.__series_dir)
+                remove_dirs(os.path.join(self.__base_dir, 'patches'),
+                            self.__name)
             else:
                 print 'Series directory %s is not empty.' % self.__name
             if not os.listdir(self.__refs_dir):
-                os.rmdir(self.__refs_dir)
+                remove_dirs(os.path.join(self.__base_dir, 'refs', 'patches'),
+                            self.__name)
             else:
                 print 'Refs directory %s is not empty.' % self.__refs_dir
 
         if os.path.exists(self.__base_file):
-            os.remove(self.__base_file)
+            remove_file_and_dirs(
+                os.path.join(self.__base_dir, 'refs', 'bases'), self.__name)
 
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,

@@ -172,7 +172,10 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('incorrect number of arguments')
 
-        branches = os.listdir(os.path.join(basedir.get(), 'refs', 'heads'))
+        branches = []
+        basepath = os.path.join(basedir.get(), 'refs', 'heads')
+        for path, files, dirs in walk_tree(basepath):
+            branches += [os.path.join(path, f) for f in files]
         branches.sort()
 
         if branches:

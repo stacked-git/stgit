@@ -28,7 +28,7 @@ usage = """%prog [options] [id]
 
 Print the hash value of a GIT id (defaulting to HEAD). In addition to
 the standard GIT id's like heads and tags, this command also accepts
-'base[@<branch>]' and '[<patch>[@<branch>]][/(bottom | top)]'. If no
+'base[@<branch>]' and '[<patch>[@<branch>]][//[bottom | top]]'. If no
 'top' or 'bottom' are passed and <patch> is a valid patch name, 'top'
 will be used by default."""
 

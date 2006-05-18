@@ -33,12 +33,12 @@ or a tree-ish object and another tree-ish object. File names can also
 be given to restrict the diff output. The tree-ish object can be a
 standard git commit, tag or tree. In addition to these, the command
 also supports 'base', representing the bottom of the current stack,
-and '[patch]/[bottom | top]' for the patch boundaries (defaulting to
+and '[patch][//[bottom | top]]' for the patch boundaries (defaulting to
 the current one):
 
-rev = '([patch]/[bottom | top]) | <tree-ish> | base'
+rev = '([patch][//[bottom | top]]) | <tree-ish> | base'
 
-If neither bottom or top are given but a '/' is present, the command
+If neither bottom nor top are given but a '//' is present, the command
 shows the specified patch (defaulting to the current one)."""
 
 options = [make_option('-r', metavar = 'rev1[:[rev2]]', dest = 'revs',
@@ -55,10 +55,14 @@ def func(parser, options, args):
         rev_list = options.revs.split(':')
         rev_list_len = len(rev_list)
         if rev_list_len == 1:
-            if rev_list[0][-1] == '/':
+            rev = rev_list[0]
+            if rev[-1] == '/':
                 # the whole patch
-                rev1 = rev_list[0] + 'bottom'
-                rev2 = rev_list[0] + 'top'
+                rev = rev[:-1]
+                if rev[-1] == '/':
+                    rev = rev[:-1]
+                rev1 = rev + '//bottom'
+                rev2 = rev + '//top'
             else:
                 rev1 = rev_list[0]
                 rev2 = None
