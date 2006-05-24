@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 __copyright__ = """
 Copyright (C) 2006, Karl Hasselström <kha@treskal.com>
 
