@@ -109,6 +109,12 @@ def strip_prefix(prefix, string):
     assert string.startswith(prefix)
     return string[len(prefix):]
 
+def strip_suffix(suffix, string):
+    """Return string, without the suffix. Blow up if string doesn't
+    end with suffix."""
+    assert string.endswith(suffix)
+    return string[:-len(suffix)]
+
 def remove_dirs(basedir, dirs):
     """Starting at join(basedir, dirs), remove the directory if empty,
     and try the same with its parent, until we find a nonempty

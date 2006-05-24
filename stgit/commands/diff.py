@@ -56,11 +56,11 @@ def func(parser, options, args):
         rev_list_len = len(rev_list)
         if rev_list_len == 1:
             rev = rev_list[0]
-            if rev[-1] == '/':
+            if rev.endswith('/'):
                 # the whole patch
-                rev = rev[:-1]
-                if rev[-1] == '/':
-                    rev = rev[:-1]
+                rev = strip_suffix('/', rev)
+                if rev.endswith('/'):
+                    rev = strip_suffix('/', rev)
                 rev1 = rev + '//bottom'
                 rev2 = rev + '//top'
             else:
