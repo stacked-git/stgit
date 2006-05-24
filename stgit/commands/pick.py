@@ -39,6 +39,9 @@ options = [make_option('-n', '--name',
                        action = 'store_true'),
            make_option('--fold',
                        help = 'fold the commit object into the current patch',
+                       action = 'store_true'),
+           make_option('--update',
+                       help = 'like fold but only update the current patch files',
                        action = 'store_true')]
 
 
@@ -54,7 +57,7 @@ def func(parser, options, args):
 
     commit_str = args[0]
 
-    if options.fold:
+    if options.fold or options.update:
         if not crt_series.get_current():
             raise CmdException, 'No patches applied'
     else:
@@ -83,6 +86,18 @@ def func(parser, options, args):
         # try a direct git-apply first
         if not git.apply_diff(bottom, top):
             git.merge(bottom, git.get_head(), top)
+
+        print 'done'
+    elif options.update:
+        rev1 = git_id('//bottom')
+        rev2 = git_id('//top')
+        files = git.barefiles(rev1, rev2).split('\n')
+
+        print 'Updating with commit %s...' % commit_id,
+        sys.stdout.flush()
+
+        if not git.apply_diff(bottom, top, files = files):
+            raise CmdException, 'Patch updating failed'
 
         print 'done'
     else:

@@ -119,6 +119,13 @@ def _input(cmd, file_desc):
     if p.wait():
         raise GitException, '%s failed' % str(cmd)
 
+def _input_str(cmd, string):
+    p = popen2.Popen3(cmd, True)
+    p.tochild.write(string)
+    p.tochild.close()
+    if p.wait():
+        raise GitException, '%s failed' % str(cmd)
+
 def _output(cmd):
     p=popen2.Popen3(cmd, True)
     output = p.fromchild.read()
@@ -460,7 +467,7 @@ def commit(message, files = None, parents = None, allowempty = False,
 
     return commit_id
 
-def apply_diff(rev1, rev2, check_index = True):
+def apply_diff(rev1, rev2, check_index = True, files = None):
     """Apply the diff between rev1 and rev2 onto the current
     index. This function doesn't need to raise an exception since it
     is only used for fast-pushing a patch. If this operation fails,
@@ -470,10 +477,18 @@ def apply_diff(rev1, rev2, check_index = True):
         index_opt = '--index'
     else:
         index_opt = ''
-    cmd = 'git-diff-tree -p %s %s | git-apply %s 2> /dev/null' \
-          % (rev1, rev2, index_opt)
 
-    return os.system(cmd) == 0
+    if not files:
+        files = []
+
+    diff_str = diff(files, rev1, rev2)
+    if diff_str:
+        try:
+            _input_str('git-apply %s' % index_opt, diff_str)
+        except GitException:
+            return False
+
+    return True
 
 def merge(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
