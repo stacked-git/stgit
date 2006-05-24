@@ -130,7 +130,7 @@ def remove_file_and_dirs(basedir, file):
 
 def create_dirs(directory):
     """Create the given directory, if the path doesn't already exist."""
-    if directory:
+    if directory and not os.path.isdir(directory):
         create_dirs(os.path.dirname(directory))
         try:
             os.mkdir(directory)
