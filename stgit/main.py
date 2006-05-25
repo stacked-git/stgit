@@ -39,6 +39,7 @@ import stgit.commands.commit
 import stgit.commands.export
 import stgit.commands.files
 import stgit.commands.fold
+import stgit.commands.goto
 import stgit.commands.id
 import stgit.commands.imprt
 import stgit.commands.init
@@ -76,6 +77,7 @@ commands = {
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
     'fold':     stgit.commands.fold,
+    'goto':     stgit.commands.goto,
     'id':       stgit.commands.id,
     'import':   stgit.commands.imprt,
     'init':     stgit.commands.init,

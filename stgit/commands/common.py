@@ -194,6 +194,21 @@ def push_patches(patches, check_merged = False):
             else:
                 print 'done'
 
+def pop_patches(patches):
+    """Pop the patches in the list from the stack. It is assumed that
+    the patches are listed in the stack reverse order.
+    """
+    p = patches[-1]
+    if len(patches) == 1:
+        print 'Popping patch "%s"...' % p,
+    else:
+        print 'Popping "%s" - "%s" patches...' % (patches[0], p),
+    sys.stdout.flush()
+
+    crt_series.pop_patch(p)
+
+    print 'done'
+
 def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' or 'email (name)' string

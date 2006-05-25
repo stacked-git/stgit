@@ -72,15 +72,6 @@ def func(parser, options, args):
     if patches == []:
         raise CmdException, 'No patches to pop'
 
-    # pop everything to the given patch
-    p = patches[-1]
-    if len(patches) == 1:
-        print 'Popping patch "%s"...' % p,
-    else:
-        print 'Popping "%s" - "%s" patches...' % (patches[0], p),
-    sys.stdout.flush()
+    pop_patches(patches)
 
-    crt_series.pop_patch(p)
-
-    print 'done'
     print_crt_patch()
