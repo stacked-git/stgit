@@ -100,19 +100,85 @@ commands = {
     'uncommit': stgit.commands.uncommit,
     }
 
+# classification: repository, stack, patch, working copy
+repocommands = (
+    'branch',
+    'clone',
+    'id',
+    'pull'
+    )
+stackcommands = (
+    'applied',
+    'clean',
+    'commit',
+    'goto',
+    'init',
+    'pop',
+    'push',
+    'series',
+    'top',
+    'unapplied',
+    'uncommit'
+    )
+patchcommands = (
+    'delete',
+    'export',
+    'files',
+    'fold',
+    'import',
+    'mail',
+    'new',
+    'pick',
+    'refresh',
+    'rename',
+    'show'
+    )
+wccommands = (
+    'add',
+    'diff',
+    'patches',
+    'resolved',
+    'rm',
+    'status'
+    )
+
+def _print_helpstring(cmd):
+    print '  ' + cmd + ' ' * (12 - len(cmd)) + commands[cmd].help
+    
 def print_help():
     print 'usage: %s <command> [options]' % os.path.basename(sys.argv[0])
     print
-    print 'commands:'
+    print 'Generic commands:'
     print '  help        print the detailed command usage'
     print '  version     display version information'
     print '  copyright   display copyright information'
-    print
-
+    # unclassified commands if any
     cmds = commands.keys()
     cmds.sort()
     for cmd in cmds:
-        print '  ' + cmd + ' ' * (12 - len(cmd)) + commands[cmd].help
+        if not cmd in repocommands and not cmd in stackcommands \
+               and not cmd in patchcommands and not cmd in wccommands:
+            _print_helpstring(cmd)
+    print
+
+    print 'Repository commands:'
+    for cmd in repocommands:
+        _print_helpstring(cmd)
+    print
+    
+    print 'Stack commands:'
+    for cmd in stackcommands:
+        _print_helpstring(cmd)
+    print
+
+    print 'Patch commands:'
+    for cmd in patchcommands:
+        _print_helpstring(cmd)
+    print
+
+    print 'Working-copy commands:'
+    for cmd in wccommands:
+        _print_helpstring(cmd)
 
 #
 # The main function (command dispatcher)
