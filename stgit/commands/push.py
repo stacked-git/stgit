@@ -25,7 +25,7 @@ from stgit import stack, git
 
 
 help = 'push a patch on top of the series'
-usage = """%prog [options] [<name>]
+usage = """%prog [options] [<patch1> [<patch2>...]]
 
 Push a patch (defaulting to the first unapplied one) or range of
 patches to the stack. The 'push' operation allows patch reordering by
@@ -118,11 +118,9 @@ def func(parser, options, args):
         patches = unapplied
     elif len(args) == 0:
         patches = [unapplied[0]]
-    elif len(args) == 1:
-        patches = args
-        is_patch_appliable(patches[0])
     else:
-        parser.error('incorrect number of arguments')
+        patches = args
+        map(is_patch_appliable, patches)
 
     if patches == []:
         raise CmdException, 'No patches to push'
