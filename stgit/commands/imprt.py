@@ -50,6 +50,9 @@ options = [make_option('-m', '--mail',
            make_option('-i', '--ignore',
                        help = 'ignore the applied patches in the series',
                        action = 'store_true'),
+           make_option('--replace',
+                       help = 'replace the unapplied patches in the series',
+                       action = 'store_true'),
            make_option('-b', '--base',
                        help = 'use BASE instead of HEAD for file importing'),
            make_option('-e', '--edit',
@@ -247,6 +250,9 @@ def __import_patch(patch, filename, options):
         committer_name = options.commname
     if options.commemail:
         committer_email = options.commemail
+
+    if options.replace and patch in crt_series.get_unapplied():
+        crt_series.delete_patch(patch)
 
     crt_series.new_patch(patch, message = message, can_edit = False,
                          author_name = author_name,
