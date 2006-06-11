@@ -117,20 +117,23 @@ def _input(cmd, file_desc):
         p.tochild.write(line)
     p.tochild.close()
     if p.wait():
-        raise GitException, '%s failed' % str(cmd)
+        raise GitException, '%s failed (%s)' % (str(cmd),
+                                                p.childerr.read().strip())
 
 def _input_str(cmd, string):
     p = popen2.Popen3(cmd, True)
     p.tochild.write(string)
     p.tochild.close()
     if p.wait():
-        raise GitException, '%s failed' % str(cmd)
+        raise GitException, '%s failed (%s)' % (str(cmd),
+                                                p.childerr.read().strip())
 
 def _output(cmd):
     p=popen2.Popen3(cmd, True)
     output = p.fromchild.read()
     if p.wait():
-        raise GitException, '%s failed' % str(cmd)
+        raise GitException, '%s failed (%s)' % (str(cmd),
+                                                p.childerr.read().strip())
     return output
 
 def _output_one_line(cmd, file_desc = None):
@@ -141,14 +144,16 @@ def _output_one_line(cmd, file_desc = None):
         p.tochild.close()
     output = p.fromchild.readline().strip()
     if p.wait():
-        raise GitException, '%s failed' % str(cmd)
+        raise GitException, '%s failed (%s)' % (str(cmd),
+                                                p.childerr.read().strip())
     return output
 
 def _output_lines(cmd):
     p=popen2.Popen3(cmd, True)
     lines = p.fromchild.readlines()
     if p.wait():
-        raise GitException, '%s failed' % str(cmd)
+        raise GitException, '%s failed (%s)' % (str(cmd),
+                                                p.childerr.read().strip())
     return lines
 
 def __run(cmd, args=None):
