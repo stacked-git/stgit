@@ -712,6 +712,8 @@ class Series:
                 append_string(self.__applied_file, patch.get_name())
                 self.__set_current(name)
 
+                self.refresh_patch(cache_update = False)
+
     def delete_patch(self, name):
         """Deletes a patch
         """
