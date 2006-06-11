@@ -40,7 +40,7 @@ test_expect_success \
      )
 "
 
-test_expect_failure \
+test_expect_success \
     'Try to push those patches without merge detection' \
     "(cd bar && stg push --all
      )
@@ -48,7 +48,7 @@ test_expect_failure \
 
 test_expect_success \
     'Pull those patches applied upstream' \
-    "(cd bar && stg push --all --merged
+    "(cd bar && stg push --undo && stg push --all --merged
      )
 "
 
