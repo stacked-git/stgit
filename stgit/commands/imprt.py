@@ -234,6 +234,11 @@ def __import_patch(patch, filename, options):
         message, author_name, author_email, author_date = \
                  __parse_patch(filename)
 
+    if not patch:
+        patch = make_patch_name(message)
+        if not patch:
+            raise CmdException, 'Unknown patch name'
+
     # refresh_patch() will invoke the editor in this case, with correct
     # patch content
     if not message:
@@ -323,7 +328,7 @@ def func(parser, options, args):
         elif filename:
             patch = os.path.basename(filename)
         else:
-            raise CmdException, 'Unknown patch name'
+            patch = ''
         if options.strip:
             patch = __strip_patch_name(patch)
 

@@ -233,3 +233,13 @@ def name_email_date(address):
         raise CmdException, 'Incorrect "name <email> date" string: %s' % address
 
     return str_list[0]
+
+def make_patch_name(msg):
+    """Return a string to be used as a patch name. This is generated
+    from the top line of the string passed as argument.
+    """
+    if not msg:
+        return None
+
+    subject_line = msg.lstrip().split('\n', 1)[0]
+    return re.sub('[\W]+', '-', subject_line).strip('-')

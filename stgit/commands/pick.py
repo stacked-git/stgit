@@ -56,6 +56,8 @@ def func(parser, options, args):
     check_head_top_equal()
 
     commit_str = args[0]
+    commit_id = git_id(commit_str)
+    commit = git.Commit(commit_id)
 
     if options.fold or options.update:
         if not crt_series.get_current():
@@ -67,10 +69,9 @@ def func(parser, options, args):
         elif len(patch_branch) == 2:
             patch = patch_branch[0]
         else:
-            raise CmdException, 'Unknown patch name'
-
-    commit_id = git_id(commit_str)
-    commit = git.Commit(commit_id)
+            patch = make_patch_name(commit.get_log())
+            if not patch:
+                raise CmdException, 'Unknown patch name'
 
     if not options.reverse:
         bottom = commit.get_parent()
