@@ -78,4 +78,6 @@ def func(parser, options, args):
     if options.stat:
         print git.diffstat(args, git_id(rev1), git_id(rev2))
     else:
-        pager(git.diff(args, git_id(rev1), git_id(rev2)))
+        diff_str = git.diff(args, git_id(rev1), git_id(rev2))
+        if diff_str:
+            pager(diff_str)

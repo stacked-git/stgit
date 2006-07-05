@@ -43,4 +43,6 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     commit_id = git_id(patch)
-    pager(git.pretty_commit(commit_id))
+    commit_str = git.pretty_commit(commit_id)
+    if commit_str:
+        pager(commit_str)
