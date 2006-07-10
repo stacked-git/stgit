@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 
 from stgit.utils import *
-from stgit import git, basedir
+from stgit import git, basedir, templates
 from stgit.config import config
 
 
@@ -66,13 +66,13 @@ def __clean_comments(f):
 
 def edit_file(series, line, comment, show_patch = True):
     fname = '.stgit.msg'
-    tmpl = os.path.join(basedir.get(), 'patchdescr.tmpl')
+    tmpl = templates.get_template('patchdescr.tmpl')
 
     f = file(fname, 'w+')
     if line:
         print >> f, line
-    elif os.path.isfile(tmpl):
-        print >> f, file(tmpl).read().rstrip()
+    elif tmpl:
+        print >> f, tmpl,
     else:
         print >> f
     print >> f, __comment_prefix, comment

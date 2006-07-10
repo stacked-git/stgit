@@ -23,7 +23,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git, basedir
+from stgit import stack, git, templates
 
 
 help = 'exports a series of patches to <dir> (or patches)'
@@ -141,20 +141,11 @@ def func(parser, options, args):
 
     # get the template
     if options.template:
-        patch_tmpl_list = [options.template]
+        tmpl = file(options.template).read()
     else:
-        patch_tmpl_list = []
-
-    patch_tmpl_list += [os.path.join(basedir.get(), 'patchexport.tmpl'),
-                        os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
-                                     'patchexport.tmpl'),
-                        os.path.join(sys.prefix,
-                                     'share', 'stgit', 'templates', 'patchexport.tmpl')]
-    tmpl = ''
-    for patch_tmpl in patch_tmpl_list:
-        if os.path.isfile(patch_tmpl):
-            tmpl = file(patch_tmpl).read()
-            break
+        tmpl = templates.get_template('patchexport.tmpl')
+        if not tmpl:
+            tmpl = ''
 
     # note the base commit for this series
     if not options.stdout:

@@ -20,7 +20,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git, basedir, version
+from stgit import stack, git, version, templates
 from stgit.config import config
 
 
@@ -443,21 +443,11 @@ def func(parser, options, args):
     if options.cover or options.edit:
         # find the template file
         if options.cover:
-            tfile_list = [options.cover]
+            tmpl = file(options.template).read()
         else:
-            tfile_list = [os.path.join(basedir.get(), 'covermail.tmpl'),
-                          os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
-                                       'covermail.tmpl'),
-                          os.path.join(sys.prefix,
-                                       'share', 'stgit', 'templates', 'covermail.tmpl')]
-
-        tmpl = None
-        for tfile in tfile_list:
-            if os.path.isfile(tfile):
-                tmpl = file(tfile).read()
-                break
-        if not tmpl:
-            raise CmdException, 'No cover message template file found'
+            tmpl = templates.get_template('covermail.tmpl')
+            if not tmpl:
+                raise CmdException, 'No cover message template file found'
 
         msg_id = email.Utils.make_msgid('stgit')
         msg = __build_cover(tmpl, total_nr, msg_id, options)
@@ -477,20 +467,11 @@ def func(parser, options, args):
 
     # send the patches
     if options.template:
-        tfile_list = [options.template]
+        tmpl = file(options.template).read()
     else:
-        tfile_list = [os.path.join(basedir.get(), 'patchmail.tmpl'),
-                      os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
-                                   'patchmail.tmpl'),
-                      os.path.join(sys.prefix,
-                                   'share', 'stgit', 'templates', 'patchmail.tmpl')]
-    tmpl = None
-    for tfile in tfile_list:
-        if os.path.isfile(tfile):
-            tmpl = file(tfile).read()
-            break
-    if not tmpl:
-        raise CmdException, 'No e-mail template file found'
+        tmpl = templates.get_template('patchmail.tmpl')
+        if not tmpl:
+            raise CmdException, 'No e-mail template file found'
 
     for (p, patch_nr) in zip(patches, range(1, len(patches) + 1)):
         msg_id = email.Utils.make_msgid('stgit')
