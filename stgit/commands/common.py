@@ -241,5 +241,5 @@ def make_patch_name(msg):
     if not msg:
         return None
 
-    subject_line = msg.lstrip().split('\n', 1)[0]
+    subject_line = msg.lstrip().split('\n', 1)[0].lower()
     return re.sub('[\W]+', '-', subject_line).strip('-')
