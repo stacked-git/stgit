@@ -65,7 +65,7 @@ def __clean_comments(f):
     f.writelines(lines)
 
 def edit_file(series, line, comment, show_patch = True):
-    fname = '.stgit.msg'
+    fname = '.stgitmsg.txt'
     tmpl = templates.get_template('patchdescr.tmpl')
 
     f = file(fname, 'w+')
