@@ -61,7 +61,7 @@ options = [make_option('-n', '--numbered',
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'Use FILE as a template'),
            make_option('-r', '--range',
-                       metavar = '[PATCH1][:[PATCH2]]',
+                       metavar = '[PATCH1][..[PATCH2]]',
                        help = 'export patches between PATCH1 and PATCH2'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
@@ -88,48 +88,11 @@ def func(parser, options, args):
         series = file(os.path.join(dirname, 'series'), 'w+')
 
     applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
 
     if options.range:
-        boundaries = options.range.split(':')
-        if len(boundaries) == 1:
-            start = boundaries[0]
-            stop = boundaries[0]
-        elif len(boundaries) == 2:
-            if boundaries[0] == '':
-                start = applied[0]
-            else:
-                start = boundaries[0]
-            if boundaries[1] == '':
-                stop = applied[-1]
-            else:
-                stop = boundaries[1]
-        else:
-            raise CmdException, 'incorrect parameters to "--range"'
-
-        if start in applied:
-            start_idx = applied.index(start)
-        else:
-            if start in unapplied:
-                raise CmdException, 'Patch "%s" not applied' % start
-            else:
-                raise CmdException, 'Patch "%s" does not exist' % start
-
-        if stop in applied:
-            stop_idx = applied.index(stop) + 1
-        else:
-            if stop in unapplied:
-                raise CmdException, 'Patch "%s" not applied' % stop
-            else:
-                raise CmdException, 'Patch "%s" does not exist' % stop
-
-        if start_idx >= stop_idx:
-            raise CmdException, 'Incorrect patch range order'
+        patches = parse_patches([options.range], applied)
     else:
-        start_idx = 0
-        stop_idx = len(applied)
-
-    patches = applied[start_idx:stop_idx]
+        patches = applied
 
     num = len(patches)
     if num == 0:

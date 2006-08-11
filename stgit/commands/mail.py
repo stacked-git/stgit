@@ -25,13 +25,13 @@ from stgit.config import config
 
 
 help = 'send a patch or series of patches by e-mail'
-usage = """%prog [options] [<patch> [<patch2...]]
+usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
-Send a patch or a range of patches (defaulting to the applied patches)
-by e-mail using the 'smtpserver' configuration option. The From
-address and the e-mail format are generated from the template file
-passed as argument to '--template' (defaulting to
-'.git/patchmail.tmpl' or '~/.stgit/templates/patchmail.tmpl' or or
+Send a patch or a range of patches by e-mail using the 'smtpserver'
+configuration option. The From address and the e-mail format are
+generated from the template file passed as argument to '--template'
+(defaulting to '.git/patchmail.tmpl' or
+'~/.stgit/templates/patchmail.tmpl' or or
 '/usr/share/stgit/templates/patchmail.tmpl'). The To/Cc/Bcc addresses
 can either be added to the template file or passed via the
 corresponding command line options.
@@ -81,9 +81,6 @@ variables are supported."""
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
                        action = 'store_true'),
-           make_option('-r', '--range',
-                       metavar = '[PATCH1][:[PATCH2]]',
-                       help = 'e-mail patches between PATCH1 and PATCH2'),
            make_option('--to',
                        help = 'add TO to the To: list',
                        action = 'append'),
@@ -367,53 +364,11 @@ def func(parser, options, args):
         smtppassword = config.get('stgit', 'smtppassword')
 
     applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
 
-    if len(args) >= 1:
-        for patch in args:
-            if patch in unapplied:
-                raise CmdException, 'Patch "%s" not applied' % patch
-            if not patch in applied:
-                raise CmdException, 'Patch "%s" does not exist' % patch
-        patches = args
-    elif options.all:
+    if options.all:
         patches = applied
-    elif options.range:
-        boundaries = options.range.split(':')
-        if len(boundaries) == 1:
-            start = boundaries[0]
-            stop = boundaries[0]
-        elif len(boundaries) == 2:
-            if boundaries[0] == '':
-                start = applied[0]
-            else:
-                start = boundaries[0]
-            if boundaries[1] == '':
-                stop = applied[-1]
-            else:
-                stop = boundaries[1]
-        else:
-            raise CmdException, 'incorrect parameters to "--range"'
-
-        if start in applied:
-            start_idx = applied.index(start)
-        else:
-            if start in unapplied:
-                raise CmdException, 'Patch "%s" not applied' % start
-            else:
-                raise CmdException, 'Patch "%s" does not exist' % start
-        if stop in applied:
-            stop_idx = applied.index(stop) + 1
-        else:
-            if stop in unapplied:
-                raise CmdException, 'Patch "%s" not applied' % stop
-            else:
-                raise CmdException, 'Patch "%s" does not exist' % stop
-
-        if start_idx >= stop_idx:
-            raise CmdException, 'Incorrect patch range order'
-
-        patches = applied[start_idx:stop_idx]
+    elif len(args) >= 1:
+        patches = parse_patches(args, applied)
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
 

@@ -209,6 +209,51 @@ def pop_patches(patches):
 
     print 'done'
 
+def parse_patches(patch_args, patch_list):
+    """Parse patch_args list for patch names in patch_list and return
+    a list. The names can be individual patches and/or in the
+    patch1..patch2 format.
+    """
+    patches = []
+
+    for name in patch_args:
+        pair = name.split('..')
+        for p in pair:
+            if p and not p in patch_list:
+                raise CmdException, 'Unknown patch name: %s' % p
+
+        if len(pair) == 1:
+            # single patch name
+            pl = pair
+        elif len(pair) == 2:
+            # patch range [p1]..[p2]
+            # inclusive boundary
+            if pair[0]:
+                first = patch_list.index(pair[0])
+            else:
+                first = 0
+            # exclusive boundary
+            if pair[1]:
+                last = patch_list.index(pair[1]) + 1
+            else:
+                last = len(patch_list)
+
+            if last > first:
+                pl = patch_list[first:last]
+            else:
+                pl = patch_list[(last - 1):(first + 1)]
+                pl.reverse()
+        else:
+            raise CmdException, 'Malformed patch name: %s' % name
+
+        for p in pl:
+            if p in patches:
+                raise CmdException, 'Duplicate patch name: %s' % p
+
+        patches += pl
+
+    return patches
+
 def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' or 'email (name)' string

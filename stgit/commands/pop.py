@@ -24,26 +24,25 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'pop the top of the series'
-usage = """%prog [options]
+help = 'pop one or more patches from the stack'
+usage = """%prog [options] [<patch>]
 
 Pop the topmost patch or a range of patches starting with the topmost
 one from the stack. The command fails if there are local changes or
-conflicts."""
+conflicts. If a patch name is given as argument, the command will pop
+all the patches up to the given one."""
 
 options = [make_option('-a', '--all',
                        help = 'pop all the applied patches',
                        action = 'store_true'),
            make_option('-n', '--number', type = 'int',
-                       help = 'pop the specified number of patches'),
-           make_option('-t', '--to', metavar = 'PATCH',
-                       help = 'pop all patches up to PATCH')]
+                       help = 'pop the specified number of patches')]
 
 
 def func(parser, options, args):
     """Pop the topmost patch from the stack
     """
-    if len(args) != 0:
+    if len(args) > 1:
         parser.error('incorrect number of arguments')
 
     check_local_changes()
@@ -53,19 +52,22 @@ def func(parser, options, args):
     applied = crt_series.get_applied()
     if not applied:
         raise CmdException, 'No patches applied'
+    # the popping is done in reverse order
     applied.reverse()
 
-    if options.to:
-        if options.to not in applied:
-            if options.to in crt_series.get_unapplied():
-                raise CmdException, 'Patch "%s" is not currently applied.' % options.to
-            else:
-                raise CmdException, 'Patch "%s" does not exist.' % options.to
-        patches = applied[:applied.index(options.to)]
+    if options.all:
+        patches = applied
     elif options.number:
         patches = applied[:options.number]
-    elif options.all:
-        patches = applied
+    elif len(args) == 1:
+        upto_patch = args[0]
+        if upto_patch not in applied:
+            if upto_patch in crt_series.get_unapplied():
+                raise CmdException, 'Patch "%s" is not currently applied' \
+                      % upto_patch
+            else:
+                raise CmdException, 'Patch "%s" does not exist' % upto_patch
+        patches = applied[:applied.index(upto_patch)]
     else:
         patches = [applied[0]]
 

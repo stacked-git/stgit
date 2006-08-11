@@ -41,7 +41,7 @@ rev = '([patch][//[bottom | top]]) | <tree-ish> | base'
 If neither bottom nor top are given but a '//' is present, the command
 shows the specified patch (defaulting to the current one)."""
 
-options = [make_option('-r', metavar = 'rev1[:[rev2]]', dest = 'revs',
+options = [make_option('-r', metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
@@ -52,7 +52,7 @@ def func(parser, options, args):
     """Show the tree diff
     """
     if options.revs:
-        rev_list = options.revs.split(':')
+        rev_list = options.revs.split('..')
         rev_list_len = len(rev_list)
         if rev_list_len == 1:
             rev = rev_list[0]
