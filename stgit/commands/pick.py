@@ -37,6 +37,8 @@ options = [make_option('-n', '--name',
            make_option('-r', '--reverse',
                        help = 'reverse the commit object before importing',
                        action = 'store_true'),
+           make_option('-p', '--parent', metavar = 'COMMITID',
+                       help = 'use COMMITID as parent'),
            make_option('--fold',
                        help = 'fold the commit object into the current patch',
                        action = 'store_true'),
@@ -73,12 +75,17 @@ def func(parser, options, args):
             if not patch:
                 raise CmdException, 'Unknown patch name'
 
+    if options.parent:
+        parent = git_id(options.parent)
+    else:
+        parent = commit.get_parent()
+
     if not options.reverse:
-        bottom = commit.get_parent()
+        bottom = parent
         top = commit_id
     else:
         bottom = commit_id
-        top = commit.get_parent()
+        top = parent
 
     if options.fold:
         print 'Folding commit %s...' % commit_id,
