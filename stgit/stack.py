@@ -925,7 +925,7 @@ class Series:
         self.pop_patch(name)
         return patch.restore_old_boundaries()
 
-    def pop_patch(self, name):
+    def pop_patch(self, name, keep = False):
         """Pops the top patch from the stack
         """
         applied = self.get_applied()
@@ -934,7 +934,7 @@ class Series:
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
-        git.switch(patch.get_bottom())
+        git.switch(patch.get_bottom(), keep)
 
         # save the new applied list
         idx = applied.index(name) + 1

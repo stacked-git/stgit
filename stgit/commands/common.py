@@ -194,7 +194,7 @@ def push_patches(patches, check_merged = False):
             else:
                 print 'done'
 
-def pop_patches(patches):
+def pop_patches(patches, keep = False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
     """
@@ -205,7 +205,7 @@ def pop_patches(patches):
         print 'Popping "%s" - "%s" patches...' % (patches[0], p),
     sys.stdout.flush()
 
-    crt_series.pop_patch(p)
+    crt_series.pop_patch(p, keep)
 
     print 'done'
 

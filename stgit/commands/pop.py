@@ -36,7 +36,10 @@ options = [make_option('-a', '--all',
                        help = 'pop all the applied patches',
                        action = 'store_true'),
            make_option('-n', '--number', type = 'int',
-                       help = 'pop the specified number of patches')]
+                       help = 'pop the specified number of patches'),
+           make_option('--keep',
+                       help = 'keep the current working directory',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -45,9 +48,10 @@ def func(parser, options, args):
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
+    if not options.keep:
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
 
     applied = crt_series.get_applied()
     if not applied:
@@ -74,6 +78,6 @@ def func(parser, options, args):
     if patches == []:
         raise CmdException, 'No patches to pop'
 
-    pop_patches(patches)
+    pop_patches(patches, options.keep)
 
     print_crt_patch()

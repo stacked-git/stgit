@@ -644,12 +644,13 @@ def checkout(files = None, tree_id = None, force = False):
     if __run(checkout_cmd, files) != 0:
         raise GitException, 'Failed git-checkout-index'
 
-def switch(tree_id):
+def switch(tree_id, keep = False):
     """Switch the tree to the given id
     """
-    refresh_index()
-    if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
-        raise GitException, 'git-read-tree failed (local changes maybe?)'
+    if not keep:
+        refresh_index()
+        if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
+            raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     __set_head(tree_id)
 
