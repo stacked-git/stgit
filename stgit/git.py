@@ -39,7 +39,6 @@ class Commit:
         self.__id_hash = id_hash
 
         lines = _output_lines('git-cat-file commit %s' % id_hash)
-        self.__parents = []
         for i in range(len(lines)):
             line = lines[i]
             if line == '\n':
@@ -47,8 +46,6 @@ class Commit:
             field = line.strip().split(' ', 1)
             if field[0] == 'tree':
                 self.__tree = field[1]
-            elif field[0] == 'parent':
-                self.__parents.append(field[1])
             if field[0] == 'author':
                 self.__author = field[1]
             if field[0] == 'committer':
@@ -62,10 +59,11 @@ class Commit:
         return self.__tree
 
     def get_parent(self):
-        return self.__parents[0]
+        return self.get_parents()[0]
 
     def get_parents(self):
-        return self.__parents
+        return _output_lines('git-rev-list --parents --max-count=1 %s'
+                             % self.__id_hash)[0].split()[1:]
 
     def get_author(self):
         return self.__author
