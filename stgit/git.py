@@ -436,7 +436,9 @@ def commit(message, files = None, parents = None, allowempty = False,
             raise GitException, 'No changes to commit'
 
     # get the commit message
-    if message[-1:] != '\n':
+    if not message:
+        message = '\n'
+    elif message[-1:] != '\n':
         message += '\n'
 
     must_switch = True
