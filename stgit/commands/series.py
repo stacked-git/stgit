@@ -42,7 +42,10 @@ options = [make_option('-b', '--branch',
                        action = 'store_true'),
            make_option('-s', '--short',
                        help = 'list just the patches around the topmost patch',
-                       action = 'store_true') ]
+                       action = 'store_true'),
+           make_option('-g', '--graphical',
+                       help = 'run gitk instead of printing',
+                       action = 'store_true')]
 
 
 def __get_description(patch):
@@ -77,16 +80,31 @@ def func(parser, options, args):
             unapplied = unapplied[:5]
 
     patches = applied + unapplied
+    if not patches:
+        return
 
-    max_len = 0
-    if len(patches) > 0:
-        max_len = max([len(i) for i in patches])
+    if options.graphical:
+        if applied:
+            gitk_args = ' %s^..%s' % (git_id(applied[0]), git_id(applied[-1]))
+        else:
+            gitk_args = ''
 
-    if len(applied) > 0:
-        for p in applied [0:-1]:
-            __print_patch(p, '+ ', '0 ', max_len, options)
+        for p in unapplied:
+            patch_id = git_id(p)
+            gitk_args += ' %s^..%s' % (patch_id, patch_id)
 
-        __print_patch(applied[-1], '> ', '0>', max_len, options)
+        if os.system('gitk%s' % gitk_args) != 0:
+            raise CmdException, 'gitk execution failed'
+    else:
+        max_len = 0
+        if len(patches) > 0:
+            max_len = max([len(i) for i in patches])
 
-    for p in unapplied:
-        __print_patch(p, '- ', '0 ', max_len, options)
+        if len(applied) > 0:
+            for p in applied [0:-1]:
+                __print_patch(p, '+ ', '0 ', max_len, options)
+
+            __print_patch(applied[-1], '> ', '0>', max_len, options)
+
+        for p in unapplied:
+            __print_patch(p, '- ', '0 ', max_len, options)
