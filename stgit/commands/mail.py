@@ -90,6 +90,9 @@ options = [make_option('-a', '--all',
            make_option('--bcc',
                        help = 'add BCC to the Bcc: list',
                        action = 'append'),
+           make_option('--noreply',
+                       help = 'do not send subsequent messages as replies',
+                       action = 'store_true'),
            make_option('-v', '--version', metavar = 'VERSION',
                        help = 'add VERSION to the [PATCH ...] prefix'),
            make_option('-t', '--template', metavar = 'FILE',
@@ -387,7 +390,10 @@ def func(parser, options, args):
     if total_nr == 0:
         raise CmdException, 'No patches to send'
 
-    ref_id = options.refid
+    if options.noreply:
+        ref_id = None
+    else:
+        ref_id = options.refid
 
     if options.sleep != None:
         sleep = options.sleep
@@ -409,7 +415,8 @@ def func(parser, options, args):
         from_addr, to_addr_list = __parse_addresses(msg)
 
         # subsequent e-mails are seen as replies to the first one
-        ref_id = msg_id
+        if not options.noreply:
+            ref_id = msg_id
 
         if options.mbox:
             __write_mbox(from_addr, msg)
@@ -435,7 +442,7 @@ def func(parser, options, args):
         from_addr, to_addr_list = __parse_addresses(msg)
 
         # subsequent e-mails are seen as replies to the first one
-        if not ref_id:
+        if not options.noreply and not ref_id:
             ref_id = msg_id
 
         if options.mbox:
