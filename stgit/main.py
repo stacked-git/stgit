@@ -43,6 +43,7 @@ import stgit.commands.goto
 import stgit.commands.id
 import stgit.commands.imprt
 import stgit.commands.init
+import stgit.commands.log
 import stgit.commands.mail
 import stgit.commands.new
 import stgit.commands.patches
@@ -81,6 +82,7 @@ commands = {
     'id':       stgit.commands.id,
     'import':   stgit.commands.imprt,
     'init':     stgit.commands.init,
+    'log':      stgit.commands.log,
     'mail':     stgit.commands.mail,
     'new':      stgit.commands.new,
     'patches':  stgit.commands.patches,
@@ -126,6 +128,7 @@ patchcommands = (
     'files',
     'fold',
     'import',
+    'log',
     'mail',
     'new',
     'pick',

@@ -128,6 +128,8 @@ class Patch:
         self.__dir = os.path.join(self.__series_dir, self.__name)
         self.__refs_dir = refs_dir
         self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
+        self.__log_ref_file = os.path.join(self.__refs_dir,
+                                           self.__name + '.log')
 
     def create(self):
         os.mkdir(self.__dir)
@@ -139,22 +141,32 @@ class Patch:
             os.remove(os.path.join(self.__dir, f))
         os.rmdir(self.__dir)
         os.remove(self.__top_ref_file)
+        if os.path.exists(self.__log_ref_file):
+            os.remove(self.__log_ref_file)
 
     def get_name(self):
         return self.__name
 
     def rename(self, newname):
         olddir = self.__dir
-        old_ref_file = self.__top_ref_file
+        old_top_ref_file = self.__top_ref_file
+        old_log_ref_file = self.__log_ref_file
         self.__name = newname
         self.__dir = os.path.join(self.__series_dir, self.__name)
         self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
+        self.__log_ref_file = os.path.join(self.__refs_dir,
+                                           self.__name + '.log')
 
         os.rename(olddir, self.__dir)
-        os.rename(old_ref_file, self.__top_ref_file)
+        os.rename(old_top_ref_file, self.__top_ref_file)
+        if os.path.exists(old_log_ref_file):
+            os.rename(old_log_ref_file, self.__log_ref_file)
 
     def __update_top_ref(self, ref):
         write_string(self.__top_ref_file, ref)
+
+    def __update_log_ref(self, ref):
+        write_string(self.__log_ref_file, ref)
 
     def update_top_ref(self):
         top = self.get_top()
@@ -273,6 +285,13 @@ class Patch:
             elif 'GIT_COMMITTER_EMAIL' in os.environ:
                 address = os.environ['GIT_COMMITTER_EMAIL']
         self.__set_field('commemail', address)
+
+    def get_log(self):
+        return self.__get_field('log')
+
+    def set_log(self, value, backup = False):
+        self.__set_field('log', value)
+        self.__update_log_ref(value)
 
 
 class Series:
@@ -582,7 +601,7 @@ class Series:
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
-                      backup = False):
+                      backup = False, log = 'refresh'):
         """Generates a new commit for the given patch
         """
         name = self.get_current()
@@ -635,6 +654,9 @@ class Series:
         patch.set_commname(committer_name)
         patch.set_commemail(committer_email)
 
+        if log:
+            self.log_patch(patch, log)
+
         return commit_id
 
     def undo_refresh(self):
@@ -654,7 +676,8 @@ class Series:
             raise StackException, 'No refresh undo information available'
 
         git.reset(tree_id = old_top, check_out = False)
-        patch.restore_old_boundaries()
+        if patch.restore_old_boundaries():
+            self.log_patch(patch, 'undo')
 
     def new_patch(self, name, message = None, can_edit = True,
                   unapplied = False, show_patch = False,
@@ -698,21 +721,24 @@ class Series:
         patch.set_commemail(committer_email)
 
         if unapplied:
+            self.log_patch(patch, 'new')
+
             patches = [patch.get_name()] + self.get_unapplied()
 
             f = file(self.__unapplied_file, 'w+')
             f.writelines([line + '\n' for line in patches])
             f.close()
-        else:
-            if before_existing:
-                insert_string(self.__applied_file, patch.get_name())
-                if not self.get_current():
-                    self.__set_current(name)
-            else:
-                append_string(self.__applied_file, patch.get_name())
-                self.__set_current(name)
+        elif before_existing:
+            self.log_patch(patch, 'new')
 
-                self.refresh_patch(cache_update = False)
+            insert_string(self.__applied_file, patch.get_name())
+            if not self.get_current():
+                self.__set_current(name)
+        else:
+            append_string(self.__applied_file, patch.get_name())
+            self.__set_current(name)
+
+            self.refresh_patch(cache_update = False, log = 'new')
 
     def delete_patch(self, name):
         """Deletes a patch
@@ -759,7 +785,8 @@ class Series:
 
             # top != bottom always since we have a commit for each patch
             if head == bottom:
-                # reset the backup information
+                # reset the backup information. No logging since the
+                # patch hasn't changed
                 patch.set_bottom(head, backup = True)
                 patch.set_top(top, backup = True)
 
@@ -790,6 +817,8 @@ class Series:
 
                     patch.set_bottom(head, backup = True)
                     patch.set_top(top, backup = True)
+
+                    self.log_patch(patch, 'push(f)')
                 else:
                     top = head
                     # stop the fast-forwarding, must do a real merge
@@ -860,7 +889,7 @@ class Series:
             patch.set_top(head, backup = True)
             modified = True
         elif head == bottom:
-            # reset the backup information
+            # reset the backup information. No need for logging
             patch.set_bottom(bottom, backup = True)
             patch.set_top(top, backup = True)
 
@@ -900,7 +929,11 @@ class Series:
             if not ex:
                 # if the merge was OK and no conflicts, just refresh the patch
                 # The GIT cache was already updated by the merge operation
-                self.refresh_patch(cache_update = False)
+                if modified:
+                    log = 'push(m)'
+                else:
+                    log = 'push'
+                self.refresh_patch(cache_update = False, log = log)
             else:
                 raise StackException, str(ex)
 
@@ -923,7 +956,11 @@ class Series:
 
         git.reset()
         self.pop_patch(name)
-        return patch.restore_old_boundaries()
+        ret = patch.restore_old_boundaries()
+        if ret:
+            self.log_patch(patch, 'undo')
+
+        return ret
 
     def pop_patch(self, name, keep = False):
         """Pops the top patch from the stack
@@ -1005,3 +1042,20 @@ class Series:
             f.close()
         else:
             raise StackException, 'Unknown patch "%s"' % oldname
+
+    def log_patch(self, patch, message):
+        """Generate a log commit for a patch
+        """
+        top = git.get_commit(patch.get_top())
+        msg = '%s\t%s' % (message, top.get_id_hash())
+
+        old_log = patch.get_log()
+        if old_log:
+            parents = [old_log]
+        else:
+            parents = []
+
+        log = git.commit(message = msg, parents = parents,
+                         cache_update = False, tree_id = top.get_tree(),
+                         allowempty = True)
+        patch.set_log(log)

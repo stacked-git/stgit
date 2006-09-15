@@ -59,7 +59,11 @@ class Commit:
         return self.__tree
 
     def get_parent(self):
-        return self.get_parents()[0]
+        parents = self.get_parents()
+        if parents:
+            return parents[0]
+        else:
+            return None
 
     def get_parents(self):
         return _output_lines('git-rev-list --parents --max-count=1 %s'

@@ -98,6 +98,8 @@ def git_id(rev):
                 return series.get_patch(patch).get_old_top()
             elif patch_id == 'bottom.old':
                 return series.get_patch(patch).get_old_bottom()
+            elif patch_id == 'log':
+                return series.get_patch(patch).get_log()
         if patch == 'base' and patch_id == None:
             return read_string(series.get_base_file())
     except RevParseException:
