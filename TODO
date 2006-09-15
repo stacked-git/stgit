@@ -1,17 +1,23 @@
-The TODO list until 1.0:
+The TODO list before 1.0:
 
-- patch revisions support (including a log command)
-- better handling of file renaming
-- use same configuration file as GIT
-- debian package support
-- man page
-- code execution allowed from templates
+- automatic patch signing (probably at import time)
 - more regression tests
 - stg help should probably pipe through the $PAGER
+- configurable pull command (currently uses git-pull only)
+- fix StGIT to run correctly in subdirectories
+- use a separate index for some commands (refresh, fold etc.) so that
+  files already added/removed are not automatically checked in
+- interactive resolve command to invoke xxdiff, emacs etc.
+- debian package support
+- man page
+- document the workflow on the StGIT wiki
+- maybe a separate undo command rather than passing a --undo option to
+  push and refresh
+- use same configuration file as GIT
 - release 1.0
 
 
-The future, when time allows or if someone else does it:
+The future, when time allows or if someone else does them:
 
 - patch dependency tracking
 - multiple heads in a patch - useful for forking a patch,
@@ -20,10 +26,7 @@ The future, when time allows or if someone else does it:
 - write bash-completion script for the StGIT commands
 - "pull" argument should default to a sane value, "origin" is wrong in
   many cases
-
-Bugs:
-
-- the following commands break in subdirs:
-  - refresh (ml: "Running StGIT in subdirectories")
-- "stg add" on files already added should print a notice, so that the
-  user can catch a possible typo
+- commit directly to a patch which is not top
+- patch synchronisation between between branches (as some people,
+  including me have the same patches based on different branches and
+  they have scripts for moving the changes in one to the others)
