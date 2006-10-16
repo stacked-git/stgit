@@ -65,7 +65,13 @@ options = [make_option('-f', '--force',
                        help = 'use COMMNAME as the committer name'),
            make_option('--commemail',
                        help = 'use COMMEMAIL as the committer ' \
-                       'e-mail')]
+                       'e-mail'),
+           make_option('--sign',
+                       help = 'add Signed-off-by line',
+                       action = 'store_true'),
+           make_option('--ack',
+                       help = 'add Acked-by line',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -91,11 +97,19 @@ def func(parser, options, args):
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
+    if options.sign:
+        sign_str = 'Signed-off-by'
+    elif options.ack:
+        sign_str = 'Acked-by'
+    else:
+        sign_str = None
+
     if git.local_changes() \
            or not crt_series.head_top_equal() \
            or options.edit or options.message \
            or options.authname or options.authemail or options.authdate \
-           or options.commname or options.commemail:
+           or options.commname or options.commemail \
+           or options.sign or options.ack:
         print 'Refreshing patch "%s"...' % patch,
         sys.stdout.flush()
 
@@ -110,7 +124,7 @@ def func(parser, options, args):
                                  author_date = options.authdate,
                                  committer_name = options.commname,
                                  committer_email = options.commemail,
-                                 backup = True)
+                                 backup = True, sign_str = sign_str)
 
         print 'done'
     else:

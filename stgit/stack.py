@@ -601,7 +601,7 @@ class Series:
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
-                      backup = False, log = 'refresh'):
+                      backup = False, sign_str = None, log = 'refresh'):
         """Generates a new commit for the given patch
         """
         name = self.get_current()
@@ -632,6 +632,10 @@ class Series:
             committer_name = patch.get_commname()
         if not committer_email:
             committer_email = patch.get_commemail()
+
+        if sign_str:
+            descr = '%s\n%s: %s <%s>\n' % (descr.rstrip(), sign_str,
+                                           committer_name, committer_email)
 
         bottom = patch.get_bottom()
 
