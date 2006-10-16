@@ -7,7 +7,6 @@ The TODO list before 1.0:
 - fix StGIT to run correctly in subdirectories
 - use a separate index for some commands (refresh, fold etc.) so that
   files already added/removed are not automatically checked in
-- interactive resolve command to invoke xxdiff, emacs etc.
 - debian package support
 - man page
 - document the workflow on the StGIT wiki

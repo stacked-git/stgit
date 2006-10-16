@@ -22,7 +22,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git, basedir
-from stgit.config import file_extensions
+from stgit.config import config, file_extensions
 
 
 help = 'mark a file conflict as solved'
@@ -37,8 +37,44 @@ options = [make_option('-a', '--all',
                        help = 'mark all conflicts as solved',
                        action = 'store_true'),
            make_option('-r', '--reset', metavar = '(ancestor|current|patched)',
-                       help = 'reset the file(s) to the given state')]
+                       help = 'reset the file(s) to the given state'),
+           make_option('-i', '--interactive',
+                       help = 'run the interactive merging tool',
+                       action = 'store_true')]
 
+def interactive_merge(filename):
+    """Run the interactive merger on the given file
+    """
+    try:
+        imerger = config.get('stgit', 'imerger')
+    except Exception, err:
+        raise CmdException, 'Configuration error: %s' % err
+
+    extensions = file_extensions()
+
+    ancestor = filename + extensions['ancestor']
+    current = filename + extensions['current']
+    patched = filename + extensions['patched']
+
+    # check whether we have all the files for a three-way merge
+    for fn in [filename, ancestor, current, patched]:
+        if not os.path.isfile(fn):
+            raise CmdException, \
+                  'Cannot run the interactive merger: "%s" missing' % fn
+
+    mtime = os.path.getmtime(filename)
+
+    err = os.system(imerger % {'branch1': current,
+                               'ancestor': ancestor,
+                               'branch2': patched,
+                               'output': filename})
+
+    if err != 0:
+        raise CmdException, 'The interactive merger failed: %d' % err
+    if not os.path.isfile(filename):
+        raise CmdException, 'The "%s" file is missing' % filename
+    if mtime == os.path.getmtime(filename):
+        raise CmdException, 'The "%s" file was not modified' % filename
 
 def func(parser, options, args):
     """Mark the conflict as resolved
@@ -47,29 +83,41 @@ def func(parser, options, args):
            and options.reset not in file_extensions():
         raise CmdException, 'Unknown reset state: %s' % options.reset
 
-    if options.all:
+    if options.all and not options.interactive:
         resolved_all(options.reset)
         return
 
-    if len(args) == 0:
+    conflicts = git.get_conflicts()
+
+    if len(args) != 0:
+        files = args
+    elif options.all:
+        files = conflicts
+    else:
         parser.error('incorrect number of arguments')
 
-    conflicts = git.get_conflicts()
     if not conflicts:
         raise CmdException, 'No more conflicts'
-    # check for arguments validity
-    for filename in args:
-        if not filename in conflicts:
-            raise CmdException, 'No conflicts for "%s"' % filename
-    # resolved
-    for filename in args:
-        resolved(filename, options.reset)
-        del conflicts[conflicts.index(filename)]
 
-    # save or remove the conflicts file
-    if conflicts == []:
-        os.remove(os.path.join(basedir.get(), 'conflicts'))
-    else:
-        f = file(os.path.join(basedir.get(), 'conflicts'), 'w+')
-        f.writelines([line + '\n' for line in conflicts])
-        f.close()
+    # check for arguments validity
+    if not options.all:
+        for filename in files:
+            if not filename in conflicts:
+                raise CmdException, 'No conflicts for "%s"' % filename
+
+    # resolved
+    try:
+        for filename in files:
+            if options.interactive:
+                interactive_merge(filename)
+            resolved(filename, options.reset)
+            del conflicts[conflicts.index(filename)]
+    finally:
+        # save or remove the conflicts file. Needs a finally clause to
+        # ensure that already solved conflicts are marked
+        if conflicts == []:
+            os.remove(os.path.join(basedir.get(), 'conflicts'))
+        else:
+            f = file(os.path.join(basedir.get(), 'conflicts'), 'w+')
+            f.writelines([line + '\n' for line in conflicts])
+            f.close()

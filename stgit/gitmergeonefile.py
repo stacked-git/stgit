@@ -61,18 +61,20 @@ def __checkout_files(orig_hash, file1_hash, file2_hash,
     """
     global orig, src1, src2
 
+    extensions = file_extensions()
+
     if orig_hash:
-        orig = path + file_extensions()['ancestor']
+        orig = path + extensions['ancestor']
         tmp = __output('git-unpack-file %s' % orig_hash)
         os.chmod(tmp, int(orig_mode, 8))
         os.renames(tmp, orig)
     if file1_hash:
-        src1 = path + file_extensions()['current']
+        src1 = path + extensions['current']
         tmp = __output('git-unpack-file %s' % file1_hash)
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, src1)
     if file2_hash:
-        src2 = path + file_extensions()['patched']
+        src2 = path + extensions['patched']
         tmp = __output('git-unpack-file %s' % file2_hash)
         os.chmod(tmp, int(file2_mode, 8))
         os.renames(tmp, src2)
