@@ -38,6 +38,7 @@ import stgit.commands.clone
 import stgit.commands.commit
 import stgit.commands.export
 import stgit.commands.files
+import stgit.commands.float
 import stgit.commands.fold
 import stgit.commands.goto
 import stgit.commands.id
@@ -77,6 +78,7 @@ commands = {
     'commit':   stgit.commands.commit,
     'export':   stgit.commands.export,
     'files':    stgit.commands.files,
+    'float':    stgit.commands.float,
     'fold':     stgit.commands.fold,
     'goto':     stgit.commands.goto,
     'id':       stgit.commands.id,
@@ -113,6 +115,7 @@ stackcommands = (
     'applied',
     'clean',
     'commit',
+    'float',
     'goto',
     'init',
     'pop',
