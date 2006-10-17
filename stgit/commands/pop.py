@@ -37,8 +37,8 @@ options = [make_option('-a', '--all',
                        action = 'store_true'),
            make_option('-n', '--number', type = 'int',
                        help = 'pop the specified number of patches'),
-           make_option('--keep',
-                       help = 'keep the current working directory',
+           make_option('-k', '--keep',
+                       help = 'keep the local changes',
                        action = 'store_true')]
 
 
@@ -48,10 +48,11 @@ def func(parser, options, args):
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
+    check_conflicts()
+    check_head_top_equal()
+
     if not options.keep:
         check_local_changes()
-        check_conflicts()
-        check_head_top_equal()
 
     applied = crt_series.get_applied()
     if not applied:

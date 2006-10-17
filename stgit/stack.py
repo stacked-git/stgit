@@ -975,6 +975,11 @@ class Series:
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
+        # only keep the local changes
+        if keep and not git.apply_diff(git.get_head(), patch.get_bottom()):
+            raise StackException, \
+                  'Failed to pop patches while preserving the local changes'
+
         git.switch(patch.get_bottom(), keep)
 
         # save the new applied list
