@@ -404,7 +404,7 @@ def func(parser, options, args):
     if options.cover or options.edit:
         # find the template file
         if options.cover:
-            tmpl = file(options.template).read()
+            tmpl = file(options.cover).read()
         else:
             tmpl = templates.get_template('covermail.tmpl')
             if not tmpl:
