@@ -90,6 +90,9 @@ options = [make_option('-a', '--all',
            make_option('--bcc',
                        help = 'add BCC to the Bcc: list',
                        action = 'append'),
+           make_option('--auto',
+                       help = 'automatically cc the patch signers',
+                       action = 'store_true'),
            make_option('--noreply',
                        help = 'do not send subsequent messages as replies',
                        action = 'store_true'),
@@ -185,24 +188,66 @@ def __write_mbox(from_addr, msg):
     print msg
     print
 
-def __build_address_headers(options):
-    headers_end = ''
+def __build_address_headers(tmpl, options, extra_cc = []):
+    """Build the address headers and check existing headers in the
+    template.
+    """
+    def csv(lst):
+        return reduce(lambda x, y: x + ', ' + y, lst)
+
+    def replace_header(header, addr, tmpl):
+        r = re.compile('^' + header + ':\s+.+$', re.I | re.M)
+        if r.search(tmpl):
+            tmpl = r.sub('\g<0>, ' + addr, tmpl, 1)
+            h = ''
+        else:
+            h = header + ': ' + addr
+
+        return tmpl, h
+
+    headers = ''
+    to_addr = ''
+    cc_addr = ''
+    bcc_addr = ''
+
     if options.to:
-        headers_end += 'To: '
-        for to in options.to:
-            headers_end += '%s, ' % to
-        headers_end = headers_end[:-2] + '\n'
+        to_addr = csv(options.to)
     if options.cc:
-        headers_end += 'Cc: '
-        for cc in options.cc:
-            headers_end += '%s, ' % cc
-        headers_end = headers_end[:-2] + '\n'
+        cc_addr = csv(options.cc + extra_cc)
+    elif extra_cc:
+        cc_addr = csv(extra_cc)
     if options.bcc:
-        headers_end += 'Bcc: '
-        for bcc in options.bcc:
-            headers_end += '%s, ' % bcc
-        headers_end = headers_end[:-2] + '\n'
-    return headers_end
+        bcc_addr = csv(options.bcc)
+
+    # replace existing headers
+    if to_addr:
+        tmpl, h = replace_header('To', to_addr, tmpl)
+        if h:
+            headers += h + '\n'
+    if cc_addr:
+        tmpl, h = replace_header('Cc', cc_addr, tmpl)
+        if h:
+            headers += h + '\n'
+    if bcc_addr:
+        tmpl, h = replace_header('Bcc', bcc_addr, tmpl)
+        if h:
+            headers += h + '\n'
+
+    return tmpl, headers
+
+def __get_signers_list(msg):
+    """Return the address list generated from signed-off-by and
+    acked-by lines in the message.
+    """
+    addr_list = []
+
+    r = re.compile('^(signed-off-by|acked-by):\s+(.+)$', re.I)
+    for line in msg.split('\n'):
+        m = r.match(line)
+        if m:
+            addr_list.append(m.expand('\g<2>'))
+
+    return addr_list
 
 def __build_extra_headers():
     """Build extra headers like content-type etc.
@@ -220,7 +265,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     if not maintainer:
         maintainer = ''
 
-    headers_end = __build_address_headers(options)
+    tmpl, headers_end = __build_address_headers(tmpl, options)
     headers_end += 'Message-Id: %s\n' % msg_id
     if options.refid:
         headers_end += "In-Reply-To: %s\n" % options.refid
@@ -300,7 +345,12 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     if not maintainer:
         maintainer = '%s <%s>' % (p.get_commname(), p.get_commemail())
 
-    headers_end = __build_address_headers(options)
+    if options.auto:
+        extra_cc = __get_signers_list(descr)
+    else:
+        extra_cc = []
+
+    tmpl, headers_end = __build_address_headers(tmpl, options, extra_cc)
     headers_end += 'Message-Id: %s\n' % msg_id
     if ref_id:
         headers_end += "In-Reply-To: %s\n" % ref_id
