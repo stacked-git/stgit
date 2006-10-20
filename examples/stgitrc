@@ -25,7 +25,7 @@ smtpserver: localhost:25
 #editor: /usr/bin/vi
 
 # this value overrides the default PAGER environment variable
-#pager: less -S
+#pager: ~/share/stgit/contrib/diffcol.sh
 
 # The three-way merge tool. Note that the 'output' file contains the
 # same data as 'branch1'. This is useful for tools that do not take an

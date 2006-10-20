@@ -3,3 +3,4 @@ include stg-prof
 include templates/*.tmpl
 include examples/*.tmpl
 include examples/stgitrc
+include contrib/diffcol.sh

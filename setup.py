@@ -18,5 +18,6 @@ setup(name = 'stgit',
       data_files = [('share/stgit/templates', glob.glob('templates/*.tmpl')),
                     ('share/stgit/examples', glob.glob('examples/*.tmpl')),
                     ('share/stgit/examples', ['examples/stgitrc']),
+                    ('share/stgit/contrib', ['contrib/diffcol.sh']),
                     ('share/doc/stgit', glob.glob('doc/*.txt'))]
       )
