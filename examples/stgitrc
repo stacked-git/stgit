@@ -11,14 +11,14 @@
 
 # Set to 'yes' if you don't want to use the 'resolved' command.
 # 'refresh' will automatically mark the conflicts as resolved
-autoresolved: no
+#autoresolved: no
 
-smtpserver: localhost:25
+#smtpserver: localhost:25
 #smtpuser: username
 #smtppassword: password
 
-# delay between messages in seconds (defaults to 2)
-#smtpdelay: 2
+# delay between messages in seconds (defaults to 5)
+#smtpdelay: 5
 
 # stg will look for this first, then look for the EDITOR environmental
 # variable, then default to using 'vi'
@@ -27,11 +27,14 @@ smtpserver: localhost:25
 # this value overrides the default PAGER environment variable
 #pager: ~/share/stgit/contrib/diffcol.sh
 
+# GIT pull command (should take the same arguments as git-pull)
+#pullcmd: git-pull
+
 # The three-way merge tool. Note that the 'output' file contains the
 # same data as 'branch1'. This is useful for tools that do not take an
 # output parameter
-merger: diff3 -L current -L ancestor -L patched -m -E \
-	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
+#merger: diff3 -L current -L ancestor -L patched -m -E \
+#	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
 
 # Interactive three-way merge tool. It is executed by the 'resolved
 # --interactive' command
@@ -42,7 +45,7 @@ merger: diff3 -L current -L ancestor -L patched -m -E \
 #	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
 
 # Leave the original files in the working tree in case of a merge conflict
-keeporig: yes
+#keeporig: yes
 
 # Extensions for the files involved in a three-way merge (ancestor,
 # current, patched)

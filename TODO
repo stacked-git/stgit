@@ -2,7 +2,6 @@ The TODO list before 1.0:
 
 - more regression tests
 - stg help should probably pipe through the $PAGER
-- configurable pull command (currently uses git-pull only)
 - fix StGIT to run correctly in subdirectories
 - use a separate index for some commands (refresh, fold etc.) so that
   files already added/removed are not automatically checked in

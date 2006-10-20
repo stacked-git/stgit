@@ -22,6 +22,7 @@ import sys, os, popen2, re, gitmergeonefile
 
 from stgit import basedir
 from stgit.utils import *
+from stgit.config import config
 
 # git exception class
 class GitException(Exception):
@@ -691,7 +692,7 @@ def pull(repository = 'origin', refspec = None):
     if refspec:
         args.append(refspec)
 
-    if __run('git-pull', args) != 0:
+    if __run(config.get('stgit', 'pullcmd'), args) != 0:
         raise GitException, 'Failed "git-pull %s"' % repository
 
 def apply_patch(filename = None, base = None):

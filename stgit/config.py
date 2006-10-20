@@ -29,7 +29,8 @@ config = ConfigParser.RawConfigParser()
 config.add_section('stgit')
 config.set('stgit', 'autoresolved', 'no')
 config.set('stgit', 'smtpserver', 'localhost:25')
-config.set('stgit', 'smtpdelay', '2')
+config.set('stgit', 'smtpdelay', '5')
+config.set('stgit', 'pullcmd', 'git-pull')
 config.set('stgit', 'merger',
            'diff3 -L current -L ancestor -L patched -m -E ' \
            '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
