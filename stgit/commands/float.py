@@ -24,18 +24,23 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'push patches to the top, even if applied'
-usage = """%prog [options] <patches>
+usage = """%prog [options] [<patches> | <series>]
 
 Push a patch or a range of patches to the top even if applied. The
 necessary pop and push operations will be performed to accomplish
-this."""
+this. The '--series' option can be used to rearrange the (top) patches
+as specified by the given series file (or the standard input)."""
 
-options = []
+options = [make_option('-s', '--series',
+                       help = 'rearrange according to a series file',
+                       action = 'store_true')]
 
 def func(parser, options, args):
     """Pops and pushed to make the named patch the topmost patch
     """
-    if len(args) == 0:
+    args_nr = len(args)
+    if (options.series and args_nr > 1) \
+           or (not options.series and args_nr == 0):
         parser.error('incorrect number of arguments')
 
     check_local_changes()
@@ -46,7 +51,20 @@ def func(parser, options, args):
     applied = crt_series.get_applied()
     all = unapplied + applied
 
-    patches = parse_patches(args, all)
+    if options.series:
+        if args_nr:
+            f = file(args[0])
+        else:
+            f = sys.stdin
+
+        patches = []
+        for line in f:
+            patch = re.sub('#.*$', '', line).strip()
+            if patch:
+                patches.append(patch)
+    else:
+        patches = parse_patches(args, all)
+
     # working with "topush" patches in reverse order might be a bit
     # more efficient for large series but the main reason is for the
     # "topop != topush" comparison to work
