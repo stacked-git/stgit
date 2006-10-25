@@ -223,8 +223,7 @@ def main():
                                   option_list = command.options)
             parser.print_help()
         else:
-            print 'usage: %s help <command>' % prog
-
+            print_help()
         sys.exit(0)
     if cmd in ['-v', '--version', 'version']:
         print 'Stacked GIT %s' % version
