@@ -30,6 +30,7 @@ from stgit.commands.common import *
 # The commands
 import stgit.commands.add
 import stgit.commands.applied
+import stgit.commands.assimilate
 import stgit.commands.branch
 import stgit.commands.delete
 import stgit.commands.diff
@@ -70,6 +71,7 @@ import stgit.commands.uncommit
 commands = {
     'add':      stgit.commands.add,
     'applied':  stgit.commands.applied,
+    'assimilate': stgit.commands.assimilate,
     'branch':   stgit.commands.branch,
     'delete':   stgit.commands.delete,
     'diff':     stgit.commands.diff,
@@ -113,6 +115,7 @@ repocommands = (
     )
 stackcommands = (
     'applied',
+    'assimilate',
     'clean',
     'commit',
     'float',

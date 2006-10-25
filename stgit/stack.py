@@ -350,9 +350,17 @@ class Series:
         """
         return Patch(name, self.__patch_dir, self.__refs_dir)
 
+    def get_current_patch(self):
+        """Return a Patch object representing the topmost patch, or
+        None if there is no such patch."""
+        crt = self.get_current()
+        if not crt:
+            return None
+        return Patch(crt, self.__patch_dir, self.__refs_dir)
+
     def get_current(self):
-        """Return a Patch object representing the topmost patch
-        """
+        """Return the name of the topmost patch, or None if there is
+        no such patch."""
         if os.path.isfile(self.__current_file):
             name = read_string(self.__current_file)
         else:
@@ -414,6 +422,11 @@ class Series:
         """
         return name in self.get_unapplied()
 
+    def patch_exists(self, name):
+        """Return true if there is a patch with the given name, false
+        otherwise."""
+        return self.__patch_applied(name) or self.__patch_applied(name)
+
     def __begin_stack_check(self):
         """Save the current HEAD into .git/refs/heads/base if the stack
         is empty
@@ -433,12 +446,11 @@ class Series:
     def head_top_equal(self):
         """Return true if the head and the top are the same
         """
-        crt = self.get_current()
+        crt = self.get_current_patch()
         if not crt:
             # we don't care, no patches applied
             return True
-        return git.get_head() == Patch(crt, self.__patch_dir,
-                                       self.__refs_dir).get_top()
+        return git.get_head() == crt.get_top()
 
     def is_initialised(self):
         """Checks if series is already initialised
@@ -688,7 +700,7 @@ class Series:
                   top = None, bottom = None,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None,
-                  before_existing = False):
+                  before_existing = False, refresh = True):
         """Creates a new patch
         """
         if self.__patch_applied(name) or self.__patch_unapplied(name):
@@ -741,8 +753,8 @@ class Series:
         else:
             append_string(self.__applied_file, patch.get_name())
             self.__set_current(name)
-
-            self.refresh_patch(cache_update = False, log = 'new')
+            if refresh:
+                self.refresh_patch(cache_update = False, log = 'new')
 
     def delete_patch(self, name):
         """Deletes a patch

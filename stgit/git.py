@@ -79,6 +79,9 @@ class Commit:
     def get_log(self):
         return self.__log
 
+    def __str__(self):
+        return self.get_id_hash()
+
 # dictionary of Commit objects, used to avoid multiple calls to git
 __commits = dict()
 

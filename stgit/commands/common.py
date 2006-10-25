@@ -113,10 +113,10 @@ def check_local_changes():
 
 def check_head_top_equal():
     if not crt_series.head_top_equal():
-        raise CmdException, \
-              'HEAD and top are not the same. You probably committed\n' \
-              '  changes to the tree outside of StGIT. If you know what you\n' \
-              '  are doing, use the "refresh -f" command'
+        raise CmdException(
+            'HEAD and top are not the same. You probably committed\n'
+            '  changes to the tree outside of StGIT. To bring them\n'
+            '  into StGIT, use the "assimilate" command')
 
 def check_conflicts():
     if os.path.exists(os.path.join(basedir.get(), 'conflicts')):
