@@ -203,7 +203,7 @@ def main():
     cmd = sys.argv[1]
 
     if cmd in ['-h', '--help']:
-        if len(sys.argv) == 3 and sys.argv[2] in commands:
+        if len(sys.argv) >= 3 and sys.argv[2] in commands:
             cmd = sys.argv[2]
             sys.argv[2] = '--help'
         else:
