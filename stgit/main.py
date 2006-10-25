@@ -195,7 +195,7 @@ def main():
     prog = os.path.basename(sys.argv[0])
 
     if len(sys.argv) < 2:
-        print >> sys.stderr, 'Unknown command'
+        print >> sys.stderr, 'usage: %s <command>' % prog
         print >> sys.stderr, \
               '  Try "%s --help" for a list of supported commands' % prog
         sys.exit(1)
