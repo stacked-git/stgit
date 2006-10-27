@@ -9,6 +9,9 @@
 #commname:  Your Name
 #commemail: your.name@yourcompany.com
 
+# Automatically Bcc the address below
+#autobcc: your.name@yourcompany.com
+
 # Set to 'yes' if you don't want to use the 'resolved' command.
 # 'refresh' will automatically mark the conflicts as resolved
 #autoresolved: no

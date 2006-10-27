@@ -196,7 +196,15 @@ def __build_address_headers(tmpl, options, extra_cc = []):
     template.
     """
     def csv(lst):
-        return reduce(lambda x, y: x + ', ' + y, lst)
+        s = ''
+        for i in lst:
+            if not i:
+                continue
+            if s:
+                s += ', ' + i
+            else:
+                s = i
+        return s
 
     def replace_header(header, addr, tmpl):
         r = re.compile('^' + header + ':\s+.+$', re.I | re.M)
@@ -213,6 +221,11 @@ def __build_address_headers(tmpl, options, extra_cc = []):
     cc_addr = ''
     bcc_addr = ''
 
+    if config.has_option('stgit', 'autobcc'):
+        autobcc = config.get('stgit', 'autobcc')
+    else:
+        autobcc = ''
+
     if options.to:
         to_addr = csv(options.to)
     if options.cc:
@@ -220,7 +233,9 @@ def __build_address_headers(tmpl, options, extra_cc = []):
     elif extra_cc:
         cc_addr = csv(extra_cc)
     if options.bcc:
-        bcc_addr = csv(options.bcc)
+        bcc_addr = csv(options.bcc + [autobcc])
+    elif autobcc:
+        bcc_addr = autobcc
 
     # replace existing headers
     if to_addr:
