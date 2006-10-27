@@ -65,6 +65,7 @@ the following variables:
   %(diffstat)s     - diff statistics
   %(date)s         - current date/time
   %(version)s      - ' version' string passed on the command line (or empty)
+  %(prefix)s       - 'prefix ' string passed on the command line
   %(patchnr)s      - patch number
   %(totalnr)s      - total number of patches to be sent
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
@@ -98,6 +99,8 @@ options = [make_option('-a', '--all',
                        action = 'store_true'),
            make_option('-v', '--version', metavar = 'VERSION',
                        help = 'add VERSION to the [PATCH ...] prefix'),
+           make_option('--prefix', metavar = 'PREFIX',
+                       help = 'add PREFIX to the [... PATCH ...] prefix'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'use FILE as the message template'),
            make_option('-c', '--cover', metavar = 'FILE',
@@ -277,6 +280,11 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     else:
         version_str = ''
 
+    if options.prefix:
+        prefix_str = options.prefix + ' '
+    else:
+        prefix_str = ''
+        
     total_nr_str = str(total_nr)
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if total_nr > 1:
@@ -288,6 +296,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
                  'endofheaders': headers_end,
                  'date':         email.Utils.formatdate(localtime = True),
                  'version':      version_str,
+                 'prefix':	 prefix_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str}
@@ -362,6 +371,11 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     else:
         version_str = ''
 
+    if options.prefix:
+        prefix_str = options.prefix + ' '
+    else:
+        prefix_str = ''
+        
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
     if total_nr > 1:
@@ -380,6 +394,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                                               rev2 = git_id('%s//top' % patch)),
                  'date':         email.Utils.formatdate(localtime = True),
                  'version':      version_str,
+                 'prefix':       prefix_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
