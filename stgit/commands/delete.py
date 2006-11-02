@@ -39,7 +39,8 @@ options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
-    """Deletes one or more patches."""
+    """Deletes one or more patches.
+    """
     applied_patches = crt_series.get_applied()
     unapplied_patches = crt_series.get_unapplied()
     all_patches = applied_patches + unapplied_patches
@@ -49,33 +50,31 @@ def func(parser, options, args):
     else:
         parser.error('No patches specified')
 
-    applied = {}
-    unapplied = {}
-    for patch in patches:
-        if patch in unapplied_patches:
-            unapplied[patch] = None
-        else:
-            applied[patch] = None
+    applied = []
 
-    while crt_series.get_current() in applied:
-        patch = crt_series.get_current()
+    # find the applied patches to be deleted. We can only delete
+    # consecutive patches in the applied range
+    for patch in applied_patches[::-1]:
+        if patch in patches:
+            applied.append(patch)
+            patches.remove(patch)
+        else:
+            break
+
+    # any applied patches to be deleted but not in consecutive order?
+    for patch in patches:
+        if patch in applied_patches:
+            raise CmdException, 'Cannot delete the applied patch "%s"' % patch
+
+    if applied and not options.branch:
         check_local_changes()
         check_conflicts()
         check_head_top_equal()
-        crt_series.delete_patch(patch)
-        del applied[patch]
-        print 'Patch "%s" successfully deleted' % patch
 
-    for patch in unapplied.iterkeys():
+    # delete the patches
+    for patch in applied + patches:
         crt_series.delete_patch(patch)
         print 'Patch "%s" successfully deleted' % patch
-
-    if applied:
-        print 'Error: failed to delete %s' % ', '.join(applied.iterkeys())
-
-    failed = len(applied)
-    if failed:
-        raise CmdException, 'Failed to delete %d patches' % failed
 
     if not options.branch:
         print_crt_patch()
