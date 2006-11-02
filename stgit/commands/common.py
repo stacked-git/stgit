@@ -200,16 +200,19 @@ def pop_patches(patches, keep = False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
     """
-    p = patches[-1]
-    if len(patches) == 1:
-        print 'Popping patch "%s"...' % p,
+    if len(patches) == 0:
+        print 'nothing to push/pop'
     else:
-        print 'Popping "%s" - "%s" patches...' % (patches[0], p),
-    sys.stdout.flush()
+        p = patches[-1]
+        if len(patches) == 1:
+            print 'Popping patch "%s"...' % p,
+        else:
+            print 'Popping "%s" - "%s" patches...' % (patches[0], p),
+        sys.stdout.flush()
 
-    crt_series.pop_patch(p, keep)
+        crt_series.pop_patch(p, keep)
 
-    print 'done'
+        print 'done'
 
 def parse_patches(patch_args, patch_list):
     """Parse patch_args list for patch names in patch_list and return
