@@ -19,92 +19,62 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
+from optparse import OptionParser
 
-from stgit.utils import *
-from stgit import stack, git, gitmergeonefile
-from stgit.version import version
-from stgit.config import config
-from stgit.commands.common import *
-
-# The commands
-import stgit.commands.add
-import stgit.commands.applied
-import stgit.commands.assimilate
-import stgit.commands.branch
-import stgit.commands.delete
-import stgit.commands.diff
-import stgit.commands.clean
-import stgit.commands.clone
-import stgit.commands.commit
-import stgit.commands.export
-import stgit.commands.files
-import stgit.commands.float
-import stgit.commands.fold
-import stgit.commands.goto
-import stgit.commands.id
-import stgit.commands.imprt
-import stgit.commands.init
-import stgit.commands.log
-import stgit.commands.mail
-import stgit.commands.new
-import stgit.commands.patches
-import stgit.commands.pick
-import stgit.commands.pop
-import stgit.commands.pull
-import stgit.commands.push
-import stgit.commands.refresh
-import stgit.commands.rename
-import stgit.commands.resolved
-import stgit.commands.rm
-import stgit.commands.series
-import stgit.commands.show
-import stgit.commands.status
-import stgit.commands.top
-import stgit.commands.unapplied
-import stgit.commands.uncommit
-
+import stgit.commands
+from stgit.stack import Series, StackException
+from stgit.git import GitException
+from stgit.commands.common import CmdException
+from stgit.gitmergeonefile import GitMergeException
 
 #
 # The commands map
 #
-commands = {
-    'add':      stgit.commands.add,
-    'applied':  stgit.commands.applied,
-    'assimilate': stgit.commands.assimilate,
-    'branch':   stgit.commands.branch,
-    'delete':   stgit.commands.delete,
-    'diff':     stgit.commands.diff,
-    'clean':    stgit.commands.clean,
-    'clone':    stgit.commands.clone,
-    'commit':   stgit.commands.commit,
-    'export':   stgit.commands.export,
-    'files':    stgit.commands.files,
-    'float':    stgit.commands.float,
-    'fold':     stgit.commands.fold,
-    'goto':     stgit.commands.goto,
-    'id':       stgit.commands.id,
-    'import':   stgit.commands.imprt,
-    'init':     stgit.commands.init,
-    'log':      stgit.commands.log,
-    'mail':     stgit.commands.mail,
-    'new':      stgit.commands.new,
-    'patches':  stgit.commands.patches,
-    'pick':     stgit.commands.pick,
-    'pop':      stgit.commands.pop,
-    'pull':     stgit.commands.pull,
-    'push':     stgit.commands.push,
-    'refresh':  stgit.commands.refresh,
-    'rename':   stgit.commands.rename,
-    'resolved': stgit.commands.resolved,
-    'rm':       stgit.commands.rm,
-    'series':   stgit.commands.series,
-    'show':     stgit.commands.show,
-    'status':   stgit.commands.status,
-    'top':      stgit.commands.top,
-    'unapplied':stgit.commands.unapplied,
-    'uncommit': stgit.commands.uncommit,
-    }
+class Commands(dict):
+    """Commands class. It performs on-demand module loading
+    """
+    def __getitem__(self, key):
+        cmd_mod = self.get(key)
+        __import__('stgit.commands.' + cmd_mod)
+        return getattr(stgit.commands, cmd_mod)
+
+commands = Commands({
+    'add':              'add',
+    'applied':          'applied',
+    'assimilate':       'assimilate',
+    'branch':           'branch',
+    'delete':           'delete',
+    'diff':             'diff',
+    'clean':            'clean',
+    'clone':            'clone',
+    'commit':           'commit',
+    'export':           'export',
+    'files':            'files',
+    'float':            'float',
+    'fold':             'fold',
+    'goto':             'goto',
+    'id':               'id',
+    'import':           'imprt',
+    'init':             'init',
+    'log':              'log',
+    'mail':             'mail',
+    'new':              'new',
+    'patches':          'patches',
+    'pick':             'pick',
+    'pop':              'pop',
+    'pull':             'pull',
+    'push':             'push',
+    'refresh':          'refresh',
+    'rename':           'rename',
+    'resolved':         'resolved',
+    'rm':               'rm',
+    'series':           'series',
+    'show':             'show',
+    'status':           'status',
+    'top':              'top',
+    'unapplied':        'unapplied',
+    'uncommit':         'uncommit'
+    })
 
 # classification: repository, stack, patch, working copy
 repocommands = (
@@ -229,6 +199,7 @@ def main():
             print_help()
         sys.exit(0)
     if cmd in ['-v', '--version', 'version']:
+        from stgit.version import version
         print 'Stacked GIT %s' % version
         os.system('git --version')
         print 'Python version %s' % sys.version
@@ -255,14 +226,14 @@ def main():
         # object will be created after the GIT tree is cloned
         if cmd != 'clone':
             if hasattr(options, 'branch') and options.branch:
-                command.crt_series = stack.Series(options.branch)
+                command.crt_series = Series(options.branch)
             else:
-                command.crt_series = stack.Series()
+                command.crt_series = Series()
             stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
-    except (IOError, CmdException, stack.StackException, git.GitException,
-            gitmergeonefile.GitMergeException), err:
+    except (IOError, CmdException, StackException, GitException,
+            GitMergeException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         sys.exit(2)
     except KeyboardInterrupt:
