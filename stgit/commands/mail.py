@@ -36,10 +36,10 @@ generated from the template file passed as argument to '--template'
 can either be added to the template file or passed via the
 corresponding command line options.
 
-A preamble e-mail can be sent using the '--cover' and/or '--edit'
-options. The first allows the user to specify a file to be used as a
-template. The latter option will invoke the editor on the specified
-file (defaulting to '.git/covermail.tmpl' or
+A preamble e-mail can be sent using the '--cover' and/or
+'--edit-cover' options. The first allows the user to specify a file to
+be used as a template. The latter option will invoke the editor on the
+specified file (defaulting to '.git/covermail.tmpl' or
 '~/.stgit/templates/covermail.tmpl' or
 '/usr/share/stgit/templates/covermail.tmpl').
 
@@ -105,8 +105,11 @@ options = [make_option('-a', '--all',
                        help = 'use FILE as the message template'),
            make_option('-c', '--cover', metavar = 'FILE',
                        help = 'send FILE as the cover message'),
-           make_option('-e', '--edit',
+           make_option('-e', '--edit-cover',
                        help = 'edit the cover message before sending',
+                       action = 'store_true'),
+           make_option('-E', '--edit-patches',
+                       help = 'edit each patch before sending',
                        action = 'store_true'),
            make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
                        help = 'sleep for SECONDS between e-mails sending'),
@@ -276,6 +279,34 @@ def __build_extra_headers():
 
     return headers
 
+def edit_message(msg):
+    fname = '.stgitmail.txt'
+
+    # create the initial file
+    f = file(fname, 'w')
+    f.write(msg)
+    f.close()
+
+    # the editor
+    if config.has_option('stgit', 'editor'):
+        editor = config.get('stgit', 'editor')
+    elif 'EDITOR' in os.environ:
+        editor = os.environ['EDITOR']
+    else:
+        editor = 'vi'
+    editor += ' %s' % fname
+
+    print 'Invoking the editor: "%s"...' % editor,
+    sys.stdout.flush()
+    print 'done (exit code: %d)' % os.system(editor)
+
+    # read the message back
+    f = file(fname)
+    msg = f.read()
+    f.close()
+
+    return msg
+
 def __build_cover(tmpl, total_nr, msg_id, options):
     """Build the cover message (series description) to be sent via SMTP
     """
@@ -325,31 +356,8 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
-    if options.edit:
-        fname = '.stgitmail.txt'
-
-        # create the initial file
-        f = file(fname, 'w+')
-        f.write(msg)
-        f.close()
-
-        # the editor
-        if config.has_option('stgit', 'editor'):
-            editor = config.get('stgit', 'editor')
-        elif 'EDITOR' in os.environ:
-            editor = os.environ['EDITOR']
-        else:
-            editor = 'vi'
-        editor += ' %s' % fname
-
-        print 'Invoking the editor: "%s"...' % editor,
-        sys.stdout.flush()
-        print 'done (exit code: %d)' % os.system(editor)
-
-        # read the message back
-        f = file(fname)
-        msg = f.read()
-        f.close()
+    if options.edit_cover:
+        msg = edit_message(msg)
 
     return msg.strip('\n')
 
@@ -431,6 +439,9 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
+    if options.edit_patches:
+        msg = edit_message(msg)
+
     return msg.strip('\n')
 
 def func(parser, options, args):
@@ -481,7 +492,7 @@ def func(parser, options, args):
         sleep = config.getint('stgit', 'smtpdelay')
 
     # send the cover message (if any)
-    if options.cover or options.edit:
+    if options.cover or options.edit_cover:
         # find the template file
         if options.cover:
             tmpl = file(options.cover).read()
