@@ -24,30 +24,58 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'remove the topmost or any unapplied patch'
-usage = """%prog [options] <patch>
+help = 'delete patches'
+usage = """%prog [options] <patch1> [<patch2>] [<patch3>..<patch4>]
 
-Delete the patch passed as argument. The patch to be deleted can only
-be part of the unapplied list or be the topmost one, in the latter
-case the command also popping it from the stack. Note that the
-'delete' operation is irreversible."""
+Delete the patches passed as arguments. If an applied patch is to be
+deleted, all other patches applied on top of it must be deleted too,
+and they must be explicitly specified, since this command will not try
+to delete a patch unless you explicitly ask it to. If any applied
+patches are deleted, they are popped from the stack.
+
+Note that the 'delete' operation is irreversible."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
-    """Deletes a patch
-    """
-    if len(args) != 1:
-        parser.error('incorrect number of arguments')
+    """Deletes one or more patches."""
+    applied_patches = crt_series.get_applied()
+    unapplied_patches = crt_series.get_unapplied()
+    all_patches = applied_patches + unapplied_patches
 
-    if args[0] == crt_series.get_current():
+    if args:
+        patches = parse_patches(args, all_patches)
+    else:
+        parser.error('No patches specified')
+
+    applied = {}
+    unapplied = {}
+    for patch in patches:
+        if patch in unapplied_patches:
+            unapplied[patch] = None
+        else:
+            applied[patch] = None
+
+    while crt_series.get_current() in applied:
+        patch = crt_series.get_current()
         check_local_changes()
         check_conflicts()
         check_head_top_equal()
+        crt_series.delete_patch(patch)
+        del applied[patch]
+        print 'Patch "%s" successfully deleted' % patch
 
-    crt_series.delete_patch(args[0])
-    print 'Patch "%s" successfully deleted' % args[0]
+    for patch in unapplied.iterkeys():
+        crt_series.delete_patch(patch)
+        print 'Patch "%s" successfully deleted' % patch
+
+    if applied:
+        print 'Error: failed to delete %s' % ', '.join(applied.iterkeys())
+
+    failed = len(applied)
+    if failed:
+        raise CmdException, 'Failed to delete %d patches' % failed
 
     if not options.branch:
         print_crt_patch()
