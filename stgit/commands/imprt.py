@@ -85,6 +85,11 @@ def __strip_patch_name(name):
 
     return stripped
 
+def __replace_slashes_with_dashes(name):
+    stripped = name.replace('/', '-')
+
+    return stripped
+
 def __parse_description(descr):
     """Parse the patch description and return the new description and
     author information (if any).
@@ -299,6 +304,7 @@ def __import_series(filename, options):
 
         if options.strip:
             patch = __strip_patch_name(patch)
+        patch = __replace_slashes_with_dashes(patch);
         if options.ignore and patch in applied:
             print 'Ignoring already applied patch "%s"' % patch
             continue
