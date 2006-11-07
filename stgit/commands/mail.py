@@ -15,7 +15,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, re, time, datetime, smtplib, email.Utils
+import sys, os, re, time, datetime, smtplib
+import email, email.Utils, email.Header
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -184,42 +185,20 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
 
     s.quit()
 
-def __write_mbox(from_addr, msg):
-    """Write an mbox like file to the standard output
-    """
-    r = re.compile('^From ', re.M)
-    msg = r.sub('>\g<0>', msg)
-
-    print 'From %s %s' % (from_addr, datetime.datetime.today().ctime())
-    print msg
-    print
-
-def __build_address_headers(tmpl, options, extra_cc = []):
+def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
     template.
     """
-    def csv(lst):
-        s = ''
-        for i in lst:
-            if not i:
-                continue
-            if s:
-                s += ', ' + i
+    def __replace_header(header, addr):
+        if addr:
+            crt_addr = msg[header]
+            del msg[header]
+
+            if crt_addr:
+                msg[header] = ', '.join([crt_addr, addr])
             else:
-                s = i
-        return s
+                msg[header] = addr
 
-    def replace_header(header, addr, tmpl):
-        r = re.compile('^' + header + ':\s+.+$', re.I | re.M)
-        if r.search(tmpl):
-            tmpl = r.sub('\g<0>, ' + addr, tmpl, 1)
-            h = ''
-        else:
-            h = header + ': ' + addr
-
-        return tmpl, h
-
-    headers = ''
     to_addr = ''
     cc_addr = ''
     bcc_addr = ''
@@ -230,31 +209,19 @@ def __build_address_headers(tmpl, options, extra_cc = []):
         autobcc = ''
 
     if options.to:
-        to_addr = csv(options.to)
+        to_addr = ', '.join(options.to)
     if options.cc:
-        cc_addr = csv(options.cc + extra_cc)
+        cc_addr = ', '.join(options.cc + extra_cc)
     elif extra_cc:
-        cc_addr = csv(extra_cc)
+        cc_addr = ', '.join(extra_cc)
     if options.bcc:
-        bcc_addr = csv(options.bcc + [autobcc])
+        bcc_addr = ', '.join(options.bcc + [autobcc])
     elif autobcc:
         bcc_addr = autobcc
 
-    # replace existing headers
-    if to_addr:
-        tmpl, h = replace_header('To', to_addr, tmpl)
-        if h:
-            headers += h + '\n'
-    if cc_addr:
-        tmpl, h = replace_header('Cc', cc_addr, tmpl)
-        if h:
-            headers += h + '\n'
-    if bcc_addr:
-        tmpl, h = replace_header('Bcc', bcc_addr, tmpl)
-        if h:
-            headers += h + '\n'
-
-    return tmpl, headers
+    __replace_header('To', to_addr)
+    __replace_header('Cc', cc_addr)
+    __replace_header('Bcc', bcc_addr)
 
 def __get_signers_list(msg):
     """Return the address list generated from signed-off-by and
@@ -270,14 +237,38 @@ def __get_signers_list(msg):
 
     return addr_list
 
-def __build_extra_headers():
-    """Build extra headers like content-type etc.
+def __build_extra_headers(msg, msg_id, ref_id = None):
+    """Build extra email headers and encoding
     """
-    headers  = 'Content-Type: text/plain; charset=utf-8; format=fixed\n'
-    headers += 'Content-Transfer-Encoding: 8bit\n'
-    headers += 'User-Agent: StGIT/%s\n' % version.version
+    del msg['Date']
+    msg['Date'] = email.Utils.formatdate(localtime = True)
+    msg['Message-ID'] = msg_id
+    if ref_id:
+        msg['In-Reply-To'] = ref_id
+        msg['References'] = ref_id
+    msg['User-Agent'] = 'StGIT/%s' % version.version
 
-    return headers
+def __encode_message(msg):
+    # 7 or 8 bit encoding
+    charset = email.Charset.Charset('utf-8')
+    charset.body_encoding = None
+
+    # encode headers
+    for header, value in msg.items():
+        words = []
+        for word in value.split(' '):
+            try:
+                uword = unicode(word, 'utf-8')
+            except UnicodeDecodeError:
+                # maybe we should try a different encoding or report
+                # the error. At the moment, we just ignore it
+                pass
+            words.append(email.Header.Header(uword).encode())
+        new_val = ' '.join(words)
+        msg.replace_header(header, new_val)
+
+    # encode the body and set the MIME and encoding headers
+    msg.set_charset(charset)
 
 def edit_message(msg):
     fname = '.stgitmail.txt'
@@ -314,13 +305,6 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     if not maintainer:
         maintainer = ''
 
-    tmpl, headers_end = __build_address_headers(tmpl, options)
-    headers_end += 'Message-Id: %s\n' % msg_id
-    if options.refid:
-        headers_end += "In-Reply-To: %s\n" % options.refid
-        headers_end += "References: %s\n" % options.refid
-    headers_end += __build_extra_headers()
-
     if options.version:
         version_str = ' %s' % options.version
     else:
@@ -339,8 +323,10 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         number_str = ''
 
     tmpl_dict = {'maintainer':   maintainer,
-                 'endofheaders': headers_end,
-                 'date':         email.Utils.formatdate(localtime = True),
+                 # for backward template compatibility
+                 'endofheaders': '',
+                 # for backward template compatibility
+                 'date':         '',
                  'version':      version_str,
                  'prefix':	 prefix_str,
                  'patchnr':      patch_nr_str,
@@ -348,7 +334,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
                  'number':       number_str}
 
     try:
-        msg = tmpl % tmpl_dict
+        msg_string = tmpl % tmpl_dict
     except KeyError, err:
         raise CmdException, 'Unknown patch template variable: %s' \
               % err
@@ -356,10 +342,22 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
-    if options.edit_cover:
-        msg = edit_message(msg)
+    # The Python email message
+    try:
+        msg = email.message_from_string(msg_string)
+    except Exception, ex:
+        raise CmdException, 'template parsing error: %s' % str(ex)
 
-    return msg.strip('\n')
+    __build_address_headers(msg, options)
+    __build_extra_headers(msg, msg_id, options.refid)
+    __encode_message(msg)
+
+    msg_string = msg.as_string(options.mbox)
+
+    if options.edit_cover:
+        msg_string = edit_message(msg_string)
+
+    return msg_string.strip('\n')
 
 def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """Build the message to be sent via SMTP
@@ -370,24 +368,11 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     descr_lines = descr.split('\n')
 
     short_descr = descr_lines[0].rstrip()
-    long_descr = reduce(lambda x, y: x + '\n' + y,
-                        descr_lines[1:], '').lstrip()
+    long_descr = '\n'.join(descr_lines[1:]).lstrip()
 
     maintainer = __get_maintainer()
     if not maintainer:
         maintainer = '%s <%s>' % (p.get_commname(), p.get_commemail())
-
-    if options.auto:
-        extra_cc = __get_signers_list(descr)
-    else:
-        extra_cc = []
-
-    tmpl, headers_end = __build_address_headers(tmpl, options, extra_cc)
-    headers_end += 'Message-Id: %s\n' % msg_id
-    if ref_id:
-        headers_end += "In-Reply-To: %s\n" % ref_id
-        headers_end += "References: %s\n" % ref_id
-    headers_end += __build_extra_headers()
 
     if options.version:
         version_str = ' %s' % options.version
@@ -410,12 +395,14 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'maintainer':   maintainer,
                  'shortdescr':   short_descr,
                  'longdescr':    long_descr,
-                 'endofheaders': headers_end,
+                 # for backward template compatibility
+                 'endofheaders': '',
                  'diff':         git.diff(rev1 = git_id('%s//bottom' % patch),
                                           rev2 = git_id('%s//top' % patch)),
                  'diffstat':     git.diffstat(rev1 = git_id('%s//bottom'%patch),
                                               rev2 = git_id('%s//top' % patch)),
-                 'date':         email.Utils.formatdate(localtime = True),
+                 # for backward template compatibility
+                 'date':         '',
                  'version':      version_str,
                  'prefix':       prefix_str,
                  'patchnr':      patch_nr_str,
@@ -426,12 +413,13 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'authdate':     p.get_authdate(),
                  'commname':     p.get_commname(),
                  'commemail':    p.get_commemail()}
+    # change None to ''
     for key in tmpl_dict:
         if not tmpl_dict[key]:
             tmpl_dict[key] = ''
 
     try:
-        msg = tmpl % tmpl_dict
+        msg_string = tmpl % tmpl_dict
     except KeyError, err:
         raise CmdException, 'Unknown patch template variable: %s' \
               % err
@@ -439,10 +427,27 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
-    if options.edit_patches:
-        msg = edit_message(msg)
+    # The Python email message
+    try:
+        msg = email.message_from_string(msg_string)
+    except Exception, ex:
+        raise CmdException, 'template parsing error: %s' % str(ex)
 
-    return msg.strip('\n')
+    if options.auto:
+        extra_cc = __get_signers_list(descr)
+    else:
+        extra_cc = []
+
+    __build_address_headers(msg, options, extra_cc)
+    __build_extra_headers(msg, msg_id, ref_id)
+    __encode_message(msg)
+
+    msg_string = msg.as_string(options.mbox)
+
+    if options.edit_patches:
+        msg_string = edit_message(msg_string)
+
+    return msg_string.strip('\n')
 
 def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
@@ -510,7 +515,8 @@ def func(parser, options, args):
             ref_id = msg_id
 
         if options.mbox:
-            __write_mbox(from_addr, msg)
+            print msg
+            print
         else:
             print 'Sending the cover message...',
             sys.stdout.flush()
@@ -537,7 +543,8 @@ def func(parser, options, args):
             ref_id = msg_id
 
         if options.mbox:
-            __write_mbox(from_addr, msg)
+            print msg
+            print
         else:
             print 'Sending patch "%s"...' % p,
             sys.stdout.flush()
