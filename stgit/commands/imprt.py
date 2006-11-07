@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, re
+from email.Header import decode_header, make_header
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -135,6 +136,15 @@ def __parse_mail(filename = None):
     """Parse the input file in a mail format and return (description,
     authname, authemail, authdate)
     """
+    def __decode_header(header):
+        """Decode a qp-encoded e-mail header as per rfc2047"""
+        try:
+            words_enc = decode_header(header)
+            hobj = make_header(words_enc)
+        except Exception, ex:
+            raise CmdException, 'header decoding error: %s' % str(ex)
+        return unicode(hobj).encode('utf-8')
+
     if filename:
         f = file(filename)
     else:
@@ -149,12 +159,12 @@ def __parse_mail(filename = None):
             break
         line = line.strip()
         if re.match('from:\s+', line, re.I):
-            auth = re.findall('^.*?:\s+(.*)$', line)[0]
+            auth = __decode_header(re.findall('^.*?:\s+(.*)$', line)[0])
             authname, authemail = name_email(auth)
         elif re.match('date:\s+', line, re.I):
             authdate = re.findall('^.*?:\s+(.*)$', line)[0]
         elif re.match('subject:\s+', line, re.I):
-            descr = re.findall('^.*?:\s+(.*)$', line)[0]
+            descr = __decode_header(re.findall('^.*?:\s+(.*)$', line)[0])
         elif line == '':
             # end of headers
             break
