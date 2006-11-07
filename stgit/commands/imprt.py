@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, re
+import sys, os, re, email
 from email.Header import decode_header, make_header
 from optparse import OptionParser, make_option
 
@@ -150,24 +150,19 @@ def __parse_mail(filename = None):
     else:
         f = sys.stdin
 
-    descr = authname = authemail = authdate = None
+    msg = email.message_from_file(f)
+
+    if filename:
+        f.close()
 
     # parse the headers
-    while True:
-        line = f.readline()
-        if not line:
-            break
-        line = line.strip()
-        if re.match('from:\s+', line, re.I):
-            auth = __decode_header(re.findall('^.*?:\s+(.*)$', line)[0])
-            authname, authemail = name_email(auth)
-        elif re.match('date:\s+', line, re.I):
-            authdate = re.findall('^.*?:\s+(.*)$', line)[0]
-        elif re.match('subject:\s+', line, re.I):
-            descr = __decode_header(re.findall('^.*?:\s+(.*)$', line)[0])
-        elif line == '':
-            # end of headers
-            break
+    if msg.has_key('from'):
+        authname, authemail = name_email(__decode_header(msg['from']))
+    else:
+        authname = authemail = None
+
+    descr = __decode_header(msg['subject'])
+    authdate = msg['date']
 
     # remove the '[*PATCH*]' expression in the subject
     if descr:
@@ -177,22 +172,23 @@ def __parse_mail(filename = None):
     else:
         raise CmdException, 'Subject: line not found'
 
-    # the rest of the patch description
-    while True:
-        line = f.readline()
-        if not line:
-            break
-        if __end_descr(line):
-            break
-        else:
-            descr += line
+    # the rest of the message
+    if msg.is_multipart():
+        descr += msg.get_payload(0, decode = True)
+        diff = msg.get_payload(1, decode = True)
+    else:
+        diff = msg.get_payload(decode = True)
+
+        for line in diff.split('\n'):
+            if __end_descr(line):
+                break
+            descr += line + '\n'
+
     descr.rstrip()
 
-    if filename:
-        f.close()
-
     # parse the description for author information
-    descr, descr_authname, descr_authemail, descr_authdate = __parse_description(descr)
+    descr, descr_authname, descr_authemail, descr_authdate = \
+           __parse_description(descr)
     if descr_authname:
         authname = descr_authname
     if descr_authemail:
@@ -200,7 +196,7 @@ def __parse_mail(filename = None):
     if descr_authdate:
        authdate = descr_authdate
 
-    return (descr, authname, authemail, authdate)
+    return (descr, authname, authemail, authdate, diff)
 
 def __parse_patch(filename = None):
     """Parse the input file and return (description, authname,
@@ -223,6 +219,8 @@ def __parse_patch(filename = None):
             descr += line
     descr.rstrip()
 
+    diff = f.read()
+
     if filename:
         f.close()
 
@@ -230,7 +228,7 @@ def __parse_patch(filename = None):
 
     # we don't yet have an agreed place for the creation date.
     # Just return None
-    return (descr, authname, authemail, authdate)
+    return (descr, authname, authemail, authdate, diff)
 
 def __import_patch(patch, filename, options):
     """Import a patch from a file or standard input
@@ -243,11 +241,14 @@ def __import_patch(patch, filename, options):
         options.authname, options.authemail = name_email(options.author)
 
     if options.mail:
-        message, author_name, author_email, author_date = \
+        message, author_name, author_email, author_date, diff = \
                  __parse_mail(filename)
     else:
-        message, author_name, author_email, author_date = \
+        message, author_name, author_email, author_date, diff = \
                  __parse_patch(filename)
+
+    if not diff:
+        raise CmdException, 'No diff found inside the patch'
 
     if not patch:
         patch = make_patch_name(message, crt_series.patch_exists)
@@ -283,9 +284,9 @@ def __import_patch(patch, filename, options):
     sys.stdout.flush()
 
     if options.base:
-        git.apply_patch(filename, git_id(options.base))
+        git.apply_patch(diff = diff, base = git_id(options.base))
     else:
-        git.apply_patch(filename)
+        git.apply_patch(diff = diff)
 
     crt_series.refresh_patch(edit = options.edit,
                              show_patch = options.showpatch)

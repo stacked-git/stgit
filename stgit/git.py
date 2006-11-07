@@ -698,19 +698,21 @@ def pull(repository = 'origin', refspec = None):
     if __run(config.get('stgit', 'pullcmd'), args) != 0:
         raise GitException, 'Failed "git-pull %s"' % repository
 
-def apply_patch(filename = None, base = None):
+def apply_patch(filename = None, diff = None, base = None):
     """Apply a patch onto the current or given index. There must not
     be any local changes in the tree, otherwise the command fails
     """
     def __apply_patch():
-        if filename:
-            return __run('git-apply --index', [filename]) == 0
-        else:
-            try:
+        try:
+            if filename:
+                return __run('git-apply --index', [filename]) == 0
+            elif diff:
+                _input_str('git-apply --index', diff)
+            else:
                 _input('git-apply --index', sys.stdin)
-            except GitException:
-                return False
-            return True
+        except GitException:
+            return False
+        return True
 
     if base:
         orig_head = get_head()

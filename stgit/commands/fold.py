@@ -71,10 +71,10 @@ def func(parser, options, args):
     if options.threeway:
         crt_patch = crt_series.get_patch(current)
         bottom = crt_patch.get_bottom()
-        git.apply_patch(filename, bottom)
+        git.apply_patch(filename = filename, base = bottom)
     elif options.base:
-        git.apply_patch(filename, git_id(options.base))
+        git.apply_patch(filename = filename, base = git_id(options.base))
     else:
-        git.apply_patch(filename)
+        git.apply_patch(filename = filename)
 
     print 'done'
