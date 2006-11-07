@@ -73,14 +73,7 @@ def func(parser, options, args):
         return name in name2patch or crt_series.patch_exists(name)
 
     for victim in victims:
-        patchname = make_patch_name(victim.get_log())
-        if not patchname:
-            patchname = 'patch'
-        if name_taken(patchname):
-            suffix = 0
-            while name_taken('%s-%d' % (patchname, suffix)):
-                suffix += 1
-            patchname = '%s-%d' % (patchname, suffix)
+        patchname = make_patch_name(victim.get_log(), name_taken)
         patch2name[victim] = patchname
         name2patch[patchname] = victim
 

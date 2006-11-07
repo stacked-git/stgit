@@ -240,9 +240,7 @@ def __import_patch(patch, filename, options):
                  __parse_patch(filename)
 
     if not patch:
-        patch = make_patch_name(message)
-        if not patch:
-            raise CmdException, 'Unknown patch name'
+        patch = make_patch_name(message, crt_series.patch_exists)
 
     # refresh_patch() will invoke the editor in this case, with correct
     # patch content

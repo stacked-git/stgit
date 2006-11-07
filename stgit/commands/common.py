@@ -284,7 +284,7 @@ def name_email_date(address):
 
     return str_list[0]
 
-def make_patch_name(msg):
+def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
     from the first 30 characters of the top line of the string passed
     as argument."""
@@ -293,3 +293,17 @@ def make_patch_name(msg):
 
     subject_line = msg[:30].lstrip().split('\n', 1)[0].lower()
     return re.sub('[\W]+', '-', subject_line).strip('-')
+
+def make_patch_name(msg, unacceptable, default_name = 'patch'):
+    """Return a patch name generated from the given commit message,
+    guaranteed to make unacceptable(name) be false. If the commit
+    message is empty, base the name on default_name instead."""
+    patchname = patch_name_from_msg(msg)
+    if not patchname:
+        patchname = 'patch'
+    if unacceptable(patchname):
+        suffix = 0
+        while unacceptable('%s-%d' % (patchname, suffix)):
+            suffix += 1
+        patchname = '%s-%d' % (patchname, suffix)
+    return patchname
