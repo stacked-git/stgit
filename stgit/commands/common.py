@@ -286,10 +286,10 @@ def name_email_date(address):
 
 def make_patch_name(msg):
     """Return a string to be used as a patch name. This is generated
-    from the top line of the string passed as argument.
-    """
+    from the first 30 characters of the top line of the string passed
+    as argument."""
     if not msg:
         return None
 
-    subject_line = msg.lstrip().split('\n', 1)[0].lower()
+    subject_line = msg[:30].lstrip().split('\n', 1)[0].lower()
     return re.sub('[\W]+', '-', subject_line).strip('-')
