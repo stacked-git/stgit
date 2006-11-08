@@ -515,8 +515,12 @@ def merge(base, head1, head2):
     local tree
     """
     refresh_index()
-    if __run('git-read-tree -u -m --aggressive', [base, head1, head2]) != 0:
-        raise GitException, 'git-read-tree failed (local changes maybe?)'
+
+    try:
+        # use _output() to mask the verbose prints of the tool
+        _output('git-merge-recursive %s -- %s %s' % (base, head1, head2))
+    except GitException:
+        pass
 
     # check the index for unmerged entries
     files = {}
