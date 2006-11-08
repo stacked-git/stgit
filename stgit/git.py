@@ -182,9 +182,13 @@ def __run(cmd, args=None):
     return 0
 
 def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
-                  noexclude = True):
+                  noexclude = True, verbose = False):
     """Returns a list of pairs - [status, filename]
     """
+    if verbose:
+        print 'Checking for changes in the working directory...',
+        sys.stdout.flush()
+
     refresh_index()
 
     if not files:
@@ -221,12 +225,15 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
         if fs[1] not in conflicts:
             cache_files.append(fs)
 
+    if verbose:
+        print 'done'
+
     return cache_files
 
 def local_changes():
     """Return true if there are local changes in the tree
     """
-    return len(__tree_status()) != 0
+    return len(__tree_status(verbose = True)) != 0
 
 # HEAD value cached
 __head = None
@@ -401,7 +408,7 @@ def update_cache(files = None, force = False):
     if not files:
         files = []
 
-    cache_files = __tree_status(files)
+    cache_files = __tree_status(files, verbose = False)
 
     # everything is up-to-date
     if len(cache_files) == 0:
