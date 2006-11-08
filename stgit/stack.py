@@ -332,6 +332,11 @@ class Series:
             for patch in self.get_applied() + self.get_unapplied():
                 self.get_patch(patch).update_top_ref()
 
+        # trash directory
+        self.__trash_dir = os.path.join(self.__series_dir, 'trash')
+        if self.is_initialised() and not os.path.isdir(self.__trash_dir):
+            os.makedirs(self.__trash_dir)
+
     def get_branch(self):
         """Return the branch name for the Series object
         """
@@ -580,6 +585,11 @@ class Series:
             for p in patches:
                 Patch(p, self.__patch_dir, self.__refs_dir).delete()
 
+            # remove the trash directory
+            for fname in os.listdir(self.__trash_dir):
+                os.remove(fname)
+            os.rmdir(self.__trash_dir)
+
             if os.path.exists(self.__applied_file):
                 os.remove(self.__applied_file)
             if os.path.exists(self.__unapplied_file):
@@ -768,6 +778,9 @@ class Series:
                   'which is not current' % name
         elif not name in self.get_unapplied():
             raise StackException, 'Unknown patch "%s"' % name
+
+        # save the commit id to a trash file
+        write_string(os.path.join(self.__trash_dir, name), patch.get_top())
 
         patch.delete()
 
