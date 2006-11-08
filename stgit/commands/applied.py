@@ -32,7 +32,10 @@ stack.  They are listed in the order in which they were pushed, the
 last one being the current (topmost) patch."""
 
 options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
+                       help = 'use BRANCH instead of the default one'),
+           make_option('-c', '--count',
+                       help = 'print the number of applied patches',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -41,5 +44,10 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    for p in crt_series.get_applied():
-        print p
+    applied = crt_series.get_applied()
+
+    if options.count:
+        print len(applied)
+    else:
+        for p in applied:
+            print p

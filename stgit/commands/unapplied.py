@@ -31,7 +31,10 @@ List the patches from the series which are not pushed onto the stack.
 They are listed in the reverse order in which they were popped."""
 
 options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
+                       help = 'use BRANCH instead of the default one'),
+           make_option('-c', '--count',
+                       help = 'print the number of unapplied patches',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -40,5 +43,10 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    for p in crt_series.get_unapplied():
-        print p
+    unapplied = crt_series.get_unapplied()
+
+    if options.count:
+        print len(unapplied)
+    else:
+        for p in unapplied:
+            print p

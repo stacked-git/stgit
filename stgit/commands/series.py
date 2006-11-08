@@ -33,6 +33,9 @@ prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('-c', '--count',
+                       help = 'print the number of patches in the series',
+                       action = 'store_true'),
            make_option('-d', '--description',
                        help = 'show a short description for each patch',
                        action = 'store_true'),
@@ -72,6 +75,10 @@ def func(parser, options, args):
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
+
+    if options.count:
+        print len(applied) + len(unapplied)
+        return
 
     if options.short:
         if len(applied) > 5:
