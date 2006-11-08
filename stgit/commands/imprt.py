@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os, re, email
 from email.Header import decode_header, make_header
+from mailbox import UnixMailbox
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -32,7 +33,12 @@ input). By default, the file name is used as the patch name but this
 can be overridden with the '--name' option. The patch can either be a
 normal file with the description at the top or it can have standard
 mail format, the Subject, From and Date headers being used for
-generating the patch information.
+generating the patch information. The command can also read series and
+mbox files.
+
+If a patch does not apply cleanly, the failed diff is written to the
+.stgit-failed.patch file and an empty StGIT patch is added to the
+stack.
 
 The patch description has to be separated from the data with a '---'
 line."""
@@ -40,13 +46,16 @@ line."""
 options = [make_option('-m', '--mail',
                        help = 'import the patch from a standard e-mail file',
                        action = 'store_true'),
+           make_option('-M', '--mbox',
+                       help = 'import a series of patches from an mbox file',
+                       action = 'store_true'),
+           make_option('-s', '--series',
+                       help = 'import a series of patches',
+                       action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
            make_option('-t', '--strip',
                        help = 'strip numbering and extension from patch name',
-                       action = 'store_true'),
-           make_option('-s', '--series',
-                       help = 'import a series of patches',
                        action = 'store_true'),
            make_option('-i', '--ignore',
                        help = 'ignore the applied patches in the series',
@@ -132,9 +141,9 @@ def __parse_description(descr):
 
     return (subject + body, authname, authemail, authdate)
 
-def __parse_mail(filename = None):
-    """Parse the input file in a mail format and return (description,
-    authname, authemail, authdate)
+def __parse_mail(msg):
+    """Parse the message object and return (description, authname,
+    authemail, authdate, diff)
     """
     def __decode_header(header):
         """Decode a qp-encoded e-mail header as per rfc2047"""
@@ -145,23 +154,14 @@ def __parse_mail(filename = None):
             raise CmdException, 'header decoding error: %s' % str(ex)
         return unicode(hobj).encode('utf-8')
 
-    if filename:
-        f = file(filename)
-    else:
-        f = sys.stdin
-
-    msg = email.message_from_file(f)
-
-    if filename:
-        f.close()
-
     # parse the headers
     if msg.has_key('from'):
         authname, authemail = name_email(__decode_header(msg['from']))
     else:
         authname = authemail = None
 
-    descr = __decode_header(msg['subject'])
+    # '\n\t' can be found on multi-line headers
+    descr = __decode_header(msg['subject']).replace('\n\t', ' ')
     authdate = msg['date']
 
     # remove the '[*PATCH*]' expression in the subject
@@ -174,8 +174,10 @@ def __parse_mail(filename = None):
 
     # the rest of the message
     if msg.is_multipart():
-        descr += msg.get_payload(0, decode = True)
-        diff = msg.get_payload(1, decode = True)
+        # this is assuming that the first part is the patch
+        # description and the second part is the attached patch
+        descr += msg.get_payload(0).get_payload(decode = True)
+        diff = msg.get_payload(1).get_payload(decode = True)
     else:
         diff = msg.get_payload(decode = True)
 
@@ -198,18 +200,13 @@ def __parse_mail(filename = None):
 
     return (descr, authname, authemail, authdate, diff)
 
-def __parse_patch(filename = None):
+def __parse_patch(fobj):
     """Parse the input file and return (description, authname,
-    authemail, authdate)
+    authemail, authdate, diff)
     """
-    if filename:
-        f = file(filename)
-    else:
-        f = sys.stdin
-
     descr = ''
     while True:
-        line = f.readline()
+        line = fobj.readline()
         if not line:
             break
 
@@ -219,10 +216,7 @@ def __parse_patch(filename = None):
             descr += line
     descr.rstrip()
 
-    diff = f.read()
-
-    if filename:
-        f.close()
+    diff = fobj.read()
 
     descr, authname, authemail, authdate = __parse_description(descr)
 
@@ -230,33 +224,33 @@ def __parse_patch(filename = None):
     # Just return None
     return (descr, authname, authemail, authdate, diff)
 
-def __import_patch(patch, filename, options):
-    """Import a patch from a file or standard input
+def __create_patch(patch, message, author_name, author_email,
+                   author_date, diff, options):
+    """Create a new patch on the stack
     """
-    # the defaults
-    message = author_name = author_email = author_date = committer_name = \
-              committer_email = None
-
-    if options.author:
-        options.authname, options.authemail = name_email(options.author)
-
-    if options.mail:
-        message, author_name, author_email, author_date, diff = \
-                 __parse_mail(filename)
-    else:
-        message, author_name, author_email, author_date, diff = \
-                 __parse_patch(filename)
-
     if not diff:
         raise CmdException, 'No diff found inside the patch'
 
     if not patch:
-        patch = make_patch_name(message, crt_series.patch_exists)
+        patch = make_patch_name(message, crt_series.patch_exists,
+                                alternative = not (options.ignore
+                                                   or options.replace))
+
+    if options.ignore and patch in crt_series.get_applied():
+        print 'Ignoring already applied patch "%s"' % patch
+        return
+    if options.replace and patch in crt_series.get_unapplied():
+        crt_series.delete_patch(patch)
 
     # refresh_patch() will invoke the editor in this case, with correct
     # patch content
     if not message:
         can_edit = False
+
+    committer_name = committer_email = None
+
+    if options.author:
+        options.authname, options.authemail = name_email(options.author)
 
     # override the automatically parsed settings
     if options.authname:
@@ -269,9 +263,6 @@ def __import_patch(patch, filename, options):
         committer_name = options.commname
     if options.commemail:
         committer_email = options.commemail
-
-    if options.replace and patch in crt_series.get_unapplied():
-        crt_series.delete_patch(patch)
 
     crt_series.new_patch(patch, message = message, can_edit = False,
                          author_name = author_name,
@@ -291,7 +282,32 @@ def __import_patch(patch, filename, options):
     crt_series.refresh_patch(edit = options.edit,
                              show_patch = options.showpatch)
 
-    print 'done'
+    print 'done'    
+
+def __import_file(patch, filename, options):
+    """Import a patch from a file or standard input
+    """
+    if filename:
+        f = file(filename)
+    else:
+        f = sys.stdin
+
+    if options.mail:
+        try:
+            msg = email.message_from_file(f)
+        except Exception, ex:
+            raise CmdException, 'error parsing the e-mail file: %s' % str(ex)
+        message, author_name, author_email, author_date, diff = \
+                 __parse_mail(msg)
+    else:
+        message, author_name, author_email, author_date, diff = \
+                 __parse_patch(f)
+
+    if filename:
+        f.close()
+
+    __create_patch(patch, message, author_name, author_email,
+                   author_date, diff, options)
 
 def __import_series(filename, options):
     """Import a series of patches
@@ -314,11 +330,33 @@ def __import_series(filename, options):
         if options.strip:
             patch = __strip_patch_name(patch)
         patch = __replace_slashes_with_dashes(patch);
-        if options.ignore and patch in applied:
-            print 'Ignoring already applied patch "%s"' % patch
-            continue
 
-        __import_patch(patch, patchfile, options)
+        __import_file(patch, patchfile, options)
+
+    if filename:
+        f.close()
+
+def __import_mbox(filename, options):
+    """Import a series from an mbox file
+    """
+    if filename:
+        f = file(filename, 'rb')
+    else:
+        f = sys.stdin
+
+    try:
+        mbox = UnixMailbox(f, email.message_from_file)
+    except Exception, ex:
+        raise CmdException, 'error parsing the mbox file: %s' % str(ex)
+
+    for msg in mbox:
+        message, author_name, author_email, author_date, diff = \
+                 __parse_mail(msg)
+        __create_patch(None, message, author_name, author_email,
+                       author_date, diff, options)
+
+    if filename:
+        f.close()
 
 def func(parser, options, args):
     """Import a GNU diff file as a new patch
@@ -337,6 +375,8 @@ def func(parser, options, args):
 
     if options.series:
         __import_series(filename, options)
+    elif options.mbox:
+        __import_mbox(filename, options)
     else:
         if options.name:
             patch = options.name
@@ -347,6 +387,6 @@ def func(parser, options, args):
         if options.strip:
             patch = __strip_patch_name(patch)
 
-        __import_patch(patch, filename, options)
+        __import_file(patch, filename, options)
 
     print_crt_patch()

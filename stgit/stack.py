@@ -430,7 +430,7 @@ class Series:
     def patch_exists(self, name):
         """Return true if there is a patch with the given name, false
         otherwise."""
-        return self.__patch_applied(name) or self.__patch_applied(name)
+        return self.__patch_applied(name) or self.__patch_unapplied(name)
 
     def __begin_stack_check(self):
         """Save the current HEAD into .git/refs/heads/base if the stack
