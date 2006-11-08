@@ -81,4 +81,9 @@ def func(parser, options, args):
     if not options.nopush:
         push_patches(applied, options.merged)
 
+    # maybe tidy up
+    repack = config.get('stgit', 'keepoptimized')
+    if repack == 'yes':
+        git.repack()
+
     print_crt_patch()

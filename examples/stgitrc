@@ -50,6 +50,9 @@
 # Leave the original files in the working tree in case of a merge conflict
 #keeporig: yes
 
+# Optimize (repack) the object store after every pull
+#keepoptimized: yes
+
 # Extensions for the files involved in a three-way merge (ancestor,
 # current, patched)
 #extensions: .ancestor .current .patched

@@ -705,6 +705,11 @@ def pull(repository = 'origin', refspec = None):
     if __run(config.get('stgit', 'pullcmd'), args) != 0:
         raise GitException, 'Failed "git-pull %s"' % repository
 
+def repack():
+    """Repack all objects into a single pack
+    """
+    __run('git-repack -a -d -f')
+
 def apply_patch(filename = None, diff = None, base = None,
                 fail_dump = True):
     """Apply a patch onto the current or given index. There must not

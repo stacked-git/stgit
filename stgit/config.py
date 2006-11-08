@@ -35,6 +35,7 @@ config.set('stgit', 'merger',
            'diff3 -L current -L ancestor -L patched -m -E ' \
            '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
 config.set('stgit', 'keeporig', 'yes')
+config.set('stgit', 'keepoptimized', 'no')
 config.set('stgit', 'extensions', '.ancestor .current .patched')
 
 # Read the configuration files (if any) and override the default settings
