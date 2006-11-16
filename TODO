@@ -20,7 +20,6 @@ The future, when time allows or if someone else does them:
 - multiple heads in a patch - useful for forking a patch,
   synchronising with other patches (diff format or in other
   repositories)
-- write bash-completion script for the StGIT commands
 - "pull" argument should default to a sane value, "origin" is wrong in
   many cases
 - commit directly to a patch which is not top
