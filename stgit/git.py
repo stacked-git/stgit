@@ -186,8 +186,9 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
     """Returns a list of pairs - [status, filename]
     """
     if verbose:
-        print 'Checking for changes in the working directory...',
-        sys.stdout.flush()
+        print >> sys.stderr, \
+              'Checking for changes in the working directory...',
+        sys.stderr.flush()
 
     refresh_index()
 
@@ -226,7 +227,7 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
             cache_files.append(fs)
 
     if verbose:
-        print 'done'
+        print >> sys.stderr, 'done'
 
     return cache_files
 
