@@ -52,19 +52,14 @@ SMTP authentication is also possible with '--smtp-user' and
 '--smtp-password' options, also available as configuration settings:
 'smtpuser' and 'smtppassword'.
 
-The template e-mail headers and body must be separated by
-'%(endofheaders)s' variable, which is replaced by StGIT with
-additional headers and a blank line. The patch e-mail template accepts
-the following variables:
+The patch e-mail template accepts the following variables:
 
   %(patch)s        - patch name
   %(maintainer)s   - 'authname <authemail>' as read from the config file
   %(shortdescr)s   - the first line of the patch description
   %(longdescr)s    - the rest of the patch description, after the first line
-  %(endofheaders)s - delimiter between e-mail headers and body
   %(diff)s         - unified diff of the patch
   %(diffstat)s     - diff statistics
-  %(date)s         - current date/time
   %(version)s      - ' version' string passed on the command line (or empty)
   %(prefix)s       - 'prefix ' string passed on the command line
   %(patchnr)s      - patch number
@@ -76,9 +71,9 @@ the following variables:
   %(commname)s     - committer's name
   %(commemail)s    - committer's e-mail
 
-For the preamble e-mail template, only the %(maintainer)s, %(date)s,
-%(endofheaders)s, %(version)s, %(patchnr)s, %(totalnr)s and %(number)s
-variables are supported."""
+For the preamble e-mail template, only the %(maintainer)s,
+%(version)s, %(patchnr)s, %(totalnr)s and %(number)s variables are
+supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
