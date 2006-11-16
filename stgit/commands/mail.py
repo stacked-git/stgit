@@ -265,7 +265,7 @@ def __encode_message(msg):
     # encode the body and set the MIME and encoding headers
     msg.set_charset(charset)
 
-def edit_message(msg):
+def __edit_message(msg):
     fname = '.stgitmail.txt'
 
     # create the initial file
@@ -337,6 +337,9 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
+    if options.edit_cover:
+        msg_string = __edit_message(msg_string)
+
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
@@ -348,9 +351,6 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     __encode_message(msg)
 
     msg_string = msg.as_string(options.mbox)
-
-    if options.edit_cover:
-        msg_string = edit_message(msg_string)
 
     return msg_string.strip('\n')
 
@@ -422,6 +422,9 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         raise CmdException, 'Only "%(name)s" variables are ' \
               'supported in the patch template'
 
+    if options.edit_patches:
+        msg_string = __edit_message(msg_string)
+
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
@@ -438,9 +441,6 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     __encode_message(msg)
 
     msg_string = msg.as_string(options.mbox)
-
-    if options.edit_patches:
-        msg_string = edit_message(msg_string)
 
     return msg_string.strip('\n')
 
