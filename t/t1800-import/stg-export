@@ -1,0 +1,26 @@
+test patch
+---
+
+ foo.txt |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/foo.txt b/foo.txt
+index ad01662..d3cd5b6 100644
+--- a/foo.txt
++++ b/foo.txt
+@@ -3,6 +3,7 @@ dobedim
+ dobedum
+ dobidam
+ dobidim
++dabadadash
+ dobidum
+ dobodam
+ dobodim
+@@ -20,6 +21,7 @@ dabedam
+ dabedim
+ dabedum
+ dabidam
++dadadadash
+ dabidim
+ dabidum
+ dabodam

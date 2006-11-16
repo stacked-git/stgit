@@ -1,0 +1,37 @@
+From: Inge =?utf-8?q?Str=C3=B6m?= <inge@power.com>
+Subject: [PATCH] test patch
+To: Upstream <foo@bar.baz>
+Date: Sat, 11 Nov 2006 11:58:14 +0100
+Message-ID: <20061111105814.23209.46952.stgit@localhost>
+User-Agent: StGIT/0.11
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Signed-off-by: Inge Ström <inge@power.com>
+---
+
+ foo.txt |    2 ++
+ 1 files changed, 2 insertions(+), 0 deletions(-)
+
+diff --git a/foo.txt b/foo.txt
+index ad01662..d3cd5b6 100644
+--- a/foo.txt
++++ b/foo.txt
+@@ -3,6 +3,7 @@ dobedim
+ dobedum
+ dobidam
+ dobidim
++pum-pöddelipåm
+ dobidum
+ dobodam
+ dobodim
+@@ -20,6 +21,7 @@ dabedam
+ dabedim
+ dabedum
+ dabidam
++pum-däddelidum
+ dabidim
+ dabidum
+ dabodam
+

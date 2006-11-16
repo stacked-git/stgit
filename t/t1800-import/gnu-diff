@@ -1,0 +1,19 @@
+diff -Naur old/foo.txt new/foo.txt
+--- old/foo.txt	2006-11-11 11:26:18.000000000 +0100
++++ new/foo.txt	2006-11-11 11:25:18.000000000 +0100
+@@ -3,6 +3,7 @@
+ dobedum
+ dobidam
+ dobidim
++dabadadash
+ dobidum
+ dobodam
+ dobodim
+@@ -20,6 +21,7 @@
+ dabedim
+ dabedum
+ dabidam
++dadadadash
+ dabidim
+ dabidum
+ dabodam
