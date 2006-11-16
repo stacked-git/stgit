@@ -10,6 +10,44 @@
 #    2. Add the following line to your .bashrc:
 #         . ~/.stgit-completion.bash
 
+_stg_commands="
+    add
+    applied
+    assimilate
+    branch
+    delete
+    diff
+    clean
+    clone
+    commit
+    export
+    files
+    float
+    fold
+    goto
+    id
+    import
+    init
+    log
+    mail
+    new
+    patches
+    pick
+    pop
+    pull
+    push
+    refresh
+    rename
+    resolved
+    rm
+    series
+    show
+    status
+    top
+    unapplied
+    uncommit
+"
+
 # The path to .git, or empty if we're not in a repository.
 _gitdir ()
 {
@@ -54,6 +92,12 @@ _all_other_patches ()
         | grep -v "^$(< $g/patches/$b/current)$"
 }
 
+# List the command options
+_cmd_options ()
+{
+    stg $1 --help | grep -e " --[A-Za-z]" | sed -e "s/.*\(--[^ =]\+\).*/\1/"
+}
+
 # Generate completions for patches and patch ranges from the given
 # patch list function, and options from the given list.
 _complete_patch_range ()
@@ -79,45 +123,34 @@ _complete_options ()
     COMPREPLY=($(compgen -W "$options" -- "${COMP_WORDS[COMP_CWORD]}"))
 }
 
-_stg_delete ()
+_stg_common ()
 {
-    _complete_patch_range _all_patches "--branch --help"
+    _complete_options "$(_cmd_options $1)"
 }
 
-_stg_goto ()
+_stg_all_patches ()
 {
-    _complete_patch_range _all_other_patches "--help"
+    _complete_patch_range _all_patches "$(_cmd_options $1)"
 }
 
-_stg_mail ()
+_stg_other_patches ()
 {
-    _complete_patch_range _all_patches \
-        "--all --to --cc --bcc --auto --noreply --version --prefix --template \
-         --cover --edit-cover --edit-patches --sleep --refid --smtp-user \
-         --smtp-password --branch --mbox --help"
+    _complete_patch_range _all_other_patches "$(_cmd_options $1)"
 }
 
-_stg_new ()
+_stg_applied_patches ()
 {
-    _complete_options "--message --showpatch --author --authname --authemail \
-                       --authdate --commname --commemail --help"
+    _complete_patch_range _applied_patches "$(_cmd_options $1)"
 }
 
-_stg_pop ()
+_stg_unapplied_patches ()
 {
-    _complete_patch_range _applied_patches "--all --number --keep --help"
+    _complete_patch_range _unapplied_patches "$(_cmd_options $1)"
 }
 
-_stg_push ()
+_stg_help ()
 {
-    _complete_patch_range _unapplied_patches "--all --number --reverse \
-                                              --merged --undo --help"
-}
-
-_stg_status ()
-{
-    _complete_options "--modified --new --deleted --conflict --unknown \
-                       --noexclude --reset --help"
+    _complete_options "$_stg_commands"
 }
 
 _stg ()
@@ -134,22 +167,33 @@ _stg ()
     # Complete name of subcommand.
     if [ $c -eq $COMP_CWORD -a -z "$command" ]; then
         COMPREPLY=($(compgen \
-            -W "--help --version \
-                $(stg help|grep '^ '|sed 's/ *\([^ ]\) .*/\1/')" \
+            -W "--help --version copyright help $_stg_commands" \
             -- "${COMP_WORDS[COMP_CWORD]}"))
         return;
     fi
 
     # Complete arguments to subcommands.
     case "$command" in
-        delete) _stg_delete ;;
-        goto)   _stg_goto ;;
-        mail)   _stg_mail ;;
-        new)    _stg_new ;;
-        pop)    _stg_pop ;;
-        push)   _stg_push ;;
-        status) _stg_status ;;
-        *)      COMPREPLY=() ;;
+        # generic commands
+        help)   _stg_help ;;
+        # repository commands
+        id)     _stg_all_patches $command ;;
+        # stack commands
+        float)  _stg_all_patches $command ;;
+        goto)   _stg_other_patches $command ;;
+        pop)    _stg_applied_patches $command ;;
+        push)   _stg_unapplied_patches $command ;;
+        # patch commands
+        delete) _stg_all_patches $command ;;
+        export) _stg_applied_patches $command ;;
+        files)  _stg_all_patches $command ;;
+        log)    _stg_all_patches $command ;;
+        mail)   _stg_applied_patches $command ;;
+        pick)   _stg_unapplied_patches $command ;;
+        rename) _stg_all_patches $command ;;
+        show)   _stg_all_patches $command ;;
+        # all the other commands
+        *)      _stg_common $command ;;
     esac
 }
 
