@@ -22,10 +22,6 @@ import sys, os
 from optparse import OptionParser
 
 import stgit.commands
-from stgit.stack import Series, StackException
-from stgit.git import GitException
-from stgit.commands.common import CmdException
-from stgit.gitmergeonefile import GitMergeException
 
 #
 # The commands map
@@ -221,6 +217,14 @@ def main():
     usage = command.usage.split('\n')[0].strip()
     parser = OptionParser(usage = usage, option_list = command.options)
     options, args = parser.parse_args()
+
+    # These modules are only used from this point onwards and do not
+    # need to be imported earlier
+    from stgit.stack import Series, StackException
+    from stgit.git import GitException
+    from stgit.commands.common import CmdException
+    from stgit.gitmergeonefile import GitMergeException
+
     try:
         # 'clone' doesn't expect an already initialised GIT tree. A Series
         # object will be created after the GIT tree is cloned
