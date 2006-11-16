@@ -166,7 +166,7 @@ def __parse_mail(msg):
 
     # remove the '[*PATCH*]' expression in the subject
     if descr:
-        descr = re.findall('^(\[[^\s]*[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
+        descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
         descr += '\n\n'
     else:
