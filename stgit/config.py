@@ -25,33 +25,50 @@ from stgit import basedir
 
 config = ConfigParser.RawConfigParser()
 
-# Set the defaults
-config.add_section('stgit')
-config.set('stgit', 'autoresolved', 'no')
-config.set('stgit', 'smtpserver', 'localhost:25')
-config.set('stgit', 'smtpdelay', '5')
-config.set('stgit', 'pullcmd', 'git-pull')
-config.set('stgit', 'merger',
-           'diff3 -L current -L ancestor -L patched -m -E ' \
-           '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
-config.set('stgit', 'keeporig', 'yes')
-config.set('stgit', 'keepoptimized', 'no')
-config.set('stgit', 'extensions', '.ancestor .current .patched')
+def config_setup():
+    global config
 
-# Read the configuration files (if any) and override the default settings
-config.read('/etc/stgitrc')
-config.read(os.path.expanduser('~/.stgitrc'))
-config.read(os.path.join(basedir.get(), 'stgitrc'))
+    # Set the defaults
+    config.add_section('stgit')
+    config.set('stgit', 'autoresolved', 'no')
+    config.set('stgit', 'smtpserver', 'localhost:25')
+    config.set('stgit', 'smtpdelay', '5')
+    config.set('stgit', 'pullcmd', 'git-pull')
+    config.set('stgit', 'merger',
+               'diff3 -L current -L ancestor -L patched -m -E ' \
+               '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
+    config.set('stgit', 'keeporig', 'yes')
+    config.set('stgit', 'keepoptimized', 'no')
+    config.set('stgit', 'extensions', '.ancestor .current .patched')
 
-# Set the PAGER environment to the config value (if any)
-if config.has_option('stgit', 'pager'):
-    os.environ['PAGER'] = config.get('stgit', 'pager')
+    # Read the configuration files (if any) and override the default settings
+    config.read('/etc/stgitrc')
+    config.read(os.path.expanduser('~/.stgitrc'))
+    config.read(os.path.join(basedir.get(), 'stgitrc'))
 
-# [gitmergeonefile] section is deprecated. In case it exists copy the
-# options/values to the [stgit] one
-if config.has_section('gitmergeonefile'):
-    for option, value in config.items('gitmergeonefile'):
-        config.set('stgit', option, value)
+    # Set the PAGER environment to the config value (if any)
+    if config.has_option('stgit', 'pager'):
+        os.environ['PAGER'] = config.get('stgit', 'pager')
+
+    # [gitmergeonefile] section is deprecated. In case it exists copy the
+    # options/values to the [stgit] one
+    if config.has_section('gitmergeonefile'):
+        for option, value in config.items('gitmergeonefile'):
+            config.set('stgit', option, value)
+
+
+class ConfigOption:
+    """Delayed cached reading of a configuration option.
+    """
+    def __init__(self, section, option):
+        self.__section = section
+        self.__option = option
+        self.__value = None
+
+    def __str__(self):
+        if not self.__value:
+            self.__value = config.get(self.__section, self.__option)
+        return self.__value
 
 
 # cached extensions

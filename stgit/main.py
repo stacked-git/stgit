@@ -220,12 +220,16 @@ def main():
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
+    from stgit.config import config_setup
+    from ConfigParser import ParsingError
     from stgit.stack import Series, StackException
     from stgit.git import GitException
     from stgit.commands.common import CmdException
     from stgit.gitmergeonefile import GitMergeException
 
     try:
+        config_setup()
+
         # 'clone' doesn't expect an already initialised GIT tree. A Series
         # object will be created after the GIT tree is cloned
         if cmd != 'clone':
@@ -236,7 +240,7 @@ def main():
             stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
-    except (IOError, CmdException, StackException, GitException,
+    except (IOError, ParsingError, CmdException, StackException, GitException,
             GitMergeException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         sys.exit(2)

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from stgit import basedir
-from stgit.config import config, file_extensions
+from stgit.config import file_extensions, ConfigOption
 from stgit.utils import append_string
 
 
@@ -31,12 +31,8 @@ class GitMergeException(Exception):
 #
 # Options
 #
-try:
-    merger = config.get('stgit', 'merger')
-    keeporig = config.get('stgit', 'keeporig')
-except Exception, err:
-    raise GitMergeException, 'Configuration error: %s' % err
-
+merger = ConfigOption('stgit', 'merger')
+keeporig = ConfigOption('stgit', 'keeporig')
 
 #
 # Utility functions
