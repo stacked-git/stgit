@@ -9,6 +9,9 @@
 #commname:  Your Name
 #commemail: your.name@yourcompany.com
 
+# E-mail sender (added to the "From: " header)
+#sender: Your Name <your.name@yourcompany.com>
+
 # Automatically Bcc the address below
 #autobcc: your.name@yourcompany.com
 

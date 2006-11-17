@@ -55,7 +55,7 @@ SMTP authentication is also possible with '--smtp-user' and
 The patch e-mail template accepts the following variables:
 
   %(patch)s        - patch name
-  %(maintainer)s   - 'authname <authemail>' as read from the config file
+  %(sender)s       - 'sender'  or 'authname <authemail>' as per the config file
   %(shortdescr)s   - the first line of the patch description
   %(longdescr)s    - the rest of the patch description, after the first line
   %(diff)s         - unified diff of the patch
@@ -65,16 +65,15 @@ The patch e-mail template accepts the following variables:
   %(patchnr)s      - patch number
   %(totalnr)s      - total number of patches to be sent
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
-  %(fromauth)s     - 'From: author\\n\\n' if different from maintainer
+  %(fromauth)s     - 'From: author\\n\\n' if different from sender
   %(authname)s     - author's name
   %(authemail)s    - author's email
   %(authdate)s     - patch creation date
   %(commname)s     - committer's name
   %(commemail)s    - committer's e-mail
 
-For the preamble e-mail template, only the %(maintainer)s,
-%(version)s, %(patchnr)s, %(totalnr)s and %(number)s variables are
-supported."""
+For the preamble e-mail template, only the %(sender)s, %(version)s,
+%(patchnr)s, %(totalnr)s and %(number)s variables are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -123,16 +122,18 @@ options = [make_option('-a', '--all',
                        action = 'store_true')]
 
 
-def __get_maintainer():
+def __get_sender():
     """Return the 'authname <authemail>' string as read from the
     configuration file
     """
-    if config.has_option('stgit', 'authname') \
-           and config.has_option('stgit', 'authemail'):
+    if config.has_option('stgit', 'sender'):
+        return config.get('stgit', 'sender')
+    elif config.has_option('stgit', 'authname') \
+             and config.has_option('stgit', 'authemail'):
         return '%s <%s>' % (config.get('stgit', 'authname'),
                             config.get('stgit', 'authemail'))
     else:
-        return None
+        raise CmdException, 'unknown sender details'
 
 def __parse_addresses(addresses):
     """Return a two elements tuple: (from, [to])
@@ -297,9 +298,7 @@ def __edit_message(msg):
 def __build_cover(tmpl, total_nr, msg_id, options):
     """Build the cover message (series description) to be sent via SMTP
     """
-    maintainer = __get_maintainer()
-    if not maintainer:
-        maintainer = ''
+    sender = __get_sender()
 
     if options.version:
         version_str = ' %s' % options.version
@@ -318,7 +317,9 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     else:
         number_str = ''
 
-    tmpl_dict = {'maintainer':   maintainer,
+    tmpl_dict = {'sender':       sender,
+                 # for backward template compatibility
+                 'maintainer':   sender,
                  # for backward template compatibility
                  'endofheaders': '',
                  # for backward template compatibility
@@ -371,12 +372,10 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     commname = p.get_commname();
     commemail = p.get_commemail();
 
-    maintainer = __get_maintainer()
-    if not maintainer:
-        maintainer = '%s <%s>' % (commname, commemail)
+    sender = __get_sender()
 
     fromauth = '%s <%s>' % (authname, authemail)
-    if fromauth != maintainer:
+    if fromauth != sender:
         fromauth = 'From: %s\n\n' % fromauth
     else:
         fromauth = ''
@@ -399,7 +398,9 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         number_str = ''
 
     tmpl_dict = {'patch':        patch,
-                 'maintainer':   maintainer,
+                 'sender':       sender,
+                 # for backward template compatibility
+                 'maintainer':   sender,
                  'shortdescr':   short_descr,
                  'longdescr':    long_descr,
                  # for backward template compatibility
