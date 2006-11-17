@@ -65,6 +65,7 @@ The patch e-mail template accepts the following variables:
   %(patchnr)s      - patch number
   %(totalnr)s      - total number of patches to be sent
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
+  %(fromauth)s     - 'From: author\\n\\n' if different from maintainer
   %(authname)s     - author's name
   %(authemail)s    - author's email
   %(authdate)s     - patch creation date
@@ -365,9 +366,20 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     short_descr = descr_lines[0].rstrip()
     long_descr = '\n'.join(descr_lines[1:]).lstrip()
 
+    authname = p.get_authname();
+    authemail = p.get_authemail();
+    commname = p.get_commname();
+    commemail = p.get_commemail();
+
     maintainer = __get_maintainer()
     if not maintainer:
-        maintainer = '%s <%s>' % (p.get_commname(), p.get_commemail())
+        maintainer = '%s <%s>' % (commname, commemail)
+
+    fromauth = '%s <%s>' % (authname, authemail)
+    if fromauth != maintainer:
+        fromauth = 'From: %s\n\n' % fromauth
+    else:
+        fromauth = ''
 
     if options.version:
         version_str = ' %s' % options.version
@@ -403,11 +415,12 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
-                 'authname':     p.get_authname(),
-                 'authemail':    p.get_authemail(),
+                 'fromauth':     fromauth,
+                 'authname':     authname,
+                 'authemail':    authemail,
                  'authdate':     p.get_authdate(),
-                 'commname':     p.get_commname(),
-                 'commemail':    p.get_commemail()}
+                 'commname':     commname,
+                 'commemail':    commemail}
     # change None to ''
     for key in tmpl_dict:
         if not tmpl_dict[key]:
