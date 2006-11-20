@@ -126,10 +126,10 @@ def merge(orig_hash, file1_hash, file2_hash,
                     return 1
             # 3-way merge
             else:
-                merge_ok = os.system(merger % {'branch1': src1,
-                                               'ancestor': orig,
-                                               'branch2': src2,
-                                               'output': path }) == 0
+                merge_ok = os.system(str(merger) % {'branch1': src1,
+                                                    'ancestor': orig,
+                                                    'branch2': src2,
+                                                    'output': path }) == 0
 
                 if merge_ok:
                     os.system('git-update-index -- %s' % path)
@@ -142,7 +142,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                     # reset the cache to the first branch
                     os.system('git-update-index --cacheinfo %s %s %s'
                               % (file1_mode, file1_hash, path))
-                    if keeporig != 'yes':
+                    if str(keeporig) != 'yes':
                         __remove_files(orig_hash, file1_hash, file2_hash)
                     __conflict(path)
                     return 1
