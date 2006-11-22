@@ -214,7 +214,7 @@ def pop_patches(patches, keep = False):
 
         print 'done'
 
-def parse_patches(patch_args, patch_list):
+def parse_patches(patch_args, patch_list, boundary = 0):
     """Parse patch_args list for patch names in patch_list and return
     a list. The names can be individual patches and/or in the
     patch1..patch2 format.
@@ -236,12 +236,26 @@ def parse_patches(patch_args, patch_list):
             if pair[0]:
                 first = patch_list.index(pair[0])
             else:
-                first = 0
+                first = -1
             # exclusive boundary
             if pair[1]:
                 last = patch_list.index(pair[1]) + 1
             else:
-                last = len(patch_list)
+                last = -1
+
+            # only cross the boundary if explicitly asked
+            if not boundary:
+                boundary = len(patch_list)
+            if first < 0:
+                if last <= boundary:
+                    first = 0
+                else:
+                    first = boundary
+            if last < 0:
+                if first < boundary:
+                    last = boundary
+                else:
+                    last = len(patch_list)
 
             if last > first:
                 pl = patch_list[first:last]

@@ -46,7 +46,7 @@ def func(parser, options, args):
     all_patches = applied_patches + unapplied_patches
 
     if args:
-        patches = parse_patches(args, all_patches)
+        patches = parse_patches(args, all_patches, len(applied_patches))
     else:
         parser.error('No patches specified')
 

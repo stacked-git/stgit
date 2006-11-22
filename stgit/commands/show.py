@@ -41,10 +41,13 @@ options = [make_option('-a', '--applied',
 def func(parser, options, args):
     """Show commit log and diff
     """
+    applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
+
     if options.applied:
-        patches = crt_series.get_applied()
+        patches = applied
     elif options.unapplied:
-        patches = crt_series.get_unapplied()
+        patches = unapplied
     elif len(args) == 0:
         patches = ['HEAD']
     else:
@@ -53,8 +56,7 @@ def func(parser, options, args):
             # it might be just a commit id
             patches = args
         else:
-            patches = parse_patches(args, crt_series.get_applied()
-                                    + crt_series.get_unapplied())
+            patches = parse_patches(args, applied + unapplied, len(applied))
 
     commit_ids = [git_id(patch) for patch in patches]
     commit_str = '\n'.join([git.pretty_commit(commit_id)
