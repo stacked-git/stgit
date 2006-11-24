@@ -417,12 +417,12 @@ class Series:
     def __patch_is_current(self, patch):
         return patch.get_name() == read_string(self.__current_file)
 
-    def __patch_applied(self, name):
+    def patch_applied(self, name):
         """Return true if the patch exists in the applied list
         """
         return name in self.get_applied()
 
-    def __patch_unapplied(self, name):
+    def patch_unapplied(self, name):
         """Return true if the patch exists in the unapplied list
         """
         return name in self.get_unapplied()
@@ -430,7 +430,7 @@ class Series:
     def patch_exists(self, name):
         """Return true if there is a patch with the given name, false
         otherwise."""
-        return self.__patch_applied(name) or self.__patch_unapplied(name)
+        return self.patch_applied(name) or self.patch_unapplied(name)
 
     def __begin_stack_check(self):
         """Save the current HEAD into .git/refs/heads/base if the stack
@@ -713,7 +713,7 @@ class Series:
                   before_existing = False, refresh = True):
         """Creates a new patch
         """
-        if self.__patch_applied(name) or self.__patch_unapplied(name):
+        if self.patch_applied(name) or self.patch_unapplied(name):
             raise StackException, 'Patch "%s" already exists' % name
 
         if not message and can_edit:
@@ -773,7 +773,7 @@ class Series:
 
         if self.__patch_is_current(patch):
             self.pop_patch(name)
-        elif self.__patch_applied(name):
+        elif self.patch_applied(name):
             raise StackException, 'Cannot remove an applied patch, "%s", ' \
                   'which is not current' % name
         elif not name in self.get_unapplied():
