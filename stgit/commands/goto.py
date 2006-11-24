@@ -45,11 +45,11 @@ def func(parser, options, args):
     check_head_top_equal()
 
     applied = crt_series.get_applied()
-    applied.reverse()
     unapplied = crt_series.get_unapplied()
     patch = args[0]
 
     if patch in applied:
+        applied.reverse()
         patches = applied[:applied.index(patch)]
         pop_patches(patches)
     elif patch in unapplied:
