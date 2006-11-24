@@ -99,6 +99,8 @@ def func(parser, options, args):
 
     if options.sign:
         sign_str = 'Signed-off-by'
+        if options.ack:
+            raise CmdException, '--ack and --sign were both specified'
     elif options.ack:
         sign_str = 'Acked-by'
     else:
