@@ -66,6 +66,8 @@ options = [make_option('-f', '--force',
            make_option('--commemail',
                        help = 'use COMMEMAIL as the committer ' \
                        'e-mail'),
+           make_option('-p', '--patch',
+                       help = 'refresh (applied) PATCH instead of the top one'),
            make_option('--sign',
                        help = 'add Signed-off-by line',
                        action = 'store_true'),
@@ -80,9 +82,17 @@ def func(parser, options, args):
     if autoresolved != 'yes':
         check_conflicts()
 
-    patch = crt_series.get_current()
-    if not patch:
-        raise CmdException, 'No patches applied'
+    if options.patch:
+        if args:
+            raise CmdException, \
+                  'Only full refresh is available with the --patch option'
+        patch = options.patch
+        if not crt_series.patch_applied(patch):
+            raise CmdException, 'Patches "%s" not applied' % patch
+    else:
+        patch = crt_series.get_current()
+        if not patch:
+            raise CmdException, 'No patches applied'
 
     if not options.force:
         check_head_top_equal()
@@ -112,6 +122,12 @@ def func(parser, options, args):
            or options.authname or options.authemail or options.authdate \
            or options.commname or options.commemail \
            or options.sign or options.ack:
+
+        if options.patch:
+            applied = crt_series.get_applied()
+            between = applied[:applied.index(patch):-1]
+            pop_patches(between, keep = True)
+
         print 'Refreshing patch "%s"...' % patch,
         sys.stdout.flush()
 
@@ -127,6 +143,10 @@ def func(parser, options, args):
                                  committer_name = options.commname,
                                  committer_email = options.commemail,
                                  backup = True, sign_str = sign_str)
+
+        if options.patch:
+            between.reverse()
+            push_patches(between)
 
         print 'done'
     else:
