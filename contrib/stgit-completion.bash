@@ -116,6 +116,21 @@ _complete_patch_range ()
     esac
 }
 
+_complete_patch_range_options ()
+{
+    local patchlist="$1" options="$2" patch_options="$3"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local popt
+    for popt in $patch_options; do
+        if [ $prev == $popt ]; then
+            _complete_patch_range $patchlist
+            return
+        fi
+    done
+    COMPREPLY=($(compgen -W "$options" -- "$cur"))
+}
+
 # Generate completions for options from the given list.
 _complete_options ()
 {
@@ -128,24 +143,14 @@ _stg_common ()
     _complete_options "$(_cmd_options $1)"
 }
 
-_stg_all_patches ()
+_stg_patches ()
 {
-    _complete_patch_range _all_patches "$(_cmd_options $1)"
+    _complete_patch_range "$2" "$(_cmd_options $1)"
 }
 
-_stg_other_patches ()
+_stg_patches_options ()
 {
-    _complete_patch_range _all_other_patches "$(_cmd_options $1)"
-}
-
-_stg_applied_patches ()
-{
-    _complete_patch_range _applied_patches "$(_cmd_options $1)"
-}
-
-_stg_unapplied_patches ()
-{
-    _complete_patch_range _unapplied_patches "$(_cmd_options $1)"
+    _complete_patch_range_options "$2" "$(_cmd_options $1)" "$3"
 }
 
 _stg_help ()
@@ -177,21 +182,24 @@ _stg ()
         # generic commands
         help)   _stg_help ;;
         # repository commands
-        id)     _stg_all_patches $command ;;
+        id)     _stg_patches $command _all_patches ;;
         # stack commands
-        float)  _stg_all_patches $command ;;
-        goto)   _stg_other_patches $command ;;
-        pop)    _stg_applied_patches $command ;;
-        push)   _stg_unapplied_patches $command ;;
+        float)  _stg_patches $command _all_patches ;;
+        goto)   _stg_patches $command _all_other_patches ;;
+        pop)    _stg_patches $command _applied_patches ;;
+        push)   _stg_patches $command _unapplied_patches ;;
         # patch commands
-        delete) _stg_all_patches $command ;;
-        export) _stg_applied_patches $command ;;
-        files)  _stg_all_patches $command ;;
-        log)    _stg_all_patches $command ;;
-        mail)   _stg_applied_patches $command ;;
-        pick)   _stg_unapplied_patches $command ;;
-        rename) _stg_all_patches $command ;;
-        show)   _stg_all_patches $command ;;
+        delete) _stg_patches $command _all_patches ;;
+        export) _stg_patches_options $command _applied_patches "-r --range" ;;
+        files)  _stg_patches $command _all_patches ;;
+        log)    _stg_patches $command _all_patches ;;
+        mail)   _stg_patches $command _applied_patches ;;
+        pick)   _stg_patches $command _unapplied_patches ;;
+        refresh)_stg_patches_options $command _applied_patches "-p --patch" ;;
+        rename) _stg_patches $command _all_patches ;;
+        show)   _stg_patches $command _all_patches ;;
+        # working-copy commands
+        diff)   _stg_patches_options $command _applied_patches "-r --range" ;;
         # all the other commands
         *)      _stg_common $command ;;
     esac

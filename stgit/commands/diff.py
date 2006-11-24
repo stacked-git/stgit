@@ -41,7 +41,8 @@ rev = '([patch][//[bottom | top]]) | <tree-ish> | base'
 If neither bottom nor top are given but a '//' is present, the command
 shows the specified patch (defaulting to the current one)."""
 
-options = [make_option('-r', metavar = 'rev1[..[rev2]]', dest = 'revs',
+options = [make_option('-r', '--range',
+                       metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
