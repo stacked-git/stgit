@@ -19,11 +19,43 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import os, ConfigParser
-
+from StringIO import StringIO
 from stgit import basedir
 
-
 config = ConfigParser.RawConfigParser()
+
+def git_config(filename):
+    """Open a git config file and convert it to be understood by
+    Python."""
+    try:
+        f = file(filename)
+        cont = False
+        lines = []
+        for line in f:
+            line = line.strip()
+
+            if cont:
+                # continued line, add a space at the beginning
+                line = ' ' + line
+
+            if line and line[-1] == '\\':
+                line = line[:-1].rstrip()
+                cont = True
+            else:
+                line = line + '\n'
+                cont = False
+
+            lines.append(line)
+
+        f.close()
+        cfg_str = ''.join(lines)
+    except IOError:
+        cfg_str = ''
+
+    strio = StringIO(cfg_str)
+    strio.name = filename
+
+    return strio
 
 def config_setup():
     global config
@@ -42,9 +74,14 @@ def config_setup():
     config.set('stgit', 'extensions', '.ancestor .current .patched')
 
     # Read the configuration files (if any) and override the default settings
+    # stgitrc are read for backward compatibility
     config.read('/etc/stgitrc')
     config.read(os.path.expanduser('~/.stgitrc'))
     config.read(os.path.join(basedir.get(), 'stgitrc'))
+
+    # GIT configuration files can have a [stgit] section
+    config.readfp(git_config(os.path.expanduser('~/.gitconfig')))
+    config.readfp(git_config(os.path.join(basedir.get(), 'config')))
 
     # Set the PAGER environment to the config value (if any)
     if config.has_option('stgit', 'pager'):

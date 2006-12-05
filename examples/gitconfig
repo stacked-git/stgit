@@ -1,62 +1,62 @@
-# StGIT configuration file. Copy it to any of /etc/stgitrc, ~/.stgitrc
-# or .git/stgitrc and modify as needed. Note that the latter overrides
-# the former.
+# StGIT configuration file. Copy it to any of ~/.gitconfig or
+# .git/gitconfig and modify as needed. Note that the latter overrides
+# the former. The "git repo-config" command can be used as well
 
 [stgit]
 # Default author/committer details
-#authname:  Your Name
-#authemail: your.name@yourcompany.com
-#commname:  Your Name
-#commemail: your.name@yourcompany.com
+#authname = Your Name
+#authemail = your.name@yourcompany.com
+#commname = Your Name
+#commemail = your.name@yourcompany.com
 
 # E-mail sender (added to the "From: " header)
-#sender: Your Name <your.name@yourcompany.com>
+#sender = Your Name <your.name@yourcompany.com>
 
 # Automatically Bcc the address below
-#autobcc: your.name@yourcompany.com
+#autobcc = your.name@yourcompany.com
 
 # Set to 'yes' if you don't want to use the 'resolved' command.
 # 'refresh' will automatically mark the conflicts as resolved
-#autoresolved: no
+#autoresolved = no
 
-#smtpserver: localhost:25
-#smtpuser: username
-#smtppassword: password
+#smtpserver = localhost:25
+#smtpuser = username
+#smtppassword = password
 
 # delay between messages in seconds (defaults to 5)
-#smtpdelay: 5
+#smtpdelay = 5
 
 # stg will look for this first, then look for the EDITOR environmental
 # variable, then default to using 'vi'
-#editor: /usr/bin/vi
+#editor = /usr/bin/vi
 
 # this value overrides the default PAGER environment variable
-#pager: ~/share/stgit/contrib/diffcol.sh
-#pager: filterdiff --annotate | colordiff | less -FRX
+#pager = ~/share/stgit/contrib/diffcol.sh
+#pager = filterdiff --annotate | colordiff | less -FRX
 
 # GIT pull command (should take the same arguments as git-pull)
-#pullcmd: git-pull
+#pullcmd = git-pull
 
 # The three-way merge tool. Note that the 'output' file contains the
 # same data as 'branch1'. This is useful for tools that do not take an
 # output parameter
-#merger: diff3 -L current -L ancestor -L patched -m -E \
+#merger = diff3 -L current -L ancestor -L patched -m -E \
 #	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
 
 # Interactive three-way merge tool. It is executed by the 'resolved
 # --interactive' command
-#imerger: xxdiff --title1 current --title2 ancestor --title3 patched \
+#imerger = xxdiff --title1 current --title2 ancestor --title3 patched \
 #	--show-merged-pane -m -E -O -X -M "%(output)s" \
 #	"%(branch1)s" "%(ancestor)s" "%(branch2)s"
-#imerger: emacs --eval '(ediff-merge-files-with-ancestor
+#imerger = emacs --eval '(ediff-merge-files-with-ancestor \
 #	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
 
 # Leave the original files in the working tree in case of a merge conflict
-#keeporig: yes
+#keeporig = yes
 
 # Optimize (repack) the object store after every pull
-#keepoptimized: yes
+#keepoptimized = yes
 
 # Extensions for the files involved in a three-way merge (ancestor,
 # current, patched)
-#extensions: .ancestor .current .patched
+#extensions = .ancestor .current .patched
