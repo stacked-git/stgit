@@ -31,13 +31,6 @@ The future, when time allows or if someone else does them:
 
 Bugs:
 
-- cannot branch off arbitrary branch when current branch not under
-stgit control:
-|$ stg branch 
-|bar
-|$ stg branch -c foo2 foo
-|stg branch: Branch "bar" not initialised
-
 - patch created with empty description ("stg new" and quit editor
 without saving) confuse "series -d":
 |$ stg series -ds

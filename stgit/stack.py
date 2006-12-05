@@ -534,7 +534,11 @@ class Series(StgitObject):
     def clone(self, target_series):
         """Clones a series
         """
-        base = read_string(self.get_base_file())
+        try:
+            # allow cloning of branches not under StGIT control
+            base = read_string(self.get_base_file())
+        except:
+            base = git.get_head()
         Series(target_series).init(create_at = base)
         new_series = Series(target_series)
 
@@ -542,8 +546,14 @@ class Series(StgitObject):
         new_series.set_description('clone of "%s"' % self.__name)
 
         # clone self's entire series as unapplied patches
-        patches = self.get_applied() + self.get_unapplied()
-        patches.reverse()
+        try:
+            # allow cloning of branches not under StGIT control
+            applied = self.get_applied()
+            unapplied = self.get_unapplied()
+            patches = applied + unapplied
+            patches.reverse()
+        except:
+            patches = applied = unapplied = []
         for p in patches:
             patch = self.get_patch(p)
             new_series.new_patch(p, message = patch.get_description(),
@@ -555,7 +565,7 @@ class Series(StgitObject):
                                  author_date = patch.get_authdate())
 
         # fast forward the cloned series to self's top
-        new_series.forward_patches(self.get_applied())
+        new_series.forward_patches(applied)
 
     def delete(self, force = False):
         """Deletes an stgit series
