@@ -55,6 +55,7 @@ def func(parser, options, args):
     crt_head = git.get_head()
 
     print 'Committing %d patches...' % len(applied),
+    sys.stdout.flush()
 
     crt_series.pop_patch(applied[0])
     git.switch(crt_head)
