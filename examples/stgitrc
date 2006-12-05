@@ -32,6 +32,7 @@
 
 # this value overrides the default PAGER environment variable
 #pager: ~/share/stgit/contrib/diffcol.sh
+#pager: filterdiff --annotate | colordiff | less -FRX
 
 # GIT pull command (should take the same arguments as git-pull)
 #pullcmd: git-pull
