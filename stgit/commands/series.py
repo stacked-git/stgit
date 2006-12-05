@@ -55,7 +55,7 @@ def __get_description(patch):
     """Extract and return a patch's short description
     """
     p = crt_series.get_patch(patch)
-    descr = p.get_description().strip()
+    descr = (p.get_description() or '').strip()
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
