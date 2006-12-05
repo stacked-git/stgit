@@ -26,3 +26,36 @@ The future, when time allows or if someone else does them:
 - patch synchronisation between between branches (as some people,
   including me have the same patches based on different branches and
   they have scripts for moving the changes in one to the others)
+- numeric shortcuts for naming patches near top (eg. +1, -2)
+- (config?) parameter for number of patches included by "series -s"
+
+Bugs:
+
+- cannot branch off arbitrary branch when current branch not under
+stgit control:
+|$ stg branch 
+|bar
+|$ stg branch -c foo2 foo
+|stg branch: Branch "bar" not initialised
+
+- patch created with empty description ("stg new" and quit editor
+without saving) confuse "series -d":
+|$ stg series -ds
+|+ p5  | p5
+|Traceback (most recent call last):
+|  File "/usr/bin/stg", line 43, in ?
+|    main()
+|  File "/var/lib/python-support/python2.4/stgit/main.py", line 261, in main
+|    command.func(parser, options, args)
+|  File "/var/lib/python-support/python2.4/stgit/commands/series.py", line 107, in func
+|    __print_patch(applied[-1], '> ', '0>', max_len, options)
+|  File "/var/lib/python-support/python2.4/stgit/commands/series.py", line 63, in __print_patch
+|    print prefix + patch.ljust(length) + '  | ' + __get_description(patch)
+|  File "/var/lib/python-support/python2.4/stgit/commands/series.py", line 55, in __get_description
+|    descr = p.get_description().strip()
+|AttributeError: 'NoneType' object has no attribute 'strip'
+|dwitch@gandelf:/export/work/yann/git/foo/a$ stg series
+|+ p5
+|> y
+|$ cat .git/patches/master/patches/y/description
+|cat: .git/patches/master/patches/y/description: No such file or directory
