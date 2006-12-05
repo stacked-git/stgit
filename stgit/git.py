@@ -33,6 +33,38 @@ class GitException(Exception):
 #
 # Classes
 #
+
+class Person:
+    """An author, committer, etc."""
+    def __init__(self, name = None, email = None, date = '',
+                 desc = None):
+        if name or email or date:
+            assert not desc
+            self.name = name
+            self.email = email
+            self.date = date
+        elif desc:
+            assert not (name or email or date)
+            def parse_desc(s):
+                m = re.match(r'^(.+)<(.+)>(.*)$', s)
+                assert m
+                return [x.strip() or None for x in m.groups()]
+            self.name, self.email, self.date = parse_desc(desc)
+    def set_name(self, val):
+        if val:
+            self.name = val
+    def set_email(self, val):
+        if val:
+            self.email = val
+    def set_date(self, val):
+        if val:
+            self.date = val
+    def __str__(self):
+        if self.name and self.email:
+            return '%s <%s>' % (self.name, self.email)
+        else:
+            raise GitException, 'not enough identity data'
+
 class Commit:
     """Handle the commit objects
     """
@@ -401,6 +433,60 @@ def rm(files, force = False):
     else:
         if files:
             __run('git-update-index --force-remove --', files)
+
+# Persons caching
+__user = None
+__author = None
+__committer = None
+
+def user():
+    """Return the user information.
+    """
+    global __user
+    if not __user:
+        if config.has_option('user', 'name') \
+               and config.has_option('user', 'email'):
+            __user = Person(config.get('user', 'name'),
+                            config.get('user', 'email'))
+        else:
+            raise GitException, 'unknown user details'
+    return __user;
+
+def author():
+    """Return the author information.
+    """
+    global __author
+    if not __author:
+        try:
+            # the environment variables take priority over config
+            try:
+                date = os.environ['GIT_AUTHOR_DATE']
+            except KeyError:
+                date = ''
+            __author = Person(os.environ['GIT_AUTHOR_NAME'],
+                              os.environ['GIT_AUTHOR_EMAIL'],
+                              date)
+        except KeyError:
+            __author = user()
+    return __author
+
+def committer():
+    """Return the author information.
+    """
+    global __committer
+    if not __committer:
+        try:
+            # the environment variables take priority over config
+            try:
+                date = os.environ['GIT_COMMITTER_DATE']
+            except KeyError:
+                date = ''
+            __committer = Person(os.environ['GIT_COMMITTER_NAME'],
+                                 os.environ['GIT_COMMITTER_EMAIL'],
+                                 date)
+        except KeyError:
+            __committer = user()
+    return __committer
 
 def update_cache(files = None, force = False):
     """Update the cache information for the given files

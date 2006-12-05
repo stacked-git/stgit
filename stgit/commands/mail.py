@@ -127,13 +127,17 @@ def __get_sender():
     configuration file
     """
     if config.has_option('stgit', 'sender'):
-        return config.get('stgit', 'sender')
-    elif config.has_option('stgit', 'authname') \
-             and config.has_option('stgit', 'authemail'):
-        return '%s <%s>' % (config.get('stgit', 'authname'),
-                            config.get('stgit', 'authemail'))
+        sender = config.get('stgit', 'sender')
     else:
+        try:
+            sender = str(git.user())
+        except git.GitException:
+            sender = str(git.author())
+
+    if not sender:
         raise CmdException, 'unknown sender details'
+
+    return sender
 
 def __parse_addresses(addresses):
     """Return a two elements tuple: (from, [to])

@@ -221,7 +221,7 @@ def main():
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
     from stgit.config import config_setup
-    from ConfigParser import ParsingError
+    from ConfigParser import ParsingError, NoSectionError
     from stgit.stack import Series, StackException
     from stgit.git import GitException
     from stgit.commands.common import CmdException
@@ -240,8 +240,8 @@ def main():
             stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
-    except (IOError, ParsingError, CmdException, StackException, GitException,
-            GitMergeException), err:
+    except (IOError, ParsingError, NoSectionError, CmdException,
+            StackException, GitException, GitMergeException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         sys.exit(2)
     except KeyboardInterrupt:

@@ -1,14 +1,13 @@
 # StGIT configuration file. Copy it to any of ~/.gitconfig or
-# .git/gitconfig and modify as needed. Note that the latter overrides
+# .git/config and modify as needed. Note that the latter overrides
 # the former. The "git repo-config" command can be used as well
 
-[stgit]
-# Default author/committer details
-#authname = Your Name
-#authemail = your.name@yourcompany.com
-#commname = Your Name
-#commemail = your.name@yourcompany.com
+[user]
+# Default author/committer details (standard GIT variables)
+#name = Your Name
+#email = your.name@yourcompany.com
 
+[stgit]
 # E-mail sender (added to the "From: " header)
 #sender = Your Name <your.name@yourcompany.com>
 

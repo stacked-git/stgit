@@ -80,8 +80,16 @@ def config_setup():
     config.read(os.path.join(basedir.get(), 'stgitrc'))
 
     # GIT configuration files can have a [stgit] section
-    config.readfp(git_config(os.path.expanduser('~/.gitconfig')))
-    config.readfp(git_config(os.path.join(basedir.get(), 'config')))
+    try:
+        global_config = os.environ['GIT_CONFIG']
+    except KeyError:
+        global_config = os.path.expanduser('~/.gitconfig')
+    try:
+        local_config = os.environ['GIT_CONFIG_LOCAL']
+    except KeyError:
+        local_config = os.path.join(basedir.get(), 'config')
+    config.readfp(git_config(global_config))
+    config.readfp(git_config(local_config))
 
     # Set the PAGER environment to the config value (if any)
     if config.has_option('stgit', 'pager'):
