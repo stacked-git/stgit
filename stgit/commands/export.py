@@ -27,11 +27,11 @@ from stgit import stack, git, templates
 
 
 help = 'exports a series of patches to <dir> (or patches)'
-usage = """%prog [options] [<dir>]
+usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
-Export the applied patches into a given directory (defaults to
-'patches') in a standard unified GNU diff format. A template file
-(defaulting to '.git/patchexport.tmpl' or
+Export a range of applied patches to a given directory (defaults to
+'patches-<branch>') in a standard unified GNU diff format. A template
+file (defaulting to '.git/patchexport.tmpl' or
 '~/.stgit/templates/patchexport.tmpl' or
 '/usr/share/stgit/templates/patchexport.tmpl') can be used for the
 patch format. The following variables are supported in the template
@@ -46,23 +46,20 @@ file:
   %(authdate)s    - patch creation date
   %(commname)s    - committer's name
   %(commemail)s   - committer's e-mail
+"""
 
-'export' can also generate a diff for a range of patches."""
-
-options = [make_option('-n', '--numbered',
-                       help = 'prefix the patch names with order numbers',
-                       action = 'store_true'),
-           make_option('-d', '--diff',
-                       help = 'append .diff to the patch names',
-                       action = 'store_true'),
+options = [make_option('-d', '--dir',
+                       help = 'export patches to DIR instead of the default'),
            make_option('-p', '--patch',
                        help = 'append .patch to the patch names',
                        action = 'store_true'),
+           make_option('-e', '--extension',
+                       help = 'append .EXTENSION to the patch names'),
+           make_option('-n', '--numbered',
+                       help = 'prefix the patch names with order numbers',
+                       action = 'store_true'),
            make_option('-t', '--template', metavar = 'FILE',
                        help = 'Use FILE as a template'),
-           make_option('-r', '--range',
-                       metavar = '[PATCH1][..[PATCH2]]',
-                       help = 'export patches between PATCH1 and PATCH2'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-s', '--stdout',
@@ -71,12 +68,12 @@ options = [make_option('-n', '--numbered',
 
 
 def func(parser, options, args):
-    if len(args) == 0:
-        dirname = 'patches-%s' % crt_series.get_branch()
-    elif len(args) == 1:
-        dirname = args[0]
+    """Export a range of patches.
+    """
+    if options.dir:
+        dirname = options.dir
     else:
-        parser.error('incorrect number of arguments')
+        dirname = 'patches-%s' % crt_series.get_branch()
 
     if not options.branch and git.local_changes():
         print 'Warning: local changes in the tree. ' \
@@ -88,9 +85,8 @@ def func(parser, options, args):
         series = file(os.path.join(dirname, 'series'), 'w+')
 
     applied = crt_series.get_applied()
-
-    if options.range:
-        patches = parse_patches([options.range], applied)
+    if len(args) != 0:
+        patches = parse_patches(args, applied)
     else:
         patches = applied
 
@@ -118,10 +114,10 @@ def func(parser, options, args):
     patch_no = 1;
     for p in patches:
         pname = p
-        if options.diff:
-            pname = '%s.diff' % pname
-        elif options.patch:
+        if options.patch:
             pname = '%s.patch' % pname
+        elif options.extension:
+            pname = '%s.%s' % (pname, options.extension)
         if options.numbered:
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
         pfile = os.path.join(dirname, pname)

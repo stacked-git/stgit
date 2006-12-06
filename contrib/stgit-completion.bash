@@ -190,7 +190,7 @@ _stg ()
         push)   _stg_patches $command _unapplied_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
-        export) _stg_patches_options $command _applied_patches "-r --range" ;;
+        export) _stg_patches $command _applied_patches ;;
         files)  _stg_patches $command _all_patches ;;
         log)    _stg_patches $command _all_patches ;;
         mail)   _stg_patches $command _applied_patches ;;
