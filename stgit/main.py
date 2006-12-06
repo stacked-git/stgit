@@ -190,7 +190,8 @@ def main():
             command = commands[cmd]
             parser = OptionParser(usage = command.usage,
                                   option_list = command.options)
-            parser.print_help()
+            from pydoc import pager
+            pager(parser.format_help())
         else:
             print_help()
         sys.exit(0)
