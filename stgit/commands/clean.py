@@ -38,16 +38,20 @@ options = [make_option('-a', '--applied',
                        action = 'store_true')]
 
 
-def __delete_empty(patches, push = False):
+def __delete_empty(patches, applied):
     """Delete the empty patches
     """
     for p in patches:
         if crt_series.empty_patch(p):
             print 'Deleting patch "%s"...' % p,
             sys.stdout.flush()
+
+            if applied and crt_series.patch_applied(p):
+                crt_series.pop_patch(p)
             crt_series.delete_patch(p)
+
             print 'done'
-        elif push:
+        elif applied and crt_series.patch_unapplied(p):
             crt_series.push_patch(p)
 
 def func(parser, options, args):
@@ -65,8 +69,6 @@ def func(parser, options, args):
 
     if options.applied:
         applied = crt_series.get_applied()
-        if applied != []:
-            crt_series.pop_patch(applied[0])
         __delete_empty(applied, True)
 
     if options.unapplied:
