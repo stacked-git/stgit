@@ -392,7 +392,7 @@ class Series(StgitObject):
             os.remove(protect_file)
 
     def get_description(self):
-        return self._get_field('description')
+        return self._get_field('description') or ''
 
     def set_description(self, line):
         self._set_field('description', line)

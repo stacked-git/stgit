@@ -214,7 +214,7 @@ def pop_patches(patches, keep = False):
 
         print 'done'
 
-def parse_patches(patch_args, patch_list, boundary = 0):
+def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     """Parse patch_args list for patch names in patch_list and return
     a list. The names can be individual patches and/or in the
     patch1..patch2 format.
@@ -270,6 +270,9 @@ def parse_patches(patch_args, patch_list, boundary = 0):
                 raise CmdException, 'Duplicate patch name: %s' % p
 
         patches += pl
+
+    if ordered:
+        patches = [p for p in patch_list if p in patches]
 
     return patches
 

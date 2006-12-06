@@ -25,12 +25,16 @@ from stgit import stack, git
 
 
 help = 'pop one or more patches from the stack'
-usage = """%prog [options] [<patch>]
+usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
-Pop the topmost patch or a range of patches starting with the topmost
-one from the stack. The command fails if there are local changes or
-conflicts. If a patch name is given as argument, the command will pop
-all the patches up to the given one."""
+Pop the topmost patch or a range of patches from the stack. The
+command fails if there are conflicts or local changes (and --keep was
+not specified).
+
+A series of pop and push operations are performed so that only the
+patches passed on the command line are popped from the stack. Some of
+the push operations may fail because of conflicts (push --undo would
+revert the last push operation)."""
 
 options = [make_option('-a', '--all',
                        help = 'pop all the applied patches',
@@ -45,9 +49,6 @@ options = [make_option('-a', '--all',
 def func(parser, options, args):
     """Pop the topmost patch from the stack
     """
-    if len(args) > 1:
-        parser.error('incorrect number of arguments')
-
     check_conflicts()
     check_head_top_equal()
 
@@ -57,28 +58,32 @@ def func(parser, options, args):
     applied = crt_series.get_applied()
     if not applied:
         raise CmdException, 'No patches applied'
-    # the popping is done in reverse order
-    applied.reverse()
 
     if options.all:
         patches = applied
     elif options.number:
-        patches = applied[:options.number]
-    elif len(args) == 1:
-        upto_patch = args[0]
-        if upto_patch not in applied:
-            if upto_patch in crt_series.get_unapplied():
-                raise CmdException, 'Patch "%s" is not currently applied' \
-                      % upto_patch
-            else:
-                raise CmdException, 'Patch "%s" does not exist' % upto_patch
-        patches = applied[:applied.index(upto_patch)]
+        # reverse it twice to also work with negative or bigger than
+        # the length numbers
+        patches = applied[::-1][:options.number][::-1]
+    elif len(args) == 0:
+        patches = [applied[-1]]
     else:
-        patches = [applied[0]]
+        patches = parse_patches(args, applied, ordered = True)
 
-    if patches == []:
+    if not patches:
         raise CmdException, 'No patches to pop'
 
-    pop_patches(patches, options.keep)
+    # pop to the most distant popped patch
+    topop = applied[applied.index(patches[0]):]
+    # push those not in the popped range
+    topush = [p for p in topop if p not in patches]
+
+    if options.keep and topush:
+        raise CmdException, 'Cannot pop arbitrary patches with --keep'
+
+    topop.reverse()
+    pop_patches(topop, options.keep)
+    if topush:
+        push_patches(topush)
 
     print_crt_patch()
