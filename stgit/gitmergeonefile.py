@@ -75,6 +75,13 @@ def __checkout_files(orig_hash, file1_hash, file2_hash,
         os.chmod(tmp, int(file2_mode, 8))
         os.renames(tmp, src2)
 
+    if file1_hash and not os.path.exists(path):
+        # the current file might be removed by GIT when it is a new
+        # file added in both branches. Just re-generate it
+        tmp = __output('git-unpack-file %s' % file1_hash)
+        os.chmod(tmp, int(file1_mode, 8))
+        os.renames(tmp, path)
+
 def __remove_files(orig_hash, file1_hash, file2_hash):
     """Remove any temporary files
     """
@@ -84,7 +91,6 @@ def __remove_files(orig_hash, file1_hash, file2_hash):
         os.remove(src1)
     if file2_hash:
         os.remove(src2)
-    pass
 
 def __conflict(path):
     """Write the conflict file for the 'path' variable and exit
