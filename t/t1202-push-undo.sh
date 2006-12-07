@@ -49,6 +49,7 @@ test_expect_failure \
 test_expect_success \
 	'Undo the previous push' \
 	'
+	stg status --reset &&
 	stg push --undo
 	'
 

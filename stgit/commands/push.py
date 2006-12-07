@@ -57,6 +57,9 @@ options = [make_option('-a', '--all',
 def func(parser, options, args):
     """Pushes the given patch or all onto the series
     """
+    check_conflicts()
+    check_local_changes()
+    check_head_top_equal()
 
     # If --undo is passed, do the work and exit
     if options.undo:
@@ -66,7 +69,6 @@ def func(parser, options, args):
 
         print 'Undoing the "%s" push...' % patch,
         sys.stdout.flush()
-        resolved_all()
         if crt_series.undo_push():
             print 'done'
         else:
@@ -74,10 +76,6 @@ def func(parser, options, args):
         print_crt_patch()
 
         return
-
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
 
     unapplied = crt_series.get_unapplied()
     if not unapplied:
