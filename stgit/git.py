@@ -262,10 +262,10 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     return cache_files
 
-def local_changes():
+def local_changes(verbose = True):
     """Return true if there are local changes in the tree
     """
-    return len(__tree_status(verbose = True)) != 0
+    return len(__tree_status(verbose = verbose)) != 0
 
 # HEAD value cached
 __head = None
@@ -814,12 +814,6 @@ def apply_patch(filename = None, diff = None, base = None,
     """Apply a patch onto the current or given index. There must not
     be any local changes in the tree, otherwise the command fails
     """
-    if base:
-        orig_head = get_head()
-        switch(base)
-    else:
-        refresh_index()
-
     if diff is None:
         if filename:
             f = file(filename)
@@ -828,6 +822,12 @@ def apply_patch(filename = None, diff = None, base = None,
         diff = f.read()
         if filename:
             f.close()
+
+    if base:
+        orig_head = get_head()
+        switch(base)
+    else:
+        refresh_index()
 
     try:
         _input_str('git-apply --index', diff)
@@ -839,6 +839,7 @@ def apply_patch(filename = None, diff = None, base = None,
             f = file('.stgit-failed.patch', 'w+')
             f.write(diff)
             f.close()
+            print >> sys.stderr, 'Diff written to the .stgit-failed.patch file'
 
         raise
 

@@ -109,7 +109,7 @@ def git_id(rev):
 def check_local_changes():
     if git.local_changes():
         raise CmdException, \
-              'local changes in the tree. Use "refresh" to commit them'
+              'local changes in the tree. Use "refresh" or "status --reset"'
 
 def check_head_top_equal():
     if not crt_series.head_top_equal():
@@ -120,7 +120,9 @@ def check_head_top_equal():
 
 def check_conflicts():
     if os.path.exists(os.path.join(basedir.get(), 'conflicts')):
-        raise CmdException, 'Unsolved conflicts. Please resolve them first'
+        raise CmdException, \
+              'Unsolved conflicts. Please resolve them first or\n' \
+              '  revert the changes with "status --reset"'
 
 def print_crt_patch(branch = None):
     if not branch:

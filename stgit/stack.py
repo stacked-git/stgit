@@ -694,7 +694,7 @@ class Series(StgitObject):
         # old_bottom is different, there wasn't any previous 'refresh'
         # command (probably only a 'push')
         if old_bottom != patch.get_bottom() or old_top == patch.get_top():
-            raise StackException, 'No refresh undo information available'
+            raise StackException, 'No undo information available'
 
         git.reset(tree_id = old_top, check_out = False)
         if patch.restore_old_boundaries():
@@ -976,7 +976,7 @@ class Series(StgitObject):
         # modified by 'refresh'). If they are both unchanged, there
         # was a fast forward
         if old_bottom == patch.get_bottom() and old_top != patch.get_top():
-            raise StackException, 'No push undo information available'
+            raise StackException, 'No undo information available'
 
         git.reset()
         self.pop_patch(name)

@@ -67,6 +67,7 @@ commands = Commands({
     'series':           'series',
     'show':             'show',
     'status':           'status',
+    'sync':             'sync',
     'top':              'top',
     'unapplied':        'unapplied',
     'uncommit':         'uncommit'
@@ -106,7 +107,8 @@ patchcommands = (
     'pick',
     'refresh',
     'rename',
-    'show'
+    'show',
+    'sync'
     )
 wccommands = (
     'add',

@@ -3,7 +3,7 @@
 # Copyright (c) 2006 Catalin Marinas
 #
 
-test_description='Branch renames.
+test_description='Branch cloning.
 
 Exercises branch cloning options.
 '

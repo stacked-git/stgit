@@ -43,6 +43,7 @@ _stg_commands="
     series
     show
     status
+    sync
     top
     unapplied
     uncommit
@@ -198,6 +199,7 @@ _stg ()
         refresh)_stg_patches_options $command _applied_patches "-p --patch" ;;
         rename) _stg_patches $command _all_patches ;;
         show)   _stg_patches $command _all_patches ;;
+        sync)   _stg_patches $command _applied_patches ;;
         # working-copy commands
         diff)   _stg_patches_options $command _applied_patches "-r --range" ;;
         # all the other commands

@@ -36,10 +36,11 @@ can be one of the following:
   push(f) - the patch was fast-forwarded
   undo    - the patch boundaries were restored to the old values
 
-Note that only the diffs shown in the 'refresh' and 'undo' actions are
-meaningful for the patch changes. The 'push' actions represent the
-changes to the entire base of the current patch. Conflicts reset the
-patch content and a subsequent 'refresh' will show the entire patch."""
+Note that only the diffs shown in the 'refresh', 'undo' and 'sync'
+actions are meaningful for the patch changes. The 'push' actions
+represent the changes to the entire base of the current
+patch. Conflicts reset the patch content and a subsequent 'refresh'
+will show the entire patch."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
@@ -59,7 +60,8 @@ def show_log(log, show_patch):
         descr = commit.get_log().rstrip()
 
         if show_patch:
-            if descr.startswith('refresh') or descr.startswith('undo'):
+            if descr.startswith('refresh') or descr.startswith('undo') \
+                   or descr.startswith('sync'):
                 diff_str = '%s%s\n' % (diff_str,
                                        git.pretty_commit(commit.get_id_hash()))
         else:
