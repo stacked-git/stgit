@@ -81,7 +81,6 @@ test_expect_success \
 test_expect_success \
 	'Check the push "undo" log' \
 	'
-	stg status --reset &&
 	stg push --undo &&
 	stg log bar | grep -q -e "^undo	"
 	'

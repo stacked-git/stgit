@@ -51,7 +51,7 @@ test_expect_failure \
 
 test_expect_success \
     'Rollback the push' \
-    "(cd bar && stg status --reset && stg push --undo
+    "(cd bar && stg push --undo
      )
 "
 
