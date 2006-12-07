@@ -144,10 +144,10 @@ def func(parser, options, args):
                                  committer_email = options.commemail,
                                  backup = True, sign_str = sign_str)
 
+        print 'done'
+
         if options.patch:
             between.reverse()
             push_patches(between)
-
-        print 'done'
     else:
         print 'Patch "%s" is already up to date' % patch
