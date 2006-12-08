@@ -91,7 +91,7 @@ def func(parser, options, args):
 
         # try a direct git-apply first
         if not git.apply_diff(bottom, top):
-            git.merge(bottom, git.get_head(), top)
+            git.merge(bottom, git.get_head(), top, recursive = True)
 
         print 'done'
     elif options.update:

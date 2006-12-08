@@ -933,7 +933,7 @@ class Series(StgitObject):
 
                 # merge can fail but the patch needs to be pushed
                 try:
-                    git.merge(bottom, head, top)
+                    git.merge(bottom, head, top, recursive = True)
                 except git.GitException, ex:
                     print >> sys.stderr, \
                           'The merge failed during "push". ' \

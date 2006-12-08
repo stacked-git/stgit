@@ -596,17 +596,27 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
 
     return True
 
-def merge(base, head1, head2):
+def merge(base, head1, head2, recursive = False):
     """Perform a 3-way merge between base, head1 and head2 into the
     local tree
     """
     refresh_index()
 
-    try:
-        # use _output() to mask the verbose prints of the tool
-        _output('git-merge-recursive %s -- %s %s' % (base, head1, head2))
-    except GitException:
-        pass
+    if recursive:
+        # this operation tracks renames but it is slower (used in
+        # general when pushing or picking patches)
+        try:
+            # use _output() to mask the verbose prints of the tool
+            _output('git-merge-recursive %s -- %s %s' % (base, head1, head2))
+        except GitException:
+            pass
+    else:
+        # the fast case where we don't track renames (used when the
+        # distance between base and heads is small, i.e. folding or
+        # synchronising patches)
+        if __run('git-read-tree -u -m --aggressive',
+                 [base, head1, head2]) != 0:
+            raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     # check the index for unmerged entries
     files = {}
