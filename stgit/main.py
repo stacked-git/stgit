@@ -30,7 +30,27 @@ class Commands(dict):
     """Commands class. It performs on-demand module loading
     """
     def __getitem__(self, key):
+        """Return the command python module name based.
+        """
+        global prog
+
         cmd_mod = self.get(key)
+        if not cmd_mod:
+            candidates = [cmd for cmd in self.keys() if cmd.startswith(key)]
+
+            if not candidates:
+                print >> sys.stderr, 'Unknown command: %s' % key
+                print >> sys.stderr, '  Try "%s help" for a list of ' \
+                      'supported commands' % prog
+                sys.exit(1)
+            elif len(candidates) > 1:
+                print >> sys.stderr, 'Ambiguous command: %s' % key
+                print >> sys.stderr, '  Candidates are: %s' \
+                      % ', '.join(candidates)
+                sys.exit(1)
+
+            cmd_mod = self.get(candidates[0])
+            
         __import__('stgit.commands.' + cmd_mod)
         return getattr(stgit.commands, cmd_mod)
 
@@ -163,6 +183,8 @@ def print_help():
 def main():
     """The main function
     """
+    global prog
+
     prog = os.path.basename(sys.argv[0])
 
     if len(sys.argv) < 2:
@@ -206,11 +228,6 @@ def main():
     if cmd in ['copyright']:
         print __copyright__
         sys.exit(0)
-    if not cmd in commands:
-        print >> sys.stderr, 'Unknown command: %s' % cmd
-        print >> sys.stderr, '  Try "%s help" for a list of supported ' \
-              'commands' % prog
-        sys.exit(1)
 
     # re-build the command line arguments
     sys.argv[0] += ' %s' % cmd
