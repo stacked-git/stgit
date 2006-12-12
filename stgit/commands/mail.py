@@ -480,7 +480,8 @@ def func(parser, options, args):
     if options.all:
         patches = applied
     elif len(args) >= 1:
-        patches = parse_patches(args, applied)
+        unapplied = crt_series.get_unapplied()
+        patches = parse_patches(args, applied + unapplied, len(applied))
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
 
