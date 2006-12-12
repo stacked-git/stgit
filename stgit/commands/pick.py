@@ -44,6 +44,9 @@ options = [make_option('-n', '--name',
                        action = 'store_true'),
            make_option('--update',
                        help = 'like fold but only update the current patch files',
+                       action = 'store_true'),
+           make_option('--unapplied',
+                       help = 'keep the patch unapplied',
                        action = 'store_true')]
 
 
@@ -53,9 +56,10 @@ def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal()
+    if not options.unapplied:
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal()
 
     commit_str = args[0]
     commit_id = git_id(commit_str)
@@ -119,7 +123,10 @@ def func(parser, options, args):
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date)
-        modified = crt_series.push_patch(patch)
+        if not options.unapplied:
+            modified = crt_series.push_patch(patch)
+        else:
+            modified = False
 
         if crt_series.empty_patch(patch):
             print 'done (empty patch)'
