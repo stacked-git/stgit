@@ -90,7 +90,7 @@ _all_other_patches ()
     local b=$(_current_branch)
     local g=$(_gitdir)
     [ "$g" ] && cat "$g/patches/$b/applied" "$g/patches/$b/unapplied" \
-        | grep -v "^$(< $g/patches/$b/current)$"
+        | grep -v "^$(cat $g/patches/$b/current 2> /dev/null)$"
 }
 
 # List the command options
