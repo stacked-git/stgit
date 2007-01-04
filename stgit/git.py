@@ -397,6 +397,11 @@ def rename_branch(from_name, to_name):
     rename(os.path.join(basedir.get(), 'refs', 'heads'),
            from_name, to_name)
 
+    reflog_dir = os.path.join(basedir.get(), 'logs', 'refs', 'heads')
+    if os.path.exists(reflog_dir) \
+           and os.path.exists(os.path.join(reflog_dir, from_name)):
+        rename(reflog_dir, from_name, to_name)
+
 def add(names):
     """Add the files or recursively add the directory contents
     """
