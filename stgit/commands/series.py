@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 from optparse import OptionParser, make_option
 
+import stgit.commands.common
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
@@ -33,6 +34,8 @@ prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('-m', '--missing', metavar = 'BRANCH',
+                       help = 'show patches in BRANCH missing in current'),
            make_option('-c', '--count',
                        help = 'print the number of patches in the series',
                        action = 'store_true'),
@@ -70,11 +73,24 @@ def __print_patch(patch, prefix, empty_prefix, length, options):
 def func(parser, options, args):
     """Show the patch series
     """
+    global crt_series
+
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
+    if options.missing:
+        # switch the series, the one specified with --missing should
+        # become the current
+        cmp_series = crt_series
+        crt_series = stack.Series(options.missing)
+        stgit.commands.common.crt_series = crt_series
+
+        cmp_patches = cmp_series.get_applied() + cmp_series.get_unapplied()
+    else:
+        cmp_patches = []
+
+    applied = [p for p in crt_series.get_applied() if p not in cmp_patches]
+    unapplied = [p for p in crt_series.get_unapplied() if p not in cmp_patches]
 
     if options.count:
         print len(applied) + len(unapplied)
@@ -91,6 +107,9 @@ def func(parser, options, args):
         return
 
     if options.graphical:
+        if options.missing:
+            raise CmdException, '--graphical not supported with --missing'
+
         if applied:
             gitk_args = ' %s^..%s' % (git_id(applied[0]), git_id(applied[-1]))
         else:
