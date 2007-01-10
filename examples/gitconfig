@@ -3,59 +3,60 @@
 # the former. The "git repo-config" command can be used as well
 
 [user]
-# Default author/committer details (standard GIT variables)
-#name = Your Name
-#email = your.name@yourcompany.com
+	# Default author/committer details (standard GIT variables)
+	name = Your Name
+	email = your.name@yourcompany.com
 
 [stgit]
-# E-mail sender (added to the "From: " header)
-#sender = Your Name <your.name@yourcompany.com>
+	# E-mail sender (added to the "From: " header)
+	#sender = Your Name <your.name@yourcompany.com>
 
-# Automatically Bcc the address below
-#autobcc = your.name@yourcompany.com
+	# Automatically Bcc the address below
+	#autobcc = your.name@yourcompany.com
 
-# Set to 'yes' if you don't want to use the 'resolved' command.
-# 'refresh' will automatically mark the conflicts as resolved
-#autoresolved = no
+	# Set to 'yes' if you don't want to use the 'resolved' command.
+	# 'refresh' will automatically mark the conflicts as resolved
+	#autoresolved = no
 
-#smtpserver = localhost:25
-#smtpuser = username
-#smtppassword = password
+	#smtpserver = localhost:25
+	#smtpuser = username
+	#smtppassword = password
 
-# delay between messages in seconds (defaults to 5)
-#smtpdelay = 5
+	# delay between messages in seconds (defaults to 5)
+	#smtpdelay = 5
 
-# stg will look for this first, then look for the EDITOR environmental
-# variable, then default to using 'vi'
-#editor = /usr/bin/vi
+	# stg will look for this first, then look for the EDITOR environmental
+	# variable, then default to using 'vi'
+	#editor = /usr/bin/vi
 
-# this value overrides the default PAGER environment variable
-#pager = ~/share/stgit/contrib/diffcol.sh
-#pager = filterdiff --annotate | colordiff | less -FRX
+	# this value overrides the default PAGER environment variable
+	#pager = ~/share/stgit/contrib/diffcol.sh
+	#pager = filterdiff --annotate | colordiff | less -FRX
 
-# GIT pull command (should take the same arguments as git-pull)
-#pullcmd = git-pull
+	# GIT pull command (should take the same arguments as git-pull)
+	#pullcmd = git-pull
 
-# The three-way merge tool. Note that the 'output' file contains the
-# same data as 'branch1'. This is useful for tools that do not take an
-# output parameter
-#merger = diff3 -L current -L ancestor -L patched -m -E \
-#	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
+	# The three-way merge tool. Note that the 'output' file contains the
+	# same data as 'branch1'. This is useful for tools that do not take an
+	# output parameter
+	#merger = diff3 -L current -L ancestor -L patched -m -E \
+	#	"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"
 
-# Interactive three-way merge tool. It is executed by the 'resolved
-# --interactive' command
-#imerger = xxdiff --title1 current --title2 ancestor --title3 patched \
-#	--show-merged-pane -m -E -O -X -M "%(output)s" \
-#	"%(branch1)s" "%(ancestor)s" "%(branch2)s"
-#imerger = emacs --eval '(ediff-merge-files-with-ancestor \
-#	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
+	# Interactive three-way merge tool. It is executed by the 'resolved
+	# --interactive' command
+	#imerger = xxdiff --title1 current --title2 ancestor --title3 patched \
+	#	--show-merged-pane -m -E -O -X -M "%(output)s" \
+	#	"%(branch1)s" "%(ancestor)s" "%(branch2)s"
+	#imerger = emacs --eval '(ediff-merge-files-with-ancestor \
+	#	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
 
-# Leave the original files in the working tree in case of a merge conflict
-#keeporig = yes
+	# Leave the original files in the working tree in case of a
+	# merge conflict
+	#keeporig = yes
 
-# Optimize (repack) the object store after every pull
-#keepoptimized = yes
+	# Optimize (repack) the object store after every pull
+	#keepoptimized = yes
 
-# Extensions for the files involved in a three-way merge (ancestor,
-# current, patched)
-#extensions = .ancestor .current .patched
+	# Extensions for the files involved in a three-way merge (ancestor,
+	# current, patched)
+	#extensions = .ancestor .current .patched
