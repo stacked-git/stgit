@@ -50,10 +50,16 @@ def func(parser, options, args):
     if len(args) > 2:
         parser.error('incorrect number of arguments')
 
-    repository = 'origin'
-    refspec = None
     if len(args) >= 1:
         repository = args[0]
+    else:
+        section = 'branch "%s"' % git.get_head_file()
+        if config.has_option(section, 'remote'):
+            repository = config.get(section, 'remote')
+        else:
+            repository = 'origin'
+
+    refspec = None
     if len(args) == 2:
         refspec = args[1]
 
