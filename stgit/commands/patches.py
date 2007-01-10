@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from optparse import OptionParser, make_option
+from pydoc import pager
 
 from stgit.commands.common import *
 from stgit.utils import *
@@ -33,6 +34,13 @@ options = [make_option('-d', '--diff',
                        help = 'show the diff for the given files',
                        action = 'store_true')]
 
+diff_tmpl = \
+          '-------------------------------------------------------------------------------\n' \
+          '%s\n' \
+          '-------------------------------------------------------------------------------\n' \
+          '%s' \
+          '---\n\n' \
+          '%s'
 
 def func(parser, options, args):
     """Show the patches modifying a file
@@ -54,16 +62,17 @@ def func(parser, options, args):
         rev_patch[patch.get_top()] = patch
 
     # print the patch names
+    diff_output = ''
     for rev in revs:
         if rev in rev_patch:
             patch = rev_patch[rev]
             if options.diff:
-                print '-------------------------------------------------------------------------------'
-                print patch.get_name()
-                print '-------------------------------------------------------------------------------'
-                print patch.get_description(),
-                print '---'
-                print
-                print git.diff(args, patch.get_bottom(), patch.get_top())
+                diff_output += diff_tmpl \
+                               % (patch.get_name(), patch.get_description(),
+                                  git.diff(args, patch.get_bottom(),
+                                           patch.get_top()))
             else:
                 print patch.get_name()
+
+    if options.diff:
+        pager(diff_output)
