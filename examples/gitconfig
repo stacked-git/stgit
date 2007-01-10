@@ -60,3 +60,7 @@
 	# Extensions for the files involved in a three-way merge (ancestor,
 	# current, patched)
 	#extensions = .ancestor .current .patched
+
+[mail "alias"]
+	# E-mail aliases used with the 'mail' command
+	git = git@vger.kernel.org

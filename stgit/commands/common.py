@@ -303,6 +303,24 @@ def name_email_date(address):
 
     return str_list[0]
 
+def address_or_alias(addr_str):
+    """Return the address if it contains an e-mail address or look up
+    the aliases in the config files.
+    """
+    def __address_or_alias(addr):
+        if addr.find('@') >= 0:
+            # it's an e-mail address
+            return addr
+        if config.has_option('mail "alias"', addr):
+            # it's an alias
+            return config.get('mail "alias"', addr)
+
+        raise CmdException, 'unknown e-mail alias: %s' % addr
+
+    addr_list = [__address_or_alias(addr.strip())
+                 for addr in addr_str.split(',')]
+    return ', '.join(addr_list)
+
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
     from the first 30 characters of the top line of the string passed

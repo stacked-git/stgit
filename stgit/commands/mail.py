@@ -32,10 +32,13 @@ Send a patch or a range of patches by e-mail using the 'smtpserver'
 configuration option. The From address and the e-mail format are
 generated from the template file passed as argument to '--template'
 (defaulting to '.git/patchmail.tmpl' or
-'~/.stgit/templates/patchmail.tmpl' or or
-'/usr/share/stgit/templates/patchmail.tmpl'). The To/Cc/Bcc addresses
-can either be added to the template file or passed via the
-corresponding command line options.
+'~/.stgit/templates/patchmail.tmpl' or
+'/usr/share/stgit/templates/patchmail.tmpl').
+
+The To/Cc/Bcc addresses can either be added to the template file or
+passed via the corresponding command line options. They can be e-mail
+addresses or aliases which are automatically expanded to the values
+stored in the [mail "alias"] section of GIT configuration files.
 
 A preamble e-mail can be sent using the '--cover' and/or
 '--edit-cover' options. The first allows the user to specify a file to
@@ -137,7 +140,7 @@ def __get_sender():
     if not sender:
         raise CmdException, 'unknown sender details'
 
-    return sender
+    return address_or_alias(sender)
 
 def __parse_addresses(addresses):
     """Return a two elements tuple: (from, [to])
@@ -196,9 +199,9 @@ def __build_address_headers(msg, options, extra_cc = []):
             del msg[header]
 
             if crt_addr:
-                msg[header] = ', '.join([crt_addr, addr])
+                msg[header] = address_or_alias(', '.join([crt_addr, addr]))
             else:
-                msg[header] = addr
+                msg[header] = address_or_alias(addr)
 
     to_addr = ''
     cc_addr = ''
