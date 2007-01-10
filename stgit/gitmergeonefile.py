@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os
 from stgit import basedir
-from stgit.config import file_extensions, ConfigOption
+from stgit.config import config, file_extensions, ConfigOption
 from stgit.utils import append_string
 
 
@@ -98,6 +98,42 @@ def __conflict(path):
     append_string(os.path.join(basedir.get(), 'conflicts'), path)
 
 
+def interactive_merge(filename):
+    """Run the interactive merger on the given file. Note that the
+    index should not have any conflicts.
+    """
+    try:
+        imerger = config.get('stgit', 'imerger')
+    except Exception, err:
+        raise GitMergeException, 'Configuration error: %s' % err
+
+    extensions = file_extensions()
+
+    ancestor = filename + extensions['ancestor']
+    current = filename + extensions['current']
+    patched = filename + extensions['patched']
+
+    # check whether we have all the files for a three-way merge
+    for fn in [filename, ancestor, current, patched]:
+        if not os.path.isfile(fn):
+            raise GitMergeException, \
+                  'Cannot run the interactive merger: "%s" missing' % fn
+
+    mtime = os.path.getmtime(filename)
+
+    err = os.system(imerger % {'branch1': current,
+                               'ancestor': ancestor,
+                               'branch2': patched,
+                               'output': filename})
+
+    if err != 0:
+        raise GitMergeException, 'The interactive merge failed: %d' % err
+    if not os.path.isfile(filename):
+        raise GitMergeException, 'The "%s" file is missing' % filename
+    if mtime == os.path.getmtime(filename):
+        raise GitMergeException, 'The "%s" file was not modified' % filename
+
+
 #
 # Main algorithm
 #
@@ -148,10 +184,30 @@ def merge(orig_hash, file1_hash, file2_hash,
                     # reset the cache to the first branch
                     os.system('git-update-index --cacheinfo %s %s %s'
                               % (file1_mode, file1_hash, path))
-                    if str(keeporig) != 'yes':
+
+                    if config.get('stgit', 'autoimerge') == 'yes':
+                        print >> sys.stderr, \
+                              'Trying the interactive merge'
+                        try:
+                            interactive_merge(path)
+                        except GitMergeException, ex:
+                            # interactive merge failed
+                            print >> sys.stderr, str(ex)
+                            if str(keeporig) != 'yes':
+                                __remove_files(orig_hash, file1_hash,
+                                               file2_hash)
+                            __conflict(path)
+                            return 1
+                        # successful interactive merge
                         __remove_files(orig_hash, file1_hash, file2_hash)
-                    __conflict(path)
-                    return 1
+                        return 0
+                    else:
+                        # no interactive merge, just mark it as conflict
+                        if str(keeporig) != 'yes':
+                            __remove_files(orig_hash, file1_hash, file2_hash)
+                        __conflict(path)
+                        return 1
+
         # file deleted in both or deleted in one and unchanged in the other
         elif not (file1_hash or file2_hash) \
                or file1_hash == orig_hash or file2_hash == orig_hash:

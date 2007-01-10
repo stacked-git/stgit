@@ -23,6 +23,7 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
+from stgit.gitmergeonefile import interactive_merge
 
 
 help = 'mark a file conflict as solved'
@@ -41,40 +42,6 @@ options = [make_option('-a', '--all',
            make_option('-i', '--interactive',
                        help = 'run the interactive merging tool',
                        action = 'store_true')]
-
-def interactive_merge(filename):
-    """Run the interactive merger on the given file
-    """
-    try:
-        imerger = config.get('stgit', 'imerger')
-    except Exception, err:
-        raise CmdException, 'Configuration error: %s' % err
-
-    extensions = file_extensions()
-
-    ancestor = filename + extensions['ancestor']
-    current = filename + extensions['current']
-    patched = filename + extensions['patched']
-
-    # check whether we have all the files for a three-way merge
-    for fn in [filename, ancestor, current, patched]:
-        if not os.path.isfile(fn):
-            raise CmdException, \
-                  'Cannot run the interactive merger: "%s" missing' % fn
-
-    mtime = os.path.getmtime(filename)
-
-    err = os.system(imerger % {'branch1': current,
-                               'ancestor': ancestor,
-                               'branch2': patched,
-                               'output': filename})
-
-    if err != 0:
-        raise CmdException, 'The interactive merger failed: %d' % err
-    if not os.path.isfile(filename):
-        raise CmdException, 'The "%s" file is missing' % filename
-    if mtime == os.path.getmtime(filename):
-        raise CmdException, 'The "%s" file was not modified' % filename
 
 def func(parser, options, args):
     """Mark the conflict as resolved

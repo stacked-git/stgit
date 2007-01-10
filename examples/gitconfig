@@ -50,6 +50,9 @@
 	#imerger = emacs --eval '(ediff-merge-files-with-ancestor \
 	#	"%(branch1)s" "%(branch2)s" "%(ancestor)s" nil "%(output)s")'
 
+	# Automatically invoke the interactive merger in case of conflicts
+	#autoimerge = no
+
 	# Leave the original files in the working tree in case of a
 	# merge conflict
 	#keeporig = yes
