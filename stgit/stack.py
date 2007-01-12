@@ -959,6 +959,11 @@ class Series(StgitObject):
                     log = 'push'
                 self.refresh_patch(cache_update = False, log = log)
             else:
+                # we store the correctly merged files only for
+                # tracking the conflict history. Note that the
+                # git.merge() operations shouls always leave the index
+                # in a valid state (i.e. only stage 0 files)
+                self.refresh_patch(cache_update = False, log = 'push(c)')
                 raise StackException, str(ex)
 
         return modified

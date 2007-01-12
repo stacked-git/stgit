@@ -69,8 +69,19 @@ test_expect_success \
 	'
 
 test_expect_success \
+	'Check the "push(c)" log' \
+	'
+	echo bar > test && stg refresh &&
+	stg pop &&
+	echo foo > test && stg refresh &&
+	! stg push &&
+	stg log | grep -q -e "^push(c)	"
+	'
+
+test_expect_success \
 	'Check the push "undo" log' \
 	'
+	stg status --reset &&
 	stg push --undo &&
 	stg log bar | grep -q -e "^undo	"
 	'

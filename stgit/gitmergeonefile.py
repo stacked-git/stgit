@@ -199,6 +199,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                             __conflict(path)
                             return 1
                         # successful interactive merge
+                        os.system('git-update-index -- %s' % path)
                         __remove_files(orig_hash, file1_hash, file2_hash)
                         return 0
                     else:
