@@ -36,6 +36,7 @@ _stg_commands="
     pop
     pull
     push
+    rebase
     refresh
     rename
     resolved
