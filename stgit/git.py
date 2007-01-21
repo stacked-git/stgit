@@ -688,6 +688,8 @@ def status(files = None, modified = False, new = False, deleted = False,
         cache_files = [x for x in cache_files if x[0] in filestat]
 
     for fs in cache_files:
+        if files and not fs[1] in files:
+            continue
         if all:
             print '%s %s' % (fs[0], fs[1])
         else:
