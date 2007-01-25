@@ -119,8 +119,10 @@ def func(parser, options, args):
         patches = applied
     elif len(args) != 0:
         patches = parse_patches(args, applied, ordered = True)
+    elif applied:
+        patches = [crt_series.get_current()]
     else:
-        parser.error('no patches specified')
+        parser.error('no patches applied')
 
     if not patches:
         raise CmdException, 'No patches to synchronise'
