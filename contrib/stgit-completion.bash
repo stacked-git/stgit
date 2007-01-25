@@ -190,6 +190,7 @@ _stg ()
         goto)   _stg_patches $command _all_other_patches ;;
         pop)    _stg_patches $command _applied_patches ;;
         push)   _stg_patches $command _unapplied_patches ;;
+        series) _stg_patches $command _all_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
         export) _stg_patches $command _applied_patches ;;

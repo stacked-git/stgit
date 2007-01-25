@@ -26,11 +26,12 @@ from stgit import stack, git
 
 
 help = 'print the patch series'
-usage = """%prog [options]
+usage = """%prog [options] [<patch-range>]
 
-Show all the patches in the series. The applied patches are prefixed
-with a '+' and the unapplied ones with a '-'. The current patch is
-prefixed with a '>'. Empty patches are prefixed with a '0'."""
+Show all the patches in the series or just those in the given
+range. The applied patches are prefixed with a '+' and the unapplied
+ones with a '-'. The current patch is prefixed with a '>'. Empty
+patches are prefixed with a '0'."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
@@ -75,9 +76,6 @@ def func(parser, options, args):
     """
     global crt_series
 
-    if len(args) != 0:
-        parser.error('incorrect number of arguments')
-
     if options.missing:
         # switch the series, the one specified with --missing should
         # become the current
@@ -89,12 +87,20 @@ def func(parser, options, args):
     else:
         cmp_patches = []
 
-    applied = [p for p in crt_series.get_applied() if p not in cmp_patches]
-    unapplied = [p for p in crt_series.get_unapplied() if p not in cmp_patches]
+    applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
 
-    if options.count:
-        print len(applied) + len(unapplied)
-        return
+    # the filtering range covers the whole series
+    if args:
+        show_patches = parse_patches(args, applied + unapplied, len(applied))
+    else:
+        show_patches = applied + unapplied
+
+    # filter the patches
+    applied = [p for p in applied
+               if p in show_patches and p not in cmp_patches]
+    unapplied = [p for p in unapplied
+                 if p in show_patches and p not in cmp_patches]
 
     if options.short:
         if len(applied) > 5:
@@ -103,6 +109,11 @@ def func(parser, options, args):
             unapplied = unapplied[:5]
 
     patches = applied + unapplied
+
+    if options.count:
+        print len(patches)
+        return
+
     if not patches:
         return
 
