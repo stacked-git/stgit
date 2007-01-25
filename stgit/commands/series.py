@@ -47,6 +47,12 @@ options = [make_option('-b', '--branch',
                        help = 'check whether patches are empty '
                        '(much slower)',
                        action = 'store_true'),
+           make_option('--showbranch',
+                       help = 'append the branch name to the listed patches',
+                       action = 'store_true'),
+           make_option('--noprefix',
+                       help = 'do not show the patch status prefix',
+                       action = 'store_true'),
            make_option('-s', '--short',
                        help = 'list just the patches around the topmost patch',
                        action = 'store_true'),
@@ -63,13 +69,19 @@ def __get_description(patch):
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
-def __print_patch(patch, prefix, empty_prefix, length, options):
-    if options.empty and crt_series.empty_patch(patch):
+def __print_patch(patch, branch_str, prefix, empty_prefix, length, options):
+    if options.noprefix:
+        prefix = ''
+    elif options.empty and crt_series.empty_patch(patch):
         prefix = empty_prefix
+
+    patch_str = patch + branch_str
+
     if options.description:
-        print prefix + patch.ljust(length) + '  | ' + __get_description(patch)
+        print prefix + patch_str.ljust(length) + '  | ' \
+              + __get_description(patch)
     else:
-        print prefix + patch
+        print prefix + patch_str
 
 def func(parser, options, args):
     """Show the patch series
@@ -117,6 +129,11 @@ def func(parser, options, args):
     if not patches:
         return
 
+    if options.showbranch:
+        branch_str = '@' + crt_series.get_branch()
+    else:
+        branch_str = ''
+
     if options.graphical:
         if options.missing:
             raise CmdException, '--graphical not supported with --missing'
@@ -135,13 +152,14 @@ def func(parser, options, args):
     else:
         max_len = 0
         if len(patches) > 0:
-            max_len = max([len(i) for i in patches])
+            max_len = max([len(i + branch_str) for i in patches])
 
         if len(applied) > 0:
             for p in applied [0:-1]:
-                __print_patch(p, '+ ', '0 ', max_len, options)
+                __print_patch(p, branch_str, '+ ', '0 ', max_len, options)
 
-            __print_patch(applied[-1], '> ', '0>', max_len, options)
+            __print_patch(applied[-1], branch_str, '> ', '0>', max_len,
+                          options)
 
         for p in unapplied:
-            __print_patch(p, '- ', '0 ', max_len, options)
+            __print_patch(p, branch_str, '- ', '0 ', max_len, options)
