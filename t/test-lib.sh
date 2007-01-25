@@ -159,11 +159,11 @@ test_create_repo () {
 	repo="$1"
 	mkdir "$repo"
 	cd "$repo" || error "Cannot setup test environment"
-	git-init-db 2>/dev/null ||
+	git-init-db >&3 2>&4 ||
 	error "cannot run git-init-db -- have you installed git-core?"
 	mv .git/hooks .git/hooks-disabled
 	echo "empty start" |
-	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>/dev/null ||
+	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>&4 ||
 	error "cannot run git-commit -- is your git-core funtionning?"
 	cd "$owd"
 }
