@@ -31,10 +31,17 @@ usage = """%prog [options] [<patch-range>]
 Show all the patches in the series or just those in the given
 range. The applied patches are prefixed with a '+' and the unapplied
 ones with a '-'. The current patch is prefixed with a '>'. Empty
-patches are prefixed with a '0'."""
+patches are prefixed with a '0'. The '*' postfix is appended to hidden
+patches."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('-a', '--all',
+                       help = 'show all patches, including the hidden ones',
+                       action = 'store_true'),
+           make_option('-i', '--invisible',
+                       help = 'show the hidden patches only',
+                       action = 'store_true'),
            make_option('-m', '--missing', metavar = 'BRANCH',
                        help = 'show patches in BRANCH missing in current'),
            make_option('-c', '--count',
@@ -69,16 +76,21 @@ def __get_description(patch):
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
-def __print_patch(patch, branch_str, prefix, empty_prefix, length, options):
+def __print_patch(patch, hidden, branch_str, prefix, empty_prefix, length,
+                  options):
+    """Print a patch name, description and various markers.
+    """
     if options.noprefix:
         prefix = ''
     elif options.empty and crt_series.empty_patch(patch):
         prefix = empty_prefix
 
     patch_str = patch + branch_str
+    if not options.noprefix and patch in hidden:
+        patch_str += '*'
 
     if options.description:
-        print prefix + patch_str.ljust(length) + '  | ' \
+        print prefix + patch_str.ljust(length) + ' | ' \
               + __get_description(patch)
     else:
         print prefix + patch_str
@@ -108,11 +120,19 @@ def func(parser, options, args):
     else:
         show_patches = applied + unapplied
 
+    # missing filtering
+    show_patches = [p for p in show_patches if p not in cmp_patches]
+
+    # hidden patches filtering
+    hidden = crt_series.get_hidden()
+    if options.invisible:
+        show_patches = [p for p in show_patches if p in hidden]
+    elif not options.all:
+        show_patches = [p for p in show_patches if p not in hidden]
+
     # filter the patches
-    applied = [p for p in applied
-               if p in show_patches and p not in cmp_patches]
-    unapplied = [p for p in unapplied
-                 if p in show_patches and p not in cmp_patches]
+    applied = [p for p in applied if p in show_patches]
+    unapplied = [p for p in unapplied if p in show_patches]
 
     if options.short:
         if len(applied) > 5:
@@ -153,13 +173,22 @@ def func(parser, options, args):
         max_len = 0
         if len(patches) > 0:
             max_len = max([len(i + branch_str) for i in patches])
+            max_len += 1
 
         if len(applied) > 0:
-            for p in applied [0:-1]:
-                __print_patch(p, branch_str, '+ ', '0 ', max_len, options)
+            current = crt_series.get_current()
+            if applied[-1] == current:
+                del applied[-1]
+            else:
+                current = None
 
-            __print_patch(applied[-1], branch_str, '> ', '0>', max_len,
-                          options)
+            for p in applied:
+                __print_patch(p, hidden, branch_str, '+ ', '0 ', max_len,
+                              options)
+
+            if current:
+                __print_patch(current, hidden, branch_str, '> ', '0>', max_len,
+                              options)
 
         for p in unapplied:
-            __print_patch(p, branch_str, '- ', '0 ', max_len, options)
+            __print_patch(p, hidden, branch_str, '- ', '0 ', max_len, options)

@@ -307,6 +307,7 @@ class Series(StgitObject):
 
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
+        self.__hidden_file = os.path.join(self._dir(), 'hidden')
         self.__current_file = os.path.join(self._dir(), 'current')
         self.__descr_file = os.path.join(self._dir(), 'description')
 
@@ -374,6 +375,14 @@ class Series(StgitObject):
         f.close()
         return names
 
+    def get_hidden(self):
+        if not os.path.isfile(self.__hidden_file):
+            return []
+        f = file(self.__hidden_file)
+        names = [line.strip() for line in f.readlines()]
+        f.close()
+        return names
+
     def get_base_file(self):
         self.__begin_stack_check()
         return self.__base_file
@@ -409,6 +418,11 @@ class Series(StgitObject):
         """Return true if the patch exists in the unapplied list
         """
         return name in self.get_unapplied()
+
+    def patch_hidden(self, name):
+        """Return true if the patch is hidden.
+        """
+        return name in self.get_hidden()
 
     def patch_exists(self, name):
         """Return true if there is a patch with the given name, false
@@ -589,6 +603,8 @@ class Series(StgitObject):
                 os.remove(self.__applied_file)
             if os.path.exists(self.__unapplied_file):
                 os.remove(self.__unapplied_file)
+            if os.path.exists(self.__hidden_file):
+                os.remove(self.__hidden_file)
             if os.path.exists(self.__current_file):
                 os.remove(self.__current_file)
             if os.path.exists(self.__descr_file):
@@ -784,6 +800,10 @@ class Series(StgitObject):
         f = file(self.__unapplied_file, 'w+')
         f.writelines([line + '\n' for line in unapplied])
         f.close()
+
+        if self.patch_hidden(name):
+            self.unhide_patch(name)
+
         self.__begin_stack_check()
 
     def forward_patches(self, names):
@@ -1057,6 +1077,10 @@ class Series(StgitObject):
         if newname in applied or newname in unapplied:
             raise StackException, 'Patch "%s" already exists' % newname
 
+        if self.patch_hidden(oldname):
+            self.unhide_patch(oldname)
+            self.hide_patch(newname)
+
         if oldname in unapplied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
@@ -1093,3 +1117,28 @@ class Series(StgitObject):
                          cache_update = False, tree_id = top.get_tree(),
                          allowempty = True)
         patch.set_log(log)
+
+    def hide_patch(self, name):
+        """Add the patch to the hidden list.
+        """
+        if not self.patch_exists(name):
+            raise StackException, 'Unknown patch "%s"' % name
+        elif self.patch_hidden(name):
+            raise StackException, 'Patch "%s" already hidden' % name
+
+        append_string(self.__hidden_file, name)
+
+    def unhide_patch(self, name):
+        """Add the patch to the hidden list.
+        """
+        if not self.patch_exists(name):
+            raise StackException, 'Unknown patch "%s"' % name
+        hidden = self.get_hidden()
+        if not name in hidden:
+            raise StackException, 'Patch "%s" not hidden' % name
+
+        hidden.remove(name)
+
+        f = file(self.__hidden_file, 'w+')
+        f.writelines([line + '\n' for line in hidden])
+        f.close()

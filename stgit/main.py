@@ -69,6 +69,7 @@ commands = Commands({
     'float':            'float',
     'fold':             'fold',
     'goto':             'goto',
+    'hide':             'hide',
     'id':               'id',
     'import':           'imprt',
     'init':             'init',
@@ -91,7 +92,8 @@ commands = Commands({
     'sync':             'sync',
     'top':              'top',
     'unapplied':        'unapplied',
-    'uncommit':         'uncommit'
+    'uncommit':         'uncommit',
+    'unhide':           'unhide'
     })
 
 # classification: repository, stack, patch, working copy
@@ -108,6 +110,7 @@ stackcommands = (
     'commit',
     'float',
     'goto',
+    'hide',
     'init',
     'pop',
     'push',
@@ -115,7 +118,8 @@ stackcommands = (
     'series',
     'top',
     'unapplied',
-    'uncommit'
+    'uncommit',
+    'unhide'
     )
 patchcommands = (
     'delete',

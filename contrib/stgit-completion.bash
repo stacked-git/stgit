@@ -25,6 +25,7 @@ _stg_commands="
     float
     fold
     goto
+    hide
     id
     import
     init
@@ -48,6 +49,7 @@ _stg_commands="
     top
     unapplied
     uncommit
+    unhide
 "
 
 # The path to .git, or empty if we're not in a repository.
@@ -188,9 +190,11 @@ _stg ()
         # stack commands
         float)  _stg_patches $command _all_patches ;;
         goto)   _stg_patches $command _all_other_patches ;;
+        hide)   _stg_patches $command _all_patches ;;
         pop)    _stg_patches $command _applied_patches ;;
         push)   _stg_patches $command _unapplied_patches ;;
         series) _stg_patches $command _all_patches ;;
+        unhide) _stg_patches $command _all_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
         export) _stg_patches $command _applied_patches ;;
