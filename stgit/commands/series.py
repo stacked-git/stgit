@@ -135,10 +135,11 @@ def func(parser, options, args):
     unapplied = [p for p in unapplied if p in show_patches]
 
     if options.short:
-        if len(applied) > 5:
-            applied = applied[-6:]
-        if len(unapplied) > 5:
-            unapplied = unapplied[:5]
+        nr = int(config.get('stgit', 'shortnr'))
+        if len(applied) > nr:
+            applied = applied[-(nr+1):]
+        if len(unapplied) > nr:
+            unapplied = unapplied[:nr]
 
     patches = applied + unapplied
 

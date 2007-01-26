@@ -73,6 +73,7 @@ def config_setup():
     config.set('stgit', 'keeporig', 'yes')
     config.set('stgit', 'keepoptimized', 'no')
     config.set('stgit', 'extensions', '.ancestor .current .patched')
+    config.set('stgit', 'shortnr', '5')
 
     # Read the configuration files (if any) and override the default settings
     # stgitrc are read for backward compatibility

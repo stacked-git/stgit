@@ -64,6 +64,10 @@
 	# current, patched)
 	#extensions = .ancestor .current .patched
 
+	# The number of patches to be listed before and after the
+	# current one by the 'series --short' command
+	#shortnr = 5
+
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org
