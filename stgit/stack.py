@@ -413,6 +413,26 @@ class Series(StgitObject):
     def __set_parent_remote(self, remote):
         value = config.set('branch.%s.remote' % self.__name, remote)
 
+    def get_parent_branch(self):
+        value = config.get('branch.%s.merge' % self.__name)
+        if value:
+            return value
+        elif git.rev_parse('heads/origin'):
+            return 'heads/origin'
+        else:
+            raise StackException, 'Cannot find a parent branch for "%s"' % self.__name
+
+    def __set_parent_branch(self, name):
+        config.set('branch.%s.merge' % self.__name, name)
+
+    def set_parent(self, remote, localbranch):
+        if localbranch:
+            self.__set_parent_branch(localbranch)
+            if remote:
+                self.__set_parent_remote(remote)
+        elif remote:
+            raise StackException, 'Remote "%s" without a branch cannot be used as parent' % remote
+
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()
 
@@ -466,7 +486,7 @@ class Series(StgitObject):
         """
         return os.path.isdir(self.__patch_dir)
 
-    def init(self, create_at=False):
+    def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
         """
         bases_dir = os.path.join(self.__base_dir, 'refs', 'bases')
@@ -483,6 +503,8 @@ class Series(StgitObject):
 
         os.makedirs(self.__patch_dir)
 
+        self.set_parent(parent_remote, parent_branch)
+        
         create_dirs(bases_dir)
 
         self.create_empty_field('applied')
