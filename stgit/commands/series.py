@@ -135,7 +135,7 @@ def func(parser, options, args):
     unapplied = [p for p in unapplied if p in show_patches]
 
     if options.short:
-        nr = int(config.get('stgit', 'shortnr'))
+        nr = int(config.get('stgit.shortnr'))
         if len(applied) > nr:
             applied = applied[-(nr+1):]
         if len(unapplied) > nr:

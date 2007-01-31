@@ -77,7 +77,7 @@ options = [make_option('-f', '--force',
 
 
 def func(parser, options, args):
-    autoresolved = config.get('stgit', 'autoresolved')
+    autoresolved = config.get('stgit.autoresolved')
 
     if autoresolved != 'yes':
         check_conflicts()

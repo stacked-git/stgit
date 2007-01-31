@@ -102,9 +102,8 @@ def interactive_merge(filename):
     """Run the interactive merger on the given file. Note that the
     index should not have any conflicts.
     """
-    try:
-        imerger = config.get('stgit', 'imerger')
-    except Exception, err:
+    imerger = config.get('stgit.imerger')
+    if not imerger:
         raise GitMergeException, 'Configuration error: %s' % err
 
     extensions = file_extensions()
@@ -185,7 +184,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                     os.system('git-update-index --cacheinfo %s %s %s'
                               % (file1_mode, file1_hash, path))
 
-                    if config.get('stgit', 'autoimerge') == 'yes':
+                    if config.get('stgit.autoimerge') == 'yes':
                         print >> sys.stderr, \
                               'Trying the interactive merge'
                         try:

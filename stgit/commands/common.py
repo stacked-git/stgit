@@ -311,9 +311,10 @@ def address_or_alias(addr_str):
         if addr.find('@') >= 0:
             # it's an e-mail address
             return addr
-        if config.has_option('mail "alias"', addr):
+        alias = config.get('mail.alias.'+addr)
+        if alias:
             # it's an alias
-            return config.get('mail "alias"', addr)
+            return alias
 
         raise CmdException, 'unknown e-mail alias: %s' % addr
 

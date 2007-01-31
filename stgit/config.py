@@ -18,91 +18,97 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import os, ConfigParser
-from StringIO import StringIO
+import os, re
 from stgit import basedir
 
-config = ConfigParser.RawConfigParser()
+class GitConfigException(Exception):
+    pass
 
-def git_config(filename):
-    """Open a git config file and convert it to be understood by
-    Python."""
-    try:
-        f = file(filename)
-        cont = False
-        lines = []
-        for line in f:
-            line = line.strip()
+class GitConfig:
+    __defaults={
+        'stgit.autoresolved':	'no',
+        'stgit.smtpserver':	'localhost:25',
+        'stgit.smtpdelay':	'5',
+        'stgit.pullcmd':	'git-pull',
+        'stgit.merger':		'diff3 -L current -L ancestor -L patched -m -E ' \
+				'"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"',
+        'stgit.autoimerge':	'no',
+        'stgit.keeporig':	'yes',
+        'stgit.keepoptimized':	'no',
+        'stgit.extensions':	'.ancestor .current .patched',
+        'stgit.shortnr':	 '5'
+        }
 
-            if cont:
-                # continued line, add a space at the beginning
-                line = ' ' + line
+    def __run(self, cmd, args=None):
+        """__run: runs cmd using spawnvp.
+    
+        Runs cmd using spawnvp.  The shell is avoided so it won't mess up
+        our arguments.  If args is very large, the command is run multiple
+        times; args is split xargs style: cmd is passed on each
+        invocation.  Unlike xargs, returns immediately if any non-zero
+        return code is received.  
+        """
+        
+        args_l=cmd.split()
+        if args is None:
+            args = []
+        for i in range(0, len(args)+1, 100):
+            r=os.spawnvp(os.P_WAIT, args_l[0], args_l + args[i:min(i+100, len(args))])
+        if r:
+            return r
+        return 0
+    
+    def get(self, name):
+        stream = os.popen('git repo-config --get %s' % name, 'r')
+        value = stream.readline().strip()
+        stream.close()
+        if len(value) > 0:
+            return value
+        elif (self.__defaults.has_key(name)):
+            return self.__defaults[name]
+        else:
+            return None
 
-            if line and line[-1] == '\\':
-                line = line[:-1].rstrip()
-                cont = True
-            else:
-                line = line + '\n'
-                cont = False
+    def getall(self, name):
+        stream = os.popen('git repo-config --get-all %s' % name, 'r')
+        values = [line.strip() for line in stream]
+        stream.close()
+        return values
 
-            lines.append(line)
+    def getint(self, name):
+        value = self.get(name)
+        if value.isdigit():
+            return int(value)
+        else:
+            raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
 
-        f.close()
-        cfg_str = ''.join(lines)
-    except IOError:
-        cfg_str = ''
+    def set(self, name, value):
+        self.__run('git-repo-config', [name, value])
 
-    strio = StringIO(cfg_str)
-    strio.name = filename
-
-    return strio
+    def sections_matching(self, regexp):
+        """Takes a regexp with a single group, matches it against all
+        config variables, and returns a list whose members are the
+        group contents, for all variable names matching the regexp.
+        """
+        result = []
+        stream = os.popen('git repo-config --get-regexp "^%s$"' % regexp, 'r')
+        for line in stream:
+            m = re.match('^%s ' % regexp, line)
+            if m:
+                result.append(m.group(1))
+        stream.close()
+        return result
+        
+config=GitConfig()
 
 def config_setup():
     global config
 
-    # Set the defaults
-    config.add_section('stgit')
-    config.set('stgit', 'autoresolved', 'no')
-    config.set('stgit', 'smtpserver', 'localhost:25')
-    config.set('stgit', 'smtpdelay', '5')
-    config.set('stgit', 'pullcmd', 'git-pull')
-    config.set('stgit', 'merger',
-               'diff3 -L current -L ancestor -L patched -m -E ' \
-               '"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"')
-    config.set('stgit', 'autoimerge', 'no')
-    config.set('stgit', 'keeporig', 'yes')
-    config.set('stgit', 'keepoptimized', 'no')
-    config.set('stgit', 'extensions', '.ancestor .current .patched')
-    config.set('stgit', 'shortnr', '5')
-
-    # Read the configuration files (if any) and override the default settings
-    # stgitrc are read for backward compatibility
-    config.read('/etc/stgitrc')
-    config.read(os.path.expanduser('~/.stgitrc'))
-    config.read(os.path.join(basedir.get(), 'stgitrc'))
-
-    # GIT configuration files can have a [stgit] section
-    try:
-        global_config = os.environ['GIT_CONFIG']
-    except KeyError:
-        global_config = os.path.expanduser('~/.gitconfig')
-    try:
-        local_config = os.environ['GIT_CONFIG_LOCAL']
-    except KeyError:
-        local_config = os.path.join(basedir.get(), 'config')
-    config.readfp(git_config(global_config))
-    config.readfp(git_config(local_config))
-
     # Set the PAGER environment to the config value (if any)
-    if config.has_option('stgit', 'pager'):
-        os.environ['PAGER'] = config.get('stgit', 'pager')
-
-    # [gitmergeonefile] section is deprecated. In case it exists copy the
-    # options/values to the [stgit] one
-    if config.has_section('gitmergeonefile'):
-        for option, value in config.items('gitmergeonefile'):
-            config.set('stgit', option, value)
-
+    pager = config.get('stgit.pager')
+    if pager:
+        os.environ['PAGER'] = pager
+    # FIXME: handle EDITOR the same way ?
 
 class ConfigOption:
     """Delayed cached reading of a configuration option.
@@ -114,7 +120,7 @@ class ConfigOption:
 
     def __str__(self):
         if not self.__value:
-            self.__value = config.get(self.__section, self.__option)
+            self.__value = config.get(self.__section + '.' + self.__option)
         return self.__value
 
 
@@ -127,7 +133,7 @@ def file_extensions():
     global __extensions
 
     if not __extensions:
-        cfg_ext = config.get('stgit', 'extensions').split()
+        cfg_ext = config.get('stgit.extensions').split()
         if len(cfg_ext) != 3:
             raise CmdException, '"extensions" configuration error'
 

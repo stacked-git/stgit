@@ -92,8 +92,9 @@ def edit_file(series, line, comment, show_patch = True):
     f.close()
 
     # the editor
-    if config.has_option('stgit', 'editor'):
-        editor = config.get('stgit', 'editor')
+    editor = config.get('stgit.editor')
+    if editor:
+        pass
     elif 'EDITOR' in os.environ:
         editor = os.environ['EDITOR']
     else:

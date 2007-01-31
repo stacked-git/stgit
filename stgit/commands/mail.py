@@ -129,9 +129,8 @@ def __get_sender():
     """Return the 'authname <authemail>' string as read from the
     configuration file
     """
-    if config.has_option('stgit', 'sender'):
-        sender = config.get('stgit', 'sender')
-    else:
+    sender=config.get('stgit.sender')
+    if not sender:
         try:
             sender = str(git.user())
         except git.GitException:
@@ -207,10 +206,7 @@ def __build_address_headers(msg, options, extra_cc = []):
     cc_addr = ''
     bcc_addr = ''
 
-    if config.has_option('stgit', 'autobcc'):
-        autobcc = config.get('stgit', 'autobcc')
-    else:
-        autobcc = ''
+    autobcc = config.get('stgit.autobcc') or ''
 
     if options.to:
         to_addr = ', '.join(options.to)
@@ -283,8 +279,9 @@ def __edit_message(msg):
     f.close()
 
     # the editor
-    if config.has_option('stgit', 'editor'):
-        editor = config.get('stgit', 'editor')
+    editor = config.get('stgit.editor')
+    if editor:
+        pass
     elif 'EDITOR' in os.environ:
         editor = os.environ['EDITOR']
     else:
@@ -469,14 +466,7 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    smtpserver = config.get('stgit', 'smtpserver')
-
-    smtpuser = None
-    smtppassword = None
-    if config.has_option('stgit', 'smtpuser'):
-        smtpuser = config.get('stgit', 'smtpuser')
-    if config.has_option('stgit', 'smtppassword'):
-        smtppassword = config.get('stgit', 'smtppassword')
+    smtpserver = config.get('stgit.smtpserver')
 
     applied = crt_series.get_applied()
 
@@ -488,11 +478,8 @@ def func(parser, options, args):
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
 
-    if options.smtp_password:
-        smtppassword = options.smtp_password
-
-    if options.smtp_user:
-        smtpuser = options.smtp_user
+    smtppassword = options.smtp_password or config.get('stgit.smtppassword')
+    smtpuser = options.smtp_user or config.get('stgit.smtpuser')
 
     if (smtppassword and not smtpuser):
         raise CmdException, 'SMTP password supplied, username needed'
@@ -508,10 +495,7 @@ def func(parser, options, args):
     else:
         ref_id = options.refid
 
-    if options.sleep != None:
-        sleep = options.sleep
-    else:
-        sleep = config.getint('stgit', 'smtpdelay')
+    sleep = options.sleep or config.getint('stgit.smtpdelay')
 
     # send the cover message (if any)
     if options.cover or options.edit_cover:

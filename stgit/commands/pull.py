@@ -53,11 +53,7 @@ def func(parser, options, args):
     if len(args) >= 1:
         repository = args[0]
     else:
-        section = 'branch "%s"' % git.get_head_file()
-        if config.has_option(section, 'remote'):
-            repository = config.get(section, 'remote')
-        else:
-            repository = 'origin'
+        repository = config.get('branch.%s.remote' % git.get_head_file()) or 'origin'
 
     refspec = None
     if len(args) == 2:
@@ -88,8 +84,7 @@ def func(parser, options, args):
         push_patches(applied, options.merged)
 
     # maybe tidy up
-    repack = config.get('stgit', 'keepoptimized')
-    if repack == 'yes':
+    if config.get('stgit.keepoptimized') == 'yes':
         git.repack()
 
     print_crt_patch()

@@ -449,10 +449,10 @@ def user():
     """
     global __user
     if not __user:
-        if config.has_option('user', 'name') \
-               and config.has_option('user', 'email'):
-            __user = Person(config.get('user', 'name'),
-                            config.get('user', 'email'))
+        name=config.get('user.name')
+        email=config.get('user.email')
+        if name and email:
+            __user = Person(name, email)
         else:
             raise GitException, 'unknown user details'
     return __user;
@@ -818,7 +818,7 @@ def pull(repository = 'origin', refspec = None):
     if refspec:
         args.append(refspec)
 
-    if __run(config.get('stgit', 'pullcmd'), args) != 0:
+    if __run(config.get('stgit.pullcmd'), args) != 0:
         raise GitException, 'Failed "git-pull %s"' % repository
 
 def repack():
