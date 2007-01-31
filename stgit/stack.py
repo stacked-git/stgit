@@ -407,6 +407,12 @@ class Series(StgitObject):
     def set_description(self, line):
         self._set_field('description', line)
 
+    def get_parent_remote(self):
+        return config.get('branch.%s.remote' % self.__name) or 'origin'
+
+    def __set_parent_remote(self, remote):
+        value = config.set('branch.%s.remote' % self.__name, remote)
+
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()
 

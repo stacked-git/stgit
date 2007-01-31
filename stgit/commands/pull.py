@@ -53,7 +53,7 @@ def func(parser, options, args):
     if len(args) >= 1:
         repository = args[0]
     else:
-        repository = config.get('branch.%s.remote' % git.get_head_file()) or 'origin'
+        repository = crt_series.get_parent_remote()
 
     refspec = None
     if len(args) == 2:
