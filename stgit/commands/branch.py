@@ -123,10 +123,41 @@ def func(parser, options, args):
         check_head_top_equal()
 
         tree_id = None
-        if len(args) == 2:
+        if len(args) >= 2:
+            try:
+                if git.rev_parse(args[1]) == git.rev_parse('refs/heads/' + args[1]):
+                    # we are for sure refering to a branch
+                    parentbranch = 'refs/heads/' + args[1]
+                    print 'Recording "%s" as parent branch.' % parentbranch
+                elif git.rev_parse(args[1]) and re.search('/', args[1]):
+                    # FIXME: should the test be more strict ?
+                    parentbranch = args[1]
+                else:
+                    # Note: this includes refs to StGIT patches
+                    print 'Don\'t know how to determine parent branch from "%s".' % args[1]
+                    parentbranch = None
+            except git.GitException:
+                # should use a more specific exception to catch only non-git refs ?
+                print 'Don\'t know how to determine parent branch from "%s".' % args[1]
+                parentbranch = None
+
             tree_id = git_id(args[1])
-        
-        stack.Series(args[0]).init(create_at = tree_id)
+        else:
+            # branch stack off current branch
+            parentbranch = git.get_head_file()
+
+        if parentbranch:
+            parentremote = git.identify_remote(parentbranch)
+            if parentremote:
+                print 'Using "%s" remote to pull parent from.' % parentremote
+            else:
+                print 'Not identified a remote to pull parent from.'
+        else:
+            parentremote = None
+
+        stack.Series(args[0]).init(create_at = tree_id,
+                                   parent_remote = parentremote,
+                                   parent_branch = parentbranch)
 
         print 'Branch "%s" created.' % args[0]
         return
