@@ -808,18 +808,23 @@ def reset(files = None, tree_id = None, check_out = True):
         __set_head(tree_id)
 
 def pull(repository = 'origin', refspec = None):
-    """Pull changes from the remote repository. At the moment, just
-    use the 'git-pull' command
+    """Pull changes from the remote repository. Uses 'git-fetch'
+    and moves the stack base.
     """
-    # 'git-pull' updates the HEAD
+    # we update the HEAD
     __clear_head_cache()
 
     args = [repository]
     if refspec:
         args.append(refspec)
 
-    if __run(config.get('stgit.pullcmd'), args) != 0:
-        raise GitException, 'Failed "git-pull %s"' % repository
+    command = config.get('stgit.pullcmd')
+    if __run(command, args) != 0:
+        raise GitException, 'Failed "%s %s"' % (command, repository)
+
+    if (config.get('stgit.pull-does-rebase')):
+        # FIXME!
+        reset(tree_id = rev_parse(repository))
 
 def repack():
     """Repack all objects into a single pack
