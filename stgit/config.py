@@ -39,6 +39,8 @@ class GitConfig:
         'stgit.shortnr':	 '5'
         }
 
+    __cache={}
+
     def __run(self, cmd, args=None):
         """__run: runs cmd using spawnvp.
     
@@ -59,20 +61,31 @@ class GitConfig:
         return 0
     
     def get(self, name):
+        if self.__cache.has_key(name):
+            return self.__cache[name]
+
         stream = os.popen('git repo-config --get %s' % name, 'r')
         value = stream.readline().strip()
         stream.close()
         if len(value) > 0:
-            return value
+            pass
         elif (self.__defaults.has_key(name)):
-            return self.__defaults[name]
+            value = self.__defaults[name]
         else:
-            return None
+            value = None
+
+        self.__cache[name] = value
+        return value
 
     def getall(self, name):
+        if self.__cache.has_key(name):
+            return self.__cache[name]
+
         stream = os.popen('git repo-config --get-all %s' % name, 'r')
         values = [line.strip() for line in stream]
         stream.close()
+
+        self.__cache[name] = values
         return values
 
     def getint(self, name):
