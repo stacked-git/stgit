@@ -881,3 +881,71 @@ def modifying_revs(files, base_rev):
     revs = [line.strip() for line in _output_lines(cmd + files)]
 
     return revs
+
+
+def refspec_localpart(refspec):
+    m = re.match('^[^:]*:([^:]*)$', refspec)
+    if m:
+        return m.group(1)
+    else:
+        raise GitException, 'Cannot parse refspec "%s"' % line
+
+def refspec_remotepart(refspec):
+    m = re.match('^([^:]*):[^:]*$', refspec)
+    if m:
+        return m.group(1)
+    else:
+        raise GitException, 'Cannot parse refspec "%s"' % line
+    
+
+def __remotes_from_config():
+    return config.sections_matching(r'remote\.(.*)\.url')
+
+def __remotes_from_dir(dir):
+    return os.listdir(os.path.join(basedir.get(), dir))
+
+def remotes_list():
+    """Return the list of remotes in the repository
+    """
+
+    return set(__remotes_from_config()) | \
+           set(__remotes_from_dir('remotes')) | \
+           set(__remotes_from_dir('branches'))
+
+def remotes_local_branches(remote):
+    """Returns the list of local branches fetched from given remote
+    """
+
+    branches = []
+    if remote in __remotes_from_config():
+        for line in config.getall('remote.%s.fetch' % remote):
+            branches.append(refspec_localpart(line))
+    elif remote in __remotes_from_dir('remotes'):
+        stream = open(os.path.join(basedir.get(), 'remotes', remote), 'r')
+        for line in stream:
+            # Only consider Pull lines
+            m = re.match('^Pull: (.*)\n$', line)
+            branches.append(refspec_localpart(m.group(1)))
+        stream.close()
+    elif remote in __remotes_from_dir('branches'):
+        # old-style branches only declare one branch
+        branches.append('refs/heads/'+remote);
+    else:
+        raise GitException, 'Unknown remote "%s"' % remote
+
+    return branches
+
+def identify_remote(branchname):
+    """Return the name for the remote to pull the given branchname
+    from, or None if we believe it is a local branch.
+    """
+
+    for remote in remotes_list():
+        if branchname in remotes_local_branches(remote):
+            return remote
+
+    # FIXME: in the case of local branch we should maybe set remote to
+    # "." but are we even sure it is the only case left ?
+
+    # if we get here we've found nothing
+    return None
