@@ -23,6 +23,7 @@ import sys, os, popen2, re, gitmergeonefile
 from stgit import basedir
 from stgit.utils import *
 from stgit.config import config
+from sets import Set
 
 # git exception class
 class GitException(Exception):
@@ -913,9 +914,9 @@ def remotes_list():
     """Return the list of remotes in the repository
     """
 
-    return set(__remotes_from_config()) | \
-           set(__remotes_from_dir('remotes')) | \
-           set(__remotes_from_dir('branches'))
+    return Set(__remotes_from_config()) | \
+           Set(__remotes_from_dir('remotes')) | \
+           Set(__remotes_from_dir('branches'))
 
 def remotes_local_branches(remote):
     """Returns the list of local branches fetched from given remote
