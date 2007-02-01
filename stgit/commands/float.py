@@ -24,7 +24,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'push patches to the top, even if applied'
-usage = """%prog [options] [<patches> | <series>]
+usage = """%prog [<patches> | -s [<series>] ]
 
 Push a patch or a range of patches to the top even if applied. The
 necessary pop and push operations will be performed to accomplish

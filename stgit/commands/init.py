@@ -24,15 +24,12 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'initialise the tree for use with StGIT'
+help = 'initialise the current branch for use with StGIT'
 usage = """%prog [options]
 
-Initialise a GIT repository to be used with StGIT. Note that the
-repository must be already initialised with git-init-db and the
-.git/HEAD link must point to a valid file in refs/heads/. For people
-switching between multiple branches in the same repository, the 'init'
-command has to be run on all the individual branches intended to be
-used with StGIT."""
+Initialise the current GIT branch to be used as an StGIT stack. Note
+that the you must already be in a GIT repository and .git/HEAD must
+point to a valid file in refs/heads/."""
 
 options = []
 
