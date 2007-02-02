@@ -414,7 +414,15 @@ class Series(StgitObject):
         self._set_field('description', line)
 
     def get_parent_remote(self):
-        return config.get('branch.%s.remote' % self.__name) or 'origin'
+        value = config.get('branch.%s.remote' % self.__name)
+        if value:
+            return value
+        elif 'origin' in git.remotes_list():
+            # FIXME: this is for compatibility only.  Should be
+            # dropped when all relevant commands record this info.
+            return 'origin'
+        else:
+            raise StackException, 'Cannot find a parent remote for "%s"' % self.__name
 
     def __set_parent_remote(self, remote):
         value = config.set('branch.%s.remote' % self.__name, remote)
@@ -424,6 +432,8 @@ class Series(StgitObject):
         if value:
             return value
         elif git.rev_parse('heads/origin'):
+            # FIXME: this is for compatibility only.  Should be
+            # dropped when all relevant commands record this info.
             return 'heads/origin'
         else:
             raise StackException, 'Cannot find a parent branch for "%s"' % self.__name
