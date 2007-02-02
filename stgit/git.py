@@ -808,9 +808,9 @@ def reset(files = None, tree_id = None, check_out = True):
     if not files:
         __set_head(tree_id)
 
-def pull(repository = 'origin', refspec = None):
-    """Pull changes from the remote repository. Uses 'git-fetch'
-    and moves the stack base.
+def fetch(repository = 'origin', refspec = None):
+    """Fetches changes from the remote repository, using 'git-fetch'
+    by default.
     """
     # we update the HEAD
     __clear_head_cache()
@@ -822,10 +822,6 @@ def pull(repository = 'origin', refspec = None):
     command = config.get('stgit.pullcmd')
     if __run(command, args) != 0:
         raise GitException, 'Failed "%s %s"' % (command, repository)
-
-    if (config.get('stgit.pull-does-rebase')):
-        # FIXME!
-        reset(tree_id = rev_parse(repository))
 
 def repack():
     """Repack all objects into a single pack

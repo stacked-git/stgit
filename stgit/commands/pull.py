@@ -26,15 +26,15 @@ from stgit import stack, git
 help = 'pull the changes from the remote repository'
 usage = """%prog [options] [<repository>]
 
-Pull the latest changes from the given repository (defaulting to
-'origin'). This command works by popping all the patches from the
-stack, pulling the changes in the parent repository, setting the base
-of the stack to the latest parent HEAD and pushing the patches back
-(unless '--nopush' is specified). The 'push' operation can fail if
-there are conflicts. They need to be resolved and the patch pushed
-again.
+Pull the latest changes from the given remote repository (defaulting
+to branch.<name>.remote, or 'origin' if not set). This command works
+by popping all the patches from the stack, pulling the changes in the
+parent repository, setting the base of the stack to the latest parent
+HEAD and pushing the patches back (unless '--nopush' is specified).
+The 'push' operation can fail if there are conflicts. They need to be
+resolved and the patch pushed again.
 
-Check the 'git pull' documentation for the <repository> format."""
+Check the 'git fetch' documentation for the <repository> format."""
 
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after pulling',
@@ -71,7 +71,9 @@ def func(parser, options, args):
 
     # pull the remote changes
     print 'Pulling from "%s"...' % repository
-    git.pull(repository)
+    git.fetch(repository)
+    if (config.get('stgit.pull-does-rebase')):
+        git.reset(tree_id = git.rev_parse(crt_series.get_parent_branch()))
     print 'done'
 
     # push the patches back
