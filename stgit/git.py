@@ -904,7 +904,11 @@ def __remotes_from_config():
     return config.sections_matching(r'remote\.(.*)\.url')
 
 def __remotes_from_dir(dir):
-    return os.listdir(os.path.join(basedir.get(), dir))
+    d = os.path.join(basedir.get(), dir)
+    if os.path.exists(d):
+        return os.listdir(d)
+    else:
+        return None
 
 def remotes_list():
     """Return the list of remotes in the repository
