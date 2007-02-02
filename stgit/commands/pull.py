@@ -24,7 +24,7 @@ from stgit import stack, git
 
 
 help = 'pull the changes from the remote repository'
-usage = """%prog [options] [<repository>] [<refspec>]
+usage = """%prog [options] [<repository>]
 
 Pull the latest changes from the given repository (defaulting to
 'origin'). This command works by popping all the patches from the
@@ -34,8 +34,7 @@ of the stack to the latest parent HEAD and pushing the patches back
 there are conflicts. They need to be resolved and the patch pushed
 again.
 
-Check the 'git pull' documentation for the <repository> and <refspec>
-format."""
+Check the 'git pull' documentation for the <repository> format."""
 
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after pulling',
@@ -47,17 +46,13 @@ options = [make_option('-n', '--nopush',
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
-    if len(args) > 2:
+    if len(args) > 1:
         parser.error('incorrect number of arguments')
 
     if len(args) >= 1:
         repository = args[0]
     else:
         repository = crt_series.get_parent_remote()
-
-    refspec = None
-    if len(args) == 2:
-        refspec = args[1]
 
     if crt_series.get_protected():
         raise CmdException, 'This branch is protected. Pulls are not permitted'
@@ -76,7 +71,7 @@ def func(parser, options, args):
 
     # pull the remote changes
     print 'Pulling from "%s"...' % repository
-    git.pull(repository, refspec)
+    git.pull(repository)
     print 'done'
 
     # push the patches back
