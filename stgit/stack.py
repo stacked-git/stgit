@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys, os, re
 
 from stgit.utils import *
 from stgit import git, basedir, templates
@@ -327,6 +327,12 @@ class Series(StgitObject):
         self.__trash_dir = os.path.join(self._dir(), 'trash')
         if self.is_initialised() and not os.path.isdir(self.__trash_dir):
             os.makedirs(self.__trash_dir)
+
+    def __patch_name_valid(self, name):
+        """Raise an exception if the patch name is not valid.
+        """
+        if not name or re.search('[^\w.-]', name):
+            raise StackException, 'Invalid patch name: "%s"' % name
 
     def get_branch(self):
         """Return the branch name for the Series object
@@ -753,6 +759,8 @@ class Series(StgitObject):
                   before_existing = False, refresh = True):
         """Creates a new patch
         """
+        self.__patch_name_valid(name)
+
         if self.patch_applied(name) or self.patch_unapplied(name):
             raise StackException, 'Patch "%s" already exists' % name
 
@@ -809,6 +817,7 @@ class Series(StgitObject):
     def delete_patch(self, name):
         """Deletes a patch
         """
+        self.__patch_name_valid(name)
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
         if self.__patch_is_current(patch):
@@ -1084,6 +1093,7 @@ class Series(StgitObject):
     def empty_patch(self, name):
         """Returns True if the patch is empty
         """
+        self.__patch_name_valid(name)
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
         bottom = patch.get_bottom()
         top = patch.get_top()
@@ -1097,6 +1107,8 @@ class Series(StgitObject):
         return False
 
     def rename_patch(self, oldname, newname):
+        self.__patch_name_valid(newname)
+
         applied = self.get_applied()
         unapplied = self.get_unapplied()
 
