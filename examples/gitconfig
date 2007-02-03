@@ -35,12 +35,11 @@
 
 	# GIT pull command (should take the same arguments as
 	# git-fetch or git-pull).  By default:
-	#pullcmd = git-fetch
-	#pull-does-rebase = yes
-	# Alternative (old behaviour), less intuitive but maybe useful
-	# for some workflows:
 	#pullcmd = git-pull
 	#pull-does-rebase = no
+	# Alternative (StGIT does the rebasing):
+	#pullcmd = git-fetch
+	#pull-does-rebase = yes
 
 	# The three-way merge tool. Note that the 'output' file contains the
 	# same data as 'branch1'. This is useful for tools that do not take an

@@ -29,8 +29,8 @@ class GitConfig:
         'stgit.autoresolved':	'no',
         'stgit.smtpserver':	'localhost:25',
         'stgit.smtpdelay':	'5',
-        'stgit.pullcmd':	'git-fetch',
-        'stgit.pull-does-rebase': 'yes',
+        'stgit.pullcmd':	'git-pull',
+        'stgit.pull-does-rebase': 'no',
         'stgit.merger':		'diff3 -L current -L ancestor -L patched -m -E ' \
 				'"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"',
         'stgit.autoimerge':	'no',
