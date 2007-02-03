@@ -931,7 +931,8 @@ def remotes_local_branches(remote):
         for line in stream:
             # Only consider Pull lines
             m = re.match('^Pull: (.*)\n$', line)
-            branches.append(refspec_localpart(m.group(1)))
+            if m:
+                branches.append(refspec_localpart(m.group(1)))
         stream.close()
     elif remote in __remotes_from_dir('branches'):
         # old-style branches only declare one branch
@@ -955,3 +956,23 @@ def identify_remote(branchname):
 
     # if we get here we've found nothing
     return None
+
+def fetch_head():
+    """Return the git id for the tip of the parent branch as left by
+    'git fetch'.
+    """
+
+    fetch_head=None
+    stream = open(os.path.join(basedir.get(), 'FETCH_HEAD'), "r")
+    for line in stream:
+        # Only consider lines not tagged not-for-merge
+        m = re.match('^([^\t]*)\t\t', line)
+        if m:
+            if fetch_head:
+                raise GitException, "StGit does not support multiple FETCH_HEAD"
+            else:
+                fetch_head=m.group(1)
+    stream.close()
+
+    # here we are sure to have a single fetch_head
+    return fetch_head
