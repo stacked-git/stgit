@@ -72,7 +72,8 @@ def func(parser, options, args):
     # pull the remote changes
     print 'Pulling from "%s"...' % repository
     git.fetch(repository)
-    if (config.get('stgit.pull-does-rebase')):
+    if (config.get('stgit.pull-does-rebase') == 'yes'):
+        print "rebasing to '%s'..." % crt_series.get_parent_branch()
         git.reset(tree_id = git.rev_parse(crt_series.get_parent_branch()))
     print 'done'
 
