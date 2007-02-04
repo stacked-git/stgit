@@ -73,8 +73,10 @@ def func(parser, options, args):
     print 'Pulling from "%s"...' % repository
     git.fetch(repository)
     if (config.get('stgit.pull-does-rebase') == 'yes'):
-        print 'rebasing to "%s"...' % git.fetch_head()
-        git.reset(tree_id = git.fetch_head())
+        fetch_head = git.fetch_head()
+        if fetch_head != git.get_head():
+            print 'rebasing to "%s"...' % fetch_head
+            git.reset(tree_id = fetch_head)
     print 'done'
 
     # push the patches back
