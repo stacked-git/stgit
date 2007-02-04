@@ -126,7 +126,7 @@ def func(parser, options, args):
         if len(args) >= 2:
             try:
                 if git.rev_parse(args[1]) == git.rev_parse('refs/heads/' + args[1]):
-                    # we are for sure refering to a branch
+                    # we are for sure referring to a branch
                     parentbranch = 'refs/heads/' + args[1]
                     print 'Recording "%s" as parent branch.' % parentbranch
                 elif git.rev_parse(args[1]) and re.search('/', args[1]):

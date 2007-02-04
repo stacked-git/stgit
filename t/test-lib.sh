@@ -164,7 +164,7 @@ test_create_repo () {
 	mv .git/hooks .git/hooks-disabled
 	echo "empty start" |
 	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>&4 ||
-	error "cannot run git-commit -- is your git-core funtionning?"
+	error "cannot run git-commit -- is your git-core functioning?"
 	cd "$owd"
 }
 

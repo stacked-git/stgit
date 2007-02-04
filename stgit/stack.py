@@ -658,7 +658,7 @@ class Series(StgitObject):
             os.rmdir(self.__trash_dir)
 
             # FIXME: find a way to get rid of those manual removals
-            # (move functionnality to StgitObject ?)
+            # (move functionality to StgitObject ?)
             if os.path.exists(self.__applied_file):
                 os.remove(self.__applied_file)
             if os.path.exists(self.__unapplied_file):
@@ -1044,7 +1044,7 @@ class Series(StgitObject):
             else:
                 # we store the correctly merged files only for
                 # tracking the conflict history. Note that the
-                # git.merge() operations shouls always leave the index
+                # git.merge() operations should always leave the index
                 # in a valid state (i.e. only stage 0 files)
                 self.refresh_patch(cache_update = False, log = 'push(c)')
                 raise StackException, str(ex)

@@ -65,7 +65,7 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Create a mege commit' \
+    'Create a merge commit' \
     '
     git checkout -b br master^^ &&
     echo woof > woof.txt &&
