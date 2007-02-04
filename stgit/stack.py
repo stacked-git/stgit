@@ -590,6 +590,10 @@ class Series(StgitObject):
             rename(os.path.join(self.__base_dir, 'refs', 'patches'),
                    self.__name, to_stack.__name)
 
+        # Rename the config section
+        config.rename_section("branch.%s" % self.__name,
+                              "branch.%s" % to_name)
+
         self.__init__(to_name)
 
     def clone(self, target_series):

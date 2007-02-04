@@ -96,6 +96,9 @@ class GitConfig:
         else:
             raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
 
+    def rename_section(self, from_name, to_name):
+        self.__run('git-repo-config --rename-section', [from_name, to_name])
+
     def set(self, name, value):
         self.__run('git-repo-config', [name, value])
 
