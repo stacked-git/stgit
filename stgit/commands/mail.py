@@ -290,7 +290,10 @@ def __edit_message(msg):
 
     print 'Invoking the editor: "%s"...' % editor,
     sys.stdout.flush()
-    print 'done (exit code: %d)' % os.system(editor)
+    err = os.system(editor)
+    if err:
+        raise CmdException, 'editor failed, exit code: %d' % err
+    print 'done'
 
     # read the message back
     f = file(fname)
