@@ -951,10 +951,7 @@ def identify_remote(branchname):
         if branchname in remotes_local_branches(remote):
             return remote
 
-    # FIXME: in the case of local branch we should maybe set remote to
-    # "." but are we even sure it is the only case left ?
-
-    # if we get here we've found nothing
+    # if we get here we've found nothing, the branch is a local one
     return None
 
 def fetch_head():

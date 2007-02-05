@@ -418,9 +418,10 @@ class Series(StgitObject):
         if value:
             return value
         elif 'origin' in git.remotes_list():
-            print 'Notice: no parent remote declared for stack "%s", defaulting to "origin".' \
-                  ' Consider setting "branch.%s.remote" with "git repo-config".' \
-                  % (self.__name, self.__name)
+            print 'Notice: no parent remote declared for stack "%s", ' \
+                  'defaulting to "origin". Consider setting "branch.%s.remote" ' \
+                  'and "branch.%s.merge" with "git repo-config".' \
+                  % (self.__name, self.__name, self.__name)
             return 'origin'
         else:
             raise StackException, 'Cannot find a parent remote for "%s"' % self.__name
@@ -429,27 +430,34 @@ class Series(StgitObject):
         value = config.set('branch.%s.remote' % self.__name, remote)
 
     def get_parent_branch(self):
-        value = config.get('branch.%s.merge' % self.__name)
+        value = config.get('branch.%s.stgit.parentbranch' % self.__name)
         if value:
             return value
         elif git.rev_parse('heads/origin'):
-            print 'Notice: no parent branch declared for stack "%s", defaulting to "heads/origin".' \
-                  ' Consider setting "branch.%s.merge" with "git repo-config".' \
+            print 'Notice: no parent branch declared for stack "%s", ' \
+                  'defaulting to "heads/origin". Consider setting ' \
+                  '"branch.%s.stgit.parentbranch" with "git repo-config".' \
                   % (self.__name, self.__name)
             return 'heads/origin'
         else:
             raise StackException, 'Cannot find a parent branch for "%s"' % self.__name
 
     def __set_parent_branch(self, name):
-        config.set('branch.%s.merge' % self.__name, name)
+        if config.get('branch.%s.remote' % self.__name):
+            # Never set merge if remote is not set to avoid
+            # possibly-erroneous lookups into 'origin'
+            config.set('branch.%s.merge' % self.__name, name)
+        config.set('branch.%s.stgit.parentbranch' % self.__name, name)
 
     def set_parent(self, remote, localbranch):
+        # policy: record local branches as remote='.'
+        recordremote = remote or '.'
         if localbranch:
+            self.__set_parent_remote(recordremote)
             self.__set_parent_branch(localbranch)
-            if remote:
-                self.__set_parent_remote(remote)
-        elif remote:
-            raise StackException, 'Remote "%s" without a branch cannot be used as parent' % remote
+        # We'll enforce this later
+#         else:
+#             raise StackException, 'Parent branch (%s) should be specified for %s' % localbranch, self.__name
 
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()

@@ -151,8 +151,9 @@ def func(parser, options, args):
             if parentremote:
                 print 'Using "%s" remote to pull parent from.' % parentremote
             else:
-                print 'Not identified a remote to pull parent from.'
+                print 'Recording as a local branch.'
         else:
+            # no known parent branch, can't guess the remote
             parentremote = None
 
         stack.Series(args[0]).init(create_at = tree_id,
