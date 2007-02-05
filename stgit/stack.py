@@ -419,7 +419,7 @@ class Series(StgitObject):
             return value
         elif 'origin' in git.remotes_list():
             print 'Notice: no parent remote declared for stack "%s", defaulting to "origin".' \
-                  'Consider setting "branch.%s.remote" with "git repo-config".' \
+                  ' Consider setting "branch.%s.remote" with "git repo-config".' \
                   % (self.__name, self.__name)
             return 'origin'
         else:
@@ -434,7 +434,7 @@ class Series(StgitObject):
             return value
         elif git.rev_parse('heads/origin'):
             print 'Notice: no parent branch declared for stack "%s", defaulting to "heads/origin".' \
-                  'Consider setting "branch.%s.merge" with "git repo-config".' \
+                  ' Consider setting "branch.%s.merge" with "git repo-config".' \
                   % (self.__name, self.__name)
             return 'heads/origin'
         else:
