@@ -29,27 +29,31 @@ import stgit.commands
 class Commands(dict):
     """Commands class. It performs on-demand module loading
     """
+    def canonical_cmd(self, key):
+        """Return the canonical name for a possibly-shortenned
+        command name.
+        """
+        candidates = [cmd for cmd in self.keys() if cmd.startswith(key)]
+
+        if not candidates:
+            print >> sys.stderr, 'Unknown command: %s' % key
+            print >> sys.stderr, '  Try "%s help" for a list of ' \
+                  'supported commands' % prog
+            sys.exit(1)
+        elif len(candidates) > 1:
+            print >> sys.stderr, 'Ambiguous command: %s' % key
+            print >> sys.stderr, '  Candidates are: %s' \
+                  % ', '.join(candidates)
+            sys.exit(1)
+
+        return candidates[0]
+        
     def __getitem__(self, key):
         """Return the command python module name based.
         """
         global prog
 
-        cmd_mod = self.get(key)
-        if not cmd_mod:
-            candidates = [cmd for cmd in self.keys() if cmd.startswith(key)]
-
-            if not candidates:
-                print >> sys.stderr, 'Unknown command: %s' % key
-                print >> sys.stderr, '  Try "%s help" for a list of ' \
-                      'supported commands' % prog
-                sys.exit(1)
-            elif len(candidates) > 1:
-                print >> sys.stderr, 'Ambiguous command: %s' % key
-                print >> sys.stderr, '  Candidates are: %s' \
-                      % ', '.join(candidates)
-                sys.exit(1)
-
-            cmd_mod = self.get(candidates[0])
+        cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))
             
         __import__('stgit.commands.' + cmd_mod)
         return getattr(stgit.commands, cmd_mod)
@@ -202,15 +206,15 @@ def main():
     cmd = sys.argv[1]
 
     if cmd in ['-h', '--help']:
-        if len(sys.argv) >= 3 and sys.argv[2] in commands:
-            cmd = sys.argv[2]
+        if len(sys.argv) >= 3:
+            cmd = commands.canonical_cmd(sys.argv[2])
             sys.argv[2] = '--help'
         else:
             print_help()
             sys.exit(0)
     if cmd == 'help':
         if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
-            cmd = sys.argv[2]
+            cmd = commands.canonical_cmd(sys.argv[2])
             if not cmd in commands:
                 print >> sys.stderr, '%s help: "%s" command unknown' \
                       % (prog, cmd)
@@ -236,7 +240,7 @@ def main():
         sys.exit(0)
 
     # re-build the command line arguments
-    sys.argv[0] += ' %s' % cmd
+    sys.argv[0] += ' %s' % commands.canonical_cmd(cmd)
     del(sys.argv[1])
 
     command = commands[cmd]
