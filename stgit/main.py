@@ -258,6 +258,14 @@ def main():
     from stgit.gitmergeonefile import GitMergeException
 
     try:
+        debug_level = int(os.environ['STGIT_DEBUG_LEVEL'])
+    except KeyError:
+        debug_level = 0
+    except ValueError:
+        print >> sys.stderr, 'Invalid STGIT_DEBUG_LEVEL environment variable'
+        sys.exit(1)
+
+    try:
         config_setup()
 
         # 'clone' doesn't expect an already initialised GIT tree. A Series
@@ -273,7 +281,10 @@ def main():
     except (IOError, ParsingError, NoSectionError, CmdException,
             StackException, GitException, GitMergeException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
-        sys.exit(2)
+        if debug_level:
+            raise
+        else:
+            sys.exit(2)
     except KeyboardInterrupt:
         sys.exit(1)
 

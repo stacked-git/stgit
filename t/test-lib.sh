@@ -63,6 +63,7 @@ do
 		echo "$test_description"
 		exit 0 ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+		export STGIT_DEBUG_LEVEL="-1"
 		verbose=t; shift ;;
 	*)
 		break ;;
