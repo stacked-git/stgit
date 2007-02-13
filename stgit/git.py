@@ -39,6 +39,7 @@ class Person:
     """An author, committer, etc."""
     def __init__(self, name = None, email = None, date = '',
                  desc = None):
+        self.name = self.email = self.date = None
         if name or email or date:
             assert not desc
             self.name = name
@@ -452,10 +453,7 @@ def user():
     if not __user:
         name=config.get('user.name')
         email=config.get('user.email')
-        if name and email:
-            __user = Person(name, email)
-        else:
-            raise GitException, 'unknown user details'
+        __user = Person(name, email)
     return __user;
 
 def author():

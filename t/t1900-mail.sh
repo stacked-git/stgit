@@ -6,6 +6,7 @@ test_description='Test the mail command'
 test_expect_success \
     'Initialize the StGIT repository' \
     '
+    git config stgit.sender "A U Thor <author@example.com>" &&
     for i in 1 2 3 4 5; do
       touch foo.txt &&
       echo "line $i" >> foo.txt &&
