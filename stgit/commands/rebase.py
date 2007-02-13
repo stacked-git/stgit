@@ -31,6 +31,9 @@ Pop all patches from current stack, move the stack base to the given
 
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after rebasing',
+                       action = 'store_true'),
+           make_option('-m', '--merged',
+                       help = 'check for patches merged upstream',
                        action = 'store_true')]
 
 def func(parser, options, args):
@@ -59,6 +62,6 @@ def func(parser, options, args):
 
     # push the patches back
     if not options.nopush:
-        push_patches(applied)
+        push_patches(applied, options.merged)
 
     print_crt_patch()
