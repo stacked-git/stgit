@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, re, email
 from email.Header import decode_header, make_header
 from mailbox import UnixMailbox
+from StringIO import StringIO
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -342,7 +343,7 @@ def __import_mbox(filename, options):
     if filename:
         f = file(filename, 'rb')
     else:
-        f = sys.stdin
+        f = StringIO(sys.stdin.read())
 
     try:
         mbox = UnixMailbox(f, email.message_from_file)
@@ -355,8 +356,7 @@ def __import_mbox(filename, options):
         __create_patch(None, message, author_name, author_email,
                        author_date, diff, options)
 
-    if filename:
-        f.close()
+    f.close()
 
 def func(parser, options, args):
     """Import a GNU diff file as a new patch
