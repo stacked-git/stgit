@@ -50,6 +50,9 @@ options = [make_option('-b', '--branch',
            make_option('-d', '--description',
                        help = 'show a short description for each patch',
                        action = 'store_true'),
+           make_option('--author',
+                       help = 'show the author name for each patch',
+                       action = 'store_true'),
            make_option('-e', '--empty',
                        help = 'check whether patches are empty '
                        '(much slower)',
@@ -76,6 +79,12 @@ def __get_description(patch):
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
+def __get_author(patch):
+    """Extract and return a patch's short description
+    """
+    p = crt_series.get_patch(patch)
+    return p.get_authname();
+
 def __print_patch(patch, hidden, branch_str, prefix, empty_prefix, length,
                   options):
     """Print a patch name, description and various markers.
@@ -89,9 +98,13 @@ def __print_patch(patch, hidden, branch_str, prefix, empty_prefix, length,
     if not options.noprefix and patch in hidden:
         patch_str += '*'
 
+    if options.description or options.author:
+        patch_str = patch_str.ljust(length)
+
     if options.description:
-        print prefix + patch_str.ljust(length) + ' | ' \
-              + __get_description(patch)
+        print prefix + patch_str + ' | ' + __get_description(patch)
+    elif options.author:
+        print prefix + patch_str + ' | ' + __get_author(patch)
     else:
         print prefix + patch_str
 
