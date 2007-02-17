@@ -27,7 +27,7 @@ from stgit import stack, git
 
 
 help = 'import a GNU diff file as a new patch'
-usage = """%prog [options] [<file>]
+usage = """%prog [options] [<file>|<url>]
 
 Create a new patch and apply the given GNU diff file (or the standard
 input). By default, the file name is used as the patch name but this
@@ -52,6 +52,9 @@ options = [make_option('-m', '--mail',
                        action = 'store_true'),
            make_option('-s', '--series',
                        help = 'import a series of patches',
+                       action = 'store_true'),
+           make_option('-u', '--url',
+                       help = 'import a patch from a URL',
                        action = 'store_true'),
            make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
@@ -358,6 +361,20 @@ def __import_mbox(filename, options):
 
     f.close()
 
+def __import_url(url, options):
+    """Import a patch from a URL
+    """
+    import urllib
+    import tempfile
+
+    if not url:
+        parser.error('URL argument required')
+
+    patch = os.path.basename(url)
+    file = os.path.join(tempfile.gettempdir(), patch)
+    urllib.urlretrieve(url, file)
+    __import_file(patch, file, options)
+
 def func(parser, options, args):
     """Import a GNU diff file as a new patch
     """
@@ -377,6 +394,8 @@ def func(parser, options, args):
         __import_series(filename, options)
     elif options.mbox:
         __import_mbox(filename, options)
+    elif options.url:
+        __import_url(filename, options)
     else:
         if options.name:
             patch = options.name
