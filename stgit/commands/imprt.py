@@ -228,17 +228,29 @@ def __parse_patch(fobj):
     # Just return None
     return (descr, authname, authemail, authdate, diff)
 
-def __create_patch(patch, message, author_name, author_email,
+def __create_patch(filename, message, author_name, author_email,
                    author_date, diff, options):
     """Create a new patch on the stack
     """
-    if not diff:
-        raise CmdException, 'No diff found inside the patch'
+    if options.name:
+        patch = options.name
+    elif filename:
+        patch = os.path.basename(filename)
+    else:
+        patch = ''
+    if options.strip:
+        patch = __strip_patch_name(patch)
 
     if not patch:
         patch = make_patch_name(message, crt_series.patch_exists,
                                 alternative = not (options.ignore
                                                    or options.replace))
+    else:
+        # fix possible invalid characters in the patch name
+        patch = re.sub('[^\w.]+', '-', patch).strip('-')
+
+    if not diff:
+        raise CmdException, 'No diff found inside the patch'
 
     if options.ignore and patch in crt_series.get_applied():
         print 'Ignoring already applied patch "%s"' % patch
@@ -288,7 +300,7 @@ def __create_patch(patch, message, author_name, author_email,
 
     print 'done'    
 
-def __import_file(patch, filename, options):
+def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
     """
     if filename:
@@ -310,7 +322,12 @@ def __import_file(patch, filename, options):
     if filename:
         f.close()
 
-    __create_patch(patch, message, author_name, author_email,
+    if patch:
+        pname = patch
+    else:
+        pname = filename
+
+    __create_patch(pname, message, author_name, author_email,
                    author_date, diff, options)
 
 def __import_series(filename, options):
@@ -330,12 +347,9 @@ def __import_series(filename, options):
         if not patch:
             continue
         patchfile = os.path.join(patchdir, patch)
-
-        if options.strip:
-            patch = __strip_patch_name(patch)
         patch = __replace_slashes_with_dashes(patch);
 
-        __import_file(patch, patchfile, options)
+        __import_file(patchfile, options, patch)
 
     if filename:
         f.close()
@@ -370,10 +384,10 @@ def __import_url(url, options):
     if not url:
         parser.error('URL argument required')
 
-    patch = os.path.basename(url)
-    file = os.path.join(tempfile.gettempdir(), patch)
-    urllib.urlretrieve(url, file)
-    __import_file(patch, file, options)
+    patch = os.path.basename(urllib.unquote(url))
+    filename = os.path.join(tempfile.gettempdir(), patch)
+    urllib.urlretrieve(url, filename)
+    __import_file(filename, options)
 
 def func(parser, options, args):
     """Import a GNU diff file as a new patch
@@ -397,15 +411,6 @@ def func(parser, options, args):
     elif options.url:
         __import_url(filename, options)
     else:
-        if options.name:
-            patch = options.name
-        elif filename:
-            patch = os.path.basename(filename)
-        else:
-            patch = ''
-        if options.strip:
-            patch = __strip_patch_name(patch)
-
-        __import_file(patch, filename, options)
+        __import_file(filename, options)
 
     print_crt_patch()
