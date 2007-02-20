@@ -64,14 +64,29 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    must_rebase = (config.get('stgit.pull-does-rebase') == 'yes')
+    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_branch()) or \
+             config.get('stgit.pull-policy')
+    if policy == 'pull':
+        must_rebase = 0
+    elif policy == 'fetch-rebase':
+        must_rebase = 1
+    elif policy == 'rebase':
+        must_rebase = 1
+    else:
+        raise config.ConfigException, 'Unsupported pull-policy "%s"' % policy
+
     applied = prepare_rebase(real_rebase=must_rebase, force=options.force)
 
     # pull the remote changes
-    print 'Pulling from "%s"...' % repository
-    git.fetch(repository)
-    if must_rebase:
+    if policy == 'pull':
+        print 'Pulling from "%s"...' % repository
+        git.pull(repository)
+    elif policy == 'fetch-rebase':
+        print 'Fetching from "%s"...' % repository
+        git.fetch(repository)
         rebase(git.fetch_head())
+    elif policy == 'rebase':
+        rebase(crt_series.get_parent_branch())
 
     post_rebase(applied, options.nopush, options.merged)
 

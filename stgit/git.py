@@ -817,7 +817,24 @@ def fetch(repository = 'origin', refspec = None):
     if refspec:
         args.append(refspec)
 
-    command = config.get('stgit.pullcmd')
+    command = config.get('branch.%s.stgit.fetchcmd' % get_head_file()) or \
+              config.get('stgit.fetchcmd')
+    if __run(command, args) != 0:
+        raise GitException, 'Failed "%s %s"' % (command, repository)
+
+def pull(repository = 'origin', refspec = None):
+    """Fetches changes from the remote repository, using 'git-pull'
+    by default.
+    """
+    # we update the HEAD
+    __clear_head_cache()
+
+    args = [repository]
+    if refspec:
+        args.append(refspec)
+
+    command = config.get('branch.%s.stgit.pullcmd' % get_head_file()) or \
+              config.get('stgit.pullcmd')
     if __run(command, args) != 0:
         raise GitException, 'Failed "%s %s"' % (command, repository)
 

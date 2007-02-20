@@ -33,14 +33,19 @@
 	#pager = ~/share/stgit/contrib/diffcol.sh
 	#pager = filterdiff --annotate | colordiff | less -FRX
 
-	# GIT pull command (should take the same arguments as
+	# GIT pull and fetch commands (should take the same arguments as
 	# git-fetch or git-pull).  By default:
-	#pullcmd = git-fetch
-	#pull-does-rebase = yes
-	# Alternative (old behaviour), less intuitive but maybe useful
-	# for some workflows:
 	#pullcmd = git-pull
-	#pull-does-rebase = no
+	#fetchcmd = git-fetch
+
+	# "stg pull" policy.  This is the repository default, which can be
+	# overriden on a per-branch basis using branch.*.stgit.pull-policy
+	# By default:
+	#pull-policy = pull
+	# To support remote rewinding parent branches:
+	#pull-policy = fetch-rebase
+	# To support local parent branches:
+	#pull-policy = rebase
 
 	# The three-way merge tool. Note that the 'output' file contains the
 	# same data as 'branch1'. This is useful for tools that do not take an
