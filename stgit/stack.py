@@ -394,6 +394,9 @@ class Series(StgitObject):
         self.__begin_stack_check()
         return self.__base_file
 
+    def get_base(self):
+        return read_string(self.get_base_file())
+
     def get_protected(self):
         return os.path.isfile(os.path.join(self._dir(), 'protected'))
 
@@ -609,7 +612,7 @@ class Series(StgitObject):
         """
         try:
             # allow cloning of branches not under StGIT control
-            base = read_string(self.get_base_file())
+            base = self.get_base()
         except:
             base = git.get_head()
         Series(target_series).init(create_at = base)

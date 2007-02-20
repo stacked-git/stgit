@@ -101,7 +101,7 @@ def git_id(rev):
             elif patch_id == 'log':
                 return series.get_patch(patch).get_log()
         if patch == 'base' and patch_id == None:
-            return read_string(series.get_base_file())
+            return series.get_base()
     except RevParseException:
         pass
     return git.rev_parse(rev + '^{commit}')
