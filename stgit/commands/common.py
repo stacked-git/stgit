@@ -347,3 +347,26 @@ def make_patch_name(msg, unacceptable, default_name = 'patch',
             suffix += 1
         patchname = '%s-%d' % (patchname, suffix)
     return patchname
+
+def prepare_rebase():
+    # pop all patches
+    applied = crt_series.get_applied()
+    if len(applied) > 0:
+        print 'Popping all applied patches...',
+        sys.stdout.flush()
+        crt_series.pop_patch(applied[0])
+        print 'done'
+    return applied
+
+def rebase(target):
+    if target == git.get_head():
+        print 'Already at "%s", no need for rebasing.' % target
+        return
+    
+    print 'Rebasing to "%s"...' % target
+    git.reset(tree_id = git_id(target))
+
+def post_rebase(applied, nopush, merged):
+    # push the patches back
+    if not nopush:
+        push_patches(applied, merged)

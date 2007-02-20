@@ -49,19 +49,8 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    # pop all patches
-    applied = crt_series.get_applied()
-    if len(applied) > 0:
-        print 'Popping all applied patches...',
-        sys.stdout.flush()
-        crt_series.pop_patch(applied[0])
-        print 'done'
-
-    print 'Rebasing to "%s"...' % args[0]
-    git.reset(tree_id = git_id(args[0]))
-
-    # push the patches back
-    if not options.nopush:
-        push_patches(applied, options.merged)
+    applied = prepare_rebase()
+    rebase(args[0])
+    post_rebase(applied, options.nopush, options.merged)
 
     print_crt_patch()

@@ -61,27 +61,15 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    # pop all patches
-    applied = crt_series.get_applied()
-    if len(applied) > 0:
-        print 'Popping all applied patches...',
-        sys.stdout.flush()
-        crt_series.pop_patch(applied[0])
-        print 'done'
+    applied = prepare_rebase()
 
     # pull the remote changes
     print 'Pulling from "%s"...' % repository
     git.fetch(repository)
     if (config.get('stgit.pull-does-rebase') == 'yes'):
-        fetch_head = git.fetch_head()
-        if fetch_head != git.get_head():
-            print 'rebasing to "%s"...' % fetch_head
-            git.reset(tree_id = fetch_head)
-    print 'done'
+        rebase(git.fetch_head())
 
-    # push the patches back
-    if not options.nopush:
-        push_patches(applied, options.merged)
+    post_rebase(applied, options.nopush, options.merged)
 
     # maybe tidy up
     if config.get('stgit.keepoptimized') == 'yes':
