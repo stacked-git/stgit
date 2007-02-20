@@ -518,8 +518,6 @@ class Series(StgitObject):
     def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
         """
-        bases_dir = os.path.join(self.__base_dir, 'refs', 'bases')
-
         if os.path.exists(self.__patch_dir):
             raise StackException, self.__patch_dir + ' already exists'
         if os.path.exists(self.__refs_dir):
@@ -534,7 +532,7 @@ class Series(StgitObject):
 
         self.set_parent(parent_remote, parent_branch)
         
-        create_dirs(bases_dir)
+        create_dirs(os.path.join(self.__base_dir, 'refs', 'bases'))
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
