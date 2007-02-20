@@ -34,6 +34,9 @@ options = [make_option('-n', '--nopush',
                        action = 'store_true'),
            make_option('-m', '--merged',
                        help = 'check for patches merged upstream',
+                       action = 'store_true'),
+           make_option('--force',
+                       help = 'force rebase even if the stack based was moved by (un)commits',
                        action = 'store_true')]
 
 def func(parser, options, args):
@@ -49,7 +52,7 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    applied = prepare_rebase()
+    applied = prepare_rebase(real_rebase=True, force=options.force)
     rebase(args[0])
     post_rebase(applied, options.nopush, options.merged)
 

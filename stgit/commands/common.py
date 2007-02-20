@@ -348,7 +348,14 @@ def make_patch_name(msg, unacceptable, default_name = 'patch',
         patchname = '%s-%d' % (patchname, suffix)
     return patchname
 
-def prepare_rebase():
+def prepare_rebase(real_rebase, force=None):
+    if not force:
+        # Be sure we won't loose results of stg-(un)commit by error.
+        # Do not require an existing orig-base for compatibility with 0.12 and earlier.
+        origbase = crt_series._get_field('orig-base')
+        if origbase and crt_series.get_base() != origbase:
+            raise CmdException, 'Rebasing would possibly lose data'
+
     # pop all patches
     applied = crt_series.get_applied()
     if len(applied) > 0:

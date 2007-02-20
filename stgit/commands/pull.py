@@ -41,6 +41,9 @@ options = [make_option('-n', '--nopush',
                        action = 'store_true'),
            make_option('-m', '--merged',
                        help = 'check for patches merged upstream',
+                       action = 'store_true'),
+           make_option('--force',
+                       help = 'force rebase even if the stack based was moved by (un)commits',
                        action = 'store_true')]
 
 def func(parser, options, args):
@@ -61,12 +64,13 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    applied = prepare_rebase()
+    must_rebase = (config.get('stgit.pull-does-rebase') == 'yes')
+    applied = prepare_rebase(real_rebase=must_rebase, force=options.force)
 
     # pull the remote changes
     print 'Pulling from "%s"...' % repository
     git.fetch(repository)
-    if (config.get('stgit.pull-does-rebase') == 'yes'):
+    if must_rebase:
         rebase(git.fetch_head())
 
     post_rebase(applied, options.nopush, options.merged)
