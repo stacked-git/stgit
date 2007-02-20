@@ -367,6 +367,8 @@ def rebase(target):
     git.reset(tree_id = git_id(target))
 
 def post_rebase(applied, nopush, merged):
+    # memorize that we rebased to here
+    crt_series._set_field('orig-base', git.get_head())
     # push the patches back
     if not nopush:
         push_patches(applied, merged)

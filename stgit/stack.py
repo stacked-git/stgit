@@ -540,6 +540,7 @@ class Series(StgitObject):
         os.makedirs(os.path.join(self._dir(), 'patches'))
         os.makedirs(self.__refs_dir)
         self.__begin_stack_check()
+        self._set_field('orig-base', git.get_head())
 
     def convert(self):
         """Either convert to use a separate patch directory, or
