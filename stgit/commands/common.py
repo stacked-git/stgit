@@ -308,6 +308,8 @@ def address_or_alias(addr_str):
     the aliases in the config files.
     """
     def __address_or_alias(addr):
+        if not addr:
+            return None
         if addr.find('@') >= 0:
             # it's an e-mail address
             return addr
@@ -315,12 +317,11 @@ def address_or_alias(addr_str):
         if alias:
             # it's an alias
             return alias
-
         raise CmdException, 'unknown e-mail alias: %s' % addr
 
     addr_list = [__address_or_alias(addr.strip())
                  for addr in addr_str.split(',')]
-    return ', '.join(addr_list)
+    return ', '.join([addr for addr in addr_list if addr])
 
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
