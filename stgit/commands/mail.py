@@ -141,25 +141,19 @@ def __get_sender():
 
     return address_or_alias(sender)
 
-def __parse_addresses(addresses):
+def __parse_addresses(msg):
     """Return a two elements tuple: (from, [to])
     """
-    def __addr_list(addrs):
-        m = re.search('[^@\s<,]+@[^>\s,]+', addrs);
-        if (m == None):
-            return []
-        return [ m.group() ] + __addr_list(addrs[m.end():])
+    def __addr_list(msg, header):
+        return [name_addr[1] for name_addr in
+                email.Utils.getaddresses(msg.get_all(header, []))]
 
-    from_addr_list = []
-    to_addr_list = []
-    for line in addresses.split('\n'):
-        if re.match('from:\s+', line, re.I):
-            from_addr_list += __addr_list(line)
-        elif re.match('(to|cc|bcc):\s+', line, re.I):
-            to_addr_list += __addr_list(line)
-
+    from_addr_list = __addr_list(msg, 'From')
     if len(from_addr_list) == 0:
         raise CmdException, 'No "From" address'
+
+    to_addr_list = __addr_list(msg, 'To') + __addr_list(msg, 'Cc') \
+                   + __addr_list(msg, 'Bcc')
     if len(to_addr_list) == 0:
         raise CmdException, 'No "To/Cc/Bcc" addresses'
 
@@ -359,9 +353,7 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     __build_extra_headers(msg, msg_id, options.refid)
     __encode_message(msg)
 
-    msg_string = msg.as_string(options.mbox)
-
-    return msg_string.strip('\n')
+    return msg
 
 def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """Build the message to be sent via SMTP
@@ -461,9 +453,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     __build_extra_headers(msg, msg_id, ref_id)
     __encode_message(msg)
 
-    msg_string = msg.as_string(options.mbox)
-
-    return msg_string.strip('\n')
+    return msg
 
 def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
@@ -514,18 +504,19 @@ def func(parser, options, args):
         msg = __build_cover(tmpl, total_nr, msg_id, options)
         from_addr, to_addr_list = __parse_addresses(msg)
 
+        msg_string = msg.as_string(options.mbox)
+
         # subsequent e-mails are seen as replies to the first one
         if not options.noreply:
             ref_id = msg_id
 
         if options.mbox:
-            print msg
-            print
+            print msg_string
         else:
             print 'Sending the cover message...',
             sys.stdout.flush()
-            __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
-                           smtpuser, smtppassword)
+            __send_message(smtpserver, from_addr, to_addr_list, msg_string,
+                           sleep, smtpuser, smtppassword)
             print 'done'
 
     # send the patches
@@ -542,16 +533,17 @@ def func(parser, options, args):
                               options)
         from_addr, to_addr_list = __parse_addresses(msg)
 
+        msg_string = msg.as_string(options.mbox)
+
         # subsequent e-mails are seen as replies to the first one
         if not options.noreply and not ref_id:
             ref_id = msg_id
 
         if options.mbox:
-            print msg
-            print
+            print msg_string
         else:
             print 'Sending patch "%s"...' % p,
             sys.stdout.flush()
-            __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
-                           smtpuser, smtppassword)
+            __send_message(smtpserver, from_addr, to_addr_list, msg_string,
+                           sleep, smtpuser, smtppassword)
             print 'done'
