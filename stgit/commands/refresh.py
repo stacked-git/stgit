@@ -144,7 +144,10 @@ def func(parser, options, args):
                                  committer_email = options.commemail,
                                  backup = True, sign_str = sign_str)
 
-        print 'done'
+        if crt_series.empty_patch(patch):
+            print 'done (empty patch)'
+        else:
+            print 'done'
 
         if options.patch:
             between.reverse()
