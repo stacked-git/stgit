@@ -891,10 +891,10 @@ def clone(repository, local_dir):
         raise GitException, 'Failed "git-clone %s %s"' \
               % (repository, local_dir)
 
-def modifying_revs(files, base_rev):
+def modifying_revs(files, base_rev, head_rev):
     """Return the revisions from the list modifying the given files
     """
-    cmd = ['git-rev-list', '%s..' % base_rev, '--']
+    cmd = ['git-rev-list', '%s..%s' % (base_rev, head_rev), '--']
     revs = [line.strip() for line in _output_lines(cmd + files)]
 
     return revs

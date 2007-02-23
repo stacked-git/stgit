@@ -32,7 +32,9 @@ option also lists the patch log and the diff for the given files."""
 
 options = [make_option('-d', '--diff',
                        help = 'show the diff for the given files',
-                       action = 'store_true')]
+                       action = 'store_true'),
+           make_option('-b', '--branch',
+                       help = 'use BRANCH instead of the default one')]
 
 diff_tmpl = \
           '-------------------------------------------------------------------------------\n' \
@@ -52,7 +54,8 @@ def func(parser, options, args):
     if not applied:
         raise CmdException, 'No patches applied'
 
-    revs = git.modifying_revs(args, git_id('base'))
+    revs = git.modifying_revs(args, crt_series.get_base(),
+                              crt_series.get_head())
     revs.reverse()
 
     # build the patch/revision mapping

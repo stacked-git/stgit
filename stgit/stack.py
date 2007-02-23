@@ -397,6 +397,15 @@ class Series(StgitObject):
     def get_base(self):
         return read_string(self.get_base_file())
 
+    def get_head(self):
+        """Return the head of the branch
+        """
+        crt = self.get_current_patch()
+        if crt:
+            return crt.get_top()
+        else:
+            return self.get_base()
+
     def get_protected(self):
         return os.path.isfile(os.path.join(self._dir(), 'protected'))
 
