@@ -20,6 +20,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
+from stgit.config import GitConfigException
 from stgit import stack, git
 
 
@@ -73,7 +74,7 @@ def func(parser, options, args):
     elif policy == 'rebase':
         must_rebase = 1
     else:
-        raise config.ConfigException, 'Unsupported pull-policy "%s"' % policy
+        raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
 
     applied = prepare_rebase(real_rebase=must_rebase, force=options.force)
 
