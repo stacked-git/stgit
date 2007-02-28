@@ -23,7 +23,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'print the hash value of a GIT id'
+help = 'print the GIT hash value of a StGIT reference'
 usage = """%prog [options] [id]
 
 Print the hash value of a GIT id (defaulting to HEAD). In addition to

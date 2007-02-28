@@ -102,28 +102,29 @@ commands = Commands({
 
 # classification: repository, stack, patch, working copy
 repocommands = (
-    'branch',
     'clone',
     'id',
-    'pull'
     )
 stackcommands = (
     'applied',
     'assimilate',
+    'branch',
     'clean',
     'commit',
     'float',
     'goto',
     'hide',
     'init',
+    'patches',
     'pop',
+    'pull',
     'push',
     'rebase',
     'series',
     'top',
     'unapplied',
     'uncommit',
-    'unhide'
+    'unhide',
     )
 patchcommands = (
     'delete',
@@ -138,15 +139,14 @@ patchcommands = (
     'refresh',
     'rename',
     'show',
-    'sync'
+    'sync',
     )
 wccommands = (
     'add',
     'diff',
-    'patches',
     'resolved',
     'rm',
-    'status'
+    'status',
     )
 
 def _print_helpstring(cmd):

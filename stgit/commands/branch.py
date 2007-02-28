@@ -26,7 +26,7 @@ from stgit.utils import *
 from stgit import stack, git, basedir
 
 
-help = 'manage development branches'
+help = 'manage patch stacks'
 usage = """%prog [options] branch-name [commit-id]
 
 Create, clone, switch between, rename, or delete development branches

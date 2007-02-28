@@ -24,7 +24,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'show the patches modifying a file'
+help = 'show the applied patches modifying a file'
 usage = """%prog [options] <file> [<file>...]
 
 Show the applied patches modifying the given files. The '--diff'

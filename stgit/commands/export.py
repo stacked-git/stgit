@@ -26,7 +26,7 @@ from stgit.utils import *
 from stgit import stack, git, templates
 
 
-help = 'exports a series of patches to <dir> (or patches)'
+help = 'exports patches to a directory'
 usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
 Export a range of applied patches to a given directory (defaults to
