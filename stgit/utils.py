@@ -154,6 +154,9 @@ def rename(basedir, file1, file2):
     os.rename(os.path.join(basedir, file1), full_file2)
     remove_dirs(basedir, os.path.dirname(file1))
 
+class EditorException(Exception):
+    pass
+
 def call_editor(filename):
     """Run the editor on the specified filename."""
 
@@ -171,5 +174,5 @@ def call_editor(filename):
     sys.stdout.flush()
     err = os.system(editor)
     if err:
-        raise Exception, 'editor failed, exit code: %d' % err
+        raise EditorException, 'editor failed, exit code: %d' % err
     print 'done'

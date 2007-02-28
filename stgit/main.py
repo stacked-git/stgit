@@ -256,6 +256,7 @@ def main():
     from stgit.git import GitException
     from stgit.commands.common import CmdException
     from stgit.gitmergeonefile import GitMergeException
+    from stgit.utils import EditorException
 
     try:
         debug_level = int(os.environ['STGIT_DEBUG_LEVEL'])
@@ -279,7 +280,8 @@ def main():
 
         command.func(parser, options, args)
     except (IOError, ParsingError, NoSectionError, CmdException,
-            StackException, GitException, GitMergeException), err:
+            StackException, GitException, GitMergeException,
+            EditorException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         if debug_level:
             raise
