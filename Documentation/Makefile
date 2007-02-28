@@ -3,6 +3,13 @@ MAN7_TXT=stg.txt
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT) $(MAN7_TXT))
 
+ARTICLES = 
+# with their own formatting rules.
+SP_ARTICLES = tutorial
+
+DOC_HTML += $(patsubst %,%.html,$(ARTICLES) $(SP_ARTICLES))
+DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES) $(SP_ARTICLES))
+
 DOC_MAN1=$(patsubst %.txt,%.1,$(MAN1_TXT))
 DOC_MAN7=$(patsubst %.txt,%.7,$(MAN7_TXT))
 
@@ -28,6 +35,7 @@ INSTALL?=install
 all: html man
 
 html: $(DOC_HTML)
+pdf: $(DOC_PDF)
 
 $(DOC_HTML) $(DOC_MAN1) $(DOC_MAN7): asciidoc.conf
 
@@ -50,7 +58,7 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 -include doc.dep
 
 clean:
-	rm -f *.xml *.html *.1 *.7 doc.dep
+	rm -f *.xml *.html *.pdf *.1 *.7 doc.dep
 
 %.html : %.txt
 	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<
@@ -60,3 +68,12 @@ clean:
 
 %.xml : %.txt
 	$(ASCIIDOC) -b docbook -d manpage -f asciidoc.conf $<
+
+%.pdf: %.xml
+	xmlto pdf $<
+
+# special formatting rules
+tutorial.html : %.html : %.txt
+	$(ASCIIDOC) -b xhtml11 -d article -f tutorial.conf $(ASCIIDOC_EXTRA) $<
+tutorial.xml : %.xml : %.txt
+	$(ASCIIDOC) -b docbook -d article -f tutorial.conf $<

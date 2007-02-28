@@ -9,15 +9,17 @@ install:
 	$(PYTHON) setup.py install --prefix=$(PREFIX) --root=$(DESTDIR)
 
 doc:
-	cd doc && $(MAKE) all
+	cd Documentation && $(MAKE) all
 
 test:
 	cd t && $(MAKE) all
 
 clean:
-	for dir in doc t; do \
+	for dir in Documentation t; do \
 		(cd $$dir && $(MAKE) clean); \
 	done
 	rm -rf build
 	rm -f stgit/*.pyc
 	rm -f stgit/commands/*.pyc
+
+.PHONY: all install doc test clean
