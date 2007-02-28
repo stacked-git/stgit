@@ -272,22 +272,7 @@ def __edit_message(msg):
     f.write(msg)
     f.close()
 
-    # the editor
-    editor = config.get('stgit.editor')
-    if editor:
-        pass
-    elif 'EDITOR' in os.environ:
-        editor = os.environ['EDITOR']
-    else:
-        editor = 'vi'
-    editor += ' %s' % fname
-
-    print 'Invoking the editor: "%s"...' % editor,
-    sys.stdout.flush()
-    err = os.system(editor)
-    if err:
-        raise CmdException, 'editor failed, exit code: %d' % err
-    print 'done'
+    call_editor(fname)
 
     # read the message back
     f = file(fname)

@@ -91,19 +91,7 @@ def edit_file(series, line, comment, show_patch = True):
     print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
     f.close()
 
-    # the editor
-    editor = config.get('stgit.editor')
-    if editor:
-        pass
-    elif 'EDITOR' in os.environ:
-        editor = os.environ['EDITOR']
-    else:
-        editor = 'vi'
-    editor += ' %s' % fname
-
-    print 'Invoking the editor: "%s"...' % editor,
-    sys.stdout.flush()
-    print 'done (exit code: %d)' % os.system(editor)
+    call_editor(fname)
 
     f = file(fname, 'r+')
 

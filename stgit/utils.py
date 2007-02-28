@@ -1,7 +1,8 @@
 """Common utility functions
 """
 
-import errno, os, os.path
+import errno, os, os.path, sys
+from stgit.config import config
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -152,3 +153,23 @@ def rename(basedir, file1, file2):
     create_dirs(os.path.dirname(full_file2))
     os.rename(os.path.join(basedir, file1), full_file2)
     remove_dirs(basedir, os.path.dirname(file1))
+
+def call_editor(filename):
+    """Run the editor on the specified filename."""
+
+    # the editor
+    editor = config.get('stgit.editor')
+    if editor:
+        pass
+    elif 'EDITOR' in os.environ:
+        editor = os.environ['EDITOR']
+    else:
+        editor = 'vi'
+    editor += ' %s' % filename
+
+    print 'Invoking the editor: "%s"...' % editor,
+    sys.stdout.flush()
+    err = os.system(editor)
+    if err:
+        raise Exception, 'editor failed, exit code: %d' % err
+    print 'done'
