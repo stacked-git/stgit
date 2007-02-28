@@ -134,7 +134,7 @@ def interactive_merge(filename):
     mtime = os.path.getmtime(filename)
 
     print 'Trying the interractive %s merge' % \
-          {True: 'three-way', False: 'two-way'}[three_way]
+          (three_way and 'three-way' or 'two-way')
 
     err = os.system(imerger % files_dict)
     if err != 0:
