@@ -54,14 +54,19 @@
 	#	\"%(branch1)s\" \"%(ancestor)s\" \"%(branch2)s\" \
 	#	> \"%(output)s\"
 
-	# Interactive three-way merge tool. It is executed by the 'resolved
-	# --interactive' command
-	#imerger = xxdiff --title1 current --title2 ancestor --title3 patched \
+	# Interactive two/three-way merge tool. It is executed by the
+	# 'resolved --interactive' command
+	#i3merge = xxdiff --title1 current --title2 ancestor --title3 patched \
 	#	--show-merged-pane -m -E -O -X -M \"%(output)s\" \
 	#	\"%(branch1)s\" \"%(ancestor)s\" \"%(branch2)s\"
-	#imerger = emacs --eval '(ediff-merge-files-with-ancestor \
+	#i2merge = xxdiff --title1 current --title2 patched \
+	#	--show-merged-pane -m -E -O -X -M \"%(output)s\" \
+	#	\"%(branch1)s\" \"%(branch2)s\"
+	#i3merge = emacs --eval '(ediff-merge-files-with-ancestor \
 	#	\"%(branch1)s\" \"%(branch2)s\" \"%(ancestor)s\" nil \
 	#	\"%(output)s\")'
+	#i2merge = emacs --eval '(ediff-merge-files \
+	#	\"%(branch1)s\" \"%(branch2)s\" nil \"%(output)s\")'
 
 	# Automatically invoke the interactive merger in case of conflicts
 	#autoimerge = no

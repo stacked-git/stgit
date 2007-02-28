@@ -102,29 +102,41 @@ def interactive_merge(filename):
     """Run the interactive merger on the given file. Note that the
     index should not have any conflicts.
     """
-    imerger = config.get('stgit.imerger')
-    if not imerger:
-        raise GitMergeException, 'Configuration error: %s' % err
-
     extensions = file_extensions()
 
     ancestor = filename + extensions['ancestor']
     current = filename + extensions['current']
     patched = filename + extensions['patched']
 
-    # check whether we have all the files for a three-way merge
-    for fn in [filename, ancestor, current, patched]:
+    if os.path.isfile(ancestor):
+        three_way = True
+        files_dict = {'branch1': current,
+                      'ancestor': ancestor,
+                      'branch2': patched,
+                      'output': filename}
+        imerger = config.get('stgit.i3merge')
+    else:
+        three_way = False
+        files_dict = {'branch1': current,
+                      'branch2': patched,
+                      'output': filename}
+        imerger = config.get('stgit.i2merge')
+
+    if not imerger:
+        raise GitMergeException, 'No interactive merge command configured'
+
+    # check whether we have all the files for the merge
+    for fn in [filename, current, patched]:
         if not os.path.isfile(fn):
             raise GitMergeException, \
-                  'Cannot run the interactive merger: "%s" missing' % fn
+                  'Cannot run the interactive merge: "%s" missing' % fn
 
     mtime = os.path.getmtime(filename)
 
-    err = os.system(imerger % {'branch1': current,
-                               'ancestor': ancestor,
-                               'branch2': patched,
-                               'output': filename})
+    print 'Trying the interractive %s merge' % \
+          {True: 'three-way', False: 'two-way'}[three_way]
 
+    err = os.system(imerger % files_dict)
     if err != 0:
         raise GitMergeException, 'The interactive merge failed: %d' % err
     if not os.path.isfile(filename):
@@ -185,8 +197,6 @@ def merge(orig_hash, file1_hash, file2_hash,
                               % (file1_mode, file1_hash, path))
 
                     if config.get('stgit.autoimerge') == 'yes':
-                        print >> sys.stderr, \
-                              'Trying the interactive merge'
                         try:
                             interactive_merge(path)
                         except GitMergeException, ex:
@@ -263,14 +273,35 @@ def merge(orig_hash, file1_hash, file2_hash,
                           'permissions conflict' % path
                     __conflict(path)
                     return 1
-            # files are different
+            # files added in both but different
             else:
-                # reset the index to the current file
-                os.system('git-update-index -- %s' % path)
                 print >> sys.stderr, \
                       'Error: File "%s" added in branches but different' % path
-                __conflict(path)
-                return 1
+                # reset the cache to the first branch
+                os.system('git-update-index --cacheinfo %s %s %s'
+                          % (file1_mode, file1_hash, path))
+
+                if config.get('stgit.autoimerge') == 'yes':
+                    try:
+                        interactive_merge(path)
+                    except GitMergeException, ex:
+                        # interactive merge failed
+                        print >> sys.stderr, str(ex)
+                        if str(keeporig) != 'yes':
+                            __remove_files(orig_hash, file1_hash,
+                                           file2_hash)
+                        __conflict(path)
+                        return 1
+                    # successful interactive merge
+                    os.system('git-update-index -- %s' % path)
+                    __remove_files(orig_hash, file1_hash, file2_hash)
+                    return 0
+                else:
+                    # no interactive merge, just mark it as conflict
+                    if str(keeporig) != 'yes':
+                        __remove_files(orig_hash, file1_hash, file2_hash)
+                    __conflict(path)
+                    return 1
         # file added in one
         elif file1_hash or file2_hash:
             if file1_hash:
