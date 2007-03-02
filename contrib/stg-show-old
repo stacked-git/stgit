@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+# stg-show-old - mini helper to look at the previous version of a
+# patch (current one by default)
+
+# Copyright (c) 2006-2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+[ "$#" -le 1 ] || { echo >&2 "Usage: $(basename $0) [<patch>]"; exit 1; }
+patch="$1"
+
+stg show "${patch}//top.old"
