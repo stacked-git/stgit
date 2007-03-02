@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+sub _run {
+  print(' >> ', @_, "\n");# and 0;
+  system(@_);
+}
+
+my $dopush=1;
+my $pop='pop -a';
+while (@ARGV and $ARGV[0] =~ m/^-/) {
+  if ($ARGV[0] eq '-n') {
+    $dopush=0;
+    shift @ARGV;
+  }
+  if ($ARGV[0] eq '-t') {
+    shift @ARGV;
+    $pop = 'goto '.shift @ARGV;
+  }
+}
+
+# default: sink current patch
+if (@ARGV == 0) {
+  $ARGV[0] = `stg top`;
+}
+
+my @oldapplied=`stg applied`;
+chomp (@oldapplied);
+
+_run('stg '.$pop) &&
+  die "cannot pop all patches";
+_run('stg push ' . join (' ', @ARGV)) &&
+  die "error pushing patches";
+
+if ($dopush) {
+  my @newapplied=`stg applied`;
+  chomp (@newapplied);
+  my @remaining=grep { my $check=$_;
+		       not grep { $check eq $_ } @newapplied;
+		     } @oldapplied;
+  _run('stg push ' . join (' ', @remaining)) &&
+    die "error pushing remaining patches";
+}
