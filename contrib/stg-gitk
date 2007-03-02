@@ -1,0 +1,61 @@
+#!/bin/sh
+set -e
+
+# stg-gitk - helper script to graphically display an StGIT stack
+
+# Displays given branches and stacks, without getting disturbed by
+# patch logs.
+
+# LIMITATIONS:
+# - asking gitk to "update" won't detect any new ref
+# - no support for spaces in branch names
+
+# Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+usage()
+{
+    echo "Usage: $(basename $0) [<branches>|--all]"
+    exit 1
+}
+
+allbranches=0
+case "$1" in
+--all) allbranches=1; shift ;;
+--*) usage ;;
+*) break ;;
+esac
+
+if [ $allbranches = 1 ] && [ "$#" -gt 0 ]; then
+    usage
+fi
+
+GIT_DIR=$(git-rev-parse --git-dir)
+GIT_DIR_SPKIPLEN=$(printf "$GIT_DIR/X" | wc -c)
+
+refdirs=''
+if [ $allbranches = 1 ]; then
+    refdirs="$GIT_DIR/refs"
+else
+    if [ "$#" = 0 ]; then
+	set -- "$(stg branch)"
+    fi
+
+    for b in "$@"; do
+	if [ -e "$GIT_DIR/refs/patches/$b" ]; then
+	    # StGIT branch: show all patches
+	    refdirs="$refdirs $GIT_DIR/refs/heads/$b $GIT_DIR/refs/patches/$b"
+	elif [ -e "$GIT_DIR/refs/heads/$b" ]; then
+	    # other GIT branch
+	    refdirs="$refdirs $GIT_DIR/refs/heads/$b"
+	elif [ $(git-for-each-ref "refs/$b" | wc -l) != 0 ]; then
+	    # other ref
+	    refdirs="$refdirs $(git-for-each-ref --format="$GIT_DIR/%(refname)" "refs/$b")"
+	else
+	    echo >&2 "ERROR: no such ref '$b'"
+	    usage
+	fi
+    done
+fi
+
+gitk $(find $refdirs -type f -not -name '*.log' | cut -c${GIT_DIR_SPKIPLEN}- )
