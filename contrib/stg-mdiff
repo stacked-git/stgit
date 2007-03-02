@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+# stg-mdiff - display meta-diffs, ie. diffs of diffs
+
+# Main use: show evolutions of a patch.
+# eg. stg-mdiff foo@stable foo
+#     stg-mdiff foo 012345567ABCD # sha1 for "foo" as integrated upstream
+
+# Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+usage()
+{
+    echo "Usage: $(basename $0) <patch1> <patch2>"
+    exit 1
+}
+
+if [ "$#" != 2 ]; then
+    usage
+fi
+
+colordiff -u <(stg show "$1") <(stg show "$2") | less -RFX
