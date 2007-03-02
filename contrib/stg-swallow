@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+# stg-swallow - completely merge an unapplied patch into current one
+
+# Copyright (c) 2006-2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+# FIXME:
+# - should provide support for conflict solving ?
+
+[ "$#" = 1 ] || { echo >&2 "Usage: $(basename $0) <patch>"; exit 1; }
+patch="$1"
+
+stg pick --fold "$patch"
+stg refresh
+stg push "$patch"
+#stg clean "$patch"
+stg pop; stg clean -u
