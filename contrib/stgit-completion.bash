@@ -99,7 +99,7 @@ _all_other_patches ()
 # List the command options
 _cmd_options ()
 {
-    stg $1 --help | grep -e " --[A-Za-z]" | sed -e "s/.*\(--[^ =]\+\).*/\1/"
+    stg $1 --help 2>/dev/null | grep -e " --[A-Za-z]" | sed -e "s/.*\(--[^ =]\+\).*/\1/"
 }
 
 # Generate completions for patches and patch ranges from the given
