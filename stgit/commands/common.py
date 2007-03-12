@@ -171,7 +171,7 @@ def push_patches(patches, check_merged = False):
     names = patches[forwarded:]
 
     # check for patches merged upstream
-    if check_merged:
+    if names and check_merged:
         print 'Checking for patches merged upstream...',
         sys.stdout.flush()
 
