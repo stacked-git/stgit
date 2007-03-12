@@ -65,11 +65,11 @@ Generic commands
 
 User-support commands not touching the repository.
 
-stglink:help[]::
+stg help::
 	stgdesc:help[]
-stglink:version[]::
+stg version::
 	stgdesc:version[]
-stglink:copyright[]::
+stg copyright::
 	stgdesc:copyright[]
 
 Repository commands
