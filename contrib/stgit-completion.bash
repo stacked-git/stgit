@@ -20,6 +20,7 @@ _stg_commands="
     clean
     clone
     commit
+    cp
     export
     files
     float

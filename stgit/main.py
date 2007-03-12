@@ -68,6 +68,7 @@ commands = Commands({
     'clean':            'clean',
     'clone':            'clone',
     'commit':           'commit',
+    'cp':		'copy',
     'export':           'export',
     'files':            'files',
     'float':            'float',
@@ -143,6 +144,7 @@ patchcommands = (
     )
 wccommands = (
     'add',
+    'cp',
     'diff',
     'resolved',
     'rm',

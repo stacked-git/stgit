@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, popen2, re, gitmergeonefile
+from shutil import copyfile
 
 from stgit import basedir
 from stgit.utils import *
@@ -427,6 +428,62 @@ def add(names):
     if files:
         if __run('git-update-index --add --', files):
             raise GitException, 'Unable to add file'
+
+def __copy_single(source, target, target2=''):
+    """Copy file or dir named 'source' to name target+target2"""
+
+    # "source" (file or dir) must match one or more git-controlled file
+    realfiles = _output_lines(['git-ls-files', source])
+    if len(realfiles) == 0:
+        raise GitException, '"%s" matches no git-controled files' % source
+
+    if os.path.isdir(source):
+        # physically copy the files, and record them to add them in one run
+        newfiles = []
+        re_string='^'+source+'/(.*)$'
+        prefix_regexp = re.compile(re_string)
+        for f in [f.strip() for f in realfiles]:
+            m = prefix_regexp.match(f)
+            if not m:
+                print '"%s" does not match "%s"' % (f, re_string)
+                assert(m)
+            newname = target+target2+'/'+m.group(1)
+            if not os.path.exists(os.path.dirname(newname)):
+                os.makedirs(os.path.dirname(newname))
+            copyfile(f, newname)
+            newfiles.append(newname)
+
+        add(newfiles)
+    else: # files, symlinks, ...
+        newname = target+target2
+        copyfile(source, newname)
+        add([newname])
+
+
+def copy(filespecs, target):
+    if os.path.isdir(target):
+        # target is a directory: copy each entry on the command line,
+        # with the same name, into the target
+        for filespec in filespecs:
+            filespec = filespec.rstrip('/')
+            basename = '/' + os.path.basename(filespec)
+            __copy_single(filespec, target, basename)
+
+    elif os.path.exists(target):
+        raise GitException, 'Target "%s" exists but is not a directory' % target
+    elif len(filespecs) != 1:
+        raise GitException, 'Cannot copy more than one file to non-directory'
+
+    else:
+        # at this point: len(filespecs)==1 and target does not exist
+
+        # check target directory
+        targetdir = os.path.dirname(target)
+        if targetdir != '' and not os.path.isdir(targetdir):
+            raise GitException, 'Target directory "%s" does not exist' % targetdir
+
+        __copy_single(filespecs[0].rstrip('/'), target)
+        
 
 def rm(files, force = False):
     """Remove a file from the repository

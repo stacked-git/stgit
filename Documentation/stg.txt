@@ -185,6 +185,8 @@ stglink:add[]::
 	stgdesc:add[]
 stglink:rm[]::
 	stgdesc:rm[]
+stglink:cp[]::
+	stgdesc:cp[]
 stglink:status[]::
 	stgdesc:status[]
 stglink:diff[]::
