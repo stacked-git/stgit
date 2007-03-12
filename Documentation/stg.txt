@@ -21,19 +21,33 @@ GIT. These operations are performed using GIT commands and the patches
 are stored as GIT commit objects, allowing easy merging of the StGIT
 patches into other repositories using standard GIT functionality.
 
+An StGIT stack is a GIT branch with additional information to help
+making changes to individual patches you already committed, rather
+than making changes by adding new commits.  It is thus a
+non-forwarding, or rewinding branch: the old head of the branch is
+often not reachable as one of the new head's ancestors.
+
 Typical uses of StGIT include:
 
 Tracking branch::
-	Maintaining modifications against a remote branch, possibly
-	with the intent of sending some patches upstream.  StGIT
-	assists in preparing and cleaning up patches until they are
-	acceptable upstream, as well as maintaining local patches not
-	meant to be sent upstream.
+	Tracking changes from a remote branch, while maintaining local
+	modifications against that branch, possibly with the intent of
+	sending some patches upstream.  StGIT assists in preparing and
+	cleaning up patches until they are acceptable upstream, as
+	well as maintaining local patches not meant to be sent
+	upstream.
++
+In such a setup, typically all commits on your branch are StGIT
+patches; the stack base is the branch point where your changes "fork"
+off their parent branch.
 
 Development branch::
 	Preparing and testing your commits before publishing them,
 	separating your features from unrelated bugfixes collected
 	while developping.
++
+In such a setup, not all commits on your branch need to be StGIT
+patches; there may be regular GIT commits below your stack base.
 
 OPTIONS
 -------
