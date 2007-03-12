@@ -35,10 +35,11 @@ file not known to Git will not be copied.
 CAVEATS
 -------
 
-The first form doesn't allow yet to overwrite an existing file
-(whether it could be recovered from Git or not), and the second form
-does not check before overwriting any file, possibly leading to loss
-of non-committed modifications.
+This command does not allow yet to overwrite an existing file (whether
+it could be recovered from Git or not).  Further more, when copying a
+directory, the second form does not allow to proceed if a directory by
+that name already exists inside the target, even when no file inside
+that directory would be overwritten.
 
 FUTURE OPTIONS
 --------------

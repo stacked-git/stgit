@@ -464,6 +464,15 @@ def copy(filespecs, target):
     if os.path.isdir(target):
         # target is a directory: copy each entry on the command line,
         # with the same name, into the target
+        target = target.rstrip('/')
+        
+        # first, check that none of the children of the target
+        # matching the command line aleady exist
+        for filespec in filespecs:
+            entry = target+ '/' + os.path.basename(filespec.rstrip('/'))
+            if os.path.exists(entry):
+                raise GitException, 'Target "%s" already exists' % entry
+        
         for filespec in filespecs:
             filespec = filespec.rstrip('/')
             basename = '/' + os.path.basename(filespec)
