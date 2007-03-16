@@ -684,14 +684,14 @@ class Series(StgitObject):
             else:
                 print 'Patch directory %s is not empty.' % self.__patch_dir
 
-            if not os.listdir(self._dir()):
+            try:
                 os.removedirs(self._dir())
-            else:
+            except OSError:
                 raise StackException, 'Series directory %s is not empty.' % self._dir()
 
-            if not os.listdir(self.__refs_dir):
+            try:
                 os.removedirs(self.__refs_dir)
-            else:
+            except OSError:
                 print 'Refs directory %s is not empty.' % self.__refs_dir
 
         if os.path.exists(self.__base_file):
