@@ -702,6 +702,13 @@ class Series(StgitObject):
             remove_file_and_dirs(
                 os.path.join(self.__base_dir, 'refs', 'bases'), self.__name)
 
+        # Cleanup parent informations
+        # FIXME: should one day make use of git-config --section-remove,
+        # scheduled for 1.5.1
+        config.unset('branch.%s.remote' % self.__name)
+        config.unset('branch.%s.merge' % self.__name)
+        config.unset('branch.%s.stgit.parentbranch' % self.__name)
+
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,
                       cache_update = True,
