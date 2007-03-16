@@ -676,6 +676,8 @@ class Series(StgitObject):
                 os.remove(self.__current_file)
             if os.path.exists(self.__descr_file):
                 os.remove(self.__descr_file)
+            if os.path.exists(self._dir()+'/orig-base'):
+                os.remove(self._dir()+'/orig-base')
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:
