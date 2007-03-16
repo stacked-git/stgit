@@ -571,7 +571,7 @@ class Series(StgitObject):
                 os.rmdir(self.__patch_dir)
                 print 'done'
             else:
-                print 'Patch directory %s is not empty.' % self.__name
+                print 'Patch directory %s is not empty.' % self.__patch_dir
 
             self.__patch_dir = self._dir()
 
@@ -678,18 +678,19 @@ class Series(StgitObject):
                 os.remove(self.__descr_file)
             if os.path.exists(self._dir()+'/orig-base'):
                 os.remove(self._dir()+'/orig-base')
+
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:
-                print 'Patch directory %s is not empty.' % self.__name
+                print 'Patch directory %s is not empty.' % self.__patch_dir
+
             if not os.listdir(self._dir()):
-                remove_dirs(os.path.join(self.__base_dir, 'patches'),
-                            self.__name)
+                os.removedirs(self._dir())
             else:
-                print 'Series directory %s is not empty.' % self.__name
+                raise StackException, 'Series directory %s is not empty.' % self._dir()
+
             if not os.listdir(self.__refs_dir):
-                remove_dirs(os.path.join(self.__base_dir, 'refs', 'patches'),
-                            self.__name)
+                os.removedirs(self.__refs_dir)
             else:
                 print 'Refs directory %s is not empty.' % self.__refs_dir
 
