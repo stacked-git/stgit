@@ -116,24 +116,16 @@ def strip_suffix(suffix, string):
     assert string.endswith(suffix)
     return string[:-len(suffix)]
 
-def remove_dirs(basedir, dirs):
-    """Starting at join(basedir, dirs), remove the directory if empty,
-    and try the same with its parent, until we find a nonempty
-    directory or reach basedir."""
-    path = dirs
-    while path:
-        try:
-            os.rmdir(os.path.join(basedir, path))
-        except OSError:
-            return # can't remove nonempty directory
-        path = os.path.dirname(path)
-
 def remove_file_and_dirs(basedir, file):
     """Remove join(basedir, file), and then remove the directory it
     was in if empty, and try the same with its parent, until we find a
     nonempty directory or reach basedir."""
     os.remove(os.path.join(basedir, file))
-    remove_dirs(basedir, os.path.dirname(file))
+    try:
+        os.removedirs(os.path.join(basedir, os.path.dirname(file)))
+    except OSError:
+        # file's parent dir may not be empty after removal
+        pass
 
 def create_dirs(directory):
     """Create the given directory, if the path doesn't already exist."""
@@ -152,7 +144,11 @@ def rename(basedir, file1, file2):
     full_file2 = os.path.join(basedir, file2)
     create_dirs(os.path.dirname(full_file2))
     os.rename(os.path.join(basedir, file1), full_file2)
-    remove_dirs(basedir, os.path.dirname(file1))
+    try:
+        os.removedirs(os.path.join(basedir, os.path.dirname(file1)))
+    except OSError:
+        # file1's parent dir may not be empty after move
+        pass
 
 class EditorException(Exception):
     pass
