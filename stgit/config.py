@@ -103,6 +103,9 @@ class GitConfig:
     def set(self, name, value):
         self.__run('git-repo-config', [name, value])
 
+    def unset(self, name):
+        self.__run('git-repo-config --unset', [name])
+
     def sections_matching(self, regexp):
         """Takes a regexp with a single group, matches it against all
         config variables, and returns a list whose members are the
