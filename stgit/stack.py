@@ -639,7 +639,7 @@ class Series(StgitObject):
         # fast forward the cloned series to self's top
         new_series.forward_patches(applied)
 
-        # Clone remote and merge settings
+        # Clone parent informations
         value = config.get('branch.%s.remote' % self.__name)
         if value:
             config.set('branch.%s.remote' % target_series, value)
@@ -647,6 +647,10 @@ class Series(StgitObject):
         value = config.get('branch.%s.merge' % self.__name)
         if value:
             config.set('branch.%s.merge' % target_series, value)
+
+        value = config.get('branch.%s.stgit.parentbranch' % self.__name)
+        if value:
+            config.set('branch.%s.stgit.parentbranch' % target_series, value)
 
     def delete(self, force = False):
         """Deletes an stgit series
