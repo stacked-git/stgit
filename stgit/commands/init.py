@@ -28,8 +28,8 @@ help = 'initialise the current branch for use with StGIT'
 usage = """%prog [options]
 
 Initialise the current GIT branch to be used as an StGIT stack. Note
-that the you must already be in a GIT repository and .git/HEAD must
-point to a valid file in refs/heads/."""
+that you must already be in a GIT repository and .git/HEAD must point
+to a valid file in refs/heads/."""
 
 options = []
 
