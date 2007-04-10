@@ -51,6 +51,8 @@ options = [make_option('-c', '--create',
            make_option('--delete',
                        help = 'delete an existing development branch',
                        action = 'store_true'),
+           make_option('-d', '--description',
+                       help = 'set the branch description'),
            make_option('--force',
                        help = 'force a delete when the series is not empty',
                        action = 'store_true'),
@@ -272,6 +274,24 @@ def func(parser, options, args):
         sys.stdout.flush()
         branch.unprotect()
         print 'done'
+
+        return
+
+    elif options.description is not None:
+
+        if len(args) == 0:
+            branch_name = crt_series.get_branch()
+        elif len(args) == 1:
+            branch_name = args[0]
+        else:
+            parser.error('incorrect number of arguments')
+        branch = stack.Series(branch_name)
+
+        if not branch.is_initialised():
+            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
+                  % branch_name
+
+        branch.set_description(options.description)
 
         return
 
