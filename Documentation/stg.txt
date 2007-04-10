@@ -137,6 +137,8 @@ stglink:goto[]::
 	stgdesc:goto[]
 stglink:float[]::
 	stgdesc:float[]
+stglink:bury[]::
+	stgdesc:bury[]
 stglink:applied[]::
 	stgdesc:applied[]
 stglink:unapplied[]::
