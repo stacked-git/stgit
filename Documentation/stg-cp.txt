@@ -57,4 +57,4 @@ FUTURE OPTIONS
 
 StGIT
 -----
-Part of the StGIT suite - see gitlink:stg[7].
+Part of the StGIT suite - see gitlink:stg[1].
