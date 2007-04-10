@@ -58,13 +58,13 @@ options = [make_option('-c', '--create',
                        help = 'list branches contained in this repository',
                        action = 'store_true'),
            make_option('-p', '--protect',
-                       help = 'prevent "stg pull" from modifying this branch',
+                       help = 'prevent StGIT from modifying this branch',
                        action = 'store_true'),
            make_option('-r', '--rename',
                        help = 'rename an existing development branch',
                        action = 'store_true'),
            make_option('-u', '--unprotect',
-                       help = 'allow "stg pull" to modify this branch',
+                       help = 'allow StGIT to modify this branch',
                        action = 'store_true')]
 
 
