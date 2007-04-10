@@ -56,7 +56,7 @@ no command, one argument::
 +
 StGIT will try to detect the branch off which the new stack is forked,
 as well as the remote repository from which that parent branch is
-taken (if any), so running stgdesc:pull[] will effectively pull new
+taken (if any), so running stglink:pull[] will effectively pull new
 commits from the correct branch.  It will warn if it cannot guess the
 parent branch (eg. if you do not specify a branch name as
 <commit-id>).

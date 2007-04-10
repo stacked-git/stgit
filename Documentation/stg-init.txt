@@ -20,8 +20,8 @@ valid file in refs/heads/.
 
 This operation is for example suitable to start working using the
 "development branch" workflow (see gitlink:stg[1]).  Other means to setup
-an StGIT stack are stgdesc:clone[] and the '--create' and '--clone'
-commands of stgdesc:branch[].
+an StGIT stack are stglink:clone[] and the '--create' and '--clone'
+commands of stglink:branch[].
 
 OPTIONS
 -------
