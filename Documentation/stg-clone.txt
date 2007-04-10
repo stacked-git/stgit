@@ -9,7 +9,8 @@ stg-clone - stgdesc:clone[]
 
 SYNOPSIS
 --------
-stg clone [OPTIONS] <repository> <dir>
+[verse]
+'stg' clone <repository> <dir>
 
 DESCRIPTION
 -----------
@@ -25,11 +26,6 @@ commands of stglink:branch[].
 
 The target directory named by <dir> will be created by this command,
 and must not exist beforehand.
-
-OPTIONS
--------
-
-No specific options.
 
 StGIT
 -----

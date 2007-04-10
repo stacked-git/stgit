@@ -9,7 +9,8 @@ stg-NAME - stgdesc:NAME[]
 
 SYNOPSIS
 --------
-stg NAME [OPTIONS] XXX
+[verse]
+'stg' NAME [OPTIONS] XXX
 
 DESCRIPTION
 -----------

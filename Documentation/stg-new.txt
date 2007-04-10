@@ -9,7 +9,8 @@ stg-new - stgdesc:new[]
 
 SYNOPSIS
 --------
-stg new [OPTIONS] <name>
+[verse]
+'stg' new [OPTIONS] <name>
 
 DESCRIPTION
 -----------
@@ -19,6 +20,9 @@ The new patch is created on top of the currently applied patches, and
 is made the new top of the stack.  The local changes in the working
 tree are not included in the patch. A stglink:refresh[] command is
 needed for this.
+
+The given <name> must be unique in the stack, and may only contain
+alphanumeric characters, dashes and underscores.
 
 An editor will be launched to edit the commit message to be used for
 the patch, unless the '--message' flag already specified one.  The
@@ -56,11 +60,6 @@ described in gitlink:git-commit-tree[1].
 
 OPTIONS
 -------
-
-<name>::
-	The short name that will be used as to identify the patch in
-	other StGIT commands.  Must be unique in the stack.  May only
-	contain alphanumeric characters, dashes and underscores.
 
 --message=<message>::
 -m <message>::

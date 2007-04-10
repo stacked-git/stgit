@@ -9,7 +9,8 @@ stg-init - stgdesc:init[]
 
 SYNOPSIS
 --------
-stg init [OPTIONS]
+[verse]
+'stg' init
 
 DESCRIPTION
 -----------
@@ -22,11 +23,6 @@ This operation is for example suitable to start working using the
 "development branch" workflow (see gitlink:stg[1]).  Other means to setup
 an StGIT stack are stglink:clone[] and the '--create' and '--clone'
 commands of stglink:branch[].
-
-OPTIONS
--------
-
-No specific options.
 
 StGIT
 -----

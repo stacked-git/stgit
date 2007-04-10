@@ -10,7 +10,9 @@ stg - manage stacks of patches using the GIT content tracker
 SYNOPSIS
 --------
 [verse]
-'stg' [--version] [--help] <command> [OPTIONS] [ARGS]
+'stg' [--version | --help]
+'stg' [--help <command> | <command> --help]
+'stg' <command> [COMMAND OPTIONS] [ARGS]
 
 DESCRIPTION
 -----------
@@ -51,6 +53,10 @@ patches; there may be regular GIT commits below your stack base.
 
 OPTIONS
 -------
+
+The following generic option flags are available.  Additional options
+are available per-command, and documented in the command-specific
+documentation.
 
 --version::
 	Prints the StGIT suite version that the 'stg' program came

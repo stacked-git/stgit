@@ -9,25 +9,17 @@ stg-branch - stgdesc:branch[]
 
 SYNOPSIS
 --------
-stg branch
-
-stg branch <branch>
-
-stg branch --list
-
-stg branch --create <newstack> [<commit-id>]
-
-stg branch --clone [<newstack>]
-
-stg branch --rename <oldname> <newname>
-
-stg branch --protect [<branch>]
-
-stg branch --unprotect [<branch>]
-
-stg branch --delete [--force] <branch>
-
-stg branch --convert
+[verse]
+'stg' branch
+'stg' branch <branch>
+'stg' branch --list
+'stg' branch --create <newstack> [<commit-id>]
+'stg' branch --clone [<newstack>]
+'stg' branch --rename <oldname> <newname>
+'stg' branch --protect [<branch>]
+'stg' branch --unprotect [<branch>]
+'stg' branch --delete [--force] <branch>
+'stg' branch --convert
 
 DESCRIPTION
 -----------
@@ -40,16 +32,14 @@ no command, no argument::
 no command, one argument::
 	Switch to the named <branch>.
 
---list::
--l::
+'stg' branch [-l | --list]::
 	Display the list of branches in the current repository,
 	suffixed by the branch description if any, and optionally
 	prefixed by the letter flags 's' if the branch is an StGIT
 	stack, and 'p' if the StGIT stack is protected.  The current
 	branch is shown with a leading ">" character.
 
---create::
--c::
+'stg' branch [-c | --create]::
 	Create a new StGIT stack based at the specified commit, or at
 	the current HEAD if not specified.  The repository HEAD is
 	switched to the new stack.
@@ -61,7 +51,7 @@ commits from the correct branch.  It will warn if it cannot guess the
 parent branch (eg. if you do not specify a branch name as
 <commit-id>).
 
---clone::
+'stg' branch --clone::
 	Clone the current stack, under the name <newstack> if
 	specified, or using the current stack's name suffixed by a
 	timestamp.
@@ -73,20 +63,17 @@ the current stack.
 Cloning a GIT branch that is not an StGIT stack is similar to creating
 a new stack off the current branch.
 
---rename::
--r::
+'stg' branch [-r | --rename]::
 	Rename the stack named <oldname> to <newname>.
 
---protect::
--p::
+'stg' branch [-p | --protect]::
 	Protect the named stack or the current one, preventing
 	further StGIT operations from modifying this stack.
 
---unprotect::
--u::
+'stg' branch [-u | --unprotect]::
 	Remove a "protected" flag previously set with '--protect'.
 
---delete::
+'stg' branch --delete::
 	Delete the named <branch>.  If there are any patches left in
 	the series, StGIT will refuse to delete it, unless '--force'
 	is specified.
@@ -100,7 +87,7 @@ the "master" branch if it exists.
 Branch "master" is treated specially (see bug #8732), in that only the
 StGIT metadata are removed, the GIT branch itself is not destroyed.
 
---convert::
+'stg' branch --convert::
 	Switch current stack between old and new format.
 
 OPTIONS

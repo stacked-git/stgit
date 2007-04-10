@@ -9,9 +9,9 @@ stg-cp - stgdesc:cp[]
 
 SYNOPSIS
 --------
-stg cp [OPTIONS] <file|dir> <newname>
-
-stg cp [OPTIONS] <files|dirs...> <dir>
+[verse]
+'stg' cp [OPTIONS] <file|dir> <newname>
+'stg' cp [OPTIONS] <files|dirs...> <dir>
 
 DESCRIPTION
 -----------
@@ -43,6 +43,9 @@ that directory would be overwritten.
 
 FUTURE OPTIONS
 --------------
+
+No options are supported yet.  The following options may be
+implemented in the future.
 
 --all::
 	Also copy files not known to Git when copying a directory.
