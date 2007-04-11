@@ -190,7 +190,7 @@ _stg ()
         # repository commands
         id)     _stg_patches $command _all_patches ;;
         # stack commands
-        bury)   _stg_patches_options $command _applied_patches "-t --to" ;;
+        bury)   _stg_patches $command _all_patches ;;
         float)  _stg_patches $command _all_patches ;;
         goto)   _stg_patches $command _all_other_patches ;;
         hide)   _stg_patches $command _all_patches ;;
