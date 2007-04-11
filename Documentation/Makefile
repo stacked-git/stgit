@@ -1,5 +1,5 @@
-MAN1_TXT=$(wildcard stg-*.txt)
-MAN7_TXT=stg.txt
+MAN1_TXT=$(wildcard stg*.txt)
+MAN7_TXT=
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT) $(MAN7_TXT))
 

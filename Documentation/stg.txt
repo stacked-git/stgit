@@ -1,4 +1,4 @@
-stg(7)
+stg(1)
 ======
 Yann Dirson <ydirson@altern.org>
 v0.12.1, February 2007
