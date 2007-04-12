@@ -16,6 +16,7 @@ SYNOPSIS
 'stg' branch --create <newstack> [<commit-id>]
 'stg' branch --clone [<newstack>]
 'stg' branch --rename <oldname> <newname>
+'stg' branch --description=<description> [<branch>]
 'stg' branch --protect [<branch>]
 'stg' branch --unprotect [<branch>]
 'stg' branch --delete [--force] <branch>
@@ -65,6 +66,9 @@ a new stack off the current branch.
 
 'stg' branch [-r | --rename]::
 	Rename the stack named <oldname> to <newname>.
+
+'stg' branch [-d <desc> | --description=<desc>]::
+	Set the branch description.
 
 'stg' branch [-p | --protect]::
 	Protect the named stack or the current one, preventing
