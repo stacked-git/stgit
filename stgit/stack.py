@@ -1046,7 +1046,8 @@ class Series(StgitObject):
                 except git.GitException, ex:
                     print >> sys.stderr, \
                           'The merge failed during "push". ' \
-                          'Use "refresh" after fixing the conflicts'
+                          'Use "refresh" after fixing the conflicts or ' \
+                          'revert the operation with "push --undo".'
 
         append_string(self.__applied_file, name)
 

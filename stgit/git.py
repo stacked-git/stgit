@@ -672,13 +672,15 @@ def merge(base, head1, head2, recursive = False):
     """
     refresh_index()
 
+    err_output = None
     if recursive:
         # this operation tracks renames but it is slower (used in
         # general when pushing or picking patches)
         try:
             # use _output() to mask the verbose prints of the tool
             _output('git-merge-recursive %s -- %s %s' % (base, head1, head2))
-        except GitException:
+        except GitException, ex:
+            err_output = str(ex)
             pass
     else:
         # the fast case where we don't track renames (used when the
@@ -705,6 +707,11 @@ def merge(base, head1, head2, recursive = False):
             files[path]['3'] = ('', '')
 
         files[path][stage] = (mode, hash)
+
+    if err_output and not files:
+        # if no unmerged files, there was probably a different type of
+        # error and we have to abort the merge
+        raise GitException, err_output
 
     # merge the unmerged files
     errors = False
