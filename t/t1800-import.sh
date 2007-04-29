@@ -6,9 +6,7 @@ test_description='Test the import command'
 test_expect_success \
     'Initialize the StGIT repository' \
     '
-    for x in {do,di,da}{be,bi,bo}{dam,dim,dum}; do
-      echo $x
-    done > foo.txt &&
+    cp ../t1800-import/foo.txt . &&
     git add foo.txt &&
     git commit -a -m "initial version" &&
     stg init
