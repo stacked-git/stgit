@@ -387,9 +387,6 @@ Layout of the .git directory
     heads/
       master		- the master commit id
       ...
-    bases/
-      master		- the bottom id of the stack (to get a big diff)
-      ...
     tags/
       ...
     branches/

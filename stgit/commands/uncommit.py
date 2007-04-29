@@ -80,11 +80,9 @@ def func(parser, options, args):
     print 'Uncommitting %d patches...' % patch_nr,
     sys.stdout.flush()
 
-    base_file = crt_series.get_base_file()
-
     for n in xrange(0, patch_nr):
         # retrieve the commit (only commits with a single parent are allowed)
-        commit_id = read_string(base_file)
+        commit_id = crt_series.get_base()
         commit = git.Commit(commit_id)
         try:
             parent, = commit.get_parents()
@@ -107,6 +105,5 @@ def func(parser, options, args):
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date)
-        write_string(base_file, parent)
 
     print 'done'

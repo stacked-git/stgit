@@ -30,11 +30,12 @@ test_expect_success \
 
 test_expect_success \
     'Port those patches to orig tree' \
-    "(cd foo &&
-      GIT_DIR=../bar/.git git-format-patch --stdout bases/master..HEAD |
+    '(cd foo &&
+      GIT_DIR=../bar/.git git-format-patch --stdout \
+          $(cd ../bar && stg id base@master)..HEAD |
       git-am -3 -k
      )
-"
+    '
 
 test_expect_success \
     'Pull to sync with parent, preparing for the problem' \

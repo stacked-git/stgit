@@ -291,8 +291,6 @@ class Series(StgitObject):
         self._set_dir(os.path.join(self.__base_dir, 'patches', self.__name))
         self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
                                        self.__name)
-        self.__base_file = os.path.join(self.__base_dir, 'refs', 'bases',
-                                        self.__name)
 
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
@@ -378,12 +376,14 @@ class Series(StgitObject):
         f.close()
         return names
 
-    def get_base_file(self):
-        self.__begin_stack_check()
-        return self.__base_file
-
     def get_base(self):
-        return read_string(self.get_base_file())
+        # Return the parent of the bottommost patch, if there is one.
+        if os.path.isfile(self.__applied_file):
+            bottommost = file(self.__applied_file).readline().strip()
+            if bottommost:
+                return self.get_patch(bottommost).get_bottom()
+        # No bottommost patch, so just return HEAD
+        return git.get_head()
 
     def get_head(self):
         """Return the head of the branch
@@ -482,22 +482,6 @@ class Series(StgitObject):
         otherwise."""
         return self.patch_applied(name) or self.patch_unapplied(name)
 
-    def __begin_stack_check(self):
-        """Save the current HEAD into .git/refs/heads/base if the stack
-        is empty
-        """
-        if len(self.get_applied()) == 0:
-            head = git.get_head()
-            write_string(self.__base_file, head)
-
-    def __end_stack_check(self):
-        """Remove .git/refs/heads/base if the stack is empty.
-        This warning should never happen
-        """
-        if len(self.get_applied()) == 0 \
-           and read_string(self.__base_file) != git.get_head():
-            print 'Warning: stack empty but the HEAD and base are different'
-
     def head_top_equal(self):
         """Return true if the head and the top are the same
         """
@@ -519,8 +503,6 @@ class Series(StgitObject):
             raise StackException, self.__patch_dir + ' already exists'
         if os.path.exists(self.__refs_dir):
             raise StackException, self.__refs_dir + ' already exists'
-        if os.path.exists(self.__base_file):
-            raise StackException, self.__base_file + ' already exists'
 
         if (create_at!=False):
             git.create_branch(self.__name, create_at)
@@ -528,15 +510,12 @@ class Series(StgitObject):
         os.makedirs(self.__patch_dir)
 
         self.set_parent(parent_remote, parent_branch)
-        
-        create_dirs(os.path.join(self.__base_dir, 'refs', 'bases'))
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
         self.create_empty_field('description')
         os.makedirs(os.path.join(self._dir(), 'patches'))
         os.makedirs(self.__refs_dir)
-        self.__begin_stack_check()
         self._set_field('orig-base', git.get_head())
 
     def convert(self):
@@ -582,16 +561,11 @@ class Series(StgitObject):
 
         if to_stack.is_initialised():
             raise StackException, '"%s" already exists' % to_stack.get_branch()
-        if os.path.exists(to_stack.__base_file):
-            os.remove(to_stack.__base_file)
 
         git.rename_branch(self.__name, to_name)
 
         if os.path.isdir(self._dir()):
             rename(os.path.join(self.__base_dir, 'patches'),
-                   self.__name, to_stack.__name)
-        if os.path.exists(self.__base_file):
-            rename(os.path.join(self.__base_dir, 'refs', 'bases'),
                    self.__name, to_stack.__name)
         if os.path.exists(self.__refs_dir):
             rename(os.path.join(self.__base_dir, 'refs', 'patches'),
@@ -697,10 +671,6 @@ class Series(StgitObject):
                 os.removedirs(self.__refs_dir)
             except OSError:
                 print 'Refs directory %s is not empty.' % self.__refs_dir
-
-        if os.path.exists(self.__base_file):
-            remove_file_and_dirs(
-                os.path.join(self.__base_dir, 'refs', 'bases'), self.__name)
 
         # Cleanup parent informations
         # FIXME: should one day make use of git-config --section-remove,
@@ -824,8 +794,6 @@ class Series(StgitObject):
 
         head = git.get_head()
 
-        self.__begin_stack_check()
-
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
         patch.create()
 
@@ -893,8 +861,6 @@ class Series(StgitObject):
         if self.patch_hidden(name):
             self.unhide_patch(name)
 
-        self.__begin_stack_check()
-
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
 
@@ -902,7 +868,6 @@ class Series(StgitObject):
         stack. Apply the rest with push_patch
         """
         unapplied = self.get_unapplied()
-        self.__begin_stack_check()
 
         forwarded = 0
         top = git.get_head()
@@ -1000,8 +965,6 @@ class Series(StgitObject):
         """
         unapplied = self.get_unapplied()
         assert(name in unapplied)
-
-        self.__begin_stack_check()
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
@@ -1139,8 +1102,6 @@ class Series(StgitObject):
             self.__set_current(None)
         else:
             self.__set_current(applied[-1])
-
-        self.__end_stack_check()
 
     def empty_patch(self, name):
         """Returns True if the patch is empty

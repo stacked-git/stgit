@@ -39,20 +39,6 @@ test_expect_success \
 '
 
 test_expect_failure \
-    'Try to create an stgit branch with a spurious refs/bases/ entry' \
-    'find .git -name foo | xargs rm -rf &&
-     touch .git/refs/bases/foo &&
-     stg branch -c foo
-'
-
-test_expect_success \
-    'Check no part of the branch was created' \
-    'test "`find .git -name foo | tee /dev/stderr`" = ".git/refs/bases/foo" &&
-     ( grep foo .git/HEAD; test $? = 1 )
-'
-
-
-test_expect_failure \
     'Try to create an stgit branch with an existing git branch by that name' \
     'find .git -name foo | xargs rm -rf &&
      cp .git/refs/heads/master .git/refs/heads/foo &&
