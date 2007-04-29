@@ -47,7 +47,7 @@ test_expect_success \
     '
     stg sync -b master p2 &&
     test $(stg applied -c) -eq 3 &&
-    test $(cat foo2.txt) == "foo2"
+    test $(cat foo2.txt) = "foo2"
     '
 
 test_expect_success \
@@ -55,8 +55,8 @@ test_expect_success \
     '
     stg sync -b master -a &&
     test $(stg applied -c) -eq 3 &&
-    test $(cat foo1.txt) == "foo1" &&
-    test $(cat foo2.txt) == "foo2"
+    test $(cat foo1.txt) = "foo1" &&
+    test $(cat foo2.txt) = "foo2"
     '
 
 test_expect_success \
@@ -64,9 +64,9 @@ test_expect_success \
     '
     stg sync -s patches-master/series -a &&
     test $(stg applied -c) -eq 3 &&
-    test $(cat foo1.txt) == "foo1" &&
-    test $(cat foo2.txt) == "foo2" &&
-    test $(cat foo3.txt) == "foo3"
+    test $(cat foo1.txt) = "foo1" &&
+    test $(cat foo2.txt) = "foo2" &&
+    test $(cat foo3.txt) = "foo3"
     '
 
 test_expect_success \
@@ -92,7 +92,7 @@ test_expect_success \
     '
     stg sync -b master p2 &&
     test $(stg applied -c) -eq 3 &&
-    test $(cat bar2.txt) == "bar2"
+    test $(cat bar2.txt) = "bar2"
     '
 
 test_expect_failure \

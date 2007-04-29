@@ -29,7 +29,7 @@ test_expect_success \
     stg pop -a &&
     stg import -M mbox0 &&
     t2=$(git cat-file -p $(stg id) | grep ^tree) &&
-    [ "$t1" == "$t2" ]
+    [ "$t1" = "$t2" ]
     '
 
 test_done

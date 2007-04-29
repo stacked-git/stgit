@@ -42,7 +42,7 @@ test_expect_success \
 	'Uncommit the patches using names' \
 	'
 	stg uncommit bar foo &&
-	[ "$(stg id foo//top)" == "$(stg id bar//bottom)" ] &&
+	[ "$(stg id foo//top)" = "$(stg id bar//bottom)" ] &&
 	stg commit
 	'
 
@@ -50,7 +50,7 @@ test_expect_success \
 	'Uncommit the patches using prefix' \
 	'
 	stg uncommit --number=2 foobar &&
-	[ "$(stg id foobar1//top)" == "$(stg id foobar2//bottom)" ] &&
+	[ "$(stg id foobar1//top)" = "$(stg id foobar2//bottom)" ] &&
 	stg commit
 	'
 
@@ -58,7 +58,7 @@ test_expect_success \
 	'Uncommit the patches using auto names' \
 	'
 	stg uncommit --number=2 &&
-	[ "$(stg id foo-patch//top)" == "$(stg id bar-patch//bottom)" ] &&
+	[ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
 	stg commit
 	'
 
@@ -67,7 +67,7 @@ test_expect_success \
 	'
 	stg uncommit &&
 	stg uncommit &&
-	[ "$(stg id foo-patch//top)" == "$(stg id bar-patch//bottom)" ] &&
+	[ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
 	stg commit
 	'
 test_done
