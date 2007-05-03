@@ -639,7 +639,7 @@ class Series(StgitObject):
 
             # remove the trash directory
             for fname in os.listdir(self.__trash_dir):
-                os.remove(fname)
+                os.remove(os.path.join(self.__trash_dir, fname))
             os.rmdir(self.__trash_dir)
 
             # FIXME: find a way to get rid of those manual removals
