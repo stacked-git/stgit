@@ -71,11 +71,11 @@ def func(parser, options, args):
     else:
         patch_branch = commit_str.split('@')
         if options.name:
-            patch = options.name
+            patchname = options.name
         elif len(patch_branch) == 2:
-            patch = patch_branch[0]
+            patchname = patch_branch[0]
         else:
-            patch = make_patch_name(commit.get_log(), crt_series.patch_exists)
+            patchname = make_patch_name(commit.get_log(), crt_series.patch_exists)
 
     if options.parent:
         parent = git_id(options.parent)
@@ -118,17 +118,17 @@ def func(parser, options, args):
         print 'Importing commit %s...' % commit_id,
         sys.stdout.flush()
 
-        crt_series.new_patch(patch, message = message, can_edit = False,
+        crt_series.new_patch(patchname, message = message, can_edit = False,
                              unapplied = True, bottom = bottom, top = top,
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date)
         if not options.unapplied:
-            modified = crt_series.push_patch(patch)
+            modified = crt_series.push_patch(patchname)
         else:
             modified = False
 
-        if crt_series.empty_patch(patch):
+        if crt_series.empty_patch(patchname):
             print 'done (empty patch)'
         elif modified:
             print 'done (modified)'
