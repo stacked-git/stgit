@@ -15,5 +15,9 @@ patch="$1"
 stg pick --fold "$patch"
 stg refresh
 stg push "$patch"
+
 #stg clean "$patch"
-stg pop; stg clean -u
+#stg pop; stg clean -u
+[ $(stg id "$patch//top") != $(stg id "$patch//bottom") ] ||
+    { echo >&2 "Assertion failed: patch '$patch' is not empty after swallowing, not deleting it."; exit 1; }    
+stg delete "$patch"
