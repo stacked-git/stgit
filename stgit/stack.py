@@ -23,6 +23,7 @@ import sys, os, re
 from stgit.utils import *
 from stgit import git, basedir, templates
 from stgit.config import config
+from shutil import copyfile
 
 
 # stack exception class
@@ -602,13 +603,18 @@ class Series(StgitObject):
             patches = applied = unapplied = []
         for p in patches:
             patch = self.get_patch(p)
-            new_series.new_patch(p, message = patch.get_description(),
-                                 can_edit = False, unapplied = True,
-                                 bottom = patch.get_bottom(),
-                                 top = patch.get_top(),
-                                 author_name = patch.get_authname(),
-                                 author_email = patch.get_authemail(),
-                                 author_date = patch.get_authdate())
+            newpatch = new_series.new_patch(p, message = patch.get_description(),
+                                            can_edit = False, unapplied = True,
+                                            bottom = patch.get_bottom(),
+                                            top = patch.get_top(),
+                                            author_name = patch.get_authname(),
+                                            author_email = patch.get_authemail(),
+                                            author_date = patch.get_authdate())
+            if patch.get_log():
+                print "setting log to %s" %  patch.get_log()
+                newpatch.set_log(patch.get_log())
+            else:
+                print "no log for %s" % patchname
 
         # fast forward the cloned series to self's top
         new_series.forward_patches(applied)
@@ -832,6 +838,8 @@ class Series(StgitObject):
             self.__set_current(name)
             if refresh:
                 self.refresh_patch(cache_update = False, log = 'new')
+
+        return patch
 
     def delete_patch(self, name):
         """Deletes a patch

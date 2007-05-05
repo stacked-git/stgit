@@ -21,6 +21,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
+from stgit.stack import Series
 
 
 help = 'import a patch from a different branch or a commit object'
@@ -118,11 +119,31 @@ def func(parser, options, args):
         print 'Importing commit %s...' % commit_id,
         sys.stdout.flush()
 
-        crt_series.new_patch(patchname, message = message, can_edit = False,
-                             unapplied = True, bottom = bottom, top = top,
-                             author_name = author_name,
-                             author_email = author_email,
-                             author_date = author_date)
+        newpatch = crt_series.new_patch(patchname, message = message, can_edit = False,
+                                        unapplied = True, bottom = bottom, top = top,
+                                        author_name = author_name,
+                                        author_email = author_email,
+                                        author_date = author_date)
+        # find a patchlog to fork from
+        (refpatchname, refbranchname, refpatchid) = parse_rev(commit_str)
+        if refpatchname and not refpatchid and \
+               (not refpatchid or refpatchid == 'top'):
+            # FIXME: should also support picking //top.old
+            if refbranchname:
+                # assume the refseries is OK, since we already resolved
+                # commit_str to a git_id
+                refseries = Series(refbranchname)
+            else:
+                refseries = crt_series
+            patch = refseries.get_patch(refpatchname)
+            if patch.get_log():
+                print"log was %s" % newpatch.get_log()
+                print "setting log to %s\n" %  patch.get_log()
+                newpatch.set_log(patch.get_log())
+                print"log is now %s" % newpatch.get_log()
+            else:
+                print "no log for %s\n" % patchname
+ 
         if not options.unapplied:
             modified = crt_series.push_patch(patchname)
         else:
