@@ -296,7 +296,6 @@ class Series(StgitObject):
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
         self.__hidden_file = os.path.join(self._dir(), 'hidden')
-        self.__current_file = os.path.join(self._dir(), 'current')
         self.__descr_file = os.path.join(self._dir(), 'description')
 
         # where this series keeps its patches
@@ -326,11 +325,6 @@ class Series(StgitObject):
         """
         return self.__name
 
-    def __set_current(self, name):
-        """Sets the topmost patch
-        """
-        self._set_field('current', name)
-
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
@@ -347,11 +341,16 @@ class Series(StgitObject):
     def get_current(self):
         """Return the name of the topmost patch, or None if there is
         no such patch."""
-        name = self._get_field('current')
-        if name == '':
+        try:
+            applied = self.get_applied()
+        except StackException:
+            # No "applied" file: branch is not initialized.
             return None
-        else:
-            return name
+        try:
+            return applied[-1]
+        except IndexError:
+            # No patches applied.
+            return None
 
     def get_applied(self):
         if not os.path.isfile(self.__applied_file):
@@ -656,8 +655,6 @@ class Series(StgitObject):
                 os.remove(self.__unapplied_file)
             if os.path.exists(self.__hidden_file):
                 os.remove(self.__hidden_file)
-            if os.path.exists(self.__current_file):
-                os.remove(self.__current_file)
             if os.path.exists(self.__descr_file):
                 os.remove(self.__descr_file)
             if os.path.exists(self._dir()+'/orig-base'):
@@ -831,11 +828,8 @@ class Series(StgitObject):
             self.log_patch(patch, 'new')
 
             insert_string(self.__applied_file, patch.get_name())
-            if not self.get_current():
-                self.__set_current(name)
         else:
             append_string(self.__applied_file, patch.get_name())
-            self.__set_current(name)
             if refresh:
                 self.refresh_patch(cache_update = False, log = 'new')
 
@@ -944,8 +938,6 @@ class Series(StgitObject):
         f.writelines([line + '\n' for line in unapplied])
         f.close()
 
-        self.__set_current(name)
-
         return forwarded
 
     def merged_patches(self, names):
@@ -1027,8 +1019,6 @@ class Series(StgitObject):
         f.writelines([line + '\n' for line in unapplied])
         f.close()
 
-        self.__set_current(name)
-
         # head == bottom case doesn't need to refresh the patch
         if empty or head != bottom:
             if not ex:
@@ -1106,11 +1096,6 @@ class Series(StgitObject):
         f.writelines([line + '\n' for line in applied])
         f.close()
 
-        if applied == []:
-            self.__set_current(None)
-        else:
-            self.__set_current(applied[-1])
-
     def empty_patch(self, name):
         """Returns True if the patch is empty
         """
@@ -1152,8 +1137,6 @@ class Series(StgitObject):
             f.close()
         elif oldname in applied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
-            if oldname == self.get_current():
-                self.__set_current(newname)
 
             applied[applied.index(oldname)] = newname
 
