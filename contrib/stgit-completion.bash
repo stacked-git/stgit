@@ -98,6 +98,12 @@ _all_other_patches ()
         | grep -v "^$(cat $g/patches/$b/current 2> /dev/null)$"
 }
 
+_all_branches ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && (cd .git/patches/ && echo *)
+}
+
 # List the command options
 _cmd_options ()
 {
@@ -135,6 +141,11 @@ _complete_patch_range_options ()
         fi
     done
     COMPREPLY=($(compgen -W "$options" -- "$cur"))
+}
+
+_complete_branch ()
+{
+     COMPREPLY=($(compgen -W "$(_cmd_options $1) $($2)" -- "${COMP_WORDS[COMP_CWORD]}"))
 }
 
 # Generate completions for options from the given list.
@@ -211,6 +222,9 @@ _stg ()
         sync)   _stg_patches $command _applied_patches ;;
         # working-copy commands
         diff)   _stg_patches_options $command _applied_patches "-r --range" ;;
+	# commands that usually raher accept branches
+	branch) _complete_branch $command _all_branches ;;
+	rebase) _complete_branch $command _all_branches ;;
         # all the other commands
         *)      _stg_common $command ;;
     esac
