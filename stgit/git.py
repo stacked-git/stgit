@@ -298,14 +298,18 @@ def set_head_file(ref):
              [os.path.join('refs', 'heads', ref)]) != 0:
         raise GitException, 'Could not set head to "%s"' % ref
 
+def set_branch(branch, val):
+    """Point branch at a new commit object."""
+    if __run('git-update-ref', [branch, val]) != 0:
+        raise GitException, 'Could not update %s to "%s".' % (branch, val)
+
 def __set_head(val):
     """Sets the HEAD value
     """
     global __head
 
     if not __head or __head != val:
-        if __run('git-update-ref HEAD', [val]) != 0:
-            raise GitException, 'Could not update HEAD to "%s".' % val
+        set_branch('HEAD', val)
         __head = val
 
     # only allow SHA1 hashes
