@@ -51,6 +51,31 @@ Development branch::
 In such a setup, not all commits on your branch need to be StGIT
 patches; there may be regular GIT commits below your stack base.
 
+Patches
+~~~~~~~
+
+Many StGIT commands take references to StGIT patches as arguments.
+Patches in the stack are identified with short names, each of which
+must be unique in the stack.
+
+Patches in the current stack are just referred to by their name.  Some
+commands allow you to specify a patch in another stack of the repository;
+this is done by suffixing the patch name with an '@' sign followed by the
+branch name (eg. 'thispatch@otherbranch').
+
+A number of positions in the stack related to the patch are also
+accessible through '//' suffixes.  For example, 'patch//top' is
+equivalent to 'patch', and 'patch//bottom' refers to the commit below
+'patch' (i.e. the patch below, or the stack base if this is the
+bottom-most patch).  Similarly '//top.old' and '//bottom.old'
+refer to the previous version of the patch (before the last
+stglink:push[] or stglink:refresh[] operation).  When referring to the
+current patch, its name can be omitted (eg. 'currentpatch//bottom.old'
+can be abbreviated as 'bottom.old').
+
+If you need to pass a given StGIT reference to a git command,
+stglink:id[] will convert it to a git commit id.
+
 OPTIONS
 -------
 
