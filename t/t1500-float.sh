@@ -20,37 +20,37 @@ test_expect_success \
 	 stg new F -m "f" && echo F >f.txt && stg add f.txt && stg refresh &&
 	 stg new G -m "g" && echo G >g.txt && stg add g.txt && stg refresh &&
 	 stg pop &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "A B C D E F"
+	 test "$(echo $(stg applied))" = "A B C D E F"
 	'
 
 test_expect_success \
 	'Float A to top' \
 	'stg float A &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "B C D E F A"
+	 test "$(echo $(stg applied))" = "B C D E F A"
 	'
 test_expect_success \
 	'Float A to top (noop)' \
 	'stg float A &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "B C D E F A"
+	 test "$(echo $(stg applied))" = "B C D E F A"
 	'
 test_expect_success \
 	'Float B C to top' \
 	'stg float B C &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "D E F A B C"
+	 test "$(echo $(stg applied))" = "D E F A B C"
 	'
 test_expect_success \
 	'Float E A to top' \
 	'stg float E A &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "D F B C E A"
+	 test "$(echo $(stg applied))" = "D F B C E A"
 	'
 test_expect_success \
 	'Float E to top' \
 	'stg float E &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "D F B C A E"
+	 test "$(echo $(stg applied))" = "D F B C A E"
 	'
 test_expect_success \
 	'Float G F to top' \
 	'stg float G F &&
-	 test "`echo \`cat .git/patches/master/applied\``" = "D B C A E G F"
+	 test "$(echo $(stg applied))" = "D B C A E G F"
 	'
 test_done
