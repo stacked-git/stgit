@@ -24,7 +24,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 
-help = 'bury patches down the stack'
+help = 'send patches deeper down the stack'
 usage = """%prog [-t <target patch>] [-n] [<patches>]
 
 Pop all patches (or all patches including <target patch>), then
@@ -36,10 +36,10 @@ options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after sinking',
                        action = 'store_true'),
            make_option('-t', '--to', metavar = 'TARGET',
-                       help = 'bury patches below TARGET patch')]
+                       help = 'sink patches below TARGET patch')]
 
 def func(parser, options, args):
-    """Bury patches
+    """Sink patches down the stack.
     """
 
     check_local_changes()

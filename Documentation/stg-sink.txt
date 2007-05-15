@@ -1,16 +1,16 @@
-stg-bury(1)
+stg-sink(1)
 ===========
 Yann Dirson <ydirson@altern.org>
 v0.13, April 2007
 
 NAME
 ----
-stg-bury - stgdesc:bury[]
+stg-sink - stgdesc:sink[]
 
 SYNOPSIS
 --------
 [verse]
-'stg' bury [--to=<target>] [--nopush] [<patches>]
+'stg' sink [--to=<target>] [--nopush] [<patches>]
 
 DESCRIPTION
 -----------
@@ -21,12 +21,12 @@ patches near the bottom of the stack, where they are less likely to be
 impacted by the push of another patch, and from where they can be more
 easily committed or pushed.
 
-If no patch is specified on command-line, the current patch is buried.
-By default patches are buried at the bottom of the stack, but the
-'--to' option allows to bury under any applied patch.
+If no patch is specified on command-line, the current patch gets sunk.
+By default patches are sunk to the bottom of the stack, but the
+'--to' option allows to place them under any applied patch.
 
-Buring internally involves popping all patches (or all patches
-including <target patch>), then pushing the patches to bury, and then
+Sinking internally involves popping all patches (or all patches
+including <target patch>), then pushing the patches to sink, and then
 (unless '--nopush' is also given) pushing back into place the
 formerly-applied patches.
 
@@ -36,13 +36,13 @@ OPTIONS
 
 --to=<TARGET>::
 -t <TARGET>::
-	Specify a target patch to bury the patches below, instead of
-	buring at the bottom of the stack.
+	Specify a target patch to place the patches below, instead of
+	sinking them to the bottom of the stack.
 
 --nopush::
 -n::
 	Do not push back on the stack the formerly-applied patches.
-	Only the patches to bury are pushed.
+	Only the patches to sink are pushed.
 
 StGIT
 -----

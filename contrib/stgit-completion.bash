@@ -15,7 +15,6 @@ _stg_commands="
     applied
     assimilate
     branch
-    bury
     delete
     diff
     clean
@@ -46,6 +45,7 @@ _stg_commands="
     rm
     series
     show
+    sink
     status
     sync
     top
@@ -201,13 +201,13 @@ _stg ()
         # repository commands
         id)     _stg_patches $command _all_patches ;;
         # stack commands
-        bury)   _stg_patches $command _all_patches ;;
         float)  _stg_patches $command _all_patches ;;
         goto)   _stg_patches $command _all_other_patches ;;
         hide)   _stg_patches $command _all_patches ;;
         pop)    _stg_patches $command _applied_patches ;;
         push)   _stg_patches $command _unapplied_patches ;;
         series) _stg_patches $command _all_patches ;;
+        sink)   _stg_patches $command _all_patches ;;
         unhide) _stg_patches $command _all_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
