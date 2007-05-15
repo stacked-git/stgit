@@ -613,7 +613,7 @@ class Series(StgitObject):
                 print "setting log to %s" %  patch.get_log()
                 newpatch.set_log(patch.get_log())
             else:
-                print "no log for %s" % patchname
+                print "no log for %s" % p
 
         # fast forward the cloned series to self's top
         new_series.forward_patches(applied)
