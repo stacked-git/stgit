@@ -242,9 +242,11 @@ def __create_patch(filename, message, author_name, author_email,
         patch = __strip_patch_name(patch)
 
     if not patch:
-        patch = make_patch_name(message, crt_series.patch_exists,
-                                alternative = not (options.ignore
-                                                   or options.replace))
+        if options.ignore or options.replace:
+            unacceptable_name = lambda name: False
+        else:
+            unacceptable_name = crt_series.patch_exists
+        patch = make_patch_name(message, unacceptable_name)
     else:
         # fix possible invalid characters in the patch name
         patch = re.sub('[^\w.]+', '-', patch).strip('-')

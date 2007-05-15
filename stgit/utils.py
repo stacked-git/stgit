@@ -183,15 +183,14 @@ def patch_name_from_msg(msg):
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
     return re.sub('[\W]+', '-', subject_line).strip('-')[:30]
 
-def make_patch_name(msg, unacceptable, default_name = 'patch',
-                    alternative = True):
+def make_patch_name(msg, unacceptable, default_name = 'patch'):
     """Return a patch name generated from the given commit message,
     guaranteed to make unacceptable(name) be false. If the commit
     message is empty, base the name on default_name instead."""
     patchname = patch_name_from_msg(msg)
     if not patchname:
         patchname = default_name
-    if alternative and unacceptable(patchname):
+    if unacceptable(patchname):
         suffix = 0
         while unacceptable('%s-%d' % (patchname, suffix)):
             suffix += 1
