@@ -70,4 +70,12 @@ test_expect_success \
 	[ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
 	stg commit
 	'
+
+test_expect_success \
+    'Uncommit the patches with --to' '
+    stg uncommit --to HEAD^ &&
+    [ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
+    stg commit
+'
+
 test_done

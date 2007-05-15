@@ -25,7 +25,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'turn regular GIT commits into StGIT patches'
-usage = """%prog [<patchname1> [<patchname2> ... ] | -n [<prefix>]]
+usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish>
 
 Take one or more git commits at the base of the current stack and turn
 them into StGIT patches. The new patches are created as applied patches
@@ -35,24 +35,34 @@ By default, the number of patches to uncommit is determined by the
 number of patch names provided on the command line. First name is used
 for the first patch to uncommit, i.e. for the newest patch.
 
-The --number option specifies the number of patches to uncommit.  In
+The -n/--number option specifies the number of patches to uncommit. In
 this case, at most one patch name may be specified. It is used as
-prefix to which the patch number is appended.
+prefix to which the patch number is appended. If no patch names are
+provided on the command line, StGIT automatically generates them based
+on the first line of the patch description.
 
-If no patch names are provided on the command line, StGIT
-automatically generates them based on the first line of the patch
-description.
+The -t/--to option specifies that all commits up to and including the
+given commit should be uncommitted.
 
 Only commits with exactly one parent can be uncommitted; in other
 words, you can't uncommit a merge."""
 
 options = [make_option('-n', '--number', type = 'int',
-                       help = 'uncommit the specified number of commits')]
+                       help = 'uncommit the specified number of commits'),
+           make_option('-t', '--to',
+                       help = 'uncommit to the specified commit')]
 
 def func(parser, options, args):
     """Uncommit a number of patches.
     """
-    if options.number:
+    if options.to:
+        if options.number:
+            parser.error('cannot give both --to and --number')
+        if len(args) != 0:
+            parser.error('cannot specify patch name with --to')
+        patch_nr = patchnames = None
+        to_commit = git.rev_parse(options.to)
+    elif options.number:
         if options.number <= 0:
             parser.error('invalid value passed to --number')
 
@@ -77,9 +87,6 @@ def func(parser, options, args):
         raise CmdException, \
               'This branch is protected. Uncommit is not permitted'
 
-    print 'Uncommitting %d patches...' % patch_nr,
-    sys.stdout.flush()
-
     def get_commit(commit_id):
         commit = git.Commit(commit_id)
         try:
@@ -91,11 +98,23 @@ def func(parser, options, args):
 
     commits = []
     next_commit = crt_series.get_base()
-    for i in xrange(patch_nr):
-        commit, commit_id, parent = get_commit(next_commit)
-        commits.append((commit, commit_id, parent))
-        next_commit = parent
+    if patch_nr:
+        print 'Uncommitting %d patches...' % patch_nr,
+        for i in xrange(patch_nr):
+            commit, commit_id, parent = get_commit(next_commit)
+            commits.append((commit, commit_id, parent))
+            next_commit = parent
+    else:
+        print 'Uncommitting to %s...' % to_commit
+        while True:
+            commit, commit_id, parent = get_commit(next_commit)
+            commits.append((commit, commit_id, parent))
+            if commit_id == to_commit:
+                break
+            next_commit = parent
+        patch_nr = len(commits)
 
+    sys.stdout.flush()
     for (commit, commit_id, parent), patchname in \
         zip(commits, patchnames or (None for i in xrange(len(commits)))):
         author_name, author_email, author_date = \
