@@ -80,23 +80,26 @@ def func(parser, options, args):
     print 'Uncommitting %d patches...' % patch_nr,
     sys.stdout.flush()
 
-    for n in xrange(0, patch_nr):
-        # retrieve the commit (only commits with a single parent are allowed)
-        commit_id = crt_series.get_base()
+    def get_commit(commit_id):
         commit = git.Commit(commit_id)
         try:
             parent, = commit.get_parents()
         except ValueError:
-            raise CmdException, 'Commit %s does not have exactly one parent' \
-                  % commit_id
+            raise CmdException('Commit %s does not have exactly one parent'
+                               % commit_id)
+        return (commit, commit_id, parent)
+
+    commits = []
+    next_commit = crt_series.get_base()
+    for i in xrange(patch_nr):
+        commit, commit_id, parent = get_commit(next_commit)
+        commits.append((commit, commit_id, parent))
+        next_commit = parent
+
+    for (commit, commit_id, parent), patchname in \
+        zip(commits, patchnames or (None for i in xrange(len(commits)))):
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
-
-        if patchnames:
-            patchname = patchnames[n]
-        else:
-            patchname = None
-
         crt_series.new_patch(patchname,
                              can_edit = False, before_existing = True,
                              top = commit_id, bottom = parent,
@@ -104,5 +107,6 @@ def func(parser, options, args):
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date)
+
 
     print 'done'
