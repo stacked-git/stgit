@@ -296,7 +296,6 @@ class Series(StgitObject):
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
         self.__hidden_file = os.path.join(self._dir(), 'hidden')
-        self.__descr_file = os.path.join(self._dir(), 'description')
 
         # where this series keeps its patches
         self.__patch_dir = os.path.join(self._dir(), 'patches')
@@ -407,11 +406,23 @@ class Series(StgitObject):
         if os.path.isfile(protect_file):
             os.remove(protect_file)
 
+    def __branch_descr(self):
+        return 'branch.%s.description' % self.get_branch()
+
     def get_description(self):
-        return self._get_field('description') or ''
+        # Fall back to the .git/patches/<branch>/description file if
+        # the config variable is unset.
+        return (config.get(self.__branch_descr())
+                or self._get_field('description') or '')
 
     def set_description(self, line):
-        self._set_field('description', line)
+        if line:
+            config.set(self.__branch_descr(), line)
+        else:
+            config.unset(self.__branch_descr())
+        # Delete the old .git/patches/<branch>/description file if it
+        # exists.
+        self._set_field('description', None)
 
     def get_parent_remote(self):
         value = config.get('branch.%s.remote' % self.__name)
@@ -511,7 +522,6 @@ class Series(StgitObject):
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
-        self.create_empty_field('description')
         os.makedirs(os.path.join(self._dir(), 'patches'))
         os.makedirs(self.__refs_dir)
         self._set_field('orig-base', git.get_head())
@@ -653,8 +663,6 @@ class Series(StgitObject):
                 os.remove(self.__unapplied_file)
             if os.path.exists(self.__hidden_file):
                 os.remove(self.__hidden_file)
-            if os.path.exists(self.__descr_file):
-                os.remove(self.__descr_file)
             if os.path.exists(self._dir()+'/orig-base'):
                 os.remove(self._dir()+'/orig-base')
 
