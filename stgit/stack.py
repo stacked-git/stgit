@@ -450,10 +450,8 @@ class Series(StgitObject):
         config.set('branch.%s.stgit.parentbranch' % self.__name, name)
 
     def set_parent(self, remote, localbranch):
-        # policy: record local branches as remote='.'
-        recordremote = remote or '.'
         if localbranch:
-            self.__set_parent_remote(recordremote)
+            self.__set_parent_remote(remote)
             self.__set_parent_branch(localbranch)
         # We'll enforce this later
 #         else:

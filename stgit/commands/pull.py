@@ -50,13 +50,25 @@ options = [make_option('-n', '--nopush',
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
-    if len(args) > 1:
-        parser.error('incorrect number of arguments')
+    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_branch()) or \
+             config.get('stgit.pull-policy')
 
-    if len(args) >= 1:
-        repository = args[0]
+    if policy == 'rebase':
+        # parent is local
+        if len(args) == 1:
+            parser.error('specifying a repository is meaningless for policy="%s"' % policy)
+        if len(args) > 0:
+            parser.error('incorrect number of arguments')
+
     else:
-        repository = crt_series.get_parent_remote()
+        # parent is remote
+        if len(args) > 1:
+            parser.error('incorrect number of arguments')
+
+        if len(args) >= 1:
+            repository = args[0]
+        else:
+            repository = crt_series.get_parent_remote()
 
     if crt_series.get_protected():
         raise CmdException, 'This branch is protected. Pulls are not permitted'
@@ -65,8 +77,6 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_branch()) or \
-             config.get('stgit.pull-policy')
     if policy == 'pull':
         must_rebase = 0
     elif policy == 'fetch-rebase':
