@@ -116,7 +116,7 @@ def func(parser, options, args):
 
     sys.stdout.flush()
     for (commit, commit_id, parent), patchname in \
-        zip(commits, patchnames or (None for i in xrange(len(commits)))):
+        zip(commits, patchnames or [None for i in xrange(len(commits))]):
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
         crt_series.new_patch(patchname,
