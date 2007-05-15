@@ -175,13 +175,13 @@ def call_editor(filename):
 
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
-    from the first 30 characters of the top line of the string passed
-    as argument."""
+    from the top line of the string passed as argument, and is at most
+    30 characters long."""
     if not msg:
         return None
 
-    subject_line = msg[:30].lstrip().split('\n', 1)[0].lower()
-    return re.sub('[\W]+', '-', subject_line).strip('-')
+    subject_line = msg.split('\n', 1)[0].lstrip().lower()
+    return re.sub('[\W]+', '-', subject_line).strip('-')[:30]
 
 def make_patch_name(msg, unacceptable, default_name = 'patch',
                     alternative = True):
