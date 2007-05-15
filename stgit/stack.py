@@ -666,6 +666,15 @@ class Series(StgitObject):
             if os.path.exists(self._dir()+'/orig-base'):
                 os.remove(self._dir()+'/orig-base')
 
+            # Remove obsolete files that StGIT no longer uses, but
+            # that might still be around if this is an old repository.
+            for obsolete in ([os.path.join(self._dir(), fn)
+                              for fn in ['current', 'description']]
+                             + [os.path.join(self.__base_dir,
+                                             'refs', 'bases', self.__name)]):
+                if os.path.exists(obsolete):
+                    os.remove(obsolete)
+
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:
