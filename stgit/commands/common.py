@@ -323,31 +323,6 @@ def address_or_alias(addr_str):
                  for addr in addr_str.split(',')]
     return ', '.join([addr for addr in addr_list if addr])
 
-def patch_name_from_msg(msg):
-    """Return a string to be used as a patch name. This is generated
-    from the first 30 characters of the top line of the string passed
-    as argument."""
-    if not msg:
-        return None
-
-    subject_line = msg[:30].lstrip().split('\n', 1)[0].lower()
-    return re.sub('[\W]+', '-', subject_line).strip('-')
-
-def make_patch_name(msg, unacceptable, default_name = 'patch',
-                    alternative = True):
-    """Return a patch name generated from the given commit message,
-    guaranteed to make unacceptable(name) be false. If the commit
-    message is empty, base the name on default_name instead."""
-    patchname = patch_name_from_msg(msg)
-    if not patchname:
-        patchname = default_name
-    if alternative and unacceptable(patchname):
-        suffix = 0
-        while unacceptable('%s-%d' % (patchname, suffix)):
-            suffix += 1
-        patchname = '%s-%d' % (patchname, suffix)
-    return patchname
-
 def prepare_rebase(real_rebase, force=None):
     if not force:
         # Be sure we won't loose results of stg-(un)commit by error.

@@ -95,8 +95,7 @@ def func(parser, options, args):
         if patchnames:
             patchname = patchnames[n]
         else:
-            patchname = make_patch_name(commit.get_log(),
-                                        crt_series.patch_exists)
+            patchname = None
 
         crt_series.new_patch(patchname,
                              can_edit = False, before_existing = True,

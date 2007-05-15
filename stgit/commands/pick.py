@@ -76,7 +76,7 @@ def func(parser, options, args):
         elif len(patch_branch) == 2:
             patchname = patch_branch[0]
         else:
-            patchname = make_patch_name(commit.get_log(), crt_series.patch_exists)
+            patchname = None
 
     if options.parent:
         parent = git_id(options.parent)

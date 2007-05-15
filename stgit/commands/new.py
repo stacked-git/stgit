@@ -25,7 +25,7 @@ from stgit import stack, git
 
 
 help = 'create a new patch and make it the topmost one'
-usage = """%prog [options] <name>
+usage = """%prog [options] [name]
 
 Create a new, empty patch and make it the topmost one. If the
 '--message' option is not passed, an editor is invoked with the
@@ -33,7 +33,10 @@ Create a new, empty patch and make it the topmost one. If the
 /usr/share/stgit/templates/patchdescr.tmpl file used a as template,
 together with generated lines. By default, the local changes in the
 working tree are not included in the patch. A 'refresh' command is
-needed for this."""
+needed for this.
+
+If no name is given for the new patch, one is generated from the first
+line of the commit message."""
 
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
@@ -57,7 +60,11 @@ options = [make_option('-m', '--message',
 def func(parser, options, args):
     """Creates a new patch
     """
-    if len(args) != 1:
+    if len(args) == 0:
+        name = None # autogenerate a name
+    elif len(args) == 1:
+        name = args[0]
+    else:
         parser.error('incorrect number of arguments')
 
     check_conflicts()
@@ -66,7 +73,7 @@ def func(parser, options, args):
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
-    crt_series.new_patch(args[0], message = options.message,
+    crt_series.new_patch(name, message = options.message,
                          show_patch = options.showpatch,
                          author_name = options.authname,
                          author_email = options.authemail,

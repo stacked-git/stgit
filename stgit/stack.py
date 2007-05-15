@@ -781,19 +781,24 @@ class Series(StgitObject):
                   before_existing = False, refresh = True):
         """Creates a new patch
         """
-        self.__patch_name_valid(name)
 
-        if self.patch_applied(name) or self.patch_unapplied(name):
-            raise StackException, 'Patch "%s" already exists' % name
+        if name != None:
+            self.__patch_name_valid(name)
+            if self.patch_applied(name) or self.patch_unapplied(name):
+                raise StackException, 'Patch "%s" already exists' % name
 
         if not message and can_edit:
-            descr = edit_file(self, None, \
-                              'Please enter the description for patch "%s" ' \
-                              'above.' % name, show_patch)
+            descr = edit_file(
+                self, None,
+                'Please enter the description for the patch above.',
+                show_patch)
         else:
             descr = message
 
         head = git.get_head()
+
+        if name == None:
+            name = make_patch_name(descr, self.patch_exists)
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
         patch.create()

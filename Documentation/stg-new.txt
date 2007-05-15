@@ -10,7 +10,7 @@ stg-new - stgdesc:new[]
 SYNOPSIS
 --------
 [verse]
-'stg' new [OPTIONS] <name>
+'stg' new [OPTIONS] [name]
 
 DESCRIPTION
 -----------
@@ -22,7 +22,8 @@ tree are not included in the patch. A stglink:refresh[] command is
 needed for this.
 
 The given <name> must be unique in the stack, and may only contain
-alphanumeric characters, dashes and underscores.
+alphanumeric characters, dashes and underscores. If no name is given,
+one is generated from the first line of the commit message.
 
 An editor will be launched to edit the commit message to be used for
 the patch, unless the '--message' flag already specified one.  The
