@@ -99,12 +99,15 @@ class GitConfig:
 
     def rename_section(self, from_name, to_name):
         self.__run('git-repo-config --rename-section', [from_name, to_name])
+        self.__cache.clear()
 
     def set(self, name, value):
         self.__run('git-repo-config', [name, value])
+        self.__cache[name] = value
 
     def unset(self, name):
         self.__run('git-repo-config --unset', [name])
+        self.__cache[name] = None
 
     def sections_matching(self, regexp):
         """Takes a regexp with a single group, matches it against all
