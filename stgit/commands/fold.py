@@ -61,12 +61,11 @@ def func(parser, options, args):
 
     if filename:
         if os.path.exists(filename):
-            print 'Folding patch "%s"...' % filename,
+            out.start('Folding patch "%s"' % filename)
         else:
             raise CmdException, 'No such file: %s' % filename
     else:
-        print 'Folding patch from stdin...',
-    sys.stdout.flush()
+        out.start('Folding patch from stdin')
 
     if options.threeway:
         crt_patch = crt_series.get_patch(current)
@@ -77,4 +76,4 @@ def func(parser, options, args):
     else:
         git.apply_patch(filename = filename)
 
-    print 'done'
+    out.done()

@@ -75,7 +75,7 @@ def func(parser, options, args):
                                   git.diff(args, patch.get_bottom(),
                                            patch.get_top()))
             else:
-                print patch.get_name()
+                out.stdout(patch.get_name())
 
     if options.diff:
         pager(diff_output)

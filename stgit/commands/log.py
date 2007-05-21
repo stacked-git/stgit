@@ -70,7 +70,7 @@ def show_log(log, show_patch):
             secs, tz = author_date.split()
             date = '%s %s' % (time.ctime(int(secs)), tz)
 
-            print descr, date
+            out.stdout('%s %s' % (descr, date))
 
         parent = commit.get_parent()
         if parent:

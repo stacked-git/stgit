@@ -22,6 +22,7 @@ import sys, os
 from optparse import OptionParser
 
 import stgit.commands
+from stgit.utils import out
 
 #
 # The commands map
@@ -36,14 +37,12 @@ class Commands(dict):
         candidates = [cmd for cmd in self.keys() if cmd.startswith(key)]
 
         if not candidates:
-            print >> sys.stderr, 'Unknown command: %s' % key
-            print >> sys.stderr, '  Try "%s help" for a list of ' \
-                  'supported commands' % prog
+            out.error('Unknown command: %s' % key,
+                      'Try "%s help" for a list of supported commands' % prog)
             sys.exit(1)
         elif len(candidates) > 1:
-            print >> sys.stderr, 'Ambiguous command: %s' % key
-            print >> sys.stderr, '  Candidates are: %s' \
-                  % ', '.join(candidates)
+            out.error('Ambiguous command: %s' % key,
+                      'Candidates are: %s' % ', '.join(candidates))
             sys.exit(1)
 
         return candidates[0]
@@ -220,8 +219,7 @@ def main():
         if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
             cmd = commands.canonical_cmd(sys.argv[2])
             if not cmd in commands:
-                print >> sys.stderr, '%s help: "%s" command unknown' \
-                      % (prog, cmd)
+                out.error('%s help: "%s" command unknown' % (prog, cmd))
                 sys.exit(1)
 
             sys.argv[0] += ' %s' % cmd
@@ -267,7 +265,7 @@ def main():
     except KeyError:
         debug_level = 0
     except ValueError:
-        print >> sys.stderr, 'Invalid STGIT_DEBUG_LEVEL environment variable'
+        out.error('Invalid STGIT_DEBUG_LEVEL environment variable')
         sys.exit(1)
 
     try:

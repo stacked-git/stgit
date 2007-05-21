@@ -79,8 +79,8 @@ def func(parser, options, args):
         dirname = 'patches-%s' % crt_series.get_branch()
 
     if not options.branch and git.local_changes():
-        print 'Warning: local changes in the tree. ' \
-              'You might want to commit them first'
+        out.warn('Local changes in the tree;'
+                 ' you might want to commit them first')
 
     if not options.stdout:
         if not os.path.isdir(dirname):
@@ -166,9 +166,9 @@ def func(parser, options, args):
             f = open(pfile, 'w+')
 
         if options.stdout and num > 1:
-            print '-------------------------------------------------------------------------------'
+            print '-'*79
             print patch.get_name()
-            print '-------------------------------------------------------------------------------'
+            print '-'*79
 
         # write description
         f.write(descr)

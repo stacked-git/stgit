@@ -43,14 +43,11 @@ def __delete_empty(patches, applied):
     """
     for p in patches:
         if crt_series.empty_patch(p):
-            print 'Deleting patch "%s"...' % p,
-            sys.stdout.flush()
-
+            out.start('Deleting patch "%s"' % p)
             if applied and crt_series.patch_applied(p):
                 crt_series.pop_patch(p)
             crt_series.delete_patch(p)
-
-            print 'done'
+            out.done()
         elif applied and crt_series.patch_unapplied(p):
             crt_series.push_patch(p)
 

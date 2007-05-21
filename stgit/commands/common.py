@@ -131,9 +131,9 @@ def print_crt_patch(branch = None):
         patch = stack.Series(branch).get_current()
 
     if patch:
-        print 'Now at patch "%s"' % patch
+        out.info('Now at patch "%s"' % patch)
     else:
-        print 'No patches applied'
+        out.info('No patches applied')
 
 def resolved(filename, reset = None):
     if reset:
@@ -163,58 +163,53 @@ def push_patches(patches, check_merged = False):
     """
     forwarded = crt_series.forward_patches(patches)
     if forwarded > 1:
-        print 'Fast-forwarded patches "%s" - "%s"' % (patches[0],
-                                                      patches[forwarded - 1])
+        out.info('Fast-forwarded patches "%s" - "%s"'
+                 % (patches[0], patches[forwarded - 1]))
     elif forwarded == 1:
-        print 'Fast-forwarded patch "%s"' % patches[0]
+        out.info('Fast-forwarded patch "%s"' % patches[0])
 
     names = patches[forwarded:]
 
     # check for patches merged upstream
     if names and check_merged:
-        print 'Checking for patches merged upstream...',
-        sys.stdout.flush()
+        out.start('Checking for patches merged upstream')
 
         merged = crt_series.merged_patches(names)
 
-        print 'done (%d found)' % len(merged)
+        out.done('%d found' % len(merged))
     else:
         merged = []
 
     for p in names:
-        print 'Pushing patch "%s"...' % p,
-        sys.stdout.flush()
+        out.start('Pushing patch "%s"' % p)
 
         if p in merged:
             crt_series.push_patch(p, empty = True)
-            print 'done (merged upstream)'
+            out.done('merged upstream')
         else:
             modified = crt_series.push_patch(p)
 
             if crt_series.empty_patch(p):
-                print 'done (empty patch)'
+                out.done('empty patch')
             elif modified:
-                print 'done (modified)'
+                out.done('modified')
             else:
-                print 'done'
+                out.done()
 
 def pop_patches(patches, keep = False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
     """
     if len(patches) == 0:
-        print 'nothing to push/pop'
+        out.info('Nothing to push/pop')
     else:
         p = patches[-1]
         if len(patches) == 1:
-            print 'Popping patch "%s"...' % p,
+            out.start('Popping patch "%s"' % p)
         else:
-            print 'Popping "%s" - "%s" patches...' % (patches[0], p),
-        sys.stdout.flush()
-
+            out.start('Popping patches "%s" - "%s"' % (patches[0], p))
         crt_series.pop_patch(p, keep)
-
-        print 'done'
+        out.done()
 
 def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     """Parse patch_args list for patch names in patch_list and return
@@ -334,19 +329,18 @@ def prepare_rebase(real_rebase, force=None):
     # pop all patches
     applied = crt_series.get_applied()
     if len(applied) > 0:
-        print 'Popping all applied patches...',
-        sys.stdout.flush()
+        out.start('Popping all applied patches')
         crt_series.pop_patch(applied[0])
-        print 'done'
+        out.done()
     return applied
 
 def rebase(target):
     if target == git.get_head():
-        print 'Already at "%s", no need for rebasing.' % target
+        out.info('Already at "%s", no need for rebasing.' % target)
         return
-    
-    print 'Rebasing to "%s"...' % target
+    out.start('Rebasing to "%s"' % target)
     git.reset(tree_id = git_id(target))
+    out.done()
 
 def post_rebase(applied, nopush, merged):
     # memorize that we rebased to here

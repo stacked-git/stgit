@@ -220,9 +220,8 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False):
     """Returns a list of pairs - [status, filename]
     """
-    if verbose and sys.stdout.isatty():
-        print 'Checking for changes in the working directory...',
-        sys.stdout.flush()
+    if verbose:
+        out.start('Checking for changes in the working directory')
 
     refresh_index()
 
@@ -260,8 +259,8 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
         if fs[1] not in conflicts:
             cache_files.append(fs)
 
-    if verbose and sys.stdout.isatty():
-        print 'done'
+    if verbose:
+        out.done()
 
     return cache_files
 
@@ -449,8 +448,7 @@ def __copy_single(source, target, target2=''):
         for f in [f.strip() for f in realfiles]:
             m = prefix_regexp.match(f)
             if not m:
-                print '"%s" does not match "%s"' % (f, re_string)
-                assert(m)
+                raise Exception, '"%s" does not match "%s"' % (f, re_string)
             newname = target+target2+'/'+m.group(1)
             if not os.path.exists(os.path.dirname(newname)):
                 os.makedirs(os.path.dirname(newname))
@@ -767,9 +765,9 @@ def status(files = None, modified = False, new = False, deleted = False,
         if files and not fs[1] in files:
             continue
         if all:
-            print '%s %s' % (fs[0], fs[1])
+            out.stdout('%s %s' % (fs[0], fs[1]))
         else:
-            print '%s' % fs[1]
+            out.stdout('%s' % fs[1])
 
 def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None,
          binary = False):
@@ -958,7 +956,7 @@ def apply_patch(filename = None, diff = None, base = None,
             f = file('.stgit-failed.patch', 'w+')
             f.write(diff)
             f.close()
-            print >> sys.stderr, 'Diff written to the .stgit-failed.patch file'
+            out.warn('Diff written to the .stgit-failed.patch file')
 
         raise
 

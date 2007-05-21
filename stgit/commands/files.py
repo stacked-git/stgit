@@ -57,8 +57,8 @@ def func(parser, options, args):
     rev2 = git_id('%s//top' % patch)
 
     if options.stat:
-        print git.diffstat(rev1 = rev1, rev2 = rev2)
+        out.stdout_raw(git.diffstat(rev1 = rev1, rev2 = rev2) + '\n')
     elif options.bare:
-        print git.barefiles(rev1, rev2)
+        out.stdout_raw(git.barefiles(rev1, rev2) + '\n')
     else:
-        print git.files(rev1, rev2)
+        out.stdout_raw(git.files(rev1, rev2) + '\n')

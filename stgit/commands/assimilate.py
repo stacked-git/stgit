@@ -42,7 +42,7 @@ def func(parser, options, args):
     """
 
     def nothing_to_do():
-        print 'No commits to assimilate'
+        out.info('No commits to assimilate')
 
     top_patch = crt_series.get_current_patch()
     if not top_patch:
@@ -79,8 +79,8 @@ def func(parser, options, args):
 
     victims.reverse()
     for victim in victims:
-        print ('Creating patch "%s" from commit %s'
-               % (patch2name[victim], victim))
+        out.info('Creating patch "%s" from commit %s'
+                 % (patch2name[victim], victim))
         aname, amail, adate = name_email_date(victim.get_author())
         cname, cmail, cdate = name_email_date(victim.get_committer())
         crt_series.new_patch(

@@ -74,7 +74,7 @@ def func(parser, options, args):
     # delete the patches
     for patch in applied + patches:
         crt_series.delete_patch(patch)
-        print 'Patch "%s" successfully deleted' % patch
+        out.info('Patch "%s" successfully deleted' % patch)
 
     if not options.branch:
         print_crt_patch()

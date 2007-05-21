@@ -102,11 +102,11 @@ def __print_patch(patch, hidden, branch_str, prefix, empty_prefix, length,
         patch_str = patch_str.ljust(length)
 
     if options.description:
-        print prefix + patch_str + ' | ' + __get_description(patch)
+        out.stdout(prefix + patch_str + ' | ' + __get_description(patch))
     elif options.author:
-        print prefix + patch_str + ' | ' + __get_author(patch)
+        out.stdout(prefix + patch_str + ' | ' + __get_author(patch))
     else:
-        print prefix + patch_str
+        out.stdout(prefix + patch_str)
 
 def func(parser, options, args):
     """Show the patch series
@@ -157,7 +157,7 @@ def func(parser, options, args):
     patches = applied + unapplied
 
     if options.count:
-        print len(patches)
+        out.stdout(len(patches))
         return
 
     if not patches:

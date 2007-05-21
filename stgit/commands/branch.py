@@ -83,8 +83,8 @@ def __print_branch(branch_name, length):
         current = '>'
     if branch.get_protected():
         protected = 'p'
-    print current + ' ' + initialized + protected + '\t' + \
-          branch_name.ljust(length) + '  | ' + branch.get_description()
+    out.stdout(current + ' ' + initialized + protected + '\t'
+               + branch_name.ljust(length) + '  | ' + branch.get_description())
 
 def __delete_branch(doomed_name, force = False):
     doomed = stack.Series(doomed_name)
@@ -92,8 +92,7 @@ def __delete_branch(doomed_name, force = False):
     if doomed.get_protected():
         raise CmdException, 'This branch is protected. Delete is not permitted'
 
-    print 'Deleting branch "%s"...' % doomed_name,
-    sys.stdout.flush()
+    out.start('Deleting branch "%s"' % doomed_name)
 
     if __is_current_branch(doomed_name):
         check_local_changes()
@@ -108,7 +107,7 @@ def __delete_branch(doomed_name, force = False):
     if doomed_name != 'master':
         git.delete_branch(doomed_name)
 
-    print 'done'
+    out.done()
 
 def func(parser, options, args):
 
@@ -127,17 +126,20 @@ def func(parser, options, args):
                 if git.rev_parse(args[1]) == git.rev_parse('refs/heads/' + args[1]):
                     # we are for sure referring to a branch
                     parentbranch = 'refs/heads/' + args[1]
-                    print 'Recording "%s" as parent branch.' % parentbranch
+                    out.info('Recording "%s" as parent branch' % parentbranch)
                 elif git.rev_parse(args[1]) and re.search('/', args[1]):
                     # FIXME: should the test be more strict ?
                     parentbranch = args[1]
                 else:
                     # Note: this includes refs to StGIT patches
-                    print 'Don\'t know how to determine parent branch from "%s".' % args[1]
+                    out.info('Don\'t know how to determine parent branch'
+                             ' from "%s"' % args[1])
                     parentbranch = None
             except git.GitException:
-                # should use a more specific exception to catch only non-git refs ?
-                print 'Don\'t know how to determine parent branch from "%s".' % args[1]
+                # should use a more specific exception to catch only
+                # non-git refs ?
+                out.info('Don\'t know how to determine parent branch'
+                         ' from "%s"' % args[1])
                 parentbranch = None
 
             tree_id = git_id(args[1])
@@ -148,9 +150,10 @@ def func(parser, options, args):
         if parentbranch:
             parentremote = git.identify_remote(parentbranch)
             if parentremote:
-                print 'Using "%s" remote to pull parent from.' % parentremote
+                out.info('Using remote "%s" to pull parent from'
+                         % parentremote)
             else:
-                print 'Recording as a local branch.'
+                out.info('Recording as a local branch')
         else:
             # no known parent branch, can't guess the remote
             parentremote = None
@@ -159,7 +162,7 @@ def func(parser, options, args):
                                    parent_remote = parentremote,
                                    parent_branch = parentbranch)
 
-        print 'Branch "%s" created.' % args[0]
+        out.info('Branch "%s" created' % args[0])
         return
 
     elif options.clone:
@@ -176,10 +179,9 @@ def func(parser, options, args):
         check_conflicts()
         check_head_top_equal()
 
-        print 'Cloning current branch to "%s"...' % clone,
-        sys.stdout.flush()
+        out.start('Cloning current branch to "%s"' % clone)
         crt_series.clone(clone)
-        print 'done'
+        out.done()
 
         return
 
@@ -202,12 +204,12 @@ def func(parser, options, args):
         branches.sort()
 
         if branches:
-            print 'Available branches:'
+            out.info('Available branches:')
             max_len = max([len(i) for i in branches])
             for i in branches:
                 __print_branch(i, max_len)
         else:
-            print 'No branches'
+            out.info('No branches')
         return
 
     elif options.protect:
@@ -224,10 +226,9 @@ def func(parser, options, args):
             raise CmdException, 'Branch "%s" is not controlled by StGIT' \
                   % branch_name
 
-        print 'Protecting branch "%s"...' % branch_name,
-        sys.stdout.flush()
+        out.start('Protecting branch "%s"' % branch_name)
         branch.protect()
-        print 'done'
+        out.done()
 
         return
 
@@ -241,7 +242,7 @@ def func(parser, options, args):
 
         stack.Series(args[0]).rename(args[1])
 
-        print 'Renamed branch "%s" as "%s".' % (args[0], args[1])
+        out.info('Renamed branch "%s" to "%s"' % (args[0], args[1]))
 
         return
 
@@ -259,10 +260,9 @@ def func(parser, options, args):
             raise CmdException, 'Branch "%s" is not controlled by StGIT' \
                   % branch_name
 
-        print 'Unprotecting branch "%s"...' % branch_name,
-        sys.stdout.flush()
+        out.info('Unprotecting branch "%s"' % branch_name)
         branch.unprotect()
-        print 'done'
+        out.done()
 
         return
 
@@ -294,12 +294,9 @@ def func(parser, options, args):
         check_conflicts()
         check_head_top_equal()
 
-        print 'Switching to branch "%s"...' % args[0],
-        sys.stdout.flush()
-
+        out.start('Switching to branch "%s"' % args[0])
         git.switch_branch(args[0])
-
-        print 'done'
+        out.done()
         return
 
     # default action: print the current branch

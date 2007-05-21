@@ -47,7 +47,7 @@ def func(parser, options, args):
     applied = crt_series.get_applied()
 
     if options.count:
-        print len(applied)
+        out.stdout(len(applied))
     else:
         for p in applied:
-            print p
+            out.stdout(p)

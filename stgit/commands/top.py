@@ -41,6 +41,6 @@ def func(parser, options, args):
 
     name = crt_series.get_current()
     if name:
-        print name
+        out.stdout(name)
     else:
         raise CmdException, 'No patches applied'

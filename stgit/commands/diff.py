@@ -80,7 +80,7 @@ def func(parser, options, args):
         rev2 = None
 
     if options.stat:
-        print git.diffstat(args, git_id(rev1), git_id(rev2))
+        out.stdout_raw(git.diffstat(args, git_id(rev1), git_id(rev2)) + '\n')
     else:
         diff_str = git.diff(args, git_id(rev1), git_id(rev2),
                             binary = options.binary)

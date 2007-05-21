@@ -307,6 +307,7 @@ def update_to_current_format_version(branch, git_dir):
             # The branch doesn't seem to be initialized at all.
             return None
     def set_format_version(v):
+        out.info('Upgraded branch %s to format version %d' % (branch, v))
         config.set(format_version_key(branch), '%d' % v)
     def mkdir(d):
         if not os.path.isdir(d):
@@ -491,10 +492,11 @@ class Series(StgitObject):
         if value:
             return value
         elif 'origin' in git.remotes_list():
-            print 'Notice: no parent remote declared for stack "%s", ' \
-                  'defaulting to "origin". Consider setting "branch.%s.remote" ' \
-                  'and "branch.%s.merge" with "git repo-config".' \
-                  % (self.__name, self.__name, self.__name)
+            out.note(('No parent remote declared for stack "%s",'
+                      ' defaulting to "origin".' % self.__name),
+                     ('Consider setting "branch.%s.remote" and'
+                      ' "branch.%s.merge" with "git repo-config".'
+                      % (self.__name, self.__name)))
             return 'origin'
         else:
             raise StackException, 'Cannot find a parent remote for "%s"' % self.__name
@@ -507,10 +509,10 @@ class Series(StgitObject):
         if value:
             return value
         elif git.rev_parse('heads/origin'):
-            print 'Notice: no parent branch declared for stack "%s", ' \
-                  'defaulting to "heads/origin". Consider setting ' \
-                  '"branch.%s.stgit.parentbranch" with "git repo-config".' \
-                  % (self.__name, self.__name)
+            out.note(('No parent branch declared for stack "%s",'
+                      ' defaulting to "heads/origin".' % self.__name),
+                     ('Consider setting "branch.%s.stgit.parentbranch"'
+                      ' with "git repo-config".' % self.__name))
             return 'heads/origin'
         else:
             raise StackException, 'Cannot find a parent branch for "%s"' % self.__name
@@ -646,10 +648,10 @@ class Series(StgitObject):
                                             author_email = patch.get_authemail(),
                                             author_date = patch.get_authdate())
             if patch.get_log():
-                print "setting log to %s" %  patch.get_log()
+                out.info('Setting log to %s' %  patch.get_log())
                 newpatch.set_log(patch.get_log())
             else:
-                print "no log for %s" % p
+                out.info('No log for %s' % p)
 
         # fast forward the cloned series to self's top
         new_series.forward_patches(applied)
@@ -697,17 +699,18 @@ class Series(StgitObject):
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
             else:
-                print 'Patch directory %s is not empty.' % self.__patch_dir
+                out.warn('Patch directory %s is not empty' % self.__patch_dir)
 
             try:
                 os.removedirs(self._dir())
             except OSError:
-                raise StackException, 'Series directory %s is not empty.' % self._dir()
+                raise StackException('Series directory %s is not empty'
+                                     % self._dir())
 
             try:
                 os.removedirs(self.__refs_dir)
             except OSError:
-                print 'Refs directory %s is not empty.' % self.__refs_dir
+                out.warn('Refs directory %s is not empty' % self.__refs_dir)
 
         # Cleanup parent informations
         # FIXME: should one day make use of git-config --section-remove,
@@ -1046,10 +1049,9 @@ class Series(StgitObject):
                 try:
                     git.merge(bottom, head, top, recursive = True)
                 except git.GitException, ex:
-                    print >> sys.stderr, \
-                          'The merge failed during "push". ' \
-                          'Use "refresh" after fixing the conflicts or ' \
-                          'revert the operation with "push --undo".'
+                    out.error('The merge failed during "push".',
+                              'Use "refresh" after fixing the conflicts or'
+                              ' revert the operation with "push --undo".')
 
         append_string(self.__applied_file, name)
 

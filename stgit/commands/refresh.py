@@ -98,10 +98,9 @@ def func(parser, options, args):
         check_head_top_equal()
 
     if options.undo:
-        print 'Undoing the "%s" refresh...' % patch,
-        sys.stdout.flush()
+        out.start('Undoing the refresh of "%s"' % patch)
         crt_series.undo_refresh()
-        print 'done'
+        out.done()
         return
 
     if options.author:
@@ -128,8 +127,7 @@ def func(parser, options, args):
             between = applied[:applied.index(patch):-1]
             pop_patches(between, keep = True)
 
-        print 'Refreshing patch "%s"...' % patch,
-        sys.stdout.flush()
+        out.start('Refreshing patch "%s"' % patch)
 
         if autoresolved == 'yes':
             resolved_all()
@@ -145,12 +143,12 @@ def func(parser, options, args):
                                  backup = True, sign_str = sign_str)
 
         if crt_series.empty_patch(patch):
-            print 'done (empty patch)'
+            out.done('empty patch')
         else:
-            print 'done'
+            out.done()
 
         if options.patch:
             between.reverse()
             push_patches(between)
     else:
-        print 'Patch "%s" is already up to date' % patch
+        out.info('Patch "%s" is already up to date' % patch)

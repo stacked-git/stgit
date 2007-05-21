@@ -99,13 +99,13 @@ def func(parser, options, args):
     commits = []
     next_commit = crt_series.get_base()
     if patch_nr:
-        print 'Uncommitting %d patches...' % patch_nr,
+        out.start('Uncommitting %d patches' % patch_nr)
         for i in xrange(patch_nr):
             commit, commit_id, parent = get_commit(next_commit)
             commits.append((commit, commit_id, parent))
             next_commit = parent
     else:
-        print 'Uncommitting to %s...' % to_commit
+        out.start('Uncommitting to %s' % to_commit)
         while True:
             commit, commit_id, parent = get_commit(next_commit)
             commits.append((commit, commit_id, parent))
@@ -114,7 +114,6 @@ def func(parser, options, args):
             next_commit = parent
         patch_nr = len(commits)
 
-    sys.stdout.flush()
     for (commit, commit_id, parent), patchname in \
         zip(commits, patchnames or [None for i in xrange(len(commits))]):
         author_name, author_email, author_date = \
@@ -127,5 +126,4 @@ def func(parser, options, args):
                              author_email = author_email,
                              author_date = author_date)
 
-
-    print 'done'
+    out.done()

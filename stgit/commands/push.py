@@ -64,13 +64,12 @@ def func(parser, options, args):
         if not patch:
             raise CmdException, 'No patch to undo'
 
-        print 'Undoing the "%s" push...' % patch,
-        sys.stdout.flush()
+        out.start('Undoing push of "%s"' % patch)
         resolved_all()
         if crt_series.undo_push():
-            print 'done'
+            out.done()
         else:
-            print 'done (patch unchanged)'
+            out.done('patch unchanged')
         print_crt_patch()
 
         return

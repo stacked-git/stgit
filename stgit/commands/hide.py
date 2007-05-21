@@ -46,4 +46,4 @@ def func(parser, options, args):
 
     for patch in patches:
         crt_series.hide_patch(patch)
-        print 'Patch "%s" hidden' % patch
+        out.info('Patch "%s" hidden' % patch)

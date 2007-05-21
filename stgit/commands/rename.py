@@ -38,7 +38,6 @@ def func(parser, options, args):
     if len(args) != 2:
         parser.error('incorrect number of arguments')
 
-    print 'Renaming patch "%s" -> "%s"...' % (args[0], args[1]),
-    sys.stdout.flush()
+    out.start('Renaming patch "%s" to "%s"' % (args[0], args[1]))
     crt_series.rename_patch(args[0], args[1])
-    print 'done'
+    out.done()

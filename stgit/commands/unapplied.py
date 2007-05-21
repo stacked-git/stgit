@@ -46,7 +46,7 @@ def func(parser, options, args):
     unapplied = crt_series.get_unapplied()
 
     if options.count:
-        print len(unapplied)
+        out.stdout(len(unapplied))
     else:
         for p in unapplied:
-            print p
+            out.stdout(p)

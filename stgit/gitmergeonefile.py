@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 from stgit import basedir
 from stgit.config import config, file_extensions, ConfigOption
-from stgit.utils import append_string
+from stgit.utils import append_string, out
 
 
 class GitMergeException(Exception):
@@ -133,8 +133,8 @@ def interactive_merge(filename):
 
     mtime = os.path.getmtime(filename)
 
-    print 'Trying the interractive %s merge' % \
-          (three_way and 'three-way' or 'two-way')
+    out.info('Trying the interactive %s merge'
+             % (three_way and 'three-way' or 'two-way'))
 
     err = os.system(imerger % files_dict)
     if err != 0:
@@ -165,16 +165,15 @@ def merge(orig_hash, file1_hash, file2_hash,
             if file1_hash == file2_hash:
                 if os.system('git-update-index --cacheinfo %s %s %s'
                              % (file1_mode, file1_hash, path)) != 0:
-                    print >> sys.stderr, 'Error: git-update-index failed'
+                    out.error('git-update-index failed')
                     __conflict(path)
                     return 1
                 if os.system('git-checkout-index -u -f -- %s' % path):
-                    print >> sys.stderr, 'Error: git-checkout-index failed'
+                    out.error('git-checkout-index failed')
                     __conflict(path)
                     return 1
                 if file1_mode != file2_mode:
-                    print >> sys.stderr, \
-                          'Error: File added in both, permissions conflict'
+                    out.error('File added in both, permissions conflict')
                     __conflict(path)
                     return 1
             # 3-way merge
@@ -189,9 +188,8 @@ def merge(orig_hash, file1_hash, file2_hash,
                     __remove_files(orig_hash, file1_hash, file2_hash)
                     return 0
                 else:
-                    print >> sys.stderr, \
-                          'Error: three-way merge tool failed for file "%s"' \
-                          % path
+                    out.error('Three-way merge tool failed for file "%s"'
+                              % path)
                     # reset the cache to the first branch
                     os.system('git-update-index --cacheinfo %s %s %s'
                               % (file1_mode, file1_hash, path))
@@ -201,7 +199,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                             interactive_merge(path)
                         except GitMergeException, ex:
                             # interactive merge failed
-                            print >> sys.stderr, str(ex)
+                            out.error(ex)
                             if str(keeporig) != 'yes':
                                 __remove_files(orig_hash, file1_hash,
                                                file2_hash)
@@ -260,23 +258,21 @@ def merge(orig_hash, file1_hash, file2_hash,
             if file1_hash == file2_hash:
                 if os.system('git-update-index --add --cacheinfo %s %s %s'
                              % (file1_mode, file1_hash, path)) != 0:
-                    print >> sys.stderr, 'Error: git-update-index failed'
+                    out.error('git-update-index failed')
                     __conflict(path)
                     return 1
                 if os.system('git-checkout-index -u -f -- %s' % path):
-                    print >> sys.stderr, 'Error: git-checkout-index failed'
+                    out.error('git-checkout-index failed')
                     __conflict(path)
                     return 1
                 if file1_mode != file2_mode:
-                    print >> sys.stderr, \
-                          'Error: File "s" added in both, ' \
-                          'permissions conflict' % path
+                    out.error('File "s" added in both, permissions conflict'
+                              % path)
                     __conflict(path)
                     return 1
             # files added in both but different
             else:
-                print >> sys.stderr, \
-                      'Error: File "%s" added in branches but different' % path
+                out.error('File "%s" added in branches but different' % path)
                 # reset the cache to the first branch
                 os.system('git-update-index --cacheinfo %s %s %s'
                           % (file1_mode, file1_hash, path))
@@ -286,7 +282,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                         interactive_merge(path)
                     except GitMergeException, ex:
                         # interactive merge failed
-                        print >> sys.stderr, str(ex)
+                        out.error(ex)
                         if str(keeporig) != 'yes':
                             __remove_files(orig_hash, file1_hash,
                                            file2_hash)
@@ -312,17 +308,16 @@ def merge(orig_hash, file1_hash, file2_hash,
                 obj = file2_hash
             if os.system('git-update-index --add --cacheinfo %s %s %s'
                          % (mode, obj, path)) != 0:
-                print >> sys.stderr, 'Error: git-update-index failed'
+                out.error('git-update-index failed')
                 __conflict(path)
                 return 1
             __remove_files(orig_hash, file1_hash, file2_hash)
             return os.system('git-checkout-index -u -f -- %s' % path)
 
     # Unhandled case
-    print >> sys.stderr, 'Error: Unhandled merge conflict: ' \
-          '"%s" "%s" "%s" "%s" "%s" "%s" "%s"' \
-          % (orig_hash, file1_hash, file2_hash,
-             path,
-             orig_mode, file1_mode, file2_mode)
+    out.error('Unhandled merge conflict: "%s" "%s" "%s" "%s" "%s" "%s" "%s"'
+              % (orig_hash, file1_hash, file2_hash,
+                 path,
+                 orig_mode, file1_mode, file2_mode))
     __conflict(path)
     return 1

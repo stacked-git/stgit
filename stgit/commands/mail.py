@@ -500,13 +500,12 @@ def func(parser, options, args):
             ref_id = msg_id
 
         if options.mbox:
-            print msg_string
+            out.stdout_raw(msg_string + '\n')
         else:
-            print 'Sending the cover message...',
-            sys.stdout.flush()
+            out.start('Sending the cover message')
             __send_message(smtpserver, from_addr, to_addr_list, msg_string,
                            sleep, smtpuser, smtppassword)
-            print 'done'
+            out.done()
 
     # send the patches
     if options.template:
@@ -529,10 +528,9 @@ def func(parser, options, args):
             ref_id = msg_id
 
         if options.mbox:
-            print msg_string
+            out.stdout_raw(msg_string + '\n')
         else:
-            print 'Sending patch "%s"...' % p,
-            sys.stdout.flush()
+            out.start('Sending patch "%s"' % p)
             __send_message(smtpserver, from_addr, to_addr_list, msg_string,
                            sleep, smtpuser, smtppassword)
-            print 'done'
+            out.done()

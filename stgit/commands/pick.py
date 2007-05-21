@@ -91,33 +91,30 @@ def func(parser, options, args):
         top = parent
 
     if options.fold:
-        print 'Folding commit %s...' % commit_id,
-        sys.stdout.flush()
+        out.start('Folding commit %s' % commit_id)
 
         # try a direct git-apply first
         if not git.apply_diff(bottom, top):
             git.merge(bottom, git.get_head(), top, recursive = True)
 
-        print 'done'
+        out.done()
     elif options.update:
         rev1 = git_id('//bottom')
         rev2 = git_id('//top')
         files = git.barefiles(rev1, rev2).split('\n')
 
-        print 'Updating with commit %s...' % commit_id,
-        sys.stdout.flush()
+        out.start('Updating with commit %s' % commit_id)
 
         if not git.apply_diff(bottom, top, files = files):
             raise CmdException, 'Patch updating failed'
 
-        print 'done'
+        out.done()
     else:
         message = commit.get_log()
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
 
-        print 'Importing commit %s...' % commit_id,
-        sys.stdout.flush()
+        out.start('Importing commit %s' % commit_id)
 
         newpatch = crt_series.new_patch(patchname, message = message, can_edit = False,
                                         unapplied = True, bottom = bottom, top = top,
@@ -137,23 +134,23 @@ def func(parser, options, args):
                 refseries = crt_series
             patch = refseries.get_patch(refpatchname)
             if patch.get_log():
-                print"log was %s" % newpatch.get_log()
-                print "setting log to %s\n" %  patch.get_log()
+                out.info("Log was %s" % newpatch.get_log())
+                out.info("Setting log to %s\n" %  patch.get_log())
                 newpatch.set_log(patch.get_log())
-                print"log is now %s" % newpatch.get_log()
+                out.info("Log is now %s" % newpatch.get_log())
             else:
-                print "no log for %s\n" % patchname
- 
+                out.info("No log for %s\n" % patchname)
+
         if not options.unapplied:
             modified = crt_series.push_patch(patchname)
         else:
             modified = False
 
         if crt_series.empty_patch(patchname):
-            print 'done (empty patch)'
+            out.done('empty patch')
         elif modified:
-            print 'done (modified)'
+            out.done('modified')
         else:
-            print 'done'
-        
+            out.done()
+
     print_crt_patch()

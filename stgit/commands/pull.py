@@ -90,10 +90,10 @@ def func(parser, options, args):
 
     # pull the remote changes
     if policy == 'pull':
-        print 'Pulling from "%s"...' % repository
+        out.info('Pulling from "%s"' % repository)
         git.pull(repository)
     elif policy == 'fetch-rebase':
-        print 'Fetching from "%s"...' % repository
+        out.info('Fetching from "%s"' % repository)
         git.fetch(repository)
         rebase(git.fetch_head())
     elif policy == 'rebase':

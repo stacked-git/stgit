@@ -46,4 +46,4 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    print git_id(id_str)
+    out.stdout(git_id(id_str))

@@ -74,13 +74,10 @@ def func(parser, options, args):
                   '--undo cannot be specified with --branch or --series'
         __check_all()
 
-        print 'Undoing the "%s" sync...' % crt_series.get_current(),
-        sys.stdout.flush()
-
+        out.start('Undoing the sync of "%s"' % crt_series.get_current())
         crt_series.undo_refresh()
         git.reset()
-
-        print 'done'
+        out.done()
         return
 
     if options.branch:
@@ -147,8 +144,7 @@ def func(parser, options, args):
             del popped[:idx]
 
         # the actual sync
-        print 'Synchronising "%s"...' % p,
-        sys.stdout.flush()
+        out.start('Synchronising "%s"' % p)
 
         patch = crt_series.get_patch(p)
         bottom = patch.get_bottom()
@@ -167,9 +163,9 @@ def func(parser, options, args):
             # backup information was already reset above
             crt_series.refresh_patch(cache_update = False, backup = False,
                                      log = 'sync')
-            print 'done (updated)'
+            out.done('updated')
         else:
-            print 'done'
+            out.done()
 
     # push the remaining patches
     if popped:

@@ -255,7 +255,7 @@ def __create_patch(filename, message, author_name, author_email,
         raise CmdException, 'No diff found inside the patch'
 
     if options.ignore and patch in crt_series.get_applied():
-        print 'Ignoring already applied patch "%s"' % patch
+        out.info('Ignoring already applied patch "%s"' % patch)
         return
     if options.replace and patch in crt_series.get_unapplied():
         crt_series.delete_patch(patch)
@@ -289,18 +289,14 @@ def __create_patch(filename, message, author_name, author_email,
                          committer_name = committer_name,
                          committer_email = committer_email)
 
-    print 'Importing patch "%s"...' % patch,
-    sys.stdout.flush()
-
+    out.start('Importing patch "%s"' % patch)
     if options.base:
         git.apply_patch(diff = diff, base = git_id(options.base))
     else:
         git.apply_patch(diff = diff)
-
     crt_series.refresh_patch(edit = options.edit,
                              show_patch = options.showpatch)
-
-    print 'done'    
+    out.done()
 
 def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
