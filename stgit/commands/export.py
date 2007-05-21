@@ -62,6 +62,9 @@ options = [make_option('-d', '--dir',
                        help = 'Use FILE as a template'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('--binary',
+                       help = 'output a diff even for binary files',
+                       action = 'store_true'),
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
                        action = 'store_true')]
@@ -172,7 +175,7 @@ def func(parser, options, args):
         # write the diff
         git.diff(rev1 = patch.get_bottom(),
                  rev2 = patch.get_top(),
-                 out_fd = f)
+                 out_fd = f, binary = options.binary)
         if not options.stdout:
             f.close()
         patch_no += 1

@@ -771,20 +771,28 @@ def status(files = None, modified = False, new = False, deleted = False,
         else:
             print '%s' % fs[1]
 
-def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None):
+def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None,
+         binary = False):
     """Show the diff between rev1 and rev2
     """
     if not files:
         files = []
 
+    args = []
+    if binary:
+        args.append('--binary')
+
     if rev1 and rev2:
-        diff_str = _output(['git-diff-tree', '-p', rev1, rev2, '--'] + files)
+        diff_str = _output(['git-diff-tree', '-p'] + args
+                           + [rev1, rev2, '--'] + files)
     elif rev1 or rev2:
         refresh_index()
         if rev2:
-            diff_str = _output(['git-diff-index', '-p', '-R', rev2, '--'] + files)
+            diff_str = _output(['git-diff-index', '-p', '-R']
+                               + args + [rev2, '--'] + files)
         else:
-            diff_str = _output(['git-diff-index', '-p', rev1, '--'] + files)
+            diff_str = _output(['git-diff-index', '-p']
+                               + args + [rev1, '--'] + files)
     else:
         diff_str = ''
 

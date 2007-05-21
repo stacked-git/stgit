@@ -120,6 +120,9 @@ options = [make_option('-a', '--all',
                        help = 'username for SMTP authentication'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('--binary',
+                       help = 'output a diff even for binary files',
+                       action = 'store_true'),
            make_option('-m', '--mbox',
                        help = 'generate an mbox file instead of sending',
                        action = 'store_true')]
@@ -390,7 +393,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  # for backward template compatibility
                  'endofheaders': '',
                  'diff':         git.diff(rev1 = git_id('%s//bottom' % patch),
-                                          rev2 = git_id('%s//top' % patch)),
+                                          rev2 = git_id('%s//top' % patch),
+                                          binary = options.binary),
                  'diffstat':     git.diffstat(rev1 = git_id('%s//bottom'%patch),
                                               rev2 = git_id('%s//top' % patch)),
                  # for backward template compatibility

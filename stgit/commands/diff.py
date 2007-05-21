@@ -44,6 +44,9 @@ shows the specified patch (defaulting to the current one)."""
 options = [make_option('-r', '--range',
                        metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
+           make_option('--binary',
+                       help = 'output a diff even for binary files',
+                       action = 'store_true'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
                        action = 'store_true')]
@@ -79,6 +82,7 @@ def func(parser, options, args):
     if options.stat:
         print git.diffstat(args, git_id(rev1), git_id(rev2))
     else:
-        diff_str = git.diff(args, git_id(rev1), git_id(rev2))
+        diff_str = git.diff(args, git_id(rev1), git_id(rev2),
+                            binary = options.binary)
         if diff_str:
             pager(diff_str)
