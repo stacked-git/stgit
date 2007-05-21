@@ -21,5 +21,9 @@ clean:
 	rm -rf build
 	rm -f stgit/*.pyc
 	rm -f stgit/commands/*.pyc
+	rm -f TAGS
+
+tags:
+	ctags -e -R stgit/*
 
 .PHONY: all install doc test clean
