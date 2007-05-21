@@ -273,6 +273,79 @@ class Patch(StgitObject):
         self._set_field('log', value)
         self.__update_log_ref(value)
 
+# The current StGIT metadata format version.
+FORMAT_VERSION = 2
+
+def format_version_key(branch):
+    return 'branch.%s.stgitformatversion' % branch
+
+def update_to_current_format_version(branch, git_dir):
+    """Update a potentially older StGIT directory structure to the
+    latest version. Note: This function should depend as little as
+    possible on external functions that may change during a format
+    version bump, since it must remain able to process older formats."""
+
+    branch_dir = os.path.join(git_dir, 'patches', branch)
+    def get_format_version():
+        """Return the integer format version number, or None if the
+        branch doesn't have any StGIT metadata at all, of any version."""
+        fv = config.get(format_version_key(branch))
+        if fv:
+            # Great, there's an explicitly recorded format version
+            # number, which means that the branch is initialized and
+            # of that exact version.
+            return int(fv)
+        elif os.path.isdir(os.path.join(branch_dir, 'patches')):
+            # There's a .git/patches/<branch>/patches dirctory, which
+            # means this is an initialized version 1 branch.
+            return 1
+        elif os.path.isdir(branch_dir):
+            # There's a .git/patches/<branch> directory, which means
+            # this is an initialized version 0 branch.
+            return 0
+        else:
+            # The branch doesn't seem to be initialized at all.
+            return None
+    def set_format_version(v):
+        config.set(format_version_key(branch), '%d' % v)
+    def mkdir(d):
+        if not os.path.isdir(d):
+            os.makedirs(d)
+    def rm(f):
+        if os.path.exists(f):
+            os.remove(f)
+
+    # Update 0 -> 1.
+    if get_format_version() == 0:
+        mkdir(os.path.join(branch_dir, 'trash'))
+        patch_dir = os.path.join(branch_dir, 'patches')
+        mkdir(patch_dir)
+        refs_dir = os.path.join(git_dir, 'refs', 'patches', branch)
+        mkdir(refs_dir)
+        for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
+                      + file(os.path.join(branch_dir, 'applied')).readlines()):
+            patch = patch.strip()
+            os.rename(os.path.join(branch_dir, patch),
+                      os.path.join(patch_dir, patch))
+            Patch(patch, patch_dir, refs_dir).update_top_ref()
+        set_format_version(1)
+
+    # Update 1 -> 2.
+    if get_format_version() == 1:
+        desc_file = os.path.join(branch_dir, 'description')
+        if os.path.isfile(desc_file):
+            desc = read_string(desc_file)
+            if desc:
+                config.set('branch.%s.description' % branch, desc)
+            rm(desc_file)
+        rm(os.path.join(branch_dir, 'current'))
+        rm(os.path.join(git_dir, 'refs', 'bases', branch))
+        set_format_version(2)
+
+    # Make sure we're at the latest version.
+    if not get_format_version() in [None, FORMAT_VERSION]:
+        raise StackException('Branch %s is at format version %d, expected %d'
+                             % (branch, get_format_version(), FORMAT_VERSION))
 
 class Series(StgitObject):
     """Class including the operations on series
@@ -290,6 +363,11 @@ class Series(StgitObject):
             raise StackException, 'GIT tree not initialised: %s' % ex
 
         self._set_dir(os.path.join(self.__base_dir, 'patches', self.__name))
+
+        # Update the branch to the latest format version if it is
+        # initialized, but don't touch it if it isn't.
+        update_to_current_format_version(self.__name, self.__base_dir)
+
         self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
                                        self.__name)
 
@@ -299,19 +377,9 @@ class Series(StgitObject):
 
         # where this series keeps its patches
         self.__patch_dir = os.path.join(self._dir(), 'patches')
-        if not os.path.isdir(self.__patch_dir):
-            self.__patch_dir = self._dir()
-
-        # if no __refs_dir, create and populate it (upgrade old repositories)
-        if self.is_initialised() and not os.path.isdir(self.__refs_dir):
-            os.makedirs(self.__refs_dir)
-            for patch in self.get_applied() + self.get_unapplied():
-                self.get_patch(patch).update_top_ref()
 
         # trash directory
         self.__trash_dir = os.path.join(self._dir(), 'trash')
-        if self.is_initialised() and not os.path.isdir(self.__trash_dir):
-            os.makedirs(self.__trash_dir)
 
     def __patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
@@ -410,19 +478,13 @@ class Series(StgitObject):
         return 'branch.%s.description' % self.get_branch()
 
     def get_description(self):
-        # Fall back to the .git/patches/<branch>/description file if
-        # the config variable is unset.
-        return (config.get(self.__branch_descr())
-                or self._get_field('description') or '')
+        return config.get(self.__branch_descr()) or ''
 
     def set_description(self, line):
         if line:
             config.set(self.__branch_descr(), line)
         else:
             config.unset(self.__branch_descr())
-        # Delete the old .git/patches/<branch>/description file if it
-        # exists.
-        self._set_field('description', None)
 
     def get_parent_remote(self):
         value = config.get('branch.%s.remote' % self.__name)
@@ -503,15 +565,16 @@ class Series(StgitObject):
     def is_initialised(self):
         """Checks if series is already initialised
         """
-        return os.path.isdir(self.__patch_dir)
+        return bool(config.get(format_version_key(self.get_branch())))
 
     def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
         """
-        if os.path.exists(self.__patch_dir):
-            raise StackException, self.__patch_dir + ' already exists'
-        if os.path.exists(self.__refs_dir):
-            raise StackException, self.__refs_dir + ' already exists'
+        if self.is_initialised():
+            raise StackException, '%s already initialized' % self.get_branch()
+        for d in [self._dir(), self.__refs_dir]:
+            if os.path.exists(d):
+                raise StackException, '%s already exists' % d
 
         if (create_at!=False):
             git.create_branch(self.__name, create_at)
@@ -522,45 +585,10 @@ class Series(StgitObject):
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
-        os.makedirs(os.path.join(self._dir(), 'patches'))
         os.makedirs(self.__refs_dir)
         self._set_field('orig-base', git.get_head())
 
-    def convert(self):
-        """Either convert to use a separate patch directory, or
-        unconvert to place the patches in the same directory with
-        series control files
-        """
-        if self.__patch_dir == self._dir():
-            print 'Converting old-style to new-style...',
-            sys.stdout.flush()
-
-            self.__patch_dir = os.path.join(self._dir(), 'patches')
-            os.makedirs(self.__patch_dir)
-
-            for p in self.get_applied() + self.get_unapplied():
-                src = os.path.join(self._dir(), p)
-                dest = os.path.join(self.__patch_dir, p)
-                os.rename(src, dest)
-
-            print 'done'
-
-        else:
-            print 'Converting new-style to old-style...',
-            sys.stdout.flush()
-
-            for p in self.get_applied() + self.get_unapplied():
-                src = os.path.join(self.__patch_dir, p)
-                dest = os.path.join(self._dir(), p)
-                os.rename(src, dest)
-
-            if not os.listdir(self.__patch_dir):
-                os.rmdir(self.__patch_dir)
-                print 'done'
-            else:
-                print 'Patch directory %s is not empty.' % self.__patch_dir
-
-            self.__patch_dir = self._dir()
+        config.set(format_version_key(self.get_branch()), str(FORMAT_VERSION))
 
     def rename(self, to_name):
         """Renames a series
@@ -665,15 +693,6 @@ class Series(StgitObject):
                 os.remove(self.__hidden_file)
             if os.path.exists(self._dir()+'/orig-base'):
                 os.remove(self._dir()+'/orig-base')
-
-            # Remove obsolete files that StGIT no longer uses, but
-            # that might still be around if this is an old repository.
-            for obsolete in ([os.path.join(self._dir(), fn)
-                              for fn in ['current', 'description']]
-                             + [os.path.join(self.__base_dir,
-                                             'refs', 'bases', self.__name)]):
-                if os.path.exists(obsolete):
-                    os.remove(obsolete)
 
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)

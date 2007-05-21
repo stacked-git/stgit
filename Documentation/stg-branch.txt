@@ -20,7 +20,6 @@ SYNOPSIS
 'stg' branch --protect [<branch>]
 'stg' branch --unprotect [<branch>]
 'stg' branch --delete [--force] <branch>
-'stg' branch --convert
 
 DESCRIPTION
 -----------
@@ -90,9 +89,6 @@ the "master" branch if it exists.
 +
 Branch "master" is treated specially (see bug #8732), in that only the
 StGIT metadata are removed, the GIT branch itself is not destroyed.
-
-'stg' branch --convert::
-	Switch current stack between old and new format.
 
 OPTIONS
 -------
