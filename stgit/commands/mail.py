@@ -226,7 +226,7 @@ def __get_signers_list(msg):
     """
     addr_list = []
 
-    r = re.compile('^(signed-off-by|acked-by):\s+(.+)$', re.I)
+    r = re.compile('^(signed-off-by|acked-by|cc):\s+(.+)$', re.I)
     for line in msg.split('\n'):
         m = r.match(line)
         if m:
