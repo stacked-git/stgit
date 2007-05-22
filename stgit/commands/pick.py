@@ -121,6 +121,9 @@ def func(parser, options, args):
                                         author_name = author_name,
                                         author_email = author_email,
                                         author_date = author_date)
+        # in case the patch name was automatically generated
+        patchname = newpatch.get_name()
+
         # find a patchlog to fork from
         (refpatchname, refbranchname, refpatchid) = parse_rev(commit_str)
         if refpatchname and not refpatchid and \
