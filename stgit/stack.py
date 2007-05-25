@@ -466,7 +466,7 @@ class Series(PatchSet):
         crt = self.get_current()
         if not crt:
             return None
-        return Patch(crt, self.__patch_dir, self.__refs_dir)
+        return self.get_patch(crt)
 
     def get_current(self):
         """Return the name of the topmost patch, or None if there is
@@ -684,7 +684,7 @@ class Series(PatchSet):
                 raise StackException, \
                       'Cannot delete: the series still contains patches'
             for p in patches:
-                Patch(p, self.__patch_dir, self.__refs_dir).delete()
+                self.get_patch(p).delete()
 
             # remove the trash directory if any
             if os.path.exists(self.__trash_dir):
@@ -741,7 +741,7 @@ class Series(PatchSet):
         if not name:
             raise StackException, 'No patches applied'
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
 
         descr = patch.get_description()
         if not (message or descr):
@@ -807,7 +807,7 @@ class Series(PatchSet):
         name = self.get_current()
         assert(name)
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
         old_bottom = patch.get_old_bottom()
         old_top = patch.get_old_top()
 
@@ -848,7 +848,7 @@ class Series(PatchSet):
         if name == None:
             name = make_patch_name(descr, self.patch_exists)
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
         patch.create()
 
         if not bottom:
@@ -903,7 +903,7 @@ class Series(PatchSet):
         """Deletes a patch
         """
         self.__patch_name_valid(name)
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
 
         if self.__patch_is_current(patch):
             self.pop_patch(name)
@@ -936,7 +936,7 @@ class Series(PatchSet):
         for name in names:
             assert(name in unapplied)
 
-            patch = Patch(name, self.__patch_dir, self.__refs_dir)
+            patch = self.get_patch(name)
 
             head = top
             bottom = patch.get_bottom()
@@ -1002,8 +1002,7 @@ class Series(PatchSet):
         patches detected to have been applied. The state of the tree
         is restored to the original one
         """
-        patches = [Patch(name, self.__patch_dir, self.__refs_dir)
-                   for name in names]
+        patches = [self.get_patch(name) for name in names]
         patches.reverse()
 
         merged = []
@@ -1022,7 +1021,7 @@ class Series(PatchSet):
         unapplied = self.get_unapplied()
         assert(name in unapplied)
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
 
         head = git.get_head()
         bottom = patch.get_bottom()
@@ -1096,7 +1095,7 @@ class Series(PatchSet):
         name = self.get_current()
         assert(name)
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
         old_bottom = patch.get_old_bottom()
         old_top = patch.get_old_top()
 
@@ -1122,7 +1121,7 @@ class Series(PatchSet):
         applied.reverse()
         assert(name in applied)
 
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
 
         if git.get_head_file() == self.get_name():
             if keep and not git.apply_diff(git.get_head(), patch.get_bottom()):
@@ -1148,7 +1147,7 @@ class Series(PatchSet):
         """Returns True if the patch is empty
         """
         self.__patch_name_valid(name)
-        patch = Patch(name, self.__patch_dir, self.__refs_dir)
+        patch = self.get_patch(name)
         bottom = patch.get_bottom()
         top = patch.get_top()
 
@@ -1173,11 +1172,11 @@ class Series(PatchSet):
             raise StackException, 'Patch "%s" already exists' % newname
 
         if oldname in unapplied:
-            Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
+            self.get_patch(oldname).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
             write_strings(self.__unapplied_file, unapplied)
         elif oldname in applied:
-            Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
+            self.get_patch(oldname).rename(newname)
 
             applied[applied.index(oldname)] = newname
             write_strings(self.__applied_file, applied)
