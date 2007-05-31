@@ -1,0 +1,32 @@
+#!/bin/sh
+set -e
+
+# stg-k - execute given StGIT command while preserving local changes
+
+# Uses a temporary patch to save local changes, then execute the given
+# command, and restore local changes from the saved patch.  In
+# essence, "stg-k pop" is a "stg pop -k" that works better, hence its
+# name.
+
+# CAVEAT: this script relies on the operation to run ignoring hidden
+# patches, so in 0.12 (where "stg push" can push an hidden patch)
+# "stg-k push" will fail midway, albeit with no information loss -
+# you'll just have to finish manually.  Luckilly this appears to work
+# on master branch.
+
+# Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+stg new __local -m " - local changes (internal patch)"
+stg refresh
+stg pop
+
+# avoid bad interactions like "stg-k push" not behaving as expected
+stg hide __local
+
+stg "$@"
+
+stg unhide __local
+
+stg push __local
+stg-unnew

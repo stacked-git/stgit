@@ -1,0 +1,15 @@
+#!/bin/sh
+set -e
+
+# stg-unnew - sort of "reverse an 'stg new'"
+
+# Remove the current patch from the stack, keeping its contents as
+# uncommitted changes.
+
+# Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+patch=$(stg top)
+stg pop
+stg pick --fold $patch
+stg delete $patch
