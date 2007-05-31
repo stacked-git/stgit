@@ -74,7 +74,7 @@ class Commit:
     def __init__(self, id_hash):
         self.__id_hash = id_hash
 
-        lines = _output_lines('git-cat-file commit %s' % id_hash)
+        lines = _output_lines(['git-cat-file', 'commit', id_hash])
         for i in range(len(lines)):
             line = lines[i]
             if line == '\n':
@@ -102,8 +102,8 @@ class Commit:
             return None
 
     def get_parents(self):
-        return _output_lines('git-rev-list --parents --max-count=1 %s'
-                             % self.__id_hash)[0].split()[1:]
+        return _output_lines(['git-rev-list', '--parents', '--max-count=1',
+                              self.__id_hash])[0].split()[1:]
 
     def get_author(self):
         return self.__author
@@ -285,7 +285,7 @@ def get_head_file():
     """Returns the name of the file pointed to by the HEAD link
     """
     return strip_prefix('refs/heads/',
-                        _output_one_line('git-symbolic-ref HEAD'))
+                        _output_one_line(['git-symbolic-ref', 'HEAD']))
 
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
@@ -617,27 +617,27 @@ def commit(message, files = None, parents = None, allowempty = False,
     must_switch = True
     # write the index to repository
     if tree_id == None:
-        tree_id = _output_one_line('git-write-tree')
+        tree_id = _output_one_line(['git-write-tree'])
     else:
         must_switch = False
 
     # the commit
-    cmd = ''
+    cmd = ['env']
     if author_name:
-        cmd += 'GIT_AUTHOR_NAME="%s" ' % author_name
+        cmd += ['GIT_AUTHOR_NAME=%s' % author_name]
     if author_email:
-        cmd += 'GIT_AUTHOR_EMAIL="%s" ' % author_email
+        cmd += ['GIT_AUTHOR_EMAIL=%s' % author_email]
     if author_date:
-        cmd += 'GIT_AUTHOR_DATE="%s" ' % author_date
+        cmd += ['GIT_AUTHOR_DATE=%s' % author_date]
     if committer_name:
-        cmd += 'GIT_COMMITTER_NAME="%s" ' % committer_name
+        cmd += ['GIT_COMMITTER_NAME=%s' % committer_name]
     if committer_email:
-        cmd += 'GIT_COMMITTER_EMAIL="%s" ' % committer_email
-    cmd += 'git-commit-tree %s' % tree_id
+        cmd += ['GIT_COMMITTER_EMAIL=%s' % committer_email]
+    cmd += ['git-commit-tree', tree_id]
 
     # get the parents
     for p in parents:
-        cmd += ' -p %s' % p
+        cmd += ['-p', p]
 
     commit_id = _output_one_line(cmd, message)
     if must_switch:
@@ -652,9 +652,9 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     the pushing would fall back to the three-way merge.
     """
     if check_index:
-        index_opt = '--index'
+        index_opt = ['--index']
     else:
-        index_opt = ''
+        index_opt = []
 
     if not files:
         files = []
@@ -662,7 +662,7 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     diff_str = diff(files, rev1, rev2)
     if diff_str:
         try:
-            _input_str('git-apply %s' % index_opt, diff_str)
+            _input_str(['git-apply'] + index_opt, diff_str)
         except GitException:
             return False
 
@@ -680,7 +680,7 @@ def merge(base, head1, head2, recursive = False):
         # general when pushing or picking patches)
         try:
             # use _output() to mask the verbose prints of the tool
-            _output('git-merge-recursive %s -- %s %s' % (base, head1, head2))
+            _output(['git-merge-recursive', base, '--', head1, head2])
         except GitException, ex:
             err_output = str(ex)
             pass
@@ -696,7 +696,7 @@ def merge(base, head1, head2, recursive = False):
     files = {}
     stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
 
-    for line in _output('git-ls-files --unmerged --stage -z').split('\0'):
+    for line in _output(['git-ls-files', '--unmerged', '--stage', '-z']).split('\0'):
         if not line:
             continue
 
@@ -818,7 +818,7 @@ def files(rev1, rev2):
     """
 
     result = ''
-    for line in _output_lines('git-diff-tree -r %s %s' % (rev1, rev2)):
+    for line in _output_lines(['git-diff-tree', '-r', rev1, rev2]):
         result += '%s %s\n' % tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
 
     return result.rstrip()
@@ -828,7 +828,7 @@ def barefiles(rev1, rev2):
     """
 
     result = ''
-    for line in _output_lines('git-diff-tree -r %s %s' % (rev1, rev2)):
+    for line in _output_lines(['git-diff-tree', '-r', rev1, rev2]):
         result += '%s\n' % line.rstrip().split(' ',4)[-1].split('\t',1)[-1]
 
     return result.rstrip()
@@ -947,7 +947,7 @@ def apply_patch(filename = None, diff = None, base = None,
         refresh_index()
 
     try:
-        _input_str('git-apply --index', diff)
+        _input_str(['git-apply', '--index'], diff)
     except GitException:
         if base:
             switch(orig_head)
