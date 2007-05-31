@@ -44,9 +44,8 @@ shows the specified patch (defaulting to the current one)."""
 options = [make_option('-r', '--range',
                        metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
-           make_option('--binary',
-                       help = 'output a diff even for binary files',
-                       action = 'store_true'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
                        action = 'store_true')]
@@ -79,8 +78,8 @@ def func(parser, options, args):
         rev1 = 'HEAD'
         rev2 = None
 
-    if options.binary:
-        diff_flags = [ '--binary' ]
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
     else:
         diff_flags = []
 

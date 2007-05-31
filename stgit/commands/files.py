@@ -38,6 +38,8 @@ options = [make_option('-s', '--stat',
                        action = 'store_true'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff'),
            make_option('--bare',
                        help = 'bare file names (useful for scripting)',
                        action = 'store_true')]
@@ -61,4 +63,9 @@ def func(parser, options, args):
     elif options.bare:
         out.stdout_raw(git.barefiles(rev1, rev2) + '\n')
     else:
-        out.stdout_raw(git.files(rev1, rev2) + '\n')
+        if options.diff_opts:
+            diff_flags = options.diff_opts.split()
+        else:
+            diff_flags = []
+
+        out.stdout_raw(git.files(rev1, rev2, diff_flags = diff_flags) + '\n')

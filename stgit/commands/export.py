@@ -62,9 +62,8 @@ options = [make_option('-d', '--dir',
                        help = 'Use FILE as a template'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
-           make_option('--binary',
-                       help = 'output a diff even for binary files',
-                       action = 'store_true'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff'),
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
                        action = 'store_true')]
@@ -87,8 +86,8 @@ def func(parser, options, args):
             os.makedirs(dirname)
         series = file(os.path.join(dirname, 'series'), 'w+')
 
-    if options.binary:
-        diff_flags = [ '--binary' ]
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
     else:
         diff_flags = []
 

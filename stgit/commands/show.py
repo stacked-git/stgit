@@ -35,7 +35,9 @@ options = [make_option('-a', '--applied',
                        action = 'store_true'),
            make_option('-u', '--unapplied',
                        help = 'show the unapplied patches',
-                       action = 'store_true')]
+                       action = 'store_true'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff')]
 
 
 def func(parser, options, args):
@@ -58,8 +60,13 @@ def func(parser, options, args):
         else:
             patches = parse_patches(args, applied + unapplied, len(applied))
 
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
+    else:
+        diff_flags = []
+
     commit_ids = [git_id(patch) for patch in patches]
-    commit_str = '\n'.join([git.pretty_commit(commit_id)
+    commit_str = '\n'.join([git.pretty_commit(commit_id, diff_flags=diff_flags)
                             for commit_id in commit_ids])
     if commit_str:
         pager(commit_str)

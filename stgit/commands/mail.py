@@ -120,9 +120,8 @@ options = [make_option('-a', '--all',
                        help = 'username for SMTP authentication'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
-           make_option('--binary',
-                       help = 'output a diff even for binary files',
-                       action = 'store_true'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff'),
            make_option('-m', '--mbox',
                        help = 'generate an mbox file instead of sending',
                        action = 'store_true')]
@@ -377,8 +376,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     else:
         prefix_str = ''
         
-    if options.binary:
-        diff_flags = [ '--binary' ]
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
     else:
         diff_flags = []
 

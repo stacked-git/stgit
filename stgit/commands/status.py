@@ -58,6 +58,8 @@ options = [make_option('-m', '--modified',
            make_option('-x', '--noexclude',
                        help = 'do not exclude any files from listing',
                        action = 'store_true'),
+           make_option('-O', '--diff-opts',
+                       help = 'options to pass to git-diff'),
            make_option('--reset',
                        help = 'reset the current tree changes',
                        action = 'store_true')]
@@ -75,5 +77,11 @@ def func(parser, options, args):
             resolved_all()
             git.reset()
     else:
+        if options.diff_opts:
+            diff_flags = options.diff_opts.split()
+        else:
+            diff_flags = []
+
         git.status(args, options.modified, options.new, options.deleted,
-                   options.conflict, options.unknown, options.noexclude)
+                   options.conflict, options.unknown, options.noexclude,
+                   diff_flags = diff_flags)

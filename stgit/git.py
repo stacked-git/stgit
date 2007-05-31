@@ -217,7 +217,7 @@ def __run(cmd, args=None):
     return 0
 
 def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
-                  noexclude = True, verbose = False):
+                  noexclude = True, verbose = False, diff_flags = []):
     """Returns a list of pairs - [status, filename]
     """
     if verbose:
@@ -254,7 +254,8 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
     cache_files += [('C', filename) for filename in conflicts]
 
     # the rest
-    for line in _output_lines(['git-diff-index', tree_id, '--'] + files):
+    for line in _output_lines(['git-diff-index'] + diff_flags +
+                              [ tree_id, '--'] + files):
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
@@ -737,13 +738,15 @@ def merge(base, head1, head2, recursive = False):
         raise GitException, 'GIT index merging failed (possible conflicts)'
 
 def status(files = None, modified = False, new = False, deleted = False,
-           conflict = False, unknown = False, noexclude = False):
+           conflict = False, unknown = False, noexclude = False,
+           diff_flags = []):
     """Show the tree status
     """
     if not files:
         files = []
 
-    cache_files = __tree_status(files, unknown = True, noexclude = noexclude)
+    cache_files = __tree_status(files, unknown = True, noexclude = noexclude,
+                                diff_flags = diff_flags)
     all = not (modified or new or deleted or conflict or unknown)
 
     if not all:
@@ -809,12 +812,12 @@ def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
         raise GitException, 'git.diffstat failed'
     return diff_str
 
-def files(rev1, rev2):
+def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2
     """
 
     result = ''
-    for line in _output_lines(['git-diff-tree', '-r', rev1, rev2]):
+    for line in _output_lines(['git-diff-tree'] + diff_flags + ['-r', rev1, rev2]):
         result += '%s %s\n' % tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
 
     return result.rstrip()
@@ -829,11 +832,11 @@ def barefiles(rev1, rev2):
 
     return result.rstrip()
 
-def pretty_commit(commit_id = 'HEAD'):
+def pretty_commit(commit_id = 'HEAD', diff_flags = []):
     """Return a given commit (log + diff)
     """
-    return _output(['git-diff-tree', '--cc', '--always', '--pretty', '-r',
-                    commit_id])
+    return _output(['git-diff-tree'] + diff_flags +
+                   ['--cc', '--always', '--pretty', '-r', commit_id])
 
 def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
