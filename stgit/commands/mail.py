@@ -377,6 +377,11 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     else:
         prefix_str = ''
         
+    if options.binary:
+        diff_flags = [ '--binary' ]
+    else:
+        diff_flags = []
+
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
     if total_nr > 1:
@@ -394,7 +399,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'endofheaders': '',
                  'diff':         git.diff(rev1 = git_id('%s//bottom' % patch),
                                           rev2 = git_id('%s//top' % patch),
-                                          binary = options.binary),
+                                          diff_flags = diff_flags ),
                  'diffstat':     git.diffstat(rev1 = git_id('%s//bottom'%patch),
                                               rev2 = git_id('%s//top' % patch)),
                  # for backward template compatibility

@@ -79,10 +79,15 @@ def func(parser, options, args):
         rev1 = 'HEAD'
         rev2 = None
 
+    if options.binary:
+        diff_flags = [ '--binary' ]
+    else:
+        diff_flags = []
+
     if options.stat:
         out.stdout_raw(git.diffstat(args, git_id(rev1), git_id(rev2)) + '\n')
     else:
         diff_str = git.diff(args, git_id(rev1), git_id(rev2),
-                            binary = options.binary)
+                            diff_flags = diff_flags )
         if diff_str:
             pager(diff_str)

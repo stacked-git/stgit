@@ -87,6 +87,11 @@ def func(parser, options, args):
             os.makedirs(dirname)
         series = file(os.path.join(dirname, 'series'), 'w+')
 
+    if options.binary:
+        diff_flags = [ '--binary' ]
+    else:
+        diff_flags = []
+
     applied = crt_series.get_applied()
     if len(args) != 0:
         patches = parse_patches(args, applied)
@@ -175,7 +180,8 @@ def func(parser, options, args):
         # write the diff
         git.diff(rev1 = patch.get_bottom(),
                  rev2 = patch.get_top(),
-                 out_fd = f, binary = options.binary)
+                 out_fd = f,
+                 diff_flags = diff_flags )
         if not options.stdout:
             f.close()
         patch_no += 1
