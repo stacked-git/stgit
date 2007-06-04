@@ -82,6 +82,15 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Hide the topmost patch and try to delete it' \
+    '
+    [ $(stg applied | wc -l) -eq 2 ] &&
+    stg hide bar &&
+    stg delete bar &&
+    [ $(stg applied | wc -l) -eq 1 ]
+    '
+
+test_expect_success \
     'Create another branch, and put one patch in each branch' \
     '
     stg branch --create br &&
@@ -99,10 +108,10 @@ test_expect_success \
 test_expect_success \
     'Delete a patch in another branch' \
     '
-    [ $(stg applied | wc -l) -eq 3 ] &&
+    [ $(stg applied | wc -l) -eq 2 ] &&
     [ $(stg applied -b br | wc -l) -eq 1 ] &&
     stg delete -b br baz &&
-    [ $(stg applied | wc -l) -eq 3 ] &&
+    [ $(stg applied | wc -l) -eq 2 ] &&
     [ $(stg applied -b br | wc -l) -eq 0 ]
     '
 

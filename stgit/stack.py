@@ -894,6 +894,9 @@ class Series(StgitObject):
         # save the commit id to a trash file
         write_string(os.path.join(self.__trash_dir, name), patch.get_top())
 
+        if self.patch_hidden(name):
+            self.unhide_patch(name)
+
         patch.delete()
 
         unapplied = self.get_unapplied()
@@ -901,9 +904,6 @@ class Series(StgitObject):
         f = file(self.__unapplied_file, 'w+')
         f.writelines([line + '\n' for line in unapplied])
         f.close()
-
-        if self.patch_hidden(name):
-            self.unhide_patch(name)
 
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
@@ -1168,7 +1168,9 @@ class Series(StgitObject):
 
         if self.patch_hidden(oldname):
             self.unhide_patch(oldname)
-            self.hide_patch(newname)
+            was_hidden=True
+        else:
+            was_hidden=False
 
         if oldname in unapplied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
@@ -1187,6 +1189,9 @@ class Series(StgitObject):
             f.close()
         else:
             raise StackException, 'Unknown patch "%s"' % oldname
+
+        if was_hidden:
+            self.hide_patch(newname)
 
     def log_patch(self, patch, message):
         """Generate a log commit for a patch
