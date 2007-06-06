@@ -680,10 +680,11 @@ class Series(StgitObject):
             for p in patches:
                 Patch(p, self.__patch_dir, self.__refs_dir).delete()
 
-            # remove the trash directory
-            for fname in os.listdir(self.__trash_dir):
-                os.remove(os.path.join(self.__trash_dir, fname))
-            os.rmdir(self.__trash_dir)
+            # remove the trash directory if any
+            if os.path.exists(self.__trash_dir):
+                for fname in os.listdir(self.__trash_dir):
+                    os.remove(os.path.join(self.__trash_dir, fname))
+                os.rmdir(self.__trash_dir)
 
             # FIXME: find a way to get rid of those manual removals
             # (move functionality to StgitObject ?)
