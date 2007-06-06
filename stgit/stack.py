@@ -719,6 +719,7 @@ class Series(StgitObject):
         config.unset('branch.%s.remote' % self.__name)
         config.unset('branch.%s.merge' % self.__name)
         config.unset('branch.%s.stgit.parentbranch' % self.__name)
+        config.unset('branch.%s.stgitformatversion' % self.__name)
 
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,
