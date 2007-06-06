@@ -23,7 +23,7 @@ fi
 
 # Merges via "push" leave top=bottom so we must look at old patch
 # in this case (unlike, eg., "pick --fold")
-patchdir="$(git-rev-parse --git-dir)/patches/$(stg branch)/$(stg top)"
+patchdir="$(git-rev-parse --git-dir)/patches/$(stg branch)/patches/$(stg top)"
 if [ $(cat "$patchdir/bottom") = $(cat "$patchdir/top") ];
 then
     current_cmd="stg show //top.old"
