@@ -27,7 +27,8 @@ test_expect_success \
 	'Rebase to previous commit' \
 	'
 	stg rebase master~1 &&
-	test `stg id base@stack` = `git rev-parse master~1`
+	test `stg id base@stack` = `git rev-parse master~1` &&
+	test `stg applied | wc -l` = 1
 	'
 
 test_done
