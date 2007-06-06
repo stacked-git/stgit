@@ -52,6 +52,10 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
+    # ensure an exception is raised before popping on non-existent target
+    if git_id(args[0]) == None:
+        raise GitException, 'Unknown revision: %s' % git_id
+        
     applied = prepare_rebase(real_rebase=True, force=options.force)
     rebase(args[0])
     post_rebase(applied, options.nopush, options.merged)
