@@ -242,7 +242,8 @@ def main():
         sys.exit(0)
 
     # re-build the command line arguments
-    sys.argv[0] += ' %s' % commands.canonical_cmd(cmd)
+    cmd = commands.canonical_cmd(cmd)
+    sys.argv[0] += ' %s' % cmd
     del(sys.argv[1])
 
     command = commands[cmd]
