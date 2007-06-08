@@ -107,6 +107,14 @@ def mkdir_file(filename, mode):
     create_dirs(os.path.dirname(filename))
     return file(filename, mode)
 
+def read_strings(filename):
+    """Reads the lines from a file
+    """
+    f = file(filename, 'r')
+    lines = [line.strip() for line in f.readlines()]
+    f.close()
+    return lines
+
 def read_string(filename, multiline = False):
     """Reads the first line from a file
     """
@@ -117,6 +125,13 @@ def read_string(filename, multiline = False):
         result = f.readline().strip()
     f.close()
     return result
+
+def write_strings(filename, lines):
+    """Write 'lines' sequence to file
+    """
+    f = file(filename, 'w+')
+    f.writelines([line + '\n' for line in lines])
+    f.close()
 
 def write_string(filename, line, multiline = False):
     """Writes 'line' to file and truncates it

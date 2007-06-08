@@ -423,26 +423,17 @@ class Series(StgitObject):
     def get_applied(self):
         if not os.path.isfile(self.__applied_file):
             raise StackException, 'Branch "%s" not initialised' % self.__name
-        f = file(self.__applied_file)
-        names = [line.strip() for line in f.readlines()]
-        f.close()
-        return names
+        return read_strings(self.__applied_file)
 
     def get_unapplied(self):
         if not os.path.isfile(self.__unapplied_file):
             raise StackException, 'Branch "%s" not initialised' % self.__name
-        f = file(self.__unapplied_file)
-        names = [line.strip() for line in f.readlines()]
-        f.close()
-        return names
+        return read_strings(self.__unapplied_file)
 
     def get_hidden(self):
         if not os.path.isfile(self.__hidden_file):
             return []
-        f = file(self.__hidden_file)
-        names = [line.strip() for line in f.readlines()]
-        f.close()
-        return names
+        return read_strings(self.__hidden_file)
 
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
@@ -865,10 +856,7 @@ class Series(StgitObject):
             self.log_patch(patch, 'new')
 
             patches = [patch.get_name()] + self.get_unapplied()
-
-            f = file(self.__unapplied_file, 'w+')
-            f.writelines([line + '\n' for line in patches])
-            f.close()
+            write_strings(self.__unapplied_file, patches)
         elif before_existing:
             self.log_patch(patch, 'new')
 
@@ -901,9 +889,7 @@ class Series(StgitObject):
 
         unapplied = self.get_unapplied()
         unapplied.remove(name)
-        f = file(self.__unapplied_file, 'w+')
-        f.writelines([line + '\n' for line in unapplied])
-        f.close()
+        write_strings(self.__unapplied_file, unapplied)
 
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
@@ -975,10 +961,7 @@ class Series(StgitObject):
         git.switch(top)
 
         append_strings(self.__applied_file, names[0:forwarded])
-
-        f = file(self.__unapplied_file, 'w+')
-        f.writelines([line + '\n' for line in unapplied])
-        f.close()
+        write_strings(self.__unapplied_file, unapplied)
 
         return forwarded
 
@@ -1056,9 +1039,7 @@ class Series(StgitObject):
         append_string(self.__applied_file, name)
 
         unapplied.remove(name)
-        f = file(self.__unapplied_file, 'w+')
-        f.writelines([line + '\n' for line in unapplied])
-        f.close()
+        write_strings(self.__unapplied_file, unapplied)
 
         # head == bottom case doesn't need to refresh the patch
         if empty or head != bottom:
@@ -1126,17 +1107,11 @@ class Series(StgitObject):
         popped = applied[:idx]
         popped.reverse()
         unapplied = popped + self.get_unapplied()
-
-        f = file(self.__unapplied_file, 'w+')
-        f.writelines([line + '\n' for line in unapplied])
-        f.close()
+        write_strings(self.__unapplied_file, unapplied)
 
         del applied[:idx]
         applied.reverse()
-
-        f = file(self.__applied_file, 'w+')
-        f.writelines([line + '\n' for line in applied])
-        f.close()
+        write_strings(self.__applied_file, applied)
 
     def empty_patch(self, name):
         """Returns True if the patch is empty
@@ -1169,18 +1144,12 @@ class Series(StgitObject):
         if oldname in unapplied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
-
-            f = file(self.__unapplied_file, 'w+')
-            f.writelines([line + '\n' for line in unapplied])
-            f.close()
+            write_strings(self.__unapplied_file, unapplied)
         elif oldname in applied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
 
             applied[applied.index(oldname)] = newname
-
-            f = file(self.__applied_file, 'w+')
-            f.writelines([line + '\n' for line in applied])
-            f.close()
+            write_strings(self.__applied_file, applied)
         else:
             raise StackException, 'Unknown patch "%s"' % oldname
 
@@ -1221,9 +1190,7 @@ class Series(StgitObject):
             append_string(self.__hidden_file, name)
 
         unapplied.remove(name)
-        f = file(self.__unapplied_file, 'w+')
-        f.writelines([line + '\n' for line in unapplied])
-        f.close()
+        write_strings(self.__unapplied_file, unapplied)
 
     def unhide_patch(self, name):
         """Remove the patch from the hidden list.
@@ -1236,9 +1203,7 @@ class Series(StgitObject):
                 raise StackException, 'Unknown patch "%s"' % name
 
         hidden.remove(name)
-        f = file(self.__hidden_file, 'w+')
-        f.writelines([line + '\n' for line in hidden])
-        f.close()
+        write_strings(self.__hidden_file, hidden)
 
         if not self.patch_applied(name) and not self.patch_unapplied(name):
             # check needed for backward compatibility with the old
