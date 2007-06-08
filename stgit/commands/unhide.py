@@ -24,10 +24,10 @@ from stgit import stack, git
 
 
 help = 'unhide a hidden patch in the series'
-usage = """%prog [options] [<patch-range>]
+usage = """%prog [options] <patch-range>
 
-Unhide a hidden range of patches or the current one if hidden so that
-they are shown in the plain 'series' command output."""
+Unhide a hidden range of patches so that they are shown in the plain
+'series' command output."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
@@ -35,14 +35,13 @@ options = [make_option('-b', '--branch',
 def func(parser, options, args):
     """Unhide a range of patches in the series
     """
-    if not args:
-        patches = [crt_series.get_current()]
+    if args:
+        # parsing all the patches for a more meaningful error reporting
+        all_patches = crt_series.get_applied() + crt_series.get_unapplied() \
+                      + crt_series.get_hidden()
+        patches = parse_patches(args, all_patches)
     else:
-        applied = crt_series.get_applied()
-        unapplied = crt_series.get_unapplied()
-        patches = parse_patches(args, applied + unapplied, len(applied))
-
-    patches = [p for p in patches if p in crt_series.get_hidden()]
+        parser.error('No patches specified')
 
     for patch in patches:
         crt_series.unhide_patch(patch)

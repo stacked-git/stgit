@@ -24,10 +24,10 @@ from stgit import stack, git
 
 
 help = 'hide a patch in the series'
-usage = """%prog [options] [<patch-range>]
+usage = """%prog [options] <patch-range>
 
-Hide a range of patches or the current one so that they are no longer
-shown in the plain 'series' command output."""
+Hide a range of unapplied patches so that they are no longer shown in
+the plain 'series' command output."""
 
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
@@ -35,14 +35,13 @@ options = [make_option('-b', '--branch',
 def func(parser, options, args):
     """Hide a range of patch in the series
     """
-    if not args:
-        patches = [crt_series.get_current()]
+    if args:
+        # parsing all the patches for a more meaningful error reporting
+        all_patches = crt_series.get_applied() + crt_series.get_unapplied() \
+                      + crt_series.get_hidden()
+        patches = parse_patches(args, all_patches)
     else:
-        applied = crt_series.get_applied()
-        unapplied = crt_series.get_unapplied()
-        patches = parse_patches(args, applied + unapplied, len(applied))
-
-    patches = [p for p in patches if p not in crt_series.get_hidden()]
+        parser.error('No patches specified')
 
     for patch in patches:
         crt_series.hide_patch(patch)

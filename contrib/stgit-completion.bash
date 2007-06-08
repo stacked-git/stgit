@@ -81,6 +81,13 @@ _unapplied_patches ()
     [ "$g" ] && cat "$g/patches/$(_current_branch)/unapplied"
 }
 
+# List of all applied patches.
+_hidden_patches ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && cat "$g/patches/$(_current_branch)/hidden"
+}
+
 # List of all patches.
 _all_patches ()
 {
@@ -203,12 +210,12 @@ _stg ()
         # stack commands
         float)  _stg_patches $command _all_patches ;;
         goto)   _stg_patches $command _all_other_patches ;;
-        hide)   _stg_patches $command _all_patches ;;
+        hide)   _stg_patches $command _unapplied_patches ;;
         pop)    _stg_patches $command _applied_patches ;;
         push)   _stg_patches $command _unapplied_patches ;;
         series) _stg_patches $command _all_patches ;;
         sink)   _stg_patches $command _all_patches ;;
-        unhide) _stg_patches $command _all_patches ;;
+        unhide) _stg_patches $command _hidden_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
         export) _stg_patches $command _applied_patches ;;

@@ -553,7 +553,8 @@ class Series(StgitObject):
     def patch_exists(self, name):
         """Return true if there is a patch with the given name, false
         otherwise."""
-        return self.patch_applied(name) or self.patch_unapplied(name)
+        return self.patch_applied(name) or self.patch_unapplied(name) \
+               or self.patch_hidden(name)
 
     def head_top_equal(self):
         """Return true if the head and the top are the same
@@ -825,7 +826,7 @@ class Series(StgitObject):
 
         if name != None:
             self.__patch_name_valid(name)
-            if self.patch_applied(name) or self.patch_unapplied(name):
+            if self.patch_exists(name):
                 raise StackException, 'Patch "%s" already exists' % name
 
         if not message and can_edit:
@@ -895,9 +896,6 @@ class Series(StgitObject):
 
         # save the commit id to a trash file
         write_string(os.path.join(self.__trash_dir, name), patch.get_top())
-
-        if self.patch_hidden(name):
-            self.unhide_patch(name)
 
         patch.delete()
 
@@ -1168,12 +1166,6 @@ class Series(StgitObject):
         if newname in applied or newname in unapplied:
             raise StackException, 'Patch "%s" already exists' % newname
 
-        if self.patch_hidden(oldname):
-            self.unhide_patch(oldname)
-            was_hidden=True
-        else:
-            was_hidden=False
-
         if oldname in unapplied:
             Patch(oldname, self.__patch_dir, self.__refs_dir).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
@@ -1191,9 +1183,6 @@ class Series(StgitObject):
             f.close()
         else:
             raise StackException, 'Unknown patch "%s"' % oldname
-
-        if was_hidden:
-            self.hide_patch(newname)
 
     def log_patch(self, patch, message):
         """Generate a log commit for a patch
@@ -1215,24 +1204,43 @@ class Series(StgitObject):
     def hide_patch(self, name):
         """Add the patch to the hidden list.
         """
-        if not self.patch_exists(name):
-            raise StackException, 'Unknown patch "%s"' % name
-        elif self.patch_hidden(name):
-            raise StackException, 'Patch "%s" already hidden' % name
+        unapplied = self.get_unapplied()
+        if name not in unapplied:
+            # keep the checking order for backward compatibility with
+            # the old hidden patches functionality
+            if self.patch_applied(name):
+                raise StackException, 'Cannot hide applied patch "%s"' % name
+            elif self.patch_hidden(name):
+                raise StackException, 'Patch "%s" already hidden' % name
+            else:
+                raise StackException, 'Unknown patch "%s"' % name
 
-        append_string(self.__hidden_file, name)
+        if not self.patch_hidden(name):
+            # check needed for backward compatibility with the old
+            # hidden patches functionality
+            append_string(self.__hidden_file, name)
+
+        unapplied.remove(name)
+        f = file(self.__unapplied_file, 'w+')
+        f.writelines([line + '\n' for line in unapplied])
+        f.close()
 
     def unhide_patch(self, name):
-        """Add the patch to the hidden list.
+        """Remove the patch from the hidden list.
         """
-        if not self.patch_exists(name):
-            raise StackException, 'Unknown patch "%s"' % name
         hidden = self.get_hidden()
         if not name in hidden:
-            raise StackException, 'Patch "%s" not hidden' % name
+            if self.patch_applied(name) or self.patch_unapplied(name):
+                raise StackException, 'Patch "%s" not hidden' % name
+            else:
+                raise StackException, 'Unknown patch "%s"' % name
 
         hidden.remove(name)
-
         f = file(self.__hidden_file, 'w+')
         f.writelines([line + '\n' for line in hidden])
         f.close()
+
+        if not self.patch_applied(name) and not self.patch_unapplied(name):
+            # check needed for backward compatibility with the old
+            # hidden patches functionality
+            append_string(self.__unapplied_file, name)
