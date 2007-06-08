@@ -1,6 +1,6 @@
-PREFIX = $(HOME)
-DESTDIR = /
-PYTHON = python
+PREFIX	?= $(HOME)
+DESTDIR	?= /
+PYTHON	?= python
 
 all:
 	$(PYTHON) setup.py build

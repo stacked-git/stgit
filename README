@@ -12,3 +12,6 @@ StGIT commands.
 
 For the latest version see http://www.procode.org/stgit/
 For a tutorial see http://wiki.procode.org/cgi-bin/wiki.cgi/StGIT_Tutorial
+
+Bugs or feature requests should be sent to the git@vger.kernel.org
+mailing list or the StGIT project page - http://gna.org/projects/stgit/

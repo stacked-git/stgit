@@ -3,3 +3,6 @@ dist
 MANIFEST
 patches-*
 *-stamp
+release.sh
+setup.cfg.rpm
+snapshot.sh
