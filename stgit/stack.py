@@ -348,7 +348,62 @@ def update_to_current_format_version(branch, git_dir):
         raise StackException('Branch %s is at format version %d, expected %d'
                              % (branch, get_format_version(), FORMAT_VERSION))
 
-class Series(StgitObject):
+class PatchSet(StgitObject):
+    def get_name(self):
+        return self.__name
+    def set_name(self, name):
+        self.__name = name
+
+    def get_head(self):
+        """Return the head of the branch
+        """
+        crt = self.get_current_patch()
+        if crt:
+            return crt.get_top()
+        else:
+            return self.get_base()
+
+    def get_protected(self):
+        return os.path.isfile(os.path.join(self._dir(), 'protected'))
+
+    def protect(self):
+        protect_file = os.path.join(self._dir(), 'protected')
+        if not os.path.isfile(protect_file):
+            create_empty_file(protect_file)
+
+    def unprotect(self):
+        protect_file = os.path.join(self._dir(), 'protected')
+        if os.path.isfile(protect_file):
+            os.remove(protect_file)
+
+    def __branch_descr(self):
+        return 'branch.%s.description' % self.get_name()
+
+    def get_description(self):
+        return config.get(self.__branch_descr()) or ''
+
+    def set_description(self, line):
+        if line:
+            config.set(self.__branch_descr(), line)
+        else:
+            config.unset(self.__branch_descr())
+
+    def head_top_equal(self):
+        """Return true if the head and the top are the same
+        """
+        crt = self.get_current_patch()
+        if not crt:
+            # we don't care, no patches applied
+            return True
+        return git.get_head() == crt.get_top()
+
+    def is_initialised(self):
+        """Checks if series is already initialised
+        """
+        return bool(config.get(format_version_key(self.get_name())))
+
+
+class Series(PatchSet):
     """Class including the operations on series
     """
     def __init__(self, name = None):
@@ -388,11 +443,6 @@ class Series(StgitObject):
         if not name or re.search('[^\w.-]', name):
             raise StackException, 'Invalid patch name: "%s"' % name
 
-    def get_name(self):
-        return self.__name
-    def set_name(self, name):
-        self.__name = name
-        
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
@@ -443,40 +493,6 @@ class Series(StgitObject):
                 return self.get_patch(bottommost).get_bottom()
         # No bottommost patch, so just return HEAD
         return git.get_head()
-
-    def get_head(self):
-        """Return the head of the branch
-        """
-        crt = self.get_current_patch()
-        if crt:
-            return crt.get_top()
-        else:
-            return self.get_base()
-
-    def get_protected(self):
-        return os.path.isfile(os.path.join(self._dir(), 'protected'))
-
-    def protect(self):
-        protect_file = os.path.join(self._dir(), 'protected')
-        if not os.path.isfile(protect_file):
-            create_empty_file(protect_file)
-
-    def unprotect(self):
-        protect_file = os.path.join(self._dir(), 'protected')
-        if os.path.isfile(protect_file):
-            os.remove(protect_file)
-
-    def __branch_descr(self):
-        return 'branch.%s.description' % self.get_name()
-
-    def get_description(self):
-        return config.get(self.__branch_descr()) or ''
-
-    def set_description(self, line):
-        if line:
-            config.set(self.__branch_descr(), line)
-        else:
-            config.unset(self.__branch_descr())
 
     def get_parent_remote(self):
         value = config.get('branch.%s.remote' % self.get_name())
@@ -546,20 +562,6 @@ class Series(StgitObject):
         otherwise."""
         return self.patch_applied(name) or self.patch_unapplied(name) \
                or self.patch_hidden(name)
-
-    def head_top_equal(self):
-        """Return true if the head and the top are the same
-        """
-        crt = self.get_current_patch()
-        if not crt:
-            # we don't care, no patches applied
-            return True
-        return git.get_head() == crt.get_top()
-
-    def is_initialised(self):
-        """Checks if series is already initialised
-        """
-        return bool(config.get(format_version_key(self.get_name())))
 
     def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
