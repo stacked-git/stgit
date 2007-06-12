@@ -366,7 +366,7 @@ class Series(PatchSet):
         self.__trash_dir = os.path.join(self._dir(), 'trash')
 
     def format_version_key(self):
-        return 'branch.%s.stgitformatversion' % self.get_name()
+        return 'branch.%s.stgit.stackformatversion' % self.get_name()
 
     def update_to_current_format_version(self):
         """Update a potentially older StGIT directory structure to the
@@ -379,11 +379,17 @@ class Series(PatchSet):
             """Return the integer format version number, or None if the
             branch doesn't have any StGIT metadata at all, of any version."""
             fv = config.get(self.format_version_key())
+            ofv = config.get('branch.%s.stgitformatversion' % self.get_name())
             if fv:
                 # Great, there's an explicitly recorded format version
                 # number, which means that the branch is initialized and
                 # of that exact version.
                 return int(fv)
+            elif ofv:
+                # Old name for the version info, upgrade it
+                config.set(self.format_version_key(), ofv)
+                config.unset('branch.%s.stgitformatversion' % self.get_name())
+                return int(ofv)
             elif os.path.isdir(os.path.join(branch_dir, 'patches')):
                 # There's a .git/patches/<branch>/patches dirctory, which
                 # means this is an initialized version 1 branch.
@@ -712,7 +718,7 @@ class Series(PatchSet):
         config.unset('branch.%s.remote' % self.get_name())
         config.unset('branch.%s.merge' % self.get_name())
         config.unset('branch.%s.stgit.parentbranch' % self.get_name())
-        config.unset('branch.%s.stgitformatversion' % self.get_name())
+        config.unset(self.format_version_key())
 
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,
