@@ -296,7 +296,11 @@ def __build_cover(tmpl, total_nr, msg_id, options):
     if options.prefix:
         prefix_str = options.prefix + ' '
     else:
-        prefix_str = ''
+        confprefix = config.get('stgit.mail.prefix')
+        if confprefix:
+            prefix_str = confprefix + ' '
+        else:
+            prefix_str = ''
         
     total_nr_str = str(total_nr)
     patch_nr_str = '0'.zfill(len(total_nr_str))
@@ -374,7 +378,11 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     if options.prefix:
         prefix_str = options.prefix + ' '
     else:
-        prefix_str = ''
+        confprefix = config.get('stgit.mail.prefix')
+        if confprefix:
+            prefix_str = confprefix + ' '
+        else:
+            prefix_str = ''
         
     if options.diff_opts:
         diff_flags = options.diff_opts.split()
