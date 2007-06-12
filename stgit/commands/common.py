@@ -318,22 +318,13 @@ def address_or_alias(addr_str):
                  for addr in addr_str.split(',')]
     return ', '.join([addr for addr in addr_list if addr])
 
-def prepare_rebase(force=None):
+def prepare_rebase(real_rebase, force=None):
     if not force:
-        # Be sure we won't loose results of stg-commit by error.
-        # Note: checking for refs/bases should not be necessary with
-        # repo format version 2, but better safe than sorry.
-        branchname = crt_series.get_name()
-        # references for anything but the current stack
-        refs = [ref for ref in git.all_refs()
-                if ref != 'refs/heads/'+branchname
-                and ref != 'refs/bases/'+branchname
-                and not re.match('^refs/patches/%s/'%branchname, ref)]
-        stray_commits = git._output_lines(['git-rev-list',
-                                           crt_series.get_base(),
-                                           '--not'] + refs)
-        if len(stray_commits) != 0:
-            raise CmdException, 'Rebasing would make the following commits below the stack base unreachable: %s' % stray_commits
+        # Be sure we won't loose results of stg-(un)commit by error.
+        # Do not require an existing orig-base for compatibility with 0.12 and earlier.
+        origbase = crt_series._get_field('orig-base')
+        if origbase and crt_series.get_base() != origbase:
+            raise CmdException, 'Rebasing would possibly lose data'
 
     # pop all patches
     applied = crt_series.get_applied()
@@ -352,6 +343,8 @@ def rebase(target):
     out.done()
 
 def post_rebase(applied, nopush, merged):
+    # memorize that we rebased to here
+    crt_series._set_field('orig-base', git.get_head())
     # push the patches back
     if not nopush:
         push_patches(applied, merged)
