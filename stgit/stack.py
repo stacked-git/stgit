@@ -276,78 +276,6 @@ class Patch(StgitObject):
 # The current StGIT metadata format version.
 FORMAT_VERSION = 2
 
-def format_version_key(branch):
-    return 'branch.%s.stgitformatversion' % branch
-
-def update_to_current_format_version(branch, git_dir):
-    """Update a potentially older StGIT directory structure to the
-    latest version. Note: This function should depend as little as
-    possible on external functions that may change during a format
-    version bump, since it must remain able to process older formats."""
-
-    branch_dir = os.path.join(git_dir, 'patches', branch)
-    def get_format_version():
-        """Return the integer format version number, or None if the
-        branch doesn't have any StGIT metadata at all, of any version."""
-        fv = config.get(format_version_key(branch))
-        if fv:
-            # Great, there's an explicitly recorded format version
-            # number, which means that the branch is initialized and
-            # of that exact version.
-            return int(fv)
-        elif os.path.isdir(os.path.join(branch_dir, 'patches')):
-            # There's a .git/patches/<branch>/patches dirctory, which
-            # means this is an initialized version 1 branch.
-            return 1
-        elif os.path.isdir(branch_dir):
-            # There's a .git/patches/<branch> directory, which means
-            # this is an initialized version 0 branch.
-            return 0
-        else:
-            # The branch doesn't seem to be initialized at all.
-            return None
-    def set_format_version(v):
-        out.info('Upgraded branch %s to format version %d' % (branch, v))
-        config.set(format_version_key(branch), '%d' % v)
-    def mkdir(d):
-        if not os.path.isdir(d):
-            os.makedirs(d)
-    def rm(f):
-        if os.path.exists(f):
-            os.remove(f)
-
-    # Update 0 -> 1.
-    if get_format_version() == 0:
-        mkdir(os.path.join(branch_dir, 'trash'))
-        patch_dir = os.path.join(branch_dir, 'patches')
-        mkdir(patch_dir)
-        refs_dir = os.path.join(git_dir, 'refs', 'patches', branch)
-        mkdir(refs_dir)
-        for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
-                      + file(os.path.join(branch_dir, 'applied')).readlines()):
-            patch = patch.strip()
-            os.rename(os.path.join(branch_dir, patch),
-                      os.path.join(patch_dir, patch))
-            Patch(patch, patch_dir, refs_dir).update_top_ref()
-        set_format_version(1)
-
-    # Update 1 -> 2.
-    if get_format_version() == 1:
-        desc_file = os.path.join(branch_dir, 'description')
-        if os.path.isfile(desc_file):
-            desc = read_string(desc_file)
-            if desc:
-                config.set('branch.%s.description' % branch, desc)
-            rm(desc_file)
-        rm(os.path.join(branch_dir, 'current'))
-        rm(os.path.join(git_dir, 'refs', 'bases', branch))
-        set_format_version(2)
-
-    # Make sure we're at the latest version.
-    if not get_format_version() in [None, FORMAT_VERSION]:
-        raise StackException('Branch %s is at format version %d, expected %d'
-                             % (branch, get_format_version(), FORMAT_VERSION))
-
 class PatchSet(StgitObject):
     def get_name(self):
         return self.__name
@@ -400,7 +328,7 @@ class PatchSet(StgitObject):
     def is_initialised(self):
         """Checks if series is already initialised
         """
-        return bool(config.get(format_version_key(self.get_name())))
+        return bool(config.get(self.format_version_key()))
 
 
 class Series(PatchSet):
@@ -422,7 +350,7 @@ class Series(PatchSet):
 
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
-        update_to_current_format_version(self.get_name(), self.__base_dir)
+        self.update_to_current_format_version()
 
         self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
                                        self.get_name())
@@ -436,6 +364,78 @@ class Series(PatchSet):
 
         # trash directory
         self.__trash_dir = os.path.join(self._dir(), 'trash')
+
+    def format_version_key(self):
+        return 'branch.%s.stgitformatversion' % self.get_name()
+
+    def update_to_current_format_version(self):
+        """Update a potentially older StGIT directory structure to the
+        latest version. Note: This function should depend as little as
+        possible on external functions that may change during a format
+        version bump, since it must remain able to process older formats."""
+
+        branch_dir = os.path.join(self.__base_dir, 'patches', self.get_name())
+        def get_format_version():
+            """Return the integer format version number, or None if the
+            branch doesn't have any StGIT metadata at all, of any version."""
+            fv = config.get(self.format_version_key())
+            if fv:
+                # Great, there's an explicitly recorded format version
+                # number, which means that the branch is initialized and
+                # of that exact version.
+                return int(fv)
+            elif os.path.isdir(os.path.join(branch_dir, 'patches')):
+                # There's a .git/patches/<branch>/patches dirctory, which
+                # means this is an initialized version 1 branch.
+                return 1
+            elif os.path.isdir(branch_dir):
+                # There's a .git/patches/<branch> directory, which means
+                # this is an initialized version 0 branch.
+                return 0
+            else:
+                # The branch doesn't seem to be initialized at all.
+                return None
+        def set_format_version(v):
+            out.info('Upgraded branch %s to format version %d' % (self.get_name(), v))
+            config.set(self.format_version_key(), '%d' % v)
+        def mkdir(d):
+            if not os.path.isdir(d):
+                os.makedirs(d)
+        def rm(f):
+            if os.path.exists(f):
+                os.remove(f)
+
+        # Update 0 -> 1.
+        if get_format_version() == 0:
+            mkdir(os.path.join(branch_dir, 'trash'))
+            patch_dir = os.path.join(branch_dir, 'patches')
+            mkdir(patch_dir)
+            refs_dir = os.path.join(self.__base_dir, 'refs', 'patches', self.get_name())
+            mkdir(refs_dir)
+            for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
+                          + file(os.path.join(branch_dir, 'applied')).readlines()):
+                patch = patch.strip()
+                os.rename(os.path.join(branch_dir, patch),
+                          os.path.join(patch_dir, patch))
+                Patch(patch, patch_dir, refs_dir).update_top_ref()
+            set_format_version(1)
+
+        # Update 1 -> 2.
+        if get_format_version() == 1:
+            desc_file = os.path.join(branch_dir, 'description')
+            if os.path.isfile(desc_file):
+                desc = read_string(desc_file)
+                if desc:
+                    config.set('branch.%s.description' % self.get_name(), desc)
+                rm(desc_file)
+            rm(os.path.join(branch_dir, 'current'))
+            rm(os.path.join(self.__base_dir, 'refs', 'bases', self.get_name()))
+            set_format_version(2)
+
+        # Make sure we're at the latest version.
+        if not get_format_version() in [None, FORMAT_VERSION]:
+            raise StackException('Branch %s is at format version %d, expected %d'
+                                 % (self.get_name(), get_format_version(), FORMAT_VERSION))
 
     def __patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
@@ -583,7 +583,7 @@ class Series(PatchSet):
         self.create_empty_field('unapplied')
         os.makedirs(self.__refs_dir)
 
-        config.set(format_version_key(self.get_name()), str(FORMAT_VERSION))
+        config.set(self.format_version_key(), str(FORMAT_VERSION))
 
     def rename(self, to_name):
         """Renames a series
