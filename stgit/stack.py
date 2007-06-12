@@ -580,7 +580,6 @@ class Series(StgitObject):
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
         os.makedirs(self.__refs_dir)
-        self._set_field('orig-base', git.get_head())
 
         config.set(format_version_key(self.get_branch()), str(FORMAT_VERSION))
 

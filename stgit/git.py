@@ -1070,3 +1070,9 @@ def fetch_head():
 
     # here we are sure to have a single fetch_head
     return fetch_head
+
+def all_refs():
+    """Return a list of all refs in the current repository.
+    """
+
+    return [line.split()[1] for line in _output_lines(['git-show-ref'])]

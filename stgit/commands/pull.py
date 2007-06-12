@@ -77,16 +77,12 @@ def func(parser, options, args):
     check_conflicts()
     check_head_top_equal()
 
-    if policy == 'pull':
-        must_rebase = 0
-    elif policy == 'fetch-rebase':
-        must_rebase = 1
-    elif policy == 'rebase':
-        must_rebase = 1
-    else:
+    if (policy != 'pull') \
+           and (policy != 'fetch-rebase') \
+           and (policy != 'rebase'):
         raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
 
-    applied = prepare_rebase(real_rebase=must_rebase, force=options.force)
+    applied = prepare_rebase(force=options.force)
 
     # pull the remote changes
     if policy == 'pull':
