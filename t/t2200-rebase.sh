@@ -43,20 +43,4 @@ test_expect_success \
 	test $(stg applied | wc -l) = 1
 	'
 
-test_expect_success \
-	'Rebase to next commit' \
-	'
-	stg rebase master &&
-	test $(stg id base@stack) = $(git rev-parse master)
-	'
-
-test_expect_success \
-	'Commit the patch and rebase again' \
-	'
-	stg commit &&
-	git tag committed-here &&
-	stg rebase master &&
-	test $(stg id base@stack) = $(git rev-parse master)
-	'
-
 test_done
