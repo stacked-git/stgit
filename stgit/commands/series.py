@@ -215,4 +215,4 @@ def func(parser, options, args):
             __print_patch(p, branch_str, '- ', '0 ', max_len, options)
 
         for p in hidden:
-            __print_patch(p, branch_str, '! ', '0 ', max_len, options)
+            __print_patch(p, branch_str, '! ', '! ', max_len, options)
