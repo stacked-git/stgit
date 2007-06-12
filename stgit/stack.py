@@ -356,21 +356,21 @@ class Series(StgitObject):
         """
         try:
             if name:
-                self.__name = name
+                self.set_name (name)
             else:
-                self.__name = git.get_head_file()
+                self.set_name (git.get_head_file())
             self.__base_dir = basedir.get()
         except git.GitException, ex:
             raise StackException, 'GIT tree not initialised: %s' % ex
 
-        self._set_dir(os.path.join(self.__base_dir, 'patches', self.__name))
+        self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
 
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
-        update_to_current_format_version(self.__name, self.__base_dir)
+        update_to_current_format_version(self.get_name(), self.__base_dir)
 
         self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
-                                       self.__name)
+                                       self.get_name())
 
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
@@ -388,11 +388,11 @@ class Series(StgitObject):
         if not name or re.search('[^\w.-]', name):
             raise StackException, 'Invalid patch name: "%s"' % name
 
-    def get_branch(self):
-        """Return the branch name for the Series object
-        """
+    def get_name(self):
         return self.__name
-
+    def set_name(self, name):
+        self.__name = name
+        
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
@@ -422,12 +422,12 @@ class Series(StgitObject):
 
     def get_applied(self):
         if not os.path.isfile(self.__applied_file):
-            raise StackException, 'Branch "%s" not initialised' % self.__name
+            raise StackException, 'Branch "%s" not initialised' % self.get_name()
         return read_strings(self.__applied_file)
 
     def get_unapplied(self):
         if not os.path.isfile(self.__unapplied_file):
-            raise StackException, 'Branch "%s" not initialised' % self.__name
+            raise StackException, 'Branch "%s" not initialised' % self.get_name()
         return read_strings(self.__unapplied_file)
 
     def get_hidden(self):
@@ -467,7 +467,7 @@ class Series(StgitObject):
             os.remove(protect_file)
 
     def __branch_descr(self):
-        return 'branch.%s.description' % self.get_branch()
+        return 'branch.%s.description' % self.get_name()
 
     def get_description(self):
         return config.get(self.__branch_descr()) or ''
@@ -479,41 +479,41 @@ class Series(StgitObject):
             config.unset(self.__branch_descr())
 
     def get_parent_remote(self):
-        value = config.get('branch.%s.remote' % self.__name)
+        value = config.get('branch.%s.remote' % self.get_name())
         if value:
             return value
         elif 'origin' in git.remotes_list():
             out.note(('No parent remote declared for stack "%s",'
-                      ' defaulting to "origin".' % self.__name),
+                      ' defaulting to "origin".' % self.get_name()),
                      ('Consider setting "branch.%s.remote" and'
                       ' "branch.%s.merge" with "git repo-config".'
-                      % (self.__name, self.__name)))
+                      % (self.get_name(), self.get_name())))
             return 'origin'
         else:
-            raise StackException, 'Cannot find a parent remote for "%s"' % self.__name
+            raise StackException, 'Cannot find a parent remote for "%s"' % self.get_name()
 
     def __set_parent_remote(self, remote):
-        value = config.set('branch.%s.remote' % self.__name, remote)
+        value = config.set('branch.%s.remote' % self.get_name(), remote)
 
     def get_parent_branch(self):
-        value = config.get('branch.%s.stgit.parentbranch' % self.__name)
+        value = config.get('branch.%s.stgit.parentbranch' % self.get_name())
         if value:
             return value
         elif git.rev_parse('heads/origin'):
             out.note(('No parent branch declared for stack "%s",'
-                      ' defaulting to "heads/origin".' % self.__name),
+                      ' defaulting to "heads/origin".' % self.get_name()),
                      ('Consider setting "branch.%s.stgit.parentbranch"'
-                      ' with "git repo-config".' % self.__name))
+                      ' with "git repo-config".' % self.get_name()))
             return 'heads/origin'
         else:
-            raise StackException, 'Cannot find a parent branch for "%s"' % self.__name
+            raise StackException, 'Cannot find a parent branch for "%s"' % self.get_name()
 
     def __set_parent_branch(self, name):
-        if config.get('branch.%s.remote' % self.__name):
+        if config.get('branch.%s.remote' % self.get_name()):
             # Never set merge if remote is not set to avoid
             # possibly-erroneous lookups into 'origin'
-            config.set('branch.%s.merge' % self.__name, name)
-        config.set('branch.%s.stgit.parentbranch' % self.__name, name)
+            config.set('branch.%s.merge' % self.get_name(), name)
+        config.set('branch.%s.stgit.parentbranch' % self.get_name(), name)
 
     def set_parent(self, remote, localbranch):
         if localbranch:
@@ -521,7 +521,7 @@ class Series(StgitObject):
             self.__set_parent_branch(localbranch)
         # We'll enforce this later
 #         else:
-#             raise StackException, 'Parent branch (%s) should be specified for %s' % localbranch, self.__name
+#             raise StackException, 'Parent branch (%s) should be specified for %s' % localbranch, self.get_name()
 
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()
@@ -559,19 +559,19 @@ class Series(StgitObject):
     def is_initialised(self):
         """Checks if series is already initialised
         """
-        return bool(config.get(format_version_key(self.get_branch())))
+        return bool(config.get(format_version_key(self.get_name())))
 
     def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
         """
         if self.is_initialised():
-            raise StackException, '%s already initialized' % self.get_branch()
+            raise StackException, '%s already initialized' % self.get_name()
         for d in [self._dir(), self.__refs_dir]:
             if os.path.exists(d):
                 raise StackException, '%s already exists' % d
 
         if (create_at!=False):
-            git.create_branch(self.__name, create_at)
+            git.create_branch(self.get_name(), create_at)
 
         os.makedirs(self.__patch_dir)
 
@@ -581,7 +581,7 @@ class Series(StgitObject):
         self.create_empty_field('unapplied')
         os.makedirs(self.__refs_dir)
 
-        config.set(format_version_key(self.get_branch()), str(FORMAT_VERSION))
+        config.set(format_version_key(self.get_name()), str(FORMAT_VERSION))
 
     def rename(self, to_name):
         """Renames a series
@@ -589,19 +589,19 @@ class Series(StgitObject):
         to_stack = Series(to_name)
 
         if to_stack.is_initialised():
-            raise StackException, '"%s" already exists' % to_stack.get_branch()
+            raise StackException, '"%s" already exists' % to_stack.get_name()
 
-        git.rename_branch(self.__name, to_name)
+        git.rename_branch(self.get_name(), to_name)
 
         if os.path.isdir(self._dir()):
             rename(os.path.join(self.__base_dir, 'patches'),
-                   self.__name, to_stack.__name)
+                   self.get_name(), to_stack.get_name())
         if os.path.exists(self.__refs_dir):
             rename(os.path.join(self.__base_dir, 'refs', 'patches'),
-                   self.__name, to_stack.__name)
+                   self.get_name(), to_stack.get_name())
 
         # Rename the config section
-        config.rename_section("branch.%s" % self.__name,
+        config.rename_section("branch.%s" % self.get_name(),
                               "branch.%s" % to_name)
 
         self.__init__(to_name)
@@ -618,7 +618,7 @@ class Series(StgitObject):
         new_series = Series(target_series)
 
         # generate an artificial description file
-        new_series.set_description('clone of "%s"' % self.__name)
+        new_series.set_description('clone of "%s"' % self.get_name())
 
         # clone self's entire series as unapplied patches
         try:
@@ -648,15 +648,15 @@ class Series(StgitObject):
         new_series.forward_patches(applied)
 
         # Clone parent informations
-        value = config.get('branch.%s.remote' % self.__name)
+        value = config.get('branch.%s.remote' % self.get_name())
         if value:
             config.set('branch.%s.remote' % target_series, value)
 
-        value = config.get('branch.%s.merge' % self.__name)
+        value = config.get('branch.%s.merge' % self.get_name())
         if value:
             config.set('branch.%s.merge' % target_series, value)
 
-        value = config.get('branch.%s.stgit.parentbranch' % self.__name)
+        value = config.get('branch.%s.stgit.parentbranch' % self.get_name())
         if value:
             config.set('branch.%s.stgit.parentbranch' % target_series, value)
 
@@ -707,10 +707,10 @@ class Series(StgitObject):
         # Cleanup parent informations
         # FIXME: should one day make use of git-config --section-remove,
         # scheduled for 1.5.1
-        config.unset('branch.%s.remote' % self.__name)
-        config.unset('branch.%s.merge' % self.__name)
-        config.unset('branch.%s.stgit.parentbranch' % self.__name)
-        config.unset('branch.%s.stgitformatversion' % self.__name)
+        config.unset('branch.%s.remote' % self.get_name())
+        config.unset('branch.%s.merge' % self.get_name())
+        config.unset('branch.%s.stgit.parentbranch' % self.get_name())
+        config.unset('branch.%s.stgitformatversion' % self.get_name())
 
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,
@@ -1092,13 +1092,13 @@ class Series(StgitObject):
 
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
 
-        if git.get_head_file() == self.get_branch():
+        if git.get_head_file() == self.get_name():
             if keep and not git.apply_diff(git.get_head(), patch.get_bottom()):
                 raise StackException(
                     'Failed to pop patches while preserving the local changes')
             git.switch(patch.get_bottom(), keep)
         else:
-            git.set_branch(self.get_branch(), patch.get_bottom())
+            git.set_branch(self.get_name(), patch.get_bottom())
 
         # save the new applied list
         idx = applied.index(name) + 1

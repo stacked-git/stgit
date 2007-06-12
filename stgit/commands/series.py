@@ -181,7 +181,7 @@ def func(parser, options, args):
         return
 
     if options.showbranch:
-        branch_str = '@' + crt_series.get_branch()
+        branch_str = '@' + crt_series.get_name()
     else:
         branch_str = ''
 

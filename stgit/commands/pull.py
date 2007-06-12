@@ -50,7 +50,7 @@ options = [make_option('-n', '--nopush',
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
-    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_branch()) or \
+    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_name()) or \
              config.get('stgit.pull-policy')
 
     if policy == 'rebase':

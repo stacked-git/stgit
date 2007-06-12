@@ -68,7 +68,7 @@ options = [make_option('-c', '--create',
 
 
 def __is_current_branch(branch_name):
-    return crt_series.get_branch() == branch_name
+    return crt_series.get_name() == branch_name
 
 def __print_branch(branch_name, length):
     initialized = ' '
@@ -168,7 +168,7 @@ def func(parser, options, args):
     elif options.clone:
 
         if len(args) == 0:
-            clone = crt_series.get_branch() + \
+            clone = crt_series.get_name() + \
                     time.strftime('-%C%y%m%d-%H%M%S')
         elif len(args) == 1:
             clone = args[0]
@@ -215,7 +215,7 @@ def func(parser, options, args):
     elif options.protect:
 
         if len(args) == 0:
-            branch_name = crt_series.get_branch()
+            branch_name = crt_series.get_name()
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -249,7 +249,7 @@ def func(parser, options, args):
     elif options.unprotect:
 
         if len(args) == 0:
-            branch_name = crt_series.get_branch()
+            branch_name = crt_series.get_name()
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -269,7 +269,7 @@ def func(parser, options, args):
     elif options.description is not None:
 
         if len(args) == 0:
-            branch_name = crt_series.get_branch()
+            branch_name = crt_series.get_name()
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -303,4 +303,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    print crt_series.get_branch()
+    print crt_series.get_name()

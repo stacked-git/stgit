@@ -85,7 +85,7 @@ def func(parser, options, args):
         # branch
         remote_series = crt_series
         stgit.commands.common.crt_series = crt_series = stack.Series()
-        if options.branch == crt_series.get_branch():
+        if options.branch == crt_series.get_name():
             raise CmdException, 'Cannot synchronise with the current branch'
         remote_patches = remote_series.get_applied()
 
