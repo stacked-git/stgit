@@ -199,7 +199,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                             interactive_merge(path)
                         except GitMergeException, ex:
                             # interactive merge failed
-                            out.error(ex)
+                            out.error(str(ex))
                             if str(keeporig) != 'yes':
                                 __remove_files(orig_hash, file1_hash,
                                                file2_hash)
@@ -282,7 +282,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                         interactive_merge(path)
                     except GitMergeException, ex:
                         # interactive merge failed
-                        out.error(ex)
+                        out.error(str(ex))
                         if str(keeporig) != 'yes':
                             __remove_files(orig_hash, file1_hash,
                                            file2_hash)
