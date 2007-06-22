@@ -25,10 +25,12 @@ from stgit import stack, git
 
 
 help = 'show the applied patches modifying a file'
-usage = """%prog [options] <file> [<file>...]
+usage = """%prog [options] [<files...>]
 
-Show the applied patches modifying the given files. The '--diff'
-option also lists the patch log and the diff for the given files."""
+Show the applied patches modifying the given files. Without arguments,
+it shows the patches affected by the local tree modifications. The
+'--diff' option also lists the patch log and the diff for the given
+files."""
 
 options = [make_option('-d', '--diff',
                        help = 'show the diff for the given files',
@@ -47,14 +49,19 @@ diff_tmpl = \
 def func(parser, options, args):
     """Show the patches modifying a file
     """
-    if len(args) < 1:
-        parser.error('incorrect number of arguments')
+    if not args:
+        files = [stat[1] for stat in git.tree_status(verbose = True)]
+    else:
+        files = args
+
+    if not files:
+        raise CmdException, 'No files specified or no local changes'
 
     applied = crt_series.get_applied()
     if not applied:
         raise CmdException, 'No patches applied'
 
-    revs = git.modifying_revs(args, crt_series.get_base(),
+    revs = git.modifying_revs(files, crt_series.get_base(),
                               crt_series.get_head())
     revs.reverse()
 
@@ -72,7 +79,7 @@ def func(parser, options, args):
             if options.diff:
                 diff_output += diff_tmpl \
                                % (patch.get_name(), patch.get_description(),
-                                  git.diff(args, patch.get_bottom(),
+                                  git.diff(files, patch.get_bottom(),
                                            patch.get_top()))
             else:
                 out.stdout(patch.get_name())

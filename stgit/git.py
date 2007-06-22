@@ -216,7 +216,7 @@ def __run(cmd, args=None):
         return r
     return 0
 
-def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
+def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
     """Returns a list of pairs - [status, filename]
     """
@@ -268,7 +268,7 @@ def __tree_status(files = None, tree_id = 'HEAD', unknown = False,
 def local_changes(verbose = True):
     """Return true if there are local changes in the tree
     """
-    return len(__tree_status(verbose = verbose)) != 0
+    return len(tree_status(verbose = verbose)) != 0
 
 # HEAD value cached
 __head = None
@@ -567,7 +567,7 @@ def update_cache(files = None, force = False):
     if not files:
         files = []
 
-    cache_files = __tree_status(files, verbose = False)
+    cache_files = tree_status(files, verbose = False)
 
     # everything is up-to-date
     if len(cache_files) == 0:
@@ -745,7 +745,7 @@ def status(files = None, modified = False, new = False, deleted = False,
     if not files:
         files = []
 
-    cache_files = __tree_status(files, unknown = True, noexclude = noexclude,
+    cache_files = tree_status(files, unknown = True, noexclude = noexclude,
                                 diff_flags = diff_flags)
     all = not (modified or new or deleted or conflict or unknown)
 
@@ -876,7 +876,7 @@ def reset(files = None, tree_id = None, check_out = True):
         tree_id = get_head()
 
     if check_out:
-        cache_files = __tree_status(files, tree_id)
+        cache_files = tree_status(files, tree_id)
         # files which were added but need to be removed
         rm_files =  [x[1] for x in cache_files if x[0] in ['A']]
 
