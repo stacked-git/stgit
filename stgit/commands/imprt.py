@@ -104,6 +104,23 @@ def __replace_slashes_with_dashes(name):
 
     return stripped
 
+def __split_descr_diff(string):
+    """Return the description and the diff from the given string
+    """
+    descr = diff = ''
+    top = True
+
+    for line in string.split('\n'):
+        if top:
+            if not __end_descr(line):
+                descr += line + '\n'
+                continue
+            else:
+                top = False
+        diff += line + '\n'
+
+    return (descr.rstrip(), diff)
+
 def __parse_description(descr):
     """Parse the patch description and return the new description and
     author information (if any).
@@ -172,25 +189,20 @@ def __parse_mail(msg):
     if descr:
         descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
-        descr += '\n\n'
     else:
         raise CmdException, 'Subject: line not found'
 
     # the rest of the message
-    if msg.is_multipart():
-        # this is assuming that the first part is the patch
-        # description and the second part is the attached patch
-        descr += msg.get_payload(0).get_payload(decode = True)
-        diff = msg.get_payload(1).get_payload(decode = True)
-    else:
-        diff = msg.get_payload(decode = True)
+    msg_text = ''
+    for part in msg.walk():
+        if part.get_content_type() == 'text/plain':
+            msg_text += part.get_payload(decode = True)
 
-        for line in diff.split('\n'):
-            if __end_descr(line):
-                break
-            descr += line + '\n'
-
-    descr.rstrip()
+    rem_descr, diff = __split_descr_diff(msg_text)
+    if rem_descr:
+        descr += '\n\n' + rem_descr
+    if not diff:
+        out.warn('Message does not contain any diff')
 
     # parse the description for author information
     descr, descr_authname, descr_authemail, descr_authdate = \
@@ -208,20 +220,7 @@ def __parse_patch(fobj):
     """Parse the input file and return (description, authname,
     authemail, authdate, diff)
     """
-    descr = ''
-    while True:
-        line = fobj.readline()
-        if not line:
-            break
-
-        if __end_descr(line):
-            break
-        else:
-            descr += line
-    descr.rstrip()
-
-    diff = fobj.read()
-
+    descr, diff = __split_descr_diff(fobj.read())
     descr, authname, authemail, authdate = __parse_description(descr)
 
     # we don't yet have an agreed place for the creation date.
