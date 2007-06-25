@@ -38,7 +38,7 @@ The sync operation can be reverted for individual patches with --undo."""
 options = [make_option('-a', '--all',
                        help = 'synchronise all the patches',
                        action = 'store_true'),
-           make_option('-b', '--branch',
+           make_option('-B', '--ref-branch',
                        help = 'syncronise patches with BRANCH'),
            make_option('-s', '--series',
                        help = 'syncronise patches with SERIES'),
@@ -69,9 +69,9 @@ def func(parser, options, args):
     global crt_series
 
     if options.undo:
-        if options.branch or options.series:
+        if options.ref_branch or options.series:
             raise CmdException, \
-                  '--undo cannot be specified with --branch or --series'
+                  '--undo cannot be specified with --ref-branch or --series'
         __check_all()
 
         out.start('Undoing the sync of "%s"' % crt_series.get_current())
@@ -80,12 +80,11 @@ def func(parser, options, args):
         out.done()
         return
 
-    if options.branch:
+    if options.ref_branch:
         # the main function already made crt_series to be the remote
         # branch
-        remote_series = crt_series
-        stgit.commands.common.crt_series = crt_series = stack.Series()
-        if options.branch == crt_series.get_name():
+        remote_series = stack.Series(options.ref_branch)
+        if options.ref_branch == crt_series.get_name():
             raise CmdException, 'Cannot synchronise with the current branch'
         remote_patches = remote_series.get_applied()
 

@@ -48,7 +48,7 @@ test_expect_success \
 test_expect_success \
     'Synchronise second patch with the master branch' \
     '
-    stg sync -b master p2 &&
+    stg sync -B master p2 &&
     [ "$(echo $(stg applied))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg unapplied))" = "" ] &&
     test $(cat foo2.txt) = "foo2"
@@ -57,7 +57,7 @@ test_expect_success \
 test_expect_success \
     'Synchronise the first two patches with the master branch' \
     '
-    stg sync -b master -a &&
+    stg sync -B master -a &&
     [ "$(echo $(stg applied))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg unapplied))" = "" ] &&
     test $(cat foo1.txt) = "foo1" &&
@@ -100,7 +100,7 @@ test_expect_success \
 test_expect_success \
     'Synchronise second patch with the master branch' \
     '
-    stg sync -b master p2 &&
+    stg sync -B master p2 &&
     [ "$(echo $(stg applied))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg unapplied))" = "" ] &&
     test $(cat bar2.txt) = "bar2"
@@ -109,7 +109,7 @@ test_expect_success \
 test_expect_failure \
     'Synchronise the first two patches with the master branch (to fail)' \
     '
-    stg sync -b master -a
+    stg sync -B master -a
     '
 
 test_expect_success \
