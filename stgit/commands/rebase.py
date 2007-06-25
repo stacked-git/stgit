@@ -56,7 +56,7 @@ def func(parser, options, args):
     if git_id(args[0]) == None:
         raise GitException, 'Unknown revision: %s' % git_id
         
-    applied = prepare_rebase(real_rebase=True, force=options.force)
+    applied = prepare_rebase(force=options.force)
     rebase(args[0])
     post_rebase(applied, options.nopush, options.merged)
 

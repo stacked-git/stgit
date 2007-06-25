@@ -318,7 +318,7 @@ def address_or_alias(addr_str):
                  for addr in addr_str.split(',')]
     return ', '.join([addr for addr in addr_list if addr])
 
-def prepare_rebase(real_rebase, force=None):
+def prepare_rebase(force=None):
     if not force:
         # Be sure we won't loose results of stg-(un)commit by error.
         # Do not require an existing orig-base for compatibility with 0.12 and earlier.

@@ -86,7 +86,7 @@ def func(parser, options, args):
     else:
         raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
 
-    applied = prepare_rebase(real_rebase=must_rebase, force=options.force)
+    applied = prepare_rebase(force=options.force)
 
     # pull the remote changes
     if policy == 'pull':
