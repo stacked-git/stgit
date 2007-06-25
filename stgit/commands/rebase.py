@@ -54,7 +54,7 @@ def func(parser, options, args):
 
     # ensure an exception is raised before popping on non-existent target
     if git_id(args[0]) == None:
-        raise GitException, 'Unknown revision: %s' % git_id
+        raise GitException, 'Unknown revision: %s' % args[0]
         
     applied = prepare_rebase(force=options.force)
     rebase(args[0])
