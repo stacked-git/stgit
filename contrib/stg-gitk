@@ -7,7 +7,6 @@ set -e
 # patch logs.
 
 # LIMITATIONS:
-# - asking gitk to "update" won't detect any new ref
 # - no support for spaces in branch names
 
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
@@ -20,11 +19,16 @@ usage()
 }
 
 allbranches=0
-case "$1" in
---all) allbranches=1; shift ;;
---*) usage ;;
-*) break ;;
-esac
+refsonly=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+	--refs) refsonly=1 ;;
+	--all) allbranches=1 ;;
+	--*) usage ;;
+	*) break ;;
+    esac
+    shift
+done
 
 if [ $allbranches = 1 ] && [ "$#" -gt 0 ]; then
     usage
@@ -58,4 +62,22 @@ else
     done
 fi
 
-gitk $(find $refdirs -type f -not -name '*.log' | cut -c${GIT_DIR_SPKIPLEN}- )
+printrefs()
+{
+    find $refdirs -type f -not -name '*.log' | cut -c${GIT_DIR_SPKIPLEN}-
+}
+
+if [ $refsonly = 1 ]; then
+    printrefs
+elif grep -q -- --argscmd $(which gitk); then
+    # This gitk supports --argscmd.
+    # Let's use a hack to pass --all, which was consumed during command-line parsing
+    if [ $allbranches = 1 ]; then
+	gitk --argscmd="$0 --refs --all"
+    else
+	gitk --argscmd="$0 --refs $*"
+    fi
+else
+    # This gitk does not support --argscmd, just compute refs onces
+    gitk $(printrefs)
+fi
