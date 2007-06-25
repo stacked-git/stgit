@@ -21,9 +21,9 @@ test_create_repo foo
 test_expect_success \
     'Clone tree and setup changes' \
     "stg clone foo bar &&
-     (cd bar && stg new p1 -m p1
+     (cd bar && stg new p1 -m p1 &&
       printf 'a\nc\n' > file && stg add file && stg refresh &&
-      stg new p2 -m p2
+      stg new p2 -m p2 &&
       printf 'a\nb\nc\n' > file && stg refresh
      )
 "
