@@ -14,15 +14,35 @@ set -e
 # - you want to add a "CVS" line to .git/info/exclude
 # - you may want to add a ".git" line to the top .cvsignore
 
+# BRANCH INIT
+# - ensure the cvs wc is clean (eg. with "cvsco")
+# $ git init
+# $ echo CVS >> .git/info/exclude
+# $ git add .
+# $ git commit -m "Initial import."
+# $ git branch -m master cvs
+# $ stg branch -c master cvs
+# $ git config branch.master.stgit.parentbranch cvs (0.12.1 and earlier only)
+# $ git config branch.cvs.description "CVS $(cat CVS/Root) $(cat CVS/Repository) $(cat CVS/Tag 2>/dev/null | echo HEAD)"
+# $ git config branch.master.description "Changes for $(cat CVS/Repository) $(cat CVS/Tag 2>/dev/null | echo HEAD)"
+
 # LIMITATIONS
 # - this is only a proof-of-concept prototype
-# - lacks an "init" command
+# - lacks an "init" command (see above)
 # - "commit" does not ensure the base is uptodate before trying to
-#   commit (but hey, it's CVS ;)
+#   commit (but hey, it's CVS ;): better "stg-cvs pull" first
 # - "commit" can only commit a single patch
 # - not much robustness here
-# - still bad support for files removed in cvs (should catch "no
+# - still no support for files removed in cvs (should catch "no
 #   longer in the repository" message)
+# - this only deals with CVS but could surely be extended to any other
+#   VCS
+# - lacks synchronisation of .cvsignore <-> .gitignore
+# - no support for filenames with spaces (stg lacks --zero output format)
+# - git-commit is too chatty when it finds nothing to commit
+# - lacks a "quick cvs commit" feature
+
+# DESIGN FLAWS
 # - while fetching, if a file change was not git-update-index'd when
 #   cvs-update'd (eg. because of a stg-cvs bug), it is not seen on further
 #   fetches until it changes again, since we scan "cvs update" output.
@@ -32,17 +52,11 @@ set -e
 #   already-existing in working copy, or to directory moves inside the
 #   cvs repository, or <fill here>) has to be dealt with by hand (although
 #   the situation is better here: cvs sees the conflict on subsequent tries)
-# - this only deals with CVS but could surely be extended to any other
-#   VCS
 # - bad/no support for cvsutils:
 #   - stg push/pop operations confuse cvsu because of timestamp changes
 #   - cvspurge/cvsco would nuke .git => does not make it easy to ensure
 #     synchronisation
 # - should use a separate workspace for cvs branch like tailor does
-# - lacks synchronisation of .cvsignore <-> .gitignore
-# - no support for filenames with spaces (stg lacks --zero output format)
-# - git-commit is too chatty when it finds nothing to commit
-# - lacks a "quick cvs commit" feature
 # - confused by cvs keyword substitution
 
 usage()
@@ -102,8 +116,8 @@ cvs_add_dir()
 
 # get context
 branch=$(stg branch)
-parent=$(git-repo-config "branch.${branch}.merge") || 
-    usage "no declared parent for '$branch' - set branch.${branch}.merge"
+parent=$(git-config "branch.${branch}.stgit.parentbranch") || 
+    usage "no declared parent for '$branch' - set branch.${branch}.stgit.parentbranch"
 
 # extract command
 
