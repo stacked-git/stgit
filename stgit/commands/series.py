@@ -109,6 +109,9 @@ def func(parser, options, args):
     """
     global crt_series
 
+    if options.all and options.short:
+        raise CmdException, 'combining --all and --short is meaningless'
+    
     # current series patches
     if options.invisible:
         applied = unapplied = []
