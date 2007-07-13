@@ -31,7 +31,9 @@ line becomes current. This is a shortcut for the 'push --to' or 'pop
 --to' commands. There is no '--undo' option for 'goto'. Use the 'push'
 command for this."""
 
-options = []
+options = [make_option('-k', '--keep',
+                       help = 'keep the local changes when popping patches',
+                       action = 'store_true')]
 
 
 def func(parser, options, args):
@@ -40,9 +42,11 @@ def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
     check_conflicts()
     check_head_top_equal()
+
+    if not options.keep:
+        check_local_changes()
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
@@ -51,8 +55,10 @@ def func(parser, options, args):
     if patch in applied:
         applied.reverse()
         patches = applied[:applied.index(patch)]
-        pop_patches(patches)
+        pop_patches(patches, options.keep)
     elif patch in unapplied:
+        if options.keep:
+            raise CmdException, 'Cannot use --keep with patch pushing'
         patches = unapplied[:unapplied.index(patch)+1]
         push_patches(patches)
     else:
