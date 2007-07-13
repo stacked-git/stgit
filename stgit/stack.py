@@ -277,10 +277,25 @@ class Patch(StgitObject):
 FORMAT_VERSION = 2
 
 class PatchSet(StgitObject):
+    def __init__(self, name = None):
+        try:
+            if name:
+                self.set_name (name)
+            else:
+                self.set_name (git.get_head_file())
+            self.__base_dir = basedir.get()
+        except git.GitException, ex:
+            raise StackException, 'GIT tree not initialised: %s' % ex
+
+        self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
+
     def get_name(self):
         return self.__name
     def set_name(self, name):
         self.__name = name
+
+    def _basedir(self):
+        return self.__base_dir
 
     def get_head(self):
         """Return the head of the branch
@@ -337,22 +352,13 @@ class Series(PatchSet):
     def __init__(self, name = None):
         """Takes a series name as the parameter.
         """
-        try:
-            if name:
-                self.set_name (name)
-            else:
-                self.set_name (git.get_head_file())
-            self.__base_dir = basedir.get()
-        except git.GitException, ex:
-            raise StackException, 'GIT tree not initialised: %s' % ex
-
-        self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
+        PatchSet.__init__(self, name)
 
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
         self.update_to_current_format_version()
 
-        self.__refs_dir = os.path.join(self.__base_dir, 'refs', 'patches',
+        self.__refs_dir = os.path.join(self._basedir(), 'refs', 'patches',
                                        self.get_name())
 
         self.__applied_file = os.path.join(self._dir(), 'applied')
@@ -374,7 +380,7 @@ class Series(PatchSet):
         possible on external functions that may change during a format
         version bump, since it must remain able to process older formats."""
 
-        branch_dir = os.path.join(self.__base_dir, 'patches', self.get_name())
+        branch_dir = os.path.join(self._basedir(), 'patches', self.get_name())
         def get_format_version():
             """Return the integer format version number, or None if the
             branch doesn't have any StGIT metadata at all, of any version."""
@@ -416,7 +422,7 @@ class Series(PatchSet):
             mkdir(os.path.join(branch_dir, 'trash'))
             patch_dir = os.path.join(branch_dir, 'patches')
             mkdir(patch_dir)
-            refs_dir = os.path.join(self.__base_dir, 'refs', 'patches', self.get_name())
+            refs_dir = os.path.join(self._basedir(), 'refs', 'patches', self.get_name())
             mkdir(refs_dir)
             for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
                           + file(os.path.join(branch_dir, 'applied')).readlines()):
@@ -435,7 +441,7 @@ class Series(PatchSet):
                     config.set('branch.%s.description' % self.get_name(), desc)
                 rm(desc_file)
             rm(os.path.join(branch_dir, 'current'))
-            rm(os.path.join(self.__base_dir, 'refs', 'bases', self.get_name()))
+            rm(os.path.join(self._basedir(), 'refs', 'bases', self.get_name()))
             set_format_version(2)
 
         # Make sure we're at the latest version.
@@ -603,10 +609,10 @@ class Series(PatchSet):
         git.rename_branch(self.get_name(), to_name)
 
         if os.path.isdir(self._dir()):
-            rename(os.path.join(self.__base_dir, 'patches'),
+            rename(os.path.join(self._basedir(), 'patches'),
                    self.get_name(), to_stack.get_name())
         if os.path.exists(self.__refs_dir):
-            rename(os.path.join(self.__base_dir, 'refs', 'patches'),
+            rename(os.path.join(self._basedir(), 'refs', 'patches'),
                    self.get_name(), to_stack.get_name())
 
         # Rename the config section
