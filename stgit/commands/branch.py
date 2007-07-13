@@ -122,27 +122,38 @@ def func(parser, options, args):
 
         tree_id = None
         if len(args) >= 2:
+            parentbranch = None
             try:
-                if git.rev_parse(args[1]) == git.rev_parse('refs/heads/' + args[1]):
-                    # we are for sure referring to a branch
-                    parentbranch = 'refs/heads/' + args[1]
-                    out.info('Recording "%s" as parent branch' % parentbranch)
-                elif git.rev_parse(args[1]) and re.search('/', args[1]):
-                    # FIXME: should the test be more strict ?
-                    parentbranch = args[1]
-                else:
-                    # Note: this includes refs to StGIT patches
-                    out.info('Don\'t know how to determine parent branch'
-                             ' from "%s"' % args[1])
-                    parentbranch = None
+                branchpoint = git.rev_parse(args[1])
+
+                # first, look for branchpoint in well-known branch namespaces
+                for namespace in ('refs/heads/', 'remotes/'):
+                    # check if branchpoint exists in namespace
+                    try:
+                        maybehead = git.rev_parse(namespace + args[1])
+                    except git.GitException:
+                        maybehead = None
+
+                    # check if git resolved branchpoint to this namespace
+                    if maybehead and branchpoint == maybehead:
+                        # we are for sure referring to a branch
+                        parentbranch = namespace + args[1]
+
             except git.GitException:
                 # should use a more specific exception to catch only
                 # non-git refs ?
                 out.info('Don\'t know how to determine parent branch'
                          ' from "%s"' % args[1])
-                parentbranch = None
+                # exception in branch = rev_parse() leaves branchpoint unbound
+                branchpoint = None
 
-            tree_id = git_id(args[1])
+            tree_id = branchpoint or git_id(args[1])
+
+            if parentbranch:
+                out.info('Recording "%s" as parent branch' % parentbranch)
+            else:
+                out.info('Don\'t know how to determine parent branch'
+                         ' from "%s"' % args[1])                
         else:
             # branch stack off current branch
             parentbranch = git.get_head_file()
