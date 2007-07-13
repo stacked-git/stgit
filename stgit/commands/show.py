@@ -55,7 +55,8 @@ def func(parser, options, args):
     elif len(args) == 0:
         patches = ['HEAD']
     else:
-        patches = parse_patches(args, applied + unapplied, len(applied))
+        patches = parse_patches(args, applied + unapplied +\
+                                crt_series.get_hidden(), len(applied))
 
     if options.diff_opts:
         diff_flags = options.diff_opts.split()

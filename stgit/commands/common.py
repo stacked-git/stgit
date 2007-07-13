@@ -89,7 +89,8 @@ def git_id(rev):
             patch = series.get_current()
             if not patch:
                 raise CmdException, 'No patches applied'
-        if patch in series.get_applied() or patch in series.get_unapplied():
+        if patch in series.get_applied() or patch in series.get_unapplied() or \
+               patch in series.get_hidden():
             if patch_id in ['top', '', None]:
                 return series.get_patch(patch).get_top()
             elif patch_id == 'bottom':

@@ -90,7 +90,8 @@ def func(parser, options, args):
             raise CmdException, 'No patches applied'
     elif len(args) == 1:
         name = args[0]
-        if not name in crt_series.get_applied() + crt_series.get_unapplied():
+        if not name in crt_series.get_applied() + crt_series.get_unapplied() + \
+               crt_series.get_hidden():
             raise CmdException, 'Unknown patch "%s"' % name
     else:
         parser.error('incorrect number of arguments')
