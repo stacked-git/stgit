@@ -96,6 +96,9 @@ options = [make_option('-a', '--all',
            make_option('--noreply',
                        help = 'do not send subsequent messages as replies',
                        action = 'store_true'),
+           make_option('--unrelated',
+                       help = 'send patches without sequence numbering',
+                       action = 'store_true'),
            make_option('-v', '--version', metavar = 'VERSION',
                        help = 'add VERSION to the [PATCH ...] prefix'),
            make_option('--prefix', metavar = 'PREFIX',
@@ -391,7 +394,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
-    if total_nr > 1:
+    if not options.unrelated and total_nr > 1:
         number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
     else:
         number_str = ''
@@ -484,15 +487,21 @@ def func(parser, options, args):
     if total_nr == 0:
         raise CmdException, 'No patches to send'
 
-    if options.noreply:
-        ref_id = None
-    else:
+    if options.refid:
+        if options.noreply or options.unrelated:
+            raise CmdException, \
+                  '--refid option not allowed with --noreply or --unrelated'
         ref_id = options.refid
+    else:
+        ref_id = None
 
     sleep = options.sleep or config.getint('stgit.smtpdelay')
 
     # send the cover message (if any)
     if options.cover or options.edit_cover:
+        if options.unrelated:
+            raise CmdException, 'cover sending not allowed with --unrelated'
+
         # find the template file
         if options.cover:
             tmpl = file(options.cover).read()
@@ -536,7 +545,7 @@ def func(parser, options, args):
         msg_string = msg.as_string(options.mbox)
 
         # subsequent e-mails are seen as replies to the first one
-        if not options.noreply and not ref_id:
+        if not options.noreply and not options.unrelated and not ref_id:
             ref_id = msg_id
 
         if options.mbox:
