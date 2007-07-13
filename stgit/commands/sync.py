@@ -66,8 +66,6 @@ def __series_merge_patch(base, patchdir, pname):
 def func(parser, options, args):
     """Synchronise a range of patches
     """
-    global crt_series
-
     if options.undo:
         if options.ref_branch or options.series:
             raise CmdException, \
@@ -81,8 +79,6 @@ def func(parser, options, args):
         return
 
     if options.ref_branch:
-        # the main function already made crt_series to be the remote
-        # branch
         remote_series = stack.Series(options.ref_branch)
         if options.ref_branch == crt_series.get_name():
             raise CmdException, 'Cannot synchronise with the current branch'
