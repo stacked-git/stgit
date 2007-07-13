@@ -55,12 +55,7 @@ def func(parser, options, args):
     elif len(args) == 0:
         patches = ['HEAD']
     else:
-        if len(args) == 1 and args[0].find('..') == -1 \
-               and not crt_series.patch_exists(args[0]):
-            # it might be just a commit id
-            patches = args
-        else:
-            patches = parse_patches(args, applied + unapplied, len(applied))
+        patches = parse_patches(args, applied + unapplied, len(applied))
 
     if options.diff_opts:
         diff_flags = options.diff_opts.split()
