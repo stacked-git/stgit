@@ -6,6 +6,9 @@ set -e
 # Remove the current patch from the stack, keeping its contents as
 # uncommitted changes.
 
+# CAVEAT: running this script on the bottom-most patch fails, since
+# "stg pick --fold" does not allow this situation.
+
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
 

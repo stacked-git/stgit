@@ -8,11 +8,13 @@ set -e
 # essence, "stg-k pop" is a "stg pop -k" that works better, hence its
 # name.
 
-# CAVEAT: this script relies on the operation to run ignoring hidden
+# CAVEATS:
+# - this script relies on the operation to run ignoring hidden
 # patches, so in 0.12 (where "stg push" can push an hidden patch)
 # "stg-k push" will fail midway, albeit with no information loss -
-# you'll just have to finish manually.  Luckilly this appears to work
-# on master branch.
+# you'll just have to finish manually.  This is fixed in 0.13
+# - running this script to pop all patches in the stack fails, since
+# stg-unnew does not support this case.
 
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
