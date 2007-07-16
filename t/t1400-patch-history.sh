@@ -21,7 +21,7 @@ test_expect_success \
 	stg new foo -m "Foo Patch" &&
 	echo foo > test && echo foo2 >> test &&
 	stg add test &&
-	stg refresh
+	stg refresh --annotate="foo notes"
 	'
 
 test_expect_success \
@@ -35,10 +35,17 @@ test_expect_success \
 test_expect_success \
 	'Check the "new" and "refresh" logs' \
 	'
-	stg log foo | grep -q -e "^new" &&
-	stg log foo | grep -q -e "^refresh" &&
-	stg log | grep -q -e "^new" &&
-	stg log | grep -q -e "^refresh"
+	stg log --full foo | grep -q -e "^new" &&
+	stg log --full foo | grep -q -e "^refresh" &&
+	stg log --full | grep -q -e "^new" &&
+	stg log --full | grep -q -e "^refresh"
+	'
+
+test_expect_success \
+	'Check the log annotation' \
+	'
+	stg log foo | grep -q -e "\[refresh\] foo notes "
+	stg log bar | grep -q -e "\[refresh\]           "
 	'
 
 test_expect_success \
@@ -47,7 +54,7 @@ test_expect_success \
 	stg pop &&
 	echo foo > test2 && stg add test2 && stg refresh &&
 	stg push &&
-	stg log | grep -q -e "^push	"
+	stg log --full | grep -q -e "^push    "
 	'
 
 test_expect_success \
@@ -56,7 +63,7 @@ test_expect_success \
 	stg pop &&
 	stg refresh -m "Foo2 Patch" &&
 	stg push &&
-	stg log | grep -q -e "^push(f)	"
+	stg log --full | grep -q -e "^push(f) "
 	'
 
 test_expect_success \
@@ -65,7 +72,7 @@ test_expect_success \
 	stg pop &&
 	echo foo2 > test && stg refresh &&
 	stg push &&
-	stg log | grep -q -e "^push(m)	"
+	stg log --full | grep -q -e "^push(m) "
 	'
 
 test_expect_success \
@@ -75,21 +82,21 @@ test_expect_success \
 	stg pop &&
 	echo foo > test && stg refresh &&
 	! stg push &&
-	stg log | grep -q -e "^push(c)	"
+	stg log --full | grep -q -e "^push(c) "
 	'
 
 test_expect_success \
 	'Check the push "undo" log' \
 	'
 	stg push --undo &&
-	stg log bar | grep -q -e "^undo	"
+	stg log --full bar | grep -q -e "^undo    "
 	'
 
 test_expect_success \
 	'Check the refresh "undo" log' \
 	'
 	stg refresh --undo &&
-	stg log | grep -q -e "^undo	"
+	stg log --full | grep -q -e "^undo    "
 	'
 
 test_done

@@ -56,7 +56,9 @@ options = [make_option('-f', '--force',
            make_option('-m', '--message',
                        help = 'use MESSAGE as the patch ' \
                        'description'),
-           make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
+           make_option('-a', '--annotate', metavar = 'NOTE',
+                       help = 'annotate the patch log entry'),
+           make_option('--author', metavar = '"NAME <EMAIL>"',
                        help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
                        help = 'use AUTHNAME as the author name'),
@@ -126,7 +128,7 @@ def func(parser, options, args):
            or options.edit or options.message \
            or options.authname or options.authemail or options.authdate \
            or options.commname or options.commemail \
-           or options.sign or options.ack:
+           or options.sign or options.ack or options.annotate:
 
         if options.patch:
             applied = crt_series.get_applied()
@@ -154,7 +156,8 @@ def func(parser, options, args):
                                  author_date = options.authdate,
                                  committer_name = options.commname,
                                  committer_email = options.commemail,
-                                 backup = True, sign_str = sign_str)
+                                 backup = True, sign_str = sign_str,
+                                 notes = options.annotate)
 
         if crt_series.empty_patch(patch):
             out.done('empty patch')

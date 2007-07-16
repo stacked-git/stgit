@@ -733,7 +733,8 @@ class Series(PatchSet):
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
-                      backup = False, sign_str = None, log = 'refresh'):
+                      backup = False, sign_str = None, log = 'refresh',
+                      notes = None):
         """Generates a new commit for the given patch
         """
         name = self.get_current()
@@ -796,7 +797,7 @@ class Series(PatchSet):
         patch.set_commemail(committer_email)
 
         if log:
-            self.log_patch(patch, log)
+            self.log_patch(patch, log, notes)
 
         return commit_id
 
@@ -1167,11 +1168,13 @@ class Series(PatchSet):
         else:
             raise StackException, 'Unknown patch "%s"' % oldname
 
-    def log_patch(self, patch, message):
+    def log_patch(self, patch, message, notes = None):
         """Generate a log commit for a patch
         """
         top = git.get_commit(patch.get_top())
         msg = '%s\t%s' % (message, top.get_id_hash())
+        if notes:
+            msg += '\n\n' + notes
 
         old_log = patch.get_log()
         if old_log:
