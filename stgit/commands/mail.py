@@ -179,7 +179,9 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
             s.ehlo()
             s.login(smtpuser, smtppassword)
 
-        s.sendmail(from_addr, to_addr_list, msg)
+        result = s.sendmail(from_addr, to_addr_list, msg)
+        if len(result):
+            print "mail server refused delivery for the following recipients: %s" % result
         # give recipients a chance of receiving patches in the correct order
         time.sleep(sleep)
     except Exception, err:
