@@ -40,6 +40,9 @@ options = [make_option('-n', '--name',
                        action = 'store_true'),
            make_option('-p', '--parent', metavar = 'COMMITID',
                        help = 'use COMMITID as parent'),
+           make_option('-x', '--expose',
+                       help = 'append the imported commit id to the patch log',
+                       action = 'store_true'),
            make_option('--fold',
                        help = 'fold the commit object into the current patch',
                        action = 'store_true'),
@@ -111,6 +114,8 @@ def func(parser, options, args):
         out.done()
     else:
         message = commit.get_log()
+        if options.expose:
+            message += '(imported from commit %s)\n' % commit.get_id_hash()
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
 
