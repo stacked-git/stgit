@@ -85,7 +85,7 @@ def func(parser, options, args):
         cname, cmail, cdate = name_email_date(victim.get_committer())
         crt_series.new_patch(
             patch2name[victim],
-            can_edit = False, before_existing = False, refresh = False,
+            can_edit = False, before_existing = False, commit = False,
             top = victim.get_id_hash(), bottom = victim.get_parent(),
             message = victim.get_log(),
             author_name = aname, author_email = amail, author_date = adate,

@@ -823,10 +823,10 @@ class Series(PatchSet):
 
     def new_patch(self, name, message = None, can_edit = True,
                   unapplied = False, show_patch = False,
-                  top = None, bottom = None,
+                  top = None, bottom = None, commit = True,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None,
-                  before_existing = False, refresh = True):
+                  before_existing = False):
         """Creates a new patch
         """
 
@@ -851,15 +851,13 @@ class Series(PatchSet):
         patch = Patch(name, self.__patch_dir, self.__refs_dir)
         patch.create()
 
-        if bottom:
-            patch.set_bottom(bottom)
-        else:
-            patch.set_bottom(head)
-        if top:
-            patch.set_top(top)
-        else:
-            patch.set_top(head)
+        if not bottom:
+            bottom = head
+        if not top:
+            top = head
 
+        patch.set_bottom(bottom)
+        patch.set_top(top)
         patch.set_description(descr)
         patch.set_authname(author_name)
         patch.set_authemail(author_email)
@@ -867,19 +865,37 @@ class Series(PatchSet):
         patch.set_commname(committer_name)
         patch.set_commemail(committer_email)
 
-        if unapplied:
-            self.log_patch(patch, 'new')
-
+        if before_existing:
+            insert_string(self.__applied_file, patch.get_name())
+            # no need to commit anything as the object is already
+            # present (mainly used by 'uncommit')
+            commit = False
+        elif unapplied:
             patches = [patch.get_name()] + self.get_unapplied()
             write_strings(self.__unapplied_file, patches)
-        elif before_existing:
-            self.log_patch(patch, 'new')
-
-            insert_string(self.__applied_file, patch.get_name())
+            set_head = False
         else:
             append_string(self.__applied_file, patch.get_name())
-            if refresh:
-                self.refresh_patch(cache_update = False, log = 'new')
+            set_head = True
+
+        if commit:
+            # create a commit for the patch (may be empty if top == bottom);
+            # only commit on top of the current branch
+            assert(commit and bottom == head)
+            top_commit = git.get_commit(top)
+            commit_id = git.commit(message = descr, parents = [bottom],
+                                   cache_update = False,
+                                   tree_id = top_commit.get_tree(),
+                                   allowempty = True, set_head = set_head,
+                                   author_name = author_name,
+                                   author_email = author_email,
+                                   author_date = author_date,
+                                   committer_name = committer_name,
+                                   committer_email = committer_email)
+            # set the patch top to the new commit
+            patch.set_top(commit_id)
+
+        self.log_patch(patch, 'new')
 
         return patch
 

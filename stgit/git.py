@@ -593,7 +593,7 @@ def update_cache(files = None, force = False):
     return True
 
 def commit(message, files = None, parents = None, allowempty = False,
-           cache_update = True, tree_id = None,
+           cache_update = True, tree_id = None, set_head = False,
            author_name = None, author_email = None, author_date = None,
            committer_name = None, committer_email = None):
     """Commit the current tree to repository
@@ -615,12 +615,10 @@ def commit(message, files = None, parents = None, allowempty = False,
     elif message[-1:] != '\n':
         message += '\n'
 
-    must_switch = True
     # write the index to repository
     if tree_id == None:
         tree_id = _output_one_line(['git-write-tree'])
-    else:
-        must_switch = False
+        set_head = True
 
     # the commit
     cmd = ['env']
@@ -641,7 +639,7 @@ def commit(message, files = None, parents = None, allowempty = False,
         cmd += ['-p', p]
 
     commit_id = _output_one_line(cmd, message)
-    if must_switch:
+    if set_head:
         __set_head(commit_id)
 
     return commit_id
