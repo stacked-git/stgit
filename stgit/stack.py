@@ -881,7 +881,7 @@ class Series(PatchSet):
         if commit:
             # create a commit for the patch (may be empty if top == bottom);
             # only commit on top of the current branch
-            assert(commit and bottom == head)
+            assert(unapplied or bottom == head)
             top_commit = git.get_commit(top)
             commit_id = git.commit(message = descr, parents = [bottom],
                                    cache_update = False,
