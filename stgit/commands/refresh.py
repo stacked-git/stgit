@@ -128,7 +128,7 @@ def func(parser, options, args):
            or options.edit or options.message \
            or options.authname or options.authemail or options.authdate \
            or options.commname or options.commemail \
-           or options.sign or options.ack or options.annotate:
+           or options.sign or options.ack:
 
         if options.patch:
             applied = crt_series.get_applied()
@@ -167,5 +167,10 @@ def func(parser, options, args):
         if options.patch:
             between.reverse()
             push_patches(between)
+    elif options.annotate:
+        # only annotate the top log entry as there is no need to
+        # refresh the patch and generate a full commit
+        crt_series.log_patch(crt_series.get_patch(patch), None,
+                             notes = options.annotate)
     else:
         out.info('Patch "%s" is already up to date' % patch)

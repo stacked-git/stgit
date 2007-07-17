@@ -44,8 +44,11 @@ test_expect_success \
 test_expect_success \
 	'Check the log annotation' \
 	'
-	stg log foo | grep -q -e "\[refresh\] foo notes "
-	stg log bar | grep -q -e "\[refresh\]           "
+	stg log foo | grep -q -e    "\[refresh\] foo notes  " &&
+	stg log bar | grep -q -e    "\[refresh\]            " &&
+	stg refresh -p foo --annotate="foo notes 2" &&
+	stg log foo | grep -q -v -e "\[refresh\] foo notes  " &&
+	stg log foo | grep -q -e    "\[refresh\] foo notes 2"
 	'
 
 test_expect_success \

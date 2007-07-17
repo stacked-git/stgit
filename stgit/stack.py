@@ -1188,15 +1188,33 @@ class Series(PatchSet):
         """Generate a log commit for a patch
         """
         top = git.get_commit(patch.get_top())
-        msg = '%s\t%s' % (message, top.get_id_hash())
+        old_log = patch.get_log()
+
+        if message is None:
+            # replace the current log entry
+            if not old_log:
+                raise StackException, \
+                      'No log entry to annotate for patch "%s"' \
+                      % patch.get_name()
+            replace = True
+            log_commit = git.get_commit(old_log)
+            msg = log_commit.get_log().split('\n')[0]
+            log_parent = log_commit.get_parent()
+            if log_parent:
+                parents = [log_parent]
+            else:
+                parents = []
+        else:
+            # generate a new log entry
+            replace = False
+            msg = '%s\t%s' % (message, top.get_id_hash())
+            if old_log:
+                parents = [old_log]
+            else:
+                parents = []
+
         if notes:
             msg += '\n\n' + notes
-
-        old_log = patch.get_log()
-        if old_log:
-            parents = [old_log]
-        else:
-            parents = []
 
         log = git.commit(message = msg, parents = parents,
                          cache_update = False, tree_id = top.get_tree(),
