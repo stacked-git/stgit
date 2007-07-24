@@ -12,7 +12,7 @@ set -e
 
 usage()
 {
-    echo "Usage: $(basename $0) <patch1> <patch2>"
+    echo "Usage: $(basename $0) <from1>..[<to1>]|<patch1> <from2>..[<to2>]|<patch2>"
     exit 1
 }
 
@@ -20,4 +20,13 @@ if [ "$#" != 2 ]; then
     usage
 fi
 
-colordiff -u <(stg show "$1") <(stg show "$2") | less -RFX
+case "$1" in
+*..*) cmd1="stg diff" ;;
+*)    cmd1="stg show" ;;
+esac
+case "$2" in
+*..*) cmd2="stg diff" ;;
+*)    cmd2="stg show" ;;
+esac
+
+colordiff -u <($cmd1 "$1") <($cmd2 "$2") | less -RFX
