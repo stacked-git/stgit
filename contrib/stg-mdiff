@@ -12,21 +12,38 @@ set -e
 
 usage()
 {
-    echo "Usage: $(basename $0) <from1>..[<to1>]|<patch1> <from2>..[<to2>]|<patch2>"
+    echo "Usage: [-o <diff-flags>] [-O <gitdiff-flags>] $(basename $0) <from1>..[<to1>]|<patch1> <from2>..[<to2>]|<patch2>"
     exit 1
 }
+
+diffopts=
+subdiffopts=
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+	-o) diffopts="$2"; shift ;;
+	-O) subdiffopts="-O $2"; shift ;;
+	-*) usage ;;
+	*) break ;;
+    esac
+    shift
+done
 
 if [ "$#" != 2 ]; then
     usage
 fi
 
+if [ -z "$diffopts" ]; then
+    diffopts="-u"
+fi
+
 case "$1" in
-*..*) cmd1="stg diff" ;;
-*)    cmd1="stg show" ;;
+*..*) cmd1="stg diff $subdiffopts -r" ;;
+*)    cmd1="stg show $subdiffopts" ;;
 esac
 case "$2" in
-*..*) cmd2="stg diff" ;;
-*)    cmd2="stg show" ;;
+*..*) cmd2="stg diff $subdiffopts -r" ;;
+*)    cmd2="stg show $subdiffopts" ;;
 esac
 
-colordiff -u <($cmd1 "$1") <($cmd2 "$2") | less -RFX
+colordiff $diffopts \
+    <($cmd1 "$1") <($cmd2 "$2") | less -RFX
