@@ -46,4 +46,6 @@ case "$2" in
 esac
 
 colordiff $diffopts \
+    -I '^index [0-9a-b]*..[0-9a-b]*' \
+    -I '^@@ .* @@' \
     <($cmd1 "$1") <($cmd2 "$2") | less -RFX

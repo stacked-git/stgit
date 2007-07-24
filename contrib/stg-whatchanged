@@ -25,11 +25,9 @@ fi
 # in this case (unlike, eg., "pick --fold")
 patchdir="$(git-rev-parse --git-dir)/patches/$(stg branch)/patches/$(stg top)"
 case $(stg log | head -n1) in
-    *push\(c\)*) current_cmd="stg show //top.old" ;;
-    *) current_cmd="stg show" ;;
+    *push\(c\)*) former="//top.old" ;;
+    *) former="//top" ;;
 esac
 
-colordiff "$@" \
-    -I '^index [0-9a-b]*..[0-9a-b]*' \
-    -I '^@@ .* @@' \
-    <($current_cmd) <(stg diff -r//bottom) | less -RFX
+stg-mdiff -o "$*" \
+    $former //bottom..
