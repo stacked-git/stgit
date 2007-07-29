@@ -3,9 +3,9 @@ include stg-prof
 include templates/*.tmpl
 include examples/*.tmpl
 include examples/gitconfig
-include contrib/diffcol.sh
-include contrib/stgbashprompt.sh
-include contrib/stgit-completion.bash
+include contrib/*.sh
+include contrib/*.bash
+include contrib/stg-*
 include t/t*.sh t/t*/* t/Makefile t/README
 include Documentation/*.txt Documentation/Makefile Documentation/*.conf
 include Documentation/build-docdep.perl Documentation/callouts.xsl
