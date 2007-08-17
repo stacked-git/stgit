@@ -286,7 +286,7 @@ def main():
             StackException, GitException, GitMergeException,
             EditorException), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
-        if debug_level:
+        if debug_level > 0:
             raise
         else:
             sys.exit(2)
