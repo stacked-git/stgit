@@ -121,7 +121,7 @@ def func(parser, options, args):
     else:
         sign_str = None
 
-    files = [x[1] for x in git.tree_status(verbose = True)]
+    files = [path for (stat,path) in git.tree_status(verbose = True)]
     if args:
         files = [f for f in files if f in args]
 

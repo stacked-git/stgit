@@ -51,7 +51,7 @@ def func(parser, options, args):
     """Show the patches modifying a file
     """
     if not args:
-        files = [stat[1] for stat in git.tree_status(verbose = True)]
+        files = [path for (stat,path) in git.tree_status(verbose = True)]
     else:
         files = args
 

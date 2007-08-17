@@ -168,7 +168,7 @@ def exclude_files():
 
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
-    """Returns a list of pairs - [status, filename]
+    """Returns a list of pairs - (status, filename)
     """
     if verbose:
         out.start('Checking for changes in the working directory')
@@ -181,16 +181,16 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # unknown files
     if unknown:
-        if noexclude:
-            exclude = []
-        else:
-            exclude = (['--exclude=%s' % s for s in
-                        ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
-                       + ['--exclude-per-directory=.gitignore']
-                       + ['--exclude-from=%s' % fn for fn in exclude_files()
-                          if os.path.exists(fn)])
-        lines = GRun('git-ls-files', '--others', '--directory', *exclude
-                     ).output_lines()
+        cmd = ['git-ls-files', '-z', '--others', '--directory']
+        if not noexclude:
+            cmd += ['--exclude=%s' % s for s in
+                    ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
+            cmd += ['--exclude-per-directory=.gitignore']
+            cmd += ['--exclude-from=%s' % fn
+                    for fn in exclude_files()
+                    if os.path.exists(fn)]
+
+        lines = GRun(*cmd).raw_output().split('\0')
         cache_files += [('?', line) for line in lines]
 
     # conflicted files
