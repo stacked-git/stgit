@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 # stg-fold-files-from - picks changes to one file from another patch.
@@ -6,8 +6,9 @@ set -e
 # of hunks from the file, using the -# flag to filterdiff.
 # Use together with "filterdiff --annotate" in your diff pager, to
 # identify hunk numbers easily.
+# Use "-O -U<n>" to get finer hunk granularity for -#<n>.
 
-# usage: stg-fold-files-from <patch> [-#<n>[-<n>][,<n>]...] <file-pattern>
+# usage: stg-fold-files-from <patch> [-O <stg-show-flags>] [-#<n>[-<n>][,<n>]...] <file-pattern>
 
 # Copyright (c) 2006-2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
@@ -18,14 +19,17 @@ shift
 filtercmd=cat
 hunks=
 foldflags=
+showflags=()
 while [ "$#" -gt 0 ]; do
     case "$1" in
-	-\#*) hunks="$1"; shift ;;
-	-t) foldflags="-t"; shift ;;
+	-\#*) hunks="$1" ;;
+	-t) foldflags="-t" ;;
+	-O) showflags+=(-O "$2"); shift ;;
 	-*) { echo >&2 "unknown flag '$1'"; exit 1; } ;;
 	*) break ;;
     esac
+    shift
 done
 [ "$#" = 1 ] || { echo >&2 "supports one file only"; exit 1; }
 
-stg show "$PATCH" | filterdiff -p1 $hunks -i "$1" | stg fold $foldflags
+stg show "${showflags[@]}" "$PATCH" | filterdiff -p1 $hunks -i "$1" | stg fold $foldflags
