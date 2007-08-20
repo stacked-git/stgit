@@ -616,8 +616,8 @@ class Series(PatchSet):
                    self.get_name(), to_stack.get_name())
 
         # Rename the config section
-        config.rename_section("branch.%s" % self.get_name(),
-                              "branch.%s" % to_name)
+        for k in ['branch.%s', 'branch.%s.stgit']:
+            config.rename_section(k % self.get_name(), k % to_name)
 
         self.__init__(to_name)
 
