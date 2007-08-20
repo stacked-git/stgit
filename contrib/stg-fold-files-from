@@ -2,12 +2,12 @@
 set -e
 
 # stg-fold-files-from - picks changes to one file from another patch.
-# Only supports picking from one file, but allows to select any range
+# Only supports picking from one file pattern, but allows to select any range
 # of hunks from the file, using the -# flag to filterdiff.
 # Use together with "filterdiff --annotate" in your diff pager, to
 # identify hunk numbers easily.
 
-# usage: stg-fold-files-from <patch> [-#<n>[-<n>][,<n>]...] <file>
+# usage: stg-fold-files-from <patch> [-#<n>[-<n>][,<n>]...] <file-pattern>
 
 # Copyright (c) 2006-2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
