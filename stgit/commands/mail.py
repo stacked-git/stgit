@@ -28,10 +28,11 @@ from stgit.config import config
 help = 'send a patch or series of patches by e-mail'
 usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
-Send a patch or a range of patches by e-mail using the 'smtpserver'
-configuration option. The From address and the e-mail format are
-generated from the template file passed as argument to '--template'
-(defaulting to '.git/patchmail.tmpl' or
+Send a patch or a range of patches by e-mail using the SMTP server
+specified by the 'stgit.smtpserver' configuration option, or the
+'--smtp-server' command line option. The From address and the e-mail
+format are generated from the template file passed as argument to
+'--template' (defaulting to '.git/patchmail.tmpl' or
 '~/.stgit/templates/patchmail.tmpl' or
 '/usr/share/stgit/templates/patchmail.tmpl').
 
@@ -118,6 +119,8 @@ options = [make_option('-a', '--all',
                        help = 'sleep for SECONDS between e-mails sending'),
            make_option('--refid',
                        help = 'use REFID as the reference id'),
+           make_option('--smtp-server', metavar = 'HOST[:PORT]',
+                       help = 'SMTP server to use for sending mail'),
            make_option('-u', '--smtp-user', metavar = 'USER',
                        help = 'username for SMTP authentication'),
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
@@ -474,7 +477,7 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    smtpserver = config.get('stgit.smtpserver')
+    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
 
     applied = crt_series.get_applied()
 
