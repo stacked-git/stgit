@@ -216,6 +216,13 @@ def __run(cmd, args=None):
         return r
     return 0
 
+def exclude_files():
+    files = [os.path.join(basedir.get(), 'info', 'exclude')]
+    user_exclude = config.get('core.excludesfile')
+    if user_exclude:
+        files.append(user_exclude)
+    return files
+
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
     """Returns a list of pairs - [status, filename]
@@ -231,20 +238,16 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # unknown files
     if unknown:
-        exclude_file = os.path.join(basedir.get(), 'info', 'exclude')
-        base_exclude = ['--exclude=%s' % s for s in
-                        ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
-        base_exclude.append('--exclude-per-directory=.gitignore')
-
-        if os.path.exists(exclude_file):
-            extra_exclude = ['--exclude-from=%s' % exclude_file]
-        else:
-            extra_exclude = []
         if noexclude:
-            extra_exclude = base_exclude = []
-
+            exclude = []
+        else:
+            exclude = (['--exclude=%s' % s for s in
+                        ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
+                       + ['--exclude-per-directory=.gitignore']
+                       + ['--exclude-from=%s' % fn for fn in exclude_files()
+                          if os.path.exists(fn)])
         lines = _output_lines(['git-ls-files', '--others', '--directory']
-                        + base_exclude + extra_exclude)
+                              + exclude)
         cache_files += [('?', line.strip()) for line in lines]
 
     # conflicted files
