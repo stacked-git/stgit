@@ -1,0 +1,27 @@
+#!/bin/bash
+set -e
+
+# stg-show - unlike "stg show", just "git show" with knowledge of stg refs
+
+# Ex:
+# stg-show --color-words -- files
+
+# Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
+# Subject to the GNU GPL, version 2.
+
+command=(git show)
+
+# subsitute git id's for stg ones until --
+endofpatches=0
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+	--) endofpatches=1; break ;;
+	-*) command+=("$1"); shift ;;
+	*) command+=( $(stg id "$1" 2>/dev/null || echo "$1") ); shift ;;
+    esac
+done
+
+# append remaining args
+command+=("$@")
+
+eval "${command[@]}"
