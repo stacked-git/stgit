@@ -19,23 +19,26 @@ specify --merged, then rollback and retry with the correct flag.'
 test_create_repo foo
 
 test_expect_success \
-    'Clone tree and setup changes' \
-    "stg clone foo bar &&
-     (cd bar && stg new p1 -m p1 &&
-      printf 'a\nc\n' > file && stg add file && stg refresh &&
-      stg new p2 -m p2 &&
-      printf 'a\nb\nc\n' > file && stg refresh
-     )
-"
+    'Clone tree and setup changes' '
+    stg clone foo bar &&
+    (
+        cd bar && stg new p1 -m p1 &&
+        printf "a\nc\n" > file && stg add file && stg refresh &&
+        stg new p2 -m p2 &&
+        printf "a\nb\nc\n" > file && stg refresh &&
+        [ "$(echo $(stg applied))" = "p1 p2" ] &&
+        [ "$(echo $(stg unapplied))" = "" ]
+    )
+'
 
 test_expect_success \
-    'Port those patches to orig tree' \
-    '(cd foo &&
-      GIT_DIR=../bar/.git git-format-patch --stdout \
-          $(cd ../bar && stg id base@master)..HEAD |
-      git-am -3 -k
-     )
-    '
+    'Port those patches to orig tree' '
+    (
+        cd foo &&
+        GIT_DIR=../bar/.git git-format-patch --stdout \
+          $(cd ../bar && stg id base@master)..HEAD | git-am -3 -k
+    )
+'
 
 test_expect_success \
     'Pull to sync with parent, preparing for the problem' \
@@ -51,15 +54,21 @@ test_expect_failure \
 "
 
 test_expect_success \
-    'Rollback the push' \
-    "(cd bar && stg push --undo
-     )
-"
+    'Rollback the push' '
+    (
+        cd bar && stg push --undo &&
+        [ "$(echo $(stg applied))" = "" ] &&
+        [ "$(echo $(stg unapplied))" = "p1 p2" ]
+    )
+'
 
 test_expect_success \
-    'Push those patches while checking they were merged upstream' \
-    "(cd bar && stg push --merged --all
-     )
-"
+    'Push those patches while checking they were merged upstream' '
+    (
+        cd bar && stg push --merged --all
+        [ "$(echo $(stg applied))" = "p1 p2" ] &&
+        [ "$(echo $(stg unapplied))" = "" ]
+    )
+'
 
 test_done
