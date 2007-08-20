@@ -21,6 +21,7 @@
 	#smtpserver = localhost:25
 	#smtpuser = username
 	#smtppassword = password
+	#smtptls = no
 
 	# delay between messages in seconds (defaults to 5)
 	#smtpdelay = 5
