@@ -111,6 +111,30 @@ _all_branches ()
     [ "$g" ] && (cd .git/patches/ && echo *)
 }
 
+_conflicting_files ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && stg status --conflict
+}
+
+_dirty_files ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && stg status --modified --new --deleted
+}
+
+_unknown_files ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && stg status --unknown
+}
+
+_known_files ()
+{
+    local g=$(_gitdir)
+    [ "$g" ] && git ls-files
+}
+
 # List the command options
 _cmd_options ()
 {
@@ -160,6 +184,11 @@ _complete_options ()
 {
     local options="$1"
     COMPREPLY=($(compgen -W "$options" -- "${COMP_WORDS[COMP_CWORD]}"))
+}
+
+_complete_files ()
+{
+    COMPREPLY=($(compgen -W "$(_cmd_options $1) $2" -- "${COMP_WORDS[COMP_CWORD]}"))
 }
 
 _stg_common ()
@@ -223,12 +252,16 @@ _stg ()
         log)    _stg_patches $command _all_patches ;;
         mail)   _stg_patches $command _all_patches ;;
         pick)   _stg_patches $command _unapplied_patches ;;
-        refresh)_stg_patches_options $command _applied_patches "-p --patch" ;;
+#	refresh)_stg_patches_options $command _applied_patches "-p --patch" ;;
+        refresh) _complete_files $command "$(_dirty_files)" ;;
         rename) _stg_patches $command _all_patches ;;
         show)   _stg_patches $command _all_patches ;;
         sync)   _stg_patches $command _applied_patches ;;
         # working-copy commands
         diff)   _stg_patches_options $command _applied_patches "-r --range" ;;
+	resolved) _complete_files $command "$(_conflicting_files)" ;;
+	add)	_complete_files $command "$(_unknown_files)" ;;
+#	rm)	_complete_files $command "$(_known_files)" ;;
 	# commands that usually raher accept branches
 	branch) _complete_branch $command _all_branches ;;
 	rebase) _complete_branch $command _all_branches ;;
