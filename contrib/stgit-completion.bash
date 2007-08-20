@@ -108,7 +108,7 @@ _all_other_patches ()
 _all_branches ()
 {
     local g=$(_gitdir)
-    [ "$g" ] && (cd .git/patches/ && echo *)
+    [ "$g" ] && (cd $g/patches/ && echo *)
 }
 
 _conflicting_files ()
