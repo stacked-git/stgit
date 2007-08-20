@@ -15,7 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, re, time, datetime, socket, smtplib
+import sys, os, re, time, datetime, socket, smtplib, getpass
 import email, email.Utils, email.Header
 from optparse import OptionParser, make_option
 
@@ -492,10 +492,10 @@ def func(parser, options, args):
 
     if (smtppassword and not smtpuser):
         raise CmdException, 'SMTP password supplied, username needed'
-    if (smtpuser and not smtppassword):
-        raise CmdException, 'SMTP username supplied, password needed'
     if (smtpusetls and not smtpuser):
         raise CmdException, 'SMTP over TLS requested, username needed'
+    if (smtpuser and not smtppassword):
+        smtppassword = getpass.getpass("Please enter SMTP password: ")
 
     total_nr = len(patches)
     if total_nr == 0:

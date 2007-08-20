@@ -18,10 +18,17 @@
 	# 'refresh' will automatically mark the conflicts as resolved
 	#autoresolved = no
 
+	# SMTP server for sending patches
 	#smtpserver = localhost:25
-	#smtpuser = username
-	#smtppassword = password
+
+	# Set to 'yes' to use SMTP over TLS
 	#smtptls = no
+
+	# Username for SMTP authentication, required if TLS is used
+	#smtpuser = username
+
+	# Password for SMTP.  If not provided, it will be asked
+	#smtppassword = password
 
 	# delay between messages in seconds (defaults to 5)
 	#smtpdelay = 5
