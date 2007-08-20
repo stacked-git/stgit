@@ -6,7 +6,7 @@ set -e
 # do so), but from the patch containing the changes to migrate,
 # instead of doing so from the target patch.
 
-# usage: stg-dispatch <topatch> [-#<n>[-<n>][,<n>]...] <file-pattern>
+# usage: stg-dispatch [-n] <topatch> [-#<n>[-<n>][,<n>]...] <file-pattern>
 
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
@@ -16,6 +16,12 @@ die()
     echo >&2 "$(basename $0) error: $*"
     exit 1
 }
+
+noact=0
+if [ "x$1" = "x-n" ]; then
+    noact=1
+    shift
+fi
 
 TOPATCH="$1"
 shift
@@ -28,7 +34,11 @@ CURRENTPATCH=$(stg top)
 [ "x$TOPATCH" != "x$CURRENTPATCH" ] ||
     die "dispatching to current patch ($CURRENTPATCH) makes no sense"
 
-stg goto "$TOPATCH"
-stg-fold-files-from "$CURRENTPATCH" "$@"
-stg refresh
-stg goto "$CURRENTPATCH"
+if [ $noact = 1 ]; then
+    stg-fold-files-from "$CURRENTPATCH" -n "$@"
+else
+    stg goto "$TOPATCH"
+    stg-fold-files-from "$CURRENTPATCH" "$@"
+    stg refresh
+    stg goto "$CURRENTPATCH"
+fi

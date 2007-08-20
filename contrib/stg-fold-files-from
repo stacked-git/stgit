@@ -8,7 +8,7 @@ set -e
 # identify hunk numbers easily.
 # Use "-O -U<n>" to get finer hunk granularity for -#<n>.
 
-# usage: stg-fold-files-from <patch> [-O <stg-show-flags>] [-#<n>[-<n>][,<n>]...] <file-pattern>
+# usage: stg-fold-files-from <patch> [-n] [-O <stg-show-flags>] [-#<n>[-<n>][,<n>]...] <file-pattern>
 
 # Copyright (c) 2006-2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
@@ -20,10 +20,12 @@ filtercmd=cat
 hunks=
 foldflags=
 showflags=()
+noact=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
 	-\#*) hunks="$1" ;;
 	-t) foldflags="-t" ;;
+	-n) noact=1 ;;
 	-O) showflags+=(-O "$2"); shift ;;
 	-*) { echo >&2 "unknown flag '$1'"; exit 1; } ;;
 	*) break ;;
@@ -32,4 +34,13 @@ while [ "$#" -gt 0 ]; do
 done
 [ "$#" = 1 ] || { echo >&2 "supports one file only"; exit 1; }
 
-stg show "${showflags[@]}" "$PATCH" | filterdiff -p1 $hunks -i "$1" | stg fold $foldflags
+getpatch()
+{
+    stg show "${showflags[@]}" "$PATCH" | filterdiff -p1 $hunks -i "$1"
+}
+
+if [ $noact = 1 ]; then
+    getpatch "$1"
+else
+    getpatch "$1" | stg fold $foldflags
+fi
