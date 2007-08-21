@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os, re
 from stgit import basedir
+from stgit.run import *
 
 class GitConfigException(Exception):
     pass
@@ -43,50 +44,21 @@ class GitConfig:
 
     __cache={}
 
-    def __run(self, cmd, args=None):
-        """__run: runs cmd using spawnvp.
-    
-        Runs cmd using spawnvp.  The shell is avoided so it won't mess up
-        our arguments.  If args is very large, the command is run multiple
-        times; args is split xargs style: cmd is passed on each
-        invocation.  Unlike xargs, returns immediately if any non-zero
-        return code is received.  
-        """
-        
-        args_l=cmd.split()
-        if args is None:
-            args = []
-        for i in range(0, len(args)+1, 100):
-            r=os.spawnvp(os.P_WAIT, args_l[0], args_l + args[i:min(i+100, len(args))])
-        if r:
-            return r
-        return 0
-    
     def get(self, name):
         if self.__cache.has_key(name):
             return self.__cache[name]
-
-        stream = os.popen('git repo-config --get %s' % name, 'r')
-        value = stream.readline().strip()
-        stream.close()
-        if len(value) > 0:
-            pass
-        elif (self.__defaults.has_key(name)):
-            value = self.__defaults[name]
-        else:
-            value = None
-
+        try:
+            value = Run('git-repo-config', '--get', name).output_one_line()
+        except RunException:
+            value = self.__defaults.get(name, None)
         self.__cache[name] = value
         return value
 
     def getall(self, name):
         if self.__cache.has_key(name):
             return self.__cache[name]
-
-        stream = os.popen('git repo-config --get-all %s' % name, 'r')
-        values = [line.strip() for line in stream]
-        stream.close()
-
+        values = Run('git-repo-config', '--get-all', name
+                     ).returns([0, 1]).output_lines()
         self.__cache[name] = values
         return values
 
@@ -98,15 +70,18 @@ class GitConfig:
             raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
 
     def rename_section(self, from_name, to_name):
-        self.__run('git-repo-config --rename-section', [from_name, to_name])
+        """Rename a section in the config file. Silently do nothing if
+        the section doesn't exist."""
+        Run('git-repo-config', '--rename-section', from_name, to_name
+            ).returns([0, 1]).run()
         self.__cache.clear()
 
     def set(self, name, value):
-        self.__run('git-repo-config', [name, value])
+        Run('git-repo-config', name, value).run()
         self.__cache[name] = value
 
     def unset(self, name):
-        self.__run('git-repo-config --unset', [name])
+        Run('git-repo-config', '--unset', name)
         self.__cache[name] = None
 
     def sections_matching(self, regexp):
@@ -115,12 +90,11 @@ class GitConfig:
         group contents, for all variable names matching the regexp.
         """
         result = []
-        stream = os.popen('git repo-config --get-regexp "^%s$"' % regexp, 'r')
-        for line in stream:
+        for line in Run('git-repo-config', '--get-regexp', '"^%s$"' % regexp
+                        ).returns([0, 1]).output_lines():
             m = re.match('^%s ' % regexp, line)
             if m:
                 result.append(m.group(1))
-        stream.close()
         return result
         
 config=GitConfig()

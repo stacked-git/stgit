@@ -18,12 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, popen2, re, gitmergeonefile
+import sys, os, re, gitmergeonefile
 from shutil import copyfile
 
 from stgit import basedir
 from stgit.utils import *
 from stgit.out import *
+from stgit.run import *
 from stgit.config import config
 from sets import Set
 
@@ -31,6 +32,12 @@ from sets import Set
 class GitException(Exception):
     pass
 
+# When a subprocess has a problem, we want the exception to be a
+# subclass of GitException.
+class GitRunException(GitException):
+    pass
+class GRun(Run):
+    exc = GitRunException
 
 
 #
@@ -75,19 +82,21 @@ class Commit:
     def __init__(self, id_hash):
         self.__id_hash = id_hash
 
-        lines = _output_lines(['git-cat-file', 'commit', id_hash])
+        lines = GRun('git-cat-file', 'commit', id_hash).output_lines()
         for i in range(len(lines)):
             line = lines[i]
-            if line == '\n':
-                break
-            field = line.strip().split(' ', 1)
-            if field[0] == 'tree':
-                self.__tree = field[1]
-            if field[0] == 'author':
-                self.__author = field[1]
-            if field[0] == 'committer':
-                self.__committer = field[1]
-        self.__log = ''.join(lines[i+1:])
+            if not line:
+                break # we've seen all the header fields
+            key, val = line.split(' ', 1)
+            if key == 'tree':
+                self.__tree = val
+            elif key == 'author':
+                self.__author = val
+            elif key == 'committer':
+                self.__committer = val
+            else:
+                pass # ignore other headers
+        self.__log = '\n'.join(lines[i+1:])
 
     def get_id_hash(self):
         return self.__id_hash
@@ -103,8 +112,8 @@ class Commit:
             return None
 
     def get_parents(self):
-        return _output_lines(['git-rev-list', '--parents', '--max-count=1',
-                              self.__id_hash])[0].split()[1:]
+        return GRun('git-rev-list', '--parents', '--max-count=1', self.__id_hash
+                    ).output_one_line().split()[1:]
 
     def get_author(self):
         return self.__author
@@ -150,73 +159,6 @@ def get_conflicts():
     else:
         return None
 
-def _input(cmd, file_desc):
-    p = popen2.Popen3(cmd, True)
-    while True:
-        line = file_desc.readline()
-        if not line:
-            break
-        p.tochild.write(line)
-    p.tochild.close()
-    if p.wait():
-        raise GitException, '%s failed (%s)' % (' '.join(cmd),
-                                                p.childerr.read().strip())
-
-def _input_str(cmd, string):
-    p = popen2.Popen3(cmd, True)
-    p.tochild.write(string)
-    p.tochild.close()
-    if p.wait():
-        raise GitException, '%s failed (%s)' % (' '.join(cmd),
-                                                p.childerr.read().strip())
-
-def _output(cmd):
-    p=popen2.Popen3(cmd, True)
-    output = p.fromchild.read()
-    if p.wait():
-        raise GitException, '%s failed (%s)' % (' '.join(cmd),
-                                                p.childerr.read().strip())
-    return output
-
-def _output_one_line(cmd, file_desc = None):
-    p=popen2.Popen3(cmd, True)
-    if file_desc != None:
-        for line in file_desc:
-            p.tochild.write(line)
-        p.tochild.close()
-    output = p.fromchild.readline().strip()
-    if p.wait():
-        raise GitException, '%s failed (%s)' % (' '.join(cmd),
-                                                p.childerr.read().strip())
-    return output
-
-def _output_lines(cmd):
-    p=popen2.Popen3(cmd, True)
-    lines = p.fromchild.readlines()
-    if p.wait():
-        raise GitException, '%s failed (%s)' % (' '.join(cmd),
-                                                p.childerr.read().strip())
-    return lines
-
-def __run(cmd, args=None):
-    """__run: runs cmd using spawnvp.
-
-    Runs cmd using spawnvp.  The shell is avoided so it won't mess up
-    our arguments.  If args is very large, the command is run multiple
-    times; args is split xargs style: cmd is passed on each
-    invocation.  Unlike xargs, returns immediately if any non-zero
-    return code is received.  
-    """
-    
-    args_l=cmd.split()
-    if args is None:
-        args = []
-    for i in range(0, len(args)+1, 100):
-        r=os.spawnvp(os.P_WAIT, args_l[0], args_l + args[i:min(i+100, len(args))])
-    if r:
-        return r
-    return 0
-
 def exclude_files():
     files = [os.path.join(basedir.get(), 'info', 'exclude')]
     user_exclude = config.get('core.excludesfile')
@@ -247,9 +189,9 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                        + ['--exclude-per-directory=.gitignore']
                        + ['--exclude-from=%s' % fn for fn in exclude_files()
                           if os.path.exists(fn)])
-        lines = _output_lines(['git-ls-files', '--others', '--directory']
-                              + exclude)
-        cache_files += [('?', line.strip()) for line in lines]
+        lines = GRun('git-ls-files', '--others', '--directory', *exclude
+                     ).output_lines()
+        cache_files += [('?', line) for line in lines]
 
     # conflicted files
     conflicts = get_conflicts()
@@ -258,8 +200,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     cache_files += [('C', filename) for filename in conflicts]
 
     # the rest
-    for line in _output_lines(['git-diff-index'] + diff_flags +
-                              [ tree_id, '--'] + files):
+    for line in GRun('git-diff-index', *(diff_flags + [tree_id, '--'] + files)
+                     ).output_lines():
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
@@ -277,7 +219,7 @@ def local_changes(verbose = True):
 def get_heads():
     heads = []
     hr = re.compile(r'^[0-9a-f]{40} refs/heads/(.+)$')
-    for line in _output_lines(['git-show-ref', '--heads']):
+    for line in GRun('git-show-ref', '--heads').output_lines():
         m = hr.match(line)
         heads.append(m.group(1))
     return heads
@@ -298,7 +240,7 @@ def get_head_file():
     """Returns the name of the file pointed to by the HEAD link
     """
     return strip_prefix('refs/heads/',
-                        _output_one_line(['git-symbolic-ref', 'HEAD']))
+                        GRun('git-symbolic-ref', 'HEAD').output_one_line())
 
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
@@ -306,12 +248,16 @@ def set_head_file(ref):
     # head cache flushing is needed since we might have a different value
     # in the new head
     __clear_head_cache()
-    if __run('git-symbolic-ref HEAD', ['refs/heads/%s' % ref]) != 0:
+    try:
+        GRun('git-symbolic-ref', 'HEAD', 'refs/heads/%s' % ref).run()
+    except GitRunException:
         raise GitException, 'Could not set head to "%s"' % ref
 
 def set_ref(ref, val):
     """Point ref at a new commit object."""
-    if __run('git-update-ref', [ref, val]) != 0:
+    try:
+        GRun('git-update-ref', ref, val).run()
+    except GitRunException:
         raise GitException, 'Could not update %s to "%s".' % (ref, val)
 
 def set_branch(branch, val):
@@ -339,14 +285,14 @@ def __clear_head_cache():
 def refresh_index():
     """Refresh index with stat() information from the working directory.
     """
-    __run('git-update-index -q --unmerged --refresh')
+    GRun('git-update-index', '-q', '--unmerged', '--refresh').run()
 
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
     """
     try:
-        return _output_one_line(['git-rev-parse', '--verify', git_id])
-    except GitException:
+        return GRun('git-rev-parse', '--verify', git_id).output_one_line()
+    except GitRunException:
         raise GitException, 'Unknown revision: %s' % git_id
 
 def ref_exists(ref):
@@ -387,7 +333,9 @@ def switch_branch(new_branch):
     tree_id = rev_parse('refs/heads/%s^{commit}' % new_branch)
     if tree_id != get_head():
         refresh_index()
-        if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
+        try:
+            GRun('git-read-tree', '-u', '-m', get_head(), tree_id).run()
+        except GitRunException:
             raise GitException, 'git-read-tree failed (local changes maybe?)'
         __head = tree_id
     set_head_file(new_branch)
@@ -398,8 +346,10 @@ def switch_branch(new_branch):
 def delete_ref(ref):
     if not ref_exists(ref):
         raise GitException, '%s does not exist' % ref
-    sha1 = _output_one_line(['git-show-ref', '-s', ref])
-    if __run('git-update-ref -d %s %s' % (ref, sha1)):
+    sha1 = GRun('git-show-ref', '-s', ref).output_one_line()
+    try:
+        GRun('git-update-ref', '-d', ref, sha1).run()
+    except GitRunException:
         raise GitException, 'Failed to delete ref %s' % ref
 
 def delete_branch(name):
@@ -411,10 +361,14 @@ def rename_ref(from_ref, to_ref):
     if ref_exists(to_ref):
         raise GitException, '"%s" already exists' % to_ref
 
-    sha1 = _output_one_line(['git-show-ref', '-s', from_ref])
-    if __run('git-update-ref %s %s %s' % (to_ref, sha1, '0'*40)):
+    sha1 = GRun('git-show-ref', '-s', from_ref).output_one_line()
+    try:
+        GRun('git-update-ref', to_ref, sha1, '0'*40).run()
+    except GitRunException:
         raise GitException, 'Failed to create new ref %s' % to_ref
-    if __run('git-update-ref -d %s %s' % (from_ref, sha1)):
+    try:
+        GRun('git-update-ref', '-d', from_ref, sha1).run()
+    except GitRunException:
         raise GitException, 'Failed to delete ref %s' % from_ref
 
 def rename_branch(from_name, to_name):
@@ -448,14 +402,16 @@ def add(names):
             raise GitException, '%s is not a file or directory' % i
 
     if files:
-        if __run('git-update-index --add --', files):
+        try:
+            GRun('git-update-index', '--add', '--').xargs(files)
+        except GitRunException:
             raise GitException, 'Unable to add file'
 
 def __copy_single(source, target, target2=''):
     """Copy file or dir named 'source' to name target+target2"""
 
     # "source" (file or dir) must match one or more git-controlled file
-    realfiles = _output_lines(['git-ls-files', source])
+    realfiles = GRun('git-ls-files', source).output_lines()
     if len(realfiles) == 0:
         raise GitException, '"%s" matches no git-controled files' % source
 
@@ -523,10 +479,10 @@ def rm(files, force = False):
             if os.path.exists(f):
                 raise GitException, '%s exists. Remove it first' %f
         if files:
-            __run('git-update-index --remove --', files)
+            GRun('git-update-index', '--remove', '--').xargs(files)
     else:
         if files:
-            __run('git-update-index --force-remove --', files)
+            GRun('git-update-index', '--force-remove', '--').xargs(files)
 
 # Persons caching
 __user = None
@@ -601,12 +557,9 @@ def update_cache(files = None, force = False):
     rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
     m_files =   [x[1] for x in cache_files if x[0] in ['M']]
 
-    if add_files and __run('git-update-index --add --', add_files) != 0:
-        raise GitException, 'Failed git-update-index --add'
-    if rm_files and __run('git-update-index --force-remove --', rm_files) != 0:
-        raise GitException, 'Failed git-update-index --rm'
-    if m_files and __run('git-update-index --', m_files) != 0:
-        raise GitException, 'Failed git-update-index'
+    GRun('git-update-index', '--add', '--').xargs(add_files)
+    GRun('git-update-index', '--force-remove', '--').xargs(rm_files)
+    GRun('git-update-index', '--').xargs(m_files)
 
     return True
 
@@ -635,28 +588,24 @@ def commit(message, files = None, parents = None, allowempty = False,
 
     # write the index to repository
     if tree_id == None:
-        tree_id = _output_one_line(['git-write-tree'])
+        tree_id = GRun('git-write-tree').output_one_line()
         set_head = True
 
     # the commit
-    cmd = ['env']
+    env = {}
     if author_name:
-        cmd += ['GIT_AUTHOR_NAME=%s' % author_name]
+        env['GIT_AUTHOR_NAME'] = author_name
     if author_email:
-        cmd += ['GIT_AUTHOR_EMAIL=%s' % author_email]
+        env['GIT_AUTHOR_EMAIL'] = author_email
     if author_date:
-        cmd += ['GIT_AUTHOR_DATE=%s' % author_date]
+        env['GIT_AUTHOR_DATE'] = author_date
     if committer_name:
-        cmd += ['GIT_COMMITTER_NAME=%s' % committer_name]
+        env['GIT_COMMITTER_NAME'] = committer_name
     if committer_email:
-        cmd += ['GIT_COMMITTER_EMAIL=%s' % committer_email]
-    cmd += ['git-commit-tree', tree_id]
-
-    # get the parents
-    for p in parents:
-        cmd += ['-p', p]
-
-    commit_id = _output_one_line(cmd, message)
+        env['GIT_COMMITTER_EMAIL'] = committer_email
+    commit_id = GRun('git-commit-tree', tree_id,
+                     *sum([['-p', p] for p in parents], [])
+                     ).env(env).raw_input(message).output_one_line()
     if set_head:
         __set_head(commit_id)
 
@@ -679,8 +628,8 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     diff_str = diff(files, rev1, rev2)
     if diff_str:
         try:
-            _input_str(['git-apply'] + index_opt, diff_str)
-        except GitException:
+            GRun('git-apply', *index_opt).raw_input(diff_str).no_output()
+        except GitRunException:
             return False
 
     return True
@@ -696,24 +645,28 @@ def merge(base, head1, head2, recursive = False):
         # this operation tracks renames but it is slower (used in
         # general when pushing or picking patches)
         try:
-            # use _output() to mask the verbose prints of the tool
-            _output(['git-merge-recursive', base, '--', head1, head2])
-        except GitException, ex:
+            # discard output to mask the verbose prints of the tool
+            GRun('git-merge-recursive', base, '--', head1, head2
+                 ).discard_output()
+        except GitRunException, ex:
             err_output = str(ex)
             pass
     else:
         # the fast case where we don't track renames (used when the
         # distance between base and heads is small, i.e. folding or
         # synchronising patches)
-        if __run('git-read-tree -u -m --aggressive',
-                 [base, head1, head2]) != 0:
+        try:
+            GRun('git-read-tree', '-u', '-m', '--aggressive',
+                 base, head1, head2).run()
+        except GitRunException:
             raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     # check the index for unmerged entries
     files = {}
     stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
 
-    for line in _output(['git-ls-files', '--unmerged', '--stage', '-z']).split('\0'):
+    for line in GRun('git-ls-files', '--unmerged', '--stage', '-z'
+                     ).raw_output().split('\0'):
         if not line:
             continue
 
@@ -788,98 +741,85 @@ def status(files = None, modified = False, new = False, deleted = False,
         else:
             out.stdout('%s' % fs[1])
 
-def diff(files = None, rev1 = 'HEAD', rev2 = None, out_fd = None,
-         diff_flags = []):
+def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
     """Show the diff between rev1 and rev2
     """
     if not files:
         files = []
 
     if rev1 and rev2:
-        diff_str = _output(['git-diff-tree', '-p'] + diff_flags
-                           + [rev1, rev2, '--'] + files)
+        return GRun('git-diff-tree', '-p',
+                    *(diff_flags + [rev1, rev2, '--'] + files)).raw_output()
     elif rev1 or rev2:
         refresh_index()
         if rev2:
-            diff_str = _output(['git-diff-index', '-p', '-R']
-                               + diff_flags + [rev2, '--'] + files)
+            return GRun('git-diff-index', '-p', '-R',
+                        *(diff_flags + [rev2, '--'] + files)).raw_output()
         else:
-            diff_str = _output(['git-diff-index', '-p']
-                               + diff_flags + [rev1, '--'] + files)
+            return GRun('git-diff-index', '-p',
+                        *(diff_flags + [rev1, '--'] + files)).raw_output()
     else:
-        diff_str = ''
-
-    if out_fd:
-        out_fd.write(diff_str)
-    else:
-        return diff_str
+        return ''
 
 def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
-    """Return the diffstat between rev1 and rev2
-    """
-    if not files:
-        files = []
-
-    p=popen2.Popen3('git-apply --stat')
-    diff(files, rev1, rev2, p.tochild)
-    p.tochild.close()
-    diff_str = p.fromchild.read().rstrip()
-    if p.wait():
-        raise GitException, 'git.diffstat failed'
-    return diff_str
+    """Return the diffstat between rev1 and rev2."""
+    return GRun('git-apply', '--stat'
+                ).raw_input(diff(files, rev1, rev2)).raw_output()
 
 def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2
     """
 
-    result = ''
-    for line in _output_lines(['git-diff-tree'] + diff_flags + ['-r', rev1, rev2]):
-        result += '%s %s\n' % tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+    result = []
+    for line in GRun('git-diff-tree', *(diff_flags + ['-r', rev1, rev2])
+                     ).output_lines():
+        result.append('%s %s' % tuple(line.split(' ', 4)[-1].split('\t', 1)))
 
-    return result.rstrip()
+    return '\n'.join(result)
 
 def barefiles(rev1, rev2):
     """Return the files modified between rev1 and rev2, without status info
     """
 
-    result = ''
-    for line in _output_lines(['git-diff-tree', '-r', rev1, rev2]):
-        result += '%s\n' % line.rstrip().split(' ',4)[-1].split('\t',1)[-1]
+    result = []
+    for line in GRun('git-diff-tree', '-r', rev1, rev2).output_lines():
+        result.append(line.split(' ', 4)[-1].split('\t', 1)[-1])
 
-    return result.rstrip()
+    return '\n'.join(result)
 
 def pretty_commit(commit_id = 'HEAD', diff_flags = []):
     """Return a given commit (log + diff)
     """
-    return _output(['git-diff-tree'] + diff_flags +
-                   ['--cc', '--always', '--pretty', '-r', commit_id])
+    return GRun('git-diff-tree',
+                *(diff_flags
+                  + ['--cc', '--always', '--pretty', '-r', commit_id])
+                ).raw_output()
 
 def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
     """
-    if not files:
-        files = []
+    if tree_id:
+        try:
+            GRun('git-read-tree', '--reset', tree_id).run()
+        except GitRunException:
+            raise GitException, 'Failed git-read-tree --reset %s' % tree_id
 
-    if tree_id and __run('git-read-tree --reset', [tree_id]) != 0:
-        raise GitException, 'Failed git-read-tree --reset %s' % tree_id
-
-    checkout_cmd = 'git-checkout-index -q -u'
+    cmd = ['git-checkout-index', '-q', '-u']
     if force:
-        checkout_cmd += ' -f'
-    if len(files) == 0:
-        checkout_cmd += ' -a'
+        cmd.append('-f')
+    if files:
+        GRun(*(cmd + ['--'])).xargs(files)
     else:
-        checkout_cmd += ' --'
-
-    if __run(checkout_cmd, files) != 0:
-        raise GitException, 'Failed git-checkout-index'
+        GRun(*(cmd + ['-a'])).run()
 
 def switch(tree_id, keep = False):
     """Switch the tree to the given id
     """
     if not keep:
         refresh_index()
-        if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
+        try:
+            GRun('git-read-tree', '-u', '-m', get_head(), tree_id).run()
+        except GitRunException:
             raise GitException, 'git-read-tree failed (local changes maybe?)'
 
     __set_head(tree_id)
@@ -917,8 +857,7 @@ def fetch(repository = 'origin', refspec = None):
 
     command = config.get('branch.%s.stgit.fetchcmd' % get_head_file()) or \
               config.get('stgit.fetchcmd')
-    if __run(command, args) != 0:
-        raise GitException, 'Failed "%s %s"' % (command, repository)
+    GRun(*(command.split() + args)).run()
 
 def pull(repository = 'origin', refspec = None):
     """Fetches changes from the remote repository, using 'git-pull'
@@ -933,13 +872,12 @@ def pull(repository = 'origin', refspec = None):
 
     command = config.get('branch.%s.stgit.pullcmd' % get_head_file()) or \
               config.get('stgit.pullcmd')
-    if __run(command, args) != 0:
-        raise GitException, 'Failed "%s %s"' % (command, repository)
+    GRun(*(command.split() + args)).run()
 
 def repack():
     """Repack all objects into a single pack
     """
-    __run('git-repack -a -d -f')
+    GRun('git-repack', '-a', '-d', '-f').run()
 
 def apply_patch(filename = None, diff = None, base = None,
                 fail_dump = True):
@@ -962,8 +900,8 @@ def apply_patch(filename = None, diff = None, base = None,
         refresh_index()
 
     try:
-        _input_str(['git-apply', '--index'], diff)
-    except GitException:
+        GRun('git-apply', '--index').raw_input(diff).no_output()
+    except GitRunException:
         if base:
             switch(orig_head)
         if fail_dump:
@@ -985,18 +923,12 @@ def clone(repository, local_dir):
     """Clone a remote repository. At the moment, just use the
     'git-clone' script
     """
-    if __run('git-clone', [repository, local_dir]) != 0:
-        raise GitException, 'Failed "git-clone %s %s"' \
-              % (repository, local_dir)
+    GRun('git-clone', repository, local_dir).run()
 
 def modifying_revs(files, base_rev, head_rev):
-    """Return the revisions from the list modifying the given files
-    """
-    cmd = ['git-rev-list', '%s..%s' % (base_rev, head_rev), '--']
-    revs = [line.strip() for line in _output_lines(cmd + files)]
-
-    return revs
-
+    """Return the revisions from the list modifying the given files."""
+    return GRun('git-rev-list', '%s..%s' % (base_rev, head_rev), '--', *files
+                ).output_lines()
 
 def refspec_localpart(refspec):
     m = re.match('^[^:]*:([^:]*)$', refspec)
@@ -1091,4 +1023,4 @@ def all_refs():
     """Return a list of all refs in the current repository.
     """
 
-    return [line.split()[1] for line in _output_lines(['git-show-ref'])]
+    return [line.split()[1] for line in GRun('git-show-ref').output_lines()]

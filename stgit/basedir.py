@@ -19,13 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import os
-
-def __output(cmd):
-    f = os.popen(cmd, 'r')
-    string = f.readline().rstrip()
-    if f.close():
-        return ''
-    return string
+from stgit.run import *
 
 # GIT_DIR value cached
 __base_dir = None
@@ -39,7 +33,10 @@ def get():
         if 'GIT_DIR' in os.environ:
             __base_dir = os.environ['GIT_DIR']
         else:
-            __base_dir = __output('git-rev-parse --git-dir 2> /dev/null')
+            try:
+                __base_dir = Run('git-rev-parse', '--git-dir').output_one_line()
+            except RunException:
+                __base_dir = ''
 
     return __base_dir
 

@@ -23,7 +23,7 @@ from stgit import basedir
 from stgit.config import config, file_extensions, ConfigOption
 from stgit.utils import append_string
 from stgit.out import *
-
+from stgit.run import *
 
 class GitMergeException(Exception):
     pass
@@ -44,12 +44,8 @@ def __str2none(x):
     else:
         return x
 
-def __output(cmd):
-    f = os.popen(cmd, 'r')
-    string = f.readline().rstrip()
-    if f.close():
-        raise GitMergeException, 'Error: failed to execute "%s"' % cmd
-    return string
+class MRun(Run):
+    exc = GitMergeException # use a custom exception class on errors
 
 def __checkout_files(orig_hash, file1_hash, file2_hash,
                      path,
@@ -62,24 +58,24 @@ def __checkout_files(orig_hash, file1_hash, file2_hash,
 
     if orig_hash:
         orig = path + extensions['ancestor']
-        tmp = __output('git-unpack-file %s' % orig_hash)
+        tmp = MRun('git-unpack-file', orig_hash).output_one_line()
         os.chmod(tmp, int(orig_mode, 8))
         os.renames(tmp, orig)
     if file1_hash:
         src1 = path + extensions['current']
-        tmp = __output('git-unpack-file %s' % file1_hash)
+        tmp = MRun('git-unpack-file', file1_hash).output_one_line()
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, src1)
     if file2_hash:
         src2 = path + extensions['patched']
-        tmp = __output('git-unpack-file %s' % file2_hash)
+        tmp = MRun('git-unpack-file', file2_hash).output_one_line()
         os.chmod(tmp, int(file2_mode, 8))
         os.renames(tmp, src2)
 
     if file1_hash and not os.path.exists(path):
         # the current file might be removed by GIT when it is a new
         # file added in both branches. Just re-generate it
-        tmp = __output('git-unpack-file %s' % file1_hash)
+        tmp = MRun('git-unpack-file', file1_hash).output_one_line()
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, path)
 

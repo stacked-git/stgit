@@ -175,13 +175,10 @@ def func(parser, options, args):
             print patch.get_name()
             print '-'*79
 
-        # write description
         f.write(descr)
-        # write the diff
-        git.diff(rev1 = patch.get_bottom(),
-                 rev2 = patch.get_top(),
-                 out_fd = f,
-                 diff_flags = diff_flags )
+        f.write(git.diff(rev1 = patch.get_bottom(),
+                         rev2 = patch.get_top(),
+                         diff_flags = diff_flags))
         if not options.stdout:
             f.close()
         patch_no += 1
