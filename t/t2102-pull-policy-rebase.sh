@@ -10,8 +10,8 @@ test_description='Excercise pull-policy "rebase".'
 test_expect_success \
     'Fork stack off parent branch, and add patches to the stack' \
     '
-    stg init &
     git branch -m master parent &&
+    stg init &&
     stg branch --create stack &&
     git repo-config branch.stack.stgit.pull-policy rebase &&
     git repo-config --list &&
