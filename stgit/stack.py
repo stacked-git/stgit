@@ -142,14 +142,16 @@ class StgitObject:
 class Patch(StgitObject):
     """Basic patch implementation
     """
-    def __init__(self, name, series_dir, refs_dir):
+    def __init_refs(self):
+        self.__top_ref = self.__refs_base + '/' + self.__name
+        self.__log_ref = self.__top_ref + '.log'
+
+    def __init__(self, name, series_dir, refs_base):
         self.__series_dir = series_dir
         self.__name = name
         self._set_dir(os.path.join(self.__series_dir, self.__name))
-        self.__refs_dir = refs_dir
-        self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
-        self.__log_ref_file = os.path.join(self.__refs_dir,
-                                           self.__name + '.log')
+        self.__refs_base = refs_base
+        self.__init_refs()
 
     def create(self):
         os.mkdir(self._dir())
@@ -160,33 +162,31 @@ class Patch(StgitObject):
         for f in os.listdir(self._dir()):
             os.remove(os.path.join(self._dir(), f))
         os.rmdir(self._dir())
-        os.remove(self.__top_ref_file)
-        if os.path.exists(self.__log_ref_file):
-            os.remove(self.__log_ref_file)
+        git.delete_ref(self.__top_ref)
+        if git.ref_exists(self.__log_ref):
+            git.delete_ref(self.__log_ref)
 
     def get_name(self):
         return self.__name
 
     def rename(self, newname):
         olddir = self._dir()
-        old_top_ref_file = self.__top_ref_file
-        old_log_ref_file = self.__log_ref_file
+        old_top_ref = self.__top_ref
+        old_log_ref = self.__log_ref
         self.__name = newname
         self._set_dir(os.path.join(self.__series_dir, self.__name))
-        self.__top_ref_file = os.path.join(self.__refs_dir, self.__name)
-        self.__log_ref_file = os.path.join(self.__refs_dir,
-                                           self.__name + '.log')
+        self.__init_refs()
 
+        git.rename_ref(old_top_ref, self.__top_ref)
+        if git.ref_exists(old_log_ref):
+            git.rename_ref(old_log_ref, self.__log_ref)
         os.rename(olddir, self._dir())
-        os.rename(old_top_ref_file, self.__top_ref_file)
-        if os.path.exists(old_log_ref_file):
-            os.rename(old_log_ref_file, self.__log_ref_file)
 
     def __update_top_ref(self, ref):
-        write_string(self.__top_ref_file, ref)
+        git.set_ref(self.__top_ref, ref)
 
     def __update_log_ref(self, ref):
-        write_string(self.__log_ref_file, ref)
+        git.set_ref(self.__log_ref, ref)
 
     def update_top_ref(self):
         top = self.get_top()
@@ -358,8 +358,7 @@ class Series(PatchSet):
         # initialized, but don't touch it if it isn't.
         self.update_to_current_format_version()
 
-        self.__refs_dir = os.path.join(self._basedir(), 'refs', 'patches',
-                                       self.get_name())
+        self.__refs_base = 'refs/patches/%s' % self.get_name()
 
         self.__applied_file = os.path.join(self._dir(), 'applied')
         self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
@@ -416,20 +415,22 @@ class Series(PatchSet):
         def rm(f):
             if os.path.exists(f):
                 os.remove(f)
+        def rm_ref(ref):
+            if git.ref_exists(ref):
+                git.delete_ref(ref)
 
         # Update 0 -> 1.
         if get_format_version() == 0:
             mkdir(os.path.join(branch_dir, 'trash'))
             patch_dir = os.path.join(branch_dir, 'patches')
             mkdir(patch_dir)
-            refs_dir = os.path.join(self._basedir(), 'refs', 'patches', self.get_name())
-            mkdir(refs_dir)
+            refs_base = 'refs/patches/%s' % self.get_name()
             for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
                           + file(os.path.join(branch_dir, 'applied')).readlines()):
                 patch = patch.strip()
                 os.rename(os.path.join(branch_dir, patch),
                           os.path.join(patch_dir, patch))
-                Patch(patch, patch_dir, refs_dir).update_top_ref()
+                Patch(patch, patch_dir, refs_base).update_top_ref()
             set_format_version(1)
 
         # Update 1 -> 2.
@@ -441,7 +442,7 @@ class Series(PatchSet):
                     config.set('branch.%s.description' % self.get_name(), desc)
                 rm(desc_file)
             rm(os.path.join(branch_dir, 'current'))
-            rm(os.path.join(self._basedir(), 'refs', 'bases', self.get_name()))
+            rm_ref('refs/bases/%s' % self.get_name())
             set_format_version(2)
 
         # Make sure we're at the latest version.
@@ -458,7 +459,7 @@ class Series(PatchSet):
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
-        return Patch(name, self.__patch_dir, self.__refs_dir)
+        return Patch(name, self.__patch_dir, self.__refs_base)
 
     def get_current_patch(self):
         """Return a Patch object representing the topmost patch, or
@@ -580,7 +581,7 @@ class Series(PatchSet):
         """
         if self.is_initialised():
             raise StackException, '%s already initialized' % self.get_name()
-        for d in [self._dir(), self.__refs_dir]:
+        for d in [self._dir()]:
             if os.path.exists(d):
                 raise StackException, '%s already exists' % d
 
@@ -593,7 +594,6 @@ class Series(PatchSet):
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
-        os.makedirs(self.__refs_dir)
         self._set_field('orig-base', git.get_head())
 
         config.set(self.format_version_key(), str(FORMAT_VERSION))
@@ -606,13 +606,17 @@ class Series(PatchSet):
         if to_stack.is_initialised():
             raise StackException, '"%s" already exists' % to_stack.get_name()
 
+        patches = self.get_applied() + self.get_unapplied()
+
         git.rename_branch(self.get_name(), to_name)
 
+        for patch in patches:
+            git.rename_ref('refs/patches/%s/%s' % (self.get_name(), patch),
+                           'refs/patches/%s/%s' % (to_name, patch))
+            git.rename_ref('refs/patches/%s/%s.log' % (self.get_name(), patch),
+                           'refs/patches/%s/%s.log' % (to_name, patch))
         if os.path.isdir(self._dir()):
             rename(os.path.join(self._basedir(), 'patches'),
-                   self.get_name(), to_stack.get_name())
-        if os.path.exists(self.__refs_dir):
-            rename(os.path.join(self._basedir(), 'refs', 'patches'),
                    self.get_name(), to_stack.get_name())
 
         # Rename the config section
@@ -715,9 +719,9 @@ class Series(PatchSet):
                                      % self._dir())
 
             try:
-                os.removedirs(self.__refs_dir)
-            except OSError:
-                out.warn('Refs directory %s is not empty' % self.__refs_dir)
+                git.delete_branch(self.get_name())
+            except GitException:
+                out.warn('Could not delete branch "%s"' % self.get_name())
 
         # Cleanup parent informations
         # FIXME: should one day make use of git-config --section-remove,

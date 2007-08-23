@@ -13,26 +13,9 @@ Exercises the "stg branch" commands.
 stg init
 
 test_expect_success \
-    'Create a spurious refs/patches/ entry' '
-    find .git -name foo | xargs rm -rf &&
-    touch .git/refs/patches/foo
-'
-
-test_expect_failure \
-    'Try to create an stgit branch with a spurious refs/patches/ entry' '
-    stg branch -c foo
-'
-
-test_expect_success \
-    'Check that no part of the branch was created' '
-    test "`find .git -name foo | tee /dev/stderr`" = ".git/refs/patches/foo" &&
-    ( grep foo .git/HEAD; test $? = 1 )
-'
-
-test_expect_success \
     'Create a spurious patches/ entry' '
     find .git -name foo | xargs rm -rf &&
-    touch .git/patches/foo
+    mkdir -p .git/patches && touch .git/patches/foo
 '
 
 test_expect_failure \
@@ -67,17 +50,6 @@ test_expect_success \
     'Create an invalid refs/heads/ entry' '
     find .git -name foo | xargs rm -rf &&
     touch .git/refs/heads/foo
-'
-
-test_expect_failure \
-    'Try to create an stgit branch with an invalid refs/heads/ entry' '
-    stg branch -c foo
-'
-
-test_expect_success \
-    'Check that no part of the branch was created' '
-    test "`find .git -name foo | tee /dev/stderr`" = ".git/refs/heads/foo" &&
-    ( grep foo .git/HEAD; test $? = 1 )
 '
 
 test_done

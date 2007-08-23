@@ -273,6 +273,13 @@ def local_changes(verbose = True):
     """
     return len(tree_status(verbose = verbose)) != 0
 
+def get_heads():
+    heads = []
+    for line in _output_lines(['git-show-ref', '--heads']):
+        m = re.match('^[0-9a-f]{40} refs/heads/(.+)$', line)
+        heads.append(m.group(1))
+    return heads
+
 # HEAD value cached
 __head = None
 
@@ -297,14 +304,16 @@ def set_head_file(ref):
     # head cache flushing is needed since we might have a different value
     # in the new head
     __clear_head_cache()
-    if __run('git-symbolic-ref HEAD',
-             [os.path.join('refs', 'heads', ref)]) != 0:
+    if __run('git-symbolic-ref HEAD', ['refs/heads/%s' % ref]) != 0:
         raise GitException, 'Could not set head to "%s"' % ref
 
+def set_ref(ref, val):
+    """Point ref at a new commit object."""
+    if __run('git-update-ref', [ref, val]) != 0:
+        raise GitException, 'Could not update %s to "%s".' % (ref, val)
+
 def set_branch(branch, val):
-    """Point branch at a new commit object."""
-    if __run('git-update-ref', [branch, val]) != 0:
-        raise GitException, 'Could not update %s to "%s".' % (branch, val)
+    set_ref('refs/heads/%s' % branch, val)
 
 def __set_head(val):
     """Sets the HEAD value
@@ -312,7 +321,7 @@ def __set_head(val):
     global __head
 
     if not __head or __head != val:
-        set_branch('HEAD', val)
+        set_ref('HEAD', val)
         __head = val
 
     # only allow SHA1 hashes
@@ -338,16 +347,15 @@ def rev_parse(git_id):
     except GitException:
         raise GitException, 'Unknown revision: %s' % git_id
 
+def ref_exists(ref):
+    try:
+        rev_parse(ref)
+        return True
+    except GitException:
+        return False
+
 def branch_exists(branch):
-    """Existence check for the named branch
-    """
-    branch = os.path.join('refs', 'heads', branch)
-    for line in _output_lines('git-rev-parse --symbolic --all 2>&1'):
-        if line.strip() == branch:
-            return True
-        if re.compile('[ |/]'+branch+' ').search(line):
-            raise GitException, 'Bogus branch: %s' % line
-    return False
+    return ref_exists('refs/heads/%s' % branch)
 
 def create_branch(new_branch, tree_id = None):
     """Create a new branch in the git repository
@@ -374,8 +382,7 @@ def switch_branch(new_branch):
     if not branch_exists(new_branch):
         raise GitException, 'Branch "%s" does not exist' % new_branch
 
-    tree_id = rev_parse(os.path.join('refs', 'heads', new_branch)
-                        + '^{commit}')
+    tree_id = rev_parse('refs/heads/%s^{commit}' % new_branch)
     if tree_id != get_head():
         refresh_index()
         if __run('git-read-tree -u -m', [get_head(), tree_id]) != 0:
@@ -386,27 +393,33 @@ def switch_branch(new_branch):
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))
 
+def delete_ref(ref):
+    if not ref_exists(ref):
+        raise GitException, '%s does not exist' % ref
+    sha1 = _output_one_line(['git-show-ref', '-s', ref])
+    if __run('git-update-ref -d %s %s' % (ref, sha1)):
+        raise GitException, 'Failed to delete ref %s' % ref
+
 def delete_branch(name):
-    """Delete a git branch
-    """
-    if not branch_exists(name):
-        raise GitException, 'Branch "%s" does not exist' % name
-    remove_file_and_dirs(os.path.join(basedir.get(), 'refs', 'heads'),
-                         name)
+    delete_ref('refs/heads/%s' % name)
+
+def rename_ref(from_ref, to_ref):
+    if not ref_exists(from_ref):
+        raise GitException, '"%s" does not exist' % from_ref
+    if ref_exists(to_ref):
+        raise GitException, '"%s" already exists' % to_ref
+
+    sha1 = _output_one_line(['git-show-ref', '-s', from_ref])
+    if __run('git-update-ref %s %s %s' % (to_ref, sha1, '0'*40)):
+        raise GitException, 'Failed to create new ref %s' % to_ref
+    if __run('git-update-ref -d %s %s' % (from_ref, sha1)):
+        raise GitException, 'Failed to delete ref %s' % from_ref
 
 def rename_branch(from_name, to_name):
-    """Rename a git branch
-    """
-    if not branch_exists(from_name):
-        raise GitException, 'Branch "%s" does not exist' % from_name
-    if branch_exists(to_name):
-        raise GitException, 'Branch "%s" already exists' % to_name
-
+    """Rename a git branch."""
+    rename_ref('refs/heads/%s' % from_name, 'refs/heads/%s' % to_name)
     if get_head_file() == from_name:
         set_head_file(to_name)
-    rename(os.path.join(basedir.get(), 'refs', 'heads'),
-           from_name, to_name)
-
     reflog_dir = os.path.join(basedir.get(), 'logs', 'refs', 'heads')
     if os.path.exists(reflog_dir) \
            and os.path.exists(os.path.join(reflog_dir, from_name)):

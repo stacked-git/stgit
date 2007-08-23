@@ -42,9 +42,7 @@ def parse_rev(rev):
     """Parse a revision specification into its
     patchname@branchname//patch_id parts. If no branch name has a slash
     in it, also accept / instead of //."""
-    files, dirs = list_files_and_dirs(os.path.join(basedir.get(),
-                                                   'refs', 'heads'))
-    if len(dirs) != 0:
+    if '/' in ''.join(git.get_heads()):
         # We have branch names with / in them.
         branch_chars = r'[^@]'
         patch_id_mark = r'//'
