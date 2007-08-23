@@ -201,8 +201,6 @@ def __parse_mail(msg):
     rem_descr, diff = __split_descr_diff(msg_text)
     if rem_descr:
         descr += '\n\n' + rem_descr
-    if not diff:
-        out.warn('Message does not contain any diff')
 
     # parse the description for author information
     descr, descr_authname, descr_authemail, descr_authdate = \
@@ -250,9 +248,6 @@ def __create_patch(filename, message, author_name, author_email,
         # fix possible invalid characters in the patch name
         patch = re.sub('[^\w.]+', '-', patch).strip('-')
 
-    if not diff:
-        raise CmdException, 'No diff found inside the patch'
-
     if options.ignore and patch in crt_series.get_applied():
         out.info('Ignoring already applied patch "%s"' % patch)
         return
@@ -288,14 +283,17 @@ def __create_patch(filename, message, author_name, author_email,
                          committer_name = committer_name,
                          committer_email = committer_email)
 
-    out.start('Importing patch "%s"' % patch)
-    if options.base:
-        git.apply_patch(diff = diff, base = git_id(options.base))
+    if not diff:
+        out.warn('No diff found, creating empty patch')
     else:
-        git.apply_patch(diff = diff)
-    crt_series.refresh_patch(edit = options.edit,
-                             show_patch = options.showpatch)
-    out.done()
+        out.start('Importing patch "%s"' % patch)
+        if options.base:
+            git.apply_patch(diff = diff, base = git_id(options.base))
+        else:
+            git.apply_patch(diff = diff)
+        crt_series.refresh_patch(edit = options.edit,
+                                 show_patch = options.showpatch)
+        out.done()
 
 def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
