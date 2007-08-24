@@ -546,7 +546,8 @@ class Series(PatchSet):
 
     def set_parent(self, remote, localbranch):
         if localbranch:
-            self.__set_parent_remote(remote)
+            if remote:
+                self.__set_parent_remote(remote)
             self.__set_parent_branch(localbranch)
         # We'll enforce this later
 #         else:
