@@ -39,11 +39,11 @@ test_expect_success \
 # as rewinding, and thus heads/origin is not moved, but the stack
 # is still correctly rebased
 
-test_expect_failure \
+test_expect_success \
     'Rewind/rewrite upstream commit and pull it from clone, without --merged' \
     '
     (cd upstream && echo b >> file2 && stg refresh) &&
-    (cd clone && stg pull)
+    (cd clone && ! stg pull)
     '
 
 test_expect_success \
