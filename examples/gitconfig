@@ -1,6 +1,6 @@
 # StGIT configuration file. Copy it to any of ~/.gitconfig or
 # .git/config and modify as needed. Note that the latter overrides
-# the former. The "git repo-config" command can be used as well
+# the former. The "git config" command can be used as well
 
 [user]
 	# Default author/committer details (standard GIT variables)

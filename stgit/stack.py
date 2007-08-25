@@ -515,7 +515,7 @@ class Series(PatchSet):
             out.note(('No parent remote declared for stack "%s",'
                       ' defaulting to "origin".' % self.get_name()),
                      ('Consider setting "branch.%s.remote" and'
-                      ' "branch.%s.merge" with "git repo-config".'
+                      ' "branch.%s.merge" with "git config".'
                       % (self.get_name(), self.get_name())))
             return 'origin'
         else:
@@ -532,7 +532,7 @@ class Series(PatchSet):
             out.note(('No parent branch declared for stack "%s",'
                       ' defaulting to "heads/origin".' % self.get_name()),
                      ('Consider setting "branch.%s.stgit.parentbranch"'
-                      ' with "git repo-config".' % self.get_name()))
+                      ' with "git config".' % self.get_name()))
             return 'heads/origin'
         else:
             raise StackException, 'Cannot find a parent branch for "%s"' % self.get_name()
