@@ -275,8 +275,9 @@ def local_changes(verbose = True):
 
 def get_heads():
     heads = []
+    hr = re.compile(r'^[0-9a-f]{40} refs/heads/(.+)$')
     for line in _output_lines(['git-show-ref', '--heads']):
-        m = re.match('^[0-9a-f]{40} refs/heads/(.+)$', line)
+        m = hr.match(line)
         heads.append(m.group(1))
     return heads
 
