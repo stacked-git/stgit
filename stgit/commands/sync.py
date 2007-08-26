@@ -21,6 +21,7 @@ from optparse import OptionParser, make_option
 import stgit.commands.common
 from stgit.commands.common import *
 from stgit.utils import *
+from stgit.out import *
 from stgit import stack, git
 
 

@@ -22,6 +22,7 @@ from pydoc import pager
 
 from stgit.commands.common import *
 from stgit.utils import *
+from stgit.out import *
 from stgit import stack, git
 
 

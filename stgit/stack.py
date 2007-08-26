@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, re
 
 from stgit.utils import *
+from stgit.out import *
 from stgit import git, basedir, templates
 from stgit.config import config
 from shutil import copyfile

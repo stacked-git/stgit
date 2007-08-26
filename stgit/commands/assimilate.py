@@ -22,6 +22,7 @@ from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
 from stgit.utils import *
+from stgit.out import *
 from stgit import stack, git
 
 help = 'StGIT-ify any GIT commits made on top of your StGIT stack'

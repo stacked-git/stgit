@@ -23,6 +23,7 @@ from shutil import copyfile
 
 from stgit import basedir
 from stgit.utils import *
+from stgit.out import *
 from stgit.config import config
 from sets import Set
 

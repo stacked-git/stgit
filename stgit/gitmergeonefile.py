@@ -21,7 +21,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 from stgit import basedir
 from stgit.config import config, file_extensions, ConfigOption
-from stgit.utils import append_string, out
+from stgit.utils import append_string
+from stgit.out import *
 
 
 class GitMergeException(Exception):

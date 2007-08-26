@@ -22,7 +22,7 @@ import sys, os
 from optparse import OptionParser
 
 import stgit.commands
-from stgit.utils import out
+from stgit.out import *
 
 #
 # The commands map

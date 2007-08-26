@@ -22,6 +22,7 @@ import sys, os, os.path, re
 from optparse import OptionParser, make_option
 
 from stgit.utils import *
+from stgit.out import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 

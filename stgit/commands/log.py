@@ -20,6 +20,7 @@ from optparse import OptionParser, make_option
 from pydoc import pager
 from stgit.commands.common import *
 from stgit import stack, git
+from stgit.out import *
 
 help = 'display the patch changelog'
 usage = """%prog [options] [patch]
