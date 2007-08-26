@@ -22,10 +22,21 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 # to stay Python 2.3 compatible.
 import popen2, os
 
+import datetime
+
+from  stgit.out import *
+
 class RunException(Exception):
     """Thrown when something bad happened when we tried to run the
     subprocess."""
     pass
+
+_all_log_modes = ['debug', 'profile']
+_log_mode = os.environ.get('STGIT_SUBPROCESS_LOG', '')
+if _log_mode and not _log_mode in _all_log_modes:
+    out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
+              % _log_mode),
+             'Valid values are: %s' % ', '.join(_all_log_modes))
 
 class Run:
     exc = RunException
@@ -37,6 +48,18 @@ class Run:
         self.__good_retvals = [0]
         self.__env = None
         self.__indata = None
+    def __log_start(self, cmd):
+        if _log_mode == 'debug':
+            out.start('Running subprocess %s' % cmd)
+        elif _log_mode == 'profile':
+            out.start('Running subprocess %s' % cmd[0])
+            self.__starttime = datetime.datetime.now()
+    def __log_end(self, retcode):
+        if _log_mode == 'debug':
+            out.done('return code: %d' % retcode)
+        elif _log_mode == 'profile':
+            duration = datetime.datetime.now() - self.__starttime
+            out.done('%1.3f s' % (duration.microseconds/1e6 + duration.seconds))
     def __run_io(self, cmd):
         """Run with captured IO. Note: arguments are parsed by the
         shell. We single-quote them, so don't use anything with single
@@ -47,6 +70,7 @@ class Run:
             ecmd = (['env'] + ['%s=%s' % (key, val)
                                for key, val in self.__env.iteritems()]
                     + cmd)
+        self.__log_start(ecmd)
         p = popen2.Popen3(' '.join(["'%s'" % c for c in ecmd]), True)
         if self.__indata != None:
             p.tochild.write(self.__indata)
@@ -54,6 +78,7 @@ class Run:
         outdata = p.fromchild.read()
         errdata = p.childerr.read()
         self.exitcode = p.wait() >> 8
+        self.__log_end(self.exitcode)
         if errdata or self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d:\n%s'
                            % (cmd[0], self.exitcode, errdata))
@@ -63,7 +88,9 @@ class Run:
         the shell."""
         assert self.__env == None
         assert self.__indata == None
+        self.__log_start(cmd)
         self.exitcode = os.spawnvp(os.P_WAIT, cmd[0], cmd)
+        self.__log_end(self.exitcode)
         if not self.exitcode in self.__good_retvals:
             raise self.exc('%s failed with code %d'
                            % (cmd[0], self.exitcode))
