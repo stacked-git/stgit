@@ -94,6 +94,9 @@
 	# current one by the 'series --short' command
 	#shortnr = 5
 
+	# The maximum length of an automatically generated patch name
+	#namelenth = 30
+
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org

@@ -190,13 +190,16 @@ def call_editor(filename):
 
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
-    from the top line of the string passed as argument, and is at most
-    30 characters long."""
+    from the top line of the string passed as argument."""
     if not msg:
         return None
 
+    name_len = config.get('stgit.namelength')
+    if not name_len:
+        name_len = 30
+
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    return re.sub('[\W]+', '-', subject_line).strip('-')[:30]
+    return re.sub('[\W]+', '-', subject_line).strip('-')[:name_len]
 
 def make_patch_name(msg, unacceptable, default_name = 'patch'):
     """Return a patch name generated from the given commit message,
