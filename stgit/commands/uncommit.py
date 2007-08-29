@@ -51,7 +51,10 @@ words, you can't uncommit a merge."""
 options = [make_option('-n', '--number', type = 'int',
                        help = 'uncommit the specified number of commits'),
            make_option('-t', '--to',
-                       help = 'uncommit to the specified commit')]
+                       help = 'uncommit to the specified commit'),
+           make_option('-x', '--exclusive',
+                       help = 'exclude the commit specified by the --to option',
+                       action = 'store_true')]
 
 def func(parser, options, args):
     """Uncommit a number of patches.
@@ -106,12 +109,17 @@ def func(parser, options, args):
             commits.append((commit, commit_id, parent))
             next_commit = parent
     else:
-        out.start('Uncommitting to %s' % to_commit)
+        if options.exclusive:
+            out.start('Uncommitting to %s (exclusive)' % to_commit)
+        else:
+            out.start('Uncommitting to %s' % to_commit)
         while True:
             commit, commit_id, parent = get_commit(next_commit)
-            commits.append((commit, commit_id, parent))
             if commit_id == to_commit:
+                if not options.exclusive:
+                    commits.append((commit, commit_id, parent))
                 break
+            commits.append((commit, commit_id, parent))
             next_commit = parent
         patch_nr = len(commits)
 
