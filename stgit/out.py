@@ -64,26 +64,33 @@ class MessagePrinter(object):
                 self.new_line()
                 self.write(string)
                 self.at_start_of_line = string.endswith('\n')
+        self.__stderr = Output(sys.stderr.write, sys.stderr.flush)
         self.__stdout = Output(sys.stdout.write, sys.stdout.flush)
         if sys.stdout.isatty():
             self.__out = self.__stdout
+            self.__err = self.__stdout
         else:
             self.__out = Output(lambda msg: None, lambda: None)
+            self.__err = self.__stderr
     def stdout(self, line):
         """Write a line to stdout."""
         self.__stdout.write_line(line)
     def stdout_raw(self, string):
         """Write a string possibly containing newlines to stdout."""
         self.__stdout.write_raw(string)
+    def err_raw(self, string):
+        """Write a string possibly containing newlines to the error
+        output."""
+        self.__err.write_raw(string)
     def info(self, *msgs):
         for msg in msgs:
             self.__out.single_line(msg)
     def note(self, *msgs):
         self.__out.tagged_lines('Notice', msgs)
     def warn(self, *msgs):
-        self.__out.tagged_lines('Warning', msgs)
+        self.__err.tagged_lines('Warning', msgs)
     def error(self, *msgs):
-        self.__out.tagged_lines('Error', msgs)
+        self.__err.tagged_lines('Error', msgs)
     def start(self, msg):
         """Start a long-running operation."""
         self.__out.single_line('%s ... ' % msg, print_newline = False)
