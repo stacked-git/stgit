@@ -79,9 +79,12 @@ class Run:
         errdata = p.childerr.read()
         self.exitcode = p.wait() >> 8
         self.__log_end(self.exitcode)
-        if errdata or self.exitcode not in self.__good_retvals:
+        if self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d:\n%s'
                            % (cmd[0], self.exitcode, errdata))
+        if errdata:
+            out.warn('call to %s succeeded, but generated a warning:' % cmd[0])
+            out.err_raw(errdata)
         return outdata
     def __run_noshell(self, cmd):
         """Run without captured IO. Note: arguments are not parsed by
