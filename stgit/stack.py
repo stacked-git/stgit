@@ -87,7 +87,8 @@ def edit_file(series, line, comment, show_patch = True):
     if show_patch:
        print >> f, __patch_prefix
        # series.get_patch(series.get_current()).get_top()
-       git.diff([], series.get_patch(series.get_current()).get_bottom(), None, f)
+       diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
+       f.write(diff_str)
 
     #Vim modeline must be near the end.
     print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
