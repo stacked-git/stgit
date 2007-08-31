@@ -6,7 +6,7 @@ all:
 	$(PYTHON) setup.py build
 
 install:
-	$(PYTHON) setup.py install --prefix=$(PREFIX) --root=$(DESTDIR)
+	$(PYTHON) setup.py install --prefix=$(PREFIX) --root=$(DESTDIR) --force
 
 doc:
 	cd Documentation && $(MAKE) all
