@@ -181,7 +181,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # unknown files
     if unknown:
-        cmd = ['git-ls-files', '-z', '--others', '--directory']
+        cmd = ['git-ls-files', '-z', '--others', '--directory',
+               '--no-empty-directory']
         if not noexclude:
             cmd += ['--exclude=%s' % s for s in
                     ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
@@ -191,7 +192,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                     if os.path.exists(fn)]
 
         lines = GRun(*cmd).raw_output().split('\0')
-        cache_files += [('?', line) for line in lines]
+        cache_files += [('?', line) for line in lines if line]
 
     # conflicted files
     conflicts = get_conflicts()
