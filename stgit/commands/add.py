@@ -40,7 +40,4 @@ def func(parser, options, args):
     if len(args) < 1:
         parser.error('incorrect number of arguments')
 
-    if not crt_series.get_current():
-        raise CmdException, 'No patches applied'
-
     git.add(args)
