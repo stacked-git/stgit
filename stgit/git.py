@@ -26,7 +26,6 @@ from stgit.utils import *
 from stgit.out import *
 from stgit.run import *
 from stgit.config import config
-from sets import Set
 
 # git exception class
 class GitException(Exception):
@@ -959,10 +958,9 @@ def __remotes_from_dir(dir):
 def remotes_list():
     """Return the list of remotes in the repository
     """
-
-    return Set(__remotes_from_config()) | \
-           Set(__remotes_from_dir('remotes')) | \
-           Set(__remotes_from_dir('branches'))
+    return (set(__remotes_from_config())
+            | set(__remotes_from_dir('remotes'))
+            | set(__remotes_from_dir('branches')))
 
 def remotes_local_branches(remote):
     """Returns the list of local branches fetched from given remote
