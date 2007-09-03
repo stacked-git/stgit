@@ -17,12 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-# popen2 and os.spawn* suck. We should really use subprocess instead,
-# but that's only available in Python 2.4 and up, and we try our best
-# to stay Python 2.3 compatible.
-import popen2, os
-
-import datetime
+import datetime, os, subprocess
 
 from  stgit.out import *
 
@@ -48,11 +43,11 @@ class Run:
         self.__good_retvals = [0]
         self.__env = None
         self.__indata = None
-    def __log_start(self, cmd):
+    def __log_start(self):
         if _log_mode == 'debug':
-            out.start('Running subprocess %s' % cmd)
+            out.start('Running subprocess %s' % self.__cmd)
         elif _log_mode == 'profile':
-            out.start('Running subprocess %s' % cmd[0])
+            out.start('Running subprocess %s' % self.__cmd[0])
             self.__starttime = datetime.datetime.now()
     def __log_end(self, retcode):
         if _log_mode == 'debug':
@@ -60,48 +55,41 @@ class Run:
         elif _log_mode == 'profile':
             duration = datetime.datetime.now() - self.__starttime
             out.done('%1.3f s' % (duration.microseconds/1e6 + duration.seconds))
-    def __run_io(self, cmd):
-        """Run with captured IO. Note: arguments are parsed by the
-        shell. We single-quote them, so don't use anything with single
-        quotes in it."""
-        if self.__env == None:
-            ecmd = cmd
-        else:
-            ecmd = (['env'] + ['%s=%s' % (key, val)
-                               for key, val in self.__env.iteritems()]
-                    + cmd)
-        self.__log_start(ecmd)
-        p = popen2.Popen3(' '.join(["'%s'" % c for c in ecmd]), True)
-        if self.__indata != None:
-            p.tochild.write(self.__indata)
-        p.tochild.close()
-        outdata = p.fromchild.read()
-        errdata = p.childerr.read()
-        self.exitcode = p.wait() >> 8
-        self.__log_end(self.exitcode)
+    def __check_exitcode(self):
         if self.exitcode not in self.__good_retvals:
-            raise self.exc('%s failed with code %d:\n%s'
-                           % (cmd[0], self.exitcode, errdata))
-        if errdata:
-            out.warn('call to %s succeeded, but generated a warning:' % cmd[0])
-            out.err_raw(errdata)
-        return outdata
-    def __run_noshell(self, cmd):
-        """Run without captured IO. Note: arguments are not parsed by
-        the shell."""
-        assert self.__env == None
-        assert self.__indata == None
-        self.__log_start(cmd)
-        self.exitcode = os.spawnvp(os.P_WAIT, cmd[0], cmd)
-        self.__log_end(self.exitcode)
-        if not self.exitcode in self.__good_retvals:
             raise self.exc('%s failed with code %d'
-                           % (cmd[0], self.exitcode))
+                           % (self.__cmd[0], self.exitcode))
+    def __run_io(self):
+        """Run with captured IO."""
+        self.__log_start()
+        try:
+            p = subprocess.Popen(self.__cmd, env = self.__env,
+                                 stdin = subprocess.PIPE,
+                                 stdout = subprocess.PIPE)
+            outdata, errdata = p.communicate(self.__indata)
+            self.exitcode = p.returncode
+        except OSError, e:
+            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
+        self.__log_end(self.exitcode)
+        self.__check_exitcode()
+        return outdata
+    def __run_noio(self):
+        """Run without captured IO."""
+        assert self.__indata == None
+        self.__log_start()
+        try:
+            p = subprocess.Popen(self.__cmd, env = self.__env)
+            self.exitcode = p.wait()
+        except OSError, e:
+            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
+        self.__log_end(self.exitcode)
+        self.__check_exitcode()
     def returns(self, retvals):
         self.__good_retvals = retvals
         return self
     def env(self, env):
-        self.__env = env
+        self.__env = dict(os.environ)
+        self.__env.update(env)
         return self
     def raw_input(self, indata):
         self.__indata = indata
@@ -110,15 +98,15 @@ class Run:
         self.__indata = ''.join(['%s\n' % line for line in lines])
         return self
     def no_output(self):
-        outdata = self.__run_io(self.__cmd)
+        outdata = self.__run_io()
         if outdata:
             raise self.exc, '%s produced output' % self.__cmd[0]
     def discard_output(self):
-        self.__run_io(self.__cmd)
+        self.__run_io()
     def raw_output(self):
-        return self.__run_io(self.__cmd)
+        return self.__run_io()
     def output_lines(self):
-        outdata = self.__run_io(self.__cmd)
+        outdata = self.__run_io()
         if outdata.endswith('\n'):
             outdata = outdata[:-1]
         if outdata:
@@ -134,11 +122,14 @@ class Run:
                            % (self.__cmd[0], len(outlines)))
     def run(self):
         """Just run, with no IO redirection."""
-        self.__run_noshell(self.__cmd)
+        self.__run_noio()
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
         run as many times as needed to consume them all."""
         step = 100
+        basecmd = self.__cmd
         for i in xrange(0, len(xargs), step):
-            self.__run_noshell(self.__cmd + xargs[i:i+step])
+            self.__cmd = basecmd + xargs[i:i+step]
+            self.__run_noio()
+        self.__cmd = basecmd
