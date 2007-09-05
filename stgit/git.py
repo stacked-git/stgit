@@ -953,7 +953,7 @@ def __remotes_from_dir(dir):
     if os.path.exists(d):
         return os.listdir(d)
     else:
-        return None
+        return []
 
 def remotes_list():
     """Return the list of remotes in the repository
