@@ -43,6 +43,7 @@ class Run:
         self.__good_retvals = [0]
         self.__env = None
         self.__indata = None
+        self.__discard_stderr = False
     def __log_start(self):
         if _log_mode == 'debug':
             out.start('Running subprocess %s' % self.__cmd)
@@ -65,11 +66,14 @@ class Run:
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env,
                                  stdin = subprocess.PIPE,
-                                 stdout = subprocess.PIPE)
+                                 stdout = subprocess.PIPE,
+                                 stderr = subprocess.PIPE)
             outdata, errdata = p.communicate(self.__indata)
             self.exitcode = p.returncode
         except OSError, e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
+        if errdata and not self.__discard_stderr:
+            out.err_raw(errdata)
         self.__log_end(self.exitcode)
         self.__check_exitcode()
         return outdata
@@ -86,6 +90,9 @@ class Run:
         self.__check_exitcode()
     def returns(self, retvals):
         self.__good_retvals = retvals
+        return self
+    def discard_stderr(self, discard = True):
+        self.__discard_stderr = discard
         return self
     def env(self, env):
         self.__env = dict(os.environ)

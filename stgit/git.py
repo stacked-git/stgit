@@ -628,7 +628,8 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     diff_str = diff(files, rev1, rev2)
     if diff_str:
         try:
-            GRun('git-apply', *index_opt).raw_input(diff_str).no_output()
+            GRun('git-apply', *index_opt).raw_input(
+                diff_str).discard_stderr().no_output()
         except GitRunException:
             return False
 
