@@ -228,7 +228,7 @@ test_create_repo () {
 	cd "$repo" || error "Cannot setup test environment"
 	git-init >/dev/null 2>&1 ||
 	error "cannot run git-init -- have you installed git-core?"
-	mv .git/hooks .git/hooks-disabled
+	mkdir .git/info
 	echo "empty start" |
 	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>&4 ||
 	error "cannot run git-commit -- is your git-core functioning?"
@@ -261,8 +261,9 @@ test_done () {
 # t/ subdirectory and are run in trash subdirectory.
 PATH=$(pwd)/..:$PATH
 HOME=$(pwd)/trash
+GIT_TEMPLATE_DIR=$(pwd)/../templates
 GIT_CONFIG=.git/config
-export PATH HOME GIT_CONFIG
+export PATH HOME GIT_TEMPLATE_DIR GIT_CONFIG
 
 
 # Test repository
