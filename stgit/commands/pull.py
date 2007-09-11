@@ -43,9 +43,6 @@ options = [make_option('-n', '--nopush',
                        action = 'store_true'),
            make_option('-m', '--merged',
                        help = 'check for patches merged upstream',
-                       action = 'store_true'),
-           make_option('--force',
-                       help = 'force rebase even if the stack based was moved by (un)commits',
                        action = 'store_true')]
 
 def func(parser, options, args):
@@ -81,7 +78,7 @@ def func(parser, options, args):
     if policy not in ['pull', 'fetch-rebase', 'rebase']:
         raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
 
-    applied = prepare_rebase(force=options.force)
+    applied = prepare_rebase()
 
     # pull the remote changes
     if policy == 'pull':

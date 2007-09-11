@@ -55,18 +55,4 @@ test_expect_success \
     test `wc -l <clone/file2` = 3
     '
 
-# this one exercises the guard against commits
-# (use a new file to avoid mistaking a conflict for a success)
-test_expect_success \
-    'New upstream commit and commit a patch in clone' \
-    '
-    (cd upstream && stg new u2 -m u2 &&
-     echo a > file3 && stg add file3 && stg refresh) &&
-    (cd clone && stg commit && stg new c2 -m c2 &&
-     echo a >> file && stg refresh)
-    '
-test_expect_success \
-    'Try to  and commit a patch in clone' \
-    '(cd clone && ! stg pull)'
-
 test_done

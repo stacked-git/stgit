@@ -318,14 +318,7 @@ def address_or_alias(addr_str):
                  for addr in addr_str.split(',')]
     return ', '.join([addr for addr in addr_list if addr])
 
-def prepare_rebase(force=None):
-    if not force:
-        # Be sure we won't loose results of stg-(un)commit by error.
-        # Do not require an existing orig-base for compatibility with 0.12 and earlier.
-        origbase = crt_series._get_field('orig-base')
-        if origbase and crt_series.get_base() != origbase:
-            raise CmdException, 'Rebasing would possibly lose data'
-
+def prepare_rebase():
     # pop all patches
     applied = crt_series.get_applied()
     if len(applied) > 0:

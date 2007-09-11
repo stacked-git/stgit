@@ -623,7 +623,6 @@ class Series(PatchSet):
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
-        self._set_field('orig-base', git.get_head())
 
         config.set(self.format_version_key(), str(FORMAT_VERSION))
 
