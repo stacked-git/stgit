@@ -214,3 +214,18 @@ def make_patch_name(msg, unacceptable, default_name = 'patch'):
             suffix += 1
         patchname = '%s-%d' % (patchname, suffix)
     return patchname
+
+# any and all functions are builtin in Python 2.5 and higher, but not
+# in 2.4.
+if not 'any' in dir(__builtins__):
+    def any(bools):
+        for b in bools:
+            if b:
+                return True
+        return False
+if not 'all' in dir(__builtins__):
+    def all(bools):
+        for b in bools:
+            if not b:
+                return False
+        return True
