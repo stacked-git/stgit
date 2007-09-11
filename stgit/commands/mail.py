@@ -58,28 +58,35 @@ SMTP authentication is also possible with '--smtp-user' and
 'smtpuser' and 'smtppassword'. TLS encryption can be enabled by
 '--smtp-tls' option and 'smtptls' setting.
 
-The patch e-mail template accepts the following variables:
+The following variables are accepted by both the preamble and the
+patch e-mail templates:
 
-  %(patch)s        - patch name
-  %(sender)s       - 'sender'  or 'authname <authemail>' as per the config file
-  %(shortdescr)s   - the first line of the patch description
-  %(longdescr)s    - the rest of the patch description, after the first line
-  %(diff)s         - unified diff of the patch
   %(diffstat)s     - diff statistics
-  %(version)s      - ' version' string passed on the command line (or empty)
-  %(prefix)s       - 'prefix ' string passed on the command line
-  %(patchnr)s      - patch number
-  %(totalnr)s      - total number of patches to be sent
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
-  %(fromauth)s     - 'From: author\\n\\n' if different from sender
-  %(authname)s     - author's name
-  %(authemail)s    - author's email
-  %(authdate)s     - patch creation date
-  %(commname)s     - committer's name
-  %(commemail)s    - committer's e-mail
+  %(patchnr)s      - patch number
+  %(sender)s       - 'sender'  or 'authname <authemail>' as per the config file
+  %(totalnr)s      - total number of patches to be sent
+  %(version)s      - ' version' string passed on the command line (or empty)
 
-For the preamble e-mail template, only the %(diffstat)s, %(sender)s,
-%(version)s, %(patchnr)s, %(totalnr)s and %(number)s variables are supported."""
+In addition to the common variables, the preamble e-mail template
+accepts the following:
+
+  %(shortlog)s     - first line of each patch description, listed by author
+
+In addition to the common variables, the patch e-mail template accepts
+the following:
+
+  %(authdate)s     - patch creation date
+  %(authemail)s    - author's email
+  %(authname)s     - author's name
+  %(commemail)s    - committer's e-mail
+  %(commname)s     - committer's name
+  %(diff)s         - unified diff of the patch
+  %(fromauth)s     - 'From: author\\n\\n' if different from sender
+  %(longdescr)s    - the rest of the patch description, after the first line
+  %(patch)s        - patch name
+  %(prefix)s       - 'prefix ' string passed on the command line
+  %(shortdescr)s   - the first line of the patch description"""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -339,6 +346,8 @@ def __build_cover(tmpl, patches, msg_id, options):
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
+                 'shortlog':     stack.shortlog(crt_series.get_patch(p)
+                                                for p in patches),
                  'diffstat':     git.diffstat(
                                      rev1 = git_id('%s//bottom' % patches[0]),
                                      rev2 = git_id('%s//top' % patches[-1]))}

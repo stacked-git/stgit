@@ -22,6 +22,7 @@ import sys, os, re
 
 from stgit.utils import *
 from stgit.out import *
+from stgit.run import *
 from stgit import git, basedir, templates
 from stgit.config import config
 from shutil import copyfile
@@ -347,6 +348,12 @@ class PatchSet(StgitObject):
         """
         return bool(config.get(self.format_version_key()))
 
+
+def shortlog(patches):
+    log = ''.join(Run('git-log', '--pretty=short',
+                      p.get_top(), '^%s' % p.get_bottom()).raw_output()
+                  for p in patches)
+    return Run('git-shortlog').raw_input(log).raw_output()
 
 class Series(PatchSet):
     """Class including the operations on series
