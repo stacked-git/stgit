@@ -78,8 +78,8 @@ The patch e-mail template accepts the following variables:
   %(commname)s     - committer's name
   %(commemail)s    - committer's e-mail
 
-For the preamble e-mail template, only the %(sender)s, %(version)s,
-%(patchnr)s, %(totalnr)s and %(number)s variables are supported."""
+For the preamble e-mail template, only the %(diffstat)s, %(sender)s,
+%(version)s, %(patchnr)s, %(totalnr)s and %(number)s variables are supported."""
 
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
@@ -301,7 +301,7 @@ def __edit_message(msg):
 
     return msg
 
-def __build_cover(tmpl, total_nr, msg_id, options):
+def __build_cover(tmpl, patches, msg_id, options):
     """Build the cover message (series description) to be sent via SMTP
     """
     sender = __get_sender()
@@ -320,9 +320,9 @@ def __build_cover(tmpl, total_nr, msg_id, options):
         else:
             prefix_str = ''
         
-    total_nr_str = str(total_nr)
+    total_nr_str = str(len(patches))
     patch_nr_str = '0'.zfill(len(total_nr_str))
-    if total_nr > 1:
+    if len(patches) > 1:
         number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
     else:
         number_str = ''
@@ -338,7 +338,10 @@ def __build_cover(tmpl, total_nr, msg_id, options):
                  'prefix':	 prefix_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
-                 'number':       number_str}
+                 'number':       number_str,
+                 'diffstat':     git.diffstat(
+                                     rev1 = git_id('%s//bottom' % patches[0]),
+                                     rev2 = git_id('%s//top' % patches[-1]))}
 
     try:
         msg_string = tmpl % tmpl_dict
@@ -529,7 +532,7 @@ def func(parser, options, args):
                 raise CmdException, 'No cover message template file found'
 
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_cover(tmpl, total_nr, msg_id, options)
+        msg = __build_cover(tmpl, patches, msg_id, options)
         from_addr, to_addr_list = __parse_addresses(msg)
 
         msg_string = msg.as_string(options.mbox)
