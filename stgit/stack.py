@@ -773,14 +773,7 @@ class Series(PatchSet):
         if not committer_email:
             committer_email = patch.get_commemail()
 
-        if sign_str:
-            descr = descr.rstrip()
-            if descr.find("\nSigned-off-by:") < 0 \
-               and descr.find("\nAcked-by:") < 0:
-                descr = descr + "\n"
-
-            descr = '%s\n%s: %s <%s>\n' % (descr, sign_str,
-                                           committer_name, committer_email)
+        descr = add_sign_line(descr, sign_str, committer_name, committer_email)
 
         bottom = patch.get_bottom()
 

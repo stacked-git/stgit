@@ -73,14 +73,8 @@ options = [make_option('-f', '--force',
                        help = 'use COMMEMAIL as the committer ' \
                        'e-mail'),
            make_option('-p', '--patch',
-                       help = 'refresh (applied) PATCH instead of the top one'),
-           make_option('--sign',
-                       help = 'add Signed-off-by line',
-                       action = 'store_true'),
-           make_option('--ack',
-                       help = 'add Acked-by line',
-                       action = 'store_true')]
-
+                       help = 'refresh (applied) PATCH instead of the top one')
+           ] + make_sign_options()
 
 def func(parser, options, args):
     autoresolved = config.get('stgit.autoresolved')
@@ -112,15 +106,6 @@ def func(parser, options, args):
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
-    if options.sign:
-        sign_str = 'Signed-off-by'
-        if options.ack:
-            raise CmdException, '--ack and --sign were both specified'
-    elif options.ack:
-        sign_str = 'Acked-by'
-    else:
-        sign_str = None
-
     files = [path for (stat,path) in git.tree_status(verbose = True)]
     if args:
         files = [f for f in files if f in args]
@@ -128,8 +113,7 @@ def func(parser, options, args):
     if files or not crt_series.head_top_equal() \
            or options.edit or options.message \
            or options.authname or options.authemail or options.authdate \
-           or options.commname or options.commemail \
-           or options.sign or options.ack:
+           or options.commname or options.commemail or options.sign_str:
 
         if options.patch:
             applied = crt_series.get_applied()
@@ -157,7 +141,7 @@ def func(parser, options, args):
                                  author_date = options.authdate,
                                  committer_name = options.commname,
                                  committer_email = options.commemail,
-                                 backup = True, sign_str = sign_str,
+                                 backup = True, sign_str = options.sign_str,
                                  notes = options.annotate)
 
         if crt_series.empty_patch(patch):

@@ -87,7 +87,8 @@ options = [make_option('-m', '--mail',
            make_option('--commname',
                        help = 'use COMMNAME as the committer name'),
            make_option('--commemail',
-                       help = 'use COMMEMAIL as the committer e-mail')]
+                       help = 'use COMMEMAIL as the committer e-mail')
+           ] + make_sign_options()
 
 
 def __end_descr(line):
@@ -293,7 +294,8 @@ def __create_patch(filename, message, author_name, author_email,
         else:
             git.apply_patch(diff = diff)
         crt_series.refresh_patch(edit = options.edit,
-                                 show_patch = options.showpatch)
+                                 show_patch = options.showpatch,
+                                 sign_str = options.sign_str)
         out.done()
 
 def __import_file(filename, options, patch = None):

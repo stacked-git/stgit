@@ -1,7 +1,7 @@
 """Common utility functions
 """
 
-import errno, os, os.path, re, sys
+import errno, optparse, os, os.path, re, sys
 from stgit.config import config
 from stgit.out import *
 
@@ -229,3 +229,29 @@ if not 'all' in dir(__builtins__):
             if not b:
                 return False
         return True
+
+def make_sign_options():
+    def callback(option, opt_str, value, parser, sign_str):
+        if parser.values.sign_str not in [None, sign_str]:
+            raise optparse.OptionValueError(
+                '--ack and --sign were both specified')
+        parser.values.sign_str = sign_str
+    return [optparse.make_option('--sign', action = 'callback',
+                                 callback = callback, dest = 'sign_str',
+                                 callback_args = ('Signed-off-by',),
+                                 help = 'add Signed-off-by line'),
+            optparse.make_option('--ack', action = 'callback',
+                                 callback = callback, dest = 'sign_str',
+                                 callback_args = ('Acked-by',),
+                                 help = 'add Acked-by line')]
+
+def add_sign_line(desc, sign_str, name, email):
+    if not sign_str:
+        return desc
+    sign_str = '%s: %s <%s>' % (sign_str, name, email)
+    if sign_str in desc:
+        return desc
+    desc = desc.rstrip()
+    if not any(s in desc for s in ['\nSigned-off-by:', '\nAcked-by:']):
+        desc = desc + '\n'
+    return '%s\n%s\n' % (desc, sign_str)
