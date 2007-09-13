@@ -50,6 +50,10 @@ def func(parser, options, args):
     unapplied = crt_series.get_unapplied()
     all = unapplied + oldapplied
 
+    if options.to and not options.to in oldapplied:
+        raise CmdException('Cannot sink below %s, since it is not applied'
+                           % options.to)
+
     if len(args) > 0:
         patches = parse_patches(args, all)
     else:
