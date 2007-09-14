@@ -68,6 +68,7 @@ commands = Commands({
     'clone':            'clone',
     'commit':           'commit',
     'cp':		'copy',
+    'edit':             'edit',
     'export':           'export',
     'files':            'files',
     'float':            'float',

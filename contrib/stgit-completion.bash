@@ -21,6 +21,7 @@ _stg_commands="
     clone
     commit
     cp
+    edit
     export
     files
     float
@@ -247,6 +248,7 @@ _stg ()
         unhide) _stg_patches $command _hidden_patches ;;
         # patch commands
         delete) _stg_patches $command _all_patches ;;
+        edit)   _stg_patches $command _applied_patches ;;
         export) _stg_patches $command _applied_patches ;;
         files)  _stg_patches $command _all_patches ;;
         log)    _stg_patches $command _all_patches ;;

@@ -762,6 +762,8 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
     else:
         return ''
 
+# TODO: take another parameter representing a diff string as we
+# usually invoke git.diff() form the calling functions
 def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
     """Return the diffstat between rev1 and rev2."""
     return GRun('git-apply', '--stat', '--summary'

@@ -348,3 +348,133 @@ def post_rebase(applied, nopush, merged):
     # push the patches back
     if not nopush:
         push_patches(applied, merged)
+
+#
+# Patch description/e-mail/diff parsing
+#
+def __end_descr(line):
+    return re.match('---\s*$', line) or re.match('diff -', line) or \
+            re.match('Index: ', line)
+
+def __split_descr_diff(string):
+    """Return the description and the diff from the given string
+    """
+    descr = diff = ''
+    top = True
+
+    for line in string.split('\n'):
+        if top:
+            if not __end_descr(line):
+                descr += line + '\n'
+                continue
+            else:
+                top = False
+        diff += line + '\n'
+
+    return (descr.rstrip(), diff)
+
+def __parse_description(descr):
+    """Parse the patch description and return the new description and
+    author information (if any).
+    """
+    subject = body = ''
+    authname = authemail = authdate = None
+
+    descr_lines = [line.rstrip() for line in  descr.split('\n')]
+    if not descr_lines:
+        raise CmdException, "Empty patch description"
+
+    lasthdr = 0
+    end = len(descr_lines)
+
+    # Parse the patch header
+    for pos in range(0, end):
+        if not descr_lines[pos]:
+           continue
+        # check for a "From|Author:" line
+        if re.match('\s*(?:from|author):\s+', descr_lines[pos], re.I):
+            auth = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+            authname, authemail = name_email(auth)
+            lasthdr = pos + 1
+            continue
+        # check for a "Date:" line
+        if re.match('\s*date:\s+', descr_lines[pos], re.I):
+            authdate = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+            lasthdr = pos + 1
+            continue
+        if subject:
+            break
+        # get the subject
+        subject = descr_lines[pos]
+        lasthdr = pos + 1
+
+    # get the body
+    if lasthdr < end:
+        body = reduce(lambda x, y: x + '\n' + y, descr_lines[lasthdr:], '')
+
+    return (subject + body, authname, authemail, authdate)
+
+def parse_mail(msg):
+    """Parse the message object and return (description, authname,
+    authemail, authdate, diff)
+    """
+    from email.Header import decode_header, make_header
+
+    def __decode_header(header):
+        """Decode a qp-encoded e-mail header as per rfc2047"""
+        try:
+            words_enc = decode_header(header)
+            hobj = make_header(words_enc)
+        except Exception, ex:
+            raise CmdException, 'header decoding error: %s' % str(ex)
+        return unicode(hobj).encode('utf-8')
+
+    # parse the headers
+    if msg.has_key('from'):
+        authname, authemail = name_email(__decode_header(msg['from']))
+    else:
+        authname = authemail = None
+
+    # '\n\t' can be found on multi-line headers
+    descr = __decode_header(msg['subject']).replace('\n\t', ' ')
+    authdate = msg['date']
+
+    # remove the '[*PATCH*]' expression in the subject
+    if descr:
+        descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
+                           descr)[0][1]
+    else:
+        raise CmdException, 'Subject: line not found'
+
+    # the rest of the message
+    msg_text = ''
+    for part in msg.walk():
+        if part.get_content_type() == 'text/plain':
+            msg_text += part.get_payload(decode = True)
+
+    rem_descr, diff = __split_descr_diff(msg_text)
+    if rem_descr:
+        descr += '\n\n' + rem_descr
+
+    # parse the description for author information
+    descr, descr_authname, descr_authemail, descr_authdate = \
+           __parse_description(descr)
+    if descr_authname:
+        authname = descr_authname
+    if descr_authemail:
+        authemail = descr_authemail
+    if descr_authdate:
+       authdate = descr_authdate
+
+    return (descr, authname, authemail, authdate, diff)
+
+def parse_patch(fobj):
+    """Parse the input file and return (description, authname,
+    authemail, authdate, diff)
+    """
+    descr, diff = __split_descr_diff(fobj.read())
+    descr, authname, authemail, authdate = __parse_description(descr)
+
+    # we don't yet have an agreed place for the creation date.
+    # Just return None
+    return (descr, authname, authemail, authdate, diff)

@@ -19,10 +19,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, re
+from email.Utils import formatdate
 
 from stgit.utils import *
 from stgit.out import *
-from stgit.run import *
 from stgit import git, basedir, templates
 from stgit.config import config
 from shutil import copyfile
@@ -67,6 +67,8 @@ def __clean_comments(f):
     f.seek(0); f.truncate()
     f.writelines(lines)
 
+# TODO: move this out of the stgit.stack module, it is really for
+# higher level commands to handle the user interaction
 def edit_file(series, line, comment, show_patch = True):
     fname = '.stgitmsg.txt'
     tmpl = templates.get_template('patchdescr.tmpl')
@@ -252,7 +254,16 @@ class Patch(StgitObject):
         self._set_field('authemail', email or git.author().email)
 
     def get_authdate(self):
-        return self._get_field('authdate')
+        date = self._get_field('authdate')
+        if not date:
+            return date
+
+        if re.match('[0-9]+\s+[+-][0-9]+', date):
+            # Unix time (seconds) + time zone
+            secs_tz = date.split()
+            date = formatdate(int(secs_tz[0]))[:-5] + secs_tz[1]
+
+        return date
 
     def set_authdate(self, date):
         self._set_field('authdate', date or git.author().date)
@@ -764,6 +775,8 @@ class Series(PatchSet):
         elif message:
             descr = message
 
+        # TODO: move this out of the stgit.stack module, it is really
+        # for higher level commands to handle the user interaction
         if not message and edit:
             descr = edit_file(self, descr.rstrip(), \
                               'Please edit the description for patch "%s" ' \
@@ -842,6 +855,8 @@ class Series(PatchSet):
             if self.patch_exists(name):
                 raise StackException, 'Patch "%s" already exists' % name
 
+        # TODO: move this out of the stgit.stack module, it is really
+        # for higher level commands to handle the user interaction
         if not message and can_edit:
             descr = edit_file(
                 self, None,

@@ -64,7 +64,7 @@ test_expect_success \
 	'Check the "push(f)" log' \
 	'
 	stg pop &&
-	stg refresh -m "Foo2 Patch" &&
+	stg edit -m "Foo2 Patch" &&
 	stg push &&
 	stg log --full | grep -q -e "^push(f) "
 	'
