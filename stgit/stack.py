@@ -1064,60 +1064,65 @@ class Series(PatchSet):
         head = git.get_head()
         bottom = patch.get_bottom()
         top = patch.get_top()
-
-        ex = None
-        modified = False
-
         # top != bottom always since we have a commit for each patch
+
         if head == bottom:
-            # reset the backup information. No need for logging
+            # A fast-forward push. Just reset the backup
+            # information. No need for logging
             patch.set_bottom(bottom, backup = True)
             patch.set_top(top, backup = True)
 
             git.switch(top)
-        else:
-            # new patch needs to be refreshed.
-            # The current patch is empty after merge.
-            patch.set_bottom(head, backup = True)
-            patch.set_top(head, backup = True)
+            append_string(self.__applied_file, name)
 
-            # Try the fast applying first. If this fails, fall back to the
-            # three-way merge
-            if not git.apply_diff(bottom, top):
-                # if git.apply_diff() fails, the patch requires a diff3
-                # merge and can be reported as modified
-                modified = True
+            unapplied.remove(name)
+            write_strings(self.__unapplied_file, unapplied)
+            return False
 
-                # merge can fail but the patch needs to be pushed
-                try:
-                    git.merge(bottom, head, top, recursive = True)
-                except git.GitException, ex:
-                    out.error('The merge failed during "push".',
-                              'Use "refresh" after fixing the conflicts or'
-                              ' revert the operation with "push --undo".')
+        # Need to create a new commit an merge in the old patch
+        ex = None
+        modified = False
+
+        # new patch needs to be refreshed.
+        # The current patch is empty after merge.
+        patch.set_bottom(head, backup = True)
+        patch.set_top(head, backup = True)
+
+        # Try the fast applying first. If this fails, fall back to the
+        # three-way merge
+        if not git.apply_diff(bottom, top):
+            # if git.apply_diff() fails, the patch requires a diff3
+            # merge and can be reported as modified
+            modified = True
+
+            # merge can fail but the patch needs to be pushed
+            try:
+                git.merge(bottom, head, top, recursive = True)
+            except git.GitException, ex:
+                out.error('The merge failed during "push".',
+                          'Use "refresh" after fixing the conflicts or'
+                          ' revert the operation with "push --undo".')
 
         append_string(self.__applied_file, name)
 
         unapplied.remove(name)
         write_strings(self.__unapplied_file, unapplied)
 
-        # head == bottom case doesn't need to refresh the patch
-        if head != bottom:
-            if not ex:
-                # if the merge was OK and no conflicts, just refresh the patch
-                # The GIT cache was already updated by the merge operation
-                if modified:
-                    log = 'push(m)'
-                else:
-                    log = 'push'
-                self.refresh_patch(cache_update = False, log = log)
+        if not ex:
+            # if the merge was OK and no conflicts, just refresh the patch
+            # The GIT cache was already updated by the merge operation
+            if modified:
+                log = 'push(m)'
             else:
-                # we store the correctly merged files only for
-                # tracking the conflict history. Note that the
-                # git.merge() operations should always leave the index
-                # in a valid state (i.e. only stage 0 files)
-                self.refresh_patch(cache_update = False, log = 'push(c)')
-                raise StackException, str(ex)
+                log = 'push'
+            self.refresh_patch(cache_update = False, log = log)
+        else:
+            # we store the correctly merged files only for
+            # tracking the conflict history. Note that the
+            # git.merge() operations should always leave the index
+            # in a valid state (i.e. only stage 0 files)
+            self.refresh_patch(cache_update = False, log = 'push(c)')
+            raise StackException, str(ex)
 
         return modified
 
