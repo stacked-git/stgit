@@ -874,13 +874,6 @@ class Series(PatchSet):
         patch = self.get_patch(name)
         patch.create()
 
-        if not bottom:
-            bottom = head
-        if not top:
-            top = head
-
-        patch.set_bottom(bottom)
-        patch.set_top(top)
         patch.set_description(descr)
         patch.set_authname(author_name)
         patch.set_authemail(author_email)
@@ -899,10 +892,15 @@ class Series(PatchSet):
             set_head = True
 
         if commit:
+            if top:
+                top_commit = git.get_commit(top)
+            else:
+                bottom = head
+                top_commit = git.get_commit(head)
+
             # create a commit for the patch (may be empty if top == bottom);
             # only commit on top of the current branch
             assert(unapplied or bottom == head)
-            top_commit = git.get_commit(top)
             commit_id = git.commit(message = descr, parents = [bottom],
                                    cache_update = False,
                                    tree_id = top_commit.get_tree(),
@@ -913,9 +911,12 @@ class Series(PatchSet):
                                    committer_name = committer_name,
                                    committer_email = committer_email)
             # set the patch top to the new commit
+            patch.set_bottom(bottom)
             patch.set_top(commit_id)
         else:
             assert top != bottom
+            patch.set_bottom(bottom)
+            patch.set_top(top)
 
         self.log_patch(patch, 'new')
 
