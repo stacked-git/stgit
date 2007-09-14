@@ -1032,7 +1032,55 @@ class Series(PatchSet):
 
         return merged
 
-    def push_patch(self, name, empty = False):
+    def push_empty_patch(self, name):
+        """Pushes an empty patch on the stack
+        """
+        unapplied = self.get_unapplied()
+        assert(name in unapplied)
+
+        patch = self.get_patch(name)
+
+        head = git.get_head()
+        bottom = patch.get_bottom()
+        top = patch.get_top()
+
+        ex = None
+        modified = False
+
+        # top != bottom always since we have a commit for each patch
+        # just make an empty patch (top = bottom = HEAD). This
+        # option is useful to allow undoing already merged
+        # patches. The top is updated by refresh_patch since we
+        # need an empty commit
+        patch.set_bottom(head, backup = True)
+        patch.set_top(head, backup = True)
+        modified = True
+
+        append_string(self.__applied_file, name)
+
+        unapplied.remove(name)
+        write_strings(self.__unapplied_file, unapplied)
+
+        # head == bottom case doesn't need to refresh the patch
+        if not ex:
+            # if the merge was OK and no conflicts, just refresh the patch
+            # The GIT cache was already updated by the merge operation
+            if modified:
+                log = 'push(m)'
+            else:
+                log = 'push'
+            self.refresh_patch(cache_update = False, log = log)
+        else:
+            # we store the correctly merged files only for
+            # tracking the conflict history. Note that the
+            # git.merge() operations should always leave the index
+            # in a valid state (i.e. only stage 0 files)
+            self.refresh_patch(cache_update = False, log = 'push(c)')
+            raise StackException, str(ex)
+
+        return modified
+
+    def push_patch(self, name):
         """Pushes a patch on the stack
         """
         unapplied = self.get_unapplied()
@@ -1048,15 +1096,7 @@ class Series(PatchSet):
         modified = False
 
         # top != bottom always since we have a commit for each patch
-        if empty:
-            # just make an empty patch (top = bottom = HEAD). This
-            # option is useful to allow undoing already merged
-            # patches. The top is updated by refresh_patch since we
-            # need an empty commit
-            patch.set_bottom(head, backup = True)
-            patch.set_top(head, backup = True)
-            modified = True
-        elif head == bottom:
+        if head == bottom:
             # reset the backup information. No need for logging
             patch.set_bottom(bottom, backup = True)
             patch.set_top(top, backup = True)
@@ -1089,7 +1129,7 @@ class Series(PatchSet):
         write_strings(self.__unapplied_file, unapplied)
 
         # head == bottom case doesn't need to refresh the patch
-        if empty or head != bottom:
+        if head != bottom:
             if not ex:
                 # if the merge was OK and no conflicts, just refresh the patch
                 # The GIT cache was already updated by the merge operation

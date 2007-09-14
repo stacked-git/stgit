@@ -184,7 +184,7 @@ def push_patches(patches, check_merged = False):
         out.start('Pushing patch "%s"' % p)
 
         if p in merged:
-            crt_series.push_patch(p, empty = True)
+            crt_series.push_empty_patch(p)
             out.done('merged upstream')
         else:
             modified = crt_series.push_patch(p)
