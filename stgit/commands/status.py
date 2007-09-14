@@ -82,6 +82,9 @@ def func(parser, options, args):
         else:
             diff_flags = []
 
+        # No args means all files
+        if not args:
+            args = None
         git.status(args, options.modified, options.new, options.deleted,
                    options.conflict, options.unknown, options.noexclude,
                    diff_flags = diff_flags)

@@ -167,15 +167,20 @@ def exclude_files():
 
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
-    """Returns a list of pairs - (status, filename)
+    """Get the status of all changed files, or of a selected set of
+    files. Returns a list of pairs - (status, filename).
+
+    If 'files' is None, it will check all files, and optionally all
+    unknown files.  If 'files' is a list, it will only check the files
+    in the list.
     """
+    assert files == None or not unknown
+
     if verbose:
         out.start('Checking for changes in the working directory')
 
     refresh_index()
 
-    if not files:
-        files = []
     cache_files = []
 
     # unknown files
@@ -197,11 +202,14 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     conflicts = get_conflicts()
     if not conflicts:
         conflicts = []
-    cache_files += [('C', filename) for filename in conflicts]
+    cache_files += [('C', filename) for filename in conflicts
+                    if files == None or filename in files]
 
     # the rest
-    for line in GRun('git-diff-index', *(diff_flags + [tree_id, '--'] + files)
-                     ).output_lines():
+    args = diff_flags + [tree_id]
+    if files != None:
+        args += ['--'] + files
+    for line in GRun('git-diff-index', *args).output_lines():
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
@@ -209,6 +217,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     if verbose:
         out.done()
 
+    assert files == None or set(f for s,f in cache_files) <= set(files)
     return cache_files
 
 def local_changes(verbose = True):
@@ -538,9 +547,6 @@ def committer():
 def update_cache(files = None, force = False):
     """Update the cache information for the given files
     """
-    if not files:
-        files = []
-
     cache_files = tree_status(files, verbose = False)
 
     # everything is up-to-date
@@ -569,8 +575,6 @@ def commit(message, files = None, parents = None, allowempty = False,
            committer_name = None, committer_email = None):
     """Commit the current tree to repository
     """
-    if not files:
-        files = []
     if not parents:
         parents = []
 
@@ -712,14 +716,13 @@ def status(files = None, modified = False, new = False, deleted = False,
            diff_flags = []):
     """Show the tree status
     """
-    if not files:
-        files = []
+    cache_files = tree_status(files,
+                              unknown = (files == None),
+                              noexclude = noexclude,
+                              diff_flags = diff_flags)
+    filtered = (modified or new or deleted or conflict or unknown)
 
-    cache_files = tree_status(files, unknown = True, noexclude = noexclude,
-                                diff_flags = diff_flags)
-    all = not (modified or new or deleted or conflict or unknown)
-
-    if not all:
+    if filtered:
         filestat = []
         if modified:
             filestat.append('M')
@@ -735,9 +738,8 @@ def status(files = None, modified = False, new = False, deleted = False,
         cache_files = [x for x in cache_files if x[0] in filestat]
 
     for fs in cache_files:
-        if files and not fs[1] in files:
-            continue
-        if all:
+        assert files == None or fs[1] in files
+        if not filtered:
             out.stdout('%s %s' % (fs[0], fs[1]))
         else:
             out.stdout('%s' % fs[1])
