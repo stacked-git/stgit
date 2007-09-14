@@ -711,39 +711,6 @@ def merge(base, head1, head2, recursive = False):
     if errors:
         raise GitException, 'GIT index merging failed (possible conflicts)'
 
-def status(files = None, modified = False, new = False, deleted = False,
-           conflict = False, unknown = False, noexclude = False,
-           diff_flags = []):
-    """Show the tree status
-    """
-    cache_files = tree_status(files,
-                              unknown = (files == None),
-                              noexclude = noexclude,
-                              diff_flags = diff_flags)
-    filtered = (modified or new or deleted or conflict or unknown)
-
-    if filtered:
-        filestat = []
-        if modified:
-            filestat.append('M')
-        if new:
-            filestat.append('A')
-            filestat.append('N')
-        if deleted:
-            filestat.append('D')
-        if conflict:
-            filestat.append('C')
-        if unknown:
-            filestat.append('?')
-        cache_files = [x for x in cache_files if x[0] in filestat]
-
-    for fs in cache_files:
-        assert files == None or fs[1] in files
-        if not filtered:
-            out.stdout('%s %s' % (fs[0], fs[1]))
-        else:
-            out.stdout('%s' % fs[1])
-
 def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
     """Show the diff between rev1 and rev2
     """
