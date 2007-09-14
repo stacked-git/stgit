@@ -755,13 +755,11 @@ class Series(PatchSet):
                       committer_name = None, committer_email = None,
                       backup = False, sign_str = None, log = 'refresh',
                       notes = None):
-        """Generates a new commit for the given patch
+        """Generates a new commit for the topmost patch
         """
-        name = self.get_current()
-        if not name:
+        patch = self.get_current_patch()
+        if not patch:
             raise StackException, 'No patches applied'
-
-        patch = self.get_patch(name)
 
         descr = patch.get_description()
         if not (message or descr):
@@ -775,7 +773,7 @@ class Series(PatchSet):
         if not message and edit:
             descr = edit_file(self, descr.rstrip(), \
                               'Please edit the description for patch "%s" ' \
-                              'above.' % name, show_patch)
+                              'above.' % patch.get_name(), show_patch)
 
         if not author_name:
             author_name = patch.get_authname()
