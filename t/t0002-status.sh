@@ -60,6 +60,14 @@ test_expect_success 'Status with an added file' '
 '
 
 cat > expected.txt <<EOF
+foo/bar
+EOF
+test_expect_success 'Status with an added file and -n option' '
+    stg status -n > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+cat > expected.txt <<EOF
 EOF
 test_expect_success 'Status after refresh' '
     stg new -m "first patch" &&
@@ -85,6 +93,12 @@ test_expect_success 'Status after refresh' '
     diff -u expected.txt output.txt
 '
 
+test_expect_success 'Add another file' '
+    echo lajbans > fie &&
+    stg add fie &&
+    stg refresh
+'
+
 test_expect_success 'Make a conflicting patch' '
     stg pop &&
     stg new -m "third patch" &&
@@ -101,6 +115,28 @@ EOF
 test_expect_success 'Status after conflicting push' '
     ! stg push &&
     stg status > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+cat > expected.txt <<EOF
+C foo/bar
+EOF
+test_expect_success 'Status of file' '
+    stg status foo/bar > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+cat > expected.txt <<EOF
+EOF
+test_expect_success 'Status of dir' '
+    stg status foo > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+cat > expected.txt <<EOF
+EOF
+test_expect_success 'Status of other file' '
+    stg status fie > output.txt &&
     diff -u expected.txt output.txt
 '
 
