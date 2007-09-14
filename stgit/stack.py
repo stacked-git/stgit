@@ -754,7 +754,7 @@ class Series(PatchSet):
                       author_date = None,
                       committer_name = None, committer_email = None,
                       backup = False, sign_str = None, log = 'refresh',
-                      notes = None):
+                      notes = None, bottom = None):
         """Generates a new commit for the topmost patch
         """
         patch = self.get_current_patch()
@@ -788,7 +788,8 @@ class Series(PatchSet):
 
         descr = add_sign_line(descr, sign_str, committer_name, committer_email)
 
-        bottom = patch.get_bottom()
+        if not bottom:
+            bottom = patch.get_bottom()
 
         commit_id = git.commit(files = files,
                                message = descr, parents = [bottom],
@@ -1036,20 +1037,15 @@ class Series(PatchSet):
         unapplied = self.get_unapplied()
         assert(name in unapplied)
 
-        patch = self.get_patch(name)
+        # patch = self.get_patch(name)
         head = git.get_head()
-
-        # The top is updated by refresh_patch since we need an empty
-        # commit
-        patch.set_bottom(head, backup = True)
-        patch.set_top(head, backup = True)
 
         append_string(self.__applied_file, name)
 
         unapplied.remove(name)
         write_strings(self.__unapplied_file, unapplied)
 
-        self.refresh_patch(cache_update = False, log = 'push(m)')
+        self.refresh_patch(bottom = head, cache_update = False, log = 'push(m)')
 
     def push_patch(self, name):
         """Pushes a patch on the stack
@@ -1081,11 +1077,6 @@ class Series(PatchSet):
         ex = None
         modified = False
 
-        # new patch needs to be refreshed.
-        # The current patch is empty after merge.
-        patch.set_bottom(head, backup = True)
-        patch.set_top(head, backup = True)
-
         # Try the fast applying first. If this fails, fall back to the
         # three-way merge
         if not git.apply_diff(bottom, top):
@@ -1113,13 +1104,14 @@ class Series(PatchSet):
                 log = 'push(m)'
             else:
                 log = 'push'
-            self.refresh_patch(cache_update = False, log = log)
+            self.refresh_patch(bottom = head, cache_update = False, log = log)
         else:
             # we store the correctly merged files only for
             # tracking the conflict history. Note that the
             # git.merge() operations should always leave the index
             # in a valid state (i.e. only stage 0 files)
-            self.refresh_patch(cache_update = False, log = 'push(c)')
+            self.refresh_patch(bottom = head, cache_update = False,
+                               log = 'push(c)')
             raise StackException, str(ex)
 
         return modified
