@@ -841,8 +841,15 @@ class Series(PatchSet):
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None,
                   before_existing = False):
-        """Creates a new patch
+        """Creates a new patch, either pointing to an existing commit object,
+        or by creating a new commit object.
         """
+
+        assert commit or (top and bottom)
+        assert not before_existing or (top and bottom)
+        assert not (commit and before_existing)
+        assert (top and bottom) or (not top and not bottom)
+        assert not top or (bottom == git.get_commit(top).get_parent())
 
         if name != None:
             self.__patch_name_valid(name)
@@ -883,9 +890,6 @@ class Series(PatchSet):
 
         if before_existing:
             insert_string(self.__applied_file, patch.get_name())
-            # no need to commit anything as the object is already
-            # present (mainly used by 'uncommit')
-            commit = False
         elif unapplied:
             patches = [patch.get_name()] + self.get_unapplied()
             write_strings(self.__unapplied_file, patches)
@@ -910,6 +914,8 @@ class Series(PatchSet):
                                    committer_email = committer_email)
             # set the patch top to the new commit
             patch.set_top(commit_id)
+        else:
+            assert top != bottom
 
         self.log_patch(patch, 'new')
 

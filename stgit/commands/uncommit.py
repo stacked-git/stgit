@@ -129,6 +129,7 @@ def func(parser, options, args):
                      name_email_date(commit.get_author())
         crt_series.new_patch(patchname,
                              can_edit = False, before_existing = True,
+                             commit = False,
                              top = commit_id, bottom = parent,
                              message = commit.get_log(),
                              author_name = author_name,
