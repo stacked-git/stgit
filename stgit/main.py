@@ -131,6 +131,7 @@ stackcommands = (
     )
 patchcommands = (
     'delete',
+    'edit',
     'export',
     'files',
     'fold',
