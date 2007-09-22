@@ -96,17 +96,10 @@ def __delete_branch(doomed_name, force = False):
     out.start('Deleting branch "%s"' % doomed_name)
 
     if __is_current_branch(doomed_name):
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal()
-
-        if doomed_name != 'master':
-            git.switch_branch('master')
+        raise CmdException('Cannot delete the current branch')
 
     doomed.delete(force)
-
-    if doomed_name != 'master':
-        git.delete_branch(doomed_name)
+    git.delete_branch(doomed_name)
 
     out.done()
 
