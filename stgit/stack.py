@@ -744,13 +744,8 @@ class Series(PatchSet):
             except GitException:
                 out.warn('Could not delete branch "%s"' % self.get_name())
 
-        # Cleanup parent informations
-        # FIXME: should one day make use of git-config --section-remove,
-        # scheduled for 1.5.1
-        config.unset('branch.%s.remote' % self.get_name())
-        config.unset('branch.%s.merge' % self.get_name())
-        config.unset('branch.%s.stgit.parentbranch' % self.get_name())
-        config.unset(self.format_version_key())
+        config.remove_section('branch.%s' % self.get_name())
+        config.remove_section('branch.%s.stgit' % self.get_name())
 
     def refresh_patch(self, files = None, message = None, edit = False,
                       show_patch = False,

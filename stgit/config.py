@@ -76,6 +76,13 @@ class GitConfig:
             ).returns([0, 1]).run()
         self.__cache.clear()
 
+    def remove_section(self, name):
+        """Remove a section in the config file. Silently do nothing if
+        the section doesn't exist."""
+        Run('git-repo-config', '--remove-section', name
+            ).returns([0, 1]).discard_stderr().discard_output()
+        self.__cache.clear()
+
     def set(self, name, value):
         Run('git-repo-config', name, value).run()
         self.__cache[name] = value
