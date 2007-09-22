@@ -99,7 +99,6 @@ def __delete_branch(doomed_name, force = False):
         raise CmdException('Cannot delete the current branch')
 
     doomed.delete(force)
-    git.delete_branch(doomed_name)
 
     out.done()
 
