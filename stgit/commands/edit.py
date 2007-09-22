@@ -93,6 +93,8 @@ def __update_patch(pname, fname, options):
     message, author_name, author_email, author_date, diff = parse_patch(f)
     f.close()
 
+    out.start('Updating patch "%s"' % pname)
+
     if options.diff:
         git.switch(bottom)
         try:
@@ -102,12 +104,12 @@ def __update_patch(pname, fname, options):
             git.switch(top)
             raise
 
-    out.start('Updating patch "%s"' % pname)
     crt_series.refresh_patch(message = message,
                              author_name = author_name,
                              author_email = author_email,
                              author_date = author_date,
                              backup = True, log = 'edit')
+
     if crt_series.empty_patch(pname):
         out.done('empty patch')
     else:
