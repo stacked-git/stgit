@@ -91,12 +91,15 @@ def status(files = None, modified = False, new = False, deleted = False,
             filestat.append('?')
         cache_files = [x for x in cache_files if x[0] in filestat]
 
-    for fs in cache_files:
-        assert files == None or fs[1] in files
-        if not filtered:
-            out.stdout('%s %s' % (fs[0], fs[1]))
+    output = []
+    for st, fn in cache_files:
+        assert files == None or fn in files
+        if filtered:
+            output.append(fn)
         else:
-            out.stdout('%s' % fs[1])
+            output.append('%s %s' % (st, fn))
+    for o in sorted(output):
+        out.stdout(o)
 
 def func(parser, options, args):
     """Show the tree status
