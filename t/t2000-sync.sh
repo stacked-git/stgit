@@ -106,10 +106,10 @@ test_expect_success \
     test $(cat bar2.txt) = "bar2"
     '
 
-test_expect_failure \
+test_expect_success \
     'Synchronise the first two patches with the master branch (to fail)' \
     '
-    stg sync -B master -a
+    ! stg sync -B master -a
     '
 
 test_expect_success \
@@ -124,10 +124,10 @@ test_expect_success \
     [ "$(echo $(stg unapplied))" = "" ]
     '
 
-test_expect_failure \
+test_expect_success \
     'Synchronise the third patch with the exported series (to fail)' \
     '
-    stg sync -s patches-master/series p3
+    ! stg sync -s patches-master/series p3
     '
 
 test_expect_success \

@@ -18,9 +18,9 @@ test_expect_success \
     mkdir -p .git/patches && touch .git/patches/foo
 '
 
-test_expect_failure \
+test_expect_success \
     'Try to create an stgit branch with a spurious patches/ entry' '
-    stg branch -c foo
+    ! stg branch -c foo
 '
 
 test_expect_success \
@@ -35,9 +35,9 @@ test_expect_success \
     cp .git/refs/heads/master .git/refs/heads/foo
 '
 
-test_expect_failure \
+test_expect_success \
     'Try to create an stgit branch with an existing git branch by that name' '
-    stg branch -c foo
+    ! stg branch -c foo
 '
 
 test_expect_success \

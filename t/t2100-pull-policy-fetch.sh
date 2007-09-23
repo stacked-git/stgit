@@ -65,8 +65,8 @@ test_expect_success \
     (cd clone && stg commit && stg new c2 -m c2 &&
      echo a >> file && stg refresh)
     '
-test_expect_failure \
+test_expect_success \
     'Try to  and commit a patch in clone' \
-    '(cd clone && stg pull)'
+    '(cd clone && ! stg pull)'
 
 test_done

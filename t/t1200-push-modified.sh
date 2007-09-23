@@ -47,9 +47,9 @@ test_expect_success \
      )
 "
 
-test_expect_failure \
+test_expect_success \
     'Attempt to push the first of those patches without --merged' \
-    "(cd bar && stg push
+    "(cd bar && ! stg push
      )
 "
 

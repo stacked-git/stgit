@@ -18,10 +18,10 @@ test_expect_success \
     git commit -a -m bar
     '
 
-test_expect_failure \
+test_expect_success \
     'Try to create a patch in a GIT branch' \
     '
-    stg new p0 -m "p0"
+    ! stg new p0 -m "p0"
     '
 
 test_expect_success \

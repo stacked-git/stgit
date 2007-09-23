@@ -40,10 +40,10 @@ test_expect_success \
 	stg pop --all
 	'
 
-test_expect_failure \
+test_expect_success \
 	'Push the second patch with conflict' \
 	'
-	stg push bar
+	! stg push bar
 	'
 
 test_expect_success \

@@ -38,10 +38,11 @@ test_expect_success 'Try new form of id with slashy branch' \
    stg id foo@x/y/z &&
    stg id foo@x/y/z//top'
 
-test_expect_failure 'Try old id with slashy branch' \
-  'stg id foo/ ||
-   stg id foo/top ||
-   stg id foo@x/y/z/top'
+test_expect_success 'Try old id with slashy branch' '
+   ! stg id foo/ &&
+   ! stg id foo/top &&
+   ! stg id foo@x/y/z/top
+   '
 
 test_expect_success 'Create patch in slashy branch' \
   'echo "bar" >> foo.txt &&

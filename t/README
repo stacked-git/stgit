@@ -162,11 +162,10 @@ library for your script to use.
    This is the opposite of test_expect_success.  If <script>
    yields success, test is considered a failure.
 
-   Example:
-
-	test_expect_failure \
-	    'git-update-index without --add should fail adding.' \
-	    'git-update-index should-be-empty'
+   This should _not_ be used for tests that succeed when their
+   commands fail -- use test_expect_success and shell negation (!) for
+   that. test_expect_failure is for cases when a test is known to be
+   broken.
 
  - test_debug <script>
 

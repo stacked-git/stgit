@@ -17,9 +17,9 @@ test_expect_success \
      stg new p1 -m "p1"
 '
 
-test_expect_failure \
+test_expect_success \
     'Rename the current stgit branch' \
-    'stg branch -r foo bar
+    '! stg branch -r foo bar
 '
 
 test_expect_success \

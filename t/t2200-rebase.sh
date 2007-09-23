@@ -31,10 +31,10 @@ test_expect_success \
 	test `stg applied | wc -l` = 1
 	'
 
-test_expect_failure \
+test_expect_success \
 	'Attempt rebase to non-existing commit' \
 	'
-	stg rebase not-a-ref
+	! stg rebase not-a-ref
 	'
 
 test_expect_success \

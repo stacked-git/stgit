@@ -46,18 +46,18 @@ test_expect_success \
     stg branch stack && stg commit && stg new c2 -m c2 &&
      echo a >> file && stg refresh
     '
-test_expect_failure \
+test_expect_success \
     'Try to pull/rebase now that stack base has moved' \
-    'stg pull'
+    '! stg pull'
 
 test_expect_success \
     'Force the pull/rebase, but do not push yet' \
     'stg pull --force --nopush'
-test_expect_failure \
+test_expect_success \
     '...check we lost the committed patch' \
-    'test -e file'
-test_expect_failure \
+    '! test -e file'
+test_expect_success \
     '...and check we get a conflict while pushing' \
-    'stg push'
+    '! stg push'
 
 test_done
