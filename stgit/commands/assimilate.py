@@ -23,20 +23,79 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
+from stgit.run import *
 from stgit import stack, git
 
-help = 'StGIT-ify any GIT commits made on top of your StGIT stack'
+help = 'StGit-ify any git commits made on top of your StGit stack'
 usage = """%prog [options]
 
-If you have made GIT commits on top of your stack of StGIT patches,
-many StGIT commands will refuse to work. This command converts any
-such commits to StGIT patches, preserving their contents.
+"assimilate" will repair three kinds of inconsistencies in your StGit
+stack, all of them caused by using plain git commands on the branch:
 
-Only GIT commits with exactly one parent can be assimilated; in other
-words, if you have committed a merge on top of your stack, this
-command cannot help you."""
+  1. If you have made regular git commits on top of your stack of
+     StGit patches, "assimilate" converts them to StGit patches,
+     preserving their contents.
+
+  2. Merge commits cannot become patches; if you have committed a
+     merge on top of your stack, "assimilate" will simply mark all
+     patches below the merge unapplied, since they are no longer
+     reachable. If this is not what you want, use "git reset" to get
+     rid of the merge and run "assimilate" again.
+
+  3. The applied patches are supposed to be precisely those that are
+     reachable from the branch head. If you have used e.g. "git reset"
+     to move the head, some applied patches may no longer be
+     reachable, and some unapplied patches may have become reachable.
+     "assimilate" will correct the appliedness of such patches.
+
+Note that these are "inconsistencies", not "errors"; furthermore,
+"assimilate" will repair them reliably. As long as you are satisfied
+with the way "assimilate" handles them, you have no reason to avoid
+causing them in the first place if that is convenient for you."""
 
 options = []
+
+class Commit(object):
+    def __init__(self, id):
+        self.id = id
+        self.parents = set()
+        self.children = set()
+        self.patch = None
+        self.__commit = None
+    def __get_commit(self):
+        if not self.__commit:
+            self.__commit = git.get_commit(self.id)
+        return self.__commit
+    commit = property(__get_commit)
+    def __str__(self):
+        if self.patch:
+            return '%s (%s)' % (self.id, self.patch)
+        else:
+            return self.id
+    def __repr__(self):
+        return '<%s>' % str(self)
+
+def read_commit_dag(branch):
+    out.start('Reading commit DAG')
+    commits = {}
+    patches = set()
+    for line in Run('git-rev-list', '--parents', '--all').output_lines():
+        cs = line.split()
+        for id in cs:
+            if not id in commits:
+                commits[id] = Commit(id)
+        for id in cs[1:]:
+            commits[cs[0]].parents.add(commits[id])
+            commits[id].children.add(commits[cs[0]])
+    for line in Run('git-show-ref').output_lines():
+        id, ref = line.split()
+        m = re.match(r'^refs/patches/%s/(.+)$' % branch, ref)
+        if m:
+            c = commits[id]
+            c.patch = m.group(1)
+            patches.add(c)
+    out.done()
+    return commits, patches
 
 def func(parser, options, args):
     """Assimilate a number of patches.
@@ -45,49 +104,86 @@ def func(parser, options, args):
     def nothing_to_do():
         out.info('No commits to assimilate')
 
-    top_patch = crt_series.get_current_patch()
-    if not top_patch:
-        return nothing_to_do()
+    orig_applied = crt_series.get_applied()
+    orig_unapplied = crt_series.get_unapplied()
 
-    victims = []
-    victim = git.get_commit(git.get_head())
-    while victim.get_id_hash() != top_patch.get_top():
-        victims.append(victim)
-        parents = victim.get_parents()
-        if not parents:
-            raise CmdException, 'Commit %s has no parents, aborting' % victim
-        elif len(parents) > 1:
-            raise CmdException, 'Commit %s is a merge, aborting' % victim
-        victim = git.get_commit(parents[0])
-
-    if not victims:
+    # If head == top, we're done.
+    head = git.get_commit(git.get_head()).get_id_hash()
+    top = crt_series.get_current_patch()
+    if top and head == top.get_top():
         return nothing_to_do()
 
     if crt_series.get_protected():
         raise CmdException(
-            'This branch is protected. Modification is not permitted')
+            'This branch is protected. Modification is not permitted.')
 
-    patch2name = {}
-    name2patch = {}
+    # Find commits to assimilate, and applied patches.
+    commits, patches = read_commit_dag(crt_series.get_name())
+    c = commits[head]
+    patchify = []
+    applied = []
+    while len(c.parents) == 1:
+        parent, = c.parents
+        if c.patch:
+            applied.append(c)
+        elif not applied:
+            patchify.append(c)
+        c = parent
+    applied.reverse()
+    patchify.reverse()
 
+    # Find patches hidden behind a merge.
+    merge = c
+    todo = set([c])
+    seen = set()
+    hidden = set()
+    while todo:
+        c = todo.pop()
+        seen.add(c)
+        todo |= c.parents - seen
+        if c.patch:
+            hidden.add(c)
+    if hidden:
+        out.warn(('%d patch%s are hidden below the merge commit'
+                  % (len(hidden), ['es', ''][len(hidden) == 1])),
+                 '%s,' % merge.id, 'and will be considered unapplied.')
+
+    # Assimilate any linear sequence of commits on top of a patch.
+    names = set(p.patch for p in patches)
     def name_taken(name):
-        return name in name2patch or crt_series.patch_exists(name)
+        return name in names
+    if applied and patchify:
+        out.start('Creating %d new patch%s'
+                  % (len(patchify), ['es', ''][len(patchify) == 1]))
+        for p in patchify:
+            name = make_patch_name(p.commit.get_log(), name_taken)
+            out.info('Creating patch %s from commit %s' % (name, p.id))
+            aname, amail, adate = name_email_date(p.commit.get_author())
+            cname, cmail, cdate = name_email_date(p.commit.get_committer())
+            parent, = p.parents
+            crt_series.new_patch(
+                name, can_edit = False, commit = False,
+                top = p.id, bottom = parent.id, message = p.commit.get_log(),
+                author_name = aname, author_email = amail, author_date = adate,
+                committer_name = cname, committer_email = cmail)
+            p.patch = name
+            applied.append(p)
+            names.add(name)
+        out.done()
 
-    for victim in victims:
-        patchname = make_patch_name(victim.get_log(), name_taken)
-        patch2name[victim] = patchname
-        name2patch[patchname] = victim
-
-    victims.reverse()
-    for victim in victims:
-        out.info('Creating patch "%s" from commit %s'
-                 % (patch2name[victim], victim))
-        aname, amail, adate = name_email_date(victim.get_author())
-        cname, cmail, cdate = name_email_date(victim.get_committer())
-        crt_series.new_patch(
-            patch2name[victim],
-            can_edit = False, before_existing = False, commit = False,
-            top = victim.get_id_hash(), bottom = victim.get_parent(),
-            message = victim.get_log(),
-            author_name = aname, author_email = amail, author_date = adate,
-            committer_name = cname, committer_email = cmail)
+    # Write the applied/unapplied files.
+    out.start('Checking patch appliedness')
+    applied_name_set = set(p.patch for p in applied)
+    unapplied_names = []
+    for name in orig_applied:
+        if not name in applied_name_set:
+            out.info('%s is now unapplied' % name)
+            unapplied_names.append(name)
+    for name in orig_unapplied:
+        if name in applied_name_set:
+            out.info('%s is now applied' % name)
+        else:
+            unapplied_names.append(name)
+    crt_series.set_applied(p.patch for p in applied)
+    crt_series.set_unapplied(unapplied_names)
+    out.done()

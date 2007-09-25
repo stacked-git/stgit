@@ -509,10 +509,16 @@ class Series(PatchSet):
             raise StackException, 'Branch "%s" not initialised' % self.get_name()
         return read_strings(self.__applied_file)
 
+    def set_applied(self, applied):
+        write_strings(self.__applied_file, applied)
+
     def get_unapplied(self):
         if not os.path.isfile(self.__unapplied_file):
             raise StackException, 'Branch "%s" not initialised' % self.get_name()
         return read_strings(self.__unapplied_file)
+
+    def set_unapplied(self, unapplied):
+        write_strings(self.__unapplied_file, unapplied)
 
     def get_hidden(self):
         if not os.path.isfile(self.__hidden_file):

@@ -5,7 +5,7 @@ test_description='Test the assimilate command.'
 
 test_expect_success \
     'Assimilate in a non-initialized repository' \
-    'stg assimilate'
+    '! stg assimilate'
 
 test_expect_success \
     'Initialize the StGIT repository' \
@@ -75,12 +75,10 @@ test_expect_success \
     git pull . br
     '
 
-test_expect_success \
-    'Try (and fail) to assimilate the merge commit' \
-    '
+test_expect_success 'Assimilate in the presence of a merge commit' '
     [ $(stg applied | wc -l) -eq 5 ] &&
-    ! stg assimilate &&
-    [ $(stg applied | wc -l) -eq 5 ]
-    '
+    stg assimilate &&
+    [ $(stg applied | wc -l) -eq 0 ]
+'
 
 test_done
