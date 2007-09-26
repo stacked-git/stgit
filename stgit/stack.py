@@ -23,6 +23,7 @@ from email.Utils import formatdate
 
 from stgit.utils import *
 from stgit.out import *
+from stgit.run import *
 from stgit import git, basedir, templates
 from stgit.config import config
 from shutil import copyfile
