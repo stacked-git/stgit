@@ -46,6 +46,11 @@
 	#pullcmd = git-pull
 	#fetchcmd = git-fetch
 
+	# Rebase command. Note that this command is internally implemented in
+	# a different way. Only define this option if a different rebase
+	# is needed (i.e. 'git svn rebase')
+	#rebasecmd = git-reset
+
 	# "stg pull" policy.  This is the repository default, which can be
 	# overriden on a per-branch basis using branch.*.stgit.pull-policy
 	# By default:
