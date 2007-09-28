@@ -25,7 +25,6 @@ from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
-from stgit.run import *
 
 crt_series = None
 
@@ -33,11 +32,6 @@ crt_series = None
 # Command exception class
 class CmdException(Exception):
     pass
-
-class CmdRunException(CmdException):
-    pass
-class CmdRun(Run):
-    exc = CmdRunException
 
 # Utility functions
 class RevParseException(Exception):
@@ -340,23 +334,20 @@ def prepare_rebase(force=None):
     return applied
 
 def rebase(target):
-    if target == git.get_head():
+    try:
+        tree_id = git_id(target)
+    except:
+        # it might be that we use a custom rebase command with its own
+        # target type
+        tree_id = target
+    if tree_id == git.get_head():
         out.info('Already at "%s", no need for rebasing.' % target)
         return
-    command = config.get('branch.%s.stgit.rebasecmd' % git.get_head_file()) \
-                or config.get('stgit.rebasecmd')
     if target:
-        args = [target]
         out.start('Rebasing to "%s"' % target)
-    elif command:
-        args = []
+    else:
         out.start('Rebasing to the default target')
-    else:
-        raise CmdException, 'Default rebasing requires a target'
-    if command:
-        CmdRun(*(command.split() + args)).run()
-    else:
-        git.reset(tree_id = git_id(target))
+    git.rebase(tree_id = tree_id)
     out.done()
 
 def post_rebase(applied, nopush, merged):

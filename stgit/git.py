@@ -846,6 +846,27 @@ def pull(repository = 'origin', refspec = None):
               config.get('stgit.pullcmd')
     GRun(*(command.split() + args)).run()
 
+def rebase(tree_id = None):
+    """Rebase the current tree to the give tree_id. The tree_id
+    argument may be something other than a GIT id if an external
+    command is invoked.
+    """
+    command = config.get('branch.%s.stgit.rebasecmd' % get_head_file()) \
+                or config.get('stgit.rebasecmd')
+    if tree_id:
+        args = [tree_id]
+    elif command:
+        args = []
+    else:
+        raise GitException, 'Default rebasing requires a commit id'
+    if command:
+        # clear the HEAD cache as the custom rebase command will update it
+        __clear_head_cache()
+        GRun(*(command.split() + args)).run()
+    else:
+        # default rebasing
+        reset(tree_id = tree_id)
+
 def repack():
     """Repack all objects into a single pack
     """
