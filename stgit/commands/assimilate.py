@@ -90,7 +90,7 @@ def read_commit_dag(branch):
     for line in Run('git-show-ref').output_lines():
         id, ref = line.split()
         m = re.match(r'^refs/patches/%s/(.+)$' % branch, ref)
-        if m:
+        if m and not m.group(1).endswith('.log'):
             c = commits[id]
             c.patch = m.group(1)
             patches.add(c)
@@ -173,17 +173,25 @@ def func(parser, options, args):
 
     # Write the applied/unapplied files.
     out.start('Checking patch appliedness')
+    unapplied = patches - set(applied)
     applied_name_set = set(p.patch for p in applied)
-    unapplied_names = []
-    for name in orig_applied:
-        if not name in applied_name_set:
-            out.info('%s is now unapplied' % name)
-            unapplied_names.append(name)
-    for name in orig_unapplied:
-        if name in applied_name_set:
-            out.info('%s is now applied' % name)
-        else:
-            unapplied_names.append(name)
+    unapplied_name_set = set(p.patch for p in unapplied)
+    patches_name_set = set(p.patch for p in patches)
+    orig_patches = orig_applied + orig_unapplied
+    orig_applied_name_set = set(orig_applied)
+    orig_unapplied_name_set = set(orig_unapplied)
+    orig_patches_name_set = set(orig_patches)
+    for name in orig_patches_name_set - patches_name_set:
+        out.info('%s is gone' % name)
+    for name in applied_name_set - orig_applied_name_set:
+        out.info('%s is now applied' % name)
+    for name in unapplied_name_set - orig_unapplied_name_set:
+        out.info('%s is now unapplied' % name)
+    orig_order = dict(zip(orig_patches, xrange(len(orig_patches))))
+    def patchname_cmp(p1, p2):
+        i1 = orig_order.get(p1, len(orig_order))
+        i2 = orig_order.get(p2, len(orig_order))
+        return cmp((i1, p1), (i2, p2))
     crt_series.set_applied(p.patch for p in applied)
-    crt_series.set_unapplied(unapplied_names)
+    crt_series.set_unapplied(sorted(unapplied_name_set, cmp = patchname_cmp))
     out.done()
