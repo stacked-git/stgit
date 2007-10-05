@@ -90,7 +90,14 @@ def func(parser, options, args):
     elif policy == 'fetch-rebase':
         out.info('Fetching from "%s"' % repository)
         git.fetch(repository)
-        rebase(git.fetch_head())
+        try:
+            target = git.fetch_head()
+        except git.GitException:
+            out.error('Could not find the remote head to rebase onto, pushing any patches back...')
+            post_rebase(applied, False, False)
+            raise CmdException, 'Could not find the remote head to rebase onto - fix branch.%s.merge in .git/config' % crt_series.get_name()
+
+        rebase(target)
     elif policy == 'rebase':
         rebase(crt_series.get_parent_branch())
 

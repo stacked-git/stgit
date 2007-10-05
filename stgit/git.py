@@ -1003,10 +1003,13 @@ def fetch_head():
         m = re.match('^([^\t]*)\t\t', line)
         if m:
             if fetch_head:
-                raise GitException, "StGit does not support multiple FETCH_HEAD"
+                raise GitException, 'StGit does not support multiple FETCH_HEAD'
             else:
                 fetch_head=m.group(1)
     stream.close()
+
+    if not fetch_head:
+        raise GitException, 'No for-merge remote head found in FETCH_HEAD'
 
     # here we are sure to have a single fetch_head
     return fetch_head
