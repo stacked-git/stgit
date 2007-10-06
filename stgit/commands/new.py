@@ -54,7 +54,8 @@ options = [make_option('-m', '--message',
            make_option('--commname',
                        help = 'use COMMNAME as the committer name'),
            make_option('--commemail',
-                       help = 'use COMMEMAIL as the committer e-mail')]
+                       help = 'use COMMEMAIL as the committer e-mail')
+           ] + make_sign_options()
 
 
 def func(parser, options, args):
@@ -79,4 +80,5 @@ def func(parser, options, args):
                          author_email = options.authemail,
                          author_date = options.authdate,
                          committer_name = options.commname,
-                         committer_email = options.commemail)
+                         committer_email = options.commemail,
+                         sign_str = options.sign_str)

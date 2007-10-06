@@ -847,7 +847,7 @@ class Series(PatchSet):
                   top = None, bottom = None, commit = True,
                   author_name = None, author_email = None, author_date = None,
                   committer_name = None, committer_email = None,
-                  before_existing = False):
+                  before_existing = False, sign_str = None):
         """Creates a new patch, either pointing to an existing commit object,
         or by creating a new commit object.
         """
@@ -865,13 +865,17 @@ class Series(PatchSet):
 
         # TODO: move this out of the stgit.stack module, it is really
         # for higher level commands to handle the user interaction
+        def sign(msg):
+            return add_sign_line(msg, sign_str,
+                                 committer_name or git.committer().name,
+                                 committer_email or git.committer().email)
         if not message and can_edit:
             descr = edit_file(
-                self, None,
+                self, sign(''),
                 'Please enter the description for the patch above.',
                 show_patch)
         else:
-            descr = message
+            descr = sign(message)
 
         head = git.get_head()
 
