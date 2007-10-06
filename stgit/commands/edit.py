@@ -30,19 +30,25 @@ from stgit import stack, git
 help = 'edit a patch description or diff'
 usage = """%prog [options] [<patch>]
 
-Edit the given patch (defaulting to the current one) description,
-author information or its diff (if the '--diff' option is
-passed). Without any other option, the command invokes the editor with
-the patch description and diff in the form below:
+Edit the description and author information of the given patch (or the
+current patch if no patch name was given). With --diff, also edit the
+diff.
 
-  Subject line
+The editor is invoked with the following contents:
 
-  From: author information
+  Patch short description
+
+  From: A U Thor <author@example.com>
   Date: creation date
 
-  Patch description
+  Patch long description
 
-  Signed-off-by: author
+If --diff was specified, the diff appears at the bottom, after a
+separator:
+
+  ---
+
+  Diff text
 
 Command-line options can be used to modify specific information
 without invoking the editor.
@@ -54,7 +60,7 @@ these files using the '--file' and '--diff' options.
 """
 
 options = [make_option('-d', '--diff',
-                       help = 'allow the editing of the patch diff',
+                       help = 'edit the patch diff',
                        action = 'store_true'),
            make_option('-f', '--file',
                        help = 'use FILE instead of invoking the editor'),
