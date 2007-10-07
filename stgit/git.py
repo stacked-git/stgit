@@ -301,7 +301,8 @@ def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
     """
     try:
-        return GRun('git-rev-parse', '--verify', git_id).output_one_line()
+        return GRun('git-rev-parse', '--verify', git_id
+                    ).discard_stderr().output_one_line()
     except GitRunException:
         raise GitException, 'Unknown revision: %s' % git_id
 
