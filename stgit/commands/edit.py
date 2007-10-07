@@ -36,12 +36,10 @@ diff.
 
 The editor is invoked with the following contents:
 
-  Patch short description
-
   From: A U Thor <author@example.com>
   Date: creation date
 
-  Patch long description
+  Patch description
 
 If --diff was specified, the diff appears at the bottom, after a
 separator:
@@ -135,22 +133,15 @@ def __edit_update_patch(pname, options):
 
     # generate the file to be edited
     descr = patch.get_description().strip()
-    descr_lines = descr.split('\n')
     authdate = patch.get_authdate()
 
-    short_descr = descr_lines[0].rstrip()
-    long_descr = reduce(lambda x, y: x + '\n' + y,
-                        descr_lines[1:], '').strip()
-
-    tmpl = '%(shortdescr)s\n\n' \
-           'From: %(authname)s <%(authemail)s>\n'
+    tmpl = 'From: %(authname)s <%(authemail)s>\n'
     if authdate:
         tmpl += 'Date: %(authdate)s\n'
-    tmpl += '\n%(longdescr)s\n'
+    tmpl += '\n%(descr)s\n'
 
     tmpl_dict = {
-        'shortdescr': short_descr,
-        'longdescr': long_descr,
+        'descr': descr,
         'authname': patch.get_authname(),
         'authemail': patch.get_authemail(),
         'authdate': patch.get_authdate()
