@@ -261,9 +261,7 @@ def main():
     from stgit.stack import Series
 
     try:
-        debug_level = int(os.environ['STGIT_DEBUG_LEVEL'])
-    except KeyError:
-        debug_level = 0
+        debug_level = int(os.environ.get('STGIT_DEBUG_LEVEL', 0))
     except ValueError:
         out.error('Invalid STGIT_DEBUG_LEVEL environment variable')
         sys.exit(1)
