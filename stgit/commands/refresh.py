@@ -37,7 +37,7 @@ options. The '--force' option is useful when a commit object was
 created with a different tool but the changes need to be included in
 the current patch."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-f', '--force',
                        help = 'force the refresh even if HEAD and '\
                        'top differ',

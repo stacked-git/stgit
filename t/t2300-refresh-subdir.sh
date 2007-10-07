@@ -15,7 +15,7 @@ test_expect_success 'Refresh from a subdirectory' '
     [ "$(stg status)" = "" ]
 '
 
-test_expect_failure 'Refresh again' '
+test_expect_success 'Refresh again' '
     echo foo2 >> foo.txt &&
     echo bar2 >> bar/bar.txt &&
     cd bar &&
