@@ -31,6 +31,7 @@ Add the files or directories passed as arguments to the
 repository. When a directory name is given, all the files and
 subdirectories are recursively added."""
 
+directory = DirectoryHasRepository()
 options = []
 
 

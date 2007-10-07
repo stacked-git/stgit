@@ -32,6 +32,7 @@ remove them from the series while advancing the base.
 Use this command only if you want to permanently store the applied
 patches and no longer manage them with StGIT."""
 
+directory = DirectoryHasRepository()
 options = []
 
 

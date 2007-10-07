@@ -24,6 +24,7 @@ from optparse import OptionParser, make_option
 from stgit.exception import *
 from stgit.utils import *
 from stgit.out import *
+from stgit.run import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 
@@ -480,3 +481,70 @@ def parse_patch(fobj):
     # we don't yet have an agreed place for the creation date.
     # Just return None
     return (descr, authname, authemail, authdate, diff)
+
+def readonly_constant_property(f):
+    """Decorator that converts a function that computes a value to an
+    attribute that returns the value. The value is computed only once,
+    the first time it is accessed."""
+    def new_f(self):
+        n = '__' + f.__name__
+        if not hasattr(self, n):
+            setattr(self, n, f(self))
+        return getattr(self, n)
+    return property(new_f)
+
+class DirectoryException(StgException):
+    pass
+
+class _Directory(object):
+    @readonly_constant_property
+    def git_dir(self):
+        try:
+            return Run('git-rev-parse', '--git-dir'
+                       ).discard_stderr().output_one_line()
+        except RunException:
+            raise DirectoryException('No git repository found')
+    @readonly_constant_property
+    def __topdir_path(self):
+        try:
+            lines = Run('git-rev-parse', '--show-cdup'
+                        ).discard_stderr().output_lines()
+            if len(lines) == 0:
+                return '.'
+            elif len(lines) == 1:
+                return lines[0]
+            else:
+                raise RunException('Too much output')
+        except RunException:
+            raise DirectoryException('No git repository found')
+    @readonly_constant_property
+    def is_inside_git_dir(self):
+        return { 'true': True, 'false': False
+                 }[Run('git-rev-parse', '--is-inside-git-dir'
+                       ).output_one_line()]
+    @readonly_constant_property
+    def is_inside_worktree(self):
+        return { 'true': True, 'false': False
+                 }[Run('git-rev-parse', '--is-inside-work-tree'
+                       ).output_one_line()]
+    def cd_to_topdir(self):
+        os.chdir(self.__topdir_path)
+
+class DirectoryAnywhere(_Directory):
+    def setup(self):
+        pass
+
+class DirectoryHasRepository(_Directory):
+    def setup(self):
+        self.git_dir # might throw an exception
+
+class DirectoryInWorktree(DirectoryHasRepository):
+    def setup(self):
+        DirectoryHasRepository.setup(self)
+        if not self.is_inside_worktree:
+            raise DirectoryException('Not inside a git worktree')
+
+class DirectoryGotoToplevel(DirectoryInWorktree):
+    def setup(self):
+        DirectoryInWorktree.setup(self)
+        self.cd_to_topdir()

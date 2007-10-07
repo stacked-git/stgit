@@ -40,6 +40,7 @@ When displaying the branches, the names can be prefixed with
 
 If not given any options, switch to the named branch."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-c', '--create',
                        help = 'create a new development branch',
                        action = 'store_true'),

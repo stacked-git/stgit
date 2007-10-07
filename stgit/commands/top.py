@@ -30,6 +30,7 @@ usage = """%prog [options]
 
 Print the name of the current (topmost) patch."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 

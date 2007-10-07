@@ -40,6 +40,7 @@ under revision control. The files are prefixed as follows:
 A 'refresh' command clears the status of the modified, new and deleted
 files."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-m', '--modified',
                        help = 'show modified files only',
                        action = 'store_true'),

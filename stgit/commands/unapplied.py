@@ -31,6 +31,7 @@ usage = """%prog [options]
 List the patches from the series which are not pushed onto the stack.
 They are listed in the reverse order in which they were popped."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-c', '--count',

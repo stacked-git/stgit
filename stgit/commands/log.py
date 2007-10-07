@@ -43,6 +43,7 @@ represent the changes to the entire base of the current
 patch. Conflicts reset the patch content and a subsequent 'refresh'
 will show the entire patch."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-p', '--patch',

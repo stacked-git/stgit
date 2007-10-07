@@ -252,6 +252,7 @@ def main():
     usage = command.usage.split('\n')[0].strip()
     parser = OptionParser(usage = usage, option_list = command.options)
     options, args = parser.parse_args()
+    directory = command.directory
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
@@ -267,6 +268,7 @@ def main():
         sys.exit(1)
 
     try:
+        directory.setup()
         config_setup()
 
         # 'clone' doesn't expect an already initialised GIT tree. A Series

@@ -49,6 +49,7 @@ file:
   %(commemail)s   - committer's e-mail
 """
 
+directory = DirectoryHasRepository()
 options = [make_option('-d', '--dir',
                        help = 'export patches to DIR instead of the default'),
            make_option('-p', '--patch',

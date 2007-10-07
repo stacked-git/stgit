@@ -33,6 +33,7 @@ it shows the patches affected by the local tree modifications. The
 '--diff' option also lists the patch log and the diff for the given
 files."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-d', '--diff',
                        help = 'show the diff for the given files',
                        action = 'store_true'),

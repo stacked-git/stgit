@@ -34,6 +34,7 @@ range. The applied patches are prefixed with a '+', the unapplied ones
 with a '-' and the hidden ones with a '!'. The current patch is
 prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-a', '--all',

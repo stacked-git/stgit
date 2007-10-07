@@ -39,6 +39,7 @@ command run.
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-a', '--all',
                        help = 'push all the unapplied patches',
                        action = 'store_true'),

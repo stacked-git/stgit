@@ -30,6 +30,7 @@ usage = """%prog [options] [<file/dir> <newname> | <files/dirs...> <dir>]
 Copy of the files and dirs passed as arguments under another name or
 location inside the same repository."""
 
+directory = DirectoryHasRepository()
 options = []
 
 def func(parser, options, args):

@@ -32,6 +32,7 @@ push the specified <patches> (the current patch by default), and
 then push back into place the formerly-applied patches (unless -n
 is also given)."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after sinking',
                        action = 'store_true'),

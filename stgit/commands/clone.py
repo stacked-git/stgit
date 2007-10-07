@@ -29,6 +29,7 @@ usage = """%prog [options] <repository> <dir>
 Clone a GIT <repository> into the local <dir> and initialise the
 patch stack."""
 
+directory = DirectoryAnywhere()
 options = []
 
 

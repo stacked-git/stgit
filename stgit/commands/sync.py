@@ -36,6 +36,7 @@ in the series must apply cleanly.
 
 The sync operation can be reverted for individual patches with --undo."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-a', '--all',
                        help = 'synchronise all the patches',
                        action = 'store_true'),

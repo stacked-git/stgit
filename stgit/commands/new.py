@@ -38,6 +38,7 @@ needed for this.
 If no name is given for the new patch, one is generated from the first
 line of the commit message."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
            make_option('-s', '--showpatch',

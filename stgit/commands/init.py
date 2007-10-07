@@ -31,6 +31,7 @@ Initialise the current GIT branch to be used as an StGIT stack. Note
 that you must already be in a GIT repository and .git/HEAD must point
 to a valid file in refs/heads/."""
 
+directory = DirectoryHasRepository()
 options = []
 
 

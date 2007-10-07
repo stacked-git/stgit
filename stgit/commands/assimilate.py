@@ -53,6 +53,7 @@ Note that these are "inconsistencies", not "errors"; furthermore,
 with the way "assimilate" handles them, you have no reason to avoid
 causing them in the first place if that is convenient for you."""
 
+directory = DirectoryHasRepository()
 options = []
 
 class Commit(object):

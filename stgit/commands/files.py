@@ -34,6 +34,7 @@ given patch. Note that this command doesn't show the files modified in
 the working tree and not yet included in the patch by a 'refresh'
 command. Use the 'diff' or 'status' commands for these files."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-s', '--stat',
                        help = 'show the diff stat',
                        action = 'store_true'),

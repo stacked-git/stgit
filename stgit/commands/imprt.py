@@ -44,6 +44,7 @@ stack.
 The patch description has to be separated from the data with a '---'
 line."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-m', '--mail',
                        help = 'import the patch from a standard e-mail file',
                        action = 'store_true'),

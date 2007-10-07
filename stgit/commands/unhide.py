@@ -30,6 +30,7 @@ usage = """%prog [options] <patch-range>
 Unhide a hidden range of patches so that they are shown in the plain
 'series' command output."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 

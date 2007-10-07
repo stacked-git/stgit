@@ -30,6 +30,7 @@ usage = """%prog [options] <files...>
 Remove given files from the repository. The command doesn't remove the
 working copy of the file."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-f', '--force',
                        help = 'force removing even if the file exists',
                        action = 'store_true')]

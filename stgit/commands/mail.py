@@ -88,6 +88,7 @@ the following:
   %(prefix)s       - 'prefix ' string passed on the command line
   %(shortdescr)s   - the first line of the patch description"""
 
+directory = DirectoryHasRepository()
 options = [make_option('-a', '--all',
                        help = 'e-mail all the applied patches',
                        action = 'store_true'),

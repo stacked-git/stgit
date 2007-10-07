@@ -29,6 +29,7 @@ usage = """%prog [options] <oldpatch> <newpatch>
 
 Rename <oldpatch> into <newpatch> in a series."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 

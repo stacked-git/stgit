@@ -34,6 +34,7 @@ performed with the current top. With the --base option, the patch is
 applied onto the specified base and a three-way merged is performed
 with the current top."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-t', '--threeway',
                        help = 'perform a three-way merge with the current patch',
                        action = 'store_true'),

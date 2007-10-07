@@ -33,6 +33,7 @@ the standard GIT id's like heads and tags, this command also accepts
 'top' or 'bottom' are passed and <patch> is a valid patch name, 'top'
 will be used by default."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 

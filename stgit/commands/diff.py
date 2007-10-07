@@ -42,6 +42,7 @@ rev = '([patch][//[bottom | top]]) | <tree-ish> | base'
 If neither bottom nor top are given but a '//' is present, the command
 shows the specified patch (defaulting to the current one)."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-r', '--range',
                        metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),

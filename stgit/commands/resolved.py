@@ -34,6 +34,7 @@ Mark a merge conflict as resolved. The conflicts can be seen with the
 'C'. This command also removes any <file>.{ancestor,current,patched}
 files."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-a', '--all',
                        help = 'mark all conflicts as solved',
                        action = 'store_true'),

@@ -31,6 +31,7 @@ necessary pop and push operations will be performed to accomplish
 this. The '--series' option can be used to rearrange the (top) patches
 as specified by the given series file (or the standard input)."""
 
+directory = DirectoryHasRepository()
 options = [make_option('-s', '--series',
                        help = 'rearrange according to a series file',
                        action = 'store_true')]
