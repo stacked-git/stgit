@@ -19,9 +19,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import datetime, os, subprocess
 
-from  stgit.out import *
+from stgit.exception import *
+from stgit.out import *
 
-class RunException(Exception):
+class RunException(StgException):
     """Thrown when something bad happened when we tried to run the
     subprocess."""
     pass

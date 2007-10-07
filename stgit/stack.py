@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, re
 from email.Utils import formatdate
 
+from stgit.exception import *
 from stgit.utils import *
 from stgit.out import *
 from stgit.run import *
@@ -30,7 +31,7 @@ from shutil import copyfile
 
 
 # stack exception class
-class StackException(Exception):
+class StackException(StgException):
     pass
 
 class FilterUntil:

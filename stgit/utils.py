@@ -2,6 +2,7 @@
 """
 
 import errno, optparse, os, os.path, re, sys
+from stgit.exception import *
 from stgit.config import config
 from stgit.out import *
 
@@ -166,7 +167,7 @@ def rename(basedir, file1, file2):
         # file1's parent dir may not be empty after move
         pass
 
-class EditorException(Exception):
+class EditorException(StgException):
     pass
 
 def call_editor(filename):

@@ -255,13 +255,10 @@ def main():
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
+    from stgit.exception import StgException
     from stgit.config import config_setup
     from ConfigParser import ParsingError, NoSectionError
-    from stgit.stack import Series, StackException
-    from stgit.git import GitException
-    from stgit.commands.common import CmdException
-    from stgit.gitmergeonefile import GitMergeException
-    from stgit.utils import EditorException
+    from stgit.stack import Series
 
     try:
         debug_level = int(os.environ['STGIT_DEBUG_LEVEL'])
@@ -284,9 +281,7 @@ def main():
             stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
-    except (IOError, ParsingError, NoSectionError, CmdException,
-            StackException, GitException, GitMergeException,
-            EditorException), err:
+    except (StgException, IOError, ParsingError, NoSectionError), err:
         print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
         if debug_level > 0:
             raise

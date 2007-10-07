@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, re, gitmergeonefile
 from shutil import copyfile
 
+from stgit.exception import *
 from stgit import basedir
 from stgit.utils import *
 from stgit.out import *
@@ -28,7 +29,7 @@ from stgit.run import *
 from stgit.config import config
 
 # git exception class
-class GitException(Exception):
+class GitException(StgException):
     pass
 
 # When a subprocess has a problem, we want the exception to be a

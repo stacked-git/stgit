@@ -20,9 +20,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os, re
 from stgit import basedir
+from stgit.exception import *
 from stgit.run import *
 
-class GitConfigException(Exception):
+class GitConfigException(StgException):
     pass
 
 class GitConfig:

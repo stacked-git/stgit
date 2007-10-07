@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, os.path, re
 from optparse import OptionParser, make_option
 
+from stgit.exception import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git, basedir
@@ -30,11 +31,11 @@ crt_series = None
 
 
 # Command exception class
-class CmdException(Exception):
+class CmdException(StgException):
     pass
 
 # Utility functions
-class RevParseException(Exception):
+class RevParseException(StgException):
     """Revision spec parse error."""
     pass
 
