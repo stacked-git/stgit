@@ -271,9 +271,8 @@ def main():
         directory.setup()
         config_setup()
 
-        # 'clone' doesn't expect an already initialised GIT tree. A Series
-        # object will be created after the GIT tree is cloned
-        if cmd != 'clone':
+        # Some commands don't (always) need an initialized series.
+        if directory.needs_current_series:
             if hasattr(options, 'branch') and options.branch:
                 command.crt_series = Series(options.branch)
             else:

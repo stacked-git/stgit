@@ -497,6 +497,8 @@ class DirectoryException(StgException):
     pass
 
 class _Directory(object):
+    def __init__(self, needs_current_series = True):
+        self.needs_current_series =  needs_current_series
     @readonly_constant_property
     def git_dir(self):
         try:
