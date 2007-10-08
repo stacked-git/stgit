@@ -51,7 +51,7 @@ def func(parser, options, args):
     """Pop the topmost patch from the stack
     """
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if not options.keep:
         check_local_changes()
@@ -83,8 +83,8 @@ def func(parser, options, args):
         raise CmdException, 'Cannot pop arbitrary patches with --keep'
 
     topop.reverse()
-    pop_patches(topop, options.keep)
+    pop_patches(crt_series, topop, options.keep)
     if topush:
-        push_patches(topush)
+        push_patches(crt_series, topush)
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

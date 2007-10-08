@@ -277,7 +277,6 @@ def main():
                 command.crt_series = Series(options.branch)
             else:
                 command.crt_series = Series()
-            stgit.commands.common.crt_series = command.crt_series
 
         command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError), err:

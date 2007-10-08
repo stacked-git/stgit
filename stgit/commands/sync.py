@@ -51,7 +51,7 @@ options = [make_option('-a', '--all',
 def __check_all():
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
 def __branch_merge_patch(remote_series, pname):
     """Merge a patch from a remote branch into the current tree.
@@ -131,13 +131,13 @@ def func(parser, options, args):
     # pop to the one before the first patch to be synchronised
     popped = applied[applied.index(sync_patches[0]) + 1:]
     if popped:
-        pop_patches(popped[::-1])
+        pop_patches(crt_series, popped[::-1])
 
     for p in sync_patches:
         if p in popped:
             # push to this patch
             idx = popped.index(p) + 1
-            push_patches(popped[:idx])
+            push_patches(crt_series, popped[:idx])
             del popped[:idx]
 
         # the actual sync
@@ -166,4 +166,4 @@ def func(parser, options, args):
 
     # push the remaining patches
     if popped:
-        push_patches(popped)
+        push_patches(crt_series, popped)

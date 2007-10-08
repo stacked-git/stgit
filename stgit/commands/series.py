@@ -195,12 +195,13 @@ def func(parser, options, args):
             raise CmdException, '--graphical not supported with --missing'
 
         if applied:
-            gitk_args = ' %s^..%s' % (git_id(applied[0]), git_id(applied[-1]))
+            gitk_args = ' %s^..%s' % (git_id(crt_series, applied[0]),
+                                      git_id(crt_series, applied[-1]))
         else:
             gitk_args = ''
 
         for p in unapplied:
-            patch_id = git_id(p)
+            patch_id = git_id(crt_series, p)
             gitk_args += ' %s^..%s' % (patch_id, patch_id)
 
         if os.system('gitk%s' % gitk_args) != 0:

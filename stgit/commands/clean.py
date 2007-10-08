@@ -61,7 +61,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if not (options.applied or options.unapplied):
         options.applied = options.unapplied = True
@@ -74,4 +74,4 @@ def func(parser, options, args):
         unapplied = crt_series.get_unapplied()
         __delete_empty(unapplied, False)
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

@@ -73,7 +73,7 @@ def func(parser, options, args):
             raise CmdException, 'No patches applied'
 
     if not options.force:
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
     if options.undo:
         out.start('Undoing the refresh of "%s"' % patch)
@@ -89,10 +89,10 @@ def func(parser, options, args):
         if options.patch:
             applied = crt_series.get_applied()
             between = applied[:applied.index(patch):-1]
-            pop_patches(between, keep = True)
+            pop_patches(crt_series, between, keep = True)
         elif options.update:
-            rev1 = git_id('//bottom')
-            rev2 = git_id('//top')
+            rev1 = git_id(crt_series, '//bottom')
+            rev2 = git_id(crt_series, '//top')
             patch_files = git.barefiles(rev1, rev2).split('\n')
             files = [f for f in files if f in patch_files]
             if not files:
@@ -113,7 +113,7 @@ def func(parser, options, args):
 
         if options.patch:
             between.reverse()
-            push_patches(between)
+            push_patches(crt_series, between)
     elif options.annotate:
         # only annotate the top log entry as there is no need to
         # refresh the patch and generate a full commit

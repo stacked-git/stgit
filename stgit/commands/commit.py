@@ -45,7 +45,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     applied = crt_series.get_applied()
     if not applied:

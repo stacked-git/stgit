@@ -112,7 +112,7 @@ def func(parser, options, args):
 
         check_local_changes()
         check_conflicts()
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
         tree_id = None
         if len(args) >= 2:
@@ -141,7 +141,7 @@ def func(parser, options, args):
                 # exception in branch = rev_parse() leaves branchpoint unbound
                 branchpoint = None
 
-            tree_id = branchpoint or git_id(args[1])
+            tree_id = branchpoint or git_id(crt_series, args[1])
 
             if parentbranch:
                 out.info('Recording "%s" as parent branch' % parentbranch)
@@ -182,7 +182,7 @@ def func(parser, options, args):
 
         check_local_changes()
         check_conflicts()
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
         out.start('Cloning current branch to "%s"' % clone)
         crt_series.clone(clone)
@@ -294,7 +294,7 @@ def func(parser, options, args):
 
         check_local_changes()
         check_conflicts()
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
         out.start('Switching to branch "%s"' % args[0])
         git.switch_branch(args[0])

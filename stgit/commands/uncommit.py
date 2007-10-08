@@ -66,7 +66,7 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('cannot specify patch name with --to')
         patch_nr = patchnames = None
-        to_commit = git_id(options.to)
+        to_commit = git_id(crt_series, options.to)
     elif options.number:
         if options.number <= 0:
             parser.error('invalid value passed to --number')

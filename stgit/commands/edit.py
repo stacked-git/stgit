@@ -203,13 +203,13 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if pname != crt_pname:
         # Go to the patch to be edited
         applied = crt_series.get_applied()
         between = applied[:applied.index(pname):-1]
-        pop_patches(between)
+        pop_patches(crt_series, between)
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)
@@ -241,4 +241,4 @@ def func(parser, options, args):
     if pname != crt_pname:
         # Push the patches back
         between.reverse()
-        push_patches(between)
+        push_patches(crt_series, between)

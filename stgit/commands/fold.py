@@ -50,7 +50,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if len(args) == 1:
         filename = args[0]
@@ -74,7 +74,8 @@ def func(parser, options, args):
         bottom = crt_patch.get_bottom()
         git.apply_patch(filename = filename, base = bottom)
     elif options.base:
-        git.apply_patch(filename = filename, base = git_id(options.base))
+        git.apply_patch(filename = filename,
+                        base = git_id(crt_series, options.base))
     else:
         git.apply_patch(filename = filename)
 

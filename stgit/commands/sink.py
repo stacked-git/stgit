@@ -45,7 +45,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     oldapplied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
@@ -61,10 +61,10 @@ def func(parser, options, args):
         patches = [ crt_series.get_current() ]
 
     crt_series.pop_patch(options.to or oldapplied[0])
-    push_patches(patches)
+    push_patches(crt_series, patches)
 
     if not options.nopush:
         newapplied = crt_series.get_applied()
         def not_reapplied_yet(p):
             return not p in newapplied
-        push_patches(filter(not_reapplied_yet, oldapplied))
+        push_patches(crt_series, filter(not_reapplied_yet, oldapplied))

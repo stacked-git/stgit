@@ -71,7 +71,7 @@ def func(parser, options, args):
     if applied and not options.branch:
         check_local_changes()
         check_conflicts()
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
     # delete the patches
     for patch in applied + patches:
@@ -79,4 +79,4 @@ def func(parser, options, args):
         out.info('Patch "%s" successfully deleted' % patch)
 
     if not options.branch:
-        print_crt_patch()
+        print_crt_patch(crt_series)

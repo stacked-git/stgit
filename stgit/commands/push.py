@@ -72,13 +72,13 @@ def func(parser, options, args):
             out.done()
         else:
             out.done('patch unchanged')
-        print_crt_patch()
+        print_crt_patch(crt_series)
 
         return
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     unapplied = crt_series.get_unapplied()
     if not unapplied:
@@ -99,6 +99,6 @@ def func(parser, options, args):
     if options.reverse:
         patches.reverse()
 
-    push_patches(patches, options.merged)
+    push_patches(crt_series, patches, options.merged)
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

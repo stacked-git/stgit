@@ -165,7 +165,8 @@ def __create_patch(filename, message, author_name, author_email,
     else:
         out.start('Importing patch "%s"' % patch)
         if options.base:
-            git.apply_patch(diff = diff, base = git_id(options.base))
+            git.apply_patch(diff = diff,
+                            base = git_id(crt_series, options.base))
         else:
             git.apply_patch(diff = diff)
         crt_series.refresh_patch(edit = options.edit,
@@ -270,7 +271,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if len(args) == 1:
         filename = args[0]
@@ -286,4 +287,4 @@ def func(parser, options, args):
     else:
         __import_file(filename, options)
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

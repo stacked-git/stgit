@@ -57,8 +57,8 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    rev1 = git_id('%s//bottom' % patch)
-    rev2 = git_id('%s//top' % patch)
+    rev1 = git_id(crt_series, '%s//bottom' % patch)
+    rev2 = git_id(crt_series, '%s//top' % patch)
 
     if options.stat:
         out.stdout_raw(git.diffstat(rev1 = rev1, rev2 = rev2) + '\n')

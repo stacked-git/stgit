@@ -46,7 +46,7 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     unapplied = crt_series.get_unapplied()
     applied = crt_series.get_applied()
@@ -85,7 +85,7 @@ def func(parser, options, args):
     # check whether the operation is really needed
     if topop != topush:
         if topop:
-            pop_patches(topop)
+            pop_patches(crt_series, topop)
         if topush:
             topush.reverse()
-            push_patches(topush)
+            push_patches(crt_series, topush)

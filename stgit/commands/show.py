@@ -69,7 +69,7 @@ def func(parser, options, args):
     else:
         diff_flags = []
 
-    commit_ids = [git_id(patch) for patch in patches]
+    commit_ids = [git_id(crt_series, patch) for patch in patches]
     commit_str = '\n'.join([git.pretty_commit(commit_id, diff_flags=diff_flags)
                             for commit_id in commit_ids])
     if commit_str:

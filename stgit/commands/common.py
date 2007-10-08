@@ -28,8 +28,6 @@ from stgit.run import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 
-crt_series = None
-
 
 # Command exception class
 class CmdException(StgException):
@@ -74,7 +72,7 @@ def parse_rev(rev):
     # No, we can't parse that.
     raise RevParseException
 
-def git_id(rev):
+def git_id(crt_series, rev):
     """Return the GIT id
     """
     if not rev:
@@ -112,7 +110,7 @@ def check_local_changes():
         raise CmdException, \
               'local changes in the tree. Use "refresh" or "status --reset"'
 
-def check_head_top_equal():
+def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
         raise CmdException(
 """HEAD and top are not the same. This can happen if you
@@ -125,7 +123,7 @@ def check_conflicts():
               'Unsolved conflicts. Please resolve them first or\n' \
               '  revert the changes with "status --reset"'
 
-def print_crt_patch(branch = None):
+def print_crt_patch(crt_series, branch = None):
     if not branch:
         patch = crt_series.get_current()
     else:
@@ -158,7 +156,7 @@ def resolved_all(reset = None):
             resolved(filename, reset)
         os.remove(os.path.join(basedir.get(), 'conflicts'))
 
-def push_patches(patches, check_merged = False):
+def push_patches(crt_series, patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared
     between the push and pull commands
     """
@@ -197,7 +195,7 @@ def push_patches(patches, check_merged = False):
             else:
                 out.done()
 
-def pop_patches(patches, keep = False):
+def pop_patches(crt_series, patches, keep = False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
     """
@@ -319,7 +317,7 @@ def address_or_alias(addr_str):
                  for addr in addr_str.split(',')]
     return ', '.join([addr for addr in addr_list if addr])
 
-def prepare_rebase():
+def prepare_rebase(crt_series):
     # pop all patches
     applied = crt_series.get_applied()
     if len(applied) > 0:
@@ -328,9 +326,9 @@ def prepare_rebase():
         out.done()
     return applied
 
-def rebase(target):
+def rebase(crt_series, target):
     try:
-        tree_id = git_id(target)
+        tree_id = git_id(crt_series, target)
     except:
         # it might be that we use a custom rebase command with its own
         # target type
@@ -345,12 +343,12 @@ def rebase(target):
     git.rebase(tree_id = tree_id)
     out.done()
 
-def post_rebase(applied, nopush, merged):
+def post_rebase(crt_series, applied, nopush, merged):
     # memorize that we rebased to here
     crt_series._set_field('orig-base', git.get_head())
     # push the patches back
     if not nopush:
-        push_patches(applied, merged)
+        push_patches(crt_series, applied, merged)
 
 #
 # Patch description/e-mail/diff parsing

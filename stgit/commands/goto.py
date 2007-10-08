@@ -44,7 +44,7 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if not options.keep:
         check_local_changes()
@@ -56,13 +56,13 @@ def func(parser, options, args):
     if patch in applied:
         applied.reverse()
         patches = applied[:applied.index(patch)]
-        pop_patches(patches, options.keep)
+        pop_patches(crt_series, patches, options.keep)
     elif patch in unapplied:
         if options.keep:
             raise CmdException, 'Cannot use --keep with patch pushing'
         patches = unapplied[:unapplied.index(patch)+1]
-        push_patches(patches)
+        push_patches(crt_series, patches)
     else:
         raise CmdException, 'Patch "%s" does not exist' % patch
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

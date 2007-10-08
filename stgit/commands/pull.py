@@ -74,12 +74,12 @@ def func(parser, options, args):
 
     check_local_changes()
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if policy not in ['pull', 'fetch-rebase', 'rebase']:
         raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
 
-    applied = prepare_rebase()
+    applied = prepare_rebase(crt_series)
 
     # pull the remote changes
     if policy == 'pull':
@@ -92,17 +92,17 @@ def func(parser, options, args):
             target = git.fetch_head()
         except git.GitException:
             out.error('Could not find the remote head to rebase onto, pushing any patches back...')
-            post_rebase(applied, False, False)
+            post_rebase(crt_series, applied, False, False)
             raise CmdException, 'Could not find the remote head to rebase onto - fix branch.%s.merge in .git/config' % crt_series.get_name()
 
-        rebase(target)
+        rebase(crt_series, target)
     elif policy == 'rebase':
-        rebase(crt_series.get_parent_branch())
+        rebase(crt_series, crt_series.get_parent_branch())
 
-    post_rebase(applied, options.nopush, options.merged)
+    post_rebase(crt_series, applied, options.nopush, options.merged)
 
     # maybe tidy up
     if config.get('stgit.keepoptimized') == 'yes':
         git.repack()
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

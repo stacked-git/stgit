@@ -70,7 +70,7 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     check_conflicts()
-    check_head_top_equal()
+    check_head_top_equal(crt_series)
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)

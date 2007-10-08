@@ -65,10 +65,10 @@ def func(parser, options, args):
     if not options.unapplied:
         check_local_changes()
         check_conflicts()
-        check_head_top_equal()
+        check_head_top_equal(crt_series)
 
     commit_str = args[0]
-    commit_id = git_id(commit_str)
+    commit_id = git_id(crt_series, commit_str)
     commit = git.Commit(commit_id)
 
     if options.fold or options.update:
@@ -84,7 +84,7 @@ def func(parser, options, args):
             patchname = None
 
     if options.parent:
-        parent = git_id(options.parent)
+        parent = git_id(crt_series, options.parent)
     else:
         parent = commit.get_parent()
 
@@ -104,8 +104,8 @@ def func(parser, options, args):
 
         out.done()
     elif options.update:
-        rev1 = git_id('//bottom')
-        rev2 = git_id('//top')
+        rev1 = git_id(crt_series, '//bottom')
+        rev2 = git_id(crt_series, '//top')
         files = git.barefiles(rev1, rev2).split('\n')
 
         out.start('Updating with commit %s' % commit_id)
@@ -163,4 +163,4 @@ def func(parser, options, args):
         else:
             out.done()
 
-    print_crt_patch()
+    print_crt_patch(crt_series)

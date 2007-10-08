@@ -86,9 +86,10 @@ def func(parser, options, args):
         diff_flags = []
 
     if options.stat:
-        out.stdout_raw(git.diffstat(args, git_id(rev1), git_id(rev2)) + '\n')
+        out.stdout_raw(git.diffstat(args, git_id(crt_series, rev1),
+                                    git_id(crt_series, rev2)) + '\n')
     else:
-        diff_str = git.diff(args, git_id(rev1), git_id(rev2),
-                            diff_flags = diff_flags )
+        diff_str = git.diff(args, git_id(crt_series, rev1),
+                            git_id(crt_series, rev2), diff_flags = diff_flags )
         if diff_str:
             pager(diff_str)
