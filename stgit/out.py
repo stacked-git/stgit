@@ -85,12 +85,12 @@ class MessagePrinter(object):
     def info(self, *msgs):
         for msg in msgs:
             self.__out.single_line(msg)
-    def note(self, *msgs):
-        self.__out.tagged_lines('Notice', msgs)
-    def warn(self, *msgs):
-        self.__err.tagged_lines('Warning', msgs)
-    def error(self, *msgs):
-        self.__err.tagged_lines('Error', msgs)
+    def note(self, *msgs, **kw):
+        self.__out.tagged_lines(kw.get('title', 'Notice'), msgs)
+    def warn(self, *msgs, **kw):
+        self.__err.tagged_lines(kw.get('title', 'Warning'), msgs)
+    def error(self, *msgs, **kw):
+        self.__err.tagged_lines(kw.get('title', 'Error'), msgs)
     def start(self, msg):
         """Start a long-running operation."""
         self.__out.single_line('%s ... ' % msg, print_newline = False)
