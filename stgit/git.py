@@ -246,11 +246,19 @@ def get_head():
         __head = rev_parse('HEAD')
     return __head
 
+class DetachedHeadException(GitException):
+    def __init__(self):
+        GitException.__init__(self, 'Not on any branch')
+
 def get_head_file():
-    """Returns the name of the file pointed to by the HEAD link
-    """
-    return strip_prefix('refs/heads/',
-                        GRun('git-symbolic-ref', 'HEAD').output_one_line())
+    """Return the name of the file pointed to by the HEAD symref.
+    Throw an exception if HEAD is detached."""
+    try:
+        return strip_prefix(
+            'refs/heads/', GRun('git-symbolic-ref', '-q', 'HEAD'
+                                ).output_one_line())
+    except GitRunException:
+        raise DetachedHeadException()
 
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
@@ -385,8 +393,11 @@ def rename_ref(from_ref, to_ref):
 def rename_branch(from_name, to_name):
     """Rename a git branch."""
     rename_ref('refs/heads/%s' % from_name, 'refs/heads/%s' % to_name)
-    if get_head_file() == from_name:
-        set_head_file(to_name)
+    try:
+        if get_head_file() == from_name:
+            set_head_file(to_name)
+    except DetachedHeadException:
+        pass # detached HEAD, so the renamee can't be the current branch
     reflog_dir = os.path.join(basedir.get(), 'logs', 'refs', 'heads')
     if os.path.exists(reflog_dir) \
            and os.path.exists(os.path.join(reflog_dir, from_name)):
