@@ -282,7 +282,7 @@ def main():
 
         command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError), err:
-        print >> sys.stderr, '%s %s: %s' % (prog, cmd, err)
+        out.error(str(err), title = '%s %s' % (prog, cmd))
         if debug_level > 0:
             raise
         else:
