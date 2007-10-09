@@ -40,7 +40,7 @@ class Run:
         self.__cmd = list(cmd)
         for c in cmd:
             if type(c) != str:
-                raise Exception, 'Bad command: %r' % cmd
+                raise Exception, 'Bad command: %r' % (cmd,)
         self.__good_retvals = [0]
         self.__env = None
         self.__indata = None
