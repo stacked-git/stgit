@@ -1022,7 +1022,7 @@ def fetch_head():
     stream.close()
 
     if not fetch_head:
-        raise GitException, 'No for-merge remote head found in FETCH_HEAD'
+        out.warn('No for-merge remote head found in FETCH_HEAD')
 
     # here we are sure to have a single fetch_head
     return fetch_head

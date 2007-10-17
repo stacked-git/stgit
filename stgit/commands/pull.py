@@ -91,9 +91,10 @@ def func(parser, options, args):
         try:
             target = git.fetch_head()
         except git.GitException:
-            out.error('Could not find the remote head to rebase onto, pushing any patches back...')
+            out.error('Could not find the remote head to rebase onto - fix branch.%s.merge in .git/config' % crt_series.get_name())
+            out.error('Pushing any patches back...')
             post_rebase(crt_series, applied, False, False)
-            raise CmdException, 'Could not find the remote head to rebase onto - fix branch.%s.merge in .git/config' % crt_series.get_name()
+            raise
 
         rebase(crt_series, target)
     elif policy == 'rebase':
