@@ -145,7 +145,7 @@ class StgitObject:
         elif os.path.isfile(fname):
             os.remove(fname)
 
-    
+
 class Patch(StgitObject):
     """Basic patch implementation
     """
@@ -856,7 +856,7 @@ class Series(PatchSet):
         assert not before_existing or (top and bottom)
         assert not (commit and before_existing)
         assert (top and bottom) or (not top and not bottom)
-        assert not top or (bottom == git.get_commit(top).get_parent())
+        assert commit or (not top or (bottom == git.get_commit(top).get_parent()))
 
         if name != None:
             self.__patch_name_valid(name)
