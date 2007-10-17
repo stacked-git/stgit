@@ -1167,7 +1167,8 @@ class Series(PatchSet):
         patch = self.get_patch(name)
 
         if git.get_head_file() == self.get_name():
-            if keep and not git.apply_diff(git.get_head(), patch.get_bottom()):
+            if keep and not git.apply_diff(git.get_head(), patch.get_bottom(),
+                                           check_index = False):
                 raise StackException(
                     'Failed to pop patches while preserving the local changes')
             git.switch(patch.get_bottom(), keep)
