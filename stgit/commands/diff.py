@@ -27,7 +27,7 @@ from stgit import stack, git
 
 
 help = 'show the tree diff'
-usage = """%prog [options] [<files...>]
+usage = """%prog [options] [<files or dirs>]
 
 Show the diff (default) or diffstat between the current working copy
 or a tree-ish object and another tree-ish object. File names can also
@@ -56,6 +56,9 @@ options = [make_option('-r', '--range',
 def func(parser, options, args):
     """Show the tree diff
     """
+    args = git.ls_files(args)
+    directory.cd_to_topdir()
+
     if options.revs:
         rev_list = options.revs.split('..')
         rev_list_len = len(rev_list)

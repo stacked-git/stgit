@@ -26,7 +26,7 @@ from stgit import stack, git
 
 
 help = 'show the applied patches modifying a file'
-usage = """%prog [options] [<files...>]
+usage = """%prog [options] [<files or dirs>]
 
 Show the applied patches modifying the given files. Without arguments,
 it shows the patches affected by the local tree modifications. The
@@ -53,8 +53,10 @@ def func(parser, options, args):
     """
     if not args:
         files = [path for (stat,path) in git.tree_status(verbose = True)]
+        # git.tree_status returns absolute paths
     else:
-        files = args
+        files = git.ls_files(args)
+    directory.cd_to_topdir()
 
     if not files:
         raise CmdException, 'No files specified or no local changes'

@@ -25,7 +25,7 @@ from stgit import stack, git
 
 
 help = 'show the tree status'
-usage = """%prog [options] [<files...>]
+usage = """%prog [options] [<files or dirs>]
 
 Show the status of the whole working copy or the given files. The
 command also shows the files in the current directory which are not
@@ -72,7 +72,7 @@ def status(files = None, modified = False, new = False, deleted = False,
     """Show the tree status
     """
     cache_files = git.tree_status(files,
-                                  unknown = (files == None),
+                                  unknown = (not files),
                                   noexclude = noexclude,
                                   diff_flags = diff_flags)
     filtered = (modified or new or deleted or conflict or unknown)
@@ -94,7 +94,6 @@ def status(files = None, modified = False, new = False, deleted = False,
 
     output = []
     for st, fn in cache_files:
-        assert files == None or fn in files
         if filtered:
             output.append(fn)
         else:
@@ -105,6 +104,9 @@ def status(files = None, modified = False, new = False, deleted = False,
 def func(parser, options, args):
     """Show the tree status
     """
+    args = git.ls_files(args)
+    directory.cd_to_topdir()
+
     if options.reset:
         if args:
             for f in args:
@@ -119,9 +121,6 @@ def func(parser, options, args):
         else:
             diff_flags = []
 
-        # No args means all files
-        if not args:
-            args = None
         status(args, options.modified, options.new, options.deleted,
                options.conflict, options.unknown, options.noexclude,
                diff_flags = diff_flags)

@@ -24,4 +24,25 @@ test_expect_success 'Refresh again' '
     [ "$(stg status)" = "" ]
 '
 
+test_expect_success 'Refresh file in subdirectory' '
+    echo foo3 >> foo.txt &&
+    echo bar3 >> bar/bar.txt &&
+    cd bar &&
+    stg refresh bar.txt &&
+    cd .. &&
+    [ "$(stg status)" = "M foo.txt" ]
+'
+
+test_expect_success 'Refresh whole subdirectory' '
+    echo bar4 >> bar/bar.txt &&
+    stg refresh bar &&
+    [ "$(stg status)" = "M foo.txt" ]
+'
+
+test_expect_success 'Refresh subdirectories recursively' '
+    echo bar5 >> bar/bar.txt &&
+    stg refresh . &&
+    [ "$(stg status)" = "" ]
+'
+
 test_done

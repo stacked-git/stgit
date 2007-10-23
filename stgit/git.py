@@ -166,16 +166,37 @@ def exclude_files():
         files.append(user_exclude)
     return files
 
+def ls_files(files, tree = None, full_name = True):
+    """Return the files known to GIT or raise an error otherwise. It also
+    converts the file to the full path relative the the .git directory.
+    """
+    if not files:
+        return []
+
+    args = []
+    if tree:
+        args.append('--with-tree=%s' % tree)
+    if full_name:
+        args.append('--full-name')
+    args.append('--')
+    args.extend(files)
+    try:
+        return GRun('git-ls-files', '--error-unmatch', *args).output_lines()
+    except GitRunException:
+        # just hide the details of the git-ls-files command we use
+        raise GitException, \
+            'Some of the given paths are either missing or not known to GIT'
+
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
     """Get the status of all changed files, or of a selected set of
     files. Returns a list of pairs - (status, filename).
 
-    If 'files' is None, it will check all files, and optionally all
+    If 'not files', it will check all files, and optionally all
     unknown files.  If 'files' is a list, it will only check the files
     in the list.
     """
-    assert files == None or not unknown
+    assert not files or not unknown
 
     if verbose:
         out.start('Checking for changes in the working directory')
@@ -204,11 +225,11 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     if not conflicts:
         conflicts = []
     cache_files += [('C', filename) for filename in conflicts
-                    if files == None or filename in files]
+                    if not files or filename in files]
 
     # the rest
     args = diff_flags + [tree_id]
-    if files != None:
+    if files:
         args += ['--'] + files
     for line in GRun('git-diff-index', *args).output_lines():
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
@@ -218,7 +239,6 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     if verbose:
         out.done()
 
-    assert files == None or set(f for s,f in cache_files) <= set(files)
     return cache_files
 
 def local_changes(verbose = True):

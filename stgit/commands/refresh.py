@@ -27,7 +27,7 @@ from stgit.config import config
 
 
 help = 'generate a new commit for the current patch'
-usage = """%prog [options] [<files...>]
+usage = """%prog [options] [<files or dirs>]
 
 Include the latest tree changes in the current patch. This command
 generates a new GIT commit object with the patch details, the previous
@@ -37,7 +37,7 @@ options. The '--force' option is useful when a commit object was
 created with a different tool but the changes need to be included in
 the current patch."""
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryHasRepository()
 options = [make_option('-f', '--force',
                        help = 'force the refresh even if HEAD and '\
                        'top differ',
@@ -55,8 +55,12 @@ options = [make_option('-f', '--force',
            ]
 
 def func(parser, options, args):
-    autoresolved = config.get('stgit.autoresolved')
+    """Generate a new commit for the current or given patch.
+    """
+    args = git.ls_files(args)
+    directory.cd_to_topdir()
 
+    autoresolved = config.get('stgit.autoresolved')
     if autoresolved != 'yes':
         check_conflicts()
 
@@ -81,9 +85,7 @@ def func(parser, options, args):
         out.done()
         return
 
-    files = [path for (stat,path) in git.tree_status(verbose = True)]
-    if args:
-        files = [f for f in files if f in args]
+    files = [path for (stat, path) in git.tree_status(files = args, verbose = True)]
 
     if files or not crt_series.head_top_equal():
         if options.patch:

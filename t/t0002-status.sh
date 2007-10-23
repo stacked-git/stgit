@@ -127,6 +127,7 @@ test_expect_success 'Status of file' '
 '
 
 cat > expected.txt <<EOF
+C foo/bar
 EOF
 test_expect_success 'Status of dir' '
     stg status foo > output.txt &&
