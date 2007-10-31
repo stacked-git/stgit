@@ -6,9 +6,7 @@ other repositories using standard GIT functionality.
 
 Note that StGIT is not an SCM interface on top of GIT and it expects a
 previously initialised GIT repository (unless it is cloned using StGIT
-directly). For standard SCM operations, either use plain GIT commands
-or the Cogito tool but it is not recommended to mix them with the
-StGIT commands.
+directly). For standard SCM operations, use plain GIT commands.
 
 For the latest version see http://www.procode.org/stgit/
 For a tutorial see http://wiki.procode.org/cgi-bin/wiki.cgi/StGIT_Tutorial
