@@ -141,7 +141,7 @@ def func(parser, options, args):
                 # exception in branch = rev_parse() leaves branchpoint unbound
                 branchpoint = None
 
-            tree_id = branchpoint or git_id(crt_series, args[1])
+            tree_id = git_id(crt_series, branchpoint or args[1])
 
             if parentbranch:
                 out.info('Recording "%s" as parent branch' % parentbranch)

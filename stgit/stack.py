@@ -166,10 +166,17 @@ class Patch(StgitObject):
         self.create_empty_field('top')
 
     def delete(self):
-        for f in os.listdir(self._dir()):
-            os.remove(os.path.join(self._dir(), f))
-        os.rmdir(self._dir())
-        git.delete_ref(self.__top_ref)
+        if os.path.isdir(self._dir()):
+            for f in os.listdir(self._dir()):
+                os.remove(os.path.join(self._dir(), f))
+            os.rmdir(self._dir())
+        else:
+            out.warn('Patch directory "%s" does not exist' % self._dir())
+        try:
+            # the reference might not exist if the repository was corrupted
+            git.delete_ref(self.__top_ref)
+        except git.GitException, e:
+            out.warn(str(e))
         if git.ref_exists(self.__log_ref):
             git.delete_ref(self.__log_ref)
 
