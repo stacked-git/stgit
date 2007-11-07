@@ -48,7 +48,7 @@ given commit should be uncommitted.
 Only commits with exactly one parent can be uncommitted; in other
 words, you can't uncommit a merge."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--number', type = 'int',
                        help = 'uncommit the specified number of commits'),
            make_option('-t', '--to',

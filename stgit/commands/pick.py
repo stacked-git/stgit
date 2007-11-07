@@ -34,7 +34,7 @@ the name of the current patch. It can be overridden with the '--name'
 option. A commit object can be reverted with the '--reverse'
 option. The log and author information are those of the commit object."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
            make_option('-r', '--reverse',

@@ -47,6 +47,9 @@ options = [make_option('-a', '--all',
 def func(parser, options, args):
     """Mark the conflict as resolved
     """
+    args = git.ls_files(args)
+    directory.cd_to_topdir()
+
     if options.reset \
            and options.reset not in file_extensions():
         raise CmdException, 'Unknown reset state: %s' % options.reset

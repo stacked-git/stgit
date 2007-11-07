@@ -29,7 +29,7 @@ usage = """%prog [options] <new-base-id>
 Pop all patches from current stack, move the stack base to the given
 <new-base-id> and push the patches back."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after rebasing',
                        action = 'store_true'),

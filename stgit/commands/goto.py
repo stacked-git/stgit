@@ -31,7 +31,7 @@ line becomes current. This is a shortcut for the 'push --to' or 'pop
 --to' commands. There is no '--undo' option for 'goto'. Use the 'push'
 command for this."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-k', '--keep',
                        help = 'keep the local changes when popping patches',
                        action = 'store_true')]

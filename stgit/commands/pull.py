@@ -38,7 +38,7 @@ resolved and the patch pushed again.
 
 Check the 'git fetch' documentation for the <repository> format."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--nopush',
                        help = 'do not push the patches back after pulling',
                        action = 'store_true'),

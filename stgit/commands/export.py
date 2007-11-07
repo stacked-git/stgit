@@ -78,6 +78,7 @@ def func(parser, options, args):
         dirname = options.dir
     else:
         dirname = 'patches-%s' % crt_series.get_name()
+        directory.cd_to_topdir()
 
     if not options.branch and git.local_changes():
         out.warn('Local changes in the tree;'

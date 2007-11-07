@@ -36,7 +36,7 @@ patches are deleted, they are popped from the stack.
 
 Note that the 'delete' operation is irreversible."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
 

@@ -57,7 +57,7 @@ rejected patch is stored in the .stgit-failed.patch file (and also in
 these files using the '--file' and '--diff' options.
 """
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-d', '--diff',
                        help = 'edit the patch diff',
                        action = 'store_true'),

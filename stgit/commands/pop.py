@@ -36,7 +36,7 @@ patches passed on the command line are popped from the stack. Some of
 the push operations may fail because of conflicts (push --undo would
 revert the last push operation)."""
 
-directory = DirectoryHasRepository()
+directory = DirectoryGotoToplevel()
 options = [make_option('-a', '--all',
                        help = 'pop all the applied patches',
                        action = 'store_true'),
