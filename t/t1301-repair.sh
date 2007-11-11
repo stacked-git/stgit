@@ -1,19 +1,19 @@
 #!/bin/sh
 # Copyright (c) 2006 Karl Hasselström
-test_description='Test the assimilate command.'
+test_description='Test the repair command.'
 . ./test-lib.sh
 
 test_expect_success \
-    'Assimilate in a non-initialized repository' \
-    '! stg assimilate'
+    'Repair in a non-initialized repository' \
+    '! stg repair'
 
 test_expect_success \
     'Initialize the StGIT repository' \
     'stg init'
 
 test_expect_success \
-    'Assimilate in a repository without patches' \
-    'stg assimilate'
+    'Repair in a repository without patches' \
+    'stg repair'
 
 test_expect_success \
     'Create a patch' \
@@ -25,8 +25,8 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Assimilate when there is nothing to do' \
-    'stg assimilate'
+    'Repair when there is nothing to do' \
+    'stg repair'
 
 test_expect_success \
     'Create a GIT commit' \
@@ -36,11 +36,9 @@ test_expect_success \
     git commit -a -m bar
     '
 
-test_expect_success \
-    'Assimilate one GIT commit' \
-    '
+test_expect_success 'Turn one GIT commit into a patch' '
     [ $(stg applied | wc -l) -eq 1 ] &&
-    stg assimilate &&
+    stg repair &&
     [ $(stg applied | wc -l) -eq 2 ]
     '
 
@@ -56,11 +54,9 @@ test_expect_success \
     git commit -a -m three
     '
 
-test_expect_success \
-    'Assimilate three GIT commits' \
-    '
+test_expect_success 'Turn three GIT commits into patches' '
     [ $(stg applied | wc -l) -eq 2 ] &&
-    stg assimilate &&
+    stg repair &&
     [ $(stg applied | wc -l) -eq 5 ]
     '
 
@@ -75,9 +71,9 @@ test_expect_success \
     git pull . br
     '
 
-test_expect_success 'Assimilate in the presence of a merge commit' '
+test_expect_success 'Repair in the presence of a merge commit' '
     [ $(stg applied | wc -l) -eq 5 ] &&
-    stg assimilate &&
+    stg repair &&
     [ $(stg applied | wc -l) -eq 0 ]
 '
 

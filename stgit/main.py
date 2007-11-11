@@ -60,7 +60,6 @@ class Commands(dict):
 commands = Commands({
     'add':              'add',
     'applied':          'applied',
-    'assimilate':       'assimilate',
     'branch':           'branch',
     'delete':           'delete',
     'diff':             'diff',
@@ -89,6 +88,7 @@ commands = Commands({
     'rebase':           'rebase',
     'refresh':          'refresh',
     'rename':           'rename',
+    'repair':           'repair',
     'resolved':         'resolved',
     'rm':               'rm',
     'series':           'series',
@@ -109,7 +109,6 @@ repocommands = (
     )
 stackcommands = (
     'applied',
-    'assimilate',
     'branch',
     'clean',
     'commit',
@@ -122,6 +121,7 @@ stackcommands = (
     'pull',
     'push',
     'rebase',
+    'repair',
     'series',
     'sink',
     'top',

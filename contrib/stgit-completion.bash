@@ -13,7 +13,6 @@
 _stg_commands="
     add
     applied
-    assimilate
     branch
     delete
     diff
@@ -42,6 +41,7 @@ _stg_commands="
     rebase
     refresh
     rename
+    repair
     resolved
     rm
     series

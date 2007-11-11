@@ -114,7 +114,7 @@ def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
         raise CmdException(
 """HEAD and top are not the same. This can happen if you
-   modify a branch with git. The "assimilate" command can
+   modify a branch with git. The "repair" command can
    fix this situation.""")
 
 def check_conflicts():

@@ -29,28 +29,28 @@ from stgit import stack, git
 help = 'StGit-ify any git commits made on top of your StGit stack'
 usage = """%prog [options]
 
-"assimilate" will repair three kinds of inconsistencies in your StGit
+"repair" will repair three kinds of inconsistencies in your StGit
 stack, all of them caused by using plain git commands on the branch:
 
   1. If you have made regular git commits on top of your stack of
-     StGit patches, "assimilate" converts them to StGit patches,
+     StGit patches, "repair" converts them to StGit patches,
      preserving their contents.
 
   2. Merge commits cannot become patches; if you have committed a
-     merge on top of your stack, "assimilate" will simply mark all
+     merge on top of your stack, "repair" will simply mark all
      patches below the merge unapplied, since they are no longer
      reachable. If this is not what you want, use "git reset" to get
-     rid of the merge and run "assimilate" again.
+     rid of the merge and run "repair" again.
 
   3. The applied patches are supposed to be precisely those that are
      reachable from the branch head. If you have used e.g. "git reset"
      to move the head, some applied patches may no longer be
      reachable, and some unapplied patches may have become reachable.
-     "assimilate" will correct the appliedness of such patches.
+     "repair" will correct the appliedness of such patches.
 
 Note that these are "inconsistencies", not "errors"; furthermore,
-"assimilate" will repair them reliably. As long as you are satisfied
-with the way "assimilate" handles them, you have no reason to avoid
+"repair" will repair them reliably. As long as you are satisfied
+with the way "repair" handles them, you have no reason to avoid
 causing them in the first place if that is convenient for you."""
 
 directory = DirectoryGotoToplevel()
@@ -99,11 +99,10 @@ def read_commit_dag(branch):
     return commits, patches
 
 def func(parser, options, args):
-    """Assimilate a number of patches.
-    """
+    """Repair inconsistencies in StGit metadata."""
 
     def nothing_to_do():
-        out.info('No commits to assimilate')
+        out.info('Nothing to repair')
 
     orig_applied = crt_series.get_applied()
     orig_unapplied = crt_series.get_unapplied()
@@ -118,7 +117,7 @@ def func(parser, options, args):
         raise CmdException(
             'This branch is protected. Modification is not permitted.')
 
-    # Find commits to assimilate, and applied patches.
+    # Find commits that aren't patches, and applied patches.
     commits, patches = read_commit_dag(crt_series.get_name())
     c = commits[head]
     patchify = []
@@ -149,7 +148,7 @@ def func(parser, options, args):
                   % (len(hidden), ['es', ''][len(hidden) == 1])),
                  '%s,' % merge.id, 'and will be considered unapplied.')
 
-    # Assimilate any linear sequence of commits on top of a patch.
+    # Make patches of any linear sequence of commits on top of a patch.
     names = set(p.patch for p in patches)
     def name_taken(name):
         return name in names

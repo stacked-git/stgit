@@ -146,8 +146,8 @@ stglink:commit[]::
 	stgdesc:commit[]
 stglink:uncommit[]::
 	stgdesc:uncommit[]
-stglink:assimilate[]::
-	stgdesc:assimilate[]
+stglink:repair[]::
+	stgdesc:repair[]
 
 Controlling what patches are applied
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

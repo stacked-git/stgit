@@ -1,5 +1,5 @@
 #!/bin/sh
-test_description='Test git/StGit interoperability with "stg assimilate"'
+test_description='Test git/StGit interoperability with "stg repair"'
 . ./test-lib.sh
 
 test_expect_success 'Create some git-only history' '
@@ -28,7 +28,7 @@ test_expect_success 'Create five patches' '
 test_expect_success 'Pop two patches with git-reset' '
     git reset --hard HEAD~2 &&
     ! stg refresh &&
-    stg assimilate &&
+    stg repair &&
     stg refresh &&
     [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg unapplied))" = "p3 p4" ]
@@ -43,7 +43,7 @@ test_expect_success 'Create a new patch' '
 test_expect_success 'Go to an unapplied patch with with git-reset' '
     git reset --hard $(stg id p3) &&
     ! stg refresh &&
-    stg assimilate &&
+    stg repair &&
     stg refresh &&
     [ "$(echo $(stg applied))" = "p0 p1 p2 p3" ] &&
     [ "$(echo $(stg unapplied))" = "q0 p4" ]
@@ -51,7 +51,7 @@ test_expect_success 'Go to an unapplied patch with with git-reset' '
 
 test_expect_success 'Go back to below the stack base with git-reset' '
     git reset --hard foo-tag &&
-    stg assimilate &&
+    stg repair &&
     [ "$(echo $(stg applied))" = "" ] &&
     [ "$(echo $(stg unapplied))" = "p0 p1 p2 p3 q0 p4" ]
 '
