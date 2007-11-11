@@ -101,33 +101,28 @@ def read_commit_dag(branch):
 def func(parser, options, args):
     """Repair inconsistencies in StGit metadata."""
 
-    def nothing_to_do():
-        out.info('Nothing to repair')
-
     orig_applied = crt_series.get_applied()
     orig_unapplied = crt_series.get_unapplied()
-
-    # If head == top, we're done.
-    head = git.get_commit(git.get_head()).get_id_hash()
-    top = crt_series.get_current_patch()
-    if top and head == top.get_top():
-        return nothing_to_do()
 
     if crt_series.get_protected():
         raise CmdException(
             'This branch is protected. Modification is not permitted.')
 
     # Find commits that aren't patches, and applied patches.
+    head = git.get_commit(git.get_head()).get_id_hash()
     commits, patches = read_commit_dag(crt_series.get_name())
     c = commits[head]
-    patchify = []
+    patchify = []       # commits to definitely patchify
+    maybe_patchify = [] # commits to patchify if we find a patch below them
     applied = []
     while len(c.parents) == 1:
         parent, = c.parents
         if c.patch:
             applied.append(c)
-        elif not applied:
-            patchify.append(c)
+            patchify.extend(maybe_patchify)
+            maybe_patchify = []
+        else:
+            maybe_patchify.append(c)
         c = parent
     applied.reverse()
     patchify.reverse()
