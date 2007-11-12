@@ -75,7 +75,7 @@ def show_log(log, options):
             cmd = rev = ''
 
         if options.patch:
-            if cmd in ['refresh', 'undo', 'sync']:
+            if cmd in ['refresh', 'undo', 'sync', 'edit']:
                 diff_str = '%s%s\n' % (diff_str,
                                        git.pretty_commit(commit.get_id_hash()))
         else:
