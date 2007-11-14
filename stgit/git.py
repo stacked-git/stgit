@@ -820,7 +820,10 @@ def checkout(files = None, tree_id = None, force = False):
 def switch(tree_id, keep = False):
     """Switch the tree to the given id
     """
-    if not keep:
+    if keep:
+        # only update the index while keeping the local changes
+        GRun('git-read-tree', tree_id).run()
+    else:
         refresh_index()
         try:
             GRun('git-read-tree', '-u', '-m', get_head(), tree_id).run()
