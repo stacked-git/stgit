@@ -34,7 +34,7 @@ def get():
             __base_dir = os.environ['GIT_DIR']
         else:
             try:
-                __base_dir = Run('git-rev-parse', '--git-dir').output_one_line()
+                __base_dir = Run('git', 'rev-parse', '--git-dir').output_one_line()
             except RunException:
                 __base_dir = ''
 

@@ -59,24 +59,24 @@ def __checkout_files(orig_hash, file1_hash, file2_hash,
 
     if orig_hash:
         orig = path + extensions['ancestor']
-        tmp = MRun('git-unpack-file', orig_hash).output_one_line()
+        tmp = MRun('git', 'unpack-file', orig_hash).output_one_line()
         os.chmod(tmp, int(orig_mode, 8))
         os.renames(tmp, orig)
     if file1_hash:
         src1 = path + extensions['current']
-        tmp = MRun('git-unpack-file', file1_hash).output_one_line()
+        tmp = MRun('git', 'unpack-file', file1_hash).output_one_line()
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, src1)
     if file2_hash:
         src2 = path + extensions['patched']
-        tmp = MRun('git-unpack-file', file2_hash).output_one_line()
+        tmp = MRun('git', 'unpack-file', file2_hash).output_one_line()
         os.chmod(tmp, int(file2_mode, 8))
         os.renames(tmp, src2)
 
     if file1_hash and not os.path.exists(path):
         # the current file might be removed by GIT when it is a new
         # file added in both branches. Just re-generate it
-        tmp = MRun('git-unpack-file', file1_hash).output_one_line()
+        tmp = MRun('git', 'unpack-file', file1_hash).output_one_line()
         os.chmod(tmp, int(file1_mode, 8))
         os.renames(tmp, path)
 
@@ -161,13 +161,13 @@ def merge(orig_hash, file1_hash, file2_hash,
         if file1_hash and file2_hash:
             # if modes are the same (git-read-tree probably dealt with it)
             if file1_hash == file2_hash:
-                if os.system('git-update-index --cacheinfo %s %s %s'
+                if os.system('git update-index --cacheinfo %s %s %s'
                              % (file1_mode, file1_hash, path)) != 0:
-                    out.error('git-update-index failed')
+                    out.error('git update-index failed')
                     __conflict(path)
                     return 1
-                if os.system('git-checkout-index -u -f -- %s' % path):
-                    out.error('git-checkout-index failed')
+                if os.system('git checkout-index -u -f -- %s' % path):
+                    out.error('git checkout-index failed')
                     __conflict(path)
                     return 1
                 if file1_mode != file2_mode:
@@ -182,14 +182,14 @@ def merge(orig_hash, file1_hash, file2_hash,
                                                     'output': path }) == 0
 
                 if merge_ok:
-                    os.system('git-update-index -- %s' % path)
+                    os.system('git update-index -- %s' % path)
                     __remove_files(orig_hash, file1_hash, file2_hash)
                     return 0
                 else:
                     out.error('Three-way merge tool failed for file "%s"'
                               % path)
                     # reset the cache to the first branch
-                    os.system('git-update-index --cacheinfo %s %s %s'
+                    os.system('git update-index --cacheinfo %s %s %s'
                               % (file1_mode, file1_hash, path))
 
                     if config.get('stgit.autoimerge') == 'yes':
@@ -204,7 +204,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                             __conflict(path)
                             return 1
                         # successful interactive merge
-                        os.system('git-update-index -- %s' % path)
+                        os.system('git update-index -- %s' % path)
                         __remove_files(orig_hash, file1_hash, file2_hash)
                         return 0
                     else:
@@ -220,7 +220,7 @@ def merge(orig_hash, file1_hash, file2_hash,
             if os.path.exists(path):
                 os.remove(path)
             __remove_files(orig_hash, file1_hash, file2_hash)
-            return os.system('git-update-index --remove -- %s' % path)
+            return os.system('git update-index --remove -- %s' % path)
         # file deleted in one and changed in the other
         else:
             # Do something here - we must at least merge the entry in
@@ -228,14 +228,14 @@ def merge(orig_hash, file1_hash, file2_hash,
             # fact, stg resolved does not handle that.
 
             # Do the same thing cogito does - remove the file in any case.
-            os.system('git-update-index --remove -- %s' % path)
+            os.system('git update-index --remove -- %s' % path)
 
             #if file1_hash:
                 ## file deleted upstream and changed in the patch. The
                 ## patch is probably going to move the changes
                 ## elsewhere.
 
-                #os.system('git-update-index --remove -- %s' % path)
+                #os.system('git update-index --remove -- %s' % path)
             #else:
                 ## file deleted in the patch and changed upstream. We
                 ## could re-delete it, but for now leave it there -
@@ -243,7 +243,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                 ## the file.
 
                 ## reset the cache to the first branch
-                #os.system('git-update-index --cacheinfo %s %s %s'
+                #os.system('git update-index --cacheinfo %s %s %s'
                 #          % (file1_mode, file1_hash, path))
             __conflict(path)
             return 1
@@ -254,13 +254,13 @@ def merge(orig_hash, file1_hash, file2_hash,
         if file1_hash and file2_hash:
             # files are the same
             if file1_hash == file2_hash:
-                if os.system('git-update-index --add --cacheinfo %s %s %s'
+                if os.system('git update-index --add --cacheinfo %s %s %s'
                              % (file1_mode, file1_hash, path)) != 0:
-                    out.error('git-update-index failed')
+                    out.error('git update-index failed')
                     __conflict(path)
                     return 1
-                if os.system('git-checkout-index -u -f -- %s' % path):
-                    out.error('git-checkout-index failed')
+                if os.system('git checkout-index -u -f -- %s' % path):
+                    out.error('git checkout-index failed')
                     __conflict(path)
                     return 1
                 if file1_mode != file2_mode:
@@ -272,7 +272,7 @@ def merge(orig_hash, file1_hash, file2_hash,
             else:
                 out.error('File "%s" added in branches but different' % path)
                 # reset the cache to the first branch
-                os.system('git-update-index --cacheinfo %s %s %s'
+                os.system('git update-index --cacheinfo %s %s %s'
                           % (file1_mode, file1_hash, path))
 
                 if config.get('stgit.autoimerge') == 'yes':
@@ -287,7 +287,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                         __conflict(path)
                         return 1
                     # successful interactive merge
-                    os.system('git-update-index -- %s' % path)
+                    os.system('git update-index -- %s' % path)
                     __remove_files(orig_hash, file1_hash, file2_hash)
                     return 0
                 else:
@@ -304,13 +304,13 @@ def merge(orig_hash, file1_hash, file2_hash,
             else:
                 mode = file2_mode
                 obj = file2_hash
-            if os.system('git-update-index --add --cacheinfo %s %s %s'
+            if os.system('git update-index --add --cacheinfo %s %s %s'
                          % (mode, obj, path)) != 0:
-                out.error('git-update-index failed')
+                out.error('git update-index failed')
                 __conflict(path)
                 return 1
             __remove_files(orig_hash, file1_hash, file2_hash)
-            return os.system('git-checkout-index -u -f -- %s' % path)
+            return os.system('git checkout-index -u -f -- %s' % path)
 
     # Unhandled case
     out.error('Unhandled merge conflict: "%s" "%s" "%s" "%s" "%s" "%s" "%s"'

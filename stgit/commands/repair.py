@@ -80,7 +80,7 @@ def read_commit_dag(branch):
     out.start('Reading commit DAG')
     commits = {}
     patches = set()
-    for line in Run('git-rev-list', '--parents', '--all').output_lines():
+    for line in Run('git', 'rev-list', '--parents', '--all').output_lines():
         cs = line.split()
         for id in cs:
             if not id in commits:
@@ -88,7 +88,7 @@ def read_commit_dag(branch):
         for id in cs[1:]:
             commits[cs[0]].parents.add(commits[id])
             commits[id].children.add(commits[cs[0]])
-    for line in Run('git-show-ref').output_lines():
+    for line in Run('git', 'show-ref').output_lines():
         id, ref = line.split()
         m = re.match(r'^refs/patches/%s/(.+)$' % branch, ref)
         if m and not m.group(1).endswith('.log'):

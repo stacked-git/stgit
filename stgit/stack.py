@@ -370,10 +370,10 @@ class PatchSet(StgitObject):
 
 
 def shortlog(patches):
-    log = ''.join(Run('git-log', '--pretty=short',
+    log = ''.join(Run('git', 'log', '--pretty=short',
                       p.get_top(), '^%s' % p.get_bottom()).raw_output()
                   for p in patches)
-    return Run('git-shortlog').raw_input(log).raw_output()
+    return Run('git', 'shortlog').raw_input(log).raw_output()
 
 class Series(PatchSet):
     """Class including the operations on series

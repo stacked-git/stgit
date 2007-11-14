@@ -500,14 +500,14 @@ class _Directory(object):
     @readonly_constant_property
     def git_dir(self):
         try:
-            return Run('git-rev-parse', '--git-dir'
+            return Run('git', 'rev-parse', '--git-dir'
                        ).discard_stderr().output_one_line()
         except RunException:
             raise DirectoryException('No git repository found')
     @readonly_constant_property
     def __topdir_path(self):
         try:
-            lines = Run('git-rev-parse', '--show-cdup'
+            lines = Run('git', 'rev-parse', '--show-cdup'
                         ).discard_stderr().output_lines()
             if len(lines) == 0:
                 return '.'
@@ -520,12 +520,12 @@ class _Directory(object):
     @readonly_constant_property
     def is_inside_git_dir(self):
         return { 'true': True, 'false': False
-                 }[Run('git-rev-parse', '--is-inside-git-dir'
+                 }[Run('git', 'rev-parse', '--is-inside-git-dir'
                        ).output_one_line()]
     @readonly_constant_property
     def is_inside_worktree(self):
         return { 'true': True, 'false': False
-                 }[Run('git-rev-parse', '--is-inside-work-tree'
+                 }[Run('git', 'rev-parse', '--is-inside-work-tree'
                        ).output_one_line()]
     def cd_to_topdir(self):
         os.chdir(self.__topdir_path)

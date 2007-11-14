@@ -38,6 +38,10 @@ class GitRunException(GitException):
     pass
 class GRun(Run):
     exc = GitRunException
+    def __init__(self, *cmd):
+        """Initialise the Run object and insert the 'git' command name.
+        """
+        Run.__init__(self, 'git', *cmd)
 
 
 #
@@ -82,7 +86,7 @@ class Commit:
     def __init__(self, id_hash):
         self.__id_hash = id_hash
 
-        lines = GRun('git-cat-file', 'commit', id_hash).output_lines()
+        lines = GRun('cat-file', 'commit', id_hash).output_lines()
         for i in range(len(lines)):
             line = lines[i]
             if not line:
@@ -112,7 +116,7 @@ class Commit:
             return None
 
     def get_parents(self):
-        return GRun('git-rev-list', '--parents', '--max-count=1', self.__id_hash
+        return GRun('rev-list', '--parents', '--max-count=1', self.__id_hash
                     ).output_one_line().split()[1:]
 
     def get_author(self):
@@ -181,9 +185,9 @@ def ls_files(files, tree = None, full_name = True):
     args.append('--')
     args.extend(files)
     try:
-        return GRun('git-ls-files', '--error-unmatch', *args).output_lines()
+        return GRun('ls-files', '--error-unmatch', *args).output_lines()
     except GitRunException:
-        # just hide the details of the git-ls-files command we use
+        # just hide the details of the 'git ls-files' command we use
         raise GitException, \
             'Some of the given paths are either missing or not known to GIT'
 
@@ -207,7 +211,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # unknown files
     if unknown:
-        cmd = ['git-ls-files', '-z', '--others', '--directory',
+        cmd = ['ls-files', '-z', '--others', '--directory',
                '--no-empty-directory']
         if not noexclude:
             cmd += ['--exclude=%s' % s for s in
@@ -231,7 +235,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     args = diff_flags + [tree_id]
     if files:
         args += ['--'] + files
-    for line in GRun('git-diff-index', *args).output_lines():
+    for line in GRun('diff-index', *args).output_lines():
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
         if fs[1] not in conflicts:
             cache_files.append(fs)
@@ -249,7 +253,7 @@ def local_changes(verbose = True):
 def get_heads():
     heads = []
     hr = re.compile(r'^[0-9a-f]{40} refs/heads/(.+)$')
-    for line in GRun('git-show-ref', '--heads').output_lines():
+    for line in GRun('show-ref', '--heads').output_lines():
         m = hr.match(line)
         heads.append(m.group(1))
     return heads
@@ -275,7 +279,7 @@ def get_head_file():
     Throw an exception if HEAD is detached."""
     try:
         return strip_prefix(
-            'refs/heads/', GRun('git-symbolic-ref', '-q', 'HEAD'
+            'refs/heads/', GRun('symbolic-ref', '-q', 'HEAD'
                                 ).output_one_line())
     except GitRunException:
         raise DetachedHeadException()
@@ -287,14 +291,14 @@ def set_head_file(ref):
     # in the new head
     __clear_head_cache()
     try:
-        GRun('git-symbolic-ref', 'HEAD', 'refs/heads/%s' % ref).run()
+        GRun('symbolic-ref', 'HEAD', 'refs/heads/%s' % ref).run()
     except GitRunException:
         raise GitException, 'Could not set head to "%s"' % ref
 
 def set_ref(ref, val):
     """Point ref at a new commit object."""
     try:
-        GRun('git-update-ref', ref, val).run()
+        GRun('update-ref', ref, val).run()
     except GitRunException:
         raise GitException, 'Could not update %s to "%s".' % (ref, val)
 
@@ -323,13 +327,13 @@ def __clear_head_cache():
 def refresh_index():
     """Refresh index with stat() information from the working directory.
     """
-    GRun('git-update-index', '-q', '--unmerged', '--refresh').run()
+    GRun('update-index', '-q', '--unmerged', '--refresh').run()
 
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
     """
     try:
-        return GRun('git-rev-parse', '--verify', git_id
+        return GRun('rev-parse', '--verify', git_id
                     ).discard_stderr().output_one_line()
     except GitRunException:
         raise GitException, 'Unknown revision: %s' % git_id
@@ -373,9 +377,9 @@ def switch_branch(new_branch):
     if tree_id != get_head():
         refresh_index()
         try:
-            GRun('git-read-tree', '-u', '-m', get_head(), tree_id).run()
+            GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
         except GitRunException:
-            raise GitException, 'git-read-tree failed (local changes maybe?)'
+            raise GitException, 'read-tree failed (local changes maybe?)'
         __head = tree_id
     set_head_file(new_branch)
 
@@ -385,9 +389,9 @@ def switch_branch(new_branch):
 def delete_ref(ref):
     if not ref_exists(ref):
         raise GitException, '%s does not exist' % ref
-    sha1 = GRun('git-show-ref', '-s', ref).output_one_line()
+    sha1 = GRun('show-ref', '-s', ref).output_one_line()
     try:
-        GRun('git-update-ref', '-d', ref, sha1).run()
+        GRun('update-ref', '-d', ref, sha1).run()
     except GitRunException:
         raise GitException, 'Failed to delete ref %s' % ref
 
@@ -400,13 +404,13 @@ def rename_ref(from_ref, to_ref):
     if ref_exists(to_ref):
         raise GitException, '"%s" already exists' % to_ref
 
-    sha1 = GRun('git-show-ref', '-s', from_ref).output_one_line()
+    sha1 = GRun('show-ref', '-s', from_ref).output_one_line()
     try:
-        GRun('git-update-ref', to_ref, sha1, '0'*40).run()
+        GRun('update-ref', to_ref, sha1, '0'*40).run()
     except GitRunException:
         raise GitException, 'Failed to create new ref %s' % to_ref
     try:
-        GRun('git-update-ref', '-d', from_ref, sha1).run()
+        GRun('update-ref', '-d', from_ref, sha1).run()
     except GitRunException:
         raise GitException, 'Failed to delete ref %s' % from_ref
 
@@ -445,7 +449,7 @@ def add(names):
 
     if files:
         try:
-            GRun('git-update-index', '--add', '--').xargs(files)
+            GRun('update-index', '--add', '--').xargs(files)
         except GitRunException:
             raise GitException, 'Unable to add file'
 
@@ -453,7 +457,7 @@ def __copy_single(source, target, target2=''):
     """Copy file or dir named 'source' to name target+target2"""
 
     # "source" (file or dir) must match one or more git-controlled file
-    realfiles = GRun('git-ls-files', source).output_lines()
+    realfiles = GRun('ls-files', source).output_lines()
     if len(realfiles) == 0:
         raise GitException, '"%s" matches no git-controled files' % source
 
@@ -521,10 +525,10 @@ def rm(files, force = False):
             if os.path.exists(f):
                 raise GitException, '%s exists. Remove it first' %f
         if files:
-            GRun('git-update-index', '--remove', '--').xargs(files)
+            GRun('update-index', '--remove', '--').xargs(files)
     else:
         if files:
-            GRun('git-update-index', '--force-remove', '--').xargs(files)
+            GRun('update-index', '--force-remove', '--').xargs(files)
 
 # Persons caching
 __user = None
@@ -596,9 +600,9 @@ def update_cache(files = None, force = False):
     rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
     m_files =   [x[1] for x in cache_files if x[0] in ['M']]
 
-    GRun('git-update-index', '--add', '--').xargs(add_files)
-    GRun('git-update-index', '--force-remove', '--').xargs(rm_files)
-    GRun('git-update-index', '--').xargs(m_files)
+    GRun('update-index', '--add', '--').xargs(add_files)
+    GRun('update-index', '--force-remove', '--').xargs(rm_files)
+    GRun('update-index', '--').xargs(m_files)
 
     return True
 
@@ -625,7 +629,7 @@ def commit(message, files = None, parents = None, allowempty = False,
 
     # write the index to repository
     if tree_id == None:
-        tree_id = GRun('git-write-tree').output_one_line()
+        tree_id = GRun('write-tree').output_one_line()
         set_head = True
 
     # the commit
@@ -640,7 +644,7 @@ def commit(message, files = None, parents = None, allowempty = False,
         env['GIT_COMMITTER_NAME'] = committer_name
     if committer_email:
         env['GIT_COMMITTER_EMAIL'] = committer_email
-    commit_id = GRun('git-commit-tree', tree_id,
+    commit_id = GRun('commit-tree', tree_id,
                      *sum([['-p', p] for p in parents], [])
                      ).env(env).raw_input(message).output_one_line()
     if set_head:
@@ -665,7 +669,7 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     diff_str = diff(files, rev1, rev2)
     if diff_str:
         try:
-            GRun('git-apply', *index_opt).raw_input(
+            GRun('apply', *index_opt).raw_input(
                 diff_str).discard_stderr().no_output()
         except GitRunException:
             return False
@@ -684,7 +688,7 @@ def merge(base, head1, head2, recursive = False):
         # general when pushing or picking patches)
         try:
             # discard output to mask the verbose prints of the tool
-            GRun('git-merge-recursive', base, '--', head1, head2
+            GRun('merge-recursive', base, '--', head1, head2
                  ).discard_output()
         except GitRunException, ex:
             err_output = str(ex)
@@ -694,16 +698,16 @@ def merge(base, head1, head2, recursive = False):
         # distance between base and heads is small, i.e. folding or
         # synchronising patches)
         try:
-            GRun('git-read-tree', '-u', '-m', '--aggressive',
+            GRun('read-tree', '-u', '-m', '--aggressive',
                  base, head1, head2).run()
         except GitRunException:
-            raise GitException, 'git-read-tree failed (local changes maybe?)'
+            raise GitException, 'read-tree failed (local changes maybe?)'
 
     # check the index for unmerged entries
     files = {}
     stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
 
-    for line in GRun('git-ls-files', '--unmerged', '--stage', '-z'
+    for line in GRun('ls-files', '--unmerged', '--stage', '-z'
                      ).raw_output().split('\0'):
         if not line:
             continue
@@ -751,15 +755,15 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
         files = []
 
     if rev1 and rev2:
-        return GRun('git-diff-tree', '-p',
+        return GRun('diff-tree', '-p',
                     *(diff_flags + [rev1, rev2, '--'] + files)).raw_output()
     elif rev1 or rev2:
         refresh_index()
         if rev2:
-            return GRun('git-diff-index', '-p', '-R',
+            return GRun('diff-index', '-p', '-R',
                         *(diff_flags + [rev2, '--'] + files)).raw_output()
         else:
-            return GRun('git-diff-index', '-p',
+            return GRun('diff-index', '-p',
                         *(diff_flags + [rev1, '--'] + files)).raw_output()
     else:
         return ''
@@ -768,7 +772,7 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
 # usually invoke git.diff() form the calling functions
 def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
     """Return the diffstat between rev1 and rev2."""
-    return GRun('git-apply', '--stat', '--summary'
+    return GRun('apply', '--stat', '--summary'
                 ).raw_input(diff(files, rev1, rev2)).raw_output()
 
 def files(rev1, rev2, diff_flags = []):
@@ -776,7 +780,7 @@ def files(rev1, rev2, diff_flags = []):
     """
 
     result = []
-    for line in GRun('git-diff-tree', *(diff_flags + ['-r', rev1, rev2])
+    for line in GRun('diff-tree', *(diff_flags + ['-r', rev1, rev2])
                      ).output_lines():
         result.append('%s %s' % tuple(line.split(' ', 4)[-1].split('\t', 1)))
 
@@ -787,7 +791,7 @@ def barefiles(rev1, rev2):
     """
 
     result = []
-    for line in GRun('git-diff-tree', '-r', rev1, rev2).output_lines():
+    for line in GRun('diff-tree', '-r', rev1, rev2).output_lines():
         result.append(line.split(' ', 4)[-1].split('\t', 1)[-1])
 
     return '\n'.join(result)
@@ -795,7 +799,7 @@ def barefiles(rev1, rev2):
 def pretty_commit(commit_id = 'HEAD', diff_flags = []):
     """Return a given commit (log + diff)
     """
-    return GRun('git-diff-tree',
+    return GRun('diff-tree',
                 *(diff_flags
                   + ['--cc', '--always', '--pretty', '-r', commit_id])
                 ).raw_output()
@@ -805,11 +809,11 @@ def checkout(files = None, tree_id = None, force = False):
     """
     if tree_id:
         try:
-            GRun('git-read-tree', '--reset', tree_id).run()
+            GRun('read-tree', '--reset', tree_id).run()
         except GitRunException:
-            raise GitException, 'Failed git-read-tree --reset %s' % tree_id
+            raise GitException, 'Failed "git read-tree" --reset %s' % tree_id
 
-    cmd = ['git-checkout-index', '-q', '-u']
+    cmd = ['checkout-index', '-q', '-u']
     if force:
         cmd.append('-f')
     if files:
@@ -822,13 +826,13 @@ def switch(tree_id, keep = False):
     """
     if keep:
         # only update the index while keeping the local changes
-        GRun('git-read-tree', tree_id).run()
+        GRun('read-tree', tree_id).run()
     else:
         refresh_index()
         try:
-            GRun('git-read-tree', '-u', '-m', get_head(), tree_id).run()
+            GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
         except GitRunException:
-            raise GitException, 'git-read-tree failed (local changes maybe?)'
+            raise GitException, 'read-tree failed (local changes maybe?)'
 
     __set_head(tree_id)
 
@@ -853,7 +857,7 @@ def reset(files = None, tree_id = None, check_out = True):
         __set_head(tree_id)
 
 def fetch(repository = 'origin', refspec = None):
-    """Fetches changes from the remote repository, using 'git-fetch'
+    """Fetches changes from the remote repository, using 'git fetch'
     by default.
     """
     # we update the HEAD
@@ -865,10 +869,10 @@ def fetch(repository = 'origin', refspec = None):
 
     command = config.get('branch.%s.stgit.fetchcmd' % get_head_file()) or \
               config.get('stgit.fetchcmd')
-    GRun(*(command.split() + args)).run()
+    Run(*(command.split() + args)).run()
 
 def pull(repository = 'origin', refspec = None):
-    """Fetches changes from the remote repository, using 'git-pull'
+    """Fetches changes from the remote repository, using 'git pull'
     by default.
     """
     # we update the HEAD
@@ -880,7 +884,7 @@ def pull(repository = 'origin', refspec = None):
 
     command = config.get('branch.%s.stgit.pullcmd' % get_head_file()) or \
               config.get('stgit.pullcmd')
-    GRun(*(command.split() + args)).run()
+    Run(*(command.split() + args)).run()
 
 def rebase(tree_id = None):
     """Rebase the current tree to the give tree_id. The tree_id
@@ -898,7 +902,7 @@ def rebase(tree_id = None):
     if command:
         # clear the HEAD cache as the custom rebase command will update it
         __clear_head_cache()
-        GRun(*(command.split() + args)).run()
+        Run(*(command.split() + args)).run()
     else:
         # default rebasing
         reset(tree_id = tree_id)
@@ -906,7 +910,7 @@ def rebase(tree_id = None):
 def repack():
     """Repack all objects into a single pack
     """
-    GRun('git-repack', '-a', '-d', '-f').run()
+    GRun('repack', '-a', '-d', '-f').run()
 
 def apply_patch(filename = None, diff = None, base = None,
                 fail_dump = True):
@@ -929,7 +933,7 @@ def apply_patch(filename = None, diff = None, base = None,
         refresh_index()
 
     try:
-        GRun('git-apply', '--index').raw_input(diff).no_output()
+        GRun('apply', '--index').raw_input(diff).no_output()
     except GitRunException:
         if base:
             switch(orig_head)
@@ -950,13 +954,13 @@ def apply_patch(filename = None, diff = None, base = None,
 
 def clone(repository, local_dir):
     """Clone a remote repository. At the moment, just use the
-    'git-clone' script
+    'git clone' script
     """
-    GRun('git-clone', repository, local_dir).run()
+    GRun('clone', repository, local_dir).run()
 
 def modifying_revs(files, base_rev, head_rev):
     """Return the revisions from the list modifying the given files."""
-    return GRun('git-rev-list', '%s..%s' % (base_rev, head_rev), '--', *files
+    return GRun('rev-list', '%s..%s' % (base_rev, head_rev), '--', *files
                 ).output_lines()
 
 def refspec_localpart(refspec):
@@ -1054,4 +1058,4 @@ def all_refs():
     """Return a list of all refs in the current repository.
     """
 
-    return [line.split()[1] for line in GRun('git-show-ref').output_lines()]
+    return [line.split()[1] for line in GRun('show-ref').output_lines()]
