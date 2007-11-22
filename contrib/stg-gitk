@@ -12,25 +12,31 @@ set -e
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
 
+helptext="Usage: $(basename $0) [--refs] [<branches>|--all] [-- <gitk args>]"
+
 usage()
 {
-    echo "Usage: $(basename $0) [<branches>|--all]"
+    echo >&2 "$helptext"
     exit 1
 }
 
 allbranches=0
 refsonly=0
+branches=''
 while [ "$#" -gt 0 ]; do
     case "$1" in
 	--refs) refsonly=1 ;;
 	--all) allbranches=1 ;;
+	--help) echo "$helptext"; exit 0 ;;
+	--) shift; break ;;
 	--*) usage ;;
-	*) break ;;
+	*) branches="$branches $1" ;;
     esac
     shift
 done
+# Now any remaining stuff in $@ are additional options for gitk
 
-if [ $allbranches = 1 ] && [ "$#" -gt 0 ]; then
+if [ $allbranches = 1 ] && [ "$branches" != "" ]; then
     usage
 fi
 
@@ -41,11 +47,17 @@ refdirs=''
 if [ $allbranches = 1 ]; then
     refdirs="$GIT_DIR/refs"
 else
-    if [ "$#" = 0 ]; then
-	set -- "$(stg branch)"
+    # default to current branch
+    if [ "$branches" == "" ]; then
+	branches="$(stg branch)"
+    fi
+    if [ "$branches" == "" ]; then
+	echo >&2 "ERROR: cannot find current branch."
+	exit 1
     fi
 
-    for b in "$@"; do
+    # expand patches for each named branch
+    for b in $branches; do
 	if [ -e "$GIT_DIR/refs/patches/$b" ]; then
 	    # StGIT branch: show all patches
 	    refdirs="$refdirs $GIT_DIR/refs/heads/$b $GIT_DIR/refs/patches/$b"
@@ -73,11 +85,11 @@ elif grep -q -- --argscmd $(which gitk); then
     # This gitk supports --argscmd.
     # Let's use a hack to pass --all, which was consumed during command-line parsing
     if [ $allbranches = 1 ]; then
-	gitk --argscmd="$0 --refs --all"
+	gitk --argscmd="$0 --refs --all" "$@"
     else
-	gitk --argscmd="$0 --refs $*"
+	gitk --argscmd="$0 --refs $branches" "$@"
     fi
 else
     # This gitk does not support --argscmd, just compute refs onces
-    gitk $(printrefs)
+    gitk $(printrefs) "$@"
 fi
