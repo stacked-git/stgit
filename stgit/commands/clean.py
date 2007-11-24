@@ -37,33 +37,14 @@ options = [make_option('-a', '--applied',
 
 
 def _clean(stack, clean_applied, clean_unapplied):
-    def deleting(pn):
-        out.info('Deleting empty patch %s' % pn)
     trans = transaction.StackTransaction(stack, 'clean')
-    if clean_unapplied:
-        trans.unapplied = []
-        for pn in stack.patchorder.unapplied:
-            p = stack.patches.get(pn)
-            if p.is_empty():
-                trans.patches[pn] = None
-                deleting(pn)
-            else:
-                trans.unapplied.append(pn)
-    if clean_applied:
-        trans.applied = []
-        parent = stack.base
-        for pn in stack.patchorder.applied:
-            p = stack.patches.get(pn)
-            if p.is_empty():
-                trans.patches[pn] = None
-                deleting(pn)
-            else:
-                if parent != p.commit.data.parent:
-                    parent = trans.patches[pn] = stack.repository.commit(
-                        p.commit.data.set_parent(parent))
-                else:
-                    parent = p.commit
-                trans.applied.append(pn)
+    def del_patch(pn):
+        if pn in stack.patchorder.applied:
+            return clean_applied and trans.patches[pn].data.is_nochange()
+        elif pn in stack.patchorder.unapplied:
+            return clean_unapplied and trans.patches[pn].data.is_nochange()
+    for pn in trans.delete_patches(del_patch):
+        trans.push_patch(pn)
     trans.run()
 
 def func(parser, options, args):
