@@ -17,13 +17,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
+from optparse import make_option
+from stgit.commands import common
+from stgit.lib import transaction
 from stgit.out import *
-from stgit import stack, git
+from stgit import utils
 
 help = 'turn regular GIT commits into StGIT patches'
 usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish> [-x]
@@ -48,7 +46,7 @@ given commit should be uncommitted.
 Only commits with exactly one parent can be uncommitted; in other
 words, you can't uncommit a merge."""
 
-directory = DirectoryGotoToplevel()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-n', '--number', type = 'int',
                        help = 'uncommit the specified number of commits'),
            make_option('-t', '--to',
@@ -60,19 +58,18 @@ options = [make_option('-n', '--number', type = 'int',
 def func(parser, options, args):
     """Uncommit a number of patches.
     """
+    stack = directory.repository.current_stack
     if options.to:
         if options.number:
             parser.error('cannot give both --to and --number')
         if len(args) != 0:
             parser.error('cannot specify patch name with --to')
         patch_nr = patchnames = None
-        to_commit = git_id(crt_series, options.to)
+        to_commit = stack.repository.rev_parse(options.to)
     elif options.number:
         if options.number <= 0:
             parser.error('invalid value passed to --number')
-
         patch_nr = options.number
-
         if len(args) == 0:
             patchnames = None
         elif len(args) == 1:
@@ -88,53 +85,45 @@ def func(parser, options, args):
         patchnames = args
         patch_nr = len(patchnames)
 
-    if crt_series.get_protected():
-        raise CmdException, \
-              'This branch is protected. Uncommit is not permitted'
-
-    def get_commit(commit_id):
-        commit = git.Commit(commit_id)
-        try:
-            parent, = commit.get_parents()
-        except ValueError:
-            raise CmdException('Commit %s does not have exactly one parent'
-                               % commit_id)
-        return (commit, commit_id, parent)
-
     commits = []
-    next_commit = crt_series.get_base()
+    next_commit = stack.base
     if patch_nr:
         out.start('Uncommitting %d patches' % patch_nr)
         for i in xrange(patch_nr):
-            commit, commit_id, parent = get_commit(next_commit)
-            commits.append((commit, commit_id, parent))
-            next_commit = parent
+            commits.append(next_commit)
+            next_commit = next_commit.data.parent
     else:
         if options.exclusive:
             out.start('Uncommitting to %s (exclusive)' % to_commit)
         else:
             out.start('Uncommitting to %s' % to_commit)
         while True:
-            commit, commit_id, parent = get_commit(next_commit)
-            if commit_id == to_commit:
+            if next_commit == to_commit:
                 if not options.exclusive:
-                    commits.append((commit, commit_id, parent))
+                    commits.append(next_commit)
                 break
-            commits.append((commit, commit_id, parent))
-            next_commit = parent
+            commits.append(next_commit)
+            next_commit = next_commit.data.parent
         patch_nr = len(commits)
 
-    for (commit, commit_id, parent), patchname in \
-        zip(commits, patchnames or [None for i in xrange(len(commits))]):
-        author_name, author_email, author_date = \
-                     name_email_date(commit.get_author())
-        crt_series.new_patch(patchname,
-                             can_edit = False, before_existing = True,
-                             commit = False,
-                             top = commit_id, bottom = parent,
-                             message = commit.get_log(),
-                             author_name = author_name,
-                             author_email = author_email,
-                             author_date = author_date)
+    taken_names = set(stack.patchorder.applied + stack.patchorder.unapplied)
+    if patchnames:
+        for pn in patchnames:
+            if pn in taken_names:
+                raise common.CmdException('Patch name "%s" already taken' % pn)
+            taken_names.add(pn)
+    else:
+        patchnames = []
+        for c in reversed(commits):
+            pn = utils.make_patch_name(c.data.message,
+                                       lambda pn: pn in taken_names)
+            patchnames.append(pn)
+            taken_names.add(pn)
+        patchnames.reverse()
 
+    trans = transaction.StackTransaction(stack, 'stg uncommit')
+    for commit, pn in zip(commits, patchnames):
+        trans.patches[pn] = commit
+    trans.applied = list(reversed(patchnames)) + trans.applied
+    trans.run()
     out.done()
