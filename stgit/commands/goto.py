@@ -27,9 +27,8 @@ help = 'push or pop patches to the given one'
 usage = """%prog [options] <name>
 
 Push/pop patches to/from the stack until the one given on the command
-line becomes current. This is a shortcut for the 'push --to' or 'pop
---to' commands. There is no '--undo' option for 'goto'. Use the 'push'
-command for this."""
+line becomes current. There is no '--undo' option for 'goto'. Use the
+'push --undo' command for this."""
 
 directory = DirectoryGotoToplevel()
 options = [make_option('-k', '--keep',
