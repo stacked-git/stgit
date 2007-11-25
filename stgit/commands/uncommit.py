@@ -26,7 +26,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'turn regular GIT commits into StGIT patches'
-usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish>
+usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish> [-x]
 
 Take one or more git commits at the base of the current stack and turn
 them into StGIT patches. The new patches are created as applied patches
