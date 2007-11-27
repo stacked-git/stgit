@@ -165,7 +165,7 @@ class Patch(StgitObject):
         self.create_empty_field('bottom')
         self.create_empty_field('top')
 
-    def delete(self):
+    def delete(self, keep_log = False):
         if os.path.isdir(self._dir()):
             for f in os.listdir(self._dir()):
                 os.remove(os.path.join(self._dir(), f))
@@ -177,7 +177,7 @@ class Patch(StgitObject):
             git.delete_ref(self.__top_ref)
         except git.GitException, e:
             out.warn(str(e))
-        if git.ref_exists(self.__log_ref):
+        if not keep_log and git.ref_exists(self.__log_ref):
             git.delete_ref(self.__log_ref)
 
     def get_name(self):
@@ -940,7 +940,7 @@ class Series(PatchSet):
 
         return patch
 
-    def delete_patch(self, name):
+    def delete_patch(self, name, keep_log = False):
         """Deletes a patch
         """
         self.__patch_name_valid(name)
@@ -957,7 +957,7 @@ class Series(PatchSet):
         # save the commit id to a trash file
         write_string(os.path.join(self.__trash_dir, name), patch.get_top())
 
-        patch.delete()
+        patch.delete(keep_log = keep_log)
 
         unapplied = self.get_unapplied()
         unapplied.remove(name)

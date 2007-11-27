@@ -129,7 +129,7 @@ def __create_patch(filename, message, author_name, author_email,
         out.info('Ignoring already applied patch "%s"' % patch)
         return
     if options.replace and patch in crt_series.get_unapplied():
-        crt_series.delete_patch(patch)
+        crt_series.delete_patch(patch, keep_log = True)
 
     # refresh_patch() will invoke the editor in this case, with correct
     # patch content
