@@ -52,4 +52,18 @@ test_expect_success 'Conflicting push from subdir' '
     [ "$(echo $(stg status --conflict))" = "foo/y.txt x.txt" ]
 '
 
+test_expect_success 'Conflicting add/unknown file in subdir' '
+    stg status --reset &&
+    stg new foo -m foo &&
+    mkdir d &&
+    echo foo > d/test &&
+    stg add d/test &&
+    stg refresh &&
+    stg pop &&
+    mkdir -p d &&
+    echo bar > d/test &&
+    ! stg push foo &&
+    [ $(stg top) != "foo" ]
+'
+
 test_done
