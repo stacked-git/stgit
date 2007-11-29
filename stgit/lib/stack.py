@@ -132,7 +132,8 @@ class Stack(object):
             raise exception.StgException('%s: no such branch' % name)
         self.__patchorder = PatchOrder(self)
         self.__patches = Patches(self)
-        stackupgrade.update_to_current_format_version(repository, name)
+        if not stackupgrade.update_to_current_format_version(repository, name):
+            raise exception.StgException('%s: branch not initialized' % name)
     name = property(lambda self: self.__name)
     repository = property(lambda self: self.__repository)
     patchorder = property(lambda self: self.__patchorder)

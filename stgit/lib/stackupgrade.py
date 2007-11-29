@@ -91,6 +91,8 @@ def update_to_current_format_version(repository, branch):
         set_format_version(2)
 
     # Make sure we're at the latest version.
-    if not get_format_version() in [None, FORMAT_VERSION]:
+    fv = get_format_version()
+    if not fv in [None, FORMAT_VERSION]:
         raise StackException('Branch %s is at format version %d, expected %d'
-                             % (branch, get_format_version(), FORMAT_VERSION))
+                             % (branch, fv, FORMAT_VERSION))
+    return fv != None # true if branch is initialized
