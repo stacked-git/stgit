@@ -114,8 +114,8 @@ def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
         raise CmdException(
 """HEAD and top are not the same. This can happen if you
-   modify a branch with git. The "repair" command can
-   fix this situation.""")
+   modify a branch with git. "stg repair --help" explains
+   more about what to do next.""")
 
 def check_conflicts():
     if os.path.exists(os.path.join(basedir.get(), 'conflicts')):

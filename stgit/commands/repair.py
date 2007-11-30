@@ -26,32 +26,47 @@ from stgit.out import *
 from stgit.run import *
 from stgit import stack, git
 
-help = 'StGit-ify any git commits made on top of your StGit stack'
+help = 'Fix StGit metadata if branch was modified with git commands'
 usage = """%prog [options]
 
-"repair" will repair three kinds of inconsistencies in your StGit
-stack, all of them caused by using plain git commands on the branch:
+If you modify an StGit stack (branch) with some git commands -- such
+as commit, pull, merge, and rebase -- you will leave the StGit
+metadata in an inconsistent state. In that situation, you have two
+options:
 
-  1. If you have made regular git commits on top of your stack of
-     StGit patches, "repair" converts them to StGit patches,
-     preserving their contents.
+  1. Use "git reset" or similar to undo the effect of the git
+     command(s).
 
-  2. Merge commits cannot become patches; if you have committed a
-     merge on top of your stack, "repair" will simply mark all
-     patches below the merge unapplied, since they are no longer
-     reachable. If this is not what you want, use "git reset" to get
-     rid of the merge and run "repair" again.
+  2. Use "stg repair". This will fix up the StGit metadata to
+     accomodate the modifications to the branch. Specifically, it will
+     do the following:
 
-  3. The applied patches are supposed to be precisely those that are
-     reachable from the branch head. If you have used e.g. "git reset"
-     to move the head, some applied patches may no longer be
-     reachable, and some unapplied patches may have become reachable.
-     "repair" will correct the appliedness of such patches.
+       * If you have made regular git commits on top of your stack of
+         StGit patches, "stg repair" makes new StGit patches out of
+         them, preserving their contents.
 
-Note that these are "inconsistencies", not "errors"; furthermore,
-"repair" will repair them reliably. As long as you are satisfied
-with the way "repair" handles them, you have no reason to avoid
-causing them in the first place if that is convenient for you."""
+       * However, merge commits cannot become patches; if you have
+         committed a merge on top of your stack, "repair" will simply
+         mark all patches below the merge unapplied, since they are no
+         longer reachable. If this is not what you want, use "git
+         reset" to get rid of the merge and run "stg repair" again.
+
+       * The applied patches are supposed to be precisely those that
+         are reachable from the branch head. If you have used e.g.
+         "git reset" to move the head, some applied patches may no
+         longer be reachable, and some unapplied patches may have
+         become reachable. "stg repair" will correct the appliedness
+         of such patches.
+
+     "stg repair" will fix these inconsistencies reliably, so as long
+     as you like what it does, you have no reason to avoid causing
+     them in the first place. For example, you might find it
+     convenient to make commits with a graphical tool and then have
+     "stg repair" make proper patches of the commits.
+
+NOTE: If using git commands on the stack was a mistake, running "stg
+repair" is _not_ what you want. In that case, what you want is option
+(1) above."""
 
 directory = DirectoryGotoToplevel()
 options = []
