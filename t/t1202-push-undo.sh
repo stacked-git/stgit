@@ -52,4 +52,10 @@ test_expect_success \
 	stg push --undo
 	'
 
+test_expect_success \
+	'Check the push after undo fails as well' \
+	'
+	! stg push bar
+	'
+
 test_done

@@ -767,7 +767,7 @@ class Series(PatchSet):
                       author_name = None, author_email = None,
                       author_date = None,
                       committer_name = None, committer_email = None,
-                      backup = False, sign_str = None, log = 'refresh',
+                      backup = True, sign_str = None, log = 'refresh',
                       notes = None, bottom = None):
         """Generates a new commit for the topmost patch
         """

@@ -171,7 +171,8 @@ def __create_patch(filename, message, author_name, author_email,
             git.apply_patch(diff = diff)
         crt_series.refresh_patch(edit = options.edit,
                                  show_patch = options.showpatch,
-                                 sign_str = options.sign_str)
+                                 sign_str = options.sign_str,
+                                 backup = False)
         out.done()
 
 def __import_file(filename, options, patch = None):
