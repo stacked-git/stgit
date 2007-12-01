@@ -159,4 +159,16 @@ test_expect_success 'Status after deleting a file' '
     diff -u expected.txt output.txt
 '
 
+cat > expected.txt <<EOF
+D foo/bar
+EOF
+test_expect_success 'Status of disappeared newborn' '
+    stg refresh &&
+    touch foo/bar &&
+    stg add foo/bar &&
+    rm foo/bar &&
+    stg status > output.txt &&
+    diff -u expected.txt output.txt
+'
+
 test_done

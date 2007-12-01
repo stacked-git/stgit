@@ -230,15 +230,27 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         conflicts = []
     cache_files += [('C', filename) for filename in conflicts
                     if not files or filename in files]
+    reported_files = set(conflicts)
 
-    # the rest
+    # files in the index
     args = diff_flags + [tree_id]
     if files:
         args += ['--'] + files
     for line in GRun('diff-index', *args).output_lines():
         fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
-        if fs[1] not in conflicts:
+        if fs[1] not in reported_files:
             cache_files.append(fs)
+            reported_files.add(fs[1])
+
+    # files in the index but changed on (or removed from) disk
+    args = list(diff_flags)
+    if files:
+        args += ['--'] + files
+    for line in GRun('diff-files', *args).output_lines():
+        fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+        if fs[1] not in reported_files:
+            cache_files.append(fs)
+            reported_files.add(fs[1])
 
     if verbose:
         out.done()

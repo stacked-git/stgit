@@ -58,4 +58,13 @@ test_expect_success \
 	! stg push bar
 	'
 
+test_expect_success \
+	'Undo with disappeared newborn' \
+	'
+	touch newfile &&
+	stg add newfile &&
+	rm newfile &&
+	stg push --undo
+	'
+
 test_done
