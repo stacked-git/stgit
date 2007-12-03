@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, time
+import sys, os, time, re
 from optparse import OptionParser, make_option
 
 from stgit.commands.common import *
@@ -120,19 +120,15 @@ def func(parser, options, args):
             try:
                 branchpoint = git.rev_parse(args[1])
 
-                # first, look for branchpoint in well-known branch namespaces
-                for namespace in ('refs/heads/', 'remotes/'):
-                    # check if branchpoint exists in namespace
-                    try:
-                        maybehead = git.rev_parse(namespace + args[1])
-                    except git.GitException:
-                        maybehead = None
-
-                    # check if git resolved branchpoint to this namespace
-                    if maybehead and branchpoint == maybehead:
-                        # we are for sure referring to a branch
-                        parentbranch = namespace + args[1]
-
+                # parent branch?
+                head_re = re.compile('refs/(heads|remotes)/')
+                ref_re = re.compile(args[1] + '$')
+                for ref in git.all_refs():
+                    if head_re.match(ref) and ref_re.search(ref):
+                        # args[1] is a valid ref from the branchpoint
+                        # setting above
+                        parentbranch = args[1]
+                        break;
             except git.GitException:
                 # should use a more specific exception to catch only
                 # non-git refs ?
