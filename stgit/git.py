@@ -366,13 +366,20 @@ def create_branch(new_branch, tree_id = None):
     if branch_exists(new_branch):
         raise GitException, 'Branch "%s" already exists' % new_branch
 
+    current_head_file = get_head_file()
     current_head = get_head()
     set_head_file(new_branch)
     __set_head(current_head)
 
     # a checkout isn't needed if new branch points to the current head
     if tree_id:
-        switch(tree_id)
+        try:
+            switch(tree_id)
+        except GitException:
+            # Tree switching failed. Revert the head file
+            set_head_file(current_head_file)
+            delete_branch(new_branch)
+            raise
 
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))

@@ -49,7 +49,30 @@ test_expect_success \
 test_expect_success \
     'Create an invalid refs/heads/ entry' '
     find .git -name foo | xargs rm -rf &&
-    touch .git/refs/heads/foo
+    touch .git/refs/heads/foo &&
+    ! stg branch -c foo
+'
+
+test_expect_success \
+    'Setup two commits including removal of generated files' '
+    git init &&
+    touch a.c a.o &&
+    git add a.c a.o &&
+    git commit -m 1 &&
+    git rm a.c a.o &&
+    git commit -m 2 &&
+    touch a.o
+'
+
+test_expect_failure \
+    'Create branch down the stack, behind the conflict caused by the generated file' '
+    stg branch --create bar master^
+'
+
+test_expect_success \
+    'Check the branch was not created' '
+    test ! -r .git/refs/heads/bar &&
+    test ! -r a.c
 '
 
 test_done
