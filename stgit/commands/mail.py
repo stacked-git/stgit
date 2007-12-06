@@ -35,7 +35,9 @@ specified by the 'stgit.smtpserver' configuration option, or the
 format are generated from the template file passed as argument to
 '--template' (defaulting to '.git/patchmail.tmpl' or
 '~/.stgit/templates/patchmail.tmpl' or
-'/usr/share/stgit/templates/patchmail.tmpl').
+'/usr/share/stgit/templates/patchmail.tmpl'). A patch can be sent as
+attachment using the --attach option in which case the 'mailattch.tmpl'
+template will be used instead of 'patchmail.tmpl'.
 
 The To/Cc/Bcc addresses can either be added to the template file or
 passed via the corresponding command line options. They can be e-mail
@@ -109,6 +111,9 @@ options = [make_option('-a', '--all',
                        action = 'store_true'),
            make_option('--unrelated',
                        help = 'send patches without sequence numbering',
+                       action = 'store_true'),
+           make_option('--attach',
+                       help = 'send a patch as attachment',
                        action = 'store_true'),
            make_option('-v', '--version', metavar = 'VERSION',
                        help = 'add VERSION to the [PATCH ...] prefix'),
@@ -234,6 +239,7 @@ def __build_address_headers(msg, options, extra_cc = []):
         to_addr = ', '.join(options.to)
     if options.cc:
         cc_addr = ', '.join(options.cc + extra_cc)
+        cc_addr = ', '.join(options.cc + extra_cc)
     elif extra_cc:
         cc_addr = ', '.join(extra_cc)
     if options.bcc:
@@ -290,7 +296,11 @@ def __encode_message(msg):
         msg.replace_header(header, new_val)
 
     # encode the body and set the MIME and encoding headers
-    msg.set_charset(charset)
+    if msg.is_multipart():
+        for p in msg.get_payload():
+            p.set_charset(charset)
+    else:
+        msg.set_charset(charset)
 
 def __edit_message(msg):
     fname = '.stgitmail.txt'
@@ -565,7 +575,10 @@ def func(parser, options, args):
     if options.template:
         tmpl = file(options.template).read()
     else:
-        tmpl = templates.get_template('patchmail.tmpl')
+        if options.attach:
+            tmpl = templates.get_template('mailattch.tmpl')
+        else:
+            tmpl = templates.get_template('patchmail.tmpl')
         if not tmpl:
             raise CmdException, 'No e-mail template file found'
 
