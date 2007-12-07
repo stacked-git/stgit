@@ -32,4 +32,19 @@ test_expect_success \
     [ "$t1" = "$t2" ]
     '
 
+test_expect_success \
+    'Put all the patches in an mbox with patch attachments' \
+    'stg mail --to="Inge Ström <inge@example.com>" -a -m \
+       -t ../../templates/mailattch.tmpl > mbox1'
+
+test_expect_success \
+    'Import the mbox containing patch attachments and compare' \
+    '
+    t1=$(git cat-file -p $(stg id) | grep ^tree)
+    stg pop -a &&
+    stg import -M mbox1 &&
+    t2=$(git cat-file -p $(stg id) | grep ^tree) &&
+    [ "$t1" = "$t2" ]
+    '
+
 test_done
