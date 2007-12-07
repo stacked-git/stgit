@@ -21,6 +21,7 @@ from pydoc import pager
 from stgit.commands.common import *
 from stgit import stack, git
 from stgit.out import *
+from stgit.run import Run
 
 help = 'display the patch changelog'
 usage = """%prog [options] [patch]
@@ -140,7 +141,6 @@ def func(parser, options, args):
         raise CmdException, 'No changelog for patch "%s"' % name
 
     if options.graphical:
-        if os.system('gitk %s' % log) != 0:
-            raise CmdException, 'gitk execution failed'
+        Run('gitk', log).run(exitcode = False)
     else:
         show_log(log, options)

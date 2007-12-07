@@ -78,7 +78,7 @@ class Run:
         self.__log_end(self.exitcode)
         self.__check_exitcode()
         return outdata
-    def __run_noio(self):
+    def __run_noio(self, exitcode = True):
         """Run without captured IO."""
         assert self.__indata == None
         self.__log_start()
@@ -88,7 +88,8 @@ class Run:
         except OSError, e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
-        self.__check_exitcode()
+        if exitcode:
+            self.__check_exitcode()
     def returns(self, retvals):
         self.__good_retvals = retvals
         return self
@@ -128,9 +129,9 @@ class Run:
         else:
             raise self.exc('%s produced %d lines, expected 1'
                            % (self.__cmd[0], len(outlines)))
-    def run(self):
+    def run(self, exitcode = True):
         """Just run, with no IO redirection."""
-        self.__run_noio()
+        self.__run_noio(exitcode = exitcode)
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
