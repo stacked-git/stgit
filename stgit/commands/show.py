@@ -46,23 +46,21 @@ options = [make_option('-b', '--branch',
 def func(parser, options, args):
     """Show commit log and diff
     """
-    applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
-
     if options.applied:
-        patches = applied
+        patches = crt_series.get_applied()
     elif options.unapplied:
-        patches = unapplied
+        patches = crt_series.get_unapplied()
     elif len(args) == 0:
         patches = ['HEAD']
     else:
-        if len(args) == 1 and args[0].find('..') == -1 \
-               and not crt_series.patch_exists(args[0]):
-            # it might be just a commit id
+        if len(args) == 1 and args[0].find('..') == -1:
+            # single patch or commit id
             patches = args
         else:
-            patches = parse_patches(args, applied + unapplied +\
-                                crt_series.get_hidden(), len(applied))
+            applied = crt_series.get_applied()
+            unapplied = crt_series.get_unapplied()
+            patches = parse_patches(args, applied + unapplied + \
+                                    crt_series.get_hidden(), len(applied))
 
     if options.show_opts:
         show_flags = options.show_opts.split()

@@ -4,7 +4,7 @@ test_description='Run "stg diff"'
 
 . ./test-lib.sh
 
-test_expect_failure 'Diff with no StGit data' '
+test_expect_success 'Diff with no StGit data' '
     stg diff
 '
 
@@ -13,7 +13,7 @@ test_expect_success 'Make some local changes' '
     git add foo.txt
 '
 
-test_expect_failure 'Diff with some local changes' '
+test_expect_success 'Diff with some local changes' '
     stg diff
 '
 

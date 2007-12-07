@@ -77,6 +77,14 @@ def git_id(crt_series, rev):
     """
     if not rev:
         return None
+
+    # try a GIT revision first
+    try:
+        return git.rev_parse(rev + '^{commit}')
+    except git.GitException:
+        pass
+
+    # try an StGIT patch name
     try:
         patch, branch, patch_id = parse_rev(rev)
         if branch == None:
@@ -103,7 +111,10 @@ def git_id(crt_series, rev):
             return series.get_base()
     except RevParseException:
         pass
-    return git.rev_parse(rev + '^{commit}')
+    except stack.StackException:
+        pass
+
+    raise CmdException, 'Unknown patch or revision: %s' % rev
 
 def check_local_changes():
     if git.local_changes():
