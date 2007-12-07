@@ -10,10 +10,17 @@ Exercises the "stg branch" commands.
 
 . ./test-lib.sh
 
-stg init
+test_expect_success \
+    'Create a branch when the current one is not an StGIT stack' '
+    git branch origin &&
+    stg branch --create new origin &&
+    test $(stg branch) == "new"
+'
 
 test_expect_success \
     'Create a spurious patches/ entry' '
+    stg branch master &&
+    stg init &&
     find .git -name foo | xargs rm -rf &&
     mkdir -p .git/patches && touch .git/patches/foo
 '

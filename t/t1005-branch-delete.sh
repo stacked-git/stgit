@@ -14,6 +14,11 @@ test_expect_success 'Delete a branch' '
     stg branch --delete master
     '
 
+test_expect_success 'Create a non-StGIT branch and delete it' '
+    git branch bar &&
+    stg branch --delete bar
+    '
+
 test_expect_success 'Make sure the branch ref was deleted' '
     [ -z "$(git show-ref | grep master | tee /dev/stderr)" ]
     '

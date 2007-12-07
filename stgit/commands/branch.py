@@ -91,16 +91,13 @@ def __print_branch(branch_name, length):
 def __delete_branch(doomed_name, force = False):
     doomed = stack.Series(doomed_name)
 
+    if __is_current_branch(doomed_name):
+        raise CmdException('Cannot delete the current branch')
     if doomed.get_protected():
         raise CmdException, 'This branch is protected. Delete is not permitted'
 
     out.start('Deleting branch "%s"' % doomed_name)
-
-    if __is_current_branch(doomed_name):
-        raise CmdException('Cannot delete the current branch')
-
     doomed.delete(force)
-
     out.done()
 
 def func(parser, options, args):

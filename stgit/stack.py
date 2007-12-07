@@ -753,10 +753,10 @@ class Series(PatchSet):
                 raise StackException('Series directory %s is not empty'
                                      % self._dir())
 
-            try:
-                git.delete_branch(self.get_name())
-            except GitException:
-                out.warn('Could not delete branch "%s"' % self.get_name())
+        try:
+            git.delete_branch(self.get_name())
+        except GitException:
+            out.warn('Could not delete branch "%s"' % self.get_name())
 
         config.remove_section('branch.%s' % self.get_name())
         config.remove_section('branch.%s.stgit' % self.get_name())
