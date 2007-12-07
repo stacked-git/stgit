@@ -152,6 +152,8 @@ def resolved(filename, reset = None):
             if os.path.isfile(filename):
                 os.remove(filename)
             os.rename(reset_file, filename)
+            # update the access and modificatied times
+            os.utime(filename, None)
 
     git.update_cache([filename], force = True)
 
