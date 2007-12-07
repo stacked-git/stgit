@@ -39,8 +39,8 @@ options = [make_option('-b', '--branch',
            make_option('-u', '--unapplied',
                        help = 'show the unapplied patches',
                        action = 'store_true'),
-           make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff')]
+           make_option('-O', '--show-opts',
+                       help = 'options to pass to "git show"')]
 
 
 def func(parser, options, args):
@@ -64,13 +64,13 @@ def func(parser, options, args):
             patches = parse_patches(args, applied + unapplied +\
                                 crt_series.get_hidden(), len(applied))
 
-    if options.diff_opts:
-        diff_flags = options.diff_opts.split()
+    if options.show_opts:
+        show_flags = options.show_opts.split()
     else:
-        diff_flags = []
+        show_flags = []
 
     commit_ids = [git_id(crt_series, patch) for patch in patches]
-    commit_str = '\n'.join([git.pretty_commit(commit_id, diff_flags=diff_flags)
+    commit_str = '\n'.join([git.pretty_commit(commit_id, flags = show_flags)
                             for commit_id in commit_ids])
     if commit_str:
         pager(commit_str)

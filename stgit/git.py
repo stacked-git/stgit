@@ -815,13 +815,10 @@ def barefiles(rev1, rev2):
 
     return '\n'.join(result)
 
-def pretty_commit(commit_id = 'HEAD', diff_flags = []):
+def pretty_commit(commit_id = 'HEAD', flags = []):
     """Return a given commit (log + diff)
     """
-    return GRun('diff-tree',
-                *(diff_flags
-                  + ['--cc', '--always', '--pretty', '-r', commit_id])
-                ).raw_output()
+    return GRun('show', *(flags + [commit_id])).raw_output()
 
 def checkout(files = None, tree_id = None, force = False):
     """Check out the given or all files
