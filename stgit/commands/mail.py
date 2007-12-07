@@ -272,6 +272,8 @@ def __build_extra_headers(msg, msg_id, ref_id = None):
     msg['Date'] = email.Utils.formatdate(localtime = True)
     msg['Message-ID'] = msg_id
     if ref_id:
+        # make sure the ref id has the angle brackets
+        ref_id = '<%s>' % ref_id.strip(' \t\n<>')
         msg['In-Reply-To'] = ref_id
         msg['References'] = ref_id
     msg['User-Agent'] = 'StGIT/%s' % version.version
