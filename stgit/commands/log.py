@@ -49,6 +49,8 @@ options = [make_option('-b', '--branch',
            make_option('-p', '--patch',
                        help = 'show the refresh diffs',
                        action = 'store_true'),
+           make_option('-n', '--number', type = 'int',
+                       help = 'limit the output to NUMBER commits'),
            make_option('-f', '--full',
                        help = 'show the full commit ids',
                        action = 'store_true'),
@@ -60,8 +62,16 @@ def show_log(log, options):
     """List the patch changelog
     """
     commit = git.get_commit(log)
-    diff_str = ''
+    if options.number != None:
+        n = options.number
+    else:
+        n = -1
+    diff_list = []
     while commit:
+        if n == 0:
+            # limit the output
+            break
+
         log = commit.get_log().split('\n')
 
         cmd_rev = log[0].split()
@@ -76,8 +86,10 @@ def show_log(log, options):
 
         if options.patch:
             if cmd in ['refresh', 'undo', 'sync', 'edit']:
-                diff_str = '%s%s\n' % (diff_str,
-                                       git.pretty_commit(commit.get_id_hash()))
+                diff_list.append(git.pretty_commit(commit.get_id_hash()))
+
+                # limiter decrement
+                n -= 1
         else:
             if len(log) >= 3:
                 notes = log[2]
@@ -94,14 +106,17 @@ def show_log(log, options):
                 out.stdout('%-8s [%-7s] %-28s  %s' % \
                            (rev[:8], cmd[:7], notes[:28], date))
 
+            # limiter decrement
+            n -= 1
+
         parent = commit.get_parent()
         if parent:
             commit = git.get_commit(parent)
         else:
             commit = None
 
-    if options.patch and diff_str:
-        pager(diff_str.rstrip())
+    if options.patch and diff_list:
+        pager('\n'.join(diff_list).rstrip())
 
 def func(parser, options, args):
     """Show the patch changelog
