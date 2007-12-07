@@ -1,9 +1,52 @@
 #!/usr/bin/env python
 
-import glob
+import sys, glob
 from distutils.core import setup
 
-from stgit.version import version
+from stgit.version import version, git_min_ver, python_min_ver
+from stgit.run import Run
+
+def __version_to_list(version):
+    """Convert a version string to a list of numbers or strings
+    """
+    ver_list = []
+    for p in version.split('.'):
+        try:
+            n = int(p)
+        except ValueError:
+            n = p
+        ver_list.append(n)
+    return ver_list
+
+def __check_min_version(min_ver, ver):
+    """Check whether ver is greater or equal to min_ver
+    """
+    min_ver_list = __version_to_list(min_ver)
+    ver_list = __version_to_list(ver)
+    return min_ver_list <= ver_list
+
+def __check_python_version():
+    """Check the minimum Python version
+    """
+    pyver = '.'.join(str(n) for n in sys.version_info)
+    if not __check_min_version(python_min_ver, pyver):
+        print >> sys.stderr, 'Python version %s or newer required. Found %s' \
+              % (python_min_ver, pyver)
+        sys.exit(1)
+
+def __check_git_version():
+    """Check the minimum GIT version
+    """
+    gitver = Run('git', '--version').output_one_line().split()[2]
+    if not __check_min_version(git_min_ver, gitver):
+        print >> sys.stderr, 'GIT version %s or newer required. Found %s' \
+              % (git_min_ver, gitver)
+        sys.exit(1)
+
+# Check the minimum versions required
+if sys.argv[1] in ['install', 'build']:
+    __check_python_version()
+    __check_git_version()
 
 setup(name = 'stgit',
       version = version,
