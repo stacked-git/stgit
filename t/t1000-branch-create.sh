@@ -71,9 +71,9 @@ test_expect_success \
     touch a.o
 '
 
-test_expect_failure \
+test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
-    stg branch --create bar master^
+    ! stg branch --create bar master^
 '
 
 test_expect_success \
