@@ -141,6 +141,6 @@ def func(parser, options, args):
         raise CmdException, 'No changelog for patch "%s"' % name
 
     if options.graphical:
-        Run('gitk', log).run(exitcode = False)
+        Run('gitk', log).discard_exitcode().run()
     else:
         show_log(log, options)

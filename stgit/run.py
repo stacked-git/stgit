@@ -58,6 +58,8 @@ class Run:
             duration = datetime.datetime.now() - self.__starttime
             out.done('%1.3f s' % (duration.microseconds/1e6 + duration.seconds))
     def __check_exitcode(self):
+        if self.__good_retvals == None:
+            return
         if self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d'
                            % (self.__cmd[0], self.exitcode))
@@ -78,7 +80,7 @@ class Run:
         self.__log_end(self.exitcode)
         self.__check_exitcode()
         return outdata
-    def __run_noio(self, exitcode = True):
+    def __run_noio(self):
         """Run without captured IO."""
         assert self.__indata == None
         self.__log_start()
@@ -88,10 +90,12 @@ class Run:
         except OSError, e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
-        if exitcode:
-            self.__check_exitcode()
+        self.__check_exitcode()
     def returns(self, retvals):
         self.__good_retvals = retvals
+        return self
+    def discard_exitcode(self):
+        self.__good_retvals = None
         return self
     def discard_stderr(self, discard = True):
         self.__discard_stderr = discard
@@ -129,9 +133,9 @@ class Run:
         else:
             raise self.exc('%s produced %d lines, expected 1'
                            % (self.__cmd[0], len(outlines)))
-    def run(self, exitcode = True):
+    def run(self):
         """Just run, with no IO redirection."""
-        self.__run_noio(exitcode = exitcode)
+        self.__run_noio()
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
