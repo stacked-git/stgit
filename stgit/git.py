@@ -767,11 +767,14 @@ def merge(base, head1, head2, recursive = False):
     if errors:
         raise GitException, 'GIT index merging failed (possible conflicts)'
 
-def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
+def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
+         binary = True):
     """Show the diff between rev1 and rev2
     """
     if not files:
         files = []
+    if binary and '--binary' not in diff_flags:
+        diff_flags = diff_flags + ['--binary']
 
     if rev1 and rev2:
         return GRun('diff-tree', '-p',
