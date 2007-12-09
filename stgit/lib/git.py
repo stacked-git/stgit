@@ -95,6 +95,8 @@ class Commitdata(Repr):
         return type(self)(committer = committer, defaults = self)
     def set_message(self, message):
         return type(self)(message = message, defaults = self)
+    def is_nochange(self):
+        return len(self.parents) == 1 and self.tree == self.parent.data.tree
     def __str__(self):
         if self.tree == None:
             tree = None
@@ -218,6 +220,21 @@ class Repository(RunWithEnv):
                                ).output_one_line())
         except run.RunException:
             raise RepositoryException('Cannot find git repository')
+    def default_index(self):
+        return Index(self, (os.environ.get('GIT_INDEX_FILE', None)
+                            or os.path.join(self.__git_dir, 'index')))
+    def temp_index(self):
+        return Index(self, self.__git_dir)
+    def default_worktree(self):
+        path = os.environ.get('GIT_WORK_TREE', None)
+        if not path:
+            o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
+            o = o or ['.']
+            assert len(o) == 1
+            path = o[0]
+        return Worktree(path)
+    def default_iw(self):
+        return IndexAndWorktree(self.default_index(), self.default_worktree())
     directory = property(lambda self: self.__git_dir)
     refs = property(lambda self: self.__refs)
     def cat_object(self, sha1):
@@ -258,3 +275,113 @@ class Repository(RunWithEnv):
             raise DetachedHeadException()
     def set_head(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
+    def simple_merge(self, base, ours, theirs):
+        """Given three trees, tries to do an in-index merge in a temporary
+        index with a temporary index. Returns the result tree, or None if
+        the merge failed (due to conflicts)."""
+        assert isinstance(base, Tree)
+        assert isinstance(ours, Tree)
+        assert isinstance(theirs, Tree)
+
+        # Take care of the really trivial cases.
+        if base == ours:
+            return theirs
+        if base == theirs:
+            return ours
+        if ours == theirs:
+            return ours
+
+        index = self.temp_index()
+        try:
+            index.merge(base, ours, theirs)
+            try:
+                return index.write_tree()
+            except MergeException:
+                return None
+        finally:
+            index.delete()
+
+class MergeException(exception.StgException):
+    pass
+
+class Index(RunWithEnv):
+    def __init__(self, repository, filename):
+        self.__repository = repository
+        if os.path.isdir(filename):
+            # Create a temp index in the given directory.
+            self.__filename = os.path.join(
+                filename, 'index.temp-%d-%x' % (os.getpid(), id(self)))
+            self.delete()
+        else:
+            self.__filename = filename
+    env = property(lambda self: utils.add_dict(
+            self.__repository.env, { 'GIT_INDEX_FILE': self.__filename }))
+    def read_tree(self, tree):
+        self.run(['git', 'read-tree', tree.sha1]).no_output()
+    def write_tree(self):
+        try:
+            return self.__repository.get_tree(
+                self.run(['git', 'write-tree']).discard_stderr(
+                    ).output_one_line())
+        except run.RunException:
+            raise MergeException('Conflicting merge')
+    def is_clean(self):
+        try:
+            self.run(['git', 'update-index', '--refresh']).discard_output()
+        except run.RunException:
+            return False
+        else:
+            return True
+    def merge(self, base, ours, theirs):
+        """In-index merge, no worktree involved."""
+        self.run(['git', 'read-tree', '-m', '-i', '--aggressive',
+                  base.sha1, ours.sha1, theirs.sha1]).no_output()
+    def delete(self):
+        if os.path.isfile(self.__filename):
+            os.remove(self.__filename)
+
+class Worktree(object):
+    def __init__(self, directory):
+        self.__directory = directory
+    env = property(lambda self: { 'GIT_WORK_TREE': self.__directory })
+
+class CheckoutException(exception.StgException):
+    pass
+
+class IndexAndWorktree(RunWithEnv):
+    def __init__(self, index, worktree):
+        self.__index = index
+        self.__worktree = worktree
+    index = property(lambda self: self.__index)
+    env = property(lambda self: utils.add_dict(self.__index.env,
+                                               self.__worktree.env))
+    def checkout(self, old_tree, new_tree):
+        # TODO: Optionally do a 3-way instead of doing nothing when we
+        # have a problem. Or maybe we should stash changes in a patch?
+        assert isinstance(old_tree, Tree)
+        assert isinstance(new_tree, Tree)
+        try:
+            self.run(['git', 'read-tree', '-u', '-m',
+                      '--exclude-per-directory=.gitignore',
+                      old_tree.sha1, new_tree.sha1]
+                     ).discard_output()
+        except run.RunException:
+            raise CheckoutException('Index/workdir dirty')
+    def merge(self, base, ours, theirs):
+        assert isinstance(base, Tree)
+        assert isinstance(ours, Tree)
+        assert isinstance(theirs, Tree)
+        try:
+            self.run(['git', 'merge-recursive', base.sha1, '--', ours.sha1,
+                      theirs.sha1],
+                     env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
+                             'GITHEAD_%s' % ours.sha1: 'current',
+                             'GITHEAD_%s' % theirs.sha1: 'patched'}
+                     ).discard_output()
+        except run.RunException, e:
+            raise MergeException('Index/worktree dirty')
+    def changed_files(self):
+        return self.run(['git', 'diff-files', '--name-only']).output_lines()
+    def update_index(self, files):
+        self.run(['git', 'update-index', '--remove', '-z', '--stdin']
+                 ).input_nulterm(files).discard_output()

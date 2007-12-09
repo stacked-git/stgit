@@ -70,8 +70,7 @@ class Patch(object):
     def is_applied(self):
         return self.name in self.__stack.patchorder.applied
     def is_empty(self):
-        c = self.commit
-        return c.data.tree == c.data.parent.data.tree
+        return self.commit.data.is_nochange()
 
 class PatchOrder(object):
     """Keeps track of patch order, and which patches are applied.
@@ -155,6 +154,10 @@ class Stack(object):
                                     ).commit.data.parent
         else:
             return self.head
+    def head_top_equal(self):
+        if not self.patchorder.applied:
+            return True
+        return self.head == self.patches.get(self.patchorder.applied[-1]).commit
 
 class Repository(git.Repository):
     def __init__(self, *args, **kwargs):

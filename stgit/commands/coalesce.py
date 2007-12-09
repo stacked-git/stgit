@@ -27,58 +27,86 @@ help = 'coalesce two or more patches into one'
 usage = """%prog [options] <patches>
 
 Coalesce two or more patches, creating one big patch that contains all
-their changes. The patches must all be applied, and must be
-consecutive."""
+their changes.
+
+If there are conflicts when reordering the patches to match the order
+you specify, you will have to resolve them manually just as if you had
+done a sequence of pushes and pops yourself."""
 
 directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-n', '--name', help = 'name of coalesced patch'),
            make_option('-m', '--message',
                        help = 'commit message of coalesced patch')]
 
-def _coalesce(stack, name, msg, patches):
-    applied = stack.patchorder.applied
+def _coalesce_patches(trans, patches, msg):
+    cd = trans.patches[patches[0]].data
+    cd = git.Commitdata(tree = cd.tree, parents = cd.parents)
+    for pn in patches[1:]:
+        c = trans.patches[pn]
+        tree = trans.stack.repository.simple_merge(
+            base = c.data.parent.data.tree,
+            ours = cd.tree, theirs = c.data.tree)
+        if not tree:
+            return None
+        cd = cd.set_tree(tree)
+    if msg == None:
+        msg = '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),
+                                        trans.patches[pn].data.message)
+                          for pn in patches)
+        msg = utils.edit_string(msg, '.stgit-coalesce.txt').strip()
+    cd = cd.set_message(msg)
 
-    # Make sure the patches are consecutive.
-    applied_ix = dict((applied[i], i) for i in xrange(len(applied)))
-    ixes = list(sorted(applied_ix[p] for p in patches))
-    i0, i1 = ixes[0], ixes[-1]
-    if i1 - i0 + 1 != len(patches):
-        raise common.CmdException('The patches must be consecutive')
+    return cd
 
-    # Make a commit for the coalesced patch.
+def _coalesce(stack, iw, name, msg, patches):
+
+    # If a name was supplied on the command line, make sure it's OK.
     def bad_name(pn):
         return pn not in patches and stack.patches.exists(pn)
+    def get_name(cd):
+        return name or utils.make_patch_name(cd.message, bad_name)
     if name and bad_name(name):
         raise common.CmdException('Patch name "%s" already taken')
-    ps = [stack.patches.get(pn) for pn in applied[i0:i1+1]]
-    if msg == None:
-        msg = '\n\n'.join('%s\n\n%s' % (p.name.ljust(70, '-'),
-                                        p.commit.data.message)
-                          for p in ps)
-        msg = utils.edit_string(msg, '.stgit-coalesce.txt').strip()
-    if not name:
-        name = utils.make_patch_name(msg, bad_name)
-    cd = git.Commitdata(tree = ps[-1].commit.data.tree,
-                        parents = ps[0].commit.data.parents, message = msg)
 
-    # Rewrite refs.
+    def make_coalesced_patch(trans, new_commit_data):
+        name = get_name(new_commit_data)
+        trans.patches[name] = stack.repository.commit(new_commit_data)
+        trans.unapplied.insert(0, name)
+
     trans = transaction.StackTransaction(stack, 'stg coalesce')
-    for pn in applied[i0:i1+1]:
-        trans.patches[pn] = None
-    parent = trans.patches[name] = stack.repository.commit(cd)
-    trans.applied = applied[:i0]
-    trans.applied.append(name)
-    for pn in applied[i1+1:]:
-        p = stack.patches.get(pn)
-        parent = trans.patches[pn] = stack.repository.commit(
-            p.commit.data.set_parent(parent))
-        trans.applied.append(pn)
-    trans.run()
+    push_new_patch = bool(set(patches) & set(trans.applied))
+    new_commit_data = _coalesce_patches(trans, patches, msg)
+    try:
+        if new_commit_data:
+            # We were able to construct the coalesced commit
+            # automatically. So just delete its constituent patches.
+            to_push = trans.delete_patches(lambda pn: pn in patches)
+        else:
+            # Automatic construction failed. So push the patches
+            # consecutively, so that a second construction attempt is
+            # guaranteed to work.
+            to_push = trans.pop_patches(lambda pn: pn in patches)
+            for pn in patches:
+                trans.push_patch(pn, iw)
+            new_commit_data = _coalesce_patches(trans, patches, msg)
+            assert not trans.delete_patches(lambda pn: pn in patches)
+        make_coalesced_patch(trans, new_commit_data)
+
+        # Push the new patch if necessary, and any unrelated patches we've
+        # had to pop out of the way.
+        if push_new_patch:
+            trans.push_patch(get_name(new_commit_data), iw)
+        for pn in to_push:
+            trans.push_patch(pn, iw)
+    except transaction.TransactionHalted:
+        pass
+    trans.run(iw)
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
-    applied = set(stack.patchorder.applied)
-    patches = set(common.parse_patches(args, list(stack.patchorder.applied)))
+    patches = common.parse_patches(args, (list(stack.patchorder.applied)
+                                          + list(stack.patchorder.unapplied)))
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
-    _coalesce(stack, options.name, options.message, patches)
+    _coalesce(stack, stack.repository.default_iw(),
+              options.name, options.message, patches)
