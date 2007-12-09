@@ -15,13 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
 from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import stack, git
-
+from stgit.commands import common
+from stgit.lib import transaction
 
 help = 'push or pop patches to the given one'
 usage = """%prog [options] <name>
@@ -30,38 +26,26 @@ Push/pop patches to/from the stack until the one given on the command
 line becomes current. There is no '--undo' option for 'goto'. Use the
 'push --undo' command for this."""
 
-directory = DirectoryGotoToplevel()
-options = [make_option('-k', '--keep',
-                       help = 'keep the local changes when popping patches',
-                       action = 'store_true')]
-
+directory = common.DirectoryHasRepositoryLib()
+options = []
 
 def func(parser, options, args):
-    """Pushes the given patch or all onto the series
-    """
     if len(args) != 1:
         parser.error('incorrect number of arguments')
-
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
-    if not options.keep:
-        check_local_changes()
-
-    applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
     patch = args[0]
 
-    if patch in applied:
-        applied.reverse()
-        patches = applied[:applied.index(patch)]
-        pop_patches(crt_series, patches, options.keep)
-    elif patch in unapplied:
-        if options.keep:
-            raise CmdException, 'Cannot use --keep with patch pushing'
-        patches = unapplied[:unapplied.index(patch)+1]
-        push_patches(crt_series, patches)
+    stack = directory.repository.current_stack
+    iw = stack.repository.default_iw()
+    trans = transaction.StackTransaction(stack, 'stg goto')
+    if patch in trans.applied:
+        to_pop = set(trans.applied[trans.applied.index(patch)+1:])
+        assert not trans.pop_patches(lambda pn: pn in to_pop)
+    elif patch in trans.unapplied:
+        try:
+            for pn in trans.unapplied[:trans.unapplied.index(patch)+1]:
+                trans.push_patch(pn, iw)
+        except transaction.TransactionHalted:
+            pass
     else:
-        raise CmdException, 'Patch "%s" does not exist' % patch
-
-    print_crt_patch(crt_series)
+        raise common.CmdException('Patch "%s" does not exist' % patch)
+    trans.run(iw)
