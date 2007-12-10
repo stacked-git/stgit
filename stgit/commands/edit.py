@@ -96,7 +96,10 @@ def __update_patch(pname, fname, options):
     bottom = patch.get_bottom()
     top = patch.get_top()
 
-    f = open(fname)
+    if fname == '-':
+        f = sys.stdin
+    else:
+        f = open(fname)
     message, author_name, author_email, author_date, diff = parse_patch(f)
     f.close()
 
@@ -171,9 +174,12 @@ def __generate_file(pname, fname, options):
     text = tmpl % tmpl_dict
 
     # write the file to be edited
-    f = open(fname, 'w+')
-    f.write(text)
-    f.close()
+    if fname == '-':
+        sys.stdout.write(text)
+    else:
+        f = open(fname, 'w+')
+        f.write(text)
+        f.close()
 
 def __edit_update_patch(pname, options):
     """Edit the given patch interactively.
