@@ -72,6 +72,8 @@ options = [make_option('-d', '--diff',
                        help = 'annotate the patch log entry'),
            make_option('-m', '--message',
                        help = 'replace the patch description with MESSAGE'),
+           make_option('--save-template', metavar = 'FILE',
+                       help = 'save the patch to FILE in the format used by -f'),
            make_option('--author', metavar = '"NAME <EMAIL>"',
                        help = 'replae the author details with "NAME <EMAIL>"'),
            make_option('--authname',
@@ -120,8 +122,8 @@ def __update_patch(pname, fname, options):
     else:
         out.done()
 
-def __edit_update_patch(pname, options):
-    """Edit the given patch interactively.
+def __generate_file(pname, fname, options):
+    """Generate a file containing the description to edit
     """
     patch = crt_series.get_patch(pname)
 
@@ -168,15 +170,20 @@ def __edit_update_patch(pname, options):
 
     text = tmpl % tmpl_dict
 
+    # write the file to be edited
+    f = open(fname, 'w+')
+    f.write(text)
+    f.close()
+
+def __edit_update_patch(pname, options):
+    """Edit the given patch interactively.
+    """
     if options.diff:
         fname = '.stgit-edit.diff'
     else:
         fname = '.stgit-edit.txt'
 
-    # write the file to be edited
-    f = open(fname, 'w+')
-    f.write(text)
-    f.close()
+    __generate_file(pname, fname, options)
 
     # invoke the editor
     call_editor(fname)
@@ -233,6 +240,8 @@ def func(parser, options, args):
                                  log = 'edit',
                                  notes = options.annotate)
         out.done()
+    elif options.save_template:
+        __generate_file(pname, options.save_template, options)
     elif options.file:
         __update_patch(pname, options.file, options)
     else:
