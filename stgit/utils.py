@@ -301,3 +301,8 @@ def make_message_options():
             m('--save-template', action = 'callback', callback = templ_callback,
               metavar = 'FILE', dest = 'save_template', type = 'string',
               help = 'save the message template to FILE and exit')]
+
+# Exit codes.
+STGIT_SUCCESS = 0        # everything's OK
+STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
+STGIT_COMMAND_ERROR = 2  # seems to be a command that failed

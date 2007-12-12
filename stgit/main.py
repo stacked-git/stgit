@@ -23,6 +23,7 @@ from optparse import OptionParser
 
 import stgit.commands
 from stgit.out import *
+from stgit import utils
 
 #
 # The commands map
@@ -39,11 +40,11 @@ class Commands(dict):
         if not candidates:
             out.error('Unknown command: %s' % key,
                       'Try "%s help" for a list of supported commands' % prog)
-            sys.exit(1)
+            sys.exit(utils.STGIT_GENERAL_ERROR)
         elif len(candidates) > 1:
             out.error('Ambiguous command: %s' % key,
                       'Candidates are: %s' % ', '.join(candidates))
-            sys.exit(1)
+            sys.exit(utils.STGIT_GENERAL_ERROR)
 
         return candidates[0]
         
@@ -206,7 +207,7 @@ def main():
         print >> sys.stderr, 'usage: %s <command>' % prog
         print >> sys.stderr, \
               '  Try "%s --help" for a list of supported commands' % prog
-        sys.exit(1)
+        sys.exit(utils.STGIT_GENERAL_ERROR)
 
     cmd = sys.argv[1]
 
@@ -216,13 +217,13 @@ def main():
             sys.argv[2] = '--help'
         else:
             print_help()
-            sys.exit(0)
+            sys.exit(utils.STGIT_SUCCESS)
     if cmd == 'help':
         if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
             cmd = commands.canonical_cmd(sys.argv[2])
             if not cmd in commands:
                 out.error('%s help: "%s" command unknown' % (prog, cmd))
-                sys.exit(1)
+                sys.exit(utils.STGIT_GENERAL_ERROR)
 
             sys.argv[0] += ' %s' % cmd
             command = commands[cmd]
@@ -232,16 +233,16 @@ def main():
             pager(parser.format_help())
         else:
             print_help()
-        sys.exit(0)
+        sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['-v', '--version', 'version']:
         from stgit.version import version
         print 'Stacked GIT %s' % version
         os.system('git --version')
         print 'Python version %s' % sys.version
-        sys.exit(0)
+        sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['copyright']:
         print __copyright__
-        sys.exit(0)
+        sys.exit(utils.STGIT_SUCCESS)
 
     # re-build the command line arguments
     cmd = commands.canonical_cmd(cmd)
@@ -265,7 +266,7 @@ def main():
         debug_level = int(os.environ.get('STGIT_DEBUG_LEVEL', 0))
     except ValueError:
         out.error('Invalid STGIT_DEBUG_LEVEL environment variable')
-        sys.exit(1)
+        sys.exit(utils.STGIT_GENERAL_ERROR)
 
     try:
         directory.setup()
@@ -284,8 +285,8 @@ def main():
         if debug_level > 0:
             raise
         else:
-            sys.exit(2)
+            sys.exit(utils.STGIT_COMMAND_ERROR)
     except KeyboardInterrupt:
-        sys.exit(1)
+        sys.exit(utils.STGIT_GENERAL_ERROR)
 
-    sys.exit(0)
+    sys.exit(utils.STGIT_SUCCESS)
