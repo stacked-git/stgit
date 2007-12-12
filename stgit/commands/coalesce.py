@@ -34,11 +34,13 @@ you specify, you will have to resolve them manually just as if you had
 done a sequence of pushes and pops yourself."""
 
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-n', '--name', help = 'name of coalesced patch'),
-           make_option('-m', '--message',
-                       help = 'commit message of coalesced patch')]
+options = [make_option('-n', '--name', help = 'name of coalesced patch')
+           ] + utils.make_message_options()
 
-def _coalesce_patches(trans, patches, msg):
+class SaveTemplateDone(Exception):
+    pass
+
+def _coalesce_patches(trans, patches, msg, save_template):
     cd = trans.patches[patches[0]].data
     cd = git.Commitdata(tree = cd.tree, parents = cd.parents)
     for pn in patches[1:]:
@@ -53,12 +55,16 @@ def _coalesce_patches(trans, patches, msg):
         msg = '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),
                                         trans.patches[pn].data.message)
                           for pn in patches)
-        msg = utils.edit_string(msg, '.stgit-coalesce.txt').strip()
+        if save_template:
+            save_template(msg)
+            raise SaveTemplateDone()
+        else:
+            msg = utils.edit_string(msg, '.stgit-coalesce.txt').strip()
     cd = cd.set_message(msg)
 
     return cd
 
-def _coalesce(stack, iw, name, msg, patches):
+def _coalesce(stack, iw, name, msg, save_template, patches):
 
     # If a name was supplied on the command line, make sure it's OK.
     def bad_name(pn):
@@ -75,8 +81,8 @@ def _coalesce(stack, iw, name, msg, patches):
 
     trans = transaction.StackTransaction(stack, 'stg coalesce')
     push_new_patch = bool(set(patches) & set(trans.applied))
-    new_commit_data = _coalesce_patches(trans, patches, msg)
     try:
+        new_commit_data = _coalesce_patches(trans, patches, msg, save_template)
         if new_commit_data:
             # We were able to construct the coalesced commit
             # automatically. So just delete its constituent patches.
@@ -88,7 +94,8 @@ def _coalesce(stack, iw, name, msg, patches):
             to_push = trans.pop_patches(lambda pn: pn in patches)
             for pn in patches:
                 trans.push_patch(pn, iw)
-            new_commit_data = _coalesce_patches(trans, patches, msg)
+            new_commit_data = _coalesce_patches(trans, patches, msg,
+                                                save_template)
             assert not trans.delete_patches(lambda pn: pn in patches)
         make_coalesced_patch(trans, new_commit_data)
 
@@ -98,6 +105,9 @@ def _coalesce(stack, iw, name, msg, patches):
             trans.push_patch(get_name(new_commit_data), iw)
         for pn in to_push:
             trans.push_patch(pn, iw)
+    except SaveTemplateDone:
+        trans.abort(iw)
+        return
     except transaction.TransactionHalted:
         pass
     trans.run(iw)
@@ -109,4 +119,4 @@ def func(parser, options, args):
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
     _coalesce(stack, stack.repository.default_iw(),
-              options.name, options.message, patches)
+              options.name, options.message, options.save_template, patches)
