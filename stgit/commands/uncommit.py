@@ -28,7 +28,7 @@ usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish> [-x]
 
 Take one or more git commits at the base of the current stack and turn
 them into StGIT patches. The new patches are created as applied patches
-at the bottom of the stack. This is the exact opposite of 'stg commit'.
+at the bottom of the stack. This is the opposite of 'stg commit'.
 
 By default, the number of patches to uncommit is determined by the
 number of patch names provided on the command line. First name is used

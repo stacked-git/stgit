@@ -35,7 +35,7 @@ test_expect_success \
 test_expect_success \
 	'Commit the patches' \
 	'
-	stg commit
+	stg commit --all
 	'
 
 test_expect_success \
@@ -43,7 +43,7 @@ test_expect_success \
 	'
 	stg uncommit bar foo &&
 	[ "$(stg id foo//top)" = "$(stg id bar//bottom)" ] &&
-	stg commit
+	stg commit --all
 	'
 
 test_expect_success \
@@ -51,7 +51,7 @@ test_expect_success \
 	'
 	stg uncommit --number=2 foobar &&
 	[ "$(stg id foobar1//top)" = "$(stg id foobar2//bottom)" ] &&
-	stg commit
+	stg commit --all
 	'
 
 test_expect_success \
@@ -59,7 +59,7 @@ test_expect_success \
 	'
 	stg uncommit --number=2 &&
 	[ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
-	stg commit
+	stg commit --all
 	'
 
 test_expect_success \
@@ -68,14 +68,14 @@ test_expect_success \
 	stg uncommit &&
 	stg uncommit &&
 	[ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
-	stg commit
+	stg commit --all
 	'
 
 test_expect_success \
     'Uncommit the patches with --to' '
     stg uncommit --to HEAD^ &&
     [ "$(stg id foo-patch//top)" = "$(stg id bar-patch//bottom)" ] &&
-    stg commit
+    stg commit --all
 '
 
 test_done

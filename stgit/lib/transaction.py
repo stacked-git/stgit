@@ -51,7 +51,8 @@ class StackTransaction(object):
         self.__unapplied = list(val)
     unapplied = property(lambda self: self.__unapplied, __set_unapplied)
     def __set_base(self, val):
-        assert not self.__applied
+        assert (not self.__applied
+                or self.patches[self.applied[0]].data.parent == val)
         self.__base = val
     base = property(lambda self: self.__base, __set_base)
     def __checkout(self, tree, iw):
