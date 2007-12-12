@@ -482,11 +482,11 @@ def parse_mail(msg):
 
     return (descr, authname, authemail, authdate, diff)
 
-def parse_patch(fobj):
-    """Parse the input file and return (description, authname,
+def parse_patch(text):
+    """Parse the input text and return (description, authname,
     authemail, authdate, diff)
     """
-    descr, diff = __split_descr_diff(fobj.read())
+    descr, diff = __split_descr_diff(text)
     descr, authname, authemail, authdate = __parse_description(descr)
 
     # we don't yet have an agreed place for the creation date.

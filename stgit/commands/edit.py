@@ -100,7 +100,8 @@ def __update_patch(pname, fname, options):
         f = sys.stdin
     else:
         f = open(fname)
-    message, author_name, author_email, author_date, diff = parse_patch(f)
+    (message, author_name, author_email, author_date, diff
+     ) = parse_patch(f.read())
     f.close()
 
     out.start('Updating patch "%s"' % pname)
