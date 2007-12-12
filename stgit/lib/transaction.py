@@ -41,6 +41,7 @@ class StackTransaction(object):
         self.__unapplied = list(self.__stack.patchorder.unapplied)
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
+        self.__base = self.__stack.base
     stack = property(lambda self: self.__stack)
     patches = property(lambda self: self.__patches)
     def __set_applied(self, val):
@@ -49,6 +50,10 @@ class StackTransaction(object):
     def __set_unapplied(self, val):
         self.__unapplied = list(val)
     unapplied = property(lambda self: self.__unapplied, __set_unapplied)
+    def __set_base(self, val):
+        assert not self.__applied
+        self.__base = val
+    base = property(lambda self: self.__base, __set_base)
     def __checkout(self, tree, iw):
         if not self.__stack.head_top_equal():
             out.error(
@@ -76,7 +81,7 @@ class StackTransaction(object):
         if self.__applied:
             return self.__patches[self.__applied[-1]]
         else:
-            return self.__stack.base
+            return self.__base
     def abort(self, iw = None):
         # The only state we need to restore is index+worktree.
         if iw:

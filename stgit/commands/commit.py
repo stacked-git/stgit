@@ -15,13 +15,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
+from stgit.commands import common
+from stgit.lib import transaction
 from stgit.out import *
-from stgit import stack, git
 
 help = 'permanently store the applied patches into stack base'
 usage = """%prog [options]
@@ -32,7 +28,7 @@ remove them from the series while advancing the base.
 Use this command only if you want to permanently store the applied
 patches and no longer manage them with StGIT."""
 
-directory = DirectoryGotoToplevel()
+directory = common.DirectoryHasRepositoryLib()
 options = []
 
 
@@ -43,25 +39,15 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
-    applied = crt_series.get_applied()
-    if not applied:
-        raise CmdException, 'No patches applied'
-
-    if crt_series.get_protected():
-        raise CmdException, 'This branch is protected.  Commit is not permitted'
-
-    crt_head = git.get_head()
-
-    out.start('Committing %d patches' % len(applied))
-
-    crt_series.pop_patch(applied[0])
-    git.switch(crt_head)
-
-    for patch in applied:
-        crt_series.delete_patch(patch)
-
+    stack = directory.repository.current_stack
+    patches = stack.patchorder.applied
+    if not patches:
+        raise CmdException('No patches to commit')
+    out.start('Committing %d patches' % len(patches))
+    trans = transaction.StackTransaction(stack, 'stg commit')
+    for pn in patches:
+        trans.patches[pn] = None
+    trans.applied = []
+    trans.base = stack.head
+    trans.run()
     out.done()
