@@ -48,4 +48,4 @@ def func(parser, options, args):
             pass
     else:
         raise common.CmdException('Patch "%s" does not exist' % patch)
-    trans.run(iw)
+    return trans.run(iw)

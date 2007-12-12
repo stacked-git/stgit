@@ -110,7 +110,7 @@ def _coalesce(stack, iw, name, msg, save_template, patches):
         return
     except transaction.TransactionHalted:
         pass
-    trans.run(iw)
+    return trans.run(iw)
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
@@ -118,5 +118,5 @@ def func(parser, options, args):
                                           + list(stack.patchorder.unapplied)))
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
-    _coalesce(stack, stack.repository.default_iw(),
-              options.name, options.message, options.save_template, patches)
+    return _coalesce(stack, stack.repository.default_iw(), options.name,
+                     options.message, options.save_template, patches)

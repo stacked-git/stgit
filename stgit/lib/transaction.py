@@ -1,4 +1,4 @@
-from stgit import exception
+from stgit import exception, utils
 from stgit.out import *
 from stgit.lib import git
 
@@ -110,6 +110,11 @@ class StackTransaction(object):
         _print_current_patch(self.__stack.patchorder.applied, self.__applied)
         self.__stack.patchorder.applied = self.__applied
         self.__stack.patchorder.unapplied = self.__unapplied
+
+        if self.__error:
+            return utils.STGIT_CONFLICT
+        else:
+            return utils.STGIT_SUCCESS
 
     def __halt(self, msg):
         self.__error = msg

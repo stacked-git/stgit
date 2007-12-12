@@ -317,6 +317,7 @@ def make_message_options():
 STGIT_SUCCESS = 0        # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
 STGIT_COMMAND_ERROR = 2  # seems to be a command that failed
+STGIT_CONFLICT = 3       # merge conflict, otherwise OK
 
 def strip_leading(prefix, s):
     """Strip leading prefix from a string. Blow up if the prefix isn't

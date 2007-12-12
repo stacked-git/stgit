@@ -275,7 +275,7 @@ def main():
             else:
                 command.crt_series = Series()
 
-        command.func(parser, options, args)
+        ret = command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError), err:
         out.error(str(err), title = '%s %s' % (prog, cmd))
         if debug_level > 0:
@@ -285,4 +285,4 @@ def main():
     except KeyboardInterrupt:
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
-    sys.exit(utils.STGIT_SUCCESS)
+    sys.exit(ret or utils.STGIT_SUCCESS)
