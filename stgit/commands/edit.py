@@ -61,8 +61,6 @@ directory = DirectoryGotoToplevel()
 options = [make_option('-d', '--diff',
                        help = 'edit the patch diff',
                        action = 'store_true'),
-           make_option('-f', '--file',
-                       help = 'use FILE instead of invoking the editor'),
            make_option('-O', '--diff-opts',
                        help = 'options to pass to git-diff'),
            make_option('--undo',
@@ -70,10 +68,6 @@ options = [make_option('-d', '--diff',
                        action = 'store_true'),
            make_option('-a', '--annotate', metavar = 'NOTE',
                        help = 'annotate the patch log entry'),
-           make_option('-m', '--message',
-                       help = 'replace the patch description with MESSAGE'),
-           make_option('--save-template', metavar = 'FILE',
-                       help = 'save the patch to FILE in the format used by -f'),
            make_option('--author', metavar = '"NAME <EMAIL>"',
                        help = 'replae the author details with "NAME <EMAIL>"'),
            make_option('--authname',
@@ -86,47 +80,48 @@ options = [make_option('-d', '--diff',
                        help = 'replace the committer name with COMMNAME'),
            make_option('--commemail',
                        help = 'replace the committer e-mail with COMMEMAIL')
-           ] + make_sign_options()
+           ] + make_sign_options() + make_message_options()
 
-def __update_patch(pname, fname, options):
-    """Update the current patch from the given file.
+def __update_patch(pname, text, options):
+    """Update the current patch from the given text.
     """
     patch = crt_series.get_patch(pname)
 
     bottom = patch.get_bottom()
     top = patch.get_top()
 
-    if fname == '-':
-        f = sys.stdin
-    else:
-        f = open(fname)
-    (message, author_name, author_email, author_date, diff
-     ) = parse_patch(f.read())
-    f.close()
+    message, author_name, author_email, author_date, diff = parse_patch(text)
 
     out.start('Updating patch "%s"' % pname)
 
     if options.diff:
         git.switch(bottom)
         try:
-            git.apply_patch(fname)
+            git.apply_patch(diff = diff)
         except:
             # avoid inconsistent repository state
             git.switch(top)
             raise
 
+    def c(a, b):
+        if a != None:
+            return a
+        return b
     crt_series.refresh_patch(message = message,
-                             author_name = author_name,
-                             author_email = author_email,
-                             author_date = author_date,
-                             backup = True, log = 'edit')
+                             author_name = c(options.authname, author_name),
+                             author_email = c(options.authemail, author_email),
+                             author_date = c(options.authdate, author_date),
+                             committer_name = options.commname,
+                             committer_email = options.commemail,
+                             backup = True, sign_str = options.sign_str,
+                             log = 'edit', notes = options.annotate)
 
     if crt_series.empty_patch(pname):
         out.done('empty patch')
     else:
         out.done()
 
-def __generate_file(pname, fname, options):
+def __generate_file(pname, write_fn, options):
     """Generate a file containing the description to edit
     """
     patch = crt_series.get_patch(pname)
@@ -175,12 +170,7 @@ def __generate_file(pname, fname, options):
     text = tmpl % tmpl_dict
 
     # write the file to be edited
-    if fname == '-':
-        sys.stdout.write(text)
-    else:
-        f = open(fname, 'w+')
-        f.write(text)
-        f.close()
+    write_fn(text)
 
 def __edit_update_patch(pname, options):
     """Edit the given patch interactively.
@@ -189,13 +179,17 @@ def __edit_update_patch(pname, options):
         fname = '.stgit-edit.diff'
     else:
         fname = '.stgit-edit.txt'
+    def write_fn(text):
+        f = file(fname, 'w')
+        f.write(text)
+        f.close()
 
-    __generate_file(pname, fname, options)
+    __generate_file(pname, write_fn, options)
 
     # invoke the editor
     call_editor(fname)
 
-    __update_patch(pname, fname, options)
+    __update_patch(pname, file(fname).read(), options)
 
 def func(parser, options, args):
     """Edit the given patch or the current one.
@@ -232,25 +226,14 @@ def func(parser, options, args):
         out.start('Undoing the editing of "%s"' % pname)
         crt_series.undo_refresh()
         out.done()
-    elif options.message or options.authname or options.authemail \
-             or options.authdate or options.commname or options.commemail \
-             or options.sign_str:
-        # just refresh the patch with the given information
-        out.start('Updating patch "%s"' % pname)
-        crt_series.refresh_patch(message = options.message,
-                                 author_name = options.authname,
-                                 author_email = options.authemail,
-                                 author_date = options.authdate,
-                                 committer_name = options.commname,
-                                 committer_email = options.commemail,
-                                 backup = True, sign_str = options.sign_str,
-                                 log = 'edit',
-                                 notes = options.annotate)
-        out.done()
     elif options.save_template:
         __generate_file(pname, options.save_template, options)
-    elif options.file:
-        __update_patch(pname, options.file, options)
+    elif any([options.message, options.authname, options.authemail,
+              options.authdate, options.commname, options.commemail,
+              options.sign_str]):
+        out.start('Updating patch "%s"' % pname)
+        __update_patch(pname, options.message, options)
+        out.done()
     else:
         __edit_update_patch(pname, options)
 

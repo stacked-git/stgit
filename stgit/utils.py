@@ -256,3 +256,48 @@ def add_sign_line(desc, sign_str, name, email):
     if not any(s in desc for s in ['\nSigned-off-by:', '\nAcked-by:']):
         desc = desc + '\n'
     return '%s\n%s\n' % (desc, sign_str)
+
+def make_message_options():
+    def no_dup(parser):
+        if parser.values.message != None:
+            raise optparse.OptionValueError(
+                'Cannot give more than one --message or --file')
+    def no_combine(parser):
+        if (parser.values.message != None
+            and parser.values.save_template != None):
+            raise optparse.OptionValueError(
+                'Cannot give both --message/--file and --save-template')
+    def msg_callback(option, opt_str, value, parser):
+        no_dup(parser)
+        parser.values.message = value
+        no_combine(parser)
+    def file_callback(option, opt_str, value, parser):
+        no_dup(parser)
+        if value == '-':
+            parser.values.message = sys.stdin.read()
+        else:
+            f = file(value)
+            parser.values.message = f.read()
+            f.close()
+        no_combine(parser)
+    def templ_callback(option, opt_str, value, parser):
+        if value == '-':
+            def w(s):
+                sys.stdout.write(s)
+        else:
+            def w(s):
+                f = file(value, 'w+')
+                f.write(s)
+                f.close()
+        parser.values.save_template = w
+        no_combine(parser)
+    m = optparse.make_option
+    return [m('-m', '--message', action = 'callback', callback = msg_callback,
+              dest = 'message', type = 'string',
+              help = 'use MESSAGE instead of invoking the editor'),
+            m('-f', '--file', action = 'callback', callback = file_callback,
+              dest = 'message', type = 'string', metavar = 'FILE',
+              help = 'use FILE instead of invoking the editor'),
+            m('--save-template', action = 'callback', callback = templ_callback,
+              metavar = 'FILE', dest = 'save_template', type = 'string',
+              help = 'save the message template to FILE and exit')]
