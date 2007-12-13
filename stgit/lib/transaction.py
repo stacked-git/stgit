@@ -77,6 +77,10 @@ class StackTransaction(object):
             return self.__patches[self.__applied[-1]]
         else:
             return self.__stack.base
+    def abort(self, iw = None):
+        # The only state we need to restore is index+worktree.
+        if iw:
+            self.__checkout(self.__stack.head.data.tree, iw)
     def run(self, iw = None):
         self.__check_consistency()
         new_head = self.__head
@@ -85,9 +89,8 @@ class StackTransaction(object):
         try:
             self.__checkout(new_head.data.tree, iw)
         except git.CheckoutException:
-            # We have to abort the transaction. The only state we need
-            # to restore is index+worktree.
-            self.__checkout(self.__stack.head.data.tree, iw)
+            # We have to abort the transaction.
+            self.abort(iw)
             self.__abort()
         self.__stack.set_head(new_head, self.__msg)
 
