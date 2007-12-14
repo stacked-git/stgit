@@ -70,7 +70,7 @@ Argument DIR is the repository path."
     (insert "Branch: ")
     (stgit-run "branch")
     (stgit-run "series" "--description")
-    (stgit-rehighlight (point-min) (point-max))
+    (stgit-rescan)
     (if curpatch
         (stgit-goto-patch curpatch)
       (goto-line curline))))
@@ -98,23 +98,30 @@ Argument DIR is the repository path."
     (t ()))
   "The face used for unapplied patch names")
 
-(defun stgit-rehighlight (start end)
-  "Refresh fontification of region between START and END."
+(defun stgit-rescan ()
+  "Rescan the status buffer."
   (save-excursion
-    (goto-char start)
-    (while (< (point) end)
-      (cond ((looking-at "Branch: \\(.*\\)")
-             (put-text-property (match-beginning 1) (match-end 1) 'face 'bold))
-            ((looking-at "\\([>+-]\\) \\([^ ]+\\) *| \\(.*\\)")
-             (let ((state (match-string 1)))
-               (put-text-property
-                (match-beginning 2) (match-end 2)
-                'face (cond ((string= state ">") 'stgit-top-patch-face)
-                            ((string= state "+") 'stgit-applied-patch-face)
-                            ((string= state "-") 'stgit-unapplied-patch-face)))
-               (put-text-property (match-beginning 3) (match-end 3)
-                                  'face 'stgit-description-face))))
-      (forward-line 1))))
+    (let ((marked ()))
+      (goto-char (point-min))
+      (while (not (eobp))
+        (cond ((looking-at "Branch: \\(.*\\)")
+               (put-text-property (match-beginning 1) (match-end 1)
+                                  'face 'bold))
+              ((looking-at "\\([>+-]\\)\\( \\)\\([^ ]+\\) *| \\(.*\\)")
+               (let ((state (match-string 1))
+                     (patchsym (intern (match-string 3))))
+                 (put-text-property
+                  (match-beginning 3) (match-end 3) 'face
+                  (cond ((string= state ">") 'stgit-top-patch-face)
+                        ((string= state "+") 'stgit-applied-patch-face)
+                        ((string= state "-") 'stgit-unapplied-patch-face)))
+                 (put-text-property (match-beginning 4) (match-end 4)
+                                    'face 'stgit-description-face)
+                 (when (memq patchsym stgit-marked-patches)
+                   (replace-match "*" nil nil nil 2)
+                   (setq marked (cons patchsym marked))))))
+        (forward-line 1))
+      (setq stgit-marked-patches (nreverse marked)))))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
@@ -125,6 +132,8 @@ Argument DIR is the repository path."
 (unless stgit-mode-map
   (setq stgit-mode-map (make-keymap))
   (suppress-keymap stgit-mode-map)
+  (define-key stgit-mode-map " "   'stgit-mark)
+  (define-key stgit-mode-map "\d" 'stgit-unmark)
   (define-key stgit-mode-map "?"   'stgit-help)
   (define-key stgit-mode-map "h"   'stgit-help)
   (define-key stgit-mode-map "p"   'previous-line)
@@ -153,14 +162,27 @@ Commands:
         goal-column 2)
   (use-local-map stgit-mode-map)
   (set (make-local-variable 'list-buffers-directory) default-directory)
+  (set (make-local-variable 'stgit-marked-patches) nil)
   (set-variable 'truncate-lines 't)
   (run-hooks 'stgit-mode-hook))
+
+(defun stgit-add-mark (patch)
+  (let ((patchsym (intern patch)))
+    (setq stgit-marked-patches (cons patchsym stgit-marked-patches))))
+
+(defun stgit-remove-mark (patch)
+  (let ((patchsym (intern patch)))
+    (setq stgit-marked-patches (delq patchsym stgit-marked-patches))))
+
+(defun stgit-marked-patches ()
+  "Return the names of the marked patches."
+  (mapcar 'symbol-name stgit-marked-patches))
 
 (defun stgit-patch-at-point ()
   "Return the patch name on the current line"
   (save-excursion
     (beginning-of-line)
-    (if (looking-at "[>+-] \\([^ ]*\\)")
+    (if (looking-at "[>+-][ *]\\([^ ]*\\)")
         (match-string-no-properties 1)
       nil)))
 
@@ -168,11 +190,27 @@ Commands:
   "Move point to the line containing PATCH"
   (let ((p (point)))
     (goto-char (point-min))
-    (if (re-search-forward (concat "[>+-] " (regexp-quote patch) " ") nil t)
+    (if (re-search-forward (concat "^[>+-][ *]" (regexp-quote patch) " ") nil t)
         (progn (move-to-column goal-column)
                t)
       (goto-char p)
       nil)))
+
+(defun stgit-mark ()
+  "Mark the patch under point"
+  (interactive)
+  (let ((patch (stgit-patch-at-point)))
+    (stgit-add-mark patch)
+    (stgit-refresh))
+  (next-line))
+
+(defun stgit-unmark ()
+  "Mark the patch on the previous line"
+  (interactive)
+  (forward-line -1)
+  (let ((patch (stgit-patch-at-point)))
+    (stgit-remove-mark patch)
+    (stgit-refresh)))
 
 (defun stgit-rename (name)
   "Rename the patch under point"
