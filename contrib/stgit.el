@@ -141,6 +141,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map "e"   'stgit-edit)
+  (define-key stgit-mode-map "c"   'stgit-coalesce)
   (define-key stgit-mode-map "N"   'stgit-new)
   (define-key stgit-mode-map "\C-r"   'stgit-repair)
   (define-key stgit-mode-map "C"   'stgit-commit)
@@ -347,6 +348,26 @@ Commands:
           ((> (length patch) 20)
            (substring patch 0 20))
           (t patch))))
+
+(defun stgit-coalesce (patch-names)
+  "Run stg coalesce on the named patches"
+  (interactive (list (stgit-marked-patches)))
+  (let ((edit-buf (get-buffer-create "*stgit edit*"))
+        (dir default-directory))
+    (log-edit 'stgit-confirm-coalesce t nil edit-buf)
+    (set (make-local-variable 'stgit-patches) patch-names)
+    (setq default-directory dir)
+    (let ((standard-output edit-buf))
+      (apply 'stgit-run "coalesce" "--save-template=-" patch-names))))
+
+(defun stgit-confirm-coalesce ()
+  (interactive)
+  (let ((file (make-temp-file "stgit-edit-")))
+    (write-region (point-min) (point-max) file)
+    (stgit-capture-output nil
+      (apply 'stgit-run "coalesce" "-f" file stgit-patches))
+    (with-current-buffer log-edit-parent-buffer
+      (stgit-refresh))))
 
 (defun stgit-help ()
   "Display help for the StGit mode."
