@@ -109,7 +109,8 @@ def func(parser, options, args):
 
     if options.reset:
         if args:
-            resolved(args)
+            conflicts = git.get_conflicts()
+            git.resolved(fn for fn in args if fn in conflicts)
             git.reset(args)
         else:
             resolved_all()

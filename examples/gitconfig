@@ -60,13 +60,6 @@
 	# To support local parent branches:
 	#pull-policy = rebase
 
-	# The three-way merge tool. Note that the 'output' file contains the
-	# same data as 'branch1'. This is useful for tools that do not take an
-	# output parameter
-	#merger = diff3 -L current -L ancestor -L patched -m -E \
-	#	\"%(branch1)s\" \"%(ancestor)s\" \"%(branch2)s\" \
-	#	> \"%(output)s\"
-
 	# Interactive two/three-way merge tool. It is executed by the
 	# 'resolved --interactive' command
 	#i3merge = xxdiff --title1 current --title2 ancestor --title3 patched \

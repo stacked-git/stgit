@@ -34,8 +34,6 @@ class GitConfig:
         'stgit.pullcmd':	'git pull',
         'stgit.fetchcmd':	'git fetch',
         'stgit.pull-policy':	'pull',
-        'stgit.merger':		'diff3 -L current -L ancestor -L patched -m -E ' \
-				'"%(branch1)s" "%(ancestor)s" "%(branch2)s" > "%(output)s"',
         'stgit.autoimerge':	'no',
         'stgit.keeporig':	'yes',
         'stgit.keepoptimized':	'no',

@@ -33,7 +33,7 @@ class GitMergeException(StgException):
 #
 # Options
 #
-merger = ConfigOption('stgit', 'merger')
+autoimerge = ConfigOption('stgit', 'autoimerge')
 keeporig = ConfigOption('stgit', 'keeporig')
 
 #
@@ -48,72 +48,46 @@ def __str2none(x):
 class MRun(Run):
     exc = GitMergeException # use a custom exception class on errors
 
-def __checkout_files(orig_hash, file1_hash, file2_hash,
-                     path,
-                     orig_mode, file1_mode, file2_mode):
-    """Check out the files passed as arguments
+def __checkout_stages(filename):
+    """Check-out the merge stages in the index for the give file
     """
-    global orig, src1, src2
-
     extensions = file_extensions()
+    line = MRun('git', 'checkout-index', '--stage=all', '--', filename
+                ).output_one_line()
+    stages, path = line.split('\t')
+    stages = dict(zip(['ancestor', 'current', 'patched'],
+                      stages.split(' ')))
 
-    if orig_hash:
-        orig = path + extensions['ancestor']
-        tmp = MRun('git', 'unpack-file', orig_hash).output_one_line()
-        os.chmod(tmp, int(orig_mode, 8))
-        os.renames(tmp, orig)
-    if file1_hash:
-        src1 = path + extensions['current']
-        tmp = MRun('git', 'unpack-file', file1_hash).output_one_line()
-        os.chmod(tmp, int(file1_mode, 8))
-        os.renames(tmp, src1)
-    if file2_hash:
-        src2 = path + extensions['patched']
-        tmp = MRun('git', 'unpack-file', file2_hash).output_one_line()
-        os.chmod(tmp, int(file2_mode, 8))
-        os.renames(tmp, src2)
+    for stage, fn in stages.iteritems():
+        if stages[stage] == '.':
+            stages[stage] = None
+        else:
+            newname = filename + extensions[stage]
+            if os.path.exists(newname):
+                # remove the stage if it is already checked out
+                os.remove(newname)
+            os.rename(stages[stage], newname)
+            stages[stage] = newname
 
-    if file1_hash and not os.path.exists(path):
-        # the current file might be removed by GIT when it is a new
-        # file added in both branches. Just re-generate it
-        tmp = MRun('git', 'unpack-file', file1_hash).output_one_line()
-        os.chmod(tmp, int(file1_mode, 8))
-        os.renames(tmp, path)
+    return stages
 
-def __remove_files(orig_hash, file1_hash, file2_hash):
-    """Remove any temporary files
+def __remove_stages(filename):
+    """Remove the merge stages from the working directory
     """
-    if orig_hash:
-        os.remove(orig)
-    if file1_hash:
-        os.remove(src1)
-    if file2_hash:
-        os.remove(src2)
-
-def __conflict(path):
-    """Write the conflict file for the 'path' variable and exit
-    """
-    append_string(os.path.join(basedir.get(), 'conflicts'), path)
-
+    extensions = file_extensions()
+    for ext in extensions.itervalues():
+        fn = filename + ext
+        if os.path.isfile(fn):
+            os.remove(fn)
 
 def interactive_merge(filename):
-    """Run the interactive merger on the given file."""
-    try:
-        extensions = file_extensions()
-        line = MRun('git', 'checkout-index', '--stage=all', '--', filename
-                    ).output_one_line()
-        stages, path = line.split('\t')
-        stages = dict(zip(['ancestor', 'current', 'patched'],
-                          stages.split(' ')))
-        for stage, fn in stages.iteritems():
-            if stages[stage] == '.':
-                stages[stage] = None
-            else:
-                newname = filename + extensions[stage]
-                if not os.path.exists(newname):
-                    os.rename(stages[stage], newname)
-                    stages[stage] = newname
+    """Run the interactive merger on the given file. Stages will be
+    removed according to stgit.keeporig. If successful and stages
+    kept, they will be removed via git.resolved().
+    """
+    stages = __checkout_stages(filename)
 
+    try:
         # Check whether we have all the files for the merge.
         if not (stages['current'] and stages['patched']):
             raise GitMergeException('Cannot run the interactive merge')
@@ -148,183 +122,29 @@ def interactive_merge(filename):
         if mtime == os.path.getmtime(filename):
             raise GitMergeException, 'The "%s" file was not modified' % filename
     finally:
-        for fn in stages.itervalues():
-            if os.path.isfile(fn):
-                os.remove(fn)
+        # keep the merge stages?
+        if str(keeporig) != 'yes':
+            __remove_stages(filename)
 
-#
-# Main algorithm
-#
-def merge(orig_hash, file1_hash, file2_hash,
-          path,
-          orig_mode, file1_mode, file2_mode):
-    """Three-way merge for one file algorithm
+def clean_up(filename):
+    """Remove merge conflict stages if they were generated.
     """
-    __checkout_files(orig_hash, file1_hash, file2_hash,
-                     path,
-                     orig_mode, file1_mode, file2_mode)
+    if str(keeporig) == 'yes':
+        __remove_stages(filename)
 
-    # file exists in origin
-    if orig_hash:
-        # modified in both
-        if file1_hash and file2_hash:
-            # if modes are the same (git-read-tree probably dealt with it)
-            if file1_hash == file2_hash:
-                if os.system('git update-index --cacheinfo %s %s %s'
-                             % (file1_mode, file1_hash, path)) != 0:
-                    out.error('git update-index failed')
-                    __conflict(path)
-                    return 1
-                if os.system('git checkout-index -u -f -- %s' % path):
-                    out.error('git checkout-index failed')
-                    __conflict(path)
-                    return 1
-                if file1_mode != file2_mode:
-                    out.error('File added in both, permissions conflict')
-                    __conflict(path)
-                    return 1
-            # 3-way merge
-            else:
-                merge_ok = os.system(str(merger) % {'branch1': src1,
-                                                    'ancestor': orig,
-                                                    'branch2': src2,
-                                                    'output': path }) == 0
+def merge(filename):
+    """Merge one file if interactive is allowed or check out the stages
+    if keeporig is set.
+    """
+    if str(autoimerge) == 'yes':
+        try:
+            interactive_merge(filename)
+        except GitMergeException, ex:
+            out.error(str(ex))
+            return False
+        return True
 
-                if merge_ok:
-                    os.system('git update-index -- %s' % path)
-                    __remove_files(orig_hash, file1_hash, file2_hash)
-                    return 0
-                else:
-                    out.error('Three-way merge tool failed for file "%s"'
-                              % path)
-                    # reset the cache to the first branch
-                    os.system('git update-index --cacheinfo %s %s %s'
-                              % (file1_mode, file1_hash, path))
+    if str(keeporig) == 'yes':
+        __checkout_stages(filename)
 
-                    if config.get('stgit.autoimerge') == 'yes':
-                        try:
-                            interactive_merge(path)
-                        except GitMergeException, ex:
-                            # interactive merge failed
-                            out.error(str(ex))
-                            if str(keeporig) != 'yes':
-                                __remove_files(orig_hash, file1_hash,
-                                               file2_hash)
-                            __conflict(path)
-                            return 1
-                        # successful interactive merge
-                        os.system('git update-index -- %s' % path)
-                        __remove_files(orig_hash, file1_hash, file2_hash)
-                        return 0
-                    else:
-                        # no interactive merge, just mark it as conflict
-                        if str(keeporig) != 'yes':
-                            __remove_files(orig_hash, file1_hash, file2_hash)
-                        __conflict(path)
-                        return 1
-
-        # file deleted in both or deleted in one and unchanged in the other
-        elif not (file1_hash or file2_hash) \
-               or file1_hash == orig_hash or file2_hash == orig_hash:
-            if os.path.exists(path):
-                os.remove(path)
-            __remove_files(orig_hash, file1_hash, file2_hash)
-            return os.system('git update-index --remove -- %s' % path)
-        # file deleted in one and changed in the other
-        else:
-            # Do something here - we must at least merge the entry in
-            # the cache, instead of leaving it in U(nmerged) state. In
-            # fact, stg resolved does not handle that.
-
-            # Do the same thing cogito does - remove the file in any case.
-            os.system('git update-index --remove -- %s' % path)
-
-            #if file1_hash:
-                ## file deleted upstream and changed in the patch. The
-                ## patch is probably going to move the changes
-                ## elsewhere.
-
-                #os.system('git update-index --remove -- %s' % path)
-            #else:
-                ## file deleted in the patch and changed upstream. We
-                ## could re-delete it, but for now leave it there -
-                ## and let the user check if he still wants to remove
-                ## the file.
-
-                ## reset the cache to the first branch
-                #os.system('git update-index --cacheinfo %s %s %s'
-                #          % (file1_mode, file1_hash, path))
-            __conflict(path)
-            return 1
-
-    # file does not exist in origin
-    else:
-        # file added in both
-        if file1_hash and file2_hash:
-            # files are the same
-            if file1_hash == file2_hash:
-                if os.system('git update-index --add --cacheinfo %s %s %s'
-                             % (file1_mode, file1_hash, path)) != 0:
-                    out.error('git update-index failed')
-                    __conflict(path)
-                    return 1
-                if os.system('git checkout-index -u -f -- %s' % path):
-                    out.error('git checkout-index failed')
-                    __conflict(path)
-                    return 1
-                if file1_mode != file2_mode:
-                    out.error('File "s" added in both, permissions conflict'
-                              % path)
-                    __conflict(path)
-                    return 1
-            # files added in both but different
-            else:
-                out.error('File "%s" added in branches but different' % path)
-                # reset the cache to the first branch
-                os.system('git update-index --cacheinfo %s %s %s'
-                          % (file1_mode, file1_hash, path))
-
-                if config.get('stgit.autoimerge') == 'yes':
-                    try:
-                        interactive_merge(path)
-                    except GitMergeException, ex:
-                        # interactive merge failed
-                        out.error(str(ex))
-                        if str(keeporig) != 'yes':
-                            __remove_files(orig_hash, file1_hash,
-                                           file2_hash)
-                        __conflict(path)
-                        return 1
-                    # successful interactive merge
-                    os.system('git update-index -- %s' % path)
-                    __remove_files(orig_hash, file1_hash, file2_hash)
-                    return 0
-                else:
-                    # no interactive merge, just mark it as conflict
-                    if str(keeporig) != 'yes':
-                        __remove_files(orig_hash, file1_hash, file2_hash)
-                    __conflict(path)
-                    return 1
-        # file added in one
-        elif file1_hash or file2_hash:
-            if file1_hash:
-                mode = file1_mode
-                obj = file1_hash
-            else:
-                mode = file2_mode
-                obj = file2_hash
-            if os.system('git update-index --add --cacheinfo %s %s %s'
-                         % (mode, obj, path)) != 0:
-                out.error('git update-index failed')
-                __conflict(path)
-                return 1
-            __remove_files(orig_hash, file1_hash, file2_hash)
-            return os.system('git checkout-index -u -f -- %s' % path)
-
-    # Unhandled case
-    out.error('Unhandled merge conflict: "%s" "%s" "%s" "%s" "%s" "%s" "%s"'
-              % (orig_hash, file1_hash, file2_hash,
-                 path,
-                 orig_mode, file1_mode, file2_mode))
-    __conflict(path)
-    return 1
+    return False

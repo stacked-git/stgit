@@ -43,15 +43,6 @@ class GRun(Run):
         """
         Run.__init__(self, 'git', *cmd)
 
-class GitConflictException(GitException):
-    def __init__(self, conflicts):
-        GitException.__init__(self)
-        self.conflicts = conflicts
-    def __str__(self):
-        return "%d conflicts" % len(self.conflicts)
-    def list(self):
-        out.info(*self.conflicts)
-
 #
 # Classes
 #
@@ -713,74 +704,21 @@ def merge_recursive(base, head1, head2):
           'GITHEAD_%s' % head1: 'current',
           'GITHEAD_%s' % head2: 'patched'}).returns([0, 1])
     output = p.output_lines()
-    if p.exitcode == 0:
-        # No problems
-        return
-    else: # exitcode == 1
+    if p.exitcode:
         # There were conflicts
         conflicts = [l.strip() for l in output if l.startswith('CONFLICT')]
-        raise GitConflictException(conflicts)
+        out.info(*conflicts)
 
-def merge(base, head1, head2):
-    """Perform a 3-way merge between base, head1 and head2 into the
-    local tree
-    """
-    refresh_index()
+        # try the interactive merge or stage checkout (if enabled)
+        for filename in get_conflicts():
+            if (gitmergeonefile.merge(filename)):
+                # interactive merge succeeded
+                resolved([filename])
 
-    err_output = None
-    # the fast case where we don't track renames (used when the
-    # distance between base and heads is small, i.e. folding or
-    # synchronising patches)
-    try:
-        GRun('read-tree', '-u', '-m', '--aggressive', base, head1, head2
-             ).run()
-    except GitRunException:
-        raise GitException, 'read-tree failed (local changes maybe?)'
-
-    # check the index for unmerged entries
-    files = {}
-    stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
-
-    for line in GRun('ls-files', '--unmerged', '--stage', '-z'
-                     ).raw_output().split('\0'):
-        if not line:
-            continue
-
-        mode, hash, stage, path = stages_re.findall(line)[0]
-
-        if not path in files:
-            files[path] = {}
-            files[path]['1'] = ('', '')
-            files[path]['2'] = ('', '')
-            files[path]['3'] = ('', '')
-
-        files[path][stage] = (mode, hash)
-
-    if err_output and not files:
-        # if no unmerged files, there was probably a different type of
-        # error and we have to abort the merge
-        raise GitException, err_output
-
-    # merge the unmerged files
-    errors = False
-    for path in files:
-        # remove additional files that might be generated for some
-        # newer versions of GIT
-        for suffix in [base, head1, head2]:
-            if not suffix:
-                continue
-            fname = path + '~' + suffix
-            if os.path.exists(fname):
-                os.remove(fname)
-
-        stages = files[path]
-        if gitmergeonefile.merge(stages['1'][1], stages['2'][1],
-                                 stages['3'][1], path, stages['1'][0],
-                                 stages['2'][0], stages['3'][0]) != 0:
-            errors = True
-
-    if errors:
-        raise GitException, 'GIT index merging failed (possible conflicts)'
+        # any conflicts left unsolved?
+        cn = len(get_conflicts())
+        if cn:
+            raise GitException, "%d conflict(s)" % cn
 
 def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
          binary = True):
@@ -890,6 +828,17 @@ def reset(files = None, tree_id = None, check_out = True):
     if not files:
         __set_head(tree_id)
 
+def resolved(filenames, reset = None):
+    if reset:
+        stage = {'ancestor': 1, 'current': 2, 'patched': 3}[reset]
+        GRun('checkout-index', '--no-create', '--stage=%d' % stage,
+             '--stdin', '-z').input_nulterm(filenames).no_output()
+    GRun('update-index', '--add', '--').xargs(filenames)
+    for filename in filenames:
+        gitmergeonefile.clean_up(filename)
+        # update the access and modificatied times
+        os.utime(filename, None)
+
 def fetch(repository = 'origin', refspec = None):
     """Fetches changes from the remote repository, using 'git fetch'
     by default.
@@ -984,7 +933,7 @@ def apply_patch(filename = None, diff = None, base = None,
         top = commit(message = 'temporary commit used for applying a patch',
                      parents = [base])
         switch(orig_head)
-        merge(base, orig_head, top)
+        merge_recursive(base, orig_head, top)
 
 def clone(repository, local_dir):
     """Clone a remote repository. At the moment, just use the

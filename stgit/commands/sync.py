@@ -57,7 +57,7 @@ def __branch_merge_patch(remote_series, pname):
     """Merge a patch from a remote branch into the current tree.
     """
     patch = remote_series.get_patch(pname)
-    git.merge(patch.get_bottom(), git.get_head(), patch.get_top())
+    git.merge_recursive(patch.get_bottom(), git.get_head(), patch.get_top())
 
 def __series_merge_patch(base, patchdir, pname):
     """Merge a patch file with the given StGIT patch.

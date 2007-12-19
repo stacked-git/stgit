@@ -79,4 +79,6 @@ def func(parser, options, args):
     if options.interactive:
         for filename in files:
             interactive_merge(filename)
-    resolved(files, options.reset)
+            git.resolved([filename])
+    else:
+        git.resolved(files, options.reset)
