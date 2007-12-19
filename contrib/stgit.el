@@ -89,6 +89,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "n"   'next-line)
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
+  (define-key stgit-mode-map "\C-r"   'stgit-repair)
   (define-key stgit-mode-map ">"   'stgit-push-next)
   (define-key stgit-mode-map "<"   'stgit-pop-next)
   (define-key stgit-mode-map "P"   'stgit-push-or-pop)
@@ -137,6 +138,13 @@ Commands:
       (stgit-run "rename" old-name name))
     (stgit-refresh)
     (stgit-goto-patch name)))
+
+(defun stgit-repair ()
+  "Run stg repair"
+  (interactive)
+  (stgit-capture-output nil
+   (stgit-run "repair"))
+  (stgit-refresh))
 
 (defun stgit-push-next ()
   "Push the first unapplied patch"
