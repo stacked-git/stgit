@@ -81,7 +81,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map ">"   'stgit-push-next)
-  (define-key stgit-mode-map "<"   'stgit-pop)
+  (define-key stgit-mode-map "<"   'stgit-pop-next)
   (define-key stgit-mode-map "="   'stgit-show))
 
 (defun stgit-mode ()
@@ -127,22 +127,16 @@ Commands:
     (stgit-goto-patch name)))
 
 (defun stgit-push-next ()
-  "Push the patch on the line after pos"
+  "Push the first unapplied patch"
   (interactive)
-  (forward-line 1)
-  (let ((patch (stgit-patch-at-point)))
-    (stgit-capture-output nil
-      (stgit-run "push" patch))
-    (stgit-refresh)))
+  (stgit-capture-output nil (stgit-run "push"))
+  (stgit-refresh))
 
-(defun stgit-pop ()
-  "Pop the patch on the current line"
+(defun stgit-pop-next ()
+  "Pop the topmost applied patch"
   (interactive)
-  (let ((patch (stgit-patch-at-point)))
-    (stgit-capture-output nil
-      (stgit-run "pop" patch))
-    (stgit-refresh)
-    (previous-line)))
+  (stgit-capture-output nil (stgit-run "pop"))
+  (stgit-refresh))
 
 (defun stgit-show ()
   "Show the patch on the current line"
