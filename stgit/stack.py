@@ -1109,8 +1109,7 @@ class Series(PatchSet):
                 ex.list()
             except git.GitException, ex:
                 out.error('The merge failed during "push".',
-                          'Use "refresh" after fixing the conflicts or'
-                          ' revert the operation with "push --undo".')
+                          'Revert the operation with "push --undo".')
 
         append_string(self.__applied_file, name)
 
