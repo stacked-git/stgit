@@ -97,51 +97,60 @@ def __conflict(path):
 
 
 def interactive_merge(filename):
-    """Run the interactive merger on the given file. Note that the
-    index should not have any conflicts.
-    """
-    extensions = file_extensions()
+    """Run the interactive merger on the given file."""
+    try:
+        extensions = file_extensions()
+        line = MRun('git', 'checkout-index', '--stage=all', '--', filename
+                    ).output_one_line()
+        stages, path = line.split('\t')
+        stages = dict(zip(['ancestor', 'current', 'patched'],
+                          stages.split(' ')))
+        for stage, fn in stages.iteritems():
+            if stages[stage] == '.':
+                stages[stage] = None
+            else:
+                newname = filename + extensions[stage]
+                if not os.path.exists(newname):
+                    os.rename(stages[stage], newname)
+                    stages[stage] = newname
 
-    ancestor = filename + extensions['ancestor']
-    current = filename + extensions['current']
-    patched = filename + extensions['patched']
+        # Check whether we have all the files for the merge.
+        if not (stages['current'] and stages['patched']):
+            raise GitMergeException('Cannot run the interactive merge')
 
-    if os.path.isfile(ancestor):
-        three_way = True
-        files_dict = {'branch1': current,
-                      'ancestor': ancestor,
-                      'branch2': patched,
-                      'output': filename}
-        imerger = config.get('stgit.i3merge')
-    else:
-        three_way = False
-        files_dict = {'branch1': current,
-                      'branch2': patched,
-                      'output': filename}
-        imerger = config.get('stgit.i2merge')
+        if stages['ancestor']:
+            three_way = True
+            files_dict = {'branch1': stages['current'],
+                          'ancestor': stages['ancestor'],
+                          'branch2': stages['patched'],
+                          'output': filename}
+            imerger = config.get('stgit.i3merge')
+        else:
+            three_way = False
+            files_dict = {'branch1': stages['current'],
+                          'branch2': stages['patched'],
+                          'output': filename}
+            imerger = config.get('stgit.i2merge')
 
-    if not imerger:
-        raise GitMergeException, 'No interactive merge command configured'
+        if not imerger:
+            raise GitMergeException, 'No interactive merge command configured'
 
-    # check whether we have all the files for the merge
-    for fn in [filename, current, patched]:
-        if not os.path.isfile(fn):
-            raise GitMergeException, \
-                  'Cannot run the interactive merge: "%s" missing' % fn
+        mtime = os.path.getmtime(filename)
 
-    mtime = os.path.getmtime(filename)
-
-    out.info('Trying the interactive %s merge'
-             % (three_way and 'three-way' or 'two-way'))
-
-    err = os.system(imerger % files_dict)
-    if err != 0:
-        raise GitMergeException, 'The interactive merge failed: %d' % err
-    if not os.path.isfile(filename):
-        raise GitMergeException, 'The "%s" file is missing' % filename
-    if mtime == os.path.getmtime(filename):
-        raise GitMergeException, 'The "%s" file was not modified' % filename
-
+        out.start('Trying the interactive %s merge'
+                  % (three_way and 'three-way' or 'two-way'))
+        err = os.system(imerger % files_dict)
+        out.done()
+        if err != 0:
+            raise GitMergeException, 'The interactive merge failed'
+        if not os.path.isfile(filename):
+            raise GitMergeException, 'The "%s" file is missing' % filename
+        if mtime == os.path.getmtime(filename):
+            raise GitMergeException, 'The "%s" file was not modified' % filename
+    finally:
+        for fn in stages.itervalues():
+            if os.path.isfile(fn):
+                os.remove(fn)
 
 #
 # Main algorithm

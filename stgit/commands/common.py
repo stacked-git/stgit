@@ -147,20 +147,11 @@ def print_crt_patch(crt_series, branch = None):
 
 def resolved(filename, reset = None):
     if reset:
-        reset_file = filename + file_extensions()[reset]
-        if os.path.isfile(reset_file):
-            if os.path.isfile(filename):
-                os.remove(filename)
-            os.rename(reset_file, filename)
-            # update the access and modificatied times
-            os.utime(filename, None)
-
-    git.update_cache([filename], force = True)
-
-    for ext in file_extensions().values():
-        fn = filename + ext
-        if os.path.isfile(fn):
-            os.remove(fn)
+        stage = {'ancestor': 1, 'current': 2, 'patched': 3}[reset]
+        Run('git', 'checkout-index', '--no-create', '--stage=%d' % stage, '--',
+            filename).no_output()
+    git.add([filename])
+    os.utime(filename, None) # update the access and modificatied times
 
 def resolved_all(reset = None):
     conflicts = git.get_conflicts()

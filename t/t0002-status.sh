@@ -144,7 +144,7 @@ cat > expected.txt <<EOF
 A fie
 M foo/bar
 EOF
-test_expect_failure 'Status after resolving the push' '
+test_expect_success 'Status after resolving the push' '
     stg resolved -a &&
     stg status > output.txt &&
     diff -u expected.txt output.txt
@@ -154,7 +154,7 @@ cat > expected.txt <<EOF
 A fie
 D foo/bar
 EOF
-test_expect_failure 'Status after deleting a file' '
+test_expect_success 'Status after deleting a file' '
     rm foo/bar &&
     stg status > output.txt &&
     diff -u expected.txt output.txt
@@ -163,7 +163,7 @@ test_expect_failure 'Status after deleting a file' '
 cat > expected.txt <<EOF
 D foo/bar
 EOF
-test_expect_failure 'Status of disappeared newborn' '
+test_expect_success 'Status of disappeared newborn' '
     stg refresh &&
     touch foo/bar &&
     stg add foo/bar &&

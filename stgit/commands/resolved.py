@@ -77,18 +77,7 @@ def func(parser, options, args):
                 raise CmdException, 'No conflicts for "%s"' % filename
 
     # resolved
-    try:
-        for filename in files:
-            if options.interactive:
-                interactive_merge(filename)
-            resolved(filename, options.reset)
-            del conflicts[conflicts.index(filename)]
-    finally:
-        # save or remove the conflicts file. Needs a finally clause to
-        # ensure that already solved conflicts are marked
-        if conflicts == []:
-            os.remove(os.path.join(basedir.get(), 'conflicts'))
-        else:
-            f = file(os.path.join(basedir.get(), 'conflicts'), 'w+')
-            f.writelines([line + '\n' for line in conflicts])
-            f.close()
+    for filename in files:
+        if options.interactive:
+            interactive_merge(filename)
+        resolved(filename, options.reset)
