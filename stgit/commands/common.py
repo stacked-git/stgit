@@ -27,7 +27,7 @@ from stgit.out import *
 from stgit.run import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
-
+from stgit.lib import stack as libstack
 
 # Command exception class
 class CmdException(StgException):
@@ -550,3 +550,11 @@ class DirectoryGotoToplevel(DirectoryInWorktree):
     def setup(self):
         DirectoryInWorktree.setup(self)
         self.cd_to_topdir()
+
+class DirectoryHasRepositoryLib(_Directory):
+    """For commands that use the new infrastructure in stgit.lib.*."""
+    def __init__(self):
+        self.needs_current_series = False
+    def setup(self):
+        # This will throw an exception if we don't have a repository.
+        self.repository = libstack.Repository.default()

@@ -15,14 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
+from optparse import make_option
 from stgit.out import *
-from stgit import stack, git
-
+from stgit.commands import common
+from stgit.lib import transaction
 
 help = 'delete the empty patches in the series'
 usage = """%prog [options]
@@ -31,7 +27,7 @@ Delete the empty patches in the whole series or only those applied or
 unapplied. A patch is considered empty if the two commit objects
 representing its boundaries refer to the same tree object."""
 
-directory = DirectoryGotoToplevel()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-a', '--applied',
                        help = 'delete the empty applied patches',
                        action = 'store_true'),
@@ -40,18 +36,35 @@ options = [make_option('-a', '--applied',
                        action = 'store_true')]
 
 
-def __delete_empty(patches, applied):
-    """Delete the empty patches
-    """
-    for p in patches:
-        if crt_series.empty_patch(p):
-            out.start('Deleting patch "%s"' % p)
-            if applied and crt_series.patch_applied(p):
-                crt_series.pop_patch(p)
-            crt_series.delete_patch(p)
-            out.done()
-        elif applied and crt_series.patch_unapplied(p):
-            crt_series.push_patch(p)
+def _clean(stack, clean_applied, clean_unapplied):
+    def deleting(pn):
+        out.info('Deleting empty patch %s' % pn)
+    trans = transaction.StackTransaction(stack, 'clean')
+    if clean_unapplied:
+        trans.unapplied = []
+        for pn in stack.patchorder.unapplied:
+            p = stack.patches.get(pn)
+            if p.is_empty():
+                trans.patches[pn] = None
+                deleting(pn)
+            else:
+                trans.unapplied.append(pn)
+    if clean_applied:
+        trans.applied = []
+        parent = stack.base
+        for pn in stack.patchorder.applied:
+            p = stack.patches.get(pn)
+            if p.is_empty():
+                trans.patches[pn] = None
+                deleting(pn)
+            else:
+                if parent != p.commit.data.parent:
+                    parent = trans.patches[pn] = stack.repository.commit(
+                        p.commit.data.set_parent(parent))
+                else:
+                    parent = p.commit
+                trans.applied.append(pn)
+    trans.run()
 
 def func(parser, options, args):
     """Delete the empty patches in the series
@@ -59,19 +72,8 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
     if not (options.applied or options.unapplied):
         options.applied = options.unapplied = True
 
-    if options.applied:
-        applied = crt_series.get_applied()
-        __delete_empty(applied, True)
-
-    if options.unapplied:
-        unapplied = crt_series.get_unapplied()
-        __delete_empty(unapplied, False)
-
-    print_crt_patch(crt_series)
+    _clean(directory.repository.current_stack,
+           options.applied, options.unapplied)
