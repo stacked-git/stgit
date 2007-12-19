@@ -83,6 +83,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map ">"   'stgit-push-next)
   (define-key stgit-mode-map "<"   'stgit-pop-next)
   (define-key stgit-mode-map "P"   'stgit-push-or-pop)
+  (define-key stgit-mode-map "G"   'stgit-goto)
   (define-key stgit-mode-map "="   'stgit-show))
 
 (defun stgit-mode ()
@@ -152,6 +153,14 @@ Commands:
         (applied (stgit-applied-at-point)))
     (stgit-capture-output nil
        (stgit-run (if applied "pop" "push") patch))
+    (stgit-refresh)))
+
+(defun stgit-goto ()
+  "Go to the patch on the current line"
+  (interactive)
+  (let ((patch (stgit-patch-at-point)))
+    (stgit-capture-output nil
+       (stgit-run "goto" patch))
     (stgit-refresh)))
 
 (defun stgit-show ()
