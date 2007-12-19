@@ -208,9 +208,15 @@ class Patch(StgitObject):
             self.__update_top_ref(top)
 
     def get_old_bottom(self):
-        return self._get_field('bottom.old')
+        old_bottom = self._get_field('bottom.old')
+        old_top = self.get_old_top()
+        assert old_bottom == git.get_commit(old_top).get_parent()
+        return old_bottom
 
     def get_bottom(self):
+        bottom = self._get_field('bottom')
+        top = self.get_top()
+        assert bottom == git.get_commit(top).get_parent()
         return self._get_field('bottom')
 
     def set_bottom(self, value, backup = False):
@@ -223,7 +229,13 @@ class Patch(StgitObject):
         return self._get_field('top.old')
 
     def get_top(self):
-        return self._get_field('top')
+        top = self._get_field('top')
+        try:
+            ref = git.rev_parse(self.__top_ref)
+        except:
+            ref = None
+        assert not ref or top == ref
+        return top
 
     def set_top(self, value, backup = False):
         if backup:
@@ -231,6 +243,7 @@ class Patch(StgitObject):
             self._set_field('top.old', curr)
         self._set_field('top', value)
         self.__update_top_ref(value)
+        self.get_bottom() # check the assert
 
     def restore_old_boundaries(self):
         bottom = self._get_field('bottom.old')
