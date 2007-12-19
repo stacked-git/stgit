@@ -162,7 +162,6 @@ class Patch(StgitObject):
 
     def create(self):
         os.mkdir(self._dir())
-        self.create_empty_field('top')
 
     def delete(self, keep_log = False):
         if os.path.isdir(self._dir()):
@@ -201,11 +200,6 @@ class Patch(StgitObject):
     def __update_log_ref(self, ref):
         git.set_ref(self.__log_ref, ref)
 
-    def update_top_ref(self):
-        top = self.get_top()
-        if top:
-            self.__update_top_ref(top)
-
     def get_old_bottom(self):
         return git.get_commit(self.get_old_top()).get_parent()
 
@@ -216,26 +210,18 @@ class Patch(StgitObject):
         return self._get_field('top.old')
 
     def get_top(self):
-        top = self._get_field('top')
-        try:
-            ref = git.rev_parse(self.__top_ref)
-        except:
-            ref = None
-        assert not ref or top == ref
-        return top
+        return git.rev_parse(self.__top_ref)
 
     def set_top(self, value, backup = False):
         if backup:
-            curr = self._get_field('top')
+            curr = self.get_top()
             self._set_field('top.old', curr)
-        self._set_field('top', value)
         self.__update_top_ref(value)
 
     def restore_old_boundaries(self):
         top = self._get_field('top.old')
 
         if top:
-            self._set_field('top', top)
             self.__update_top_ref(top)
             return True
         else:
@@ -456,7 +442,13 @@ class Series(PatchSet):
                 patch = patch.strip()
                 os.rename(os.path.join(branch_dir, patch),
                           os.path.join(patch_dir, patch))
-                Patch(patch, patch_dir, refs_base).update_top_ref()
+                topfield = os.path.join(patch_dir, patch, 'top')
+                if os.path.isfile(topfield):
+                    top = read_string(topfield, False)
+                else:
+                    top = None
+                if top:
+                    git.set_ref(refs_base + '/' + patch, top)
             set_format_version(1)
 
         # Update 1 -> 2.
