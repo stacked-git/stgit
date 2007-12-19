@@ -70,9 +70,51 @@ Argument DIR is the repository path."
     (insert "Branch: ")
     (stgit-run "branch")
     (stgit-run "series" "--description")
+    (stgit-rehighlight (point-min) (point-max))
     (if curpatch
         (stgit-goto-patch curpatch)
       (goto-line curline))))
+
+(defface stgit-description-face
+  '((((background dark)) (:foreground "tan"))
+    (((background light)) (:foreground "dark red")))
+  "The face used for StGit desriptions")
+
+(defface stgit-top-patch-face
+  '((((background dark)) (:weight bold :foreground "yellow"))
+    (((background light)) (:weight bold :foreground "purple"))
+    (t (:weight bold)))
+  "The face used for the top patch names")
+
+(defface stgit-applied-patch-face
+  '((((background dark)) (:foreground "light yellow"))
+    (((background light)) (:foreground "purple"))
+    (t ()))
+  "The face used for applied patch names")
+
+(defface stgit-unapplied-patch-face
+  '((((background dark)) (:foreground "gray80"))
+    (((background light)) (:foreground "orchid"))
+    (t ()))
+  "The face used for unapplied patch names")
+
+(defun stgit-rehighlight (start end)
+  "Refresh fontification of region between START and END."
+  (save-excursion
+    (goto-char start)
+    (while (< (point) end)
+      (cond ((looking-at "Branch: \\(.*\\)")
+             (put-text-property (match-beginning 1) (match-end 1) 'face 'bold))
+            ((looking-at "\\([>+-]\\) \\([^ ]+\\) *| \\(.*\\)")
+             (let ((state (match-string 1)))
+               (put-text-property
+                (match-beginning 2) (match-end 2)
+                'face (cond ((string= state ">") 'stgit-top-patch-face)
+                            ((string= state "+") 'stgit-applied-patch-face)
+                            ((string= state "-") 'stgit-unapplied-patch-face)))
+               (put-text-property (match-beginning 3) (match-end 3)
+                                  'face 'stgit-description-face))))
+      (forward-line 1))))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
@@ -118,7 +160,7 @@ Commands:
   (save-excursion
     (beginning-of-line)
     (if (looking-at "[>+-] \\([^ ]*\\)")
-        (match-string 1)
+        (match-string-no-properties 1)
       nil)))
 
 (defun stgit-goto-patch (patch)
