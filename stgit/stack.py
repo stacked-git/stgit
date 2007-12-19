@@ -196,6 +196,8 @@ class Patch(StgitObject):
 
     def __update_top_ref(self, ref):
         git.set_ref(self.__top_ref, ref)
+        self._set_field('top', ref)
+        self._set_field('bottom', git.get_commit(ref).get_parent())
 
     def __update_log_ref(self, ref):
         git.set_ref(self.__log_ref, ref)
@@ -214,8 +216,9 @@ class Patch(StgitObject):
 
     def set_top(self, value, backup = False):
         if backup:
-            curr = self.get_top()
-            self._set_field('top.old', curr)
+            curr_top = self.get_top()
+            self._set_field('top.old', curr_top)
+            self._set_field('bottom.old', git.get_commit(curr_top).get_parent())
         self.__update_top_ref(value)
 
     def restore_old_boundaries(self):
