@@ -7,15 +7,66 @@ class Patch(object):
         self.__stack = stack
         self.__name = name
     name = property(lambda self: self.__name)
+    @property
     def __ref(self):
         return 'refs/patches/%s/%s' % (self.__stack.name, self.__name)
     @property
+    def __log_ref(self):
+        return self.__ref + '.log'
+    @property
     def commit(self):
-        return self.__stack.repository.refs.get(self.__ref())
+        return self.__stack.repository.refs.get(self.__ref)
+    @property
+    def __compat_dir(self):
+        return os.path.join(self.__stack.directory, 'patches', self.__name)
+    def __write_compat_files(self, new_commit, msg):
+        """Write files used by the old infrastructure."""
+        def write(name, val, multiline = False):
+            fn = os.path.join(self.__compat_dir, name)
+            if val:
+                utils.write_string(fn, val, multiline)
+            elif os.path.isfile(fn):
+                os.remove(fn)
+        def write_patchlog():
+            try:
+                old_log = [self.__stack.repository.refs.get(self.__log_ref)]
+            except KeyError:
+                old_log = []
+            cd = git.Commitdata(tree = new_commit.data.tree, parents = old_log,
+                                message = '%s\t%s' % (msg, new_commit.sha1))
+            c = self.__stack.repository.commit(cd)
+            self.__stack.repository.refs.set(self.__log_ref, c, msg)
+            return c
+        d = new_commit.data
+        write('authname', d.author.name)
+        write('authemail', d.author.email)
+        write('authdate', d.author.date)
+        write('commname', d.committer.name)
+        write('commemail', d.committer.email)
+        write('description', d.message)
+        write('log', write_patchlog().sha1)
+        write('top', new_commit.sha1)
+        write('bottom', d.parent.sha1)
+        try:
+            old_top_sha1 = self.commit.sha1
+            old_bottom_sha1 = self.commit.data.parent.sha1
+        except KeyError:
+            old_top_sha1 = None
+            old_bottom_sha1 = None
+        write('top.old', old_top_sha1)
+        write('bottom.old', old_bottom_sha1)
+    def __delete_compat_files(self):
+        if os.path.isdir(self.__compat_dir):
+            for f in os.listdir(self.__compat_dir):
+                os.remove(os.path.join(self.__compat_dir, f))
+            os.rmdir(self.__compat_dir)
+        self.__stack.repository.refs.delete(self.__log_ref)
     def set_commit(self, commit, msg):
-        self.__stack.repository.refs.set(self.__ref(), commit, msg)
+        self.__write_compat_files(commit, msg)
+        self.__stack.repository.refs.set(self.__ref, commit, msg)
     def delete(self):
-        self.__stack.repository.refs.delete(self.__ref())
+        self.__delete_compat_files()
+        self.__stack.repository.refs.delete(self.__ref)
     def is_applied(self):
         return self.name in self.__stack.patchorder.applied
     def is_empty(self):
