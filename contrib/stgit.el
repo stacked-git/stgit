@@ -89,6 +89,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "n"   'next-line)
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
+  (define-key stgit-mode-map "e"   'stgit-edit)
   (define-key stgit-mode-map "\C-r"   'stgit-repair)
   (define-key stgit-mode-map "C"   'stgit-commit)
   (define-key stgit-mode-map "U"   'stgit-uncommit)
@@ -203,6 +204,30 @@ Commands:
     (with-current-buffer standard-output
       (goto-char (point-min))
       (diff-mode))))
+
+(defun stgit-edit ()
+  "Edit the patch on the current line"
+  (interactive)
+  (let ((patch (if (stgit-applied-at-point)
+                   (stgit-patch-at-point)
+                 (error "This patch is not applied")))
+        (edit-buf (get-buffer-create "*stgit edit*"))
+        (dir default-directory))
+    (log-edit 'stgit-confirm-edit t nil edit-buf)
+    (set (make-local-variable 'stgit-edit-patch) patch)
+    (setq default-directory dir)
+    (let ((standard-output edit-buf))
+      (stgit-run "edit" "--save-template=-" patch))))
+
+(defun stgit-confirm-edit ()
+  (interactive)
+  (let ((file (make-temp-file "stgit-edit-")))
+    (write-region (point-min) (point-max) file)
+    (stgit-capture-output nil
+      (stgit-run "edit" "-f" file stgit-edit-patch))
+    (with-current-buffer log-edit-parent-buffer
+      (stgit-refresh))))
+
 
 (defun stgit-help ()
   "Display help for the StGit mode."
