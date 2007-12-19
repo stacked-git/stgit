@@ -189,6 +189,17 @@ def call_editor(filename):
         raise EditorException, 'editor failed, exit code: %d' % err
     out.done()
 
+def edit_string(s, filename):
+    f = file(filename, 'w')
+    f.write(s)
+    f.close()
+    call_editor(filename)
+    f = file(filename)
+    s = f.read()
+    f.close()
+    os.remove(filename)
+    return s
+
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
     from the top line of the string passed as argument."""
