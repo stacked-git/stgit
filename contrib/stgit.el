@@ -90,6 +90,8 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map "\C-r"   'stgit-repair)
+  (define-key stgit-mode-map "C"   'stgit-commit)
+  (define-key stgit-mode-map "U"   'stgit-uncommit)
   (define-key stgit-mode-map ">"   'stgit-push-next)
   (define-key stgit-mode-map "<"   'stgit-pop-next)
   (define-key stgit-mode-map "P"   'stgit-push-or-pop)
@@ -144,6 +146,18 @@ Commands:
   (interactive)
   (stgit-capture-output nil
    (stgit-run "repair"))
+  (stgit-refresh))
+
+(defun stgit-commit ()
+  "Run stg commit."
+  (interactive)
+  (stgit-capture-output nil (stgit-run "commit"))
+  (stgit-refresh))
+
+(defun stgit-uncommit (arg)
+  "Run stg uncommit. Numeric arg determines number of patches to uncommit."
+  (interactive "p")
+  (stgit-capture-output nil (stgit-run "uncommit" "-n" (number-to-string arg)))
   (stgit-refresh))
 
 (defun stgit-push-next ()
