@@ -1,0 +1,120 @@
+import os.path
+from stgit import exception, utils
+from stgit.lib import git
+
+class Patch(object):
+    def __init__(self, stack, name):
+        self.__stack = stack
+        self.__name = name
+    name = property(lambda self: self.__name)
+    def __ref(self):
+        return 'refs/patches/%s/%s' % (self.__stack.name, self.__name)
+    @property
+    def commit(self):
+        return self.__stack.repository.refs.get(self.__ref())
+    def set_commit(self, commit, msg):
+        self.__stack.repository.refs.set(self.__ref(), commit, msg)
+    def delete(self):
+        self.__stack.repository.refs.delete(self.__ref())
+    def is_applied(self):
+        return self.name in self.__stack.patchorder.applied
+    def is_empty(self):
+        c = self.commit
+        return c.data.tree == c.data.parent.data.tree
+
+class PatchOrder(object):
+    """Keeps track of patch order, and which patches are applied.
+    Works with patch names, not actual patches."""
+    __list_order = [ 'applied', 'unapplied' ]
+    def __init__(self, stack):
+        self.__stack = stack
+        self.__lists = {}
+    def __read_file(self, fn):
+        return tuple(utils.read_strings(
+            os.path.join(self.__stack.directory, fn)))
+    def __write_file(self, fn, val):
+        utils.write_strings(os.path.join(self.__stack.directory, fn), val)
+    def __get_list(self, name):
+        if not name in self.__lists:
+            self.__lists[name] = self.__read_file(name)
+        return self.__lists[name]
+    def __set_list(self, name, val):
+        val = tuple(val)
+        if val != self.__lists.get(name, None):
+            self.__lists[name] = val
+            self.__write_file(name, val)
+    applied = property(lambda self: self.__get_list('applied'),
+                       lambda self, val: self.__set_list('applied', val))
+    unapplied = property(lambda self: self.__get_list('unapplied'),
+                         lambda self, val: self.__set_list('unapplied', val))
+
+class Patches(object):
+    """Creates Patch objects."""
+    def __init__(self, stack):
+        self.__stack = stack
+        def create_patch(name):
+            p = Patch(self.__stack, name)
+            p.commit # raise exception if the patch doesn't exist
+            return p
+        self.__patches = git.ObjectCache(create_patch) # name -> Patch
+    def exists(self, name):
+        try:
+            self.get(name)
+            return True
+        except KeyError:
+            return False
+    def get(self, name):
+        return self.__patches[name]
+    def new(self, name, commit, msg):
+        assert not name in self.__patches
+        p = Patch(self.__stack, name)
+        p.set_commit(commit, msg)
+        self.__patches[name] = p
+        return p
+
+class Stack(object):
+    def __init__(self, repository, name):
+        self.__repository = repository
+        self.__name = name
+        try:
+            self.head
+        except KeyError:
+            raise exception.StgException('%s: no such branch' % name)
+        self.__patchorder = PatchOrder(self)
+        self.__patches = Patches(self)
+    name = property(lambda self: self.__name)
+    repository = property(lambda self: self.__repository)
+    patchorder = property(lambda self: self.__patchorder)
+    patches = property(lambda self: self.__patches)
+    @property
+    def directory(self):
+        return os.path.join(self.__repository.directory, 'patches', self.__name)
+    def __ref(self):
+        return 'refs/heads/%s' % self.__name
+    @property
+    def head(self):
+        return self.__repository.refs.get(self.__ref())
+    def set_head(self, commit, msg):
+        self.__repository.refs.set(self.__ref(), commit, msg)
+    @property
+    def base(self):
+        if self.patchorder.applied:
+            return self.patches.get(self.patchorder.applied[0]
+                                    ).commit.data.parent
+        else:
+            return self.head
+
+class Repository(git.Repository):
+    def __init__(self, *args, **kwargs):
+        git.Repository.__init__(self, *args, **kwargs)
+        self.__stacks = {} # name -> Stack
+    @property
+    def current_branch(self):
+        return utils.strip_leading('refs/heads/', self.head)
+    @property
+    def current_stack(self):
+        return self.get_stack(self.current_branch)
+    def get_stack(self, name):
+        if not name in self.__stacks:
+            self.__stacks[name] = Stack(self, name)
+        return self.__stacks[name]
