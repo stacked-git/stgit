@@ -42,7 +42,7 @@ test_expect_success 'Modifying push from a subdir' '
     [ "$(echo $(cat foo/y.txt))" = "y0 y1 y2" ]
 '
 
-test_expect_success 'Conflicting push from subdir' '
+test_expect_failure 'Conflicting push from subdir' '
     stg pop p1 p2 &&
     [ "$(echo $(cat x.txt))" = "x0" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0" ] &&

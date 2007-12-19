@@ -754,6 +754,7 @@ class Series(PatchSet):
         config.remove_section('branch.%s.stgit' % self.get_name())
 
     def refresh_patch(self, files = None, message = None, edit = False,
+                      empty = False,
                       show_patch = False,
                       cache_update = True,
                       author_name = None, author_email = None,
@@ -797,9 +798,16 @@ class Series(PatchSet):
         if not bottom:
             bottom = patch.get_bottom()
 
+        if empty:
+            tree_id = git.get_commit(bottom).get_tree()
+        else:
+            tree_id = None
+
         commit_id = git.commit(files = files,
                                message = descr, parents = [bottom],
                                cache_update = cache_update,
+                               tree_id = tree_id,
+                               set_head = True,
                                allowempty = True,
                                author_name = author_name,
                                author_email = author_email,
@@ -1116,12 +1124,10 @@ class Series(PatchSet):
                 log = 'push'
             self.refresh_patch(bottom = head, cache_update = False, log = log)
         else:
-            # we store the correctly merged files only for
-            # tracking the conflict history. Note that the
-            # git.merge() operations should always leave the index
-            # in a valid state (i.e. only stage 0 files)
+            # we make the patch empty, with the merged state in the
+            # working tree.
             self.refresh_patch(bottom = head, cache_update = False,
-                               log = 'push(c)')
+                               empty = True, log = 'push(c)')
             raise StackException, str(ex)
 
         return modified

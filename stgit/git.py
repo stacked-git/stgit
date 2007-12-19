@@ -736,25 +736,7 @@ def merge_recursive(base, head1, head2):
         # error and we have to abort the merge
         raise GitException, err_output
 
-    # merge the unmerged files
-    errors = False
-    for path in files:
-        # remove additional files that might be generated for some
-        # newer versions of GIT
-        for suffix in [base, head1, head2]:
-            if not suffix:
-                continue
-            fname = path + '~' + suffix
-            if os.path.exists(fname):
-                os.remove(fname)
-
-        stages = files[path]
-        if gitmergeonefile.merge(stages['1'][1], stages['2'][1],
-                                 stages['3'][1], path, stages['1'][0],
-                                 stages['2'][0], stages['3'][0]) != 0:
-            errors = True
-
-    if errors:
+    if files:
         raise GitException, 'GIT index merging failed (possible conflicts)'
 
 def merge(base, head1, head2):
