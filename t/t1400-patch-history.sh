@@ -20,7 +20,7 @@ test_expect_success \
 	'
 	stg new foo -m "Foo Patch" &&
 	echo foo > test && echo foo2 >> test &&
-	stg add test &&
+	git add test &&
 	stg refresh --annotate="foo notes"
 	'
 
@@ -55,7 +55,7 @@ test_expect_success \
 	'Check the "push" log' \
 	'
 	stg pop &&
-	echo foo > test2 && stg add test2 && stg refresh &&
+	echo foo > test2 && git add test2 && stg refresh &&
 	stg push &&
 	stg log --full | grep -q -e "^push    "
 	'

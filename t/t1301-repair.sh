@@ -20,7 +20,7 @@ test_expect_success \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
-    stg add foo.txt &&
+    git add foo.txt &&
     stg refresh
     '
 

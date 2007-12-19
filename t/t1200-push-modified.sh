@@ -23,7 +23,7 @@ test_expect_success \
     stg clone foo bar &&
     (
         cd bar && stg new p1 -m p1 &&
-        printf "a\nc\n" > file && stg add file && stg refresh &&
+        printf "a\nc\n" > file && git add file && stg refresh &&
         stg new p2 -m p2 &&
         printf "a\nb\nc\n" > file && stg refresh &&
         [ "$(echo $(stg applied))" = "p1 p2" ] &&

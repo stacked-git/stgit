@@ -16,14 +16,14 @@ test_expect_success \
     git repo-config branch.stack.stgit.pull-policy rebase &&
     git repo-config --list &&
     stg new c1 -m c1 &&
-    echo a > file && stg add file && stg refresh
+    echo a > file && git add file && stg refresh
     '
 
 test_expect_success \
     'Add non-rewinding commit in parent and pull the stack' \
     '
     stg branch parent && stg new u1 -m u1 &&
-    echo b > file2 && stg add file2 && stg refresh &&
+    echo b > file2 && git add file2 && stg refresh &&
     stg branch stack && stg pull &&
     test -e file2
     '

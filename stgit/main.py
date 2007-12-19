@@ -59,7 +59,6 @@ class Commands(dict):
         return getattr(stgit.commands, cmd_mod)
 
 commands = Commands({
-    'add':              'add',
     'applied':          'applied',
     'branch':           'branch',
     'delete':           'delete',
@@ -147,7 +146,6 @@ patchcommands = (
     'sync',
     )
 wccommands = (
-    'add',
     'cp',
     'diff',
     'resolved',

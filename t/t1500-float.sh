@@ -12,13 +12,13 @@ test_description='Test floating a number of patches to the top of the stack
 test_expect_success \
 	'Initialize the StGIT repository' \
 	'stg init &&
-	 stg new A -m "a" && echo A >a.txt && stg add a.txt && stg refresh &&
-	 stg new B -m "b" && echo B >b.txt && stg add b.txt && stg refresh &&
-	 stg new C -m "c" && echo C >c.txt && stg add c.txt && stg refresh &&
-	 stg new D -m "d" && echo D >d.txt && stg add d.txt && stg refresh &&
-	 stg new E -m "e" && echo E >e.txt && stg add e.txt && stg refresh &&
-	 stg new F -m "f" && echo F >f.txt && stg add f.txt && stg refresh &&
-	 stg new G -m "g" && echo G >g.txt && stg add g.txt && stg refresh &&
+	 stg new A -m "a" && echo A >a.txt && git add a.txt && stg refresh &&
+	 stg new B -m "b" && echo B >b.txt && git add b.txt && stg refresh &&
+	 stg new C -m "c" && echo C >c.txt && git add c.txt && stg refresh &&
+	 stg new D -m "d" && echo D >d.txt && git add d.txt && stg refresh &&
+	 stg new E -m "e" && echo E >e.txt && git add e.txt && stg refresh &&
+	 stg new F -m "f" && echo F >f.txt && git add f.txt && stg refresh &&
+	 stg new G -m "g" && echo G >g.txt && git add g.txt && stg refresh &&
 	 stg pop &&
 	 test "$(echo $(stg applied))" = "A B C D E F"
 	'

@@ -127,14 +127,14 @@ already exist in the working directory, but you have to tell StGIT
 explicitly if you add, remove, or rename files.
 To record the addition or deletion of files in your new patch:
 
-  stg add [<file>*]
+  git add [<file>*]
   stg rm [<file>*]
 
 To record the renaming of a file in your new patch, issue both of these
 commands:
 
   stg rm <oldfilename>
-  stg add <newfilename>
+  git add <newfilename>
 
 
 Stack manipulation: managing multiple patches

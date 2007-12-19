@@ -54,7 +54,7 @@ cat > expected.txt <<EOF
 A foo/bar
 EOF
 test_expect_success 'Status with an added file' '
-    stg add foo &&
+    git add foo &&
     stg status > output.txt &&
     diff -u expected.txt output.txt
 '
@@ -95,7 +95,7 @@ test_expect_success 'Status after refresh' '
 
 test_expect_success 'Add another file' '
     echo lajbans > fie &&
-    stg add fie &&
+    git add fie &&
     stg refresh
 '
 
@@ -166,7 +166,7 @@ EOF
 test_expect_success 'Status of disappeared newborn' '
     stg refresh &&
     touch foo/bar &&
-    stg add foo/bar &&
+    git add foo/bar &&
     rm foo/bar &&
     stg status > output.txt &&
     diff -u expected.txt output.txt

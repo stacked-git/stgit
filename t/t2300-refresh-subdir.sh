@@ -8,7 +8,7 @@ test_expect_success 'Refresh from a subdirectory' '
     echo foo >> foo.txt &&
     mkdir bar &&
     echo bar >> bar/bar.txt &&
-    stg add foo.txt bar/bar.txt &&
+    git add foo.txt bar/bar.txt &&
     cd bar &&
     stg refresh &&
     cd .. &&

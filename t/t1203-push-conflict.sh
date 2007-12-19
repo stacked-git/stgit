@@ -21,7 +21,7 @@ test_expect_success \
 	stg new foo -m foo &&
 	echo foo > test &&
 	echo fie > test2 &&
-	stg add test test2 &&
+	git add test test2 &&
 	stg refresh &&
         stg pop
 	'
@@ -31,7 +31,7 @@ test_expect_success \
 	'
 	stg new bar -m bar &&
 	echo bar > test &&
-	stg add test &&
+	git add test &&
 	stg refresh
 	'
 
