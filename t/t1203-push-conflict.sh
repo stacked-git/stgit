@@ -54,6 +54,12 @@ test_expect_success \
 	'
 
 test_expect_success \
+	'Check that pop will fail while there are unmerged conflicts' \
+	'
+	! stg pop
+	'
+
+test_expect_success \
 	'Resolve the conflict' \
 	'
 	echo resolved > test &&

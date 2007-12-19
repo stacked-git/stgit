@@ -162,14 +162,14 @@ def get_commit(id_hash):
 def get_conflicts():
     """Return the list of file conflicts
     """
-    conflicts_file = os.path.join(basedir.get(), 'conflicts')
-    if os.path.isfile(conflicts_file):
-        f = file(conflicts_file)
-        names = [line.strip() for line in f.readlines()]
-        f.close()
-        return names
-    else:
-        return None
+    names = []
+    for line in GRun('ls-files', '-z', '--unmerged'
+                     ).raw_output().split('\0')[:-1]:
+        stat, path = line.split('\t', 1)
+        # Look for entries in stage 2 (could equally well use 3)
+        if stat.endswith(' 2'):
+            names.append(path)
+    return names
 
 def exclude_files():
     files = [os.path.join(basedir.get(), 'info', 'exclude')]
@@ -234,8 +234,6 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     # conflicted files
     conflicts = get_conflicts()
-    if not conflicts:
-        conflicts = []
     cache_files += [('C', filename) for filename in conflicts
                     if not files or filename in files]
     reported_files = set(conflicts)

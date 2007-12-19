@@ -110,7 +110,7 @@ cat > expected.txt <<EOF
 A fie
 C foo/bar
 EOF
-test_expect_failure 'Status after conflicting push' '
+test_expect_success 'Status after conflicting push' '
     ! stg push &&
     stg status > output.txt &&
     diff -u expected.txt output.txt
@@ -119,7 +119,7 @@ test_expect_failure 'Status after conflicting push' '
 cat > expected.txt <<EOF
 C foo/bar
 EOF
-test_expect_failure 'Status of file' '
+test_expect_success 'Status of file' '
     stg status foo/bar > output.txt &&
     diff -u expected.txt output.txt
 '
@@ -127,7 +127,7 @@ test_expect_failure 'Status of file' '
 cat > expected.txt <<EOF
 C foo/bar
 EOF
-test_expect_failure 'Status of dir' '
+test_expect_success 'Status of dir' '
     stg status foo > output.txt &&
     diff -u expected.txt output.txt
 '
@@ -144,7 +144,7 @@ cat > expected.txt <<EOF
 A fie
 M foo/bar
 EOF
-test_expect_success 'Status after resolving the push' '
+test_expect_failure 'Status after resolving the push' '
     stg resolved -a &&
     stg status > output.txt &&
     diff -u expected.txt output.txt

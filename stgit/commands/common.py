@@ -129,7 +129,7 @@ def check_head_top_equal(crt_series):
    more about what to do next.""")
 
 def check_conflicts():
-    if os.path.exists(os.path.join(basedir.get(), 'conflicts')):
+    if git.get_conflicts():
         raise CmdException, \
               'Unsolved conflicts. Please resolve them first or\n' \
               '  revert the changes with "status --reset"'
@@ -164,10 +164,8 @@ def resolved(filename, reset = None):
 
 def resolved_all(reset = None):
     conflicts = git.get_conflicts()
-    if conflicts:
-        for filename in conflicts:
-            resolved(filename, reset)
-        os.remove(os.path.join(basedir.get(), 'conflicts'))
+    for filename in conflicts:
+        resolved(filename, reset)
 
 def push_patches(crt_series, patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared
