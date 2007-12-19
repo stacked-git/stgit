@@ -162,7 +162,6 @@ class Patch(StgitObject):
 
     def create(self):
         os.mkdir(self._dir())
-        self.create_empty_field('bottom')
         self.create_empty_field('top')
 
     def delete(self, keep_log = False):
@@ -208,22 +207,10 @@ class Patch(StgitObject):
             self.__update_top_ref(top)
 
     def get_old_bottom(self):
-        old_bottom = self._get_field('bottom.old')
-        old_top = self.get_old_top()
-        assert old_bottom == git.get_commit(old_top).get_parent()
-        return old_bottom
+        return git.get_commit(self.get_old_top()).get_parent()
 
     def get_bottom(self):
-        bottom = self._get_field('bottom')
-        top = self.get_top()
-        assert bottom == git.get_commit(top).get_parent()
-        return self._get_field('bottom')
-
-    def set_bottom(self, value, backup = False):
-        if backup:
-            curr = self._get_field('bottom')
-            self._set_field('bottom.old', curr)
-        self._set_field('bottom', value)
+        return git.get_commit(self.get_top()).get_parent()
 
     def get_old_top(self):
         return self._get_field('top.old')
@@ -243,14 +230,11 @@ class Patch(StgitObject):
             self._set_field('top.old', curr)
         self._set_field('top', value)
         self.__update_top_ref(value)
-        self.get_bottom() # check the assert
 
     def restore_old_boundaries(self):
-        bottom = self._get_field('bottom.old')
         top = self._get_field('top.old')
 
-        if top and bottom:
-            self._set_field('bottom', bottom)
+        if top:
             self._set_field('top', top)
             self.__update_top_ref(top)
             return True
@@ -828,7 +812,6 @@ class Series(PatchSet):
                                committer_name = committer_name,
                                committer_email = committer_email)
 
-        patch.set_bottom(bottom, backup = backup)
         patch.set_top(commit_id, backup = backup)
         patch.set_description(descr)
         patch.set_authname(author_name)
@@ -942,11 +925,8 @@ class Series(PatchSet):
                                    committer_name = committer_name,
                                    committer_email = committer_email)
             # set the patch top to the new commit
-            patch.set_bottom(bottom)
             patch.set_top(commit_id)
         else:
-            assert top != bottom
-            patch.set_bottom(bottom)
             patch.set_top(top)
 
         self.log_patch(patch, 'new')
@@ -1000,7 +980,6 @@ class Series(PatchSet):
             if head == bottom:
                 # reset the backup information. No logging since the
                 # patch hasn't changed
-                patch.set_bottom(head, backup = True)
                 patch.set_top(top, backup = True)
 
             else:
@@ -1028,7 +1007,6 @@ class Series(PatchSet):
                                      committer_name = committer_name,
                                      committer_email = committer_email)
 
-                    patch.set_bottom(head, backup = True)
                     patch.set_top(top, backup = True)
 
                     self.log_patch(patch, 'push(f)')
@@ -1101,7 +1079,6 @@ class Series(PatchSet):
         if head == bottom:
             # A fast-forward push. Just reset the backup
             # information. No need for logging
-            patch.set_bottom(bottom, backup = True)
             patch.set_top(top, backup = True)
 
             git.switch(top)

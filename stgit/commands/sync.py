@@ -149,7 +149,6 @@ def func(parser, options, args):
 
         # reset the patch backup information. That's needed in case we
         # undo the sync but there were no changes made
-        patch.set_bottom(bottom, backup = True)
         patch.set_top(top, backup = True)
 
         # the actual merging (either from a branch or an external file)
