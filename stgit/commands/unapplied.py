@@ -16,13 +16,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
+from optparse import make_option
 from stgit.out import *
-from stgit import stack, git
+from stgit.commands import common
 
 
 help = 'print the unapplied patches'
@@ -31,9 +27,9 @@ usage = """%prog [options]
 List the patches from the series which are not pushed onto the stack.
 They are listed in the reverse order in which they were popped."""
 
-directory = DirectoryHasRepository()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
+                       help = 'use BRANCH instead of the default branch'),
            make_option('-c', '--count',
                        help = 'print the number of unapplied patches',
                        action = 'store_true')]
@@ -45,10 +41,13 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    unapplied = crt_series.get_unapplied()
+    if options.branch:
+        s = directory.repository.get_stack(options.branch)
+    else:
+        s = directory.repository.current_stack
 
     if options.count:
-        out.stdout(len(unapplied))
+        out.stdout(len(s.patchorder.unapplied))
     else:
-        for p in unapplied:
-            out.stdout(p)
+        for pn in s.patchorder.unapplied:
+            out.stdout(pn)
