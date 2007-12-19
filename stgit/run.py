@@ -110,6 +110,9 @@ class Run:
     def input_lines(self, lines):
         self.__indata = ''.join(['%s\n' % line for line in lines])
         return self
+    def input_nulterm(self, lines):
+        self.__indata = ''.join('%s\0' % line for line in lines)
+        return self
     def no_output(self):
         outdata = self.__run_io()
         if outdata:

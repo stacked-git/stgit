@@ -77,7 +77,7 @@ def func(parser, options, args):
                 raise CmdException, 'No conflicts for "%s"' % filename
 
     # resolved
-    for filename in files:
-        if options.interactive:
+    if options.interactive:
+        for filename in files:
             interactive_merge(filename)
-        resolved(filename, options.reset)
+    resolved(files, options.reset)

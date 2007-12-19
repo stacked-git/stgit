@@ -109,8 +109,7 @@ def func(parser, options, args):
 
     if options.reset:
         if args:
-            for f in args:
-                resolved(f)
+            resolved(args)
             git.reset(args)
         else:
             resolved_all()

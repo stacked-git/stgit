@@ -145,18 +145,18 @@ def print_crt_patch(crt_series, branch = None):
     else:
         out.info('No patches applied')
 
-def resolved(filename, reset = None):
+def resolved(filenames, reset = None):
     if reset:
         stage = {'ancestor': 1, 'current': 2, 'patched': 3}[reset]
-        Run('git', 'checkout-index', '--no-create', '--stage=%d' % stage, '--',
-            filename).no_output()
-    git.add([filename])
-    os.utime(filename, None) # update the access and modificatied times
+        Run('git', 'checkout-index', '--no-create', '--stage=%d' % stage,
+            '--stdin', '-z').input_nulterm(filenames).no_output()
+    git.add(filenames)
+    for filename in filenames:
+        os.utime(filename, None) # update the access and modificatied times
 
 def resolved_all(reset = None):
     conflicts = git.get_conflicts()
-    for filename in conflicts:
-        resolved(filename, reset)
+    resolved(conflicts, reset)
 
 def push_patches(crt_series, patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared
