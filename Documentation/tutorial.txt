@@ -123,18 +123,22 @@ You can view modified files that have already been saved into a patch:
   stg files
 
 The 'stg refresh' command automatically notes changes to files that
-already exist in the working directory, but you have to tell StGIT
-explicitly if you add, remove, or rename files.
-To record the addition or deletion of files in your new patch:
+already exist in the working directory (it also notices if you remove
+them), but you have to tell StGIT explicitly if you add or rename a
+file:
 
-  git add [<file>*]
-  stg rm [<file>*]
+  git add new-file
 
-To record the renaming of a file in your new patch, issue both of these
-commands:
+to add a file, and
 
-  stg rm <oldfilename>
-  git add <newfilename>
+  mv old-file new-file
+  git add new-file
+
+or simply
+
+  git mv old-file new-file
+
+to move a file.
 
 
 Stack manipulation: managing multiple patches

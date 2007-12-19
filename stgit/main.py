@@ -90,7 +90,6 @@ commands = Commands({
     'rename':           'rename',
     'repair':           'repair',
     'resolved':         'resolved',
-    'rm':               'rm',
     'series':           'series',
     'show':             'show',
     'sink':             'sink',
@@ -149,7 +148,6 @@ wccommands = (
     'cp',
     'diff',
     'resolved',
-    'rm',
     'status',
     )
 
