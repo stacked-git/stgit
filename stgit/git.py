@@ -153,14 +153,12 @@ def get_commit(id_hash):
 def get_conflicts():
     """Return the list of file conflicts
     """
-    names = []
+    names = set()
     for line in GRun('ls-files', '-z', '--unmerged'
                      ).raw_output().split('\0')[:-1]:
         stat, path = line.split('\t', 1)
-        # Look for entries in stage 2 (could equally well use 3)
-        if stat.endswith(' 2'):
-            names.append(path)
-    return names
+        names.add(path)
+    return list(names)
 
 def exclude_files():
     files = [os.path.join(basedir.get(), 'info', 'exclude')]
