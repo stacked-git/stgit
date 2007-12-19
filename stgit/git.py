@@ -710,7 +710,10 @@ def merge_recursive(base, head1, head2):
     local tree
     """
     refresh_index()
-    p = GRun('merge-recursive', base, '--', head1, head2).returns([0, 1])
+    p = GRun('merge-recursive', base, '--', head1, head2).env(
+        { 'GITHEAD_%s' % base: 'ancestor',
+          'GITHEAD_%s' % head1: 'current',
+          'GITHEAD_%s' % head2: 'patched'}).returns([0, 1])
     output = p.output_lines()
     if p.exitcode == 0:
         # No problems
