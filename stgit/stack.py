@@ -1105,6 +1105,8 @@ class Series(PatchSet):
             # merge can fail but the patch needs to be pushed
             try:
                 git.merge_recursive(bottom, head, top)
+            except git.GitConflictException, ex:
+                ex.list()
             except git.GitException, ex:
                 out.error('The merge failed during "push".',
                           'Use "refresh" after fixing the conflicts or'

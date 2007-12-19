@@ -43,6 +43,14 @@ class GRun(Run):
         """
         Run.__init__(self, 'git', *cmd)
 
+class GitConflictException(GitException):
+    def __init__(self, conflicts):
+        GitException.__init__(self)
+        self.conflicts = conflicts
+    def __str__(self):
+        return "%d conflicts" % len(self.conflicts)
+    def list(self):
+        out.info(*self.conflicts)
 
 #
 # Classes
@@ -702,13 +710,15 @@ def merge_recursive(base, head1, head2):
     local tree
     """
     refresh_index()
-
-    # use _output() to mask the verbose prints of the tool
-    try:
-        # discard output to mask the verbose prints of the tool
-        GRun('merge-recursive', base, '--', head1, head2).discard_output()
-    except GitRunException, ex:
-        raise GitException, 'GIT index merging failed (possible conflicts)'
+    p = GRun('merge-recursive', base, '--', head1, head2).returns([0, 1])
+    output = p.output_lines()
+    if p.exitcode == 0:
+        # No problems
+        return
+    else: # exitcode == 1
+        # There were conflicts
+        conflicts = [l.strip() for l in output if l.startswith('CONFLICT')]
+        raise GitConflictException(conflicts)
 
 def merge(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
