@@ -65,6 +65,8 @@ Argument DIR is the repository path."
 (unless stgit-mode-map
   (setq stgit-mode-map (make-keymap))
   (suppress-keymap stgit-mode-map)
+  (define-key stgit-mode-map "?"   'stgit-help)
+  (define-key stgit-mode-map "h"   'stgit-help)
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map ">"   'stgit-push-next)
@@ -139,3 +141,8 @@ Commands:
     (with-current-buffer standard-output
       (goto-char (point-min))
       (diff-mode))))
+
+(defun stgit-help ()
+  "Display help for the StGit mode."
+  (interactive)
+  (describe-function 'stgit-mode))
