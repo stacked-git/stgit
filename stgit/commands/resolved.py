@@ -31,8 +31,7 @@ usage = """%prog [options] [<files...>]
 
 Mark a merge conflict as resolved. The conflicts can be seen with the
 'status' command, the corresponding files being prefixed with a
-'C'. This command also removes any <file>.{ancestor,current,patched}
-files."""
+'C'."""
 
 directory = DirectoryHasRepository(needs_current_series = False)
 options = [make_option('-a', '--all',
