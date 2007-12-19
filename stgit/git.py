@@ -695,32 +695,83 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
 
     return True
 
-def merge(base, head1, head2, recursive = False):
+stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
+
+def merge_recursive(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
     local tree
     """
     refresh_index()
 
     err_output = None
-    if recursive:
-        # this operation tracks renames but it is slower (used in
-        # general when pushing or picking patches)
-        try:
-            # discard output to mask the verbose prints of the tool
-            GRun('merge-recursive', base, '--', head1, head2
-                 ).discard_output()
-        except GitRunException, ex:
-            err_output = str(ex)
-            pass
-    else:
-        # the fast case where we don't track renames (used when the
-        # distance between base and heads is small, i.e. folding or
-        # synchronising patches)
-        try:
-            GRun('read-tree', '-u', '-m', '--aggressive',
-                 base, head1, head2).run()
-        except GitRunException:
-            raise GitException, 'read-tree failed (local changes maybe?)'
+    # this operation tracks renames but it is slower (used in
+    # general when pushing or picking patches)
+    try:
+        # discard output to mask the verbose prints of the tool
+        GRun('merge-recursive', base, '--', head1, head2).discard_output()
+    except GitRunException, ex:
+        err_output = str(ex)
+        pass
+
+    # check the index for unmerged entries
+    files = {}
+
+    for line in GRun('ls-files', '--unmerged', '--stage', '-z'
+                     ).raw_output().split('\0'):
+        if not line:
+            continue
+
+        mode, hash, stage, path = stages_re.findall(line)[0]
+
+        if not path in files:
+            files[path] = {}
+            files[path]['1'] = ('', '')
+            files[path]['2'] = ('', '')
+            files[path]['3'] = ('', '')
+
+        files[path][stage] = (mode, hash)
+
+    if err_output and not files:
+        # if no unmerged files, there was probably a different type of
+        # error and we have to abort the merge
+        raise GitException, err_output
+
+    # merge the unmerged files
+    errors = False
+    for path in files:
+        # remove additional files that might be generated for some
+        # newer versions of GIT
+        for suffix in [base, head1, head2]:
+            if not suffix:
+                continue
+            fname = path + '~' + suffix
+            if os.path.exists(fname):
+                os.remove(fname)
+
+        stages = files[path]
+        if gitmergeonefile.merge(stages['1'][1], stages['2'][1],
+                                 stages['3'][1], path, stages['1'][0],
+                                 stages['2'][0], stages['3'][0]) != 0:
+            errors = True
+
+    if errors:
+        raise GitException, 'GIT index merging failed (possible conflicts)'
+
+def merge(base, head1, head2):
+    """Perform a 3-way merge between base, head1 and head2 into the
+    local tree
+    """
+    refresh_index()
+
+    err_output = None
+    # the fast case where we don't track renames (used when the
+    # distance between base and heads is small, i.e. folding or
+    # synchronising patches)
+    try:
+        GRun('read-tree', '-u', '-m', '--aggressive', base, head1, head2
+             ).run()
+    except GitRunException:
+        raise GitException, 'read-tree failed (local changes maybe?)'
 
     # check the index for unmerged entries
     files = {}
