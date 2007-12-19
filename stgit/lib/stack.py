@@ -1,6 +1,6 @@
 import os.path
 from stgit import exception, utils
-from stgit.lib import git
+from stgit.lib import git, stackupgrade
 
 class Patch(object):
     def __init__(self, stack, name):
@@ -133,6 +133,7 @@ class Stack(object):
             raise exception.StgException('%s: no such branch' % name)
         self.__patchorder = PatchOrder(self)
         self.__patches = Patches(self)
+        stackupgrade.update_to_current_format_version(repository, name)
     name = property(lambda self: self.__name)
     repository = property(lambda self: self.__repository)
     patchorder = property(lambda self: self.__patchorder)

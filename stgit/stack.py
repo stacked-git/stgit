@@ -28,7 +28,7 @@ from stgit.run import *
 from stgit import git, basedir, templates
 from stgit.config import config
 from shutil import copyfile
-
+from stgit.lib import git as libgit, stackupgrade
 
 # stack exception class
 class StackException(StgException):
@@ -282,9 +282,6 @@ class Patch(StgitObject):
         self._set_field('log', value)
         self.__update_log_ref(value)
 
-# The current StGIT metadata format version.
-FORMAT_VERSION = 2
-
 class PatchSet(StgitObject):
     def __init__(self, name = None):
         try:
@@ -352,7 +349,8 @@ class PatchSet(StgitObject):
     def is_initialised(self):
         """Checks if series is already initialised
         """
-        return bool(config.get(self.format_version_key()))
+        return config.get(stackupgrade.format_version_key(self.get_name())
+                          ) != None
 
 
 def shortlog(patches):
@@ -371,7 +369,8 @@ class Series(PatchSet):
 
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
-        self.update_to_current_format_version()
+        stackupgrade.update_to_current_format_version(
+            libgit.Repository.default(), self.get_name())
 
         self.__refs_base = 'refs/patches/%s' % self.get_name()
 
@@ -384,92 +383,6 @@ class Series(PatchSet):
 
         # trash directory
         self.__trash_dir = os.path.join(self._dir(), 'trash')
-
-    def format_version_key(self):
-        return 'branch.%s.stgit.stackformatversion' % self.get_name()
-
-    def update_to_current_format_version(self):
-        """Update a potentially older StGIT directory structure to the
-        latest version. Note: This function should depend as little as
-        possible on external functions that may change during a format
-        version bump, since it must remain able to process older formats."""
-
-        branch_dir = os.path.join(self._basedir(), 'patches', self.get_name())
-        def get_format_version():
-            """Return the integer format version number, or None if the
-            branch doesn't have any StGIT metadata at all, of any version."""
-            fv = config.get(self.format_version_key())
-            ofv = config.get('branch.%s.stgitformatversion' % self.get_name())
-            if fv:
-                # Great, there's an explicitly recorded format version
-                # number, which means that the branch is initialized and
-                # of that exact version.
-                return int(fv)
-            elif ofv:
-                # Old name for the version info, upgrade it
-                config.set(self.format_version_key(), ofv)
-                config.unset('branch.%s.stgitformatversion' % self.get_name())
-                return int(ofv)
-            elif os.path.isdir(os.path.join(branch_dir, 'patches')):
-                # There's a .git/patches/<branch>/patches dirctory, which
-                # means this is an initialized version 1 branch.
-                return 1
-            elif os.path.isdir(branch_dir):
-                # There's a .git/patches/<branch> directory, which means
-                # this is an initialized version 0 branch.
-                return 0
-            else:
-                # The branch doesn't seem to be initialized at all.
-                return None
-        def set_format_version(v):
-            out.info('Upgraded branch %s to format version %d' % (self.get_name(), v))
-            config.set(self.format_version_key(), '%d' % v)
-        def mkdir(d):
-            if not os.path.isdir(d):
-                os.makedirs(d)
-        def rm(f):
-            if os.path.exists(f):
-                os.remove(f)
-        def rm_ref(ref):
-            if git.ref_exists(ref):
-                git.delete_ref(ref)
-
-        # Update 0 -> 1.
-        if get_format_version() == 0:
-            mkdir(os.path.join(branch_dir, 'trash'))
-            patch_dir = os.path.join(branch_dir, 'patches')
-            mkdir(patch_dir)
-            refs_base = 'refs/patches/%s' % self.get_name()
-            for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
-                          + file(os.path.join(branch_dir, 'applied')).readlines()):
-                patch = patch.strip()
-                os.rename(os.path.join(branch_dir, patch),
-                          os.path.join(patch_dir, patch))
-                topfield = os.path.join(patch_dir, patch, 'top')
-                if os.path.isfile(topfield):
-                    top = read_string(topfield, False)
-                else:
-                    top = None
-                if top:
-                    git.set_ref(refs_base + '/' + patch, top)
-            set_format_version(1)
-
-        # Update 1 -> 2.
-        if get_format_version() == 1:
-            desc_file = os.path.join(branch_dir, 'description')
-            if os.path.isfile(desc_file):
-                desc = read_string(desc_file)
-                if desc:
-                    config.set('branch.%s.description' % self.get_name(), desc)
-                rm(desc_file)
-            rm(os.path.join(branch_dir, 'current'))
-            rm_ref('refs/bases/%s' % self.get_name())
-            set_format_version(2)
-
-        # Make sure we're at the latest version.
-        if not get_format_version() in [None, FORMAT_VERSION]:
-            raise StackException('Branch %s is at format version %d, expected %d'
-                                 % (self.get_name(), get_format_version(), FORMAT_VERSION))
 
     def __patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
@@ -623,7 +536,8 @@ class Series(PatchSet):
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
 
-        config.set(self.format_version_key(), str(FORMAT_VERSION))
+        config.set(stackupgrade.format_version_key(self.get_name()),
+                   str(stackupgrade.FORMAT_VERSION))
 
     def rename(self, to_name):
         """Renames a series

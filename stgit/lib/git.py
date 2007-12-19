@@ -160,6 +160,13 @@ class Refs(object):
         if self.__refs == None:
             self.__cache_refs()
         return self.__repository.get_commit(self.__refs[ref])
+    def exists(self, ref):
+        try:
+            self.get(ref)
+        except KeyError:
+            return False
+        else:
+            return True
     def set(self, ref, commit, msg):
         if self.__refs == None:
             self.__cache_refs()
