@@ -1,3 +1,14 @@
+;; stgit.el: An emacs mode for StGit
+;;
+;; Copyright (C) 2007 David Kågedal <davidk@lysator.liu.se>
+;;
+;; To install: put this file on the load-path and place the following
+;; in your .emacs file:
+;;
+;;    (require 'stgit)
+;;
+;; To start: `M-x stgit'
+
 (defun stgit (dir)
   "Manage stgit patches"
   (interactive "DDirectory: \n")
@@ -146,3 +157,5 @@ Commands:
   "Display help for the StGit mode."
   (interactive)
   (describe-function 'stgit-mode))
+
+(provide 'stgit)
