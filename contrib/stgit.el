@@ -132,6 +132,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map "e"   'stgit-edit)
+  (define-key stgit-mode-map "N"   'stgit-new)
   (define-key stgit-mode-map "\C-r"   'stgit-repair)
   (define-key stgit-mode-map "C"   'stgit-commit)
   (define-key stgit-mode-map "U"   'stgit-uncommit)
@@ -270,6 +271,44 @@ Commands:
     (with-current-buffer log-edit-parent-buffer
       (stgit-refresh))))
 
+(defun stgit-new ()
+  "Create a new patch"
+  (interactive)
+  (let ((edit-buf (get-buffer-create "*stgit edit*")))
+    (log-edit 'stgit-confirm-new t nil edit-buf)))
+
+(defun stgit-confirm-new ()
+  (interactive)
+  (let ((file (make-temp-file "stgit-edit-"))
+        (patch (stgit-create-patch-name
+                (buffer-substring (point-min)
+                                  (save-excursion (goto-char (point-min))
+                                                  (end-of-line)
+                                                  (point))))))
+    (write-region (point-min) (point-max) file)
+    (stgit-capture-output nil
+      (stgit-run "new" "-m" "placeholder" patch)
+      (stgit-run "edit" "-f" file patch))
+    (with-current-buffer log-edit-parent-buffer
+      (stgit-refresh))))
+
+(defun stgit-create-patch-name (description)
+  "Create a patch name from a long description"
+  (let ((patch ""))
+    (while (> (length description) 0)
+      (cond ((string-match "\\`[a-zA-Z_-]+" description)
+             (setq patch (downcase (concat patch (match-string 0 description))))
+             (setq description (substring description (match-end 0))))
+            ((string-match "\\` +" description)
+             (setq patch (concat patch "-"))
+             (setq description (substring description (match-end 0))))
+            ((string-match "\\`[^a-zA-Z_-]+" description)
+             (setq description (substring description (match-end 0))))))
+    (cond ((= (length patch) 0)
+           "patch")
+          ((> (length patch) 20)
+           (substring patch 0 20))
+          (t patch))))
 
 (defun stgit-help ()
   "Display help for the StGit mode."
