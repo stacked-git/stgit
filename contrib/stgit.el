@@ -85,6 +85,8 @@ Argument DIR is the repository path."
   (suppress-keymap stgit-mode-map)
   (define-key stgit-mode-map "?"   'stgit-help)
   (define-key stgit-mode-map "h"   'stgit-help)
+  (define-key stgit-mode-map "p"   'previous-line)
+  (define-key stgit-mode-map "n"   'next-line)
   (define-key stgit-mode-map "g"   'stgit-refresh)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map ">"   'stgit-push-next)
