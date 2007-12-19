@@ -42,7 +42,7 @@ class Run:
             if type(c) != str:
                 raise Exception, 'Bad command: %r' % (cmd,)
         self.__good_retvals = [0]
-        self.__env = None
+        self.__env = self.__cwd = None
         self.__indata = None
         self.__discard_stderr = False
     def __log_start(self):
@@ -67,7 +67,7 @@ class Run:
         """Run with captured IO."""
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd, env = self.__env,
+            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.PIPE)
@@ -85,7 +85,7 @@ class Run:
         assert self.__indata == None
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd, env = self.__env)
+            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd)
             self.exitcode = p.wait()
         except OSError, e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
@@ -103,6 +103,9 @@ class Run:
     def env(self, env):
         self.__env = dict(os.environ)
         self.__env.update(env)
+        return self
+    def cwd(self, cwd):
+        self.__cwd = cwd
         return self
     def raw_input(self, indata):
         self.__indata = indata

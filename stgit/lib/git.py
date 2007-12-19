@@ -344,6 +344,7 @@ class Worktree(object):
     def __init__(self, directory):
         self.__directory = directory
     env = property(lambda self: { 'GIT_WORK_TREE': self.__directory })
+    directory = property(lambda self: self.__directory)
 
 class CheckoutException(exception.StgException):
     pass
@@ -364,7 +365,7 @@ class IndexAndWorktree(RunWithEnv):
             self.run(['git', 'read-tree', '-u', '-m',
                       '--exclude-per-directory=.gitignore',
                       old_tree.sha1, new_tree.sha1]
-                     ).discard_output()
+                     ).cwd(self.__worktree.directory).discard_output()
         except run.RunException:
             raise CheckoutException('Index/workdir dirty')
     def merge(self, base, ours, theirs):
@@ -377,7 +378,7 @@ class IndexAndWorktree(RunWithEnv):
                      env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
                              'GITHEAD_%s' % ours.sha1: 'current',
                              'GITHEAD_%s' % theirs.sha1: 'patched'}
-                     ).discard_output()
+                     ).cwd(self.__worktree.directory).discard_output()
         except run.RunException, e:
             raise MergeException('Index/worktree dirty')
     def changed_files(self):
