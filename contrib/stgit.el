@@ -41,13 +41,20 @@ Argument DIR is the repository path."
 
 (defmacro stgit-capture-output (name &rest body)
   "Capture StGit output and show it in a window at the end"
-  `(let ((output-buf (get-buffer-create ,(or name "*StGit output*"))))
+  `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
+         (stgit-dir default-directory)
+         (inhibit-read-only t))
      (with-current-buffer output-buf
-       (erase-buffer))
+       (erase-buffer)
+       (setq default-directory stgit-dir)
+       (setq buffer-read-only t))
      (let ((standard-output output-buf))
        ,@body)
-     (if (with-current-buffer output-buf (< (point-min) (point-max)))
-         (display-buffer output-buf t))))
+     (with-current-buffer output-buf
+       (set-buffer-modified-p nil)
+       (setq buffer-read-only t)
+       (if (< (point-min) (point-max))
+           (display-buffer output-buf t)))))
 (put 'stgit-capture-output 'lisp-indent-function 1)
 
 (defun stgit-run (&rest args)
