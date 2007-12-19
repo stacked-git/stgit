@@ -703,40 +703,11 @@ def merge_recursive(base, head1, head2):
     """
     refresh_index()
 
-    err_output = None
-    # this operation tracks renames but it is slower (used in
-    # general when pushing or picking patches)
+    # use _output() to mask the verbose prints of the tool
     try:
         # discard output to mask the verbose prints of the tool
         GRun('merge-recursive', base, '--', head1, head2).discard_output()
     except GitRunException, ex:
-        err_output = str(ex)
-        pass
-
-    # check the index for unmerged entries
-    files = {}
-
-    for line in GRun('ls-files', '--unmerged', '--stage', '-z'
-                     ).raw_output().split('\0'):
-        if not line:
-            continue
-
-        mode, hash, stage, path = stages_re.findall(line)[0]
-
-        if not path in files:
-            files[path] = {}
-            files[path]['1'] = ('', '')
-            files[path]['2'] = ('', '')
-            files[path]['3'] = ('', '')
-
-        files[path][stage] = (mode, hash)
-
-    if err_output and not files:
-        # if no unmerged files, there was probably a different type of
-        # error and we have to abort the merge
-        raise GitException, err_output
-
-    if files:
         raise GitException, 'GIT index merging failed (possible conflicts)'
 
 def merge(base, head1, head2):
