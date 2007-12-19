@@ -182,11 +182,13 @@ def ls_files(files, tree = None, full_name = True):
     args.append('--')
     args.extend(files)
     try:
-        return GRun('ls-files', '--error-unmatch', *args).output_lines()
+        # use a set to avoid file names duplication due to different stages
+        fileset = set(GRun('ls-files', '--error-unmatch', *args).output_lines())
     except GitRunException:
         # just hide the details of the 'git ls-files' command we use
         raise GitException, \
             'Some of the given paths are either missing or not known to GIT'
+    return list(fileset)
 
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
