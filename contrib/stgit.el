@@ -62,7 +62,7 @@ Argument DIR is the repository path."
     (erase-buffer)
     (insert "Branch: ")
     (stgit-run "branch")
-    (stgit-run "series")
+    (stgit-run "series" "--description")
     (if curpatch
         (stgit-goto-patch curpatch)
       (goto-line curline))))
@@ -97,13 +97,14 @@ Commands:
         goal-column 2)
   (use-local-map stgit-mode-map)
   (set (make-local-variable 'list-buffers-directory) default-directory)
+  (set-variable 'truncate-lines 't)
   (run-hooks 'stgit-mode-hook))
 
 (defun stgit-patch-at-point ()
   "Return the patch name on the current line"
   (save-excursion
     (beginning-of-line)
-    (if (looking-at "[>+-] \\(.*\\)")
+    (if (looking-at "[>+-] \\([^ ]*\\)")
         (match-string 1)
       nil)))
 
@@ -111,7 +112,7 @@ Commands:
   "Move point to the line containing PATCH"
   (let ((p (point)))
     (goto-char (point-min))
-    (if (re-search-forward (concat "[>+-] " (regexp-quote patch) "$") nil t)
+    (if (re-search-forward (concat "[>+-] " (regexp-quote patch) " ") nil t)
         (progn (move-to-column goal-column)
                t)
       (goto-char p)
