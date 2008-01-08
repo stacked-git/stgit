@@ -6,8 +6,10 @@ test_description='Run "stg refresh"'
 
 test_expect_success 'Initialize StGit stack' '
     stg init &&
-    echo expected.txt >> .git/info/exclude &&
+    echo expected*.txt >> .git/info/exclude &&
     echo patches.txt >> .git/info/exclude &&
+    echo show.txt >> .git/info/exclude &&
+    echo diff.txt >> .git/info/exclude &&
     stg new p0 -m "base" &&
     for i in 1 2 3; do
         echo base >> foo$i.txt &&
@@ -62,4 +64,57 @@ test_expect_success 'Refresh bottom patch' '
     diff -u expected.txt patches.txt
 '
 
+cat > expected.txt <<EOF
+p0
+p1
+p4
+EOF
+cat > expected2.txt <<EOF
+diff --git a/foo1.txt b/foo1.txt
+index 728535d..6f34984 100644
+--- a/foo1.txt
++++ b/foo1.txt
+@@ -1,3 +1,4 @@
+ base
+ foo 1
+ bar 1
++baz 1
+EOF
+cat > expected3.txt <<EOF
+diff --git a/foo1.txt b/foo1.txt
+index 6f34984..a80eb63 100644
+--- a/foo1.txt
++++ b/foo1.txt
+@@ -2,3 +2,4 @@ base
+ foo 1
+ bar 1
+ baz 1
++blah 1
+diff --git a/foo2.txt b/foo2.txt
+index 415c9f5..43168f2 100644
+--- a/foo2.txt
++++ b/foo2.txt
+@@ -1,3 +1,4 @@
+ base
+ foo 2
+ bar 2
++baz 2
+EOF
+test_expect_success 'Refresh --index' '
+    stg status &&
+    stg new p4 -m "refresh_index" &&
+    echo baz 1 >> foo1.txt &&
+    git add foo1.txt &&
+    echo blah 1 >> foo1.txt &&
+    echo baz 2 >> foo2.txt &&
+    stg refresh --index &&
+    stg patches foo1.txt > patches.txt &&
+    git diff HEAD^..HEAD > show.txt &&
+    stg diff > diff.txt &&
+    diff -u expected.txt patches.txt &&
+    diff -u expected2.txt show.txt &&
+    diff -u expected3.txt diff.txt &&
+    stg new p5 -m "cleanup again" &&
+    stg refresh
+'
 test_done
