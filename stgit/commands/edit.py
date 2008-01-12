@@ -90,7 +90,11 @@ def __update_patch(pname, text, options):
     bottom = patch.get_bottom()
     top = patch.get_top()
 
-    message, author_name, author_email, author_date, diff = parse_patch(text)
+    if text:
+        (message, author_name, author_email, author_date, diff
+         ) = parse_patch(text)
+    else:
+        message = author_name = author_email = author_date = diff = None
 
     out.start('Updating patch "%s"' % pname)
 
