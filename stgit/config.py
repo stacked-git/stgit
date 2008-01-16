@@ -47,7 +47,7 @@ class GitConfig:
         if self.__cache.has_key(name):
             return self.__cache[name]
         try:
-            value = Run('git', 'repo-config', '--get', name).output_one_line()
+            value = Run('git', 'config', '--get', name).output_one_line()
         except RunException:
             value = self.__defaults.get(name, None)
         self.__cache[name] = value
@@ -56,7 +56,7 @@ class GitConfig:
     def getall(self, name):
         if self.__cache.has_key(name):
             return self.__cache[name]
-        values = Run('git', 'repo-config', '--get-all', name
+        values = Run('git', 'config', '--get-all', name
                      ).returns([0, 1]).output_lines()
         self.__cache[name] = values
         return values
@@ -71,23 +71,23 @@ class GitConfig:
     def rename_section(self, from_name, to_name):
         """Rename a section in the config file. Silently do nothing if
         the section doesn't exist."""
-        Run('git', 'repo-config', '--rename-section', from_name, to_name
+        Run('git', 'config', '--rename-section', from_name, to_name
             ).returns([0, 1]).run()
         self.__cache.clear()
 
     def remove_section(self, name):
         """Remove a section in the config file. Silently do nothing if
         the section doesn't exist."""
-        Run('git', 'repo-config', '--remove-section', name
+        Run('git', 'config', '--remove-section', name
             ).returns([0, 1]).discard_stderr().discard_output()
         self.__cache.clear()
 
     def set(self, name, value):
-        Run('git', 'repo-config', name, value).run()
+        Run('git', 'config', name, value).run()
         self.__cache[name] = value
 
     def unset(self, name):
-        Run('git', 'repo-config', '--unset', name)
+        Run('git', 'config', '--unset', name)
         self.__cache[name] = None
 
     def sections_matching(self, regexp):
@@ -96,7 +96,7 @@ class GitConfig:
         group contents, for all variable names matching the regexp.
         """
         result = []
-        for line in Run('git', 'repo-config', '--get-regexp', '"^%s$"' % regexp
+        for line in Run('git', 'config', '--get-regexp', '"^%s$"' % regexp
                         ).returns([0, 1]).output_lines():
             m = re.match('^%s ' % regexp, line)
             if m:
