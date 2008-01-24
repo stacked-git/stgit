@@ -176,6 +176,7 @@ class StackTransaction(object):
         conflicts to them."""
         i = self.unapplied.index(pn)
         cd = self.patches[pn].data
+        cd = cd.set_committer(None)
         s = ['', ' (empty)'][cd.is_nochange()]
         oldparent = cd.parent
         cd = cd.set_parent(self.__head)
