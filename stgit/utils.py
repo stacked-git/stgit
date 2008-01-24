@@ -316,7 +316,8 @@ def make_diff_opts_option():
         else:
             parser.values.diff_flags = []
     return [optparse.make_option(
-        '-O', '--diff-opts', dest = 'diff_flags', default = [],
+        '-O', '--diff-opts', dest = 'diff_flags',
+        default = (config.get('stgit.diff-opts') or '').split(),
         action = 'callback', callback = diff_opts_callback,
         type = 'string', metavar = 'OPTIONS',
         help = 'extra options to pass to "git diff"')]

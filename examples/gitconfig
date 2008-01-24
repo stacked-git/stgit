@@ -95,6 +95,10 @@
 	# The maximum length of an automatically generated patch name
 	#namelenth = 30
 
+	# Extra options to pass to "git diff" (extend/override with
+	# -O/--diff-opts). For example, -M turns on rename detection.
+	#diff-opts = -M
+
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org
