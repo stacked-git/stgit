@@ -293,7 +293,7 @@ Commands:
   (let ((patch (if (stgit-applied-at-point)
                    (stgit-patch-at-point)
                  (error "This patch is not applied")))
-        (edit-buf (get-buffer-create "*stgit edit*"))
+        (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
     (set (make-local-variable 'stgit-edit-patch) patch)
@@ -313,7 +313,7 @@ Commands:
 (defun stgit-new ()
   "Create a new patch"
   (interactive)
-  (let ((edit-buf (get-buffer-create "*stgit edit*")))
+  (let ((edit-buf (get-buffer-create "*StGit edit*")))
     (log-edit 'stgit-confirm-new t nil edit-buf)))
 
 (defun stgit-confirm-new ()
@@ -352,7 +352,7 @@ Commands:
 (defun stgit-coalesce (patch-names)
   "Run stg coalesce on the named patches"
   (interactive (list (stgit-marked-patches)))
-  (let ((edit-buf (get-buffer-create "*stgit edit*"))
+  (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-coalesce t nil edit-buf)
     (set (make-local-variable 'stgit-patches) patch-names)
