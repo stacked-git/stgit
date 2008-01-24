@@ -64,11 +64,10 @@ options = [make_option('-d', '--dir',
                        help = 'Use FILE as a template'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
-           make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
-                       action = 'store_true')]
+                       action = 'store_true')
+           ] + make_diff_opts_option()
 
 
 def func(parser, options, args):
@@ -88,11 +87,6 @@ def func(parser, options, args):
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
         series = file(os.path.join(dirname, 'series'), 'w+')
-
-    if options.diff_opts:
-        diff_flags = options.diff_opts.split()
-    else:
-        diff_flags = []
 
     applied = crt_series.get_applied()
     if len(args) != 0:
@@ -180,7 +174,7 @@ def func(parser, options, args):
         f.write(descr)
         f.write(git.diff(rev1 = patch.get_bottom(),
                          rev2 = patch.get_top(),
-                         diff_flags = diff_flags))
+                         diff_flags = options.diff_flags))
         if not options.stdout:
             f.close()
         patch_no += 1

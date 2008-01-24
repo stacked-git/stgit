@@ -46,12 +46,10 @@ directory = DirectoryHasRepository()
 options = [make_option('-r', '--range',
                        metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
-           make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
-                       action = 'store_true')]
-
+                       action = 'store_true')
+           ] + make_diff_opts_option()
 
 def func(parser, options, args):
     """Show the tree diff
@@ -83,16 +81,12 @@ def func(parser, options, args):
         rev1 = 'HEAD'
         rev2 = None
 
-    if options.diff_opts:
-        diff_flags = options.diff_opts.split()
-    else:
-        diff_flags = []
-
     if options.stat:
         out.stdout_raw(git.diffstat(args, git_id(crt_series, rev1),
                                     git_id(crt_series, rev2)) + '\n')
     else:
         diff_str = git.diff(args, git_id(crt_series, rev1),
-                            git_id(crt_series, rev2), diff_flags = diff_flags )
+                            git_id(crt_series, rev2),
+                            diff_flags = options.diff_flags)
         if diff_str:
             pager(diff_str)

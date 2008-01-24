@@ -144,11 +144,10 @@ options = [make_option('-a', '--all',
                        action = 'store_true'),
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
-           make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
            make_option('-m', '--mbox',
                        help = 'generate an mbox file instead of sending',
-                       action = 'store_true')]
+                       action = 'store_true')
+           ] + make_diff_opts_option()
 
 
 def __get_sender():
@@ -426,11 +425,6 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
             prefix_str = confprefix + ' '
         else:
             prefix_str = ''
-        
-    if options.diff_opts:
-        diff_flags = options.diff_opts.split()
-    else:
-        diff_flags = []
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
@@ -450,7 +444,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'diff':         git.diff(
                      rev1 = git_id(crt_series, '%s//bottom' % patch),
                      rev2 = git_id(crt_series, '%s//top' % patch),
-                     diff_flags = diff_flags),
+                     diff_flags = options.diff_flags),
                  'diffstat':     git.diffstat(
                      rev1 = git_id(crt_series, '%s//bottom'%patch),
                      rev2 = git_id(crt_series, '%s//top' % patch)),

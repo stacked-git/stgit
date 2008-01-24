@@ -313,6 +313,18 @@ def make_message_options():
               metavar = 'FILE', dest = 'save_template', type = 'string',
               help = 'save the message template to FILE and exit')]
 
+def make_diff_opts_option():
+    def diff_opts_callback(option, opt_str, value, parser):
+        if value:
+            parser.values.diff_flags.extend(value.split())
+        else:
+            parser.values.diff_flags = []
+    return [optparse.make_option(
+        '-O', '--diff-opts', dest = 'diff_flags', default = [],
+        action = 'callback', callback = diff_opts_callback,
+        type = 'string', metavar = 'OPTIONS',
+        help = 'extra options to pass to "git diff"')]
+
 # Exit codes.
 STGIT_SUCCESS = 0        # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
