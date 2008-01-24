@@ -66,9 +66,8 @@ options = [make_option('-m', '--modified',
                        action = 'store_true')]
 
 
-def status(files = None, modified = False, new = False, deleted = False,
-           conflict = False, unknown = False, noexclude = False,
-           diff_flags = []):
+def status(files, modified, new, deleted, conflict, unknown, noexclude,
+           diff_flags):
     """Show the tree status
     """
     cache_files = git.tree_status(files,
