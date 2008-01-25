@@ -24,4 +24,21 @@ test_expect_success 'Clean empty patches' '
     [ "$(echo $(stg unapplied))" = "" ]
 '
 
+test_expect_success 'Create a conflict' '
+    stg new p1 -m p1 &&
+    echo bar > foo.txt &&
+    stg refresh &&
+    stg pop &&
+    stg new p2 -m p2
+    echo quux > foo.txt &&
+    stg refresh &&
+    ! stg push
+'
+
+test_expect_failure 'Make sure conflicting patches are preserved' '
+    stg clean &&
+    [ "$(echo $(stg applied))" = "p0 p2 p1" ] &&
+    [ "$(echo $(stg unapplied))" = "" ]
+'
+
 test_done
