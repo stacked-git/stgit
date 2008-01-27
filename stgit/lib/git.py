@@ -353,6 +353,14 @@ class Index(RunWithEnv):
     def delete(self):
         if os.path.isfile(self.__filename):
             os.remove(self.__filename)
+    def conflicts(self):
+        """The set of conflicting paths."""
+        paths = set()
+        for line in self.run(['git', 'ls-files', '-z', '--unmerged']
+                             ).raw_output().split('\0')[:-1]:
+            stat, path = line.split('\t', 1)
+            paths.add(path)
+        return paths
 
 class Worktree(object):
     def __init__(self, directory):

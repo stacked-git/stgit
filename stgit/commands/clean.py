@@ -40,6 +40,13 @@ def _clean(stack, clean_applied, clean_unapplied):
     trans = transaction.StackTransaction(stack, 'stg clean')
     def del_patch(pn):
         if pn in stack.patchorder.applied:
+            if pn == stack.patchorder.applied[-1]:
+                # We're about to clean away the topmost patch. Don't
+                # do that if we have conflicts, since that means the
+                # patch is only empty because the conflicts have made
+                # us dump its contents into the index and worktree.
+                if stack.repository.default_index.conflicts():
+                    return False
             return clean_applied and trans.patches[pn].data.is_nochange()
         elif pn in stack.patchorder.unapplied:
             return clean_unapplied and trans.patches[pn].data.is_nochange()

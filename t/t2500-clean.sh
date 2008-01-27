@@ -35,7 +35,7 @@ test_expect_success 'Create a conflict' '
     ! stg push
 '
 
-test_expect_failure 'Make sure conflicting patches are preserved' '
+test_expect_success 'Make sure conflicting patches are preserved' '
     stg clean &&
     [ "$(echo $(stg applied))" = "p0 p2 p1" ] &&
     [ "$(echo $(stg unapplied))" = "" ]
