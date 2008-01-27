@@ -274,7 +274,8 @@ def name_email(address):
     if not str_list:
         str_list = re.findall('^(.*)\s*\((.*)\)\s*$', address)
         if not str_list:
-            raise CmdException, 'Incorrect "name <email>"/"email (name)" string: %s' % address
+            raise CmdException('Incorrect "name <email>"/"email (name)"'
+                               ' string: %s' % address)
         return ( str_list[0][1], str_list[0][0] )
 
     return str_list[0]
