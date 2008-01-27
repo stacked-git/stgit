@@ -118,5 +118,5 @@ def func(parser, options, args):
                                           + list(stack.patchorder.unapplied)))
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
-    return _coalesce(stack, stack.repository.default_iw(), options.name,
+    return _coalesce(stack, stack.repository.default_iw, options.name,
                      options.message, options.save_template, patches)

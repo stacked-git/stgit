@@ -211,6 +211,9 @@ class Repository(RunWithEnv):
         self.__refs = Refs(self)
         self.__trees = ObjectCache(lambda sha1: Tree(sha1))
         self.__commits = ObjectCache(lambda sha1: Commit(self, sha1))
+        self.__default_index = None
+        self.__default_worktree = None
+        self.__default_iw = None
     env = property(lambda self: { 'GIT_DIR': self.__git_dir })
     @classmethod
     def default(cls):
@@ -220,21 +223,32 @@ class Repository(RunWithEnv):
                                ).output_one_line())
         except run.RunException:
             raise RepositoryException('Cannot find git repository')
+    @property
     def default_index(self):
-        return Index(self, (os.environ.get('GIT_INDEX_FILE', None)
-                            or os.path.join(self.__git_dir, 'index')))
+        if self.__default_index == None:
+            self.__default_index = Index(
+                self, (os.environ.get('GIT_INDEX_FILE', None)
+                       or os.path.join(self.__git_dir, 'index')))
+        return self.__default_index
     def temp_index(self):
         return Index(self, self.__git_dir)
+    @property
     def default_worktree(self):
-        path = os.environ.get('GIT_WORK_TREE', None)
-        if not path:
-            o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
-            o = o or ['.']
-            assert len(o) == 1
-            path = o[0]
-        return Worktree(path)
+        if self.__default_worktree == None:
+            path = os.environ.get('GIT_WORK_TREE', None)
+            if not path:
+                o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
+                o = o or ['.']
+                assert len(o) == 1
+                path = o[0]
+            self.__default_worktree = Worktree(path)
+        return self.__default_worktree
+    @property
     def default_iw(self):
-        return IndexAndWorktree(self.default_index(), self.default_worktree())
+        if self.__default_iw == None:
+            self.__default_iw = IndexAndWorktree(self.default_index,
+                                                 self.default_worktree)
+        return self.__default_iw
     directory = property(lambda self: self.__git_dir)
     refs = property(lambda self: self.__refs)
     def cat_object(self, sha1):

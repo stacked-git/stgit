@@ -68,7 +68,7 @@ def func(parser, options, args):
     if not patches:
         raise common.CmdException('No patches to commit')
 
-    iw = stack.repository.default_iw()
+    iw = stack.repository.default_iw
     trans = transaction.StackTransaction(stack, 'stg commit')
     try:
         common_prefix = 0

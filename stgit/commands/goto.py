@@ -35,7 +35,7 @@ def func(parser, options, args):
     patch = args[0]
 
     stack = directory.repository.current_stack
-    iw = stack.repository.default_iw()
+    iw = stack.repository.default_iw
     trans = transaction.StackTransaction(stack, 'stg goto')
     if patch in trans.applied:
         to_pop = set(trans.applied[trans.applied.index(patch)+1:])
