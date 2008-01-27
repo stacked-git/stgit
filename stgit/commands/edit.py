@@ -154,9 +154,9 @@ def __generate_file(pname, write_fn, options):
                 '%(diffstat)s\n' \
                 '%(diff)s'
 
-        tmpl_dict['diffstat'] = git.diffstat(rev1 = bottom, rev2 = top)
         tmpl_dict['diff'] = git.diff(rev1 = bottom, rev2 = top,
                                      diff_flags = options.diff_flags)
+        tmpl_dict['diffstat'] = git.diffstat(tmpl_dict['diff'])
 
     for key in tmpl_dict:
         # make empty strings if key is not available

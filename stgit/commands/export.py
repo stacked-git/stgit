@@ -138,11 +138,13 @@ def func(parser, options, args):
         long_descr = reduce(lambda x, y: x + '\n' + y,
                             descr_lines[1:], '').strip()
 
+        diff = git.diff(rev1 = patch.get_bottom(),
+                        rev2 = patch.get_top(),
+                        diff_flags = options.diff_flags)
         tmpl_dict = {'description': patch.get_description().rstrip(),
                      'shortdescr': short_descr,
                      'longdescr': long_descr,
-                     'diffstat': git.diffstat(rev1 = patch.get_bottom(),
-                                              rev2 = patch.get_top()),
+                     'diffstat': git.diffstat(diff),
                      'authname': patch.get_authname(),
                      'authemail': patch.get_authemail(),
                      'authdate': patch.get_authdate(),
@@ -172,9 +174,7 @@ def func(parser, options, args):
             print '-'*79
 
         f.write(descr)
-        f.write(git.diff(rev1 = patch.get_bottom(),
-                         rev2 = patch.get_top(),
-                         diff_flags = options.diff_flags))
+        f.write(diff)
         if not options.stdout:
             f.close()
         patch_no += 1

@@ -360,9 +360,9 @@ def __build_cover(tmpl, patches, msg_id, options):
                  'number':       number_str,
                  'shortlog':     stack.shortlog(crt_series.get_patch(p)
                                                 for p in patches),
-                 'diffstat':     git.diffstat(
+                 'diffstat':     git.diffstat(git.diff(
                      rev1 = git_id(crt_series, '%s//bottom' % patches[0]),
-                     rev2 = git_id(crt_series, '%s//top' % patches[-1]))}
+                     rev2 = git_id(crt_series, '%s//top' % patches[-1])))}
 
     try:
         msg_string = tmpl % tmpl_dict
@@ -433,6 +433,9 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     else:
         number_str = ''
 
+    diff = git.diff(rev1 = git_id(crt_series, '%s//bottom' % patch),
+                    rev2 = git_id(crt_series, '%s//top' % patch),
+                    diff_flags = options.diff_flags)
     tmpl_dict = {'patch':        patch,
                  'sender':       sender,
                  # for backward template compatibility
@@ -441,13 +444,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  'longdescr':    long_descr,
                  # for backward template compatibility
                  'endofheaders': '',
-                 'diff':         git.diff(
-                     rev1 = git_id(crt_series, '%s//bottom' % patch),
-                     rev2 = git_id(crt_series, '%s//top' % patch),
-                     diff_flags = options.diff_flags),
-                 'diffstat':     git.diffstat(
-                     rev1 = git_id(crt_series, '%s//bottom'%patch),
-                     rev2 = git_id(crt_series, '%s//top' % patch)),
+                 'diff':         diff,
+                 'diffstat':     git.diffstat(diff),
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,
