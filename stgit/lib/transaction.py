@@ -174,7 +174,6 @@ class StackTransaction(object):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
-        i = self.unapplied.index(pn)
         cd = self.patches[pn].data
         cd = cd.set_committer(None)
         s = ['', ' (empty)'][cd.is_nochange()]
@@ -203,7 +202,7 @@ class StackTransaction(object):
                 s = ' (conflict)'
         cd = cd.set_tree(tree)
         self.patches[pn] = self.__stack.repository.commit(cd)
-        del self.unapplied[i]
+        del self.unapplied[self.unapplied.index(pn)]
         self.applied.append(pn)
         out.info('Pushed %s%s' % (pn, s))
         if merge_conflict:
