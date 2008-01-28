@@ -339,6 +339,23 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
+    def apply(self, tree, patch_text):
+        """Given a tree and a patch, will either return the new tree that
+        results when the patch is applied, or None if the patch
+        couldn't be applied."""
+        assert isinstance(tree, Tree)
+        if not patch_text:
+            return tree
+        index = self.temp_index()
+        try:
+            index.read_tree(tree)
+            try:
+                index.apply(patch_text)
+                return index.write_tree()
+            except MergeException:
+                return None
+        finally:
+            index.delete()
 
 class MergeException(exception.StgException):
     pass
@@ -375,6 +392,13 @@ class Index(RunWithEnv):
         """In-index merge, no worktree involved."""
         self.run(['git', 'read-tree', '-m', '-i', '--aggressive',
                   base.sha1, ours.sha1, theirs.sha1]).no_output()
+    def apply(self, patch_text):
+        """In-index patch application, no worktree involved."""
+        try:
+            self.run(['git', 'apply', '--cached']
+                     ).raw_input(patch_text).no_output()
+        except run.RunException:
+            raise MergeException('Patch does not apply cleanly')
     def delete(self):
         if os.path.isfile(self.__filename):
             os.remove(self.__filename)
