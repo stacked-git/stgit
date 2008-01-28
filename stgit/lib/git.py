@@ -356,6 +356,11 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
+    def diff_tree(self, t1, t2, diff_opts):
+        assert isinstance(t1, Tree)
+        assert isinstance(t2, Tree)
+        return self.run(['git', 'diff-tree', '-p'] + list(diff_opts)
+                        + [t1.sha1, t2.sha1]).raw_output()
 
 class MergeException(exception.StgException):
     pass
