@@ -175,12 +175,8 @@ def call_editor(filename):
 
     # the editor
     editor = config.get('stgit.editor')
-    if editor:
-        pass
-    elif 'EDITOR' in os.environ:
-        editor = os.environ['EDITOR']
-    else:
-        editor = 'vi'
+    if not editor:
+        editor = os.environ.get('EDITOR', 'vi')
     editor += ' %s' % filename
 
     out.start('Invoking the editor: "%s"' % editor)
