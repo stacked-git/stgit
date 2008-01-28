@@ -1,5 +1,6 @@
 import os, os.path, re
 from stgit import exception, run, utils
+from stgit.config import config
 
 class RepositoryException(exception.StgException):
     pass
@@ -52,6 +53,30 @@ class Person(Repr):
         email = m.group(2)
         date = m.group(3)
         return cls(name, email, date)
+    @classmethod
+    def user(cls):
+        if not hasattr(cls, '__user'):
+            cls.__user = cls(name = config.get('user.name'),
+                             email = config.get('user.email'))
+        return cls.__user
+    @classmethod
+    def author(cls):
+        if not hasattr(cls, '__author'):
+            cls.__author = cls(
+                name = os.environ.get('GIT_AUTHOR_NAME', NoValue),
+                email = os.environ.get('GIT_AUTHOR_EMAIL', NoValue),
+                date = os.environ.get('GIT_AUTHOR_DATE', NoValue),
+                defaults = cls.user())
+        return cls.__author
+    @classmethod
+    def committer(cls):
+        if not hasattr(cls, '__committer'):
+            cls.__committer = cls(
+                name = os.environ.get('GIT_COMMITTER_NAME', NoValue),
+                email = os.environ.get('GIT_COMMITTER_EMAIL', NoValue),
+                date = os.environ.get('GIT_COMMITTER_DATE', NoValue),
+                defaults = cls.user())
+        return cls.__committer
 
 class Tree(Repr):
     """Immutable."""
