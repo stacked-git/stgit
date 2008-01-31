@@ -290,9 +290,7 @@ Commands:
 (defun stgit-edit ()
   "Edit the patch on the current line"
   (interactive)
-  (let ((patch (if (stgit-applied-at-point)
-                   (stgit-patch-at-point)
-                 (error "This patch is not applied")))
+  (let ((patch (stgit-patch-at-point))
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
