@@ -1,9 +1,16 @@
 import os, os.path, re
+from datetime import datetime, timedelta, tzinfo
+
 from stgit import exception, run, utils
 from stgit.config import config
 
 class RepositoryException(exception.StgException):
     pass
+
+class DateException(exception.StgException):
+    def __init__(self, string, type):
+        exception.StgException.__init__(
+            self, '"%s" is not a valid %s' % (string, type))
 
 class DetachedHeadException(RepositoryException):
     def __init__(self):
@@ -26,6 +33,65 @@ def make_defaults(defaults):
             return None
     return d
 
+class TimeZone(tzinfo, Repr):
+    def __init__(self, tzstring):
+        m = re.match(r'^([+-])(\d{2}):?(\d{2})$', tzstring)
+        if not m:
+            raise DateException(tzstring, 'time zone')
+        sign = int(m.group(1) + '1')
+        try:
+            self.__offset = timedelta(hours = sign*int(m.group(2)),
+                                      minutes = sign*int(m.group(3)))
+        except OverflowError:
+            raise DateException(tzstring, 'time zone')
+        self.__name = tzstring
+    def utcoffset(self, dt):
+        return self.__offset
+    def tzname(self, dt):
+        return self.__name
+    def dst(self, dt):
+        return timedelta(0)
+    def __str__(self):
+        return self.__name
+
+class Date(Repr):
+    """Immutable."""
+    def __init__(self, datestring):
+        # Try git-formatted date.
+        m = re.match(r'^(\d+)\s+([+-]\d\d:?\d\d)$', datestring)
+        if m:
+            try:
+                self.__time = datetime.fromtimestamp(int(m.group(1)),
+                                                     TimeZone(m.group(2)))
+            except ValueError:
+                raise DateException(datestring, 'date')
+            return
+
+        # Try iso-formatted date.
+        m = re.match(r'^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})\s+'
+                     + r'([+-]\d\d:?\d\d)$', datestring)
+        if m:
+            try:
+                self.__time = datetime(
+                    *[int(m.group(i + 1)) for i in xrange(6)],
+                    **{'tzinfo': TimeZone(m.group(7))})
+            except ValueError:
+                raise DateException(datestring, 'date')
+            return
+
+        raise DateException(datestring, 'date')
+    def __str__(self):
+        return self.isoformat()
+    def isoformat(self):
+        """Human-friendly ISO 8601 format."""
+        return '%s %s' % (self.__time.replace(tzinfo = None).isoformat(' '),
+                          self.__time.tzinfo)
+    @classmethod
+    def maybe(cls, datestring):
+        if datestring in [None, NoValue]:
+            return datestring
+        return cls(datestring)
+
 class Person(Repr):
     """Immutable."""
     def __init__(self, name = NoValue, email = NoValue,
@@ -34,6 +100,7 @@ class Person(Repr):
         self.__name = d(name, 'name')
         self.__email = d(email, 'email')
         self.__date = d(date, 'date')
+        assert isinstance(self.__date, Date) or self.__date in [None, NoValue]
     name = property(lambda self: self.__name)
     email = property(lambda self: self.__email)
     date = property(lambda self: self.__date)
@@ -51,7 +118,7 @@ class Person(Repr):
         assert m
         name = m.group(1).strip()
         email = m.group(2)
-        date = m.group(3)
+        date = Date(m.group(3))
         return cls(name, email, date)
     @classmethod
     def user(cls):
@@ -65,7 +132,7 @@ class Person(Repr):
             cls.__author = cls(
                 name = os.environ.get('GIT_AUTHOR_NAME', NoValue),
                 email = os.environ.get('GIT_AUTHOR_EMAIL', NoValue),
-                date = os.environ.get('GIT_AUTHOR_DATE', NoValue),
+                date = Date.maybe(os.environ.get('GIT_AUTHOR_DATE', NoValue)),
                 defaults = cls.user())
         return cls.__author
     @classmethod
@@ -74,7 +141,8 @@ class Person(Repr):
             cls.__committer = cls(
                 name = os.environ.get('GIT_COMMITTER_NAME', NoValue),
                 email = os.environ.get('GIT_COMMITTER_EMAIL', NoValue),
-                date = os.environ.get('GIT_COMMITTER_DATE', NoValue),
+                date = Date.maybe(
+                    os.environ.get('GIT_COMMITTER_DATE', NoValue)),
                 defaults = cls.user())
         return cls.__committer
 
@@ -301,7 +369,7 @@ class Repository(RunWithEnv):
                 for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
                                  ('date', 'DATE')):
                     if getattr(p, attr) != None:
-                        env['GIT_%s_%s' % (v1, v2)] = getattr(p, attr)
+                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
         sha1 = self.run(c, env = env).raw_input(commitdata.message
                                                 ).output_one_line()
         return self.get_commit(sha1)
