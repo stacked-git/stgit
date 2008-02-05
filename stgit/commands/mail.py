@@ -27,7 +27,7 @@ from stgit.config import config
 
 
 help = 'send a patch or series of patches by e-mail'
-usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
+usage = r"""%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
 Send a patch or a range of patches by e-mail using the SMTP server
 specified by the 'stgit.smtpserver' configuration option, or the
@@ -84,7 +84,7 @@ the following:
   %(commemail)s    - committer's e-mail
   %(commname)s     - committer's name
   %(diff)s         - unified diff of the patch
-  %(fromauth)s     - 'From: author\\n\\n' if different from sender
+  %(fromauth)s     - 'From: author\n\n' if different from sender
   %(longdescr)s    - the rest of the patch description, after the first line
   %(patch)s        - patch name
   %(prefix)s       - 'prefix ' string passed on the command line

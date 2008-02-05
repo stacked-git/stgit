@@ -269,7 +269,7 @@ def name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' or 'email (name)' string
     """
-    address = re.sub('[\\\\"]', '\\\\\g<0>', address)
+    address = re.sub(r'[\\"]', r'\\\g<0>', address)
     str_list = re.findall('^(.*)\s*<(.*)>\s*$', address)
     if not str_list:
         str_list = re.findall('^(.*)\s*\((.*)\)\s*$', address)
@@ -284,7 +284,7 @@ def name_email_date(address):
     """Return a tuple consisting of the name, email and date parsed
     from a 'name <email> date' string
     """
-    address = re.sub('[\\\\"]', '\\\\\g<0>', address)
+    address = re.sub(r'[\\"]', r'\\\g<0>', address)
     str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
     if not str_list:
         raise CmdException, 'Incorrect "name <email> date" string: %s' % address
