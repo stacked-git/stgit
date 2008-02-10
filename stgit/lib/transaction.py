@@ -92,12 +92,13 @@ class StackTransaction(object):
         new_head = self.__head
 
         # Set branch head.
-        try:
-            self.__checkout(new_head.data.tree, iw)
-        except git.CheckoutException:
-            # We have to abort the transaction.
-            self.abort(iw)
-            self.__abort()
+        if iw:
+            try:
+                self.__checkout(new_head.data.tree, iw)
+            except git.CheckoutException:
+                # We have to abort the transaction.
+                self.abort(iw)
+                self.__abort()
         self.__stack.set_head(new_head, self.__msg)
 
         if self.__error:
