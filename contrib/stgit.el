@@ -143,7 +143,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "e"   'stgit-edit)
   (define-key stgit-mode-map "c"   'stgit-coalesce)
   (define-key stgit-mode-map "N"   'stgit-new)
-  (define-key stgit-mode-map "\C-r"   'stgit-repair)
+  (define-key stgit-mode-map "R"   'stgit-repair)
   (define-key stgit-mode-map "C"   'stgit-commit)
   (define-key stgit-mode-map "U"   'stgit-uncommit)
   (define-key stgit-mode-map ">"   'stgit-push-next)
