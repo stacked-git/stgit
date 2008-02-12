@@ -75,7 +75,6 @@ class Patch(object):
 class PatchOrder(object):
     """Keeps track of patch order, and which patches are applied.
     Works with patch names, not actual patches."""
-    __list_order = [ 'applied', 'unapplied' ]
     def __init__(self, stack):
         self.__stack = stack
         self.__lists = {}
