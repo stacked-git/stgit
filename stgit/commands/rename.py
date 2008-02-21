@@ -25,9 +25,10 @@ from stgit import stack, git
 
 
 help = 'rename a patch in the series'
-usage = """%prog [options] <oldpatch> <newpatch>
+usage = """%prog [options] [oldpatch] <newpatch>
 
-Rename <oldpatch> into <newpatch> in a series."""
+Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not given, the
+top-most patch will be renamed. """
 
 directory = DirectoryHasRepository()
 options = [make_option('-b', '--branch',
@@ -37,9 +38,18 @@ options = [make_option('-b', '--branch',
 def func(parser, options, args):
     """Rename a patch in the series
     """
-    if len(args) != 2:
+    crt = crt_series.get_current()
+
+    if len(args) == 2:
+        old, new = args
+    elif len(args) == 1:
+        if not crt:
+            raise CmdException, "No applied top patch to rename exists."
+        old, [new] = crt, args
+    else:
         parser.error('incorrect number of arguments')
 
-    out.start('Renaming patch "%s" to "%s"' % (args[0], args[1]))
-    crt_series.rename_patch(args[0], args[1])
+    out.start('Renaming patch "%s" to "%s"' % (old, new))
+    crt_series.rename_patch(old, new)
+
     out.done()
