@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys, os, traceback
 from optparse import OptionParser
 
 import stgit.commands
@@ -279,10 +279,13 @@ def main():
     except (StgException, IOError, ParsingError, NoSectionError), err:
         out.error(str(err), title = '%s %s' % (prog, cmd))
         if debug_level > 0:
-            raise
-        else:
-            sys.exit(utils.STGIT_COMMAND_ERROR)
+            traceback.print_exc()
+        sys.exit(utils.STGIT_COMMAND_ERROR)
     except KeyboardInterrupt:
         sys.exit(utils.STGIT_GENERAL_ERROR)
+    except:
+        out.error('Unhandled exception:')
+        traceback.print_exc()
+        sys.exit(utils.STGIT_BUG_ERROR)
 
     sys.exit(ret or utils.STGIT_SUCCESS)
