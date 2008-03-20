@@ -100,9 +100,9 @@ def __print_patch(patch, branch_str, prefix, empty_prefix, length, options):
         patch_str = patch_str.ljust(length)
 
     if options.description:
-        out.stdout(prefix + patch_str + ' | ' + __get_description(patch))
+        out.stdout(prefix + patch_str + ' # ' + __get_description(patch))
     elif options.author:
-        out.stdout(prefix + patch_str + ' | ' + __get_author(patch))
+        out.stdout(prefix + patch_str + ' # ' + __get_author(patch))
     else:
         out.stdout(prefix + patch_str)
 
