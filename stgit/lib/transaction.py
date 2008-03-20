@@ -197,10 +197,12 @@ class StackTransaction(object):
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = ' (modified)'
-            except git.MergeException:
+            except git.MergeConflictException:
                 tree = ours
                 merge_conflict = True
                 s = ' (conflict)'
+            except git.MergeException, e:
+                self.__halt(str(e))
         cd = cd.set_tree(tree)
         self.patches[pn] = self.__stack.repository.commit(cd)
         del self.unapplied[self.unapplied.index(pn)]

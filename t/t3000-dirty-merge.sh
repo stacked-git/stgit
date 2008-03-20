@@ -22,7 +22,7 @@ test_expect_success 'Pop one patch and update the other' '
     stg refresh
 '
 
-test_expect_failure 'Push with dirty worktree' '
+test_expect_success 'Push with dirty worktree' '
     echo 4 > a &&
     [ "$(echo $(stg applied))" = "p1" ] &&
     [ "$(echo $(stg unapplied))" = "p2" ] &&

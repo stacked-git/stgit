@@ -433,6 +433,9 @@ class Repository(RunWithEnv):
 class MergeException(exception.StgException):
     pass
 
+class MergeConflictException(MergeException):
+    pass
+
 class Index(RunWithEnv):
     def __init__(self, repository, filename):
         self.__repository = repository
@@ -517,14 +520,18 @@ class IndexAndWorktree(RunWithEnv):
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
         try:
-            self.run(['git', 'merge-recursive', base.sha1, '--', ours.sha1,
-                      theirs.sha1],
-                     env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
-                             'GITHEAD_%s' % ours.sha1: 'current',
-                             'GITHEAD_%s' % theirs.sha1: 'patched'}
-                     ).cwd(self.__worktree.directory).discard_output()
+            r = self.run(['git', 'merge-recursive', base.sha1, '--', ours.sha1,
+                          theirs.sha1],
+                         env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
+                                 'GITHEAD_%s' % ours.sha1: 'current',
+                                 'GITHEAD_%s' % theirs.sha1: 'patched'}
+                         ).cwd(self.__worktree.directory)
+            r.discard_output()
         except run.RunException, e:
-            raise MergeException('Index/worktree dirty')
+            if r.exitcode == 1:
+                raise MergeConflictException()
+            else:
+                raise MergeException('Index/worktree dirty')
     def changed_files(self):
         return self.run(['git', 'diff-files', '--name-only']).output_lines()
     def update_index(self, files):
