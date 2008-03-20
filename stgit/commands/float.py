@@ -82,6 +82,13 @@ def func(parser, options, args):
             topop.append(top)
     topush = patches + topush
 
+    # remove common patches to avoid unnecessary pop/push
+    while topush and topop:
+        if topush[-1] != topop[-1]:
+            break
+        topush.pop()
+        topop.pop()
+
     # check whether the operation is really needed
     if topop != topush:
         if topop:
