@@ -27,7 +27,19 @@ help = 'move the stack base to another point in history'
 usage = """%prog [options] <new-base-id>
 
 Pop all patches from current stack, move the stack base to the given
-<new-base-id> and push the patches back."""
+<new-base-id> and push the patches back.
+
+If you experience merge conflicts, resolve the problem and continue
+the rebase by executing the following sequence:
+
+        $ stg resolved -a [-i]
+        $ stg refresh
+        $ stg goto top-patch
+
+Or if you want to skip that patch:
+
+        $ stg push --undo
+        $ stg push next-patch..top-patch"""
 
 directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--nopush',
