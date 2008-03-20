@@ -393,9 +393,14 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
     """
     p = crt_series.get_patch(patch)
 
-    descr = p.get_description().strip()
-    descr_lines = descr.split('\n')
+    if p.get_description():
+        descr = p.get_description().strip()
+    else:
+        # provide a place holder and force the edit message option on
+        descr = '<empty message>'
+        options.edit_patches = True
 
+    descr_lines = descr.split('\n')
     short_descr = descr_lines[0].rstrip()
     long_descr = '\n'.join(descr_lines[1:]).lstrip()
 
