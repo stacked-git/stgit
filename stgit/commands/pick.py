@@ -26,17 +26,20 @@ from stgit.stack import Series
 
 
 help = 'import a patch from a different branch or a commit object'
-usage = """%prog [options] [<patch@branch>|<commit>]
+usage = """%prog [options] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>
 
-Import a patch from a different branch or a commit object into the
-current series. By default, the name of the imported patch is used as
-the name of the current patch. It can be overridden with the '--name'
-option. A commit object can be reverted with the '--reverse'
-option. The log and author information are those of the commit object."""
+Import one or more patches from a different branch or a commit object
+into the current series. By default, the name of the imported patch is
+used as the name of the current patch. It can be overridden with the
+'--name' option. A commit object can be reverted with the '--reverse'
+option. The log and author information are those of the commit
+object."""
 
 directory = DirectoryGotoToplevel()
 options = [make_option('-n', '--name',
                        help = 'use NAME as the patch name'),
+           make_option('-B', '--ref-branch',
+                       help = 'pick patches from BRANCH'),
            make_option('-r', '--reverse',
                        help = 'reverse the commit object before importing',
                        action = 'store_true'),
@@ -55,33 +58,13 @@ options = [make_option('-n', '--name',
                        help = 'keep the patch unapplied',
                        action = 'store_true')]
 
-
-def func(parser, options, args):
-    """Import a commit object as a new patch
+def __pick_commit(commit_id, patchname, options):
+    """Pick a commit id.
     """
-    if len(args) != 1:
-        parser.error('incorrect number of arguments')
-
-    if not options.unapplied:
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal(crt_series)
-
-    commit_str = args[0]
-    commit_id = git_id(crt_series, commit_str)
     commit = git.Commit(commit_id)
 
-    if options.fold or options.update:
-        if not crt_series.get_current():
-            raise CmdException, 'No patches applied'
-    else:
-        patch_branch = commit_str.split('@')
-        if options.name:
-            patchname = options.name
-        elif len(patch_branch) == 2:
-            patchname = patch_branch[0]
-        else:
-            patchname = None
+    if options.name:
+        patchname = options.name
 
     if options.parent:
         parent = git_id(crt_series, options.parent)
@@ -132,7 +115,7 @@ def func(parser, options, args):
         patchname = newpatch.get_name()
 
         # find a patchlog to fork from
-        (refpatchname, refbranchname, refpatchid) = parse_rev(commit_str)
+        (refpatchname, refbranchname, refpatchid) = parse_rev(patchname)
         if refpatchname and not refpatchid and \
                (not refpatchid or refpatchid == 'top'):
             # FIXME: should also support picking //top.old
@@ -162,5 +145,50 @@ def func(parser, options, args):
             out.done('modified')
         else:
             out.done()
+
+
+def func(parser, options, args):
+    """Import a commit object as a new patch
+    """
+    if not args:
+        parser.error('incorrect number of arguments')
+
+    if not options.unapplied:
+        check_local_changes()
+        check_conflicts()
+        check_head_top_equal(crt_series)
+
+    if options.ref_branch:
+        remote_series = Series(options.ref_branch)
+    else:
+        remote_series = crt_series
+
+    applied = remote_series.get_applied()
+    unapplied = remote_series.get_unapplied()
+    try:
+        patches = parse_patches(args, applied + unapplied)
+        commit_id = None
+    except CmdException:
+        if len(args) >= 1:
+            raise
+        # no patches found, try a commit id
+        commit_id = git_id(remote_series, args[0])
+
+    if len(patches) > 1:
+        if options.name:
+            raise CmdException, '--name can only be specified with one patch'
+        if options.parent:
+            raise CmdException, '--parent can only be specified with one patch'
+
+    if (options.fold or options.update) and not crt_series.get_current():
+        raise CmdException, 'No patches applied'
+
+    if commit_id:
+        __pick_commit(commit_id, None, options)
+    else:
+        if options.unapplied:
+            patches.reverse()
+        for patch in patches:
+            __pick_commit(git_id(remote_series, patch), patch, options)
 
     print_crt_patch(crt_series)
