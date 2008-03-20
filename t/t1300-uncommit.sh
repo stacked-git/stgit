@@ -78,7 +78,7 @@ test_expect_success \
     stg commit --all
 '
 
-test_expect_failure 'Uncommit a commit with not precisely one parent' '
+test_expect_success 'Uncommit a commit with not precisely one parent' '
     stg uncommit -n 5 ; [ $? = 2 ] &&
     [ "$(echo $(stg series))" = "" ]
 '
