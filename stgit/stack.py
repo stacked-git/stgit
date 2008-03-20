@@ -793,8 +793,6 @@ class Series(PatchSet):
             author_name = patch.get_authname()
         if not author_email:
             author_email = patch.get_authemail()
-        if not author_date:
-            author_date = patch.get_authdate()
         if not committer_name:
             committer_name = patch.get_commname()
         if not committer_email:
