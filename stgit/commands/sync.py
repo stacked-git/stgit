@@ -38,7 +38,7 @@ The sync operation can be reverted for individual patches with --undo."""
 
 directory = DirectoryGotoToplevel()
 options = [make_option('-a', '--all',
-                       help = 'synchronise all the patches',
+                       help = 'synchronise all the applied patches',
                        action = 'store_true'),
            make_option('-B', '--ref-branch',
                        help = 'syncronise patches with BRANCH'),
@@ -112,7 +112,9 @@ def func(parser, options, args):
     if options.all:
         patches = applied
     elif len(args) != 0:
-        patches = parse_patches(args, applied, ordered = True)
+        unapplied = crt_series.get_unapplied()
+        patches = parse_patches(args, applied + unapplied, len(applied),
+                                ordered = True)
     elif applied:
         patches = [crt_series.get_current()]
     else:
@@ -129,16 +131,22 @@ def func(parser, options, args):
         raise CmdException, 'No common patches to be synchronised'
 
     # pop to the one before the first patch to be synchronised
-    popped = applied[applied.index(sync_patches[0]) + 1:]
-    if popped:
-        pop_patches(crt_series, popped[::-1])
+    first_patch = sync_patches[0]
+    if first_patch in applied:
+        to_pop = applied[applied.index(first_patch) + 1:]
+        if to_pop:
+            pop_patches(crt_series, to_pop[::-1])
+        popped = patches[patches.index(first_patch) + 1:]
+    else:
+        popped = patches
 
-    for p in sync_patches:
+    for p in patches:
         if p in popped:
-            # push to this patch
-            idx = popped.index(p) + 1
-            push_patches(crt_series, popped[:idx])
-            del popped[:idx]
+            # push this patch
+            push_patches(crt_series, [p])
+        if p not in sync_patches:
+            # nothing to synchronise
+            continue
 
         # the actual sync
         out.start('Synchronising "%s"' % p)
@@ -162,7 +170,3 @@ def func(parser, options, args):
             out.done('updated')
         else:
             out.done()
-
-    # push the remaining patches
-    if popped:
-        push_patches(crt_series, popped)
