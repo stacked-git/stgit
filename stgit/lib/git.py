@@ -204,7 +204,7 @@ class Commitdata(Repr):
                 ) % (tree, parents, self.author, self.committer, self.message)
     @classmethod
     def parse(cls, repository, s):
-        cd = cls()
+        cd = cls(parents = [])
         lines = list(s.splitlines(True))
         for i in xrange(len(lines)):
             line = lines[i].strip()
