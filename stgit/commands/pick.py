@@ -169,12 +169,12 @@ def func(parser, options, args):
         patches = parse_patches(args, applied + unapplied, len(applied))
         commit_id = None
     except CmdException:
-        if len(args) >= 1:
+        if len(args) > 1:
             raise
         # no patches found, try a commit id
         commit_id = git_id(remote_series, args[0])
 
-    if len(patches) > 1:
+    if not commit_id and len(patches) > 1:
         if options.name:
             raise CmdException, '--name can only be specified with one patch'
         if options.parent:
