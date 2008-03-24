@@ -31,9 +31,9 @@ Create a new, empty patch and make it the topmost one. If the
 '--message' option is not passed, an editor is invoked with the
 .git/patchdescr.tmpl, ~/.stgit/templates/patchdescr.tmpl or
 /usr/share/stgit/templates/patchdescr.tmpl file used a as template,
-together with generated lines. By default, the local changes in the
-working tree are not included in the patch. A 'refresh' command is
-needed for this.
+together with generated lines. The local changes in the working tree
+are not included in the patch; an "stg refresh" command is needed for
+this.
 
 If no name is given for the new patch, one is generated from the first
 line of the commit message."""
