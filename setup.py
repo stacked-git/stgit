@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, glob
+import sys, glob, os
 from distutils.core import setup
 
 from stgit.version import version, git_min_ver, python_min_ver
@@ -48,6 +48,9 @@ if sys.argv[1] in ['install', 'build']:
     __check_python_version()
     __check_git_version()
 
+# ensure readable template files
+old_mask = os.umask(0022)
+
 setup(name = 'stgit',
       version = version,
       license = 'GPLv2',
@@ -66,3 +69,6 @@ setup(name = 'stgit',
                                              'contrib/stgit-completion.bash']),
                     ('share/doc/stgit', glob.glob('doc/*.txt'))]
       )
+
+# restore the old mask
+os.umask(old_mask)
