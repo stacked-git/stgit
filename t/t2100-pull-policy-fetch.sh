@@ -19,8 +19,8 @@ test_expect_success \
     (cd upstream && stg init) &&
     stg clone upstream clone &&
     (cd clone &&
-     git repo-config branch.master.stgit.pull-policy fetch-rebase &&
-     git repo-config --list &&
+     git config branch.master.stgit.pull-policy fetch-rebase &&
+     git config --list &&
      stg new c1 -m c1 &&
      echo a > file && stg add file && stg refresh
     )

@@ -13,8 +13,8 @@ test_expect_success \
     git branch -m master parent &&
     stg init &&
     stg branch --create stack &&
-    git repo-config branch.stack.stgit.pull-policy rebase &&
-    git repo-config --list &&
+    git config branch.stack.stgit.pull-policy rebase &&
+    git config --list &&
     stg new c1 -m c1 &&
     echo a > file && stg add file && stg refresh
     '
