@@ -166,7 +166,7 @@ def func(parser, options, args):
     applied = remote_series.get_applied()
     unapplied = remote_series.get_unapplied()
     try:
-        patches = parse_patches(args, applied + unapplied)
+        patches = parse_patches(args, applied + unapplied, len(applied))
         commit_id = None
     except CmdException:
         if len(args) >= 1:
