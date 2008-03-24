@@ -514,6 +514,12 @@ def func(parser, options, args):
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
 
+    out.start('Checking the validity of the patches')
+    for p in patches:
+        if crt_series.empty_patch(p):
+            raise CmdException, 'Cannot send empty patch "%s"' % p
+    out.done()
+
     smtppassword = options.smtp_password or config.get('stgit.smtppassword')
     smtpuser = options.smtp_user or config.get('stgit.smtpuser')
     smtpusetls = options.smtp_tls or config.get('stgit.smtptls') == 'yes'
