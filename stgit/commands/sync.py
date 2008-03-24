@@ -108,11 +108,11 @@ def func(parser, options, args):
         raise CmdException, 'No remote branch or series specified'
 
     applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
     
     if options.all:
         patches = applied
     elif len(args) != 0:
-        unapplied = crt_series.get_unapplied()
         patches = parse_patches(args, applied + unapplied, len(applied),
                                 ordered = True)
     elif applied:
@@ -136,7 +136,7 @@ def func(parser, options, args):
         to_pop = applied[applied.index(first_patch) + 1:]
         if to_pop:
             pop_patches(crt_series, to_pop[::-1])
-        popped = patches[patches.index(first_patch) + 1:]
+        popped = to_pop + [p for p in patches if p in unapplied]
     else:
         popped = patches
 
@@ -144,6 +144,7 @@ def func(parser, options, args):
         if p in popped:
             # push this patch
             push_patches(crt_series, [p])
+            popped.remove(p)
         if p not in sync_patches:
             # nothing to synchronise
             continue
@@ -170,3 +171,7 @@ def func(parser, options, args):
             out.done('updated')
         else:
             out.done()
+
+    # push the remaining patches
+    if popped:
+        push_patches(crt_series, popped)
