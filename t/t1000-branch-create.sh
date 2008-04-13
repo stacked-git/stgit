@@ -21,65 +21,81 @@ test_expect_success \
     'Create a spurious patches/ entry' '
     stg branch master &&
     stg init &&
-    find .git -name foo | xargs rm -rf &&
-    mkdir -p .git/patches && touch .git/patches/foo
+    mkdir -p .git/patches && touch .git/patches/foo1
 '
 
 test_expect_success \
     'Try to create an stgit branch with a spurious patches/ entry' '
-    ! stg branch -c foo
+    ! stg branch -c foo1
 '
 
 test_expect_success \
     'Check that no part of the branch was created' '
-    test "`find .git -name foo | tee /dev/stderr`" = ".git/patches/foo" &&
-    ( grep foo .git/HEAD; test $? = 1 )
+    test "$(find .git -name foo1 | tee /dev/stderr)" = ".git/patches/foo1" &&
+    test "$(git show-ref | grep foo1 | wc -l)" = 0 &&
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
 test_expect_success \
     'Create a git branch' '
-    find .git -name foo | xargs rm -rf &&
-    cp .git/refs/heads/master .git/refs/heads/foo
+    git update-ref refs/heads/foo2 refs/heads/master
 '
 
 test_expect_success \
     'Try to create an stgit branch with an existing git branch by that name' '
-    ! stg branch -c foo
+    ! stg branch -c foo2
 '
 
 test_expect_success \
     'Check that no part of the branch was created' '
-    test "`find .git -name foo | tee /dev/stderr`" = ".git/refs/heads/foo" &&
-    ( grep foo .git/HEAD; test $? = 1 )
+    test "$(find .git -name foo2 | tee /dev/stderr \
+        | grep -v ^\\.git/refs/heads/foo2$ \
+        | grep -v ^\\.git/logs/refs/heads/foo2$ | wc -l)" = 0 &&
+    test "$(git show-ref | grep foo2 | wc -l)" = 1 &&
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
 test_expect_success \
     'Create an invalid refs/heads/ entry' '
-    find .git -name foo | xargs rm -rf &&
-    touch .git/refs/heads/foo &&
-    ! stg branch -c foo
+    touch .git/refs/heads/foo3 &&
+    ! stg branch -c foo3
 '
+
+test_expect_failure \
+    'Check that no part of the branch was created' '
+    test "$(find .git -name foo3 | tee /dev/stderr \
+        | grep -v ^\\.git/refs/heads/foo3$ | wc -l)" = 0 &&
+    test "$(git show-ref | grep foo3 | wc -l)" = 0 &&
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
+'
+
+# Workaround for the test failure to make the rest of the subtests
+# succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
+# we need to reset it.)
+git symbolic-ref HEAD refs/heads/master
 
 test_expect_success \
     'Setup two commits including removal of generated files' '
     git init &&
-    touch a.c a.o &&
-    git add a.c a.o &&
+    touch file1 file2 &&
+    git add file1 file2 &&
     git commit -m 1 &&
-    git rm a.c a.o &&
+    git rm file1 file2 &&
     git commit -m 2 &&
-    touch a.o
+    touch file2
 '
 
 test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
-    ! stg branch --create bar master^
+    ! stg branch --create foo4 master^
 '
 
 test_expect_success \
     'Check the branch was not created' '
-    test ! -r .git/refs/heads/bar &&
-    test ! -r a.c
+    test ! -e file1 &&
+    test "$(find .git -name foo4 | tee /dev/stderr | wc -l)" = 0 &&
+    test "$(git show-ref | grep foo4 | wc -l)" = 0 &&
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
 test_done
