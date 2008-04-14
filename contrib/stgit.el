@@ -107,7 +107,7 @@ Argument DIR is the repository path."
         (cond ((looking-at "Branch: \\(.*\\)")
                (put-text-property (match-beginning 1) (match-end 1)
                                   'face 'bold))
-              ((looking-at "\\([>+-]\\)\\( \\)\\([^ ]+\\) *| \\(.*\\)")
+              ((looking-at "\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
                (let ((state (match-string 1))
                      (patchsym (intern (match-string 3))))
                  (put-text-property
