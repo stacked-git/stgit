@@ -48,6 +48,12 @@ class Run:
     def __log_start(self):
         if _log_mode == 'debug':
             out.start('Running subprocess %s' % self.__cmd)
+            if self.__cwd != None:
+                out.info('cwd: %s' % self.__cwd)
+            if self.__env != None:
+                for k in sorted(self.__env.iterkeys()):
+                    if k not in os.environ or os.environ[k] != self.__env[k]:
+                        out.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':
             out.start('Running subprocess %s' % self.__cmd[0])
             self.__starttime = datetime.datetime.now()
