@@ -298,6 +298,10 @@ class RunWithEnv(object):
     def run(self, args, env = {}):
         return run.Run(*args).env(utils.add_dict(self.env, env))
 
+class RunWithEnvCwd(RunWithEnv):
+    def run(self, args, env = {}):
+        return RunWithEnv.run(self, args, env).cwd(self.cwd)
+
 class Repository(RunWithEnv):
     def __init__(self, directory):
         self.__git_dir = directory
@@ -490,19 +494,20 @@ class Index(RunWithEnv):
 class Worktree(object):
     def __init__(self, directory):
         self.__directory = directory
-    env = property(lambda self: { 'GIT_WORK_TREE': self.__directory })
+    env = property(lambda self: { 'GIT_WORK_TREE': '.' })
     directory = property(lambda self: self.__directory)
 
 class CheckoutException(exception.StgException):
     pass
 
-class IndexAndWorktree(RunWithEnv):
+class IndexAndWorktree(RunWithEnvCwd):
     def __init__(self, index, worktree):
         self.__index = index
         self.__worktree = worktree
     index = property(lambda self: self.__index)
     env = property(lambda self: utils.add_dict(self.__index.env,
                                                self.__worktree.env))
+    cwd = property(lambda self: self.__worktree.directory)
     def checkout(self, old_tree, new_tree):
         # TODO: Optionally do a 3-way instead of doing nothing when we
         # have a problem. Or maybe we should stash changes in a patch?
@@ -512,7 +517,7 @@ class IndexAndWorktree(RunWithEnv):
             self.run(['git', 'read-tree', '-u', '-m',
                       '--exclude-per-directory=.gitignore',
                       old_tree.sha1, new_tree.sha1]
-                     ).cwd(self.__worktree.directory).discard_output()
+                     ).discard_output()
         except run.RunException:
             raise CheckoutException('Index/workdir dirty')
     def merge(self, base, ours, theirs):
@@ -524,8 +529,7 @@ class IndexAndWorktree(RunWithEnv):
                           theirs.sha1],
                          env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
                                  'GITHEAD_%s' % ours.sha1: 'current',
-                                 'GITHEAD_%s' % theirs.sha1: 'patched'}
-                         ).cwd(self.__worktree.directory)
+                                 'GITHEAD_%s' % theirs.sha1: 'patched'})
             r.discard_output()
         except run.RunException, e:
             if r.exitcode == 1:
