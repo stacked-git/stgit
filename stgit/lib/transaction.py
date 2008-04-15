@@ -1,4 +1,5 @@
 from stgit import exception, utils
+from stgit.utils import any, all
 from stgit.out import *
 from stgit.lib import git
 
@@ -175,8 +176,8 @@ class StackTransaction(object):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
-        cd = self.patches[pn].data
-        cd = cd.set_committer(None)
+        orig_cd = self.patches[pn].data
+        cd = orig_cd.set_committer(None)
         s = ['', ' (empty)'][cd.is_nochange()]
         oldparent = cd.parent
         cd = cd.set_parent(self.__head)
@@ -204,7 +205,11 @@ class StackTransaction(object):
             except git.MergeException, e:
                 self.__halt(str(e))
         cd = cd.set_tree(tree)
-        self.patches[pn] = self.__stack.repository.commit(cd)
+        if any(getattr(cd, a) != getattr(orig_cd, a) for a in
+               ['parent', 'tree', 'author', 'message']):
+            self.patches[pn] = self.__stack.repository.commit(cd)
+        else:
+            s = ' (unmodified)'
         del self.unapplied[self.unapplied.index(pn)]
         self.applied.append(pn)
         out.info('Pushed %s%s' % (pn, s))
