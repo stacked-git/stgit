@@ -136,11 +136,13 @@ def func(parser, options, args):
         to_pop = applied[applied.index(first_patch) + 1:]
         if to_pop:
             pop_patches(crt_series, to_pop[::-1])
+        pushed = [first_patch]
     else:
         to_pop = []
+        pushed = []
     popped = to_pop + [p for p in patches if p in unapplied]
 
-    for p in [first_patch] + popped:
+    for p in pushed + popped:
         if p in popped:
             # push this patch
             push_patches(crt_series, [p])
