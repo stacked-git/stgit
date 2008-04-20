@@ -307,13 +307,13 @@ test_cmp() {
 test_create_repo () {
 	test "$#" = 1 ||
 	error "bug in the test script: not 1 parameter to test-create-repo"
-	owd=`pwd`
+	owd=$(pwd)
 	repo="$1"
 	mkdir "$repo"
 	cd "$repo" || error "Cannot setup test environment"
 	git init >/dev/null 2>&1 || error "cannot run git init"
 	echo "empty start" | \
-	    git commit-tree `git write-tree` >.git/refs/heads/master 2>&4 || \
+	    git commit-tree $(git write-tree) >.git/refs/heads/master 2>&4 || \
 	    error "cannot run git commit"
 	mv .git/hooks .git/hooks-disabled
 	cd "$owd"
