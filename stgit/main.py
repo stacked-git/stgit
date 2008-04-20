@@ -281,6 +281,10 @@ def main():
         if debug_level > 0:
             traceback.print_exc()
         sys.exit(utils.STGIT_COMMAND_ERROR)
+    except SystemExit:
+        # Triggered by the option parser when it finds bad commandline
+        # parameters.
+        sys.exit(utils.STGIT_COMMAND_ERROR)
     except KeyboardInterrupt:
         sys.exit(utils.STGIT_GENERAL_ERROR)
     except:
