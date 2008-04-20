@@ -4,14 +4,19 @@
 # Copyright (c) 2006 Yann Dirson - tuning for stgit
 #
 
+# Keep the original TERM for say_color
+ORIGINAL_TERM=$TERM
+
 # For repeatability, reset the environment to known value.
 LANG=C
 LC_ALL=C
 PAGER=cat
 TZ=UTC
-export LANG LC_ALL PAGER TZ
+TERM=dumb
+export LANG LC_ALL PAGER TERM TZ
 EDITOR=:
 VISUAL=:
+unset GIT_EDITOR
 unset AUTHOR_DATE
 unset AUTHOR_EMAIL
 unset AUTHOR_NAME
@@ -27,6 +32,7 @@ GIT_COMMITTER_EMAIL=committer@example.com
 GIT_COMMITTER_NAME='C O Mitter'
 unset GIT_DIFF_OPTS
 unset GIT_DIR
+unset GIT_WORK_TREE
 unset GIT_EXTERNAL_DIFF
 unset GIT_INDEX_FILE
 unset GIT_OBJECT_DIRECTORY
@@ -37,6 +43,7 @@ export GIT_MERGE_VERBOSITY
 export GIT_AUTHOR_EMAIL GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL GIT_COMMITTER_NAME
 export EDITOR VISUAL
+GIT_TEST_CMP=${GIT_TEST_CMP:-diff -u}
 
 # Protect ourselves from common misconfiguration to export
 # CDPATH into the environment
@@ -57,19 +64,15 @@ esac
 # This test checks if command xyzzy does the right thing...
 # '
 # . ./test-lib.sh
-
-error () {
-	echo "* error: $*"
-	trap - exit
-	exit 1
-}
-
-say () {
-	echo "* $*"
-}
-
-test "${test_description}" != "" ||
-error "Test script did not set test_description."
+[ "x$ORIGINAL_TERM" != "xdumb" ] && (
+		TERM=$ORIGINAL_TERM &&
+		export TERM &&
+		[ -t 1 ] &&
+		tput bold >/dev/null 2>&1 &&
+		tput setaf 1 >/dev/null 2>&1 &&
+		tput sgr0 >/dev/null 2>&1
+	) &&
+	color=t
 
 while test "$#" -ne 0
 do
@@ -79,15 +82,62 @@ do
 	-i|--i|--im|--imm|--imme|--immed|--immedi|--immedia|--immediat|--immediate)
 		immediate=t; shift ;;
 	-h|--h|--he|--hel|--help)
-		echo "$test_description"
-		exit 0 ;;
+		help=t; shift ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
 		export STGIT_DEBUG_LEVEL="-1"
 		verbose=t; shift ;;
+	-q|--q|--qu|--qui|--quie|--quiet)
+		quiet=t; shift ;;
+	--no-color)
+		color=; shift ;;
 	*)
 		break ;;
 	esac
 done
+
+if test -n "$color"; then
+	say_color () {
+		(
+		TERM=$ORIGINAL_TERM
+		export TERM
+		case "$1" in
+			error) tput bold; tput setaf 1;; # bold red
+			skip)  tput bold; tput setaf 2;; # bold green
+			pass)  tput setaf 2;;            # green
+			info)  tput setaf 3;;            # brown
+			*) test -n "$quiet" && return;;
+		esac
+		shift
+		echo "* $*"
+		tput sgr0
+		)
+	}
+else
+	say_color() {
+		test -z "$1" && test -n "$quiet" && return
+		shift
+		echo "* $*"
+	}
+fi
+
+error () {
+	say_color error "error: $*"
+	trap - exit
+	exit 1
+}
+
+say () {
+	say_color info "$*"
+}
+
+test "${test_description}" != "" ||
+error "Test script did not set test_description."
+
+if test "$help" = "t"
+then
+	echo "$test_description"
+	exit 0
+fi
 
 exec 5>&1
 if test "$verbose" = "t"
@@ -99,8 +149,15 @@ fi
 
 test_failure=0
 test_count=0
+test_fixed=0
+test_broken=0
 
-trap 'echo >&5 "FATAL: Unexpected exit with code $?"; exit 1' exit
+die () {
+	echo >&5 "FATAL: Unexpected exit with code $?"
+	exit 1
+}
+
+trap 'die' exit
 
 test_tick () {
 	if test -z "${test_tick+set}"
@@ -119,18 +176,29 @@ test_tick () {
 
 test_ok_ () {
 	test_count=$(expr "$test_count" + 1)
-	say "  ok $test_count: $@"
+	say_color "" "  ok $test_count: $@"
 }
 
 test_failure_ () {
 	test_count=$(expr "$test_count" + 1)
 	test_failure=$(expr "$test_failure" + 1);
-	say "FAIL $test_count: $1"
+	say_color error "FAIL $test_count: $1"
 	shift
 	echo "$@" | sed -e 's/^/	/'
 	test "$immediate" = "" || { trap - exit; exit 1; }
 }
 
+test_known_broken_ok_ () {
+	test_count=$(expr "$test_count" + 1)
+	test_fixed=$(($test_fixed+1))
+	say_color "" "  FIXED $test_count: $@"
+}
+
+test_known_broken_failure_ () {
+	test_count=$(expr "$test_count" + 1)
+	test_broken=$(($test_broken+1))
+	say_color skip "  still broken $test_count: $@"
+}
 
 test_debug () {
 	test "$debug" = "" || eval "$1"
@@ -155,9 +223,9 @@ test_skip () {
 	done
 	case "$to_skip" in
 	t)
-		say >&3 "skipping test: $@"
+		say_color skip >&3 "skipping test: $@"
 		test_count=$(expr "$test_count" + 1)
-		say "skip $test_count: $1"
+		say_color skip "skip $test_count: $1"
 		: true
 		;;
 	*)
@@ -171,13 +239,13 @@ test_expect_failure () {
 	error "bug in the test script: not 2 parameters to test-expect-failure"
 	if ! test_skip "$@"
 	then
-		say >&3 "expecting failure: $2"
+		say >&3 "checking known breakage: $2"
 		test_run_ "$2"
-		if [ "$?" = 0 -a "$eval_ret" != 0 -a "$eval_ret" -lt 129 ]
+		if [ "$?" = 0 -a "$eval_ret" = 0 ]
 		then
-			test_ok_ "$1"
+			test_known_broken_ok_ "$1"
 		else
-			test_failure_ "$@"
+		    test_known_broken_failure_ "$1"
 		fi
 	fi
 	echo >&3 ""
@@ -217,7 +285,24 @@ test_expect_code () {
 	echo >&3 ""
 }
 
-# Most tests can use the created repository, but some amy need to create more.
+# test_cmp is a helper function to compare actual and expected output.
+# You can use it like:
+#
+#	test_expect_success 'foo works' '
+#		echo expected >expected &&
+#		foo >actual &&
+#		test_cmp expected actual
+#	'
+#
+# This could be written as either "cmp" or "diff -u", but:
+# - cmp's output is not nearly as easy to read as diff -u
+# - not all diff versions understand "-u"
+
+test_cmp() {
+	$GIT_TEST_CMP "$@"
+}
+
+# Most tests can use the created repository, but some may need to create more.
 # Usage: test_create_repo <directory>
 test_create_repo () {
 	test "$#" = 1 ||
@@ -226,17 +311,28 @@ test_create_repo () {
 	repo="$1"
 	mkdir "$repo"
 	cd "$repo" || error "Cannot setup test environment"
-	git-init >/dev/null 2>&1 ||
-	error "cannot run git-init -- have you installed git-core?"
-	mkdir .git/info
-	echo "empty start" |
-	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>&4 ||
-	error "cannot run git-commit -- is your git-core functioning?"
+	git init >/dev/null 2>&1 || error "cannot run git init"
+	echo "empty start" | \
+	    git commit-tree `git write-tree` >.git/refs/heads/master 2>&4 || \
+	    error "cannot run git commit"
+	mv .git/hooks .git/hooks-disabled
 	cd "$owd"
 }
 
 test_done () {
 	trap - exit
+
+	if test "$test_fixed" != 0
+	then
+		say_color pass "fixed $test_fixed known breakage(s)"
+	fi
+	if test "$test_broken" != 0
+	then
+		say_color error "still have $test_broken known breakage(s)"
+		msg="remaining $(($test_count-$test_broken)) test(s)"
+	else
+		msg="$test_count test(s)"
+	fi
 	case "$test_failure" in
 	0)
 		# We could:
@@ -247,11 +343,11 @@ test_done () {
 		# The Makefile provided will clean this test area so
 		# we will leave things as they are.
 
-		say "passed all $test_count test(s)"
+		say_color pass "passed all $msg"
 		exit 0 ;;
 
 	*)
-		say "failed $test_failure among $test_count test(s)"
+		say_color error "failed $test_failure among $msg"
 		exit 1 ;;
 
 	esac
@@ -261,14 +357,17 @@ test_done () {
 # t/ subdirectory and are run in trash subdirectory.
 PATH=$(pwd)/..:$PATH
 HOME=$(pwd)/trash
-GIT_TEMPLATE_DIR=$(pwd)/../templates
 GIT_CONFIG=.git/config
-export PATH HOME GIT_TEMPLATE_DIR GIT_CONFIG
-
+export PATH HOME GIT_CONFIG
 
 # Test repository
 test=trash
-rm -fr "$test"
+rm -fr "$test" || {
+	trap - exit
+	echo >&5 "FATAL: Cannot prepare test area"
+	exit 1
+}
+
 test_create_repo $test
 cd "$test"
 
@@ -285,8 +384,8 @@ do
 	done
 	case "$to_skip" in
 	t)
-		say >&3 "skipping test $this_test altogether"
-		say "skip all tests in $this_test"
+		say_color skip >&3 "skipping test $this_test altogether"
+		say_color skip "skip all tests in $this_test"
 		test_done
 	esac
 done
