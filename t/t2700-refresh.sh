@@ -33,7 +33,7 @@ test_expect_success 'Refresh top patch' '
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo3.txt > patches.txt &&
-    diff -u expected.txt patches.txt
+    test_cmp expected.txt patches.txt
 '
 
 cat > expected.txt <<EOF
@@ -47,7 +47,7 @@ test_expect_success 'Refresh middle patch' '
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo2.txt > patches.txt &&
-    diff -u expected.txt patches.txt
+    test_cmp expected.txt patches.txt
 '
 
 cat > expected.txt <<EOF
@@ -61,7 +61,7 @@ test_expect_success 'Refresh bottom patch' '
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo1.txt > patches.txt &&
-    diff -u expected.txt patches.txt
+    test_cmp expected.txt patches.txt
 '
 
 cat > expected.txt <<EOF
@@ -111,9 +111,9 @@ test_expect_success 'Refresh --index' '
     stg patches foo1.txt > patches.txt &&
     git diff HEAD^..HEAD > show.txt &&
     stg diff > diff.txt &&
-    diff -u expected.txt patches.txt &&
-    diff -u expected2.txt show.txt &&
-    diff -u expected3.txt diff.txt &&
+    test_cmp expected.txt patches.txt &&
+    test_cmp expected2.txt show.txt &&
+    test_cmp expected3.txt diff.txt &&
     stg new p5 -m "cleanup again" &&
     stg refresh
 '

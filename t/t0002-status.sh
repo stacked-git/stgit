@@ -20,7 +20,7 @@ cat > expected.txt <<EOF
 EOF
 test_expect_success 'Run status on empty' '
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -29,7 +29,7 @@ EOF
 test_expect_success 'Status with an untracked file' '
     touch foo &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 rm -f foo
 
@@ -38,7 +38,7 @@ EOF
 test_expect_success 'Status with an empty directory' '
     mkdir foo &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -47,7 +47,7 @@ EOF
 test_expect_success 'Status with an untracked file in a subdir' '
     touch foo/bar &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -56,7 +56,7 @@ EOF
 test_expect_success 'Status with an added file' '
     git add foo &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -64,7 +64,7 @@ foo/bar
 EOF
 test_expect_success 'Status with an added file and -n option' '
     stg status -n > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -73,7 +73,7 @@ test_expect_success 'Status after refresh' '
     stg new -m "first patch" &&
     stg refresh &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -82,7 +82,7 @@ EOF
 test_expect_success 'Status after modification' '
     echo "wee" >> foo/bar &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -90,7 +90,7 @@ EOF
 test_expect_success 'Status after refresh' '
     stg new -m "second patch" && stg refresh &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 test_expect_success 'Add another file' '
@@ -116,7 +116,7 @@ EOF
 test_expect_success 'Status after conflicting push' '
     ! stg push &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -124,7 +124,7 @@ C foo/bar
 EOF
 test_expect_success 'Status of file' '
     stg status foo/bar > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -132,7 +132,7 @@ C foo/bar
 EOF
 test_expect_success 'Status of dir' '
     stg status foo > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -140,7 +140,7 @@ A fie
 EOF
 test_expect_success 'Status of other file' '
     stg status fie > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -150,7 +150,7 @@ EOF
 test_expect_success 'Status after resolving the push' '
     stg resolved -a &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -160,7 +160,7 @@ EOF
 test_expect_success 'Status after deleting a file' '
     rm foo/bar &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 cat > expected.txt <<EOF
@@ -172,7 +172,7 @@ test_expect_success 'Status of disappeared newborn' '
     git add foo/bar &&
     rm foo/bar &&
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 test_done

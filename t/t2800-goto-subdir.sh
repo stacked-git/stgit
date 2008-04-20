@@ -27,9 +27,9 @@ EOF
 test_expect_success 'Goto in subdirectory (just pop)' '
     (cd foo && stg goto p1) &&
     cat foo/bar > actual.txt &&
-    diff -u expected1.txt actual.txt &&
+    test_cmp expected1.txt actual.txt &&
     ls foo > actual.txt &&
-    diff -u expected2.txt actual.txt
+    test_cmp expected2.txt actual.txt
 '
 
 test_expect_success 'Prepare conflicting goto' '
@@ -51,9 +51,9 @@ test_expect_success 'Goto in subdirectory (conflicting push)' '
     (cd foo && stg goto p3) ;
     [ $? -eq 3 ] &&
     cat foo/bar > actual.txt &&
-    diff -u expected1.txt actual.txt &&
+    test_cmp expected1.txt actual.txt &&
     ls foo > actual.txt &&
-    diff -u expected2.txt actual.txt
+    test_cmp expected2.txt actual.txt
 '
 
 test_done

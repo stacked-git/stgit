@@ -55,7 +55,7 @@ test_expect_success \
 
 test_expect_success \
     'Check that all went well' \
-    "diff -u foo/file bar/file
+    "test_cmp foo/file bar/file
 "
 
 test_done
