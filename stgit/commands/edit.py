@@ -191,7 +191,7 @@ def func(parser, options, args):
     # The patch applied, so now we have to rewrite the StGit patch
     # (and any patches on top of it).
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'stg edit')
+    trans = transaction.StackTransaction(stack, 'edit')
     if patchname in trans.applied:
         popped = trans.applied[trans.applied.index(patchname)+1:]
         assert not trans.pop_patches(lambda pn: pn in popped)

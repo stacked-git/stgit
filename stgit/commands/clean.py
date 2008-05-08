@@ -37,7 +37,7 @@ options = [make_option('-a', '--applied',
 
 
 def _clean(stack, clean_applied, clean_unapplied):
-    trans = transaction.StackTransaction(stack, 'stg clean')
+    trans = transaction.StackTransaction(stack, 'clean')
     def del_patch(pn):
         if pn in stack.patchorder.applied:
             if pn == stack.patchorder.applied[-1]:

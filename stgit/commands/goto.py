@@ -36,7 +36,7 @@ def func(parser, options, args):
 
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'stg goto')
+    trans = transaction.StackTransaction(stack, 'goto')
     if patch in trans.applied:
         to_pop = set(trans.applied[trans.applied.index(patch)+1:])
         assert not trans.pop_patches(lambda pn: pn in to_pop)

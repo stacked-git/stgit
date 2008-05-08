@@ -131,7 +131,7 @@ def func(parser, options, args):
             taken_names.add(pn)
         patchnames.reverse()
 
-    trans = transaction.StackTransaction(stack, 'stg uncommit')
+    trans = transaction.StackTransaction(stack, 'uncommit')
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied

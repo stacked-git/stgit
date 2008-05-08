@@ -69,7 +69,7 @@ def func(parser, options, args):
         raise common.CmdException('No patches to commit')
 
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'stg commit')
+    trans = transaction.StackTransaction(stack, 'commit')
     try:
         common_prefix = 0
         for i in xrange(min(len(stack.patchorder.applied), len(patches))):
