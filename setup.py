@@ -48,6 +48,8 @@ if sys.argv[1] in ['install', 'build']:
     __check_python_version()
     __check_git_version()
 
+version.write_builtin_version()
+
 # ensure readable template files
 old_mask = os.umask(0022)
 
