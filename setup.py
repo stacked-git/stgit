@@ -3,7 +3,7 @@
 import sys, glob, os
 from distutils.core import setup
 
-from stgit.version import version, git_min_ver, python_min_ver
+from stgit import version
 from stgit.run import Run
 
 def __version_to_list(version):
@@ -29,18 +29,18 @@ def __check_python_version():
     """Check the minimum Python version
     """
     pyver = '.'.join(str(n) for n in sys.version_info)
-    if not __check_min_version(python_min_ver, pyver):
+    if not __check_min_version(version.python_min_ver, pyver):
         print >> sys.stderr, 'Python version %s or newer required. Found %s' \
-              % (python_min_ver, pyver)
+              % (version.python_min_ver, pyver)
         sys.exit(1)
 
 def __check_git_version():
     """Check the minimum GIT version
     """
     gitver = Run('git', '--version').output_one_line().split()[2]
-    if not __check_min_version(git_min_ver, gitver):
+    if not __check_min_version(version.git_min_ver, gitver):
         print >> sys.stderr, 'GIT version %s or newer required. Found %s' \
-              % (git_min_ver, gitver)
+              % (version.git_min_ver, gitver)
         sys.exit(1)
 
 # Check the minimum versions required
@@ -52,7 +52,7 @@ if sys.argv[1] in ['install', 'build']:
 old_mask = os.umask(0022)
 
 setup(name = 'stgit',
-      version = version,
+      version = version.version,
       license = 'GPLv2',
       author = 'Catalin Marinas',
       author_email = 'catalin.marinas@gmail.com',
