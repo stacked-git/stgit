@@ -12,8 +12,19 @@
 (defun stgit (dir)
   "Manage stgit patches"
   (interactive "DDirectory: \n")
-  (switch-to-stgit-buffer dir)
+  (switch-to-stgit-buffer (git-get-top-dir dir))
   (stgit-refresh))
+
+(defun git-get-top-dir (dir)
+  "Retrieve the top-level directory of a git tree."
+  (let ((cdup (with-output-to-string
+                (with-current-buffer standard-output
+                  (cd dir)
+                  (unless (eq 0 (call-process "git" nil t nil
+                                              "rev-parse" "--show-cdup"))
+                    (error "cannot find top-level git tree for %s." dir))))))
+    (expand-file-name (concat (file-name-as-directory dir)
+                              (car (split-string cdup "\n"))))))
 
 (defun switch-to-stgit-buffer (dir)
   "Switch to a (possibly new) buffer displaying StGit patches for DIR"
