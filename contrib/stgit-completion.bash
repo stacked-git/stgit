@@ -249,7 +249,7 @@ _stg ()
         # patch commands
         delete) _stg_patches $command _all_patches ;;
         edit)   _stg_patches $command _applied_patches ;;
-        export) _stg_patches $command _applied_patches ;;
+        export) _stg_patches $command _all_patches ;;
         files)  _stg_patches $command _all_patches ;;
         log)    _stg_patches $command _all_patches ;;
         mail)   _stg_patches $command _all_patches ;;
