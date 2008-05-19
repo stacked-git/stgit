@@ -89,8 +89,9 @@ def func(parser, options, args):
         series = file(os.path.join(dirname, 'series'), 'w+')
 
     applied = crt_series.get_applied()
+    unapplied = crt_series.get_unapplied()
     if len(args) != 0:
-        patches = parse_patches(args, applied)
+        patches = parse_patches(args, applied + unapplied, len(applied))
     else:
         patches = applied
 
