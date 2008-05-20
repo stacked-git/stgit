@@ -37,10 +37,8 @@ If no name is given for the new patch, one is generated from the first
 line of the commit message."""
 
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-m', '--message',
-                       help = 'use MESSAGE as the patch description'),
-           ] + (utils.make_author_committer_options()
-                + utils.make_sign_options())
+options = (utils.make_author_committer_options()
+           + utils.make_message_options() + utils.make_sign_options())
 
 def func(parser, options, args):
     """Create a new patch."""
@@ -78,6 +76,10 @@ def func(parser, options, args):
         cd = cd.set_message(
             utils.add_sign_line(cd.message, options.sign_str,
                                 cd.committer.name, cd.committer.email))
+
+    if options.save_template:
+        options.save_template(cd.message)
+        return utils.STGIT_SUCCESS
 
     # Let user edit the commit message manually.
     if not options.message:
