@@ -116,7 +116,7 @@ def func(parser, options, args):
             next_commit = get_parent(next_commit)
         patch_nr = len(commits)
 
-    taken_names = set(stack.patchorder.applied + stack.patchorder.unapplied)
+    taken_names = set(stack.patchorder.all)
     if patchnames:
         for pn in patchnames:
             if pn in taken_names:

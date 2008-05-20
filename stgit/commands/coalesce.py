@@ -115,8 +115,7 @@ def _coalesce(stack, iw, name, msg, save_template, patches):
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
-    patches = common.parse_patches(args, (list(stack.patchorder.applied)
-                                          + list(stack.patchorder.unapplied)))
+    patches = common.parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
     return _coalesce(stack, stack.repository.default_iw, options.name,

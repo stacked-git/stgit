@@ -41,9 +41,7 @@ def func(parser, options, args):
         stack = directory.repository.current_stack
         iw = stack.repository.default_iw
     if args:
-        patches = set(common.parse_patches(
-                args, (list(stack.patchorder.applied)
-                       + list(stack.patchorder.unapplied))))
+        patches = set(common.parse_patches(args, list(stack.patchorder.all)))
     else:
         parser.error('No patches specified')
     def allow_conflicts(trans):

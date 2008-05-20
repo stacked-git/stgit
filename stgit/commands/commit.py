@@ -45,13 +45,11 @@ options = [make_option('-n', '--number', type = 'int',
 def func(parser, options, args):
     """Commit a number of patches."""
     stack = directory.repository.current_stack
-    args = common.parse_patches(args, (list(stack.patchorder.applied)
-                                       + list(stack.patchorder.unapplied)))
+    args = common.parse_patches(args, list(stack.patchorder.all))
     if len([x for x in [args, options.number != None, options.all] if x]) > 1:
         parser.error('too many options')
     if args:
-        patches = [pn for pn in (stack.patchorder.applied
-                                 + stack.patchorder.unapplied) if pn in args]
+        patches = [pn for pn in stack.patchorder.all if pn in args]
         bad = set(args) - set(patches)
         if bad:
             raise common.CmdException('Bad patch names: %s'

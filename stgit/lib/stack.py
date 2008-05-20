@@ -96,6 +96,7 @@ class PatchOrder(object):
                        lambda self, val: self.__set_list('applied', val))
     unapplied = property(lambda self: self.__get_list('unapplied'),
                          lambda self, val: self.__set_list('unapplied', val))
+    all = property(lambda self: self.applied + self.unapplied)
 
 class Patches(object):
     """Creates Patch objects."""
