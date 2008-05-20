@@ -161,7 +161,8 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "<"   'stgit-pop-next)
   (define-key stgit-mode-map "P"   'stgit-push-or-pop)
   (define-key stgit-mode-map "G"   'stgit-goto)
-  (define-key stgit-mode-map "="   'stgit-show))
+  (define-key stgit-mode-map "="   'stgit-show)
+  (define-key stgit-mode-map "D"   'stgit-delete))
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
@@ -197,6 +198,15 @@ Commands:
     (if (looking-at "[>+-][ *]\\([^ ]*\\)")
         (match-string-no-properties 1)
       nil)))
+
+(defun stgit-patches-marked-or-at-point ()
+  "Return the names of the marked patches, or the patch on the current line."
+  (if stgit-marked-patches
+      (stgit-marked-patches)
+    (let ((patch (stgit-patch-at-point)))
+      (if patch
+          (list patch)
+        '()))))
 
 (defun stgit-goto-patch (patch)
   "Move point to the line containing PATCH"
@@ -351,6 +361,17 @@ Commands:
           ((> (length patch) 20)
            (substring patch 0 20))
           (t patch))))
+
+(defun stgit-delete (patch-names)
+  "Delete the named patches"
+  (interactive (list (stgit-patches-marked-or-at-point)))
+  (if (zerop (length patch-names))
+      (error "No patches to delete")
+    (when (yes-or-no-p (format "Really delete %d patches? "
+                               (length patch-names)))
+      (stgit-capture-output nil
+        (apply 'stgit-run "delete" patch-names))
+      (stgit-refresh))))
 
 (defun stgit-coalesce (patch-names)
   "Run stg coalesce on the named patches"
