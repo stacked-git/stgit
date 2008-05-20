@@ -327,16 +327,10 @@ Commands:
 
 (defun stgit-confirm-new ()
   (interactive)
-  (let ((file (make-temp-file "stgit-edit-"))
-        (patch (stgit-create-patch-name
-                (buffer-substring (point-min)
-                                  (save-excursion (goto-char (point-min))
-                                                  (end-of-line)
-                                                  (point))))))
+  (let ((file (make-temp-file "stgit-edit-")))
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
-      (stgit-run "new" "-m" "placeholder" patch)
-      (stgit-run "edit" "-f" file patch))
+      (stgit-run "new" "-f" file))
     (with-current-buffer log-edit-parent-buffer
       (stgit-refresh))))
 
