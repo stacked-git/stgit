@@ -77,8 +77,8 @@ test_expect_success \
     'Try to delete a non-topmost applied patch' \
     '
     [ $(stg applied | wc -l) -eq 2 ] &&
-    ! stg delete foo &&
-    [ $(stg applied | wc -l) -eq 2 ]
+    stg delete foo &&
+    [ $(stg applied | wc -l) -eq 1 ]
     '
 
 test_expect_success \
@@ -99,10 +99,10 @@ test_expect_success \
 test_expect_success \
     'Delete a patch in another branch' \
     '
-    [ $(stg applied | wc -l) -eq 3 ] &&
+    [ $(stg applied | wc -l) -eq 2 ] &&
     [ $(stg applied -b br | wc -l) -eq 1 ] &&
     stg delete -b br baz &&
-    [ $(stg applied | wc -l) -eq 3 ] &&
+    [ $(stg applied | wc -l) -eq 2 ] &&
     [ $(stg applied -b br | wc -l) -eq 0 ]
     '
 
