@@ -46,7 +46,15 @@ def func(parser, options, args):
                        + list(stack.patchorder.unapplied))))
     else:
         parser.error('No patches specified')
-    trans = transaction.StackTransaction(stack, 'delete')
+    def allow_conflicts(trans):
+        # Allow conflicts if the topmost patch stays the same.
+        if stack.patchorder.applied:
+            return (trans.applied
+                    and trans.applied[-1] == stack.patchorder.applied[-1])
+        else:
+            return not trans.applied
+    trans = transaction.StackTransaction(stack, 'delete',
+                                         allow_conflicts = allow_conflicts)
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:

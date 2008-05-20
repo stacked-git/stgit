@@ -34,7 +34,7 @@ class _TransPatchMap(dict):
             return self.__stack.patches.get(pn).commit
 
 class StackTransaction(object):
-    def __init__(self, stack, msg):
+    def __init__(self, stack, msg, allow_conflicts = False):
         self.__stack = stack
         self.__msg = msg
         self.__patches = _TransPatchMap(stack)
@@ -43,6 +43,10 @@ class StackTransaction(object):
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
+        if isinstance(allow_conflicts, bool):
+            self.__allow_conflicts = lambda trans: allow_conflicts
+        else:
+            self.__allow_conflicts = allow_conflicts
     stack = property(lambda self: self.__stack)
     patches = property(lambda self: self.__patches)
     def __set_applied(self, val):
@@ -63,10 +67,19 @@ class StackTransaction(object):
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
             self.__abort()
-        if self.__current_tree != tree:
-            assert iw != None
-            iw.checkout(self.__current_tree, tree)
-            self.__current_tree = tree
+        if self.__current_tree == tree:
+            # No tree change, but we still want to make sure that
+            # there are no unresolved conflicts. Conflicts
+            # conceptually "belong" to the topmost patch, and just
+            # carrying them along to another patch is confusing.
+            if (self.__allow_conflicts(self) or iw == None
+                or not iw.index.conflicts()):
+                return
+            out.error('Need to resolve conflicts first')
+            self.__abort()
+        assert iw != None
+        iw.checkout(self.__current_tree, tree)
+        self.__current_tree = tree
     @staticmethod
     def __abort():
         raise TransactionException(
@@ -214,4 +227,8 @@ class StackTransaction(object):
         self.applied.append(pn)
         out.info('Pushed %s%s' % (pn, s))
         if merge_conflict:
+            # We've just caused conflicts, so we must allow them in
+            # the final checkout.
+            self.__allow_conflicts = lambda trans: True
+
             self.__halt('Merge conflict')

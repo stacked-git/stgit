@@ -69,7 +69,12 @@ def func(parser, options, args):
         raise common.CmdException('No patches to commit')
 
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'commit')
+    def allow_conflicts(trans):
+        # As long as the topmost patch stays where it is, it's OK to
+        # run "stg commit" with conflicts in the index.
+        return len(trans.applied) >= 1
+    trans = transaction.StackTransaction(stack, 'commit',
+                                         allow_conflicts = allow_conflicts)
     try:
         common_prefix = 0
         for i in xrange(min(len(stack.patchorder.applied), len(patches))):

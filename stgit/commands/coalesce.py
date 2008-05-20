@@ -79,7 +79,8 @@ def _coalesce(stack, iw, name, msg, save_template, patches):
         trans.patches[name] = stack.repository.commit(new_commit_data)
         trans.unapplied.insert(0, name)
 
-    trans = transaction.StackTransaction(stack, 'coalesce')
+    trans = transaction.StackTransaction(stack, 'coalesce',
+                                         allow_conflicts = True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
         new_commit_data = _coalesce_patches(trans, patches, msg, save_template)
