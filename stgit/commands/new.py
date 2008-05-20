@@ -16,13 +16,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
+from optparse import make_option
 
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import stack, git
-
+from stgit import utils
+from stgit.commands import common
+from stgit.lib import git as gitlib, transaction
 
 help = 'create a new patch and make it the topmost one'
 usage = """%prog [options] [name]
@@ -38,12 +36,9 @@ this.
 If no name is given for the new patch, one is generated from the first
 line of the commit message."""
 
-directory = DirectoryGotoToplevel()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
-           make_option('-s', '--showpatch',
-                       help = 'show the patch content in the editor buffer',
-                       action = 'store_true'),
            make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
                        help = 'use "NAME <EMAIL>" as the author details'),
            make_option('--authname',
@@ -56,30 +51,62 @@ options = [make_option('-m', '--message',
                        help = 'use COMMNAME as the committer name'),
            make_option('--commemail',
                        help = 'use COMMEMAIL as the committer e-mail')
-           ] + make_sign_options()
-
+           ] + utils.make_sign_options()
 
 def func(parser, options, args):
-    """Creates a new patch
-    """
+    """Create a new patch."""
+    stack = directory.repository.current_stack
+    if stack.repository.default_index.conflicts():
+        raise common.CmdException(
+            'Cannot create a new patch -- resolve conflicts first')
+
+    # Choose a name for the new patch -- or None, which means make one
+    # up later when we've gotten hold of the commit message.
     if len(args) == 0:
-        name = None # autogenerate a name
+        name = None
     elif len(args) == 1:
         name = args[0]
+        if stack.patches.exists(name):
+            raise common.CmdException('%s: patch already exists' % name)
     else:
         parser.error('incorrect number of arguments')
 
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    head = directory.repository.refs.get(directory.repository.head)
+    cd = gitlib.Commitdata(tree = head.data.tree, parents = [head],
+                           message = '')
 
-    if options.author:
-        options.authname, options.authemail = name_email(options.author)
+    # Set patch commit message from commandline.
+    if options.message != None:
+        cd = cd.set_message(options.message)
 
-    crt_series.new_patch(name, message = options.message,
-                         show_patch = options.showpatch,
-                         author_name = options.authname,
-                         author_email = options.authemail,
-                         author_date = options.authdate,
-                         committer_name = options.commname,
-                         committer_email = options.commemail,
-                         sign_str = options.sign_str)
+    # Specify author and committer data.
+    if options.author != None:
+        options.authname, options.authemail = common.name_email(options.author)
+    for p, f, val in [('author', 'name', options.authname),
+                      ('author', 'email', options.authemail),
+                      ('author', 'date', gitlib.Date.maybe(options.authdate)),
+                      ('committer', 'name', options.commname),
+                      ('committer', 'email', options.commemail)]:
+        if val != None:
+            cd = getattr(cd, 'set_' + p)(
+                getattr(getattr(cd, p), 'set_' + f)(val))
+
+    # Add Signed-off-by: or similar.
+    if options.sign_str != None:
+        cd = cd.set_message(utils.add_sign_line(
+                cd.message, options.sign_str, gitlib.Person.committer().name,
+                gitlib.Person.committer().email))
+
+    # Let user edit the commit message manually.
+    if not options.message:
+        cd = cd.set_message(utils.edit_string(cd.message, '.stgit-new.txt'))
+    if name == None:
+        name = utils.make_patch_name(cd.message,
+                                     lambda name: stack.patches.exists(name))
+
+    # Write the new patch.
+    iw = stack.repository.default_iw
+    trans = transaction.StackTransaction(stack, 'new')
+    trans.patches[name] = stack.repository.commit(cd)
+    trans.applied.append(name)
+    return trans.run()

@@ -24,13 +24,13 @@ class NoValue(object):
     pass
 
 def make_defaults(defaults):
-    def d(val, attr):
+    def d(val, attr, default_fun = lambda: None):
         if val != NoValue:
             return val
         elif defaults != NoValue:
             return getattr(defaults, attr)
         else:
-            return None
+            return default_fun()
     return d
 
 class TimeZone(tzinfo, Repr):
@@ -161,8 +161,8 @@ class Commitdata(Repr):
         d = make_defaults(defaults)
         self.__tree = d(tree, 'tree')
         self.__parents = d(parents, 'parents')
-        self.__author = d(author, 'author')
-        self.__committer = d(committer, 'committer')
+        self.__author = d(author, 'author', Person.author)
+        self.__committer = d(committer, 'committer', Person.committer)
         self.__message = d(message, 'message')
     tree = property(lambda self: self.__tree)
     parents = property(lambda self: self.__parents)
