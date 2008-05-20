@@ -266,30 +266,19 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     return patches
 
 def name_email(address):
-    """Return a tuple consisting of the name and email parsed from a
-    standard 'name <email>' or 'email (name)' string
-    """
-    address = re.sub(r'[\\"]', r'\\\g<0>', address)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*$', address)
-    if not str_list:
-        str_list = re.findall('^(.*)\s*\((.*)\)\s*$', address)
-        if not str_list:
-            raise CmdException('Incorrect "name <email>"/"email (name)"'
-                               ' string: %s' % address)
-        return ( str_list[0][1], str_list[0][0] )
-
-    return str_list[0]
+    p = parse_name_email(address)
+    if p:
+        return p
+    else:
+        raise CmdException('Incorrect "name <email>"/"email (name)" string: %s'
+                           % address)
 
 def name_email_date(address):
-    """Return a tuple consisting of the name, email and date parsed
-    from a 'name <email> date' string
-    """
-    address = re.sub(r'[\\"]', r'\\\g<0>', address)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
-    if not str_list:
-        raise CmdException, 'Incorrect "name <email> date" string: %s' % address
-
-    return str_list[0]
+    p = parse_name_email_date(address)
+    if p:
+        return p
+    else:
+        raise CmdException('Incorrect "name <email> date" string: %s' % address)
 
 def address_or_alias(addr_str):
     """Return the address if it contains an e-mail address or look up

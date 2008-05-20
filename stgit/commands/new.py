@@ -39,19 +39,8 @@ line of the commit message."""
 directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-m', '--message',
                        help = 'use MESSAGE as the patch description'),
-           make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
-                       help = 'use "NAME <EMAIL>" as the author details'),
-           make_option('--authname',
-                       help = 'use AUTHNAME as the author name'),
-           make_option('--authemail',
-                       help = 'use AUTHEMAIL as the author e-mail'),
-           make_option('--authdate',
-                       help = 'use AUTHDATE as the author date'),
-           make_option('--commname',
-                       help = 'use COMMNAME as the committer name'),
-           make_option('--commemail',
-                       help = 'use COMMEMAIL as the committer e-mail')
-           ] + utils.make_sign_options()
+           ] + (utils.make_author_committer_options()
+                + utils.make_sign_options())
 
 def func(parser, options, args):
     """Create a new patch."""
@@ -72,30 +61,23 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     head = directory.repository.refs.get(directory.repository.head)
-    cd = gitlib.Commitdata(tree = head.data.tree, parents = [head],
-                           message = '')
+    cd = gitlib.Commitdata(
+        tree = head.data.tree, parents = [head], message = '',
+        author = gitlib.Person.author(), committer = gitlib.Person.committer())
 
     # Set patch commit message from commandline.
     if options.message != None:
         cd = cd.set_message(options.message)
 
-    # Specify author and committer data.
-    if options.author != None:
-        options.authname, options.authemail = common.name_email(options.author)
-    for p, f, val in [('author', 'name', options.authname),
-                      ('author', 'email', options.authemail),
-                      ('author', 'date', gitlib.Date.maybe(options.authdate)),
-                      ('committer', 'name', options.commname),
-                      ('committer', 'email', options.commemail)]:
-        if val != None:
-            cd = getattr(cd, 'set_' + p)(
-                getattr(getattr(cd, p), 'set_' + f)(val))
+    # Modify author and committer data.
+    cd = (cd.set_author(options.author(cd.author))
+            .set_committer(options.committer(cd.committer)))
 
     # Add Signed-off-by: or similar.
     if options.sign_str != None:
-        cd = cd.set_message(utils.add_sign_line(
-                cd.message, options.sign_str, gitlib.Person.committer().name,
-                gitlib.Person.committer().email))
+        cd = cd.set_message(
+            utils.add_sign_line(cd.message, options.sign_str,
+                                cd.committer.name, cd.committer.email))
 
     # Let user edit the commit message manually.
     if not options.message:

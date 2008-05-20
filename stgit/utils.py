@@ -322,6 +322,56 @@ def make_diff_opts_option():
         type = 'string', metavar = 'OPTIONS',
         help = 'extra options to pass to "git diff"')]
 
+def parse_name_email(address):
+    """Return a tuple consisting of the name and email parsed from a
+    standard 'name <email>' or 'email (name)' string."""
+    address = re.sub(r'[\\"]', r'\\\g<0>', address)
+    str_list = re.findall(r'^(.*)\s*<(.*)>\s*$', address)
+    if not str_list:
+        str_list = re.findall(r'^(.*)\s*\((.*)\)\s*$', address)
+        if not str_list:
+            return None
+        return (str_list[0][1], str_list[0][0])
+    return str_list[0]
+
+def parse_name_email_date(address):
+    """Return a tuple consisting of the name, email and date parsed
+    from a 'name <email> date' string."""
+    address = re.sub(r'[\\"]', r'\\\g<0>', address)
+    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
+    if not str_list:
+        return None
+    return str_list[0]
+
+def make_person_options(person, short):
+    """Sets options.<person> to a function that modifies a Person
+    according to the commandline options."""
+    def short_callback(option, opt_str, value, parser, field):
+        f = getattr(parser.values, person)
+        setattr(parser.values, person,
+                lambda p: getattr(f(p), 'set_' + field)(value))
+    def full_callback(option, opt_str, value, parser):
+        ne = parse_name_email(value)
+        if not ne:
+            raise optparse.OptionValueError(
+                'Bad %s specification: %r' % (opt_str, value))
+        name, email = ne
+        short_callback(option, opt_str, name, parser, 'name')
+        short_callback(option, opt_str, email, parser, 'email')
+    return ([optparse.make_option(
+                '--%s' % person, metavar = '"NAME <EMAIL>"', type = 'string',
+                action = 'callback', callback = full_callback, dest = person,
+                default = lambda p: p, help = 'set the %s details' % person)]
+            + [optparse.make_option(
+                '--%s%s' % (short, f), metavar = f.upper(), type = 'string',
+                action = 'callback', callback = short_callback, dest = person,
+                callback_args = (f,), help = 'set the %s %s' % (person, f))
+               for f in ['name', 'email', 'date']])
+
+def make_author_committer_options():
+    return (make_person_options('author', 'auth')
+            + make_person_options('committer', 'comm'))
+
 # Exit codes.
 STGIT_SUCCESS = 0        # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error

@@ -60,19 +60,8 @@ options = [make_option('-d', '--diff',
                        action = 'store_true'),
            make_option('-e', '--edit', action = 'store_true',
                        help = 'invoke interactive editor'),
-           make_option('--author', metavar = '"NAME <EMAIL>"',
-                       help = 'replae the author details with "NAME <EMAIL>"'),
-           make_option('--authname',
-                       help = 'replace the author name with AUTHNAME'),
-           make_option('--authemail',
-                       help = 'replace the author e-mail with AUTHEMAIL'),
-           make_option('--authdate',
-                       help = 'replace the author date with AUTHDATE'),
-           make_option('--commname',
-                       help = 'replace the committer name with COMMNAME'),
-           make_option('--commemail',
-                       help = 'replace the committer e-mail with COMMEMAIL')
            ] + (utils.make_sign_options() + utils.make_message_options()
+                + utils.make_author_committer_options()
                 + utils.make_diff_opts_option())
 
 def patch_diff(repository, cd, diff, diff_flags):
@@ -141,16 +130,9 @@ def func(parser, options, args):
                                                    options.message)
 
     # Modify author and committer data.
-    if options.author != None:
-        options.authname, options.authemail = common.name_email(options.author)
-    for p, f, val in [('author', 'name', options.authname),
-                      ('author', 'email', options.authemail),
-                      ('author', 'date', gitlib.Date.maybe(options.authdate)),
-                      ('committer', 'name', options.commname),
-                      ('committer', 'email', options.commemail)]:
-        if val != None:
-            cd = getattr(cd, 'set_' + p)(
-                getattr(getattr(cd, p), 'set_' + f)(val))
+    a, c = options.author(cd.author), options.committer(cd.committer)
+    if (a, c) != (cd.author, cd.committer):
+        cd = cd.set_author(a).set_committer(c)
 
     # Add Signed-off-by: or similar.
     if options.sign_str != None:
