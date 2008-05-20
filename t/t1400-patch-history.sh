@@ -35,9 +35,7 @@ test_expect_success \
 test_expect_success \
 	'Check the "new" and "refresh" logs' \
 	'
-	stg log --full foo | grep -q -e "^new" &&
 	stg log --full foo | grep -q -e "^refresh" &&
-	stg log --full | grep -q -e "^new" &&
 	stg log --full | grep -q -e "^refresh"
 	'
 
