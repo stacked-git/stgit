@@ -1,6 +1,6 @@
 from stgit.exception import StgException
 from stgit import run, utils
-import os.path, re, sys
+import os, os.path, re, sys
 
 class VersionUnavailable(StgException):
     pass
@@ -31,17 +31,26 @@ def builtin_version():
     else:
         return bv.version
 
+def _builtin_version_file(ext = 'py'):
+    return os.path.join(sys.path[0], 'stgit', 'builtin_version.%s' % ext)
+
 def write_builtin_version():
     try:
         v = git_describe_version()
     except VersionUnavailable:
         return
-    f = file(os.path.join(sys.path[0], 'stgit', 'builtin_version.py'), 'w')
+    f = file(_builtin_version_file(), 'w')
     f.write('# This file was generated automatically. Do not edit by hand.\n'
             'version = %r\n' % v)
 
+def delete_builtin_version():
+    for ext in ['py', 'pyc', 'pyo']:
+        fn = _builtin_version_file(ext)
+        if os.path.exists(fn):
+            os.remove(fn)
+
 def get_version():
-    for v in [git_describe_version, builtin_version]:
+    for v in [builtin_version, git_describe_version]:
         try:
             return v()
         except VersionUnavailable:

@@ -43,34 +43,39 @@ def __check_git_version():
               % (version.git_min_ver, gitver)
         sys.exit(1)
 
+def __run_setup():
+    setup(name = 'stgit',
+          version = version.version,
+          license = 'GPLv2',
+          author = 'Catalin Marinas',
+          author_email = 'catalin.marinas@gmail.com',
+          url = 'http://www.procode.org/stgit/',
+          description = 'Stacked GIT',
+          long_description = 'Push/pop utility on top of GIT',
+          scripts = ['stg'],
+          packages = ['stgit', 'stgit.commands', 'stgit.lib'],
+          data_files = [
+            ('share/stgit/templates', glob.glob('templates/*.tmpl')),
+            ('share/stgit/examples', glob.glob('examples/*.tmpl')),
+            ('share/stgit/examples', ['examples/gitconfig']),
+            ('share/stgit/contrib', ['contrib/diffcol.sh',
+                                     'contrib/stgbashprompt.sh',
+                                     'contrib/stgit-completion.bash']),
+            ('share/doc/stgit', glob.glob('doc/*.txt'))])
+
 # Check the minimum versions required
 if sys.argv[1] in ['install', 'build']:
     __check_python_version()
     __check_git_version()
 
-version.write_builtin_version()
-
 # ensure readable template files
 old_mask = os.umask(0022)
 
-setup(name = 'stgit',
-      version = version.version,
-      license = 'GPLv2',
-      author = 'Catalin Marinas',
-      author_email = 'catalin.marinas@gmail.com',
-      url = 'http://www.procode.org/stgit/',
-      description = 'Stacked GIT',
-      long_description = 'Push/pop utility on top of GIT',
-      scripts = ['stg'],
-      packages = ['stgit', 'stgit.commands', 'stgit.lib'],
-      data_files = [('share/stgit/templates', glob.glob('templates/*.tmpl')),
-                    ('share/stgit/examples', glob.glob('examples/*.tmpl')),
-                    ('share/stgit/examples', ['examples/gitconfig']),
-                    ('share/stgit/contrib', ['contrib/diffcol.sh',
-                                             'contrib/stgbashprompt.sh',
-                                             'contrib/stgit-completion.bash']),
-                    ('share/doc/stgit', glob.glob('doc/*.txt'))]
-      )
+try:
+    version.write_builtin_version()
+    __run_setup()
+finally:
+    version.delete_builtin_version()
 
 # restore the old mask
 os.umask(old_mask)
