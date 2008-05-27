@@ -117,4 +117,10 @@ test_expect_success 'Refresh --index' '
     stg new p5 -m "cleanup again" &&
     stg refresh
 '
+
+test_expect_success 'Refresh moved files' '
+    git mv foo1.txt foo1-new.txt &&
+    stg refresh
+'
+
 test_done
