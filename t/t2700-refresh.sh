@@ -62,4 +62,9 @@ test_expect_success 'Refresh bottom patch' '
     diff -u expected.txt patches.txt
 '
 
+test_expect_success 'Refresh moved files' '
+    git mv foo1.txt foo1-new.txt &&
+    stg refresh
+'
+
 test_done

@@ -170,7 +170,7 @@ def exclude_files():
         files.append(user_exclude)
     return files
 
-def ls_files(files, tree = None, full_name = True):
+def ls_files(files, tree = 'HEAD', full_name = True):
     """Return the files known to GIT or raise an error otherwise. It also
     converts the file to the full path relative the the .git directory.
     """
@@ -207,6 +207,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
 
     refresh_index()
 
+    if files is None:
+        files = []
     cache_files = []
 
     # unknown files
@@ -231,26 +233,39 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     cache_files += [('C', filename) for filename in conflicts
                     if not files or filename in files]
     reported_files = set(conflicts)
+    files_left = [f for f in files if f not in reported_files]
 
-    # files in the index
-    args = diff_flags + [tree_id]
-    if files:
-        args += ['--'] + files
-    for line in GRun('diff-index', *args).output_lines():
-        fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
-        if fs[1] not in reported_files:
-            cache_files.append(fs)
-            reported_files.add(fs[1])
+    # files in the index. Only execute this code if no files were
+    # specified when calling the function (i.e. report all files) or
+    # files were specified but already found in the previous step
+    if not files or files_left:
+        args = diff_flags + [tree_id]
+        if files_left:
+            args += ['--'] + files_left
+        for line in GRun('diff-index', *args).output_lines():
+            fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+            # the condition is needed in case files is emtpy and
+            # diff-index lists those already reported
+            if fs[1] not in reported_files:
+                cache_files.append(fs)
+                reported_files.add(fs[1])
+        files_left = [f for f in files if f not in reported_files]
 
-    # files in the index but changed on (or removed from) disk
-    args = list(diff_flags)
-    if files:
-        args += ['--'] + files
-    for line in GRun('diff-files', *args).output_lines():
-        fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
-        if fs[1] not in reported_files:
-            cache_files.append(fs)
-            reported_files.add(fs[1])
+    # files in the index but changed on (or removed from) disk. Only
+    # execute this code if no files were specified when calling the
+    # function (i.e. report all files) or files were specified but
+    # already found in the previous step
+    if not files or files_left:
+        args = list(diff_flags)
+        if files_left:
+            args += ['--'] + files_left
+        for line in GRun('diff-files', *args).output_lines():
+            fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+            # the condition is needed in case files is empty and
+            # diff-files lists those already reported
+            if fs[1] not in reported_files:
+                cache_files.append(fs)
+                reported_files.add(fs[1])
 
     if verbose:
         out.done()
@@ -995,7 +1010,6 @@ def refspec_remotepart(refspec):
         return m.group(1)
     else:
         raise GitException, 'Cannot parse refspec "%s"' % line
-    
 
 def __remotes_from_config():
     return config.sections_matching(r'remote\.(.*)\.url')
