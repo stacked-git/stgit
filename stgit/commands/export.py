@@ -18,14 +18,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
+import os
+from optparse import make_option
 
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import stack, git, templates
-
+from stgit.commands import common
+from stgit import git, utils, templates
+from stgit.out import out
+from stgit.lib import git as gitlib
 
 help = 'exports patches to a directory'
 usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
@@ -49,7 +48,7 @@ file:
   %(commemail)s   - committer's e-mail
 """
 
-directory = DirectoryHasRepository()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-d', '--dir',
                        help = 'export patches to DIR instead of the default'),
            make_option('-p', '--patch',
@@ -67,16 +66,17 @@ options = [make_option('-d', '--dir',
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
                        action = 'store_true')
-           ] + make_diff_opts_option()
-
+           ] + utils.make_diff_opts_option()
 
 def func(parser, options, args):
     """Export a range of patches.
     """
+    stack = directory.repository.get_stack(options.branch)
+
     if options.dir:
         dirname = options.dir
     else:
-        dirname = 'patches-%s' % crt_series.get_name()
+        dirname = 'patches-%s' % stack.name
         directory.cd_to_topdir()
 
     if not options.branch and git.local_changes():
@@ -88,8 +88,8 @@ def func(parser, options, args):
             os.makedirs(dirname)
         series = file(os.path.join(dirname, 'series'), 'w+')
 
-    applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
+    applied = stack.patchorder.applied
+    unapplied = stack.patchorder.unapplied
     if len(args) != 0:
         patches = parse_patches(args, applied + unapplied, len(applied))
     else:
@@ -113,7 +113,7 @@ def func(parser, options, args):
 
     # note the base commit for this series
     if not options.stdout:
-        base_commit = crt_series.get_patch(patches[0]).get_bottom()
+        base_commit = stack.patches.get(patches[0]).commit.sha1
         print >> series, '# This series applies on GIT commit %s' % base_commit
 
     patch_no = 1;
@@ -130,27 +130,27 @@ def func(parser, options, args):
             print >> series, pname
 
         # get the patch description
-        patch = crt_series.get_patch(p)
+        patch = stack.patches.get(p)
+        cd = patch.commit.data
 
-        descr = patch.get_description().strip()
+        descr = cd.message.strip()
         descr_lines = descr.split('\n')
 
         short_descr = descr_lines[0].rstrip()
         long_descr = reduce(lambda x, y: x + '\n' + y,
                             descr_lines[1:], '').strip()
 
-        diff = git.diff(rev1 = patch.get_bottom(),
-                        rev2 = patch.get_top(),
-                        diff_flags = options.diff_flags)
-        tmpl_dict = {'description': patch.get_description().rstrip(),
+        diff = stack.repository.diff_tree(cd.parent.data.tree, cd.tree, options.diff_flags)
+
+        tmpl_dict = {'description': descr,
                      'shortdescr': short_descr,
                      'longdescr': long_descr,
-                     'diffstat': git.diffstat(diff),
-                     'authname': patch.get_authname(),
-                     'authemail': patch.get_authemail(),
-                     'authdate': patch.get_authdate(),
-                     'commname': patch.get_commname(),
-                     'commemail': patch.get_commemail()}
+                     'diffstat': git.diffstat(diff).rstrip(),
+                     'authname': cd.author.name,
+                     'authemail': cd.author.email,
+                     'authdate': cd.author.date.isoformat(),
+                     'commname': cd.committer.name,
+                     'commemail': cd.committer.email}
         for key in tmpl_dict:
             if not tmpl_dict[key]:
                 tmpl_dict[key] = ''
@@ -171,7 +171,7 @@ def func(parser, options, args):
 
         if options.stdout and num > 1:
             print '-'*79
-            print patch.get_name()
+            print patch.name
             print '-'*79
 
         f.write(descr)
