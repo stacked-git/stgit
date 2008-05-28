@@ -41,10 +41,7 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    if options.branch:
-        s = directory.repository.get_stack(options.branch)
-    else:
-        s = directory.repository.current_stack
+    s = directory.repository.get_stack(options.branch)
 
     if options.count:
         out.stdout(len(s.patchorder.unapplied))

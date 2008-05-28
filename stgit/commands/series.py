@@ -106,10 +106,7 @@ def func(parser, options, args):
     if options.all and options.short:
         raise common.CmdException, 'combining --all and --short is meaningless'
 
-    if options.branch:
-        stack = directory.repository.get_stack(options.branch)
-    else:
-        stack = directory.repository.current_stack
+    stack = directory.repository.get_stack(options.branch)
     if options.missing:
         cmp_stack = stack
         stack = directory.repository.get_stack(options.missing)

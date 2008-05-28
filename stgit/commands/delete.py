@@ -34,11 +34,10 @@ options = [make_option('-b', '--branch',
 
 def func(parser, options, args):
     """Delete one or more patches."""
+    stack = directory.repository.get_stack(options.branch)
     if options.branch:
-        stack = directory.repository.get_stack(options.branch)
         iw = None # can't use index/workdir to manipulate another branch
     else:
-        stack = directory.repository.current_stack
         iw = stack.repository.default_iw
     if args:
         patches = set(common.parse_patches(args, list(stack.patchorder.all)))
