@@ -16,15 +16,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
+from optparse import make_option
 
-import stgit.commands.common
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import stack, git
-
+from stgit.commands import common
+from stgit.commands.common import parse_patches
+from stgit.out import out
 
 help = 'print the patch series'
 usage = """%prog [options] [<patch-range>]
@@ -34,13 +30,14 @@ range. The applied patches are prefixed with a '+', the unapplied ones
 with a '-' and the hidden ones with a '!'. The current patch is
 prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
-directory = DirectoryHasRepository()
+directory = common.DirectoryHasRepositoryLib()
+
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-a', '--all',
                        help = 'show all patches, including the hidden ones',
                        action = 'store_true'),
-           make_option('-i', '--invisible',
+           make_option('--hidden',
                        help = 'show the hidden patches only',
                        action = 'store_true'),
            make_option('-m', '--missing', metavar = 'BRANCH',
@@ -66,32 +63,29 @@ options = [make_option('-b', '--branch',
                        action = 'store_true'),
            make_option('-s', '--short',
                        help = 'list just the patches around the topmost patch',
-                       action = 'store_true'),
-           make_option('-g', '--graphical',
-                       help = 'run gitk instead of printing',
                        action = 'store_true')]
 
 
-def __get_description(patch):
+def __get_description(stack, patch):
     """Extract and return a patch's short description
     """
-    p = crt_series.get_patch(patch)
-    descr = (p.get_description() or '').strip()
+    cd = stack.patches.get(patch).commit.data
+    descr = cd.message.strip()
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
-def __get_author(patch):
+def __get_author(stack, patch):
     """Extract and return a patch's short description
     """
-    p = crt_series.get_patch(patch)
-    return p.get_authname();
+    cd = stack.patches.get(patch).commit.data
+    return cd.author.name
 
-def __print_patch(patch, branch_str, prefix, empty_prefix, length, options):
+def __print_patch(stack, patch, branch_str, prefix, empty_prefix, length, options):
     """Print a patch name, description and various markers.
     """
     if options.noprefix:
         prefix = ''
-    elif options.empty and crt_series.empty_patch(patch):
+    elif options.empty and stack.patches.get(patch).is_empty():
         prefix = empty_prefix
 
     patch_str = patch + branch_str
@@ -100,56 +94,43 @@ def __print_patch(patch, branch_str, prefix, empty_prefix, length, options):
         patch_str = patch_str.ljust(length)
 
     if options.description:
-        out.stdout(prefix + patch_str + ' # ' + __get_description(patch))
+        out.stdout(prefix + patch_str + ' # ' + __get_description(stack, patch))
     elif options.author:
-        out.stdout(prefix + patch_str + ' # ' + __get_author(patch))
+        out.stdout(prefix + patch_str + ' # ' + __get_author(stack, patch))
     else:
         out.stdout(prefix + patch_str)
 
 def func(parser, options, args):
     """Show the patch series
     """
-    global crt_series
-
     if options.all and options.short:
-        raise CmdException, 'combining --all and --short is meaningless'
-    
-    # current series patches
-    if options.invisible:
-        applied = unapplied = []
-        hidden = crt_series.get_hidden()
-    elif options.all:
-        applied = crt_series.get_applied()
-        unapplied = crt_series.get_unapplied()
-        hidden = crt_series.get_hidden()
+        raise common.CmdException, 'combining --all and --short is meaningless'
+
+    if options.branch:
+        stack = directory.repository.get_stack(options.branch)
     else:
-        applied = crt_series.get_applied()
-        unapplied = crt_series.get_unapplied()
-        hidden = []
+        stack = directory.repository.current_stack
+    if options.missing:
+        cmp_stack = stack
+        stack = directory.repository.get_stack(options.missing)
+
+    # current series patches
+    if options.all:
+        applied = stack.patchorder.applied
+        unapplied = stack.patchorder.unapplied
+        hidden = stack.patchorder.hidden
+    elif options.hidden:
+        applied = unapplied = ()
+        hidden = stack.patchorder.hidden
+    else:
+        applied = stack.patchorder.applied
+        unapplied = stack.patchorder.unapplied
+        hidden = ()
 
     if options.missing:
-        # switch the series, the one specified with --missing should
-        # become the current
-        cmp_series = crt_series
-        crt_series = stack.Series(options.missing)
-        stgit.commands.common.crt_series = crt_series
-
-        cmp_patches = applied + unapplied + hidden
-
-        # new current series patches
-        if options.invisible:
-            applied = unapplied = []
-            hidden = crt_series.get_hidden()
-        elif options.all:
-            applied = crt_series.get_applied()
-            unapplied = crt_series.get_unapplied()
-            hidden = crt_series.get_hidden()
-        else:
-            applied = crt_series.get_applied()
-            unapplied = crt_series.get_unapplied()
-            hidden = []
+        cmp_patches = cmp_stack.patchorder.all
     else:
-        cmp_patches = []
+        cmp_patches = ()
 
     # the filtering range covers the whole series
     if args:
@@ -186,38 +167,22 @@ def func(parser, options, args):
         return
 
     if options.showbranch:
-        branch_str = '@' + crt_series.get_name()
+        branch_str = '@' + stack.name
     else:
         branch_str = ''
 
-    if options.graphical:
-        if options.missing:
-            raise CmdException, '--graphical not supported with --missing'
+    max_len = 0
+    if len(patches) > 0:
+        max_len = max([len(i + branch_str) for i in patches])
 
-        gitk_args = []
-        if applied:
-            gitk_args.append('%s^..%s'
-                             % (git_id(crt_series, applied[0]),
-                                git_id(crt_series, applied[-1])))
-        for p in unapplied:
-            patch_id = git_id(crt_series, p)
-            gitk_args.append('%s^..%s' % (patch_id, patch_id))
+    if applied:
+        for p in applied[:-1]:
+            __print_patch(stack, p, branch_str, '+ ', '0 ', max_len, options)
+        __print_patch(stack, applied[-1], branch_str, '> ', '0>', max_len,
+                      options)
 
-        # discard the exit codes generated by SIGINT, SIGKILL, SIGTERM
-        Run('gitk', *gitk_args).returns([0, -2, -9, -15]).run()
-    else:
-        max_len = 0
-        if len(patches) > 0:
-            max_len = max([len(i + branch_str) for i in patches])
+    for p in unapplied:
+        __print_patch(stack, p, branch_str, '- ', '0 ', max_len, options)
 
-        if applied:
-            for p in applied[:-1]:
-                __print_patch(p, branch_str, '+ ', '0 ', max_len, options)
-            __print_patch(applied[-1], branch_str, '> ', '0>', max_len,
-                          options)
-
-        for p in unapplied:
-            __print_patch(p, branch_str, '- ', '0 ', max_len, options)
-
-        for p in hidden:
-            __print_patch(p, branch_str, '! ', '! ', max_len, options)
+    for p in hidden:
+        __print_patch(stack, p, branch_str, '! ', '! ', max_len, options)

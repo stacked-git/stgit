@@ -96,6 +96,9 @@ class PatchOrder(object):
                        lambda self, val: self.__set_list('applied', val))
     unapplied = property(lambda self: self.__get_list('unapplied'),
                          lambda self, val: self.__set_list('unapplied', val))
+    hidden = property(lambda self: self.__get_list('hidden'),
+                      lambda self, val: self.__set_list('hidden', val))
+    # don't return the hidden patches, these have to be returned explicitly
     all = property(lambda self: self.applied + self.unapplied)
 
 class Patches(object):
