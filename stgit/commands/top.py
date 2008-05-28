@@ -16,24 +16,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
+from optparse import make_option
 
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import stack, git
-
+from stgit.commands import common
+from stgit.out import out
 
 help = 'print the name of the top patch'
 usage = """%prog [options]
 
 Print the name of the current (topmost) patch."""
 
-directory = DirectoryHasRepository()
+directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one')]
-
 
 def func(parser, options, args):
     """Show the name of the topmost patch
@@ -41,8 +36,10 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    name = crt_series.get_current()
-    if name:
-        out.stdout(name)
+    stack = directory.repository.get_stack(options.branch)
+    applied = stack.patchorder.applied
+
+    if applied:
+        out.stdout(applied[-1])
     else:
-        raise CmdException, 'No patches applied'
+        raise common.CmdException, 'No patches applied'
