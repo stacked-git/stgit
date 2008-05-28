@@ -32,7 +32,7 @@ class Patch(object):
                 old_log = [self.__stack.repository.refs.get(self.__log_ref)]
             except KeyError:
                 old_log = []
-            cd = git.Commitdata(tree = new_commit.data.tree, parents = old_log,
+            cd = git.CommitData(tree = new_commit.data.tree, parents = old_log,
                                 message = '%s\t%s' % (msg, new_commit.sha1))
             c = self.__stack.repository.commit(cd)
             self.__stack.repository.refs.set(self.__log_ref, c, msg)

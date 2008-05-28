@@ -154,7 +154,7 @@ class Tree(Repr):
     def __str__(self):
         return 'Tree<%s>' % self.sha1
 
-class Commitdata(Repr):
+class CommitData(Repr):
     """Immutable."""
     def __init__(self, tree = NoValue, parents = NoValue, author = NoValue,
                  committer = NoValue, message = NoValue, defaults = NoValue):
@@ -199,7 +199,7 @@ class Commitdata(Repr):
             parents = None
         else:
             parents = [p.sha1 for p in self.parents]
-        return ('Commitdata<tree: %s, parents: %s, author: %s,'
+        return ('CommitData<tree: %s, parents: %s, author: %s,'
                 ' committer: %s, message: "%s">'
                 ) % (tree, parents, self.author, self.committer, self.message)
     @classmethod
@@ -233,7 +233,7 @@ class Commit(Repr):
     @property
     def data(self):
         if self.__data == None:
-            self.__data = Commitdata.parse(
+            self.__data = CommitData.parse(
                 self.__repository,
                 self.__repository.cat_object(self.sha1))
         return self.__data

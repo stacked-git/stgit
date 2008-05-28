@@ -59,7 +59,7 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     head = directory.repository.refs.get(directory.repository.head)
-    cd = gitlib.Commitdata(
+    cd = gitlib.CommitData(
         tree = head.data.tree, parents = [head], message = '',
         author = gitlib.Person.author(), committer = gitlib.Person.committer())
 

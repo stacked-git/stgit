@@ -42,7 +42,7 @@ class SaveTemplateDone(Exception):
 
 def _coalesce_patches(trans, patches, msg, save_template):
     cd = trans.patches[patches[0]].data
-    cd = git.Commitdata(tree = cd.tree, parents = cd.parents)
+    cd = git.CommitData(tree = cd.tree, parents = cd.parents)
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
