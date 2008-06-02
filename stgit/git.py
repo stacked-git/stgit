@@ -242,13 +242,21 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = diff_flags + [tree_id]
         if files_left:
             args += ['--'] + files_left
-        for line in GRun('diff-index', *args).output_lines():
-            fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
-            # the condition is needed in case files is emtpy and
-            # diff-index lists those already reported
-            if fs[1] not in reported_files:
-                cache_files.append(fs)
-                reported_files.add(fs[1])
+        t = None
+        for line in GRun('diff-index', '-z', *args).raw_output().split('\0'):
+            if not line:
+                # There's a zero byte at the end of the output, which
+                # gives us an empty string as the last "line".
+                continue
+            if t == None:
+                mode_a, mode_b, sha1_a, sha1_b, t = line.split(' ')
+            else:
+                # the condition is needed in case files is emtpy and
+                # diff-index lists those already reported
+                if not line in reported_files:
+                    cache_files.append((t, line))
+                    reported_files.add(line)
+                t = None
         files_left = [f for f in files if f not in reported_files]
 
     # files in the index but changed on (or removed from) disk. Only

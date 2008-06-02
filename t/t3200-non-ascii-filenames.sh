@@ -20,7 +20,7 @@ test_expect_success 'Setup' '
     stg push
 '
 
-test_expect_failure 'Rebase onto changed non-ASCII file' '
+test_expect_success 'Rebase onto changed non-ASCII file' '
     stg rebase upstream
 '
 
