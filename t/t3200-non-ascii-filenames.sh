@@ -3,6 +3,12 @@ test_description='Handle files with non-ASCII characters in their names'
 
 . ./test-lib.sh
 
+# Ignore our own output files.
+cat > .git/info/exclude <<EOF
+/expected.txt
+/output.txt
+EOF
+
 test_expect_success 'Setup' '
     echo "Fjäderholmarna" > skärgårdsö.txt &&
     git add skärgårdsö.txt &&
@@ -10,7 +16,7 @@ test_expect_success 'Setup' '
     stg init &&
     echo foo > unrelated.txt &&
     git add unrelated.txt &&
-    stg new -m "Unrelated file" &&
+    stg new p0 -m "Unrelated file" &&
     stg refresh &&
     stg pop &&
     rm skärgårdsö.txt &&
@@ -22,6 +28,32 @@ test_expect_success 'Setup' '
 
 test_expect_success 'Rebase onto changed non-ASCII file' '
     stg rebase upstream
+'
+
+test_expect_success 'Setup' '
+    stg delete p0 &&
+    git reset --hard HEAD^ &&
+    echo "-- ett liv mitt ute i vattnet" >> skärgårdsö.txt &&
+    stg new p1 -m "Describe island"
+'
+
+cat > expected.txt <<EOF
+M skärgårdsö.txt
+EOF
+test_expect_failure 'Status of modified non-ASCII file' '
+    stg status > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+test_expect_success 'Refresh changes to non-ASCII file' '
+    stg refresh
+'
+
+cat > expected.txt <<EOF
+EOF
+test_expect_success 'Status after refresh' '
+    stg status > output.txt &&
+    diff -u expected.txt output.txt
 '
 
 test_done
