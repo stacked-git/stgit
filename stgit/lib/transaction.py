@@ -1,13 +1,19 @@
+"""The L{StackTransaction} class makes it possible to make complex
+updates to an StGit stack in a safe and convenient way."""
+
 from stgit import exception, utils
 from stgit.utils import any, all
 from stgit.out import *
 from stgit.lib import git
 
 class TransactionException(exception.StgException):
-    pass
+    """Exception raised when something goes wrong with a
+    L{StackTransaction}."""
 
 class TransactionHalted(TransactionException):
-    pass
+    """Exception raised when a L{StackTransaction} stops part-way through.
+    Used to make a non-local jump from the transaction setup to the
+    part of the transaction code where the transaction is run."""
 
 def _print_current_patch(old_applied, new_applied):
     def now_at(pn):
@@ -24,6 +30,7 @@ def _print_current_patch(old_applied, new_applied):
         now_at(new_applied[-1])
 
 class _TransPatchMap(dict):
+    """Maps patch names to sha1 strings."""
     def __init__(self, stack):
         dict.__init__(self)
         self.__stack = stack
@@ -34,6 +41,36 @@ class _TransPatchMap(dict):
             return self.__stack.patches.get(pn).commit
 
 class StackTransaction(object):
+    """A stack transaction, used for making complex updates to an StGit
+    stack in one single operation that will either succeed or fail
+    cleanly.
+
+    The basic theory of operation is the following:
+
+      1. Create a transaction object.
+
+      2. Inside a::
+
+         try
+           ...
+         except TransactionHalted:
+           pass
+
+      block, update the transaction with e.g. methods like
+      L{pop_patches} and L{push_patch}. This may create new git
+      objects such as commits, but will not write any refs; this means
+      that in case of a fatal error we can just walk away, no clean-up
+      required.
+
+      (Some operations may need to touch your index and working tree,
+      though. But they are cleaned up when needed.)
+
+      3. After the C{try} block -- wheher or not the setup ran to
+      completion or halted part-way through by raising a
+      L{TransactionHalted} exception -- call the transaction's L{run}
+      method. This will either succeed in writing the updated state to
+      your refs and index+worktree, or fail without having done
+      anything."""
     def __init__(self, stack, msg, allow_conflicts = False):
         self.__stack = stack
         self.__msg = msg
@@ -102,6 +139,8 @@ class StackTransaction(object):
         if iw:
             self.__checkout(self.__stack.head.data.tree, iw)
     def run(self, iw = None):
+        """Execute the transaction. Will either succeed, or fail (with an
+        exception) and do nothing."""
         self.__check_consistency()
         new_head = self.__head
 
@@ -152,7 +191,8 @@ class StackTransaction(object):
 
     def pop_patches(self, p):
         """Pop all patches pn for which p(pn) is true. Return the list of
-        other patches that had to be popped to accomplish this."""
+        other patches that had to be popped to accomplish this. Always
+        succeeds."""
         popped = []
         for i in xrange(len(self.applied)):
             if p(self.applied[i]):
@@ -167,7 +207,8 @@ class StackTransaction(object):
 
     def delete_patches(self, p):
         """Delete all patches pn for which p(pn) is true. Return the list of
-        other patches that had to be popped to accomplish this."""
+        other patches that had to be popped to accomplish this. Always
+        succeeds."""
         popped = []
         all_patches = self.applied + self.unapplied
         for i in xrange(len(self.applied)):

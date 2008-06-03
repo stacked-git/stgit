@@ -1,8 +1,12 @@
+"""A Python class hierarchy wrapping the StGit on-disk metadata."""
+
 import os.path
 from stgit import exception, utils
 from stgit.lib import git, stackupgrade
 
 class Patch(object):
+    """Represents an StGit patch. This class is mainly concerned with
+    reading and writing the on-disk representation of a patch."""
     def __init__(self, stack, name):
         self.__stack = stack
         self.__name = name
@@ -102,7 +106,8 @@ class PatchOrder(object):
     all = property(lambda self: self.applied + self.unapplied)
 
 class Patches(object):
-    """Creates Patch objects."""
+    """Creates L{Patch} objects. Makes sure there is only one such object
+    per patch."""
     def __init__(self, stack):
         self.__stack = stack
         def create_patch(name):
@@ -126,6 +131,8 @@ class Patches(object):
         return p
 
 class Stack(object):
+    """Represents an StGit stack (that is, a git branch with some extra
+    metadata)."""
     def __init__(self, repository, name):
         self.__repository = repository
         self.__name = name
@@ -164,6 +171,8 @@ class Stack(object):
         return self.head == self.patches.get(self.patchorder.applied[-1]).commit
 
 class Repository(git.Repository):
+    """A git L{Repository<git.Repository>} with some added StGit-specific
+    operations."""
     def __init__(self, *args, **kwargs):
         git.Repository.__init__(self, *args, **kwargs)
         self.__stacks = {} # name -> Stack
