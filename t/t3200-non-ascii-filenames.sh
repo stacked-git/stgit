@@ -40,7 +40,7 @@ test_expect_success 'Setup' '
 cat > expected.txt <<EOF
 M skärgårdsö.txt
 EOF
-test_expect_failure 'Status of modified non-ASCII file' '
+test_expect_success 'Status of modified non-ASCII file' '
     stg status > output.txt &&
     diff -u expected.txt output.txt
 '
