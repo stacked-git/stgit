@@ -1,26 +1,53 @@
+"""A Python class hierarchy wrapping a git repository and its
+contents."""
+
 import os, os.path, re
 from datetime import datetime, timedelta, tzinfo
 
 from stgit import exception, run, utils
 from stgit.config import config
 
+class Immutable(object):
+    """I{Immutable} objects cannot be modified once created. Any
+    modification methods will return a new object, leaving the
+    original object as it was.
+
+    The reason for this is that we want to be able to represent git
+    objects, which are immutable, and want to be able to create new
+    git objects that are just slight modifications of other git
+    objects. (Such as, for example, modifying the commit message of a
+    commit object while leaving the rest of it intact. This involves
+    creating a whole new commit object that's exactly like the old one
+    except for the commit message.)
+
+    The L{Immutable} class doesn't acytually enforce immutability --
+    that is up to the individual immutable subclasses. It just serves
+    as documentation."""
+
 class RepositoryException(exception.StgException):
-    pass
+    """Base class for all exceptions due to failed L{Repository}
+    operations."""
 
 class DateException(exception.StgException):
+    """Exception raised when a date+time string could not be parsed."""
     def __init__(self, string, type):
         exception.StgException.__init__(
             self, '"%s" is not a valid %s' % (string, type))
 
 class DetachedHeadException(RepositoryException):
+    """Exception raised when HEAD is detached (that is, there is no
+    current branch)."""
     def __init__(self):
         RepositoryException.__init__(self, 'Not on any branch')
 
 class Repr(object):
+    """Utility class that defines C{__reps__} in terms of C{__str__}."""
     def __repr__(self):
         return str(self)
 
 class NoValue(object):
+    """A handy default value that is guaranteed to be distinct from any
+    real argument value."""
     pass
 
 def make_defaults(defaults):
@@ -34,6 +61,9 @@ def make_defaults(defaults):
     return d
 
 class TimeZone(tzinfo, Repr):
+    """A simple time zone class for static offsets from UTC. (We have to
+    define our own since Python's standard library doesn't define any
+    time zone classes.)"""
     def __init__(self, tzstring):
         m = re.match(r'^([+-])(\d{2}):?(\d{2})$', tzstring)
         if not m:
@@ -54,8 +84,8 @@ class TimeZone(tzinfo, Repr):
     def __str__(self):
         return self.__name
 
-class Date(Repr):
-    """Immutable."""
+class Date(Immutable, Repr):
+    """Represents a timestamp used in git commits."""
     def __init__(self, datestring):
         # Try git-formatted date.
         m = re.match(r'^(\d+)\s+([+-]\d\d:?\d\d)$', datestring)
@@ -88,12 +118,15 @@ class Date(Repr):
                           self.__time.tzinfo)
     @classmethod
     def maybe(cls, datestring):
+        """Return a new object initialized with the argument if it contains a
+        value (otherwise, just return the argument)."""
         if datestring in [None, NoValue]:
             return datestring
         return cls(datestring)
 
-class Person(Repr):
-    """Immutable."""
+class Person(Immutable, Repr):
+    """Represents an author or committer in a git commit object. Contains
+    name, email and timestamp."""
     def __init__(self, name = NoValue, email = NoValue,
                  date = NoValue, defaults = NoValue):
         d = make_defaults(defaults)
@@ -146,16 +179,16 @@ class Person(Repr):
                 defaults = cls.user())
         return cls.__committer
 
-class Tree(Repr):
-    """Immutable."""
+class Tree(Immutable, Repr):
+    """Represents a git tree object."""
     def __init__(self, sha1):
         self.__sha1 = sha1
     sha1 = property(lambda self: self.__sha1)
     def __str__(self):
         return 'Tree<%s>' % self.sha1
 
-class CommitData(Repr):
-    """Immutable."""
+class CommitData(Immutable, Repr):
+    """Represents the actual data contents of a git commit object."""
     def __init__(self, tree = NoValue, parents = NoValue, author = NoValue,
                  committer = NoValue, message = NoValue, defaults = NoValue):
         d = make_defaults(defaults)
@@ -223,8 +256,10 @@ class CommitData(Repr):
                 assert False
         assert False
 
-class Commit(Repr):
-    """Immutable."""
+class Commit(Immutable, Repr):
+    """Represents a git commit object. All the actual data contents of the
+    commit object is stored in the L{data} member, which is a
+    L{CommitData} object."""
     def __init__(self, repository, sha1):
         self.__sha1 = sha1
         self.__repository = repository
@@ -241,21 +276,26 @@ class Commit(Repr):
         return 'Commit<sha1: %s, data: %s>' % (self.sha1, self.__data)
 
 class Refs(object):
+    """Accessor for the refs stored in a git repository. Will
+    transparently cache the values of all refs."""
     def __init__(self, repository):
         self.__repository = repository
         self.__refs = None
     def __cache_refs(self):
+        """(Re-)Build the cache of all refs in the repository."""
         self.__refs = {}
         for line in self.__repository.run(['git', 'show-ref']).output_lines():
             m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line)
             sha1, ref = m.groups()
             self.__refs[ref] = sha1
     def get(self, ref):
-        """Throws KeyError if ref doesn't exist."""
+        """Get the Commit the given ref points to. Throws KeyError if ref
+        doesn't exist."""
         if self.__refs == None:
             self.__cache_refs()
         return self.__repository.get_commit(self.__refs[ref])
     def exists(self, ref):
+        """Check if the given ref exists."""
         try:
             self.get(ref)
         except KeyError:
@@ -263,6 +303,8 @@ class Refs(object):
         else:
             return True
     def set(self, ref, commit, msg):
+        """Write the sha1 of the given Commit to the ref. The ref may or may
+        not already exist."""
         if self.__refs == None:
             self.__cache_refs()
         old_sha1 = self.__refs.get(ref, '0'*40)
@@ -272,6 +314,7 @@ class Refs(object):
                                    ref, new_sha1, old_sha1]).no_output()
             self.__refs[ref] = new_sha1
     def delete(self, ref):
+        """Delete the given ref. Throws KeyError if ref doesn't exist."""
         if self.__refs == None:
             self.__cache_refs()
         self.__repository.run(['git', 'update-ref',
@@ -280,7 +323,8 @@ class Refs(object):
 
 class ObjectCache(object):
     """Cache for Python objects, for making sure that we create only one
-    Python object per git object."""
+    Python object per git object. This reduces memory consumption and
+    makes object comparison very cheap."""
     def __init__(self, create):
         self.__objects = {}
         self.__create = create
@@ -296,13 +340,27 @@ class ObjectCache(object):
 
 class RunWithEnv(object):
     def run(self, args, env = {}):
+        """Run the given command with an environment given by self.env.
+
+        @type args: list of strings
+        @param args: Command and argument vector
+        @type env: dict
+        @param env: Extra environment"""
         return run.Run(*args).env(utils.add_dict(self.env, env))
 
 class RunWithEnvCwd(RunWithEnv):
     def run(self, args, env = {}):
+        """Run the given command with an environment given by self.env, and
+        current working directory given by self.cwd.
+
+        @type args: list of strings
+        @param args: Command and argument vector
+        @type env: dict
+        @param env: Extra environment"""
         return RunWithEnv.run(self, args, env).cwd(self.cwd)
 
 class Repository(RunWithEnv):
+    """Represents a git repository."""
     def __init__(self, directory):
         self.__git_dir = directory
         self.__refs = Refs(self)
@@ -322,15 +380,20 @@ class Repository(RunWithEnv):
             raise RepositoryException('Cannot find git repository')
     @property
     def default_index(self):
+        """An L{Index} object representing the default index file for the
+        repository."""
         if self.__default_index == None:
             self.__default_index = Index(
                 self, (os.environ.get('GIT_INDEX_FILE', None)
                        or os.path.join(self.__git_dir, 'index')))
         return self.__default_index
     def temp_index(self):
+        """Return an L{Index} object representing a new temporary index file
+        for the repository."""
         return Index(self, self.__git_dir)
     @property
     def default_worktree(self):
+        """A L{Worktree} object representing the default work tree."""
         if self.__default_worktree == None:
             path = os.environ.get('GIT_WORK_TREE', None)
             if not path:
@@ -342,6 +405,8 @@ class Repository(RunWithEnv):
         return self.__default_worktree
     @property
     def default_iw(self):
+        """An L{IndexAndWorktree} object representing the default index and
+        work tree for this repository."""
         if self.__default_iw == None:
             self.__default_iw = IndexAndWorktree(self.default_index,
                                                  self.default_worktree)
@@ -387,9 +452,9 @@ class Repository(RunWithEnv):
     def set_head(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
     def simple_merge(self, base, ours, theirs):
-        """Given three trees, tries to do an in-index merge in a temporary
-        index with a temporary index. Returns the result tree, or None if
-        the merge failed (due to conflicts)."""
+        """Given three L{Tree}s, tries to do an in-index merge with a
+        temporary index. Returns the result L{Tree}, or None if the
+        merge failed (due to conflicts)."""
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
@@ -412,8 +477,8 @@ class Repository(RunWithEnv):
         finally:
             index.delete()
     def apply(self, tree, patch_text):
-        """Given a tree and a patch, will either return the new tree that
-        results when the patch is applied, or None if the patch
+        """Given a L{Tree} and a patch, will either return the new L{Tree}
+        that results when the patch is applied, or None if the patch
         couldn't be applied."""
         assert isinstance(tree, Tree)
         if not patch_text:
@@ -429,18 +494,26 @@ class Repository(RunWithEnv):
         finally:
             index.delete()
     def diff_tree(self, t1, t2, diff_opts):
+        """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
+        C{t1} to C{t2}.
+
+        @type diff_opts: list of strings
+        @param diff_opts: Extra diff options
+        @rtype: String
+        @return: Patch text"""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
         return self.run(['git', 'diff-tree', '-p'] + list(diff_opts)
                         + [t1.sha1, t2.sha1]).raw_output()
 
 class MergeException(exception.StgException):
-    pass
+    """Exception raised when a merge fails for some reason."""
 
 class MergeConflictException(MergeException):
-    pass
+    """Exception raised when a merge fails due to conflicts."""
 
 class Index(RunWithEnv):
+    """Represents a git index file."""
     def __init__(self, repository, filename):
         self.__repository = repository
         if os.path.isdir(filename):
@@ -492,15 +565,20 @@ class Index(RunWithEnv):
         return paths
 
 class Worktree(object):
+    """Represents a git worktree (that is, a checked-out file tree)."""
     def __init__(self, directory):
         self.__directory = directory
     env = property(lambda self: { 'GIT_WORK_TREE': '.' })
     directory = property(lambda self: self.__directory)
 
 class CheckoutException(exception.StgException):
-    pass
+    """Exception raised when a checkout fails."""
 
 class IndexAndWorktree(RunWithEnvCwd):
+    """Represents a git index and a worktree. Anything that an index or
+    worktree can do on their own are handled by the L{Index} and
+    L{Worktree} classes; this class concerns itself with the
+    operations that require both."""
     def __init__(self, index, worktree):
         self.__index = index
         self.__worktree = worktree

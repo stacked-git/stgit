@@ -118,21 +118,19 @@ def git_id(crt_series, rev):
 
 def check_local_changes():
     if git.local_changes():
-        raise CmdException, \
-              'local changes in the tree. Use "refresh" or "status --reset"'
+        raise CmdException('local changes in the tree. Use "refresh" or'
+                           ' "status --reset"')
 
 def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
-        raise CmdException(
-"""HEAD and top are not the same. This can happen if you
-   modify a branch with git. "stg repair --help" explains
-   more about what to do next.""")
+        raise CmdException('HEAD and top are not the same. This can happen'
+                           ' if you modify a branch with git. "stg repair'
+                           ' --help" explains more about what to do next.')
 
 def check_conflicts():
     if git.get_conflicts():
-        raise CmdException, \
-              'Unsolved conflicts. Please resolve them first or\n' \
-              '  revert the changes with "status --reset"'
+        raise CmdException('Unsolved conflicts. Please resolve them first'
+                           ' or revert the changes with "status --reset"')
 
 def print_crt_patch(crt_series, branch = None):
     if not branch:

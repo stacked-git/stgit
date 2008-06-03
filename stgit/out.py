@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys
+import sys, textwrap
 
 class MessagePrinter(object):
     def __init__(self):
@@ -49,6 +49,10 @@ class MessagePrinter(object):
                     self.at_start_of_line = False
             def tagged_lines(self, tag, lines):
                 tag += ': '
+                width = 79 - 2*self.level - len(tag)
+                lines = [wl for line in lines
+                         for wl in textwrap.wrap(line, width,
+                                                 break_long_words = False)]
                 for line in lines:
                     self.single_line(tag + line)
                     tag = ' '*len(tag)
