@@ -190,6 +190,19 @@ def ls_files(files, tree = 'HEAD', full_name = True):
             'Some of the given paths are either missing or not known to GIT'
     return list(fileset)
 
+def parse_git_ls(output):
+    t = None
+    for line in output.split('\0'):
+        if not line:
+            # There's a zero byte at the end of the output, which
+            # gives us an empty string as the last "line".
+            continue
+        if t == None:
+            mode_a, mode_b, sha1_a, sha1_b, t = line.split(' ')
+        else:
+            yield (t, line)
+            t = None
+
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                   noexclude = True, verbose = False, diff_flags = []):
     """Get the status of all changed files, or of a selected set of
@@ -239,13 +252,12 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = diff_flags + [tree_id]
         if files_left:
             args += ['--'] + files_left
-        for line in GRun('diff-index', *args).output_lines():
-            fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+        for t, fn in parse_git_ls(GRun('diff-index', '-z', *args).raw_output()):
             # the condition is needed in case files is emtpy and
             # diff-index lists those already reported
-            if fs[1] not in reported_files:
-                cache_files.append(fs)
-                reported_files.add(fs[1])
+            if not fn in reported_files:
+                cache_files.append((t, fn))
+                reported_files.add(fn)
         files_left = [f for f in files if f not in reported_files]
 
     # files in the index but changed on (or removed from) disk. Only
@@ -256,13 +268,12 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = list(diff_flags)
         if files_left:
             args += ['--'] + files_left
-        for line in GRun('diff-files', *args).output_lines():
-            fs = tuple(line.rstrip().split(' ',4)[-1].split('\t',1))
+        for t, fn in parse_git_ls(GRun('diff-files', '-z', *args).raw_output()):
             # the condition is needed in case files is empty and
             # diff-files lists those already reported
-            if fs[1] not in reported_files:
-                cache_files.append(fs)
-                reported_files.add(fs[1])
+            if not fn in reported_files:
+                cache_files.append((t, fn))
+                reported_files.add(fn)
 
     if verbose:
         out.done()
