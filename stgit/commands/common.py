@@ -206,6 +206,8 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     a list. The names can be individual patches and/or in the
     patch1..patch2 format.
     """
+    # in case it receives a tuple
+    patch_list = list(patch_list)
     patches = []
 
     for name in patch_args:
