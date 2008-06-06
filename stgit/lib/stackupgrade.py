@@ -90,6 +90,13 @@ def update_to_current_format_version(repository, branch):
         rm_ref('refs/bases/%s' % branch)
         set_format_version(2)
 
+    # compatibility with the new infrastructure. The changes here do not
+    # affect the compatibility with the old infrastructure (format version 2)
+    if get_format_version() == 2:
+        hidden_file = os.path.join(branch_dir, 'hidden')
+        if not os.path.isfile(hidden_file):
+            utils.create_empty_file(hidden_file)
+
     # Make sure we're at the latest version.
     fv = get_format_version()
     if not fv in [None, FORMAT_VERSION]:

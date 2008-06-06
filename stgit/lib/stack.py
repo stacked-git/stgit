@@ -102,8 +102,8 @@ class PatchOrder(object):
                          lambda self, val: self.__set_list('unapplied', val))
     hidden = property(lambda self: self.__get_list('hidden'),
                       lambda self, val: self.__set_list('hidden', val))
-    # don't return the hidden patches, these have to be returned explicitly
-    all = property(lambda self: self.applied + self.unapplied)
+    all = property(lambda self: self.applied + self.unapplied + self.hidden)
+    all_visible = property(lambda self: self.applied + self.unapplied)
 
 class Patches(object):
     """Creates L{Patch} objects. Makes sure there is only one such object
