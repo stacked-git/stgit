@@ -178,7 +178,7 @@ class Repository(git.Repository):
         self.__stacks = {} # name -> Stack
     @property
     def current_branch(self):
-        return utils.strip_leading('refs/heads/', self.head)
+        return utils.strip_leading('refs/heads/', self.head_ref)
     @property
     def current_stack(self):
         return self.get_stack()

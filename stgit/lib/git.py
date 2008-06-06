@@ -443,13 +443,13 @@ class Repository(RunWithEnv):
                                                 ).output_one_line()
         return self.get_commit(sha1)
     @property
-    def head(self):
+    def head_ref(self):
         try:
             return self.run(['git', 'symbolic-ref', '-q', 'HEAD']
                             ).output_one_line()
         except run.RunException:
             raise DetachedHeadException()
-    def set_head(self, ref, msg):
+    def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
     def simple_merge(self, base, ours, theirs):
         """Given three L{Tree}s, tries to do an in-index merge with a

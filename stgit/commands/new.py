@@ -58,9 +58,8 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    head = directory.repository.refs.get(directory.repository.head)
     cd = gitlib.CommitData(
-        tree = head.data.tree, parents = [head], message = '',
+        tree = stack.head.data.tree, parents = [stack.head], message = '',
         author = gitlib.Person.author(), committer = gitlib.Person.committer())
 
     # Set patch commit message from commandline.
