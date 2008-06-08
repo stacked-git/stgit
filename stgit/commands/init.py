@@ -16,13 +16,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from optparse import OptionParser, make_option
-
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import stack, git
-
+from stgit.commands import common
+from stgit.lib import stack
 
 help = 'initialise the current branch for use with StGIT'
 usage = """%prog [options]
@@ -31,9 +26,8 @@ Initialise the current GIT branch to be used as an StGIT stack. Note
 that you must already be in a GIT repository and .git/HEAD must point
 to a valid file in refs/heads/."""
 
-directory = DirectoryHasRepository()
+directory = common.DirectoryHasRepositoryLib()
 options = []
-
 
 def func(parser, options, args):
     """Performs the repository initialisation
@@ -41,4 +35,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    crt_series.init()
+    stack.Stack.initialise(directory.repository)
