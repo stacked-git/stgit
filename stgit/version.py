@@ -1,4 +1,4 @@
-version = '0.14.2'
+version = '0.14.3'
 
 # minimum version requirements
 git_min_ver = '1.5.2'
