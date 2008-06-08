@@ -3,6 +3,10 @@
 import os.path
 from stgit import exception, utils
 from stgit.lib import git, stackupgrade
+from stgit.config import config
+
+class StackException(exception.StgException):
+    """Exception raised by L{stack} objects."""
 
 class Patch(object):
     """Represents an StGit patch. This class is mainly concerned with
@@ -105,6 +109,14 @@ class PatchOrder(object):
     all = property(lambda self: self.applied + self.unapplied + self.hidden)
     all_visible = property(lambda self: self.applied + self.unapplied)
 
+    @staticmethod
+    def create(stackdir):
+        """Create the PatchOrder specific files
+        """
+        utils.create_empty_file(os.path.join(stackdir, 'applied'))
+        utils.create_empty_file(os.path.join(stackdir, 'unapplied'))
+        utils.create_empty_file(os.path.join(stackdir, 'hidden'))
+
 class Patches(object):
     """Creates L{Patch} objects. Makes sure there is only one such object
     per patch."""
@@ -140,7 +152,7 @@ class Stack(git.Branch):
         self.__patchorder = PatchOrder(self)
         self.__patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
-            raise exception.StgException('%s: branch not initialized' % name)
+            raise StackException('%s: branch not initialized' % name)
     patchorder = property(lambda self: self.__patchorder)
     patches = property(lambda self: self.__patches)
     @property
@@ -157,6 +169,55 @@ class Stack(git.Branch):
         if not self.patchorder.applied:
             return True
         return self.head == self.patches.get(self.patchorder.applied[-1]).commit
+
+    def set_parents(self, remote, branch):
+        if remote:
+            self.set_parent_remote(remote)
+        if branch:
+            self.set_parent_branch(branch)
+
+    @classmethod
+    def initialise(cls, repository, name = None):
+        """Initialise a Git branch to handle patch series.
+
+        @param repository: The L{Repository} where the L{Stack} will be created
+        @param name: The name of the L{Stack}
+        """
+        if not name:
+            name = repository.current_branch_name
+        # make sure that the corresponding Git branch exists
+        git.Branch(repository, name)
+
+        dir = os.path.join(repository.directory, cls.__repo_subdir, name)
+        compat_dir = os.path.join(dir, 'patches')
+        if os.path.exists(dir):
+            raise StackException('%s: branch already initialized' % name)
+
+        # create the stack directory and files
+        utils.create_dirs(dir)
+        utils.create_dirs(compat_dir)
+        PatchOrder.create(dir)
+        config.set(stackupgrade.format_version_key(name),
+                   str(stackupgrade.FORMAT_VERSION))
+
+        return repository.get_stack(name)
+
+    @classmethod
+    def create(cls, repository, name,
+               create_at = None, parent_remote = None, parent_branch = None):
+        """Create and initialise a Git branch returning the L{Stack} object.
+
+        @param repository: The L{Repository} where the L{Stack} will be created
+        @param name: The name of the L{Stack}
+        @param create_at: The Git id used as the base for the newly created
+            Git branch
+        @param parent_remote: The name of the remote Git branch
+        @param parent_branch: The name of the parent Git branch
+        """
+        git.Branch.create(repository, name, create_at = create_at)
+        stack = cls.initialise(repository, name)
+        stack.set_parents(parent_remote, parent_branch)
+        return stack
 
 class Repository(git.Repository):
     """A git L{Repository<git.Repository>} with some added StGit-specific
