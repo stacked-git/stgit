@@ -2,6 +2,8 @@ PREFIX	?= $(HOME)
 DESTDIR	?= /
 PYTHON	?= python
 
+TEST_PATCHES ?= ..
+
 all:
 	$(PYTHON) setup.py build
 
@@ -13,6 +15,11 @@ doc:
 
 test:
 	cd t && $(MAKE) all
+
+test_patches:
+	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
+		stg goto $$patch && $(MAKE) test || break; \
+	done
 
 clean:
 	for dir in Documentation t; do \
@@ -26,4 +33,4 @@ clean:
 tags:
 	ctags -e -R stgit/*
 
-.PHONY: all install doc test clean
+.PHONY: all install doc test test_patches clean
