@@ -130,34 +130,22 @@ class Patches(object):
         self.__patches[name] = p
         return p
 
-class Stack(object):
+class Stack(git.Branch):
     """Represents an StGit stack (that is, a git branch with some extra
     metadata)."""
+    __repo_subdir = 'patches'
+
     def __init__(self, repository, name):
-        self.__repository = repository
-        self.__name = name
-        try:
-            self.head
-        except KeyError:
-            raise exception.StgException('%s: no such branch' % name)
+        git.Branch.__init__(self, repository, name)
         self.__patchorder = PatchOrder(self)
         self.__patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
             raise exception.StgException('%s: branch not initialized' % name)
-    name = property(lambda self: self.__name)
-    repository = property(lambda self: self.__repository)
     patchorder = property(lambda self: self.__patchorder)
     patches = property(lambda self: self.__patches)
     @property
     def directory(self):
-        return os.path.join(self.__repository.directory, 'patches', self.__name)
-    def __ref(self):
-        return 'refs/heads/%s' % self.__name
-    @property
-    def head(self):
-        return self.__repository.refs.get(self.__ref())
-    def set_head(self, commit, msg):
-        self.__repository.refs.set(self.__ref(), commit, msg)
+        return os.path.join(self.repository.directory, self.__repo_subdir, self.name)
     @property
     def base(self):
         if self.patchorder.applied:
@@ -177,14 +165,11 @@ class Repository(git.Repository):
         git.Repository.__init__(self, *args, **kwargs)
         self.__stacks = {} # name -> Stack
     @property
-    def current_branch(self):
-        return utils.strip_leading('refs/heads/', self.head_ref)
-    @property
     def current_stack(self):
         return self.get_stack()
     def get_stack(self, name = None):
         if not name:
-            name = self.current_branch
+            name = self.current_branch_name
         if not name in self.__stacks:
             self.__stacks[name] = Stack(self, name)
         return self.__stacks[name]

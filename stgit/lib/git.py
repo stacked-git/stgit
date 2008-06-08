@@ -28,6 +28,9 @@ class RepositoryException(exception.StgException):
     """Base class for all exceptions due to failed L{Repository}
     operations."""
 
+class BranchException(exception.StgException):
+    """Exception raised by failed L{Branch} operations."""
+
 class DateException(exception.StgException):
     """Exception raised when a date+time string could not be parsed."""
     def __init__(self, string, type):
@@ -379,6 +382,10 @@ class Repository(RunWithEnv):
         except run.RunException:
             raise RepositoryException('Cannot find git repository')
     @property
+    def current_branch_name(self):
+        """Return the name of the current branch."""
+        return utils.strip_leading('refs/heads/', self.head_ref)
+    @property
     def default_index(self):
         """An L{Index} object representing the default index file for the
         repository."""
@@ -619,3 +626,50 @@ class IndexAndWorktree(RunWithEnvCwd):
     def update_index(self, files):
         self.run(['git', 'update-index', '--remove', '-z', '--stdin']
                  ).input_nulterm(files).discard_output()
+
+class Branch(object):
+    """Represents a Git branch."""
+    def __init__(self, repository, name):
+        self.__repository = repository
+        self.__name = name
+        try:
+            self.head
+        except KeyError:
+            raise BranchException('%s: no such branch' % name)
+
+    name = property(lambda self: self.__name)
+    repository = property(lambda self: self.__repository)
+
+    def __ref(self):
+        return 'refs/heads/%s' % self.__name
+    @property
+    def head(self):
+        return self.__repository.refs.get(self.__ref())
+    def set_head(self, commit, msg):
+        self.__repository.refs.set(self.__ref(), commit, msg)
+
+    def set_parent_remote(self, name):
+        value = config.set('branch.%s.remote' % self.__name, name)
+    def set_parent_branch(self, name):
+        if config.get('branch.%s.remote' % self.__name):
+            # Never set merge if remote is not set to avoid
+            # possibly-erroneous lookups into 'origin'
+            config.set('branch.%s.merge' % self.__name, name)
+
+    @classmethod
+    def create(cls, repository, name, create_at = None):
+        """Create a new Git branch and return the corresponding
+        L{Branch} object."""
+        try:
+            branch = cls(repository, name)
+        except BranchException:
+            branch = None
+        if branch:
+            raise BranchException('%s: branch already exists' % name)
+
+        cmd = ['git', 'branch']
+        if create_at:
+            cmd.append(create_at.sha1)
+        repository.run(['git', 'branch', create_at.sha1]).discard_output()
+
+        return cls(repository, name)
