@@ -97,7 +97,7 @@ def func(parser, options, args):
 
     num = len(patches)
     if num == 0:
-        raise CmdException, 'No patches applied'
+        raise common.CmdException, 'No patches applied'
 
     zpadding = len(str(num))
     if zpadding < 2:
@@ -158,10 +158,10 @@ def func(parser, options, args):
         try:
             descr = tmpl % tmpl_dict
         except KeyError, err:
-            raise CmdException, 'Unknown patch template variable: %s' \
+            raise common.CmdException, 'Unknown patch template variable: %s' \
                   % err
         except TypeError:
-            raise CmdException, 'Only "%(name)s" variables are ' \
+            raise common.CmdException, 'Only "%(name)s" variables are ' \
                   'supported in the patch template'
 
         if options.stdout:
