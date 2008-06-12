@@ -20,7 +20,7 @@ class Immutable(object):
     creating a whole new commit object that's exactly like the old one
     except for the commit message.)
 
-    The L{Immutable} class doesn't acytually enforce immutability --
+    The L{Immutable} class doesn't actually enforce immutability --
     that is up to the individual immutable subclasses. It just serves
     as documentation."""
 
