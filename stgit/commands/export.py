@@ -91,7 +91,7 @@ def func(parser, options, args):
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
     if len(args) != 0:
-        patches = parse_patches(args, applied + unapplied, len(applied))
+        patches = common.parse_patches(args, applied + unapplied, len(applied))
     else:
         patches = applied
 
