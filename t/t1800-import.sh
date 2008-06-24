@@ -80,4 +80,46 @@ test_expect_success \
     stg delete ..
     '
 
+test_expect_success \
+    'Apply a bzip2 patch created with "git diff"' \
+    '
+    bzip2 -c ../t1800-import/git-diff >../t1800-import/bzip2-git-diff &&
+    stg import ../t1800-import/bzip2-git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    rm ../t1800-import/bzip2-git-diff &&
+    stg delete .. 
+    '
+test_expect_success \
+    'Apply a bzip2 patch with a .bz2 suffix' \
+    '
+    bzip2 -c ../t1800-import/git-diff >../t1800-import/git-diff.bz2 &&
+    stg import ../t1800-import/git-diff.bz2 &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    rm ../t1800-import/git-diff.bz2 &&
+    stg delete .. 
+    '
+
+test_expect_success \
+    'Apply a gzip patch created with GNU diff' \
+    '
+    gzip -c ../t1800-import/gnu-diff >../t1800-import/gzip-gnu-diff &&
+    stg import ../t1800-import/gzip-gnu-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    rm ../t1800-import/gzip-gnu-diff &&
+    stg delete ..
+    '
+test_expect_success \
+    'Apply a gzip patch with a .gz suffix' \
+    '
+    gzip -c ../t1800-import/gnu-diff >../t1800-import/gnu-diff.gz &&
+    stg import ../t1800-import/gnu-diff.gz &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    rm ../t1800-import/gnu-diff.gz &&
+    stg delete ..
+    '
+
 test_done

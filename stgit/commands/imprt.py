@@ -175,13 +175,41 @@ def __create_patch(filename, message, author_name, author_email,
                                  backup = False)
         out.done()
 
+def __mkpatchname(name, suffix):
+    if name.lower().endswith(suffix.lower()):
+        return name[:-len(suffix)]
+    return name
+
+def __get_handle_and_name(filename):
+    """Return a file object and a patch name derived from filename
+    """
+    # see if it's a gzip'ed or bzip2'ed patch
+    import bz2, gzip
+    for copen, ext in [(gzip.open, '.gz'), (bz2.BZ2File, '.bz2')]:
+        try:
+            f = copen(filename)
+            f.read(1)
+            f.seek(0)
+            return (f, __mkpatchname(filename, ext))
+        except IOError, e:
+            pass
+
+    # plain old file...
+    return (open(filename), filename)
+
 def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
     """
+    pname = None
     if filename:
-        f = file(filename)
+        (f, pname) = __get_handle_and_name(filename)
     else:
         f = sys.stdin
+
+    if patch:
+        pname = patch
+    elif not pname:
+        pname = filename
 
     if options.mail:
         try:
@@ -196,11 +224,6 @@ def __import_file(filename, options, patch = None):
 
     if filename:
         f.close()
-
-    if patch:
-        pname = patch
-    else:
-        pname = filename
 
     __create_patch(pname, message, author_name, author_email,
                    author_date, diff, options)
