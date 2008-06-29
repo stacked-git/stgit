@@ -20,7 +20,7 @@ test_expect_success 'sink without applied patches' '
     ! stg sink
 '
 
-test_expect_failure 'sink a specific patch without applied patches' '
+test_expect_success 'sink a specific patch without applied patches' '
     stg sink y &&
     test $(echo $(stg applied)) = "y"
 '

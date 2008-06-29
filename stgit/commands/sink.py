@@ -58,9 +58,13 @@ def func(parser, options, args):
     if len(args) > 0:
         patches = parse_patches(args, all)
     else:
-        patches = [ crt_series.get_current() ]
+        current = crt_series.get_current()
+        if not current:
+            raise CmdException('No patch applied')
+        patches = [current]
 
-    crt_series.pop_patch(options.to or oldapplied[0])
+    if oldapplied:
+        crt_series.pop_patch(options.to or oldapplied[0])
     push_patches(crt_series, patches)
 
     if not options.nopush:
