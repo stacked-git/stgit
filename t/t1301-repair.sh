@@ -5,7 +5,7 @@ test_description='Test the repair command.'
 
 test_expect_success \
     'Repair in a non-initialized repository' \
-    '! stg repair'
+    'command_error stg repair'
 
 test_expect_success \
     'Initialize the StGIT repository' \

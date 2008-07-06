@@ -17,7 +17,7 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'sink without applied patches' '
-    ! stg sink
+    command_error stg sink
 '
 
 test_expect_success 'sink a specific patch without applied patches' '

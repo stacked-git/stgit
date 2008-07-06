@@ -13,7 +13,7 @@ Tests some parts of the stg rename command.'
 stg init
 
 test_expect_success 'Rename in empty' '
-   ! stg rename foo
+   command_error stg rename foo
 '
 
 test_expect_success 'Rename single top-most' '
@@ -23,7 +23,7 @@ test_expect_success 'Rename single top-most' '
 # bar
 
 test_expect_success 'Rename non-existing' '
-   ! stg rename neithersuchpatch norsuchpatch
+   command_error stg rename neithersuchpatch norsuchpatch
 '
 
 test_expect_success 'Rename with two arguments' '
@@ -33,11 +33,11 @@ test_expect_success 'Rename with two arguments' '
 # foo,baz
 
 test_expect_success 'Rename to existing name' '
-   ! stg rename foo baz
+   command_error stg rename foo baz
 '
 
 test_expect_success 'Rename to same name' '
-   ! stg rename foo foo
+   command_error stg rename foo foo
 '
 
 test_expect_success 'Rename top-most when others exist' '

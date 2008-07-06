@@ -31,7 +31,7 @@ for ver in 0.12 0.8; do
 
     test_expect_success \
         "v$ver: Make sure the base ref is no longer there" '
-        ! git show-ref --verify --quiet refs/bases/master
+        must_fail git show-ref --verify --quiet refs/bases/master
     '
 
     cd ..

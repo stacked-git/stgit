@@ -285,6 +285,30 @@ test_expect_code () {
 	echo >&3 ""
 }
 
+# When running an StGit command that should exit with an error, use
+# these instead of testing for any non-zero exit code with !.
+exit_code () {
+	expected=$1
+	shift
+	"$@"
+	test $? -eq $expected
+}
+general_error () { exit_code 1 "$@" ; }
+command_error () { exit_code 2 "$@" ; }
+conflict () { exit_code 3 "$@" ; }
+
+# Old-infrastructure commands don't exit with the proper value on
+# conflicts. But we don't want half the tests to fail because of that,
+# so use this instead of "conflict" for them.
+conflict_old () { command_error "$@" ; }
+
+# Same thing, but for other commands that StGit where we just want to
+# make sure that they fail instead of crashing.
+must_fail () {
+        "$@"
+        test $? -gt 0 -a $? -le 129
+}
+
 # test_cmp is a helper function to compare actual and expected output.
 # You can use it like:
 #

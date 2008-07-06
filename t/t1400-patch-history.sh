@@ -82,7 +82,7 @@ test_expect_success \
 	echo bar > test && stg refresh &&
 	stg pop &&
 	echo foo > test && stg refresh &&
-	! stg push &&
+	conflict_old stg push &&
 	stg log --full | grep -q -e "^push(c) "
 	'
 

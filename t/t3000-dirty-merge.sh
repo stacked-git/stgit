@@ -26,7 +26,7 @@ test_expect_success 'Push with dirty worktree' '
     echo 4 > a &&
     [ "$(echo $(stg applied))" = "p1" ] &&
     [ "$(echo $(stg unapplied))" = "p2" ] &&
-    ! stg goto p2 &&
+    conflict stg goto p2 &&
     [ "$(echo $(stg applied))" = "p1" ] &&
     [ "$(echo $(stg unapplied))" = "p2" ] &&
     [ "$(echo $(cat a))" = "4" ]

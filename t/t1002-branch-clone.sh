@@ -21,7 +21,7 @@ test_expect_success \
 test_expect_success \
     'Try to create a patch in a GIT branch' \
     '
-    ! stg new p0 -m "p0"
+    command_error stg new p0 -m "p0"
     '
 
 test_expect_success \

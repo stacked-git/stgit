@@ -163,9 +163,9 @@ library for your script to use.
    yields success, test is considered a failure.
 
    This should _not_ be used for tests that succeed when their
-   commands fail -- use test_expect_success and shell negation (!) for
-   that. test_expect_failure is for cases when a test is known to be
-   broken.
+   commands fail -- use test_expect_success and one of general_error,
+   command_error, and conflict for that. test_expect_failure is for
+   cases when a test is known to be broken.
 
  - test_debug <script>
 

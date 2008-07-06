@@ -47,7 +47,7 @@ test_expect_success 'Conflicting push from subdir' '
     [ "$(echo $(cat x.txt))" = "x0" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0" ] &&
     cd foo &&
-    ! stg push p2 &&
+    conflict_old stg push p2 &&
     cd .. &&
     [ "$(echo $(stg status --conflict))" = "foo/y.txt x.txt" ]
 '
@@ -62,7 +62,7 @@ test_expect_success 'Conflicting add/unknown file in subdir' '
     stg pop &&
     mkdir -p d &&
     echo bar > d/test &&
-    ! stg push foo &&
+    command_error stg push foo &&
     [ $(stg top) != "foo" ]
 '
 

@@ -20,7 +20,7 @@ test_expect_success \
     'Try to delete a non-existing patch' \
     '
     [ $(stg applied | wc -l) -eq 1 ] &&
-    ! stg delete bar &&
+    command_error stg delete bar &&
     [ $(stg applied | wc -l) -eq 1 ]
     '
 
@@ -29,7 +29,7 @@ test_expect_success \
     '
     echo dirty >> foo.txt &&
     [ $(stg applied | wc -l) -eq 1 ] &&
-    ! stg delete foo &&
+    command_error stg delete foo &&
     [ $(stg applied | wc -l) -eq 1 ] &&
     git reset --hard
     '

@@ -39,9 +39,9 @@ test_expect_success 'Try new form of id with slashy branch' \
    stg id foo@x/y/z//top'
 
 test_expect_success 'Try old id with slashy branch' '
-   ! stg id foo/ &&
-   ! stg id foo/top &&
-   ! stg id foo@x/y/z/top
+   command_error stg id foo/ &&
+   command_error stg id foo/top &&
+   command_error stg id foo@x/y/z/top
    '
 
 test_expect_success 'Create patch in slashy branch' \
@@ -51,11 +51,11 @@ test_expect_success 'Create patch in slashy branch' \
 
 test_expect_success 'Rename branches' \
   'stg branch --rename master goo/gaa &&
-   ! git show-ref --verify --quiet refs/heads/master &&
+   must_fail git show-ref --verify --quiet refs/heads/master &&
    stg branch --rename goo/gaa x1/x2/x3/x4 &&
-   ! git show-ref --verify --quiet refs/heads/goo/gaa &&
+   must_fail git show-ref --verify --quiet refs/heads/goo/gaa &&
    stg branch --rename x1/x2/x3/x4 servant &&
-   ! git show-ref --verify --quiet refs/heads/x1/x2/x3/x4
+   must_fail git show-ref --verify --quiet refs/heads/x1/x2/x3/x4
 '
 
 test_done

@@ -32,7 +32,7 @@ test_expect_success 'Create a conflict' '
     stg new p2 -m p2
     echo quux > foo.txt &&
     stg refresh &&
-    ! stg push
+    conflict_old stg push
 '
 
 test_expect_success 'Make sure conflicting patches are preserved' '

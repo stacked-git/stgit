@@ -34,7 +34,7 @@ test_expect_success \
 test_expect_success \
 	'Attempt rebase to non-existing commit' \
 	'
-	! stg rebase not-a-ref
+	command_error stg rebase not-a-ref
 	'
 
 test_expect_success \

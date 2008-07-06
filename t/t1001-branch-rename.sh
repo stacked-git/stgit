@@ -19,7 +19,7 @@ test_expect_success \
 
 test_expect_success \
     'Rename the current stgit branch' \
-    '! stg branch -r foo bar
+    'command_error stg branch -r foo bar
 '
 
 test_expect_success \

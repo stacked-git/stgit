@@ -43,7 +43,7 @@ test_expect_success \
     'Rewind/rewrite upstream commit and pull it from clone, without --merged' \
     '
     (cd upstream && echo b >> file2 && stg refresh) &&
-    (cd clone && ! stg pull)
+    (cd clone && conflict_old stg pull)
     '
 
 test_expect_success \

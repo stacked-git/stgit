@@ -38,7 +38,7 @@ test_expect_success \
 test_expect_success \
 	'Push the first patch with conflict' \
 	'
-	! stg push foo
+	conflict_old stg push foo
 	'
 
 test_expect_success \
@@ -56,7 +56,7 @@ test_expect_success \
 test_expect_success \
 	'Check that pop will fail while there are unmerged conflicts' \
 	'
-	! stg pop
+	command_error stg pop
 	'
 
 test_expect_success \

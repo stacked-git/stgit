@@ -37,7 +37,7 @@ test_expect_success \
     '
     [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg unapplied))" = "p5 p8 p9" ] &&
-    ! stg delete p7 p8 p2 p0 &&
+    command_error stg delete p7 p8 p2 p0 &&
     [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg unapplied))" = "p5 p8 p9" ]
     '

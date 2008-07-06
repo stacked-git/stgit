@@ -26,7 +26,7 @@ test_expect_success \
 
 test_expect_success \
     'Try to create an stgit branch with a spurious patches/ entry' '
-    ! stg branch -c foo1
+    command_error stg branch -c foo1
 '
 
 test_expect_success \
@@ -43,7 +43,7 @@ test_expect_success \
 
 test_expect_success \
     'Try to create an stgit branch with an existing git branch by that name' '
-    ! stg branch -c foo2
+    command_error stg branch -c foo2
 '
 
 test_expect_success \
@@ -58,7 +58,7 @@ test_expect_success \
 test_expect_success \
     'Create an invalid refs/heads/ entry' '
     touch .git/refs/heads/foo3 &&
-    ! stg branch -c foo3
+    command_error stg branch -c foo3
 '
 
 test_expect_failure \
@@ -87,7 +87,7 @@ test_expect_success \
 
 test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
-    ! stg branch --create foo4 master^
+    command_error stg branch --create foo4 master^
 '
 
 test_expect_success \
