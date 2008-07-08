@@ -171,4 +171,20 @@ test_expect_success 'Status of disappeared newborn' '
     diff -u expected.txt output.txt
 '
 
+cat > expected.txt <<EOF
+A fay
+D fie
+EOF
+test_expect_success 'Status after renaming a file' '
+    git rm foo/bar &&
+    git mv fie fay &&
+    stg status > output.txt &&
+    diff -u expected.txt output.txt
+'
+
+test_expect_failure 'Status after renaming a file (with rename detection)' '
+    stg status --diff-opts=-M > output.txt &&
+    diff -u expected.txt output.txt
+'
+
 test_done
