@@ -186,4 +186,10 @@ test_expect_success 'Status after renaming a file' '
     test_cmp expected.txt output.txt
 '
 
+test_expect_success 'Status after renaming a file (with rename detection)' '
+    git config stgit.diff-opts -M &&
+    stg status > output.txt &&
+    test_cmp expected.txt output.txt
+'
+
 test_done
