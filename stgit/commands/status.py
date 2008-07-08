@@ -61,18 +61,15 @@ options = [make_option('-m', '--modified',
                        action = 'store_true'),
            make_option('--reset',
                        help = 'reset the current tree changes',
-                       action = 'store_true')
-           ] + make_diff_opts_option()
+                       action = 'store_true')]
 
 
-def status(files, modified, new, deleted, conflict, unknown, noexclude,
-           diff_flags):
+def status(files, modified, new, deleted, conflict, unknown, noexclude):
     """Show the tree status
     """
     cache_files = git.tree_status(files,
                                   unknown = (not files),
-                                  noexclude = noexclude,
-                                  diff_flags = diff_flags)
+                                  noexclude = noexclude)
     filtered = (modified or new or deleted or conflict or unknown)
 
     if filtered:
@@ -115,5 +112,4 @@ def func(parser, options, args):
             git.reset()
     else:
         status(args, options.modified, options.new, options.deleted,
-               options.conflict, options.unknown, options.noexclude,
-               options.diff_flags)
+               options.conflict, options.unknown, options.noexclude)
