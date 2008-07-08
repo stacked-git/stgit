@@ -192,6 +192,9 @@ def ls_files(files, tree = 'HEAD', full_name = True):
             'Some of the given paths are either missing or not known to GIT'
 
 def parse_git_ls(output):
+    """Parse the output of git diff-index, diff-files, etc. Doesn't handle
+    rename/copy output, so don't feed it output generated with the -M
+    or -C flags."""
     t = None
     for line in output.split('\0'):
         if not line:
@@ -205,7 +208,7 @@ def parse_git_ls(output):
             t = None
 
 def tree_status(files = None, tree_id = 'HEAD', unknown = False,
-                  noexclude = True, verbose = False, diff_flags = []):
+                  noexclude = True, verbose = False):
     """Get the status of all changed files, or of a selected set of
     files. Returns a list of pairs - (status, filename).
 
@@ -252,7 +255,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     # specified when calling the function (i.e. report all files) or
     # files were specified but already found in the previous step
     if not files or files_left:
-        args = diff_flags + [tree_id]
+        args = [tree_id]
         if files_left:
             args += ['--'] + files_left
         for t, fn in parse_git_ls(GRun('diff-index', '-z', *args).raw_output()):
@@ -268,7 +271,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     # function (i.e. report all files) or files were specified but
     # already found in the previous step
     if not files or files_left:
-        args = list(diff_flags)
+        args = []
         if files_left:
             args += ['--'] + files_left
         for t, fn in parse_git_ls(GRun('diff-files', '-z', *args).raw_output()):

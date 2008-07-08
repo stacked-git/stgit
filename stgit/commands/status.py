@@ -59,22 +59,18 @@ options = [make_option('-m', '--modified',
            make_option('-x', '--noexclude',
                        help = 'do not exclude any files from listing',
                        action = 'store_true'),
-           make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
            make_option('--reset',
                        help = 'reset the current tree changes',
                        action = 'store_true')]
 
 
 def status(files = None, modified = False, new = False, deleted = False,
-           conflict = False, unknown = False, noexclude = False,
-           diff_flags = []):
+           conflict = False, unknown = False, noexclude = False):
     """Show the tree status
     """
     cache_files = git.tree_status(files,
                                   unknown = (not files),
-                                  noexclude = noexclude,
-                                  diff_flags = diff_flags)
+                                  noexclude = noexclude)
     filtered = (modified or new or deleted or conflict or unknown)
 
     if filtered:
@@ -116,11 +112,5 @@ def func(parser, options, args):
             resolved_all()
             git.reset()
     else:
-        if options.diff_opts:
-            diff_flags = options.diff_opts.split()
-        else:
-            diff_flags = []
-
         status(args, options.modified, options.new, options.deleted,
-               options.conflict, options.unknown, options.noexclude,
-               diff_flags = diff_flags)
+               options.conflict, options.unknown, options.noexclude)
