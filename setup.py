@@ -27,7 +27,7 @@ def __check_min_version(min_ver, ver):
 def __check_python_version():
     """Check the minimum Python version
     """
-    pyver = '.'.join(str(n) for n in sys.version_info)
+    pyver = '.'.join(map(lambda x: str(x), sys.version_info))
     if not __check_min_version(python_min_ver, pyver):
         print >> sys.stderr, 'Python version %s or newer required. Found %s' \
               % (python_min_ver, pyver)
