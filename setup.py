@@ -4,7 +4,6 @@ import sys, glob, os
 from distutils.core import setup
 
 from stgit.version import version, git_min_ver, python_min_ver
-from stgit.run import Run
 
 def __version_to_list(version):
     """Convert a version string to a list of numbers or strings
@@ -37,6 +36,7 @@ def __check_python_version():
 def __check_git_version():
     """Check the minimum GIT version
     """
+    from stgit.run import Run
     gitver = Run('git', '--version').output_one_line().split()[2]
     if not __check_min_version(git_min_ver, gitver):
         print >> sys.stderr, 'GIT version %s or newer required. Found %s' \
