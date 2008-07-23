@@ -1,6 +1,8 @@
 """The L{StackTransaction} class makes it possible to make complex
 updates to an StGit stack in a safe and convenient way."""
 
+import atexit
+
 from stgit import exception, utils
 from stgit.utils import any, all
 from stgit.out import *
@@ -84,6 +86,7 @@ class StackTransaction(object):
             self.__allow_conflicts = lambda trans: allow_conflicts
         else:
             self.__allow_conflicts = allow_conflicts
+        self.__temp_index = self.temp_index_tree = None
     stack = property(lambda self: self.__stack)
     patches = property(lambda self: self.__patches)
     def __set_applied(self, val):
@@ -97,6 +100,12 @@ class StackTransaction(object):
                 or self.patches[self.applied[0]].data.parent == val)
         self.__base = val
     base = property(lambda self: self.__base, __set_base)
+    @property
+    def temp_index(self):
+        if not self.__temp_index:
+            self.__temp_index = self.__stack.repository.temp_index()
+            atexit.register(self.__temp_index.delete)
+        return self.__temp_index
     def __checkout(self, tree, iw):
         if not self.__stack.head_top_equal():
             out.error(
@@ -239,7 +248,8 @@ class StackTransaction(object):
         base = oldparent.data.tree
         ours = cd.parent.data.tree
         theirs = cd.tree
-        tree = self.__stack.repository.simple_merge(base, ours, theirs)
+        tree, self.temp_index_tree = self.temp_index.merge(
+            base, ours, theirs, self.temp_index_tree)
         merge_conflict = False
         if not tree:
             if iw == None:

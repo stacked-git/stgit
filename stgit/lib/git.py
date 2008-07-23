@@ -459,31 +459,12 @@ class Repository(RunWithEnv):
     def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
     def simple_merge(self, base, ours, theirs):
-        """Given three L{Tree}s, tries to do an in-index merge with a
-        temporary index. Returns the result L{Tree}, or None if the
-        merge failed (due to conflicts)."""
-        assert isinstance(base, Tree)
-        assert isinstance(ours, Tree)
-        assert isinstance(theirs, Tree)
-
-        # Take care of the really trivial cases.
-        if base == ours:
-            return theirs
-        if base == theirs:
-            return ours
-        if ours == theirs:
-            return ours
-
         index = self.temp_index()
-        index.read_tree(ours)
         try:
-            try:
-                index.apply_treediff(base, theirs, quiet = True)
-                return index.write_tree()
-            except MergeException:
-                return None
+            result, index_tree = index.merge(base, ours, theirs)
         finally:
             index.delete()
+        return result
     def apply(self, tree, patch_text, quiet):
         """Given a L{Tree} and a patch, will either return the new L{Tree}
         that results when the patch is applied, or None if the patch
@@ -566,6 +547,46 @@ class Index(RunWithEnv):
         # to use --binary.
         self.apply(self.__repository.diff_tree(tree1, tree2, ['--full-index']),
                    quiet)
+    def merge(self, base, ours, theirs, current = None):
+        """Use the index (and only the index) to do a 3-way merge of the
+        L{Tree}s C{base}, C{ours} and C{theirs}. The merge will either
+        succeed (in which case the first half of the return value is
+        the resulting tree) or fail cleanly (in which case the first
+        half of the return value is C{None}).
+
+        If C{current} is given (and not C{None}), it is assumed to be
+        the L{Tree} currently stored in the index; this information is
+        used to avoid having to read the right tree (either of C{ours}
+        and C{theirs}) into the index if it's already there. The
+        second half of the return value is the tree now stored in the
+        index, or C{None} if unknown. If the merge succeeded, this is
+        often the merge result."""
+        assert isinstance(base, Tree)
+        assert isinstance(ours, Tree)
+        assert isinstance(theirs, Tree)
+        assert current == None or isinstance(current, Tree)
+
+        # Take care of the really trivial cases.
+        if base == ours:
+            return (theirs, current)
+        if base == theirs:
+            return (ours, current)
+        if ours == theirs:
+            return (ours, current)
+
+        if current == theirs:
+            # Swap the trees. It doesn't matter since merging is
+            # symmetric, and will allow us to avoid the read_tree()
+            # call below.
+            ours, theirs = theirs, ours
+        if current != ours:
+            self.read_tree(ours)
+        try:
+            self.apply_treediff(base, theirs, quiet = True)
+            result = self.write_tree()
+            return (result, result)
+        except MergeException:
+            return (None, ours)
     def delete(self):
         if os.path.isfile(self.__filename):
             os.remove(self.__filename)
