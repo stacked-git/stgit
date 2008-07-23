@@ -96,7 +96,7 @@ def update_patch_description(repository, cd, text):
                                  .set_date(gitlib.Date.maybe(authdate))))
     failed_diff = None
     if diff:
-        tree = repository.apply(cd.parent.data.tree, diff)
+        tree = repository.apply(cd.parent.data.tree, diff, quiet = False)
         if tree == None:
             failed_diff = diff
         else:

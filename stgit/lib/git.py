@@ -483,7 +483,7 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
-    def apply(self, tree, patch_text):
+    def apply(self, tree, patch_text, quiet):
         """Given a L{Tree} and a patch, will either return the new L{Tree}
         that results when the patch is applied, or None if the patch
         couldn't be applied."""
@@ -494,7 +494,7 @@ class Repository(RunWithEnv):
         try:
             index.read_tree(tree)
             try:
-                index.apply(patch_text)
+                index.apply(patch_text, quiet)
                 return index.write_tree()
             except MergeException:
                 return None
@@ -552,11 +552,13 @@ class Index(RunWithEnv):
         """In-index merge, no worktree involved."""
         self.run(['git', 'read-tree', '-m', '-i', '--aggressive',
                   base.sha1, ours.sha1, theirs.sha1]).no_output()
-    def apply(self, patch_text):
+    def apply(self, patch_text, quiet):
         """In-index patch application, no worktree involved."""
         try:
-            self.run(['git', 'apply', '--cached']
-                     ).raw_input(patch_text).no_output()
+            r = self.run(['git', 'apply', '--cached']).raw_input(patch_text)
+            if quiet:
+                r = r.discard_stderr()
+            r.no_output()
         except run.RunException:
             raise MergeException('Patch does not apply cleanly')
     def delete(self):
