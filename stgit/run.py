@@ -27,12 +27,22 @@ class RunException(StgException):
     subprocess."""
     pass
 
-_all_log_modes = ['debug', 'profile']
-_log_mode = os.environ.get('STGIT_SUBPROCESS_LOG', '')
-if _log_mode and not _log_mode in _all_log_modes:
-    out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
-              % _log_mode),
-             'Valid values are: %s' % ', '.join(_all_log_modes))
+def get_log_mode(spec):
+    if not ':' in spec:
+        spec += ':'
+    (log_mode, outfile) = spec.split(':', 1)
+    all_log_modes = ['debug', 'profile']
+    if log_mode and not log_mode in all_log_modes:
+        out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
+                  % log_mode),
+                 'Valid values are: %s' % ', '.join(all_log_modes))
+    if outfile:
+        f = MessagePrinter(open(outfile, 'a'))
+    else:
+        f = out
+    return (log_mode, f)
+
+(_log_mode, _logfile) = get_log_mode(os.environ.get('STGIT_SUBPROCESS_LOG', ''))
 
 class Run:
     exc = RunException
@@ -47,22 +57,23 @@ class Run:
         self.__discard_stderr = False
     def __log_start(self):
         if _log_mode == 'debug':
-            out.start('Running subprocess %s' % self.__cmd)
+            _logfile.start('Running subprocess %s' % self.__cmd)
             if self.__cwd != None:
-                out.info('cwd: %s' % self.__cwd)
+                _logfile.info('cwd: %s' % self.__cwd)
             if self.__env != None:
                 for k in sorted(self.__env.iterkeys()):
                     if k not in os.environ or os.environ[k] != self.__env[k]:
-                        out.info('%s: %s' % (k, self.__env[k]))
+                        _logfile.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':
-            out.start('Running subprocess %s' % self.__cmd[0])
+            _logfile.start('Running subprocess %s' % self.__cmd[0])
             self.__starttime = datetime.datetime.now()
     def __log_end(self, retcode):
         if _log_mode == 'debug':
-            out.done('return code: %d' % retcode)
+            _logfile.done('return code: %d' % retcode)
         elif _log_mode == 'profile':
             duration = datetime.datetime.now() - self.__starttime
-            out.done('%1.3f s' % (duration.microseconds/1e6 + duration.seconds))
+            _logfile.done('%1.3f s' % (duration.microseconds/1e6
+                                       + duration.seconds))
     def __check_exitcode(self):
         if self.__good_retvals == None:
             return

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, textwrap
 
 class MessagePrinter(object):
-    def __init__(self):
+    def __init__(self, file = None):
         class Output(object):
             def __init__(self, write, flush):
                 self.write = write
@@ -68,9 +68,12 @@ class MessagePrinter(object):
                 self.new_line()
                 self.write(string)
                 self.at_start_of_line = string.endswith('\n')
-        self.__stderr = Output(sys.stderr.write, sys.stderr.flush)
-        self.__stdout = Output(sys.stdout.write, sys.stdout.flush)
-        if sys.stdout.isatty():
+        if file:
+            self.__stdout = self.__stderr = Output(file.write, file.flush)
+        else:
+            self.__stdout = Output(sys.stdout.write, sys.stdout.flush)
+            self.__stderr = Output(sys.stdout.write, sys.stdout.flush)
+        if file or sys.stdout.isatty():
             self.__out = self.__stdout
             self.__err = self.__stdout
         else:
