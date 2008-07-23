@@ -1,4 +1,4 @@
-import datetime, subprocess, sys
+import datetime, os, os.path, subprocess, sys
 
 def duration(t1, t2):
     d = t2 - t1
@@ -8,8 +8,16 @@ class Run(object):
     def __init__(self):
         self.__cwd = None
         self.__log = []
+    def __logfile(self, cmd):
+        fn = os.path.join(os.getcwd(), '%04d.log' % len(self.__log))
+        f = open(fn, 'w')
+        f.write(' '.join(cmd) + '\n' + '-'*70 + '\n\n')
+        f.close()
+        return fn
     def __call__(self, *cmd, **args):
-        kwargs = { 'cwd': self.__cwd }
+        env = dict(os.environ)
+        env['STGIT_SUBPROCESS_LOG'] = 'profile:' + self.__logfile(cmd)
+        kwargs = { 'cwd': self.__cwd, 'env': env }
         if args.get('capture_stdout', False):
             kwargs['stdout'] = subprocess.PIPE
         start = datetime.datetime.now()
