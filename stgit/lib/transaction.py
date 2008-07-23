@@ -79,6 +79,7 @@ class StackTransaction(object):
         self.__patches = _TransPatchMap(stack)
         self.__applied = list(self.__stack.patchorder.applied)
         self.__unapplied = list(self.__stack.patchorder.unapplied)
+        self.__hidden = list(self.__stack.patchorder.hidden)
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
@@ -95,6 +96,9 @@ class StackTransaction(object):
     def __set_unapplied(self, val):
         self.__unapplied = list(val)
     unapplied = property(lambda self: self.__unapplied, __set_unapplied)
+    def __set_hidden(self, val):
+        self.__hidden = list(val)
+    hidden = property(lambda self: self.__hidden, __set_hidden)
     def __set_base(self, val):
         assert (not self.__applied
                 or self.patches[self.applied[0]].data.parent == val)
@@ -131,7 +135,7 @@ class StackTransaction(object):
         raise TransactionException(
             'Command aborted (all changes rolled back)')
     def __check_consistency(self):
-        remaining = set(self.__applied + self.__unapplied)
+        remaining = set(self.__applied + self.__unapplied + self.__hidden)
         for pn, commit in self.__patches.iteritems():
             if commit == None:
                 assert self.__stack.patches.exists(pn)
@@ -180,6 +184,7 @@ class StackTransaction(object):
         _print_current_patch(self.__stack.patchorder.applied, self.__applied)
         self.__stack.patchorder.applied = self.__applied
         self.__stack.patchorder.unapplied = self.__unapplied
+        self.__stack.patchorder.hidden = self.__hidden
 
         if self.__error:
             return utils.STGIT_CONFLICT
@@ -220,7 +225,7 @@ class StackTransaction(object):
         other patches that had to be popped to accomplish this. Always
         succeeds."""
         popped = []
-        all_patches = self.applied + self.unapplied
+        all_patches = self.applied + self.unapplied + self.hidden
         for i in xrange(len(self.applied)):
             if p(self.applied[i]):
                 popped = self.applied[i:]
@@ -228,6 +233,7 @@ class StackTransaction(object):
                 break
         popped = [pn for pn in popped if not p(pn)]
         self.unapplied = popped + [pn for pn in self.unapplied if not p(pn)]
+        self.hidden = [pn for pn in self.hidden if not p(pn)]
         self.__print_popped(popped)
         for pn in all_patches:
             if p(pn):
@@ -275,7 +281,11 @@ class StackTransaction(object):
             self.patches[pn] = self.__stack.repository.commit(cd)
         else:
             s = ' (unmodified)'
-        del self.unapplied[self.unapplied.index(pn)]
+        if pn in self.hidden:
+            x = self.hidden
+        else:
+            x = self.unapplied
+        del x[x.index(pn)]
         self.applied.append(pn)
         out.info('Pushed %s%s' % (pn, s))
         if merge_conflict:
