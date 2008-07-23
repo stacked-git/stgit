@@ -475,9 +475,10 @@ class Repository(RunWithEnv):
             return ours
 
         index = self.temp_index()
+        index.read_tree(ours)
         try:
-            index.merge(base, ours, theirs)
             try:
+                index.apply_treediff(base, theirs, quiet = True)
                 return index.write_tree()
             except MergeException:
                 return None
@@ -548,10 +549,6 @@ class Index(RunWithEnv):
             return False
         else:
             return True
-    def merge(self, base, ours, theirs):
-        """In-index merge, no worktree involved."""
-        self.run(['git', 'read-tree', '-m', '-i', '--aggressive',
-                  base.sha1, ours.sha1, theirs.sha1]).no_output()
     def apply(self, patch_text, quiet):
         """In-index patch application, no worktree involved."""
         try:
@@ -561,6 +558,14 @@ class Index(RunWithEnv):
             r.no_output()
         except run.RunException:
             raise MergeException('Patch does not apply cleanly')
+    def apply_treediff(self, tree1, tree2, quiet):
+        """Apply the diff from C{tree1} to C{tree2} to the index."""
+        # Passing --full-index here is necessary to support binary
+        # files. It is also sufficient, since the repository already
+        # contains all involved objects; in other words, we don't have
+        # to use --binary.
+        self.apply(self.__repository.diff_tree(tree1, tree2, ['--full-index']),
+                   quiet)
     def delete(self):
         if os.path.isfile(self.__filename):
             os.remove(self.__filename)
