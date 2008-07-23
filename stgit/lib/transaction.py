@@ -2,6 +2,7 @@
 updates to an StGit stack in a safe and convenient way."""
 
 import atexit
+import itertools as it
 
 from stgit import exception, utils
 from stgit.utils import any, all
@@ -294,3 +295,16 @@ class StackTransaction(object):
             self.__allow_conflicts = lambda trans: True
 
             self.__halt('Merge conflict')
+
+    def reorder_patches(self, applied, unapplied, hidden, iw = None):
+        """Push and pop patches to attain the given ordering."""
+        common = len(list(it.takewhile(lambda (a, b): a == b,
+                                       zip(self.applied, applied))))
+        to_pop = set(self.applied[common:])
+        self.pop_patches(lambda pn: pn in to_pop)
+        for pn in applied[common:]:
+            self.push_patch(pn, iw)
+        assert self.applied == applied
+        assert set(self.unapplied + self.hidden) == set(unapplied + hidden)
+        self.unapplied = unapplied
+        self.hidden = hidden
