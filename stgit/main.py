@@ -23,7 +23,7 @@ from optparse import OptionParser
 
 import stgit.commands
 from stgit.out import *
-from stgit import utils
+from stgit import run, utils
 
 #
 # The commands map
@@ -192,7 +192,7 @@ def print_help():
 #
 # The main function (command dispatcher)
 #
-def main():
+def _main():
     """The main function
     """
     global prog
@@ -293,3 +293,9 @@ def main():
         sys.exit(utils.STGIT_BUG_ERROR)
 
     sys.exit(ret or utils.STGIT_SUCCESS)
+
+def main():
+    try:
+        _main()
+    finally:
+        run.finish_logging()

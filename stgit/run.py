@@ -43,6 +43,24 @@ def get_log_mode(spec):
     return (log_mode, f)
 
 (_log_mode, _logfile) = get_log_mode(os.environ.get('STGIT_SUBPROCESS_LOG', ''))
+if _log_mode == 'profile':
+    _log_starttime = datetime.datetime.now()
+    _log_subproctime = 0.0
+
+def duration(t1, t2):
+    d = t2 - t1
+    return 86400*d.days + d.seconds + 1e-6*d.microseconds
+
+def finish_logging():
+    if _log_mode != 'profile':
+        return
+    ttime = duration(_log_starttime, datetime.datetime.now())
+    rtime = ttime - _log_subproctime
+    _logfile.info('Total time: %1.3f s' % ttime,
+                  'Time spent in subprocess calls: %1.3f s (%1.1f%%)'
+                  % (_log_subproctime, 100*_log_subproctime/ttime),
+                  'Remaining time: %1.3f s (%1.1f%%)'
+                  % (rtime, 100*rtime/ttime))
 
 class Run:
     exc = RunException
@@ -68,12 +86,16 @@ class Run:
             _logfile.start('Running subprocess %s' % self.__cmd)
             self.__starttime = datetime.datetime.now()
     def __log_end(self, retcode):
+        global _log_subproctime, _log_starttime
         if _log_mode == 'debug':
             _logfile.done('return code: %d' % retcode)
         elif _log_mode == 'profile':
-            duration = datetime.datetime.now() - self.__starttime
-            _logfile.done('%1.3f s' % (duration.microseconds/1e6
-                                       + duration.seconds))
+            n = datetime.datetime.now()
+            d = duration(self.__starttime, n)
+            _logfile.done('%1.3f s' % d)
+            _log_subproctime += d
+            _logfile.info('Time since program start: %1.3f s'
+                          % duration(_log_starttime, n))
     def __check_exitcode(self):
         if self.__good_retvals == None:
             return
