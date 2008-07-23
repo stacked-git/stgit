@@ -182,16 +182,142 @@ class Person(Immutable, Repr):
                 defaults = cls.user())
         return cls.__committer
 
-class Tree(Immutable, Repr):
-    """Represents a git tree object."""
-    def __init__(self, sha1):
+class GitObject(Immutable, Repr):
+    """Base class for all git objects. One git object is represented by at
+    most one C{GitObject}, which makes it possible to compare them
+    using normal Python object comparison; it also ensures we don't
+    waste more memory than necessary."""
+
+class BlobData(Immutable, Repr):
+    """Represents the data contents of a git blob object."""
+    def __init__(self, string):
+        self.__string = str(string)
+    str = property(lambda self: self.__string)
+    def commit(self, repository):
+        """Commit the blob.
+        @return: The committed blob
+        @rtype: L{Blob}"""
+        sha1 = repository.run(['git', 'hash-object', '-w', '--stdin']
+                              ).raw_input(self.str).output_one_line()
+        return repository.get_blob(sha1)
+
+class Blob(GitObject):
+    """Represents a git blob object. All the actual data contents of the
+    blob object is stored in the L{data} member, which is a
+    L{BlobData} object."""
+    typename = 'blob'
+    default_perm = '100644'
+    def __init__(self, repository, sha1):
+        self.__repository = repository
         self.__sha1 = sha1
     sha1 = property(lambda self: self.__sha1)
     def __str__(self):
-        return 'Tree<%s>' % self.sha1
+        return 'Blob<%s>' % self.sha1
+    @property
+    def data(self):
+        return BlobData(self.__repository.cat_object(self.sha1))
+
+class ImmutableDict(dict):
+    """A dictionary that cannot be modified once it's been created."""
+    def error(*args, **kwargs):
+        raise TypeError('Cannot modify immutable dict')
+    __delitem__ = error
+    __setitem__ = error
+    clear = error
+    pop = error
+    popitem = error
+    setdefault = error
+    update = error
+
+class TreeData(Immutable, Repr):
+    """Represents the data contents of a git tree object."""
+    @staticmethod
+    def __x(po):
+        if isinstance(po, GitObject):
+            perm, object = po.default_perm, po
+        else:
+            perm, object = po
+        return perm, object
+    def __init__(self, entries):
+        """Create a new L{TreeData} object from the given mapping from names
+        (strings) to either (I{permission}, I{object}) tuples or just
+        objects."""
+        self.__entries = ImmutableDict((name, self.__x(po))
+                                       for (name, po) in entries.iteritems())
+    entries = property(lambda self: self.__entries)
+    """Map from name to (I{permission}, I{object}) tuple."""
+    def set_entry(self, name, po):
+        """Create a new L{TreeData} object identical to this one, except that
+        it maps C{name} to C{po}.
+
+        @param name: Name of the changed mapping
+        @type name: C{str}
+        @param po: Value of the changed mapping
+        @type po: L{Blob} or L{Tree} or (C{str}, L{Blob} or L{Tree})
+        @return: The new L{TreeData} object
+        @rtype: L{TreeData}"""
+        e = dict(self.entries)
+        e[name] = self.__x(po)
+        return type(self)(e)
+    def del_entry(self, name):
+        """Create a new L{TreeData} object identical to this one, except that
+        it doesn't map C{name} to anything.
+
+        @param name: Name of the deleted mapping
+        @type name: C{str}
+        @return: The new L{TreeData} object
+        @rtype: L{TreeData}"""
+        e = dict(self.entries)
+        del e[name]
+        return type(self)(e)
+    def commit(self, repository):
+        """Commit the tree.
+        @return: The committed tree
+        @rtype: L{Tree}"""
+        listing = ''.join(
+            '%s %s %s\t%s\0' % (mode, obj.typename, obj.sha1, name)
+            for (name, (mode, obj)) in self.entries.iteritems())
+        sha1 = repository.run(['git', 'mktree', '-z']
+                              ).raw_input(listing).output_one_line()
+        return repository.get_tree(sha1)
+    @classmethod
+    def parse(cls, repository, s):
+        """Parse a raw git tree description.
+
+        @return: A new L{TreeData} object
+        @rtype: L{TreeData}"""
+        entries = {}
+        for line in s.split('\0')[:-1]:
+            m = re.match(r'^([0-7]{6}) ([a-z]+) ([0-9a-f]{40})\t(.*)$', line)
+            assert m
+            perm, type, sha1, name = m.groups()
+            entries[name] = (perm, repository.get_object(type, sha1))
+        return cls(entries)
+
+class Tree(GitObject):
+    """Represents a git tree object. All the actual data contents of the
+    tree object is stored in the L{data} member, which is a
+    L{TreeData} object."""
+    typename = 'tree'
+    default_perm = '040000'
+    def __init__(self, repository, sha1):
+        self.__sha1 = sha1
+        self.__repository = repository
+        self.__data = None
+    sha1 = property(lambda self: self.__sha1)
+    @property
+    def data(self):
+        if self.__data == None:
+            self.__data = TreeData.parse(
+                self.__repository,
+                self.__repository.run(['git', 'ls-tree', '-z', self.sha1]
+                                      ).raw_output())
+        return self.__data
+    def __str__(self):
+        return 'Tree<sha1: %s>' % self.sha1
 
 class CommitData(Immutable, Repr):
-    """Represents the actual data contents of a git commit object."""
+    """Represents the data contents of a git commit object."""
     def __init__(self, tree = NoValue, parents = NoValue, author = NoValue,
                  committer = NoValue, message = NoValue, defaults = NoValue):
         d = make_defaults(defaults)
@@ -238,8 +364,30 @@ class CommitData(Immutable, Repr):
         return ('CommitData<tree: %s, parents: %s, author: %s,'
                 ' committer: %s, message: "%s">'
                 ) % (tree, parents, self.author, self.committer, self.message)
+    def commit(self, repository):
+        """Commit the commit.
+        @return: The committed commit
+        @rtype: L{Commit}"""
+        c = ['git', 'commit-tree', self.tree.sha1]
+        for p in self.parents:
+            c.append('-p')
+            c.append(p.sha1)
+        env = {}
+        for p, v1 in ((self.author, 'AUTHOR'),
+                       (self.committer, 'COMMITTER')):
+            if p != None:
+                for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
+                                 ('date', 'DATE')):
+                    if getattr(p, attr) != None:
+                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
+        sha1 = repository.run(c, env = env).raw_input(self.message
+                                                      ).output_one_line()
+        return repository.get_commit(sha1)
     @classmethod
     def parse(cls, repository, s):
+        """Parse a raw git commit description.
+        @return: A new L{CommitData} object
+        @rtype: L{CommitData}"""
         cd = cls(parents = [])
         lines = list(s.splitlines(True))
         for i in xrange(len(lines)):
@@ -259,10 +407,11 @@ class CommitData(Immutable, Repr):
                 assert False
         assert False
 
-class Commit(Immutable, Repr):
+class Commit(GitObject):
     """Represents a git commit object. All the actual data contents of the
     commit object is stored in the L{data} member, which is a
     L{CommitData} object."""
+    typename = 'commit'
     def __init__(self, repository, sha1):
         self.__sha1 = sha1
         self.__repository = repository
@@ -367,7 +516,8 @@ class Repository(RunWithEnv):
     def __init__(self, directory):
         self.__git_dir = directory
         self.__refs = Refs(self)
-        self.__trees = ObjectCache(lambda sha1: Tree(sha1))
+        self.__blobs = ObjectCache(lambda sha1: Blob(self, sha1))
+        self.__trees = ObjectCache(lambda sha1: Tree(self, sha1))
         self.__commits = ObjectCache(lambda sha1: Commit(self, sha1))
         self.__default_index = None
         self.__default_worktree = None
@@ -429,26 +579,18 @@ class Repository(RunWithEnv):
                     ).output_one_line())
         except run.RunException:
             raise RepositoryException('%s: No such revision' % rev)
+    def get_blob(self, sha1):
+        return self.__blobs[sha1]
     def get_tree(self, sha1):
         return self.__trees[sha1]
     def get_commit(self, sha1):
         return self.__commits[sha1]
-    def commit(self, commitdata):
-        c = ['git', 'commit-tree', commitdata.tree.sha1]
-        for p in commitdata.parents:
-            c.append('-p')
-            c.append(p.sha1)
-        env = {}
-        for p, v1 in ((commitdata.author, 'AUTHOR'),
-                       (commitdata.committer, 'COMMITTER')):
-            if p != None:
-                for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
-                                 ('date', 'DATE')):
-                    if getattr(p, attr) != None:
-                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
-        sha1 = self.run(c, env = env).raw_input(commitdata.message
-                                                ).output_one_line()
-        return self.get_commit(sha1)
+    def get_object(self, type, sha1):
+        return { Blob.typename: self.get_blob,
+                 Tree.typename: self.get_tree,
+                 Commit.typename: self.get_commit }[type](sha1)
+    def commit(self, objectdata):
+        return objectdata.commit(self)
     @property
     def head_ref(self):
         try:
