@@ -104,9 +104,9 @@ def func(parser, options, args):
             next_commit = get_parent(next_commit)
     else:
         if options.exclusive:
-            out.start('Uncommitting to %s (exclusive)' % to_commit)
+            out.start('Uncommitting to %s (exclusive)' % to_commit.sha1)
         else:
-            out.start('Uncommitting to %s' % to_commit)
+            out.start('Uncommitting to %s' % to_commit.sha1)
         while True:
             if next_commit == to_commit:
                 if not options.exclusive:
