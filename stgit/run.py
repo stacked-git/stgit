@@ -65,7 +65,7 @@ class Run:
                     if k not in os.environ or os.environ[k] != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':
-            _logfile.start('Running subprocess %s' % self.__cmd[0])
+            _logfile.start('Running subprocess %s' % self.__cmd)
             self.__starttime = datetime.datetime.now()
     def __log_end(self, retcode):
         if _log_mode == 'debug':
