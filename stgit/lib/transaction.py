@@ -138,21 +138,22 @@ class StackTransaction(object):
         # The only state we need to restore is index+worktree.
         if iw:
             self.__checkout(self.__stack.head.data.tree, iw)
-    def run(self, iw = None):
+    def run(self, iw = None, set_head = True):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self.__check_consistency()
         new_head = self.__head
 
         # Set branch head.
-        if iw:
-            try:
-                self.__checkout(new_head.data.tree, iw)
-            except git.CheckoutException:
-                # We have to abort the transaction.
-                self.abort(iw)
-                self.__abort()
-        self.__stack.set_head(new_head, self.__msg)
+        if set_head:
+            if iw:
+                try:
+                    self.__checkout(new_head.data.tree, iw)
+                except git.CheckoutException:
+                    # We have to abort the transaction.
+                    self.abort(iw)
+                    self.__abort()
+            self.__stack.set_head(new_head, self.__msg)
 
         if self.__error:
             out.error(self.__error)

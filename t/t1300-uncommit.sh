@@ -85,7 +85,7 @@ test_expect_success 'Uncommit a commit with not precisely one parent' '
 
 # stg uncommit should work even when top != head, and should not touch
 # the head.
-test_expect_failure 'Uncommit when top != head' '
+test_expect_success 'Uncommit when top != head' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD)
