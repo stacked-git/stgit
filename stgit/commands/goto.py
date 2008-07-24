@@ -46,6 +46,8 @@ def func(parser, options, args):
                 trans.push_patch(pn, iw)
         except transaction.TransactionHalted:
             pass
+    elif patch in trans.hidden:
+        raise common.CmdException('Cannot goto a hidden patch')
     else:
         raise common.CmdException('Patch "%s" does not exist' % patch)
     return trans.run(iw)
