@@ -44,4 +44,11 @@ test_expect_success 'Rename top-most when others exist' '
    stg rename bar
 '
 
+test_expect_failure 'Rename hidden' '
+    stg pop &&
+    stg hide bar &&
+    stg rename bar pub &&
+    test "$(echo $(stg series --all))" = "> foo ! pub"
+'
+
 test_done

@@ -4,7 +4,7 @@ test_description='Test "stg edit"'
 . ./test-lib.sh
 
 test_expect_success 'Setup' '
-    printf "000\n111\n222\n" >> foo &&
+    printf "000\n111\n222\n333\n" >> foo &&
     git add foo &&
     git commit -m "Initial commit" &&
     sed -i "s/000/000xx/" foo &&
@@ -13,9 +13,13 @@ test_expect_success 'Setup' '
     git commit -a -m "Second change" &&
     sed -i "s/222/222zz/" foo &&
     git commit -a -m "Third change" &&
+    sed -i "s/333/333zz/" foo &&
+    git commit -a -m "Fourth change" &&
     stg init &&
-    stg uncommit -n 3 p &&
-    stg pop
+    stg uncommit -n 4 p &&
+    stg pop -n 2 &&
+    stg hide p4 &&
+    test "$(echo $(stg series --all))" = "+ p1 > p2 - p3 ! p4"
 '
 
 # Commit parse functions.
@@ -39,6 +43,12 @@ test_expect_success 'Edit message of unapplied patch' '
     test "$(msg $(stg id p3))" = "Third change" &&
     stg edit p3 -m "Third change 2" &&
     test "$(msg $(stg id p3))" = "Third change 2"
+'
+
+test_expect_success 'Edit message of hidden patch' '
+    test "$(msg $(stg id p4))" = "Fourth change" &&
+    stg edit p4 -m "Fourth change 2" &&
+    test "$(msg $(stg id p4))" = "Fourth change 2"
 '
 
 test_expect_success 'Set patch message with --file <file>' '
