@@ -61,7 +61,7 @@ def __run_setup():
             ('share/stgit/contrib', ['contrib/diffcol.sh',
                                      'contrib/stgbashprompt.sh',
                                      'contrib/stgit-completion.bash']),
-            ('share/doc/stgit', glob.glob('doc/*.txt'))])
+            ])
 
 # Check the minimum versions required
 if sys.argv[1] in ['install', 'build']:
