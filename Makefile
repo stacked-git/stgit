@@ -1,4 +1,4 @@
-PREFIX	?= $(HOME)
+prefix	?= $(HOME)
 DESTDIR	?= /
 PYTHON	?= python
 
@@ -8,7 +8,7 @@ all:
 	$(PYTHON) setup.py build
 
 install:
-	$(PYTHON) setup.py install --prefix=$(PREFIX) --root=$(DESTDIR) --force
+	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
 
 doc:
 	cd Documentation && $(MAKE) all
