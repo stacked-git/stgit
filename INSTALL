@@ -1,13 +1,18 @@
 For basic installation:
 
-	python setup.py install
+	$ make all doc ;# as yourself
+	$ make install install-doc ;# as yourself
 
 By default, the above command installs StGIT in the
 $HOME/{bin,lib,share} directories. For a different location, use the
---prefix option.
+prefix option.
 
-	python setup.py install --prefix=/usr
+	$ make prefix=/usr all doc #; as yourself
+	# make prefix=/usr install install-doc #; as root
 
-For more information:
+Issues of note:
 
-	http://docs.python.org/inst/inst.html
+- To build and install the documentation, you need to have the
+  asciidoc/xmlto toolchain.  The default build target ("make all")
+  does _not_ build them.
+
