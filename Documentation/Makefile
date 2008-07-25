@@ -12,6 +12,7 @@ DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES) $(SP_ARTICLES))
 DOC_MAN1=$(patsubst %.txt,%.1,$(MAN1_TXT))
 
 prefix?=$(HOME)
+htmldir?=$(prefix)/share/doc/stgit
 mandir?=$(prefix)/share/man
 man1dir=$(mandir)/man1
 # DESTDIR=
@@ -41,6 +42,10 @@ man1: $(DOC_MAN1)
 install: man
 	$(INSTALL) -d -m755 $(DESTDIR)$(man1dir)
 	$(INSTALL) -m644 $(DOC_MAN1) $(DESTDIR)$(man1dir)
+
+install-html: html
+	$(INSTALL) -d -m755 $(DESTDIR)$(htmldir)
+	$(INSTALL) -m644 $(DOC_HTML) $(DESTDIR)$(htmldir)
 #
 # Determine "include::" file references in asciidoc files.
 #

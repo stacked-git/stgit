@@ -16,6 +16,9 @@ doc:
 install-doc:
 	$(MAKE) -C Documentation install
 
+install-html:
+	$(MAKE) -C Documentation install-html
+
 test:
 	cd t && $(MAKE) all
 
@@ -36,4 +39,4 @@ clean:
 tags:
 	ctags -e -R stgit/*
 
-.PHONY: all install doc install-doc test test_patches clean
+.PHONY: all install doc install-doc install-html test test_patches clean
