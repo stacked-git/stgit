@@ -1,7 +1,6 @@
 MAN1_TXT=$(wildcard stg*.txt)
-MAN7_TXT=
 
-DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT) $(MAN7_TXT))
+DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
 ARTICLES = 
 # with their own formatting rules.
@@ -11,12 +10,10 @@ DOC_HTML += $(patsubst %,%.html,$(ARTICLES) $(SP_ARTICLES))
 DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES) $(SP_ARTICLES))
 
 DOC_MAN1=$(patsubst %.txt,%.1,$(MAN1_TXT))
-DOC_MAN7=$(patsubst %.txt,%.7,$(MAN7_TXT))
 
 prefix?=$(HOME)
 mandir?=$(prefix)/man
 man1dir=$(mandir)/man1
-man7dir=$(mandir)/man7
 # DESTDIR=
 
 ASCIIDOC=asciidoc --unsafe
@@ -37,16 +34,13 @@ all: html man
 html: $(DOC_HTML)
 pdf: $(DOC_PDF)
 
-$(DOC_HTML) $(DOC_MAN1) $(DOC_MAN7): asciidoc.conf
+$(DOC_HTML) $(DOC_MAN1): asciidoc.conf
 
-man: man1 man7
+man: man1
 man1: $(DOC_MAN1)
-man7: $(DOC_MAN7)
-
 install: man
-	$(INSTALL) -d -m755 $(DESTDIR)$(man1dir) $(DESTDIR)$(man7dir)
+	$(INSTALL) -d -m755 $(DESTDIR)$(man1dir)
 	$(INSTALL) -m644 $(DOC_MAN1) $(DESTDIR)$(man1dir)
-	$(INSTALL) -m644 $(DOC_MAN7) $(DESTDIR)$(man7dir)
 #
 # Determine "include::" file references in asciidoc files.
 #
@@ -58,12 +52,12 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 -include doc.dep
 
 clean:
-	rm -f *.xml *.html *.pdf *.1 *.7 doc.dep
+	rm -f *.xml *.html *.pdf *.1 doc.dep
 
 %.html : %.txt
 	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<
 
-%.1 %.7 : %.xml
+%.1 : %.xml
 	xmlto -m callouts.xsl man $<
 
 %.xml : %.txt
