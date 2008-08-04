@@ -401,8 +401,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
         options.edit_patches = True
 
     descr_lines = descr.split('\n')
-    short_descr = descr_lines[0].rstrip()
-    long_descr = '\n'.join(descr_lines[1:]).lstrip()
+    short_descr = descr_lines[0].strip()
+    long_descr = '\n'.join(l.rstrip() for l in descr_lines[1:]).lstrip('\n')
 
     authname = p.get_authname();
     authemail = p.get_authemail();
