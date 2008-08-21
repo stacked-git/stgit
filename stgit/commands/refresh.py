@@ -103,8 +103,8 @@ def func(parser, options, args):
             between = applied[:applied.index(patch):-1]
             pop_patches(crt_series, between, keep = True)
         elif options.update:
-            rev1 = git_id(crt_series, '//bottom')
-            rev2 = git_id(crt_series, '//top')
+            rev1 = git_id(crt_series, 'HEAD^')
+            rev2 = git_id(crt_series, 'HEAD')
             patch_files = git.barefiles(rev1, rev2).split('\n')
             files = [f for f in files if f in patch_files]
             if not files:

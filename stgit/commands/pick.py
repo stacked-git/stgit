@@ -87,8 +87,8 @@ def __pick_commit(commit_id, patchname, options):
 
         out.done()
     elif options.update:
-        rev1 = git_id(crt_series, '//bottom')
-        rev2 = git_id(crt_series, '//top')
+        rev1 = git_id(crt_series, 'HEAD^')
+        rev2 = git_id(crt_series, 'HEAD')
         files = git.barefiles(rev1, rev2).split('\n')
 
         out.start('Updating with commit %s' % commit_id)
@@ -115,10 +115,8 @@ def __pick_commit(commit_id, patchname, options):
         patchname = newpatch.get_name()
 
         # find a patchlog to fork from
-        (refpatchname, refbranchname, refpatchid) = parse_rev(patchname)
-        if refpatchname and not refpatchid and \
-               (not refpatchid or refpatchid == 'top'):
-            # FIXME: should also support picking //top.old
+        refbranchname, refpatchname = parse_rev(patchname)
+        if refpatchname:
             if refbranchname:
                 # assume the refseries is OK, since we already resolved
                 # commit_str to a git_id

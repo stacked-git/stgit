@@ -26,7 +26,7 @@ from stgit import stack, git
 
 
 help = 'show the files modified by a patch (or the current patch)'
-usage = """%prog [options] [<patch>]
+usage = """%prog [options] [[<branch>:]<patch>]
 
 List the files modified by the given patch (defaulting to the current
 one). Passing the '--stat' option shows the diff statistics for the
@@ -38,8 +38,6 @@ directory = DirectoryHasRepository()
 options = [make_option('-s', '--stat',
                        help = 'show the diff stat',
                        action = 'store_true'),
-           make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
            make_option('--bare',
                        help = 'bare file names (useful for scripting)',
                        action = 'store_true')
@@ -50,14 +48,14 @@ def func(parser, options, args):
     """Show the files modified by a patch (or the current patch)
     """
     if len(args) == 0:
-        patch = ''
+        patch = 'HEAD'
     elif len(args) == 1:
         patch = args[0]
     else:
         parser.error('incorrect number of arguments')
 
-    rev1 = git_id(crt_series, '%s//bottom' % patch)
-    rev2 = git_id(crt_series, '%s//top' % patch)
+    rev1 = git_id(crt_series, '%s^' % patch)
+    rev2 = git_id(crt_series, '%s' % patch)
 
     if options.stat:
         out.stdout_raw(git.diffstat(git.diff(rev1 = rev1, rev2 = rev2)) + '\n')

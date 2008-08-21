@@ -37,7 +37,7 @@ test_expect_success \
 test_expect_success \
     'Create a branch with empty patches' \
     '
-    stg branch -c foo base &&
+    stg branch -c foo {base} &&
     stg new p1 -m p1 &&
     stg new p2 -m p2 &&
     stg new p3 -m p3 &&

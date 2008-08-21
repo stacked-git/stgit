@@ -30,17 +30,14 @@ help = 'show the tree diff'
 usage = """%prog [options] [<files or dirs>]
 
 Show the diff (default) or diffstat between the current working copy
-or a tree-ish object and another tree-ish object. File names can also
-be given to restrict the diff output. The tree-ish object can be a
-standard git commit, tag or tree. In addition to these, the command
-also supports 'base', representing the bottom of the current stack,
-and '[patch][//[bottom | top]]' for the patch boundaries (defaulting to
-the current one):
+or a tree-ish object and another tree-ish object (defaulting to HEAD).
+File names can also be given to restrict the diff output. The
+tree-ish object can be an StGIT patch, a standard git commit, tag or
+tree. In addition to these, the command also supports '{base}',
+representing the bottom of the current stack.
 
-rev = '([patch][//[bottom | top]]) | <tree-ish> | base'
-
-If neither bottom nor top are given but a '//' is present, the command
-shows the specified patch (defaulting to the current one)."""
+rev = '[branch:](<patch>|{base}) | <tree-ish>'
+"""
 
 directory = DirectoryHasRepository()
 options = [make_option('-r', '--range',
@@ -61,17 +58,8 @@ def func(parser, options, args):
         rev_list = options.revs.split('..')
         rev_list_len = len(rev_list)
         if rev_list_len == 1:
-            rev = rev_list[0]
-            if rev.endswith('/'):
-                # the whole patch
-                rev = strip_suffix('/', rev)
-                if rev.endswith('/'):
-                    rev = strip_suffix('/', rev)
-                rev1 = rev + '//bottom'
-                rev2 = rev + '//top'
-            else:
-                rev1 = rev_list[0]
-                rev2 = None
+            rev1 = rev_list[0]
+            rev2 = None
         elif rev_list_len == 2:
             rev1 = rev_list[0]
             rev2 = rev_list[1]
@@ -82,7 +70,7 @@ def func(parser, options, args):
         rev2 = None
 
     diff_str = git.diff(args, git_id(crt_series, rev1),
-                        git_id(crt_series, rev2),
+                        rev2 and git_id(crt_series, rev2),
                         diff_flags = options.diff_flags)
     if options.stat:
         out.stdout_raw(git.diffstat(diff_str) + '\n')

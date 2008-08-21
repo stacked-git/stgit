@@ -35,101 +35,35 @@ class CmdException(StgException):
     pass
 
 # Utility functions
-class RevParseException(StgException):
-    """Revision spec parse error."""
-    pass
-
 def parse_rev(rev):
-    """Parse a revision specification into its
-    patchname@branchname//patch_id parts. If no branch name has a slash
-    in it, also accept / instead of //."""
-    if '/' in ''.join(git.get_heads()):
-        # We have branch names with / in them.
-        branch_chars = r'[^@]'
-        patch_id_mark = r'//'
-    else:
-        # No / in branch names.
-        branch_chars = r'[^@/]'
-        patch_id_mark = r'(/|//)'
-    patch_re = r'(?P<patch>[^@/]+)'
-    branch_re = r'@(?P<branch>%s+)' % branch_chars
-    patch_id_re = r'%s(?P<patch_id>[a-z.]*)' % patch_id_mark
+    """Parse a revision specification into its branch:patch parts.
+    """
+    try:
+        branch, patch = rev.split(':', 1)
+    except ValueError:
+        branch = None
+        patch = rev
 
-    # Try //patch_id.
-    m = re.match(r'^%s$' % patch_id_re, rev)
-    if m:
-        return None, None, m.group('patch_id')
-
-    # Try path[@branch]//patch_id.
-    m = re.match(r'^%s(%s)?%s$' % (patch_re, branch_re, patch_id_re), rev)
-    if m:
-        return m.group('patch'), m.group('branch'), m.group('patch_id')
-
-    # Try patch[@branch].
-    m = re.match(r'^%s(%s)?$' % (patch_re, branch_re), rev)
-    if m:
-        return m.group('patch'), m.group('branch'), None
-
-    # No, we can't parse that.
-    raise RevParseException
+    return (branch, patch)
 
 def git_id(crt_series, rev):
     """Return the GIT id
     """
-    if not rev:
-        return None
+    # TODO: remove this function once all the occurrences were converted
+    # to git_commit()
+    repository = libstack.Repository.default()
+    return git_commit(rev, repository, crt_series.get_name()).sha1
 
-    # try a GIT revision first
-    try:
-        return git.rev_parse(rev + '^{commit}')
-    except git.GitException:
-        pass
-
-    # try an StGIT patch name
-    try:
-        patch, branch, patch_id = parse_rev(rev)
-        if branch == None:
-            series = crt_series
-        else:
-            series = stack.Series(branch)
-        if patch == None:
-            patch = series.get_current()
-            if not patch:
-                raise CmdException, 'No patches applied'
-        if patch in series.get_applied() or patch in series.get_unapplied() or \
-               patch in series.get_hidden():
-            if patch_id in ['top', '', None]:
-                return series.get_patch(patch).get_top()
-            elif patch_id == 'bottom':
-                return series.get_patch(patch).get_bottom()
-            elif patch_id == 'top.old':
-                return series.get_patch(patch).get_old_top()
-            elif patch_id == 'bottom.old':
-                return series.get_patch(patch).get_old_bottom()
-            elif patch_id == 'log':
-                return series.get_patch(patch).get_log()
-        if patch == 'base' and patch_id == None:
-            return series.get_base()
-    except RevParseException:
-        pass
-    except stack.StackException:
-        pass
-
-    raise CmdException, 'Unknown patch or revision: %s' % rev
-
-def git_commit(name, repository, branch = None):
+def git_commit(name, repository, branch_name = None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
     The patch names allowed are in the form '<branch>:<patch>' and can
     be followed by standard symbols used by git-rev-parse. If <patch>
     is '{base}', it represents the bottom of the stack.
     """
     # Try a [branch:]patch name first
-    try:
-        branch, patch = name.split(':', 1)
-    except ValueError:
-        patch = name
+    branch, patch = parse_rev(name)
     if not branch:
-        branch = repository.current_branch_name
+        branch = branch_name or repository.current_branch_name
 
     # The stack base
     if patch.startswith('{base}'):

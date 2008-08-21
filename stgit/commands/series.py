@@ -88,7 +88,7 @@ def __print_patch(stack, patch, branch_str, prefix, empty_prefix, length, option
     elif options.empty and stack.patches.get(patch).is_empty():
         prefix = empty_prefix
 
-    patch_str = patch + branch_str
+    patch_str = branch_str + patch
 
     if options.description or options.author:
         patch_str = patch_str.ljust(length)
@@ -164,7 +164,7 @@ def func(parser, options, args):
         return
 
     if options.showbranch:
-        branch_str = '@' + stack.name
+        branch_str = stack.name + ':'
     else:
         branch_str = ''
 
