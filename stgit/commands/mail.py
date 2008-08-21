@@ -24,6 +24,7 @@ from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git, version, templates
 from stgit.config import config
+from stgit.run import Run
 
 
 help = 'send a patch or series of patches by e-mail'
@@ -31,13 +32,15 @@ usage = r"""%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
 
 Send a patch or a range of patches by e-mail using the SMTP server
 specified by the 'stgit.smtpserver' configuration option, or the
-'--smtp-server' command line option. The From address and the e-mail
-format are generated from the template file passed as argument to
-'--template' (defaulting to '.git/patchmail.tmpl' or
-'~/.stgit/templates/patchmail.tmpl' or
+'--smtp-server' command line option. This option can also be an
+absolute path to 'sendmail' followed by command line arguments.
+
+The From address and the e-mail format are generated from the template
+file passed as argument to '--template' (defaulting to
+'.git/patchmail.tmpl' or '~/.stgit/templates/patchmail.tmpl' or
 '/usr/share/stgit/templates/patchmail.tmpl'). A patch can be sent as
-attachment using the --attach option in which case the 'mailattch.tmpl'
-template will be used instead of 'patchmail.tmpl'.
+attachment using the --attach option in which case the
+'mailattch.tmpl' template will be used instead of 'patchmail.tmpl'.
 
 The To/Cc/Bcc addresses can either be added to the template file or
 passed via the corresponding command line options. They can be e-mail
@@ -133,8 +136,9 @@ options = [make_option('-a', '--all',
                        help = 'sleep for SECONDS between e-mails sending'),
            make_option('--refid',
                        help = 'use REFID as the reference id'),
-           make_option('--smtp-server', metavar = 'HOST[:PORT]',
-                       help = 'SMTP server to use for sending mail'),
+           make_option('--smtp-server',
+                       metavar = 'HOST[:PORT] or "/path/to/sendmail -t -i"',
+                       help = 'SMTP server or command to use for sending mail'),
            make_option('-u', '--smtp-user', metavar = 'USER',
                        help = 'username for SMTP authentication'),
            make_option('-p', '--smtp-password', metavar = 'PASSWORD',
@@ -184,8 +188,14 @@ def __parse_addresses(msg):
 
     return (from_addr_list[0], to_addr_list)
 
-def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
-                   smtpuser, smtppassword, use_tls):
+def __send_message_sendmail(sendmail, msg):
+    """Send the message using the sendmail command.
+    """
+    cmd = sendmail.split()
+    Run(*cmd).raw_input(msg).discard_output()
+
+def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
+                        smtpuser, smtppassword, use_tls):
     """Send the message using the given SMTP server
     """
     try:
@@ -207,12 +217,24 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg, sleep,
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
             print "mail server refused delivery for the following recipients: %s" % result
-        # give recipients a chance of receiving patches in the correct order
-        time.sleep(sleep)
     except Exception, err:
         raise CmdException, str(err)
 
     s.quit()
+
+def __send_message(smtpserver, from_addr, to_addr_list, msg,
+                   sleep, smtpuser, smtppassword, use_tls):
+    """Message sending dispatcher.
+    """
+    if smtpserver.startswith('/'):
+        # Use the sendmail tool
+        __send_message_sendmail(smtpserver, msg)
+    else:
+        # Use the SMTP server (we have host and port information)
+        __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
+                            smtpuser, smtppassword, use_tls)
+    # give recipients a chance of receiving patches in the correct order
+    time.sleep(sleep)
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the

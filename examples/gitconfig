@@ -19,6 +19,7 @@
 	#autoresolved = no
 
 	# SMTP server for sending patches
+	#smtpserver = /usr/sbin/sendmail -t -i
 	#smtpserver = localhost:25
 
 	# Set to 'yes' to use SMTP over TLS
