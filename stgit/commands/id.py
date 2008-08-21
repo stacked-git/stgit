@@ -15,28 +15,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
 from optparse import OptionParser, make_option
 
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import stack, git
-
+from stgit.out import out
+from stgit.commands import common
+from stgit.lib import stack
 
 help = 'print the GIT hash value of a StGIT reference'
 usage = """%prog [options] [id]
 
-Print the hash value of a GIT id (defaulting to HEAD). In addition to
-the standard GIT id's like heads and tags, this command also accepts
-'base[@<branch>]' and '[<patch>[@<branch>]][//[bottom | top]]'. If no
-'top' or 'bottom' are passed and <patch> is a valid patch name, 'top'
-will be used by default."""
+Print the SHA1 value of a Git id (defaulting to HEAD). In addition to
+the standard Git id's like heads and tags, this command also accepts
+'[<branch>:]<patch>' and '[<branch>:]{base}' showing the id of a patch
+or the base of the stack. If no branch is specified, it defaults to the
+current one. The bottom of a patch is accessible with the
+'[<branch>:]<patch>^' format."""
 
-directory = DirectoryHasRepository()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
-
+directory = common.DirectoryHasRepositoryLib()
+options = []
 
 def func(parser, options, args):
     """Show the applied patches
@@ -48,4 +44,4 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    out.stdout(git_id(crt_series, id_str))
+    out.stdout(common.git_commit(id_str, directory.repository).sha1)

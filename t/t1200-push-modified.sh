@@ -36,7 +36,7 @@ test_expect_success \
     (
         cd foo &&
         GIT_DIR=../bar/.git git-format-patch --stdout \
-          $(cd ../bar && stg id base@master)..HEAD | git-am -3 -k
+          $(cd ../bar && stg id master:{base})..HEAD | git-am -3 -k
     )
 '
 

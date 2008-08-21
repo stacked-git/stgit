@@ -572,11 +572,11 @@ class Repository(RunWithEnv):
     refs = property(lambda self: self.__refs)
     def cat_object(self, sha1):
         return self.run(['git', 'cat-file', '-p', sha1]).raw_output()
-    def rev_parse(self, rev):
+    def rev_parse(self, rev, discard_stderr = False):
         try:
             return self.get_commit(self.run(
                     ['git', 'rev-parse', '%s^{commit}' % rev]
-                    ).output_one_line())
+                    ).discard_stderr(discard_stderr).output_one_line())
         except run.RunException:
             raise RepositoryException('%s: No such revision' % rev)
     def get_blob(self, sha1):

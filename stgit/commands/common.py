@@ -28,6 +28,7 @@ from stgit.run import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 from stgit.lib import stack as libstack
+from stgit.lib import git as libgit
 
 # Command exception class
 class CmdException(StgException):
@@ -115,6 +116,39 @@ def git_id(crt_series, rev):
         pass
 
     raise CmdException, 'Unknown patch or revision: %s' % rev
+
+def git_commit(name, repository, branch = None):
+    """Return the a Commit object if 'name' is a patch name or Git commit.
+    The patch names allowed are in the form '<branch>:<patch>' and can
+    be followed by standard symbols used by git-rev-parse. If <patch>
+    is '{base}', it represents the bottom of the stack.
+    """
+    # Try a [branch:]patch name first
+    try:
+        branch, patch = name.split(':', 1)
+    except ValueError:
+        patch = name
+    if not branch:
+        branch = repository.current_branch_name
+
+    # The stack base
+    if patch.startswith('{base}'):
+        base_id = repository.get_stack(branch).base.sha1
+        return repository.rev_parse(base_id +
+                                    strip_prefix('{base}', patch))
+
+    # Other combination of branch and patch
+    try:
+        return repository.rev_parse('patches/%s/%s' % (branch, patch),
+                                    discard_stderr = True)
+    except libgit.RepositoryException:
+        pass
+
+    # Try a Git commit
+    try:
+        return repository.rev_parse(name, discard_stderr = True)
+    except libgit.RepositoryException:
+        raise CmdException('%s: Unknown patch or revision name' % name)
 
 def check_local_changes():
     if git.local_changes():

@@ -18,25 +18,21 @@ test_expect_success 'Create a patch' \
    stg new foo -m "Add foo.txt" &&
    stg refresh'
 
-test_expect_success 'Old and new id with non-slashy branch' \
-  'stg id foo &&
-   stg id foo// &&
-   stg id foo/ &&
-   stg id foo//top &&
-   stg id foo/top &&
-   stg id foo@master &&
-   stg id foo@master//top &&
-   stg id foo@master/top'
+test_expect_success 'Try id with non-slashy branch' \
+  'stg id &&
+   stg id foo &&
+   stg id foo^ &&
+   stg id master:foo &&
+   stg id master:foo^'
 
 test_expect_success 'Clone branch to slashier name' \
   'stg branch --clone x/y/z'
 
-test_expect_success 'Try new form of id with slashy branch' \
+test_expect_success 'Try new id with slashy branch' \
   'stg id foo &&
-   stg id foo// &&
-   stg id foo//top &&
-   stg id foo@x/y/z &&
-   stg id foo@x/y/z//top'
+   stg id foo^ &&
+   stg id x/y/z:foo &&
+   stg id x/y/z:foo^'
 
 test_expect_success 'Try old id with slashy branch' '
    command_error stg id foo/ &&
