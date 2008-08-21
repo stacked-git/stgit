@@ -534,7 +534,7 @@ class Repository(RunWithEnv):
     @property
     def current_branch_name(self):
         """Return the name of the current branch."""
-        return utils.strip_leading('refs/heads/', self.head_ref)
+        return utils.strip_prefix('refs/heads/', self.head_ref)
     @property
     def default_index(self):
         """An L{Index} object representing the default index file for the

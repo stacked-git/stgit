@@ -379,12 +379,6 @@ STGIT_COMMAND_ERROR = 2  # seems to be a command that failed
 STGIT_CONFLICT = 3       # merge conflict, otherwise OK
 STGIT_BUG_ERROR = 4      # a bug in StGit
 
-def strip_leading(prefix, s):
-    """Strip leading prefix from a string. Blow up if the prefix isn't
-    there."""
-    assert s.startswith(prefix)
-    return s[len(prefix):]
-
 def add_dict(d1, d2):
     """Return a new dict with the contents of both d1 and d2. In case of
     conflicting mappings, d2 takes precedence."""
