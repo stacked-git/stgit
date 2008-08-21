@@ -25,31 +25,31 @@ test_expect_success \
 test_expect_success \
     'Delete some patches' \
     '
-    [ "$(echo $(stg applied))" = "p0 p1 p2 p3 p4" ] &&
-    [ "$(echo $(stg unapplied))" = "p5 p6 p7 p8 p9" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p6 p7 p8 p9" ] &&
     stg delete p7 p6 p3 p4 &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "p5 p8 p9" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ]
     '
 
 test_expect_success \
     'Delete some more patches, some of which do not exist' \
     '
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "p5 p8 p9" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ] &&
     command_error stg delete p7 p8 p2 p0 &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "p5 p8 p9" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ]
     '
 
 test_expect_success \
     'Delete a range of patches' \
     '
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "p5 p8 p9" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p5 p8 p9" ] &&
     stg delete p1..p8 &&
-    [ "$(echo $(stg applied))" = "p0" ] &&
-    [ "$(echo $(stg unapplied))" = "p9" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ]
     '
 
 test_done

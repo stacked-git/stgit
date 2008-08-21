@@ -17,11 +17,11 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'Clean empty patches' '
-    [ "$(echo $(stg applied))" = "e0 p0 e1" ] &&
-    [ "$(echo $(stg unapplied))" = "e2" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "e0 p0 e1" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "e2" ] &&
     stg clean &&
-    [ "$(echo $(stg applied))" = "p0" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Create a conflict' '
@@ -37,8 +37,8 @@ test_expect_success 'Create a conflict' '
 
 test_expect_success 'Make sure conflicting patches are preserved' '
     stg clean &&
-    [ "$(echo $(stg applied))" = "p0 p2 p1" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p2 p1" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_done

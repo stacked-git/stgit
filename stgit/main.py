@@ -59,7 +59,6 @@ class Commands(dict):
         return getattr(stgit.commands, cmd_mod)
 
 commands = Commands({
-    'applied':          'applied',
     'branch':           'branch',
     'delete':           'delete',
     'diff':             'diff',
@@ -96,7 +95,6 @@ commands = Commands({
     'status':           'status',
     'sync':             'sync',
     'top':              'top',
-    'unapplied':        'unapplied',
     'uncommit':         'uncommit',
     'unhide':           'unhide'
     })
@@ -107,7 +105,6 @@ repocommands = (
     'id',
     )
 stackcommands = (
-    'applied',
     'branch',
     'clean',
     'coalesce',
@@ -125,7 +122,6 @@ stackcommands = (
     'series',
     'sink',
     'top',
-    'unapplied',
     'uncommit',
     'unhide',
     )

@@ -11,8 +11,8 @@ test_expect_success 'Create a few patches' '
         git add patch$i.txt &&
         stg refresh
     done &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Make some non-conflicting local changes' '
@@ -21,8 +21,8 @@ test_expect_success 'Make some non-conflicting local changes' '
 
 test_expect_success 'Pop two patches, keeping local changes' '
     stg pop -n 2 --keep &&
-    [ "$(echo $(stg applied))" = "p0" ] &&
-    [ "$(echo $(stg unapplied))" = "p1 p2" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p1 p2" ] &&
     [ "$(echo $(ls patch?.txt))" = "patch0.txt" ] &&
     [ "$(echo $(cat patch0.txt))" = "patch0 local" ]
 '
@@ -34,8 +34,8 @@ test_expect_success 'Reset and push patches again' '
 
 test_expect_success 'Pop a patch without local changes' '
     stg pop --keep &&
-    [ "$(echo $(stg applied))" = "p0 p1" ] &&
-    [ "$(echo $(stg unapplied))" = "p2" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p2" ] &&
     [ "$(echo $(ls patch?.txt))" = "patch0.txt patch1.txt" ]
 '
 

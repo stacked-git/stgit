@@ -37,9 +37,9 @@ test_expect_success \
     '
 
 test_expect_success 'Turn one GIT commit into a patch' '
-    [ $(stg applied | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 1 ] &&
     stg repair &&
-    [ $(stg applied | wc -l) -eq 2 ]
+    [ $(stg series --applied -c) -eq 2 ]
     '
 
 test_expect_success \
@@ -55,9 +55,9 @@ test_expect_success \
     '
 
 test_expect_success 'Turn three GIT commits into patches' '
-    [ $(stg applied | wc -l) -eq 2 ] &&
+    [ $(stg series --applied -c) -eq 2 ] &&
     stg repair &&
-    [ $(stg applied | wc -l) -eq 5 ]
+    [ $(stg series --applied -c) -eq 5 ]
     '
 
 test_expect_success \
@@ -72,9 +72,9 @@ test_expect_success \
     '
 
 test_expect_success 'Repair in the presence of a merge commit' '
-    [ $(stg applied | wc -l) -eq 5 ] &&
+    [ $(stg series --applied -c) -eq 5 ] &&
     stg repair &&
-    [ $(stg applied | wc -l) -eq 0 ]
+    [ $(stg series --applied -c) -eq 0 ]
 '
 
 test_done

@@ -14,8 +14,8 @@ for ver in 0.12 0.8; do
 
     test_expect_success \
         "v$ver: Check the list of applied and unapplied patches" '
-        [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-        [ "$(echo $(stg unapplied))" = "p3 p4" ]
+        [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+        [ "$(echo $(stg series --unapplied --noprefix))" = "p3 p4" ]
     '
 
     test_expect_success \

@@ -12,8 +12,8 @@ test_expect_success 'Create some patches' '
         git add x.txt foo/y.txt &&
         stg refresh
     done &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Fast-forward push from a subdir' '

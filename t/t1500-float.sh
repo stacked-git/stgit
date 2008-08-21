@@ -20,37 +20,37 @@ test_expect_success \
 	 stg new F -m "f" && echo F >f.txt && git add f.txt && stg refresh &&
 	 stg new G -m "g" && echo G >g.txt && git add g.txt && stg refresh &&
 	 stg pop &&
-	 test "$(echo $(stg applied))" = "A B C D E F"
+	 test "$(echo $(stg series --applied --noprefix))" = "A B C D E F"
 	'
 
 test_expect_success \
 	'Float A to top' \
 	'stg float A &&
-	 test "$(echo $(stg applied))" = "B C D E F A"
+	 test "$(echo $(stg series --applied --noprefix))" = "B C D E F A"
 	'
 test_expect_success \
 	'Float A to top (noop)' \
 	'stg float A &&
-	 test "$(echo $(stg applied))" = "B C D E F A"
+	 test "$(echo $(stg series --applied --noprefix))" = "B C D E F A"
 	'
 test_expect_success \
 	'Float B C to top' \
 	'stg float B C &&
-	 test "$(echo $(stg applied))" = "D E F A B C"
+	 test "$(echo $(stg series --applied --noprefix))" = "D E F A B C"
 	'
 test_expect_success \
 	'Float E A to top' \
 	'stg float E A &&
-	 test "$(echo $(stg applied))" = "D F B C E A"
+	 test "$(echo $(stg series --applied --noprefix))" = "D F B C E A"
 	'
 test_expect_success \
 	'Float E to top' \
 	'stg float E &&
-	 test "$(echo $(stg applied))" = "D F B C A E"
+	 test "$(echo $(stg series --applied --noprefix))" = "D F B C A E"
 	'
 test_expect_success \
 	'Float G F to top' \
 	'stg float G F &&
-	 test "$(echo $(stg applied))" = "D B C A E G F"
+	 test "$(echo $(stg series --applied --noprefix))" = "D B C A E G F"
 	'
 test_done

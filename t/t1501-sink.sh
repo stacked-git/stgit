@@ -22,7 +22,7 @@ test_expect_success 'sink without applied patches' '
 
 test_expect_success 'sink a specific patch without applied patches' '
     stg sink y &&
-    test $(echo $(stg applied)) = "y"
+    test $(echo $(stg series --applied --noprefix)) = "y"
 '
 
 test_done

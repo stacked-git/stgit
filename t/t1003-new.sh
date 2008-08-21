@@ -17,13 +17,13 @@ test_expect_success \
 test_expect_success \
     'Create a named patch' '
     stg new foo -m foobar &&
-    [ $(stg applied -c) -eq 1 ]
+    [ $(stg series --applied -c) -eq 1 ]
 '
 
 test_expect_success \
     'Create a patch without giving a name' '
     stg new -m yo &&
-    [ $(stg applied -c) -eq 2 ]
+    [ $(stg series --applied -c) -eq 2 ]
 '
 
 test_done

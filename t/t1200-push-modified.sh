@@ -26,8 +26,8 @@ test_expect_success \
         printf "a\nc\n" > file && git add file && stg refresh &&
         stg new p2 -m p2 &&
         printf "a\nb\nc\n" > file && stg refresh &&
-        [ "$(echo $(stg applied))" = "p1 p2" ] &&
-        [ "$(echo $(stg unapplied))" = "" ]
+        [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
+        [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
     )
 '
 
@@ -57,8 +57,8 @@ test_expect_success \
     'Rollback the push' '
     (
         cd bar && stg push --undo &&
-        [ "$(echo $(stg applied))" = "" ] &&
-        [ "$(echo $(stg unapplied))" = "p1 p2" ]
+        [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
+        [ "$(echo $(stg series --unapplied --noprefix))" = "p1 p2" ]
     )
 '
 
@@ -66,8 +66,8 @@ test_expect_success \
     'Push those patches while checking they were merged upstream' '
     (
         cd bar && stg push --merged --all
-        [ "$(echo $(stg applied))" = "p1 p2" ] &&
-        [ "$(echo $(stg unapplied))" = "" ]
+        [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
+        [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
     )
 '
 

@@ -21,8 +21,8 @@ test_expect_success 'Create five patches' '
     for i in 0 1 2 3 4; do
         stg new p$i -m p$i;
     done &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2 p3 p4" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Pop two patches with git-reset' '
@@ -30,14 +30,14 @@ test_expect_success 'Pop two patches with git-reset' '
     command_error stg refresh &&
     stg repair &&
     stg refresh &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg unapplied))" = "p3 p4" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p3 p4" ]
 '
 
 test_expect_success 'Create a new patch' '
     stg new q0 -m q0 &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2 q0" ] &&
-    [ "$(echo $(stg unapplied))" = "p3 p4" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 q0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p3 p4" ]
 '
 
 test_expect_success 'Go to an unapplied patch with with git-reset' '
@@ -45,15 +45,15 @@ test_expect_success 'Go to an unapplied patch with with git-reset' '
     command_error stg refresh &&
     stg repair &&
     stg refresh &&
-    [ "$(echo $(stg applied))" = "p0 p1 p2 p3" ] &&
-    [ "$(echo $(stg unapplied))" = "q0 p4" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "q0 p4" ]
 '
 
 test_expect_success 'Go back to below the stack base with git-reset' '
     git reset --hard foo-tag &&
     stg repair &&
-    [ "$(echo $(stg applied))" = "" ] &&
-    [ "$(echo $(stg unapplied))" = "p0 p1 p2 p3 q0 p4" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2 p3 q0 p4" ]
 '
 
 test_done

@@ -15,17 +15,17 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'Coalesce some patches' '
-    [ "$(echo $(stg applied))" = "p0 p1 p2 p3" ] &&
-    [ "$(echo $(stg unapplied))" = "" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     stg coalesce --name=q0 --message="wee woo" p1 p2 &&
-    [ "$(echo $(stg applied))" = "p0 q0 p3" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 q0 p3" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Coalesce at stack top' '
     stg coalesce --name=q1 --message="wee woo wham" q0 p3 &&
-    [ "$(echo $(stg applied))" = "p0 q1" ] &&
-    [ "$(echo $(stg unapplied))" = "" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 q1" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_done

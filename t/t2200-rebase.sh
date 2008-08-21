@@ -28,7 +28,7 @@ test_expect_success \
 	'
 	stg rebase master~1 &&
 	test `stg id stack:{base}` = `git rev-parse master~1` &&
-	test `stg applied | wc -l` = 1
+	test `stg series --applied -c` = 1
 	'
 
 test_expect_success \
@@ -40,7 +40,7 @@ test_expect_success \
 test_expect_success \
 	'Check patches were re-applied' \
 	'
-	test $(stg applied | wc -l) = 1
+	test $(stg series --applied -c) = 1
 	'
 
 test_done

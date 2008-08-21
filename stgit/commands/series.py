@@ -37,7 +37,13 @@ options = [make_option('-b', '--branch',
            make_option('-a', '--all',
                        help = 'show all patches, including the hidden ones',
                        action = 'store_true'),
-           make_option('--hidden',
+           make_option('-A', '--applied',
+                       help = 'show the applied patches only',
+                       action = 'store_true'),
+           make_option('-U', '--unapplied',
+                       help = 'show the unapplied patches only',
+                       action = 'store_true'),
+           make_option('-H', '--hidden',
                        help = 'show the hidden patches only',
                        action = 'store_true'),
            make_option('-m', '--missing', metavar = 'BRANCH',
@@ -112,17 +118,24 @@ def func(parser, options, args):
         stack = directory.repository.get_stack(options.missing)
 
     # current series patches
-    if options.all:
+    applied = unapplied = hidden = ()
+    if options.applied or options.unapplied or options.hidden:
+        if options.all:
+            raise common.CmdException, \
+                '--all cannot be used with --applied/unapplied/hidden'
+        if options.applied:
+            applied = stack.patchorder.applied
+        if options.unapplied:
+            unapplied = stack.patchorder.unapplied
+        if options.hidden:
+            hidden = stack.patchorder.hidden
+    elif options.all:
         applied = stack.patchorder.applied
         unapplied = stack.patchorder.unapplied
-        hidden = stack.patchorder.hidden
-    elif options.hidden:
-        applied = unapplied = ()
         hidden = stack.patchorder.hidden
     else:
         applied = stack.patchorder.applied
         unapplied = stack.patchorder.unapplied
-        hidden = ()
 
     if options.missing:
         cmp_patches = cmp_stack.patchorder.all

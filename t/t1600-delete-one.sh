@@ -19,27 +19,27 @@ test_expect_success \
 test_expect_success \
     'Try to delete a non-existing patch' \
     '
-    [ $(stg applied | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 1 ] &&
     command_error stg delete bar &&
-    [ $(stg applied | wc -l) -eq 1 ]
+    [ $(stg series --applied -c) -eq 1 ]
     '
 
 test_expect_success \
     'Try to delete the topmost patch while dirty' \
     '
     echo dirty >> foo.txt &&
-    [ $(stg applied | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 1 ] &&
     command_error stg delete foo &&
-    [ $(stg applied | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 1 ] &&
     git reset --hard
     '
 
 test_expect_success \
     'Delete the topmost patch' \
     '
-    [ $(stg applied | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 1 ] &&
     stg delete foo &&
-    [ $(stg applied | wc -l) -eq 0 ]
+    [ $(stg series --applied -c) -eq 0 ]
     '
 
 test_expect_success \
@@ -55,9 +55,9 @@ test_expect_success \
 test_expect_success \
     'Delete an unapplied patch' \
     '
-    [ $(stg unapplied | wc -l) -eq 1 ] &&
+    [ $(stg series --unapplied -c) -eq 1 ] &&
     stg delete foo &&
-    [ $(stg unapplied | wc -l) -eq 0 ]
+    [ $(stg series --unapplied -c) -eq 0 ]
     '
 
 test_expect_success \
@@ -76,9 +76,9 @@ test_expect_success \
 test_expect_success \
     'Try to delete a non-topmost applied patch' \
     '
-    [ $(stg applied | wc -l) -eq 2 ] &&
+    [ $(stg series --applied -c) -eq 2 ] &&
     stg delete foo &&
-    [ $(stg applied | wc -l) -eq 1 ]
+    [ $(stg series --applied -c) -eq 1 ]
     '
 
 test_expect_success \
@@ -99,11 +99,11 @@ test_expect_success \
 test_expect_success \
     'Delete a patch in another branch' \
     '
-    [ $(stg applied | wc -l) -eq 2 ] &&
-    [ $(stg applied -b br | wc -l) -eq 1 ] &&
+    [ $(stg series --applied -c) -eq 2 ] &&
+    [ $(stg series --applied -b br -c) -eq 1 ] &&
     stg delete -b br baz &&
-    [ $(stg applied | wc -l) -eq 2 ] &&
-    [ $(stg applied -b br | wc -l) -eq 0 ]
+    [ $(stg series --applied -c) -eq 2 ] &&
+    [ $(stg series --applied -b br -c) -eq 0 ]
     '
 
 test_done
