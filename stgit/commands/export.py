@@ -65,7 +65,7 @@ options = [make_option('-d', '--dir',
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
+                       help = 'options to pass to git diff'),
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
                        action = 'store_true')]

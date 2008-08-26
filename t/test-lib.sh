@@ -226,12 +226,12 @@ test_create_repo () {
 	repo="$1"
 	mkdir "$repo"
 	cd "$repo" || error "Cannot setup test environment"
-	git-init >/dev/null 2>&1 ||
-	error "cannot run git-init -- have you installed git-core?"
+	git init >/dev/null 2>&1 ||
+	error "cannot run git init -- have you installed git-core?"
 	mkdir .git/info
 	echo "empty start" |
-	git-commit-tree `git-write-tree` >.git/refs/heads/master 2>&4 ||
-	error "cannot run git-commit -- is your git-core functioning?"
+	git commit-tree `git write-tree` >.git/refs/heads/master 2>&4 ||
+	error "cannot run git commit -- is your git-core functioning?"
 	cd "$owd"
 }
 

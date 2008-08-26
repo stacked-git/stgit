@@ -25,7 +25,7 @@ test_expect_success 'Create five patches' '
     [ "$(echo $(stg unapplied))" = "" ]
 '
 
-test_expect_success 'Pop two patches with git-reset' '
+test_expect_success 'Pop two patches with git reset' '
     git reset --hard HEAD~2 &&
     ! stg refresh &&
     stg repair &&
@@ -40,7 +40,7 @@ test_expect_success 'Create a new patch' '
     [ "$(echo $(stg unapplied))" = "p3 p4" ]
 '
 
-test_expect_success 'Go to an unapplied patch with with git-reset' '
+test_expect_success 'Go to an unapplied patch with with git reset' '
     git reset --hard $(stg id p3) &&
     ! stg refresh &&
     stg repair &&
@@ -49,7 +49,7 @@ test_expect_success 'Go to an unapplied patch with with git-reset' '
     [ "$(echo $(stg unapplied))" = "q0 p4" ]
 '
 
-test_expect_success 'Go back to below the stack base with git-reset' '
+test_expect_success 'Go back to below the stack base with git reset' '
     git reset --hard foo-tag &&
     stg repair &&
     [ "$(echo $(stg applied))" = "" ] &&

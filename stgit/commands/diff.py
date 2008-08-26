@@ -47,7 +47,7 @@ options = [make_option('-r', '--range',
                        metavar = 'rev1[..[rev2]]', dest = 'revs',
                        help = 'show the diff between revisions'),
            make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
+                       help = 'options to pass to git diff'),
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
                        action = 'store_true')]

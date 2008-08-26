@@ -159,7 +159,7 @@ def merge(orig_hash, file1_hash, file2_hash,
     if orig_hash:
         # modified in both
         if file1_hash and file2_hash:
-            # if modes are the same (git-read-tree probably dealt with it)
+            # if modes are the same (git read-tree probably dealt with it)
             if file1_hash == file2_hash:
                 if os.system('git update-index --cacheinfo %s %s %s'
                              % (file1_mode, file1_hash, path)) != 0:

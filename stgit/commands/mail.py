@@ -145,7 +145,7 @@ options = [make_option('-a', '--all',
            make_option('-b', '--branch',
                        help = 'use BRANCH instead of the default one'),
            make_option('-O', '--diff-opts',
-                       help = 'options to pass to git-diff'),
+                       help = 'options to pass to git diff'),
            make_option('-m', '--mbox',
                        help = 'generate an mbox file instead of sending',
                        action = 'store_true')]
