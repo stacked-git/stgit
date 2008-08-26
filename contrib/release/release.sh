@@ -13,7 +13,7 @@ BINRPM=dist/stgit-$VERSION-1.noarch.rpm
 SRCRPM=dist/stgit-$VERSION-1.src.rpm
 DEBPKG=../stgit_$VERSION-0_all.deb
 
-git-rev-list --pretty HEAD > ChangeLog
+git rev-list --pretty HEAD > ChangeLog
 
 rm -f MANIFEST
 

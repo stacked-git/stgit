@@ -25,7 +25,7 @@ test_expect_success 'Create five patches' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
-test_expect_success 'Pop two patches with git-reset' '
+test_expect_success 'Pop two patches with git reset' '
     git reset --hard HEAD~2 &&
     command_error stg refresh &&
     stg repair &&
@@ -40,7 +40,7 @@ test_expect_success 'Create a new patch' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "p3 p4" ]
 '
 
-test_expect_success 'Go to an unapplied patch with with git-reset' '
+test_expect_success 'Go to an unapplied patch with with git reset' '
     git reset --hard $(stg id p3) &&
     command_error stg refresh &&
     stg repair &&
@@ -49,7 +49,7 @@ test_expect_success 'Go to an unapplied patch with with git-reset' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "q0 p4" ]
 '
 
-test_expect_success 'Go back to below the stack base with git-reset' '
+test_expect_success 'Go back to below the stack base with git reset' '
     git reset --hard foo-tag &&
     stg repair &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&

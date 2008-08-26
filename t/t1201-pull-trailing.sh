@@ -29,9 +29,9 @@ test_expect_success \
 test_expect_success \
     'Port those patches to orig tree' \
     '(cd foo &&
-      GIT_DIR=../bar/.git git-format-patch --stdout \
+      GIT_DIR=../bar/.git git format-patch --stdout \
           $(cd ../bar && stg id master:{base})..HEAD |
-      git-am -3 -k
+      git am -3 -k
      )
     '
 

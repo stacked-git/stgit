@@ -40,7 +40,7 @@ if [ $allbranches = 1 ] && [ "$branches" != "" ]; then
     usage
 fi
 
-GIT_DIR=$(git-rev-parse --git-dir)
+GIT_DIR=$(git rev-parse --git-dir)
 GIT_DIR_SPKIPLEN=$(printf "$GIT_DIR/X" | wc -c)
 
 refdirs=''
@@ -64,9 +64,9 @@ else
 	elif [ -e "$GIT_DIR/refs/heads/$b" ]; then
 	    # other GIT branch
 	    refdirs="$refdirs $GIT_DIR/refs/heads/$b"
-	elif [ $(git-for-each-ref "refs/$b" | wc -l) != 0 ]; then
+	elif [ $(git for-each-ref "refs/$b" | wc -l) != 0 ]; then
 	    # other ref
-	    refdirs="$refdirs $(git-for-each-ref --format="$GIT_DIR/%(refname)" "refs/$b")"
+	    refdirs="$refdirs $(git for-each-ref --format="$GIT_DIR/%(refname)" "refs/$b")"
 	else
 	    echo >&2 "ERROR: no such ref '$b'"
 	    usage

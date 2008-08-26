@@ -39,11 +39,11 @@ set -e
 #   VCS
 # - lacks synchronisation of .cvsignore <-> .gitignore
 # - no support for filenames with spaces (stg lacks --zero output format)
-# - git-commit is too chatty when it finds nothing to commit
+# - git commit is too chatty when it finds nothing to commit
 # - lacks a "quick cvs commit" feature
 
 # DESIGN FLAWS
-# - while fetching, if a file change was not git-update-index'd when
+# - while fetching, if a file change was not git update-index'd when
 #   cvs-update'd (eg. because of a stg-cvs bug), it is not seen on further
 #   fetches until it changes again, since we scan "cvs update" output.
 #   This yields possible inconsistencies with CVS.
@@ -116,7 +116,7 @@ cvs_add_dir()
 
 # get context
 branch=$(stg branch)
-parent=$(git-config "branch.${branch}.stgit.parentbranch") || 
+parent=$(git config "branch.${branch}.stgit.parentbranch") || 
     usage "no declared parent for '$branch' - set branch.${branch}.stgit.parentbranch"
 
 # extract command
@@ -165,7 +165,7 @@ commit)
 
     # sync the parent branch
     stg branch "$parent"
-    git-cherry-pick "patches/${branch}/${patch}"
+    git cherry-pick "patches/${branch}/${patch}"
     stg branch "${branch}"
 
     # update

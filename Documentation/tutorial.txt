@@ -32,7 +32,7 @@ Repository initialisation
 -------------------------
 
 In stand-alone mode, StGIT is used in conjunction with a GIT repository
-that is already initialised (using 'git-init-db'). StGIT cannot be used
+that is already initialised (using 'git init'). StGIT cannot be used
 outside of a GIT repository.
 Any branch in a GIT repository may be managed by StGIT. Each branch
 managed by StGIT contains an independent series of StGIT patches.

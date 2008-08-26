@@ -28,7 +28,7 @@ cat > expected0.txt <<EOF
 D y.txt
 EOF
 printf '' > expected1.txt
-test_expect_success 'git-rm a file' '
+test_expect_success 'git rm a file' '
     stg new -m p0 &&
     git rm y.txt &&
     stg status > status0.txt &&
@@ -47,7 +47,7 @@ D y.txt
 M x.txt
 EOF
 printf '' > expected1.txt
-test_expect_success 'git-rm a file together with other changes' '
+test_expect_success 'git rm a file together with other changes' '
     stg new -m p1 &&
     echo x2 >> x.txt &&
     git rm y.txt &&

@@ -6,7 +6,7 @@
 # To enable this hook, make this file executable by "chmod +x post-update".
 
 git repack -d
-git-update-server-info
+git update-server-info
 
 # FTP upload
 lftp ftp://your-ftp-site/stgit.git -u username,password -e " \

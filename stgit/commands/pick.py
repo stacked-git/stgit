@@ -81,7 +81,7 @@ def __pick_commit(commit_id, patchname, options):
     if options.fold:
         out.start('Folding commit %s' % commit_id)
 
-        # try a direct git-apply first
+        # try a direct git apply first
         if not git.apply_diff(bottom, top):
             git.merge_recursive(bottom, git.get_head(), top)
 

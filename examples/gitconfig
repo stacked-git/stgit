@@ -43,14 +43,14 @@
 	#pager = filterdiff --annotate | colordiff | less -FRX
 
 	# GIT pull and fetch commands (should take the same arguments as
-	# git-fetch or git-pull).  By default:
-	#pullcmd = git-pull
-	#fetchcmd = git-fetch
+	# git fetch or git pull).  By default:
+	#pullcmd = git pull
+	#fetchcmd = git fetch
 
 	# Rebase command. Note that this command is internally implemented in
 	# a different way. Only define this option if a different rebase
 	# is needed (i.e. 'git svn rebase')
-	#rebasecmd = git-reset
+	#rebasecmd = git reset
 
 	# "stg pull" policy.  This is the repository default, which can be
 	# overriden on a per-branch basis using branch.*.stgit.pull-policy

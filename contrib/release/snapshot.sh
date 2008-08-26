@@ -5,7 +5,7 @@
 VERSION=`date "+%Y%m%d"`
 SNAPSHOT=dist/stgit-$VERSION.tar.gz
 
-git-rev-list --pretty HEAD > ChangeLog
+git rev-list --pretty HEAD > ChangeLog
 
 mv stgit/version.py stgit/version.py-
 echo "version = '$VERSION'" > stgit/version.py
