@@ -57,7 +57,7 @@ def git_id(crt_series, rev):
 def git_commit(name, repository, branch_name = None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
     The patch names allowed are in the form '<branch>:<patch>' and can
-    be followed by standard symbols used by git-rev-parse. If <patch>
+    be followed by standard symbols used by git rev-parse. If <patch>
     is '{base}', it represents the bottom of the stack.
     """
     # Try a [branch:]patch name first
