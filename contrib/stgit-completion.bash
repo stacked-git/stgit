@@ -11,8 +11,6 @@
 #         . ~/.stgit-completion.bash
 
 _stg_commands="
-    add
-    applied
     branch
     delete
     diff
@@ -20,7 +18,6 @@ _stg_commands="
     clone
     coalesce
     commit
-    cp
     edit
     export
     files
@@ -44,14 +41,12 @@ _stg_commands="
     rename
     repair
     resolved
-    rm
     series
     show
     sink
     status
     sync
     top
-    unapplied
     uncommit
     unhide
 "
@@ -264,8 +259,6 @@ _stg ()
         # working-copy commands
         diff)   _stg_patches_options $command _applied_patches "-r --range" ;;
 	resolved) _complete_files $command "$(_conflicting_files)" ;;
-	add)	_complete_files $command "$(_unknown_files)" ;;
-#	rm)	_complete_files $command "$(_known_files)" ;;
 	# commands that usually raher accept branches
 	branch) _complete_branch $command _all_branches ;;
 	rebase) _complete_branch $command _all_branches ;;
