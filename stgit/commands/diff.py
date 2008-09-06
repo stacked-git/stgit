@@ -23,8 +23,7 @@ from pydoc import pager
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
-
+from stgit import argparse, stack, git
 
 help = 'show the tree diff'
 usage = """%prog [options] [<files or dirs>]
@@ -46,7 +45,7 @@ options = [make_option('-r', '--range',
            make_option('-s', '--stat',
                        help = 'show the stat instead of the diff',
                        action = 'store_true')
-           ] + make_diff_opts_option()
+           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Show the tree diff

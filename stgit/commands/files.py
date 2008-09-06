@@ -22,8 +22,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
-
+from stgit import argparse, stack, git
 
 help = 'show the files modified by a patch (or the current patch)'
 usage = """%prog [options] [[<branch>:]<patch>]
@@ -41,8 +40,7 @@ options = [make_option('-s', '--stat',
            make_option('--bare',
                        help = 'bare file names (useful for scripting)',
                        action = 'store_true')
-           ] + make_diff_opts_option()
-
+           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Show the files modified by a patch (or the current patch)

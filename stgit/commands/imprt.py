@@ -23,8 +23,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
-
+from stgit import argparse, stack, git
 
 help = 'import a GNU diff file as a new patch'
 usage = """%prog [options] [<file>|<url>]
@@ -88,7 +87,7 @@ options = [make_option('-m', '--mail',
                        help = 'use COMMNAME as the committer name'),
            make_option('--commemail',
                        help = 'use COMMEMAIL as the committer e-mail')
-           ] + make_sign_options()
+           ] + argparse.sign_options()
 
 
 def __strip_patch_name(name):

@@ -22,7 +22,7 @@ from optparse import OptionParser, make_option
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git, version, templates
+from stgit import argparse, stack, git, version, templates
 from stgit.config import config
 from stgit.run import Run
 
@@ -151,8 +151,7 @@ options = [make_option('-a', '--all',
            make_option('-m', '--mbox',
                        help = 'generate an mbox file instead of sending',
                        action = 'store_true')
-           ] + make_diff_opts_option()
-
+           ] + argparse.diff_opts_option()
 
 def __get_sender():
     """Return the 'authname <authemail>' string as read from the

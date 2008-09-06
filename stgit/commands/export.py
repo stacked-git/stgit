@@ -22,7 +22,7 @@ import os
 from optparse import make_option
 
 from stgit.commands import common
-from stgit import git, utils, templates
+from stgit import argparse, git, templates
 from stgit.out import out
 from stgit.lib import git as gitlib
 
@@ -66,7 +66,7 @@ options = [make_option('-d', '--dir',
            make_option('-s', '--stdout',
                        help = 'dump the patches to the standard output',
                        action = 'store_true')
-           ] + utils.make_diff_opts_option()
+           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Export a range of patches.

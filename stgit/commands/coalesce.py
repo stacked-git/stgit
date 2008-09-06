@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 from optparse import make_option
 from stgit.out import *
-from stgit import utils
+from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git, transaction
 
@@ -35,7 +35,7 @@ done a sequence of pushes and pops yourself."""
 
 directory = common.DirectoryHasRepositoryLib()
 options = [make_option('-n', '--name', help = 'name of coalesced patch')
-           ] + utils.make_message_options()
+           ] + argparse.message_options()
 
 class SaveTemplateDone(Exception):
     pass

@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 from optparse import make_option
 
-from stgit import git, utils
+from stgit import argparse, git, utils
 from stgit.commands import common
 from stgit.lib import git as gitlib, transaction
 from stgit.out import *
@@ -60,9 +60,9 @@ options = [make_option('-d', '--diff',
                        action = 'store_true'),
            make_option('-e', '--edit', action = 'store_true',
                        help = 'invoke interactive editor'),
-           ] + (utils.make_sign_options() + utils.make_message_options()
-                + utils.make_author_committer_options()
-                + utils.make_diff_opts_option())
+           ] + (argparse.sign_options() + argparse.message_options()
+                + argparse.author_committer_options()
+                + argparse.diff_opts_option())
 
 def patch_diff(repository, cd, diff, diff_flags):
     if diff:

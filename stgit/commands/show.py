@@ -20,8 +20,7 @@ from optparse import OptionParser, make_option
 from pydoc import pager
 
 from stgit.commands.common import *
-from stgit import git
-
+from stgit import argparse, git
 
 help = 'show the commit corresponding to a patch (or the current patch)'
 usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
@@ -39,8 +38,7 @@ options = [make_option('-b', '--branch',
            make_option('-u', '--unapplied',
                        help = 'show the unapplied patches',
                        action = 'store_true')
-           ] + make_diff_opts_option()
-
+           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Show commit log and diff
