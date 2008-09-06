@@ -19,8 +19,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, os.path, re
-from optparse import OptionParser, make_option
-
 from stgit.exception import *
 from stgit.utils import *
 from stgit.out import *
