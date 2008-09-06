@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Code copied from Quilt (http://savannah.nongnu.org/projects/quilt)
 #
