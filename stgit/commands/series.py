@@ -21,6 +21,7 @@ from optparse import make_option
 from stgit.commands import common
 from stgit.commands.common import parse_patches
 from stgit.out import out
+from stgit.config import config
 
 help = 'print the patch series'
 usage = """%prog [options] [<patch-range>]
