@@ -301,6 +301,10 @@ def func(parser, options, args):
     else:
         filename = None
 
+    if filename:
+        filename = os.path.abspath(filename)
+    directory.cd_to_topdir()
+
     if options.series:
         __import_series(filename, options)
     elif options.mbox:
