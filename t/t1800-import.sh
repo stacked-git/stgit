@@ -22,6 +22,17 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply a patch created with "git diff" from a subdirectory' \
+    '
+    mkdir subdir && cd subdir &&
+    stg import ../../t1800-import/git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    stg delete .. &&
+    cd ..
+    '
+
+test_expect_success \
     'Apply a patch created with GNU diff' \
     '
     stg import ../t1800-import/gnu-diff &&
