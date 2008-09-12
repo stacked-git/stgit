@@ -21,6 +21,7 @@ from optparse import make_option
 from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git as gitlib, transaction
+from stgit.config import config
 
 help = 'create a new patch and make it the topmost one'
 usage = """%prog [options] [name]
@@ -72,8 +73,13 @@ def func(parser, options, args):
 
     # Add Signed-off-by: or similar.
     if options.sign_str != None:
+        sign_str = options.sign_str
+    else:
+        sign_str = config.get("stgit.autosign")
+
+    if sign_str != None:
         cd = cd.set_message(
-            utils.add_sign_line(cd.message, options.sign_str,
+            utils.add_sign_line(cd.message, sign_str,
                                 cd.committer.name, cd.committer.email))
 
     if options.save_template:
