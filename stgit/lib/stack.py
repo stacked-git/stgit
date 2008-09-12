@@ -68,7 +68,11 @@ class Patch(object):
             for f in os.listdir(self.__compat_dir):
                 os.remove(os.path.join(self.__compat_dir, f))
             os.rmdir(self.__compat_dir)
-        self.__stack.repository.refs.delete(self.__log_ref)
+        try:
+            # this compatibility log ref might not exist
+            self.__stack.repository.refs.delete(self.__log_ref)
+        except KeyError:
+            pass
     def set_commit(self, commit, msg):
         self.__write_compat_files(commit, msg)
         self.__stack.repository.refs.set(self.__ref, commit, msg)
