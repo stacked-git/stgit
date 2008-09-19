@@ -49,7 +49,7 @@ def func(parser, options, args):
 
     oldapplied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
-    all = unapplied + oldapplied
+    all = oldapplied + unapplied
 
     if options.to and not options.to in oldapplied:
         raise CmdException('Cannot sink below %s, since it is not applied'
@@ -63,12 +63,29 @@ def func(parser, options, args):
             raise CmdException('No patch applied')
         patches = [current]
 
-    if oldapplied:
-        crt_series.pop_patch(options.to or oldapplied[0])
-    push_patches(crt_series, patches)
+    before_patches = after_patches = []
 
+    # pop necessary patches
+    if oldapplied:
+        if options.to:
+            pop_idx = oldapplied.index(options.to)
+        else:
+            pop_idx = 0
+        after_patches = [p for p in oldapplied[pop_idx:] if p not in patches]
+
+        # find the deepest patch to pop
+        sink_applied = [p for p in oldapplied if p in patches]
+        if sink_applied:
+            sinked_idx = oldapplied.index(sink_applied[0])
+            if sinked_idx < pop_idx:
+                # this is the case where sink brings patches forward
+                before_patches = [p for p in oldapplied[sinked_idx:pop_idx]
+                                  if p not in patches]
+                pop_idx = sinked_idx
+
+        crt_series.pop_patch(oldapplied[pop_idx])
+
+    push_patches(crt_series, before_patches)
+    push_patches(crt_series, patches)
     if not options.nopush:
-        newapplied = crt_series.get_applied()
-        def not_reapplied_yet(p):
-            return not p in newapplied
-        push_patches(crt_series, filter(not_reapplied_yet, oldapplied))
+        push_patches(crt_series, after_patches)
