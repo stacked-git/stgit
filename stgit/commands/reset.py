@@ -27,19 +27,8 @@ kind = 'stack'
 usage = ['[options] <state> [<patchnames>]']
 description = """
 Reset the patch stack to an earlier state. The state is specified with
-a commit from a stack log; for a branch foo, StGit stores the stack
-log in foo.stgit^. So to undo the last N StGit commands (or rather,
-the last N log entries; there is not an exact one-to-one
-relationship), you would say
-
-  stg reset foo.stgit^~N
-
-or, if you are not sure how many steps to undo, you can view the log
-with "git log" or gitk
-
-  gitk foo.stgit^
-
-and then reset to any sha1 you see in the log.
+a commit id from a stack log; "stg log" lets you view this log, and
+"stg reset" lets you reset to any state you see in the log.
 
 If one or more patch names are given, reset only those patches, and
 leave the rest alone."""

@@ -1,5 +1,8 @@
+# -*- coding: utf-8 -*-
+
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
+Copyright (C) 2008, Karl Hasselström <kha@treskal.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2 as
@@ -15,35 +18,24 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, time
-from pydoc import pager
+import os.path
+from optparse import make_option
+from stgit import run
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit import stack, git
-from stgit.out import *
-from stgit.run import Run
+from stgit.commands import common
+from stgit.lib import log
+from stgit.out import out
 
 help = 'Display the patch changelog'
-kind = 'patch'
-usage = ['[options] [patch]']
+kind = 'stack'
+usage = ['[options] [<patches>]']
 description = """
-List all the current and past commit ids of the given patch. The
---graphical option invokes gitk instead of printing. The changelog
-commit messages have the form '<action> <new-patch-id>'. The <action>
-can be one of the following:
+List the history of the patch stack: the stack log. If one or more
+patch names are given, limit the list to the log entries that touch
+the named patches.
 
-  new     - new patch created
-  refresh - local changes were added to the patch
-  push    - the patch was cleanly pushed onto the stack
-  push(m) - the patch was pushed onto the stack with a three-way merge
-  push(f) - the patch was fast-forwarded
-  undo    - the patch boundaries were restored to the old values
-
-Note that only the diffs shown in the 'refresh', 'undo' and 'sync'
-actions are meaningful for the patch changes. The 'push' actions
-represent the changes to the entire base of the current
-patch. Conflicts reset the patch content and a subsequent 'refresh'
-will show the entire patch."""
+"stg undo" and "stg redo" let you step back and forth in the patch
+stack. "stg reset" lets you go directly to any state."""
 
 options = [
     opt('-b', '--branch',
@@ -57,91 +49,40 @@ options = [
     opt('-g', '--graphical', action = 'store_true',
         short = 'Run gitk instead of printing')]
 
-directory = DirectoryHasRepository(log = False)
+directory = common.DirectoryHasRepositoryLib()
 
-def show_log(log, options):
-    """List the patch changelog
-    """
-    commit = git.get_commit(log)
-    if options.number != None:
-        n = options.number
-    else:
-        n = -1
-    diff_list = []
-    while commit:
-        if n == 0:
-            # limit the output
-            break
-
-        log = commit.get_log().split('\n')
-
-        cmd_rev = log[0].split()
-        if len(cmd_rev) >= 2:
-            cmd = cmd_rev[0]
-            rev = cmd_rev[1]
-        elif len(cmd_rev) == 1:
-            cmd = cmd_rev[0]
-            rev = ''
-        else:
-            cmd = rev = ''
-
-        if options.patch:
-            if cmd in ['refresh', 'undo', 'sync', 'edit']:
-                diff_list.append(git.pretty_commit(commit.get_id_hash()))
-
-                # limiter decrement
-                n -= 1
-        else:
-            if len(log) >= 3:
-                notes = log[2]
-            else:
-                notes = ''
-            author_name, author_email, author_date = \
-                         name_email_date(commit.get_author())
-            secs, tz = author_date.split()
-            date = '%s %s' % (time.ctime(int(secs)), tz)
-
-            if options.full:
-                out.stdout('%-7s %-40s %s' % (cmd[:7], rev[:40], date))
-            else:
-                out.stdout('%-8s [%-7s] %-28s  %s' % \
-                           (rev[:8], cmd[:7], notes[:28], date))
-
-            # limiter decrement
-            n -= 1
-
-        parent = commit.get_parent()
-        if parent:
-            commit = git.get_commit(parent)
-        else:
-            commit = None
-
-    if options.patch and diff_list:
-        pager('\n'.join(diff_list).rstrip())
+def show_log(stacklog, pathlim, num, full, show_diff):
+    cmd = ['git', 'log']
+    if num != None and num > 0:
+        cmd.append('-%d' % num)
+    if show_diff:
+        cmd.append('-p')
+    elif not full:
+        cmd.append('--pretty=format:%h   %aD   %s')
+    run.Run(*(cmd + [stacklog.sha1, '--'] + pathlim)).run()
 
 def func(parser, options, args):
-    """Show the patch changelog
-    """
-    if len(args) == 0:
-        name = crt_series.get_current()
-        if not name:
-            raise CmdException, 'No patches applied'
-    elif len(args) == 1:
-        name = args[0]
-        if not name in crt_series.get_applied() + crt_series.get_unapplied() + \
-               crt_series.get_hidden():
-            raise CmdException, 'Unknown patch "%s"' % name
+    if options.branch:
+        stack = directory.repository.get_stack(options.branch)
     else:
-        parser.error('incorrect number of arguments')
-
-    patch = crt_series.get_patch(name)
-
-    log = patch.get_log()
-    if not log:
-        raise CmdException, 'No changelog for patch "%s"' % name
+        stack = directory.repository.current_stack
+    patches = common.parse_patches(args, list(stack.patchorder.all))
+    logref = log.log_ref(stack.name)
+    try:
+        logcommit = stack.repository.refs.get(logref)
+    except KeyError:
+        out.info('Log is empty')
+        return
+    stacklog = log.get_log_entry(stack.repository, logref, logcommit)
+    pathlim = [os.path.join('patches', pn) for pn in patches]
 
     if options.graphical:
-        # discard the exit codes generated by SIGINT, SIGKILL, SIGTERM
-        Run('gitk', log).returns([0, -2, -9, -15]).run()
+        for o in ['diff', 'number', 'full']:
+            if getattr(options, o):
+                parser.error('cannot combine --graphical and --%s' % o)
+        # Discard the exit codes generated by SIGINT, SIGKILL, and SIGTERM.
+        run.Run(*(['gitk', stacklog.simplified.sha1, '--'] + pathlim)
+                 ).returns([0, -2, -9, -15]).run()
     else:
-        show_log(log, options)
+        show_log(stacklog.simplified, pathlim,
+                 options.number, options.full, options.diff)
