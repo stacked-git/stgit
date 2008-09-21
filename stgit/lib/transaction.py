@@ -81,6 +81,7 @@ class StackTransaction(object):
         self.__applied = list(self.__stack.patchorder.applied)
         self.__unapplied = list(self.__stack.patchorder.unapplied)
         self.__hidden = list(self.__stack.patchorder.hidden)
+        self.__conflicting_push = None
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
@@ -173,20 +174,27 @@ class StackTransaction(object):
             out.error(self.__error)
 
         # Write patches.
-        for pn, commit in self.__patches.iteritems():
-            if self.__stack.patches.exists(pn):
-                p = self.__stack.patches.get(pn)
-                if commit == None:
-                    p.delete()
+        def write(msg):
+            for pn, commit in self.__patches.iteritems():
+                if self.__stack.patches.exists(pn):
+                    p = self.__stack.patches.get(pn)
+                    if commit == None:
+                        p.delete()
+                    else:
+                        p.set_commit(commit, msg)
                 else:
-                    p.set_commit(commit, self.__msg)
-            else:
-                self.__stack.patches.new(pn, commit, self.__msg)
-        _print_current_patch(self.__stack.patchorder.applied, self.__applied)
-        self.__stack.patchorder.applied = self.__applied
-        self.__stack.patchorder.unapplied = self.__unapplied
-        self.__stack.patchorder.hidden = self.__hidden
-        log.log_entry(self.__stack, self.__msg)
+                    self.__stack.patches.new(pn, commit, msg)
+            self.__stack.patchorder.applied = self.__applied
+            self.__stack.patchorder.unapplied = self.__unapplied
+            self.__stack.patchorder.hidden = self.__hidden
+            log.log_entry(self.__stack, msg)
+        old_applied = self.__stack.patchorder.applied
+        write(self.__msg)
+        if self.__conflicting_push != None:
+            self.__patches = _TransPatchMap(self.__stack)
+            self.__conflicting_push()
+            write(self.__msg + ' (CONFLICT)')
+        _print_current_patch(old_applied, self.__applied)
 
         if self.__error:
             return utils.STGIT_CONFLICT
@@ -280,22 +288,31 @@ class StackTransaction(object):
         cd = cd.set_tree(tree)
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
                ['parent', 'tree', 'author', 'message']):
-            self.patches[pn] = self.__stack.repository.commit(cd)
+            comm = self.__stack.repository.commit(cd)
         else:
+            comm = None
             s = ' (unmodified)'
-        if pn in self.hidden:
-            x = self.hidden
-        else:
-            x = self.unapplied
-        del x[x.index(pn)]
-        self.applied.append(pn)
         out.info('Pushed %s%s' % (pn, s))
+        def update():
+            if comm:
+                self.patches[pn] = comm
+            if pn in self.hidden:
+                x = self.hidden
+            else:
+                x = self.unapplied
+            del x[x.index(pn)]
+            self.applied.append(pn)
         if merge_conflict:
             # We've just caused conflicts, so we must allow them in
             # the final checkout.
             self.__allow_conflicts = lambda trans: True
 
+            # Save this update so that we can run it a little later.
+            self.__conflicting_push = update
             self.__halt('Merge conflict')
+        else:
+            # Update immediately.
+            update()
 
     def reorder_patches(self, applied, unapplied, hidden, iw = None):
         """Push and pop patches to attain the given ordering."""
