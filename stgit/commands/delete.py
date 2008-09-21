@@ -16,21 +16,22 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
-
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
 
-help = 'delete patches'
-usage = """%prog [options] <patch1> [<patch2>] [<patch3>..<patch4>]
-
+help = 'Delete patches'
+usage = ['[options] <patch1> [<patch2>] [<patch3>..<patch4>]']
+description = """
 Delete the patches passed as arguments.
 
 Note that the 'delete' operation is irreversible."""
 
+options = [
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch')]
+
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
     """Delete one or more patches."""

@@ -18,16 +18,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
-
+from stgit.argparse import opt
 from stgit import argparse, git, utils
 from stgit.commands import common
 from stgit.lib import git as gitlib, transaction
 from stgit.out import *
 
 help = 'edit a patch description or diff'
-usage = """%prog [options] [<patch>]
-
+usage = ['[options] [<patch>]']
+description = """
 Edit the description and author information of the given patch (or the
 current patch if no patch name was given). With --diff, also edit the
 diff.
@@ -54,15 +53,15 @@ If the patch diff is edited but does not apply, no changes are made to
 the patch at all. The edited patch is saved to a file which you can
 feed to "stg edit --file", once you have made sure it does apply."""
 
+options = [
+    opt('-d', '--diff', action = 'store_true',
+        short = 'Edit the patch diff'),
+    opt('-e', '--edit', action = 'store_true',
+        short = 'Invoke interactive editor'),
+    ] + (argparse.sign_options() + argparse.message_options() +
+         argparse.author_committer_options() + argparse.diff_opts_option())
+
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-d', '--diff',
-                       help = 'edit the patch diff',
-                       action = 'store_true'),
-           make_option('-e', '--edit', action = 'store_true',
-                       help = 'invoke interactive editor'),
-           ] + (argparse.sign_options() + argparse.message_options()
-                + argparse.author_committer_options()
-                + argparse.diff_opts_option())
 
 def patch_diff(repository, cd, diff, diff_flags):
     if diff:

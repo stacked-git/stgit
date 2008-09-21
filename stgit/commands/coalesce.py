@@ -17,15 +17,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
+from stgit.argparse import opt
 from stgit.out import *
 from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git, transaction
 
-help = 'coalesce two or more patches into one'
-usage = """%prog [options] <patches>
-
+help = 'Coalesce two or more patches into one'
+usage = ['[options] <patches>']
+description = """
 Coalesce two or more patches, creating one big patch that contains all
 their changes.
 
@@ -33,9 +33,10 @@ If there are conflicts when reordering the patches to match the order
 you specify, you will have to resolve them manually just as if you had
 done a sequence of pushes and pops yourself."""
 
-directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-n', '--name', help = 'name of coalesced patch')
+options = [opt('-n', '--name', short = 'Name of coalesced patch')
            ] + argparse.message_options()
+
+directory = common.DirectoryHasRepositoryLib()
 
 class SaveTemplateDone(Exception):
     pass

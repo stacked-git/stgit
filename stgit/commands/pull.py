@@ -16,18 +16,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit.config import GitConfigException
 from stgit import stack, git
 
-
-help = 'pull the changes from the remote repository'
-usage = """%prog [options] [<repository>]
-
+help = 'Pull changes from a remote repository'
+usage = ['[options] [<repository>]']
+description = """
 Pull the latest changes from the given remote repository (defaulting
 to branch.<name>.remote, or 'origin' if not set). This command works
 by popping all the patches from the stack, pulling the changes in the
@@ -38,13 +36,13 @@ resolved and the patch pushed again.
 
 Check the 'git fetch' documentation for the <repository> format."""
 
+options = [
+    opt('-n', '--nopush', action = 'store_true',
+        short = 'Do not push the patches back after pulling'),
+    opt('-m', '--merged', action = 'store_true',
+        short = 'Check for patches merged upstream')]
+
 directory = DirectoryGotoToplevel()
-options = [make_option('-n', '--nopush',
-                       help = 'do not push the patches back after pulling',
-                       action = 'store_true'),
-           make_option('-m', '--merged',
-                       help = 'check for patches merged upstream',
-                       action = 'store_true')]
 
 def func(parser, options, args):
     """Pull the changes from a remote repository

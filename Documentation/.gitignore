@@ -1,5 +1,5 @@
 *.html
 *.pdf
-*.7
-*.1
+*.[1-9]
+stg-*.txt
 doc.dep

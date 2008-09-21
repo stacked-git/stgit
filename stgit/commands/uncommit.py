@@ -17,15 +17,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import *
 from stgit import utils
 
-help = 'turn regular GIT commits into StGIT patches'
-usage = """%prog [<patchnames>] | -n NUM [<prefix>]] | -t <committish> [-x]
-
+help = 'Turn regular git commits into StGit patches'
+usage = ['<patch-name-1> [<patch-name-2> ...]',
+         '-n NUM [<prefix>]',
+         '-t <committish> [-x]']
+description = """
 Take one or more git commits at the base of the current stack and turn
 them into StGIT patches. The new patches are created as applied patches
 at the bottom of the stack. This is the opposite of 'stg commit'.
@@ -46,14 +48,14 @@ given commit should be uncommitted.
 Only commits with exactly one parent can be uncommitted; in other
 words, you can't uncommit a merge."""
 
+options = [
+    opt('-n', '--number', type = 'int',
+        short = 'Uncommit the specified number of commits'),
+    opt('-t', '--to', short = 'Uncommit to the specified commit'),
+    opt('-x', '--exclusive', action = 'store_true',
+        short = 'Exclude the commit specified by the --to option')]
+
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-n', '--number', type = 'int',
-                       help = 'uncommit the specified number of commits'),
-           make_option('-t', '--to',
-                       help = 'uncommit to the specified commit'),
-           make_option('-x', '--exclusive',
-                       help = 'exclude the commit specified by the --to option',
-                       action = 'store_true')]
 
 def func(parser, options, args):
     """Uncommit a number of patches.

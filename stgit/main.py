@@ -19,11 +19,10 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, traceback
-from optparse import OptionParser
 
 import stgit.commands
 from stgit.out import *
-from stgit import run, utils
+from stgit import argparse, run, utils
 
 #
 # The commands map
@@ -219,8 +218,7 @@ def _main():
 
             sys.argv[0] += ' %s' % cmd
             command = commands[cmd]
-            parser = OptionParser(usage = command.usage,
-                                  option_list = command.options)
+            parser = argparse.make_option_parser(command)
             from pydoc import pager
             pager(parser.format_help())
         else:
@@ -242,8 +240,7 @@ def _main():
     del(sys.argv[1])
 
     command = commands[cmd]
-    usage = command.usage.split('\n')[0].strip()
-    parser = OptionParser(usage = usage, option_list = command.options)
+    parser = argparse.make_option_parser(command)
     options, args = parser.parse_args()
     directory = command.directory
 

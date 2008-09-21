@@ -18,16 +18,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os, re, email
 from mailbox import UnixMailbox
 from StringIO import StringIO
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import argparse, stack, git
 
-help = 'import a GNU diff file as a new patch'
-usage = """%prog [options] [<file>|<url>]
-
+name = 'import'
+help = 'Import a GNU diff file as a new patch'
+usage = ['[options] [<file>|<url>]']
+description = """
 Create a new patch and apply the given GNU diff file (or the standard
 input). By default, the file name is used as the patch name but this
 can be overridden with the '--name' option. The patch can either be a
@@ -43,52 +43,44 @@ stack.
 The patch description has to be separated from the data with a '---'
 line."""
 
-directory = DirectoryHasRepository()
-options = [make_option('-m', '--mail',
-                       help = 'import the patch from a standard e-mail file',
-                       action = 'store_true'),
-           make_option('-M', '--mbox',
-                       help = 'import a series of patches from an mbox file',
-                       action = 'store_true'),
-           make_option('-s', '--series',
-                       help = 'import a series of patches',
-                       action = 'store_true'),
-           make_option('-u', '--url',
-                       help = 'import a patch from a URL',
-                       action = 'store_true'),
-           make_option('-n', '--name',
-                       help = 'use NAME as the patch name'),
-           make_option('-t', '--strip',
-                       help = 'strip numbering and extension from patch name',
-                       action = 'store_true'),
-           make_option('-i', '--ignore',
-                       help = 'ignore the applied patches in the series',
-                       action = 'store_true'),
-           make_option('--replace',
-                       help = 'replace the unapplied patches in the series',
-                       action = 'store_true'),
-           make_option('-b', '--base',
-                       help = 'use BASE instead of HEAD for file importing'),
-           make_option('-e', '--edit',
-                       help = 'invoke an editor for the patch description',
-                       action = 'store_true'),
-           make_option('-p', '--showpatch',
-                       help = 'show the patch content in the editor buffer',
-                       action = 'store_true'),
-           make_option('-a', '--author', metavar = '"NAME <EMAIL>"',
-                       help = 'use "NAME <EMAIL>" as the author details'),
-           make_option('--authname',
-                       help = 'use AUTHNAME as the author name'),
-           make_option('--authemail',
-                       help = 'use AUTHEMAIL as the author e-mail'),
-           make_option('--authdate',
-                       help = 'use AUTHDATE as the author date'),
-           make_option('--commname',
-                       help = 'use COMMNAME as the committer name'),
-           make_option('--commemail',
-                       help = 'use COMMEMAIL as the committer e-mail')
-           ] + argparse.sign_options()
+options = [
+    opt('-m', '--mail', action = 'store_true',
+        short = 'Import the patch from a standard e-mail file'),
+    opt('-M', '--mbox', action = 'store_true',
+        short = 'Import a series of patches from an mbox file'),
+    opt('-s', '--series', action = 'store_true',
+        short = 'Import a series of patches'),
+    opt('-u', '--url', action = 'store_true',
+        short = 'Import a patch from a URL'),
+    opt('-n', '--name',
+        short = 'Use NAME as the patch name'),
+    opt('-t', '--strip', action = 'store_true',
+        short = 'Strip numbering and extension from patch name'),
+    opt('-i', '--ignore', action = 'store_true',
+        short = 'Ignore the applied patches in the series'),
+    opt('--replace', action = 'store_true',
+        short = 'Replace the unapplied patches in the series'),
+    opt('-b', '--base',
+        short = 'Use BASE instead of HEAD for file importing'),
+    opt('-e', '--edit', action = 'store_true',
+        short = 'Invoke an editor for the patch description'),
+    opt('-p', '--showpatch', action = 'store_true',
+        short = 'Show the patch content in the editor buffer'),
+    opt('-a', '--author', metavar = '"NAME <EMAIL>"',
+        short = 'Use "NAME <EMAIL>" as the author details'),
+    opt('--authname',
+        short = 'Use AUTHNAME as the author name'),
+    opt('--authemail',
+        short = 'Use AUTHEMAIL as the author e-mail'),
+    opt('--authdate',
+        short = 'Use AUTHDATE as the author date'),
+    opt('--commname',
+        short = 'Use COMMNAME as the committer name'),
+    opt('--commemail',
+        short = 'Use COMMEMAIL as the committer e-mail'),
+    ] + argparse.sign_options()
 
+directory = DirectoryHasRepository()
 
 def __strip_patch_name(name):
     stripped = re.sub('^[0-9]+-(.*)$', '\g<1>', name)

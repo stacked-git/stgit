@@ -19,16 +19,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import os
-from optparse import make_option
-
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit import argparse, git, templates
 from stgit.out import out
 from stgit.lib import git as gitlib
 
-help = 'exports patches to a directory'
-usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
-
+help = 'Export patches to a directory'
+usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+description = """
 Export a range of applied patches to a given directory (defaults to
 'patches-<branch>') in a standard unified GNU diff format. A template
 file (defaulting to '.git/patchexport.tmpl' or
@@ -45,28 +44,26 @@ file:
   %(authemail)s   - author's e-mail
   %(authdate)s    - patch creation date
   %(commname)s    - committer's name
-  %(commemail)s   - committer's e-mail
-"""
+  %(commemail)s   - committer's e-mail"""
+
+options = [
+    opt('-d', '--dir',
+        short = 'Export patches to DIR instead of the default'),
+    opt('-p', '--patch', action = 'store_true',
+        short = 'Append .patch to the patch names'),
+    opt('-e', '--extension',
+        short = 'Append .EXTENSION to the patch names'),
+    opt('-n', '--numbered', action = 'store_true',
+        short = 'Prefix the patch names with order numbers'),
+    opt('-t', '--template', metavar = 'FILE',
+        short = 'Use FILE as a template'),
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch'),
+    opt('-s', '--stdout', action = 'store_true',
+        short = 'Dump the patches to the standard output'),
+    ] + argparse.diff_opts_option()
 
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-d', '--dir',
-                       help = 'export patches to DIR instead of the default'),
-           make_option('-p', '--patch',
-                       help = 'append .patch to the patch names',
-                       action = 'store_true'),
-           make_option('-e', '--extension',
-                       help = 'append .EXTENSION to the patch names'),
-           make_option('-n', '--numbered',
-                       help = 'prefix the patch names with order numbers',
-                       action = 'store_true'),
-           make_option('-t', '--template', metavar = 'FILE',
-                       help = 'Use FILE as a template'),
-           make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
-           make_option('-s', '--stdout',
-                       help = 'dump the patches to the standard output',
-                       action = 'store_true')
-           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Export a range of patches.

@@ -17,17 +17,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
-
-help = 'push one or more patches onto of the stack'
-usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
-
+help = 'Push one or more patches onto the stack'
+usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+description = """
 Push one or more patches (defaulting to the first unapplied one) onto
 the stack. The 'push' operation allows patch reordering by commuting
 them with the three-way merge algorithm. If the result of the 'push'
@@ -39,22 +37,19 @@ command run.
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
-directory = DirectoryGotoToplevel()
-options = [make_option('-a', '--all',
-                       help = 'push all the unapplied patches',
-                       action = 'store_true'),
-           make_option('-n', '--number', type = 'int',
-                       help = 'push the specified number of patches'),
-           make_option('--reverse',
-                       help = 'push the patches in reverse order',
-                       action = 'store_true'),
-           make_option('-m', '--merged',
-                       help = 'check for patches merged upstream',
-                       action = 'store_true'),
-           make_option('--undo',
-                       help = 'undo the last patch pushing',
-                       action = 'store_true')]
+options = [
+    opt('-a', '--all', action = 'store_true',
+        short = 'Push all the unapplied patches'),
+    opt('-n', '--number', type = 'int',
+        short = 'Push the specified number of patches'),
+    opt('--reverse', action = 'store_true',
+        short = 'Push the patches in reverse order'),
+    opt('-m', '--merged', action = 'store_true',
+        short = 'Check for patches merged upstream'),
+    opt('--undo', action = 'store_true',
+        short = 'Undo the last patch pushing')]
 
+directory = DirectoryGotoToplevel()
 
 def func(parser, options, args):
     """Pushes the given patch or all onto the series

@@ -16,62 +16,49 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
-
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.commands.common import parse_patches
 from stgit.out import out
 from stgit.config import config
 
-help = 'print the patch series'
-usage = """%prog [options] [<patch-range>]
-
+help = 'Print the patch series'
+usage = ['[options] [<patch-range>]']
+description = """
 Show all the patches in the series or just those in the given
 range. The applied patches are prefixed with a '+', the unapplied ones
 with a '-' and the hidden ones with a '!'. The current patch is
 prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
+options = [
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch'),
+    opt('-a', '--all', action = 'store_true',
+        short = 'Show all patches, including the hidden ones'),
+    opt('-A', '--applied', action = 'store_true',
+        short = 'Show the applied patches only'),
+    opt('-U', '--unapplied', action = 'store_true',
+        short = 'Show the unapplied patches only'),
+    opt('-H', '--hidden', action = 'store_true',
+        short = 'Show the hidden patches only'),
+    opt('-m', '--missing', metavar = 'BRANCH',
+        short = 'Show patches in BRANCH missing in current'),
+    opt('-c', '--count', action = 'store_true',
+        short = 'Print the number of patches in the series'),
+    opt('-d', '--description', action = 'store_true',
+        short = 'Show a short description for each patch'),
+    opt('--author', action = 'store_true',
+        short = 'Show the author name for each patch'),
+    opt('-e', '--empty', action = 'store_true',
+        short = 'Check whether patches are empty'),
+    opt('--showbranch', action = 'store_true',
+        short = 'Append the branch name to the listed patches'),
+    opt('--noprefix', action = 'store_true',
+        short = 'Do not show the patch status prefix'),
+    opt('-s', '--short', action = 'store_true',
+        short = 'List just the patches around the topmost patch')]
+
 directory = common.DirectoryHasRepositoryLib()
-
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
-           make_option('-a', '--all',
-                       help = 'show all patches, including the hidden ones',
-                       action = 'store_true'),
-           make_option('-A', '--applied',
-                       help = 'show the applied patches only',
-                       action = 'store_true'),
-           make_option('-U', '--unapplied',
-                       help = 'show the unapplied patches only',
-                       action = 'store_true'),
-           make_option('-H', '--hidden',
-                       help = 'show the hidden patches only',
-                       action = 'store_true'),
-           make_option('-m', '--missing', metavar = 'BRANCH',
-                       help = 'show patches in BRANCH missing in current'),
-           make_option('-c', '--count',
-                       help = 'print the number of patches in the series',
-                       action = 'store_true'),
-           make_option('-d', '--description',
-                       help = 'show a short description for each patch',
-                       action = 'store_true'),
-           make_option('--author',
-                       help = 'show the author name for each patch',
-                       action = 'store_true'),
-           make_option('-e', '--empty',
-                       help = 'check whether patches are empty '
-                       '(much slower)',
-                       action = 'store_true'),
-           make_option('--showbranch',
-                       help = 'append the branch name to the listed patches',
-                       action = 'store_true'),
-           make_option('--noprefix',
-                       help = 'do not show the patch status prefix',
-                       action = 'store_true'),
-           make_option('-s', '--short',
-                       help = 'list just the patches around the topmost patch',
-                       action = 'store_true')]
-
 
 def __get_description(stack, patch):
     """Extract and return a patch's short description

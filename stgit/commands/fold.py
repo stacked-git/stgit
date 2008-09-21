@@ -16,17 +16,15 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
-
-help = 'integrate a GNU diff patch into the current patch'
-usage = """%prog [options] [<file>]
-
+help = 'Integrate a GNU diff patch into the current patch'
+usage = ['[options] [<file>]']
+description = """
 Apply the given GNU diff file (or the standard input) onto the top of
 the current patch. With the '--threeway' option, the patch is applied
 onto the bottom of the current patch and a three-way merge is
@@ -34,13 +32,13 @@ performed with the current top. With the --base option, the patch is
 applied onto the specified base and a three-way merged is performed
 with the current top."""
 
-directory = DirectoryHasRepository()
-options = [make_option('-t', '--threeway',
-                       help = 'perform a three-way merge with the current patch',
-                       action = 'store_true'),
-           make_option('-b', '--base',
-                       help = 'use BASE instead of HEAD applying the patch')]
+options = [
+    opt('-t', '--threeway', action = 'store_true',
+        short = 'Perform a three-way merge with the current patch'),
+    opt('-b', '--base',
+        short = 'Use BASE instead of HEAD applying the patch')]
 
+directory = DirectoryHasRepository()
 
 def func(parser, options, args):
     """Integrate a GNU diff patch into the current patch

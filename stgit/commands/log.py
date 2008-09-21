@@ -16,16 +16,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, time
-from optparse import OptionParser, make_option
 from pydoc import pager
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit import stack, git
 from stgit.out import *
 from stgit.run import Run
 
-help = 'display the patch changelog'
-usage = """%prog [options] [patch]
-
+help = 'Display the patch changelog'
+usage = ['[options] [patch]']
+description = """
 List all the current and past commit ids of the given patch. The
 --graphical option invokes gitk instead of printing. The changelog
 commit messages have the form '<action> <new-patch-id>'. The <action>
@@ -44,20 +44,19 @@ represent the changes to the entire base of the current
 patch. Conflicts reset the patch content and a subsequent 'refresh'
 will show the entire patch."""
 
+options = [
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default one'),
+    opt('-p', '--patch', action = 'store_true',
+        short = 'Show the refresh diffs'),
+    opt('-n', '--number', type = 'int',
+        short = 'Limit the output to NUMBER commits'),
+    opt('-f', '--full', action = 'store_true',
+        short = 'Show the full commit ids'),
+    opt('-g', '--graphical', action = 'store_true',
+        short = 'Run gitk instead of printing')]
+
 directory = DirectoryHasRepository()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
-           make_option('-p', '--patch',
-                       help = 'show the refresh diffs',
-                       action = 'store_true'),
-           make_option('-n', '--number', type = 'int',
-                       help = 'limit the output to NUMBER commits'),
-           make_option('-f', '--full',
-                       help = 'show the full commit ids',
-                       action = 'store_true'),
-           make_option('-g', '--graphical',
-                       help = 'run gitk instead of printing',
-                       action = 'store_true')]
 
 def show_log(log, options):
     """List the patch changelog

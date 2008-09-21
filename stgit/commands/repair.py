@@ -18,8 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
@@ -27,8 +26,8 @@ from stgit.run import *
 from stgit import stack, git
 
 help = 'Fix StGit metadata if branch was modified with git commands'
-usage = """%prog [options]
-
+usage = ['']
+description = """
 If you modify an StGit stack (branch) with some git commands -- such
 as commit, pull, merge, and rebase -- you will leave the StGit
 metadata in an inconsistent state. In that situation, you have two
@@ -68,8 +67,9 @@ NOTE: If using git commands on the stack was a mistake, running "stg
 repair" is _not_ what you want. In that case, what you want is option
 (1) above."""
 
-directory = DirectoryGotoToplevel()
 options = []
+
+directory = DirectoryGotoToplevel()
 
 class Commit(object):
     def __init__(self, id):

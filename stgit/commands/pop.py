@@ -17,16 +17,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
 
-
-help = 'pop one or more patches from the stack'
-usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
-
+help = 'Pop one or more patches from the stack'
+usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+description = """
 Pop the topmost patch or a range of patches from the stack. The
 command fails if there are conflicts or local changes (and --keep was
 not specified).
@@ -36,16 +34,15 @@ patches passed on the command line are popped from the stack. Some of
 the push operations may fail because of conflicts (push --undo would
 revert the last push operation)."""
 
-directory = DirectoryGotoToplevel()
-options = [make_option('-a', '--all',
-                       help = 'pop all the applied patches',
-                       action = 'store_true'),
-           make_option('-n', '--number', type = 'int',
-                       help = 'pop the specified number of patches'),
-           make_option('-k', '--keep',
-                       help = 'keep the local changes',
-                       action = 'store_true')]
+options = [
+    opt('-a', '--all', action = 'store_true',
+        short = 'Pop all the applied patches'),
+    opt('-n', '--number', type = 'int',
+        short = 'Pop the specified number of patches'),
+    opt('-k', '--keep', action = 'store_true',
+        short = 'Keep the local changes')]
 
+directory = DirectoryGotoToplevel()
 
 def func(parser, options, args):
     """Pop the topmost patch from the stack

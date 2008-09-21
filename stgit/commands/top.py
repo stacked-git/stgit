@@ -16,19 +16,20 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
-
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.out import out
 
-help = 'print the name of the top patch'
-usage = """%prog [options]
-
+help = 'Print the name of the top patch'
+usage = ['']
+description = """
 Print the name of the current (topmost) patch."""
 
+options = [
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch')]
+
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
     """Show the name of the topmost patch

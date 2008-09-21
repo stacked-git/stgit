@@ -1,4 +1,7 @@
-MAN1_TXT=$(wildcard stg*.txt)
+COMMANDS = $(shell ../stg-build --commands)
+COMMANDS_TXT = $(patsubst %,stg-%.txt,$(COMMANDS))
+
+MAN1_TXT=$(wildcard stg*.txt) $(COMMANDS_TXT)
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
@@ -57,7 +60,10 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 -include doc.dep
 
 clean:
-	rm -f *.xml *.html *.pdf *.1 doc.dep
+	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT)
+
+$(COMMANDS_TXT): $(shell find .. -name '*.py')
+	../stg-build --asciidoc $(basename $(subst stg-,,$@)) > $@
 
 %.html : %.txt
 	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<

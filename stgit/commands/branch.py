@@ -1,6 +1,3 @@
-"""Branch command
-"""
-
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
 
@@ -19,55 +16,92 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os, time, re
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git, basedir
 
-
-help = 'manage patch stacks'
-usage = """%prog [options] branch-name [commit-id]
-
+help = 'Branch operations: switch, list, create, rename, delete, ...'
+usage = ['',
+         '<branch>',
+         '--list',
+         '--create <new-branch> [<committish>]',
+         '--clone [<new-branch>]',
+         '--rename <old-name> <new-name>',
+         '--protect [<branch>]',
+         '--unprotect [<branch>]',
+         '--delete [--force] <branch>',
+         '--description=<description> [<branch>]']
+description = """
 Create, clone, switch between, rename, or delete development branches
-within a git repository.  By default, a single branch called 'master'
-is always created in a new repository.  This subcommand allows you to
-manage several patch series in the same repository via GIT branches.
+within a git repository.
 
-When displaying the branches, the names can be prefixed with
-'s' (StGIT managed) or 'p' (protected).
+'stg branch'::
+        Display the name of the current branch.
 
-If not given any options, switch to the named branch."""
+'stg branch' <branch>::
+        Switch to the given branch."""
+
+options = [
+    opt('-l', '--list', action = 'store_true',
+        short = 'List the branches contained in this repository', long = """
+        List each branch in the current repository, followed by its
+        branch description (if any). The current branch is prefixed
+        with '>'. Branches that have been initialized for StGit (with
+        stglink:init[]) are prefixed with 's'. Protected branches are
+        prefixed with 'p'."""),
+    opt('-c', '--create', action = 'store_true',
+        short = 'Create (and switch to) a new branch', long = """
+        Create (and switch to) a new branch. The new branch is already
+        initialized as an StGit patch stack, so you do not have to run
+        stglink:init[] manually. If you give a committish argument,
+        the new branch is based there; otherwise, it is based at the
+        current HEAD.
+
+        StGit will try to detect the branch off of which the new
+        branch is forked, as well as the remote repository from which
+        that parent branch is taken (if any), so that running
+        stglink:pull[] will automatically pull new commits from the
+        correct branch. It will warn if it cannot guess the parent
+        branch (e.g. if you do not specify a branch name as
+        committish)."""),
+    opt('--clone', action = 'store_true',
+        short = 'Clone the contents of the current branch', long = """
+        Clone the current branch, under the name <new-branch> if
+        specified, or using the current branch's name plus a
+        timestamp.
+
+        The description of the new branch is set to tell it is a clone
+        of the current branch. The parent information of the new
+        branch is copied from the current branch."""),
+    opt('-r', '--rename', action = 'store_true',
+        short = 'Rename an existing branch'),
+    opt('-p', '--protect', action = 'store_true',
+        short = 'Prevent StGit from modifying a branch', long = """
+        Prevent StGit from modifying a branch -- either the current
+        one, or one named on the command line."""),
+    opt('-u', '--unprotect', action = 'store_true',
+        short = 'Allow StGit to modify a branch', long = """
+        Allow StGit to modify a branch -- either the current one, or
+        one named on the command line. This undoes the effect of an
+        earlier 'stg branch --protect' command."""),
+    opt('--delete', action = 'store_true',
+        short = 'Delete a branch', long = """
+        Delete the named branch. If there are any patches left in the
+        branch, StGit will refuse to delete it unless you give the
+        '--force' flag.
+
+        A protected branch cannot be deleted; it must be unprotected
+        first (see '--unprotect' above).
+
+        If you delete the current branch, you are switched to the
+        "master" branch, if it exists."""),
+    opt('-d', '--description', short = 'Set the branch description'),
+    opt('--force', action = 'store_true',
+        short = 'Force a delete when the series is not empty')]
 
 directory = DirectoryGotoToplevel()
-options = [make_option('-c', '--create',
-                       help = 'create a new development branch',
-                       action = 'store_true'),
-           make_option('--clone',
-                       help = 'clone the contents of the current branch',
-                       action = 'store_true'),
-           make_option('--delete',
-                       help = 'delete an existing development branch',
-                       action = 'store_true'),
-           make_option('-d', '--description',
-                       help = 'set the branch description'),
-           make_option('--force',
-                       help = 'force a delete when the series is not empty',
-                       action = 'store_true'),
-           make_option('-l', '--list',
-                       help = 'list branches contained in this repository',
-                       action = 'store_true'),
-           make_option('-p', '--protect',
-                       help = 'prevent StGIT from modifying this branch',
-                       action = 'store_true'),
-           make_option('-r', '--rename',
-                       help = 'rename an existing development branch',
-                       action = 'store_true'),
-           make_option('-u', '--unprotect',
-                       help = 'allow StGIT to modify this branch',
-                       action = 'store_true')]
-
 
 def __is_current_branch(branch_name):
     return crt_series.get_name() == branch_name

@@ -17,27 +17,40 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
 
+help = 'Send patches deeper down the stack'
+usage = ['[-t <target patch>] [-n] [<patches>]']
+description = """
+This is the opposite operation of stglink:float[]: move the specified
+patches down the stack.  It is for example useful to group stable
+patches near the bottom of the stack, where they are less likely to be
+impacted by the push of another patch, and from where they can be more
+easily committed or pushed.
 
-help = 'send patches deeper down the stack'
-usage = """%prog [-t <target patch>] [-n] [<patches>]
+If no patch is specified on command-line, the current patch gets sunk.
+By default patches are sunk to the bottom of the stack, but the '--to'
+option allows to place them under any applied patch.
 
-Pop all patches (or all patches including <target patch>), then
-push the specified <patches> (the current patch by default), and
-then push back into place the formerly-applied patches (unless -n
-is also given)."""
+Sinking internally involves popping all patches (or all patches
+including <target patch>), then pushing the patches to sink, and then
+(unless '--nopush' is also given) pushing back into place the
+formerly-applied patches."""
+
+options = [
+    opt('-n', '--nopush', action = 'store_true',
+        short = 'Do not push the patches back after sinking', long = """
+        Do not push back on the stack the formerly-applied patches.
+        Only the patches to sink are pushed."""),
+    opt('-t', '--to', metavar = 'TARGET',
+        short = 'Sink patches below the TARGET patch', long = """
+        Specify a target patch to place the patches below, instead of
+        sinking them to the bottom of the stack.""")]
 
 directory = DirectoryGotoToplevel()
-options = [make_option('-n', '--nopush',
-                       help = 'do not push the patches back after sinking',
-                       action = 'store_true'),
-           make_option('-t', '--to', metavar = 'TARGET',
-                       help = 'sink patches below TARGET patch')]
 
 def func(parser, options, args):
     """Sink patches down the stack.

@@ -16,18 +16,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
 import stgit.commands.common
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
-
-help = 'synchronise patches with a branch or a series'
-usage = """%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
-
+help = 'Synchronise patches with a branch or a series'
+usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+description = """
 For each of the specified patches perform a three-way merge with the
 same patch in the specified branch or series. The command can be used
 for keeping patches on several branches in sync. Note that the
@@ -36,17 +34,17 @@ in the series must apply cleanly.
 
 The sync operation can be reverted for individual patches with --undo."""
 
+options = [
+    opt('-a', '--all', action = 'store_true',
+        short = 'Synchronise all the applied patches'),
+    opt('-B', '--ref-branch',
+        short = 'Syncronise patches with BRANCH'),
+    opt('-s', '--series',
+        short = 'Syncronise patches with SERIES'),
+    opt('--undo', action = 'store_true',
+        short = 'Undo the synchronisation of the current patch')]
+
 directory = DirectoryGotoToplevel()
-options = [make_option('-a', '--all',
-                       help = 'synchronise all the applied patches',
-                       action = 'store_true'),
-           make_option('-B', '--ref-branch',
-                       help = 'syncronise patches with BRANCH'),
-           make_option('-s', '--series',
-                       help = 'syncronise patches with SERIES'),
-           make_option('--undo',
-                       help = 'undo the synchronisation of the current patch',
-                       action = 'store_true')]
 
 def __check_all():
     check_local_changes()

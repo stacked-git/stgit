@@ -16,18 +16,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 from stgit.stack import Series
 
-
-help = 'import a patch from a different branch or a commit object'
-usage = """%prog [options] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>
-
+help = 'Import a patch from a different branch or a commit object'
+usage = ['[options] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>']
+description = """
 Import one or more patches from a different branch or a commit object
 into the current series. By default, the name of the imported patch is
 used as the name of the current patch. It can be overridden with the
@@ -35,28 +33,25 @@ used as the name of the current patch. It can be overridden with the
 option. The log and author information are those of the commit
 object."""
 
+options = [
+    opt('-n', '--name',
+        short = 'Use NAME as the patch name'),
+    opt('-B', '--ref-branch',
+        short = 'Pick patches from BRANCH'),
+    opt('-r', '--reverse', action = 'store_true',
+        short = 'Reverse the commit object before importing'),
+    opt('-p', '--parent', metavar = 'COMMITID',
+        short = 'Use COMMITID as parent'),
+    opt('-x', '--expose', action = 'store_true',
+        short = 'Append the imported commit id to the patch log'),
+    opt('--fold', action = 'store_true',
+        short = 'Fold the commit object into the current patch'),
+    opt('--update', action = 'store_true',
+        short = 'Like fold but only update the current patch files'),
+    opt('--unapplied', action = 'store_true',
+        short = 'Keep the patch unapplied')]
+
 directory = DirectoryGotoToplevel()
-options = [make_option('-n', '--name',
-                       help = 'use NAME as the patch name'),
-           make_option('-B', '--ref-branch',
-                       help = 'pick patches from BRANCH'),
-           make_option('-r', '--reverse',
-                       help = 'reverse the commit object before importing',
-                       action = 'store_true'),
-           make_option('-p', '--parent', metavar = 'COMMITID',
-                       help = 'use COMMITID as parent'),
-           make_option('-x', '--expose',
-                       help = 'append the imported commit id to the patch log',
-                       action = 'store_true'),
-           make_option('--fold',
-                       help = 'fold the commit object into the current patch',
-                       action = 'store_true'),
-           make_option('--update',
-                       help = 'like fold but only update the current patch files',
-                       action = 'store_true'),
-           make_option('--unapplied',
-                       help = 'keep the patch unapplied',
-                       action = 'store_true')]
 
 def __pick_commit(commit_id, patchname, options):
     """Pick a commit id.

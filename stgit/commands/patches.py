@@ -16,29 +16,28 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
 from pydoc import pager
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
-
-help = 'show the applied patches modifying a file'
-usage = """%prog [options] [<files or dirs>]
-
+help = 'Show the applied patches modifying a file'
+usage = ['[options] [<files or dirs>]']
+description = """
 Show the applied patches modifying the given files. Without arguments,
 it shows the patches affected by the local tree modifications. The
 '--diff' option also lists the patch log and the diff for the given
 files."""
 
+options = [
+    opt('-d', '--diff', action = 'store_true',
+        short = 'Show the diff for the given files'),
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch')]
+
 directory = DirectoryHasRepository()
-options = [make_option('-d', '--diff',
-                       help = 'show the diff for the given files',
-                       action = 'store_true'),
-           make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
 
 diff_tmpl = \
           '-------------------------------------------------------------------------------\n' \

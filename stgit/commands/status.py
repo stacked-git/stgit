@@ -17,16 +17,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
 
-
-help = 'show the tree status'
-usage = """%prog [options] [<files or dirs>]
-
+help = 'Show the tree status'
+usage = ['[options] [<files or dirs>]']
+description = """
 Show the status of the whole working copy or the given files. The
 command also shows the files in the current directory which are not
 under revision control. The files are prefixed as follows:
@@ -37,32 +35,26 @@ under revision control. The files are prefixed as follows:
   C - conflict
   ? - unknown
 
-A 'refresh' command clears the status of the modified, new and deleted
-files."""
+An 'stg refresh' command clears the status of the modified, new and
+deleted files."""
+
+options = [
+    opt('-m', '--modified', action = 'store_true',
+        short = 'Show modified files only'),
+    opt('-n', '--new', action = 'store_true',
+        short = 'Show new files only'),
+    opt('-d', '--deleted', action = 'store_true',
+        short = 'Show deleted files only'),
+    opt('-c', '--conflict', action = 'store_true',
+        short = 'Show conflict files only'),
+    opt('-u', '--unknown', action = 'store_true',
+        short = 'Show unknown files only'),
+    opt('-x', '--noexclude', action = 'store_true',
+        short = 'Do not exclude any files from listing'),
+    opt('--reset', action = 'store_true',
+        short = 'Reset the current tree changes')]
 
 directory = DirectoryHasRepository(needs_current_series = False)
-options = [make_option('-m', '--modified',
-                       help = 'show modified files only',
-                       action = 'store_true'),
-           make_option('-n', '--new',
-                       help = 'show new files only',
-                       action = 'store_true'),
-           make_option('-d', '--deleted',
-                       help = 'show deleted files only',
-                       action = 'store_true'),
-           make_option('-c', '--conflict',
-                       help = 'show conflict files only',
-                       action = 'store_true'),
-           make_option('-u', '--unknown',
-                       help = 'show unknown files only',
-                       action = 'store_true'),
-           make_option('-x', '--noexclude',
-                       help = 'do not exclude any files from listing',
-                       action = 'store_true'),
-           make_option('--reset',
-                       help = 'reset the current tree changes',
-                       action = 'store_true')]
-
 
 def status(files, modified, new, deleted, conflict, unknown, noexclude):
     """Show the tree status

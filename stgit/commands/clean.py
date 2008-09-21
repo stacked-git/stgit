@@ -15,26 +15,25 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
+from stgit.argparse import opt
 from stgit.out import *
 from stgit.commands import common
 from stgit.lib import transaction
 
-help = 'delete the empty patches in the series'
-usage = """%prog [options]
-
+help = 'Delete the empty patches in the series'
+usage = ['']
+description = """
 Delete the empty patches in the whole series or only those applied or
 unapplied. A patch is considered empty if the two commit objects
 representing its boundaries refer to the same tree object."""
 
-directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-a', '--applied',
-                       help = 'delete the empty applied patches',
-                       action = 'store_true'),
-           make_option('-u', '--unapplied',
-                       help = 'delete the empty unapplied patches',
-                       action = 'store_true')]
+options = [
+    opt('-a', '--applied', action = 'store_true',
+        short = 'Delete the empty applied patches'),
+    opt('-u', '--unapplied', action = 'store_true',
+        short = 'Delete the empty unapplied patches')]
 
+directory = common.DirectoryHasRepositoryLib()
 
 def _clean(stack, clean_applied, clean_unapplied):
     trans = transaction.StackTransaction(stack, 'clean', allow_conflicts = True)

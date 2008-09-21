@@ -17,17 +17,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
 from pydoc import pager
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import argparse, stack, git
 
-help = 'show the tree diff'
-usage = """%prog [options] [<files or dirs>]
-
+help = 'Show the tree diff'
+usage = ['[options] [<files or dirs>]']
+description = """
 Show the diff (default) or diffstat between the current working copy
 or a tree-ish object and another tree-ish object (defaulting to HEAD).
 File names can also be given to restrict the diff output. The
@@ -35,17 +34,16 @@ tree-ish object can be an StGIT patch, a standard git commit, tag or
 tree. In addition to these, the command also supports '{base}',
 representing the bottom of the current stack.
 
-rev = '[branch:](<patch>|{base}) | <tree-ish>'
-"""
+rev = '[branch:](<patch>|{base}) | <tree-ish>'"""
+
+options = [
+    opt('-r', '--range', metavar = 'rev1[..[rev2]]', dest = 'revs',
+        short = 'Show the diff between revisions'),
+    opt('-s', '--stat', action = 'store_true',
+        short = 'Show the stat instead of the diff'),
+    ] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository()
-options = [make_option('-r', '--range',
-                       metavar = 'rev1[..[rev2]]', dest = 'revs',
-                       help = 'show the diff between revisions'),
-           make_option('-s', '--stat',
-                       help = 'show the stat instead of the diff',
-                       action = 'store_true')
-           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Show the tree diff

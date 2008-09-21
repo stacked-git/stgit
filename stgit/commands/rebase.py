@@ -16,16 +16,14 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
 
-
-help = 'move the stack base to another point in history'
-usage = """%prog [options] <new-base-id>
-
+help = 'Move the stack base to another point in history'
+usage = ['[options] <new-base-id>']
+description = """
 Pop all patches from current stack, move the stack base to the given
 <new-base-id> and push the patches back.
 
@@ -41,13 +39,13 @@ Or if you want to skip that patch:
         $ stg push --undo
         $ stg push next-patch..top-patch"""
 
+options = [
+    opt('-n', '--nopush', action = 'store_true',
+        short = 'Do not push the patches back after rebasing'),
+    opt('-m', '--merged', action = 'store_true',
+        short = 'Check for patches merged upstream')]
+
 directory = DirectoryGotoToplevel()
-options = [make_option('-n', '--nopush',
-                       help = 'do not push the patches back after rebasing',
-                       action = 'store_true'),
-           make_option('-m', '--merged',
-                       help = 'check for patches merged upstream',
-                       action = 'store_true')]
 
 def func(parser, options, args):
     """Rebase the current stack

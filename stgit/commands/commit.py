@@ -15,14 +15,17 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import *
 
-help = 'permanently store the applied patches into stack base'
-usage = """%prog [<patchnames>] | -n NUM | --all
-
+help = 'Permanently store the applied patches into the stack base'
+usage = ['',
+         '<patchnames>',
+         '-n NUM',
+         '--all']
+description = """
 Merge one or more patches into the base of the current stack and
 remove them from the series while advancing the base. This is the
 opposite of 'stg uncommit'. Use this command if you no longer want to
@@ -36,11 +39,13 @@ The -n/--number option specifies the number of applied patches to
 commit (counting from the bottom of the stack). If -a/--all is given,
 all applied patches are committed."""
 
+options = [
+    opt('-n', '--number', type = 'int',
+        short = 'Commit the specified number of patches'),
+    opt('-a', '--all', action = 'store_true',
+        short = 'Commit all applied patches')]
+
 directory = common.DirectoryHasRepositoryLib()
-options = [make_option('-n', '--number', type = 'int',
-                       help = 'commit the specified number of patches'),
-           make_option('-a', '--all', action = 'store_true',
-                       help = 'commit all applied patches')]
 
 def func(parser, options, args):
     """Commit a number of patches."""

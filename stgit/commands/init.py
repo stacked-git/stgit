@@ -19,15 +19,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.commands import common
 from stgit.lib import stack
 
-help = 'initialise the current branch for use with StGIT'
-usage = """%prog [options]
+help = 'Initialise the current branch for use with StGIT'
+usage = ['']
+description = """
+Initialise the current git branch to be used as an StGIT stack. The
+branch (and the git repository it is in) must already exist and
+contain at least one commit."""
 
-Initialise the current GIT branch to be used as an StGIT stack. Note
-that you must already be in a GIT repository and .git/HEAD must point
-to a valid file in refs/heads/."""
+options = []
 
 directory = common.DirectoryHasRepositoryLib()
-options = []
 
 def func(parser, options, args):
     """Performs the repository initialisation

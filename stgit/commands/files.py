@@ -17,30 +17,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import argparse, stack, git
 
-help = 'show the files modified by a patch (or the current patch)'
-usage = """%prog [options] [[<branch>:]<patch>]
-
+help = 'Show the files modified by a patch (or the current patch)'
+usage = ['[options] [[<branch>:]<patch>]']
+description = """
 List the files modified by the given patch (defaulting to the current
 one). Passing the '--stat' option shows the diff statistics for the
 given patch. Note that this command doesn't show the files modified in
 the working tree and not yet included in the patch by a 'refresh'
 command. Use the 'diff' or 'status' commands for these files."""
 
+options = [
+    opt('-s', '--stat', action = 'store_true',
+        short = 'Show the diffstat'),
+    opt('--bare', action = 'store_true',
+        short = 'Bare file names (useful for scripting)'),
+    ] + argparse.diff_opts_option()
+
 directory = DirectoryHasRepository()
-options = [make_option('-s', '--stat',
-                       help = 'show the diff stat',
-                       action = 'store_true'),
-           make_option('--bare',
-                       help = 'bare file names (useful for scripting)',
-                       action = 'store_true')
-           ] + argparse.diff_opts_option()
 
 def func(parser, options, args):
     """Show the files modified by a patch (or the current patch)

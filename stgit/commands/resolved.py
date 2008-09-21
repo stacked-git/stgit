@@ -17,31 +17,29 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 from stgit.gitmergeonefile import interactive_merge
 
-
-help = 'mark a file conflict as solved'
-usage = """%prog [options] [<files...>]
-
+help = 'Mark a file conflict as solved'
+usage = ['[options] [<files...>]']
+description = """
 Mark a merge conflict as resolved. The conflicts can be seen with the
 'status' command, the corresponding files being prefixed with a
 'C'."""
 
+options = [
+    opt('-a', '--all', action = 'store_true',
+        short = 'Mark all conflicts as solved'),
+    opt('-r', '--reset', metavar = '(ancestor|current|patched)',
+        short = 'Reset the file(s) to the given state'),
+    opt('-i', '--interactive', action = 'store_true',
+        short = 'Run the interactive merging tool')]
+
 directory = DirectoryHasRepository(needs_current_series = False)
-options = [make_option('-a', '--all',
-                       help = 'mark all conflicts as solved',
-                       action = 'store_true'),
-           make_option('-r', '--reset', metavar = '(ancestor|current|patched)',
-                       help = 'reset the file(s) to the given state'),
-           make_option('-i', '--interactive',
-                       help = 'run the interactive merging tool',
-                       action = 'store_true')]
 
 def func(parser, options, args):
     """Mark the conflict as resolved

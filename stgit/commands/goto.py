@@ -15,19 +15,19 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import OptionParser, make_option
 from stgit.commands import common
 from stgit.lib import transaction
 
-help = 'push or pop patches to the given one'
-usage = """%prog [options] <name>
-
+help = 'Push or pop patches to the given one'
+usage = ['<patch-name>']
+description = """
 Push/pop patches to/from the stack until the one given on the command
 line becomes current. There is no '--undo' option for 'goto'. Use the
 'push --undo' command for this."""
 
-directory = common.DirectoryHasRepositoryLib()
 options = []
+
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
     if len(args) != 1:

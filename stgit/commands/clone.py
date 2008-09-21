@@ -16,22 +16,27 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit import stack, git
 
+help = 'Make a local clone of a remote repository'
+usage = ['<repository> <dir>']
+description = """
+Clone a git repository into the local directory <dir> (using
+gitlink:clone[]) and initialise the local branch "master".
 
-help = 'make a local clone of a remote repository'
-usage = """%prog [options] <repository> <dir>
+This operation is for example suitable to start working using the
+"tracking branch" workflow (see gitlink:stg[1]). Other means to setup
+an StGit stack are stglink:init[] and the '--create' and '--clone'
+commands of stglink:branch[].
 
-Clone a GIT <repository> into the local <dir> and initialise the
-patch stack."""
+The target directory <dir> will be created by this command, and must
+not already exist."""
 
-directory = DirectoryAnywhere(needs_current_series = False)
 options = []
 
+directory = DirectoryAnywhere(needs_current_series = False)
 
 def func(parser, options, args):
     """Clone the <repository> into the local <dir> and initialises the

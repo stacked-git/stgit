@@ -17,8 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import sys, os, re, time, datetime, socket, smtplib, getpass
 import email, email.Utils, email.Header
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
@@ -26,10 +25,9 @@ from stgit import argparse, stack, git, version, templates
 from stgit.config import config
 from stgit.run import Run
 
-
-help = 'send a patch or series of patches by e-mail'
-usage = r"""%prog [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]
-
+help = 'Send a patch or series of patches by e-mail'
+usage = [' [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+description = r"""
 Send a patch or a range of patches by e-mail using the SMTP server
 specified by the 'stgit.smtpserver' configuration option, or the
 '--smtp-server' command line option. This option can also be an
@@ -93,65 +91,54 @@ the following:
   %(prefix)s       - 'prefix ' string passed on the command line
   %(shortdescr)s   - the first line of the patch description"""
 
+options = [
+    opt('-a', '--all', action = 'store_true',
+        short = 'E-mail all the applied patches'),
+    opt('--to', action = 'append',
+        short = 'Add TO to the To: list'),
+    opt('--cc', action = 'append',
+        short = 'Add CC to the Cc: list'),
+    opt('--bcc', action = 'append',
+        short = 'Add BCC to the Bcc: list'),
+    opt('--auto', action = 'store_true',
+        short = 'Automatically cc the patch signers'),
+    opt('--noreply', action = 'store_true',
+        short = 'Do not send subsequent messages as replies'),
+    opt('--unrelated', action = 'store_true',
+        short = 'Send patches without sequence numbering'),
+    opt('--attach', action = 'store_true',
+        short = 'Send a patch as attachment'),
+    opt('-v', '--version', metavar = 'VERSION',
+        short = 'Add VERSION to the [PATCH ...] prefix'),
+    opt('--prefix', metavar = 'PREFIX',
+        short = 'Add PREFIX to the [... PATCH ...] prefix'),
+    opt('-t', '--template', metavar = 'FILE',
+        short = 'Use FILE as the message template'),
+    opt('-c', '--cover', metavar = 'FILE',
+        short = 'Send FILE as the cover message'),
+    opt('-e', '--edit-cover', action = 'store_true',
+        short = 'Edit the cover message before sending'),
+    opt('-E', '--edit-patches', action = 'store_true',
+        short = 'Edit each patch before sending'),
+    opt('-s', '--sleep', type = 'int', metavar = 'SECONDS',
+        short = 'Sleep for SECONDS between e-mails sending'),
+    opt('--refid',
+        short = 'Use REFID as the reference id'),
+    opt('--smtp-server', metavar = 'HOST[:PORT] or "/path/to/sendmail -t -i"',
+        short = 'SMTP server or command to use for sending mail'),
+    opt('-u', '--smtp-user', metavar = 'USER',
+        short = 'Username for SMTP authentication'),
+    opt('-p', '--smtp-password', metavar = 'PASSWORD',
+        short = 'Password for SMTP authentication'),
+    opt('-T', '--smtp-tls', action = 'store_true',
+        short = 'Use SMTP with TLS encryption'),
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch'),
+    opt('-m', '--mbox', action = 'store_true',
+        short = 'Generate an mbox file instead of sending')
+    ] + argparse.diff_opts_option()
+
 directory = DirectoryHasRepository()
-options = [make_option('-a', '--all',
-                       help = 'e-mail all the applied patches',
-                       action = 'store_true'),
-           make_option('--to',
-                       help = 'add TO to the To: list',
-                       action = 'append'),
-           make_option('--cc',
-                       help = 'add CC to the Cc: list',
-                       action = 'append'),
-           make_option('--bcc',
-                       help = 'add BCC to the Bcc: list',
-                       action = 'append'),
-           make_option('--auto',
-                       help = 'automatically cc the patch signers',
-                       action = 'store_true'),
-           make_option('--noreply',
-                       help = 'do not send subsequent messages as replies',
-                       action = 'store_true'),
-           make_option('--unrelated',
-                       help = 'send patches without sequence numbering',
-                       action = 'store_true'),
-           make_option('--attach',
-                       help = 'send a patch as attachment',
-                       action = 'store_true'),
-           make_option('-v', '--version', metavar = 'VERSION',
-                       help = 'add VERSION to the [PATCH ...] prefix'),
-           make_option('--prefix', metavar = 'PREFIX',
-                       help = 'add PREFIX to the [... PATCH ...] prefix'),
-           make_option('-t', '--template', metavar = 'FILE',
-                       help = 'use FILE as the message template'),
-           make_option('-c', '--cover', metavar = 'FILE',
-                       help = 'send FILE as the cover message'),
-           make_option('-e', '--edit-cover',
-                       help = 'edit the cover message before sending',
-                       action = 'store_true'),
-           make_option('-E', '--edit-patches',
-                       help = 'edit each patch before sending',
-                       action = 'store_true'),
-           make_option('-s', '--sleep', type = 'int', metavar = 'SECONDS',
-                       help = 'sleep for SECONDS between e-mails sending'),
-           make_option('--refid',
-                       help = 'use REFID as the reference id'),
-           make_option('--smtp-server',
-                       metavar = 'HOST[:PORT] or "/path/to/sendmail -t -i"',
-                       help = 'SMTP server or command to use for sending mail'),
-           make_option('-u', '--smtp-user', metavar = 'USER',
-                       help = 'username for SMTP authentication'),
-           make_option('-p', '--smtp-password', metavar = 'PASSWORD',
-                       help = 'username for SMTP authentication'),
-           make_option('-T', '--smtp-tls',
-                       help = 'use SMTP with TLS encryption',
-                       action = 'store_true'),
-           make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one'),
-           make_option('-m', '--mbox',
-                       help = 'generate an mbox file instead of sending',
-                       action = 'store_true')
-           ] + argparse.diff_opts_option()
 
 def __get_sender():
     """Return the 'authname <authemail>' string as read from the

@@ -16,23 +16,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
-
-help = 'unhide a hidden patch in the series'
-usage = """%prog [options] <patch-range>
-
+help = 'Unhide a hidden patch'
+usage = ['[options] <patch-range>']
+description = """
 Unhide a hidden range of patches so that they are shown in the plain
-'series' command output."""
+'stg series' command output."""
+
+options = [
+    opt('-b', '--branch',
+        short = 'Use BRANCH instead of the default branch')]
 
 directory = DirectoryHasRepository()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
 
 def func(parser, options, args):
     """Unhide a range of patches in the series

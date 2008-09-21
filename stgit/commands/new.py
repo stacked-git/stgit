@@ -16,30 +16,33 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-from optparse import make_option
-
 from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git as gitlib, transaction
 from stgit.config import config
 
-help = 'create a new patch and make it the topmost one'
-usage = """%prog [options] [name]
+help = 'Create a new, empty patch'
+usage = ['[options] [<name>]']
+description = """
+Create a new, empty patch on the current stack. The new patch is
+created on top of the currently applied patches, and is made the new
+top of the stack. Uncommitted changes in the work tree are not
+included in the patch -- that is handled by stglink:refresh[].
 
-Create a new, empty patch and make it the topmost one. If the
-'--message' option is not passed, an editor is invoked with the
-.git/patchdescr.tmpl, ~/.stgit/templates/patchdescr.tmpl or
-/usr/share/stgit/templates/patchdescr.tmpl file used a as template,
-together with generated lines. The local changes in the working tree
-are not included in the patch; an "stg refresh" command is needed for
-this.
+The given name must be unique in the stack, and may only contain
+alphanumeric characters, dashes and underscores. If no name is given,
+one is generated from the first line of the patch's commit message.
 
-If no name is given for the new patch, one is generated from the first
-line of the commit message."""
+An editor will be launched to edit the commit message to be used for
+the patch, unless the '--message' flag already specified one. The
+'patchdescr.tmpl' template file (if available) is used to pre-fill the
+editor."""
+
+options = (argparse.author_committer_options()
+           + argparse.message_options()
+           + argparse.sign_options())
 
 directory = common.DirectoryHasRepositoryLib()
-options = (argparse.author_committer_options()
-           + argparse.message_options() + argparse.sign_options())
 
 def func(parser, options, args):
     """Create a new patch."""

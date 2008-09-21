@@ -16,24 +16,23 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import sys, os
-from optparse import OptionParser, make_option
-
+from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git
 
+help = 'Rename a patch'
+usage = ['[options] [oldpatch] <newpatch>']
+description = """
+Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not
+given, the top-most patch will be renamed."""
 
-help = 'rename a patch in the series'
-usage = """%prog [options] [oldpatch] <newpatch>
-
-Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not given, the
-top-most patch will be renamed. """
+options = [
+    opt('-b', '--branch',
+        short = 'use BRANCH instead of the default one')]
 
 directory = DirectoryHasRepository()
-options = [make_option('-b', '--branch',
-                       help = 'use BRANCH instead of the default one')]
-
 
 def func(parser, options, args):
     """Rename a patch in the series
