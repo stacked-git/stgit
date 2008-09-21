@@ -50,71 +50,6 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
-def reset_stack(stack, iw, state, only_patches, hard):
-    only_patches = set(only_patches)
-    def mask(s):
-        if only_patches:
-            return s & only_patches
-        else:
-            return s
-    patches_to_reset = mask(set(state.applied + state.unapplied + state.hidden))
-    existing_patches = set(stack.patchorder.all)
-    to_delete = mask(existing_patches - patches_to_reset)
-    trans = transaction.StackTransaction(stack, 'reset', discard_changes = hard)
-
-    # If we have to change the stack base, we need to pop all patches
-    # first.
-    if not only_patches and trans.base != state.base:
-        trans.pop_patches(lambda pn: True)
-        out.info('Setting stack base to %s' % state.base.sha1)
-        trans.base = state.base
-
-    # In one go, do all the popping we have to in order to pop the
-    # patches we're going to delete or modify.
-    def mod(pn):
-        if only_patches and not pn in only_patches:
-            return False
-        if pn in to_delete:
-            return True
-        if stack.patches.get(pn).commit != state.patches.get(pn, None):
-            return True
-        return False
-    trans.pop_patches(mod)
-
-    # Delete and modify/create patches. We've previously popped all
-    # patches that we touch in this step.
-    trans.delete_patches(lambda pn: pn in to_delete)
-    for pn in patches_to_reset:
-        if pn in existing_patches:
-            if trans.patches[pn] == state.patches[pn]:
-                continue
-            else:
-                out.info('Resetting %s' % pn)
-        else:
-            if pn in state.hidden:
-                trans.hidden.append(pn)
-            else:
-                trans.unapplied.append(pn)
-            out.info('Resurrecting %s' % pn)
-        trans.patches[pn] = state.patches[pn]
-
-    # Push/pop patches as necessary.
-    try:
-        if only_patches:
-            # Push all the patches that we've popped, if they still
-            # exist.
-            pushable = set(trans.unapplied)
-            for pn in stack.patchorder.applied:
-                if pn in pushable:
-                    trans.push_patch(pn, iw)
-        else:
-            # Recreate the exact order specified by the goal state.
-            trans.reorder_patches(state.applied, state.unapplied,
-                                  state.hidden, iw)
-    except transaction.TransactionHalted:
-        pass
-    return trans.run(iw)
-
 def func(parser, options, args):
     stack = directory.repository.current_stack
     if len(args) >= 1:
@@ -123,5 +58,10 @@ def func(parser, options, args):
                                   stack.repository.rev_parse(ref))
     else:
         raise common.CmdException('Wrong number of arguments')
-    return reset_stack(stack, stack.repository.default_iw, state, patches,
-                       options.hard)
+    trans = transaction.StackTransaction(stack, 'reset',
+                                         discard_changes = options.hard)
+    try:
+        log.reset_stack(trans, stack.repository.default_iw, state, patches)
+    except transaction.TransactionHalted:
+        pass
+    return trans.run(stack.repository.default_iw)

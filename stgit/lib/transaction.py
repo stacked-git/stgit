@@ -109,6 +109,8 @@ class StackTransaction(object):
     def __set_hidden(self, val):
         self.__hidden = list(val)
     hidden = property(lambda self: self.__hidden, __set_hidden)
+    all_patches = property(lambda self: (self.__applied + self.__unapplied
+                                         + self.__hidden))
     def __set_base(self, val):
         assert (not self.__applied
                 or self.patches[self.applied[0]].data.parent == val)
@@ -148,7 +150,7 @@ class StackTransaction(object):
         raise TransactionException(
             'Command aborted (all changes rolled back)')
     def __check_consistency(self):
-        remaining = set(self.__applied + self.__unapplied + self.__hidden)
+        remaining = set(self.all_patches)
         for pn, commit in self.__patches.iteritems():
             if commit == None:
                 assert self.__stack.patches.exists(pn)

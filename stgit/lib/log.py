@@ -382,3 +382,68 @@ def copy_log(repo, src_branch, dst_branch, msg):
 
 def default_repo():
     return libstack.Repository.default()
+
+def reset_stack(trans, iw, state, only_patches):
+    """Reset the stack to a given previous state. If C{only_patches} is
+    not empty, touch only patches whose names appear in it.
+
+    @param only_patches: Reset only these patches
+    @type only_patches: iterable"""
+    only_patches = set(only_patches)
+    def mask(s):
+        if only_patches:
+            return s & only_patches
+        else:
+            return s
+    patches_to_reset = mask(set(state.applied + state.unapplied + state.hidden))
+    existing_patches = set(trans.all_patches)
+    original_applied_order = list(trans.applied)
+    to_delete = mask(existing_patches - patches_to_reset)
+
+    # If we have to change the stack base, we need to pop all patches
+    # first.
+    if not only_patches and trans.base != state.base:
+        trans.pop_patches(lambda pn: True)
+        out.info('Setting stack base to %s' % state.base.sha1)
+        trans.base = state.base
+
+    # In one go, do all the popping we have to in order to pop the
+    # patches we're going to delete or modify.
+    def mod(pn):
+        if only_patches and not pn in only_patches:
+            return False
+        if pn in to_delete:
+            return True
+        if trans.patches[pn] != state.patches.get(pn, None):
+            return True
+        return False
+    trans.pop_patches(mod)
+
+    # Delete and modify/create patches. We've previously popped all
+    # patches that we touch in this step.
+    trans.delete_patches(lambda pn: pn in to_delete)
+    for pn in patches_to_reset:
+        if pn in existing_patches:
+            if trans.patches[pn] == state.patches[pn]:
+                continue
+            else:
+                out.info('Resetting %s' % pn)
+        else:
+            if pn in state.hidden:
+                trans.hidden.append(pn)
+            else:
+                trans.unapplied.append(pn)
+            out.info('Resurrecting %s' % pn)
+        trans.patches[pn] = state.patches[pn]
+
+    # Push/pop patches as necessary.
+    if only_patches:
+        # Push all the patches that we've popped, if they still
+        # exist.
+        pushable = set(trans.unapplied)
+        for pn in original_applied_order:
+            if pn in pushable:
+                trans.push_patch(pn, iw)
+    else:
+        # Recreate the exact order specified by the goal state.
+        trans.reorder_patches(state.applied, state.unapplied, state.hidden, iw)
