@@ -35,7 +35,7 @@ you specify, you will have to resolve them manually just as if you had
 done a sequence of pushes and pops yourself."""
 
 options = [opt('-n', '--name', short = 'Name of coalesced patch')
-           ] + argparse.message_options()
+           ] + argparse.message_options(save_template = True)
 
 directory = common.DirectoryHasRepositoryLib()
 

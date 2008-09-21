@@ -59,7 +59,8 @@ options = [
         short = 'Edit the patch diff'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke interactive editor'),
-    ] + (argparse.sign_options() + argparse.message_options() +
+    ] + (argparse.sign_options() +
+         argparse.message_options(save_template = True) +
          argparse.author_committer_options() + argparse.diff_opts_option())
 
 directory = common.DirectoryHasRepositoryLib()

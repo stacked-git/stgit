@@ -40,7 +40,7 @@ the patch, unless the '--message' flag already specified one. The
 editor."""
 
 options = (argparse.author_committer_options()
-           + argparse.message_options()
+           + argparse.message_options(save_template = True)
            + argparse.sign_options())
 
 directory = common.DirectoryHasRepositoryLib()

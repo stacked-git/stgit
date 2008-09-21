@@ -112,13 +112,13 @@ def sign_options():
             short = 'Add "Acked-by:" line', long = """
             Add an "Acked-by:" line to the end of the patch.""")]
 
-def message_options():
+def message_options(save_template):
     def no_dup(parser):
         if parser.values.message != None:
             raise optparse.OptionValueError(
                 'Cannot give more than one --message or --file')
     def no_combine(parser):
-        if (parser.values.message != None
+        if (save_template and parser.values.message != None
             and parser.values.save_template != None):
             raise optparse.OptionValueError(
                 'Cannot give both --message/--file and --save-template')
@@ -146,7 +146,7 @@ def message_options():
                 f.close()
         parser.values.save_template = w
         no_combine(parser)
-    return [
+    opts = [
         opt('-m', '--message', action = 'callback',
             callback = msg_callback, dest = 'message', type = 'string',
             short = 'Use MESSAGE instead of invoking the editor'),
@@ -154,18 +154,21 @@ def message_options():
             dest = 'message', type = 'string',
             short = 'Use FILE instead of invoking the editor', long = """
             Use the contents of FILE instead of invoking the editor.
-            (If FILE is "-", write to stdout.)"""),
-        opt('--save-template', action = 'callback', dest = 'save_template',
-            callback = templ_callback, metavar = 'FILE', type = 'string',
-            short = 'Save the message template to FILE and exit', long = """
-            Instead of running the command, just write the message
-            template to FILE, and exit. (If FILE is "-", write to
-            stdout.)
+            (If FILE is "-", write to stdout.)""")]
+    if save_template:
+        opts.append(
+            opt('--save-template', action = 'callback', dest = 'save_template',
+                callback = templ_callback, metavar = 'FILE', type = 'string',
+                short = 'Save the message template to FILE and exit', long = """
+                Instead of running the command, just write the message
+                template to FILE, and exit. (If FILE is "-", write to
+                stdout.)
 
-            When driving StGit from another program, it is often
-            useful to first call a command with '--save-template',
-            then let the user edit the message, and then call the same
-            command with '--file'.""")]
+                When driving StGit from another program, it is often
+                useful to first call a command with '--save-template',
+                then let the user edit the message, and then call the
+                same command with '--file'."""))
+    return opts
 
 def diff_opts_option():
     def diff_opts_callback(option, opt_str, value, parser):
@@ -203,6 +206,9 @@ def _person_opts(person, short):
              action = 'callback', callback = short_callback, dest = person,
              callback_args = (f,), short = 'Set the %s %s' % (person, f))
          for f in ['name', 'email', 'date']])
+
+def author_options():
+    return _person_opts('author', 'auth')
 
 def author_committer_options():
     return _person_opts('author', 'auth') + _person_opts('committer', 'comm')
