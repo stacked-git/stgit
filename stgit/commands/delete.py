@@ -30,6 +30,13 @@ Delete the patches passed as arguments."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
+    opt('--spill', action = 'store_true',
+        short = 'Spill patch contents to worktree and index', long = """
+        Delete the patches, but do not touch the index and worktree.
+        This only works with applied patches at the top of the stack.
+        The effect is to "spill" the patch contents into the index and
+        worktree. This can be useful e.g. if you want to split a patch
+        into several smaller pieces."""),
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
@@ -46,6 +53,12 @@ def func(parser, options, args):
         patches = set(common.parse_patches(args, list(stack.patchorder.all)))
     else:
         parser.error('No patches specified')
+
+    if options.spill:
+        if set(stack.patchorder.applied[-len(patches):]) != patches:
+            parser.error('Can only spill topmost applied patches')
+        iw = None # don't touch index+worktree
+
     def allow_conflicts(trans):
         # Allow conflicts if the topmost patch stays the same.
         if stack.patchorder.applied:
