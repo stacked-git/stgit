@@ -461,6 +461,8 @@ def undo_state(stack, undo_steps):
     operations along the way we have to add those undo steps to
     C{undo_steps}.)
 
+    If C{undo_steps} is negative, redo instead of undo.
+
     @return: The log entry that is the destination of the undo
              operation
     @rtype: L{LogEntry}"""
@@ -470,13 +472,22 @@ def undo_state(stack, undo_steps):
     except KeyError:
         raise LogException('Log is empty')
     log = get_log_entry(stack.repository, ref, commit)
-    while undo_steps > 0:
+    while undo_steps != 0:
         msg = log.message.strip()
-        m = re.match(r'^undo\s+(\d+)$', msg)
-        if m:
-            undo_steps += int(m.group(1))
+        um = re.match(r'^undo\s+(\d+)$', msg)
+        if undo_steps > 0:
+            if um:
+                undo_steps += int(um.group(1))
+            else:
+                undo_steps -= 1
         else:
-            undo_steps -= 1
+            rm = re.match(r'^redo\s+(\d+)$', msg)
+            if um:
+                undo_steps += 1
+            elif rm:
+                undo_steps -= int(rm.group(1))
+            else:
+                raise LogException('No more redo information available')
         if not log.prev:
             raise LogException('Not enough undo information available')
         log = log.prev
