@@ -25,9 +25,7 @@ help = 'Delete patches'
 kind = 'patch'
 usage = ['[options] <patch1> [<patch2>] [<patch3>..<patch4>]']
 description = """
-Delete the patches passed as arguments.
-
-Note that the 'delete' operation is irreversible."""
+Delete the patches passed as arguments."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
