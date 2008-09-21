@@ -45,7 +45,7 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'undo %d' % options.number,
                                          discard_changes = options.hard)
     try:
-        log.reset_stack(trans, stack.repository.default_iw, state, [])
+        log.reset_stack(trans, stack.repository.default_iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(stack.repository.default_iw)
+    return trans.run(stack.repository.default_iw, allow_bad_head = True)

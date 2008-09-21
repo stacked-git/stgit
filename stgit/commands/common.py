@@ -491,6 +491,7 @@ class DirectoryAnywhere(_Directory):
 class DirectoryHasRepository(_Directory):
     def setup(self):
         self.git_dir # might throw an exception
+        log.compat_log_external_mods()
 
 class DirectoryInWorktree(DirectoryHasRepository):
     def setup(self):

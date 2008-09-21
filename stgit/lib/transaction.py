@@ -93,6 +93,7 @@ class StackTransaction(object):
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
         self.__discard_changes = discard_changes
+        self.__bad_head = None
         if isinstance(allow_conflicts, bool):
             self.__allow_conflicts = lambda trans: allow_conflicts
         else:
@@ -122,8 +123,22 @@ class StackTransaction(object):
             self.__temp_index = self.__stack.repository.temp_index()
             atexit.register(self.__temp_index.delete)
         return self.__temp_index
-    def __checkout(self, tree, iw):
-        if not self.__stack.head_top_equal():
+    @property
+    def top(self):
+        if self.__applied:
+            return self.__patches[self.__applied[-1]]
+        else:
+            return self.__base
+    def __get_head(self):
+        if self.__bad_head:
+            return self.__bad_head
+        else:
+            return self.top
+    def __set_head(self, val):
+        self.__bad_head = val
+    head = property(__get_head, __set_head)
+    def __checkout(self, tree, iw, allow_bad_head):
+        if not (allow_bad_head or self.__stack.head_top_equal()):
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
@@ -156,27 +171,23 @@ class StackTransaction(object):
                 assert self.__stack.patches.exists(pn)
             else:
                 assert pn in remaining
-    @property
-    def __head(self):
-        if self.__applied:
-            return self.__patches[self.__applied[-1]]
-        else:
-            return self.__base
     def abort(self, iw = None):
         # The only state we need to restore is index+worktree.
         if iw:
-            self.__checkout(self.__stack.head.data.tree, iw)
-    def run(self, iw = None, set_head = True):
+            self.__checkout(self.__stack.head.data.tree, iw,
+                            allow_bad_head = True)
+    def run(self, iw = None, set_head = True, allow_bad_head = False):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self.__check_consistency()
-        new_head = self.__head
+        log.log_external_mods(self.__stack)
+        new_head = self.head
 
         # Set branch head.
         if set_head:
             if iw:
                 try:
-                    self.__checkout(new_head.data.tree, iw)
+                    self.__checkout(new_head.data.tree, iw, allow_bad_head)
                 except git.CheckoutException:
                     # We have to abort the transaction.
                     self.abort(iw)
@@ -273,7 +284,7 @@ class StackTransaction(object):
         cd = orig_cd.set_committer(None)
         s = ['', ' (empty)'][cd.is_nochange()]
         oldparent = cd.parent
-        cd = cd.set_parent(self.__head)
+        cd = cd.set_parent(self.top)
         base = oldparent.data.tree
         ours = cd.parent.data.tree
         theirs = cd.tree
@@ -284,7 +295,7 @@ class StackTransaction(object):
             if iw == None:
                 self.__halt('%s does not apply cleanly' % pn)
             try:
-                self.__checkout(ours, iw)
+                self.__checkout(ours, iw, allow_bad_head = False)
             except git.CheckoutException:
                 self.__halt('Index/worktree dirty')
             try:

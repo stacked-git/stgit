@@ -164,6 +164,8 @@ class LogEntry(object):
             return self.patches[self.applied[-1]]
         else:
             return self.head
+    all_patches = property(lambda self: (self.applied + self.unapplied
+                                         + self.hidden))
     @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(
@@ -390,34 +392,34 @@ def copy_log(repo, src_branch, dst_branch, msg):
 def default_repo():
     return libstack.Repository.default()
 
-def reset_stack(trans, iw, state, only_patches):
-    """Reset the stack to a given previous state. If C{only_patches} is
-    not empty, touch only patches whose names appear in it.
+def reset_stack(trans, iw, state):
+    """Reset the stack to a given previous state."""
+    for pn in trans.all_patches:
+        trans.patches[pn] = None
+    for pn in state.all_patches:
+        trans.patches[pn] = state.patches[pn]
+    trans.applied = state.applied
+    trans.unapplied = state.unapplied
+    trans.hidden = state.hidden
+    trans.base = state.base
+    trans.head = state.head
 
-    @param only_patches: Reset only these patches
+def reset_stack_partially(trans, iw, state, only_patches):
+    """Reset the stack to a given previous state -- but only the given
+    patches, not anything else.
+
+    @param only_patches: Touch only these patches
     @type only_patches: iterable"""
     only_patches = set(only_patches)
-    def mask(s):
-        if only_patches:
-            return s & only_patches
-        else:
-            return s
-    patches_to_reset = mask(set(state.applied + state.unapplied + state.hidden))
+    patches_to_reset = set(state.all_patches) & only_patches
     existing_patches = set(trans.all_patches)
     original_applied_order = list(trans.applied)
-    to_delete = mask(existing_patches - patches_to_reset)
-
-    # If we have to change the stack base, we need to pop all patches
-    # first.
-    if not only_patches and trans.base != state.base:
-        trans.pop_patches(lambda pn: True)
-        out.info('Setting stack base to %s' % state.base.sha1)
-        trans.base = state.base
+    to_delete = (existing_patches - patches_to_reset) & only_patches
 
     # In one go, do all the popping we have to in order to pop the
     # patches we're going to delete or modify.
     def mod(pn):
-        if only_patches and not pn in only_patches:
+        if not pn in only_patches:
             return False
         if pn in to_delete:
             return True
@@ -443,17 +445,12 @@ def reset_stack(trans, iw, state, only_patches):
             out.info('Resurrecting %s' % pn)
         trans.patches[pn] = state.patches[pn]
 
-    # Push/pop patches as necessary.
-    if only_patches:
-        # Push all the patches that we've popped, if they still
-        # exist.
-        pushable = set(trans.unapplied)
-        for pn in original_applied_order:
-            if pn in pushable:
-                trans.push_patch(pn, iw)
-    else:
-        # Recreate the exact order specified by the goal state.
-        trans.reorder_patches(state.applied, state.unapplied, state.hidden, iw)
+    # Push all the patches that we've popped, if they still
+    # exist.
+    pushable = set(trans.unapplied + trans.hidden)
+    for pn in original_applied_order:
+        if pn in pushable:
+            trans.push_patch(pn, iw)
 
 def undo_state(stack, undo_steps):
     """Find the log entry C{undo_steps} steps in the past. (Successive
@@ -492,3 +489,36 @@ def undo_state(stack, undo_steps):
             raise LogException('Not enough undo information available')
         log = log.prev
     return log
+
+def log_external_mods(stack):
+    ref = log_ref(stack.name)
+    try:
+        log_commit = stack.repository.refs.get(ref)
+    except KeyError:
+        # No log exists yet.
+        log_entry(stack, 'start of log')
+        return
+    try:
+        log = get_log_entry(stack.repository, ref, log_commit)
+    except LogException:
+        # Something's wrong with the log, so don't bother.
+        return
+    if log.head == stack.head:
+        # No external modifications.
+        return
+    log_entry(stack, '\n'.join([
+                'external modifications', '',
+                'Modifications by tools other than StGit (e.g. git).']))
+
+def compat_log_external_mods():
+    try:
+        repo = default_repo()
+    except git.RepositoryException:
+        # No repository, so we couldn't log even if we wanted to.
+        return
+    try:
+        stack = repo.get_stack(repo.current_branch_name)
+    except exception.StgException:
+        # Stack doesn't exist, so we can't log.
+        return
+    log_external_mods(stack)

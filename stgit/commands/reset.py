@@ -61,7 +61,11 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'reset',
                                          discard_changes = options.hard)
     try:
-        log.reset_stack(trans, stack.repository.default_iw, state, patches)
+        if patches:
+            log.reset_stack_partially(trans, stack.repository.default_iw,
+                                      state, patches)
+        else:
+            log.reset_stack(trans, stack.repository.default_iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(stack.repository.default_iw)
+    return trans.run(stack.repository.default_iw, allow_bad_head = not patches)
