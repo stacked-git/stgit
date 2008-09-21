@@ -152,7 +152,7 @@ cat > expected.txt <<EOF
 222
 EOF
 test_expect_success '... and undo the refresh' '
-    stg reset master.stgit^~1 &&
+    stg reset master.stgit^~2 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2" &&
     test_cmp expected.txt a
 '

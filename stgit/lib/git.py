@@ -511,6 +511,14 @@ class RunWithEnvCwd(RunWithEnv):
         @type env: dict
         @param env: Extra environment"""
         return RunWithEnv.run(self, args, env).cwd(self.cwd)
+    def run_in_cwd(self, args):
+        """Run the given command with an environment given by self.env and
+        self.env_in_cwd, without changing the current working
+        directory.
+
+        @type args: list of strings
+        @param args: Command and argument vector"""
+        return RunWithEnv.run(self, args, self.env_in_cwd)
 
 class Repository(RunWithEnv):
     """Represents a git repository."""
@@ -637,6 +645,32 @@ class Repository(RunWithEnv):
         assert isinstance(t2, Tree)
         return self.run(['git', 'diff-tree', '-p'] + list(diff_opts)
                         + [t1.sha1, t2.sha1]).raw_output()
+    def diff_tree_files(self, t1, t2):
+        """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
+        which they differ. For each file, yield a tuple with the old
+        file mode, the new file mode, the old blob, the new blob, the
+        status, the old filename, and the new filename. Except in case
+        of a copy or a rename, the old and new filenames are
+        identical."""
+        assert isinstance(t1, Tree)
+        assert isinstance(t2, Tree)
+        i = iter(self.run(['git', 'diff-tree', '-r', '-z'] + [t1.sha1, t2.sha1]
+                          ).raw_output().split('\0'))
+        try:
+            while True:
+                x = i.next()
+                if not x:
+                    continue
+                omode, nmode, osha1, nsha1, status = x[1:].split(' ')
+                fn1 = i.next()
+                if status[0] in ['C', 'R']:
+                    fn2 = i.next()
+                else:
+                    fn2 = fn1
+                yield (omode, nmode, self.get_blob(osha1),
+                       self.get_blob(nsha1), status, fn1, fn2)
+        except StopIteration:
+            pass
 
 class MergeException(exception.StgException):
     """Exception raised when a merge fails for some reason."""
@@ -660,6 +694,9 @@ class Index(RunWithEnv):
     def read_tree(self, tree):
         self.run(['git', 'read-tree', tree.sha1]).no_output()
     def write_tree(self):
+        """Write the index contents to the repository.
+        @return: The resulting L{Tree}
+        @rtype: L{Tree}"""
         try:
             return self.__repository.get_tree(
                 self.run(['git', 'write-tree']).discard_stderr(
@@ -747,6 +784,7 @@ class Worktree(object):
     def __init__(self, directory):
         self.__directory = directory
     env = property(lambda self: { 'GIT_WORK_TREE': '.' })
+    env_in_cwd = property(lambda self: { 'GIT_WORK_TREE': self.directory })
     directory = property(lambda self: self.__directory)
 
 class CheckoutException(exception.StgException):
@@ -763,6 +801,7 @@ class IndexAndWorktree(RunWithEnvCwd):
     index = property(lambda self: self.__index)
     env = property(lambda self: utils.add_dict(self.__index.env,
                                                self.__worktree.env))
+    env_in_cwd = property(lambda self: self.__worktree.env_in_cwd)
     cwd = property(lambda self: self.__worktree.directory)
     def checkout_hard(self, tree):
         assert isinstance(tree, Tree)
@@ -796,11 +835,24 @@ class IndexAndWorktree(RunWithEnvCwd):
                 raise MergeConflictException()
             else:
                 raise MergeException('Index/worktree dirty')
-    def changed_files(self):
-        return self.run(['git', 'diff-files', '--name-only']).output_lines()
-    def update_index(self, files):
-        self.run(['git', 'update-index', '--remove', '-z', '--stdin']
-                 ).input_nulterm(files).discard_output()
+    def changed_files(self, tree, pathlimits = []):
+        """Return the set of files in the worktree that have changed with
+        respect to C{tree}. The listing is optionally restricted to
+        those files that match any of the path limiters given.
+
+        The path limiters are relative to the current working
+        directory; the returned file names are relative to the
+        repository root."""
+        assert isinstance(tree, Tree)
+        return set(self.run_in_cwd(
+                ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
+                + list(pathlimits)).raw_output().split('\0')[:-1])
+    def update_index(self, paths):
+        """Update the index with files from the worktree. C{paths} is an
+        iterable of paths relative to the root of the repository."""
+        cmd = ['git', 'update-index', '--remove']
+        self.run(cmd + ['-z', '--stdin']
+                 ).input_nulterm(paths).discard_output()
 
 class Branch(object):
     """Represents a Git branch."""

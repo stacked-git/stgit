@@ -90,6 +90,15 @@ class Patch(object):
         return self.name in self.__stack.patchorder.applied
     def is_empty(self):
         return self.commit.data.is_nochange()
+    def files(self):
+        """Return the set of files this patch touches."""
+        fs = set()
+        for (_, _, _, _, _, oldname, newname
+             ) in self.__stack.repository.diff_tree_files(
+            self.commit.data.tree, self.commit.data.parent.data.tree):
+            fs.add(oldname)
+            fs.add(newname)
+        return fs
 
 class PatchOrder(object):
     """Keeps track of patch order, and which patches are applied.

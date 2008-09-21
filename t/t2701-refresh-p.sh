@@ -29,7 +29,7 @@ EOF
 cat > expected2.txt <<EOF
 A 2.txt
 EOF
-test_expect_failure 'Add new file to non-top patch' '
+test_expect_success 'Add new file to non-top patch' '
     stg status > status1.txt &&
     test_cmp expected0.txt status1.txt &&
     echo y > new.txt &&

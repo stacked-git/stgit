@@ -181,7 +181,8 @@ class StackTransaction(object):
         if iw:
             self.__checkout(self.__stack.head.data.tree, iw,
                             allow_bad_head = True)
-    def run(self, iw = None, set_head = True, allow_bad_head = False):
+    def run(self, iw = None, set_head = True, allow_bad_head = False,
+            print_current_patch = True):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self.__check_consistency()
@@ -223,7 +224,8 @@ class StackTransaction(object):
             self.__patches = _TransPatchMap(self.__stack)
             self.__conflicting_push()
             write(self.__msg + ' (CONFLICT)')
-        _print_current_patch(old_applied, self.__applied)
+        if print_current_patch:
+            _print_current_patch(old_applied, self.__applied)
 
         if self.__error:
             return utils.STGIT_CONFLICT
@@ -259,7 +261,7 @@ class StackTransaction(object):
         self.__print_popped(popped)
         return popped1
 
-    def delete_patches(self, p):
+    def delete_patches(self, p, quiet = False):
         """Delete all patches pn for which p(pn) is true. Return the list of
         other patches that had to be popped to accomplish this. Always
         succeeds."""
@@ -278,7 +280,8 @@ class StackTransaction(object):
             if p(pn):
                 s = ['', ' (empty)'][self.patches[pn].data.is_nochange()]
                 self.patches[pn] = None
-                out.info('Deleted %s%s' % (pn, s))
+                if not quiet:
+                    out.info('Deleted %s%s' % (pn, s))
         return popped
 
     def push_patch(self, pn, iw = None):
