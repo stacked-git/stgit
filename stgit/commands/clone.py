@@ -24,10 +24,10 @@ help = 'Make a local clone of a remote repository'
 usage = ['<repository> <dir>']
 description = """
 Clone a git repository into the local directory <dir> (using
-gitlink:clone[]) and initialise the local branch "master".
+stglink:clone[]) and initialise the local branch "master".
 
 This operation is for example suitable to start working using the
-"tracking branch" workflow (see gitlink:stg[1]). Other means to setup
+"tracking branch" workflow (see link:stg[1]). Other means to setup
 an StGit stack are stglink:init[] and the '--create' and '--clone'
 commands of stglink:branch[].
 

@@ -245,7 +245,7 @@ CONFIGURATION MECHANISM
 -----------------------
 
 Starting with 0.12, StGIT uses the same configuration mechanism as
-GIT.  See gitlink:git[7] for more details.
+GIT.  See link:git[7] for more details.
 
 TEMPLATES
 ---------
