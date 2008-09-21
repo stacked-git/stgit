@@ -34,6 +34,8 @@ given patch. Note that this command doesn't show the files modified in
 the working tree and not yet included in the patch by a 'refresh'
 command. Use the 'diff' or 'status' commands for these files."""
 
+args = [argparse.applied_patches, argparse.unapplied_patches,
+        argparse.hidden_patches]
 options = [
     opt('-s', '--stat', action = 'store_true',
         short = 'Show the diffstat'),

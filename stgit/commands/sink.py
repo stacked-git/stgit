@@ -20,7 +20,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Send patches deeper down the stack'
 kind = 'stack'
@@ -41,12 +41,14 @@ including <target patch>), then pushing the patches to sink, and then
 (unless '--nopush' is also given) pushing back into place the
 formerly-applied patches."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
     opt('-n', '--nopush', action = 'store_true',
         short = 'Do not push the patches back after sinking', long = """
         Do not push back on the stack the formerly-applied patches.
         Only the patches to sink are pushed."""),
-    opt('-t', '--to', metavar = 'TARGET',
+    opt('-t', '--to', metavar = 'TARGET', args = [argparse.applied_patches],
         short = 'Sink patches below the TARGET patch', long = """
         Specify a target patch to place the patches below, instead of
         sinking them to the bottom of the stack.""")]

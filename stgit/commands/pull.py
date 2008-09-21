@@ -21,7 +21,7 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit.config import GitConfigException
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Pull changes from a remote repository'
 kind = 'stack'
@@ -37,6 +37,7 @@ resolved and the patch pushed again.
 
 Check the 'git fetch' documentation for the <repository> format."""
 
+args = [argparse.repo]
 options = [
     opt('-n', '--nopush', action = 'store_true',
         short = 'Do not push the patches back after pulling'),

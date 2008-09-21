@@ -7,12 +7,15 @@ TEST_PATCHES ?= ..
 all: build
 	$(PYTHON) setup.py build
 
-build: stgit/commands/cmdlist.py
+build: stgit/commands/cmdlist.py stgit-completion.bash
 
 ALL_PY = $(shell find stgit -name '*.py')
 
 stgit/commands/cmdlist.py: $(ALL_PY)
 	$(PYTHON) stg-build --py-cmd-list > $@
+
+stgit-completion.bash: $(ALL_PY)
+	$(PYTHON) stg-build --bash-completion > $@
 
 install: build
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force

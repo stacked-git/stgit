@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 import sys, os
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Make a local clone of a remote repository'
 kind = 'repo'
@@ -35,6 +35,7 @@ commands of stglink:branch[].
 The target directory <dir> will be created by this command, and must
 not already exist."""
 
+args = [argparse.repo, argparse.dir]
 options = []
 
 directory = DirectoryAnywhere(needs_current_series = False, log = False)

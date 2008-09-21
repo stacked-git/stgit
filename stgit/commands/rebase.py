@@ -19,7 +19,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Move the stack base to another point in history'
 kind = 'stack'
@@ -40,6 +40,7 @@ Or if you want to skip that patch:
         $ stg undo --hard
         $ stg push next-patch..top-patch"""
 
+args = [argparse.commit]
 options = [
     opt('-n', '--nopush', action = 'store_true',
         short = 'Do not push the patches back after rebasing'),

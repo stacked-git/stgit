@@ -39,6 +39,7 @@ the patch, unless the '--message' flag already specified one. The
 'patchdescr.tmpl' template file (if available) is used to pre-fill the
 editor."""
 
+args = []
 options = (argparse.author_committer_options()
            + argparse.message_options(save_template = True)
            + argparse.sign_options())

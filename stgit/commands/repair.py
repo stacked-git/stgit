@@ -69,6 +69,7 @@ NOTE: If using git commands on the stack was a mistake, running "stg
 repair" is _not_ what you want. In that case, what you want is option
 (1) above."""
 
+args = []
 options = []
 
 directory = DirectoryGotoToplevel(log = True)

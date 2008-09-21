@@ -21,7 +21,7 @@ from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import *
-from stgit import utils
+from stgit import argparse, utils
 
 help = 'Turn regular git commits into StGit patches'
 kind = 'stack'
@@ -49,10 +49,12 @@ given commit should be uncommitted.
 Only commits with exactly one parent can be uncommitted; in other
 words, you can't uncommit a merge."""
 
+args = []
 options = [
     opt('-n', '--number', type = 'int',
         short = 'Uncommit the specified number of commits'),
-    opt('-t', '--to', short = 'Uncommit to the specified commit'),
+    opt('-t', '--to', args = [argparse.commit],
+        short = 'Uncommit to the specified commit'),
     opt('-x', '--exclusive', action = 'store_true',
         short = 'Exclude the commit specified by the --to option')]
 

@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 from stgit.stack import Series
 
 help = 'Import a patch from a different branch or a commit object'
@@ -34,14 +34,17 @@ used as the name of the current patch. It can be overridden with the
 option. The log and author information are those of the commit
 object."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches,
+                             argparse.hidden_patches)]
 options = [
     opt('-n', '--name',
         short = 'Use NAME as the patch name'),
-    opt('-B', '--ref-branch',
+    opt('-B', '--ref-branch', args = [argparse.stg_branches],
         short = 'Pick patches from BRANCH'),
     opt('-r', '--reverse', action = 'store_true',
         short = 'Reverse the commit object before importing'),
-    opt('-p', '--parent', metavar = 'COMMITID',
+    opt('-p', '--parent', metavar = 'COMMITID', args = [argparse.commit],
         short = 'Use COMMITID as parent'),
     opt('-x', '--expose', action = 'store_true',
         short = 'Append the imported commit id to the patch log'),

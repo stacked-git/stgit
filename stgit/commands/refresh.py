@@ -48,6 +48,7 @@ the patch stack log; this means that one undo step will undo the merge
 between the other patch and the temp patch, and two undo steps will
 additionally get rid of the temp patch."""
 
+args = [argparse.dirty_files]
 options = [
     opt('-u', '--update', action = 'store_true',
         short = 'Only update the current patch files'),
@@ -55,7 +56,8 @@ options = [
         short = 'Refresh from index instead of worktree', long = """
         Instead of setting the patch top to the current contents of
         the worktree, set it to the current contents of the index."""),
-    opt('-p', '--patch',
+    opt('-p', '--patch', args = [argparse.other_applied_patches,
+                                 argparse.unapplied_patches],
         short = 'Refresh (applied) PATCH instead of the top patch'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),

@@ -59,8 +59,8 @@ def __run_setup():
             ('share/stgit/examples', glob.glob('examples/*.tmpl')),
             ('share/stgit/examples', ['examples/gitconfig']),
             ('share/stgit/contrib', ['contrib/diffcol.sh',
-                                     'contrib/stgbashprompt.sh',
-                                     'contrib/stgit-completion.bash']),
+                                     'contrib/stgbashprompt.sh']),
+            ('share/stgit/completion', ['stgit-completion.bash'])
             ])
 
 # Check the minimum versions required

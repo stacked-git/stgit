@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Unhide a hidden patch'
 kind = 'stack'
@@ -29,8 +29,9 @@ description = """
 Unhide a hidden range of patches so that they are shown in the plain
 'stg series' command output."""
 
+args = [argparse.patch_range(argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
 directory = DirectoryHasRepository(log = True)

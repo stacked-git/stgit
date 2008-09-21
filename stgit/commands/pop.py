@@ -20,7 +20,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Pop one or more patches from the stack'
 kind = 'stack'
@@ -35,6 +35,7 @@ patches passed on the command line are popped from the stack. Some of
 the push operations may fail because of conflicts ("stg undo" would
 revert the last push operation)."""
 
+args = [argparse.patch_range(argparse.applied_patches)]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Pop all the applied patches'),

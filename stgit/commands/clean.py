@@ -28,6 +28,7 @@ Delete the empty patches in the whole series or only those applied or
 unapplied. A patch is considered empty if the two commit objects
 representing its boundaries refer to the same tree object."""
 
+args = []
 options = [
     opt('-a', '--applied', action = 'store_true',
         short = 'Delete the empty applied patches'),

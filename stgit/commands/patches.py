@@ -21,7 +21,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Show the applied patches modifying a file'
 kind = 'stack'
@@ -32,10 +32,11 @@ it shows the patches affected by the local tree modifications. The
 '--diff' option also lists the patch log and the diff for the given
 files."""
 
+args = [argparse.known_files]
 options = [
     opt('-d', '--diff', action = 'store_true',
         short = 'Show the diff for the given files'),
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
 directory = DirectoryHasRepository(log = False)

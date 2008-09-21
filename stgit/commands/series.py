@@ -21,6 +21,7 @@ from stgit.commands import common
 from stgit.commands.common import parse_patches
 from stgit.out import out
 from stgit.config import config
+from stgit import argparse
 
 help = 'Print the patch series'
 kind = 'stack'
@@ -31,8 +32,11 @@ range. The applied patches are prefixed with a '+', the unapplied ones
 with a '-' and the hidden ones with a '!'. The current patch is
 prefixed with a '>'. Empty patches are prefixed with a '0'."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches,
+                             argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch'),
     opt('-a', '--all', action = 'store_true',
         short = 'Show all patches, including the hidden ones'),
@@ -42,7 +46,7 @@ options = [
         short = 'Show the unapplied patches only'),
     opt('-H', '--hidden', action = 'store_true',
         short = 'Show the hidden patches only'),
-    opt('-m', '--missing', metavar = 'BRANCH',
+    opt('-m', '--missing', metavar = 'BRANCH',  args = [argparse.stg_branches],
         short = 'Show patches in BRANCH missing in current'),
     opt('-c', '--count', action = 'store_true',
         short = 'Print the number of patches in the series'),

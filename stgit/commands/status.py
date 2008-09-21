@@ -20,7 +20,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Show the tree status'
 kind = 'wc'
@@ -39,6 +39,7 @@ under revision control. The files are prefixed as follows:
 An 'stg refresh' command clears the status of the modified, new and
 deleted files."""
 
+args = [argparse.files]
 options = [
     opt('-m', '--modified', action = 'store_true',
         short = 'Show modified files only'),

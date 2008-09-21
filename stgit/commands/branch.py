@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git, basedir
+from stgit import argparse, stack, git, basedir
 from stgit.lib import log
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
@@ -45,6 +45,7 @@ within a git repository.
 'stg branch' <branch>::
         Switch to the given branch."""
 
+args = [argparse.all_branches]
 options = [
     opt('-l', '--list', action = 'store_true',
         short = 'List the branches contained in this repository', long = """

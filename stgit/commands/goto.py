@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 from stgit.commands import common
 from stgit.lib import transaction
+from stgit import argparse
 
 help = 'Push or pop patches to the given one'
 kind = 'stack'
@@ -25,6 +26,7 @@ description = """
 Push/pop patches to/from the stack until the one given on the command
 line becomes current."""
 
+args = [argparse.other_applied_patches, argparse.unapplied_patches]
 options = []
 
 directory = common.DirectoryHasRepositoryLib()

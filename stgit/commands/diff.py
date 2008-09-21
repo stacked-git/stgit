@@ -38,8 +38,12 @@ representing the bottom of the current stack.
 
 rev = '[branch:](<patch>|{base}) | <tree-ish>'"""
 
+args = [argparse.known_files, argparse.dirty_files]
 options = [
     opt('-r', '--range', metavar = 'rev1[..[rev2]]', dest = 'revs',
+        args = [argparse.patch_range(argparse.applied_patches,
+                                     argparse.unapplied_patches,
+                                     argparse.hidden_patches)],
         short = 'Show the diff between revisions'),
     opt('-s', '--stat', action = 'store_true',
         short = 'Show the stat instead of the diff'),

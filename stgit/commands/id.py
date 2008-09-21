@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.out import out
 from stgit.commands import common
 from stgit.lib import stack
+from stgit import argparse
 
 help = 'Print the git hash value of a StGit reference'
 kind = 'repo'
@@ -30,6 +31,8 @@ or the base of the stack. If no branch is specified, it defaults to the
 current one. The bottom of a patch is accessible with the
 '[<branch>:]<patch>^' format."""
 
+args = [argparse.applied_patches, argparse.unapplied_patches,
+        argparse.hidden_patches]
 options = []
 
 directory = common.DirectoryHasRepositoryLib()

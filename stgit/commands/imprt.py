@@ -44,6 +44,7 @@ stack.
 The patch description has to be separated from the data with a '---'
 line."""
 
+args = [argparse.files]
 options = [
     opt('-m', '--mail', action = 'store_true',
         short = 'Import the patch from a standard e-mail file'),
@@ -61,7 +62,7 @@ options = [
         short = 'Ignore the applied patches in the series'),
     opt('--replace', action = 'store_true',
         short = 'Replace the unapplied patches in the series'),
-    opt('-b', '--base',
+    opt('-b', '--base', args = [argparse.commit],
         short = 'Use BASE instead of HEAD for file importing'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),

@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Integrate a GNU diff patch into the current patch'
 kind = 'patch'
@@ -33,10 +33,11 @@ performed with the current top. With the --base option, the patch is
 applied onto the specified base and a three-way merged is performed
 with the current top."""
 
+args = [argparse.files]
 options = [
     opt('-t', '--threeway', action = 'store_true',
         short = 'Perform a three-way merge with the current patch'),
-    opt('-b', '--base',
+    opt('-b', '--base', args = [argparse.commit],
         short = 'Use BASE instead of HEAD applying the patch')]
 
 directory = DirectoryHasRepository(log = True)

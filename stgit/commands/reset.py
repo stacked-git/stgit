@@ -21,6 +21,7 @@ from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import git, log, transaction
 from stgit.out import out
+from stgit import argparse
 
 help = 'Reset the patch stack to an earlier state'
 kind = 'stack'
@@ -33,6 +34,9 @@ a commit id from a stack log; "stg log" lets you view this log, and
 If one or more patch names are given, reset only those patches, and
 leave the rest alone."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches,
+                             argparse.hidden_patches)]
 options = [
     opt('--hard', action = 'store_true',
         short = 'Discard changes in your index/worktree')]

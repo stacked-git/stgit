@@ -20,7 +20,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Push patches to the top, even if applied'
 kind = 'stack'
@@ -32,6 +32,8 @@ necessary pop and push operations will be performed to accomplish
 this. The '--series' option can be used to rearrange the (top) patches
 as specified by the given series file (or the standard input)."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
     opt('-s', '--series', action = 'store_true',
         short = 'Rearrange according to a series file')]

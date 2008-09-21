@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
+from stgit import argparse
 
 help = 'Delete patches'
 kind = 'patch'
@@ -28,8 +29,10 @@ Delete the patches passed as arguments.
 
 Note that the 'delete' operation is irreversible."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
 directory = common.DirectoryHasRepositoryLib()

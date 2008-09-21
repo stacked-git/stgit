@@ -32,6 +32,7 @@ the effects of consecutive invocations of "stg undo".
 It is an error to run "stg redo" if the last command was not an
 undo."""
 
+args = []
 options = [
     opt('-n', '--number', type = 'int', metavar = 'N', default = 1,
         short = 'Undo the last N undos'),

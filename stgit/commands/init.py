@@ -27,6 +27,7 @@ Initialise the current git branch to be used as an StGIT stack. The
 branch (and the git repository it is in) must already exist and
 contain at least one commit."""
 
+args = []
 options = []
 
 directory = common.DirectoryHasRepositoryLib()

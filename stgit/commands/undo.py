@@ -29,6 +29,7 @@ description = """
 Reset the patch stack to the previous state. Consecutive invocations
 of "stg undo" will take you ever further into the past."""
 
+args = []
 options = [
     opt('-n', '--number', type = 'int', metavar = 'N', default = 1,
         short = 'Undo the last N commands'),

@@ -21,7 +21,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Synchronise patches with a branch or a series'
 kind = 'patch'
@@ -33,12 +33,14 @@ for keeping patches on several branches in sync. Note that the
 operation may fail for some patches because of conflicts. The patches
 in the series must apply cleanly."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Synchronise all the applied patches'),
-    opt('-B', '--ref-branch',
+    opt('-B', '--ref-branch', args = [argparse.stg_branches],
         short = 'Syncronise patches with BRANCH'),
-    opt('-s', '--series',
+    opt('-s', '--series', args = [argparse.files],
         short = 'Syncronise patches with SERIES')]
 
 directory = DirectoryGotoToplevel(log = True)

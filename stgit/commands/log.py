@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 import os.path
 from optparse import make_option
-from stgit import run
+from stgit import argparse, run
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import log
@@ -37,8 +37,11 @@ the named patches.
 "stg undo" and "stg redo" let you step back and forth in the patch
 stack. "stg reset" lets you go directly to any state."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches,
+                             argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default one'),
     opt('-p', '--patch', action = 'store_true',
         short = 'Show the refresh diffs'),

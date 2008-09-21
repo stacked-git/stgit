@@ -54,6 +54,8 @@ If the patch diff is edited but does not apply, no changes are made to
 the patch at all. The edited patch is saved to a file which you can
 feed to "stg edit --file", once you have made sure it does apply."""
 
+args = [argparse.applied_patches, argparse.unapplied_patches,
+        argparse.hidden_patches]
 options = [
     opt('-d', '--diff', action = 'store_true',
         short = 'Edit the patch diff'),

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.out import out
+from stgit import argparse
 
 help = 'Print the name of the top patch'
 kind = 'stack'
@@ -26,8 +27,9 @@ usage = ['']
 description = """
 Print the name of the current (topmost) patch."""
 
+args = []
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
 directory = common.DirectoryHasRepositoryLib()

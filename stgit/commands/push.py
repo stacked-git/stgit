@@ -21,7 +21,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Push one or more patches onto the stack'
 kind = 'stack'
@@ -38,6 +38,7 @@ conflicting push with 'stg undo').
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
+args = [argparse.patch_range(argparse.unapplied_patches)]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Push all the unapplied patches'),

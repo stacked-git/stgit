@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Rename a patch'
 kind = 'patch'
@@ -29,8 +29,10 @@ description = """
 Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not
 given, the top-most patch will be renamed."""
 
+args = [argparse.applied_patches, argparse.unapplied_patches,
+        argparse.hidden_patches]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'use BRANCH instead of the default one')]
 
 directory = DirectoryHasRepository(log = True)

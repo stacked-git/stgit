@@ -34,6 +34,8 @@ If there are conflicts when reordering the patches to match the order
 you specify, you will have to resolve them manually just as if you had
 done a sequence of pushes and pops yourself."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [opt('-n', '--name', short = 'Name of coalesced patch')
            ] + argparse.message_options(save_template = True)
 

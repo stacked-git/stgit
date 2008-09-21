@@ -19,6 +19,7 @@ from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import *
+from stgit import argparse
 
 help = 'Permanently store the applied patches into the stack base'
 kind = 'stack'
@@ -40,6 +41,8 @@ The -n/--number option specifies the number of applied patches to
 commit (counting from the bottom of the stack). If -a/--all is given,
 all applied patches are committed."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
     opt('-n', '--number', type = 'int',
         short = 'Commit the specified number of patches'),

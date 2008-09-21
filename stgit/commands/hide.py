@@ -20,7 +20,7 @@ from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
-from stgit import stack, git
+from stgit import argparse, stack, git
 
 help = 'Hide a patch in the series'
 kind = 'stack'
@@ -29,8 +29,10 @@ description = """
 Hide a range of unapplied patches so that they are no longer shown in
 the plain 'series' command output."""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches)]
 options = [
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
 directory = DirectoryHasRepository(log = True)

@@ -2,7 +2,7 @@
 # -*- python -*-
 import optparse, sys
 import stgit.main
-from stgit import argparse, commands
+from stgit import argparse, commands, completion
 
 def main():
     op = optparse.OptionParser()
@@ -14,6 +14,8 @@ def main():
                   help = 'Print asciidoc command list')
     op.add_option('--py-cmd-list', action = 'store_true',
                   help = 'Write Python command list')
+    op.add_option('--bash-completion', action = 'store_true',
+                  help = 'Write bash completion code')
     options, args = op.parse_args()
     if args:
         op.error('Wrong number of arguments')
@@ -30,6 +32,8 @@ def main():
     elif options.py_cmd_list:
         commands.py_commands(commands.get_commands(allow_cached = False),
                              sys.stdout)
+    elif options.bash_completion:
+        completion.write_completion(sys.stdout)
     else:
         op.error('No command')
 

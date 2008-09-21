@@ -6,3 +6,4 @@ patches-*
 release.sh
 setup.cfg.rpm
 snapshot.sh
+stgit-completion.bash

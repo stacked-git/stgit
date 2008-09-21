@@ -20,7 +20,7 @@ import sys, os
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit.utils import *
-from stgit import stack, git, basedir
+from stgit import argparse, stack, git, basedir
 from stgit.config import config, file_extensions
 from stgit.gitmergeonefile import interactive_merge
 
@@ -32,10 +32,12 @@ Mark a merge conflict as resolved. The conflicts can be seen with the
 'status' command, the corresponding files being prefixed with a
 'C'."""
 
+args = [argparse.conflicting_files]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Mark all conflicts as solved'),
     opt('-r', '--reset', metavar = '(ancestor|current|patched)',
+        args = [argparse.strings('ancestor', 'current', 'patched')],
         short = 'Reset the file(s) to the given state'),
     opt('-i', '--interactive', action = 'store_true',
         short = 'Run the interactive merging tool')]

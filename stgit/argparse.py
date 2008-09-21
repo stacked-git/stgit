@@ -26,28 +26,27 @@ def _paragraphs(s):
 
 class opt(object):
     """Represents a command-line flag."""
-    def __init__(self, *args, **kwargs):
-        self.args = args
+    def __init__(self, *pargs, **kwargs):
+        self.pargs = pargs
         self.kwargs = kwargs
     def get_option(self):
         kwargs = dict(self.kwargs)
         kwargs['help'] = kwargs['short']
-        del kwargs['short']
-        if 'long' in kwargs:
-            del kwargs['long']
-        return optparse.make_option(*self.args, **kwargs)
+        for k in ['short', 'long', 'args']:
+            kwargs.pop(k, None)
+        return optparse.make_option(*self.pargs, **kwargs)
     def metavar(self):
         o = self.get_option()
         if not o.nargs:
             return None
         if o.metavar:
             return o.metavar
-        for flag in self.args:
+        for flag in self.pargs:
             if flag.startswith('--'):
                 return utils.strip_prefix('--', flag).upper()
         raise Exception('Cannot determine metavar')
     def write_asciidoc(self, f):
-        for flag in self.args:
+        for flag in self.pargs:
             f.write(flag)
             m = self.metavar()
             if m:
@@ -60,6 +59,16 @@ class opt(object):
             f.write('+\n')
             for line in para:
                 f.write(line + '\n')
+    @property
+    def flags(self):
+        return self.pargs
+    @property
+    def args(self):
+        if self.kwargs.get('action', None) in ['store_true', 'store_false']:
+            default = []
+        else:
+            default = [files]
+        return self.kwargs.get('args', default)
 
 def _cmd_name(cmd_mod):
     return getattr(cmd_mod, 'name', cmd_mod.__name__.split('.')[-1])
@@ -103,11 +112,11 @@ def sign_options():
                 '--ack and --sign were both specified')
         parser.values.sign_str = sign_str
     return [
-        opt('--sign', action = 'callback', dest = 'sign_str',
+        opt('--sign', action = 'callback', dest = 'sign_str', args = [],
             callback = callback, callback_args = ('Signed-off-by',),
             short = 'Add "Signed-off-by:" line', long = """
             Add a "Signed-off-by:" to the end of the patch."""),
-        opt('--ack', action = 'callback', dest = 'sign_str',
+        opt('--ack', action = 'callback', dest = 'sign_str', args = [],
             callback = callback, callback_args = ('Acked-by',),
             short = 'Add "Acked-by:" line', long = """
             Add an "Acked-by:" line to the end of the patch.""")]
@@ -151,7 +160,7 @@ def message_options(save_template):
             callback = msg_callback, dest = 'message', type = 'string',
             short = 'Use MESSAGE instead of invoking the editor'),
         opt('-f', '--file', action = 'callback', callback = file_callback,
-            dest = 'message', type = 'string',
+            dest = 'message', type = 'string', args = [files],
             short = 'Use FILE instead of invoking the editor', long = """
             Use the contents of FILE instead of invoking the editor.
             (If FILE is "-", write to stdout.)""")]
@@ -181,6 +190,7 @@ def diff_opts_option():
             default = (config.get('stgit.diff-opts') or '').split(),
             action = 'callback', callback = diff_opts_callback,
             type = 'string', metavar = 'OPTIONS',
+            args = [strings('-M', '-C')],
             short = 'Extra options to pass to "git diff"')]
 
 def _person_opts(person, short):
@@ -212,3 +222,63 @@ def author_options():
 
 def author_committer_options():
     return _person_opts('author', 'auth') + _person_opts('committer', 'comm')
+
+class CompgenBase(object):
+    def actions(self, var): return set()
+    def words(self, var): return set()
+    def command(self, var):
+        cmd = ['compgen']
+        for act in self.actions(var):
+            cmd += ['-A', act]
+        words = self.words(var)
+        if words:
+            cmd += ['-W', '"%s"' % ' '.join(words)]
+        cmd += ['--', '"%s"' % var]
+        return ' '.join(cmd)
+
+class CompgenJoin(CompgenBase):
+    def __init__(self, a, b):
+        assert isinstance(a, CompgenBase)
+        assert isinstance(b, CompgenBase)
+        self.__a = a
+        self.__b = b
+    def words(self, var): return self.__a.words(var) | self.__b.words(var)
+    def actions(self, var): return self.__a.actions(var) | self.__b.actions(var)
+
+class Compgen(CompgenBase):
+    def __init__(self, words = frozenset(), actions = frozenset()):
+        self.__words = set(words)
+        self.__actions = set(actions)
+    def actions(self, var): return self.__actions
+    def words(self, var): return self.__words
+
+def compjoin(compgens):
+    comp = Compgen()
+    for c in compgens:
+        comp = CompgenJoin(comp, c)
+    return comp
+
+all_branches = Compgen(['$(_all_branches)'])
+stg_branches = Compgen(['$(_stg_branches)'])
+applied_patches = Compgen(['$(_applied_patches)'])
+other_applied_patches = Compgen(['$(_other_applied_patches)'])
+unapplied_patches = Compgen(['$(_unapplied_patches)'])
+hidden_patches = Compgen(['$(_hidden_patches)'])
+commit = Compgen(['$(_all_branches) $(_tags) $(_remotes)'])
+conflicting_files = Compgen(['$(_conflicting_files)'])
+dirty_files = Compgen(['$(_dirty_files)'])
+unknown_files = Compgen(['$(_unknown_files)'])
+known_files = Compgen(['$(_known_files)'])
+repo = Compgen(actions = ['directory'])
+dir = Compgen(actions = ['directory'])
+files = Compgen(actions = ['file'])
+def strings(*ss): return Compgen(ss)
+class patch_range(CompgenBase):
+    def __init__(self, *endpoints):
+        self.__endpoints = endpoints
+    def words(self, var):
+        words = set()
+        for e in self.__endpoints:
+            assert not e.actions(var)
+            words |= e.words(var)
+        return set(['$(_patch_range "%s" "%s")' % (' '.join(words), var)])

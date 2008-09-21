@@ -93,6 +93,9 @@ the following:
   %(prefix)s       - 'prefix ' string passed on the command line
   %(shortdescr)s   - the first line of the patch description"""
 
+args = [argparse.patch_range(argparse.applied_patches,
+                             argparse.unapplied_patches,
+                             argparse.hidden_patches)]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'E-mail all the applied patches'),
@@ -134,7 +137,7 @@ options = [
         short = 'Password for SMTP authentication'),
     opt('-T', '--smtp-tls', action = 'store_true',
         short = 'Use SMTP with TLS encryption'),
-    opt('-b', '--branch',
+    opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch'),
     opt('-m', '--mbox', action = 'store_true',
         short = 'Generate an mbox file instead of sending')
