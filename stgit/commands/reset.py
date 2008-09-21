@@ -119,7 +119,8 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     if len(args) >= 1:
         ref, patches = args[0], args[1:]
-        state = log.get_log_entry(stack.repository, ref)
+        state = log.get_log_entry(stack.repository, ref,
+                                  stack.repository.rev_parse(ref))
     else:
         raise common.CmdException('Wrong number of arguments')
     return reset_stack(stack, stack.repository.default_iw, state, patches,

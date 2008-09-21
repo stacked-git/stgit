@@ -286,23 +286,35 @@ class LogEntry(object):
                 tree = tree, message = self.message,
                 parents = [self.simplified] + parents))
 
-def get_log_entry(repo, ref):
+def get_log_entry(repo, ref, commit):
     try:
-        return LogEntry.from_commit(repo, repo.rev_parse(ref))
+        return LogEntry.from_commit(repo, commit)
     except LogException, e:
         raise LogException('While reading log from %s: %s' % (ref, e))
+
+def same_state(log1, log2):
+    """Check whether two log entries describe the same current state."""
+    s = [[lg.head, lg.applied, lg.unapplied, lg.hidden, lg.patches]
+         for lg in [log1, log2]]
+    return s[0] == s[1]
 
 def log_entry(stack, msg):
     """Write a new log entry for the stack."""
     ref = log_ref(stack.name)
     try:
-        last_log = stack.repository.refs.get(ref)
+        last_log_commit = stack.repository.refs.get(ref)
     except KeyError:
-        last_log = None
+        last_log_commit = None
     try:
+        if last_log_commit:
+            last_log = get_log_entry(stack.repository, ref, last_log_commit)
+        else:
+            last_log = None
         new_log = LogEntry.from_stack(last_log, stack, msg)
     except LogException, e:
         out.warn(str(e), 'No log entry written.')
+        return
+    if last_log and same_state(last_log, new_log):
         return
     new_log.write_commit()
     stack.repository.refs.set(ref, new_log.commit, msg)
