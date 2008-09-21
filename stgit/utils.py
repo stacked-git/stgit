@@ -170,17 +170,21 @@ def rename(basedir, file1, file2):
 class EditorException(StgException):
     pass
 
+def get_editor():
+    for editor in [os.environ.get('GIT_EDITOR'),
+                   config.get('stgit.editor'), # legacy
+                   config.get('core.editor'),
+                   os.environ.get('VISUAL'),
+                   os.environ.get('EDITOR'),
+                   'vi']:
+        if editor:
+            return editor
+
 def call_editor(filename):
     """Run the editor on the specified filename."""
-
-    # the editor
-    editor = config.get('stgit.editor')
-    if not editor:
-        editor = os.environ.get('EDITOR', 'vi')
-    editor += ' %s' % filename
-
-    out.start('Invoking the editor: "%s"' % editor)
-    err = os.system(editor)
+    cmd = '%s %s' % (get_editor(), filename)
+    out.start('Invoking the editor: "%s"' % cmd)
+    err = os.system(cmd)
     if err:
         raise EditorException, 'editor failed, exit code: %d' % err
     out.done()

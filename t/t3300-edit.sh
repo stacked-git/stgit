@@ -99,7 +99,7 @@ EOF
 }
 
 mkeditor vi
-test_expect_failure 'Edit commit message interactively (vi)' '
+test_expect_success 'Edit commit message interactively (vi)' '
     m=$(msg HEAD) &&
     PATH=.:$PATH stg edit p2 &&
     test "$(msg HEAD)" = "$m/vi"
@@ -114,14 +114,14 @@ test_expect_success 'Edit commit message interactively (EDITOR)' '
 '
 
 mkeditor e2
-test_expect_failure 'Edit commit message interactively (VISUAL)' '
+test_expect_success 'Edit commit message interactively (VISUAL)' '
     m=$(msg HEAD) &&
     VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
     test "$(msg HEAD)" = "$m/e2"
 '
 
 mkeditor e3
-test_expect_failure 'Edit commit message interactively (core.editor)' '
+test_expect_success 'Edit commit message interactively (core.editor)' '
     m=$(msg HEAD) &&
     git config core.editor e3 &&
     VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
@@ -137,7 +137,7 @@ test_expect_success 'Edit commit message interactively (stgit.editor)' '
 '
 
 mkeditor e5
-test_expect_failure 'Edit commit message interactively (GIT_EDITOR)' '
+test_expect_success 'Edit commit message interactively (GIT_EDITOR)' '
     m=$(msg HEAD) &&
     GIT_EDITOR=./e5 VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
     test "$(msg HEAD)" = "$m/e5"
