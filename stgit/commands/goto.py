@@ -23,8 +23,7 @@ kind = 'stack'
 usage = ['<patch-name>']
 description = """
 Push/pop patches to/from the stack until the one given on the command
-line becomes current. There is no '--undo' option for 'goto'. Use the
-'push --undo' command for this."""
+line becomes current."""
 
 options = []
 

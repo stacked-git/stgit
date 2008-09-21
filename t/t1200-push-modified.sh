@@ -56,7 +56,7 @@ test_expect_success \
 test_expect_success \
     'Rollback the push' '
     (
-        cd bar && stg push --undo &&
+        cd bar && stg undo --hard &&
         [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "p1 p2" ]
     )

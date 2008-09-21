@@ -37,7 +37,7 @@ the rebase by executing the following sequence:
 
 Or if you want to skip that patch:
 
-        $ stg push --undo
+        $ stg undo --hard
         $ stg push next-patch..top-patch"""
 
 options = [

@@ -3,10 +3,10 @@
 # Copyright (c) 2006 Catalin Marinas
 #
 
-test_description='Exercise push --undo with missing files.
+test_description='Exercise stg undo with push of missing files.
 
 Test the case where a patch fails to be pushed because it modifies a
-missing file. The "push --undo" command has to be able to revert it.
+missing file. The "stg undo" command has to be able to revert it.
 '
 
 . ./test-lib.sh
@@ -49,7 +49,7 @@ test_expect_success \
 test_expect_success \
 	'Undo the previous push' \
 	'
-	stg push --undo
+	stg undo --hard
 	'
 
 test_expect_success \
@@ -64,7 +64,7 @@ test_expect_success \
 	touch newfile &&
 	git add newfile &&
 	rm newfile &&
-	stg push --undo
+	stg undo --hard
 	'
 
 test_done

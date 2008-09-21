@@ -49,7 +49,7 @@ test_expect_success \
 
 test_expect_success \
     'Pull those patches applied upstream' \
-    "(cd bar && stg push --undo && stg push --all --merged
+    "(cd bar && stg undo && stg push --all --merged
      )
 "
 

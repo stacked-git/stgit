@@ -32,7 +32,7 @@ not specified).
 
 A series of pop and push operations are performed so that only the
 patches passed on the command line are popped from the stack. Some of
-the push operations may fail because of conflicts (push --undo would
+the push operations may fail because of conflicts ("stg undo" would
 revert the last push operation)."""
 
 options = [

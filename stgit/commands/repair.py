@@ -34,8 +34,9 @@ as commit, pull, merge, and rebase -- you will leave the StGit
 metadata in an inconsistent state. In that situation, you have two
 options:
 
-  1. Use "git reset" or similar to undo the effect of the git
-     command(s).
+  1. Use "stg undo" to undo the effect of the git commands. (If you
+     know what you are doing and want more control, "git reset" or
+     similar will work too.)
 
   2. Use "stg repair". This will fix up the StGit metadata to
      accomodate the modifications to the branch. Specifically, it will
@@ -48,8 +49,8 @@ options:
        * However, merge commits cannot become patches; if you have
          committed a merge on top of your stack, "repair" will simply
          mark all patches below the merge unapplied, since they are no
-         longer reachable. If this is not what you want, use "git
-         reset" to get rid of the merge and run "stg repair" again.
+         longer reachable. If this is not what you want, use "stg
+         undo" to get rid of the merge and run "stg repair" again.
 
        * The applied patches are supposed to be precisely those that
          are reachable from the branch head. If you have used e.g.

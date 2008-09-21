@@ -31,9 +31,7 @@ For each of the specified patches perform a three-way merge with the
 same patch in the specified branch or series. The command can be used
 for keeping patches on several branches in sync. Note that the
 operation may fail for some patches because of conflicts. The patches
-in the series must apply cleanly.
-
-The sync operation can be reverted for individual patches with --undo."""
+in the series must apply cleanly."""
 
 options = [
     opt('-a', '--all', action = 'store_true',
@@ -41,9 +39,7 @@ options = [
     opt('-B', '--ref-branch',
         short = 'Syncronise patches with BRANCH'),
     opt('-s', '--series',
-        short = 'Syncronise patches with SERIES'),
-    opt('--undo', action = 'store_true',
-        short = 'Undo the synchronisation of the current patch')]
+        short = 'Syncronise patches with SERIES')]
 
 directory = DirectoryGotoToplevel(log = True)
 
@@ -67,18 +63,6 @@ def __series_merge_patch(base, patchdir, pname):
 def func(parser, options, args):
     """Synchronise a range of patches
     """
-    if options.undo:
-        if options.ref_branch or options.series:
-            raise CmdException, \
-                  '--undo cannot be specified with --ref-branch or --series'
-        __check_all()
-
-        out.start('Undoing the sync of "%s"' % crt_series.get_current())
-        crt_series.undo_refresh()
-        git.reset()
-        out.done()
-        return
-
     if options.ref_branch:
         remote_series = stack.Series(options.ref_branch)
         if options.ref_branch == crt_series.get_name():
@@ -156,8 +140,7 @@ def func(parser, options, args):
         bottom = patch.get_bottom()
         top = patch.get_top()
 
-        # reset the patch backup information. That's needed in case we
-        # undo the sync but there were no changes made
+        # reset the patch backup information.
         patch.set_top(top, backup = True)
 
         # the actual merging (either from a branch or an external file)

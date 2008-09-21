@@ -740,26 +740,6 @@ class Series(PatchSet):
 
         return commit_id
 
-    def undo_refresh(self):
-        """Undo the patch boundaries changes caused by 'refresh'
-        """
-        name = self.get_current()
-        assert(name)
-
-        patch = self.get_patch(name)
-        old_bottom = patch.get_old_bottom()
-        old_top = patch.get_old_top()
-
-        # the bottom of the patch is not changed by refresh. If the
-        # old_bottom is different, there wasn't any previous 'refresh'
-        # command (probably only a 'push')
-        if old_bottom != patch.get_bottom() or old_top == patch.get_top():
-            raise StackException, 'No undo information available'
-
-        git.reset(tree_id = old_top, check_out = False)
-        if patch.restore_old_boundaries():
-            self.log_patch(patch, 'undo')
-
     def new_patch(self, name, message = None, can_edit = True,
                   unapplied = False, show_patch = False,
                   top = None, bottom = None, commit = True,
@@ -1019,7 +999,7 @@ class Series(PatchSet):
                 git.merge_recursive(bottom, head, top)
             except git.GitException, ex:
                 out.error('The merge failed during "push".',
-                          'Revert the operation with "push --undo".')
+                          'Revert the operation with "stg undo".')
 
         append_string(self.__applied_file, name)
 
@@ -1042,29 +1022,6 @@ class Series(PatchSet):
             raise StackException, str(ex)
 
         return modified
-
-    def undo_push(self):
-        name = self.get_current()
-        assert(name)
-
-        patch = self.get_patch(name)
-        old_bottom = patch.get_old_bottom()
-        old_top = patch.get_old_top()
-
-        # the top of the patch is changed by a push operation only
-        # together with the bottom (otherwise the top was probably
-        # modified by 'refresh'). If they are both unchanged, there
-        # was a fast forward
-        if old_bottom == patch.get_bottom() and old_top != patch.get_top():
-            raise StackException, 'No undo information available'
-
-        git.reset()
-        self.pop_patch(name)
-        ret = patch.restore_old_boundaries()
-        if ret:
-            self.log_patch(patch, 'undo')
-
-        return ret
 
     def pop_patch(self, name, keep = False):
         """Pops the top patch from the stack

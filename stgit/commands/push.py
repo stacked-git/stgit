@@ -29,11 +29,11 @@ usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Push one or more patches (defaulting to the first unapplied one) onto
 the stack. The 'push' operation allows patch reordering by commuting
-them with the three-way merge algorithm. If the result of the 'push'
-operation is not acceptable or if there are too many conflicts, the
-'--undo' option can be used to revert the last pushed patch. Conflicts
-raised during the push operation have to be fixed and the 'resolved'
-command run.
+them with the three-way merge algorithm. If there are conflicts while
+pushing a patch, those conflicts are written to the work tree, and the
+command halts. Conflicts raised during the push operation have to be
+fixed and the 'resolved' command run (alternatively, you may undo the
+conflicting push with 'stg undo').
 
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
@@ -46,31 +46,13 @@ options = [
     opt('--reverse', action = 'store_true',
         short = 'Push the patches in reverse order'),
     opt('-m', '--merged', action = 'store_true',
-        short = 'Check for patches merged upstream'),
-    opt('--undo', action = 'store_true',
-        short = 'Undo the last patch pushing')]
+        short = 'Check for patches merged upstream')]
 
 directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Pushes the given patch or all onto the series
     """
-
-    # If --undo is passed, do the work and exit
-    if options.undo:
-        patch = crt_series.get_current()
-        if not patch:
-            raise CmdException, 'No patch to undo'
-
-        out.start('Undoing push of "%s"' % patch)
-        resolved_all()
-        if crt_series.undo_push():
-            out.done()
-        else:
-            out.done('patch unchanged')
-        print_crt_patch(crt_series)
-
-        return
 
     check_local_changes()
     check_conflicts()

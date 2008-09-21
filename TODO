@@ -8,8 +8,6 @@ The TODO list before 1.0:
 - debian package support
 - man page
 - document the workflow on the StGIT wiki
-- maybe a separate undo command rather than passing a --undo option to
-  push and refresh
 - use same configuration file as GIT
 - release 1.0
 

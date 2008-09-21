@@ -178,7 +178,9 @@ patches in a stack.
 During a push operation, merge conflicts can occur (especially if you
 are changing the order of the patches in your stack). If the push causes
 merge conflicts, they need to be fixed and 'stg resolved' run (see
-below). A 'push' operation can also be reverted with 'stg push --undo'.
+below). A 'push' operation can also be reverted with 'stg undo' (you
+will need to give it the --hard flag, since the conflicting push will
+have left your work tree dirty).
 A few more stack basics; to rename a patch:
 
   stg rename <old-name> <new-name>
