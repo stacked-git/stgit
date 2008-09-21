@@ -75,7 +75,7 @@ class StackTransaction(object):
       your refs and index+worktree, or fail without having done
       anything."""
     def __init__(self, stack, msg, discard_changes = False,
-                 allow_conflicts = False):
+                 allow_conflicts = False, allow_bad_head = False):
         """Create a new L{StackTransaction}.
 
         @param discard_changes: Discard any changes in index+worktree
@@ -99,6 +99,8 @@ class StackTransaction(object):
         else:
             self.__allow_conflicts = allow_conflicts
         self.__temp_index = self.temp_index_tree = None
+        if not allow_bad_head:
+            self.__assert_head_top_equal()
     stack = property(lambda self: self.__stack)
     patches = property(lambda self: self.__patches)
     def __set_applied(self, val):
@@ -137,13 +139,16 @@ class StackTransaction(object):
     def __set_head(self, val):
         self.__bad_head = val
     head = property(__get_head, __set_head)
-    def __checkout(self, tree, iw, allow_bad_head):
-        if not (allow_bad_head or self.__stack.head_top_equal()):
+    def __assert_head_top_equal(self):
+        if not self.__stack.head_top_equal():
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
             self.__abort()
+    def __checkout(self, tree, iw, allow_bad_head):
+        if not allow_bad_head:
+            self.__assert_head_top_equal()
         if self.__current_tree == tree and not self.__discard_changes:
             # No tree change, but we still want to make sure that
             # there are no unresolved conflicts. Conflicts

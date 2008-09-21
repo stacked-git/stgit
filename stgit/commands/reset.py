@@ -59,7 +59,8 @@ def func(parser, options, args):
     else:
         raise common.CmdException('Wrong number of arguments')
     trans = transaction.StackTransaction(stack, 'reset',
-                                         discard_changes = options.hard)
+                                         discard_changes = options.hard,
+                                         allow_bad_head = True)
     try:
         if patches:
             log.reset_stack_partially(trans, stack.repository.default_iw,

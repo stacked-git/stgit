@@ -33,7 +33,7 @@ cat > editor <<EOF
 echo "Editor was invoked" | tee editor-invoked
 EOF
 chmod a+x editor
-test_expect_failure 'Coalesce with top != head' '
+test_expect_success 'Coalesce with top != head' '
     echo blahonga >> foo.txt &&
     git commit -a -m "a new commit" &&
     EDITOR=./editor command_error stg coalesce --name=r0 p0 q1 &&
