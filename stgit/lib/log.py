@@ -151,6 +151,12 @@ class LogEntry(object):
         if self.__prev != None and not isinstance(self.__prev, LogEntry):
             self.__prev = self.from_commit(self.__repo, self.__prev)
         return self.__prev
+    @property
+    def base(self):
+        if self.applied:
+            return self.patches[self.applied[0]].data.parent
+        else:
+            return self.head
     @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(
@@ -279,6 +285,12 @@ class LogEntry(object):
         self.commit = self.__repo.commit(git.CommitData(
                 tree = tree, message = self.message,
                 parents = [self.simplified] + parents))
+
+def get_log_entry(repo, ref):
+    try:
+        return LogEntry.from_commit(repo, repo.rev_parse(ref))
+    except LogException, e:
+        raise LogException('While reading log from %s: %s' % (ref, e))
 
 def log_entry(stack, msg):
     """Write a new log entry for the stack."""
