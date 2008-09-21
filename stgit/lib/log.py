@@ -307,6 +307,34 @@ def log_entry(stack, msg):
     new_log.write_commit()
     stack.repository.refs.set(ref, new_log.commit, msg)
 
+class Fakestack(object):
+    """Imitates a real L{Stack<stgit.lib.stack.Stack>}, but with the
+    topmost patch popped."""
+    def __init__(self, stack):
+        appl = list(stack.patchorder.applied)
+        unappl = list(stack.patchorder.unapplied)
+        hidd = list(stack.patchorder.hidden)
+        class patchorder(object):
+            applied = appl[:-1]
+            unapplied = [appl[-1]] + unappl
+            hidden = hidd
+            all = appl + unappl + hidd
+        self.patchorder = patchorder
+        class patches(object):
+            @staticmethod
+            def get(pn):
+                if pn == appl[-1]:
+                    class patch(object):
+                        commit = stack.patches.get(pn).old_commit
+                    return patch
+                else:
+                    return stack.patches.get(pn)
+        self.patches = patches
+        self.head = stack.head.data.parent
+        self.top = stack.top.data.parent
+        self.base = stack.base
+        self.name = stack.name
+        self.repository = stack.repository
 def compat_log_entry(msg):
     """Write a new log entry. (Convenience function intended for use by
     code not yet converted to the new infrastructure.)"""
@@ -316,7 +344,11 @@ def compat_log_entry(msg):
     except libstack.StackException, e:
         out.warn(str(e), 'Could not write to stack log')
     else:
-        log_entry(stack, msg)
+        if repo.default_index.conflicts() and stack.patchorder.applied:
+            log_entry(Fakestack(stack), msg)
+            log_entry(stack, msg + ' (CONFLICT)')
+        else:
+            log_entry(stack, msg)
 
 def delete_log(repo, branch):
     ref = log_ref(branch)

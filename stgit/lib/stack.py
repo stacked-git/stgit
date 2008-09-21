@@ -25,6 +25,13 @@ class Patch(object):
     def commit(self):
         return self.__stack.repository.refs.get(self.__ref)
     @property
+    def old_commit(self):
+        """Return the previous commit for this patch."""
+        fn = os.path.join(self.__compat_dir, 'top.old')
+        if not os.path.isfile(fn):
+            return None
+        return self.__stack.repository.get_commit(utils.read_string(fn))
+    @property
     def __compat_dir(self):
         return os.path.join(self.__stack.directory, 'patches', self.__name)
     def __write_compat_files(self, new_commit, msg):
