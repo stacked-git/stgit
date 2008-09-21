@@ -1,7 +1,7 @@
 COMMANDS = $(shell ../stg-build --commands)
 COMMANDS_TXT = $(patsubst %,stg-%.txt,$(COMMANDS))
 
-MAN1_TXT=$(wildcard stg*.txt) $(COMMANDS_TXT)
+MAN1_TXT= stg.txt $(COMMANDS_TXT)
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
@@ -60,14 +60,14 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 -include doc.dep
 
 clean:
-	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT) stg-cmd-list.txt
+	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT) command-list.txt
 
 ALL_PY = $(shell find ../stgit -name '*.py')
 
 $(COMMANDS_TXT): $(ALL_PY)
 	../stg-build --asciidoc $(basename $(subst stg-,,$@)) > $@
 
-stg-cmd-list.txt: $(ALL_PY)
+command-list.txt: $(ALL_PY)
 	../stg-build --cmd-list > $@
 
 %.html : %.txt

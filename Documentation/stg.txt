@@ -105,7 +105,7 @@ description is available in individual command manpages.  Those
 manpages are named 'stg-<command>(1)'.
 endif::backend-docbook[]
 
-include::stg-cmd-list.txt[]
+include::command-list.txt[]
 
 CONFIGURATION MECHANISM
 -----------------------
