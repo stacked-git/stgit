@@ -764,6 +764,10 @@ class IndexAndWorktree(RunWithEnvCwd):
     env = property(lambda self: utils.add_dict(self.__index.env,
                                                self.__worktree.env))
     cwd = property(lambda self: self.__worktree.directory)
+    def checkout_hard(self, tree):
+        assert isinstance(tree, Tree)
+        self.run(['git', 'read-tree', '--reset', '-u', tree.sha1]
+                 ).discard_output()
     def checkout(self, old_tree, new_tree):
         # TODO: Optionally do a 3-way instead of doing nothing when we
         # have a problem. Or maybe we should stash changes in a patch?

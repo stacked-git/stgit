@@ -74,7 +74,14 @@ class StackTransaction(object):
       method. This will either succeed in writing the updated state to
       your refs and index+worktree, or fail without having done
       anything."""
-    def __init__(self, stack, msg, allow_conflicts = False):
+    def __init__(self, stack, msg, discard_changes = False,
+                 allow_conflicts = False):
+        """Create a new L{StackTransaction}.
+
+        @param discard_changes: Discard any changes in index+worktree
+        @type discard_changes: bool
+        @param allow_conflicts: Whether to allow pre-existing conflicts
+        @type allow_conflicts: bool or function of L{StackTransaction}"""
         self.__stack = stack
         self.__msg = msg
         self.__patches = _TransPatchMap(stack)
@@ -85,6 +92,7 @@ class StackTransaction(object):
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
+        self.__discard_changes = discard_changes
         if isinstance(allow_conflicts, bool):
             self.__allow_conflicts = lambda trans: allow_conflicts
         else:
@@ -119,7 +127,7 @@ class StackTransaction(object):
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
             self.__abort()
-        if self.__current_tree == tree:
+        if self.__current_tree == tree and not self.__discard_changes:
             # No tree change, but we still want to make sure that
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
@@ -130,7 +138,10 @@ class StackTransaction(object):
             out.error('Need to resolve conflicts first')
             self.__abort()
         assert iw != None
-        iw.checkout(self.__current_tree, tree)
+        if self.__discard_changes:
+            iw.checkout_hard(tree)
+        else:
+            iw.checkout(self.__current_tree, tree)
         self.__current_tree = tree
     @staticmethod
     def __abort():

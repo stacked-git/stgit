@@ -17,13 +17,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
+from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import git, log, transaction
 from stgit.out import out
 
 help = 'Reset the patch stack to an earlier state'
 kind = 'stack'
-usage = ['<state> [<patchnames>]']
+usage = ['[options] <state> [<patchnames>]']
 description = """
 Reset the patch stack to an earlier state. The state is specified with
 a commit from a stack log; for a branch foo, StGit stores the stack
@@ -43,11 +44,13 @@ and then reset to any sha1 you see in the log.
 If one or more patch names are given, reset only those patches, and
 leave the rest alone."""
 
-options = []
+options = [
+    opt('--hard', action = 'store_true',
+        short = 'Discard changes in your index/worktree')]
 
 directory = common.DirectoryHasRepositoryLib()
 
-def reset_stack(stack, iw, state, only_patches):
+def reset_stack(stack, iw, state, only_patches, hard):
     only_patches = set(only_patches)
     def mask(s):
         if only_patches:
@@ -57,7 +60,7 @@ def reset_stack(stack, iw, state, only_patches):
     patches_to_reset = mask(set(state.applied + state.unapplied + state.hidden))
     existing_patches = set(stack.patchorder.all)
     to_delete = mask(existing_patches - patches_to_reset)
-    trans = transaction.StackTransaction(stack, 'reset')
+    trans = transaction.StackTransaction(stack, 'reset', discard_changes = hard)
 
     # If we have to change the stack base, we need to pop all patches
     # first.
@@ -119,4 +122,5 @@ def func(parser, options, args):
         state = log.get_log_entry(stack.repository, ref)
     else:
         raise common.CmdException('Wrong number of arguments')
-    return reset_stack(stack, stack.repository.default_iw, state, patches)
+    return reset_stack(stack, stack.repository.default_iw, state, patches,
+                       options.hard)
