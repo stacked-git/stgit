@@ -130,7 +130,10 @@ Argument DIR is the repository path."
                                     'face 'stgit-description-face)
                  (when (memq patchsym stgit-marked-patches)
                    (replace-match "*" nil nil nil 2)
-                   (setq marked (cons patchsym marked))))))
+                   (setq marked (cons patchsym marked)))))
+              ((looking-at "stg series: Branch \".*\" not initialised")
+               (forward-line 1)
+               (insert "Run M-x stgit-init to initialise")))
         (forward-line 1))
       (setq stgit-marked-patches (nreverse marked)))))
 
@@ -217,6 +220,13 @@ Commands:
                t)
       (goto-char p)
       nil)))
+
+(defun stgit-init ()
+  "Run stg init"
+  (interactive)
+  (stgit-capture-output nil
+   (stgit-run "init"))
+  (stgit-refresh))
 
 (defun stgit-mark ()
   "Mark the patch under point"
