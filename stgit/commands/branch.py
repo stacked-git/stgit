@@ -21,6 +21,7 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import stack, git, basedir
+from stgit.lib import log
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
 kind = 'stack'
@@ -102,7 +103,7 @@ options = [
     opt('--force', action = 'store_true',
         short = 'Force a delete when the series is not empty')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = False)
 
 def __is_current_branch(branch_name):
     return crt_series.get_name() == branch_name
@@ -196,6 +197,7 @@ def func(parser, options, args):
                                    parent_branch = parentbranch)
 
         out.info('Branch "%s" created' % args[0])
+        log.compat_log_entry('branch --create')
         return
 
     elif options.clone:
@@ -216,6 +218,8 @@ def func(parser, options, args):
         crt_series.clone(clone)
         out.done()
 
+        log.copy_log(log.default_repo(), crt_series.get_name(), clone,
+                     'branch --clone')
         return
 
     elif options.delete:
@@ -223,6 +227,7 @@ def func(parser, options, args):
         if len(args) != 1:
             parser.error('incorrect number of arguments')
         __delete_branch(args[0], options.force)
+        log.delete_log(log.default_repo(), args[0])
         return
 
     elif options.list:
@@ -230,13 +235,16 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('incorrect number of arguments')
 
-        branches = git.get_heads()
-        branches.sort()
+        branches = set(git.get_heads())
+        for br in set(branches):
+            m = re.match(r'^(.*)\.stgit$', br)
+            if m and m.group(1) in branches:
+                branches.remove(br)
 
         if branches:
             out.info('Available branches:')
             max_len = max([len(i) for i in branches])
-            for i in branches:
+            for i in sorted(branches):
                 __print_branch(i, max_len)
         else:
             out.info('No branches')
@@ -273,7 +281,7 @@ def func(parser, options, args):
         stack.Series(args[0]).rename(args[1])
 
         out.info('Renamed branch "%s" to "%s"' % (args[0], args[1]))
-
+        log.rename_log(log.default_repo(), args[0], args[1], 'branch --rename')
         return
 
     elif options.unprotect:

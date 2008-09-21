@@ -36,7 +36,7 @@ options = [
     opt('-s', '--series', action = 'store_true',
         short = 'Rearrange according to a series file')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Pops and pushed to make the named patch the topmost patch

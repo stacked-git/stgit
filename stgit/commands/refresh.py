@@ -50,7 +50,7 @@ options = [
     opt('-p', '--patch',
         short = 'Refresh (applied) PATCH instead of the top patch')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = True)
 
 def func(parser, options, args):
     """Generate a new commit for the current or given patch.

@@ -139,7 +139,7 @@ options = [
         short = 'Generate an mbox file instead of sending')
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = False)
 
 def __get_sender():
     """Return the 'authname <authemail>' string as read from the

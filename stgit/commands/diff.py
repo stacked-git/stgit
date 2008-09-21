@@ -44,7 +44,7 @@ options = [
         short = 'Show the stat instead of the diff'),
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = False)
 
 def func(parser, options, args):
     """Show the tree diff

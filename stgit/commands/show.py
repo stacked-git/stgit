@@ -37,7 +37,7 @@ options = [
         short = 'Show the unapplied patches'),
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = False)
 
 def func(parser, options, args):
     """Show commit log and diff

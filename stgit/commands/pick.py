@@ -52,7 +52,7 @@ options = [
     opt('--unapplied', action = 'store_true',
         short = 'Keep the patch unapplied')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def __pick_commit(commit_id, patchname, options):
     """Pick a commit id.

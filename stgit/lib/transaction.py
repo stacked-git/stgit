@@ -7,7 +7,7 @@ import itertools as it
 from stgit import exception, utils
 from stgit.utils import any, all
 from stgit.out import *
-from stgit.lib import git
+from stgit.lib import git, log
 
 class TransactionException(exception.StgException):
     """Exception raised when something goes wrong with a
@@ -186,6 +186,7 @@ class StackTransaction(object):
         self.__stack.patchorder.applied = self.__applied
         self.__stack.patchorder.unapplied = self.__unapplied
         self.__stack.patchorder.hidden = self.__hidden
+        log.log_entry(self.__stack, self.__msg)
 
         if self.__error:
             return utils.STGIT_CONFLICT

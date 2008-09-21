@@ -45,7 +45,7 @@ options = [
     opt('--undo', action = 'store_true',
         short = 'Undo the synchronisation of the current patch')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def __check_all():
     check_local_changes()

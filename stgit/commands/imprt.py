@@ -81,7 +81,7 @@ options = [
         short = 'Use COMMEMAIL as the committer e-mail'),
     ] + argparse.sign_options()
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = True)
 
 def __strip_patch_name(name):
     stripped = re.sub('^[0-9]+-(.*)$', '\g<1>', name)

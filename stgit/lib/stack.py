@@ -169,6 +169,15 @@ class Stack(git.Branch):
                                     ).commit.data.parent
         else:
             return self.head
+    @property
+    def top(self):
+        """Commit of the topmost patch, or the stack base if no patches are
+        applied."""
+        if self.patchorder.applied:
+            return self.patches.get(self.patchorder.applied[-1]).commit
+        else:
+            # When no patches are applied, base == head.
+            return self.head
     def head_top_equal(self):
         if not self.patchorder.applied:
             return True

@@ -38,7 +38,7 @@ options = [
     opt('-b', '--branch',
         short = 'Use BRANCH instead of the default branch')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = False)
 
 diff_tmpl = \
           '-------------------------------------------------------------------------------\n' \

@@ -57,7 +57,7 @@ options = [
     opt('-g', '--graphical', action = 'store_true',
         short = 'Run gitk instead of printing')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = False)
 
 def show_log(log, options):
     """List the patch changelog

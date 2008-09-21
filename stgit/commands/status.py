@@ -55,7 +55,7 @@ options = [
     opt('--reset', action = 'store_true',
         short = 'Reset the current tree changes')]
 
-directory = DirectoryHasRepository(needs_current_series = False)
+directory = DirectoryHasRepository(needs_current_series = False, log = False)
 
 def status(files, modified, new, deleted, conflict, unknown, noexclude):
     """Show the tree status
@@ -96,6 +96,7 @@ def func(parser, options, args):
     directory.cd_to_topdir()
 
     if options.reset:
+        directory.log = True
         if args:
             conflicts = git.get_conflicts()
             git.resolved([fn for fn in args if fn in conflicts])

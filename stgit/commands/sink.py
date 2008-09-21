@@ -51,7 +51,7 @@ options = [
         Specify a target patch to place the patches below, instead of
         sinking them to the bottom of the stack.""")]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Sink patches down the stack.

@@ -139,6 +139,7 @@ class Person(Immutable, Repr):
         assert isinstance(self.__date, Date) or self.__date in [None, NoValue]
     name = property(lambda self: self.__name)
     email = property(lambda self: self.__email)
+    name_email = property(lambda self: '%s <%s>' % (self.name, self.email))
     date = property(lambda self: self.__date)
     def set_name(self, name):
         return type(self)(name = name, defaults = self)
@@ -147,7 +148,7 @@ class Person(Immutable, Repr):
     def set_date(self, date):
         return type(self)(date = date, defaults = self)
     def __str__(self):
-        return '%s <%s> %s' % (self.name, self.email, self.date)
+        return '%s %s' % (self.name_email, self.date)
     @classmethod
     def parse(cls, s):
         m = re.match(r'^([^<]*)<([^>]*)>\s+(\d+\s+[+-]\d{4})$', s)

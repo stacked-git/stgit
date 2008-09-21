@@ -39,7 +39,7 @@ options = [
     opt('-b', '--base',
         short = 'Use BASE instead of HEAD applying the patch')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = True)
 
 def func(parser, options, args):
     """Integrate a GNU diff patch into the current patch

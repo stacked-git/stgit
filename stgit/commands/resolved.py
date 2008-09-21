@@ -40,7 +40,7 @@ options = [
     opt('-i', '--interactive', action = 'store_true',
         short = 'Run the interactive merging tool')]
 
-directory = DirectoryHasRepository(needs_current_series = False)
+directory = DirectoryHasRepository(needs_current_series = False, log = False)
 
 def func(parser, options, args):
     """Mark the conflict as resolved

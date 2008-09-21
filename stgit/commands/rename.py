@@ -33,7 +33,7 @@ options = [
     opt('-b', '--branch',
         short = 'use BRANCH instead of the default one')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = True)
 
 def func(parser, options, args):
     """Rename a patch in the series

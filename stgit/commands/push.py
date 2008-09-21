@@ -50,7 +50,7 @@ options = [
     opt('--undo', action = 'store_true',
         short = 'Undo the last patch pushing')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Pushes the given patch or all onto the series

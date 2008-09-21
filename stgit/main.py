@@ -151,6 +151,7 @@ def _main():
 
         ret = command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError), err:
+        directory.write_log(cmd)
         out.error(str(err), title = '%s %s' % (prog, cmd))
         if debug_level > 0:
             traceback.print_exc()
@@ -166,6 +167,7 @@ def _main():
         traceback.print_exc()
         sys.exit(utils.STGIT_BUG_ERROR)
 
+    directory.write_log(cmd)
     sys.exit(ret or utils.STGIT_SUCCESS)
 
 def main():

@@ -46,7 +46,7 @@ options = [
     opt('-m', '--merged', action = 'store_true',
         short = 'Check for patches merged upstream')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Rebase the current stack

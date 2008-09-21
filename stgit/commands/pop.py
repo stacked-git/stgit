@@ -43,7 +43,7 @@ options = [
     opt('-k', '--keep', action = 'store_true',
         short = 'Keep the local changes')]
 
-directory = DirectoryGotoToplevel()
+directory = DirectoryGotoToplevel(log = True)
 
 def func(parser, options, args):
     """Pop the topmost patch from the stack

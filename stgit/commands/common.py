@@ -27,6 +27,7 @@ from stgit import stack, git, basedir
 from stgit.config import config, file_extensions
 from stgit.lib import stack as libstack
 from stgit.lib import git as libgit
+from stgit.lib import log
 
 # Command exception class
 class CmdException(StgException):
@@ -444,8 +445,9 @@ class DirectoryException(StgException):
     pass
 
 class _Directory(object):
-    def __init__(self, needs_current_series = True):
+    def __init__(self, needs_current_series = True, log = True):
         self.needs_current_series =  needs_current_series
+        self.log = log
     @readonly_constant_property
     def git_dir(self):
         try:
@@ -478,6 +480,9 @@ class _Directory(object):
                        ).output_one_line()]
     def cd_to_topdir(self):
         os.chdir(self.__topdir_path)
+    def write_log(self, msg):
+        if self.log:
+            log.compat_log_entry(msg)
 
 class DirectoryAnywhere(_Directory):
     def setup(self):
@@ -502,6 +507,7 @@ class DirectoryHasRepositoryLib(_Directory):
     """For commands that use the new infrastructure in stgit.lib.*."""
     def __init__(self):
         self.needs_current_series = False
+        self.log = False # stgit.lib.transaction handles logging
     def setup(self):
         # This will throw an exception if we don't have a repository.
         self.repository = libstack.Repository.default()

@@ -33,7 +33,7 @@ options = [
     opt('-b', '--branch',
         short = 'Use BRANCH instead of the default branch')]
 
-directory = DirectoryHasRepository()
+directory = DirectoryHasRepository(log = True)
 
 def func(parser, options, args):
     """Unhide a range of patches in the series
