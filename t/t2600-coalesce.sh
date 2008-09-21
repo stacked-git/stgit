@@ -28,4 +28,17 @@ test_expect_success 'Coalesce at stack top' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
+cat > editor <<EOF
+#!/bin/sh
+echo "Editor was invoked" | tee editor-invoked
+EOF
+chmod a+x editor
+test_expect_failure 'Coalesce with top != head' '
+    echo blahonga >> foo.txt &&
+    git commit -a -m "a new commit" &&
+    EDITOR=./editor command_error stg coalesce --name=r0 p0 q1 &&
+    test "$(echo $(stg series))" = "+ p0 > q1" &&
+    test ! -e editor-invoked
+'
+
 test_done
