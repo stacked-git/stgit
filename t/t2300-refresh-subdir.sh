@@ -4,7 +4,7 @@ test_description='Test the refresh command from a subdirectory'
 stg init
 
 test_expect_success 'Refresh from a subdirectory' '
-    stg new foo -m foo &&
+    stg new p0 -m p0 &&
     echo foo >> foo.txt &&
     mkdir bar &&
     echo bar >> bar/bar.txt &&
@@ -43,6 +43,33 @@ test_expect_success 'Refresh subdirectories recursively' '
     echo bar5 >> bar/bar.txt &&
     stg refresh . &&
     [ "$(stg status)" = "" ]
+'
+
+test_expect_success 'refresh -u' '
+    echo baz >> bar/baz.txt &&
+    stg new p1 -m p1 &&
+    git add bar/baz.txt &&
+    stg refresh --index &&
+    echo xyzzy >> foo.txt &&
+    echo xyzzy >> bar/bar.txt &&
+    echo xyzzy >> bar/baz.txt &&
+    stg refresh -u &&
+    test "$(echo $(stg status))" = "M bar/bar.txt M foo.txt"
+'
+
+test_expect_success 'refresh -u -p <subdir>' '
+    echo xyzzy >> bar/baz.txt &&
+    stg refresh -p p0 -u bar &&
+    test "$(echo $(stg status))" = "M bar/baz.txt M foo.txt"
+'
+
+test_expect_success 'refresh an unapplied patch' '
+    stg refresh -u &&
+    stg goto p0 &&
+    test "$(stg status)" = "M foo.txt" &&
+    stg refresh -p p1 &&
+    test "$(stg status)" = "" &&
+    test "$(echo $(stg files p1))" = "A bar/baz.txt M foo.txt"
 '
 
 test_done
