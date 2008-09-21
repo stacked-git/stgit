@@ -99,6 +99,7 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
+import re
 from stgit.lib import git, stack as libstack
 from stgit import exception, utils
 from stgit.out import out
@@ -155,6 +156,12 @@ class LogEntry(object):
     def base(self):
         if self.applied:
             return self.patches[self.applied[0]].data.parent
+        else:
+            return self.head
+    @property
+    def top(self):
+        if self.applied:
+            return self.patches[self.applied[-1]]
         else:
             return self.head
     @classmethod
@@ -447,3 +454,30 @@ def reset_stack(trans, iw, state, only_patches):
     else:
         # Recreate the exact order specified by the goal state.
         trans.reorder_patches(state.applied, state.unapplied, state.hidden, iw)
+
+def undo_state(stack, undo_steps):
+    """Find the log entry C{undo_steps} steps in the past. (Successive
+    undo operations are supposed to "add up", so if we find other undo
+    operations along the way we have to add those undo steps to
+    C{undo_steps}.)
+
+    @return: The log entry that is the destination of the undo
+             operation
+    @rtype: L{LogEntry}"""
+    ref = log_ref(stack.name)
+    try:
+        commit = stack.repository.refs.get(ref)
+    except KeyError:
+        raise LogException('Log is empty')
+    log = get_log_entry(stack.repository, ref, commit)
+    while undo_steps > 0:
+        msg = log.message.strip()
+        m = re.match(r'^undo\s+(\d+)$', msg)
+        if m:
+            undo_steps += int(m.group(1))
+        else:
+            undo_steps -= 1
+        if not log.prev:
+            raise LogException('Not enough undo information available')
+        log = log.prev
+    return log
