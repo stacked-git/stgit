@@ -22,6 +22,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'Move the stack base to another point in history'
+kind = 'stack'
 usage = ['[options] <new-base-id>']
 description = """
 Pop all patches from current stack, move the stack base to the given

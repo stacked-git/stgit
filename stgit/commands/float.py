@@ -23,6 +23,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'Push patches to the top, even if applied'
+kind = 'stack'
 usage = ['<patches>',
          '-s <series>']
 description = """

@@ -25,6 +25,7 @@ from stgit.config import config, file_extensions
 from stgit.gitmergeonefile import interactive_merge
 
 help = 'Mark a file conflict as solved'
+kind = 'wc'
 usage = ['[options] [<files...>]']
 description = """
 Mark a merge conflict as resolved. The conflicts can be seen with the

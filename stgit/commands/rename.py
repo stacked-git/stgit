@@ -23,6 +23,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'Rename a patch'
+kind = 'patch'
 usage = ['[options] [oldpatch] <newpatch>']
 description = """
 Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not

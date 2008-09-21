@@ -21,6 +21,7 @@ from stgit.commands import common
 from stgit.lib import transaction
 
 help = 'Delete the empty patches in the series'
+kind = 'stack'
 usage = ['']
 description = """
 Delete the empty patches in the whole series or only those applied or

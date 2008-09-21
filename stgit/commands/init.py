@@ -20,6 +20,7 @@ from stgit.commands import common
 from stgit.lib import stack
 
 help = 'Initialise the current branch for use with StGIT'
+kind = 'stack'
 usage = ['']
 description = """
 Initialise the current git branch to be used as an StGIT stack. The

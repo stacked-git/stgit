@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'Push one or more patches onto the stack'
+kind = 'stack'
 usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Push one or more patches (defaulting to the first unapplied one) onto

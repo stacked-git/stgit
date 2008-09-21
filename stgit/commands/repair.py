@@ -26,6 +26,7 @@ from stgit.run import *
 from stgit import stack, git
 
 help = 'Fix StGit metadata if branch was modified with git commands'
+kind = 'stack'
 usage = ['']
 description = """
 If you modify an StGit stack (branch) with some git commands -- such

@@ -20,6 +20,7 @@ from stgit.commands import common
 from stgit.lib import stack
 
 help = 'Print the git hash value of a StGit reference'
+kind = 'repo'
 usage = ['[options] [id]']
 description = """
 Print the SHA1 value of a Git id (defaulting to HEAD). In addition to

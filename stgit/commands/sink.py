@@ -23,6 +23,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'Send patches deeper down the stack'
+kind = 'stack'
 usage = ['[-t <target patch>] [-n] [<patches>]']
 description = """
 This is the opposite operation of stglink:float[]: move the specified

@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit import argparse, stack, git
 
 help = 'Show the files modified by a patch (or the current patch)'
+kind = 'patch'
 usage = ['[options] [[<branch>:]<patch>]']
 description = """
 List the files modified by the given patch (defaulting to the current

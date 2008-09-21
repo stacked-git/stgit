@@ -23,6 +23,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'Show the tree status'
+kind = 'wc'
 usage = ['[options] [<files or dirs>]']
 description = """
 Show the status of the whole working copy or the given files. The

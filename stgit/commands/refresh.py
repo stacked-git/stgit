@@ -25,6 +25,7 @@ from stgit import stack, git
 from stgit.config import config
 
 help = 'Generate a new commit for the current patch'
+kind = 'patch'
 usage = ['[options] [<files or dirs>]']
 description = """
 Include the latest tree changes in the current patch. This command

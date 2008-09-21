@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'Synchronise patches with a branch or a series'
+kind = 'patch'
 usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 For each of the specified patches perform a three-way merge with the

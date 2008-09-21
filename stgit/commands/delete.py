@@ -21,6 +21,7 @@ from stgit.commands import common
 from stgit.lib import transaction
 
 help = 'Delete patches'
+kind = 'patch'
 usage = ['[options] <patch1> [<patch2>] [<patch3>..<patch4>]']
 description = """
 Delete the patches passed as arguments.

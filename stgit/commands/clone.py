@@ -21,6 +21,7 @@ from stgit.utils import *
 from stgit import stack, git
 
 help = 'Make a local clone of a remote repository'
+kind = 'repo'
 usage = ['<repository> <dir>']
 description = """
 Clone a git repository into the local directory <dir> (using

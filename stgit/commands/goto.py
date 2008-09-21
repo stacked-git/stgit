@@ -19,6 +19,7 @@ from stgit.commands import common
 from stgit.lib import transaction
 
 help = 'Push or pop patches to the given one'
+kind = 'stack'
 usage = ['<patch-name>']
 description = """
 Push/pop patches to/from the stack until the one given on the command

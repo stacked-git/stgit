@@ -24,6 +24,7 @@ from stgit.commands import common
 from stgit.lib import git, transaction
 
 help = 'Coalesce two or more patches into one'
+kind = 'stack'
 usage = ['[options] <patches>']
 description = """
 Coalesce two or more patches, creating one big patch that contains all

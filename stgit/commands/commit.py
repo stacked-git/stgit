@@ -21,6 +21,7 @@ from stgit.lib import transaction
 from stgit.out import *
 
 help = 'Permanently store the applied patches into the stack base'
+kind = 'stack'
 usage = ['',
          '<patchnames>',
          '-n NUM',

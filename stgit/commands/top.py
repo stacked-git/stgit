@@ -21,6 +21,7 @@ from stgit.commands import common
 from stgit.out import out
 
 help = 'Print the name of the top patch'
+kind = 'stack'
 usage = ['']
 description = """
 Print the name of the current (topmost) patch."""

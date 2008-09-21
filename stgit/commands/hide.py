@@ -23,6 +23,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'Hide a patch in the series'
+kind = 'stack'
 usage = ['[options] <patch-range>']
 description = """
 Hide a range of unapplied patches so that they are no longer shown in

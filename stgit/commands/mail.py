@@ -26,6 +26,7 @@ from stgit.config import config
 from stgit.run import Run
 
 help = 'Send a patch or series of patches by e-mail'
+kind = 'patch'
 usage = [' [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = r"""
 Send a patch or a range of patches by e-mail using the SMTP server

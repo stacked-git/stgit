@@ -23,6 +23,7 @@ from stgit.out import *
 from stgit import stack, git, basedir
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
+kind = 'stack'
 usage = ['',
          '<branch>',
          '--list',

@@ -23,6 +23,7 @@ from stgit.out import *
 from stgit import stack, git
 
 help = 'Integrate a GNU diff patch into the current patch'
+kind = 'patch'
 usage = ['[options] [<file>]']
 description = """
 Apply the given GNU diff file (or the standard input) onto the top of

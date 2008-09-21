@@ -23,6 +23,7 @@ from stgit.out import out
 from stgit.config import config
 
 help = 'Print the patch series'
+kind = 'stack'
 usage = ['[options] [<patch-range>]']
 description = """
 Show all the patches in the series or just those in the given

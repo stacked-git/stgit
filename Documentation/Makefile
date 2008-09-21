@@ -60,10 +60,15 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 -include doc.dep
 
 clean:
-	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT)
+	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT) stg-cmd-list.txt
 
-$(COMMANDS_TXT): $(shell find .. -name '*.py')
+ALL_PY = $(shell find ../stgit -name '*.py')
+
+$(COMMANDS_TXT): $(ALL_PY)
 	../stg-build --asciidoc $(basename $(subst stg-,,$@)) > $@
+
+stg-cmd-list.txt: $(ALL_PY)
+	../stg-build --cmd-list > $@
 
 %.html : %.txt
 	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<

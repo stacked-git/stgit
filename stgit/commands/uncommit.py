@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit import utils
 
 help = 'Turn regular git commits into StGit patches'
+kind = 'stack'
 usage = ['<patch-name-1> [<patch-name-2> ...]',
          '-n NUM [<prefix>]',
          '-t <committish> [-x]']

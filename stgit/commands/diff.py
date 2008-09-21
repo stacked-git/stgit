@@ -25,6 +25,7 @@ from stgit.out import *
 from stgit import argparse, stack, git
 
 help = 'Show the tree diff'
+kind = 'wc'
 usage = ['[options] [<files or dirs>]']
 description = """
 Show the diff (default) or diffstat between the current working copy

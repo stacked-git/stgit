@@ -25,6 +25,7 @@ from stgit.lib import git as gitlib, transaction
 from stgit.out import *
 
 help = 'edit a patch description or diff'
+kind = 'patch'
 usage = ['[options] [<patch>]']
 description = """
 Edit the description and author information of the given patch (or the

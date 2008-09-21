@@ -26,6 +26,7 @@ from stgit import argparse, stack, git
 
 name = 'import'
 help = 'Import a GNU diff file as a new patch'
+kind = 'patch'
 usage = ['[options] [<file>|<url>]']
 description = """
 Create a new patch and apply the given GNU diff file (or the standard

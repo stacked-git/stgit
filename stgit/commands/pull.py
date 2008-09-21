@@ -24,6 +24,7 @@ from stgit.config import GitConfigException
 from stgit import stack, git
 
 help = 'Pull changes from a remote repository'
+kind = 'stack'
 usage = ['[options] [<repository>]']
 description = """
 Pull the latest changes from the given remote repository (defaulting

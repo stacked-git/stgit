@@ -22,6 +22,7 @@ from stgit.commands.common import *
 from stgit import argparse, git
 
 help = 'Show the commit corresponding to a patch'
+kind = 'patch'
 usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Show the commit log and the diff corresponding to the given patches.

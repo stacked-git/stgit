@@ -48,107 +48,13 @@ class Commands(dict):
         return candidates[0]
         
     def __getitem__(self, key):
-        """Return the command python module name based.
-        """
-        global prog
-
         cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))
-            
-        __import__('stgit.commands.' + cmd_mod)
-        return getattr(stgit.commands, cmd_mod)
+        return stgit.commands.get_command(cmd_mod)
 
-commands = Commands({
-    'branch':           'branch',
-    'delete':           'delete',
-    'diff':             'diff',
-    'clean':            'clean',
-    'clone':            'clone',
-    'coalesce':         'coalesce',
-    'commit':           'commit',
-    'edit':             'edit',
-    'export':           'export',
-    'files':            'files',
-    'float':            'float',
-    'fold':             'fold',
-    'goto':             'goto',
-    'hide':             'hide',
-    'id':               'id',
-    'import':           'imprt',
-    'init':             'init',
-    'log':              'log',
-    'mail':             'mail',
-    'new':              'new',
-    'patches':          'patches',
-    'pick':             'pick',
-    'pop':              'pop',
-    'pull':             'pull',
-    'push':             'push',
-    'rebase':           'rebase',
-    'refresh':          'refresh',
-    'rename':           'rename',
-    'repair':           'repair',
-    'resolved':         'resolved',
-    'series':           'series',
-    'show':             'show',
-    'sink':             'sink',
-    'status':           'status',
-    'sync':             'sync',
-    'top':              'top',
-    'uncommit':         'uncommit',
-    'unhide':           'unhide'
-    })
+cmd_list = stgit.commands.get_commands()
+commands = Commands((cmd, mod) for cmd, (mod, kind, help)
+                    in cmd_list.iteritems())
 
-# classification: repository, stack, patch, working copy
-repocommands = (
-    'clone',
-    'id',
-    )
-stackcommands = (
-    'branch',
-    'clean',
-    'coalesce',
-    'commit',
-    'float',
-    'goto',
-    'hide',
-    'init',
-    'patches',
-    'pop',
-    'pull',
-    'push',
-    'rebase',
-    'repair',
-    'series',
-    'sink',
-    'top',
-    'uncommit',
-    'unhide',
-    )
-patchcommands = (
-    'delete',
-    'edit',
-    'export',
-    'files',
-    'fold',
-    'import',
-    'log',
-    'mail',
-    'new',
-    'pick',
-    'refresh',
-    'rename',
-    'show',
-    'sync',
-    )
-wccommands = (
-    'diff',
-    'resolved',
-    'status',
-    )
-
-def _print_helpstring(cmd):
-    print '  ' + cmd + ' ' * (12 - len(cmd)) + commands[cmd].help
-    
 def print_help():
     print 'usage: %s <command> [options]' % os.path.basename(sys.argv[0])
     print
@@ -156,33 +62,8 @@ def print_help():
     print '  help        print the detailed command usage'
     print '  version     display version information'
     print '  copyright   display copyright information'
-    # unclassified commands if any
-    cmds = commands.keys()
-    cmds.sort()
-    for cmd in cmds:
-        if not cmd in repocommands and not cmd in stackcommands \
-               and not cmd in patchcommands and not cmd in wccommands:
-            _print_helpstring(cmd)
     print
-
-    print 'Repository commands:'
-    for cmd in repocommands:
-        _print_helpstring(cmd)
-    print
-    
-    print 'Stack commands:'
-    for cmd in stackcommands:
-        _print_helpstring(cmd)
-    print
-
-    print 'Patch commands:'
-    for cmd in patchcommands:
-        _print_helpstring(cmd)
-    print
-
-    print 'Working-copy commands:'
-    for cmd in wccommands:
-        _print_helpstring(cmd)
+    stgit.commands.pretty_command_list(cmd_list, sys.stdout)
 
 #
 # The main function (command dispatcher)

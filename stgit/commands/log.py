@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit.run import Run
 
 help = 'Display the patch changelog'
+kind = 'patch'
 usage = ['[options] [patch]']
 description = """
 List all the current and past commit ids of the given patch. The

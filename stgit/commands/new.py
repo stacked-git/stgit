@@ -22,6 +22,7 @@ from stgit.lib import git as gitlib, transaction
 from stgit.config import config
 
 help = 'Create a new, empty patch'
+kind = 'patch'
 usage = ['[options] [<name>]']
 description = """
 Create a new, empty patch on the current stack. The new patch is
