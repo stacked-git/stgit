@@ -900,3 +900,8 @@ class Branch(object):
         repository.run(['git', 'branch', create_at.sha1]).discard_output()
 
         return cls(repository, name)
+
+def diffstat(diff):
+    """Return the diffstat of the supplied diff."""
+    return run.Run('git', 'apply', '--stat', '--summary'
+                   ).raw_input(diff).raw_output()

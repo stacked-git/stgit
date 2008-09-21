@@ -93,7 +93,7 @@ mkeditor ()
 {
     cat > "$1" <<EOF
 #!/bin/sh
-printf "\n$1\n" >> "\$1"
+printf "\n$1" >> "\$1"
 EOF
     chmod a+x "$1"
 }
@@ -148,7 +148,7 @@ git config --unset core.editor
 git config --unset stgit.editor
 
 mkeditor twoliner
-test_expect_failure 'Both noninterative and interactive editing' '
+test_expect_success 'Both noninterative and interactive editing' '
     EDITOR=./twoliner stg edit -e -m "oneliner" p2 &&
     test "$(msg HEAD)" = "oneliner/twoliner"
 '

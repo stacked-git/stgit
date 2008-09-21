@@ -419,12 +419,15 @@ def parse_mail(msg):
 
     return (descr, authname, authemail, authdate, diff)
 
-def parse_patch(text):
+def parse_patch(text, contains_diff):
     """Parse the input text and return (description, authname,
     authemail, authdate, diff)
     """
-    descr, diff = __split_descr_diff(text)
-    descr, authname, authemail, authdate = __parse_description(descr)
+    if contains_diff:
+        (text, diff) = __split_descr_diff(text)
+    else:
+        diff = None
+    (descr, authname, authemail, authdate) = __parse_description(text)
 
     # we don't yet have an agreed place for the creation date.
     # Just return None

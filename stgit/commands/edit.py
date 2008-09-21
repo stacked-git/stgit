@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.argparse import opt
 from stgit import argparse, git, utils
 from stgit.commands import common
-from stgit.lib import git as gitlib, transaction
+from stgit.lib import git as gitlib, transaction, edit
 from stgit.out import *
 
 help = 'edit a patch description or diff'
@@ -64,45 +64,6 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
-def patch_diff(repository, cd, diff, diff_flags):
-    if diff:
-        diff = repository.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
-        return '\n'.join([git.diffstat(diff), diff])
-    else:
-        return None
-
-def patch_description(cd, diff):
-    """Generate a string containing the description to edit."""
-
-    desc = ['From: %s <%s>' % (cd.author.name, cd.author.email),
-            'Date: %s' % cd.author.date.isoformat(),
-            '',
-            cd.message]
-    if diff:
-        desc += ['---',
-                 '',
-                diff]
-    return '\n'.join(desc)
-
-def patch_desc(repository, cd, failed_diff, diff, diff_flags):
-    return patch_description(cd, failed_diff or patch_diff(
-            repository, cd, diff, diff_flags))
-
-def update_patch_description(repository, cd, text):
-    message, authname, authemail, authdate, diff = common.parse_patch(text)
-    cd = (cd.set_message(message)
-            .set_author(cd.author.set_name(authname)
-                                 .set_email(authemail)
-                                 .set_date(gitlib.Date.maybe(authdate))))
-    failed_diff = None
-    if diff:
-        tree = repository.apply(cd.parent.data.tree, diff, quiet = False)
-        if tree == None:
-            failed_diff = diff
-        else:
-            cd = cd.set_tree(tree)
-    return cd, failed_diff
-
 def func(parser, options, args):
     """Edit the given patch or the current one.
     """
@@ -122,44 +83,26 @@ def func(parser, options, args):
 
     cd = orig_cd = stack.patches.get(patchname).commit.data
 
-    # Read patch from user-provided description.
-    if options.message == None:
-        failed_diff = None
-    else:
-        cd, failed_diff = update_patch_description(stack.repository, cd,
-                                                   options.message)
-
-    # Modify author and committer data.
-    a, c = options.author(cd.author), options.committer(cd.committer)
-    if (a, c) != (cd.author, cd.committer):
-        cd = cd.set_author(a).set_committer(c)
-
-    # Add Signed-off-by: or similar.
-    if options.sign_str != None:
-        cd = cd.set_message(utils.add_sign_line(
-                cd.message, options.sign_str, gitlib.Person.committer().name,
-                gitlib.Person.committer().email))
+    cd, failed_diff = edit.auto_edit_patch(
+        stack.repository, cd, msg = options.message, contains_diff = True,
+        author = options.author, committer = options.committer,
+        sign_str = options.sign_str)
 
     if options.save_template:
         options.save_template(
-            patch_desc(stack.repository, cd, failed_diff,
-                       options.diff, options.diff_flags))
+            edit.patch_desc(stack.repository, cd,
+                            options.diff, options.diff_flags, failed_diff))
         return utils.STGIT_SUCCESS
 
-    # Let user edit the patch manually.
     if cd == orig_cd or options.edit:
-        fn = '.stgit-edit.' + ['txt', 'patch'][bool(options.diff)]
-        cd, failed_diff = update_patch_description(
-            stack.repository, cd, utils.edit_string(
-                patch_desc(stack.repository, cd, failed_diff,
-                           options.diff, options.diff_flags),
-                fn))
+        cd, failed_diff = edit.interactive_edit_patch(
+            stack.repository, cd, options.diff, options.diff_flags, failed_diff)
 
     def failed():
         fn = '.stgit-failed.patch'
         f = file(fn, 'w')
-        f.write(patch_desc(stack.repository, cd, failed_diff,
-                           options.diff, options.diff_flags))
+        f.write(edit.patch_desc(stack.repository, cd,
+                                options.diff, options.diff_flags, failed_diff))
         f.close()
         out.error('Edited patch did not apply.',
                   'It has been saved to "%s".' % fn)

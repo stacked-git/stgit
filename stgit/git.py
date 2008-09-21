@@ -669,10 +669,6 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
     else:
         return ''
 
-def diffstat(diff):
-    """Return the diffstat of the supplied diff."""
-    return GRun('apply', '--stat', '--summary').raw_input(diff).raw_output()
-
 def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2
     """

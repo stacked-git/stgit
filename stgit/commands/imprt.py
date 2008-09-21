@@ -212,7 +212,7 @@ def __import_file(filename, options, patch = None):
                  parse_mail(msg)
     else:
         message, author_name, author_email, author_date, diff = \
-                 parse_patch(f.read())
+                 parse_patch(f.read(), contains_diff = True)
 
     if filename:
         f.close()

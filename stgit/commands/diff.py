@@ -23,6 +23,7 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import argparse, stack, git
+from stgit.lib import git as gitlib
 
 help = 'Show the tree diff'
 kind = 'wc'
@@ -71,7 +72,7 @@ def func(parser, options, args):
                         rev2 and git_id(crt_series, rev2),
                         diff_flags = options.diff_flags)
     if options.stat:
-        out.stdout_raw(git.diffstat(diff_str) + '\n')
+        out.stdout_raw(gitlib.diffstat(diff_str) + '\n')
     else:
         if diff_str:
             pager(diff_str)

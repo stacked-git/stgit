@@ -24,6 +24,7 @@ from stgit.out import *
 from stgit import argparse, stack, git, version, templates
 from stgit.config import config
 from stgit.run import Run
+from stgit.lib import git as gitlib
 
 help = 'Send a patch or series of patches by e-mail'
 kind = 'patch'
@@ -369,7 +370,7 @@ def __build_cover(tmpl, patches, msg_id, options):
                  'number':       number_str,
                  'shortlog':     stack.shortlog(crt_series.get_patch(p)
                                                 for p in patches),
-                 'diffstat':     git.diffstat(git.diff(
+                 'diffstat':     gitlib.diffstat(git.diff(
                      rev1 = git_id(crt_series, '%s^' % patches[0]),
                      rev2 = git_id(crt_series, '%s' % patches[-1])))}
 
@@ -459,7 +460,7 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                  # for backward template compatibility
                  'endofheaders': '',
                  'diff':         diff,
-                 'diffstat':     git.diffstat(diff),
+                 'diffstat':     gitlib.diffstat(diff),
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,

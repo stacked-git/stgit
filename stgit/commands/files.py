@@ -22,6 +22,7 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit.out import *
 from stgit import argparse, stack, git
+from stgit.lib import git as gitlib
 
 help = 'Show the files modified by a patch (or the current patch)'
 kind = 'patch'
@@ -56,7 +57,7 @@ def func(parser, options, args):
     rev2 = git_id(crt_series, '%s' % patch)
 
     if options.stat:
-        out.stdout_raw(git.diffstat(git.diff(rev1 = rev1, rev2 = rev2)) + '\n')
+        out.stdout_raw(gitlib.diffstat(git.diff(rev1 = rev1, rev2 = rev2)) + '\n')
     elif options.bare:
         out.stdout_raw(git.barefiles(rev1, rev2) + '\n')
     else:

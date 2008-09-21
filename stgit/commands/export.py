@@ -143,7 +143,7 @@ def func(parser, options, args):
         tmpl_dict = {'description': descr,
                      'shortdescr': short_descr,
                      'longdescr': long_descr,
-                     'diffstat': git.diffstat(diff).rstrip(),
+                     'diffstat': gitlib.diffstat(diff).rstrip(),
                      'authname': cd.author.name,
                      'authemail': cd.author.email,
                      'authdate': cd.author.date.isoformat(),
