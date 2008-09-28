@@ -264,7 +264,7 @@ def merge(orig_hash, file1_hash, file2_hash,
                     __conflict(path)
                     return 1
                 if file1_mode != file2_mode:
-                    out.error('File "s" added in both, permissions conflict'
+                    out.error('File "%s" added in both, permissions conflict'
                               % path)
                     __conflict(path)
                     return 1
