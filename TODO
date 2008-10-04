@@ -2,6 +2,16 @@ The TODO list before 1.0:
 
 - more regression tests
 
+- Convert the remaining commands to the new infrastructure.
+
+- Go through the design of the UI and make sure there's nothing hard
+  to change in there that we'll regret later.
+
+- Write a user guide. I'm thinking a document on the order of 10-30
+  pages that'll explain why one would want to use StGit, and how.
+
+- Make sure the rest of the documentation is in good shape.
+
 - use a separate index for some commands (refresh, fold etc.) so that
   files already added/removed are not automatically checked in
 
@@ -9,7 +19,6 @@ The TODO list before 1.0:
       uses a separate index when appropriate. fold has not yet been
       converted.
 
-- document the workflow on the StGIT wiki
 - release 1.0
 
 
