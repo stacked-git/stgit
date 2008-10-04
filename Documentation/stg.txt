@@ -1,11 +1,10 @@
 stg(1)
 ======
 Yann Dirson <ydirson@altern.org>
-v0.12.1, February 2007
 
 NAME
 ----
-stg - manage stacks of patches using the GIT content tracker
+stg - Manage stacks of patches using the Git content tracker
 
 SYNOPSIS
 --------
@@ -17,86 +16,113 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-StGIT (Stacked GIT) is an application providing similar functionality
-to Quilt (i.e. pushing/popping patches to/from a stack), on top of
-GIT. These operations are performed using GIT commands and the patches
-are stored as GIT commit objects, allowing easy merging of the StGIT
-patches into other repositories using standard GIT functionality.
+StGit (Stacked Git) is an application that provides a convenient way
+to maintain a 'patch stack' on top of a Git branch:
 
-An StGIT stack is a GIT branch with additional information to help
-making changes to individual patches you already committed, rather
-than making changes by adding new commits.  It is thus a
-non-forwarding, or rewinding branch: the old head of the branch is
-often not reachable as one of the new head's ancestors.
+  * The topmost (most recent) commits of a branch are given names.
+    Such a named commit is called a 'patch'.
 
-Typical uses of StGIT include:
+  * After making changes to the worktree, you can incorporate the
+    changes into an existing patch; this is called 'refreshing'. You
+    may refresh any patch, not just the topmost one.
+
+  * You can 'pop' a patch: temporarily putting it aside, so that the
+    patch below it becomes the topmost patch. Later you may 'push' it
+    onto the stack again. Pushing and popping can be used to reorder
+    patches.
+
+  * You can easily 'rebase' your patch stack on top of any other Git
+    commit. (The 'base' of a patch stack is the most recent Git commit
+    that is not an StGit patch.) For example, if you started making
+    patches on top of someone else's branch, and that person publishes
+    an updated branch, you can take all your patches and apply them on
+    top of the updated branch.
+
+  * The patch stack is just some extra metadata attached to regular
+    Git commits, so you can continue to use most Git tools along with
+    StGit.
+
+Typical uses
+~~~~~~~~~~~~
 
 Tracking branch::
-	Tracking changes from a remote branch, while maintaining local
-	modifications against that branch, possibly with the intent of
-	sending some patches upstream.  StGIT assists in preparing and
-	cleaning up patches until they are acceptable upstream, as
-	well as maintaining local patches not meant to be sent
-	upstream.
+
+  Tracking changes from a remote branch, while maintaining local
+  modifications against that branch, possibly with the intent of
+  sending some patches upstream. You can modify your patch stack as
+  much as you want, and when your patches are finally accepted
+  upstream, the permanent recorded Git history will contain just the
+  final sequence of patches, and not the messy sequence of edits that
+  produced them.
 +
-In such a setup, typically all commits on your branch are StGIT
-patches; the stack base is the branch point where your changes "fork"
-off their parent branch.
+Commands of interest in this workflow are e.g. stgsublink:rebase[] and
+stgsublink:mail[].
 
 Development branch::
-	Preparing and testing your commits before publishing them,
-	separating your features from unrelated bugfixes collected
-	while developping.
+
+  Even if you have no "upstream" to send patches to, you can use StGit
+  as a convenient way to modify the recent history of a Git branch.
+  For example, instead of first committing change 'A', then change
+  'B', and then 'A2' to fix 'A' because it wasn't quite right, you
+  could incorporate the fix directly into 'A'. This way of working
+  results in a much more readable Git history than if you had
+  immortalized every misstep you made on your way to the right
+  solution.
 +
-In such a setup, not all commits on your branch need to be StGIT
-patches; there may be regular GIT commits below your stack base.
+Commands of interest in this workflow are e.g. stgsublink:uncommit[],
+which can be used to move the patch stack base downwards -- i.e., turn
+Git commits into StGit patches after the fact -- and
+stgsublink:commit[], its inverse.
 
-Patches
-~~~~~~~
+For more information, see htmllink:tutorial.html[the tutorial].
 
-Many StGIT commands take references to StGIT patches as arguments.
+Specifying patches
+~~~~~~~~~~~~~~~~~~
+
+Many StGit commands take references to StGit patches as arguments.
 Patches in the stack are identified with short names, each of which
 must be unique in the stack.
 
-Patches in the current stack are just referred to by their name.  Some
-commands allow you to specify a patch in another stack of the repository;
-this is done by suffixing the patch name with an '@' sign followed by the
-branch name (eg. 'thispatch@otherbranch').
+Patches in the current branch are simply referred to by their name.
+Some commands allow you to specify a patch in another branch of the
+repository; this is done by prefixing the patch name with the branch
+name and a colon (e.g. +otherbranch:thatpatch+).
 
-A number of positions in the stack related to the patch are also
-accessible through '//' suffixes.  For example, 'patch//top' is
-equivalent to 'patch', and 'patch//bottom' refers to the commit below
-'patch' (i.e. the patch below, or the stack base if this is the
-bottom-most patch).  Similarly '//top.old' and '//bottom.old'
-refer to the previous version of the patch (before the last
-stglink:push[] or stglink:refresh[] operation).  When referring to the
-current patch, its name can be omitted (eg. 'currentpatch//bottom.old'
-can be abbreviated as 'bottom.old').
+Specifying commits
+~~~~~~~~~~~~~~~~~~
 
-If you need to pass a given StGIT reference to a git command,
-stglink:id[] will convert it to a git commit id.
+Some StGit commands take Git commits as arguments. StGit accepts all
+commit expressions that Git does; and in addition, a patch name
+(optionally prefixed by a branch name and a colon) is allowed in this
+context. The usual Git modifiers $$^$$ and $$~$$ are also allowed;
+e.g., +abranch:apatch~2+ is the grandparent of the commit that is the
+patch +apatch+ on branch +abranch+.
+
+Instead of a patch name, you can say +$${base}$$+ to refer to the
+stack base (the commit just below the bottommost patch); so,
++abranch:$${base}$$+ is the base of the stack in branch +abranch+.
+
+If you need to pass a given StGit reference to a Git command,
+stglink:id[] will convert it to a Git commit id for you.
 
 OPTIONS
 -------
 
-The following generic option flags are available.  Additional options
-are available per-command, and documented in the command-specific
-documentation.
+The following generic option flags are available. Additional options
+are available for (and documented with) the different subcommands.
 
 --version::
-	Prints the StGIT suite version that the 'stg' program came
-	from, as well as version of other components used, such as GIT
-	and Python.
+  Prints the StGit version, as well as version of other components
+  used, such as Git and Python.
 
 --help::
-	Prints the synopsis and a list of all commands.  If a git
-	command is given this option will display the specific help
-	for that command.
+  Prints the synopsis and a list of all subcommands. If an StGit
+  subcommand is given, prints the synposis for that subcommand.
 
 STGIT COMMANDS
 --------------
 
-We divide StGIT commands in thematic groups, according to the primary
+We divide StGit commands in thematic groups, according to the primary
 type of object they create or change.
 
 ifdef::backend-docbook[]
@@ -110,16 +136,16 @@ include::command-list.txt[]
 CONFIGURATION MECHANISM
 -----------------------
 
-Starting with 0.12, StGIT uses the same configuration mechanism as
-GIT.  See link:git[7] for more details.
+StGit uses the same configuration mechanism as Git. See manlink:git[7]
+for more details.
 
 TEMPLATES
 ---------
 
-A number of StGIT commands make use of template files to provide
-useful default texts to be edited by the user.  These '<name>.tmpl'
+A number of StGit commands make use of template files to provide
+useful default texts to be edited by the user. These +<name>.tmpl+
 template files are searched in the following directories:
 
-	$GITDIR/
-	$HOME/.stgit/templates/
-	/usr/share/stgit/templates/
+  . +$GITDIR/+ (in practice, the +.git/+ directory in your repository)
+  . +$HOME/.stgit/templates/+
+  . +/usr/share/stgit/templates/+
