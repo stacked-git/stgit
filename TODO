@@ -1,8 +1,14 @@
 The TODO list before 1.0:
 
 - more regression tests
+
 - use a separate index for some commands (refresh, fold etc.) so that
   files already added/removed are not automatically checked in
+
+    + This is easily done with the new infrastructure. refresh now
+      uses a separate index when appropriate. fold has not yet been
+      converted.
+
 - document the workflow on the StGIT wiki
 - release 1.0
 
