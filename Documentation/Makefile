@@ -5,12 +5,10 @@ MAN1_TXT= stg.txt $(COMMANDS_TXT)
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
-ARTICLES = 
-# with their own formatting rules.
-SP_ARTICLES = tutorial
+ARTICLES = tutorial
 
-DOC_HTML += $(patsubst %,%.html,$(ARTICLES) $(SP_ARTICLES))
-DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES) $(SP_ARTICLES))
+DOC_HTML += $(patsubst %,%.html,$(ARTICLES))
+DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES))
 
 DOC_MAN1=$(patsubst %.txt,%.1,$(MAN1_TXT))
 
