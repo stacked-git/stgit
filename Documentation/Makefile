@@ -82,6 +82,7 @@ command-list.txt: $(ALL_PY)
 
 # special formatting rules
 tutorial.html : %.html : %.txt
-	$(ASCIIDOC) -b xhtml11 -d article -f tutorial.conf $(ASCIIDOC_EXTRA) $<
+	$(ASCIIDOC) -b xhtml11 -d article -a toc -f tutorial.conf \
+                $(ASCIIDOC_EXTRA) $<
 tutorial.xml : %.xml : %.txt
 	$(ASCIIDOC) -b docbook -d article -f tutorial.conf $<
