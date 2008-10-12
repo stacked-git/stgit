@@ -103,10 +103,11 @@ And voilà -- the patch is no longer empty:
            _main()
        finally:
 
-(I'm assuming you're already familiar with patches like this from Git,
-but it's really quite simple; in this example, I've added the +$$print
-'My first patch!'$$+ line to the file +stgit/main.py+, at around line
-171.)
+(I'm assuming you're already familiar with
+htmllink:http://en.wikipedia.org/wiki/Diff#Unified_format[unified
+diff] patches like this from Git, but it's really quite simple; in
+this example, I've added the +$$print 'My first patch!'$$+ line to the
+file +stgit/main.py+, at around line 171.)
 
 Since the patch is also a regular Git commit, you can also look at it
 with regular Git tools such as manlink:gitk[].
