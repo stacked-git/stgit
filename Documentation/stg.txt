@@ -38,6 +38,14 @@ to maintain a 'patch stack' on top of a Git branch:
     an updated branch, you can take all your patches and apply them on
     top of the updated branch.
 
+  * As you would expect, changing what is below a patch can cause that
+    patch to no longer apply cleanly -- this can occur when you
+    reorder patches, rebase patches, or refresh a non-topmost patch.
+    StGit uses Git's rename-aware three-way merge capability to
+    automatically fix up what it can; if it still fails, it lets you
+    manually resolve the conflict just like you would resolve a merge
+    conflict in Git.
+
   * The patch stack is just some extra metadata attached to regular
     Git commits, so you can continue to use most Git tools along with
     StGit.
