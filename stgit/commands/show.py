@@ -52,8 +52,8 @@ def func(parser, options, args):
     elif len(args) == 0:
         patches = ['HEAD']
     else:
-        if len(args) == 1 and args[0].find('..') == -1:
-            # single patch or commit id
+        if len(args) == 1 or args[0].find('..') == -1:
+            # single patch or one/more commit ids
             patches = args
         else:
             applied = crt_series.get_applied()
