@@ -1,0 +1,21 @@
+attribution
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index 066d2e8..a9dd1f3 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -32,3 +32,7 @@ O frabjous day! Callooh! Callay!'
+   Did gyre and gimble in the wabe;
+ All mimsy were the borogoves,
+   And the mome raths outgrabe.
++
++	JABBERWOCKY
++	Lewis Carroll
++	(from Through the Looking-Glass and What Alice Found There, 1872) 

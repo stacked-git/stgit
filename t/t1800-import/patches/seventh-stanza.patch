@@ -1,0 +1,24 @@
+seventh stanza
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    7 +++++++
+ 1 files changed, 7 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index bf732f5..98cb716 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -27,3 +27,10 @@ He left it dead, and with its head
+   Come to my arms, my beamish boy!
+ O frabjous day! Callooh! Callay!'
+   He chortled in his joy.
++
++
++
++`Twas brillig, and the slithy toves
++  Did gyre and gimble in the wabe;
++All mimsy were the borogoves,
++  And the mome raths outgrabe.

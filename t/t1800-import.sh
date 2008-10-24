@@ -133,4 +133,16 @@ test_expect_success \
     stg delete ..
     '
 
+test_expect_success \
+    'apply a series from a tarball' \
+    '
+    rm -f jabberwocky.txt && touch jabberwocky.txt &&
+    git add jabberwocky.txt && git commit -m "empty file" jabberwocky.txt &&
+    (cd ../t1800-import; tar -cjf jabberwocky.tar.bz2 patches) &&
+    stg import --series ../t1800-import/jabberwocky.tar.bz2
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ] &&
+    rm ../t1800-import/jabberwocky.tar.bz2
+    '
+
 test_done

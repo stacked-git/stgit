@@ -1,0 +1,22 @@
+fourth stanza
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index 6405f36..b1c2ad3 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -12,3 +12,8 @@ He took his vorpal sword in hand:
+   Long time the manxome foe he sought --
+ So rested he by the Tumtum tree,
+   And stood awhile in thought.
++
++And, as in uffish thought he stood,
++  The Jabberwock, with eyes of flame,
++Came whiffling through the tulgey wood,
++  And burbled as it came!

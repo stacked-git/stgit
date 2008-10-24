@@ -1,0 +1,18 @@
+first stanza
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index e69de29..fba24dc 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -0,0 +1,4 @@
++`Twas brillig, and the slithy toves
++  Did gyre and gimble in the wabe:
++All mimsy were the borogoves,
++  And the mome raths outgrabe.

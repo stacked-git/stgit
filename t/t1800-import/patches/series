@@ -1,0 +1,10 @@
+# This series applies on GIT commit 6a8b6f6e2ecbcab26de7656b66b7f30eeba1ee96
+first-stanza.patch
+second-stanza.patch
+third-stanza.patch
+fourth-stanza.patch
+fifth-stanza.patch
+sixth-stanza.patch
+seventh-stanza.patch
+delete-extra-lines.patch
+attribution.patch

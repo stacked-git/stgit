@@ -1,0 +1,22 @@
+third stanza
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index 9ed0b49..6405f36 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -7,3 +7,8 @@ All mimsy were the borogoves,
+   The jaws that bite, the claws that catch!
+ Beware the Jubjub bird, and shun
+   The frumious Bandersnatch!"
++
++He took his vorpal sword in hand:
++  Long time the manxome foe he sought --
++So rested he by the Tumtum tree,
++  And stood awhile in thought.

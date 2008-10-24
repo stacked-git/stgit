@@ -1,0 +1,22 @@
+delete extra lines
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    2 --
+ 1 files changed, 0 insertions(+), 2 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index 98cb716..066d2e8 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -28,8 +28,6 @@ He left it dead, and with its head
+ O frabjous day! Callooh! Callay!'
+   He chortled in his joy.
+ 
+-
+-
+ `Twas brillig, and the slithy toves
+   Did gyre and gimble in the wabe;
+ All mimsy were the borogoves,

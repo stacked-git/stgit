@@ -1,0 +1,22 @@
+second stanza
+
+From: Clark Williams <williams@redhat.com>
+
+
+---
+ jabberwocky.txt |    5 +++++
+ 1 files changed, 5 insertions(+), 0 deletions(-)
+
+diff --git a/jabberwocky.txt b/jabberwocky.txt
+index fba24dc..9ed0b49 100644
+--- a/jabberwocky.txt
++++ b/jabberwocky.txt
+@@ -2,3 +2,8 @@
+   Did gyre and gimble in the wabe:
+ All mimsy were the borogoves,
+   And the mome raths outgrabe.
++
++"Beware the Jabberwock, my son!
++  The jaws that bite, the claws that catch!
++Beware the Jubjub bird, and shun
++  The frumious Bandersnatch!"
