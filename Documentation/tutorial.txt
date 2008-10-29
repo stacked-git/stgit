@@ -621,7 +621,94 @@ get rid of such empty patches if you don't want them hanging around:
 Importing patches
 -----------------
 
-TODO:: import, ...
+While you are busy producing patches, there's hopefully someone -- the
+'maintainer' -- at the other end who recieves them and 'applies' them
+to her Git tree, which is then published for all (or parts of) the
+world to see.
+
+It's perfectly fine for this person to not have the foggiest idea what
+StGit is. In that case, she'll probably apply your patches with
+something like +git am+, and everything will just work, exactly as if
+you'd used Git to send those patches. But she might be an StGit user
+too, in which case she might use stglink:import[].
+
+There are basically four kinds if stuff you can import with
+stglink:import[]:
+
+  1. A patch in a file.
+
+  2. Several files containing one patch each, and a 'series' file
+     listing those other files in the correct order.
+
+  3. An e-mail containing a single patch.
+
+  4. A mailbox file (in standard Unix +mbox+ format) containing
+     multiple e-mails with one patch in each.
+
+
+Importing a plain patch
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Importing a plain patch, such as produced by e.g. GNU +diff+, +git
+diff+, +git show+, stglink:diff[], or stglink:show[], is very easy.
+Just say
+
+  $ stg import my-patch
+
+and you'll have a new patch at the top of your stack.
+
+If you don't give a file name on the command line, stglink:import[]
+will read the patch from its standard input -- in other words, you can
+pipe a patch to it directly from the command that produces it.
+
+By default, the new patch's name will be taken from the file name, and
+its commit message and author info will be taken from the beginning of
+the patch, if they are there. However, there are command line switches
+to override all of these things; see the man page for details.
+
+
+Importing several patches at once
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some programs -- among them stglink:export[] -- will create a bunch of
+files with one patch in each, and a 'series' file (often called
++series+) listing the other files in the correct order. Give
++$$--series$$+ and the name of the series file to stglink:import[],
+and it will import all the patches for you, in the correct order.
+
+
+Importing a patch from an e-mail
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Importing a patch from an e-mail is simple too:
+
+  $ stg import --mail my-mail
+
+The e-mail should be in standard Git mail format (which is what e.g.
+stglink:mail[] produces) -- that is, with the patch in-line in the
+mail, not attached. The authorship info is taken from the mail
+headers, and the commit message is read from the 'Subject:' line and
+the mail body.
+
+If you don't give a file name, the mail will be read from the standard
+input. This means that, if your mail reader supports it, you can pipe
+a mail directly to +stg import $$--mail$$+ and the patch will be
+applied.
+
+
+Importing a mailbox full of patches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Finally, in case importing one patch at a time is too much work,
+stglink:import[] also accepts an entire Unix +mbox+-format mailbox,
+either on the command line or on its standard input; just use the
++$$--mbox$$+ flag. Each mail should contain one patch, and is imported
+just like with +$$--mail$$+.
+
+Mailboxes full of patches are produced by e.g. stglink:mail[] with the
++$$--mbox$$+ flag, but most mail readers can produce them too, meaning
+that you can copy all the patch mails you want to apply to a separate
+mailbox, and then import them all in one go.
 
 
 Other stuff that needs to be placed somewhere
