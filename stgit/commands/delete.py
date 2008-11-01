@@ -50,7 +50,8 @@ def func(parser, options, args):
     else:
         iw = stack.repository.default_iw
     if args:
-        patches = set(common.parse_patches(args, list(stack.patchorder.all)))
+        patches = set(common.parse_patches(args, list(stack.patchorder.all),
+                                           len(stack.patchorder.applied)))
     else:
         parser.error('No patches specified')
 
