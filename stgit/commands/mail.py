@@ -288,7 +288,7 @@ def __build_extra_headers(msg, msg_id, ref_id = None):
         ref_id = '<%s>' % ref_id.strip(' \t\n<>')
         msg['In-Reply-To'] = ref_id
         msg['References'] = ref_id
-    msg['User-Agent'] = 'StGIT/%s' % version.version
+    msg['User-Agent'] = 'StGit/%s' % version.version
 
 def __encode_message(msg):
     # 7 or 8 bit encoding
