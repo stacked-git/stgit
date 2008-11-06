@@ -166,7 +166,9 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "P"   'stgit-push-or-pop)
   (define-key stgit-mode-map "G"   'stgit-goto)
   (define-key stgit-mode-map "="   'stgit-show)
-  (define-key stgit-mode-map "D"   'stgit-delete))
+  (define-key stgit-mode-map "D"   'stgit-delete)
+  (define-key stgit-mode-map [(control ?/)] 'stgit-undo)
+  (define-key stgit-mode-map "\C-_" 'stgit-undo))
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
@@ -411,5 +413,15 @@ With numeric prefix argument, pop that many patches."
   "Display help for the StGit mode."
   (interactive)
   (describe-function 'stgit-mode))
+
+(defun stgit-undo (&optional arg)
+  "Run stg undo.
+With prefix argument, run it with the --hard flag."
+  (interactive "P")
+  (stgit-capture-output nil
+    (if arg
+        (stgit-run "undo" "--hard")
+      (stgit-run "undo")))
+  (stgit-refresh))
 
 (provide 'stgit)
