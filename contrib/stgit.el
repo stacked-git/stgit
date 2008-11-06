@@ -274,16 +274,19 @@ Commands:
   (stgit-capture-output nil (stgit-run "uncommit" "-n" (number-to-string arg)))
   (stgit-refresh))
 
-(defun stgit-push-next ()
-  "Push the first unapplied patch"
-  (interactive)
-  (stgit-capture-output nil (stgit-run "push"))
+(defun stgit-push-next (npatches)
+  "Push the first unapplied patch.
+With numeric prefix argument, push that many patches."
+  (interactive "p")
+  (stgit-capture-output nil (stgit-run "push" "-n"
+                                       (number-to-string npatches)))
   (stgit-refresh))
 
-(defun stgit-pop-next ()
-  "Pop the topmost applied patch"
-  (interactive)
-  (stgit-capture-output nil (stgit-run "pop"))
+(defun stgit-pop-next (npatches)
+  "Pop the topmost applied patch.
+With numeric prefix argument, pop that many patches."
+  (interactive "p")
+  (stgit-capture-output nil (stgit-run "pop" "-n" (number-to-string npatches)))
   (stgit-refresh))
 
 (defun stgit-applied-at-point ()
