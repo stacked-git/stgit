@@ -220,9 +220,6 @@ def _person_opts(person, short):
 def author_options():
     return _person_opts('author', 'auth')
 
-def author_committer_options():
-    return _person_opts('author', 'auth') + _person_opts('committer', 'comm')
-
 class CompgenBase(object):
     def actions(self, var): return set()
     def words(self, var): return set()

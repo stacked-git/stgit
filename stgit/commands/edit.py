@@ -63,7 +63,7 @@ options = [
         short = 'Invoke interactive editor'),
     ] + (argparse.sign_options() +
          argparse.message_options(save_template = True) +
-         argparse.author_committer_options() + argparse.diff_opts_option())
+         argparse.author_options() + argparse.diff_opts_option())
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -88,7 +88,7 @@ def func(parser, options, args):
 
     cd, failed_diff = edit.auto_edit_patch(
         stack.repository, cd, msg = options.message, contains_diff = True,
-        author = options.author, committer = options.committer,
+        author = options.author, committer = lambda p: p,
         sign_str = options.sign_str)
 
     if options.save_template:

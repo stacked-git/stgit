@@ -155,19 +155,19 @@ def __get_sender():
             sender = str(git.user())
         except git.GitException:
             sender = str(git.author())
-
     if not sender:
         raise CmdException, 'unknown sender details'
+    sender = email.Utils.parseaddr(sender)
 
-    return address_or_alias(sender)
+    return email.Utils.formataddr(address_or_alias(sender))
+
+def __addr_list(msg, header):
+    return [addr for name, addr in
+            email.Utils.getaddresses(msg.get_all(header, []))]
 
 def __parse_addresses(msg):
     """Return a two elements tuple: (from, [to])
     """
-    def __addr_list(msg, header):
-        return [name_addr[1] for name_addr in
-                email.Utils.getaddresses(msg.get_all(header, []))]
-
     from_addr_list = __addr_list(msg, 'From')
     if len(from_addr_list) == 0:
         raise CmdException, 'No "From" address'
@@ -177,7 +177,7 @@ def __parse_addresses(msg):
     if len(to_addr_list) == 0:
         raise CmdException, 'No "To/Cc/Bcc" addresses'
 
-    return (from_addr_list[0], to_addr_list)
+    return (from_addr_list[0], set(to_addr_list))
 
 def __send_message_sendmail(sendmail, msg):
     """Send the message using the sendmail command.
@@ -231,18 +231,24 @@ def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
     template.
     """
-    def __replace_header(header, addr):
-        if addr:
-            crt_addr = msg[header]
-            del msg[header]
+    def __addr_pairs(msg, header, extra):
+        pairs = email.Utils.getaddresses(msg.get_all(header, []) + extra)
+        # remove pairs without an address and resolve the aliases
+        return [address_or_alias(p) for p in pairs if p[1]]
 
-            if crt_addr:
-                msg[header] = address_or_alias(', '.join([crt_addr, addr]))
-            else:
-                msg[header] = address_or_alias(addr)
+    def __update_header(header, addr = '', ignore = ()):
+        addr_pairs = __addr_pairs(msg, header, [addr])
+        del msg[header]
+        # remove the duplicates and filter the addresses
+        addr_dict = dict((addr, email.Utils.formataddr((name, addr)))
+                         for name, addr in addr_pairs if addr not in ignore)
+        if addr_dict:
+            msg[header] = ', '.join(addr_dict.itervalues())
+        return set(addr_dict.iterkeys())
 
     to_addr = ''
     cc_addr = ''
+    extra_cc_addr = ''
     bcc_addr = ''
 
     autobcc = config.get('stgit.autobcc') or ''
@@ -250,18 +256,27 @@ def __build_address_headers(msg, options, extra_cc = []):
     if options.to:
         to_addr = ', '.join(options.to)
     if options.cc:
-        cc_addr = ', '.join(options.cc + extra_cc)
-        cc_addr = ', '.join(options.cc + extra_cc)
-    elif extra_cc:
-        cc_addr = ', '.join(extra_cc)
+        cc_addr = ', '.join(options.cc)
+    if extra_cc:
+        extra_cc_addr = ', '.join(extra_cc)
     if options.bcc:
         bcc_addr = ', '.join(options.bcc + [autobcc])
     elif autobcc:
         bcc_addr = autobcc
 
-    __replace_header('To', to_addr)
-    __replace_header('Cc', cc_addr)
-    __replace_header('Bcc', bcc_addr)
+    # if an address is on a header, ignore it from the rest
+    to_set = __update_header('To', to_addr)
+    cc_set = __update_header('Cc', cc_addr, to_set)
+    bcc_set = __update_header('Bcc', bcc_addr, to_set.union(cc_set))
+
+    # --auto generated addresses, don't include the sender
+    from_set = __update_header('From')
+    __update_header('Cc', extra_cc_addr, to_set.union(bcc_set).union(from_set))
+
+    # update other address headers
+    __update_header('Reply-To')
+    __update_header('Mail-Reply-To')
+    __update_header('Mail-Followup-To')
 
 def __get_signers_list(msg):
     """Return the address list generated from signed-off-by and

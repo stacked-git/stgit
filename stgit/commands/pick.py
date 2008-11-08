@@ -64,6 +64,8 @@ def __pick_commit(commit_id, patchname, options):
 
     if options.name:
         patchname = options.name
+    if patchname:
+        patchname = find_patch_name(patchname, crt_series.patch_exists)
 
     if options.parent:
         parent = git_id(crt_series, options.parent)
@@ -177,11 +179,16 @@ def func(parser, options, args):
         if options.parent:
             raise CmdException, '--parent can only be specified with one patch'
 
-    if (options.fold or options.update) and not crt_series.get_current():
+    if options.update and not crt_series.get_current():
         raise CmdException, 'No patches applied'
 
     if commit_id:
-        __pick_commit(commit_id, None, options)
+        # Try to guess a patch name if the argument was <branch>:<patch>
+        try:
+            patchname = args[0].split(':')[1]
+        except IndexError:
+            patchname = None
+        __pick_commit(commit_id, patchname, options)
     else:
         if options.unapplied:
             patches.reverse()
