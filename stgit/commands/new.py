@@ -40,7 +40,7 @@ the patch, unless the '--message' flag already specified one. The
 editor."""
 
 args = []
-options = (argparse.author_committer_options()
+options = (argparse.author_options()
            + argparse.message_options(save_template = True)
            + argparse.sign_options())
 
@@ -72,9 +72,8 @@ def func(parser, options, args):
     if options.message != None:
         cd = cd.set_message(options.message)
 
-    # Modify author and committer data.
-    cd = (cd.set_author(options.author(cd.author))
-            .set_committer(options.committer(cd.committer)))
+    # Modify author data.
+    cd = cd.set_author(options.author(cd.author))
 
     # Add Signed-off-by: or similar.
     if options.sign_str != None:

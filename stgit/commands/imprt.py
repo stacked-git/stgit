@@ -77,10 +77,6 @@ options = [
         short = 'Use AUTHEMAIL as the author e-mail'),
     opt('--authdate',
         short = 'Use AUTHDATE as the author date'),
-    opt('--commname',
-        short = 'Use COMMNAME as the committer name'),
-    opt('--commemail',
-        short = 'Use COMMEMAIL as the committer e-mail'),
     ] + argparse.sign_options()
 
 directory = DirectoryHasRepository(log = True)
@@ -130,8 +126,6 @@ def __create_patch(filename, message, author_name, author_email,
     if not message:
         can_edit = False
 
-    committer_name = committer_email = None
-
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
@@ -142,17 +136,11 @@ def __create_patch(filename, message, author_name, author_email,
         author_email = options.authemail
     if options.authdate:
         author_date = options.authdate
-    if options.commname:
-        committer_name = options.commname
-    if options.commemail:
-        committer_email = options.commemail
 
     crt_series.new_patch(patch, message = message, can_edit = False,
                          author_name = author_name,
                          author_email = author_email,
-                         author_date = author_date,
-                         committer_name = committer_name,
-                         committer_email = committer_email)
+                         author_date = author_date)
 
     if not diff:
         out.warn('No diff found, creating empty patch')
