@@ -177,7 +177,7 @@ def func(parser, options, args):
         if options.parent:
             raise CmdException, '--parent can only be specified with one patch'
 
-    if (options.fold or options.update) and not crt_series.get_current():
+    if options.update and not crt_series.get_current():
         raise CmdException, 'No patches applied'
 
     if commit_id:
