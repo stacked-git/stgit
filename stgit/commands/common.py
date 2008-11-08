@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, os.path, re
+import sys, os, os.path, re, email.Utils
 from stgit.exception import *
 from stgit.utils import *
 from stgit.out import *
@@ -233,8 +233,8 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     return patches
 
 def name_email(address):
-    p = parse_name_email(address)
-    if p:
+    p = email.Utils.parseaddr(address)
+    if p[1]:
         return p
     else:
         raise CmdException('Incorrect "name <email>"/"email (name)" string: %s'
@@ -247,25 +247,19 @@ def name_email_date(address):
     else:
         raise CmdException('Incorrect "name <email> date" string: %s' % address)
 
-def address_or_alias(addr_str):
-    """Return the address if it contains an e-mail address or look up
+def address_or_alias(addr_pair):
+    """Return a name-email tuple the e-mail address is valid or look up
     the aliases in the config files.
     """
-    def __address_or_alias(addr):
-        if not addr:
-            return None
-        if addr.find('@') >= 0:
-            # it's an e-mail address
-            return addr
-        alias = config.get('mail.alias.'+addr)
-        if alias:
-            # it's an alias
-            return alias
-        raise CmdException, 'unknown e-mail alias: %s' % addr
-
-    addr_list = [__address_or_alias(addr.strip())
-                 for addr in addr_str.split(',')]
-    return ', '.join([addr for addr in addr_list if addr])
+    addr = addr_pair[1]
+    if '@' in addr:
+        # it's an e-mail address
+        return addr_pair
+    alias = config.get('mail.alias.' + addr)
+    if alias:
+        # it's an alias
+        return name_email(alias)
+    raise CmdException, 'unknown e-mail alias: %s' % addr
 
 def prepare_rebase(crt_series):
     # pop all patches
