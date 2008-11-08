@@ -200,6 +200,15 @@ def edit_string(s, filename):
     os.remove(filename)
     return s
 
+def find_patch_name(patchname, unacceptable):
+    """Find a patch name which is acceptable."""
+    if unacceptable(patchname):
+        suffix = 0
+        while unacceptable('%s-%d' % (patchname, suffix)):
+            suffix += 1
+        patchname = '%s-%d' % (patchname, suffix)
+    return patchname
+
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
     from the top line of the string passed as argument."""
@@ -220,12 +229,7 @@ def make_patch_name(msg, unacceptable, default_name = 'patch'):
     patchname = patch_name_from_msg(msg)
     if not patchname:
         patchname = default_name
-    if unacceptable(patchname):
-        suffix = 0
-        while unacceptable('%s-%d' % (patchname, suffix)):
-            suffix += 1
-        patchname = '%s-%d' % (patchname, suffix)
-    return patchname
+    return find_patch_name(patchname, unacceptable)
 
 # any and all functions are builtin in Python 2.5 and higher, but not
 # in 2.4.
