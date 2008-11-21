@@ -290,7 +290,6 @@ class StackTransaction(object):
         conflicts to them."""
         orig_cd = self.patches[pn].data
         cd = orig_cd.set_committer(None)
-        s = ['', ' (empty)'][cd.is_nochange()]
         oldparent = cd.parent
         cd = cd.set_parent(self.top)
         base = oldparent.data.tree
@@ -298,6 +297,7 @@ class StackTransaction(object):
         theirs = cd.tree
         tree, self.temp_index_tree = self.temp_index.merge(
             base, ours, theirs, self.temp_index_tree)
+        s = ''
         merge_conflict = False
         if not tree:
             if iw == None:
@@ -324,6 +324,8 @@ class StackTransaction(object):
         else:
             comm = None
             s = ' (unmodified)'
+        if not merge_conflict and cd.is_nochange():
+            s = ' (empty)'
         out.info('Pushed %s%s' % (pn, s))
         def update():
             if comm:
