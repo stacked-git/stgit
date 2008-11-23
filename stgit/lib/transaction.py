@@ -321,6 +321,7 @@ class StackTransaction(object):
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
                ['parent', 'tree', 'author', 'message']):
             comm = self.__stack.repository.commit(cd)
+            self.head = comm
         else:
             comm = None
             s = ' (unmodified)'
