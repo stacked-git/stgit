@@ -58,7 +58,7 @@ class Patch(object):
         write('authdate', d.author.date)
         write('commname', d.committer.name)
         write('commemail', d.committer.email)
-        write('description', d.message)
+        write('description', d.message, multiline = True)
         write('log', write_patchlog().sha1)
         write('top', new_commit.sha1)
         write('bottom', d.parent.sha1)
