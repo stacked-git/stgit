@@ -48,6 +48,10 @@ clean:
 	rm -f stgit/commands/cmdlist.py
 
 tags:
+	ctags -R stgit/*
+
+TAGS:
 	ctags -e -R stgit/*
 
-.PHONY: all build install doc install-doc install-html test test_patches clean
+.PHONY: all build install doc install-doc install-html test test_patches \
+	clean tags TAGS
