@@ -1,15 +1,15 @@
-StGIT is a Python application providing similar functionality to Quilt
-(i.e. pushing/popping patches to/from a stack) on top of GIT. These
-operations are performed using GIT commands and the patches are stored
-as GIT commit objects, allowing easy merging of the StGIT patches into
-other repositories using standard GIT functionality.
+StGit is a Python application providing similar functionality to Quilt
+(i.e. pushing/popping patches to/from a stack) on top of Git. These
+operations are performed using Git commands and the patches are stored
+as Git commit objects, allowing easy merging of the StGit patches into
+other repositories using standard Git functionality.
 
-Note that StGIT is not an SCM interface on top of GIT and it expects a
-previously initialised GIT repository (unless it is cloned using StGIT
-directly). For standard SCM operations, use plain GIT commands.
+Note that StGit is not an SCM interface on top of Git and it expects a
+previously initialised Git repository (unless it is cloned using StGit
+directly). For standard SCM operations, use plain Git commands.
 
 For the latest version see http://www.procode.org/stgit/
-For a tutorial see http://wiki.procode.org/cgi-bin/wiki.cgi/StGIT_Tutorial
+For a tutorial see http://wiki.procode.org/cgi-bin/wiki.cgi/StGit_Tutorial
 
 Bugs or feature requests should be sent to the git@vger.kernel.org
-mailing list or the StGIT project page - http://gna.org/projects/stgit/
+mailing list or the StGit project page - http://gna.org/projects/stgit/
