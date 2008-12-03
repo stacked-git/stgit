@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
 import os
+import sys
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit import argparse, git, templates
