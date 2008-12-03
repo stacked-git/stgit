@@ -94,6 +94,7 @@ class StackTransaction(object):
         self.__base = self.__stack.base
         self.__discard_changes = discard_changes
         self.__bad_head = None
+        self.__conflicts = None
         if isinstance(allow_conflicts, bool):
             self.__allow_conflicts = lambda trans: allow_conflicts
         else:
@@ -201,7 +202,10 @@ class StackTransaction(object):
             self.__stack.set_head(new_head, self.__msg)
 
         if self.__error:
-            out.error(self.__error)
+            if self.__conflicts:
+                out.error(*([self.__error] + self.__conflicts))
+            else:
+                out.error(self.__error)
 
         # Write patches.
         def write(msg):
@@ -311,9 +315,10 @@ class StackTransaction(object):
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = ' (modified)'
-            except git.MergeConflictException:
+            except git.MergeConflictException, e:
                 tree = ours
                 merge_conflict = True
+                self.__conflicts = e.conflicts
                 s = ' (conflict)'
             except git.MergeException, e:
                 self.__halt(str(e))
@@ -344,7 +349,7 @@ class StackTransaction(object):
 
             # Save this update so that we can run it a little later.
             self.__conflicting_push = update
-            self.__halt('Merge conflict')
+            self.__halt("%d merge conflict(s)" % len(self.__conflicts))
         else:
             # Update immediately.
             update()
