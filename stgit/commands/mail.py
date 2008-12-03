@@ -283,8 +283,17 @@ def __get_signers_list(msg):
     acked-by lines in the message.
     """
     addr_list = []
+    tags = '%s|%s|%s|%s|%s|%s|%s' % (
+            'signed-off-by',
+            'acked-by',
+            'cc',
+            'reviewed-by',
+            'reported-by',
+            'tested-by',
+            'reported-and-tested-by')
+    regex = '^(%s):\s+(.+)$' % tags
 
-    r = re.compile('^(signed-off-by|acked-by|cc):\s+(.+)$', re.I)
+    r = re.compile(regex, re.I)
     for line in msg.split('\n'):
         m = r.match(line)
         if m:
