@@ -68,8 +68,14 @@ Argument DIR is the repository path."
            (display-buffer output-buf t)))))
 (put 'stgit-capture-output 'lisp-indent-function 1)
 
-(defun stgit-run (&rest args)
+(defun stgit-run-silent (&rest args)
   (apply 'call-process "stg" nil standard-output nil args))
+
+(defun stgit-run (&rest args)
+  (let ((msgcmd (mapconcat #'identity args " ")))
+    (message "Running stg %s..." msgcmd)
+    (apply 'call-process "stg" nil standard-output nil args)
+    (message "Running stg %s...done" msgcmd)))
 
 (defun stgit-reload ()
   "Update the contents of the stgit buffer"
@@ -79,8 +85,8 @@ Argument DIR is the repository path."
         (curpatch (stgit-patch-at-point)))
     (erase-buffer)
     (insert "Branch: ")
-    (stgit-run "branch")
-    (stgit-run "series" "--description")
+    (stgit-run-silent "branch")
+    (stgit-run-silent "series" "--description")
     (stgit-rescan)
     (if curpatch
         (stgit-goto-patch curpatch)
@@ -338,7 +344,7 @@ With numeric prefix argument, pop that many patches."
     (set (make-local-variable 'stgit-edit-patch) patch)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
-      (stgit-run "edit" "--save-template=-" patch))))
+      (stgit-run-silent "edit" "--save-template=-" patch))))
 
 (defun stgit-confirm-edit ()
   (interactive)
@@ -402,7 +408,7 @@ With numeric prefix argument, pop that many patches."
     (set (make-local-variable 'stgit-patches) patch-names)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
-      (apply 'stgit-run "coalesce" "--save-template=-" patch-names))))
+      (apply 'stgit-run-silent "coalesce" "--save-template=-" patch-names))))
 
 (defun stgit-confirm-coalesce ()
   (interactive)
