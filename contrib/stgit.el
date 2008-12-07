@@ -193,6 +193,9 @@ Commands:
   (let ((patchsym (intern patch)))
     (setq stgit-marked-patches (delq patchsym stgit-marked-patches))))
 
+(defun stgit-clear-marks ()
+  (setq stgit-marked-patches '()))
+
 (defun stgit-marked-patches ()
   "Return the names of the marked patches."
   (mapcar 'symbol-name stgit-marked-patches))
@@ -407,7 +410,14 @@ With numeric prefix argument, pop that many patches."
     (stgit-capture-output nil
       (apply 'stgit-run "coalesce" "-f" file stgit-patches))
     (with-current-buffer log-edit-parent-buffer
-      (stgit-refresh))))
+      (stgit-clear-marks)
+      ;; Go to first marked patch and stay there
+      (goto-char (point-min))
+      (re-search-forward (concat "^[>+-]\\*") nil t)
+      (move-to-column goal-column)
+      (let ((pos (point)))
+        (stgit-refresh)
+        (goto-char pos)))))
 
 (defun stgit-help ()
   "Display help for the StGit mode."
