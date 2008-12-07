@@ -154,6 +154,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "p"   'previous-line)
   (define-key stgit-mode-map "n"   'next-line)
   (define-key stgit-mode-map "g"   'stgit-reload)
+  (define-key stgit-mode-map "r"   'stgit-refresh)
   (define-key stgit-mode-map "\C-c\C-r" 'stgit-rename)
   (define-key stgit-mode-map "e"   'stgit-edit)
   (define-key stgit-mode-map "c"   'stgit-coalesce)
@@ -432,6 +433,23 @@ With prefix argument, run it with the --hard flag."
     (if arg
         (stgit-run "undo" "--hard")
       (stgit-run "undo")))
+  (stgit-reload))
+
+(defun stgit-refresh (&optional arg)
+  "Run stg refresh.
+With prefix argument, refresh the patch under point."
+  (interactive "P")
+  (let ((patchargs (if arg
+                      (let ((patches (stgit-patches-marked-or-at-point)))
+                        (cond ((null patches)
+                               (error "no patch to update"))
+                              ((> (length patches) 1)
+                               (error "too many patches selected"))
+                              (t
+                               (cons "-p" patches))))
+                    nil)))
+    (stgit-capture-output nil
+      (apply 'stgit-run "refresh" patchargs)))
   (stgit-reload))
 
 (provide 'stgit)
