@@ -154,7 +154,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "p"   'previous-line)
   (define-key stgit-mode-map "n"   'next-line)
   (define-key stgit-mode-map "g"   'stgit-reload)
-  (define-key stgit-mode-map "r"   'stgit-rename)
+  (define-key stgit-mode-map "\C-c\C-r" 'stgit-rename)
   (define-key stgit-mode-map "e"   'stgit-edit)
   (define-key stgit-mode-map "c"   'stgit-coalesce)
   (define-key stgit-mode-map "N"   'stgit-new)
