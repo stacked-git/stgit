@@ -13,7 +13,7 @@
   "Manage stgit patches"
   (interactive "DDirectory: \n")
   (switch-to-stgit-buffer (git-get-top-dir dir))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun git-get-top-dir (dir)
   "Retrieve the top-level directory of a git tree."
@@ -71,7 +71,7 @@ Argument DIR is the repository path."
 (defun stgit-run (&rest args)
   (apply 'call-process "stg" nil standard-output nil args))
 
-(defun stgit-refresh ()
+(defun stgit-reload ()
   "Update the contents of the stgit buffer"
   (interactive)
   (let ((inhibit-read-only t)
@@ -153,7 +153,7 @@ Argument DIR is the repository path."
   (define-key stgit-mode-map "h"   'stgit-help)
   (define-key stgit-mode-map "p"   'previous-line)
   (define-key stgit-mode-map "n"   'next-line)
-  (define-key stgit-mode-map "g"   'stgit-refresh)
+  (define-key stgit-mode-map "g"   'stgit-reload)
   (define-key stgit-mode-map "r"   'stgit-rename)
   (define-key stgit-mode-map "e"   'stgit-edit)
   (define-key stgit-mode-map "c"   'stgit-coalesce)
@@ -232,14 +232,14 @@ Commands:
   (interactive)
   (stgit-capture-output nil
    (stgit-run "init"))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-mark ()
   "Mark the patch under point"
   (interactive)
   (let ((patch (stgit-patch-at-point)))
     (stgit-add-mark patch)
-    (stgit-refresh))
+    (stgit-reload))
   (next-line))
 
 (defun stgit-unmark ()
@@ -248,7 +248,7 @@ Commands:
   (forward-line -1)
   (let ((patch (stgit-patch-at-point)))
     (stgit-remove-mark patch)
-    (stgit-refresh)))
+    (stgit-reload)))
 
 (defun stgit-rename (name)
   "Rename the patch under point"
@@ -258,7 +258,7 @@ Commands:
       (error "No patch on this line"))
     (stgit-capture-output nil
       (stgit-run "rename" old-name name))
-    (stgit-refresh)
+    (stgit-reload)
     (stgit-goto-patch name)))
 
 (defun stgit-repair ()
@@ -266,19 +266,19 @@ Commands:
   (interactive)
   (stgit-capture-output nil
    (stgit-run "repair"))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-commit ()
   "Run stg commit."
   (interactive)
   (stgit-capture-output nil (stgit-run "commit"))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-uncommit (arg)
   "Run stg uncommit. Numeric arg determines number of patches to uncommit."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "uncommit" "-n" (number-to-string arg)))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-push-next (npatches)
   "Push the first unapplied patch.
@@ -286,14 +286,14 @@ With numeric prefix argument, push that many patches."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "push" "-n"
                                        (number-to-string npatches)))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-pop-next (npatches)
   "Pop the topmost applied patch.
 With numeric prefix argument, pop that many patches."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "pop" "-n" (number-to-string npatches)))
-  (stgit-refresh))
+  (stgit-reload))
 
 (defun stgit-applied-at-point ()
   "Is the patch on the current line applied?"
@@ -308,7 +308,7 @@ With numeric prefix argument, pop that many patches."
         (applied (stgit-applied-at-point)))
     (stgit-capture-output nil
        (stgit-run (if applied "pop" "push") patch))
-    (stgit-refresh)))
+    (stgit-reload)))
 
 (defun stgit-goto ()
   "Go to the patch on the current line"
@@ -316,7 +316,7 @@ With numeric prefix argument, pop that many patches."
   (let ((patch (stgit-patch-at-point)))
     (stgit-capture-output nil
        (stgit-run "goto" patch))
-    (stgit-refresh)))
+    (stgit-reload)))
 
 (defun stgit-show ()
   "Show the patch on the current line"
@@ -346,7 +346,7 @@ With numeric prefix argument, pop that many patches."
     (stgit-capture-output nil
       (stgit-run "edit" "-f" file stgit-edit-patch))
     (with-current-buffer log-edit-parent-buffer
-      (stgit-refresh))))
+      (stgit-reload))))
 
 (defun stgit-new ()
   "Create a new patch"
@@ -361,7 +361,7 @@ With numeric prefix argument, pop that many patches."
     (stgit-capture-output nil
       (stgit-run "new" "-f" file))
     (with-current-buffer log-edit-parent-buffer
-      (stgit-refresh))))
+      (stgit-reload))))
 
 (defun stgit-create-patch-name (description)
   "Create a patch name from a long description"
@@ -390,7 +390,7 @@ With numeric prefix argument, pop that many patches."
                                (length patch-names)))
       (stgit-capture-output nil
         (apply 'stgit-run "delete" patch-names))
-      (stgit-refresh))))
+      (stgit-reload))))
 
 (defun stgit-coalesce (patch-names)
   "Run stg coalesce on the named patches"
@@ -416,7 +416,7 @@ With numeric prefix argument, pop that many patches."
       (re-search-forward (concat "^[>+-]\\*") nil t)
       (move-to-column goal-column)
       (let ((pos (point)))
-        (stgit-refresh)
+        (stgit-reload)
         (goto-char pos)))))
 
 (defun stgit-help ()
@@ -432,6 +432,6 @@ With prefix argument, run it with the --hard flag."
     (if arg
         (stgit-run "undo" "--hard")
       (stgit-run "undo")))
-  (stgit-refresh))
+  (stgit-reload))
 
 (provide 'stgit)
