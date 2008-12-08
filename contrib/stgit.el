@@ -161,7 +161,8 @@ Argument DIR is the repository path."
   (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
         '((" " .        stgit-mark)
           ("m" .        stgit-mark)
-          ("\d" .       stgit-unmark)
+          ("\d" .       stgit-unmark-up)
+          ("u" .        stgit-unmark-down)
           ("?" .        stgit-help)
           ("h" .        stgit-help)
           ("p" .        previous-line)
@@ -257,13 +258,19 @@ Commands:
     (stgit-reload))
   (next-line))
 
-(defun stgit-unmark ()
-  "Mark the patch on the previous line"
+(defun stgit-unmark-up ()
+  "Remove mark from the patch on the previous line"
   (interactive)
   (forward-line -1)
-  (let ((patch (stgit-patch-at-point)))
-    (stgit-remove-mark patch)
-    (stgit-reload)))
+  (stgit-remove-mark (stgit-patch-at-point))
+  (stgit-reload))
+
+(defun stgit-unmark-down ()
+  "Remove mark from the patch on the current line"
+  (interactive)
+  (stgit-remove-mark (stgit-patch-at-point))
+  (forward-line)
+  (stgit-reload))
 
 (defun stgit-rename (name)
   "Rename the patch under point"
