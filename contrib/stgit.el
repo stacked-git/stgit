@@ -160,6 +160,7 @@ Argument DIR is the repository path."
   (suppress-keymap stgit-mode-map)
   (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
         '((" " .        stgit-mark)
+          ("m" .        stgit-mark)
           ("\d" .       stgit-unmark)
           ("?" .        stgit-help)
           ("h" .        stgit-help)
