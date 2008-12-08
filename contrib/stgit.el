@@ -247,7 +247,7 @@ Commands:
   "Run stg init"
   (interactive)
   (stgit-capture-output nil
-   (stgit-run "init"))
+    (stgit-run "init"))
   (stgit-reload))
 
 (defun stgit-mark ()
@@ -287,7 +287,7 @@ Commands:
   "Run stg repair"
   (interactive)
   (stgit-capture-output nil
-   (stgit-run "repair"))
+    (stgit-run "repair"))
   (stgit-reload))
 
 (defun stgit-commit ()
@@ -329,7 +329,7 @@ With numeric prefix argument, pop that many patches."
   (let ((patch (stgit-patch-at-point))
         (applied (stgit-applied-at-point)))
     (stgit-capture-output nil
-       (stgit-run (if applied "pop" "push") patch))
+      (stgit-run (if applied "pop" "push") patch))
     (stgit-reload)))
 
 (defun stgit-goto ()
@@ -337,7 +337,7 @@ With numeric prefix argument, pop that many patches."
   (interactive)
   (let ((patch (stgit-patch-at-point)))
     (stgit-capture-output nil
-       (stgit-run "goto" patch))
+      (stgit-run "goto" patch))
     (stgit-reload)))
 
 (defun stgit-show ()
@@ -461,14 +461,14 @@ With prefix argument, run it with the --hard flag."
 With prefix argument, refresh the patch under point."
   (interactive "P")
   (let ((patchargs (if arg
-                      (let ((patches (stgit-patches-marked-or-at-point)))
-                        (cond ((null patches)
-                               (error "no patch to update"))
-                              ((> (length patches) 1)
-                               (error "too many patches selected"))
-                              (t
-                               (cons "-p" patches))))
-                    nil)))
+                       (let ((patches (stgit-patches-marked-or-at-point)))
+                         (cond ((null patches)
+                                (error "no patch to update"))
+                               ((> (length patches) 1)
+                                (error "too many patches selected"))
+                               (t
+                                (cons "-p" patches))))
+                     nil)))
     (stgit-capture-output nil
       (apply 'stgit-run "refresh" patchargs)))
   (stgit-reload))
