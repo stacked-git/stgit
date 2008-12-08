@@ -79,13 +79,16 @@ def __get_author(stack, patch):
     cd = stack.patches.get(patch).commit.data
     return cd.author.name
 
-def __print_patch(stack, patch, branch_str, prefix, empty_prefix, length, options):
+def __print_patch(stack, patch, branch_str, prefix, length, options):
     """Print a patch name, description and various markers.
     """
     if options.noprefix:
         prefix = ''
-    elif options.empty and stack.patches.get(patch).is_empty():
-        prefix = empty_prefix
+    elif options.empty:
+        if stack.patches.get(patch).is_empty():
+            prefix = '0' + prefix
+        else:
+            prefix = ' ' + prefix
 
     patch_str = branch_str + patch
 
@@ -180,12 +183,12 @@ def func(parser, options, args):
 
     if applied:
         for p in applied[:-1]:
-            __print_patch(stack, p, branch_str, '+ ', '0 ', max_len, options)
-        __print_patch(stack, applied[-1], branch_str, '> ', '0>', max_len,
+            __print_patch(stack, p, branch_str, '+ ', max_len, options)
+        __print_patch(stack, applied[-1], branch_str, '> ', max_len,
                       options)
 
     for p in unapplied:
-        __print_patch(stack, p, branch_str, '- ', '0 ', max_len, options)
+        __print_patch(stack, p, branch_str, '- ', max_len, options)
 
     for p in hidden:
-        __print_patch(stack, p, branch_str, '! ', '! ', max_len, options)
+        __print_patch(stack, p, branch_str, '! ', max_len, options)
