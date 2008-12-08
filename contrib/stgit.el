@@ -144,6 +144,11 @@ Argument DIR is the repository path."
         (forward-line 1))
       (setq stgit-marked-patches (nreverse marked)))))
 
+(defun stgit-quit ()
+  "Hide the stgit buffer"
+  (interactive)
+  (bury-buffer))
+
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
 
@@ -176,7 +181,8 @@ Argument DIR is the repository path."
           ("=" .        stgit-show)
           ("D" .        stgit-delete)
           ([(control ?/)] . stgit-undo)
-          ("\C-_" .     stgit-undo))))
+          ("\C-_" .     stgit-undo)
+          ("q" . stgit-quit))))
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
