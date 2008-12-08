@@ -27,10 +27,14 @@ help = 'Print the patch series'
 kind = 'stack'
 usage = ['[options] [<patch-range>]']
 description = """
-Show all the patches in the series or just those in the given
-range. The applied patches are prefixed with a '+', the unapplied ones
-with a '-' and the hidden ones with a '!'. The current patch is
-prefixed with a '>'. Empty patches are prefixed with a '0'."""
+Show all the patches in the series, or just those in the given range,
+ordered from top to bottom.
+
+The applied patches are prefixed with a +++ (except the current patch,
+which is prefixed with a +>+), the unapplied patches with a +-+, and
+the hidden patches with a +!+.
+
+Empty patches are prefixed with a '0'."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
@@ -55,7 +59,10 @@ options = [
     opt('--author', action = 'store_true',
         short = 'Show the author name for each patch'),
     opt('-e', '--empty', action = 'store_true',
-        short = 'Check whether patches are empty'),
+        short = 'Check whether patches are empty', long = """
+        Before the +++, +>+, +-+, and +!+ prefixes, print a column
+        that contains either +0+ (for empty patches) or a space (for
+        non-empty patches)."""),
     opt('--showbranch', action = 'store_true',
         short = 'Append the branch name to the listed patches'),
     opt('--noprefix', action = 'store_true',
