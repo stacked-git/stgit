@@ -9,6 +9,8 @@
 ;;
 ;; To start: `M-x stgit'
 
+(require 'git nil t)
+
 (defun stgit (dir)
   "Manage stgit patches"
   (interactive "DDirectory: \n")
@@ -149,6 +151,16 @@ Argument DIR is the repository path."
   (interactive)
   (bury-buffer))
 
+(defun stgit-git-status ()
+  "Show status using `git-status'"
+  (interactive)
+  (unless (fboundp 'git-status)
+    (error "stgit-git-status requires git-status"))
+  (let ((dir default-directory))
+    (save-selected-window
+      (pop-to-buffer nil)
+      (git-status dir))))
+
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
 
@@ -167,6 +179,7 @@ Argument DIR is the repository path."
           ("h" .        stgit-help)
           ("p" .        previous-line)
           ("n" .        next-line)
+          ("s" .        stgit-git-status)
           ("g" .        stgit-reload)
           ("r" .        stgit-refresh)
           ("\C-c\C-r" . stgit-rename)
