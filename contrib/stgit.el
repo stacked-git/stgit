@@ -386,8 +386,10 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-new ()
   "Create a new patch"
   (interactive)
-  (let ((edit-buf (get-buffer-create "*StGit edit*")))
-    (log-edit 'stgit-confirm-new t nil edit-buf)))
+  (let ((edit-buf (get-buffer-create "*StGit edit*"))
+        (dir default-directory))
+    (log-edit 'stgit-confirm-new t nil edit-buf)
+    (setq default-directory dir)))
 
 (defun stgit-confirm-new ()
   (interactive)
