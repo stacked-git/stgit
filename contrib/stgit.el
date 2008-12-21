@@ -165,6 +165,12 @@ Argument DIR is the repository path."
   "StGit mode face used for unknown file status"
   :group 'stgit)
 
+(defface stgit-file-permission-face
+  '((((class color) (background light)) (:foreground "green" :bold t))
+    (((class color) (background dark)) (:foreground "green" :bold t)))
+  "StGit mode face used for permission changes."
+  :group 'stgit)
+
 (defcustom stgit-expand-find-copies-harder
   nil
   "Try harder to find copied files when listing patches.
@@ -177,24 +183,30 @@ flag, which reduces performance."
 (defconst stgit-file-status-code-strings
   (mapcar (lambda (arg)
             (cons (car arg)
-                  (format "%-12s"
-                          (propertize (cadr arg) 'face (car (cddr arg))))))
-          '((add         "Added"        stgit-modified-file-face)
-            (copy        "Copied"       stgit-modified-file-face)
-            (delete      "Deleted"      stgit-modified-file-face)
-            (modify      "Modified"     stgit-modified-file-face)
-            (rename      "Renamed"      stgit-modified-file-face)
-            (mode-change "Mode changed" stgit-modified-file-face)
-            (unmerged    "Unmerged"     stgit-unmerged-file-face)
-            (unknown     "Unknown"      stgit-unknown-file-face)))
+                  (propertize (cadr arg) 'face (car (cddr arg)))))
+          '((add         "Added"       stgit-modified-file-face)
+            (copy        "Copied"      stgit-modified-file-face)
+            (delete      "Deleted"     stgit-modified-file-face)
+            (modify      "Modified"    stgit-modified-file-face)
+            (rename      "Renamed"     stgit-modified-file-face)
+            (mode-change "Mode change" stgit-modified-file-face)
+            (unmerged    "Unmerged"    stgit-unmerged-file-face)
+            (unknown     "Unknown"     stgit-unknown-file-face)))
   "Alist of code symbols to description strings")
 
 (defun stgit-file-status-code-as-string (code)
   "Return stgit status code as string"
-  (let ((str (assq code stgit-file-status-code-strings)))
-    (and str (cdr str))))
+  (let ((str (assq (if (consp code) (car code) code)
+                   stgit-file-status-code-strings)))
+    (when str
+      (format "%-11s  "
+              (if (and str (consp code) (/= (cdr code) 100))
+                  (format "%s %s" (cdr str)
+                          (propertize (format "%d%%" (cdr code))
+                                      'face 'stgit-description-face))
+                (cdr str))))))
 
-(defun stgit-file-status-code (str)
+(defun stgit-file-status-code (str &optional score)
   "Return stgit status code from git status string"
   (let ((code (assoc str '(("A" . add)
                            ("C" . copy)
@@ -204,7 +216,59 @@ flag, which reduces performance."
                            ("T" . mode-change)
                            ("U" . unmerged)
                            ("X" . unknown)))))
-    (if code (cdr code) 'unknown)))
+    (setq code (if code (cdr code) 'unknown))
+    (when (stringp score)
+      (if (> (length score) 0)
+          (setq score (string-to-number score))
+        (setq score nil)))
+    (if score (cons code score) code)))
+
+(defconst stgit-file-type-strings
+  '((#o100 . "file")
+    (#o120 . "symlink")
+    (#o160 . "subproject"))
+  "Alist of names of file types")
+
+(defun stgit-file-type-string (type)
+  (let ((type-str (assoc type stgit-file-type-strings)))
+    (or (and type-str (cdr type-str))
+	(format "unknown type %o" type))))
+
+(defun stgit-file-type-change-string (old-perm new-perm)
+  (let ((old-type (lsh old-perm -9))
+        (new-type (lsh new-perm -9)))
+    (cond ((= old-type new-type) "")
+          ((zerop new-type) "")
+          ((zerop old-type)
+           (if (= new-type #o100)
+               ""
+             (format "   (%s)" (stgit-file-type-string new-type))))
+          (t (format "   (%s -> %s)"
+                     (stgit-file-type-string old-type)
+                     (stgit-file-type-string new-type))))))
+
+(defun stgit-file-mode-change-string (old-perm new-perm)
+  (setq old-perm (logand old-perm #o777)
+        new-perm (logand new-perm #o777))
+  (if (or (= old-perm new-perm)
+          (zerop old-perm)
+          (zerop new-perm))
+      ""
+    (let* ((modified       (logxor old-perm new-perm))
+	   (not-x-modified (logand (logxor old-perm new-perm) #o666)))
+      (cond ((zerop modified) "")
+            ((and (zerop not-x-modified)
+                  (or (and (eq #o111 (logand old-perm #o111))
+                           (propertize "-x" 'face 'stgit-file-permission-face))
+                      (and (eq #o111 (logand new-perm #o111))
+                           (propertize "+x" 'face
+                                       'stgit-file-permission-face)))))
+            (t (concat (propertize (format "%o" old-perm)
+                                   'face 'stgit-file-permission-face)
+                       (propertize " -> "
+                                   'face 'stgit-description-face)
+                       (propertize (format "%o" new-perm)
+                                   'face 'stgit-file-permission-face)))))))
 
 (defun stgit-expand-patch (patchsym)
   (save-excursion
@@ -217,28 +281,44 @@ flag, which reduces performance."
                                       "-C")
                                     (stgit-id (symbol-name patchsym))))))
       (let (mstart)
-        (while (string-match "\0:[0-7]+ [0-7]+ [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
+        (while (string-match "\0:\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
                              result mstart)
-          (let ((copy-or-rename (match-string 2 result))
+          (let ((copy-or-rename (match-string 4 result))
+                (old-perm       (read (format "#o%s" (match-string 1 result))))
+                (new-perm       (read (format "#o%s" (match-string 2 result))))
                 (line-start (point))
+                status
+                change
                 properties)
             (insert "    ")
             (if copy-or-rename
-                (let ((cr-score       (match-string 3 result))
-                      (cr-from-file   (match-string 4 result))
-                      (cr-to-file     (match-string 5 result)))
-                  (setq properties (list 'stgit-old-file cr-from-file
-                                         'stgit-new-file cr-to-file))
-                  (insert (stgit-file-status-code-as-string
-                           (if (equal "C" copy-or-rename) 'copy 'rename))
-                          cr-from-file
-                          (propertize " -> " 'face 'stgit-description-face)
-                          cr-to-file))
-              (let ((status (stgit-file-status-code (match-string 6 result)))
-                    (file   (match-string 7 result)))
-                (setq properties (list 'stgit-file file))
-                (insert (stgit-file-status-code-as-string status) file)))
-            (insert ?\n)
+                (let ((cr-score       (match-string 5 result))
+                      (cr-from-file   (match-string 6 result))
+                      (cr-to-file     (match-string 7 result)))
+                  (setq status (stgit-file-status-code copy-or-rename
+                                                       cr-score)
+                        properties (list 'stgit-old-file cr-from-file
+                                         'stgit-new-file cr-to-file)
+                        change (concat
+                                cr-from-file
+                                (propertize " -> "
+                                            'face 'stgit-description-face)
+                                cr-to-file)))
+              (setq status (stgit-file-status-code (match-string 8 result))
+                    properties (list 'stgit-file (match-string 9 result))
+                    change (match-string 9 result)))
+
+            (let ((mode-change (stgit-file-mode-change-string old-perm
+                                                              new-perm)))
+              (insert (format "%-12s" (stgit-file-status-code-as-string
+                                       status))
+                      mode-change
+                      (if (> (length mode-change) 0) " " "")
+                      change
+                      (propertize (stgit-file-type-change-string old-perm
+                                                                 new-perm)
+                                  'face 'stgit-description-face)
+                      ?\n))
             (add-text-properties line-start (point) properties))
           (setq mstart (match-end 0))))
       (when (= start (point))
