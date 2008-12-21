@@ -97,6 +97,9 @@ Argument DIR is the repository path."
     (apply 'call-process "git" nil standard-output nil args)
     (message "Running git %s...done" msgcmd)))
 
+(defun stgit-run-git-silent (&rest args)
+  (apply 'call-process "git" nil standard-output nil args))
+
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
   (interactive)
@@ -144,27 +147,103 @@ Argument DIR is the repository path."
   "The face used for unapplied patch names"
   :group 'stgit)
 
+(defface stgit-modified-file-face
+  '((((class color) (background light)) (:foreground "purple"))
+    (((class color) (background dark)) (:foreground "salmon")))
+  "StGit mode face used for modified file status"
+  :group 'stgit)
+
+(defface stgit-unmerged-file-face
+  '((((class color) (background light)) (:foreground "red" :bold t))
+    (((class color) (background dark)) (:foreground "red" :bold t)))
+  "StGit mode face used for unmerged file status"
+  :group 'stgit)
+
+(defface stgit-unknown-file-face
+  '((((class color) (background light)) (:foreground "goldenrod" :bold t))
+    (((class color) (background dark)) (:foreground "goldenrod" :bold t)))
+  "StGit mode face used for unknown file status"
+  :group 'stgit)
+
+(defcustom stgit-expand-find-copies-harder
+  nil
+  "Try harder to find copied files when listing patches.
+
+When not nil, runs git diff-tree with the --find-copies-harder
+flag, which reduces performance."
+  :type 'boolean
+  :group 'stgit)
+
+(defconst stgit-file-status-code-strings
+  (mapcar (lambda (arg)
+            (cons (car arg)
+                  (format "%-12s"
+                          (propertize (cadr arg) 'face (car (cddr arg))))))
+          '((add         "Added"        stgit-modified-file-face)
+            (copy        "Copied"       stgit-modified-file-face)
+            (delete      "Deleted"      stgit-modified-file-face)
+            (modify      "Modified"     stgit-modified-file-face)
+            (rename      "Renamed"      stgit-modified-file-face)
+            (mode-change "Mode changed" stgit-modified-file-face)
+            (unmerged    "Unmerged"     stgit-unmerged-file-face)
+            (unknown     "Unknown"      stgit-unknown-file-face)))
+  "Alist of code symbols to description strings")
+
+(defun stgit-file-status-code-as-string (code)
+  "Return stgit status code as string"
+  (let ((str (assq code stgit-file-status-code-strings)))
+    (and str (cdr str))))
+
+(defun stgit-file-status-code (str)
+  "Return stgit status code from git status string"
+  (let ((code (assoc str '(("A" . add)
+                           ("C" . copy)
+                           ("D" . delete)
+                           ("M" . modify)
+                           ("R" . rename)
+                           ("T" . mode-change)
+                           ("U" . unmerged)
+                           ("X" . unknown)))))
+    (if code (cdr code) 'unknown)))
+
 (defun stgit-expand-patch (patchsym)
   (save-excursion
     (forward-line)
-    (let ((start (point)))
-      (stgit-run "files" (symbol-name patchsym))
-      
-      ;; 'stg files' outputs a single newline for empty patches; it
-      ;; must be destroyed!
-      (when (and (= (1+ start) (point))
-                 (= (char-before) ?\n))
-        (delete-backward-char 1))
-
-      (let ((end-marker (point-marker)))
-        (if (= start (point))
-            (insert-string "    <no files>\n")
-          (unless (looking-at "^")
-            (insert ?\n))
-          (while (and (zerop (forward-line -1))
-                      (>= (point) start))
-            (insert "    ")))
-        (put-text-property start end-marker 'stgit-patchsym patchsym)))))
+    (let* ((start (point))
+           (result (with-output-to-string
+                     (stgit-run-git "diff-tree" "-r" "-z"
+                                    (if stgit-expand-find-copies-harder
+                                        "--find-copies-harder"
+                                      "-C")
+                                    (stgit-id (symbol-name patchsym))))))
+      (let (mstart)
+        (while (string-match "\0:[0-7]+ [0-7]+ [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
+                             result mstart)
+          (let ((copy-or-rename (match-string 2 result))
+                (line-start (point))
+                properties)
+            (insert "    ")
+            (if copy-or-rename
+                (let ((cr-score       (match-string 3 result))
+                      (cr-from-file   (match-string 4 result))
+                      (cr-to-file     (match-string 5 result)))
+                  (setq properties (list 'stgit-old-file cr-from-file
+                                         'stgit-new-file cr-to-file))
+                  (insert (stgit-file-status-code-as-string
+                           (if (equal "C" copy-or-rename) 'copy 'rename))
+                          cr-from-file
+                          (propertize " -> " 'face 'stgit-description-face)
+                          cr-to-file))
+              (let ((status (stgit-file-status-code (match-string 6 result)))
+                    (file   (match-string 7 result)))
+                (setq properties (list 'stgit-file file))
+                (insert (stgit-file-status-code-as-string status) file)))
+            (insert ?\n)
+            (add-text-properties line-start (point) properties))
+          (setq mstart (match-end 0))))
+      (when (= start (point))
+        (insert "    <no files>\n"))
+      (put-text-property start (point) 'stgit-patchsym patchsym))))
 
 (defun stgit-rescan ()
   "Rescan the status buffer."
@@ -372,14 +451,29 @@ a patch."
       (and cause-error
            (error "No patch on this line"))))
 
-(defun stgit-patched-file-at-point ()
-  "Returns a cons of the patchsym and file name at point"
-  (let ((patchsym (get-text-property (point) 'stgit-patchsym)))
-    (when patchsym
-      (save-excursion
-        (beginning-of-line)
-        (when (looking-at "    [A-Z] \\(.*\\)")
-          (cons patchsym (match-string-no-properties 1)))))))
+(defun stgit-patched-file-at-point (&optional both-files)
+  "Returns a cons of the patchsym and file name at point. For
+copies and renames, return the new file if the patch is either
+applied. If BOTH-FILES is non-nil, return a cons of the old and
+the new file names instead of just one name."
+  (let ((patchsym (get-text-property (point) 'stgit-patchsym))
+        (file     (get-text-property (point) 'stgit-file)))
+    (cond ((not patchsym) nil)
+          (file (cons patchsym file))
+          (both-files
+           (cons patchsym (cons (get-text-property (point) 'stgit-old-file)
+                                (get-text-property (point) 'stgit-new-file))))
+          (t
+           (let ((file-sym (save-excursion
+                             (stgit-previous-patch)
+                             (unless (equal (stgit-patch-at-point)
+                                            (symbol-name patchsym))
+                               (error "Cannot find the %s patch" patchsym))
+                             (beginning-of-line)
+                             (if (= (char-after) ?-)
+                                 'stgit-old-file 
+                               'stgit-new-file))))
+             (cons patchsym (get-text-property (point) file-sym)))))))
 
 (defun stgit-patches-marked-or-at-point ()
   "Return the names of the marked patches, or the patch on the current line."
@@ -519,12 +613,18 @@ With numeric prefix argument, pop that many patches."
   (stgit-capture-output "*StGit patch*"
     (let ((patch (stgit-patch-at-point)))
       (if (not patch)
-          (let ((patched-file (stgit-patched-file-at-point)))
+          (let ((patched-file (stgit-patched-file-at-point t)))
             (unless patched-file
               (error "No patch or file at point"))
             (let ((id (stgit-id (symbol-name (car patched-file)))))
               (with-output-to-temp-buffer "*StGit diff*"
-                (stgit-run-git "diff" (concat id "^") id (cdr patched-file))
+                (if (consp (cdr patched-file))
+                    ;; two files (copy or rename)
+                    (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
+                                   (cadr patched-file) (cddr patched-file))
+                  ;; just one file
+                  (stgit-run-git "diff" (concat id "^") id "--"
+                                 (cdr patched-file)))
                 (with-current-buffer standard-output
                   (diff-mode)))))
         (stgit-run "show" (stgit-patch-at-point))
