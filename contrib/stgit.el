@@ -12,7 +12,7 @@
 (require 'git nil t)
 
 (defun stgit (dir)
-  "Manage stgit patches"
+  "Manage StGit patches for the tree in DIR."
   (interactive "DDirectory: \n")
   (switch-to-stgit-buffer (git-get-top-dir dir))
   (stgit-reload))
@@ -29,7 +29,7 @@
                               (car (split-string cdup "\n"))))))
 
 (defun switch-to-stgit-buffer (dir)
-  "Switch to a (possibly new) buffer displaying StGit patches for DIR"
+  "Switch to a (possibly new) buffer displaying StGit patches for DIR."
   (setq dir (file-name-as-directory dir))
   (let ((buffers (buffer-list)))
     (while (and buffers
@@ -53,7 +53,7 @@ Argument DIR is the repository path."
     buf))
 
 (defmacro stgit-capture-output (name &rest body)
-  "Capture StGit output and show it in a window at the end"
+  "Capture StGit output and show it in a window at the end."
   `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
          (stgit-dir default-directory)
          (inhibit-read-only t))
@@ -80,7 +80,7 @@ Argument DIR is the repository path."
     (message "Running stg %s...done" msgcmd)))
 
 (defun stgit-reload ()
-  "Update the contents of the stgit buffer"
+  "Update the contents of the StGit buffer."
   (interactive)
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
@@ -147,12 +147,12 @@ Argument DIR is the repository path."
       (setq stgit-marked-patches (nreverse marked)))))
 
 (defun stgit-quit ()
-  "Hide the stgit buffer"
+  "Hide the stgit buffer."
   (interactive)
   (bury-buffer))
 
 (defun stgit-git-status ()
-  "Show status using `git-status'"
+  "Show status using `git-status'."
   (interactive)
   (unless (fboundp 'git-status)
     (error "stgit-git-status requires git-status"))
@@ -230,7 +230,7 @@ Commands:
   (mapcar 'symbol-name stgit-marked-patches))
 
 (defun stgit-patch-at-point ()
-  "Return the patch name on the current line"
+  "Return the patch name on the current line."
   (save-excursion
     (beginning-of-line)
     (if (looking-at "[>+-][ *]\\([^ ]*\\)")
@@ -247,7 +247,7 @@ Commands:
         '()))))
 
 (defun stgit-goto-patch (patch)
-  "Move point to the line containing PATCH"
+  "Move point to the line containing PATCH."
   (let ((p (point)))
     (goto-char (point-min))
     (if (re-search-forward (concat "^[>+-][ *]" (regexp-quote patch) " ") nil t)
@@ -257,14 +257,14 @@ Commands:
       nil)))
 
 (defun stgit-init ()
-  "Run stg init"
+  "Run stg init."
   (interactive)
   (stgit-capture-output nil
     (stgit-run "init"))
   (stgit-reload))
 
 (defun stgit-mark ()
-  "Mark the patch under point"
+  "Mark the patch under point."
   (interactive)
   (let ((patch (stgit-patch-at-point)))
     (stgit-add-mark patch)
@@ -272,21 +272,21 @@ Commands:
   (next-line))
 
 (defun stgit-unmark-up ()
-  "Remove mark from the patch on the previous line"
+  "Remove mark from the patch on the previous line."
   (interactive)
   (forward-line -1)
   (stgit-remove-mark (stgit-patch-at-point))
   (stgit-reload))
 
 (defun stgit-unmark-down ()
-  "Remove mark from the patch on the current line"
+  "Remove mark from the patch on the current line."
   (interactive)
   (stgit-remove-mark (stgit-patch-at-point))
   (forward-line)
   (stgit-reload))
 
 (defun stgit-rename (name)
-  "Rename the patch under point"
+  "Rename the patch under point."
   (interactive (list (read-string "Patch name: " (stgit-patch-at-point))))
   (let ((old-name (stgit-patch-at-point)))
     (unless old-name
@@ -297,7 +297,7 @@ Commands:
     (stgit-goto-patch name)))
 
 (defun stgit-repair ()
-  "Run stg repair"
+  "Run stg repair."
   (interactive)
   (stgit-capture-output nil
     (stgit-run "repair"))
@@ -337,7 +337,7 @@ With numeric prefix argument, pop that many patches."
     (looking-at "[>+]")))
 
 (defun stgit-push-or-pop ()
-  "Push or pop the patch on the current line"
+  "Push or pop the patch on the current line."
   (interactive)
   (let ((patch (stgit-patch-at-point))
         (applied (stgit-applied-at-point)))
@@ -346,7 +346,7 @@ With numeric prefix argument, pop that many patches."
     (stgit-reload)))
 
 (defun stgit-goto ()
-  "Go to the patch on the current line"
+  "Go to the patch on the current line."
   (interactive)
   (let ((patch (stgit-patch-at-point)))
     (stgit-capture-output nil
@@ -354,7 +354,7 @@ With numeric prefix argument, pop that many patches."
     (stgit-reload)))
 
 (defun stgit-show ()
-  "Show the patch on the current line"
+  "Show the patch on the current line."
   (interactive)
   (stgit-capture-output "*StGit patch*"
     (stgit-run "show" (stgit-patch-at-point))
@@ -363,7 +363,7 @@ With numeric prefix argument, pop that many patches."
       (diff-mode))))
 
 (defun stgit-edit ()
-  "Edit the patch on the current line"
+  "Edit the patch on the current line."
   (interactive)
   (let ((patch (stgit-patch-at-point))
         (edit-buf (get-buffer-create "*StGit edit*"))
@@ -384,7 +384,7 @@ With numeric prefix argument, pop that many patches."
       (stgit-reload))))
 
 (defun stgit-new ()
-  "Create a new patch"
+  "Create a new patch."
   (interactive)
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
@@ -419,7 +419,7 @@ With numeric prefix argument, pop that many patches."
           (t patch))))
 
 (defun stgit-delete (patch-names)
-  "Delete the named patches"
+  "Delete the named patches."
   (interactive (list (stgit-patches-marked-or-at-point)))
   (if (zerop (length patch-names))
       (error "No patches to delete")
@@ -430,7 +430,7 @@ With numeric prefix argument, pop that many patches."
       (stgit-reload))))
 
 (defun stgit-coalesce (patch-names)
-  "Run stg coalesce on the named patches"
+  "Run stg coalesce on the named patches."
   (interactive (list (stgit-marked-patches)))
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
@@ -473,7 +473,7 @@ With prefix argument, run it with the --hard flag."
 
 (defun stgit-refresh (&optional arg)
   "Run stg refresh.
-With prefix argument, refresh the patch under point."
+With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
   (let ((patchargs (if arg
                        (let ((patches (stgit-patches-marked-or-at-point)))
