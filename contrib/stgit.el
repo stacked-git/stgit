@@ -17,16 +17,28 @@
   (switch-to-stgit-buffer (git-get-top-dir dir))
   (stgit-reload))
 
-(defun git-get-top-dir (dir)
-  "Retrieve the top-level directory of a git tree."
-  (let ((cdup (with-output-to-string
-                (with-current-buffer standard-output
-                  (cd dir)
-                  (unless (eq 0 (call-process "git" nil t nil
-                                              "rev-parse" "--show-cdup"))
-                    (error "cannot find top-level git tree for %s." dir))))))
-    (expand-file-name (concat (file-name-as-directory dir)
-                              (car (split-string cdup "\n"))))))
+(unless (fboundp 'git-get-top-dir)
+  (defun git-get-top-dir (dir)
+    "Retrieve the top-level directory of a git tree."
+    (let ((cdup (with-output-to-string
+                  (with-current-buffer standard-output
+                    (cd dir)
+                    (unless (eq 0 (call-process "git" nil t nil
+                                                "rev-parse" "--show-cdup"))
+                      (error "cannot find top-level git tree for %s." dir))))))
+      (expand-file-name (concat (file-name-as-directory dir)
+                                (car (split-string cdup "\n")))))))
+
+(defun stgit-refresh-git-status (&optional dir)
+  "If it exists, refresh the `git-status' buffer belonging to
+directory DIR or `default-directory'"
+  (when (and (fboundp 'git-find-status-buffer)
+             (fboundp 'git-refresh-status))
+    (let* ((top-dir (git-get-top-dir (or dir default-directory)))
+           (git-status-buffer (and top-dir (git-find-status-buffer top-dir))))
+      (when git-status-buffer
+        (with-current-buffer git-status-buffer
+          (git-refresh-status))))))
 
 (defun switch-to-stgit-buffer (dir)
   "Switch to a (possibly new) buffer displaying StGit patches for DIR."
@@ -92,7 +104,8 @@ Argument DIR is the repository path."
     (stgit-rescan)
     (if curpatch
         (stgit-goto-patch curpatch)
-      (goto-line curline))))
+      (goto-line curline)))
+  (stgit-refresh-git-status))
 
 (defface stgit-description-face
   '((((background dark)) (:foreground "tan"))
@@ -321,14 +334,16 @@ With numeric prefix argument, push that many patches."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "push" "-n"
                                        (number-to-string npatches)))
-  (stgit-reload))
+  (stgit-reload)
+  (stgit-refresh-git-status))
 
 (defun stgit-pop-next (npatches)
   "Pop the topmost applied patch.
 With numeric prefix argument, pop that many patches."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "pop" "-n" (number-to-string npatches)))
-  (stgit-reload))
+  (stgit-reload)
+  (stgit-refresh-git-status))
 
 (defun stgit-applied-at-point ()
   "Is the patch on the current line applied?"
@@ -485,7 +500,8 @@ With prefix argument, refresh the marked patch or the patch under point."
                                 (cons "-p" patches))))
                      nil)))
     (stgit-capture-output nil
-      (apply 'stgit-run "refresh" patchargs)))
+      (apply 'stgit-run "refresh" patchargs))
+    (stgit-refresh-git-status))
   (stgit-reload))
 
 (provide 'stgit)
