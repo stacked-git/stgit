@@ -113,28 +113,36 @@ Argument DIR is the repository path."
       (goto-line curline)))
   (stgit-refresh-git-status))
 
+(defgroup stgit nil
+  "A user interface for the StGit patch maintenance tool."
+  :group 'tools)
+
 (defface stgit-description-face
   '((((background dark)) (:foreground "tan"))
     (((background light)) (:foreground "dark red")))
-  "The face used for StGit desriptions")
+  "The face used for StGit descriptions"
+  :group 'stgit)
 
 (defface stgit-top-patch-face
   '((((background dark)) (:weight bold :foreground "yellow"))
     (((background light)) (:weight bold :foreground "purple"))
     (t (:weight bold)))
-  "The face used for the top patch names")
+  "The face used for the top patch names"
+  :group 'stgit)
 
 (defface stgit-applied-patch-face
   '((((background dark)) (:foreground "light yellow"))
     (((background light)) (:foreground "purple"))
     (t ()))
-  "The face used for applied patch names")
+  "The face used for applied patch names"
+  :group 'stgit)
 
 (defface stgit-unapplied-patch-face
   '((((background dark)) (:foreground "gray80"))
     (((background light)) (:foreground "orchid"))
     (t ()))
-  "The face used for unapplied patch names")
+  "The face used for unapplied patch names"
+  :group 'stgit)
 
 (defun stgit-expand-patch (patchsym)
   (save-excursion
