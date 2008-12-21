@@ -2,270 +2,203 @@ Checklist (and a short version for the impatient):
 
         Commits:
 
-        - make commits of logical units
-        - check for unnecessary whitespace with "git diff --check"
-          before committing
-        - do not check in commented out code or unneeded files
-        - provide a meaningful commit message
-        - the first line of the commit message should be a short
-          description and should skip the full stop
-        - if you want your work included in git.git, add a
+        - Make commits of logical units.
+        - Check for unnecessary whitespace with "git diff --check"
+          before committing.
+        - Do not check in commented out code or unneeded files.
+        - Provide a meaningful commit message.
+        - The first line of the commit message should be a short
+          description and should skip the full stop.
+        - If you want your work included in StGit, add a
           "Signed-off-by: Your Name <you@example.com>" line to the
           commit message (or just use the option "-s" when
           committing) to confirm that you agree to the Developer's
-          Certificate of Origin
-        - make sure that you have tests for the bug you are fixing
-        - make sure that the test suite passes after your commit
+          Certificate of Origin.
+        - Make sure that you have tests for the bug you are fixing.
+        - Make sure that the test suite passes after your commit.
 
         Patch:
 
-        - use "git format-patch -M" to create the patch
-        - do not PGP sign your patch
-        - do not attach your patch, but read in the mail
+        - Preferably use "stg mail" to send patches. The first time,
+          it's a good idea to try to mail the patches to yourself to
+          see that everything works.
+        - Do not PGP sign your patch.
+        - Do not attach your patch, but read in the mail.
           body, unless you cannot teach your mailer to
           leave the formatting of the patch alone.
-        - be careful doing cut & paste into your mailer, not to
+        - Be careful doing cut & paste into your mailer, not to
           corrupt whitespaces.
-        - provide additional information (which is unsuitable for
-          the commit message) between the "---" and the diffstat
-        - if you change, add, or remove a command line option or
+        - Provide additional information (which is unsuitable for the
+          commit message) between the "---" and the diffstat. (The -E
+          option to stg mail lets you edit the message before you send
+          it out.)
+        - If you change, add, or remove a command line option or
           make some other user interface change, the associated
           documentation should be updated as well.
-        - if your name is not writable in ASCII, make sure that
+        - If your name is not writable in ASCII, make sure that
           you send off a message in the correct encoding.
-        - send the patch to the list (git@vger.kernel.org) and the
-          maintainer (gitster@pobox.com) if (and only if) the patch
-          is ready for inclusion. If you use git-send-email(1),
-          please test it first by sending email to yourself.
+        - Send the patch to the list (git@vger.kernel.org) and the
+          maintainer (catalin.marinas@gmail.com) if (and only if) the
+          patch is ready for inclusion.
+
 
 Long version:
 
-I started reading over the SubmittingPatches document for Linux
-kernel, primarily because I wanted to have a document similar to
-it for the core GIT to make sure people understand what they are
-doing when they write "Signed-off-by" line.
 
-But the patch submission requirements are a lot more relaxed
-here on the technical/contents front, because the core GIT is
-thousand times smaller ;-).  So here is only the relevant bits.
+1. Make separate commits for logically separate changes.
 
+   Unless your patch is really trivial, you should not be sending out
+   a patch that was generated between your working tree and your
+   commit head. Instead, always make a commit with complete commit
+   message and generate a series of patches from your repository. It
+   is a good discipline.
 
-(1) Make separate commits for logically separate changes.
+   Describe the technical detail of the change(s).
 
-Unless your patch is really trivial, you should not be sending
-out a patch that was generated between your working tree and
-your commit head.  Instead, always make a commit with complete
-commit message and generate a series of patches from your
-repository.  It is a good discipline.
+   If your description starts to get too long, that's a sign that you
+   probably need to split up your commit to finer grained pieces.
 
-Describe the technical detail of the change(s).
-
-If your description starts to get too long, that's a sign that you
-probably need to split up your commit to finer grained pieces.
-
-Oh, another thing.  I am picky about whitespaces.  Make sure your
-changes do not trigger errors with the sample pre-commit hook shipped
-in templates/hooks--pre-commit.  To help ensure this does not happen,
-run git diff --check on your changes before you commit.
+   Oh, another thing. I am picky about whitespaces. Please run git
+   diff --check on your changes before you commit.
 
 
-(1a) Try to be nice to older C compilers
+2. Generate your patch using Git tools out of your commits.
 
-We try to support a wide range of C compilers to compile
-git with. That means that you should not use C99 initializers, even
-if a lot of compilers grok it.
+   Git based diff tools (Git, Cogito, and StGit included) generate
+   unidiff which is the preferred format.
 
-Also, variables have to be declared at the beginning of the block
-(you can check this with gcc, using the -Wdeclaration-after-statement
-option).
+   You do not have to be afraid to use -M option to "git diff" and
+   friends, if your patch involves file renames. The receiving end can
+   handle them just fine.
 
-Another thing: NULL pointers shall be written as NULL, not as 0.
-
-
-(2) Generate your patch using git tools out of your commits.
-
-git based diff tools (git, Cogito, and StGIT included) generate
-unidiff which is the preferred format.
-
-You do not have to be afraid to use -M option to "git diff" or
-"git format-patch", if your patch involves file renames.  The
-receiving end can handle them just fine.
-
-Please make sure your patch does not include any extra files
-which do not belong in a patch submission.  Make sure to review
-your patch after generating it, to ensure accuracy.  Before
-sending out, please make sure it cleanly applies to the "master"
-branch head.  If you are preparing a work based on "next" branch,
-that is fine, but please mark it as such.
+   Please make sure your patch does not include any extra files which
+   do not belong in a patch submission. Make sure to review your patch
+   after generating it, to ensure accuracy. Before sending out, please
+   make sure it cleanly applies to the "master" branch head. If you
+   are preparing a work based on some other branch, that is fine, but
+   please mark it as such.
 
 
-(3) Sending your patches.
+3. Sending your patches.
 
-People on the git mailing list need to be able to read and
-comment on the changes you are submitting.  It is important for
-a developer to be able to "quote" your changes, using standard
-e-mail tools, so that they may comment on specific portions of
-your code.  For this reason, all patches should be submitted
-"inline".  WARNING: Be wary of your MUAs word-wrap
-corrupting your patch.  Do not cut-n-paste your patch; you can
-lose tabs that way if you are not careful.
+   StGit patches should be sent to the Git mailing list
+   (git@vger.kernel.org), and preferably CCed to the StGit maintainer
+   (catalin.marinas@gmail.com). The recipients need to be able to read
+   and comment on the changes you are submitting. It is important for
+   a developer to be able to "quote" your changes, using standard
+   e-mail tools, so that they may comment on specific portions of your
+   code. For this reason, all patches should be submitted "inline".
+   WARNING: Be wary of your MUAs word-wrap corrupting your patch. Do
+   not cut-n-paste your patch; you can lose tabs that way if you are
+   not careful.
 
-It is a common convention to prefix your subject line with
-[PATCH].  This lets people easily distinguish patches from other
-e-mail discussions.  Use of additional markers after PATCH and
-the closing bracket to mark the nature of the patch is also
-encouraged.  E.g. [PATCH/RFC] is often used when the patch is
-not ready to be applied but it is for discussion, [PATCH v2],
-[PATCH v3] etc. are often seen when you are sending an update to
-what you have previously sent.
+   It is a common convention to prefix your subject line with [StGit
+   PATCH]. This lets people easily distinguish patches to StGit from
+   other e-mail discussions and patches meant for Git itself. Use of
+   additional markers after PATCH and the closing bracket to mark the
+   nature of the patch is also encouraged. E.g. [PATCH/RFC] is often
+   used when the patch is not ready to be applied but it is for
+   discussion, [PATCH v2], [PATCH v3] etc. are often seen when you are
+   sending an update to what you have previously sent.
 
-"git format-patch" command follows the best current practice to
-format the body of an e-mail message.  At the beginning of the
-patch should come your commit message, ending with the
-Signed-off-by: lines, and a line that consists of three dashes,
-followed by the diffstat information and the patch itself.  If
-you are forwarding a patch from somebody else, optionally, at
-the beginning of the e-mail message just before the commit
-message starts, you can put a "From: " line to name that person.
+   "stg mail" command follows the best current practice to format the
+   body of an e-mail message. At the beginning of the patch should
+   come your commit message, ending with the Signed-off-by: lines, and
+   a line that consists of three dashes, followed by the diffstat
+   information and the patch itself. If you are forwarding a patch
+   from somebody else, optionally, at the beginning of the e-mail
+   message just before the commit message starts, you can put a
+   "From:" line to name that person.
 
-You often want to add additional explanation about the patch,
-other than the commit message itself.  Place such "cover letter"
-material between the three dash lines and the diffstat.
+   You often want to add additional explanation about the patch, other
+   than the commit message itself. Place such "cover letter" material
+   between the three dash lines and the diffstat. If you have comments
+   about a whole series of patches, you can include them in a separate
+   cover mail message (the -e option to stg mail).
 
-Do not attach the patch as a MIME attachment, compressed or not.
-Do not let your e-mail client send quoted-printable.  Do not let
-your e-mail client send format=flowed which would destroy
-whitespaces in your patches. Many
-popular e-mail applications will not always transmit a MIME
-attachment as plain text, making it impossible to comment on
-your code.  A MIME attachment also takes a bit more time to
-process.  This does not decrease the likelihood of your
-MIME-attached change being accepted, but it makes it more likely
-that it will be postponed.
+   Do not attach the patch as a MIME attachment, compressed or not. Do
+   not let your e-mail client send quoted-printable. Do not let your
+   e-mail client send format=flowed which would destroy whitespaces in
+   your patches. Many popular e-mail applications will not always
+   transmit a MIME attachment as plain text, making it impossible to
+   comment on your code. A MIME attachment also takes a bit more time
+   to process. This does not decrease the likelihood of your
+   MIME-attached change being accepted, but it makes it more likely
+   that it will be postponed.
 
-Exception:  If your mailer is mangling patches then someone may ask
-you to re-send them using MIME, that is OK.
+   Exception: If your mailer is mangling patches then someone may ask
+   you to re-send them using MIME, that is OK.
 
-Do not PGP sign your patch, at least for now.  Most likely, your
-maintainer or other people on the list would not have your PGP
-key and would not bother obtaining it anyway.  Your patch is not
-judged by who you are; a good patch from an unknown origin has a
-far better chance of being accepted than a patch from a known,
-respected origin that is done poorly or does incorrect things.
-
-If you really really really really want to do a PGP signed
-patch, format it as "multipart/signed", not a text/plain message
-that starts with '-----BEGIN PGP SIGNED MESSAGE-----'.  That is
-not a text/plain, it's something else.
-
-Note that your maintainer does not necessarily read everything
-on the git mailing list.  If your patch is for discussion first,
-send it "To:" the mailing list, and optionally "cc:" him.  If it
-is trivially correct or after the list reached a consensus, send
-it "To:" the maintainer and optionally "cc:" the list for
-inclusion.
-
-Also note that your maintainer does not actively involve himself in
-maintaining what are in contrib/ hierarchy.  When you send fixes and
-enhancements to them, do not forget to "cc: " the person who primarily
-worked on that hierarchy in contrib/.
+   Do not PGP sign your patch, at least for now. Most likely, your
+   maintainer or other people on the list would not have your PGP key
+   and would not bother obtaining it anyway. Your patch is not judged
+   by who you are; a good patch from an unknown origin has a far
+   better chance of being accepted than a patch from a known,
+   respected origin that is done poorly or does incorrect things.
 
 
-(4) Sign your work
+4. Sign your work
 
-To improve tracking of who did what, we've borrowed the
-"sign-off" procedure from the Linux kernel project on patches
-that are being emailed around.  Although core GIT is a lot
-smaller project it is a good discipline to follow it.
+   To improve tracking of who did what, we've borrowed the "sign-off"
+   procedure from the Git and Linux kernel projects on patches that
+   are being emailed around. Although StGit is a lot smaller project
+   it is a good discipline to follow it.
 
-The sign-off is a simple line at the end of the explanation for
-the patch, which certifies that you wrote it or otherwise have
-the right to pass it on as a open-source patch.  The rules are
-pretty simple: if you can certify the below:
+   The sign-off is a simple line at the end of the explanation for the
+   patch, which certifies that you wrote it or otherwise have the
+   right to pass it on as a open-source patch. The rules are pretty
+   simple: if you can certify the below:
 
         Developer's Certificate of Origin 1.1
 
         By making a contribution to this project, I certify that:
 
-        (a) The contribution was created in whole or in part by me and I
-            have the right to submit it under the open source license
-            indicated in the file; or
+        (a) The contribution was created in whole or in part by me and
+            I have the right to submit it under the open source
+            license indicated in the file; or
 
-        (b) The contribution is based upon previous work that, to the best
-            of my knowledge, is covered under an appropriate open source
-            license and I have the right under that license to submit that
-            work with modifications, whether created in whole or in part
-            by me, under the same open source license (unless I am
-            permitted to submit under a different license), as indicated
-            in the file; or
+        (b) The contribution is based upon previous work that, to the
+            best of my knowledge, is covered under an appropriate open
+            source license and I have the right under that license to
+            submit that work with modifications, whether created in
+            whole or in part by me, under the same open source license
+            (unless I am permitted to submit under a different
+            license), as indicated in the file; or
 
         (c) The contribution was provided directly to me by some other
-            person who certified (a), (b) or (c) and I have not modified
-            it.
+            person who certified (a), (b) or (c) and I have not
+            modified it.
 
-        (d) I understand and agree that this project and the contribution
-            are public and that a record of the contribution (including all
-            personal information I submit with it, including my sign-off) is
-            maintained indefinitely and may be redistributed consistent with
-            this project or the open source license(s) involved.
+        (d) I understand and agree that this project and the
+            contribution are public and that a record of the
+            contribution (including all personal information I submit
+            with it, including my sign-off) is maintained indefinitely
+            and may be redistributed consistent with this project or
+            the open source license(s) involved.
 
-then you just add a line saying
+   then you just add a line saying
 
-        Signed-off-by: Random J Developer <random@developer.example.org>
+       Signed-off-by: Random J Developer <random@developer.example.org>
 
-This line can be automatically added by git if you run the git-commit
-command with the -s option.
+   This line can be automatically added by StGit by any command that
+   accepts the --sign option.
 
-Notice that you can place your own Signed-off-by: line when
-forwarding somebody else's patch with the above rules for
-D-C-O.  Indeed you are encouraged to do so.  Do not forget to
-place an in-body "From: " line at the beginning to properly attribute
-the change to its true author (see (2) above).
+   Notice that you can place your own Signed-off-by: line when
+   forwarding somebody else's patch with the above rules for D-C-O.
+   Indeed you are encouraged to do so. Do not forget to place an
+   in-body "From: " line at the beginning to properly attribute the
+   change to its true author (see (2) above).
 
-Also notice that a real name is used in the Signed-off-by: line. Please
-don't hide your real name.
+   Also notice that a real name is used in the Signed-off-by: line.
+   Please don't hide your real name.
 
-Some people also put extra tags at the end.
+   Some people also put extra tags at the end.
 
-"Acked-by:" says that the patch was reviewed by the person who
-is more familiar with the issues and the area the patch attempts
-to modify.  "Tested-by:" says the patch was tested by the person
-and found to have the desired effect.
+   "Acked-by:" says that the patch was reviewed by a person who is
+   more familiar with the issues and the area the patch attempts to
+   modify. "Tested-by:" says the patch was tested by the person and
+   found to have the desired effect.
 
-------------------------------------------------
-An ideal patch flow
-
-Here is an ideal patch flow for this project the current maintainer
-suggests to the contributors:
-
- (0) You come up with an itch.  You code it up.
-
- (1) Send it to the list and cc people who may need to know about
-     the change.
-
-     The people who may need to know are the ones whose code you
-     are butchering.  These people happen to be the ones who are
-     most likely to be knowledgeable enough to help you, but
-     they have no obligation to help you (i.e. you ask for help,
-     don't demand).  "git log -p -- $area_you_are_modifying" would
-     help you find out who they are.
-
- (2) You get comments and suggestions for improvements.  You may
-     even get them in a "on top of your change" patch form.
-
- (3) Polish, refine, and re-send to the list and the people who
-     spend their time to improve your patch.  Go back to step (2).
-
- (4) The list forms consensus that the last round of your patch is
-     good.  Send it to the list and cc the maintainer.
-
- (5) A topic branch is created with the patch and is merged to 'next',
-     and cooked further and eventually graduates to 'master'.
-
-In any time between the (2)-(3) cycle, the maintainer may pick it up
-from the list and queue it to 'pu', in order to make it easier for
-people play with it without having to pick up and apply the patch to
-their trees themselves.
 
 ------------------------------------------------
 MUA specific hints
@@ -290,12 +223,13 @@ One test you could do yourself if your MUA is set up correctly is:
   a.patch.
 
 * Try to apply to the tip of the "master" branch from the
-  git.git public repository:
+  public repository:
 
-    $ git fetch http://kernel.org/pub/scm/git/git.git master:test-apply
+    $ git fetch http://homepage.ntlworld.com/cmarinas/stgit.git master:test-apply
     $ git checkout test-apply
     $ git reset --hard
-    $ git am a.patch
+    $ stg init
+    $ stg import -M a.patch
 
 If it does not apply correctly, there can be various reasons.
 
@@ -303,19 +237,16 @@ If it does not apply correctly, there can be various reasons.
   does not have much to do with your MUA.  Please rebase the
   patch appropriately.
 
-* Your MUA corrupted your patch; "am" would complain that
-  the patch does not apply.  Look at .git/rebase-apply/ subdirectory and
-  see what 'patch' file contains and check for the common
-  corruption patterns mentioned above.
+* Your MUA corrupted your patch; "stg import" would complain that
+  the patch does not apply.
 
-* While you are at it, check what are in 'info' and
-  'final-commit' files as well.  If what is in 'final-commit' is
-  not exactly what you would want to see in the commit log
-  message, it is very likely that your maintainer would end up
-  hand editing the log message when he applies your patch.
-  Things like "Hi, this is my first patch.\n", if you really
-  want to put in the patch e-mail, should come after the
-  three-dash line that signals the end of the commit message.
+* Check the imported patch with e.g. "stg show". If it isn't exactly
+  what you would want to see in the commit log message, it is very
+  likely that the maintainer would end up hand editing the log
+  message when he applies your patch. Things like "Hi, this is my
+  first patch.\n", if you really want to put in the patch e-mail,
+  should come after the three-dash line that signals the end of the
+  commit message.
 
 
 Pine
