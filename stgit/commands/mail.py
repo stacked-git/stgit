@@ -154,9 +154,14 @@ def __get_sender():
         try:
             sender = str(git.user())
         except git.GitException:
-            sender = str(git.author())
+            try:
+                sender = str(git.author())
+            except git.GitException:
+                pass
     if not sender:
-        raise CmdException, 'unknown sender details'
+        raise CmdException, ('Unknown sender name and e-mail; you should'
+                             ' for example set git config user.name and'
+                             ' user.email')
     sender = email.Utils.parseaddr(sender)
 
     return email.Utils.formataddr(address_or_alias(sender))
@@ -550,6 +555,9 @@ def func(parser, options, args):
         patches = parse_patches(args, applied + unapplied, len(applied))
     else:
         raise CmdException, 'Incorrect options. Unknown patches to send'
+
+    # early test for sender identity
+    __get_sender()
 
     out.start('Checking the validity of the patches')
     for p in patches:
