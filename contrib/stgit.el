@@ -229,13 +229,15 @@ Commands:
   "Return the names of the marked patches."
   (mapcar 'symbol-name stgit-marked-patches))
 
-(defun stgit-patch-at-point ()
-  "Return the patch name on the current line."
+(defun stgit-patch-at-point (&optional cause-error)
+  "Return the patch name on the current line. If CAUSE-ERROR is
+not nil, signal an error if none found."
   (save-excursion
     (beginning-of-line)
-    (if (looking-at "[>+-][ *]\\([^ ]*\\)")
-        (match-string-no-properties 1)
-      nil)))
+    (cond ((looking-at "[>+-][ *]\\([^ ]*\\)")
+           (match-string-no-properties 1))
+          (cause-error
+           (error "No patch on this line")))))
 
 (defun stgit-patches-marked-or-at-point ()
   "Return the names of the marked patches, or the patch on the current line."
@@ -266,7 +268,7 @@ Commands:
 (defun stgit-mark ()
   "Mark the patch under point."
   (interactive)
-  (let ((patch (stgit-patch-at-point)))
+  (let ((patch (stgit-patch-at-point t)))
     (stgit-add-mark patch)
     (stgit-reload))
   (next-line))
@@ -275,22 +277,20 @@ Commands:
   "Remove mark from the patch on the previous line."
   (interactive)
   (forward-line -1)
-  (stgit-remove-mark (stgit-patch-at-point))
+  (stgit-remove-mark (stgit-patch-at-point t))
   (stgit-reload))
 
 (defun stgit-unmark-down ()
   "Remove mark from the patch on the current line."
   (interactive)
-  (stgit-remove-mark (stgit-patch-at-point))
+  (stgit-remove-mark (stgit-patch-at-point t))
   (forward-line)
   (stgit-reload))
 
 (defun stgit-rename (name)
-  "Rename the patch under point."
-  (interactive (list (read-string "Patch name: " (stgit-patch-at-point))))
-  (let ((old-name (stgit-patch-at-point)))
-    (unless old-name
-      (error "No patch on this line"))
+  "Rename the patch under point to NAME."
+  (interactive (list (read-string "Patch name: " (stgit-patch-at-point t))))
+  (let ((old-name (stgit-patch-at-point t)))
     (stgit-capture-output nil
       (stgit-run "rename" old-name name))
     (stgit-reload)
@@ -339,7 +339,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-push-or-pop ()
   "Push or pop the patch on the current line."
   (interactive)
-  (let ((patch (stgit-patch-at-point))
+  (let ((patch (stgit-patch-at-point t))
         (applied (stgit-applied-at-point)))
     (stgit-capture-output nil
       (stgit-run (if applied "pop" "push") patch))
@@ -348,7 +348,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-goto ()
   "Go to the patch on the current line."
   (interactive)
-  (let ((patch (stgit-patch-at-point)))
+  (let ((patch (stgit-patch-at-point t)))
     (stgit-capture-output nil
       (stgit-run "goto" patch))
     (stgit-reload)))
@@ -357,7 +357,7 @@ With numeric prefix argument, pop that many patches."
   "Show the patch on the current line."
   (interactive)
   (stgit-capture-output "*StGit patch*"
-    (stgit-run "show" (stgit-patch-at-point))
+    (stgit-run "show" (stgit-patch-at-point t))
     (with-current-buffer standard-output
       (goto-char (point-min))
       (diff-mode))))
@@ -365,7 +365,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-edit ()
   "Edit the patch on the current line."
   (interactive)
-  (let ((patch (stgit-patch-at-point))
+  (let ((patch (stgit-patch-at-point t))
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
