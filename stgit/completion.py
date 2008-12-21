@@ -1,6 +1,7 @@
 import textwrap
 import stgit.commands
 from stgit import argparse
+import itertools
 
 def fun(name, *body):
     return ['%s ()' % name, '{', list(body), '}']
@@ -81,8 +82,10 @@ def command_fun(cmd, modname):
     return fun(
         '_stg_%s' % cmd,
         'local flags="%s"' % ' '.join(sorted(
-                flag for opt in mod.options
-                for flag in opt.flags if flag.startswith('--'))),
+                itertools.chain(
+                    ('--help',),
+                    (flag for opt in mod.options
+                     for flag in opt.flags if flag.startswith('--'))))),
         'local prev="${COMP_WORDS[COMP_CWORD-1]}"',
         'local cur="${COMP_WORDS[COMP_CWORD]}"',
         'case "$prev" in', [
