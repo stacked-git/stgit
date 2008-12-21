@@ -91,6 +91,12 @@ Argument DIR is the repository path."
     (apply 'call-process "stg" nil standard-output nil args)
     (message "Running stg %s...done" msgcmd)))
 
+(defun stgit-run-git (&rest args)
+  (let ((msgcmd (mapconcat #'identity args " ")))
+    (message "Running git %s..." msgcmd)
+    (apply 'call-process "git" nil standard-output nil args)
+    (message "Running git %s...done" msgcmd)))
+
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
   (interactive)
@@ -130,6 +136,28 @@ Argument DIR is the repository path."
     (t ()))
   "The face used for unapplied patch names")
 
+(defun stgit-expand-patch (patchsym)
+  (save-excursion
+    (forward-line)
+    (let ((start (point)))
+      (stgit-run "files" (symbol-name patchsym))
+      
+      ;; 'stg files' outputs a single newline for empty patches; it
+      ;; must be destroyed!
+      (when (and (= (1+ start) (point))
+                 (= (char-before) ?\n))
+        (delete-backward-char 1))
+
+      (let ((end-marker (point-marker)))
+        (if (= start (point))
+            (insert-string "    <no files>\n")
+          (unless (looking-at "^")
+            (insert ?\n))
+          (while (and (zerop (forward-line -1))
+                      (>= (point) start))
+            (insert "    ")))
+        (put-text-property start end-marker 'stgit-patchsym patchsym)))))
+
 (defun stgit-rescan ()
   "Rescan the status buffer."
   (save-excursion
@@ -151,13 +179,46 @@ Argument DIR is the repository path."
                                     'face 'stgit-description-face)
                  (when (memq patchsym stgit-marked-patches)
                    (replace-match "*" nil nil nil 2)
-                   (setq marked (cons patchsym marked)))))
+                   (setq marked (cons patchsym marked)))
+                 (when (memq patchsym stgit-expanded-patches)
+                   (stgit-expand-patch patchsym))
+                 ))
               ((or (looking-at "stg series: Branch \".*\" not initialised")
                    (looking-at "stg series: .*: branch not initialized"))
                (forward-line 1)
                (insert "Run M-x stgit-init to initialise")))
         (forward-line 1))
       (setq stgit-marked-patches (nreverse marked)))))
+
+(defun stgit-select ()
+  "Expand or collapse the current entry"
+  (interactive)
+  (let ((curpatch (stgit-patch-at-point)))
+    (if (not curpatch)
+        (let ((patched-file (stgit-patched-file-at-point)))
+          (unless patched-file
+            (error "No patch or file on the current line"))
+          (let ((filename (expand-file-name (cdr patched-file))))
+            (unless (file-exists-p filename)
+              (error "File does not exist"))
+            (find-file filename)))
+      (setq curpatch (intern curpatch))
+      (setq stgit-expanded-patches
+            (if (memq curpatch stgit-expanded-patches)
+                (delq curpatch stgit-expanded-patches)
+              (cons curpatch stgit-expanded-patches)))
+      (stgit-reload))))
+
+(defun stgit-find-file-other-window ()
+  "Open file at point in other window"
+  (interactive)
+  (let ((patched-file (stgit-patched-file-at-point)))
+    (unless patched-file
+      (error "No file on the current line"))
+    (let ((filename (expand-file-name (cdr patched-file))))
+      (unless (file-exists-p filename)
+        (error "File does not exist"))
+      (find-file-other-window filename))))
 
 (defun stgit-quit ()
   "Hide the stgit buffer."
@@ -173,6 +234,44 @@ Argument DIR is the repository path."
     (save-selected-window
       (pop-to-buffer nil)
       (git-status dir))))
+
+(defun stgit-next-line (&optional arg try-vscroll)
+  "Move cursor vertically down ARG lines"
+  (interactive "p\np")
+  (next-line arg try-vscroll)
+  (when (looking-at "  \\S-")
+    (forward-char 2)))
+
+(defun stgit-previous-line (&optional arg try-vscroll)
+  "Move cursor vertically up ARG lines"
+  (interactive "p\np")
+  (previous-line arg try-vscroll)
+  (when (looking-at "  \\S-")
+    (forward-char 2)))
+
+(defun stgit-next-patch (&optional arg)
+  "Move cursor down ARG patches"
+  (interactive "p")
+  (unless arg
+    (setq arg 1))
+  (if (< arg 0)
+      (stgit-previous-patch (- arg))
+    (while (not (zerop arg))
+      (setq arg (1- arg))
+      (while (progn (stgit-next-line)
+                    (not (stgit-patch-at-point)))))))
+
+(defun stgit-previous-patch (&optional arg)
+  "Move cursor up ARG patches"
+  (interactive "p")
+  (unless arg
+    (setq arg 1))
+  (if (< arg 0)
+      (stgit-next-patch (- arg))
+    (while (not (zerop arg))
+      (setq arg (1- arg))
+      (while (progn (stgit-previous-line)
+                    (not (stgit-patch-at-point)))))))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
@@ -190,8 +289,12 @@ Argument DIR is the repository path."
           ("u" .        stgit-unmark-down)
           ("?" .        stgit-help)
           ("h" .        stgit-help)
-          ("p" .        previous-line)
-          ("n" .        next-line)
+          ("p" .        stgit-previous-line)
+          ("n" .        stgit-next-line)
+          ("\C-p" .     stgit-previous-patch)
+          ("\C-n" .     stgit-next-patch)
+          ("\M-{" .     stgit-previous-patch)
+          ("\M-}" .     stgit-next-patch)
           ("s" .        stgit-git-status)
           ("g" .        stgit-reload)
           ("r" .        stgit-refresh)
@@ -202,6 +305,8 @@ Argument DIR is the repository path."
           ("R" .        stgit-repair)
           ("C" .        stgit-commit)
           ("U" .        stgit-uncommit)
+          ("\r" .       stgit-select)
+          ("o" .        stgit-find-file-other-window)
           (">" .        stgit-push-next)
           ("<" .        stgit-pop-next)
           ("P" .        stgit-push-or-pop)
@@ -224,6 +329,7 @@ Commands:
   (use-local-map stgit-mode-map)
   (set (make-local-variable 'list-buffers-directory) default-directory)
   (set (make-local-variable 'stgit-marked-patches) nil)
+  (set (make-local-variable 'stgit-expanded-patches) nil)
   (set-variable 'truncate-lines 't)
   (run-hooks 'stgit-mode-hook))
 
@@ -242,15 +348,30 @@ Commands:
   "Return the names of the marked patches."
   (mapcar 'symbol-name stgit-marked-patches))
 
-(defun stgit-patch-at-point (&optional cause-error)
-  "Return the patch name on the current line. If CAUSE-ERROR is
-not nil, signal an error if none found."
-  (save-excursion
-    (beginning-of-line)
-    (cond ((looking-at "[>+-][ *]\\([^ ]*\\)")
-           (match-string-no-properties 1))
-          (cause-error
-           (error "No patch on this line")))))
+(defun stgit-patch-at-point (&optional cause-error allow-file)
+  "Return the patch name on the current line.
+If CAUSE-ERROR is not nil, signal an error if none found.
+If ALLOW-FILE is not nil, also handle when point is on a file of
+a patch."
+  (or (and allow-file
+           (let ((patchsym (get-text-property (point) 'stgit-patchsym)))
+             (and patchsym
+                  (symbol-name patchsym))))
+      (save-excursion
+        (beginning-of-line)
+        (and (looking-at "[>+-][ *]\\([^ ]*\\)")
+             (match-string-no-properties 1)))
+      (and cause-error
+           (error "No patch on this line"))))
+
+(defun stgit-patched-file-at-point ()
+  "Returns a cons of the patchsym and file name at point"
+  (let ((patchsym (get-text-property (point) 'stgit-patchsym)))
+    (when patchsym
+      (save-excursion
+        (beginning-of-line)
+        (when (looking-at "    [A-Z] \\(.*\\)")
+          (cons patchsym (match-string-no-properties 1)))))))
 
 (defun stgit-patches-marked-or-at-point ()
   "Return the names of the marked patches, or the patch on the current line."
@@ -284,12 +405,12 @@ not nil, signal an error if none found."
   (let ((patch (stgit-patch-at-point t)))
     (stgit-add-mark patch)
     (stgit-reload))
-  (next-line))
+  (stgit-next-patch))
 
 (defun stgit-unmark-up ()
   "Remove mark from the patch on the previous line."
   (interactive)
-  (forward-line -1)
+  (stgit-previous-patch)
   (stgit-remove-mark (stgit-patch-at-point t))
   (stgit-reload))
 
@@ -297,7 +418,7 @@ not nil, signal an error if none found."
   "Remove mark from the patch on the current line."
   (interactive)
   (stgit-remove-mark (stgit-patch-at-point t))
-  (forward-line)
+  (stgit-next-patch)
   (stgit-reload))
 
 (defun stgit-rename (name)
@@ -306,6 +427,14 @@ not nil, signal an error if none found."
   (let ((old-name (stgit-patch-at-point t)))
     (stgit-capture-output nil
       (stgit-run "rename" old-name name))
+    (let ((old-name-sym (intern old-name))
+          (name-sym (intern name)))
+      (when (memq old-name-sym stgit-expanded-patches)
+        (setq stgit-expanded-patches
+            (cons name-sym (delq old-name-sym stgit-expanded-patches))))
+      (when (memq old-name-sym stgit-marked-patches)
+        (setq stgit-marked-patches
+            (cons name-sym (delq old-name-sym stgit-marked-patches)))))
     (stgit-reload)
     (stgit-goto-patch name)))
 
@@ -368,14 +497,32 @@ With numeric prefix argument, pop that many patches."
       (stgit-run "goto" patch))
     (stgit-reload)))
 
+(defun stgit-id (patch)
+  "Return the git commit id for PATCH"
+  (let ((result (with-output-to-string
+                  (stgit-run-silent "id" patch))))
+    (unless (string-match "^\\([0-9A-Fa-f]\\{40\\}\\)$" result)
+      (error "Cannot find commit id for %s" patch))
+    (match-string 1 result)))
+
 (defun stgit-show ()
   "Show the patch on the current line."
   (interactive)
   (stgit-capture-output "*StGit patch*"
-    (stgit-run "show" (stgit-patch-at-point t))
-    (with-current-buffer standard-output
-      (goto-char (point-min))
-      (diff-mode))))
+    (let ((patch (stgit-patch-at-point)))
+      (if (not patch)
+          (let ((patched-file (stgit-patched-file-at-point)))
+            (unless patched-file
+              (error "No patch or file at point"))
+            (let ((id (stgit-id (symbol-name (car patched-file)))))
+              (with-output-to-temp-buffer "*StGit diff*"
+                (stgit-run-git "diff" (concat id "^") id (cdr patched-file))
+                (with-current-buffer standard-output
+                  (diff-mode)))))
+        (stgit-run "show" (stgit-patch-at-point))
+        (with-current-buffer standard-output
+          (goto-char (point-min))
+          (diff-mode))))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
