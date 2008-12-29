@@ -600,8 +600,8 @@ the new file names instead of just one name."
   "Remove mark from the patch on the current line."
   (interactive)
   (stgit-remove-mark (stgit-patch-at-point t))
-  (stgit-next-patch)
-  (stgit-reload))
+  (stgit-reload)
+  (stgit-next-patch))
 
 (defun stgit-rename (name)
   "Rename the patch under point to NAME."
