@@ -733,13 +733,19 @@ With numeric prefix argument, pop that many patches."
     (with-current-buffer log-edit-parent-buffer
       (stgit-reload))))
 
-(defun stgit-new ()
-  "Create a new patch."
-  (interactive)
+(defun stgit-new (add-sign)
+  "Create a new patch.
+With a prefix argument, include a \"Signed-off-by:\" line at the
+end of the patch."
+  (interactive "P")
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-new t nil edit-buf)
-    (setq default-directory dir)))
+    (setq default-directory dir)
+    (when add-sign
+      (save-excursion
+        (let ((standard-output (current-buffer)))
+          (stgit-run-silent "new" "--sign" "--save-template=-"))))))
 
 (defun stgit-confirm-new ()
   (interactive)
