@@ -568,7 +568,8 @@ the new file names instead of just one name."
   "Move point to the line containing PATCH."
   (let ((p (point)))
     (goto-char (point-min))
-    (if (re-search-forward (concat "^[>+-][ *]" (regexp-quote patch) " ") nil t)
+    (if (re-search-forward (concat "^[>+-][ *]" (regexp-quote patch) " ")
+                           nil t)
         (progn (move-to-column goal-column)
                t)
       (goto-char p)
@@ -761,7 +762,8 @@ end of the patch."
   (let ((patch ""))
     (while (> (length description) 0)
       (cond ((string-match "\\`[a-zA-Z_-]+" description)
-             (setq patch (downcase (concat patch (match-string 0 description))))
+             (setq patch (downcase (concat patch
+                                           (match-string 0 description))))
              (setq description (substring description (match-end 0))))
             ((string-match "\\` +" description)
              (setq patch (concat patch "-"))
