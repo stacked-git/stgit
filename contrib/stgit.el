@@ -230,11 +230,15 @@ flag, which reduces performance."
   "Alist of names of file types")
 
 (defun stgit-file-type-string (type)
+  "Return string describing file type TYPE (the high bits of file permission).
+Cf. `stgit-file-type-strings' and `stgit-file-type-change-string'."
   (let ((type-str (assoc type stgit-file-type-strings)))
     (or (and type-str (cdr type-str))
 	(format "unknown type %o" type))))
 
 (defun stgit-file-type-change-string (old-perm new-perm)
+  "Return string describing file type change from OLD-PERM to NEW-PERM.
+Cf. `stgit-file-type-string'."
   (let ((old-type (lsh old-perm -9))
         (new-type (lsh new-perm -9)))
     (cond ((= old-type new-type) "")
@@ -248,6 +252,8 @@ flag, which reduces performance."
                      (stgit-file-type-string new-type))))))
 
 (defun stgit-file-mode-change-string (old-perm new-perm)
+  "Return string describing file mode change from OLD-PERM to NEW-PERM.
+Cf. `stgit-file-type-change-string'."
   (setq old-perm (logand old-perm #o777)
         new-perm (logand new-perm #o777))
   (if (or (= old-perm new-perm)
@@ -271,6 +277,10 @@ flag, which reduces performance."
                                    'face 'stgit-file-permission-face)))))))
 
 (defun stgit-expand-patch (patchsym)
+  "Expand (show modification of) the patch with name PATCHSYM (a
+symbol) at point.
+`stgit-expand-find-copies-harder' controls how hard to try to
+find copied files."
   (save-excursion
     (forward-line)
     (let* ((start (point))
@@ -501,14 +511,17 @@ Commands:
   (run-hooks 'stgit-mode-hook))
 
 (defun stgit-add-mark (patch)
+  "Mark the patch named PATCH."
   (let ((patchsym (intern patch)))
     (setq stgit-marked-patches (cons patchsym stgit-marked-patches))))
 
 (defun stgit-remove-mark (patch)
+  "Unmark the patch named PATCH."
   (let ((patchsym (intern patch)))
     (setq stgit-marked-patches (delq patchsym stgit-marked-patches))))
 
 (defun stgit-clear-marks ()
+  "Unmark all patches."
   (setq stgit-marked-patches '()))
 
 (defun stgit-marked-patches ()
