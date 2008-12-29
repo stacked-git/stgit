@@ -37,7 +37,7 @@ class opt(object):
         return optparse.make_option(*self.pargs, **kwargs)
     def metavar(self):
         o = self.get_option()
-        if not o.nargs:
+        if not o.takes_value():
             return None
         if o.metavar:
             return o.metavar
