@@ -25,7 +25,7 @@
                     (cd dir)
                     (unless (eq 0 (call-process "git" nil t nil
                                                 "rev-parse" "--show-cdup"))
-                      (error "cannot find top-level git tree for %s." dir))))))
+                      (error "Cannot find top-level git tree for %s" dir))))))
       (expand-file-name (concat (file-name-as-directory dir)
                                 (car (split-string cdup "\n")))))))
 
@@ -406,7 +406,7 @@ find copied files."
   "Show status using `git-status'."
   (interactive)
   (unless (fboundp 'git-status)
-    (error "stgit-git-status requires git-status"))
+    (error "The stgit-git-status command requires git-status"))
   (let ((dir default-directory))
     (save-selected-window
       (pop-to-buffer nil)
@@ -849,9 +849,9 @@ With prefix argument, refresh the marked patch or the patch under point."
   (let ((patchargs (if arg
                        (let ((patches (stgit-patches-marked-or-at-point)))
                          (cond ((null patches)
-                                (error "no patch to update"))
+                                (error "No patch to update"))
                                ((> (length patches) 1)
-                                (error "too many patches selected"))
+                                (error "Too many patches selected"))
                                (t
                                 (cons "-p" patches))))
                      nil)))
