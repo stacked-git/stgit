@@ -677,6 +677,9 @@ class MergeException(exception.StgException):
 
 class MergeConflictException(MergeException):
     """Exception raised when a merge fails due to conflicts."""
+    def __init__(self, conflicts):
+        MergeException.__init__(self)
+        self.conflicts = conflicts
 
 class Index(RunWithEnv):
     """Represents a git index file."""
@@ -829,12 +832,14 @@ class IndexAndWorktree(RunWithEnvCwd):
                          env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
                                  'GITHEAD_%s' % ours.sha1: 'current',
                                  'GITHEAD_%s' % theirs.sha1: 'patched'})
-            r.discard_output()
+            r.returns([0, 1])
+            output = r.output_lines()
+            if r.exitcode:
+                # There were conflicts
+                conflicts = [l for l in output if l.startswith('CONFLICT')]
+                raise MergeConflictException(conflicts)
         except run.RunException, e:
-            if r.exitcode == 1:
-                raise MergeConflictException()
-            else:
-                raise MergeException('Index/worktree dirty')
+            raise MergeException('Index/worktree dirty')
     def changed_files(self, tree, pathlimits = []):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
