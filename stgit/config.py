@@ -65,7 +65,9 @@ class GitConfig:
 
     def getint(self, name):
         value = self.get(name)
-        if value.isdigit():
+        if value == None:
+            return None
+        elif value.isdigit():
             return int(value)
         else:
             raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
