@@ -658,16 +658,18 @@ If that patch cannot be found, return nil."
     (stgit-run "repair"))
   (stgit-reload))
 
-(defun stgit-commit ()
-  "Run stg commit."
-  (interactive)
-  (stgit-capture-output nil (stgit-run "commit"))
+(defun stgit-commit (count)
+  "Run stg commit on COUNT commits.
+Interactively, the prefix argument is used as COUNT."
+  (interactive "p")
+  (stgit-capture-output nil (stgit-run "commit" "-n" count))
   (stgit-reload))
 
-(defun stgit-uncommit (arg)
-  "Run stg uncommit. Numeric arg determines number of patches to uncommit."
+(defun stgit-uncommit (count)
+  "Run stg uncommit on COUNT commits.
+Interactively, the prefix argument is used as COUNT."
   (interactive "p")
-  (stgit-capture-output nil (stgit-run "uncommit" "-n" arg))
+  (stgit-capture-output nil (stgit-run "uncommit" "-n" count))
   (stgit-reload))
 
 (defun stgit-push-next (npatches)
