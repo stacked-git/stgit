@@ -806,15 +806,15 @@ end of the patch."
   "Delete the patches in PATCHSYMS.
 Interactively, delete the marked patches, or the patch at point."
   (interactive (list (stgit-patches-marked-or-at-point)))
+  (unless patchsyms
+    (error "No patches to delete"))
   (let ((npatches (length patchsyms)))
-    (if (zerop npatches)
-        (error "No patches to delete")
-      (when (yes-or-no-p (format "Really delete %d patch%s? "
-                                 npatches
-                                 (if (= 1 npatches) "" "es")))
-        (stgit-capture-output nil
-          (apply 'stgit-run "delete" patchsyms))
-        (stgit-reload)))))
+    (when (yes-or-no-p (format "Really delete %d patch%s? "
+			       npatches
+			       (if (= 1 npatches) "" "es")))
+      (stgit-capture-output nil
+	(apply 'stgit-run "delete" patchsyms))
+      (stgit-reload))))
 
 (defun stgit-coalesce (patchsyms)
   "Coalesce the patches in PATCHSYMS.
