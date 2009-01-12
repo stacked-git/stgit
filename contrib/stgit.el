@@ -720,7 +720,7 @@ With numeric prefix argument, pop that many patches."
 		;; just one file
 		(stgit-run-git "diff" (concat id "^") id "--"
 			       (cdr patched-file)))))
-        (stgit-run "show" patchsym))
+        (stgit-run "show" "-O" "--patch-with-stat" patchsym))
       (with-current-buffer standard-output
 	(goto-char (point-min))
 	(diff-mode)))))
