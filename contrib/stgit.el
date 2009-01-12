@@ -713,20 +713,17 @@ With numeric prefix argument, pop that many patches."
             (unless patched-file
               (error "No patch or file at point"))
             (let ((id (stgit-id (car patched-file))))
-              (with-output-to-temp-buffer "*StGit diff*"
-                (if (consp (cdr patched-file))
-                    ;; two files (copy or rename)
-                    (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
-                                   (cadr patched-file) (cddr patched-file))
-                  ;; just one file
-                  (stgit-run-git "diff" (concat id "^") id "--"
-                                 (cdr patched-file)))
-                (with-current-buffer standard-output
-                  (diff-mode)))))
-        (stgit-run "show" patchsym)
-        (with-current-buffer standard-output
-          (goto-char (point-min))
-          (diff-mode))))))
+	      (if (consp (cdr patched-file))
+		  ;; two files (copy or rename)
+		  (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
+				 (cadr patched-file) (cddr patched-file))
+		;; just one file
+		(stgit-run-git "diff" (concat id "^") id "--"
+			       (cdr patched-file)))))
+        (stgit-run "show" patchsym))
+      (with-current-buffer standard-output
+	(goto-char (point-min))
+	(diff-mode)))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
