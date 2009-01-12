@@ -353,13 +353,15 @@ find copied files."
 (defun stgit-rescan ()
   "Rescan the status buffer."
   (save-excursion
-    (let ((marked ()))
+    (let ((marked ())
+	  found-any)
       (goto-char (point-min))
       (while (not (eobp))
         (cond ((looking-at "Branch: \\(.*\\)")
                (put-text-property (match-beginning 1) (match-end 1)
                                   'face 'bold))
               ((looking-at "\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
+	       (setq found-any t)
                (let ((state (match-string 1))
                      (patchsym (intern (match-string 3))))
                  (put-text-property
@@ -379,10 +381,15 @@ find copied files."
                  ))
               ((or (looking-at "stg series: Branch \".*\" not initialised")
                    (looking-at "stg series: .*: branch not initialized"))
+	       (setq found-any t)
                (forward-line 1)
                (insert "Run M-x stgit-init to initialise")))
         (forward-line 1))
-      (setq stgit-marked-patches (nreverse marked)))))
+      (setq stgit-marked-patches (nreverse marked))
+      (unless found-any
+	(insert "\n  "
+		(propertize "no patches in series"
+			    'face 'stgit-description-face))))))
 
 (defun stgit-select ()
   "Expand or collapse the current entry"
