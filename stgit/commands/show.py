@@ -51,15 +51,15 @@ def func(parser, options, args):
         patches = crt_series.get_unapplied()
     elif len(args) == 0:
         patches = ['HEAD']
+    elif '..' in ' '.join(args):
+        # patch ranges
+        applied = crt_series.get_applied()
+        unapplied = crt_series.get_unapplied()
+        patches = parse_patches(args, applied + unapplied + \
+                                crt_series.get_hidden(), len(applied))
     else:
-        if len(args) == 1 or args[0].find('..') == -1:
-            # single patch or one/more commit ids
-            patches = args
-        else:
-            applied = crt_series.get_applied()
-            unapplied = crt_series.get_unapplied()
-            patches = parse_patches(args, applied + unapplied + \
-                                    crt_series.get_hidden(), len(applied))
+        # individual patches or commit ids
+        patches = args
 
     commit_ids = [git_id(crt_series, patch) for patch in patches]
     commit_str = '\n'.join([git.pretty_commit(commit_id,
