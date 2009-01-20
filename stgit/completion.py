@@ -111,13 +111,19 @@ def main_switch(commands):
         ('# Complete name of subcommand if the user has not finished'
          ' typing it yet.'),
         'if test $c -eq $COMP_CWORD -a -z "$command"; then', [
-            ('COMPREPLY=($(compgen -W "$_stg_commands" --'
+            ('COMPREPLY=($(compgen -W "help version copyright $_stg_commands" --'
              ' "${COMP_WORDS[COMP_CWORD]}"))'),
             'return'],
         'fi',
         '',
         '# Complete arguments to subcommands.',
         'case "$command" in', [
+            'help) ', [
+            ('COMPREPLY=($(compgen -W "$_stg_commands" --'
+             ' "${COMP_WORDS[COMP_CWORD]}"))'),
+            'return ;;'],
+            'version) return ;;',
+            'copyright) return ;;'], [
             '%s) _stg_%s ;;' % (cmd, cmd)
             for cmd in sorted(commands.iterkeys())],
         'esac')
