@@ -129,7 +129,8 @@ def main_switch(commands):
         'esac')
 
 def install():
-    return ['complete -o default -F _stg stg']
+    return ['complete -o bashdefault -o default -F _stg stg 2>/dev/null \\', [
+            '|| complete -o default -F _stg stg' ] ]
 
 def write_completion(f):
     commands = stgit.commands.get_commands(allow_cached = False)
