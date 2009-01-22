@@ -215,7 +215,7 @@ def patch_name_from_msg(msg):
     if not msg:
         return None
 
-    name_len = config.get('stgit.namelength')
+    name_len = config.getint('stgit.namelength')
     if not name_len:
         name_len = 30
 
