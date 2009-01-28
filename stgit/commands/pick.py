@@ -52,6 +52,8 @@ options = [
         short = 'Fold the commit object into the current patch'),
     opt('--update', action = 'store_true',
         short = 'Like fold but only update the current patch files'),
+    opt('-f', '--file', action = 'append',
+        short = 'Only fold the given file (can be used multiple times)'),
     opt('--unapplied', action = 'store_true',
         short = 'Keep the patch unapplied')]
 
@@ -83,8 +85,11 @@ def __pick_commit(commit_id, patchname, options):
         out.start('Folding commit %s' % commit_id)
 
         # try a direct git apply first
-        if not git.apply_diff(bottom, top):
-            git.merge_recursive(bottom, git.get_head(), top)
+        if not git.apply_diff(bottom, top, files = options.file):
+            if options.file:
+                raise CmdException('Patch folding failed')
+            else:
+                git.merge_recursive(bottom, git.get_head(), top)
 
         out.done()
     elif options.update:
@@ -151,6 +156,9 @@ def func(parser, options, args):
     """
     if not args:
         parser.error('incorrect number of arguments')
+
+    if options.file and not options.fold:
+        parser.error('--file can only be specified with --fold')
 
     if not options.unapplied:
         check_local_changes()
