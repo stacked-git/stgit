@@ -404,7 +404,8 @@ def __build_cover(tmpl, patches, msg_id, options):
                                                 for p in patches),
                  'diffstat':     gitlib.diffstat(git.diff(
                      rev1 = git_id(crt_series, '%s^' % patches[0]),
-                     rev2 = git_id(crt_series, '%s' % patches[-1])))}
+                     rev2 = git_id(crt_series, '%s' % patches[-1]),
+                     diff_flags = options.diff_flags))}
 
     try:
         msg_string = tmpl % tmpl_dict

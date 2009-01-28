@@ -59,7 +59,8 @@ def func(parser, options, args):
     rev2 = git_id(crt_series, '%s' % patch)
 
     if options.stat:
-        output = gitlib.diffstat(git.diff(rev1 = rev1, rev2 = rev2))
+        output = gitlib.diffstat(git.diff(rev1 = rev1, rev2 = rev2,
+                                          diff_flags = options.diff_flags))
     elif options.bare:
         output = git.barefiles(rev1, rev2)
     else:
