@@ -57,17 +57,18 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
+    else:
+        diff_flags = []
+
     rev1 = git_id(crt_series, '%s//bottom' % patch)
     rev2 = git_id(crt_series, '%s//top' % patch)
 
     if options.stat:
-        out.stdout_raw(git.diffstat(rev1 = rev1, rev2 = rev2) + '\n')
+        out.stdout_raw(git.diffstat(rev1 = rev1, rev2 = rev2,
+                                    diff_flags = diff_flags) + '\n')
     elif options.bare:
         out.stdout_raw(git.barefiles(rev1, rev2) + '\n')
     else:
-        if options.diff_opts:
-            diff_flags = options.diff_opts.split()
-        else:
-            diff_flags = []
-
         out.stdout_raw(git.files(rev1, rev2, diff_flags = diff_flags) + '\n')

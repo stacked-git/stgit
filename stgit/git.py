@@ -821,10 +821,11 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
 
 # TODO: take another parameter representing a diff string as we
 # usually invoke git.diff() form the calling functions
-def diffstat(files = None, rev1 = 'HEAD', rev2 = None):
+def diffstat(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = []):
     """Return the diffstat between rev1 and rev2."""
     return GRun('apply', '--stat', '--summary'
-                ).raw_input(diff(files, rev1, rev2)).raw_output()
+               ).raw_input(diff(files, rev1, rev2, diff_flags = diff_flags)
+                          ).raw_output()
 
 def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2

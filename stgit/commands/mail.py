@@ -347,6 +347,11 @@ def __build_cover(tmpl, patches, msg_id, options):
     else:
         number_str = ''
 
+    if options.diff_opts:
+        diff_flags = options.diff_opts.split()
+    else:
+        diff_flags = []
+
     tmpl_dict = {'sender':       sender,
                  # for backward template compatibility
                  'maintainer':   sender,
@@ -363,7 +368,8 @@ def __build_cover(tmpl, patches, msg_id, options):
                                                 for p in patches),
                  'diffstat':     git.diffstat(
                      rev1 = git_id(crt_series, '%s//bottom' % patches[0]),
-                     rev2 = git_id(crt_series, '%s//top' % patches[-1]))}
+                     rev2 = git_id(crt_series, '%s//top' % patches[-1]),
+                     diff_flags = diff_flags)}
 
     try:
         msg_string = tmpl % tmpl_dict
@@ -458,7 +464,8 @@ def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
                      diff_flags = diff_flags),
                  'diffstat':     git.diffstat(
                      rev1 = git_id(crt_series, '%s//bottom'%patch),
-                     rev2 = git_id(crt_series, '%s//top' % patch)),
+                     rev2 = git_id(crt_series, '%s//top' % patch),
+                     diff_flags = diff_flags),
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,
