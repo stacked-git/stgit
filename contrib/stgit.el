@@ -804,19 +804,29 @@ end of the patch."
            (substring patch 0 20))
           (t patch))))
 
-(defun stgit-delete (patchsyms)
+(defun stgit-delete (patchsyms &optional spill-p)
   "Delete the patches in PATCHSYMS.
-Interactively, delete the marked patches, or the patch at point."
-  (interactive (list (stgit-patches-marked-or-at-point)))
+Interactively, delete the marked patches, or the patch at point.
+
+With a prefix argument, or SPILL-P, spill the patch contents to
+the work tree and index."
+  (interactive (list (stgit-patches-marked-or-at-point)
+                     current-prefix-arg))
   (unless patchsyms
     (error "No patches to delete"))
   (let ((npatches (length patchsyms)))
-    (when (yes-or-no-p (format "Really delete %d patch%s? "
+    (when (yes-or-no-p (format "Really delete %d patch%s%s? "
 			       npatches
-			       (if (= 1 npatches) "" "es")))
-      (stgit-capture-output nil
-	(apply 'stgit-run "delete" patchsyms))
-      (stgit-reload))))
+			       (if (= 1 npatches) "" "es")
+                               (if spill-p
+                                   " (spilling contents to index)"
+                                 "")))
+      (let ((args (if spill-p 
+                      (cons "--spill" patchsyms)
+                    patchsyms)))
+        (stgit-capture-output nil
+          (apply 'stgit-run "delete" args))
+        (stgit-reload)))))
 
 (defun stgit-coalesce (patchsyms)
   "Coalesce the patches in PATCHSYMS.
