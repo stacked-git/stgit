@@ -41,7 +41,7 @@ with your updates, and then merges that patch into the patch you asked
 to have refreshed. If you asked to refresh a patch other than the
 topmost patch, there can be conflicts; in that case, the temporary
 patch will be left for you to take care of, for example with stg
-coalesce.
+squash.
 
 The creation of the temporary patch is recorded in a separate entry in
 the patch stack log; this means that one undo step will undo the merge

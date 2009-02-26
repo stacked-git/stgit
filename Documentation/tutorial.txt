@@ -172,7 +172,7 @@ pop the topmost patch, respectively.
 NOTE: There are at least two more ways to update a non-topmost patch.
 One is to use stglink:refresh[] with the +$$--patch$$+ flag, the other
 to create a new patch for the update and then merge it into the other
-patch with stglink:coalesce[].
+patch with stglink:squash[].
 
 
 Keeping commit messages up to date
@@ -405,8 +405,8 @@ At this point, there are a number of things we could do:
   * Use e.g. stglink:float[], stglink:sink[], stglink:push[], and
     stglink:pop[] to reorder patches.
 
-  * Use stglink:coalesce[] to merge two or more patches into one.
-    stgsublink:coalesce[] pushes and pops so that the patches to be
+  * Use stglink:squash[] to merge two or more patches into one.
+    stgsublink:squash[] pushes and pops so that the patches to be
     merged are consecutive and unrelated patches aren't in the way,
     then makes one big patch out of the patches to be merged, and
     finally pushes the other patches back.

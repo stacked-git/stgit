@@ -526,7 +526,7 @@ find copied files."
           ("r" .        stgit-refresh)
           ("\C-c\C-r" . stgit-rename)
           ("e" .        stgit-edit)
-          ("c" .        stgit-coalesce)
+          ("S" .        stgit-squash)
           ("N" .        stgit-new)
           ("R" .        stgit-repair)
           ("C" .        stgit-commit)
@@ -866,26 +866,26 @@ the work tree and index."
           (apply 'stgit-run "delete" args))
         (stgit-reload)))))
 
-(defun stgit-coalesce (patchsyms)
-  "Coalesce the patches in PATCHSYMS.
-Interactively, coalesce the marked patches."
+(defun stgit-squash (patchsyms)
+  "Squash the patches in PATCHSYMS.
+Interactively, squash the marked patches."
   (interactive (list stgit-marked-patches))
   (when (< (length patchsyms) 2)
-    (error "Need at least two patches to coalesce"))
+    (error "Need at least two patches to squash"))
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
-    (log-edit 'stgit-confirm-coalesce t nil edit-buf)
+    (log-edit 'stgit-confirm-squash t nil edit-buf)
     (set (make-local-variable 'stgit-patchsyms) patchsyms)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
-      (apply 'stgit-run-silent "coalesce" "--save-template=-" patchsyms))))
+      (apply 'stgit-run-silent "squash" "--save-template=-" patchsyms))))
 
-(defun stgit-confirm-coalesce ()
+(defun stgit-confirm-squash ()
   (interactive)
   (let ((file (make-temp-file "stgit-edit-")))
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
-      (apply 'stgit-run "coalesce" "-f" file stgit-patchsyms))
+      (apply 'stgit-run "squash" "-f" file stgit-patchsyms))
     (with-current-buffer log-edit-parent-buffer
       (stgit-clear-marks)
       ;; Go to first marked patch and stay there

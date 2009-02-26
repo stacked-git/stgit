@@ -23,11 +23,11 @@ from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git, transaction
 
-help = 'Coalesce two or more patches into one'
+help = 'Squash two or more patches into one'
 kind = 'stack'
 usage = ['[options] <patches>']
 description = """
-Coalesce two or more patches, creating one big patch that contains all
+Squash two or more patches, creating one big patch that contains all
 their changes.
 
 If there are conflicts when reordering the patches to match the order
@@ -36,7 +36,7 @@ done a sequence of pushes and pops yourself."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
-options = [opt('-n', '--name', short = 'Name of coalesced patch')
+options = [opt('-n', '--name', short = 'Name of squashed patch')
            ] + argparse.message_options(save_template = True)
 
 directory = common.DirectoryHasRepositoryLib()
@@ -44,7 +44,7 @@ directory = common.DirectoryHasRepositoryLib()
 class SaveTemplateDone(Exception):
     pass
 
-def _coalesce_patches(trans, patches, msg, save_template):
+def _squash_patches(trans, patches, msg, save_template):
     cd = trans.patches[patches[0]].data
     cd = git.CommitData(tree = cd.tree, parents = cd.parents)
     for pn in patches[1:]:
@@ -63,12 +63,12 @@ def _coalesce_patches(trans, patches, msg, save_template):
             save_template(msg)
             raise SaveTemplateDone()
         else:
-            msg = utils.edit_string(msg, '.stgit-coalesce.txt').strip()
+            msg = utils.edit_string(msg, '.stgit-squash.txt').strip()
     cd = cd.set_message(msg)
 
     return cd
 
-def _coalesce(stack, iw, name, msg, save_template, patches):
+def _squash(stack, iw, name, msg, save_template, patches):
 
     # If a name was supplied on the command line, make sure it's OK.
     def bad_name(pn):
@@ -78,18 +78,18 @@ def _coalesce(stack, iw, name, msg, save_template, patches):
     if name and bad_name(name):
         raise common.CmdException('Patch name "%s" already taken')
 
-    def make_coalesced_patch(trans, new_commit_data):
+    def make_squashed_patch(trans, new_commit_data):
         name = get_name(new_commit_data)
         trans.patches[name] = stack.repository.commit(new_commit_data)
         trans.unapplied.insert(0, name)
 
-    trans = transaction.StackTransaction(stack, 'coalesce',
+    trans = transaction.StackTransaction(stack, 'squash',
                                          allow_conflicts = True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        new_commit_data = _coalesce_patches(trans, patches, msg, save_template)
+        new_commit_data = _squash_patches(trans, patches, msg, save_template)
         if new_commit_data:
-            # We were able to construct the coalesced commit
+            # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
             to_push = trans.delete_patches(lambda pn: pn in patches)
         else:
@@ -99,10 +99,10 @@ def _coalesce(stack, iw, name, msg, save_template, patches):
             to_push = trans.pop_patches(lambda pn: pn in patches)
             for pn in patches:
                 trans.push_patch(pn, iw)
-            new_commit_data = _coalesce_patches(trans, patches, msg,
+            new_commit_data = _squash_patches(trans, patches, msg,
                                                 save_template)
             assert not trans.delete_patches(lambda pn: pn in patches)
-        make_coalesced_patch(trans, new_commit_data)
+        make_squashed_patch(trans, new_commit_data)
 
         # Push the new patch if necessary, and any unrelated patches we've
         # had to pop out of the way.
@@ -122,5 +122,5 @@ def func(parser, options, args):
     patches = common.parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
-    return _coalesce(stack, stack.repository.default_iw, options.name,
-                     options.message, options.save_template, patches)
+    return _squash(stack, stack.repository.default_iw, options.name,
+                   options.message, options.save_template, patches)
