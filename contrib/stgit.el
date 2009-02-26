@@ -541,7 +541,8 @@ find copied files."
           ("D" .        stgit-delete)
           ([(control ?/)] . stgit-undo)
           ("\C-_" .     stgit-undo)
-          ("q" . stgit-quit))))
+          ("B" .        stgit-branch)
+          ("q" .        stgit-quit))))
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
@@ -675,6 +676,24 @@ If that patch cannot be found, return nil."
   (interactive)
   (stgit-capture-output nil
     (stgit-run "repair"))
+  (stgit-reload))
+
+(defun stgit-available-branches ()
+  "Returns a list of the available stg branches"
+  (let ((output (with-output-to-string
+                  (stgit-run "branch" "--list")))
+        (start 0)
+        result)
+    (while (string-match "^>?\\s-+s\\s-+\\(\\S-+\\)" output start)
+      (setq result (cons (match-string 1 output) result))
+      (setq start (match-end 0)))
+    result))
+
+(defun stgit-branch (branch)
+  "Switch to branch BRANCH."
+  (interactive (list (completing-read "Switch to branch: "
+                                      (stgit-available-branches))))
+  (stgit-capture-output nil (stgit-run "branch" "--" branch))
   (stgit-reload))
 
 (defun stgit-commit (count)
