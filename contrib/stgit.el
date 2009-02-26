@@ -350,6 +350,15 @@ find copied files."
         (insert "    <no files>\n"))
       (put-text-property start (point) 'stgit-file-patchsym patchsym))))
 
+(defun stgit-collapse-patch (patchsym)
+  "Collapse the patch with name PATCHSYM after the line at point."
+  (save-excursion
+    (forward-line)
+    (let ((start (point)))
+      (while (eq (get-text-property (point) 'stgit-file-patchsym) patchsym)
+        (forward-line))
+      (delete-region start (point)))))
+
 (defun stgit-rescan ()
   "Rescan the status buffer."
   (save-excursion
@@ -398,23 +407,33 @@ find copied files."
 		(propertize "no patches in series"
 			    'face 'stgit-description-face))))))
 
+(defun stgit-select-file ()
+  (let ((patched-file (stgit-patched-file-at-point)))
+    (unless patched-file
+      (error "No patch or file on the current line"))
+    (let ((filename (expand-file-name (cdr patched-file))))
+      (unless (file-exists-p filename)
+        (error "File does not exist"))
+      (find-file filename))))
+
+(defun stgit-toggle-patch-file-list (curpath)
+  (let ((inhibit-read-only t))
+    (if (memq curpatch stgit-expanded-patches)
+        (save-excursion
+          (setq stgit-expanded-patches (delq curpatch stgit-expanded-patches))
+          (stgit-collapse-patch curpatch))
+      (progn
+        (setq stgit-expanded-patches (cons curpatch stgit-expanded-patches))
+        (stgit-expand-patch curpatch)))))
+
 (defun stgit-select ()
   "Expand or collapse the current entry"
   (interactive)
   (let ((curpatch (stgit-patch-at-point)))
-    (if (not curpatch)
-        (let ((patched-file (stgit-patched-file-at-point)))
-          (unless patched-file
-            (error "No patch or file on the current line"))
-          (let ((filename (expand-file-name (cdr patched-file))))
-            (unless (file-exists-p filename)
-              (error "File does not exist"))
-            (find-file filename)))
-      (setq stgit-expanded-patches
-            (if (memq curpatch stgit-expanded-patches)
-                (delq curpatch stgit-expanded-patches)
-              (cons curpatch stgit-expanded-patches)))
-      (stgit-reload))))
+    (if curpatch
+        (stgit-toggle-patch-file-list curpatch)
+      (stgit-select-file))))
+
 
 (defun stgit-find-file-other-window ()
   "Open file at point in other window"
