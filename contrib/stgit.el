@@ -528,6 +528,7 @@ find copied files."
           ("r" .        stgit-refresh)
           ("\C-c\C-r" . stgit-rename)
           ("e" .        stgit-edit)
+          ("M" .        stgit-move-patches)
           ("S" .        stgit-squash)
           ("N" .        stgit-new)
           ("R" .        stgit-repair)
@@ -876,6 +877,62 @@ the work tree and index."
         (stgit-capture-output nil
           (apply 'stgit-run "delete" args))
         (stgit-reload)))))
+
+(defun stgit-move-patches-target ()
+  "Return the patchsym indicating a target patch for
+`stgit-move-patches'.
+
+This is either the patch at point, or one of :top and :bottom, if
+the point is after or before the applied patches."
+
+  (let ((patchsym (stgit-patch-at-point)))
+    (cond (patchsym patchsym)
+	  ((save-excursion (re-search-backward "^>" nil t)) :top)
+	  (t :bottom))))
+
+(defun stgit-move-patches (patchsyms target-patch)
+  "Move the patches in PATCHSYMS to below TARGET-PATCH.
+If TARGET-PATCH is :bottom or :top, move the patches to the
+bottom or top of the stack, respectively.
+
+Interactively, move the marked patches to where the point is."
+  (interactive (list stgit-marked-patches
+                     (stgit-move-patches-target)))
+  (unless patchsyms
+    (error "Need at least one patch to move"))
+
+  (unless target-patch
+    (error "Point not at a patch"))
+
+  (if (eq target-patch :top)
+      (stgit-capture-output nil
+        (apply 'stgit-run "float" patchsyms))
+
+    ;; need to have patchsyms sorted by position in the stack
+    (let (sorted-patchsyms
+          (series (with-output-to-string
+                    (with-current-buffer standard-output
+                      (stgit-run-silent "series" "--noprefix"))))
+          start)
+      (while (string-match "^\\(.+\\)" series start)
+        (let ((patchsym (intern (match-string 1 series))))
+          (when (memq patchsym patchsyms)
+            (setq sorted-patchsyms (cons patchsym sorted-patchsyms))))
+        (setq start (match-end 0)))
+      (setq sorted-patchsyms (nreverse sorted-patchsyms))
+    
+      (unless (= (length patchsyms) (length sorted-patchsyms))
+        (error "Internal error"))
+
+      (while sorted-patchsyms
+        (setq sorted-patchsyms
+              (and (stgit-capture-output nil
+                     (if (eq target-patch :bottom)
+                         (stgit-run "sink" "--" (car sorted-patchsyms))
+                       (stgit-run "sink" "--to" target-patch "--"
+                                  (car sorted-patchsyms))))
+                   (cdr sorted-patchsyms))))))
+  (stgit-reload))
 
 (defun stgit-squash (patchsyms)
   "Squash the patches in PATCHSYMS.
