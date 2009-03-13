@@ -952,14 +952,27 @@ deepest patch had before the squash."
   (interactive (list stgit-marked-patches))
   (when (< (length patchsyms) 2)
     (error "Need at least two patches to squash"))
-  (let ((edit-buf (get-buffer-create "*StGit edit*"))
+  (let ((stgit-buffer (current-buffer))
+        (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory)
         (sorted-patchsyms (stgit-sort-patches patchsyms)))
     (log-edit 'stgit-confirm-squash t nil edit-buf)
     (set (make-local-variable 'stgit-patchsyms) sorted-patchsyms)
     (setq default-directory dir)
-    (let ((standard-output edit-buf))
-      (apply 'stgit-run-silent "squash" "--save-template=-" sorted-patchsyms))))
+    (let ((result (let ((standard-output edit-buf))
+                    (apply 'stgit-run-silent "squash"
+                           "--save-template=-" sorted-patchsyms))))
+
+      ;; stg squash may have reordered the patches or caused conflicts
+      (with-current-buffer stgit-buffer
+        (stgit-reload))
+
+      (unless (eq 0 result)
+        (fundamental-mode)
+        (rename-buffer "*StGit error*")
+        (resize-temp-buffer-window)
+        (switch-to-buffer-other-window stgit-buffer)
+        (error "stg squash failed")))))
 
 (defun stgit-confirm-squash ()
   (interactive)
