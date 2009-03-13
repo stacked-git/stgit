@@ -562,11 +562,23 @@ Commands:
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
-  (setq stgit-marked-patches (cons patchsym stgit-marked-patches)))
+  (setq stgit-marked-patches (cons patchsym stgit-marked-patches))
+  (save-excursion
+    (when (stgit-goto-patch patchsym)
+      (move-to-column 1)
+      (let ((inhibit-read-only t))
+        (insert-and-inherit ?*)
+        (delete-char 1)))))
 
 (defun stgit-remove-mark (patchsym)
   "Unmark the patch PATCHSYM."
-  (setq stgit-marked-patches (delq patchsym stgit-marked-patches)))
+  (setq stgit-marked-patches (delq patchsym stgit-marked-patches))
+  (save-excursion
+    (when (stgit-goto-patch patchsym)
+      (move-to-column 1)
+      (let ((inhibit-read-only t))
+        (insert-and-inherit ? )
+        (delete-char 1)))))
 
 (defun stgit-clear-marks ()
   "Unmark all patches."
@@ -636,22 +648,19 @@ If that patch cannot be found, return nil."
   "Mark the patch under point."
   (interactive)
   (let ((patch (stgit-patch-at-point t)))
-    (stgit-add-mark patch)
-    (stgit-reload))
+    (stgit-add-mark patch))
   (stgit-next-patch))
 
 (defun stgit-unmark-up ()
   "Remove mark from the patch on the previous line."
   (interactive)
   (stgit-previous-patch)
-  (stgit-remove-mark (stgit-patch-at-point t))
-  (stgit-reload))
+  (stgit-remove-mark (stgit-patch-at-point t)))
 
 (defun stgit-unmark-down ()
   "Remove mark from the patch on the current line."
   (interactive)
   (stgit-remove-mark (stgit-patch-at-point t))
-  (stgit-reload)
   (stgit-next-patch))
 
 (defun stgit-rename (name)
