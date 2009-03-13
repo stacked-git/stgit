@@ -63,8 +63,8 @@ Tracking branch::
   final sequence of patches, and not the messy sequence of edits that
   produced them.
 +
-Commands of interest in this workflow are e.g. stgsublink:rebase[] and
-stgsublink:mail[].
+Commands of interest in this workflow are e.g. linkstgsub:rebase[] and
+linkstgsub:mail[].
 
 Development branch::
 
@@ -77,10 +77,10 @@ Development branch::
   immortalized every misstep you made on your way to the right
   solution.
 +
-Commands of interest in this workflow are e.g. stgsublink:uncommit[],
+Commands of interest in this workflow are e.g. linkstgsub:uncommit[],
 which can be used to move the patch stack base downwards -- i.e., turn
 Git commits into StGit patches after the fact -- and
-stgsublink:commit[], its inverse.
+linkstgsub:commit[], its inverse.
 
 For more information, see htmllink:tutorial.html[the tutorial].
 
@@ -111,7 +111,7 @@ stack base (the commit just below the bottommost patch); so,
 +abranch:$${base}$$+ is the base of the stack in branch +abranch+.
 
 If you need to pass a given StGit reference to a Git command,
-stglink:id[] will convert it to a Git commit id for you.
+linkstg:id[] will convert it to a Git commit id for you.
 
 OPTIONS
 -------

@@ -25,12 +25,12 @@ kind = 'repo'
 usage = ['<repository> <dir>']
 description = """
 Clone a git repository into the local directory <dir> (using
-stglink:clone[]) and initialise the local branch "master".
+linkstg:clone[]) and initialise the local branch "master".
 
 This operation is for example suitable to start working using the
 "tracking branch" workflow (see link:stg[1]). Other means to setup
-an StGit stack are stglink:init[] and the '--create' and '--clone'
-commands of stglink:branch[].
+an StGit stack are linkstg:init[] and the '--create' and '--clone'
+commands of linkstg:branch[].
 
 The target directory <dir> will be created by this command, and must
 not already exist."""

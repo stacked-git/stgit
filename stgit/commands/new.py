@@ -28,7 +28,7 @@ description = """
 Create a new, empty patch on the current stack. The new patch is
 created on top of the currently applied patches, and is made the new
 top of the stack. Uncommitted changes in the work tree are not
-included in the patch -- that is handled by stglink:refresh[].
+included in the patch -- that is handled by linkstg:refresh[].
 
 The given name must be unique in the stack, and may only contain
 alphanumeric characters, dashes and underscores. If no name is given,

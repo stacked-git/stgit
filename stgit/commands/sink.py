@@ -26,7 +26,7 @@ help = 'Send patches deeper down the stack'
 kind = 'stack'
 usage = ['[-t <target patch>] [-n] [<patches>]']
 description = """
-This is the opposite operation of stglink:float[]: move the specified
+This is the opposite operation of linkstg:float[]: move the specified
 patches down the stack.  It is for example useful to group stable
 patches near the bottom of the stack, where they are less likely to be
 impacted by the push of another patch, and from where they can be more

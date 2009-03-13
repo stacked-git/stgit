@@ -52,20 +52,20 @@ options = [
         List each branch in the current repository, followed by its
         branch description (if any). The current branch is prefixed
         with '>'. Branches that have been initialized for StGit (with
-        stglink:init[]) are prefixed with 's'. Protected branches are
+        linkstg:init[]) are prefixed with 's'. Protected branches are
         prefixed with 'p'."""),
     opt('-c', '--create', action = 'store_true',
         short = 'Create (and switch to) a new branch', long = """
         Create (and switch to) a new branch. The new branch is already
         initialized as an StGit patch stack, so you do not have to run
-        stglink:init[] manually. If you give a committish argument,
+        linkstg:init[] manually. If you give a committish argument,
         the new branch is based there; otherwise, it is based at the
         current HEAD.
 
         StGit will try to detect the branch off of which the new
         branch is forked, as well as the remote repository from which
         that parent branch is taken (if any), so that running
-        stglink:pull[] will automatically pull new commits from the
+        linkstg:pull[] will automatically pull new commits from the
         correct branch. It will warn if it cannot guess the parent
         branch (e.g. if you do not specify a branch name as
         committish)."""),
