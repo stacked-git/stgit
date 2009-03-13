@@ -1,6 +1,7 @@
 *.html
 *.pdf
 *.[1-9]
+*.xml
 stg-*.txt
 doc.dep
 command-list.txt
