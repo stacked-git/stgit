@@ -65,7 +65,9 @@ Argument DIR is the repository path."
     buf))
 
 (defmacro stgit-capture-output (name &rest body)
-  "Capture StGit output and show it in a window at the end."
+  "Capture StGit output and, if there was any output, show it in a window
+at the end.
+Returns nil if there was no output."
   `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
          (stgit-dir default-directory)
          (inhibit-read-only t))
