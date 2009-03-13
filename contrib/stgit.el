@@ -944,17 +944,22 @@ Interactively, move the marked patches to where the point is."
 
 (defun stgit-squash (patchsyms)
   "Squash the patches in PATCHSYMS.
-Interactively, squash the marked patches."
+Interactively, squash the marked patches.
+
+Unless there are any conflicts, the patches will be merged into
+one patch, which will occupy the same spot in the series as the
+deepest patch had before the squash."
   (interactive (list stgit-marked-patches))
   (when (< (length patchsyms) 2)
     (error "Need at least two patches to squash"))
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
-        (dir default-directory))
+        (dir default-directory)
+        (sorted-patchsyms (stgit-sort-patches patchsyms)))
     (log-edit 'stgit-confirm-squash t nil edit-buf)
-    (set (make-local-variable 'stgit-patchsyms) patchsyms)
+    (set (make-local-variable 'stgit-patchsyms) sorted-patchsyms)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
-      (apply 'stgit-run-silent "squash" "--save-template=-" patchsyms))))
+      (apply 'stgit-run-silent "squash" "--save-template=-" sorted-patchsyms))))
 
 (defun stgit-confirm-squash ()
   (interactive)
