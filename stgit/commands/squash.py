@@ -28,11 +28,23 @@ kind = 'stack'
 usage = ['[options] <patches>']
 description = """
 Squash two or more patches, creating one big patch that contains all
-their changes.
+their changes. In more detail:
 
-If there are conflicts when reordering the patches to match the order
-you specify, you will have to resolve them manually just as if you had
-done a sequence of pushes and pops yourself."""
+  1. Pop all the given patches, plus any other patches on top of them.
+
+  2. Push the given patches in the order they were given on the
+     command line.
+
+  3. Squash the given patches into one big patch.
+
+  4. Allow the user to edit the commit message of the new patch
+     interactively.
+
+  5. Push the other patches that were popped in step (1).
+
+Conflicts can occur whenever we push a patch; that is, in step (2) and
+(5). If there are conflicts, the command will stop so that you can
+resolve them."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
