@@ -890,6 +890,28 @@ the point is after or before the applied patches."
 	  ((save-excursion (re-search-backward "^>" nil t)) :top)
 	  (t :bottom))))
 
+(defun stgit-sort-patches (patchsyms)
+  "Returns the list of patches in PATCHSYMS sorted according to
+their position in the patch series, bottommost first.
+
+PATCHSYMS may not contain duplicate entries."
+  (let (sorted-patchsyms
+        (series (with-output-to-string
+                  (with-current-buffer standard-output
+                    (stgit-run-silent "series" "--noprefix"))))
+        start)
+    (while (string-match "^\\(.+\\)" series start)
+      (let ((patchsym (intern (match-string 1 series))))
+        (when (memq patchsym patchsyms)
+          (setq sorted-patchsyms (cons patchsym sorted-patchsyms))))
+      (setq start (match-end 0)))
+    (setq sorted-patchsyms (nreverse sorted-patchsyms))
+
+    (unless (= (length patchsyms) (length sorted-patchsyms))
+      (error "Internal error"))
+
+    sorted-patchsyms))
+
 (defun stgit-move-patches (patchsyms target-patch)
   "Move the patches in PATCHSYMS to below TARGET-PATCH.
 If TARGET-PATCH is :bottom or :top, move the patches to the
@@ -909,21 +931,7 @@ Interactively, move the marked patches to where the point is."
         (apply 'stgit-run "float" patchsyms))
 
     ;; need to have patchsyms sorted by position in the stack
-    (let (sorted-patchsyms
-          (series (with-output-to-string
-                    (with-current-buffer standard-output
-                      (stgit-run-silent "series" "--noprefix"))))
-          start)
-      (while (string-match "^\\(.+\\)" series start)
-        (let ((patchsym (intern (match-string 1 series))))
-          (when (memq patchsym patchsyms)
-            (setq sorted-patchsyms (cons patchsym sorted-patchsyms))))
-        (setq start (match-end 0)))
-      (setq sorted-patchsyms (nreverse sorted-patchsyms))
-    
-      (unless (= (length patchsyms) (length sorted-patchsyms))
-        (error "Internal error"))
-
+    (let ((sorted-patchsyms (stgit-sort-patches patchsyms)))
       (while sorted-patchsyms
         (setq sorted-patchsyms
               (and (stgit-capture-output nil
