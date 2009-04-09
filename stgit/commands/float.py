@@ -16,11 +16,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+import sys
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import argparse, stack, git
+from stgit.commands import common
+from stgit.lib import transaction
+from stgit import argparse
 
 help = 'Push patches to the top, even if applied'
 kind = 'stack'
@@ -35,32 +35,27 @@ as specified by the given series file (or the standard input)."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-s', '--series', action = 'store_true',
-        short = 'Rearrange according to a series file')]
+    opt('-s', '--series', metavar = 'FILE',
+        short = 'Rearrange according to the series FILE')
+    ] + argparse.keep_option()
 
-directory = DirectoryGotoToplevel(log = True)
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
-    """Pops and pushed to make the named patch the topmost patch
+    """Reorder patches to make the named patch the topmost one.
     """
-    args_nr = len(args)
-    if (options.series and args_nr > 1) \
-           or (not options.series and args_nr == 0):
+    if options.series and args:
+        parser.error('<patches> cannot be used with --series')
+    elif not options.series and not args:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
-    unapplied = crt_series.get_unapplied()
-    applied = crt_series.get_applied()
-    all = unapplied + applied
+    stack = directory.repository.current_stack
 
     if options.series:
-        if args_nr:
-            f = file(args[0])
-        else:
+        if options.series == '-':
             f = sys.stdin
+        else:
+            f = file(args[0])
 
         patches = []
         for line in f:
@@ -68,35 +63,23 @@ def func(parser, options, args):
             if patch:
                 patches.append(patch)
     else:
-        patches = parse_patches(args, all)
+        patches = common.parse_patches(args, stack.patchorder.all)
 
-    # working with "topush" patches in reverse order might be a bit
-    # more efficient for large series but the main reason is for the
-    # "topop != topush" comparison to work
-    patches.reverse()
+    if not patches:
+        raise common.CmdException('No patches to float')
 
-    topush = []
-    topop = []
+    applied = [p for p in stack.patchorder.applied if p not in patches] + \
+            patches
+    unapplied = [p for p in stack.patchorder.unapplied if not p in patches]
+    hidden = list(stack.patchorder.hidden)
 
-    for p in patches:
-        while p in applied:
-            top = applied.pop()
-            if not top in patches:
-                topush.append(top)
-            topop.append(top)
-    topush = patches + topush
+    iw = stack.repository.default_iw
+    clean_iw = (not options.keep and iw) or None
+    trans = transaction.StackTransaction(stack, 'sink',
+                                         check_clean_iw = clean_iw)
 
-    # remove common patches to avoid unnecessary pop/push
-    while topush and topop:
-        if topush[-1] != topop[-1]:
-            break
-        topush.pop()
-        topop.pop()
-
-    # check whether the operation is really needed
-    if topop != topush:
-        if topop:
-            pop_patches(crt_series, topop)
-        if topush:
-            topush.reverse()
-            push_patches(crt_series, topush)
+    try:
+        trans.reorder_patches(applied, unapplied, hidden, iw)
+    except transaction.TransactionHalted:
+        pass
+    return trans.run(iw)
