@@ -16,11 +16,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import argparse, stack, git
+from stgit.commands import common
+from stgit.lib import transaction
+from stgit import argparse
 
 help = 'Send patches deeper down the stack'
 kind = 'stack'
@@ -51,57 +50,48 @@ options = [
     opt('-t', '--to', metavar = 'TARGET', args = [argparse.applied_patches],
         short = 'Sink patches below the TARGET patch', long = """
         Specify a target patch to place the patches below, instead of
-        sinking them to the bottom of the stack.""")]
+        sinking them to the bottom of the stack.""")
+    ] + argparse.keep_option()
 
-directory = DirectoryGotoToplevel(log = True)
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
     """Sink patches down the stack.
     """
+    stack = directory.repository.current_stack
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
-    oldapplied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
-    all = oldapplied + unapplied
-
-    if options.to and not options.to in oldapplied:
-        raise CmdException('Cannot sink below %s, since it is not applied'
-                           % options.to)
+    if options.to and not options.to in stack.patchorder.applied:
+        raise common.CmdException('Cannot sink below %s since it is not applied'
+                                  % options.to)
 
     if len(args) > 0:
-        patches = parse_patches(args, all)
+        patches = common.parse_patches(args, stack.patchorder.all)
     else:
-        current = crt_series.get_current()
-        if not current:
-            raise CmdException('No patch applied')
-        patches = [current]
+        # current patch
+        patches = list(stack.patchorder.applied[-1:])
 
-    before_patches = after_patches = []
+    if not patches:
+        raise common.CmdException('No patches to sink')
+    if options.to and options.to in patches:
+        raise common.CmdException('Cannot have a sinked patch as target')
 
-    # pop necessary patches
-    if oldapplied:
-        if options.to:
-            pop_idx = oldapplied.index(options.to)
-        else:
-            pop_idx = 0
-        after_patches = [p for p in oldapplied[pop_idx:] if p not in patches]
+    applied = [p for p in stack.patchorder.applied if p not in patches]
+    if options.to:
+        insert_idx = applied.index(options.to)
+    else:
+        insert_idx = 0
+    applied = applied[:insert_idx] + patches + applied[insert_idx:]
 
-        # find the deepest patch to pop
-        sink_applied = [p for p in oldapplied if p in patches]
-        if sink_applied:
-            sinked_idx = oldapplied.index(sink_applied[0])
-            if sinked_idx < pop_idx:
-                # this is the case where sink brings patches forward
-                before_patches = [p for p in oldapplied[sinked_idx:pop_idx]
-                                  if p not in patches]
-                pop_idx = sinked_idx
+    unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
+    hidden = list(stack.patchorder.hidden)
 
-        crt_series.pop_patch(oldapplied[pop_idx])
+    iw = stack.repository.default_iw
+    clean_iw = (not options.keep and iw) or None
+    trans = transaction.StackTransaction(stack, 'sink',
+                                         check_clean_iw = clean_iw)
 
-    push_patches(crt_series, before_patches)
-    push_patches(crt_series, patches)
-    if not options.nopush:
-        push_patches(crt_series, after_patches)
+    try:
+        trans.reorder_patches(applied, unapplied, hidden, iw)
+    except transaction.TransactionHalted:
+        pass
+    return trans.run(iw)

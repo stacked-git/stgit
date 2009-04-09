@@ -58,7 +58,7 @@ test_expect_success 'sink specified patch below a target' '
 '
 
 test_expect_success 'sink with conflict' '
-    conflict_old stg sink --to=p2 p22 &&
+    conflict stg sink --to=p2 p22 &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p22" &&
     test "$(echo $(stg status -c))" = "f2"
 '
