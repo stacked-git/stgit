@@ -297,7 +297,8 @@ class StackTransaction(object):
                     out.info('Deleted %s%s' % (pn, s))
         return popped
 
-    def push_patch(self, pn, iw = None, allow_interactive = False):
+    def push_patch(self, pn, iw = None, allow_interactive = False,
+                   already_merged = False):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
@@ -305,11 +306,15 @@ class StackTransaction(object):
         cd = orig_cd.set_committer(None)
         oldparent = cd.parent
         cd = cd.set_parent(self.top)
-        base = oldparent.data.tree
-        ours = cd.parent.data.tree
-        theirs = cd.tree
-        tree, self.temp_index_tree = self.temp_index.merge(
-            base, ours, theirs, self.temp_index_tree)
+        if already_merged:
+            # the resulting patch is empty
+            tree = cd.parent.data.tree
+        else:
+            base = oldparent.data.tree
+            ours = cd.parent.data.tree
+            theirs = cd.tree
+            tree, self.temp_index_tree = self.temp_index.merge(
+                base, ours, theirs, self.temp_index_tree)
         s = ''
         merge_conflict = False
         if not tree:
@@ -341,7 +346,9 @@ class StackTransaction(object):
         else:
             comm = None
             s = ' (unmodified)'
-        if not merge_conflict and cd.is_nochange():
+        if already_merged:
+            s = ' (merged)'
+        elif not merge_conflict and cd.is_nochange():
             s = ' (empty)'
         out.info('Pushed %s%s' % (pn, s))
         def update():
@@ -379,3 +386,25 @@ class StackTransaction(object):
         assert set(self.unapplied + self.hidden) == set(unapplied + hidden)
         self.unapplied = unapplied
         self.hidden = hidden
+
+    def check_merged(self, patches):
+        """Return a subset of patches already merged."""
+        merged = []
+        if self.temp_index_tree != self.stack.head.data.tree:
+            self.temp_index.read_tree(self.stack.head.data.tree)
+            self.temp_index_tree = self.stack.head.data.tree
+        for pn in reversed(patches):
+            # check whether patch changes can be reversed in the current index
+            cd = self.patches[pn].data
+            if cd.is_nochange():
+                continue
+            try:
+                self.temp_index.apply_treediff(cd.tree, cd.parent.data.tree,
+                                               quiet = True)
+                merged.append(pn)
+                # The self.temp_index was modified by apply_treediff() so
+                # force read_tree() the next time merge() is used.
+                self.temp_index_tree = None
+            except git.MergeException:
+                pass
+        return merged

@@ -28,7 +28,7 @@ Push/pop patches to/from the stack until the one given on the command
 line becomes current."""
 
 args = [argparse.other_applied_patches, argparse.unapplied_patches]
-options = argparse.keep_option()
+options = argparse.keep_option() + argparse.merged_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -47,8 +47,14 @@ def func(parser, options, args):
         assert not trans.pop_patches(lambda pn: pn in to_pop)
     elif patch in trans.unapplied:
         try:
-            for pn in trans.unapplied[:trans.unapplied.index(patch)+1]:
-                trans.push_patch(pn, iw, allow_interactive = True)
+            to_push = trans.unapplied[:trans.unapplied.index(patch)+1]
+            if options.merged:
+                merged = set(trans.check_merged(to_push))
+            else:
+                merged = set()
+            for pn in to_push:
+                trans.push_patch(pn, iw, allow_interactive = True,
+                                 already_merged = pn in merged)
         except transaction.TransactionHalted:
             pass
     elif patch in trans.hidden:

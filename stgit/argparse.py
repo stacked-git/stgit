@@ -225,6 +225,10 @@ def keep_option():
                 short = 'Keep the local changes',
                 default = config.get('stgit.autokeep') == 'yes')]
 
+def merged_option():
+    return [opt('-m', '--merged', action = 'store_true',
+                short = 'Check for patches merged upstream')]
+
 class CompgenBase(object):
     def actions(self, var): return set()
     def words(self, var): return set()
