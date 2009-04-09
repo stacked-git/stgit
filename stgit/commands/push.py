@@ -16,12 +16,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+from stgit.commands import common
+from stgit.lib import transaction
+from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git
 
 help = 'Push one or more patches onto the stack'
 kind = 'stack'
@@ -45,39 +43,45 @@ options = [
     opt('-n', '--number', type = 'int',
         short = 'Push the specified number of patches'),
     opt('--reverse', action = 'store_true',
-        short = 'Push the patches in reverse order'),
-    opt('-m', '--merged', action = 'store_true',
-        short = 'Check for patches merged upstream')]
+        short = 'Push the patches in reverse order')
+    ] + argparse.keep_option() + argparse.merged_option()
 
-directory = DirectoryGotoToplevel(log = True)
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
-    """Pushes the given patch or all onto the series
-    """
+    """Pushes the given patches or the first unapplied onto the stack."""
+    stack = directory.repository.current_stack
+    iw = stack.repository.default_iw
+    clean_iw = (not options.keep and iw) or None
+    trans = transaction.StackTransaction(stack, 'pop',
+                                         check_clean_iw = clean_iw)
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    if not trans.unapplied:
+        raise common.CmdException('No patches to push')
 
-    unapplied = crt_series.get_unapplied()
-    if not unapplied:
-        raise CmdException, 'No more patches to push'
-
-    if options.number:
-        patches = unapplied[:options.number]
-    elif options.all:
-        patches = unapplied
-    elif len(args) == 0:
-        patches = [unapplied[0]]
+    if options.all:
+        patches = list(trans.unapplied)
+    elif options.number:
+        patches = trans.unapplied[:options.number]
+    elif not args:
+        patches = [trans.unapplied[0]]
     else:
-        patches = parse_patches(args, unapplied)
+        patches = common.parse_patches(args, trans.unapplied)
 
-    if patches == []:
-        raise CmdException, 'No patches to push'
+    if not patches:
+        raise common.CmdException('No patches to push')
 
     if options.reverse:
         patches.reverse()
 
-    push_patches(crt_series, patches, options.merged)
-
-    print_crt_patch(crt_series)
+    try:
+        if options.merged:
+            merged = set(trans.check_merged(patches))
+        else:
+            merged = set()
+        for pn in patches:
+            trans.push_patch(pn, iw, allow_interactive = True,
+                             already_merged = pn in merged)
+    except transaction.TransactionHalted:
+        pass
+    return trans.run(iw)

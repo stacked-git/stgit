@@ -38,7 +38,7 @@ test_expect_success \
 test_expect_success \
 	'Push the first patch with conflict' \
 	'
-	conflict_old stg push foo
+	conflict stg push foo
 	'
 
 test_expect_success \

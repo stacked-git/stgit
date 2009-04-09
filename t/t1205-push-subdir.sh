@@ -47,7 +47,7 @@ test_expect_success 'Conflicting push from subdir' '
     [ "$(echo $(cat x.txt))" = "x0" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0" ] &&
     cd foo &&
-    conflict_old stg push p2 &&
+    conflict stg push p2 &&
     cd .. &&
     [ "$(echo $(stg status --conflict))" = "foo/y.txt x.txt" ]
 '

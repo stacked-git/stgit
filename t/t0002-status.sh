@@ -111,7 +111,7 @@ A fie
 C foo/bar
 EOF
 test_expect_success 'Status after conflicting push' '
-    conflict_old stg push &&
+    conflict stg push &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '

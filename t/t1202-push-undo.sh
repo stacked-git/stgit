@@ -43,7 +43,7 @@ test_expect_success \
 test_expect_success \
 	'Push the second patch with conflict' \
 	'
-	conflict_old stg push bar
+	conflict stg push bar
 	'
 
 test_expect_success \
@@ -55,7 +55,7 @@ test_expect_success \
 test_expect_success \
 	'Check the push after undo fails as well' \
 	'
-	conflict_old stg push bar
+	conflict stg push bar
 	'
 
 test_expect_success \
