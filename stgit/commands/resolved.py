@@ -22,7 +22,6 @@ from stgit.commands.common import *
 from stgit.utils import *
 from stgit import argparse, stack, git, basedir
 from stgit.config import config, file_extensions
-from stgit.gitmergeonefile import interactive_merge
 
 help = 'Mark a file conflict as solved'
 kind = 'wc'
@@ -78,8 +77,6 @@ def func(parser, options, args):
 
     # resolved
     if options.interactive:
-        for filename in files:
-            interactive_merge(filename)
-            git.resolved([filename])
+        git.mergetool(files)
     else:
         git.resolved(files, options.reset)

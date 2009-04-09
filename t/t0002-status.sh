@@ -107,9 +107,6 @@ test_expect_success 'Make a conflicting patch' '
 '
 
 cat > expected.txt <<EOF
-? foo/bar.ancestor
-? foo/bar.current
-? foo/bar.patched
 A fie
 C foo/bar
 EOF

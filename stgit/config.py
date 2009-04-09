@@ -35,7 +35,6 @@ class GitConfig:
         'stgit.fetchcmd':	'git fetch',
         'stgit.pull-policy':	'pull',
         'stgit.autoimerge':	'no',
-        'stgit.keeporig':	'yes',
         'stgit.keepoptimized':	'no',
         'stgit.extensions':	'.ancestor .current .patched',
         'stgit.shortnr':	 '5'

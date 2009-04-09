@@ -18,7 +18,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os, re, gitmergeonefile
+import sys, os, re
 from shutil import copyfile
 
 from stgit.exception import *
@@ -632,19 +632,23 @@ def merge_recursive(base, head1, head2):
     output = p.output_lines()
     if p.exitcode:
         # There were conflicts
-        conflicts = [l.strip() for l in output if l.startswith('CONFLICT')]
+        if config.get('stgit.autoimerge') == 'yes':
+            mergetool()
+        else:
+            conflicts = [l for l in output if l.startswith('CONFLICT')]
+            out.info(*conflicts)
+            raise GitException, "%d conflict(s)" % len(conflicts)
+
+def mergetool(files = ()):
+    """Invoke 'git mergetool' to resolve any outstanding conflicts. If 'not
+    files', all the files in an unmerged state will be processed."""
+    GRun('mergetool', *list(files)).returns([0, 1]).run()
+    # check for unmerged entries (prepend 'CONFLICT ' for consistency with
+    # merge_recursive())
+    conflicts = ['CONFLICT ' + f for f in get_conflicts()]
+    if conflicts:
         out.info(*conflicts)
-
-        # try the interactive merge or stage checkout (if enabled)
-        for filename in get_conflicts():
-            if (gitmergeonefile.merge(filename)):
-                # interactive merge succeeded
-                resolved([filename])
-
-        # any conflicts left unsolved?
-        cn = len(get_conflicts())
-        if cn:
-            raise GitException, "%d conflict(s)" % cn
+        raise GitException, "%d conflict(s)" % len(conflicts)
 
 def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
          binary = True):
@@ -754,7 +758,6 @@ def resolved(filenames, reset = None):
              '--stdin', '-z').input_nulterm(filenames).no_output()
     GRun('update-index', '--add', '--').xargs(filenames)
     for filename in filenames:
-        gitmergeonefile.clean_up(filename)
         # update the access and modificatied times
         os.utime(filename, None)
 
