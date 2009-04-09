@@ -16,11 +16,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+from stgit.commands import common
+from stgit.lib import transaction
+from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import argparse, stack, git
 
 help = 'Pop one or more patches from the stack'
 kind = 'stack'
@@ -40,50 +39,40 @@ options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Pop all the applied patches'),
     opt('-n', '--number', type = 'int',
-        short = 'Pop the specified number of patches'),
-    opt('-k', '--keep', action = 'store_true',
-        short = 'Keep the local changes')]
+        short = 'Pop the specified number of patches')
+    ] + argparse.keep_option()
 
-directory = DirectoryGotoToplevel(log = True)
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
-    """Pop the topmost patch from the stack
-    """
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    """Pop the given patches or the topmost one from the stack."""
+    stack = directory.repository.current_stack
+    iw = stack.repository.default_iw
+    clean_iw = (not options.keep and iw) or None
+    trans = transaction.StackTransaction(stack, 'pop',
+                                         check_clean_iw = clean_iw)
 
-    if not options.keep:
-        check_local_changes()
-
-    applied = crt_series.get_applied()
-    if not applied:
-        raise CmdException, 'No patches applied'
+    if not trans.applied:
+        raise common.CmdException('No patches applied')
 
     if options.all:
-        patches = applied
+        patches = trans.applied
     elif options.number:
         # reverse it twice to also work with negative or bigger than
         # the length numbers
-        patches = applied[::-1][:options.number][::-1]
-    elif len(args) == 0:
-        patches = [applied[-1]]
+        patches = trans.applied[::-1][:options.number][::-1]
+    elif not args:
+        patches = [trans.applied[-1]]
     else:
-        patches = parse_patches(args, applied, ordered = True)
+        patches = common.parse_patches(args, trans.applied, ordered = True)
 
     if not patches:
-        raise CmdException, 'No patches to pop'
+        raise common.CmdException('No patches to pop')
 
-    # pop to the most distant popped patch
-    topop = applied[applied.index(patches[0]):]
-    # push those not in the popped range
-    topush = [p for p in topop if p not in patches]
-
-    if options.keep and topush:
-        raise CmdException, 'Cannot pop arbitrary patches with --keep'
-
-    topop.reverse()
-    pop_patches(crt_series, topop, options.keep)
-    if topush:
-        push_patches(crt_series, topush)
-
-    print_crt_patch(crt_series)
+    applied = [p for p in trans.applied if not p in set(patches)]
+    unapplied = patches + trans.unapplied
+    try:
+        trans.reorder_patches(applied, unapplied, iw = iw)
+    except transaction.TransactionException:
+        pass
+    return trans.run(iw)

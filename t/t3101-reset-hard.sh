@@ -28,7 +28,7 @@ cat > expected.txt <<EOF
 C a
 EOF
 test_expect_success 'Pop middle patch, creating a conflict' '
-    conflict_old stg pop p2 &&
+    conflict stg pop p2 &&
     stg status a > actual.txt &&
     test_cmp expected.txt actual.txt &&
     test "$(echo $(stg series))" = "+ p1 > p3 - p2"
@@ -47,7 +47,7 @@ test_expect_success 'Try to reset with --hard' '
     stg reset --hard master.stgit^~1 &&
     stg status a > actual.txt &&
     test_cmp expected.txt actual.txt &&
-    test "$(echo $(stg series))" = "> p1 - p3 - p2"
+    test "$(echo $(stg series))" = "> p1 - p2 - p3"
 '
 
 test_done
