@@ -128,7 +128,7 @@ def func(parser, options, args):
     trans.patches[patchname] = stack.repository.commit(cd)
     try:
         for pn in popped:
-            trans.push_patch(pn, iw)
+            trans.push_patch(pn, iw, allow_interactive = True)
     except transaction.TransactionHalted:
         pass
     try:

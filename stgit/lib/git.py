@@ -824,7 +824,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                      ).discard_output()
         except run.RunException:
             raise CheckoutException('Index/workdir dirty')
-    def merge(self, base, ours, theirs):
+    def merge(self, base, ours, theirs, interactive = False):
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
@@ -838,10 +838,23 @@ class IndexAndWorktree(RunWithEnvCwd):
             output = r.output_lines()
             if r.exitcode:
                 # There were conflicts
-                conflicts = [l for l in output if l.startswith('CONFLICT')]
-                raise MergeConflictException(conflicts)
+                if interactive:
+                    self.mergetool()
+                else:
+                    conflicts = [l for l in output if l.startswith('CONFLICT')]
+                    raise MergeConflictException(conflicts)
         except run.RunException, e:
             raise MergeException('Index/worktree dirty')
+    def mergetool(self, files = ()):
+        """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
+        any outstanding conflicts. If 'not files', all the files in an
+        unmerged state will be processed."""
+        self.run(['git', 'mergetool'] + list(files)).returns([0, 1]).run()
+        # check for unmerged entries (prepend 'CONFLICT ' for consistency with
+        # merge())
+        conflicts = ['CONFLICT ' + f for f in self.index.conflicts()]
+        if conflicts:
+            raise MergeConflictException(conflicts)
     def changed_files(self, tree, pathlimits = []):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to

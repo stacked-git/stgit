@@ -8,6 +8,7 @@ from stgit import exception, utils
 from stgit.utils import any, all
 from stgit.out import *
 from stgit.lib import git, log
+from stgit.config import config
 
 class TransactionException(exception.StgException):
     """Exception raised when something goes wrong with a
@@ -296,7 +297,7 @@ class StackTransaction(object):
                     out.info('Deleted %s%s' % (pn, s))
         return popped
 
-    def push_patch(self, pn, iw = None):
+    def push_patch(self, pn, iw = None, allow_interactive = False):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
@@ -319,7 +320,9 @@ class StackTransaction(object):
             except git.CheckoutException:
                 self.__halt('Index/worktree dirty')
             try:
-                iw.merge(base, ours, theirs)
+                interactive = (allow_interactive and
+                               config.get('stgit.autoimerge') == 'yes')
+                iw.merge(base, ours, theirs, interactive = interactive)
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = ' (modified)'

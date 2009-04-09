@@ -48,7 +48,7 @@ def func(parser, options, args):
     elif patch in trans.unapplied:
         try:
             for pn in trans.unapplied[:trans.unapplied.index(patch)+1]:
-                trans.push_patch(pn, iw)
+                trans.push_patch(pn, iw, allow_interactive = True)
         except transaction.TransactionHalted:
             pass
     elif patch in trans.hidden:
