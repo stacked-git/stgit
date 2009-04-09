@@ -81,9 +81,7 @@ def func(parser, options, args):
     else:
         insert_idx = 0
     applied = applied[:insert_idx] + patches + applied[insert_idx:]
-
     unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
-    hidden = list(stack.patchorder.hidden)
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
@@ -91,7 +89,7 @@ def func(parser, options, args):
                                          check_clean_iw = clean_iw)
 
     try:
-        trans.reorder_patches(applied, unapplied, hidden, iw)
+        trans.reorder_patches(applied, unapplied, iw = iw)
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)

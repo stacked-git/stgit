@@ -365,8 +365,10 @@ class StackTransaction(object):
             # Update immediately.
             update()
 
-    def reorder_patches(self, applied, unapplied, hidden, iw = None):
+    def reorder_patches(self, applied, unapplied, hidden = None, iw = None):
         """Push and pop patches to attain the given ordering."""
+        if hidden is None:
+            hidden = self.hidden
         common = len(list(it.takewhile(lambda (a, b): a == b,
                                        zip(self.applied, applied))))
         to_pop = set(self.applied[common:])
