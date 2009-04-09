@@ -65,7 +65,7 @@ test_expect_success 'refresh -u -p <subdir>' '
 
 test_expect_success 'refresh an unapplied patch' '
     stg refresh -u &&
-    stg goto p0 &&
+    stg goto --keep p0 &&
     test "$(stg status)" = "M foo.txt" &&
     stg refresh -p p1 &&
     test "$(stg status)" = "" &&

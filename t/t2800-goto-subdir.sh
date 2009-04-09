@@ -25,7 +25,7 @@ cat > expected2.txt <<EOF
 bar
 EOF
 test_expect_success 'Goto in subdirectory (just pop)' '
-    (cd foo && stg goto p1) &&
+    (cd foo && stg goto --keep p1) &&
     cat foo/bar > actual.txt &&
     test_cmp expected1.txt actual.txt &&
     ls foo > actual.txt &&
@@ -48,7 +48,7 @@ cat > expected2.txt <<EOF
 bar
 EOF
 test_expect_success 'Goto in subdirectory (conflicting push)' '
-    (cd foo && stg goto p3) ;
+    (cd foo && stg goto --keep p3) ;
     [ $? -eq 3 ] &&
     cat foo/bar > actual.txt &&
     test_cmp expected1.txt actual.txt &&

@@ -75,7 +75,8 @@ class StackTransaction(object):
       your refs and index+worktree, or fail without having done
       anything."""
     def __init__(self, stack, msg, discard_changes = False,
-                 allow_conflicts = False, allow_bad_head = False):
+                 allow_conflicts = False, allow_bad_head = False,
+                 check_clean_iw = None):
         """Create a new L{StackTransaction}.
 
         @param discard_changes: Discard any changes in index+worktree
@@ -102,6 +103,8 @@ class StackTransaction(object):
         self.__temp_index = self.temp_index_tree = None
         if not allow_bad_head:
             self.__assert_head_top_equal()
+        if check_clean_iw:
+            self.__assert_index_worktree_clean(check_clean_iw)
     stack = property(lambda self: self.__stack)
     patches = property(lambda self: self.__patches)
     def __set_applied(self, val):
@@ -147,6 +150,11 @@ class StackTransaction(object):
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
             self.__abort()
+    def __assert_index_worktree_clean(self, iw):
+        if not iw.worktree_clean():
+            self.__halt('Worktree not clean. Use "refresh" or "status --reset"')
+        if not iw.index.is_clean(self.stack.head):
+            self.__halt('Index not clean. Use "refresh" or "status --reset"')
     def __checkout(self, tree, iw, allow_bad_head):
         if not allow_bad_head:
             self.__assert_head_top_equal()

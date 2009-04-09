@@ -706,9 +706,11 @@ class Index(RunWithEnv):
                     ).output_one_line())
         except run.RunException:
             raise MergeException('Conflicting merge')
-    def is_clean(self):
+    def is_clean(self, tree):
+        """Check whether the index is clean relative to the given treeish."""
         try:
-            self.run(['git', 'update-index', '--refresh']).discard_output()
+            self.run(['git', 'diff-index', '--quiet', '--cached', tree.sha1]
+                    ).discard_output()
         except run.RunException:
             return False
         else:
@@ -858,6 +860,14 @@ class IndexAndWorktree(RunWithEnvCwd):
         cmd = ['git', 'update-index', '--remove']
         self.run(cmd + ['-z', '--stdin']
                  ).input_nulterm(paths).discard_output()
+    def worktree_clean(self):
+        """Check whether the worktree is clean relative to index."""
+        try:
+            self.run(['git', 'update-index', '--refresh']).discard_output()
+        except run.RunException:
+            return False
+        else:
+            return True
 
 class Branch(object):
     """Represents a Git branch."""

@@ -220,6 +220,11 @@ def _person_opts(person, short):
 def author_options():
     return _person_opts('author', 'auth')
 
+def keep_option():
+    return [opt('-k', '--keep', action = 'store_true',
+                short = 'Keep the local changes',
+                default = config.get('stgit.autokeep') == 'yes')]
+
 class CompgenBase(object):
     def actions(self, var): return set()
     def words(self, var): return set()

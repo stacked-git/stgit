@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit import argparse
+from stgit.argparse import opt
 
 help = 'Push or pop patches to the given one'
 kind = 'stack'
@@ -27,7 +28,7 @@ Push/pop patches to/from the stack until the one given on the command
 line becomes current."""
 
 args = [argparse.other_applied_patches, argparse.unapplied_patches]
-options = []
+options = argparse.keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -38,7 +39,9 @@ def func(parser, options, args):
 
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'goto')
+    clean_iw = (not options.keep and iw) or None
+    trans = transaction.StackTransaction(stack, 'goto',
+                                         check_clean_iw = clean_iw)
     if patch in trans.applied:
         to_pop = set(trans.applied[trans.applied.index(patch)+1:])
         assert not trans.pop_patches(lambda pn: pn in to_pop)
