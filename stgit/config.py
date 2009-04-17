@@ -73,14 +73,14 @@ class GitConfig:
         """Rename a section in the config file. Silently do nothing if
         the section doesn't exist."""
         Run('git', 'config', '--rename-section', from_name, to_name
-            ).returns([0, 1]).run()
+            ).returns([0, 1, 128]).run()
         self.__cache.clear()
 
     def remove_section(self, name):
         """Remove a section in the config file. Silently do nothing if
         the section doesn't exist."""
         Run('git', 'config', '--remove-section', name
-            ).returns([0, 1]).discard_stderr().discard_output()
+            ).returns([0, 1, 128]).discard_stderr().discard_output()
         self.__cache.clear()
 
     def set(self, name, value):
