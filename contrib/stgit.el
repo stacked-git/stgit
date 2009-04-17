@@ -463,19 +463,23 @@ find copied files."
       (pop-to-buffer nil)
       (git-status dir))))
 
-(defun stgit-next-line (&optional arg try-vscroll)
-  "Move cursor vertically down ARG lines"
-  (interactive "p\np")
-  (next-line arg try-vscroll)
-  (when (looking-at "  \\S-")
-    (forward-char 2)))
+(defun stgit-goal-column ()
+  "Return goal column for the current line"
+  (cond ((get-text-property (point) 'stgit-file-patchsym) 4)
+        ((get-text-property (point) 'stgit-patchsym)      2)
+        (t 0)))
 
-(defun stgit-previous-line (&optional arg try-vscroll)
+(defun stgit-next-line (&optional arg)
+  "Move cursor vertically down ARG lines"
+  (interactive "p")
+  (next-line arg)
+  (move-to-column (stgit-goal-column)))
+
+(defun stgit-previous-line (&optional arg)
   "Move cursor vertically up ARG lines"
-  (interactive "p\np")
-  (previous-line arg try-vscroll)
-  (when (looking-at "  \\S-")
-    (forward-char 2)))
+  (interactive "p")
+  (previous-line arg)
+  (move-to-column (stgit-goal-column)))
 
 (defun stgit-next-patch (&optional arg)
   "Move cursor down ARG patches"
@@ -517,10 +521,12 @@ find copied files."
           ("u" .        stgit-unmark-down)
           ("?" .        stgit-help)
           ("h" .        stgit-help)
-          ("p" .        stgit-previous-line)
-          ("n" .        stgit-next-line)
-          ("\C-p" .     stgit-previous-patch)
-          ("\C-n" .     stgit-next-patch)
+          ("\C-p" .     stgit-previous-line)
+          ("\C-n" .     stgit-next-line)
+          ([up] .       stgit-previous-line)
+          ([down] .     stgit-next-line)
+          ("p" .        stgit-previous-patch)
+          ("n" .        stgit-next-patch)
           ("\M-{" .     stgit-previous-patch)
           ("\M-}" .     stgit-next-patch)
           ("s" .        stgit-git-status)
