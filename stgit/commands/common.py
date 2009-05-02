@@ -301,9 +301,6 @@ def rebase(crt_series, target):
         # it might be that we use a custom rebase command with its own
         # target type
         tree_id = target
-    if tree_id == git.get_head():
-        out.info('Already at "%s", no need for rebasing.' % target)
-        return
     if target:
         out.start('Rebasing to "%s"' % target)
     else:
