@@ -61,6 +61,8 @@ options = [
         short = 'Refresh (applied) PATCH instead of the top patch'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),
+    opt('-a', '--annotate', metavar = 'NOTE',
+        short = 'Annotate the patch log entry')
     ] + (argparse.message_options(save_template = False) +
          argparse.sign_options() + argparse.author_options())
 
@@ -200,9 +202,13 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
         # leave the temp patch for the user.
         return False
 
-def absorb(stack, patch_name, temp_name, edit_fun):
+def absorb(stack, patch_name, temp_name, edit_fun, annotate = None):
     """Absorb the temp patch into the target patch."""
-    trans = transaction.StackTransaction(stack, 'refresh')
+    if annotate:
+        log_msg = 'refresh\n\n' + annotate
+    else:
+        log_msg = 'refresh'
+    trans = transaction.StackTransaction(stack, log_msg)
     iw = stack.repository.default_iw
     f = { True: absorb_applied, False: absorb_unapplied
           }[patch_name in trans.applied]
@@ -252,4 +258,5 @@ def func(parser, options, args):
                 diff_flags = [], replacement_diff = None)
             assert not failed_diff
         return cd
-    return absorb(stack, patch_name, temp_name, edit_fun)
+    return absorb(stack, patch_name, temp_name, edit_fun,
+                  annotate = options.annotate)
