@@ -1,5 +1,5 @@
 __copyright__ = """
-Copyright (C) 2007, Catalin Marinas <catalin.marinas@gmail.com>
+Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2 as
@@ -15,12 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
+from stgit.commands import common
+from stgit.lib import transaction
+from stgit import argparse, out
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git
 
 help = 'Hide a patch in the series'
 kind = 'stack'
@@ -35,19 +33,25 @@ options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
-directory = DirectoryHasRepository(log = True)
+directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
-    """Hide a range of patch in the series
-    """
-    if args:
-        # parsing all the patches for a more meaningful error reporting
-        all_patches = crt_series.get_applied() + crt_series.get_unapplied() \
-                      + crt_series.get_hidden()
-        patches = parse_patches(args, all_patches)
-    else:
+    """Hide a range of patch in the series."""
+    stack = directory.repository.current_stack
+    trans = transaction.StackTransaction(stack, 'hide')
+
+    if not args:
         parser.error('No patches specified')
 
-    for patch in patches:
-        crt_series.hide_patch(patch)
-        out.info('Patch "%s" hidden' % patch)
+    patches = common.parse_patches(args, trans.all_patches)
+    for p in patches:
+        if p in trans.hidden:
+            out.warn('Patch "%s" already hidden' % p)
+    patches = [p for p in patches if not p in set(trans.hidden)]
+
+    applied = [p for p in trans.applied if not p in set(patches)]
+    unapplied = [p for p in trans.unapplied if not p in set(patches)]
+    hidden = patches + trans.hidden
+
+    trans.reorder_patches(applied, unapplied, hidden)
+    return trans.run()
