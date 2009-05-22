@@ -53,6 +53,8 @@ directory DIR or `default-directory'"
     (switch-to-buffer (if buffers
                           (car buffers)
                         (create-stgit-buffer dir)))))
+(defstruct (stgit-patch)
+  status name desc empty)
 
 (defun create-stgit-buffer (dir)
   "Create a buffer for showing StGit patches.
@@ -124,7 +126,7 @@ Returns nil if there was no output."
   (interactive)
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
-        (curpatch (stgit-patch-at-point)))
+        (curpatch (stgit-patch-name-at-point)))
     (erase-buffer)
     (insert "Branch: ")
     (stgit-run-silent "branch")
@@ -377,7 +379,7 @@ find copied files."
                                   'face 'bold))
               ((looking-at "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
 	       (setq found-any t)
-               (let ((empty (match-string 1))
+               (let ((empty (string= (match-string 1) "0"))
 		     (state (match-string 2))
                      (patchsym (intern (match-string 4))))
                  (put-text-property
@@ -393,10 +395,15 @@ find copied files."
                    (setq marked (cons patchsym marked)))
                  (add-text-properties (match-beginning 0) (match-end 0)
                                       (list 'stgit-patchsym patchsym
-                                            'entry-type 'patch))
+                                            'entry-type 'patch
+                                            'patch-data (make-stgit-patch
+                                                         :status state
+                                                         :name patchsym
+                                                         :desc (match-string 5)
+                                                         :empty empty)))
                  (when (memq patchsym stgit-expanded-patches)
                    (stgit-expand-patch patchsym))
-		 (when (equal "0" empty)
+		 (when empty
 		   (save-excursion
 		     (goto-char (match-beginning 5))
 		     (insert "(empty) ")))
@@ -425,7 +432,7 @@ find copied files."
 
 (defun stgit-select-patch ()
   (let ((inhibit-read-only t)
-        (curpatch (stgit-patch-at-point)))
+        (curpatch (stgit-patch-name-at-point)))
     (if (memq curpatch stgit-expanded-patches)
         (save-excursion
           (setq stgit-expanded-patches (delq curpatch stgit-expanded-patches))
@@ -500,7 +507,7 @@ find copied files."
     (while (not (zerop arg))
       (setq arg (1- arg))
       (while (progn (stgit-next-line)
-                    (not (stgit-patch-at-point)))))))
+                    (not (stgit-patch-name-at-point)))))))
 
 (defun stgit-previous-patch (&optional arg)
   "Move cursor up ARG patches"
@@ -512,7 +519,7 @@ find copied files."
     (while (not (zerop arg))
       (setq arg (1- arg))
       (while (progn (stgit-previous-line)
-                    (not (stgit-patch-at-point)))))))
+                    (not (stgit-patch-name-at-point)))))))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
@@ -603,13 +610,16 @@ Commands:
   (setq stgit-marked-patches '()))
 
 (defun stgit-patch-at-point (&optional cause-error)
+  (get-text-property (point) 'patch-data))
+
+(defun stgit-patch-name-at-point (&optional cause-error)
   "Return the patch name on the current line as a symbol.
 If CAUSE-ERROR is not nil, signal an error if none found."
-  (case (get-text-property (point) 'entry-type)
-    ('patch (get-text-property (point) 'stgit-patchsym))
-    (t (if cause-error
-           (error "No patch on this line")
-         nil))))
+  (let ((patch (stgit-patch-at-point)))
+    (cond (patch
+           (stgit-patch-name patch))
+          (cause-error
+           (error "No patch on this line")))))
 
 (defun stgit-patched-file-at-point (&optional both-files)
   "Returns a cons of the patchsym and file name at point. For
@@ -626,7 +636,7 @@ the new file names instead of just one name."
           (t
            (let ((file-sym (save-excursion
                              (stgit-previous-patch)
-                             (unless (eq (stgit-patch-at-point)
+                             (unless (eq (stgit-patch-name-at-point)
                                          patchsym)
                                (error "Cannot find the %s patch" patchsym))
                              (beginning-of-line)
@@ -639,7 +649,7 @@ the new file names instead of just one name."
   "Return the symbols of the marked patches, or the patch on the current line."
   (if stgit-marked-patches
       stgit-marked-patches
-    (let ((patch (stgit-patch-at-point)))
+    (let ((patch (stgit-patch-name-at-point)))
       (if patch
           (list patch)
         '()))))
@@ -663,7 +673,7 @@ If that patch cannot be found, return nil."
 (defun stgit-mark ()
   "Mark the patch under point."
   (interactive)
-  (let ((patch (stgit-patch-at-point t)))
+  (let ((patch (stgit-patch-name-at-point t)))
     (stgit-add-mark patch))
   (stgit-next-patch))
 
@@ -671,19 +681,19 @@ If that patch cannot be found, return nil."
   "Remove mark from the patch on the previous line."
   (interactive)
   (stgit-previous-patch)
-  (stgit-remove-mark (stgit-patch-at-point t)))
+  (stgit-remove-mark (stgit-patch-name-at-point t)))
 
 (defun stgit-unmark-down ()
   "Remove mark from the patch on the current line."
   (interactive)
-  (stgit-remove-mark (stgit-patch-at-point t))
+  (stgit-remove-mark (stgit-patch-name-at-point t))
   (stgit-next-patch))
 
 (defun stgit-rename (name)
   "Rename the patch under point to NAME."
   (interactive (list (read-string "Patch name: "
-                                  (symbol-name (stgit-patch-at-point t)))))
-  (let ((old-patchsym (stgit-patch-at-point t)))
+                                  (symbol-name (stgit-patch-name-at-point t)))))
+  (let ((old-patchsym (stgit-patch-name-at-point t)))
     (stgit-capture-output nil
       (stgit-run "rename" old-patchsym name))
     (let ((name-sym (intern name)))
@@ -760,7 +770,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-push-or-pop ()
   "Push or pop the patch on the current line."
   (interactive)
-  (let ((patchsym (stgit-patch-at-point t))
+  (let ((patchsym (stgit-patch-name-at-point t))
         (applied (stgit-applied-at-point)))
     (stgit-capture-output nil
       (stgit-run (if applied "pop" "push") patchsym))
@@ -769,7 +779,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-goto ()
   "Go to the patch on the current line."
   (interactive)
-  (let ((patchsym (stgit-patch-at-point t)))
+  (let ((patchsym (stgit-patch-name-at-point t)))
     (stgit-capture-output nil
       (stgit-run "goto" patchsym))
     (stgit-reload)))
@@ -791,7 +801,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
   (stgit-capture-output "*StGit patch*"
     (case (get-text-property (point) 'entry-type)
       ('file
-       (let ((patchsym (stgit-patch-at-point))
+       (let ((patchsym (stgit-patch-name-at-point))
              (patched-file (stgit-patched-file-at-point t)))
          (let ((id (stgit-id (car patched-file))))
            (if (consp (cdr patched-file))
@@ -802,7 +812,8 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
              (stgit-run-git "diff" (concat id "^") id "--"
                             (cdr patched-file))))))
       ('patch
-       (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M" (stgit-patch-at-point)))
+       (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
+                  (stgit-patch-name-at-point)))
       (t
        (error "No patch or file at point")))
     (with-current-buffer standard-output
@@ -812,7 +823,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 (defun stgit-edit ()
   "Edit the patch on the current line."
   (interactive)
-  (let ((patchsym (stgit-patch-at-point t))
+  (let ((patchsym (stgit-patch-name-at-point t))
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
@@ -903,7 +914,7 @@ the work tree and index."
 This is either the patch at point, or one of :top and :bottom, if
 the point is after or before the applied patches."
 
-  (let ((patchsym (stgit-patch-at-point)))
+  (let ((patchsym (stgit-patch-name-at-point)))
     (cond (patchsym patchsym)
 	  ((save-excursion (re-search-backward "^>" nil t)) :top)
 	  (t :bottom))))
