@@ -43,7 +43,18 @@ options = [
     opt('-n', '--number', type = 'int',
         short = 'Push the specified number of patches'),
     opt('--reverse', action = 'store_true',
-        short = 'Push the patches in reverse order')
+        short = 'Push the patches in reverse order'),
+    opt('--set-tree', action = 'store_true',
+        short = 'Push the patch with the original tree', long = """
+        Push the patches, but don't perform a merge. Instead, the
+        resulting tree will be identical to the tree that the patch
+        previously created.
+
+        This can be useful when splitting a patch by first popping the
+        patch and creating a new patch with some of the
+        changes. Pushing the original patch with '--set-tree' will
+        avoid conflicts and only the remaining changes will be in the
+        patch.""")
     ] + argparse.keep_option() + argparse.merged_option()
 
 directory = common.DirectoryHasRepositoryLib()
@@ -74,14 +85,18 @@ def func(parser, options, args):
     if options.reverse:
         patches.reverse()
 
-    try:
-        if options.merged:
-            merged = set(trans.check_merged(patches))
-        else:
-            merged = set()
+    if options.set_tree:
         for pn in patches:
-            trans.push_patch(pn, iw, allow_interactive = True,
-                             already_merged = pn in merged)
-    except transaction.TransactionHalted:
-        pass
+            trans.push_tree(pn)
+    else:
+        try:
+            if options.merged:
+                merged = set(trans.check_merged(patches))
+            else:
+                merged = set()
+            for pn in patches:
+                trans.push_patch(pn, iw, allow_interactive = True,
+                                 already_merged = pn in merged)
+        except transaction.TransactionHalted:
+            pass
     return trans.run(iw)

@@ -379,6 +379,28 @@ class StackTransaction(object):
             # Update immediately.
             update()
 
+    def push_tree(self, pn):
+        """Push the named patch without updating its tree."""
+        orig_cd = self.patches[pn].data
+        cd = orig_cd.set_committer(None).set_parent(self.top)
+
+        s = ''
+        if any(getattr(cd, a) != getattr(orig_cd, a) for a in
+               ['parent', 'tree', 'author', 'message']):
+            self.patches[pn] = self.__stack.repository.commit(cd)
+        else:
+            s = ' (unmodified)'
+        if cd.is_nochange():
+            s = ' (empty)'
+        out.info('Pushed %s%s' % (pn, s))
+
+        if pn in self.hidden:
+            x = self.hidden
+        else:
+            x = self.unapplied
+        del x[x.index(pn)]
+        self.applied.append(pn)
+
     def reorder_patches(self, applied, unapplied, hidden = None, iw = None):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
