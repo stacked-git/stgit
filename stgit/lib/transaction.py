@@ -390,6 +390,7 @@ class StackTransaction(object):
 
     def check_merged(self, patches):
         """Return a subset of patches already merged."""
+        out.start('Checking for patches merged upstream')
         merged = []
         if self.temp_index_tree != self.stack.head.data.tree:
             self.temp_index.read_tree(self.stack.head.data.tree)
@@ -408,4 +409,5 @@ class StackTransaction(object):
                 self.temp_index_tree = None
             except git.MergeException:
                 pass
+        out.done('%d found' % len(merged))
         return merged
