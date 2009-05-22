@@ -40,25 +40,31 @@ class GitConfig:
         'stgit.shortnr':	 '5'
         }
 
-    __cache={}
+    __cache = None
+
+    def load(self):
+        """Load the whole configuration in __cache unless it has been
+        done already."""
+        if self.__cache is not None:
+            return
+        self.__cache = {}
+        lines = Run('git', 'config', '--list', '--null').raw_output()
+        for line in filter(None, lines.split('\0')):
+            key, value = line.split('\n', 1)
+            self.__cache.setdefault(key, []).append(value)
 
     def get(self, name):
-        if self.__cache.has_key(name):
-            return self.__cache[name]
-        try:
-            value = Run('git', 'config', '--get', name).output_one_line()
-        except RunException:
-            value = self.__defaults.get(name, None)
-        self.__cache[name] = value
-        return value
+        self.load()
+        if name not in self.__cache:
+            self.__cache[name] = [self.__defaults.get(name, None)]
+        return self.__cache[name][0]
 
     def getall(self, name):
-        if self.__cache.has_key(name):
+        self.load()
+        try:
             return self.__cache[name]
-        values = Run('git', 'config', '--get-all', name
-                     ).returns([0, 1]).output_lines()
-        self.__cache[name] = values
-        return values
+        except KeyError:
+            return []
 
     def getint(self, name):
         value = self.get(name)
