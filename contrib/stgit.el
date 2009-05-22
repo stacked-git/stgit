@@ -419,7 +419,7 @@ find copied files."
         (error "File does not exist"))
       (find-file filename))))
 
-(defun stgit-toggle-patch-file-list (curpath)
+(defun stgit-select-patch (curpath)
   (let ((inhibit-read-only t))
     (if (memq curpatch stgit-expanded-patches)
         (save-excursion
@@ -434,7 +434,7 @@ find copied files."
   (interactive)
   (let ((curpatch (stgit-patch-at-point)))
     (if curpatch
-        (stgit-toggle-patch-file-list curpatch)
+        (stgit-select-patch curpatch)
       (stgit-select-file))))
 
 
