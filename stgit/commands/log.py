@@ -50,7 +50,9 @@ options = [
     opt('-f', '--full', action = 'store_true',
         short = 'Show the full commit ids'),
     opt('-g', '--graphical', action = 'store_true',
-        short = 'Run gitk instead of printing')]
+        short = 'Run gitk instead of printing'),
+    opt('--clear', action = 'store_true',
+        short = 'Clear the log history')]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -76,6 +78,11 @@ def func(parser, options, args):
     except KeyError:
         out.info('Log is empty')
         return
+
+    if options.clear:
+        log.delete_log(stack.repository, stack.name)
+        return
+
     stacklog = log.get_log_entry(stack.repository, logref, logcommit)
     pathlim = [os.path.join('patches', pn) for pn in patches]
 
