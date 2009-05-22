@@ -302,6 +302,7 @@ class StackTransaction(object):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
+        out.start('Pushing patch "%s"' % pn)
         orig_cd = self.patches[pn].data
         cd = orig_cd.set_committer(None)
         oldparent = cd.parent
@@ -330,12 +331,12 @@ class StackTransaction(object):
                 iw.merge(base, ours, theirs, interactive = interactive)
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
-                s = ' (modified)'
+                s = 'modified'
             except git.MergeConflictException, e:
                 tree = ours
                 merge_conflict = True
                 self.__conflicts = e.conflicts
-                s = ' (conflict)'
+                s = 'conflict'
             except git.MergeException, e:
                 self.__halt(str(e))
         cd = cd.set_tree(tree)
@@ -345,12 +346,12 @@ class StackTransaction(object):
             self.head = comm
         else:
             comm = None
-            s = ' (unmodified)'
+            s = 'unmodified'
         if already_merged:
-            s = ' (merged)'
+            s = 'merged'
         elif not merge_conflict and cd.is_nochange():
-            s = ' (empty)'
-        out.info('Pushed %s%s' % (pn, s))
+            s = 'empty'
+        out.done(s)
         def update():
             if comm:
                 self.patches[pn] = comm
