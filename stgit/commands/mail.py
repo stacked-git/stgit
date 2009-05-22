@@ -219,7 +219,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
     s.quit()
 
 def __send_message(smtpserver, from_addr, to_addr_list, msg,
-                   sleep, smtpuser, smtppassword, use_tls):
+                   smtpuser, smtppassword, use_tls):
     """Message sending dispatcher.
     """
     if smtpserver.startswith('/'):
@@ -229,8 +229,6 @@ def __send_message(smtpserver, from_addr, to_addr_list, msg,
         # Use the SMTP server (we have host and port information)
         __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
                             smtpuser, smtppassword, use_tls)
-    # give recipients a chance of receiving patches in the correct order
-    time.sleep(sleep)
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
@@ -619,7 +617,8 @@ def func(parser, options, args):
         else:
             out.start('Sending the cover message')
             __send_message(smtpserver, from_addr, to_addr_list, msg_string,
-                           sleep, smtpuser, smtppassword, smtpusetls)
+                           smtpuser, smtppassword, smtpusetls)
+            time.sleep(sleep)
             out.done()
 
     # send the patches
@@ -633,7 +632,7 @@ def func(parser, options, args):
         if not tmpl:
             raise CmdException, 'No e-mail template file found'
 
-    for (p, patch_nr) in zip(patches, range(1, len(patches) + 1)):
+    for (p, patch_nr) in zip(patches, range(1, total_nr + 1)):
         msg_id = email.Utils.make_msgid('stgit')
         msg = __build_message(tmpl, p, patch_nr, total_nr, msg_id, ref_id,
                               options)
@@ -650,5 +649,9 @@ def func(parser, options, args):
         else:
             out.start('Sending patch "%s"' % p)
             __send_message(smtpserver, from_addr, to_addr_list, msg_string,
-                           sleep, smtpuser, smtppassword, smtpusetls)
+                           smtpuser, smtppassword, smtpusetls)
+            # give recipients a chance of receiving related patches in the
+            # correct order.
+            if patch_nr < total_nr:
+                time.sleep(sleep)
             out.done()
