@@ -567,23 +567,11 @@ Commands:
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
-  (setq stgit-marked-patches (cons patchsym stgit-marked-patches))
-  (save-excursion
-    (when (stgit-goto-patch patchsym)
-      (move-to-column 1)
-      (let ((inhibit-read-only t))
-        (insert-and-inherit ?*)
-        (delete-char 1)))))
+  (setq stgit-marked-patches (cons patchsym stgit-marked-patches)))
 
 (defun stgit-remove-mark (patchsym)
   "Unmark the patch PATCHSYM."
-  (setq stgit-marked-patches (delq patchsym stgit-marked-patches))
-  (save-excursion
-    (when (stgit-goto-patch patchsym)
-      (move-to-column 1)
-      (let ((inhibit-read-only t))
-        (insert-and-inherit ? )
-        (delete-char 1)))))
+  (setq stgit-marked-patches (delq patchsym stgit-marked-patches)))
 
 (defun stgit-clear-marks ()
   "Unmark all patches."
@@ -653,20 +641,29 @@ If that patch cannot be found, return nil."
 (defun stgit-mark ()
   "Mark the patch under point."
   (interactive)
-  (let ((patch (stgit-patch-name-at-point t)))
-    (stgit-add-mark patch))
+  (let* ((node (ewoc-locate stgit-ewoc))
+         (patch (ewoc-data node)))
+    (stgit-add-mark (stgit-patch-name patch))
+    (ewoc-invalidate stgit-ewoc node))
   (stgit-next-patch))
 
 (defun stgit-unmark-up ()
   "Remove mark from the patch on the previous line."
   (interactive)
   (stgit-previous-patch)
-  (stgit-remove-mark (stgit-patch-name-at-point t)))
+  (let* ((node (ewoc-locate stgit-ewoc))
+         (patch (ewoc-data node)))
+    (stgit-remove-mark (stgit-patch-name patch))
+    (ewoc-invalidate stgit-ewoc node))
+  (move-to-column (stgit-goal-column)))
 
 (defun stgit-unmark-down ()
   "Remove mark from the patch on the current line."
   (interactive)
-  (stgit-remove-mark (stgit-patch-name-at-point t))
+  (let* ((node (ewoc-locate stgit-ewoc))
+         (patch (ewoc-data node)))
+    (stgit-remove-mark (stgit-patch-name patch))
+    (ewoc-invalidate stgit-ewoc node))
   (stgit-next-patch))
 
 (defun stgit-rename (name)
