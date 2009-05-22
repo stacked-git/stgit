@@ -343,7 +343,13 @@ class StackTransaction(object):
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
                ['parent', 'tree', 'author', 'message']):
             comm = self.__stack.repository.commit(cd)
-            self.head = comm
+            if merge_conflict:
+                # When we produce a conflict, we'll run the update()
+                # function defined below _after_ having done the
+                # checkout in run(). To make sure that we check out
+                # the real stack top (as it will look after update()
+                # has been run), set it hard here.
+                self.head = comm
         else:
             comm = None
             s = 'unmodified'
