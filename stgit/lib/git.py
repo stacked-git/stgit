@@ -933,3 +933,7 @@ def diffstat(diff):
     """Return the diffstat of the supplied diff."""
     return run.Run('git', 'apply', '--stat', '--summary'
                    ).raw_input(diff).raw_output()
+
+def clone(remote, local):
+    """Clone a remote repository using 'git clone'."""
+    run.Run('git', 'clone', remote, local).run()

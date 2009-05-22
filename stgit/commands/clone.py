@@ -1,5 +1,5 @@
 __copyright__ = """
-Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
+Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2 as
@@ -15,10 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
-import sys, os
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import argparse, stack, git
+import os
+from stgit.commands import common
+from stgit.lib import git, stack
+from stgit import argparse
+from stgit.out import out
 
 help = 'Make a local clone of a remote repository'
 kind = 'repo'
@@ -38,7 +39,7 @@ not already exist."""
 args = [argparse.repo, argparse.dir]
 options = []
 
-directory = DirectoryAnywhere(needs_current_series = False, log = False)
+directory = common.DirectoryAnywhere(needs_current_series = False, log = False)
 
 def func(parser, options, args):
     """Clone the <repository> into the local <dir> and initialises the
@@ -51,17 +52,10 @@ def func(parser, options, args):
     local_dir = args[1]
 
     if os.path.exists(local_dir):
-        raise CmdException, '"%s" exists. Remove it first' % local_dir
-
-    print 'Cloning "%s" into "%s"...' % (repository, local_dir)
+        raise common.CmdException('"%s" exists. Remove it first' % local_dir)
 
     git.clone(repository, local_dir)
     os.chdir(local_dir)
-    git.checkout(tree_id = 'HEAD')
-
-    # be sure to forget any cached value for .git, since we're going
-    # to work on a brand new repository
-    basedir.clear_cache()
-    stack.Series().init()
-
-    print 'done'
+    directory = common.DirectoryHasRepositoryLib()
+    directory.setup()
+    stack.Stack.initialise(directory.repository)
