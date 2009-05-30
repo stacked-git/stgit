@@ -82,9 +82,7 @@ def func(parser, options, args):
     stack = repository.get_stack(options.branch)
 
     if not args:
-        public_ref = config.get('branch.%s.public' % stack.name)
-        if not public_ref:
-            public_ref = 'refs/heads/%s.public' % stack.name
+        public_ref = common.get_public_ref(stack.name)
     elif len(args) == 1:
         public_ref = args[0]
     else:

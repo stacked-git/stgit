@@ -32,11 +32,7 @@ description = """
 Show the diff (default) or diffstat between the current working copy
 or a tree-ish object and another tree-ish object (defaulting to HEAD).
 File names can also be given to restrict the diff output. The
-tree-ish object can be an StGIT patch, a standard git commit, tag or
-tree. In addition to these, the command also supports '{base}',
-representing the bottom of the current stack.
-
-rev = '[branch:](<patch>|{base}) | <tree-ish>'"""
+tree-ish object has the format accepted by the linkstg:id[] command."""
 
 args = [argparse.known_files, argparse.dirty_files]
 options = [

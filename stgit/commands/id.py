@@ -24,12 +24,13 @@ help = 'Print the git hash value of a StGit reference'
 kind = 'repo'
 usage = ['[options] [id]']
 description = """
-Print the SHA1 value of a Git id (defaulting to HEAD). In addition to
-the standard Git id's like heads and tags, this command also accepts
-'[<branch>:]<patch>' and '[<branch>:]{base}' showing the id of a patch
-or the base of the stack. If no branch is specified, it defaults to the
-current one. The bottom of a patch is accessible with the
-'[<branch>:]<patch>^' format."""
+Print the SHA1 value of a Git id (defaulting to HEAD). In addition to the
+standard Git id's like heads and tags, this command also accepts
+'[<branch>:]<patch>' for the id of a patch, '[<branch>:]\{base\}' for the base
+of the stack and '[<branch>:]\{public\}' for the public branch corresponding
+to the stack (see the 'publish' command for details). If no branch is
+specified, it defaults to the current one. The bottom of a patch is accessible
+with the '[<branch>:]<patch>^' format."""
 
 args = [argparse.applied_patches, argparse.unapplied_patches,
         argparse.hidden_patches]
