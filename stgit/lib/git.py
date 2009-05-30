@@ -609,6 +609,15 @@ class Repository(RunWithEnv):
             raise DetachedHeadException()
     def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
+    def get_merge_bases(self, commit1, commit2):
+        """Return a set of merge bases of two commits."""
+        sha1_list = self.run(['git', 'merge-base', '--all',
+                              commit1.sha1, commit2.sha1]).output_lines()
+        return set(self.get_commit(sha1) for sha1 in sha1_list)
+    def describe(self, commit):
+        """Use git describe --all on the given commit."""
+        return self.run(['git', 'describe', '--all', commit.sha1]
+                       ).discard_stderr().discard_exitcode().raw_output()
     def simple_merge(self, base, ours, theirs):
         index = self.temp_index()
         try:

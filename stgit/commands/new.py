@@ -67,32 +67,12 @@ def func(parser, options, args):
     cd = gitlib.CommitData(
         tree = stack.head.data.tree, parents = [stack.head], message = '',
         author = gitlib.Person.author(), committer = gitlib.Person.committer())
-
-    # Set patch commit message from commandline.
-    if options.message != None:
-        cd = cd.set_message(options.message)
-
-    # Modify author data.
-    cd = cd.set_author(options.author(cd.author))
-
-    # Add Signed-off-by: or similar.
-    if options.sign_str != None:
-        sign_str = options.sign_str
-    else:
-        sign_str = config.get("stgit.autosign")
-
-    if sign_str != None:
-        cd = cd.set_message(
-            utils.add_sign_line(cd.message, sign_str,
-                                cd.committer.name, cd.committer.email))
+    cd = common.update_commit_data(cd, options, allow_edit = True)
 
     if options.save_template:
         options.save_template(cd.message)
         return utils.STGIT_SUCCESS
 
-    # Let user edit the commit message manually.
-    if not options.message:
-        cd = cd.set_message(utils.edit_string(cd.message, '.stgit-new.txt'))
     if name == None:
         name = utils.make_patch_name(cd.message,
                                      lambda name: stack.patches.exists(name))

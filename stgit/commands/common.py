@@ -439,6 +439,32 @@ def readonly_constant_property(f):
         return getattr(self, n)
     return property(new_f)
 
+def update_commit_data(cd, options, allow_edit = False):
+    """Return a new CommitData object updated according to the command line
+    options."""
+    # Set the commit message from commandline.
+    if options.message != None:
+        cd = cd.set_message(options.message)
+
+    # Modify author data.
+    cd = cd.set_author(options.author(cd.author))
+
+    # Add Signed-off-by: or similar.
+    if options.sign_str != None:
+        sign_str = options.sign_str
+    else:
+        sign_str = config.get("stgit.autosign")
+    if sign_str != None:
+        cd = cd.set_message(
+            add_sign_line(cd.message, sign_str,
+                          cd.committer.name, cd.committer.email))
+
+    # Let user edit the commit message manually.
+    if allow_edit and not options.message:
+        cd = cd.set_message(edit_string(cd.message, '.stgit-new.txt'))
+
+    return cd
+
 class DirectoryException(StgException):
     pass
 
