@@ -42,8 +42,8 @@
 	#editor = /usr/bin/vi
 
 	# this value overrides the default PAGER environment variable
-	#pager = ~/share/stgit/contrib/diffcol.sh
-	#pager = filterdiff --annotate | colordiff | less -FRX
+	#pager = less -FRSX
+	#pager = filterdiff --annotate | colordiff | less -FRSX
 
 	# GIT pull and fetch commands (should take the same arguments as
 	# git fetch or git pull).  By default:

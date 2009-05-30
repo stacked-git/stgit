@@ -37,7 +37,8 @@ class GitConfig:
         'stgit.autoimerge':	'no',
         'stgit.keepoptimized':	'no',
         'stgit.extensions':	'.ancestor .current .patched',
-        'stgit.shortnr':	 '5'
+        'stgit.shortnr': '5',
+        'stgit.pager':  'less -FRSX'
         }
 
     __cache = None
@@ -109,16 +110,18 @@ class GitConfig:
             if m:
                 result.append(m.group(1))
         return result
+
+    def get_colorbool(self, name, stdout_is_tty):
+        """Invoke 'git config --get-colorbool' and return the result."""
+        return Run('git', 'config', '--get-colorbool', name,
+                   stdout_is_tty).output_one_line()
         
 config=GitConfig()
 
 def config_setup():
     global config
 
-    # Set the PAGER environment to the config value (if any)
-    pager = config.get('stgit.pager')
-    if pager:
-        os.environ['PAGER'] = pager
+    os.environ.setdefault('PAGER', config.get('stgit.pager'))
     # FIXME: handle EDITOR the same way ?
 
 class ConfigOption:

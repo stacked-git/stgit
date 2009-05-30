@@ -97,6 +97,15 @@ def git_commit(name, repository, branch_name = None):
     except libgit.RepositoryException:
         raise CmdException('%s: Unknown patch or revision name' % name)
 
+def color_diff_flags():
+    """Return the git flags for coloured diff output if the configuration and
+    stdout allows."""
+    stdout_is_tty = (sys.stdout.isatty() and 'true') or 'false'
+    if config.get_colorbool('color.diff', stdout_is_tty) == 'true':
+        return ['--color']
+    else:
+        return []
+
 def check_local_changes():
     if git.local_changes():
         raise CmdException('local changes in the tree. Use "refresh" or'

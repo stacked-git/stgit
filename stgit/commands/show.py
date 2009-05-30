@@ -61,6 +61,7 @@ def func(parser, options, args):
         # individual patches or commit ids
         patches = args
 
+    options.diff_flags.extend(color_diff_flags())
     commit_ids = [git_id(crt_series, patch) for patch in patches]
     commit_str = '\n'.join([git.pretty_commit(commit_id,
                                               flags = options.diff_flags)
