@@ -31,7 +31,7 @@ Pop all patches from current stack, move the stack base to the given
 If you experience merge conflicts, resolve the problem and continue
 the rebase by executing the following sequence:
 
-        $ stg resolved -a [-i]
+        $ git add --update
         $ stg refresh
         $ stg goto top-patch
 

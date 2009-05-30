@@ -30,8 +30,8 @@ the stack. The 'push' operation allows patch reordering by commuting
 them with the three-way merge algorithm. If there are conflicts while
 pushing a patch, those conflicts are written to the work tree, and the
 command halts. Conflicts raised during the push operation have to be
-fixed and the 'resolved' command run (alternatively, you may undo the
-conflicting push with 'stg undo').
+fixed and the 'git add --update' command run (alternatively, you may
+undo the conflicting push with 'stg undo').
 
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""

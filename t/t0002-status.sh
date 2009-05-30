@@ -145,7 +145,7 @@ A fie
 M foo/bar
 EOF
 test_expect_success 'Status after resolving the push' '
-    stg resolved -a &&
+    git add --update &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '

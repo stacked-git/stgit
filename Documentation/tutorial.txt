@@ -313,7 +313,7 @@ markers.
 Now that we've resolved the conflict, we just need to tell StGit about
 it:
 
-  $ stg resolved TODO
+  $ git add TODO
   $ stg status
   M TODO
 

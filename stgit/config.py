@@ -28,7 +28,6 @@ class GitConfigException(StgException):
 
 class GitConfig:
     __defaults={
-        'stgit.autoresolved':	'no',
         'stgit.smtpserver':	'localhost:25',
         'stgit.smtpdelay':	'5',
         'stgit.pullcmd':	'git pull',

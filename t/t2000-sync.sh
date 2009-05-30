@@ -117,7 +117,7 @@ test_expect_success \
     '
     [ "$(echo $(stg series --applied --noprefix))" = "p1" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p2 p3" ] &&
-    stg resolved -a &&
+    git add --update &&
     stg refresh &&
     stg goto p3
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
@@ -135,7 +135,7 @@ test_expect_success \
     '
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    stg resolved -a &&
+    git add --update &&
     stg refresh &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]

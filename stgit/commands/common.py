@@ -120,7 +120,7 @@ def check_head_top_equal(crt_series):
 def check_conflicts():
     if git.get_conflicts():
         raise CmdException('Unsolved conflicts. Please fix the conflicts'
-                           ' then use "resolve <files>" or revert the'
+                           ' then use "git add --update <files>" or revert the'
                            ' changes with "status --reset".')
 
 def print_crt_patch(crt_series, branch = None):

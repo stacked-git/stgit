@@ -17,10 +17,6 @@
 	# Automatically sign newly created patches
 	#autosign = Signed-off-by
 
-	# Set to 'yes' if you don't want to use the 'resolved' command.
-	# 'refresh' will automatically mark the conflicts as resolved
-	#autoresolved = no
-
 	# SMTP server for sending patches
 	#smtpserver = /usr/sbin/sendmail -t -i
 	#smtpserver = localhost:25
