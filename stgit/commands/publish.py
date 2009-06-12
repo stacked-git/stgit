@@ -21,6 +21,7 @@ from stgit.commands import common
 from stgit.config import config
 from stgit.lib import git, stack
 from stgit.out import out
+from stgit import utils
 
 help = 'Publish the stack changes to a merge-friendly head'
 kind = 'stack'
@@ -88,6 +89,9 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
+    if not public_ref.startswith('refs/heads/'):
+        public_ref = 'refs/heads/' + public_ref
+
     # just clone the stack if the public ref does not exist
     if not repository.refs.exists(public_ref):
         repository.refs.set(public_ref, stack.head, 'publish')
@@ -107,7 +111,8 @@ def func(parser, options, args):
     merge_bases = repository.get_merge_bases(public_head, stack.base)
     if not stack.base in merge_bases:
         message = 'Merge %s into %s' % (repository.describe(stack.base),
-                                        public_ref)
+                                        utils.strip_prefix('refs/heads/',
+                                                           public_ref))
         public_head = __create_commit(repository, stack.head.data.tree,
                                       [public_head, stack.base], options,
                                       message)
