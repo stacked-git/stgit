@@ -133,7 +133,7 @@ def func(parser, options, args):
             cd = pc.data.set_parent(public_head)
             public_head = repository.commit(cd)
             public_tree = public_head.data.tree
-            out.start('Published new patch "%s"' % p)
+            out.info('Published new patch "%s"' % p)
 
     # create a new commit (only happens if no new patches are detected)
     if public_tree.sha1 != stack.head.data.tree.sha1:
