@@ -65,6 +65,8 @@ options = [
         short = 'Replace the unapplied patches in the series'),
     opt('-b', '--base', args = [argparse.commit],
         short = 'Use BASE instead of HEAD for file importing'),
+    opt('--reject', action = 'store_true',
+        short = 'leave the rejected hunks in corresponding *.rej files'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),
     opt('-p', '--showpatch', action = 'store_true',
@@ -147,10 +149,10 @@ def __create_patch(filename, message, author_name, author_email,
     else:
         out.start('Importing patch "%s"' % patch)
         if options.base:
-            git.apply_patch(diff = diff,
-                            base = git_id(crt_series, options.base))
+            base = git_id(crt_series, options.base)
         else:
-            git.apply_patch(diff = diff)
+            base = None
+        git.apply_patch(diff = diff, base = base, reject = options.reject)
         crt_series.refresh_patch(edit = options.edit,
                                  show_patch = options.showpatch,
                                  sign_str = options.sign_str,
