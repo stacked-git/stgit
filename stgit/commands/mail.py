@@ -399,7 +399,7 @@ def __build_cover(tmpl, patches, msg_id, options):
                  'totalnr':      total_nr_str,
                  'number':       number_str,
                  'shortlog':     stack.shortlog(crt_series.get_patch(p)
-                                                for p in patches),
+                                                for p in reversed(patches)),
                  'diffstat':     gitlib.diffstat(git.diff(
                      rev1 = git_id(crt_series, '%s^' % patches[0]),
                      rev2 = git_id(crt_series, '%s' % patches[-1]),
