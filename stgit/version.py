@@ -21,7 +21,7 @@ def git_describe_version():
         raise VersionUnavailable(str(e))
     if dirty:
         v += '-dirty'
-    return re.sub('-', '.', utils.strip_prefix('v', v))
+    return utils.strip_prefix('v', v)
 
 def builtin_version():
     try:
