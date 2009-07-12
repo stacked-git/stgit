@@ -20,6 +20,7 @@ from pydoc import pager
 from stgit.argparse import opt
 from stgit.commands.common import *
 from stgit import argparse, git
+from stgit.lib import git as gitlib
 
 help = 'Show the commit corresponding to a patch'
 kind = 'patch'
@@ -38,6 +39,8 @@ options = [
         short = 'Show the applied patches'),
     opt('-u', '--unapplied', action = 'store_true',
         short = 'Show the unapplied patches'),
+    opt('-s', '--stat', action = 'store_true',
+        short = 'Show a diffstat summary of the specified patches'),
     ] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log = False)
@@ -61,10 +64,13 @@ def func(parser, options, args):
         # individual patches or commit ids
         patches = args
 
-    options.diff_flags.extend(color_diff_flags())
+    if not options.stat:
+        options.diff_flags.extend(color_diff_flags())
     commit_ids = [git_id(crt_series, patch) for patch in patches]
     commit_str = '\n'.join([git.pretty_commit(commit_id,
                                               flags = options.diff_flags)
                             for commit_id in commit_ids])
+    if options.stat:
+        commit_str = gitlib.diffstat(commit_str)
     if commit_str:
         pager(commit_str)
