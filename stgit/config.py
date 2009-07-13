@@ -37,7 +37,7 @@ class GitConfig:
         'stgit.keepoptimized':	'no',
         'stgit.extensions':	'.ancestor .current .patched',
         'stgit.shortnr': '5',
-        'stgit.pager':  'less -FRSX'
+        'stgit.pager':  'less'
         }
 
     __cache = None
@@ -121,6 +121,7 @@ def config_setup():
     global config
 
     os.environ.setdefault('PAGER', config.get('stgit.pager'))
+    os.environ.setdefault('LESS', '-FRSX')
     # FIXME: handle EDITOR the same way ?
 
 class ConfigOption:
