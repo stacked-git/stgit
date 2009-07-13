@@ -68,6 +68,8 @@ Argument DIR is the repository path."
   "Capture StGit output and, if there was any output, show it in a window
 at the end.
 Returns nil if there was no output."
+  (declare (debug ([&or stringp null] body))
+           (indent 1))
   `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
          (stgit-dir default-directory)
          (inhibit-read-only t))
@@ -82,7 +84,6 @@ Returns nil if there was no output."
        (setq buffer-read-only t)
        (if (< (point-min) (point-max))
            (display-buffer output-buf t)))))
-(put 'stgit-capture-output 'lisp-indent-function 1)
 
 (defun stgit-make-run-args (args)
   "Return a copy of ARGS with its elements converted to strings."
