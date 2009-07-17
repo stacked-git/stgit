@@ -267,7 +267,7 @@ def __import_url(url, options):
     import tempfile
 
     if not url:
-        parser.error('URL argument required')
+        raise CmdException('URL argument required')
 
     patch = os.path.basename(urllib.unquote(url))
     filename = os.path.join(tempfile.gettempdir(), patch)
@@ -327,7 +327,7 @@ def func(parser, options, args):
     else:
         filename = None
 
-    if filename:
+    if not options.url and filename:
         filename = os.path.abspath(filename)
     directory.cd_to_topdir()
 
