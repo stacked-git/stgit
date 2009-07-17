@@ -16,6 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 """
 
+import re
 import sys
 from stgit.argparse import opt
 from stgit.commands import common
@@ -55,7 +56,7 @@ def func(parser, options, args):
         if options.series == '-':
             f = sys.stdin
         else:
-            f = file(args[0])
+            f = file(options.series)
 
         patches = []
         for line in f:
