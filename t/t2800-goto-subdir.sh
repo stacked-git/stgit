@@ -36,7 +36,8 @@ test_expect_success 'Prepare conflicting goto' '
     stg delete p2
 '
 
-cat > expected1.txt <<EOF
+# git gives this result before commit 606475f3 ...
+cat > expected1a.txt <<EOF
 foo1
 <<<<<<< current:foo/bar
 =======
@@ -44,6 +45,17 @@ foo2
 foo3
 >>>>>>> patched:foo/bar
 EOF
+
+# ... and this result after commit 606475f3.
+cat > expected1b.txt <<EOF
+foo1
+<<<<<<< current
+=======
+foo2
+foo3
+>>>>>>> patched
+EOF
+
 cat > expected2.txt <<EOF
 bar
 EOF
@@ -51,7 +63,8 @@ test_expect_success 'Goto in subdirectory (conflicting push)' '
     (cd foo && stg goto --keep p3) ;
     [ $? -eq 3 ] &&
     cat foo/bar > actual.txt &&
-    test_cmp expected1.txt actual.txt &&
+    ( test_cmp expected1a.txt actual.txt \
+      || test_cmp expected1b.txt actual.txt ) &&
     ls foo > actual.txt &&
     test_cmp expected2.txt actual.txt
 '
