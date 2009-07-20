@@ -405,7 +405,8 @@ def parse_mail(msg):
         authname = authemail = None
 
     # '\n\t' can be found on multi-line headers
-    descr = __decode_header(msg['subject']).replace('\n\t', ' ')
+    descr = __decode_header(msg['subject'])
+    descr = re.sub('\n[ \t]*', ' ', descr)
     authdate = msg['date']
 
     # remove the '[*PATCH*]' expression in the subject
