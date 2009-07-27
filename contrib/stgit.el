@@ -77,8 +77,7 @@ directory DIR or `default-directory'"
             (if (stgit-patch-empty patch) "(empty) " "")
             (propertize (or (stgit-patch-desc patch) "")
                         'face 'stgit-description-face))
-    (add-text-properties start (point) (list 'entry-type 'patch
-                                             'stgit-patchsym name))
+    (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files name))
     (put-text-property start (point) 'patch-data patch)))
@@ -624,11 +623,13 @@ the new file names instead of just one name."
 
 (defun stgit-goto-patch (patchsym)
   "Move point to the line containing patch PATCHSYM.
-If that patch cannot be found, return nil."
-  (let ((p (text-property-any (point-min) (point-max)
-                              'stgit-patchsym patchsym)))
-    (when p
-      (goto-char p)
+If that patch cannot be found, do nothing."
+  (let ((node (ewoc-nth stgit-ewoc 0)))
+    (while (and node (not (eq (stgit-patch-name (ewoc-data node))
+                              patchsym)))
+      (setq node (ewoc-next stgit-ewoc node)))
+    (when node
+      (ewoc-goto-node stgit-ewoc node)
       (move-to-column goal-column))))
 
 (defun stgit-init ()
