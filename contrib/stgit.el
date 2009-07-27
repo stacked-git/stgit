@@ -594,14 +594,10 @@ Commands:
   "Unmark all patches."
   (setq stgit-marked-patches '()))
 
-(defun stgit-patch-at-point (&optional cause-error allow-file)
+(defun stgit-patch-at-point (&optional cause-error)
   "Return the patch name on the current line as a symbol.
-If CAUSE-ERROR is not nil, signal an error if none found.
-If ALLOW-FILE is not nil, also handle when point is on a file of
-a patch."
+If CAUSE-ERROR is not nil, signal an error if none found."
   (or (get-text-property (point) 'stgit-patchsym)
-      (and allow-file
-           (get-text-property (point) 'stgit-file-patchsym))
       (when cause-error
         (error "No patch on this line"))))
 
