@@ -191,19 +191,20 @@ Returns nil if there was no output."
                                 :desc (match-string 5)
                                 :empty (string= (match-string 1) "0"))))
             (setq first-line nil)
-            (forward-line 1))
-          (ewoc-enter-last ewoc
-                           (make-stgit-patch
-                            :status 'index
-                            :name :index
-                            :desc nil
-                            :empty nil))
-          (ewoc-enter-last ewoc
-                           (make-stgit-patch
-                            :status 'work
-                            :name :work
-                            :desc nil
-                            :empty nil)))))))
+            (forward-line 1)))))
+    (when stgit-show-worktree
+      (ewoc-enter-last ewoc
+                       (make-stgit-patch
+                        :status 'index
+                        :name :index
+                        :desc nil
+                        :empty nil))
+      (ewoc-enter-last ewoc
+                       (make-stgit-patch
+                        :status 'work
+                        :name :work
+                        :desc nil
+                        :empty nil)))))
 
 
 (defun stgit-reload ()
@@ -221,7 +222,12 @@ Returns nil if there was no output."
                             (buffer-substring (point-min) (1- (point-max))))
                           'face 'bold)
                          "\n")
-                 "--")
+                 (if stgit-show-worktree
+                     "--"
+                   (propertize
+                    (substitute-command-keys "--\n\"\\[stgit-toggle-worktree]\"\
+ shows the working tree\n")
+                   'face 'stgit-description-face)))
     (stgit-run-series stgit-ewoc)
     (if curpatch
         (stgit-goto-patch curpatch)
@@ -564,47 +570,52 @@ find copied files."
   "Keymap for StGit major mode.")
 
 (unless stgit-mode-map
-  (setq stgit-mode-map (make-keymap))
-  (suppress-keymap stgit-mode-map)
-  (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
-        '((" " .        stgit-mark)
-          ("m" .        stgit-mark)
-          ("\d" .       stgit-unmark-up)
-          ("u" .        stgit-unmark-down)
-          ("?" .        stgit-help)
-          ("h" .        stgit-help)
-          ("\C-p" .     stgit-previous-line)
-          ("\C-n" .     stgit-next-line)
-          ([up] .       stgit-previous-line)
-          ([down] .     stgit-next-line)
-          ("p" .        stgit-previous-patch)
-          ("n" .        stgit-next-patch)
-          ("\M-{" .     stgit-previous-patch)
-          ("\M-}" .     stgit-next-patch)
-          ("s" .        stgit-git-status)
-          ("g" .        stgit-reload)
-          ("r" .        stgit-refresh)
-          ("\C-c\C-r" . stgit-rename)
-          ("e" .        stgit-edit)
-          ("M" .        stgit-move-patches)
-          ("S" .        stgit-squash)
-          ("N" .        stgit-new)
-          ("R" .        stgit-repair)
-          ("C" .        stgit-commit)
-          ("U" .        stgit-uncommit)
-          ("\r" .       stgit-select)
-          ("o" .        stgit-find-file-other-window)
-          ("i" .        stgit-file-toggle-index)
-          (">" .        stgit-push-next)
-          ("<" .        stgit-pop-next)
-          ("P" .        stgit-push-or-pop)
-          ("G" .        stgit-goto)
-          ("=" .        stgit-show)
-          ("D" .        stgit-delete)
-          ([(control ?/)] . stgit-undo)
-          ("\C-_" .     stgit-undo)
-          ("B" .        stgit-branch)
-          ("q" .        stgit-quit))))
+  (let ((toggle-map (make-keymap)))
+    (suppress-keymap toggle-map)
+    (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
+          '(("t" .        stgit-toggle-worktree)))
+    (setq stgit-mode-map (make-keymap))
+    (suppress-keymap stgit-mode-map)
+    (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
+          `((" " .        stgit-mark)
+            ("m" .        stgit-mark)
+            ("\d" .       stgit-unmark-up)
+            ("u" .        stgit-unmark-down)
+            ("?" .        stgit-help)
+            ("h" .        stgit-help)
+            ("\C-p" .     stgit-previous-line)
+            ("\C-n" .     stgit-next-line)
+            ([up] .       stgit-previous-line)
+            ([down] .     stgit-next-line)
+            ("p" .        stgit-previous-patch)
+            ("n" .        stgit-next-patch)
+            ("\M-{" .     stgit-previous-patch)
+            ("\M-}" .     stgit-next-patch)
+            ("s" .        stgit-git-status)
+            ("g" .        stgit-reload)
+            ("r" .        stgit-refresh)
+            ("\C-c\C-r" . stgit-rename)
+            ("e" .        stgit-edit)
+            ("M" .        stgit-move-patches)
+            ("S" .        stgit-squash)
+            ("N" .        stgit-new)
+            ("R" .        stgit-repair)
+            ("C" .        stgit-commit)
+            ("U" .        stgit-uncommit)
+            ("\r" .       stgit-select)
+            ("o" .        stgit-find-file-other-window)
+            ("i" .        stgit-file-toggle-index)
+            (">" .        stgit-push-next)
+            ("<" .        stgit-pop-next)
+            ("P" .        stgit-push-or-pop)
+            ("G" .        stgit-goto)
+            ("=" .        stgit-show)
+            ("D" .        stgit-delete)
+            ([(control ?/)] . stgit-undo)
+            ("\C-_" .     stgit-undo)
+            ("B" .        stgit-branch)
+            ("t" .        ,toggle-map)
+            ("q" .        stgit-quit)))))
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
@@ -619,6 +630,7 @@ Commands:
   (set (make-local-variable 'list-buffers-directory) default-directory)
   (set (make-local-variable 'stgit-marked-patches) nil)
   (set (make-local-variable 'stgit-expanded-patches) nil)
+  (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
   (set-variable 'truncate-lines 't)
   (add-hook 'after-save-hook 'stgit-update-saved-file)
   (run-hooks 'stgit-mode-hook))
@@ -1115,6 +1127,31 @@ With prefix argument, refresh the marked patch or the patch under point."
     (stgit-capture-output nil
       (apply 'stgit-run "refresh" patchargs))
     (stgit-refresh-git-status))
+  (stgit-reload))
+
+(defcustom stgit-default-show-worktree
+  nil
+  "Set to non-nil to by default show the working tree in a new stgit buffer.
+
+This value is used as the default value for `stgit-show-worktree'."
+  :type 'boolean
+  :group 'stgit)
+
+(defvar stgit-show-worktree nil
+  "Show work tree and index in the stgit buffer.
+
+See `stgit-default-show-worktree' for its default value.")
+
+(defun stgit-toggle-worktree (&optional arg)
+  "Toggle the visibility of the work tree.
+With arg, show the work tree if arg is positive.
+
+Its initial setting is controlled by `stgit-default-show-worktree'."
+  (interactive)
+  (setq stgit-show-worktree
+        (if (numberp arg)
+            (> arg 0)
+          (not stgit-show-worktree)))
   (stgit-reload))
 
 (provide 'stgit)
