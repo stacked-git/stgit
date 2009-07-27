@@ -79,7 +79,7 @@ directory DIR or `default-directory'"
                         'face 'stgit-description-face))
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
-      (stgit-insert-patch-files name))
+      (stgit-insert-patch-files patch))
     (put-text-property start (point) 'patch-data patch)))
 
 (defun create-stgit-buffer (dir)
@@ -361,68 +361,85 @@ Cf. `stgit-file-type-change-string'."
                        (propertize (format "%o" new-perm)
                                    'face 'stgit-file-permission-face)))))))
 
-(defun stgit-insert-patch-files (patchsym)
-  (let* ((start (point))
-         (result (with-output-to-string
-                   (stgit-run-git "diff-tree" "-r" "-z"
-                                  (if stgit-expand-find-copies-harder
-                                      "--find-copies-harder"
-                                    "-C")
-                                  (stgit-id patchsym)))))
-    (let (mstart)
-      (while (string-match "\0:\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
-                           result mstart)
-        (let ((copy-or-rename (match-string 4 result))
-              (old-perm       (read (format "#o%s" (match-string 1 result))))
-              (new-perm       (read (format "#o%s" (match-string 2 result))))
-              (line-start (point))
-              status
-              change
-              (properties '(entry-type file)))
-          (if copy-or-rename
-              (let ((cr-score       (match-string 5 result))
-                    (cr-from-file   (match-string 6 result))
-                    (cr-to-file     (match-string 7 result)))
-                (setq status (stgit-file-status-code copy-or-rename
-                                                     cr-score)
-                      properties (list* 'stgit-old-file cr-from-file
-                                        'stgit-new-file cr-to-file
-                                        properties)
-                      change (concat
-                              cr-from-file
-                              (propertize " -> "
-                                          'face 'stgit-description-face)
-                              cr-to-file)))
-            (setq status (stgit-file-status-code (match-string 8 result))
-                  properties (list* 'stgit-file (match-string 9 result)
-                                    properties)
-                  change (match-string 9 result)))
+(defstruct (stgit-file)
+  old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
-          (let ((mode-change (stgit-file-mode-change-string old-perm
-                                                            new-perm)))
-            (insert "\n    "
-                    (format "%-12s" (stgit-file-status-code-as-string
-                                     status))
+(defun stgit-insert-file (file)
+  (let ((status (stgit-file-status file))
+        (name (if (stgit-file-copy-or-rename file)
+                  (concat (stgit-file-cr-from file)
+                          (propertize " -> "
+                                      'face 'stgit-description-face)
+                          (stgit-file-cr-to file))
+                (stgit-file-file file)))
+        (mode-change (stgit-file-mode-change-string
+                      (stgit-file-old-perm file)
+                      (stgit-file-new-perm file)))
+        (start (point)))
+    (insert (format "\n    %-12s%1s%s%s"
+                    (stgit-file-status-code-as-string status)
                     mode-change
-                    (if (> (length mode-change) 0) " " "")
-                    change
-                    (propertize (stgit-file-type-change-string old-perm
-                                                               new-perm)
+                    name
+                    (propertize (stgit-file-type-change-string
+                                 (stgit-file-old-perm file)
+                                 (stgit-file-new-perm file))
                                 'face 'stgit-description-face)))
-          (add-text-properties line-start (point) properties))
-        (setq mstart (match-end 0))))
+    (add-text-properties start (point)
+                         `(entry-type file file ,(stgit-file-file file)))))
+
+(defun stgit-insert-patch-files (patch)
+  "Expand (show modification of) the patch with name PATCHSYM (a
+symbol) after the line at point.
+`stgit-expand-find-copies-harder' controls how hard to try to
+find copied files."
+  (let* ((start (point))
+         (patchsym (stgit-patch-name patch))
+         (args (list "-r" "-z" (if stgit-expand-find-copies-harder
+                                   "--find-copies-harder"
+                                 "-C")))
+         (stgbuf (current-buffer)))
+    (with-temp-buffer
+      (apply 'stgit-run-git "diff-tree"
+             (append args (list (stgit-id patchsym))))
+      (goto-char (point-min))
+      (forward-char 41)
+      (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
+        (let ((old-perm (string-to-number (match-string 1) 8))
+              (new-perm (string-to-number (match-string 2) 8)))
+          (goto-char (match-end 0))
+          (let ((file
+                 (cond ((looking-at
+                         "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
+                        (make-stgit-file
+                         :old-perm       old-perm
+                         :new-perm       new-perm
+                         :copy-or-rename t
+                         :cr-score       (string-to-number (match-string 2))
+                         :cr-from        (match-string 3)
+                         :cr-to          (match-string 4)
+                         :status         (stgit-file-status-code (match-string 1))
+                         :file           (match-string 3)))
+                       ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
+                        (make-stgit-file
+                         :old-perm       old-perm
+                         :new-perm       new-perm
+                         :copy-or-rename nil
+                         :cr-score       nil
+                         :cr-from        nil
+                         :cr-to          nil
+                         :status         (stgit-file-status-code (match-string 1))
+                         :file           (match-string 2))))))
+            (with-current-buffer stgbuf
+              (stgit-insert-file file)))
+          (goto-char (match-end 0)))))
     (when (= start (point))
-      (insert "    <no files>\n"))
-    (put-text-property start (point) 'stgit-file-patchsym patchsym)))
+      (insert "    <no files>\n"))))
 
 (defun stgit-select-file ()
-  (let ((patched-file (stgit-patched-file-at-point)))
-    (unless patched-file
-      (error "No patch or file on the current line"))
-    (let ((filename (expand-file-name (cdr patched-file))))
-      (unless (file-exists-p filename)
-        (error "File does not exist"))
-      (find-file filename))))
+  (let ((filename (expand-file-name (get-text-property (point) 'file))))
+    (unless (file-exists-p filename)
+      (error "File does not exist"))
+    (find-file filename)))
 
 (defun stgit-select-patch ()
   (let ((patchname (stgit-patch-name-at-point)))
