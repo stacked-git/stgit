@@ -164,6 +164,17 @@ Returns nil if there was no output."
   "Returns non-nil if the index contains no changes from HEAD."
   (zerop (stgit-run-git-silent "diff-index" "--cached" "--quiet" "HEAD")))
 
+(defvar stgit-index-node nil)
+(defvar stgit-worktree-node nil)
+
+(defun stgit-refresh-index ()
+  (when stgit-index-node
+    (ewoc-invalidate (car stgit-index-node) (cdr stgit-index-node))))
+
+(defun stgit-refresh-worktree ()
+  (when stgit-worktree-node
+    (ewoc-invalidate (car stgit-worktree-node) (cdr stgit-worktree-node))))
+
 (defun stgit-run-series (ewoc)
   (let ((first-line t))
     (with-temp-buffer
@@ -192,19 +203,20 @@ Returns nil if there was no output."
                                 :empty (string= (match-string 1) "0"))))
             (setq first-line nil)
             (forward-line 1)))))
-    (when stgit-show-worktree
-      (ewoc-enter-last ewoc
-                       (make-stgit-patch
-                        :status 'index
-                        :name :index
-                        :desc nil
-                        :empty nil))
-      (ewoc-enter-last ewoc
-                       (make-stgit-patch
-                        :status 'work
-                        :name :work
-                        :desc nil
-                        :empty nil)))))
+    (if stgit-show-worktree
+        (setq stgit-index-node (cons ewoc (ewoc-enter-last ewoc
+                                                           (make-stgit-patch
+                                                            :status 'index
+                                                            :name :index
+                                                            :desc nil
+                                                            :empty nil)))
+              stgit-worktree-node (cons ewoc (ewoc-enter-last ewoc
+                                                              (make-stgit-patch
+                                                               :status 'work
+                                                               :name :work
+                                                               :desc nil
+                                                               :empty nil))))
+      (setq stgit-worktree-node nil))))
 
 
 (defun stgit-reload ()
@@ -435,6 +447,8 @@ find copied files."
                             "-C")))
          (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
     (setf (stgit-patch-files-ewoc patch) ewoc)
+    (when (eq patchsym :work)
+      (setq stgit-work-ewoc ewoc))
     (with-temp-buffer
       (apply 'stgit-run-git
              (cond ((eq patchsym :work)
@@ -643,8 +657,7 @@ Commands:
 	 (buffer (and gitdir (stgit-find-buffer gitdir))))
     (when buffer
       (with-current-buffer buffer
-        ;; FIXME: just invalidate ewoc node
-	(stgit-reload)))))
+        (stgit-refresh-worktree)))))
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
@@ -894,8 +907,8 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
                                              (stgit-file-status patched-file)))
             (t
              (error "Can only move files in the working tree to index")))))
-  ;; FIXME: invalidate ewoc
-  (stgit-reload))
+  (stgit-refresh-worktree)
+  (stgit-refresh-index))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
