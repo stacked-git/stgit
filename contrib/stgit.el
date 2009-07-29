@@ -42,8 +42,8 @@ directory DIR or `default-directory'"
         (with-current-buffer git-status-buffer
           (git-refresh-status))))))
 
-(defun switch-to-stgit-buffer (dir)
-  "Switch to a (possibly new) buffer displaying StGit patches for DIR."
+(defun stgit-find-buffer (dir)
+  "Return the buffer displaying StGit patches for DIR, or nil if none."
   (setq dir (file-name-as-directory dir))
   (let ((buffers (buffer-list)))
     (while (and buffers
@@ -51,9 +51,15 @@ directory DIR or `default-directory'"
                        (and (eq major-mode 'stgit-mode)
                             (string= default-directory dir)))))
       (setq buffers (cdr buffers)))
-    (switch-to-buffer (if buffers
-                          (car buffers)
-                        (create-stgit-buffer dir)))))
+    (and buffers (car buffers))))
+
+(defun switch-to-stgit-buffer (dir)
+  "Switch to a (possibly new) buffer displaying StGit patches for DIR."
+  (setq dir (file-name-as-directory dir))
+  (let ((buffer (stgit-find-buffer dir)))
+    (switch-to-buffer (or buffer
+			  (create-stgit-buffer dir)))))
+
 (defstruct (stgit-patch)
   status name desc empty files-ewoc)
 
@@ -61,22 +67,27 @@ directory DIR or `default-directory'"
   (let ((status (stgit-patch-status patch))
         (start (point))
         (name (stgit-patch-name patch)))
-    (insert (case status
-              ('applied "+")
-              ('top ">")
-              ('unapplied "-")
-              (t "·"))
-            (if (memq name stgit-marked-patches)
-                "*" " ")
-            (propertize (format "%-30s" (symbol-name name))
-                        'face (case status
-                                ('applied 'stgit-applied-patch-face)
-                                ('top 'stgit-top-patch-face)
-                                ('unapplied 'stgit-unapplied-patch-face)))
-            "  "
-            (if (stgit-patch-empty patch) "(empty) " "")
-            (propertize (or (stgit-patch-desc patch) "")
-                        'face 'stgit-description-face))
+    (case name
+       (:index (insert (propertize "  Index" 'face 'italic)))
+       (:work (insert (propertize "  Work tree" 'face 'italic)))
+       (t (insert (case status
+                    ('applied "+")
+                    ('top ">")
+                    ('unapplied "-"))
+                  (if (memq name stgit-marked-patches)
+                      "*" " ")
+                  (propertize (format "%-30s"
+                                      (symbol-name name))
+                              'face (case status
+                                      ('applied 'stgit-applied-patch-face)
+                                      ('top 'stgit-top-patch-face)
+                                      ('unapplied 'stgit-unapplied-patch-face)
+                                      ('index nil)
+                                      ('work nil)))
+                  "  "
+                  (if (stgit-patch-empty patch) "(empty) " "")
+                  (propertize (or (stgit-patch-desc patch) "")
+                              'face 'stgit-description-face))))
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files patch))
@@ -149,6 +160,10 @@ Returns nil if there was no output."
   (setq args (stgit-make-run-args args))
   (apply 'call-process "git" nil standard-output nil args))
 
+(defun stgit-index-empty-p ()
+  "Returns non-nil if the index contains no changes from HEAD."
+  (zerop (stgit-run-git-silent "diff-index" "--cached" "--quiet" "HEAD")))
+
 (defun stgit-run-series (ewoc)
   (let ((first-line t))
     (with-temp-buffer
@@ -176,7 +191,19 @@ Returns nil if there was no output."
                                 :desc (match-string 5)
                                 :empty (string= (match-string 1) "0"))))
             (setq first-line nil)
-            (forward-line 1)))))))
+            (forward-line 1))
+          (ewoc-enter-last ewoc
+                           (make-stgit-patch
+                            :status 'index
+                            :name :index
+                            :desc nil
+                            :empty nil))
+          (ewoc-enter-last ewoc
+                           (make-stgit-patch
+                            :status 'work
+                            :name :work
+                            :desc nil
+                            :empty nil)))))))
 
 
 (defun stgit-reload ()
@@ -397,16 +424,22 @@ find copied files."
   (insert "\n")
   (let* ((patchsym (stgit-patch-name patch))
          (end (progn (insert "#") (prog1 (point-marker) (forward-char -1))))
-         (args (list "-r" "-z" (if stgit-expand-find-copies-harder
-                                   "--find-copies-harder"
-                                 "-C")))
+         (args (list "-z" (if stgit-expand-find-copies-harder
+                              "--find-copies-harder"
+                            "-C")))
          (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
     (setf (stgit-patch-files-ewoc patch) ewoc)
     (with-temp-buffer
-      (apply 'stgit-run-git "diff-tree"
-             (append args (list (stgit-id patchsym))))
+      (apply 'stgit-run-git
+             (cond ((eq patchsym :work)
+                    `("diff-files" ,@args))
+                   ((eq patchsym :index)
+                    `("diff-index" ,@args "--cached" "HEAD"))
+                   (t
+                    `("diff-tree" ,@args "-r" ,(stgit-id patchsym)))))
       (goto-char (point-min))
-      (forward-char 41)
+      (unless (or (eobp) (memq patchsym '(:work :index)))
+        (forward-char 41))
       (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
         (let ((old-perm (string-to-number (match-string 1) 8))
               (new-perm (string-to-number (match-string 2) 8)))
@@ -586,7 +619,19 @@ Commands:
   (set (make-local-variable 'stgit-marked-patches) nil)
   (set (make-local-variable 'stgit-expanded-patches) nil)
   (set-variable 'truncate-lines 't)
+  (add-hook 'after-save-hook 'stgit-update-saved-file)
   (run-hooks 'stgit-mode-hook))
+
+(defun stgit-update-saved-file ()
+  (let* ((file (expand-file-name buffer-file-name))
+         (dir (file-name-directory file))
+         (gitdir (condition-case nil (git-get-top-dir dir)
+                   (error nil)))
+	 (buffer (and gitdir (stgit-find-buffer gitdir))))
+    (when buffer
+      (with-current-buffer buffer
+        ;; FIXME: just invalidate ewoc node
+	(stgit-reload)))))
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
@@ -789,7 +834,12 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
                                  (if stgit-expand-find-copies-harder
                                      '("--find-copies-harder")
                                    '("-C")))
-                            (list (concat patch-id "^") patch-id)
+                            (cond ((eq patch-id :index)
+                                   '("--cached"))
+                                  ((eq patch-id :work)
+                                   nil)
+                                  (t
+                                   (list (concat patch-id "^") patch-id)))
                             '("--")
                               (if (stgit-file-copy-or-rename patched-file)
                                   (list (stgit-file-cr-from patched-file)
