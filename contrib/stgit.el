@@ -10,6 +10,7 @@
 ;; To start: `M-x stgit'
 
 (require 'git nil t)
+(require 'cl)
 
 (defun stgit (dir)
   "Manage StGit patches for the tree in DIR."
@@ -317,7 +318,7 @@ find copied files."
                 (line-start (point))
                 status
                 change
-                properties)
+                (properties '(entry-type file)))
             (insert "    ")
             (if copy-or-rename
                 (let ((cr-score       (match-string 5 result))
@@ -325,15 +326,17 @@ find copied files."
                       (cr-to-file     (match-string 7 result)))
                   (setq status (stgit-file-status-code copy-or-rename
                                                        cr-score)
-                        properties (list 'stgit-old-file cr-from-file
-                                         'stgit-new-file cr-to-file)
+                        properties (list* 'stgit-old-file cr-from-file
+                                          'stgit-new-file cr-to-file
+                                          properties)
                         change (concat
                                 cr-from-file
                                 (propertize " -> "
                                             'face 'stgit-description-face)
                                 cr-to-file)))
               (setq status (stgit-file-status-code (match-string 8 result))
-                    properties (list 'stgit-file (match-string 9 result))
+                    properties (list* 'stgit-file (match-string 9 result)
+                                      properties)
                     change (match-string 9 result)))
 
             (let ((mode-change (stgit-file-mode-change-string old-perm
@@ -388,8 +391,9 @@ find copied files."
                    (save-excursion
 		     (replace-match "*" nil nil nil 3))
                    (setq marked (cons patchsym marked)))
-                 (put-text-property (match-beginning 0) (match-end 0)
-                                    'stgit-patchsym patchsym)
+                 (add-text-properties (match-beginning 0) (match-end 0)
+                                      (list 'stgit-patchsym patchsym
+                                            'entry-type 'patch))
                  (when (memq patchsym stgit-expanded-patches)
                    (stgit-expand-patch patchsym))
 		 (when (equal "0" empty)
@@ -419,8 +423,9 @@ find copied files."
         (error "File does not exist"))
       (find-file filename))))
 
-(defun stgit-select-patch (curpath)
-  (let ((inhibit-read-only t))
+(defun stgit-select-patch ()
+  (let ((inhibit-read-only t)
+        (curpatch (stgit-patch-at-point)))
     (if (memq curpatch stgit-expanded-patches)
         (save-excursion
           (setq stgit-expanded-patches (delq curpatch stgit-expanded-patches))
@@ -432,11 +437,13 @@ find copied files."
 (defun stgit-select ()
   "Expand or collapse the current entry"
   (interactive)
-  (let ((curpatch (stgit-patch-at-point)))
-    (if curpatch
-        (stgit-select-patch curpatch)
-      (stgit-select-file))))
-
+  (case (get-text-property (point) 'entry-type)
+    ('patch
+     (stgit-select-patch))
+    ('file
+     (stgit-select-file))
+    (t
+     (error "No patch or file on line"))))
 
 (defun stgit-find-file-other-window ()
   "Open file at point in other window"
@@ -466,9 +473,10 @@ find copied files."
 
 (defun stgit-goal-column ()
   "Return goal column for the current line"
-  (cond ((get-text-property (point) 'stgit-file-patchsym) 4)
-        ((get-text-property (point) 'stgit-patchsym)      2)
-        (t 0)))
+  (case (get-text-property (point) 'entry-type)
+    ('patch 2)
+    ('file 4)
+    (t 0)))
 
 (defun stgit-next-line (&optional arg)
   "Move cursor vertically down ARG lines"
@@ -597,9 +605,11 @@ Commands:
 (defun stgit-patch-at-point (&optional cause-error)
   "Return the patch name on the current line as a symbol.
 If CAUSE-ERROR is not nil, signal an error if none found."
-  (or (get-text-property (point) 'stgit-patchsym)
-      (when cause-error
-        (error "No patch on this line"))))
+  (case (get-text-property (point) 'entry-type)
+    ('patch (get-text-property (point) 'stgit-patchsym))
+    (t (if cause-error
+           (error "No patch on this line")
+         nil))))
 
 (defun stgit-patched-file-at-point (&optional both-files)
   "Returns a cons of the patchsym and file name at point. For
@@ -765,34 +775,39 @@ With numeric prefix argument, pop that many patches."
     (stgit-reload)))
 
 (defun stgit-id (patchsym)
-  "Return the git commit id for PATCHSYM."
-  (let ((result (with-output-to-string
-                  (stgit-run-silent "id" patchsym))))
-    (unless (string-match "^\\([0-9A-Fa-f]\\{40\\}\\)$" result)
-      (error "Cannot find commit id for %s" patchsym))
-    (match-string 1 result)))
+  "Return the git commit id for PATCHSYM.
+If PATCHSYM is a keyword, returns PATCHSYM unmodified."
+  (if (keywordp patchsym)
+      patchsym
+    (let ((result (with-output-to-string
+		    (stgit-run-silent "id" patchsym))))
+      (unless (string-match "^\\([0-9A-Fa-f]\\{40\\}\\)$" result)
+	(error "Cannot find commit id for %s" patchsym))
+      (match-string 1 result))))
 
 (defun stgit-show ()
   "Show the patch on the current line."
   (interactive)
   (stgit-capture-output "*StGit patch*"
-    (let ((patchsym (stgit-patch-at-point)))
-      (if (not patchsym)
-          (let ((patched-file (stgit-patched-file-at-point t)))
-            (unless patched-file
-              (error "No patch or file at point"))
-            (let ((id (stgit-id (car patched-file))))
-	      (if (consp (cdr patched-file))
-		  ;; two files (copy or rename)
-		  (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
-				 (cadr patched-file) (cddr patched-file))
-		;; just one file
-		(stgit-run-git "diff" (concat id "^") id "--"
-			       (cdr patched-file)))))
-        (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M" patchsym))
-      (with-current-buffer standard-output
-	(goto-char (point-min))
-	(diff-mode)))))
+    (case (get-text-property (point) 'entry-type)
+      ('file
+       (let ((patchsym (stgit-patch-at-point))
+             (patched-file (stgit-patched-file-at-point t)))
+         (let ((id (stgit-id (car patched-file))))
+           (if (consp (cdr patched-file))
+               ;; two files (copy or rename)
+               (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
+                              (cadr patched-file) (cddr patched-file))
+             ;; just one file
+             (stgit-run-git "diff" (concat id "^") id "--"
+                            (cdr patched-file))))))
+      ('patch
+       (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M" (stgit-patch-at-point)))
+      (t
+       (error "No patch or file at point")))
+    (with-current-buffer standard-output
+      (goto-char (point-min))
+      (diff-mode))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
