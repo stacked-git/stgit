@@ -616,6 +616,7 @@ at point."
             ("R" .        stgit-repair)
             ("\C-c\C-c" . stgit-commit)
             ("\C-c\C-u" . stgit-uncommit)
+            ("U" .        stgit-revert-file)
             ("\r" .       stgit-select)
             ("o" .        stgit-find-file-other-window)
             ("i" .        stgit-file-toggle-index)
@@ -791,6 +792,37 @@ Interactively, the prefix argument is used as COUNT."
   (interactive "p")
   (stgit-capture-output nil (stgit-run "commit" "-n" count))
   (stgit-reload))
+
+(defun stgit-revert-file ()
+  "Revert the file at point, which must be in the index or the
+working tree."
+  (interactive)
+  (let* ((patched-file (or (stgit-patched-file-at-point)
+                           (error "No file on the current line")))
+         (patch-name   (stgit-patch-name-at-point))
+         (file-status  (stgit-file-status patched-file))
+         (rm-file      (cond ((stgit-file-copy-or-rename patched-file)
+                              (stgit-file-cr-to patched-file))
+                             ((eq file-status 'add)
+                              (stgit-file-file patched-file))))
+         (co-file      (cond ((eq file-status 'rename)
+                              (stgit-file-cr-from patched-file))
+                             ((not (memq file-status '(copy add)))
+                              (stgit-file-file patched-file)))))
+
+    (unless (memq patch-name '(:work :index))
+      (error "No index or working tree file on this line"))
+
+    (let ((nfiles (+ (if rm-file 1 0) (if co-file 1 0))))
+      (when (yes-or-no-p (format "Revert %d file%s? "
+                                 nfiles
+                                 (if (= nfiles 1) "" "s")))
+        (stgit-capture-output nil
+          (when rm-file
+            (stgit-run-git "rm" "-f" "-q" "--" rm-file))
+          (when co-file
+            (stgit-run-git "checkout" "HEAD" co-file)))
+        (stgit-reload)))))
 
 (defun stgit-uncommit (count)
   "Run stg uncommit on COUNT commits.
