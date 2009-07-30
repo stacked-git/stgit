@@ -616,6 +616,7 @@ at point."
             ("\C-c\C-c" . stgit-commit)
             ("\C-c\C-u" . stgit-uncommit)
             ("U" .        stgit-revert-file)
+            ("R" .        stgit-resolve-file)
             ("\r" .       stgit-select)
             ("o" .        stgit-find-file-other-window)
             ("i" .        stgit-file-toggle-index)
@@ -833,6 +834,25 @@ working tree."
             (stgit-run-git "checkout" "HEAD" co-file)))
         (stgit-reload)))))
 
+(defun stgit-resolve-file ()
+  "Resolve conflict in the file at point."
+  (interactive)
+  (let* ((patched-file (stgit-patched-file-at-point))
+         (patch        (stgit-patch-at-point))
+         (patch-name   (and patch (stgit-patch-name patch)))
+         (status       (and patched-file (stgit-file-status patched-file))))
+
+    (unless (memq patch-name '(:work :index))
+      (error "No index or working tree file on this line"))
+
+    (unless (eq status 'unmerged)
+      (error "No conflict to resolve at the current line"))
+
+    (stgit-capture-output nil
+      (stgit-move-change-to-index (stgit-file-file patched-file)))
+
+    (stgit-reload)))
+
 (defun stgit-uncommit (count)
   "Run stg uncommit on COUNT commits.
 Interactively, the prefix argument is used as COUNT."
@@ -942,6 +962,8 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
   (let ((patched-file (stgit-patched-file-at-point)))
     (unless patched-file
       (error "No file on the current line"))
+    (when (eq (stgit-file-status patched-file) 'unmerged)
+      (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
     (let ((patch-name (stgit-patch-name-at-point)))
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)))
