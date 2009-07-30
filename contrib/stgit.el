@@ -594,6 +594,7 @@ find copied files."
           ("U" .        stgit-uncommit)
           ("\r" .       stgit-select)
           ("o" .        stgit-find-file-other-window)
+          ("i" .        stgit-file-toggle-index)
           (">" .        stgit-push-next)
           ("<" .        stgit-pop-next)
           ("P" .        stgit-push-or-pop)
@@ -854,6 +855,35 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
     (with-current-buffer standard-output
       (goto-char (point-min))
       (diff-mode))))
+
+(defun stgit-move-change-to-index (file status)
+  "Copies the workspace state of FILE to index, using git add or git rm"
+  (let ((op (if (file-exists-p file) "add" "rm")))
+    (stgit-capture-output "*git output*"
+      (stgit-run-git op "--" file))))
+
+(defun stgit-remove-change-from-index (file status)
+  "Unstages the change in FILE from the index"
+  (stgit-capture-output "*git output*"
+    (stgit-run-git "reset" "-q" "--" file)))
+
+(defun stgit-file-toggle-index ()
+  "Move modified file in or out of the index."
+  (interactive)
+  (let ((patched-file (stgit-patched-file-at-point)))
+    (unless patched-file
+      (error "No file on the current line"))
+    (let ((patch-name (stgit-patch-name-at-point)))
+      (cond ((eq patch-name :work)
+             (stgit-move-change-to-index (stgit-file-file patched-file)
+                                         (stgit-file-status patched-file)))
+            ((eq patch-name :index)
+             (stgit-remove-change-from-index (stgit-file-file patched-file)
+                                             (stgit-file-status patched-file)))
+            (t
+             (error "Can only move files in the working tree to index")))))
+  ;; FIXME: invalidate ewoc
+  (stgit-reload))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
