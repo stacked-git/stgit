@@ -55,7 +55,7 @@ directory DIR or `default-directory'"
                           (car buffers)
                         (create-stgit-buffer dir)))))
 (defstruct (stgit-patch)
-  status name desc empty)
+  status name desc empty files-ewoc)
 
 (defun stgit-patch-pp (patch)
   (let ((status (stgit-patch-status patch))
@@ -279,17 +279,18 @@ flag, which reduces performance."
             (unknown     "Unknown"     stgit-unknown-file-face)))
   "Alist of code symbols to description strings")
 
-(defun stgit-file-status-code-as-string (code)
-  "Return stgit status code as string"
-  (let ((str (assq (if (consp code) (car code) code)
-                   stgit-file-status-code-strings)))
-    (when str
+(defun stgit-file-status-code-as-string (file)
+  "Return stgit status code for FILE as a string"
+  (let* ((code (assq (stgit-file-status file)
+                     stgit-file-status-code-strings))
+         (score (stgit-file-cr-score file)))
+    (when code
       (format "%-11s  "
-              (if (and str (consp code) (/= (cdr code) 100))
-                  (format "%s %s" (cdr str)
-                          (propertize (format "%d%%" (cdr code))
+              (if (and score (/= score 100))
+                  (format "%s %s" (cdr code)
+                          (propertize (format "%d%%" score)
                                       'face 'stgit-description-face))
-                (cdr str))))))
+                (cdr code))))))
 
 (defun stgit-file-status-code (str &optional score)
   "Return stgit status code from git status string"
@@ -364,7 +365,7 @@ Cf. `stgit-file-type-change-string'."
 (defstruct (stgit-file)
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
-(defun stgit-insert-file (file)
+(defun stgit-file-pp (file)
   (let ((status (stgit-file-status file))
         (name (if (stgit-file-copy-or-rename file)
                   (concat (stgit-file-cr-from file)
@@ -376,8 +377,8 @@ Cf. `stgit-file-type-change-string'."
                       (stgit-file-old-perm file)
                       (stgit-file-new-perm file)))
         (start (point)))
-    (insert (format "\n    %-12s%1s%s%s"
-                    (stgit-file-status-code-as-string status)
+    (insert (format "    %-12s%1s%s%s\n"
+                    (stgit-file-status-code-as-string file)
                     mode-change
                     name
                     (propertize (stgit-file-type-change-string
@@ -385,19 +386,22 @@ Cf. `stgit-file-type-change-string'."
                                  (stgit-file-new-perm file))
                                 'face 'stgit-description-face)))
     (add-text-properties start (point)
-                         `(entry-type file file ,(stgit-file-file file)))))
+                         (list 'entry-type 'file
+                               'file-data file))))
 
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch with name PATCHSYM (a
 symbol) after the line at point.
 `stgit-expand-find-copies-harder' controls how hard to try to
 find copied files."
-  (let* ((start (point))
-         (patchsym (stgit-patch-name patch))
+  (insert "\n")
+  (let* ((patchsym (stgit-patch-name patch))
+         (end (progn (insert "#") (prog1 (point-marker) (forward-char -1))))
          (args (list "-r" "-z" (if stgit-expand-find-copies-harder
                                    "--find-copies-harder"
                                  "-C")))
-         (stgbuf (current-buffer)))
+         (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
+    (setf (stgit-patch-files-ewoc patch) ewoc)
     (with-temp-buffer
       (apply 'stgit-run-git "diff-tree"
              (append args (list (stgit-id patchsym))))
@@ -429,14 +433,17 @@ find copied files."
                          :cr-to          nil
                          :status         (stgit-file-status-code (match-string 1))
                          :file           (match-string 2))))))
-            (with-current-buffer stgbuf
-              (stgit-insert-file file)))
-          (goto-char (match-end 0)))))
-    (when (= start (point))
-      (insert "    <no files>\n"))))
+            (ewoc-enter-last ewoc file))
+          (goto-char (match-end 0))))
+      (unless (ewoc-nth ewoc 0)
+        (ewoc-set-hf ewoc "" (propertize "    <no files>\n"
+                                         'face 'stgit-description-face))))
+    (goto-char end)
+    (delete-char -2)))
 
 (defun stgit-select-file ()
-  (let ((filename (expand-file-name (get-text-property (point) 'file))))
+  (let ((filename (expand-file-name
+                   (stgit-file-file (stgit-patched-file-at-point)))))
     (unless (file-exists-p filename)
       (error "File does not exist"))
     (find-file filename)))
@@ -466,7 +473,7 @@ find copied files."
   (let ((patched-file (stgit-patched-file-at-point)))
     (unless patched-file
       (error "No file on the current line"))
-    (let ((filename (expand-file-name (cdr patched-file))))
+    (let ((filename (expand-file-name (stgit-file-file patched-file))))
       (unless (file-exists-p filename)
         (error "File does not exist"))
       (find-file-other-window filename))))
@@ -605,29 +612,8 @@ If CAUSE-ERROR is not nil, signal an error if none found."
           (cause-error
            (error "No patch on this line")))))
 
-(defun stgit-patched-file-at-point (&optional both-files)
-  "Returns a cons of the patchsym and file name at point. For
-copies and renames, return the new file if the patch is either
-applied. If BOTH-FILES is non-nil, return a cons of the old and
-the new file names instead of just one name."
-  (let ((patchsym (get-text-property (point) 'stgit-file-patchsym))
-        (file     (get-text-property (point) 'stgit-file)))
-    (cond ((not patchsym) nil)
-          (file (cons patchsym file))
-          (both-files
-           (cons patchsym (cons (get-text-property (point) 'stgit-old-file)
-                                (get-text-property (point) 'stgit-new-file))))
-          (t
-           (let ((file-sym (save-excursion
-                             (stgit-previous-patch)
-                             (unless (eq (stgit-patch-name-at-point)
-                                         patchsym)
-                               (error "Cannot find the %s patch" patchsym))
-                             (beginning-of-line)
-                             (if (= (char-after) ?-)
-                                 'stgit-old-file 
-                               'stgit-new-file))))
-             (cons patchsym (get-text-property (point) file-sym)))))))
+(defun stgit-patched-file-at-point ()
+  (get-text-property (point) 'file-data))
 
 (defun stgit-patches-marked-or-at-point ()
   "Return the symbols of the marked patches, or the patch on the current line."
@@ -796,16 +782,20 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
   (stgit-capture-output "*StGit patch*"
     (case (get-text-property (point) 'entry-type)
       ('file
-       (let ((patchsym (stgit-patch-name-at-point))
-             (patched-file (stgit-patched-file-at-point t)))
-         (let ((id (stgit-id (car patched-file))))
-           (if (consp (cdr patched-file))
-               ;; two files (copy or rename)
-               (stgit-run-git "diff" "-C" "-C" (concat id "^") id "--"
-                              (cadr patched-file) (cddr patched-file))
-             ;; just one file
-             (stgit-run-git "diff" (concat id "^") id "--"
-                            (cdr patched-file))))))
+       (let* ((patched-file (stgit-patched-file-at-point))
+              (patch-name (stgit-patch-name-at-point))
+              (patch-id (stgit-id patch-name))
+              (args (append (and (stgit-file-cr-from patched-file)
+                                 (if stgit-expand-find-copies-harder
+                                     '("--find-copies-harder")
+                                   '("-C")))
+                            (list (concat patch-id "^") patch-id)
+                            '("--")
+                              (if (stgit-file-copy-or-rename patched-file)
+                                  (list (stgit-file-cr-from patched-file)
+                                        (stgit-file-cr-to patched-file))
+                                (list (stgit-file-file patched-file))))))
+         (apply 'stgit-run-git "diff" args)))
       ('patch
        (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
                   (stgit-patch-name-at-point)))
