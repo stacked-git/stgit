@@ -472,15 +472,21 @@ at point."
           (let ((file
                  (cond ((looking-at
                          "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
-                        (make-stgit-file
-                         :old-perm       old-perm
-                         :new-perm       new-perm
-                         :copy-or-rename t
-                         :cr-score       (string-to-number (match-string 2))
-                         :cr-from        (match-string 3)
-                         :cr-to          (match-string 4)
-                         :status         (stgit-file-status-code (match-string 1))
-                         :file           (match-string 3)))
+                        (let* ((patch-status (stgit-patch-status patch))
+                               (file-subexp  (if (eq patch-status 'unapplied)
+                                                 3
+                                               4))
+                               (file         (match-string file-subexp)))
+                          (make-stgit-file
+                           :old-perm       old-perm
+                           :new-perm       new-perm
+                           :copy-or-rename t
+                           :cr-score       (string-to-number (match-string 2))
+                           :cr-from        (match-string 3)
+                           :cr-to          (match-string 4)
+                           :status         (stgit-file-status-code
+                                            (match-string 1))
+                           :file           file)))
                        ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
                         (make-stgit-file
                          :old-perm       old-perm
@@ -489,7 +495,8 @@ at point."
                          :cr-score       nil
                          :cr-from        nil
                          :cr-to          nil
-                         :status         (stgit-file-status-code (match-string 1))
+                         :status         (stgit-file-status-code
+                                          (match-string 1))
                          :file           (match-string 2))))))
             (ewoc-enter-last ewoc file))
           (goto-char (match-end 0))))
