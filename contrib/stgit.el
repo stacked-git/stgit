@@ -1190,6 +1190,8 @@ With prefix argument, run it with the --hard flag."
 
 (defun stgit-refresh (&optional arg)
   "Run stg refresh.
+If the index contains any changes, only refresh from index.
+
 With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
   (let ((patchargs (if arg
@@ -1201,6 +1203,8 @@ With prefix argument, refresh the marked patch or the patch under point."
                                (t
                                 (cons "-p" patches))))
                      nil)))
+    (unless (stgit-index-empty-p)
+      (setq patchargs (cons "--index" patchargs)))
     (stgit-capture-output nil
       (apply 'stgit-run "refresh" patchargs))
     (stgit-refresh-git-status))
