@@ -11,6 +11,7 @@
 
 (require 'git nil t)
 (require 'cl)
+(require 'ewoc)
 
 (defun stgit (dir)
   "Manage StGit patches for the tree in DIR."
@@ -56,6 +57,32 @@ directory DIR or `default-directory'"
 (defstruct (stgit-patch)
   status name desc empty)
 
+(defun stgit-patch-pp (patch)
+  (let ((status (stgit-patch-status patch))
+        (start (point))
+        (name (stgit-patch-name patch)))
+    (insert (case status
+              ('applied "+")
+              ('top ">")
+              ('unapplied "-")
+              (t "·"))
+            (if (memq name stgit-marked-patches)
+                "*" " ")
+            (propertize (format "%-30s" (symbol-name name))
+                        'face (case status
+                                ('applied 'stgit-applied-patch-face)
+                                ('top 'stgit-top-patch-face)
+                                ('unapplied 'stgit-unapplied-patch-face)))
+            "  "
+            (if (stgit-patch-empty patch) "(empty) " "")
+            (propertize (or (stgit-patch-desc patch) "")
+                        'face 'stgit-description-face))
+    (add-text-properties start (point) (list 'entry-type 'patch
+                                             'stgit-patchsym name))
+    (when (memq name stgit-expanded-patches)
+      (stgit-insert-patch-files name))
+    (put-text-property start (point) 'patch-data patch)))
+
 (defun create-stgit-buffer (dir)
   "Create a buffer for showing StGit patches.
 Argument DIR is the repository path."
@@ -64,6 +91,8 @@ Argument DIR is the repository path."
     (with-current-buffer buf
       (setq default-directory dir)
       (stgit-mode)
+      (set (make-local-variable 'stgit-ewoc)
+           (ewoc-create #'stgit-patch-pp "Branch:\n" "--"))
       (setq buffer-read-only t))
     buf))
 
@@ -121,17 +150,53 @@ Returns nil if there was no output."
   (setq args (stgit-make-run-args args))
   (apply 'call-process "git" nil standard-output nil args))
 
+(defun stgit-run-series (ewoc)
+  (let ((first-line t))
+    (with-temp-buffer
+      (let ((exit-status (stgit-run-silent "series" "--description" "--empty")))
+        (goto-char (point-min))
+        (if (not (zerop exit-status))
+            (cond ((looking-at "stg series: \\(.*\\)")
+                   (ewoc-set-hf ewoc (car (ewoc-get-hf ewoc))
+                                "-- not initialized (run M-x stgit-init)"))
+                  ((looking-at ".*")
+                   (error "Error running stg: %s"
+                          (match-string 0))))
+          (while (not (eobp))
+            (unless (looking-at
+                     "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
+              (error "Syntax error in output from stg series"))
+            (let* ((state-str (match-string 2))
+                   (state (cond ((string= state-str ">") 'top)
+                                ((string= state-str "+") 'applied)
+                                ((string= state-str "-") 'unapplied))))
+              (ewoc-enter-last ewoc
+                               (make-stgit-patch
+                                :status state
+                                :name (intern (match-string 4))
+                                :desc (match-string 5)
+                                :empty (string= (match-string 1) "0"))))
+            (setq first-line nil)
+            (forward-line 1)))))))
+
+
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
   (interactive)
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
         (curpatch (stgit-patch-name-at-point)))
-    (erase-buffer)
-    (insert "Branch: ")
-    (stgit-run-silent "branch")
-    (stgit-run-silent "series" "--description" "--empty")
-    (stgit-rescan)
+    (ewoc-filter stgit-ewoc #'(lambda (x) nil))
+    (ewoc-set-hf stgit-ewoc
+                 (concat "Branch: "
+                         (propertize
+                          (with-temp-buffer
+                            (stgit-run-silent "branch")
+                            (buffer-substring (point-min) (1- (point-max))))
+                          'face 'bold)
+                         "\n")
+                 "--")
+    (stgit-run-series stgit-ewoc)
     (if curpatch
         (stgit-goto-patch curpatch)
       (goto-line curline)))
@@ -297,129 +362,59 @@ Cf. `stgit-file-type-change-string'."
                        (propertize (format "%o" new-perm)
                                    'face 'stgit-file-permission-face)))))))
 
-(defun stgit-expand-patch (patchsym)
-  "Expand (show modification of) the patch with name PATCHSYM (a
-symbol) at point.
-`stgit-expand-find-copies-harder' controls how hard to try to
-find copied files."
-  (save-excursion
-    (forward-line)
-    (let* ((start (point))
-           (result (with-output-to-string
-                     (stgit-run-git "diff-tree" "-r" "-z"
-                                    (if stgit-expand-find-copies-harder
-                                        "--find-copies-harder"
-                                      "-C")
-                                    (stgit-id patchsym)))))
-      (let (mstart)
-        (while (string-match "\0:\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
-                             result mstart)
-          (let ((copy-or-rename (match-string 4 result))
-                (old-perm       (read (format "#o%s" (match-string 1 result))))
-                (new-perm       (read (format "#o%s" (match-string 2 result))))
-                (line-start (point))
-                status
-                change
-                (properties '(entry-type file)))
-            (insert "    ")
-            (if copy-or-rename
-                (let ((cr-score       (match-string 5 result))
-                      (cr-from-file   (match-string 6 result))
-                      (cr-to-file     (match-string 7 result)))
-                  (setq status (stgit-file-status-code copy-or-rename
-                                                       cr-score)
-                        properties (list* 'stgit-old-file cr-from-file
-                                          'stgit-new-file cr-to-file
-                                          properties)
-                        change (concat
-                                cr-from-file
-                                (propertize " -> "
-                                            'face 'stgit-description-face)
-                                cr-to-file)))
-              (setq status (stgit-file-status-code (match-string 8 result))
-                    properties (list* 'stgit-file (match-string 9 result)
-                                      properties)
-                    change (match-string 9 result)))
+(defun stgit-insert-patch-files (patchsym)
+  (let* ((start (point))
+         (result (with-output-to-string
+                   (stgit-run-git "diff-tree" "-r" "-z"
+                                  (if stgit-expand-find-copies-harder
+                                      "--find-copies-harder"
+                                    "-C")
+                                  (stgit-id patchsym)))))
+    (let (mstart)
+      (while (string-match "\0:\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} \\(\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\\|\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\\)"
+                           result mstart)
+        (let ((copy-or-rename (match-string 4 result))
+              (old-perm       (read (format "#o%s" (match-string 1 result))))
+              (new-perm       (read (format "#o%s" (match-string 2 result))))
+              (line-start (point))
+              status
+              change
+              (properties '(entry-type file)))
+          (if copy-or-rename
+              (let ((cr-score       (match-string 5 result))
+                    (cr-from-file   (match-string 6 result))
+                    (cr-to-file     (match-string 7 result)))
+                (setq status (stgit-file-status-code copy-or-rename
+                                                     cr-score)
+                      properties (list* 'stgit-old-file cr-from-file
+                                        'stgit-new-file cr-to-file
+                                        properties)
+                      change (concat
+                              cr-from-file
+                              (propertize " -> "
+                                          'face 'stgit-description-face)
+                              cr-to-file)))
+            (setq status (stgit-file-status-code (match-string 8 result))
+                  properties (list* 'stgit-file (match-string 9 result)
+                                    properties)
+                  change (match-string 9 result)))
 
-            (let ((mode-change (stgit-file-mode-change-string old-perm
-                                                              new-perm)))
-              (insert (format "%-12s" (stgit-file-status-code-as-string
-                                       status))
-                      mode-change
-                      (if (> (length mode-change) 0) " " "")
-                      change
-                      (propertize (stgit-file-type-change-string old-perm
-                                                                 new-perm)
-                                  'face 'stgit-description-face)
-                      ?\n))
-            (add-text-properties line-start (point) properties))
-          (setq mstart (match-end 0))))
-      (when (= start (point))
-        (insert "    <no files>\n"))
-      (put-text-property start (point) 'stgit-file-patchsym patchsym))))
-
-(defun stgit-collapse-patch (patchsym)
-  "Collapse the patch with name PATCHSYM after the line at point."
-  (save-excursion
-    (forward-line)
-    (let ((start (point)))
-      (while (eq (get-text-property (point) 'stgit-file-patchsym) patchsym)
-        (forward-line))
-      (delete-region start (point)))))
-
-(defun stgit-rescan ()
-  "Rescan the status buffer."
-  (save-excursion
-    (let ((marked ())
-	  found-any)
-      (goto-char (point-min))
-      (while (not (eobp))
-        (cond ((looking-at "Branch: \\(.*\\)")
-               (put-text-property (match-beginning 1) (match-end 1)
-                                  'face 'bold))
-              ((looking-at "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
-	       (setq found-any t)
-               (let ((empty (string= (match-string 1) "0"))
-		     (state (match-string 2))
-                     (patchsym (intern (match-string 4))))
-                 (put-text-property
-                  (match-beginning 4) (match-end 4) 'face
-                  (cond ((string= state ">") 'stgit-top-patch-face)
-                        ((string= state "+") 'stgit-applied-patch-face)
-                        ((string= state "-") 'stgit-unapplied-patch-face)))
-                 (put-text-property (match-beginning 5) (match-end 5)
-                                    'face 'stgit-description-face)
-                 (when (memq patchsym stgit-marked-patches)
-                   (save-excursion
-		     (replace-match "*" nil nil nil 3))
-                   (setq marked (cons patchsym marked)))
-                 (add-text-properties (match-beginning 0) (match-end 0)
-                                      (list 'stgit-patchsym patchsym
-                                            'entry-type 'patch
-                                            'patch-data (make-stgit-patch
-                                                         :status state
-                                                         :name patchsym
-                                                         :desc (match-string 5)
-                                                         :empty empty)))
-                 (when (memq patchsym stgit-expanded-patches)
-                   (stgit-expand-patch patchsym))
-		 (when empty
-		   (save-excursion
-		     (goto-char (match-beginning 5))
-		     (insert "(empty) ")))
-		 (delete-char 1)
-                 ))
-              ((or (looking-at "stg series: Branch \".*\" not initialised")
-                   (looking-at "stg series: .*: branch not initialized"))
-	       (setq found-any t)
-               (forward-line 1)
-               (insert "Run M-x stgit-init to initialise")))
-        (forward-line 1))
-      (setq stgit-marked-patches (nreverse marked))
-      (unless found-any
-	(insert "\n  "
-		(propertize "no patches in series"
-			    'face 'stgit-description-face))))))
+          (let ((mode-change (stgit-file-mode-change-string old-perm
+                                                            new-perm)))
+            (insert "\n    "
+                    (format "%-12s" (stgit-file-status-code-as-string
+                                     status))
+                    mode-change
+                    (if (> (length mode-change) 0) " " "")
+                    change
+                    (propertize (stgit-file-type-change-string old-perm
+                                                               new-perm)
+                                'face 'stgit-description-face)))
+          (add-text-properties line-start (point) properties))
+        (setq mstart (match-end 0))))
+    (when (= start (point))
+      (insert "    <no files>\n"))
+    (put-text-property start (point) 'stgit-file-patchsym patchsym)))
 
 (defun stgit-select-file ()
   (let ((patched-file (stgit-patched-file-at-point)))
@@ -431,15 +426,12 @@ find copied files."
       (find-file filename))))
 
 (defun stgit-select-patch ()
-  (let ((inhibit-read-only t)
-        (curpatch (stgit-patch-name-at-point)))
-    (if (memq curpatch stgit-expanded-patches)
-        (save-excursion
-          (setq stgit-expanded-patches (delq curpatch stgit-expanded-patches))
-          (stgit-collapse-patch curpatch))
-      (progn
-        (setq stgit-expanded-patches (cons curpatch stgit-expanded-patches))
-        (stgit-expand-patch curpatch)))))
+  (let ((patchname (stgit-patch-name-at-point)))
+    (if (memq patchname stgit-expanded-patches)
+        (setq stgit-expanded-patches (delq patchname stgit-expanded-patches))
+      (setq stgit-expanded-patches (cons patchname stgit-expanded-patches)))
+    (ewoc-invalidate stgit-ewoc (ewoc-locate stgit-ewoc)))
+  (move-to-column (stgit-goal-column)))
 
 (defun stgit-select ()
   "Expand or collapse the current entry"
@@ -498,28 +490,16 @@ find copied files."
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-next-patch (&optional arg)
-  "Move cursor down ARG patches"
+  "Move cursor down ARG patches."
   (interactive "p")
-  (unless arg
-    (setq arg 1))
-  (if (< arg 0)
-      (stgit-previous-patch (- arg))
-    (while (not (zerop arg))
-      (setq arg (1- arg))
-      (while (progn (stgit-next-line)
-                    (not (stgit-patch-name-at-point)))))))
+  (ewoc-goto-next stgit-ewoc (or arg 1))
+  (move-to-column goal-column))
 
 (defun stgit-previous-patch (&optional arg)
-  "Move cursor up ARG patches"
+  "Move cursor up ARG patches."
   (interactive "p")
-  (unless arg
-    (setq arg 1))
-  (if (< arg 0)
-      (stgit-next-patch (- arg))
-    (while (not (zerop arg))
-      (setq arg (1- arg))
-      (while (progn (stgit-previous-line)
-                    (not (stgit-patch-name-at-point)))))))
+  (ewoc-goto-prev stgit-ewoc (or arg 1))
+  (move-to-column goal-column))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
