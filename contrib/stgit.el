@@ -439,14 +439,19 @@ Cf. `stgit-file-type-change-string'."
                          (list 'entry-type 'file
                                'file-data file))))
 
+(defun stgit-find-copies-harder-diff-arg ()
+  "Return the flag to use with `git-diff' depending on the
+`stgit-expand-find-copies-harder' flag."
+  (if stgit-expand-find-copies-harder
+      "--find-copies-harder"
+    "-C"))
+
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch PATCH after the line
 at point."
   (let* ((patchsym (stgit-patch-name patch))
          (end (progn (insert "#") (prog1 (point-marker) (forward-char -1))))
-         (args (list "-z" (if stgit-expand-find-copies-harder
-                              "--find-copies-harder"
-                            "-C")))
+         (args (list "-z" (stgit-find-copies-harder-diff-arg)))
          (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
     (setf (stgit-patch-files-ewoc patch) ewoc)
     (with-temp-buffer
@@ -920,9 +925,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
               (patch-name (stgit-patch-name-at-point))
               (patch-id (stgit-id patch-name))
               (args (append (and (stgit-file-cr-from patched-file)
-                                 (if stgit-expand-find-copies-harder
-                                     '("--find-copies-harder")
-                                   '("-C")))
+                                 (list (stgit-find-copies-harder-diff-arg)))
                             (cond ((eq patch-id :index)
                                    '("--cached"))
                                   ((eq patch-id :work)
