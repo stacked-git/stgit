@@ -684,7 +684,7 @@ Commands:
   (use-local-map stgit-mode-map)
   (set (make-local-variable 'list-buffers-directory) default-directory)
   (set (make-local-variable 'stgit-marked-patches) nil)
-  (set (make-local-variable 'stgit-expanded-patches) nil)
+  (set (make-local-variable 'stgit-expanded-patches) (list :work :index))
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
   (set (make-local-variable 'stgit-index-node) nil)
   (set (make-local-variable 'stgit-worktree-node) nil)
