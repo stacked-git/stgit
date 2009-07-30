@@ -606,14 +606,13 @@ at point."
             ("\M-{" .     stgit-previous-patch)
             ("\M-}" .     stgit-next-patch)
             ("s" .        stgit-git-status)
-            ("g" .        stgit-reload)
+            ("g" .        stgit-reload-or-repair)
             ("r" .        stgit-refresh)
             ("\C-c\C-r" . stgit-rename)
             ("e" .        stgit-edit)
             ("M" .        stgit-move-patches)
             ("S" .        stgit-squash)
             ("N" .        stgit-new)
-            ("R" .        stgit-repair)
             ("\C-c\C-c" . stgit-commit)
             ("\C-c\C-u" . stgit-uncommit)
             ("U" .        stgit-revert-file)
@@ -760,6 +759,16 @@ If that patch cannot be found, do nothing."
             (cons name-sym (delq old-patchsym stgit-marked-patches))))
       (stgit-reload)
       (stgit-goto-patch name-sym))))
+
+(defun stgit-reload-or-repair (repair)
+  "Update the contents of the StGit buffer (`stgit-reload').
+
+With a prefix argument, repair the StGit metadata if the branch
+was modified with git commands (`stgit-repair')."
+  (interactive "P")
+  (if repair
+      (stgit-repair)
+    (stgit-reload)))
 
 (defun stgit-repair ()
   "Run stg repair."
