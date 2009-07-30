@@ -939,8 +939,15 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
                                 (list (stgit-file-file patched-file))))))
          (apply 'stgit-run-git "diff" args)))
       ('patch
-       (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
-                  (stgit-patch-name-at-point)))
+       (let* ((patch-name (stgit-patch-name-at-point))
+              (patch-id (stgit-id patch-name)))
+         (if (or (eq patch-id :index) (eq patch-id :work))
+             (apply 'stgit-run-git "diff"
+                    (stgit-find-copies-harder-diff-arg)
+                    (and (eq patch-id :index)
+                         '("--cached")))
+           (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
+                      (stgit-patch-name-at-point)))))
       (t
        (error "No patch or file at point")))
     (with-current-buffer standard-output
