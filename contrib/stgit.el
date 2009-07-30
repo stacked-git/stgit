@@ -68,8 +68,10 @@ directory DIR or `default-directory'"
         (start (point))
         (name (stgit-patch-name patch)))
     (case name
-       (:index (insert (propertize "  Index" 'face 'italic)))
-       (:work (insert (propertize "  Work tree" 'face 'italic)))
+       (:index (insert (propertize "  Index"
+                                   'face 'stgit-index-work-tree-title-face)))
+       (:work  (insert (propertize "  Work tree"
+                                   'face 'stgit-index-work-tree-title-face)))
        (t (insert (case status
                     ('applied "+")
                     ('top ">")
@@ -305,6 +307,13 @@ Returns nil if there was no output."
     (((class color) (background dark)) (:foreground "green" :bold t)))
   "StGit mode face used for permission changes."
   :group 'stgit)
+
+(defface stgit-index-work-tree-title-face
+  '((((supports :slant italic)) :slant italic)
+    (t :inherit bold))
+  "StGit mode face used for the \"Index\" and \"Work tree\" titles"
+  :group 'stgit)
+
 
 (defcustom stgit-expand-find-copies-harder
   nil
