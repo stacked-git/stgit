@@ -198,7 +198,8 @@ Returns nil if there was no output."
         stgit-worktree-node nil)
   (let ((inserted-index (not stgit-show-worktree))
         index-node
-        worktree-node)
+        worktree-node
+        all-patchsyms)
     (with-temp-buffer
       (let ((exit-status (stgit-run-silent "series" "--description" "--empty")))
         (goto-char (point-min))
@@ -228,6 +229,7 @@ Returns nil if there was no output."
                                (eq state 'unapplied)))
                   (setq inserted-index t)
                   (stgit-run-series-insert-index ewoc)))
+              (setq all-patchsyms (cons name all-patchsyms))
               (ewoc-enter-last ewoc
                                (make-stgit-patch
                                 :status state
@@ -238,7 +240,9 @@ Returns nil if there was no output."
       (unless inserted-index
         (stgit-run-series-insert-index ewoc)))
     (setq stgit-index-node    index-node
-          stgit-worktree-node worktree-node)))
+          stgit-worktree-node worktree-node
+          stgit-marked-patches (intersection stgit-marked-patches
+                                             all-patchsyms))))
 
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
