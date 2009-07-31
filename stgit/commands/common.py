@@ -323,7 +323,7 @@ def post_rebase(crt_series, applied, nopush, merged):
 #
 def __end_descr(line):
     return re.match('---\s*$', line) or re.match('diff -', line) or \
-            re.match('Index: ', line)
+            re.match('Index: ', line) or re.match('--- \w', line)
 
 def __split_descr_diff(string):
     """Return the description and the diff from the given string
