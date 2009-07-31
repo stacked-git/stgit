@@ -689,10 +689,16 @@ Commands:
 (defun stgit-patch-at-point (&optional cause-error)
   (get-text-property (point) 'patch-data))
 
-(defun stgit-patch-name-at-point (&optional cause-error)
+(defun stgit-patch-name-at-point (&optional cause-error only-patches)
   "Return the patch name on the current line as a symbol.
-If CAUSE-ERROR is not nil, signal an error if none found."
+If CAUSE-ERROR is not nil, signal an error if none found.
+If ONLY-PATCHES is not nil, only allow real patches, and not
+index or work tree."
   (let ((patch (stgit-patch-at-point)))
+    (and patch
+         only-patches
+         (memq (stgit-patch-status patch) '(work index))
+         (setq patch nil))
     (cond (patch
            (stgit-patch-name patch))
           (cause-error
@@ -732,7 +738,12 @@ If that patch cannot be found, do nothing."
   "Mark the patch under point."
   (interactive)
   (let* ((node (ewoc-locate stgit-ewoc))
-         (patch (ewoc-data node)))
+         (patch (ewoc-data node))
+         (name (stgit-patch-name patch)))
+    (when (eq name :work)
+      (error "Cannot mark the work tree"))
+    (when (eq name :index)
+      (error "Cannot mark the index"))
     (stgit-add-mark (stgit-patch-name patch))
     (ewoc-invalidate stgit-ewoc node))
   (stgit-next-patch))
@@ -758,9 +769,10 @@ If that patch cannot be found, do nothing."
 
 (defun stgit-rename (name)
   "Rename the patch under point to NAME."
-  (interactive (list (read-string "Patch name: "
-                                  (symbol-name (stgit-patch-name-at-point t)))))
-  (let ((old-patchsym (stgit-patch-name-at-point t)))
+  (interactive (list
+                (read-string "Patch name: "
+                             (symbol-name (stgit-patch-name-at-point t t)))))
+  (let ((old-patchsym (stgit-patch-name-at-point t t)))
     (stgit-capture-output nil
       (stgit-run "rename" old-patchsym name))
     (let ((name-sym (intern name)))
@@ -994,7 +1006,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 (defun stgit-edit ()
   "Edit the patch on the current line."
   (interactive)
-  (let ((patchsym (stgit-patch-name-at-point t))
+  (let ((patchsym (stgit-patch-name-at-point t t))
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-edit t nil edit-buf)
@@ -1064,6 +1076,11 @@ the work tree and index."
                      current-prefix-arg))
   (unless patchsyms
     (error "No patches to delete"))
+  (when (memq :index patchsyms)
+    (error "Cannot delete the index"))
+  (when (memq :work  patchsyms)
+    (error "Cannot delete the work tree"))
+
   (let ((npatches (length patchsyms)))
     (when (yes-or-no-p (format "Really delete %d patch%s%s? "
 			       npatches
