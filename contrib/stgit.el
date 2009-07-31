@@ -554,7 +554,10 @@ at point."
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-select ()
-  "Expand or collapse the current entry"
+  "With point on a patch, toggle showing files in the patch.
+
+With point on a file, open the associated file. Opens the target
+file for (applied) copies and renames."
   (interactive)
   (case (get-text-property (point) 'entry-type)
     ('patch
