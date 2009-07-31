@@ -64,31 +64,26 @@ directory DIR or `default-directory'"
   status name desc empty files-ewoc)
 
 (defun stgit-patch-pp (patch)
-  (let ((status (stgit-patch-status patch))
-        (start (point))
-        (name (stgit-patch-name patch)))
-    (case name
-       (:index (insert "  "
-                       (propertize "Index"
-                                   'face 'stgit-index-work-tree-title-face)))
-       (:work  (insert "  "
-                       (propertize "Work tree"
-                                   'face 'stgit-index-work-tree-title-face)))
-       (t (insert (case status
-                    ('applied "+")
-                    ('top ">")
-                    ('unapplied "-"))
-                  (if (memq name stgit-marked-patches)
-                      "*" " ")
-                  (format "%-30s"
-                          (propertize
-                           (symbol-name name)
-                           'face (cdr (assq status
-                                            stgit-patch-status-face-alist))))
-                  "  "
-                  (if (stgit-patch-empty patch) "(empty) " "")
-                  (propertize (or (stgit-patch-desc patch) "")
-                              'face 'stgit-description-face))))
+  (let* ((status (stgit-patch-status patch))
+         (start (point))
+         (name (stgit-patch-name patch))
+         (face (cdr (assq status stgit-patch-status-face-alist))))
+    (insert (case status
+              ('applied "+")
+              ('top ">")
+              ('unapplied "-")
+              (t " "))
+            (if (memq name stgit-marked-patches)
+                "*" " "))
+    (if (memq status '(index work))
+        (insert (propertize (if (eq status 'index) "Index" "Work tree")
+                            'face face))
+      (insert (format "%-30s"
+                      (propertize (symbol-name name) 'face face))
+              "  "
+              (if (stgit-patch-empty patch) "(empty) " "")
+              (propertize (or (stgit-patch-desc patch) "")
+                          'face 'stgit-description-face)))
     (insert "\n")
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
@@ -363,8 +358,8 @@ flag, which reduces performance."
   '((applied   . stgit-applied-patch-face)
     (top       . stgit-top-patch-face)
     (unapplied . stgit-unapplied-patch-face)
-    (index     . nil)
-    (work      . nil))
+    (index     . stgit-index-work-tree-title-face)
+    (work      . stgit-index-work-tree-title-face))
   "Alist of face to use for a given patch status")
 
 (defun stgit-file-status-code-as-string (file)
