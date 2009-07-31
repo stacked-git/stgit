@@ -110,7 +110,7 @@ def func(parser, options, args):
     # base by setting two parents.
     merge_bases = repository.get_merge_bases(public_head, stack.base)
     if not stack.base in merge_bases:
-        message = 'Merge %s into %s' % (repository.describe(stack.base),
+        message = 'Merge %s into %s' % (repository.describe(stack.base).strip(),
                                         utils.strip_prefix('refs/heads/',
                                                            public_ref))
         public_head = __create_commit(repository, stack.head.data.tree,
