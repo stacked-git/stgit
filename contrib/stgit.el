@@ -483,9 +483,10 @@ Cf. `stgit-file-type-change-string'."
   "Expand (show modification of) the patch PATCH after the line
 at point."
   (let* ((patchsym (stgit-patch-name patch))
-         (end (progn (insert "#") (prog1 (point-marker) (forward-char -1))))
-         (args (list "-z" (stgit-find-copies-harder-diff-arg)))
-         (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
+         (end      (point-marker))
+         (args     (list "-z" (stgit-find-copies-harder-diff-arg)))
+         (ewoc     (ewoc-create #'stgit-file-pp nil nil t)))
+    (set-marker-insertion-type end t)
     (setf (stgit-patch-files-ewoc patch) ewoc)
     (with-temp-buffer
       (apply 'stgit-run-git
@@ -536,8 +537,7 @@ at point."
       (unless (ewoc-nth ewoc 0)
         (ewoc-set-hf ewoc "" (propertize "    <no files>\n"
                                          'face 'stgit-description-face))))
-    (goto-char end)
-    (delete-char -1)))
+    (goto-char end)))
 
 (defun stgit-select-file ()
   (let ((filename (expand-file-name
