@@ -617,7 +617,7 @@ class Repository(RunWithEnv):
     def describe(self, commit):
         """Use git describe --all on the given commit."""
         return self.run(['git', 'describe', '--all', commit.sha1]
-                       ).discard_stderr().discard_exitcode().raw_output()
+                       ).discard_stderr().discard_exitcode().output_one_line()
     def simple_merge(self, base, ours, theirs):
         index = self.temp_index()
         try:
