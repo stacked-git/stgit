@@ -73,7 +73,7 @@ def __create_commit(repository, tree, parents, options, message = ''):
     cd = git.CommitData(
         tree = tree, parents = parents, message = message,
         author = git.Person.author(), committer = git.Person.committer())
-    cd = common.update_commit_data(cd, options, allow_edit = True)
+    cd = common.update_commit_data(cd, options)
 
     return repository.commit(cd)
 
