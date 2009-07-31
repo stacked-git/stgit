@@ -80,14 +80,11 @@ directory DIR or `default-directory'"
                     ('unapplied "-"))
                   (if (memq name stgit-marked-patches)
                       "*" " ")
-                  (propertize (format "%-30s"
-                                      (symbol-name name))
-                              'face (case status
-                                      ('applied 'stgit-applied-patch-face)
-                                      ('top 'stgit-top-patch-face)
-                                      ('unapplied 'stgit-unapplied-patch-face)
-                                      ('index nil)
-                                      ('work nil)))
+                  (format "%-30s"
+                          (propertize
+                           (symbol-name name)
+                           'face (cdr (assq status
+                                            stgit-patch-status-face-alist))))
                   "  "
                   (if (stgit-patch-empty patch) "(empty) " "")
                   (propertize (or (stgit-patch-desc patch) "")
@@ -362,6 +359,14 @@ flag, which reduces performance."
             (unknown     "Unknown"     stgit-unknown-file-face)))
   "Alist of code symbols to description strings")
 
+(defconst stgit-patch-status-face-alist
+  '((applied   . stgit-applied-patch-face)
+    (top       . stgit-top-patch-face)
+    (unapplied . stgit-unapplied-patch-face)
+    (index     . nil)
+    (work      . nil))
+  "Alist of face to use for a given patch status")
+
 (defun stgit-file-status-code-as-string (file)
   "Return stgit status code for FILE as a string"
   (let* ((code (assq (stgit-file-status file)
@@ -535,8 +540,11 @@ at point."
             (ewoc-enter-last ewoc file))
           (goto-char (match-end 0))))
       (unless (ewoc-nth ewoc 0)
-        (ewoc-set-hf ewoc "" (propertize "    <no files>\n"
-                                         'face 'stgit-description-face))))
+        (ewoc-set-hf ewoc ""
+                     (concat "    "
+                             (propertize "<no files>"
+                                         'face 'stgit-description-face)
+                             "\n"))))
     (goto-char end)))
 
 (defun stgit-select-file ()
