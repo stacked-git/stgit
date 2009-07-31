@@ -92,6 +92,7 @@ directory DIR or `default-directory'"
                   (if (stgit-patch-empty patch) "(empty) " "")
                   (propertize (or (stgit-patch-desc patch) "")
                               'face 'stgit-description-face))))
+    (insert "\n")
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files patch))
@@ -106,7 +107,7 @@ Argument DIR is the repository path."
       (setq default-directory dir)
       (stgit-mode)
       (set (make-local-variable 'stgit-ewoc)
-           (ewoc-create #'stgit-patch-pp "Branch:\n" "--"))
+           (ewoc-create #'stgit-patch-pp "Branch:\n\n" "--\n" t))
       (setq buffer-read-only t))
     buf))
 
@@ -258,7 +259,7 @@ Returns nil if there was no output."
                             (stgit-run-silent "branch")
                             (buffer-substring (point-min) (1- (point-max))))
                           'face 'stgit-branch-name-face)
-                         "\n")
+                         "\n\n")
                  (if stgit-show-worktree
                      "--"
                    (propertize
@@ -536,7 +537,7 @@ at point."
         (ewoc-set-hf ewoc "" (propertize "    <no files>\n"
                                          'face 'stgit-description-face))))
     (goto-char end)
-    (delete-char -2)))
+    (delete-char -1)))
 
 (defun stgit-select-file ()
   (let ((filename (expand-file-name
