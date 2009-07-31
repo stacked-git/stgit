@@ -793,6 +793,7 @@ file for (applied) copies and renames."
             ("M" .        stgit-move-patches)
             ("S" .        stgit-squash)
             ("N" .        stgit-new)
+            ("c" .        stgit-new-and-refresh)
             ("\C-c\C-c" . stgit-commit)
             ("\C-c\C-u" . stgit-uncommit)
             ("U" .        stgit-revert-file)
@@ -851,6 +852,7 @@ Commands for patches:
 \\[stgit-diff]	Show the patch log and diff
 
 \\[stgit-new]	Create a new, empty patch
+\\[stgit-new-and-refresh]	Create a new patch from index or work tree
 \\[stgit-rename]	Rename patch
 \\[stgit-edit]	Edit patch description
 \\[stgit-delete]	Delete patch(es)
@@ -1413,7 +1415,7 @@ file ended up. You can then jump to the file with \
     (with-current-buffer log-edit-parent-buffer
       (stgit-reload))))
 
-(defun stgit-new (add-sign)
+(defun stgit-new (add-sign &optional refresh)
   "Create a new patch.
 With a prefix argument, include a \"Signed-off-by:\" line at the
 end of the patch."
@@ -1422,6 +1424,7 @@ end of the patch."
         (dir default-directory))
     (log-edit 'stgit-confirm-new t nil edit-buf)
     (setq default-directory dir)
+    (set (make-local-variable 'stgit-refresh-after-new) refresh)
     (when add-sign
       (save-excursion
         (let ((standard-output (current-buffer)))
@@ -1429,12 +1432,25 @@ end of the patch."
 
 (defun stgit-confirm-new ()
   (interactive)
-  (let ((file (make-temp-file "stgit-edit-")))
+  (let ((file (make-temp-file "stgit-edit-"))
+        (refresh stgit-refresh-after-new))
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
       (stgit-run "new" "-f" file))
     (with-current-buffer log-edit-parent-buffer
-      (stgit-reload))))
+      (if refresh
+          (stgit-refresh)
+        (stgit-reload)))))
+
+(defun stgit-new-and-refresh (add-sign)
+  "Create a new patch and refresh it with the current changes.
+
+With a prefix argument, include a \"Signed-off-by:\" line at the
+end of the patch.
+
+This works just like running `stgit-new' followed by `stgit-refresh'."
+  (interactive "P")
+  (stgit-new add-sign t))
 
 (defun stgit-create-patch-name (description)
   "Create a patch name from a long description"
