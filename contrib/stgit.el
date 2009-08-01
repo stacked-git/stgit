@@ -318,6 +318,11 @@ Returns nil if there was no output."
   "StGit mode face used for unknown file status"
   :group 'stgit)
 
+(defface stgit-ignored-file-face
+  '((((class color) (background light)) (:foreground "grey60"))
+    (((class color) (background dark)) (:foreground "grey40")))
+  "StGit mode face used for ignored files")
+
 (defface stgit-file-permission-face
   '((((class color) (background light)) (:foreground "green" :bold t))
     (((class color) (background dark)) (:foreground "green" :bold t)))
@@ -351,7 +356,8 @@ flag, which reduces performance."
             (rename      "Renamed"     stgit-modified-file-face)
             (mode-change "Mode change" stgit-modified-file-face)
             (unmerged    "Unmerged"    stgit-unmerged-file-face)
-            (unknown     "Unknown"     stgit-unknown-file-face)))
+            (unknown     "Unknown"     stgit-unknown-file-face)
+            (ignore      "Ignored"     stgit-ignored-file-face)))
   "Alist of code symbols to description strings")
 
 (defconst stgit-patch-status-face-alist
@@ -380,6 +386,7 @@ flag, which reduces performance."
   (let ((code (assoc str '(("A" . add)
                            ("C" . copy)
                            ("D" . delete)
+                           ("I" . ignore)
                            ("M" . modify)
                            ("R" . rename)
                            ("T" . mode-change)
@@ -479,6 +486,16 @@ Cf. `stgit-file-type-change-string'."
       "--find-copies-harder"
     "-C"))
 
+(defun stgit-insert-ls-files (args file-flag)
+  (let ((start (point)))
+    (apply 'stgit-run-git
+           (append '("ls-files" "--exclude-standard" "-z") args))
+    (goto-char start)
+    (while (looking-at "\\([^\0]*\\)\0")
+      (let ((name-len (- (match-end 0) (match-beginning 0))))
+        (insert ":0 0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 " file-flag "\0")
+        (forward-char name-len)))))
+
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch PATCH after the line
 at point."
@@ -496,6 +513,15 @@ at point."
                     `("diff-index" ,@args "--cached" "HEAD"))
                    (t
                     `("diff-tree" ,@args "-r" ,(stgit-id patchsym)))))
+
+      (when (and (eq patchsym :work))
+        (when stgit-show-ignored
+          (stgit-insert-ls-files '("--ignored" "--others") "I"))
+        (when stgit-show-unknown
+          (stgit-insert-ls-files '("--others") "X"))
+        (sort-regexp-fields nil ":[^\0]*\0\\([^\0]*\\)\0" "\\1"
+                            (point-min) (point-max)))
+
       (goto-char (point-min))
       (unless (or (eobp) (memq patchsym '(:work :index)))
         (forward-char 41))
@@ -638,7 +664,9 @@ file for (applied) copies and renames."
   (let ((toggle-map (make-keymap)))
     (suppress-keymap toggle-map)
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
-          '(("t" .        stgit-toggle-worktree)))
+          '(("t" .        stgit-toggle-worktree)
+            ("i" .        stgit-toggle-ignored)
+            ("u" .        stgit-toggle-unknown)))
     (setq stgit-mode-map (make-keymap))
     (suppress-keymap stgit-mode-map)
     (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
@@ -886,6 +914,12 @@ working tree."
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
 
+    (when (eq file-status 'ignore)
+      (error "Cannot revert ignored files"))
+
+    (when (eq file-status 'unknown)
+      (error "Cannot revert unknown files"))
+
     (let ((nfiles (+ (if rm-file 1 0) (if co-file 1 0))))
       (when (yes-or-no-p (format "Revert %d file%s? "
                                  nfiles
@@ -1032,6 +1066,8 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
       (error "No file on the current line"))
     (when (eq (stgit-file-status patched-file) 'unmerged)
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
+    (when (eq (stgit-file-status patched-file) 'ignore)
+      (error "You cannot add ignored files to the index"))
     (let ((patch-name (stgit-patch-name-at-point)))
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)))
@@ -1310,6 +1346,12 @@ This value is used as the default value for `stgit-show-worktree'."
 
 See also `stgit-show-worktree-mode'.")
 
+(defvar stgit-show-ignored nil
+  "If nil, inhibit showing files ignored by git.")
+
+(defvar stgit-show-unknown nil
+  "If nil, inhibit showing files not registered with git.")
+
 (defun stgit-toggle-worktree (&optional arg)
   "Toggle the visibility of the work tree.
 With arg, show the work tree if arg is positive.
@@ -1323,6 +1365,30 @@ work tree will show up."
         (if (numberp arg)
             (> arg 0)
           (not stgit-show-worktree)))
+  (stgit-reload))
+
+(defun stgit-toggle-ignored (&optional arg)
+  "Toggle the visibility of files ignored by git in the work
+tree. With ARG, show these files if ARG is positive.
+
+Use \\[stgit-toggle-worktree] to show the work tree."
+  (interactive)
+  (setq stgit-show-ignored
+        (if (numberp arg)
+            (> arg 0)
+          (not stgit-show-ignored)))
+  (stgit-reload))
+
+(defun stgit-toggle-unknown (&optional arg)
+  "Toggle the visibility of files not registered with git in the
+work tree. With ARG, show these files if ARG is positive.
+
+Use \\[stgit-toggle-worktree] to show the work tree."
+  (interactive)
+  (setq stgit-show-unknown
+        (if (numberp arg)
+            (> arg 0)
+          (not stgit-show-unknown)))
   (stgit-reload))
 
 (provide 'stgit)
