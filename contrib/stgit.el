@@ -242,7 +242,8 @@ Returns nil if there was no output."
   (interactive)
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
-        (curpatch (stgit-patch-name-at-point)))
+        (curpatch (stgit-patch-name-at-point))
+        (curfile (stgit-patched-file-at-point)))
     (ewoc-filter stgit-ewoc #'(lambda (x) nil))
     (ewoc-set-hf stgit-ewoc
                  (concat "Branch: "
@@ -260,7 +261,7 @@ Returns nil if there was no output."
                    'face 'stgit-description-face)))
     (stgit-run-series stgit-ewoc)
     (if curpatch
-        (stgit-goto-patch curpatch)
+        (stgit-goto-patch curpatch (and curfile (stgit-file-file curfile)))
       (goto-line curline)))
   (stgit-refresh-git-status))
 
@@ -783,13 +784,26 @@ index or work tree."
           (list patch)
         '()))))
 
-(defun stgit-goto-patch (patchsym)
+(defun stgit-goto-patch (patchsym &optional file)
   "Move point to the line containing patch PATCHSYM.
-If that patch cannot be found, do nothing."
+If that patch cannot be found, do nothing.
+
+If the patch was found and FILE is not nil, instead move to that
+file's line. If FILE cannot be found, stay on the line of
+PATCHSYM."
   (let ((node (ewoc-nth stgit-ewoc 0)))
     (while (and node (not (eq (stgit-patch-name (ewoc-data node))
                               patchsym)))
       (setq node (ewoc-next stgit-ewoc node)))
+    (when (and node file)
+      (let* ((file-ewoc (stgit-patch-files-ewoc (ewoc-data node)))
+             (file-node (ewoc-nth file-ewoc 0)))
+        (while (and file-node (not (equal (stgit-file-file (ewoc-data file-node)) file)))
+          (setq file-node (ewoc-next file-ewoc file-node)))
+        (when file-node
+          (ewoc-goto-node file-ewoc file-node)
+          (move-to-column (stgit-goal-column))
+          (setq node nil))))
     (when node
       (ewoc-goto-node stgit-ewoc node)
       (move-to-column goal-column))))
@@ -1059,7 +1073,11 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
     (stgit-run-git "reset" "-q" "--" file)))
 
 (defun stgit-file-toggle-index ()
-  "Move modified file in or out of the index."
+  "Move modified file in or out of the index.
+
+Leaves the point where it is, but moves the mark to where the
+file ended up. You can then jump to the file with \
+\\[exchange-point-and-mark]."
   (interactive)
   (let ((patched-file (stgit-patched-file-at-point)))
     (unless patched-file
@@ -1068,15 +1086,35 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
     (when (eq (stgit-file-status patched-file) 'ignore)
       (error "You cannot add ignored files to the index"))
-    (let ((patch-name (stgit-patch-name-at-point)))
+    (let* ((patch      (stgit-patch-at-point))
+           (patch-name (stgit-patch-name patch))
+           (old-point  (point))
+           next-file)
+
+      ;; find the next file in the patch, or the previous one if this
+      ;; was the last file
+      (and (zerop (forward-line 1))
+           (let ((f (stgit-patched-file-at-point)))
+             (and f (setq next-file (stgit-file-file f)))))
+      (goto-char old-point)
+      (unless next-file
+        (and (zerop (forward-line -1))
+             (let ((f (stgit-patched-file-at-point)))
+               (and f (setq next-file (stgit-file-file f)))))
+        (goto-char old-point))
+
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)))
             ((eq patch-name :index)
              (stgit-remove-change-from-index (stgit-file-file patched-file)))
             (t
-             (error "Can only move files in the working tree to index")))))
-  (stgit-refresh-worktree)
-  (stgit-refresh-index))
+             (error "Can only move files in the working tree to index")))
+      (stgit-refresh-worktree)
+      (stgit-refresh-index)
+      (stgit-goto-patch (if (eq patch-name :index) :work :index)
+                        (stgit-file-file patched-file))
+      (push-mark nil t t)
+      (stgit-goto-patch patch-name next-file))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
