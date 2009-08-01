@@ -337,7 +337,7 @@ Returns nil if there was no output."
   :group 'stgit)
 
 
-(defcustom stgit-expand-find-copies-harder
+(defcustom stgit-find-copies-harder
   nil
   "Try harder to find copied files when listing patches.
 
@@ -482,10 +482,8 @@ Cf. `stgit-file-type-change-string'."
 
 (defun stgit-find-copies-harder-diff-arg ()
   "Return the flag to use with `git-diff' depending on the
-`stgit-expand-find-copies-harder' flag."
-  (if stgit-expand-find-copies-harder
-      "--find-copies-harder"
-    "-C"))
+`stgit-find-copies-harder' flag."
+  (if stgit-find-copies-harder "--find-copies-harder" "-C"))
 
 (defun stgit-insert-ls-files (args file-flag)
   (let ((start (point)))
