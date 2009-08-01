@@ -164,8 +164,8 @@ Returns nil if there was no output."
   "Returns non-nil if the index contains no changes from HEAD."
   (zerop (stgit-run-git-silent "diff-index" "--cached" "--quiet" "HEAD")))
 
-(defvar stgit-index-node nil)
-(defvar stgit-worktree-node nil)
+(defvar stgit-index-node)
+(defvar stgit-worktree-node)
 
 (defun stgit-refresh-index ()
   (when stgit-index-node
@@ -640,6 +640,8 @@ Commands:
   (set (make-local-variable 'stgit-marked-patches) nil)
   (set (make-local-variable 'stgit-expanded-patches) nil)
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
+  (set (make-local-variable 'stgit-index-node) nil)
+  (set (make-local-variable 'stgit-worktree-node) nil)
   (set-variable 'truncate-lines 't)
   (add-hook 'after-save-hook 'stgit-update-saved-file)
   (run-hooks 'stgit-mode-hook))
