@@ -878,7 +878,8 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 
 (defun stgit-move-change-to-index (file)
   "Copies the workspace state of FILE to index, using git add or git rm"
-  (let ((op (if (file-exists-p file) '("add") '("rm" "-q"))))
+  (let ((op (if (or (file-exists-p file) (file-symlink-p file))
+                '("add") '("rm" "-q"))))
     (stgit-capture-output "*git output*"
       (apply 'stgit-run-git (append op '("--") (list file))))))
 
