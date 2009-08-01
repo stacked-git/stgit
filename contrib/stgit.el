@@ -68,9 +68,11 @@ directory DIR or `default-directory'"
         (start (point))
         (name (stgit-patch-name patch)))
     (case name
-       (:index (insert (propertize "  Index"
+       (:index (insert "  "
+                       (propertize "Index"
                                    'face 'stgit-index-work-tree-title-face)))
-       (:work  (insert (propertize "  Work tree"
+       (:work  (insert "  "
+                       (propertize "Work tree"
                                    'face 'stgit-index-work-tree-title-face)))
        (t (insert (case status
                     ('applied "+")
@@ -177,15 +179,35 @@ Returns nil if there was no output."
   (when stgit-worktree-node
     (ewoc-invalidate (car stgit-worktree-node) (cdr stgit-worktree-node))))
 
+(defun stgit-run-series-insert-index (ewoc)
+  (setq index-node    (cons ewoc (ewoc-enter-last ewoc
+                                                  (make-stgit-patch
+                                                   :status 'index
+                                                   :name :index
+                                                   :desc nil
+                                                   :empty nil)))
+        worktree-node (cons ewoc (ewoc-enter-last ewoc
+                                                  (make-stgit-patch
+                                                   :status 'work
+                                                   :name :work
+                                                   :desc nil
+                                                   :empty nil)))))
+
 (defun stgit-run-series (ewoc)
-  (let ((first-line t))
+  (setq stgit-index-node nil
+        stgit-worktree-node nil)
+  (let ((inserted-index (not stgit-show-worktree))
+        index-node
+        worktree-node)
     (with-temp-buffer
       (let ((exit-status (stgit-run-silent "series" "--description" "--empty")))
         (goto-char (point-min))
         (if (not (zerop exit-status))
             (cond ((looking-at "stg series: \\(.*\\)")
+                   (setq inserted-index t)
                    (ewoc-set-hf ewoc (car (ewoc-get-hf ewoc))
-                                "-- not initialized (run M-x stgit-init)"))
+                                (substitute-command-keys
+                                 "-- not initialized; run \\[stgit-init]")))
                   ((looking-at ".*")
                    (error "Error running stg: %s"
                           (match-string 0))))
@@ -196,30 +218,27 @@ Returns nil if there was no output."
             (let* ((state-str (match-string 2))
                    (state (cond ((string= state-str ">") 'top)
                                 ((string= state-str "+") 'applied)
-                                ((string= state-str "-") 'unapplied))))
+                                ((string= state-str "-") 'unapplied)))
+                   (name (intern (match-string 4)))
+                   (desc (match-string 5))
+                   (empty (string= (match-string 1) "0")))
+              (unless inserted-index
+                (when (or (eq stgit-show-worktree-mode 'top)
+                          (and (eq stgit-show-worktree-mode 'center)
+                               (eq state 'unapplied)))
+                  (setq inserted-index t)
+                  (stgit-run-series-insert-index ewoc)))
               (ewoc-enter-last ewoc
                                (make-stgit-patch
                                 :status state
-                                :name (intern (match-string 4))
-                                :desc (match-string 5)
-                                :empty (string= (match-string 1) "0"))))
-            (setq first-line nil)
-            (forward-line 1)))))
-    (if stgit-show-worktree
-        (setq stgit-index-node (cons ewoc (ewoc-enter-last ewoc
-                                                           (make-stgit-patch
-                                                            :status 'index
-                                                            :name :index
-                                                            :desc nil
-                                                            :empty nil)))
-              stgit-worktree-node (cons ewoc (ewoc-enter-last ewoc
-                                                              (make-stgit-patch
-                                                               :status 'work
-                                                               :name :work
-                                                               :desc nil
-                                                               :empty nil))))
-      (setq stgit-worktree-node nil))))
-
+                                :name   name
+                                :desc   desc
+                                :empty  empty)))
+            (forward-line 1))))
+      (unless inserted-index
+        (stgit-run-series-insert-index ewoc)))
+    (setq stgit-index-node    index-node
+          stgit-worktree-node worktree-node)))
 
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
@@ -1253,6 +1272,20 @@ With prefix argument, refresh the marked patch or the patch under point."
     (stgit-refresh-git-status))
   (stgit-reload))
 
+(defcustom stgit-show-worktree-mode 'center
+  "This variable controls where the \"Index\" and \"Work tree\"
+will be shown on in the buffer.
+
+It can be set to 'top (above all patches), 'center (show between
+applied and unapplied patches), and 'bottom (below all patches).
+
+See also `stgit-show-worktree'."
+  :type '(radio (const :tag "above all patches (top)" top)
+                (const :tag "between applied and unapplied patches (center)"
+                       center)
+                (const :tag "below all patches (bottom)" bottom))
+  :group 'stgit)
+
 (defcustom stgit-default-show-worktree
   nil
   "Set to non-nil to by default show the working tree in a new stgit buffer.
@@ -1262,15 +1295,18 @@ This value is used as the default value for `stgit-show-worktree'."
   :group 'stgit)
 
 (defvar stgit-show-worktree nil
-  "Show work tree and index in the stgit buffer.
+  "If nil, inhibit showing work tree and index in the stgit buffer.
 
-See `stgit-default-show-worktree' for its default value.")
+See also `stgit-show-worktree-mode'.")
 
 (defun stgit-toggle-worktree (&optional arg)
   "Toggle the visibility of the work tree.
 With arg, show the work tree if arg is positive.
 
-Its initial setting is controlled by `stgit-default-show-worktree'."
+Its initial setting is controlled by `stgit-default-show-worktree'.
+
+`stgit-show-worktree-mode' controls where on screen the index and
+work tree will show up."
   (interactive)
   (setq stgit-show-worktree
         (if (numberp arg)
