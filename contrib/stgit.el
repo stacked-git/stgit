@@ -876,13 +876,13 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
       (goto-char (point-min))
       (diff-mode))))
 
-(defun stgit-move-change-to-index (file status)
+(defun stgit-move-change-to-index (file)
   "Copies the workspace state of FILE to index, using git add or git rm"
   (let ((op (if (file-exists-p file) "add" "rm")))
     (stgit-capture-output "*git output*"
       (stgit-run-git op "--" file))))
 
-(defun stgit-remove-change-from-index (file status)
+(defun stgit-remove-change-from-index (file)
   "Unstages the change in FILE from the index"
   (stgit-capture-output "*git output*"
     (stgit-run-git "reset" "-q" "--" file)))
@@ -895,11 +895,9 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
       (error "No file on the current line"))
     (let ((patch-name (stgit-patch-name-at-point)))
       (cond ((eq patch-name :work)
-             (stgit-move-change-to-index (stgit-file-file patched-file)
-                                         (stgit-file-status patched-file)))
+             (stgit-move-change-to-index (stgit-file-file patched-file)))
             ((eq patch-name :index)
-             (stgit-remove-change-from-index (stgit-file-file patched-file)
-                                             (stgit-file-status patched-file)))
+             (stgit-remove-change-from-index (stgit-file-file patched-file)))
             (t
              (error "Can only move files in the working tree to index")))))
   (stgit-refresh-worktree)
