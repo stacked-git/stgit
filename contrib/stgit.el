@@ -507,7 +507,7 @@ at point."
     (with-temp-buffer
       (apply 'stgit-run-git
              (cond ((eq patchsym :work)
-                    `("diff-files" ,@args))
+                    `("diff-files" "-0" ,@args))
                    ((eq patchsym :index)
                     `("diff-index" ,@args "--cached" "HEAD"))
                    (t
@@ -567,12 +567,16 @@ at point."
                              "\n"))))
     (goto-char end)))
 
-(defun stgit-select-file ()
-  (let ((filename (expand-file-name
-                   (stgit-file-file (stgit-patched-file-at-point)))))
+(defun stgit-find-file (&optional other-window)
+  (let* ((file (or (stgit-patched-file-at-point)
+                   (error "No file at point")))
+         (filename (expand-file-name (stgit-file-file file))))
     (unless (file-exists-p filename)
       (error "File does not exist"))
-    (find-file filename)))
+    (funcall (if other-window 'find-file-other-window 'find-file)
+             filename)
+    (when (eq (stgit-file-status file) 'unmerged)
+      (smerge-mode 1))))
 
 (defun stgit-select-patch ()
   (let ((patchname (stgit-patch-name-at-point)))
@@ -592,20 +596,14 @@ file for (applied) copies and renames."
     ('patch
      (stgit-select-patch))
     ('file
-     (stgit-select-file))
+     (stgit-find-file))
     (t
      (error "No patch or file on line"))))
 
 (defun stgit-find-file-other-window ()
   "Open file at point in other window"
   (interactive)
-  (let ((patched-file (stgit-patched-file-at-point)))
-    (unless patched-file
-      (error "No file on the current line"))
-    (let ((filename (expand-file-name (stgit-file-file patched-file))))
-      (unless (file-exists-p filename)
-        (error "File does not exist"))
-      (find-file-other-window filename))))
+  (stgit-find-file t))
 
 (defun stgit-quit ()
   "Hide the stgit buffer."
@@ -1033,13 +1031,18 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
       ('file
        (let* ((patched-file (stgit-patched-file-at-point))
               (patch-name (stgit-patch-name-at-point))
-              (patch-id (stgit-id patch-name))
+              (patch-id (let ((id (stgit-id patch-name)))
+                          (if (and (eq id :index)
+                                   (eq (stgit-file-status patched-file)
+                                       'unmerged))
+                              :work
+                            id)))
               (args (append (and (stgit-file-cr-from patched-file)
                                  (list (stgit-find-copies-harder-diff-arg)))
                             (cond ((eq patch-id :index)
                                    '("--cached"))
                                   ((eq patch-id :work)
-                                   nil)
+                                   '("--ours"))
                                   (t
                                    (list (concat patch-id "^") patch-id)))
                             '("--")
@@ -1054,8 +1057,9 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
          (if (or (eq patch-id :index) (eq patch-id :work))
              (apply 'stgit-run-git "diff"
                     (stgit-find-copies-harder-diff-arg)
-                    (and (eq patch-id :index)
-                         '("--cached")))
+                    (if (eq patch-id :index)
+                        '("--cached")
+                      '("--ours")))
            (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
                       (stgit-patch-name-at-point)))))
       (t
