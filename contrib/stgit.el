@@ -903,10 +903,23 @@ was modified with git commands (`stgit-repair')."
 
 (defun stgit-commit (count)
   "Run stg commit on COUNT commits.
-Interactively, the prefix argument is used as COUNT."
+Interactively, the prefix argument is used as COUNT.
+A negative COUNT will uncommit instead."
   (interactive "p")
-  (stgit-capture-output nil (stgit-run "commit" "-n" count))
-  (stgit-reload))
+  (if (< count 0)
+      (stgit-uncommit (- count))
+    (stgit-capture-output nil (stgit-run "commit" "-n" count))
+    (stgit-reload)))
+
+(defun stgit-uncommit (count)
+  "Run stg uncommit on COUNT commits.
+Interactively, the prefix argument is used as COUNT.
+A negative COUNT will commit instead."
+  (interactive "p")
+  (if (< count 0)
+      (stgit-commit (- count))
+    (stgit-capture-output nil (stgit-run "uncommit" "-n" count))
+    (stgit-reload)))
 
 (defun stgit-revert-file ()
   "Revert the file at point, which must be in the index or the
@@ -963,13 +976,6 @@ working tree."
       (stgit-move-change-to-index (stgit-file-file patched-file)))
 
     (stgit-reload)))
-
-(defun stgit-uncommit (count)
-  "Run stg uncommit on COUNT commits.
-Interactively, the prefix argument is used as COUNT."
-  (interactive "p")
-  (stgit-capture-output nil (stgit-run "uncommit" "-n" count))
-  (stgit-reload))
 
 (defun stgit-push-next (npatches)
   "Push the first unapplied patch.
