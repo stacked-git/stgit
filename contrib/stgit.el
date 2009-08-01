@@ -878,9 +878,9 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 
 (defun stgit-move-change-to-index (file)
   "Copies the workspace state of FILE to index, using git add or git rm"
-  (let ((op (if (file-exists-p file) "add" "rm")))
+  (let ((op (if (file-exists-p file) '("add") '("rm" "-q"))))
     (stgit-capture-output "*git output*"
-      (stgit-run-git op "--" file))))
+      (apply 'stgit-run-git (append op '("--") (list file))))))
 
 (defun stgit-remove-change-from-index (file)
   "Unstages the change in FILE from the index"
