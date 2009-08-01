@@ -435,11 +435,8 @@ Cf. `stgit-file-type-change-string'."
                                'file-data file))))
 
 (defun stgit-insert-patch-files (patch)
-  "Expand (show modification of) the patch with name PATCHSYM (a
-symbol) after the line at point.
-`stgit-expand-find-copies-harder' controls how hard to try to
-find copied files."
-  (insert "\n")
+  "Expand (show modification of) the patch PATCH after the line
+at point."
   (let* ((patchsym (stgit-patch-name patch))
          (end (progn (insert "#") (prog1 (point-marker) (forward-char -1))))
          (args (list "-z" (if stgit-expand-find-copies-harder
