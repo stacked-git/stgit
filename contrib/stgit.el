@@ -232,7 +232,7 @@ Returns nil if there was no output."
                           (with-temp-buffer
                             (stgit-run-silent "branch")
                             (buffer-substring (point-min) (1- (point-max))))
-                          'face 'bold)
+                          'face 'stgit-branch-name-face)
                          "\n")
                  (if stgit-show-worktree
                      "--"
@@ -254,6 +254,11 @@ Returns nil if there was no output."
   '((((background dark)) (:foreground "tan"))
     (((background light)) (:foreground "dark red")))
   "The face used for StGit descriptions"
+  :group 'stgit)
+
+(defface stgit-branch-name-face
+  '((t :inherit bold))
+  "The face used for the StGit branch name"
   :group 'stgit)
 
 (defface stgit-top-patch-face
