@@ -1038,85 +1038,89 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 	(error "Cannot find commit id for %s" patchsym))
       (match-string 1 result))))
 
-(defun stgit-show-patch (unmerged-stage)
+(defun stgit-show-patch (unmerged-stage ignore-whitespace)
   "Show the patch on the current line.
 
 UNMERGED-STAGE is the argument to `git-diff' that that selects
 which stage to diff against in the case of unmerged files."
-  (stgit-capture-output "*StGit patch*"
-    (case (get-text-property (point) 'entry-type)
-      ('file
-       (let* ((patched-file (stgit-patched-file-at-point))
-              (patch-name (stgit-patch-name-at-point))
-              (patch-id (let ((id (stgit-id patch-name)))
-                          (if (and (eq id :index)
-                                   (eq (stgit-file-status patched-file)
-                                       'unmerged))
-                              :work
-                            id)))
-              (args (append (and (stgit-file-cr-from patched-file)
-                                 (list (stgit-find-copies-harder-diff-arg)))
-                            (cond ((eq patch-id :index)
-                                   '("--cached"))
-                                  ((eq patch-id :work)
-                                   (list unmerged-stage))
-                                  (t
-                                   (list (concat patch-id "^") patch-id)))
-                            '("--")
+  (let ((space-arg (when (numberp ignore-whitespace)
+                     (cond ((> ignore-whitespace 4)
+                            "--ignore-all-space")
+                           ((> ignore-whitespace 1)
+                            "--ignore-space-change"))))
+        (patch-name (stgit-patch-name-at-point t)))
+    (stgit-capture-output "*StGit patch*"
+      (case (get-text-property (point) 'entry-type)
+        ('file
+         (let* ((patched-file (stgit-patched-file-at-point))
+                (patch-id (let ((id (stgit-id patch-name)))
+                            (if (and (eq id :index)
+                                     (eq (stgit-file-status patched-file)
+                                         'unmerged))
+                                :work
+                              id)))
+                (args (append (and space-arg (list space-arg))
+                              (and (stgit-file-cr-from patched-file)
+                                   (list (stgit-find-copies-harder-diff-arg)))
+                              (cond ((eq patch-id :index)
+                                     '("--cached"))
+                                    ((eq patch-id :work)
+                                     (list unmerged-stage))
+                                    (t
+                                     (list (concat patch-id "^") patch-id)))
+                              '("--")
                               (if (stgit-file-copy-or-rename patched-file)
                                   (list (stgit-file-cr-from patched-file)
                                         (stgit-file-cr-to patched-file))
                                 (list (stgit-file-file patched-file))))))
-         (apply 'stgit-run-git "diff" args)))
-      ('patch
-       (let* ((patch-name (stgit-patch-name-at-point))
-              (patch-id (stgit-id patch-name)))
-         (if (or (eq patch-id :index) (eq patch-id :work))
-             (apply 'stgit-run-git "diff"
-                    (stgit-find-copies-harder-diff-arg)
-                    (if (eq patch-id :index)
-                        '("--cached")
-                      (list unmerged-stage)))
-           (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
-                      (stgit-patch-name-at-point)))))
-      (t
-       (error "No patch or file at point")))
-    (with-current-buffer standard-output
-      (goto-char (point-min))
-      (diff-mode))))
+           (apply 'stgit-run-git "diff" args)))
+        ('patch
+         (let* ((patch-id (stgit-id patch-name)))
+           (if (or (eq patch-id :index) (eq patch-id :work))
+               (apply 'stgit-run-git "diff"
+                      (stgit-find-copies-harder-diff-arg)
+                      (append (and space-arg (list space-arg))
+                              (if (eq patch-id :index)
+                                  '("--cached")
+                                (list unmerged-stage))))
+             (let ((args (append '("show" "-O" "--patch-with-stat" "-O" "-M")
+                                 (and space-arg (list "-O" space-arg))
+                                 (list (stgit-patch-name-at-point)))))
+               (apply 'stgit-run args)))))
+         (t
+          (error "No patch or file at point")))
+      (with-current-buffer standard-output
+        (goto-char (point-min))
+        (diff-mode)))))
 
-(defun stgit-diff ()
-  "Show the patch on the current line."
-  (interactive)
-  (stgit-show-patch "--ours"))
+(defmacro stgit-define-diff (name diff-arg &optional unmerged-action)
+  `(defun ,name (&optional ignore-whitespace)
+     ,(format "Show the patch on the current line.
 
-(defun stgit-diff-ours ()
-  "Show the patch on the current line.
+%sWith a prefix argument, ignore whitespace. With a prefix argument
+greater than four (e.g., \\[universal-argument] \
+\\[universal-argument] \\[%s]), ignore all whitespace."
+              (if unmerged-action
+                  (format "For unmerged files, %s.\n\n" unmerged-action)
+                "")
+              name)
+     (interactive "p")
+     (stgit-show-patch ,diff-arg ignore-whitespace)))
 
-For unmerged files, diff against our branch."
-  (interactive)
-  (stgit-show-patch "--ours"))
-
-(defun stgit-diff-theirs ()
-  "Show the patch on the current line.
-
-For unmerged files, diff against their branch."
-  (interactive)
-  (stgit-show-patch "--theirs"))
-
-(defun stgit-diff-base ()
-  "Show the patch on the current line.
-
-For unmerged files, diff against the base version."
-  (interactive)
-  (stgit-show-patch "--base"))
-
-(defun stgit-diff-combined ()
-  "Show the patch on the current line.
-
-For unmerged files, show a combined diff."
-  (interactive)
-  (stgit-show-patch "--cc"))
+(stgit-define-diff stgit-diff
+                   "--ours" nil)
+(stgit-define-diff stgit-diff-ours
+                   "--ours"
+                   "diff against our branch")
+(stgit-define-diff stgit-diff-theirs
+                   "--theirs"
+                   "diff against their branch")
+(stgit-define-diff stgit-diff-base
+                   "--base"
+                   "diff against the merge base")
+(stgit-define-diff stgit-diff-combined
+                   "--cc"
+                   "show a combined diff")
 
 (defun stgit-move-change-to-index (file)
   "Copies the workspace state of FILE to index, using git add or git rm"
