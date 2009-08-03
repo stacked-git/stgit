@@ -605,6 +605,12 @@ file for (applied) copies and renames."
   (interactive)
   (stgit-find-file t))
 
+(defun stgit-find-file-merge ()
+  "Open file at point and merge it using `smerge-ediff'."
+  (interactive)
+  (stgit-find-file t)
+  (smerge-ediff))
+
 (defun stgit-quit ()
   "Hide the stgit buffer."
   (interactive)
@@ -658,7 +664,15 @@ file for (applied) copies and renames."
   "Keymap for StGit major mode.")
 
 (unless stgit-mode-map
-  (let ((toggle-map (make-keymap)))
+  (let ((diff-map   (make-keymap))
+        (toggle-map (make-keymap)))
+    (suppress-keymap diff-map)
+    (mapc (lambda (arg) (define-key diff-map (car arg) (cdr arg)))
+          '(("b" .        stgit-diff-base)
+            ("c" .        stgit-diff-combined)
+            ("m" .        stgit-find-file-merge)
+            ("o" .        stgit-diff-ours)
+            ("t" .        stgit-diff-theirs)))
     (suppress-keymap toggle-map)
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
           '(("t" .        stgit-toggle-worktree)
@@ -700,12 +714,13 @@ file for (applied) copies and renames."
             ("<" .        stgit-pop-next)
             ("P" .        stgit-push-or-pop)
             ("G" .        stgit-goto)
-            ("=" .        stgit-show)
+            ("=" .        stgit-diff)
             ("D" .        stgit-delete)
             ([(control ?/)] . stgit-undo)
             ("\C-_" .     stgit-undo)
             ("B" .        stgit-branch)
             ("t" .        ,toggle-map)
+            ("d" .        ,diff-map)
             ("q" .        stgit-quit)))))
 
 (defun stgit-mode ()
@@ -1023,9 +1038,11 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 	(error "Cannot find commit id for %s" patchsym))
       (match-string 1 result))))
 
-(defun stgit-show ()
-  "Show the patch on the current line."
-  (interactive)
+(defun stgit-show-patch (unmerged-stage)
+  "Show the patch on the current line.
+
+UNMERGED-STAGE is the argument to `git-diff' that that selects
+which stage to diff against in the case of unmerged files."
   (stgit-capture-output "*StGit patch*"
     (case (get-text-property (point) 'entry-type)
       ('file
@@ -1042,7 +1059,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
                             (cond ((eq patch-id :index)
                                    '("--cached"))
                                   ((eq patch-id :work)
-                                   '("--ours"))
+                                   (list unmerged-stage))
                                   (t
                                    (list (concat patch-id "^") patch-id)))
                             '("--")
@@ -1059,7 +1076,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
                     (stgit-find-copies-harder-diff-arg)
                     (if (eq patch-id :index)
                         '("--cached")
-                      '("--ours")))
+                      (list unmerged-stage)))
            (stgit-run "show" "-O" "--patch-with-stat" "-O" "-M"
                       (stgit-patch-name-at-point)))))
       (t
@@ -1067,6 +1084,39 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
     (with-current-buffer standard-output
       (goto-char (point-min))
       (diff-mode))))
+
+(defun stgit-diff ()
+  "Show the patch on the current line."
+  (interactive)
+  (stgit-show-patch "--ours"))
+
+(defun stgit-diff-ours ()
+  "Show the patch on the current line.
+
+For unmerged files, diff against our branch."
+  (interactive)
+  (stgit-show-patch "--ours"))
+
+(defun stgit-diff-theirs ()
+  "Show the patch on the current line.
+
+For unmerged files, diff against their branch."
+  (interactive)
+  (stgit-show-patch "--theirs"))
+
+(defun stgit-diff-base ()
+  "Show the patch on the current line.
+
+For unmerged files, diff against the base version."
+  (interactive)
+  (stgit-show-patch "--base"))
+
+(defun stgit-diff-combined ()
+  "Show the patch on the current line.
+
+For unmerged files, show a combined diff."
+  (interactive)
+  (stgit-show-patch "--cc"))
 
 (defun stgit-move-change-to-index (file)
   "Copies the workspace state of FILE to index, using git add or git rm"
