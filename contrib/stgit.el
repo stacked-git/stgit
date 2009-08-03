@@ -444,8 +444,6 @@ at point."
                             "-C")))
          (ewoc (ewoc-create #'stgit-file-pp nil nil t)))
     (setf (stgit-patch-files-ewoc patch) ewoc)
-    (when (eq patchsym :work)
-      (setq stgit-work-ewoc ewoc))
     (with-temp-buffer
       (apply 'stgit-run-git
              (cond ((eq patchsym :work)
