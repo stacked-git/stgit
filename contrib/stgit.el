@@ -718,8 +718,10 @@ file for (applied) copies and renames."
             ("G" .        stgit-goto)
             ("=" .        stgit-diff)
             ("D" .        stgit-delete)
-            ([(control ?/)] . stgit-undo)
+            ([?\C-/] .    stgit-undo)
             ("\C-_" .     stgit-undo)
+            ([?\C-c ?\C-/] . stgit-redo)
+            ("\C-c\C-_" . stgit-redo)
             ("B" .        stgit-branch)
             ("t" .        ,toggle-map)
             ("d" .        ,diff-map)
@@ -1392,12 +1394,26 @@ deepest patch had before the squash."
 
 (defun stgit-undo (&optional arg)
   "Run stg undo.
-With prefix argument, run it with the --hard flag."
+With prefix argument, run it with the --hard flag.
+
+See also `stgit-redo'."
   (interactive "P")
   (stgit-capture-output nil
     (if arg
         (stgit-run "undo" "--hard")
       (stgit-run "undo")))
+  (stgit-reload))
+
+(defun stgit-redo (&optional arg)
+  "Run stg redo.
+With prefix argument, run it with the --hard flag.
+
+See also `stgit-undo'."
+  (interactive "P")
+  (stgit-capture-output nil
+    (if arg
+        (stgit-run "redo" "--hard")
+      (stgit-run "redo")))
   (stgit-reload))
 
 (defun stgit-refresh (&optional arg)
