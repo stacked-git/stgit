@@ -9,6 +9,9 @@
 ;;
 ;; To start: `M-x stgit'
 
+(when (< emacs-major-version 22)
+  (error "Emacs older than 22 is not supported by stgit.el"))
+
 (require 'git nil t)
 (require 'cl)
 (require 'ewoc)
