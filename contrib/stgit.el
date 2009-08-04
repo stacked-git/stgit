@@ -1456,7 +1456,7 @@ See also `stgit-show-worktree'."
   :group 'stgit)
 
 (defcustom stgit-default-show-worktree
-  nil
+  t
   "Set to non-nil to by default show the working tree in a new stgit buffer.
 
 This value is used as the default value for `stgit-show-worktree'."
