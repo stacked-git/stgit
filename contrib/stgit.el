@@ -79,7 +79,9 @@ directory DIR or `default-directory'"
         (insert (propertize (if (eq status 'index) "Index" "Work tree")
                             'face face))
       (insert (format "%-30s"
-                      (propertize (symbol-name name) 'face face))
+                      (propertize (symbol-name name)
+                                  'face face
+                                  'syntax-table (string-to-syntax "w")))
               "  "
               (if (stgit-patch-empty patch) "(empty) " "")
               (propertize (or (stgit-patch-desc patch) "")
@@ -739,6 +741,7 @@ Commands:
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
   (set (make-local-variable 'stgit-index-node) nil)
   (set (make-local-variable 'stgit-worktree-node) nil)
+  (set (make-local-variable 'parse-sexp-lookup-properties) t)
   (set-variable 'truncate-lines 't)
   (add-hook 'after-save-hook 'stgit-update-saved-file)
   (run-hooks 'stgit-mode-hook))
