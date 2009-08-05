@@ -1188,12 +1188,15 @@ greater than four (e.g., \\[universal-argument] \
                    "--cc"
                    "show a combined diff")
 
-(defun stgit-move-change-to-index (file)
-  "Copies the workspace state of FILE to index, using git add or git rm"
+(defun stgit-move-change-to-index (file &optional force)
+  "Copies the work tree state of FILE to index, using git add or git rm.
+
+If FORCE is not nil, use --force."
   (let ((op (if (or (file-exists-p file) (file-symlink-p file))
                 '("add") '("rm" "-q"))))
     (stgit-capture-output "*git output*"
-      (apply 'stgit-run-git (append op '("--") (list file))))))
+      (apply 'stgit-run-git (append op (and force '("--force"))
+                                    '("--") (list file))))))
 
 (defun stgit-remove-change-from-index (file)
   "Unstages the change in FILE from the index"
@@ -1212,8 +1215,6 @@ file ended up. You can then jump to the file with \
 	 (patched-status (stgit-file-status patched-file)))
     (when (eq patched-status 'unmerged)
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
-    (when (eq patched-status 'ignore)
-      (error "You cannot add ignored files to the index"))
     (let* ((patch      (stgit-patch-at-point))
            (patch-name (stgit-patch-name patch))
            (mark-file  (if (eq patched-status 'rename)
@@ -1224,7 +1225,8 @@ file ended up. You can then jump to the file with \
 			 (stgit-neighbour-file))))
 
       (cond ((eq patch-name :work)
-             (stgit-move-change-to-index (stgit-file-file patched-file)))
+             (stgit-move-change-to-index (stgit-file-file patched-file)
+                                         (eq patched-status 'ignore)))
             ((eq patch-name :index)
              (stgit-remove-change-from-index (stgit-file-file patched-file)))
             (t
