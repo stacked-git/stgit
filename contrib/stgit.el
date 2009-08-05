@@ -562,8 +562,9 @@ at point."
                          :status         (stgit-file-status-code
                                           (match-string 1))
                          :file           (match-string 2))))))
-            (ewoc-enter-last ewoc file))
-          (goto-char (match-end 0))))
+            (goto-char (match-end 0))
+            (ewoc-enter-last ewoc file))))
+
       (unless (ewoc-nth ewoc 0)
         (ewoc-set-hf ewoc ""
                      (concat "    "
