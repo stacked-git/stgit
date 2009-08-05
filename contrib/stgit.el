@@ -1207,29 +1207,33 @@ Leaves the point where it is, but moves the mark to where the
 file ended up. You can then jump to the file with \
 \\[exchange-point-and-mark]."
   (interactive)
-  (let ((patched-file (stgit-patched-file-at-point)))
-    (unless patched-file
-      (error "No file on the current line"))
-    (when (eq (stgit-file-status patched-file) 'unmerged)
+  (let* ((patched-file   (or (stgit-patched-file-at-point)
+			     (error "No file on the current line")))
+	 (patched-status (stgit-file-status patched-file)))
+    (when (eq patched-status 'unmerged)
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
-    (when (eq (stgit-file-status patched-file) 'ignore)
+    (when (eq patched-status 'ignore)
       (error "You cannot add ignored files to the index"))
     (let* ((patch      (stgit-patch-at-point))
            (patch-name (stgit-patch-name patch))
-           (next-file  (stgit-neighbour-file)))
+           (mark-file  (if (eq patched-status 'rename)
+			   (stgit-file-cr-to patched-file)
+			 (stgit-file-file patched-file)))
+           (point-file  (if (eq patched-status 'rename)
+			   (stgit-file-cr-from patched-file)
+			 (stgit-neighbour-file))))
 
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)))
             ((eq patch-name :index)
              (stgit-remove-change-from-index (stgit-file-file patched-file)))
             (t
-             (error "Can only move files in the working tree to index")))
+             (error "Can only move files between working tree and index")))
       (stgit-refresh-worktree)
       (stgit-refresh-index)
-      (stgit-goto-patch (if (eq patch-name :index) :work :index)
-                        (stgit-file-file patched-file))
+      (stgit-goto-patch (if (eq patch-name :index) :work :index) mark-file)
       (push-mark nil t t)
-      (stgit-goto-patch patch-name next-file))))
+      (stgit-goto-patch patch-name point-file))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
