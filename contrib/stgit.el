@@ -1345,7 +1345,7 @@ the point is after or before the applied patches."
   "Returns the list of patches in PATCHSYMS sorted according to
 their position in the patch series, bottommost first.
 
-PATCHSYMS may not contain duplicate entries."
+PATCHSYMS must not contain duplicate entries."
   (let (sorted-patchsyms
         (series (with-output-to-string
                   (with-current-buffer standard-output
@@ -1527,7 +1527,7 @@ See also `stgit-show-worktree-mode'.")
 
 (defun stgit-toggle-worktree (&optional arg)
   "Toggle the visibility of the work tree.
-With arg, show the work tree if arg is positive.
+With ARG, show the work tree if ARG is positive.
 
 Its initial setting is controlled by `stgit-default-show-worktree'.
 
