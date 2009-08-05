@@ -980,6 +980,22 @@ A negative COUNT will commit instead."
     (stgit-capture-output nil (stgit-run "uncommit" "-n" count))
     (stgit-reload)))
 
+(defun stgit-neighbour-file ()
+  "Return the file name of the next file after point, or the
+previous file if point is at the last file within a patch."
+  (let ((old-point (point))
+        neighbour-file)
+    (and (zerop (forward-line 1))
+         (let ((f (stgit-patched-file-at-point)))
+           (and f (setq neighbour-file (stgit-file-file f)))))
+    (goto-char old-point)
+    (unless neighbour-file
+      (and (zerop (forward-line -1))
+           (let ((f (stgit-patched-file-at-point)))
+             (and f (setq neighbour-file (stgit-file-file f)))))
+      (goto-char old-point))
+    neighbour-file))
+
 (defun stgit-revert-file ()
   "Revert the file at point, which must be in the index or the
 working tree."
@@ -995,7 +1011,8 @@ working tree."
          (co-file      (cond ((eq file-status 'rename)
                               (stgit-file-cr-from patched-file))
                              ((not (memq file-status '(copy add)))
-                              (stgit-file-file patched-file)))))
+                              (stgit-file-file patched-file))))
+         (next-file    (stgit-neighbour-file)))
 
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
@@ -1015,7 +1032,8 @@ working tree."
             (stgit-run-git "rm" "-f" "-q" "--" rm-file))
           (when co-file
             (stgit-run-git "checkout" "HEAD" co-file)))
-        (stgit-reload)))))
+        (stgit-reload)
+        (stgit-goto-patch patch-name next-file)))))
 
 (defun stgit-resolve-file ()
   "Resolve conflict in the file at point."
@@ -1198,20 +1216,7 @@ file ended up. You can then jump to the file with \
       (error "You cannot add ignored files to the index"))
     (let* ((patch      (stgit-patch-at-point))
            (patch-name (stgit-patch-name patch))
-           (old-point  (point))
-           next-file)
-
-      ;; find the next file in the patch, or the previous one if this
-      ;; was the last file
-      (and (zerop (forward-line 1))
-           (let ((f (stgit-patched-file-at-point)))
-             (and f (setq next-file (stgit-file-file f)))))
-      (goto-char old-point)
-      (unless next-file
-        (and (zerop (forward-line -1))
-             (let ((f (stgit-patched-file-at-point)))
-               (and f (setq next-file (stgit-file-file f)))))
-        (goto-char old-point))
+           (next-file  (stgit-neighbour-file)))
 
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)))
