@@ -461,13 +461,52 @@ Cf. `stgit-file-type-change-string'."
 (defstruct (stgit-file)
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
+(defun stgit-describe-copy-or-rename (file)
+  (let (from to common-head common-tail
+        (arrow (concat " "
+                       (propertize "->" 'face 'stgit-description-face)
+                       " ")))
+
+    (when stgit-abbreviate-copies-and-renames
+      (setq from (split-string (stgit-file-cr-from file) "/")
+            to   (split-string (stgit-file-cr-to   file) "/"))
+
+      (while (and from to (cdr from) (cdr to)
+                  (string-equal (car from) (car to)))
+        (setq common-head (cons (car from) common-head)
+              from        (cdr from)
+              to          (cdr to)))
+      (setq common-head (nreverse common-head)
+            from        (nreverse from)
+            to          (nreverse to))
+      (while (and from to (cdr from) (cdr to)
+                  (string-equal (car from) (car to)))
+        (setq common-tail (cons (car from) common-tail)
+              from        (cdr from)
+              to          (cdr to)))
+      (setq from (nreverse from)
+            to   (nreverse to)))
+
+    (if (or common-head common-tail)
+        (concat (if common-head
+                    (mapconcat #'identity common-head "/")
+                  "")
+                (if common-head "/" "")
+                (propertize "{" 'face 'stgit-description-face)
+                (mapconcat #'identity from "/")
+                arrow
+                (mapconcat #'identity to "/")
+                (propertize "}" 'face 'stgit-description-face)
+                (if common-tail "/" "")
+                (if common-tail
+                    (mapconcat #'identity common-tail "/")
+                  ""))
+      (concat (stgit-file-cr-from file) arrow (stgit-file-cr-to file)))))
+
 (defun stgit-file-pp (file)
   (let ((status (stgit-file-status file))
         (name (if (stgit-file-copy-or-rename file)
-                  (concat (stgit-file-cr-from file)
-                          (propertize " -> "
-                                      'face 'stgit-description-face)
-                          (stgit-file-cr-to file))
+                  (stgit-describe-copy-or-rename file)
                 (stgit-file-file file)))
         (mode-change (stgit-file-mode-change-string
                       (stgit-file-old-perm file)
@@ -1513,5 +1552,12 @@ Use \\[stgit-toggle-worktree] to show the work tree."
             (> arg 0)
           (not stgit-show-unknown)))
   (stgit-reload))
+
+(defcustom stgit-abbreviate-copies-and-renames
+  t
+  "If non-nil, abbreviate copies and renames as \"dir/{old -> new}/file\"
+instead of \"dir/old/file -> dir/new/file\"."
+  :type 'boolean
+  :group 'stgit)
 
 (provide 'stgit)
