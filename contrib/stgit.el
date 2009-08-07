@@ -512,9 +512,10 @@ Cf. `stgit-file-type-change-string'."
                       (stgit-file-old-perm file)
                       (stgit-file-new-perm file)))
         (start (point)))
-    (insert (format "    %-12s%1s%s%s\n"
+    (insert (format "    %-12s%s%s%s%s\n"
                     (stgit-file-status-code-as-string file)
                     mode-change
+                    (if (zerop (length mode-change)) "" " ")
                     name
                     (propertize (stgit-file-type-change-string
                                  (stgit-file-old-perm file)
