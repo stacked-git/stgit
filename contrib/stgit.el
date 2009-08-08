@@ -17,7 +17,9 @@
 (require 'ewoc)
 
 (defun stgit (dir)
-  "Manage StGit patches for the tree in DIR."
+  "Manage StGit patches for the tree in DIR.
+
+See `stgit-mode' for commands available."
   (interactive "DDirectory: \n")
   (switch-to-stgit-buffer (git-get-top-dir dir))
   (stgit-reload))
@@ -271,7 +273,9 @@ Returns nil if there was no output."
   (stgit-refresh-git-status))
 
 (defgroup stgit nil
-  "A user interface for the StGit patch maintenance tool."
+  "A user interface for the StGit patch maintenance tool.
+
+See `stgit-mode' for more information."
   :group 'tools)
 
 (defface stgit-description-face
@@ -773,8 +777,92 @@ file for (applied) copies and renames."
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
-Commands:
-\\{stgit-mode-map}"
+
+Start StGit using \\[stgit].
+
+Basic commands:
+\\<stgit-mode-map>\
+\\[stgit-help]	Show this help text
+\\[stgit-quit]	Hide the StGit buffer
+\\[describe-bindings]	Show all key bindings
+
+\\[stgit-reload-or-repair]	Reload the StGit buffer
+\\[universal-argument] \\[stgit-reload-or-repair]	Repair StGit metadata
+
+\\[stgit-undo]	Undo most recent StGit operation
+\\[stgit-redo]	Undo recent undo
+
+\\[stgit-git-status]	Run `git-status' (if available)
+
+Movement commands:
+\\[stgit-previous-line]	Move to previous line
+\\[stgit-next-line]	Move to next line
+\\[stgit-previous-patch]	Move to previous patch
+\\[stgit-next-patch]	Move to next patch
+
+\\[stgit-mark]	Mark patch
+\\[stgit-unmark-up]	Unmark patch and move up
+\\[stgit-unmark-down]	Unmark patch and move down
+
+Commands for patches:
+\\[stgit-select]	Toggle showing changed files in patch
+\\[stgit-refresh]	Refresh patch with changes in index or work tree
+\\[stgit-diff]	Show the patch log and diff
+
+\\[stgit-new]	Create a new, empty patch
+\\[stgit-rename]	Rename patch
+\\[stgit-edit]	Edit patch description
+\\[stgit-delete]	Delete patch(es)
+
+\\[stgit-push-next]	Push next patch onto stack
+\\[stgit-pop-next]	Pop current patch from stack
+\\[stgit-push-or-pop]	Push or pop patch at point
+\\[stgit-goto]	Make current patch current by popping or pushing
+
+\\[stgit-squash]	Squash (meld together) patches
+\\[stgit-move-patches]	Move patch(es) to point
+
+\\[stgit-commit]	Commit patch(es)
+\\[stgit-uncommit]	Uncommit patch(es)
+
+Commands for files:
+\\[stgit-select]	Open the file in this window
+\\[stgit-find-file-other-window]	Open the file in another window
+\\[stgit-diff]	Show the file's diff
+
+\\[stgit-file-toggle-index]	Toggle change between index and work tree
+\\[stgit-revert-file]	Revert changes to file
+
+Display commands:
+\\[stgit-toggle-worktree]	Toggle showing index and work tree
+\\[stgit-toggle-unknown]	Toggle showing unknown files
+\\[stgit-toggle-ignored]	Toggle showing ignored files
+
+Commands for diffs:
+\\[stgit-diff]	Show diff of patch or file
+\\[stgit-diff-base]	Show diff against the merge base
+\\[stgit-diff-ours]	Show diff against our branch
+\\[stgit-diff-theirs]	Show diff against their branch
+
+  With one prefix argument (e.g., \\[universal-argument] \\[stgit-diff]), \
+ignore space changes.
+  With two prefix arguments (e.g., \\[universal-argument] \
+\\[universal-argument] \\[stgit-diff]), ignore all space changes.
+
+Commands for merge conflicts:
+\\[stgit-find-file-merge]	Resolve conflicts using `smerge-ediff'
+\\[stgit-resolve-file]	Mark unmerged file as resolved
+
+Commands for branches:
+\\[stgit-branch]	Switch to another branch
+
+Customization variables:
+`stgit-abbreviate-copies-and-renames'
+`stgit-default-show-worktree'
+`stgit-find-copies-harder'
+`stgit-show-worktree-mode'
+
+See also \\[customize-group] for the \"stgit\" group."
   (kill-all-local-variables)
   (buffer-disable-undo)
   (setq mode-name "StGit"
