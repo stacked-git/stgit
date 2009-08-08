@@ -272,17 +272,58 @@ Returns nil if there was no output."
       (goto-line curline)))
   (stgit-refresh-git-status))
 
+(defun stgit-set-default (symbol value)
+  "Set default value of SYMBOL to VALUE using `set-default' and
+reload all StGit buffers."
+  (set-default symbol value)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when (eq major-mode 'stgit-mode)
+        (stgit-reload)))))
+
 (defgroup stgit nil
-  "A user interface for the StGit patch maintenance tool.
+  "A user interface for the StGit patch maintenance tool."
+  :group 'tools
+  :link '(function-link stgit)
+  :link '(url-link "http://www.procode.org/stgit/"))
 
-See `stgit-mode' for more information."
-  :group 'tools)
+(defcustom stgit-abbreviate-copies-and-renames t
+  "If non-nil, abbreviate copies and renames as \"dir/{old -> new}/file\"
+instead of \"dir/old/file -> dir/new/file\"."
+  :type 'boolean
+  :group 'stgit
+  :set 'stgit-set-default)
 
-(defface stgit-description-face
-  '((((background dark)) (:foreground "tan"))
-    (((background light)) (:foreground "dark red")))
-  "The face used for StGit descriptions"
-  :group 'stgit)
+(defcustom stgit-default-show-worktree t
+  "Set to non-nil to by default show the working tree in a new stgit buffer.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-worktree] to toggle the this setting in an already-started StGit buffer."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-worktree))
+
+(defcustom stgit-find-copies-harder nil
+  "Try harder to find copied files when listing patches.
+
+When not nil, runs git diff-tree with the --find-copies-harder
+flag, which reduces performance."
+  :type 'boolean
+  :group 'stgit
+  :set 'stgit-set-default)
+
+(defcustom stgit-show-worktree-mode 'center
+  "This variable controls where the \"Index\" and \"Work tree\"
+will be shown on in the buffer.
+
+It can be set to 'top (above all patches), 'center (show between
+applied and unapplied patches), and 'bottom (below all patches)."
+  :type '(radio (const :tag "above all patches (top)" top)
+                (const :tag "between applied and unapplied patches (center)"
+                       center)
+                (const :tag "below all patches (bottom)" bottom))
+  :group 'stgit
+  :link '(variable-link stgit-show-worktree)
+  :set 'stgit-set-default)
 
 (defface stgit-branch-name-face
   '((t :inherit bold))
@@ -310,10 +351,16 @@ See `stgit-mode' for more information."
   "The face used for unapplied patch names"
   :group 'stgit)
 
-(defface stgit-modified-file-face
-  '((((class color) (background light)) (:foreground "purple"))
-    (((class color) (background dark)) (:foreground "salmon")))
-  "StGit mode face used for modified file status"
+(defface stgit-description-face
+  '((((background dark)) (:foreground "tan"))
+    (((background light)) (:foreground "dark red")))
+  "The face used for StGit descriptions"
+  :group 'stgit)
+
+(defface stgit-index-work-tree-title-face
+  '((((supports :slant italic)) :slant italic)
+    (t :inherit bold))
+  "StGit mode face used for the \"Index\" and \"Work tree\" titles"
   :group 'stgit)
 
 (defface stgit-unmerged-file-face
@@ -339,20 +386,10 @@ See `stgit-mode' for more information."
   "StGit mode face used for permission changes."
   :group 'stgit)
 
-(defface stgit-index-work-tree-title-face
-  '((((supports :slant italic)) :slant italic)
-    (t :inherit bold))
-  "StGit mode face used for the \"Index\" and \"Work tree\" titles"
-  :group 'stgit)
-
-
-(defcustom stgit-find-copies-harder
-  nil
-  "Try harder to find copied files when listing patches.
-
-When not nil, runs git diff-tree with the --find-copies-harder
-flag, which reduces performance."
-  :type 'boolean
+(defface stgit-modified-file-face
+  '((((class color) (background light)) (:foreground "purple"))
+    (((class color) (background dark)) (:foreground "salmon")))
+  "StGit mode face used for modified file status"
   :group 'stgit)
 
 (defconst stgit-file-status-code-strings
@@ -1608,28 +1645,6 @@ With prefix argument, refresh the marked patch or the patch under point."
     (stgit-refresh-git-status))
   (stgit-reload))
 
-(defcustom stgit-show-worktree-mode 'center
-  "This variable controls where the \"Index\" and \"Work tree\"
-will be shown on in the buffer.
-
-It can be set to 'top (above all patches), 'center (show between
-applied and unapplied patches), and 'bottom (below all patches).
-
-See also `stgit-show-worktree'."
-  :type '(radio (const :tag "above all patches (top)" top)
-                (const :tag "between applied and unapplied patches (center)"
-                       center)
-                (const :tag "below all patches (bottom)" bottom))
-  :group 'stgit)
-
-(defcustom stgit-default-show-worktree
-  t
-  "Set to non-nil to by default show the working tree in a new stgit buffer.
-
-This value is used as the default value for `stgit-show-worktree'."
-  :type 'boolean
-  :group 'stgit)
-
 (defvar stgit-show-worktree nil
   "If nil, inhibit showing work tree and index in the stgit buffer.
 
@@ -1679,12 +1694,5 @@ Use \\[stgit-toggle-worktree] to show the work tree."
             (> arg 0)
           (not stgit-show-unknown)))
   (stgit-reload))
-
-(defcustom stgit-abbreviate-copies-and-renames
-  t
-  "If non-nil, abbreviate copies and renames as \"dir/{old -> new}/file\"
-instead of \"dir/old/file -> dir/new/file\"."
-  :type 'boolean
-  :group 'stgit)
 
 (provide 'stgit)
