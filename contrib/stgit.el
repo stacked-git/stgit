@@ -771,6 +771,7 @@ file for (applied) copies and renames."
             ([?\C-c ?\C-/] . stgit-redo)
             ("\C-c\C-_" . stgit-redo)
             ("B" .        stgit-branch)
+            ("\C-c\C-b" . stgit-rebase)
             ("t" .        ,toggle-map)
             ("d" .        ,diff-map)
             ("q" .        stgit-quit)))))
@@ -855,6 +856,7 @@ Commands for merge conflicts:
 
 Commands for branches:
 \\[stgit-branch]	Switch to another branch
+\\[stgit-rebase]	Rebase the current branch
 
 Customization variables:
 `stgit-abbreviate-copies-and-renames'
@@ -1047,6 +1049,31 @@ was modified with git commands (`stgit-repair')."
   (interactive (list (completing-read "Switch to branch: "
                                       (stgit-available-branches))))
   (stgit-capture-output nil (stgit-run "branch" "--" branch))
+  (stgit-reload))
+
+(defun stgit-available-refs (&optional omit-stgit)
+  "Returns a list of the available git refs.
+If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
+  (let* ((output (with-output-to-string
+                   (stgit-run-git-silent "for-each-ref" "--format=%(refname)"
+                                         "refs/tags" "refs/heads"
+                                         "refs/remotes")))
+         (result (split-string output "\n" t)))
+    (mapcar (lambda (s)
+              (if (string-match "^refs/\\(heads\\|tags\\|remotes\\)/" s)
+                  (substring s (match-end 0))
+                s))
+            (if omit-stgit
+                (delete-if (lambda (s)
+                             (string-match "^refs/heads/.*\\.stgit$" s))
+                           result)
+              result))))
+
+(defun stgit-rebase (new-base)
+  "Rebase to NEW-BASE."
+  (interactive (list (completing-read "Rebase to: "
+                                      (stgit-available-refs t))))
+  (stgit-capture-output nil (stgit-run "rebase" new-base))
   (stgit-reload))
 
 (defun stgit-commit (count)
