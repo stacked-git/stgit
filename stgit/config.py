@@ -94,8 +94,8 @@ class GitConfig:
         self.__cache[name] = value
 
     def unset(self, name):
-        Run('git', 'config', '--unset', name)
-        self.__cache[name] = None
+        Run('git', 'config', '--unset', name).run()
+        self.__cache[name] = [None]
 
     def sections_matching(self, regexp):
         """Takes a regexp with a single group, matches it against all
