@@ -1489,7 +1489,7 @@ the work tree and index."
 This is either the patch at point, or one of :top and :bottom, if
 the point is after or before the applied patches."
 
-  (let ((patchsym (stgit-patch-name-at-point)))
+  (let ((patchsym (stgit-patch-name-at-point nil t)))
     (cond (patchsym patchsym)
 	  ((save-excursion (re-search-backward "^>" nil t)) :top)
 	  (t :bottom))))
