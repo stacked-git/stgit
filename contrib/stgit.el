@@ -201,7 +201,9 @@ Returns nil if there was no output."
         worktree-node
         all-patchsyms)
     (with-temp-buffer
-      (let ((exit-status (stgit-run-silent "series" "--description" "--empty")))
+      (let* ((standard-output (current-buffer))
+             (exit-status (stgit-run-silent "series"
+                                            "--description" "--empty")))
         (goto-char (point-min))
         (if (not (zerop exit-status))
             (cond ((looking-at "stg series: \\(.*\\)")
@@ -255,9 +257,9 @@ Returns nil if there was no output."
     (ewoc-set-hf stgit-ewoc
                  (concat "Branch: "
                          (propertize
-                          (with-temp-buffer
-                            (stgit-run-silent "branch")
-                            (buffer-substring (point-min) (1- (point-max))))
+                          (substring (with-output-to-string
+                                       (stgit-run-silent "branch"))
+                                     0 -1)
                           'face 'stgit-branch-name-face)
                          "\n\n")
                  (if stgit-show-worktree
@@ -591,67 +593,68 @@ at point."
     (set-marker-insertion-type end t)
     (setf (stgit-patch-files-ewoc patch) ewoc)
     (with-temp-buffer
-      (apply 'stgit-run-git
-             (cond ((eq patchsym :work)
-                    `("diff-files" "-0" ,@args))
-                   ((eq patchsym :index)
-                    `("diff-index" ,@args "--cached" "HEAD"))
-                   (t
-                    `("diff-tree" ,@args "-r" ,(stgit-id patchsym)))))
+      (let ((standard-output (current-buffer)))
+        (apply 'stgit-run-git
+               (cond ((eq patchsym :work)
+                      `("diff-files" "-0" ,@args))
+                     ((eq patchsym :index)
+                      `("diff-index" ,@args "--cached" "HEAD"))
+                     (t
+                      `("diff-tree" ,@args "-r" ,(stgit-id patchsym)))))
 
-      (when (and (eq patchsym :work))
-        (when stgit-show-ignored
-          (stgit-insert-ls-files '("--ignored" "--others") "I"))
-        (when stgit-show-unknown
-          (stgit-insert-ls-files '("--others") "X"))
-        (sort-regexp-fields nil ":[^\0]*\0\\([^\0]*\\)\0" "\\1"
-                            (point-min) (point-max)))
+        (when (and (eq patchsym :work))
+          (when stgit-show-ignored
+            (stgit-insert-ls-files '("--ignored" "--others") "I"))
+          (when stgit-show-unknown
+            (stgit-insert-ls-files '("--others") "X"))
+          (sort-regexp-fields nil ":[^\0]*\0\\([^\0]*\\)\0" "\\1"
+                              (point-min) (point-max)))
 
-      (goto-char (point-min))
-      (unless (or (eobp) (memq patchsym '(:work :index)))
-        (forward-char 41))
-      (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
-        (let ((old-perm (string-to-number (match-string 1) 8))
-              (new-perm (string-to-number (match-string 2) 8)))
-          (goto-char (match-end 0))
-          (let ((file
-                 (cond ((looking-at
-                         "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
-                        (let* ((patch-status (stgit-patch-status patch))
-                               (file-subexp  (if (eq patch-status 'unapplied)
-                                                 3
-                                               4))
-                               (file         (match-string file-subexp)))
+        (goto-char (point-min))
+        (unless (or (eobp) (memq patchsym '(:work :index)))
+          (forward-char 41))
+        (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
+          (let ((old-perm (string-to-number (match-string 1) 8))
+                (new-perm (string-to-number (match-string 2) 8)))
+            (goto-char (match-end 0))
+            (let ((file
+                   (cond ((looking-at
+                           "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
+                          (let* ((patch-status (stgit-patch-status patch))
+                                 (file-subexp  (if (eq patch-status 'unapplied)
+                                                   3
+                                                 4))
+                                 (file         (match-string file-subexp)))
+                            (make-stgit-file
+                             :old-perm       old-perm
+                             :new-perm       new-perm
+                             :copy-or-rename t
+                             :cr-score       (string-to-number (match-string 2))
+                             :cr-from        (match-string 3)
+                             :cr-to          (match-string 4)
+                             :status         (stgit-file-status-code
+                                              (match-string 1))
+                             :file           file)))
+                         ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
                           (make-stgit-file
                            :old-perm       old-perm
                            :new-perm       new-perm
-                           :copy-or-rename t
-                           :cr-score       (string-to-number (match-string 2))
-                           :cr-from        (match-string 3)
-                           :cr-to          (match-string 4)
+                           :copy-or-rename nil
+                           :cr-score       nil
+                           :cr-from        nil
+                           :cr-to          nil
                            :status         (stgit-file-status-code
                                             (match-string 1))
-                           :file           file)))
-                       ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
-                        (make-stgit-file
-                         :old-perm       old-perm
-                         :new-perm       new-perm
-                         :copy-or-rename nil
-                         :cr-score       nil
-                         :cr-from        nil
-                         :cr-to          nil
-                         :status         (stgit-file-status-code
-                                          (match-string 1))
-                         :file           (match-string 2))))))
-            (goto-char (match-end 0))
-            (ewoc-enter-last ewoc file))))
+                           :file           (match-string 2))))))
+              (goto-char (match-end 0))
+              (ewoc-enter-last ewoc file))))
 
-      (unless (ewoc-nth ewoc 0)
-        (ewoc-set-hf ewoc ""
-                     (concat "    "
-                             (propertize "<no files>"
-                                         'face 'stgit-description-face)
-                             "\n"))))
+        (unless (ewoc-nth ewoc 0)
+          (ewoc-set-hf ewoc ""
+                       (concat "    "
+                               (propertize "<no files>"
+                                           'face 'stgit-description-face)
+                               "\n")))))
     (goto-char end)))
 
 (defun stgit-find-file (&optional other-window)
