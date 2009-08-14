@@ -15,6 +15,7 @@
 (require 'git nil t)
 (require 'cl)
 (require 'ewoc)
+(require 'easymenu)
 
 (defun stgit (dir)
   "Manage StGit patches for the tree in DIR.
@@ -795,8 +796,8 @@ file for (applied) copies and renames."
   "Keymap for StGit major mode.")
 
 (unless stgit-mode-map
-  (let ((diff-map   (make-keymap))
-        (toggle-map (make-keymap)))
+  (let ((diff-map   (make-sparse-keymap))
+        (toggle-map (make-sparse-keymap)))
     (suppress-keymap diff-map)
     (mapc (lambda (arg) (define-key diff-map (car arg) (cdr arg)))
           '(("b" .        stgit-diff-base)
@@ -858,7 +859,122 @@ file for (applied) copies and renames."
             ("\C-c\C-b" . stgit-rebase)
             ("t" .        ,toggle-map)
             ("d" .        ,diff-map)
-            ("q" .        stgit-quit)))))
+            ("q" .        stgit-quit))))
+
+  (let ((at-unmerged-file '(let ((file (stgit-patched-file-at-point)))
+                             (and file (eq (stgit-file-status file)
+                                           'unmerged))))
+        (patch-collapsed-p '(lambda (p) (not (memq p stgit-expanded-patches)))))
+    (easy-menu-define stgit-menu stgit-mode-map
+      "StGit Menu"
+      `("StGit"
+        ["Reload" stgit-reload-or-repair
+         :help "Reload StGit status from disk"]
+        ["Repair" stgit-repair
+         :keys "\\[universal-argument] \\[stgit-reload-or-repair]"
+         :help "Repair StGit metadata"]
+        "-"
+        ["Undo" stgit-undo t]
+        ["Redo" stgit-redo t]
+        "-"
+        ["Git status" stgit-git-status :active (fboundp 'git-status)]
+        "-"
+        ["New patch" stgit-new-and-refresh
+         :help "Create a new patch from changes in index or work tree"
+         :active (not (and (stgit-index-empty-p) (stgit-work-tree-empty-p)))]
+        ["New empty patch" stgit-new
+         :help "Create a new, empty patch"]
+        ["(Un)mark patch" stgit-toggle-mark
+         :label (if (memq (stgit-patch-name-at-point nil t)
+                          stgit-marked-patches)
+                    "Unmark patch" "Mark patch")
+         :active (stgit-patch-name-at-point nil t)]
+        ["Expand/collapse patch"
+         (let ((patches (stgit-patches-marked-or-at-point)))
+           (if (member-if ,patch-collapsed-p patches)
+               (stgit-expand patches)
+             (stgit-collapse patches)))
+         :label (if (member-if ,patch-collapsed-p
+                               (stgit-patches-marked-or-at-point))
+                    "Expand patches"
+                  "Collapse patches")
+         :active (stgit-patches-marked-or-at-point)]
+        ["Edit patch" stgit-edit
+         :help "Edit patch comment"
+         :active (stgit-patch-name-at-point nil t)]
+        ["Rename patch" stgit-rename :active (stgit-patch-name-at-point nil t)]
+        ["Push/pop patch" stgit-push-or-pop
+         :label (if (stgit-applied-at-point-p) "Pop patch" "Push patch")
+         :active (stgit-patch-name-at-point nil t)]
+        ["Delete patch" stgit-delete :active (stgit-patch-name-at-point nil t)]
+        "-"
+        ["Move patches" stgit-move-patches
+         :active stgit-marked-patches
+         :help "Move selected patch(es) to point"]
+        ["Squash patches" stgit-squash
+         :active (> (length stgit-marked-patches) 1)
+         :help "Merge selected patches into one"]
+        "-"
+        ["Refresh top patch" stgit-refresh
+         :active (not (and (stgit-index-empty-p) (stgit-work-tree-empty-p)))
+         :help "Refresh the top patch with changes in index or work tree"]
+        ["Refresh this patch" (stgit-refresh t)
+         :keys "\\[universal-argument] \\[stgit-refresh]"
+         :help "Refresh the patch at point with changes in index or work tree"
+         :active (and (not (and (stgit-index-empty-p)
+                                (stgit-work-tree-empty-p)))
+                      (stgit-patch-name-at-point nil t))]
+        "-"
+        ["Find file" stgit-select
+         :active (eq (get-text-property (point) 'entry-type) 'file)]
+        ["Open file" stgit-find-file-other-window
+         :active (eq (get-text-property (point) 'entry-type) 'file)]
+        ["Toggle file index" stgit-toggle-index
+         :active (and (eq (get-text-property (point) 'entry-type) 'file)
+                      (memq (stgit-patch-name-at-point) '(:work :index)))
+         :label (if (eq (stgit-patch-name-at-point) :work)
+                    "Move change to index"
+                  "Move change to work tree")]
+        "-"
+        ["Show diff" stgit-diff
+         :active (get-text-property (point) 'entry-type)]
+        ("Merge"
+         :active (stgit-git-index-unmerged-p)
+         ["Combined diff" stgit-diff-combined
+          :active (memq (stgit-patch-name-at-point nil nil) '(:work :index))]
+         ["Diff against base" stgit-diff-base
+          :help "Show diff against the common base"
+          :active (memq (stgit-patch-name-at-point nil nil) '(:work :index))]
+         ["Diff against ours" stgit-diff-ours
+          :help "Show diff against our branch"
+          :active (memq (stgit-patch-name-at-point nil nil) '(:work :index))]
+         ["Diff against theirs" stgit-diff-theirs
+          :help "Show diff against their branch"
+          :active (memq (stgit-patch-name-at-point nil nil) '(:work :index))]
+         "-"
+         ["Interactive merge" stgit-find-file-merge
+          :help "Interactively merge the file"
+          :active ,at-unmerged-file]
+         ["Resolve file" stgit-resolve-file
+          :help "Mark file conflict as resolved"
+          :active ,at-unmerged-file]
+         )
+        "-"
+        ["Show index & work tree" stgit-toggle-worktree :style toggle
+         :selected stgit-show-worktree]
+        ["Show unknown files" stgit-toggle-unknown :style toggle
+         :selected stgit-show-unknown :active stgit-show-worktree]
+        ["Show ignored files" stgit-toggle-ignored :style toggle
+         :selected stgit-show-ignored :active stgit-show-worktree]
+        "-"
+        ["Switch branches" stgit-branch t
+         :help "Switch to another branch"]
+        ["Rebase branch" stgit-rebase t
+         :help "Rebase the current branch"]
+        ))))
+
+;; disable tool bar editing buttons
+(put 'stgit-mode 'mode-class 'special)
 
 (defun stgit-mode ()
   "Major mode for interacting with StGit.
