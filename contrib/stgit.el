@@ -168,6 +168,10 @@ Returns nil if there was no output."
   "Returns non-nil if the index contains no changes from HEAD."
   (zerop (stgit-run-git-silent "diff-index" "--cached" "--quiet" "HEAD")))
 
+(defun stgit-work-tree-empty-p ()
+  "Returns non-nil if the work tree contains no changes from index."
+  (zerop (stgit-run-git-silent "diff-files" "--quiet")))
+
 (defvar stgit-index-node)
 (defvar stgit-worktree-node)
 
@@ -817,7 +821,7 @@ file for (applied) copies and renames."
             ("c" .        stgit-new-and-refresh)
             ("\C-c\C-c" . stgit-commit)
             ("\C-c\C-u" . stgit-uncommit)
-            ("U" .        stgit-revert-file)
+            ("U" .        stgit-revert)
             ("R" .        stgit-resolve-file)
             ("\r" .       stgit-select)
             ("+" .        stgit-expand)
@@ -883,6 +887,8 @@ Commands for patches:
 \\[stgit-edit]	Edit patch description
 \\[stgit-delete]	Delete patch(es)
 
+\\[stgit-revert]	Revert all changes in index or work tree
+
 \\[stgit-push-next]	Push next patch onto stack
 \\[stgit-pop-next]	Pop current patch from stack
 \\[stgit-push-or-pop]	Push or pop patch at point
@@ -900,7 +906,7 @@ Commands for files:
 \\[stgit-diff]	Show the file's diff
 
 \\[stgit-file-toggle-index]	Toggle change between index and work tree
-\\[stgit-revert-file]	Revert changes to file
+\\[stgit-revert]	Revert changes to file
 
 Display commands:
 \\[stgit-toggle-worktree]	Toggle showing index and work tree
@@ -1218,6 +1224,38 @@ working tree."
             (stgit-run-git "checkout" "HEAD" co-file)))
         (stgit-reload)
         (stgit-goto-patch patch-name next-file)))))
+
+(defun stgit-revert ()
+  "Revert the change at point, which must be the index, the work
+tree, or a single change in either."
+  (interactive)
+  (let ((patched-file (stgit-patched-file-at-point)))
+    (if patched-file
+        (stgit-revert-file)
+      (let* ((patch-name (or (stgit-patch-name-at-point)
+                             (error "No patch or file at point")))
+             (patch-desc (case patch-name
+                           (:index "index")
+                           (:work  "work tree")
+                           (t (error (substitute-command-keys
+                                      "Use \\[stgit-delete] to delete a patch"))))))
+        (when (if (eq patch-name :work)
+                  (stgit-work-tree-empty-p)
+                (stgit-index-empty-p))
+          (error (format "There are no changes in the %s to revert"
+                         patch-desc)))
+        (and (eq patch-name :index)
+             (not (stgit-work-tree-empty-p))
+             (error "Cannot revert index as work tree contains unstaged changes"))
+
+        (when (yes-or-no-p (format "Revert all changes in the %s? "
+                                   patch-desc))
+          (if (eq patch-name :index)
+              (stgit-run-git-silent "reset" "--hard" "-q")
+            (stgit-run-git-silent "checkout" "--" "."))
+          (stgit-refresh-index)
+          (stgit-refresh-worktree)
+          (stgit-goto-patch patch-name))))))
 
 (defun stgit-resolve-file ()
   "Resolve conflict in the file at point."
