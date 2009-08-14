@@ -666,13 +666,36 @@ at point."
     (when (eq (stgit-file-status file) 'unmerged)
       (smerge-mode 1))))
 
+(defun stgit-expand (&optional patches collapse)
+  "Show the contents selected patches, or the patch at point.
+
+See also `stgit-collapse'.
+
+Non-interactively, operate on PATCHES, and collapse instead of
+expand if COLLAPSE is not nil."
+  (interactive (list (stgit-patches-marked-or-at-point)))
+  (let ((patches-diff (funcall (if collapse #'intersection #'set-difference)
+                               patches stgit-expanded-patches)))
+    (setq stgit-expanded-patches
+          (if collapse
+              (set-difference stgit-expanded-patches patches-diff)
+            (append stgit-expanded-patches patches-diff)))
+    (ewoc-map #'(lambda (patch)
+                  (memq (stgit-patch-name patch) patches-diff))
+              stgit-ewoc))
+  (move-to-column (stgit-goal-column)))
+
+(defun stgit-collapse (&optional patches)
+  "Hide the contents selected patches, or the patch at point.
+
+See also `stgit-expand'."
+  (interactive (list (stgit-patches-marked-or-at-point)))
+  (stgit-expand patches t))
+
 (defun stgit-select-patch ()
   (let ((patchname (stgit-patch-name-at-point)))
-    (if (memq patchname stgit-expanded-patches)
-        (setq stgit-expanded-patches (delq patchname stgit-expanded-patches))
-      (setq stgit-expanded-patches (cons patchname stgit-expanded-patches)))
-    (ewoc-invalidate stgit-ewoc (ewoc-locate stgit-ewoc)))
-  (move-to-column (stgit-goal-column)))
+    (stgit-expand (list patchname)
+                  (memq patchname stgit-expanded-patches))))
 
 (defun stgit-select ()
   "With point on a patch, toggle showing files in the patch.
@@ -797,6 +820,8 @@ file for (applied) copies and renames."
             ("U" .        stgit-revert-file)
             ("R" .        stgit-resolve-file)
             ("\r" .       stgit-select)
+            ("+" .        stgit-expand)
+            ("-" .        stgit-collapse)
             ("o" .        stgit-find-file-other-window)
             ("i" .        stgit-file-toggle-index)
             (">" .        stgit-push-next)
@@ -848,6 +873,9 @@ Commands for patches:
 \\[stgit-select]	Toggle showing changed files in patch
 \\[stgit-refresh]	Refresh patch with changes in index or work tree
 \\[stgit-diff]	Show the patch log and diff
+
+\\[stgit-expand]	Show changes in selected patches
+\\[stgit-collapse]	Hide changes in selected patches
 
 \\[stgit-new]	Create a new, empty patch
 \\[stgit-new-and-refresh]	Create a new patch from index or work tree
