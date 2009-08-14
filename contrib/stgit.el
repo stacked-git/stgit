@@ -24,6 +24,10 @@ See `stgit-mode' for commands available."
   (switch-to-stgit-buffer (git-get-top-dir dir))
   (stgit-reload))
 
+(defun stgit-assert-mode ()
+  "Signal an error if not in an StGit buffer."
+  (assert (derived-mode-p 'stgit-mode) nil "Not an StGit buffer"))
+
 (unless (fboundp 'git-get-top-dir)
   (defun git-get-top-dir (dir)
     "Retrieve the top-level directory of a git tree."
@@ -253,6 +257,7 @@ Returns nil if there was no output."
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
   (interactive)
+  (stgit-assert-mode)
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
         (curpatch (stgit-patch-name-at-point))
@@ -678,6 +683,7 @@ See also `stgit-collapse'.
 Non-interactively, operate on PATCHES, and collapse instead of
 expand if COLLAPSE is not nil."
   (interactive (list (stgit-patches-marked-or-at-point)))
+  (stgit-assert-mode)
   (let ((patches-diff (funcall (if collapse #'intersection #'set-difference)
                                patches stgit-expanded-patches)))
     (setq stgit-expanded-patches
@@ -694,6 +700,7 @@ expand if COLLAPSE is not nil."
 
 See also `stgit-expand'."
   (interactive (list (stgit-patches-marked-or-at-point)))
+  (stgit-assert-mode)
   (stgit-expand patches t))
 
 (defun stgit-select-patch ()
@@ -707,6 +714,7 @@ See also `stgit-expand'."
 With point on a file, open the associated file. Opens the target
 file for (applied) copies and renames."
   (interactive)
+  (stgit-assert-mode)
   (case (get-text-property (point) 'entry-type)
     ('patch
      (stgit-select-patch))
@@ -718,22 +726,26 @@ file for (applied) copies and renames."
 (defun stgit-find-file-other-window ()
   "Open file at point in other window"
   (interactive)
+  (stgit-assert-mode)
   (stgit-find-file t))
 
 (defun stgit-find-file-merge ()
   "Open file at point and merge it using `smerge-ediff'."
   (interactive)
+  (stgit-assert-mode)
   (stgit-find-file t)
   (smerge-ediff))
 
 (defun stgit-quit ()
   "Hide the stgit buffer."
   (interactive)
+  (stgit-assert-mode)
   (bury-buffer))
 
 (defun stgit-git-status ()
   "Show status using `git-status'."
   (interactive)
+  (stgit-assert-mode)
   (unless (fboundp 'git-status)
     (error "The stgit-git-status command requires git-status"))
   (let ((dir default-directory))
@@ -751,24 +763,28 @@ file for (applied) copies and renames."
 (defun stgit-next-line (&optional arg)
   "Move cursor vertically down ARG lines"
   (interactive "p")
+  (stgit-assert-mode)
   (next-line arg)
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-previous-line (&optional arg)
   "Move cursor vertically up ARG lines"
   (interactive "p")
+  (stgit-assert-mode)
   (previous-line arg)
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-next-patch (&optional arg)
   "Move cursor down ARG patches."
   (interactive "p")
+  (stgit-assert-mode)
   (ewoc-goto-next stgit-ewoc (or arg 1))
   (move-to-column goal-column))
 
 (defun stgit-previous-patch (&optional arg)
   "Move cursor up ARG patches."
   (interactive "p")
+  (stgit-assert-mode)
   (ewoc-goto-prev stgit-ewoc (or arg 1))
   (move-to-column goal-column))
 
@@ -1036,6 +1052,7 @@ PATCHSYM."
 (defun stgit-init ()
   "Run stg init."
   (interactive)
+  (stgit-assert-mode)
   (stgit-capture-output nil
     (stgit-run "init"))
   (stgit-reload))
@@ -1043,6 +1060,7 @@ PATCHSYM."
 (defun stgit-mark ()
   "Mark the patch under point."
   (interactive)
+  (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node))
          (name (stgit-patch-name patch)))
@@ -1057,6 +1075,7 @@ PATCHSYM."
 (defun stgit-unmark-up ()
   "Remove mark from the patch on the previous line."
   (interactive)
+  (stgit-assert-mode)
   (stgit-previous-patch)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node)))
@@ -1067,6 +1086,7 @@ PATCHSYM."
 (defun stgit-unmark-down ()
   "Remove mark from the patch on the current line."
   (interactive)
+  (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node)))
     (stgit-remove-mark (stgit-patch-name patch))
@@ -1078,6 +1098,7 @@ PATCHSYM."
   (interactive (list
                 (read-string "Patch name: "
                              (symbol-name (stgit-patch-name-at-point t t)))))
+  (stgit-assert-mode)
   (let ((old-patchsym (stgit-patch-name-at-point t t)))
     (stgit-capture-output nil
       (stgit-run "rename" old-patchsym name))
@@ -1097,6 +1118,7 @@ PATCHSYM."
 With a prefix argument, repair the StGit metadata if the branch
 was modified with git commands (`stgit-repair')."
   (interactive "P")
+  (stgit-assert-mode)
   (if repair
       (stgit-repair)
     (stgit-reload)))
@@ -1104,6 +1126,7 @@ was modified with git commands (`stgit-repair')."
 (defun stgit-repair ()
   "Run stg repair."
   (interactive)
+  (stgit-assert-mode)
   (stgit-capture-output nil
     (stgit-run "repair"))
   (stgit-reload))
@@ -1123,6 +1146,7 @@ was modified with git commands (`stgit-repair')."
   "Switch to branch BRANCH."
   (interactive (list (completing-read "Switch to branch: "
                                       (stgit-available-branches))))
+  (stgit-assert-mode)
   (stgit-capture-output nil (stgit-run "branch" "--" branch))
   (stgit-reload))
 
@@ -1148,6 +1172,7 @@ If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
   "Rebase to NEW-BASE."
   (interactive (list (completing-read "Rebase to: "
                                       (stgit-available-refs t))))
+  (stgit-assert-mode)
   (stgit-capture-output nil (stgit-run "rebase" new-base))
   (stgit-reload))
 
@@ -1156,6 +1181,7 @@ If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
 Interactively, the prefix argument is used as COUNT.
 A negative COUNT will uncommit instead."
   (interactive "p")
+  (stgit-assert-mode)
   (if (< count 0)
       (stgit-uncommit (- count))
     (stgit-capture-output nil (stgit-run "commit" "-n" count))
@@ -1166,6 +1192,7 @@ A negative COUNT will uncommit instead."
 Interactively, the prefix argument is used as COUNT.
 A negative COUNT will commit instead."
   (interactive "p")
+  (stgit-assert-mode)
   (if (< count 0)
       (stgit-commit (- count))
     (stgit-capture-output nil (stgit-run "uncommit" "-n" count))
@@ -1191,6 +1218,7 @@ previous file if point is at the last file within a patch."
   "Revert the file at point, which must be in the index or the
 working tree."
   (interactive)
+  (stgit-assert-mode)
   (let* ((patched-file (or (stgit-patched-file-at-point)
                            (error "No file on the current line")))
          (patch-name   (stgit-patch-name-at-point))
@@ -1230,6 +1258,7 @@ working tree."
   "Revert the change at point, which must be the index, the work
 tree, or a single change in either."
   (interactive)
+  (stgit-assert-mode)
   (let ((patched-file (stgit-patched-file-at-point)))
     (if patched-file
         (stgit-revert-file)
@@ -1261,6 +1290,7 @@ tree, or a single change in either."
 (defun stgit-resolve-file ()
   "Resolve conflict in the file at point."
   (interactive)
+  (stgit-assert-mode)
   (let* ((patched-file (stgit-patched-file-at-point))
          (patch        (stgit-patch-at-point))
          (patch-name   (and patch (stgit-patch-name patch)))
@@ -1281,6 +1311,7 @@ tree, or a single change in either."
   "Push the first unapplied patch.
 With numeric prefix argument, push that many patches."
   (interactive "p")
+  (stgit-assert-mode)
   (stgit-capture-output nil (stgit-run "push" "-n" npatches))
   (stgit-reload)
   (stgit-refresh-git-status))
@@ -1289,6 +1320,7 @@ With numeric prefix argument, push that many patches."
   "Pop the topmost applied patch.
 With numeric prefix argument, pop that many patches."
   (interactive "p")
+  (stgit-assert-mode)
   (stgit-capture-output nil (stgit-run "pop" "-n" npatches))
   (stgit-reload)
   (stgit-refresh-git-status))
@@ -1301,6 +1333,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-push-or-pop ()
   "Push or pop the patch on the current line."
   (interactive)
+  (stgit-assert-mode)
   (let ((patchsym (stgit-patch-name-at-point t t))
         (applied (stgit-applied-at-point-p)))
     (stgit-capture-output nil
@@ -1310,6 +1343,7 @@ With numeric prefix argument, pop that many patches."
 (defun stgit-goto ()
   "Go to the patch on the current line."
   (interactive)
+  (stgit-assert-mode)
   (let ((patchsym (stgit-patch-name-at-point t)))
     (stgit-capture-output nil
       (stgit-run "goto" patchsym))
@@ -1393,6 +1427,7 @@ greater than four (e.g., \\[universal-argument] \
                 "")
               name)
      (interactive "p")
+     (stgit-assert-mode)
      (stgit-show-patch ,diff-arg ignore-whitespace)))
 
 (stgit-define-diff stgit-diff
@@ -1440,6 +1475,7 @@ Leaves the point where it is, but moves the mark to where the
 file ended up. You can then jump to the file with \
 \\[exchange-point-and-mark]."
   (interactive)
+  (stgit-assert-mode)
   (let* ((patched-file   (or (stgit-patched-file-at-point)
 			     (error "No file on the current line")))
 	 (patched-status (stgit-file-status patched-file)))
@@ -1476,6 +1512,7 @@ Leaves the point where it is, but moves the mark to where the
 file ended up. You can then jump to the file with \
 \\[exchange-point-and-mark]."
   (interactive)
+  (stgit-assert-mode)
   (if (stgit-patched-file-at-point)
       (stgit-file-toggle-index)
     (let ((patch-name (stgit-patch-name-at-point)))
@@ -1498,6 +1535,7 @@ file ended up. You can then jump to the file with \
 (defun stgit-edit ()
   "Edit the patch on the current line."
   (interactive)
+  (stgit-assert-mode)
   (let ((patchsym (stgit-patch-name-at-point t t))
         (edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
@@ -1521,6 +1559,7 @@ file ended up. You can then jump to the file with \
 With a prefix argument, include a \"Signed-off-by:\" line at the
 end of the patch."
   (interactive "P")
+  (stgit-assert-mode)
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
         (dir default-directory))
     (log-edit 'stgit-confirm-new t nil edit-buf)
@@ -1551,6 +1590,7 @@ end of the patch.
 
 This works just like running `stgit-new' followed by `stgit-refresh'."
   (interactive "P")
+  (stgit-assert-mode)
   (stgit-new add-sign t))
 
 (defun stgit-create-patch-name (description)
@@ -1580,6 +1620,7 @@ With a prefix argument, or SPILL-P, spill the patch contents to
 the work tree and index."
   (interactive (list (stgit-patches-marked-or-at-point)
                      current-prefix-arg))
+  (stgit-assert-mode)
   (unless patchsyms
     (error "No patches to delete"))
   (when (memq :index patchsyms)
@@ -1643,6 +1684,7 @@ bottom or top of the stack, respectively.
 Interactively, move the marked patches to where the point is."
   (interactive (list stgit-marked-patches
                      (stgit-move-patches-target)))
+  (stgit-assert-mode)
   (unless patchsyms
     (error "Need at least one patch to move"))
 
@@ -1673,6 +1715,7 @@ Unless there are any conflicts, the patches will be merged into
 one patch, which will occupy the same spot in the series as the
 deepest patch had before the squash."
   (interactive (list stgit-marked-patches))
+  (stgit-assert-mode)
   (when (< (length patchsyms) 2)
     (error "Need at least two patches to squash"))
   (let ((stgit-buffer (current-buffer))
@@ -1724,6 +1767,7 @@ With prefix argument, run it with the --hard flag.
 
 See also `stgit-redo'."
   (interactive "P")
+  (stgit-assert-mode)
   (stgit-capture-output nil
     (if arg
         (stgit-run "undo" "--hard")
@@ -1736,6 +1780,7 @@ With prefix argument, run it with the --hard flag.
 
 See also `stgit-undo'."
   (interactive "P")
+  (stgit-assert-mode)
   (stgit-capture-output nil
     (if arg
         (stgit-run "redo" "--hard")
@@ -1748,6 +1793,7 @@ If the index contains any changes, only refresh from index.
 
 With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
+  (stgit-assert-mode)
   (let ((patchargs (if arg
                        (let ((patches (stgit-patches-marked-or-at-point)))
                          (cond ((null patches)
@@ -1784,6 +1830,7 @@ Its initial setting is controlled by `stgit-default-show-worktree'.
 `stgit-show-worktree-mode' controls where on screen the index and
 work tree will show up."
   (interactive)
+  (stgit-assert-mode)
   (setq stgit-show-worktree
         (if (numberp arg)
             (> arg 0)
@@ -1796,6 +1843,7 @@ tree. With ARG, show these files if ARG is positive.
 
 Use \\[stgit-toggle-worktree] to show the work tree."
   (interactive)
+  (stgit-assert-mode)
   (setq stgit-show-ignored
         (if (numberp arg)
             (> arg 0)
@@ -1808,6 +1856,7 @@ work tree. With ARG, show these files if ARG is positive.
 
 Use \\[stgit-toggle-worktree] to show the work tree."
   (interactive)
+  (stgit-assert-mode)
   (setq stgit-show-unknown
         (if (numberp arg)
             (> arg 0)
