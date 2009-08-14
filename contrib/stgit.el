@@ -1226,17 +1226,16 @@ With numeric prefix argument, pop that many patches."
   (stgit-reload)
   (stgit-refresh-git-status))
 
-(defun stgit-applied-at-point ()
-  "Is the patch on the current line applied?"
-  (save-excursion
-    (beginning-of-line)
-    (looking-at "[>+]")))
+(defun stgit-applied-at-point-p ()
+  "Return non-nil if the patch at point is applied."
+  (let ((patch (stgit-patch-at-point t)))
+    (not (eq (stgit-patch-status patch) 'unapplied))))
 
 (defun stgit-push-or-pop ()
   "Push or pop the patch on the current line."
   (interactive)
-  (let ((patchsym (stgit-patch-name-at-point t))
-        (applied (stgit-applied-at-point)))
+  (let ((patchsym (stgit-patch-name-at-point t t))
+        (applied (stgit-applied-at-point-p)))
     (stgit-capture-output nil
       (stgit-run (if applied "pop" "push") patchsym))
     (stgit-reload)))
