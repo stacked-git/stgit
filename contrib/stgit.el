@@ -812,8 +812,8 @@ file for (applied) copies and renames."
     (setq stgit-mode-map (make-keymap))
     (suppress-keymap stgit-mode-map)
     (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
-          `((" " .        stgit-mark)
-            ("m" .        stgit-mark)
+          `((" " .        stgit-mark-down)
+            ("m" .        stgit-mark-down)
             ("\d" .       stgit-unmark-up)
             ("u" .        stgit-unmark-down)
             ("?" .        stgit-help)
@@ -885,7 +885,7 @@ Movement commands:
 \\[stgit-previous-patch]	Move to previous patch
 \\[stgit-next-patch]	Move to next patch
 
-\\[stgit-mark]	Mark patch
+\\[stgit-mark-down]	Mark patch and move down
 \\[stgit-unmark-up]	Unmark patch and move up
 \\[stgit-unmark-down]	Unmark patch and move down
 
@@ -1057,6 +1057,14 @@ PATCHSYM."
     (stgit-run "init"))
   (stgit-reload))
 
+(defun stgit-toggle-mark ()
+  "Toggle mark on the patch under point."
+  (interactive)
+  (stgit-assert-mode)
+  (if (memq (stgit-patch-name-at-point t t) stgit-marked-patches)
+      (stgit-unmark)
+    (stgit-mark)))
+
 (defun stgit-mark ()
   "Mark the patch under point."
   (interactive)
@@ -1069,28 +1077,39 @@ PATCHSYM."
     (when (eq name :index)
       (error "Cannot mark the index"))
     (stgit-add-mark (stgit-patch-name patch))
-    (ewoc-invalidate stgit-ewoc node))
+    (let ((column (current-column)))
+      (ewoc-invalidate stgit-ewoc node)
+      (move-to-column column))))
+
+(defun stgit-mark-down ()
+  "Mark the patch under point and move to the next patch."
+  (interactive)
+  (stgit-mark)
   (stgit-next-patch))
 
-(defun stgit-unmark-up ()
-  "Remove mark from the patch on the previous line."
-  (interactive)
-  (stgit-assert-mode)
-  (stgit-previous-patch)
-  (let* ((node (ewoc-locate stgit-ewoc))
-         (patch (ewoc-data node)))
-    (stgit-remove-mark (stgit-patch-name patch))
-    (ewoc-invalidate stgit-ewoc node))
-  (move-to-column (stgit-goal-column)))
-
-(defun stgit-unmark-down ()
+(defun stgit-unmark ()
   "Remove mark from the patch on the current line."
   (interactive)
   (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node)))
     (stgit-remove-mark (stgit-patch-name patch))
-    (ewoc-invalidate stgit-ewoc node))
+    (let ((column (current-column)))
+      (ewoc-invalidate stgit-ewoc node)
+      (move-to-column column))))
+
+(defun stgit-unmark-up ()
+  "Remove mark from the patch on the previous line."
+  (interactive)
+  (stgit-assert-mode)
+  (stgit-previous-patch)
+  (stgit-unmark))
+
+(defun stgit-unmark-down ()
+  "Remove mark from the patch on the current line."
+  (interactive)
+  (stgit-assert-mode)
+  (stgit-unmark)
   (stgit-next-patch))
 
 (defun stgit-rename (name)
