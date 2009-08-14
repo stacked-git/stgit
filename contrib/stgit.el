@@ -827,7 +827,7 @@ file for (applied) copies and renames."
             ("+" .        stgit-expand)
             ("-" .        stgit-collapse)
             ("o" .        stgit-find-file-other-window)
-            ("i" .        stgit-file-toggle-index)
+            ("i" .        stgit-toggle-index)
             (">" .        stgit-push-next)
             ("<" .        stgit-pop-next)
             ("P" .        stgit-push-or-pop)
@@ -888,6 +888,7 @@ Commands for patches:
 \\[stgit-delete]	Delete patch(es)
 
 \\[stgit-revert]	Revert all changes in index or work tree
+\\[stgit-toggle-index]	Toggle all changes between index and work tree
 
 \\[stgit-push-next]	Push next patch onto stack
 \\[stgit-pop-next]	Pop current patch from stack
@@ -905,7 +906,7 @@ Commands for files:
 \\[stgit-find-file-other-window]	Open the file in another window
 \\[stgit-diff]	Show the file's diff
 
-\\[stgit-file-toggle-index]	Toggle change between index and work tree
+\\[stgit-toggle-index]	Toggle change between index and work tree
 \\[stgit-revert]	Revert changes to file
 
 Display commands:
@@ -1424,6 +1425,14 @@ If FORCE is not nil, use --force."
   (stgit-capture-output "*git output*"
     (stgit-run-git "reset" "-q" "--" file)))
 
+(defun stgit-git-index-unmerged-p ()
+  (let (result)
+    (with-output-to-string
+      (setq result (not (zerop (stgit-run-git-silent "diff-index" "--cached"
+                                                     "--diff-filter=U"
+                                                     "--quiet" "HEAD")))))
+    result))
+
 (defun stgit-file-toggle-index ()
   "Move modified file in or out of the index.
 
@@ -1457,6 +1466,34 @@ file ended up. You can then jump to the file with \
       (stgit-goto-patch (if (eq patch-name :index) :work :index) mark-file)
       (push-mark nil t t)
       (stgit-goto-patch patch-name point-file))))
+
+(defun stgit-toggle-index ()
+  "Move change in or out of the index.
+
+Works on index and work tree, as well as files in either.
+
+Leaves the point where it is, but moves the mark to where the
+file ended up. You can then jump to the file with \
+\\[exchange-point-and-mark]."
+  (interactive)
+  (if (stgit-patched-file-at-point)
+      (stgit-file-toggle-index)
+    (let ((patch-name (stgit-patch-name-at-point)))
+      (unless (memq patch-name '(:index :work))
+        (error "Can only move changes between working tree and index"))
+      (when (stgit-git-index-unmerged-p)
+        (error "Resolve unmerged changes with \\[stgit-resolve-file] first"))
+      (if (if (eq patch-name :index)
+              (stgit-index-empty-p)
+            (stgit-work-tree-empty-p))
+          (message "No changes to be moved")
+        (stgit-capture-output nil
+          (if (eq patch-name :work)
+              (stgit-run-git "add" "--update")
+            (stgit-run-git "reset" "--mixed" "-q")))
+        (stgit-refresh-worktree)
+        (stgit-refresh-index))
+      (stgit-goto-patch (if (eq patch-name :index) :work :index)))))
 
 (defun stgit-edit ()
   "Edit the patch on the current line."
