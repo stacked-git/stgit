@@ -267,7 +267,7 @@ Returns nil if there was no output."
                    (propertize
                     (substitute-command-keys "--\n\"\\[stgit-toggle-worktree]\"\
  shows the working tree\n")
-                   'face 'stgit-description-face)))
+                    'face 'stgit-description-face)))
     (stgit-run-series stgit-ewoc)
     (if curpatch
         (stgit-goto-patch curpatch (and curfile (stgit-file-file curfile)))
@@ -505,10 +505,8 @@ Cf. `stgit-file-type-change-string'."
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
 (defun stgit-describe-copy-or-rename (file)
-  (let (from to common-head common-tail
-        (arrow (concat " "
-                       (propertize "->" 'face 'stgit-description-face)
-                       " ")))
+  (let ((arrow (concat " " (propertize "->" 'face 'stgit-description-face) " "))
+        from to common-head common-tail)
 
     (when stgit-abbreviate-copies-and-renames
       (setq from (split-string (stgit-file-cr-from file) "/")
@@ -1051,10 +1049,10 @@ PATCHSYM."
     (let ((name-sym (intern name)))
       (when (memq old-patchsym stgit-expanded-patches)
         (setq stgit-expanded-patches
-            (cons name-sym (delq old-patchsym stgit-expanded-patches))))
+              (cons name-sym (delq old-patchsym stgit-expanded-patches))))
       (when (memq old-patchsym stgit-marked-patches)
         (setq stgit-marked-patches
-            (cons name-sym (delq old-patchsym stgit-marked-patches))))
+              (cons name-sym (delq old-patchsym stgit-marked-patches))))
       (stgit-reload)
       (stgit-goto-patch name-sym))))
 
@@ -1310,8 +1308,8 @@ which stage to diff against in the case of unmerged files."
                                  (and space-arg (list "-O" space-arg))
                                  (list (stgit-patch-name-at-point)))))
                (apply 'stgit-run args)))))
-         (t
-          (error "No patch or file at point")))
+        (t
+         (error "No patch or file at point")))
       (with-current-buffer standard-output
         (goto-char (point-min))
         (diff-mode)))))
@@ -1378,8 +1376,8 @@ file ended up. You can then jump to the file with \
 			   (stgit-file-cr-to patched-file)
 			 (stgit-file-file patched-file)))
            (point-file  (if (eq patched-status 'rename)
-			   (stgit-file-cr-from patched-file)
-			 (stgit-neighbour-file))))
+                            (stgit-file-cr-from patched-file)
+                          (stgit-neighbour-file))))
 
       (cond ((eq patch-name :work)
              (stgit-move-change-to-index (stgit-file-file patched-file)
