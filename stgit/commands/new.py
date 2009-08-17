@@ -67,7 +67,7 @@ def func(parser, options, args):
     cd = gitlib.CommitData(
         tree = stack.head.data.tree, parents = [stack.head], message = '',
         author = gitlib.Person.author(), committer = gitlib.Person.committer())
-    cd = common.update_commit_data(cd, options, allow_edit = True)
+    cd = common.update_commit_data(cd, options)
 
     if options.save_template:
         options.save_template(cd.message)

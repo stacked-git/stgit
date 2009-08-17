@@ -463,7 +463,7 @@ def readonly_constant_property(f):
         return getattr(self, n)
     return property(new_f)
 
-def update_commit_data(cd, options, allow_edit = False):
+def update_commit_data(cd, options):
     """Return a new CommitData object updated according to the command line
     options."""
     # Set the commit message from commandline.
@@ -483,8 +483,9 @@ def update_commit_data(cd, options, allow_edit = False):
             add_sign_line(cd.message, sign_str,
                           cd.committer.name, cd.committer.email))
 
-    # Let user edit the commit message manually.
-    if allow_edit and not options.message:
+    # Let user edit the commit message manually, unless
+    # --save-template or --message was specified.
+    if not getattr(options, 'save_template', None) and not options.message:
         cd = cd.set_message(edit_string(cd.message, '.stgit-new.txt'))
 
     return cd
