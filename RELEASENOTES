@@ -1,0 +1,33 @@
+Stacked Git 0.15-rc1
+--------------------
+
+The first release candidate for StGit 0.15 is available from the
+git://repo.or.cz/stgit.git or http://download.gna.org/stgit/. Bugs can
+be reported on the Git mailing list or via the project bugs page
+(https://gna.org/bugs/?group=stgit).
+
+StGit is a Python application providing similar functionality to Quilt
+(i.e. pushing/popping patches to/from a stack) on top of Git. These
+operations are performed using Git commands and the patches are stored
+as Git commit objects, allowing easy merging of the StGit patches into
+other repositories using standard Git functionality.
+
+The main changes since release 0.14.3 (I may miss some important
+features but they can be found in the log):
+
+- New core infrastructure for repository operations
+- Infinite undo/redo operations and corresponding commands
+- Automatic reverting of changes following a failed operation (using
+  transactions)
+- New 'squash' command for combining two or more patches into one
+- New 'publish' command for maintaining merge-friendly branches (which
+  are not rebased)
+- New patch identification format - <branch>:<patch> (see 'id'
+  command)
+- UI improvements and removal of the 'add', 'rm' and 'resolved'
+  commands since there are corresponding Git equivalents
+- Emacs mode improvements
+- Man pages and improved tutorial
+
+Special thanks go to Karl Hasselström for the hard work done on the
+new StGit features.
