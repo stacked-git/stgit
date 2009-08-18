@@ -904,8 +904,9 @@ file for (applied) copies and renames."
          :active (stgit-patch-name-at-point nil t)]
         ["Rename patch" stgit-rename :active (stgit-patch-name-at-point nil t)]
         ["Push/pop patch" stgit-push-or-pop
-         :label (if (stgit-applied-at-point-p) "Pop patch" "Push patch")
-         :active (stgit-patch-name-at-point nil t)]
+         :label (if (subsetp (stgit-patches-marked-or-at-point nil t)
+                             (stgit-applied-patchsyms t))
+                    "Pop patches" "Push patches")]
         ["Delete patches" stgit-delete
          :active (stgit-patches-marked-or-at-point nil t)]
         "-"
@@ -1463,20 +1464,38 @@ With numeric prefix argument, pop that many patches."
   (stgit-reload)
   (stgit-refresh-git-status))
 
-(defun stgit-applied-at-point-p ()
-  "Return non-nil if the patch at point is applied."
-  (let ((patch (stgit-patch-at-point t)))
-    (not (eq (stgit-patch-status patch) 'unapplied))))
+(defun stgit-applied-patches (&optional only-patches)
+  "Return a list of the applied patches.
+
+If ONLY-PATCHES is not nil, exclude index and work tree."
+  (let ((states (if only-patches
+                    '(applied top)
+                  '(applied top index work)))
+        result)
+    (ewoc-map (lambda (patch) (when (memq (stgit-patch-status patch) states)
+                                (setq result (cons patch result))))
+              stgit-ewoc)
+    result))
+
+(defun stgit-applied-patchsyms (&optional only-patches)
+  "Return a list of the symbols of the applied patches.
+
+If ONLY-PATCHES is not nil, exclude index and work tree."
+  (mapcar #'stgit-patch-name (stgit-applied-patches only-patches)))
 
 (defun stgit-push-or-pop ()
-  "Push or pop the patch on the current line."
+  "Push or pop the marked patches."
   (interactive)
   (stgit-assert-mode)
-  (let ((patchsym (stgit-patch-name-at-point t t))
-        (applied (stgit-applied-at-point-p)))
+  (let* ((patchsyms (stgit-patches-marked-or-at-point t t))
+         (applied-syms (stgit-applied-patchsyms t))
+         (unapplied (set-difference patchsyms applied-syms)))
     (stgit-capture-output nil
-      (stgit-run (if applied "pop" "push") patchsym))
-    (stgit-reload)))
+      (apply 'stgit-run
+             (if unapplied "push" "pop")
+             "--"
+             (stgit-sort-patches (if unapplied unapplied patchsyms)))))
+  (stgit-reload))
 
 (defun stgit-goto ()
   "Go to the patch on the current line."
