@@ -683,7 +683,7 @@ See also `stgit-collapse'.
 
 Non-interactively, operate on PATCHES, and collapse instead of
 expand if COLLAPSE is not nil."
-  (interactive (list (stgit-patches-marked-or-at-point)))
+  (interactive (list (stgit-patches-marked-or-at-point t)))
   (stgit-assert-mode)
   (let ((patches-diff (funcall (if collapse #'intersection #'set-difference)
                                patches stgit-expanded-patches)))
@@ -700,7 +700,7 @@ expand if COLLAPSE is not nil."
   "Hide the contents selected patches, or the patch at point.
 
 See also `stgit-expand'."
-  (interactive (list (stgit-patches-marked-or-at-point)))
+  (interactive (list (stgit-patches-marked-or-at-point t)))
   (stgit-assert-mode)
   (stgit-expand patches t))
 
@@ -906,7 +906,8 @@ file for (applied) copies and renames."
         ["Push/pop patch" stgit-push-or-pop
          :label (if (stgit-applied-at-point-p) "Pop patch" "Push patch")
          :active (stgit-patch-name-at-point nil t)]
-        ["Delete patch" stgit-delete :active (stgit-patch-name-at-point nil t)]
+        ["Delete patches" stgit-delete
+         :active (stgit-patches-marked-or-at-point nil t)]
         "-"
         ["Move patches" stgit-move-patches
          :active stgit-marked-patches
@@ -1132,14 +1133,16 @@ index or work tree."
 (defun stgit-patched-file-at-point ()
   (get-text-property (point) 'file-data))
 
-(defun stgit-patches-marked-or-at-point ()
-  "Return the symbols of the marked patches, or the patch on the current line."
+(defun stgit-patches-marked-or-at-point (&optional cause-error only-patches)
+  "Return the symbols of the marked patches, or the patch on the current line.
+If CAUSE-ERRROR is not nil, signal an error if none found.
+If ONLY-PATCHES is not nil, do not include index or work tree."
   (if stgit-marked-patches
       stgit-marked-patches
-    (let ((patch (stgit-patch-name-at-point)))
-      (if patch
-          (list patch)
-        '()))))
+    (let ((patch (stgit-patch-name-at-point nil only-patches)))
+      (cond (patch (list patch))
+            (cause-error (error "No patches marked or at this line"))
+            (t nil)))))
 
 (defun stgit-goto-patch (patchsym &optional file)
   "Move point to the line containing patch PATCHSYM.
@@ -1753,7 +1756,7 @@ Interactively, delete the marked patches, or the patch at point.
 
 With a prefix argument, or SPILL-P, spill the patch contents to
 the work tree and index."
-  (interactive (list (stgit-patches-marked-or-at-point)
+  (interactive (list (stgit-patches-marked-or-at-point t t)
                      current-prefix-arg))
   (stgit-assert-mode)
   (unless patchsyms
@@ -1930,13 +1933,10 @@ With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
   (stgit-assert-mode)
   (let ((patchargs (if arg
-                       (let ((patches (stgit-patches-marked-or-at-point)))
-                         (cond ((null patches)
-                                (error "No patch to update"))
-                               ((> (length patches) 1)
-                                (error "Too many patches selected"))
-                               (t
-                                (cons "-p" patches))))
+                       (let ((patches (stgit-patches-marked-or-at-point nil t)))
+                         (when (> (length patches) 1)
+                           (error "Too many patches marked"))
+                         (cons "-p" patches))
                      nil)))
     (unless (stgit-index-empty-p)
       (setq patchargs (cons "--index" patchargs)))
