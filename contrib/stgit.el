@@ -1784,13 +1784,21 @@ the work tree and index."
   "Return the patchsym indicating a target patch for
 `stgit-move-patches'.
 
-This is either the patch at point, or one of :top and :bottom, if
-the point is after or before the applied patches."
+This is either the first unmarked patch at or after point, or one
+of :top and :bottom if the point is after or before the applied
+patches."
 
-  (let ((patchsym (stgit-patch-name-at-point nil t)))
-    (cond (patchsym patchsym)
-	  ((save-excursion (re-search-backward "^>" nil t)) :top)
-	  (t :bottom))))
+  (save-excursion
+    (let (result)
+      (while (not result)
+        (let ((patchsym (stgit-patch-name-at-point)))
+          (cond ((memq patchsym '(:work :index)) (setq result :top))
+                (patchsym (if (memq patchsym stgit-marked-patches)
+                              (stgit-next-patch)
+                            (setq result patchsym)))
+                ((re-search-backward "^>" nil t) (setq result :top))
+                (t (setq result :bottom)))))
+      result)))
 
 (defun stgit-sort-patches (patchsyms)
   "Returns the list of patches in PATCHSYMS sorted according to
@@ -1829,20 +1837,17 @@ Interactively, move the marked patches to where the point is."
   (unless target-patch
     (error "Point not at a patch"))
 
-  (if (eq target-patch :top)
-      (stgit-capture-output nil
-        (apply 'stgit-run "float" patchsyms))
-
-    ;; need to have patchsyms sorted by position in the stack
-    (let ((sorted-patchsyms (stgit-sort-patches patchsyms)))
-      (while sorted-patchsyms
-        (setq sorted-patchsyms
-              (and (stgit-capture-output nil
-                     (if (eq target-patch :bottom)
-                         (stgit-run "sink" "--" (car sorted-patchsyms))
-                       (stgit-run "sink" "--to" target-patch "--"
-                                  (car sorted-patchsyms))))
-                   (cdr sorted-patchsyms))))))
+  ;; need to have patchsyms sorted by position in the stack
+  (let ((sorted-patchsyms (stgit-sort-patches patchsyms)))
+    (stgit-capture-output nil
+      (if (eq target-patch :top)
+          (apply 'stgit-run "float" sorted-patchsyms)
+        (apply 'stgit-run
+               "sink"
+               (append (unless (eq target-patch :bottom)
+                         (list "--to" target-patch))
+                       '("--")
+                       sorted-patchsyms)))))
   (stgit-reload))
 
 (defun stgit-squash (patchsyms)
