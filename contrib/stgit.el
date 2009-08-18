@@ -677,7 +677,7 @@ at point."
       (smerge-mode 1))))
 
 (defun stgit-expand (&optional patches collapse)
-  "Show the contents selected patches, or the patch at point.
+  "Show the contents of marked patches, or the patch at point.
 
 See also `stgit-collapse'.
 
@@ -697,7 +697,7 @@ expand if COLLAPSE is not nil."
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-collapse (&optional patches)
-  "Hide the contents selected patches, or the patch at point.
+  "Hide the contents of marked patches, or the patch at point.
 
 See also `stgit-expand'."
   (interactive (list (stgit-patches-marked-or-at-point t)))
@@ -911,17 +911,17 @@ file for (applied) copies and renames."
         "-"
         ["Move patches" stgit-move-patches
          :active stgit-marked-patches
-         :help "Move selected patch(es) to point"]
+         :help "Move marked patch(es) to point"]
         ["Squash patches" stgit-squash
          :active (> (length stgit-marked-patches) 1)
-         :help "Merge selected patches into one"]
+         :help "Merge marked patches into one"]
         "-"
         ["Refresh top patch" stgit-refresh
          :active (not (and (stgit-index-empty-p) (stgit-work-tree-empty-p)))
          :help "Refresh the top patch with changes in index or work tree"]
         ["Refresh this patch" (stgit-refresh t)
          :keys "\\[universal-argument] \\[stgit-refresh]"
-         :help "Refresh the patch at point with changes in index or work tree"
+         :help "Refresh marked patch with changes in index or work tree"
          :active (and (not (and (stgit-index-empty-p)
                                 (stgit-work-tree-empty-p)))
                       (stgit-patch-name-at-point nil t))]
@@ -1011,8 +1011,8 @@ Commands for patches:
 \\[stgit-refresh]	Refresh patch with changes in index or work tree
 \\[stgit-diff]	Show the patch log and diff
 
-\\[stgit-expand]	Show changes in selected patches
-\\[stgit-collapse]	Hide changes in selected patches
+\\[stgit-expand]	Show changes in marked patches
+\\[stgit-collapse]	Hide changes in marked patches
 
 \\[stgit-new]	Create a new, empty patch
 \\[stgit-new-and-refresh]	Create a new patch from index or work tree
