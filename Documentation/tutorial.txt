@@ -40,7 +40,7 @@ StGit is not a stand-alone program -- it operates on a Git repository
 that you have already created, using +git init+ or +git clone+. So get
 one of those; if you don't have one at hand, try for example
 
-  $ git clone http://homepage.ntlworld.com/cmarinas/stgit.git
+  $ git clone git://repo.or.cz/stgit.git
   $ cd stgit
 
 Before you can create StGit patches, you have to run linkstg:init[]:
