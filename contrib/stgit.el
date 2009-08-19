@@ -1015,8 +1015,9 @@ Commands for patches:
 \\[stgit-expand]	Show changes in marked patches
 \\[stgit-collapse]	Hide changes in marked patches
 
-\\[stgit-new]	Create a new, empty patch
 \\[stgit-new-and-refresh]	Create a new patch from index or work tree
+\\[stgit-new]	Create a new, empty patch
+
 \\[stgit-rename]	Rename patch
 \\[stgit-edit]	Edit patch description
 \\[stgit-delete]	Delete patch(es)
@@ -1026,11 +1027,11 @@ Commands for patches:
 
 \\[stgit-push-next]	Push next patch onto stack
 \\[stgit-pop-next]	Pop current patch from stack
-\\[stgit-push-or-pop]	Push or pop patch at point
-\\[stgit-goto]	Make current patch current by popping or pushing
+\\[stgit-push-or-pop]	Push or pop marked patches
+\\[stgit-goto]	Make patch at point current by popping or pushing
 
 \\[stgit-squash]	Squash (meld together) patches
-\\[stgit-move-patches]	Move patch(es) to point
+\\[stgit-move-patches]	Move marked patches to point
 
 \\[stgit-commit]	Commit patch(es)
 \\[stgit-uncommit]	Uncommit patch(es)
