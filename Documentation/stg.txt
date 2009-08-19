@@ -82,7 +82,7 @@ which can be used to move the patch stack base downwards -- i.e., turn
 Git commits into StGit patches after the fact -- and
 linkstgsub:commit[], its inverse.
 
-For more information, see htmllink:tutorial.html[the tutorial].
+For more information, see link:tutorial.html[the tutorial].
 
 Specifying patches
 ~~~~~~~~~~~~~~~~~~
@@ -144,7 +144,7 @@ include::command-list.txt[]
 CONFIGURATION MECHANISM
 -----------------------
 
-StGit uses the same configuration mechanism as Git. See manlink:git[7]
+StGit uses the same configuration mechanism as Git. See linkman:git[7]
 for more details.
 
 TEMPLATES

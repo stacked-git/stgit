@@ -2,7 +2,7 @@ StGit tutorial
 ##############
 
 StGit is a command-line application that provides functionality
-similar to htmllink:http://savannah.nongnu.org/projects/quilt/[Quilt]
+similar to link:http://savannah.nongnu.org/projects/quilt/[Quilt]
 (i.e. pushing/popping patches to/from a stack), but using Git instead
 of +diff+ and +patch+. StGit stores its patches in a Git repository as
 normal Git commits, and provides a number of commands to manipulate
@@ -10,7 +10,7 @@ them in various ways.
 
 This tutorial assumes you are already familiar with the basics of Git
 (for example, branches, commits, and conflicts). For more information
-on Git, see manlink:git[1] or htmllink:http://git.or.cz/[the Git home
+on Git, see linkman:git[1] or link:http://git.or.cz/[the Git home
 page].
 
 
@@ -29,7 +29,7 @@ For more extensive help on a subcommand:
 
   $ man stg-<cmd>
 
-(The documentation is also available in htmllink:stg.html[HTML
+(The documentation is also available in link:stg.html[HTML
 format].)
 
 
@@ -104,13 +104,13 @@ And voilà -- the patch is no longer empty:
        finally:
 
 (I'm assuming you're already familiar with
-htmllink:http://en.wikipedia.org/wiki/Diff#Unified_format[unified
+link:http://en.wikipedia.org/wiki/Diff#Unified_format[unified
 diff] patches like this from Git, but it's really quite simple; in
 this example, I've added the +$$print 'My first patch!'$$+ line to the
 file +stgit/main.py+, at around line 171.)
 
 Since the patch is also a regular Git commit, you can also look at it
-with regular Git tools such as manlink:gitk[].
+with regular Git tools such as linkman:gitk[].
 
 Creating another patch
 ----------------------
@@ -156,7 +156,7 @@ make.
 The minus sign says that +credit+ is 'unapplied' -- this means that
 it's been temporarily put aside. If you look at the +AUTHORS+ file,
 you'll see that our change to it is gone; and tools such as
-manlink:gitk[] will not show it, because it's been edited out of the
+linkman:gitk[] will not show it, because it's been edited out of the
 Git history. But it's just one linkstg:push[] command away from being
 restored:
 

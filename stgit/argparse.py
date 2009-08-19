@@ -103,7 +103,7 @@ def write_asciidoc(cmd, f):
             o.write_asciidoc(f)
             f.write('\n')
     _write_underlined('StGit', '-', f)
-    f.write('Part of the StGit suite - see manlink:stg[1]\n')
+    f.write('Part of the StGit suite - see linkman:stg[1]\n')
 
 def sign_options():
     def callback(option, opt_str, value, parser, sign_str):
