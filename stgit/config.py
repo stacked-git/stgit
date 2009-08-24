@@ -57,7 +57,7 @@ class GitConfig:
         self.load()
         if name not in self.__cache:
             self.__cache[name] = [self.__defaults.get(name, None)]
-        return self.__cache[name][0]
+        return self.__cache[name][-1]
 
     def getall(self, name):
         self.load()
