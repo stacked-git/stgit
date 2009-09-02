@@ -68,14 +68,17 @@ def _squash_patches(trans, patches, msg, save_template):
             return None
         cd = cd.set_tree(tree)
     if msg == None:
-        msg = '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),
-                                        trans.patches[pn].data.message)
-                          for pn in patches)
+        msg = utils.append_comment(
+            trans.patches[patches[0]].data.message,
+            '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),
+                                      trans.patches[pn].data.message)
+                        for pn in patches[1:]))
         if save_template:
             save_template(msg)
             raise SaveTemplateDone()
         else:
-            msg = utils.edit_string(msg, '.stgit-squash.txt').strip()
+            msg = utils.edit_string(msg, '.stgit-squash.txt')
+    msg = utils.strip_comment(msg).strip()
     cd = cd.set_message(msg)
 
     return cd

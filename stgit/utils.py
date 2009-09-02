@@ -200,6 +200,16 @@ def edit_string(s, filename):
     os.remove(filename)
     return s
 
+def append_comment(s, comment, separator = '---'):
+    return ('%s\n\n%s\nEverything following the line with "%s" will be'
+            ' ignored\n\n%s' % (s, separator, separator, comment))
+
+def strip_comment(s, separator = '---'):
+    try:
+        return s[:s.index('\n%s\n' % separator)]
+    except ValueError:
+        return s
+
 def find_patch_name(patchname, unacceptable):
     """Find a patch name which is acceptable."""
     if unacceptable(patchname):
