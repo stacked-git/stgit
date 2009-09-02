@@ -355,6 +355,7 @@ def __parse_description(descr):
 
     lasthdr = 0
     end = len(descr_lines)
+    descr_strip = 0
 
     # Parse the patch header
     for pos in range(0, end):
@@ -374,12 +375,16 @@ def __parse_description(descr):
         if subject:
             break
         # get the subject
-        subject = descr_lines[pos]
+        subject = descr_lines[pos][descr_strip:]
+        if re.match('commit [\da-f]{40}$', subject):
+            # 'git show' output, look for the real subject
+            subject = ''
+            descr_strip = 4
         lasthdr = pos + 1
 
     # get the body
     if lasthdr < end:
-        body = reduce(lambda x, y: x + '\n' + y, descr_lines[lasthdr:], '')
+        body = '\n' + '\n'.join(l[descr_strip:] for l in descr_lines[lasthdr:])
 
     return (subject + body, authname, authemail, authdate)
 
