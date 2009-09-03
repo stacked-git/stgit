@@ -108,7 +108,7 @@ def read_commit_dag(branch):
             commits[id].children.add(commits[cs[0]])
     for line in Run('git', 'show-ref').output_lines():
         id, ref = line.split()
-        m = re.match(r'^refs/patches/%s/(.+)$' % branch, ref)
+        m = re.match(r'^refs/patches/%s/(.+)$' % re.escape(branch), ref)
         if m and not m.group(1).endswith('.log'):
             c = commits[id]
             c.patch = m.group(1)
