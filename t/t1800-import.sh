@@ -22,6 +22,33 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply a patch created with "git diff" using -p1' \
+    '
+    stg import -p1 ../t1800-import/git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply a patch created with "git diff" using -p0' \
+    '
+    stg import -p0 ../t1800-import/git-diff-p0 &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply a patch created with "git diff" using -p2' \
+    '
+    ! stg import -p2 ../t1800-import/git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree a5850c97490398571d41d6304dd940800550f507") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a patch created with "git diff" from a subdirectory' \
     '
     mkdir subdir && cd subdir &&

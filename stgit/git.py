@@ -818,7 +818,7 @@ def repack():
     GRun('repack', '-a', '-d', '-f').run()
 
 def apply_patch(filename = None, diff = None, base = None,
-                fail_dump = True, reject = False):
+                fail_dump = True, reject = False, strip = None):
     """Apply a patch onto the current or given index. There must not
     be any local changes in the tree, otherwise the command fails
     """
@@ -840,6 +840,8 @@ def apply_patch(filename = None, diff = None, base = None,
     cmd = ['apply', '--index']
     if reject:
         cmd += ['--reject']
+    if strip != None:
+        cmd += ['-p', str(strip)]
     try:
         GRun(*cmd).raw_input(diff).no_output()
     except GitRunException:

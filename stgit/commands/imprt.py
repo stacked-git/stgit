@@ -57,7 +57,9 @@ options = [
         short = 'Import a patch from a URL'),
     opt('-n', '--name',
         short = 'Use NAME as the patch name'),
-    opt('-t', '--strip', action = 'store_true',
+    opt('-p', '--strip', type = 'int', metavar = 'N',
+        short = 'Remove N leading slashes from diff paths (default 1)'),
+    opt('-t', '--stripname', action = 'store_true',
         short = 'Strip numbering and extension from patch name'),
     opt('-i', '--ignore', action = 'store_true',
         short = 'Ignore the applied patches in the series'),
@@ -69,7 +71,7 @@ options = [
         short = 'leave the rejected hunks in corresponding *.rej files'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),
-    opt('-p', '--showpatch', action = 'store_true',
+    opt('-d', '--showdiff', action = 'store_true',
         short = 'Show the patch content in the editor buffer'),
     opt('-a', '--author', metavar = '"NAME <EMAIL>"',
         short = 'Use "NAME <EMAIL>" as the author details'),
@@ -104,7 +106,7 @@ def __create_patch(filename, message, author_name, author_email,
         patch = os.path.basename(filename)
     else:
         patch = ''
-    if options.strip:
+    if options.stripname:
         patch = __strip_patch_name(patch)
 
     if not patch:
@@ -152,9 +154,10 @@ def __create_patch(filename, message, author_name, author_email,
             base = git_id(crt_series, options.base)
         else:
             base = None
-        git.apply_patch(diff = diff, base = base, reject = options.reject)
+        git.apply_patch(diff = diff, base = base, reject = options.reject,
+                        strip = options.strip)
         crt_series.refresh_patch(edit = options.edit,
-                                 show_patch = options.showpatch,
+                                 show_patch = options.showdiff,
                                  sign_str = options.sign_str,
                                  backup = False)
         out.done()

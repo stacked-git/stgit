@@ -1,0 +1,20 @@
+diff --git foo.txt foo.txt
+index ad01662..d3cd5b6 100644
+--- foo.txt
++++ foo.txt
+@@ -3,6 +3,7 @@ dobedim
+ dobedum
+ dobidam
+ dobidim
++dabadadash
+ dobidum
+ dobodam
+ dobodim
+@@ -20,6 +21,7 @@ dabedam
+ dabedim
+ dabedum
+ dabidam
++dadadadash
+ dabidim
+ dabidum
+ dabodam

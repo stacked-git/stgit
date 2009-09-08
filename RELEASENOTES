@@ -37,6 +37,9 @@ The main changes since release 0.14.3 are
   - The commands "stg add", "stg rm", "stg cp", and "stg resolved"
     were removed, since there are corresponding Git equivalents
 
+  - The "stg import" command supports the "-p N" option for stripping
+    leading slashes from diff paths
+
   - New patch identification syntax: <branch>:<patch> (see
     documentation for the "stg id" command).
 
