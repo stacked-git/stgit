@@ -158,6 +158,7 @@ def __create_patch(filename, message, author_name, author_email,
                         strip = options.strip)
         crt_series.refresh_patch(edit = options.edit,
                                  show_patch = options.showdiff,
+                                 author_date = author_date,
                                  sign_str = options.sign_str,
                                  backup = False)
         out.done()
