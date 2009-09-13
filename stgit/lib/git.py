@@ -642,7 +642,7 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
-    def diff_tree(self, t1, t2, diff_opts):
+    def diff_tree(self, t1, t2, diff_opts, binary = True):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
 
@@ -652,7 +652,10 @@ class Repository(RunWithEnv):
         @return: Patch text"""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
-        return self.run(['git', 'diff-tree', '-p'] + list(diff_opts)
+        diff_opts = list(diff_opts)
+        if binary and not '--binary' in diff_opts:
+            diff_opts.append('--binary')
+        return self.run(['git', 'diff-tree', '-p'] + diff_opts
                         + [t1.sha1, t2.sha1]).raw_output()
     def diff_tree_files(self, t1, t2):
         """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
