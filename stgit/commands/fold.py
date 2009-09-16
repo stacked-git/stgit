@@ -38,7 +38,9 @@ options = [
     opt('-t', '--threeway', action = 'store_true',
         short = 'Perform a three-way merge with the current patch'),
     opt('-b', '--base', args = [argparse.commit],
-        short = 'Use BASE instead of HEAD applying the patch')]
+        short = 'Use BASE instead of HEAD when applying the patch'),
+    opt('--reject', action = 'store_true',
+        short = 'Leave the rejected hunks in corresponding *.rej files')]
 
 directory = DirectoryHasRepository(log = True)
 
@@ -72,11 +74,12 @@ def func(parser, options, args):
     if options.threeway:
         crt_patch = crt_series.get_patch(current)
         bottom = crt_patch.get_bottom()
-        git.apply_patch(filename = filename, base = bottom)
+        git.apply_patch(filename = filename, base = bottom,
+                        reject = options.reject)
     elif options.base:
-        git.apply_patch(filename = filename,
+        git.apply_patch(filename = filename, reject = options.reject,
                         base = git_id(crt_series, options.base))
     else:
-        git.apply_patch(filename = filename)
+        git.apply_patch(filename = filename, reject = options.reject)
 
     out.done()
