@@ -818,7 +818,7 @@ def repack():
     GRun('repack', '-a', '-d', '-f').run()
 
 def apply_patch(filename = None, diff = None, base = None,
-                fail_dump = True, reject = False, strip = None):
+                reject = False, strip = None):
     """Apply a patch onto the current or given index. There must not
     be any local changes in the tree, otherwise the command fails
     """
@@ -847,14 +847,7 @@ def apply_patch(filename = None, diff = None, base = None,
     except GitRunException:
         if base:
             switch(orig_head)
-        if fail_dump:
-            # write the failed diff to a file
-            f = file('.stgit-failed.patch', 'w+')
-            f.write(diff)
-            f.close()
-            out.warn('Diff written to the .stgit-failed.patch file')
-
-        raise
+        raise GitException('Diff does not apply cleanly')
 
     if base:
         top = commit(message = 'temporary commit used for applying a patch',
