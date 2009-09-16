@@ -141,10 +141,14 @@ def __create_patch(filename, message, author_name, author_email,
     if options.authdate:
         author_date = options.authdate
 
+    sign_str = options.sign_str
+    if not options.sign_str:
+        sign_str = config.get('stgit.autosign')
+
     crt_series.new_patch(patch, message = message, can_edit = False,
                          author_name = author_name,
                          author_email = author_email,
-                         author_date = author_date)
+                         author_date = author_date, sign_str = sign_str)
 
     if not diff:
         out.warn('No diff found, creating empty patch')
@@ -164,7 +168,6 @@ def __create_patch(filename, message, author_name, author_email,
         crt_series.refresh_patch(edit = options.edit,
                                  show_patch = options.showdiff,
                                  author_date = author_date,
-                                 sign_str = options.sign_str,
                                  backup = False)
         out.done()
 
