@@ -68,7 +68,7 @@ options = [
     opt('-b', '--base', args = [argparse.commit],
         short = 'Use BASE instead of HEAD for file importing'),
     opt('--reject', action = 'store_true',
-        short = 'leave the rejected hunks in corresponding *.rej files'),
+        short = 'Leave the rejected hunks in corresponding *.rej files'),
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),
     opt('-d', '--showdiff', action = 'store_true',
@@ -154,8 +154,13 @@ def __create_patch(filename, message, author_name, author_email,
             base = git_id(crt_series, options.base)
         else:
             base = None
-        git.apply_patch(diff = diff, base = base, reject = options.reject,
-                        strip = options.strip)
+        try:
+            git.apply_patch(diff = diff, base = base, reject = options.reject,
+                            strip = options.strip)
+        except git.GitException:
+            if not options.reject:
+                crt_series.delete_patch(patch)
+            raise
         crt_series.refresh_patch(edit = options.edit,
                                  show_patch = options.showdiff,
                                  author_date = author_date,
