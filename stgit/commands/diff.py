@@ -70,7 +70,7 @@ def func(parser, options, args):
 
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
-    diff_str = git.diff(args, git_id(crt_series, rev1),
+    diff_str = git.diff(args, rev1 and git_id(crt_series, rev1),
                         rev2 and git_id(crt_series, rev2),
                         diff_flags = options.diff_flags)
     if options.stat:
