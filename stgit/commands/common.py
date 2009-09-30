@@ -424,7 +424,8 @@ def parse_mail(msg):
     # the rest of the message
     msg_text = ''
     for part in msg.walk():
-        if part.get_content_type() == 'text/plain':
+        if part.get_content_type() in ['text/plain',
+                                       'application/octet-stream']:
             msg_text += part.get_payload(decode = True)
 
     rem_descr, diff = __split_descr_diff(msg_text)
