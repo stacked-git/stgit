@@ -624,7 +624,8 @@ class Series(PatchSet):
         """Deletes an stgit series
         """
         if self.is_initialised():
-            patches = self.get_unapplied() + self.get_applied()
+            patches = self.get_unapplied() + self.get_applied() + \
+                    self.get_hidden();
             if not force and patches:
                 raise StackException, \
                       'Cannot delete: the series still contains patches'
