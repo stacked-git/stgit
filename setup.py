@@ -70,11 +70,8 @@ if sys.argv[1] in ['install', 'build']:
 # ensure readable template files
 old_mask = os.umask(0022)
 
-try:
-    version.write_builtin_version()
-    __run_setup()
-finally:
-    version.delete_builtin_version()
+version.write_builtin_version()
+__run_setup()
 
 # restore the old mask
 os.umask(old_mask)

@@ -43,12 +43,6 @@ def write_builtin_version():
     f.write('# This file was generated automatically. Do not edit by hand.\n'
             'version = %r\n' % v)
 
-def delete_builtin_version():
-    for ext in ['py', 'pyc', 'pyo']:
-        fn = _builtin_version_file(ext)
-        if os.path.exists(fn):
-            os.remove(fn)
-
 def get_version():
     for v in [builtin_version, git_describe_version]:
         try:
