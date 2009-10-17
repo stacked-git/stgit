@@ -48,7 +48,8 @@ class GitConfig:
         if self.__cache is not None:
             return
         self.__cache = {}
-        lines = Run('git', 'config', '--null', '--list').raw_output()
+        lines = Run('git', 'config', '--null', '--list'
+                   ).discard_exitcode().raw_output()
         for line in filter(None, lines.split('\0')):
             key, value = line.split('\n', 1)
             self.__cache.setdefault(key, []).append(value)
