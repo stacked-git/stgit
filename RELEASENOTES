@@ -35,13 +35,19 @@ The main changes since release 0.14.3 are
         patch in the series.
 
   - The commands "stg add", "stg rm", "stg cp", and "stg resolved"
-    were removed, since there are corresponding Git equivalents
+    were removed, since there are corresponding Git equivalents.
 
-  - The "stg import" command supports the "-p N" option for stripping
-    leading slashes from diff paths
+  - The "stg import" and "stg fold" commands support the "-p N" option
+    for stripping leading slashes from diff paths.
+
+  - The "stg import" and "stg fold" commands support the "--reject"
+    option for leaving rejected hunks in corresponding *.rej files.
 
   - New patch identification syntax: <branch>:<patch> (see
     documentation for the "stg id" command).
+
+  - Autosigning of imported patches when "sign.autosign" configuration
+    option is set.
 
   - A powerful Emacs mode for StGit was added to the "contrib"
     directory. It displays the patch stack in an Emacs buffer, and can
