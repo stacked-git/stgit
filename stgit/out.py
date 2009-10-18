@@ -72,13 +72,12 @@ class MessagePrinter(object):
             self.__stdout = self.__stderr = Output(file.write, file.flush)
         else:
             self.__stdout = Output(sys.stdout.write, sys.stdout.flush)
-            self.__stderr = Output(sys.stdout.write, sys.stdout.flush)
+            self.__stderr = Output(sys.stderr.write, sys.stderr.flush)
         if file or sys.stdout.isatty():
             self.__out = self.__stdout
-            self.__err = self.__stdout
         else:
             self.__out = Output(lambda msg: None, lambda: None)
-            self.__err = self.__stderr
+        self.__err = self.__stderr
     def stdout(self, line):
         """Write a line to stdout."""
         self.__stdout.write_line(line)
