@@ -161,6 +161,7 @@ def message_options(save_template):
             short = 'Use MESSAGE instead of invoking the editor'),
         opt('-f', '--file', action = 'callback', callback = file_callback,
             dest = 'message', type = 'string', args = [files],
+            metavar = 'FILE',
             short = 'Use FILE instead of invoking the editor', long = """
             Use the contents of FILE instead of invoking the editor.
             (If FILE is "-", write to stdout.)""")]
