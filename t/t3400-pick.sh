@@ -39,9 +39,9 @@ test_expect_success \
 	'
 
 test_expect_success \
-	'Pick --fold --reverse local patch' \
+	'Pick --fold --revert local patch' \
 	'
-	stg pick --fold --reverse D &&
+	stg pick --fold --revert D &&
 	stg refresh && stg clean &&
 	test "$(echo $(stg series --applied --noprefix))" = "A B C" &&
 	test "$(echo $(stg series --unapplied --noprefix))" = "D"

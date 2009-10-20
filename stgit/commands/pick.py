@@ -30,7 +30,7 @@ description = """
 Import one or more patches from a different branch or a commit object
 into the current series. By default, the name of the imported patch is
 used as the name of the current patch. It can be overridden with the
-'--name' option. A commit object can be reverted with the '--reverse'
+'--name' option. A commit object can be reverted with the '--revert'
 option. The log and author information are those of the commit
 object."""
 
@@ -42,8 +42,8 @@ options = [
         short = 'Use NAME as the patch name'),
     opt('-B', '--ref-branch', args = [argparse.stg_branches],
         short = 'Pick patches from BRANCH'),
-    opt('-r', '--reverse', action = 'store_true',
-        short = 'Reverse the commit object before importing'),
+    opt('-r', '--revert', action = 'store_true',
+        short = 'Revert the given commit object'),
     opt('-p', '--parent', metavar = 'COMMITID', args = [argparse.commit],
         short = 'Use COMMITID as parent'),
     opt('-x', '--expose', action = 'store_true',
@@ -66,6 +66,8 @@ def __pick_commit(commit_id, patchname, options):
 
     if options.name:
         patchname = options.name
+    elif patchname and options.revert:
+        patchname = 'revert-' + patchname
     if patchname:
         patchname = find_patch_name(patchname, crt_series.patch_exists)
 
@@ -74,7 +76,7 @@ def __pick_commit(commit_id, patchname, options):
     else:
         parent = commit.get_parent()
 
-    if not options.reverse:
+    if not options.revert:
         bottom = parent
         top = commit_id
     else:
@@ -105,7 +107,14 @@ def __pick_commit(commit_id, patchname, options):
         out.done()
     else:
         message = commit.get_log()
-        if options.expose:
+        if options.revert:
+            if message:
+                subject = message.splitlines()[0]
+            else:
+                subject = commit.get_id_hash()
+            message = 'Revert "%s"\n\nThis reverts commit %s.\n' \
+                    % (subject, commit.get_id_hash())
+        elif options.expose:
             message += '(imported from commit %s)\n' % commit.get_id_hash()
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
