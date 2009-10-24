@@ -23,7 +23,7 @@ from stgit.lib import git, stack
 from stgit.out import out
 from stgit import utils
 
-help = 'Publish the stack changes to a merge-friendly head'
+help = 'Push the stack changes to a merge-friendly branch'
 kind = 'stack'
 usage = ['[options] [branch]']
 description = """
