@@ -41,7 +41,10 @@ options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Push all the unapplied patches'),
     opt('-n', '--number', type = 'int',
-        short = 'Push the specified number of patches'),
+        short = 'Push the specified number of patches', long = '''
+        Push the specified number of patches.
+
+        With a negative number, push all but that many patches.'''),
     opt('--reverse', action = 'store_true',
         short = 'Push the patches in reverse order'),
     opt('--set-tree', action = 'store_true',
@@ -67,12 +70,16 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'pop',
                                          check_clean_iw = clean_iw)
 
+    if options.number == 0:
+        # explicitly allow this without any warning/error message
+        return
+
     if not trans.unapplied:
         raise common.CmdException('No patches to push')
 
     if options.all:
         patches = list(trans.unapplied)
-    elif options.number:
+    elif options.number is not None:
         patches = trans.unapplied[:options.number]
     elif not args:
         patches = [trans.unapplied[0]]

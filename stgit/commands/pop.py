@@ -39,7 +39,10 @@ options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Pop all the applied patches'),
     opt('-n', '--number', type = 'int',
-        short = 'Pop the specified number of patches')
+        short = 'Pop the specified number of patches', long = '''
+        Pop the specified number of patches.
+
+        With a negative number, pop all but that many patches.'''),
     ] + argparse.keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
@@ -52,12 +55,16 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'pop',
                                          check_clean_iw = clean_iw)
 
+    if options.number == 0:
+        # explicitly allow this without any warning/error message
+        return
+
     if not trans.applied:
         raise common.CmdException('No patches applied')
 
     if options.all:
         patches = trans.applied
-    elif options.number:
+    elif options.number is not None:
         # reverse it twice to also work with negative or bigger than
         # the length numbers
         patches = trans.applied[::-1][:options.number][::-1]
