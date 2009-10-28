@@ -841,7 +841,7 @@ def apply_patch(filename = None, diff = None, base = None,
     if reject:
         cmd += ['--reject']
     if strip != None:
-        cmd += ['-p', str(strip)]
+        cmd += ['-p%s' % (strip,)]
     try:
         GRun(*cmd).raw_input(diff).no_output()
     except GitRunException:
