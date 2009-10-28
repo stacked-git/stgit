@@ -1703,7 +1703,8 @@ file ended up. You can then jump to the file with \
     (set (make-local-variable 'stgit-edit-patchsym) patchsym)
     (setq default-directory dir)
     (let ((standard-output edit-buf))
-      (stgit-run-silent "edit" "--save-template=-" patchsym))))
+      (save-excursion
+        (stgit-run-silent "edit" "--save-template=-" patchsym)))))
 
 (defun stgit-confirm-edit ()
   (interactive)
@@ -1891,8 +1892,9 @@ deepest patch had before the squash."
     (set (make-local-variable 'stgit-patchsyms) sorted-patchsyms)
     (setq default-directory dir)
     (let ((result (let ((standard-output edit-buf))
-                    (apply 'stgit-run-silent "squash"
-                           "--save-template=-" sorted-patchsyms))))
+                    (save-excursion
+                      (apply 'stgit-run-silent "squash"
+                             "--save-template=-" sorted-patchsyms)))))
 
       ;; stg squash may have reordered the patches or caused conflicts
       (with-current-buffer stgit-buffer
