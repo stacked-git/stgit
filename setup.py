@@ -4,6 +4,7 @@ import sys, glob, os
 from distutils.core import setup
 
 from stgit import version
+from stgit import commands, completion
 
 def __version_to_list(version):
     """Convert a version string to a list of numbers or strings
@@ -63,14 +64,24 @@ def __run_setup():
             ])
 
 # Check the minimum versions required
-if sys.argv[1] in ['install', 'build']:
-    __check_python_version()
-    __check_git_version()
+__check_python_version()
+__check_git_version()
 
 # ensure readable template files
 old_mask = os.umask(0022)
 
 version.write_builtin_version()
+
+# generate the python command list
+f = file('stgit/commands/cmdlist.py', 'w')
+commands.py_commands(commands.get_commands(allow_cached = False), f)
+f.close()
+
+# generate the bash completion script
+f = file('stgit-completion.bash', 'w')
+completion.write_completion(f)
+f.close()
+
 __run_setup()
 
 # restore the old mask

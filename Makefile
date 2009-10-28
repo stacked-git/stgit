@@ -4,20 +4,10 @@ PYTHON	?= python
 
 TEST_PATCHES ?= ..
 
-all: build
+all:
 	$(PYTHON) setup.py build
 
-build: stgit/commands/cmdlist.py stgit-completion.bash
-
-ALL_PY = $(shell find stgit -name '*.py')
-
-stgit/commands/cmdlist.py: $(ALL_PY)
-	$(PYTHON) stg-build --py-cmd-list > $@
-
-stgit-completion.bash: $(ALL_PY)
-	$(PYTHON) stg-build --bash-completion > $@
-
-install: build
+install:
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
 
 doc:
@@ -29,10 +19,11 @@ install-doc:
 install-html:
 	$(MAKE) -C Documentation install-html
 
-test: build
+test:
+	$(PYTHON) setup.py build
 	cd t && $(MAKE) all
 
-test_patches: build
+test_patches:
 	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
 		stg goto $$patch && $(MAKE) test || break; \
 	done
@@ -53,5 +44,5 @@ tags:
 TAGS:
 	ctags -e -R stgit/*
 
-.PHONY: all build install doc install-doc install-html test test_patches \
+.PHONY: all install doc install-doc install-html test test_patches \
 	clean tags TAGS
