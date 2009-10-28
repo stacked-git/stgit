@@ -1499,7 +1499,9 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
   (stgit-reload))
 
 (defun stgit-goto ()
-  "Go to the patch on the current line."
+  "Go to the patch on the current line.
+
+Pops or pushes patches to make this patch topmost."
   (interactive)
   (stgit-assert-mode)
   (let ((patchsym (stgit-patch-name-at-point t)))
