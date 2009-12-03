@@ -258,9 +258,6 @@ top of +second+, now that they both modify +TODO+. We can take a look
 at the situation with linkstg:status[]:
 
   $ stg status
-  ? TODO.ancestor
-  ? TODO.current
-  ? TODO.patched
   C TODO
 
 As we were told by linkstg:push[], the conflict is in the file +TODO+.
@@ -268,19 +265,14 @@ As we were told by linkstg:push[], the conflict is in the file +TODO+.
 listed here; prefixed with +C+ if they had conflicts, and +M+ if StGit
 managed to automatically resolve everything in the file.)
 
-NOTE: +TODO.ancestor+, +TODO.current+, and +TODO.patched+ are the
-three versions of the file that StGit tried to merge. The +.current+
-file is the version before the patch was applied, +.patched+ is the
-version in the patch we tried to push, and +.ancestor+ the version
-that contains neither of the added lines.
-
 At this point, we have two options:
 
   1. Undo the failed merge with linkstg:undo[]. (Remember to use the
      +$$--hard$$+ flag, since the unresolved conflict means the
      worktree is not clean.)
 
-  2. Manually resolve the conflict.
+  2. Manually resolve the conflict (editing the file directly followed
+     by +git add+ or using +git mergetool+.)
 
 To resolve the conflict, open +TODO+ in your favorite editor. It ends
 like this:
