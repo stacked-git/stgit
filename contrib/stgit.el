@@ -16,6 +16,7 @@
 (require 'cl)
 (require 'ewoc)
 (require 'easymenu)
+(require 'format-spec)
 
 (defun stgit-set-default (symbol value)
   "Set default value of SYMBOL to VALUE using `set-default' and
@@ -68,6 +69,25 @@ applied and unapplied patches), and 'bottom (below all patches)."
                 (const :tag "below all patches (bottom)" bottom))
   :group 'stgit
   :link '(variable-link stgit-show-worktree)
+  :set 'stgit-set-default)
+
+(defcustom stgit-patch-line-format "%s%m%-30n %e%d"
+  "The format string used to format patch lines.
+The format string is passed to `format-spec' and the following
+format characters are recognized:
+
+  %s - A '+', '-', '>' or space, depending on whether the patch is
+       applied, unapplied, top, or something else.
+
+  %m - An asterisk if the patch is marked, and a space otherwise.
+
+  %n - The patch name.
+
+  %e - The string \"(empty) \" if the patch is empty.
+
+  %d - The short patch description."
+  :type 'string
+  :group 'stgit
   :set 'stgit-set-default)
 
 (defface stgit-branch-name-face
@@ -193,30 +213,34 @@ directory DIR or `default-directory'"
 (defstruct (stgit-patch)
   status name desc empty files-ewoc)
 
+(defun stgit-patch-display-name (patch)
+  (let ((name (stgit-patch-name patch)))
+    (case name
+      (:index "Index")
+      (:work "Work Tree")
+      (t (symbol-name name)))))
+
 (defun stgit-patch-pp (patch)
   (let* ((status (stgit-patch-status patch))
          (start (point))
          (name (stgit-patch-name patch))
-         (face (cdr (assq status stgit-patch-status-face-alist))))
-    (insert (case status
-              ('applied "+")
-              ('top ">")
-              ('unapplied "-")
-              (t " "))
-            (if (memq name stgit-marked-patches)
-                "*" " "))
-    (if (memq status '(index work))
-        (insert (propertize (if (eq status 'index) "Index" "Work tree")
-                            'face face))
-      (insert (format "%-30s"
-                      (propertize (symbol-name name)
-                                  'face face
-                                  'syntax-table (string-to-syntax "w")))
-              "  "
-              (if (stgit-patch-empty patch) "(empty) " "")
-              (propertize (or (stgit-patch-desc patch) "")
-                          'face 'stgit-description-face)))
-    (insert "\n")
+         (face (cdr (assq status stgit-patch-status-face-alist)))
+         (spec (format-spec-make
+                ?s (case status
+                     ('applied "+")
+                     ('top ">")
+                     ('unapplied "-")
+                     (t " "))
+                ?m (if (memq name stgit-marked-patches)
+                       "*" " ")
+                ?n (propertize (stgit-patch-display-name patch)
+                               'face face
+                               'syntax-table (string-to-syntax "w"))
+                ?e (if (stgit-patch-empty patch) "(empty) " "")
+                ?d (propertize (or (stgit-patch-desc patch) "")
+                               'face 'stgit-description-face))))
+
+    (insert (format-spec stgit-patch-line-format spec) "\n")
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files patch))
