@@ -661,6 +661,47 @@ Cf. `stgit-file-type-change-string'."
         (insert ":0 0 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 " file-flag "\0")
         (forward-char name-len)))))
 
+(defun stgit-process-files (callback)
+  (goto-char (point-min))
+  (when (looking-at "[0-9A-Fa-f]\\{40\\}\0")
+    (goto-char (match-end 0)))
+  (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
+    (let ((old-perm (string-to-number (match-string 1) 8))
+          (new-perm (string-to-number (match-string 2) 8)))
+      (goto-char (match-end 0))
+      (let ((file
+             (cond ((looking-at
+                     "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
+                    (let* ((patch-status (stgit-patch->status patch))
+                           (file-subexp  (if (eq patch-status 'unapplied)
+                                             3
+                                           4))
+                           (file         (match-string file-subexp)))
+                      (make-stgit-file
+                       :old-perm       old-perm
+                       :new-perm       new-perm
+                       :copy-or-rename t
+                       :cr-score       (string-to-number (match-string 2))
+                       :cr-from        (match-string 3)
+                       :cr-to          (match-string 4)
+                       :status         (stgit-file-status-code
+                                        (match-string 1))
+                       :file           file)))
+                   ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
+                    (make-stgit-file
+                     :old-perm       old-perm
+                     :new-perm       new-perm
+                     :copy-or-rename nil
+                     :cr-score       nil
+                     :cr-from        nil
+                     :cr-to          nil
+                     :status         (stgit-file-status-code
+                                      (match-string 1))
+                     :file           (match-string 2))))))
+        (goto-char (match-end 0))
+        (funcall callback file)))))
+
+
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch PATCH after the line
 at point."
@@ -684,48 +725,13 @@ at point."
           (when stgit-show-ignored
             (stgit-insert-ls-files '("--ignored" "--others") "I"))
           (when stgit-show-unknown
-            (stgit-insert-ls-files '("--others") "X"))
+            (stgit-insert-ls-files '("--directory" "--no-empty-directory"
+                                     "--others")
+                                   "X"))
           (sort-regexp-fields nil ":[^\0]*\0\\([^\0]*\\)\0" "\\1"
                               (point-min) (point-max)))
 
-        (goto-char (point-min))
-        (unless (or (eobp) (memq patchsym '(:work :index)))
-          (forward-char 41))
-        (while (looking-at ":\\([0-7]+\\) \\([0-7]+\\) [0-9A-Fa-f]\\{40\\} [0-9A-Fa-f]\\{40\\} ")
-          (let ((old-perm (string-to-number (match-string 1) 8))
-                (new-perm (string-to-number (match-string 2) 8)))
-            (goto-char (match-end 0))
-            (let ((file
-                   (cond ((looking-at
-                           "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
-                          (let* ((patch-status (stgit-patch->status patch))
-                                 (file-subexp  (if (eq patch-status 'unapplied)
-                                                   3
-                                                 4))
-                                 (file         (match-string file-subexp)))
-                            (make-stgit-file
-                             :old-perm       old-perm
-                             :new-perm       new-perm
-                             :copy-or-rename t
-                             :cr-score       (string-to-number (match-string 2))
-                             :cr-from        (match-string 3)
-                             :cr-to          (match-string 4)
-                             :status         (stgit-file-status-code
-                                              (match-string 1))
-                             :file           file)))
-                         ((looking-at "\\([ABD-QS-Z]\\)\0\\([^\0]*\\)\0")
-                          (make-stgit-file
-                           :old-perm       old-perm
-                           :new-perm       new-perm
-                           :copy-or-rename nil
-                           :cr-score       nil
-                           :cr-from        nil
-                           :cr-to          nil
-                           :status         (stgit-file-status-code
-                                            (match-string 1))
-                           :file           (match-string 2))))))
-              (goto-char (match-end 0))
-              (ewoc-enter-last ewoc file))))
+        (stgit-process-files (lambda (file) (ewoc-enter-last ewoc file)))
 
         (unless (ewoc-nth ewoc 0)
           (ewoc-set-hf ewoc ""
@@ -779,6 +785,45 @@ See also `stgit-expand'."
     (stgit-expand (list patchname)
                   (memq patchname stgit-expanded-patches))))
 
+(defun stgit-expand-directory (file)
+  (let* ((patch (stgit-patch-at-point))
+         (ewoc (stgit-patch->files-ewoc patch))
+         (node (ewoc-locate ewoc))
+         (filename (stgit-file->file file))
+         (start (make-marker))
+         (end (make-marker)))
+
+    (save-excursion
+      (forward-line 1)
+      (set-marker start (point))
+      (set-marker end (point))
+      (set-marker-insertion-type end t))
+
+    (assert (string-match "/$" filename))
+    ;; remove trailing "/"
+    (setf (stgit-file->file file) (substring filename 0 -1))
+    (ewoc-invalidate ewoc node)
+
+    (with-temp-buffer
+      (let ((standard-output (current-buffer)))
+        (stgit-insert-ls-files (list "--directory" "--others"
+                                     "--no-empty-directory" "--"
+                                     filename)
+                               "X")
+        (stgit-process-files (lambda (f)
+                               (setq node (ewoc-enter-after ewoc node f))))))
+
+    (let ((inhibit-read-only t))
+      (put-text-property start end 'patch-data patch))))
+
+(defun stgit-select-file ()
+  (let* ((file (or (stgit-patched-file-at-point)
+                   (error "No file at point")))
+         (filename (stgit-file->file file)))
+    (if (string-match "/$" filename)
+        (stgit-expand-directory file)
+      (stgit-find-file))))
+
 (defun stgit-select ()
   "With point on a patch, toggle showing files in the patch.
 
@@ -790,7 +835,7 @@ file for (applied) copies and renames."
     ('patch
      (stgit-select-patch))
     ('file
-     (stgit-find-file))
+     (stgit-select-file))
     (t
      (error "No patch or file on line"))))
 
