@@ -1454,10 +1454,25 @@ If OMIT-STGIT is not nil, filter out \"resf/heads/*.stgit\"."
                            result)
               result))))
 
+(defun stgit-parent-branch ()
+  "Return the parent branch of the current stg branch as per
+git-config setting branch.<branch>.stgit.parentbranch."
+  (let ((output (with-output-to-string
+                  (stgit-run-git-silent "config"
+                                        (format "branch.%s.stgit.parentbranch"
+                                                (stgit-current-branch))))))
+    (when (string-match ".*" output)
+      (match-string 0 output))))
+
 (defun stgit-rebase (new-base)
-  "Rebase to NEW-BASE."
+  "Rebase the current branch to NEW-BASE.
+
+Interactively, first ask which branch to rebase to. Defaults to
+what git-config branch.<branch>.stgit.parentbranch is set to."
   (interactive (list (completing-read "Rebase to: "
-                                      (stgit-available-refs t))))
+                                      (stgit-available-refs t)
+                                      nil nil
+                                      (stgit-parent-branch))))
   (stgit-assert-mode)
   (stgit-capture-output nil (stgit-run "rebase" new-base))
   (stgit-reload))
