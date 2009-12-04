@@ -251,20 +251,21 @@ directory DIR or `default-directory'"
     (switch-to-buffer (or buffer
 			  (create-stgit-buffer dir)))))
 
-(defstruct (stgit-patch)
+(defstruct (stgit-patch
+            (:conc-name stgit-patch->))
   status name desc empty files-ewoc)
 
 (defun stgit-patch-display-name (patch)
-  (let ((name (stgit-patch-name patch)))
+  (let ((name (stgit-patch->name patch)))
     (case name
       (:index "Index")
       (:work "Work Tree")
       (t (symbol-name name)))))
 
 (defun stgit-patch-pp (patch)
-  (let* ((status (stgit-patch-status patch))
+  (let* ((status (stgit-patch->status patch))
          (start (point))
-         (name (stgit-patch-name patch))
+         (name (stgit-patch->name patch))
          (face (cdr (assq status stgit-patch-status-face-alist)))
          (fmt (if stgit-show-patch-names
                   stgit-patch-line-format
@@ -280,10 +281,10 @@ directory DIR or `default-directory'"
                 ?n (propertize (stgit-patch-display-name patch)
                                'face face
                                'syntax-table (string-to-syntax "w"))
-                ?e (if (stgit-patch-empty patch) "(empty) " "")
-                ?d (propertize (or (stgit-patch-desc patch) "")
+                ?e (if (stgit-patch->empty patch) "(empty) " "")
+                ?d (propertize (or (stgit-patch->desc patch) "")
                                'face 'stgit-description-face)
-                ?D (propertize (or (stgit-patch-desc patch)
+                ?D (propertize (or (stgit-patch->desc patch)
                                    (stgit-patch-display-name patch))
                                'face face))))
 
@@ -472,7 +473,7 @@ Returns nil if there was no output."
                     'face 'stgit-description-face)))
     (stgit-run-series stgit-ewoc)
     (if curpatch
-        (stgit-goto-patch curpatch (and curfile (stgit-file-file curfile)))
+        (stgit-goto-patch curpatch (and curfile (stgit-file->file curfile)))
       (goto-line curline)))
   (stgit-refresh-git-status))
 
@@ -501,9 +502,9 @@ Returns nil if there was no output."
 
 (defun stgit-file-status-code-as-string (file)
   "Return stgit status code for FILE as a string"
-  (let* ((code (assq (stgit-file-status file)
+  (let* ((code (assq (stgit-file->status file)
                      stgit-file-status-code-strings))
-         (score (stgit-file-cr-score file)))
+         (score (stgit-file->cr-score file)))
     (when code
       (if (and score (/= score 100))
           (format "%s %s" (cdr code)
@@ -582,7 +583,8 @@ Cf. `stgit-file-type-change-string'."
                        (propertize (format "%o" new-perm)
                                    'face 'stgit-file-permission-face)))))))
 
-(defstruct (stgit-file)
+(defstruct (stgit-file
+            (:conc-name stgit-file->))
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
 (defun stgit-describe-copy-or-rename (file)
@@ -590,8 +592,8 @@ Cf. `stgit-file-type-change-string'."
         from to common-head common-tail)
 
     (when stgit-abbreviate-copies-and-renames
-      (setq from (split-string (stgit-file-cr-from file) "/")
-            to   (split-string (stgit-file-cr-to   file) "/"))
+      (setq from (split-string (stgit-file->cr-from file) "/")
+            to   (split-string (stgit-file->cr-to   file) "/"))
 
       (while (and from to (cdr from) (cdr to)
                   (string-equal (car from) (car to)))
@@ -623,21 +625,21 @@ Cf. `stgit-file-type-change-string'."
                 (if common-tail
                     (mapconcat #'identity common-tail "/")
                   ""))
-      (concat (stgit-file-cr-from file) arrow (stgit-file-cr-to file)))))
+      (concat (stgit-file->cr-from file) arrow (stgit-file->cr-to file)))))
 
 (defun stgit-file-pp (file)
   (let ((start (point))
         (spec (format-spec-make
                ?s (stgit-file-status-code-as-string file)
                ?m (stgit-file-mode-change-string
-                   (stgit-file-old-perm file)
-                   (stgit-file-new-perm file))
-               ?n (if (stgit-file-copy-or-rename file)
+                   (stgit-file->old-perm file)
+                   (stgit-file->new-perm file))
+               ?n (if (stgit-file->copy-or-rename file)
                       (stgit-describe-copy-or-rename file)
-                    (stgit-file-file file))
+                    (stgit-file->file file))
                ?c (propertize (stgit-file-type-change-string
-                               (stgit-file-old-perm file)
-                               (stgit-file-new-perm file))
+                               (stgit-file->old-perm file)
+                               (stgit-file->new-perm file))
                               'face 'stgit-description-face))))
     (insert (format-spec stgit-file-line-format spec) "\n")
     (add-text-properties start (point)
@@ -662,12 +664,12 @@ Cf. `stgit-file-type-change-string'."
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch PATCH after the line
 at point."
-  (let* ((patchsym (stgit-patch-name patch))
+  (let* ((patchsym (stgit-patch->name patch))
          (end      (point-marker))
          (args     (list "-z" (stgit-find-copies-harder-diff-arg)))
          (ewoc     (ewoc-create #'stgit-file-pp nil nil t)))
     (set-marker-insertion-type end t)
-    (setf (stgit-patch-files-ewoc patch) ewoc)
+    (setf (stgit-patch->files-ewoc patch) ewoc)
     (with-temp-buffer
       (let ((standard-output (current-buffer)))
         (apply 'stgit-run-git
@@ -696,7 +698,7 @@ at point."
             (let ((file
                    (cond ((looking-at
                            "\\([CR]\\)\\([0-9]*\\)\0\\([^\0]*\\)\0\\([^\0]*\\)\0")
-                          (let* ((patch-status (stgit-patch-status patch))
+                          (let* ((patch-status (stgit-patch->status patch))
                                  (file-subexp  (if (eq patch-status 'unapplied)
                                                    3
                                                  4))
@@ -736,12 +738,12 @@ at point."
 (defun stgit-find-file (&optional other-window)
   (let* ((file (or (stgit-patched-file-at-point)
                    (error "No file at point")))
-         (filename (expand-file-name (stgit-file-file file))))
+         (filename (expand-file-name (stgit-file->file file))))
     (unless (file-exists-p filename)
       (error "File does not exist"))
     (funcall (if other-window 'find-file-other-window 'find-file)
              filename)
-    (when (eq (stgit-file-status file) 'unmerged)
+    (when (eq (stgit-file->status file) 'unmerged)
       (smerge-mode 1))))
 
 (defun stgit-expand (&optional patches collapse)
@@ -760,7 +762,7 @@ expand if COLLAPSE is not nil."
               (set-difference stgit-expanded-patches patches-diff)
             (append stgit-expanded-patches patches-diff)))
     (ewoc-map #'(lambda (patch)
-                  (memq (stgit-patch-name patch) patches-diff))
+                  (memq (stgit-patch->name patch) patches-diff))
               stgit-ewoc))
   (move-to-column (stgit-goal-column)))
 
@@ -931,7 +933,7 @@ file for (applied) copies and renames."
             ("q" .        stgit-quit))))
 
   (let ((at-unmerged-file '(let ((file (stgit-patched-file-at-point)))
-                             (and file (eq (stgit-file-status file)
+                             (and file (eq (stgit-file->status file)
                                            'unmerged))))
         (patch-collapsed-p '(lambda (p) (not (memq p stgit-expanded-patches)))))
     (easy-menu-define stgit-menu stgit-mode-map
@@ -1200,10 +1202,10 @@ index or work tree."
   (let ((patch (stgit-patch-at-point)))
     (and patch
          only-patches
-         (memq (stgit-patch-status patch) '(work index))
+         (memq (stgit-patch->status patch) '(work index))
          (setq patch nil))
     (cond (patch
-           (stgit-patch-name patch))
+           (stgit-patch->name patch))
           (cause-error
            (error "No patch on this line")))))
 
@@ -1229,13 +1231,13 @@ If the patch was found and FILE is not nil, instead move to that
 file's line. If FILE cannot be found, stay on the line of
 PATCHSYM."
   (let ((node (ewoc-nth stgit-ewoc 0)))
-    (while (and node (not (eq (stgit-patch-name (ewoc-data node))
+    (while (and node (not (eq (stgit-patch->name (ewoc-data node))
                               patchsym)))
       (setq node (ewoc-next stgit-ewoc node)))
     (when (and node file)
-      (let* ((file-ewoc (stgit-patch-files-ewoc (ewoc-data node)))
+      (let* ((file-ewoc (stgit-patch->files-ewoc (ewoc-data node)))
              (file-node (ewoc-nth file-ewoc 0)))
-        (while (and file-node (not (equal (stgit-file-file (ewoc-data file-node)) file)))
+        (while (and file-node (not (equal (stgit-file->file (ewoc-data file-node)) file)))
           (setq file-node (ewoc-next file-ewoc file-node)))
         (when file-node
           (ewoc-goto-node file-ewoc file-node)
@@ -1267,12 +1269,12 @@ PATCHSYM."
   (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node))
-         (name (stgit-patch-name patch)))
+         (name (stgit-patch->name patch)))
     (when (eq name :work)
       (error "Cannot mark the work tree"))
     (when (eq name :index)
       (error "Cannot mark the index"))
-    (stgit-add-mark (stgit-patch-name patch))
+    (stgit-add-mark (stgit-patch->name patch))
     (let ((column (current-column)))
       (ewoc-invalidate stgit-ewoc node)
       (move-to-column column))))
@@ -1289,7 +1291,7 @@ PATCHSYM."
   (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
          (patch (ewoc-data node)))
-    (stgit-remove-mark (stgit-patch-name patch))
+    (stgit-remove-mark (stgit-patch->name patch))
     (let ((column (current-column)))
       (ewoc-invalidate stgit-ewoc node)
       (move-to-column column))))
@@ -1420,12 +1422,12 @@ previous file if point is at the last file within a patch."
         neighbour-file)
     (and (zerop (forward-line 1))
          (let ((f (stgit-patched-file-at-point)))
-           (and f (setq neighbour-file (stgit-file-file f)))))
+           (and f (setq neighbour-file (stgit-file->file f)))))
     (goto-char old-point)
     (unless neighbour-file
       (and (zerop (forward-line -1))
            (let ((f (stgit-patched-file-at-point)))
-             (and f (setq neighbour-file (stgit-file-file f)))))
+             (and f (setq neighbour-file (stgit-file->file f)))))
       (goto-char old-point))
     neighbour-file))
 
@@ -1437,15 +1439,15 @@ working tree."
   (let* ((patched-file (or (stgit-patched-file-at-point)
                            (error "No file on the current line")))
          (patch-name   (stgit-patch-name-at-point))
-         (file-status  (stgit-file-status patched-file))
-         (rm-file      (cond ((stgit-file-copy-or-rename patched-file)
-                              (stgit-file-cr-to patched-file))
+         (file-status  (stgit-file->status patched-file))
+         (rm-file      (cond ((stgit-file->copy-or-rename patched-file)
+                              (stgit-file->cr-to patched-file))
                              ((eq file-status 'add)
-                              (stgit-file-file patched-file))))
+                              (stgit-file->file patched-file))))
          (co-file      (cond ((eq file-status 'rename)
-                              (stgit-file-cr-from patched-file))
+                              (stgit-file->cr-from patched-file))
                              ((not (memq file-status '(copy add)))
-                              (stgit-file-file patched-file))))
+                              (stgit-file->file patched-file))))
          (next-file    (stgit-neighbour-file)))
 
     (unless (memq patch-name '(:work :index))
@@ -1508,8 +1510,8 @@ tree, or a single change in either."
   (stgit-assert-mode)
   (let* ((patched-file (stgit-patched-file-at-point))
          (patch        (stgit-patch-at-point))
-         (patch-name   (and patch (stgit-patch-name patch)))
-         (status       (and patched-file (stgit-file-status patched-file))))
+         (patch-name   (and patch (stgit-patch->name patch)))
+         (status       (and patched-file (stgit-file->status patched-file))))
 
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
@@ -1518,7 +1520,7 @@ tree, or a single change in either."
       (error "No conflict to resolve at the current line"))
 
     (stgit-capture-output nil
-      (stgit-move-change-to-index (stgit-file-file patched-file)))
+      (stgit-move-change-to-index (stgit-file->file patched-file)))
 
     (stgit-reload)))
 
@@ -1548,7 +1550,7 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
                     '(applied top)
                   '(applied top index work)))
         result)
-    (ewoc-map (lambda (patch) (when (memq (stgit-patch-status patch) states)
+    (ewoc-map (lambda (patch) (when (memq (stgit-patch->status patch) states)
                                 (setq result (cons patch result))))
               stgit-ewoc)
     result))
@@ -1557,7 +1559,7 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
   "Return a list of the symbols of the applied patches.
 
 If ONLY-PATCHES is not nil, exclude index and work tree."
-  (mapcar #'stgit-patch-name (stgit-applied-patches only-patches)))
+  (mapcar #'stgit-patch->name (stgit-applied-patches only-patches)))
 
 (defun stgit-push-or-pop ()
   "Push or pop the marked patches."
@@ -1612,12 +1614,12 @@ which stage to diff against in the case of unmerged files."
          (let* ((patched-file (stgit-patched-file-at-point))
                 (patch-id (let ((id (stgit-id patch-name)))
                             (if (and (eq id :index)
-                                     (eq (stgit-file-status patched-file)
+                                     (eq (stgit-file->status patched-file)
                                          'unmerged))
                                 :work
                               id)))
                 (args (append (and space-arg (list space-arg))
-                              (and (stgit-file-cr-from patched-file)
+                              (and (stgit-file->cr-from patched-file)
                                    (list (stgit-find-copies-harder-diff-arg)))
                               (cond ((eq patch-id :index)
                                      '("--cached"))
@@ -1626,10 +1628,10 @@ which stage to diff against in the case of unmerged files."
                                     (t
                                      (list (concat patch-id "^") patch-id)))
                               '("--")
-                              (if (stgit-file-copy-or-rename patched-file)
-                                  (list (stgit-file-cr-from patched-file)
-                                        (stgit-file-cr-to patched-file))
-                                (list (stgit-file-file patched-file))))))
+                              (if (stgit-file->copy-or-rename patched-file)
+                                  (list (stgit-file->cr-from patched-file)
+                                        (stgit-file->cr-to patched-file))
+                                (list (stgit-file->file patched-file))))))
            (apply 'stgit-run-git "diff" args)))
         ('patch
          (let* ((patch-id (stgit-id patch-name)))
@@ -1713,23 +1715,23 @@ file ended up. You can then jump to the file with \
   (stgit-assert-mode)
   (let* ((patched-file   (or (stgit-patched-file-at-point)
 			     (error "No file on the current line")))
-	 (patched-status (stgit-file-status patched-file)))
+	 (patched-status (stgit-file->status patched-file)))
     (when (eq patched-status 'unmerged)
       (error (substitute-command-keys "Use \\[stgit-resolve-file] to move an unmerged file to the index")))
     (let* ((patch      (stgit-patch-at-point))
-           (patch-name (stgit-patch-name patch))
+           (patch-name (stgit-patch->name patch))
            (mark-file  (if (eq patched-status 'rename)
-			   (stgit-file-cr-to patched-file)
-			 (stgit-file-file patched-file)))
+			   (stgit-file->cr-to patched-file)
+			 (stgit-file->file patched-file)))
            (point-file  (if (eq patched-status 'rename)
-                            (stgit-file-cr-from patched-file)
+                            (stgit-file->cr-from patched-file)
                           (stgit-neighbour-file))))
 
       (cond ((eq patch-name :work)
-             (stgit-move-change-to-index (stgit-file-file patched-file)
+             (stgit-move-change-to-index (stgit-file->file patched-file)
                                          (eq patched-status 'ignore)))
             ((eq patch-name :index)
-             (stgit-remove-change-from-index (stgit-file-file patched-file)))
+             (stgit-remove-change-from-index (stgit-file->file patched-file)))
             (t
              (error "Can only move files between working tree and index")))
       (stgit-refresh-worktree)
