@@ -316,6 +316,7 @@ Returns nil if there was no output."
          (stgit-dir default-directory)
          (inhibit-read-only t))
      (with-current-buffer output-buf
+       (buffer-disable-undo)
        (erase-buffer)
        (setq default-directory stgit-dir)
        (setq buffer-read-only t))
