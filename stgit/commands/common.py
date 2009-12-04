@@ -470,7 +470,7 @@ def update_commit_data(cd, options):
     """Return a new CommitData object updated according to the command line
     options."""
     # Set the commit message from commandline.
-    if options.message != None:
+    if options.message is not None:
         cd = cd.set_message(options.message)
 
     # Modify author data.
@@ -488,7 +488,7 @@ def update_commit_data(cd, options):
 
     # Let user edit the commit message manually, unless
     # --save-template or --message was specified.
-    if not getattr(options, 'save_template', None) and not options.message:
+    if not getattr(options, 'save_template', None) and options.message is None:
         cd = cd.set_message(edit_string(cd.message, '.stgit-new.txt'))
 
     return cd
