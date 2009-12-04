@@ -85,10 +85,35 @@ format characters are recognized:
 
   %e - The string \"(empty) \" if the patch is empty.
 
-  %d - The short patch description."
+  %d - The short patch description.
+
+  %D - The short patch description, or the patch name.
+
+When `stgit-show-patch-names' is non-nil, the `stgit-noname-patch-line-format'
+variable is used instead."
   :type 'string
   :group 'stgit
   :set 'stgit-set-default)
+
+(defcustom stgit-noname-patch-line-format "%s%m%e%D"
+  "The alternate format string used to format patch lines.
+It has the same semantics as `stgit-patch-line-format', and the
+display can be toggled between the two formats using
+\\<stgit-mode-map>>\\[stgit-toggle-patch-names].
+
+The alternate form is used when the patch name is hidden."
+  :type 'string
+  :group 'stgit
+  :set 'stgit-set-default)
+
+(defcustom stgit-default-show-patch-names t
+  "If non-nil, default to showing patch names in a new stgit buffer.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-patch-names] to toggle the
+this setting in an already-started StGit buffer."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-patch-names))
 
 (defcustom stgit-file-line-format "    %-11s %-2m %n   %c"
   "The format string used to format file lines.
@@ -241,6 +266,9 @@ directory DIR or `default-directory'"
          (start (point))
          (name (stgit-patch-name patch))
          (face (cdr (assq status stgit-patch-status-face-alist)))
+         (fmt (if stgit-show-patch-names
+                  stgit-patch-line-format
+                stgit-noname-patch-line-format))
          (spec (format-spec-make
                 ?s (case status
                      ('applied "+")
@@ -254,9 +282,12 @@ directory DIR or `default-directory'"
                                'syntax-table (string-to-syntax "w"))
                 ?e (if (stgit-patch-empty patch) "(empty) " "")
                 ?d (propertize (or (stgit-patch-desc patch) "")
-                               'face 'stgit-description-face))))
+                               'face 'stgit-description-face)
+                ?D (propertize (or (stgit-patch-desc patch)
+                                   (stgit-patch-display-name patch))
+                               'face face))))
 
-    (insert (format-spec stgit-patch-line-format spec) "\n")
+    (insert (format-spec fmt spec) "\n")
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files patch))
@@ -843,7 +874,8 @@ file for (applied) copies and renames."
             ("t" .        stgit-diff-theirs)))
     (suppress-keymap toggle-map)
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
-          '(("t" .        stgit-toggle-worktree)
+          '(("n" .        stgit-toggle-patch-names)
+            ("t" .        stgit-toggle-worktree)
             ("i" .        stgit-toggle-ignored)
             ("u" .        stgit-toggle-unknown)))
     (setq stgit-mode-map (make-keymap))
@@ -1004,6 +1036,8 @@ file for (applied) copies and renames."
          :selected stgit-show-unknown :active stgit-show-worktree]
         ["Show ignored files" stgit-toggle-ignored :style toggle
          :selected stgit-show-ignored :active stgit-show-worktree]
+        ["Show patch names" stgit-toggle-patch-names :style toggle
+         :selected stgit-show-patch-names]
         "-"
         ["Switch branches" stgit-branch t
          :help "Switch to another branch"]
@@ -1081,6 +1115,7 @@ Commands for files:
 \\[stgit-revert]	Revert changes to file
 
 Display commands:
+\\[stgit-toggle-patch-names]	Toggle showing patch names
 \\[stgit-toggle-worktree]	Toggle showing index and work tree
 \\[stgit-toggle-unknown]	Toggle showing unknown files
 \\[stgit-toggle-ignored]	Toggle showing ignored files
@@ -1106,6 +1141,7 @@ Commands for branches:
 
 Customization variables:
 `stgit-abbreviate-copies-and-renames'
+`stgit-default-show-patch-names'
 `stgit-default-show-worktree'
 `stgit-find-copies-harder'
 `stgit-show-worktree-mode'
@@ -1120,6 +1156,8 @@ See also \\[customize-group] for the \"stgit\" group."
   (set (make-local-variable 'list-buffers-directory) default-directory)
   (set (make-local-variable 'stgit-marked-patches) nil)
   (set (make-local-variable 'stgit-expanded-patches) (list :work :index))
+  (set (make-local-variable 'stgit-show-patch-names)
+       stgit-default-show-patch-names)
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
   (set (make-local-variable 'stgit-index-node) nil)
   (set (make-local-variable 'stgit-worktree-node) nil)
@@ -2021,6 +2059,9 @@ See also `stgit-show-worktree-mode'.")
 (defvar stgit-show-unknown nil
   "If nil, inhibit showing files not registered with git.")
 
+(defvar stgit-show-patch-names t
+  "If nil, inhibit showing patch names.")
+
 (defun stgit-toggle-worktree (&optional arg)
   "Toggle the visibility of the work tree.
 With ARG, show the work tree if ARG is positive.
@@ -2061,6 +2102,19 @@ Use \\[stgit-toggle-worktree] to show the work tree."
         (if (numberp arg)
             (> arg 0)
           (not stgit-show-unknown)))
+  (stgit-reload))
+
+(defun stgit-toggle-patch-names (&optional arg)
+  "Toggle the visibility of patch names. With ARG, show patch names
+if ARG is positive.
+
+The initial setting is controlled by `stgit-default-show-patch-names'."
+  (interactive)
+  (stgit-assert-mode)
+  (setq stgit-show-patch-names
+        (if (numberp arg)
+            (> arg 0)
+          (not stgit-show-patch-names)))
   (stgit-reload))
 
 (provide 'stgit)
