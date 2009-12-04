@@ -90,6 +90,22 @@ format characters are recognized:
   :group 'stgit
   :set 'stgit-set-default)
 
+(defcustom stgit-file-line-format "    %-11s %-2m %n   %c"
+  "The format string used to format file lines.
+The format string is passed to `format-spec' and the following
+format characters are recognized:
+
+  %s - A string describing the status of the file.
+
+  %m - Mode change information
+
+  %n - The file name.
+
+  %c - A description of file changes."
+  :type 'string
+  :group 'stgit
+  :set 'stgit-set-default)
+
 (defface stgit-branch-name-face
   '((t :inherit bold))
   "The face used for the StGit branch name"
@@ -457,12 +473,11 @@ Returns nil if there was no output."
                      stgit-file-status-code-strings))
          (score (stgit-file-cr-score file)))
     (when code
-      (format "%-11s  "
-              (if (and score (/= score 100))
-                  (format "%s %s" (cdr code)
-                          (propertize (format "%d%%" score)
-                                      'face 'stgit-description-face))
-                (cdr code))))))
+      (if (and score (/= score 100))
+          (format "%s %s" (cdr code)
+                  (propertize (format "%d%%" score)
+                              'face 'stgit-description-face))
+        (cdr code)))))
 
 (defun stgit-file-status-code (str &optional score)
   "Return stgit status code from git status string"
@@ -505,8 +520,8 @@ Cf. `stgit-file-type-string'."
           ((zerop old-type)
            (if (= new-type #o100)
                ""
-             (format "   (%s)" (stgit-file-type-string new-type))))
-          (t (format "   (%s -> %s)"
+             (format "(%s)" (stgit-file-type-string new-type))))
+          (t (format "(%s -> %s)"
                      (stgit-file-type-string old-type)
                      (stgit-file-type-string new-type))))))
 
@@ -579,23 +594,20 @@ Cf. `stgit-file-type-change-string'."
       (concat (stgit-file-cr-from file) arrow (stgit-file-cr-to file)))))
 
 (defun stgit-file-pp (file)
-  (let ((status (stgit-file-status file))
-        (name (if (stgit-file-copy-or-rename file)
-                  (stgit-describe-copy-or-rename file)
-                (stgit-file-file file)))
-        (mode-change (stgit-file-mode-change-string
-                      (stgit-file-old-perm file)
-                      (stgit-file-new-perm file)))
-        (start (point)))
-    (insert (format "    %-12s%s%s%s%s\n"
-                    (stgit-file-status-code-as-string file)
-                    mode-change
-                    (if (zerop (length mode-change)) "" " ")
-                    name
-                    (propertize (stgit-file-type-change-string
-                                 (stgit-file-old-perm file)
-                                 (stgit-file-new-perm file))
-                                'face 'stgit-description-face)))
+  (let ((start (point))
+        (spec (format-spec-make
+               ?s (stgit-file-status-code-as-string file)
+               ?m (stgit-file-mode-change-string
+                   (stgit-file-old-perm file)
+                   (stgit-file-new-perm file))
+               ?n (if (stgit-file-copy-or-rename file)
+                      (stgit-describe-copy-or-rename file)
+                    (stgit-file-file file))
+               ?c (propertize (stgit-file-type-change-string
+                               (stgit-file-old-perm file)
+                               (stgit-file-new-perm file))
+                              'face 'stgit-description-face))))
+    (insert (format-spec stgit-file-line-format spec) "\n")
     (add-text-properties start (point)
                          (list 'entry-type 'file
                                'file-data file))))
