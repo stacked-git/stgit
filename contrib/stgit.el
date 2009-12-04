@@ -373,6 +373,13 @@ Returns nil if there was no output."
 (defvar stgit-index-node)
 (defvar stgit-worktree-node)
 
+(defconst stgit-allowed-branch-name-re
+  ;; Disallow control characters, space, del, and "/:@^{}~" in
+  ;; "/"-separated parts; parts may not start with a period (.)
+  "^[^\0- ./:@^{}~\177][^\0- /:@^{}~\177]*\
+\\(/[^\0- ./:@^{}~\177][^\0- /:@^{}~\177]*\\)*$"
+  "Regular expression that (new) branch names must match.")
+
 (defun stgit-refresh-index ()
   (when stgit-index-node
     (ewoc-invalidate (car stgit-index-node) (cdr stgit-index-node))))
@@ -448,6 +455,12 @@ Returns nil if there was no output."
           stgit-marked-patches (intersection stgit-marked-patches
                                              all-patchsyms))))
 
+(defun stgit-current-branch ()
+  "Return the name of the current branch."
+  (substring (with-output-to-string
+               (stgit-run-silent "branch"))
+             0 -1))
+
 (defun stgit-reload ()
   "Update the contents of the StGit buffer."
   (interactive)
@@ -459,11 +472,8 @@ Returns nil if there was no output."
     (ewoc-filter stgit-ewoc #'(lambda (x) nil))
     (ewoc-set-hf stgit-ewoc
                  (concat "Branch: "
-                         (propertize
-                          (substring (with-output-to-string
-                                       (stgit-run-silent "branch"))
-                                     0 -1)
-                          'face 'stgit-branch-name-face)
+                         (propertize (stgit-current-branch)
+                                     'face 'stgit-branch-name-face)
                          "\n\n")
                  (if stgit-show-worktree
                      "--"
@@ -1088,7 +1098,7 @@ file for (applied) copies and renames."
          :selected stgit-show-patch-names]
         "-"
         ["Switch branches" stgit-branch t
-         :help "Switch to another branch"]
+         :help "Switch to or create another branch"]
         ["Rebase branch" stgit-rebase t
          :help "Rebase the current branch"]
         ))))
@@ -1184,7 +1194,7 @@ Commands for merge conflicts:
 \\[stgit-resolve-file]	Mark unmerged file as resolved
 
 Commands for branches:
-\\[stgit-branch]	Switch to another branch
+\\[stgit-branch]	Switch to or create another branch
 \\[stgit-rebase]	Rebase the current branch
 
 Customization variables:
@@ -1393,24 +1403,38 @@ was modified with git commands (`stgit-repair')."
     (stgit-run "repair"))
   (stgit-reload))
 
-(defun stgit-available-branches ()
-  "Returns a list of the available stg branches"
+(defun stgit-available-branches (&optional all)
+  "Returns a list of the names of the available stg branches as strings.
+
+If ALL is not nil, also return non-stgit branches."
   (let ((output (with-output-to-string
                   (stgit-run "branch" "--list")))
+        (pattern (format "^>?\\s-+%c\\s-+\\(\\S-+\\)"
+                         (if all ?. ?s)))
         (start 0)
         result)
-    (while (string-match "^>?\\s-+s\\s-+\\(\\S-+\\)" output start)
+    (while (string-match pattern output start)
       (setq result (cons (match-string 1 output) result))
       (setq start (match-end 0)))
     result))
 
 (defun stgit-branch (branch)
-  "Switch to branch BRANCH."
+  "Switch to or create branch BRANCH."
   (interactive (list (completing-read "Switch to branch: "
                                       (stgit-available-branches))))
   (stgit-assert-mode)
-  (stgit-capture-output nil (stgit-run "branch" "--" branch))
-  (stgit-reload))
+  (when (cond ((equal branch (stgit-current-branch))
+               (error "Branch is already current"))
+              ((member branch (stgit-available-branches t))
+               (stgit-capture-output nil (stgit-run "branch" "--" branch))
+               t)
+              ((not (string-match stgit-allowed-branch-name-re branch))
+               (error "Invalid branch name"))
+              ((yes-or-no-p (format "Create branch \"%s\"? " branch))
+               (stgit-capture-output nil (stgit-run "branch" "--create" "--"
+                                                    branch))
+               t))
+    (stgit-reload)))
 
 (defun stgit-available-refs (&optional omit-stgit)
   "Returns a list of the available git refs.
