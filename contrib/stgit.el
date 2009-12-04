@@ -262,6 +262,13 @@ directory DIR or `default-directory'"
       (:work "Work Tree")
       (t (symbol-name name)))))
 
+(defun stgit-insert-without-trailing-whitespace (text)
+  "Insert TEXT in buffer using `insert', without trailing whitespace.
+A newline is appended."
+  (unless (string-match "\\(.*?\\) *$" text)
+    (error))
+  (insert (match-string 1 text) ?\n))
+
 (defun stgit-patch-pp (patch)
   (let* ((status (stgit-patch->status patch))
          (start (point))
@@ -286,9 +293,10 @@ directory DIR or `default-directory'"
                                'face 'stgit-description-face)
                 ?D (propertize (or (stgit-patch->desc patch)
                                    (stgit-patch-display-name patch))
-                               'face face))))
+                               'face face)))
+         (text (format-spec fmt spec)))
 
-    (insert (format-spec fmt spec) "\n")
+    (stgit-insert-without-trailing-whitespace text)
     (put-text-property start (point) 'entry-type 'patch)
     (when (memq name stgit-expanded-patches)
       (stgit-insert-patch-files patch))
@@ -651,7 +659,8 @@ Cf. `stgit-file-type-change-string'."
                                (stgit-file->old-perm file)
                                (stgit-file->new-perm file))
                               'face 'stgit-description-face))))
-    (insert (format-spec stgit-file-line-format spec) "\n")
+    (stgit-insert-without-trailing-whitespace
+     (format-spec stgit-file-line-format spec))
     (add-text-properties start (point)
                          (list 'entry-type 'file
                                'file-data file))))
