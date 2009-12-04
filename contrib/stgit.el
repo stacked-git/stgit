@@ -2050,18 +2050,29 @@ deepest patch had before the squash."
   (interactive)
   (describe-function 'stgit-mode))
 
+(defun stgit-undo-or-redo (redo hard)
+  "Run stg undo or, if REDO is non-nil, stg redo.
+
+If HARD is non-nil, use the --hard flag."
+  (stgit-assert-mode)
+  (let ((cmd (if redo "redo" "undo")))
+    (stgit-capture-output nil
+      (if arg
+          (when (or (and (stgit-index-empty-p)
+                         (stgit-work-tree-empty-p))
+                    (y-or-n-p (format "Hard %s may overwrite index/work tree changes. Continue? "
+                                      cmd)))
+            (stgit-run cmd "--hard"))
+        (stgit-run cmd))))
+  (stgit-reload))
+
 (defun stgit-undo (&optional arg)
   "Run stg undo.
 With prefix argument, run it with the --hard flag.
 
 See also `stgit-redo'."
   (interactive "P")
-  (stgit-assert-mode)
-  (stgit-capture-output nil
-    (if arg
-        (stgit-run "undo" "--hard")
-      (stgit-run "undo")))
-  (stgit-reload))
+  (stgit-undo-or-redo nil arg))
 
 (defun stgit-redo (&optional arg)
   "Run stg redo.
@@ -2069,12 +2080,7 @@ With prefix argument, run it with the --hard flag.
 
 See also `stgit-undo'."
   (interactive "P")
-  (stgit-assert-mode)
-  (stgit-capture-output nil
-    (if arg
-        (stgit-run "redo" "--hard")
-      (stgit-run "redo")))
-  (stgit-reload))
+  (stgit-undo-or-redo t arg))
 
 (defun stgit-refresh (&optional arg)
   "Run stg refresh.
