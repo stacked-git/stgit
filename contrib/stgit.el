@@ -291,8 +291,10 @@ A newline is appended."
                 ?e (if (stgit-patch->empty patch) "(empty) " "")
                 ?d (propertize (or (stgit-patch->desc patch) "")
                                'face 'stgit-description-face)
-                ?D (propertize (or (stgit-patch->desc patch)
-                                   (stgit-patch-display-name patch))
+                ?D (propertize (let ((desc (stgit-patch->desc patch)))
+                                 (if (zerop (length desc))
+                                   (stgit-patch-display-name patch)
+                                   desc))
                                'face face)))
          (text (format-spec fmt spec)))
 
