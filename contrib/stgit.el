@@ -1619,23 +1619,32 @@ tree, or a single change in either."
 
     (stgit-reload)))
 
+(defun stgit-push-or-pop-patches (do-push npatches)
+  "Push (if DO-PUSH is not nil) or pop (if DO-PUSH is nil)
+NPATCHES patches, or all patches if NPATCHES is t."
+  (stgit-assert-mode)
+  (stgit-capture-output nil
+    (apply 'stgit-run
+           (if do-push "push" "pop")
+           (if (eq npatches t)
+               '("--all")
+             (list "-n" npatches))))
+  (stgit-reload)
+  (stgit-refresh-git-status))
+
 (defun stgit-push-next (npatches)
   "Push the first unapplied patch.
 With numeric prefix argument, push that many patches."
   (interactive "p")
-  (stgit-assert-mode)
-  (stgit-capture-output nil (stgit-run "push" "-n" npatches))
-  (stgit-reload)
-  (stgit-refresh-git-status))
+  (stgit-push-or-pop-patches t npatches))
 
 (defun stgit-pop-next (npatches)
   "Pop the topmost applied patch.
-With numeric prefix argument, pop that many patches."
+With numeric prefix argument, pop that many patches.
+
+If NPATCHES is t, pop all patches."
   (interactive "p")
-  (stgit-assert-mode)
-  (stgit-capture-output nil (stgit-run "pop" "-n" npatches))
-  (stgit-reload)
-  (stgit-refresh-git-status))
+  (stgit-push-or-pop-patches nil npatches))
 
 (defun stgit-applied-patches (&optional only-patches)
   "Return a list of the applied patches.
@@ -1670,16 +1679,33 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
              (stgit-sort-patches (if unapplied unapplied patchsyms)))))
   (stgit-reload))
 
+(defun stgit-goto-target ()
+  "Return the goto target a point; either a patchsym, :top,
+or :bottom."
+  (let ((patchsym (stgit-patch-name-at-point)))
+    (cond ((memq patchsym '(:work :index)) nil)
+          (patchsym)
+          ((not (next-single-property-change (point) 'patch-data))
+           :top)
+          ((not (previous-single-property-change (point) 'patch-data))
+           :bottom))))
+
 (defun stgit-goto ()
   "Go to the patch on the current line.
 
-Pops or pushes patches to make this patch topmost."
+Push or pop patches to make this patch topmost. Push or pop all
+patches if used on a line after or before all patches."
   (interactive)
   (stgit-assert-mode)
-  (let ((patchsym (stgit-patch-name-at-point t)))
-    (stgit-capture-output nil
-      (stgit-run "goto" patchsym))
-    (stgit-reload)))
+  (let ((patchsym (stgit-goto-target)))
+    (unless patchsym
+      (error "No patch to go to on this line"))
+    (case patchsym
+      (:top    (stgit-push-or-pop-patches t t))
+      (:bottom (stgit-push-or-pop-patches nil t))
+      (t (stgit-capture-output nil
+           (stgit-run "goto" patchsym))
+         (stgit-reload)))))
 
 (defun stgit-id (patchsym)
   "Return the git commit id for PATCHSYM.
