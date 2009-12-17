@@ -26,7 +26,7 @@ fi
 TOPATCH="$1"
 shift
 
-stg applied | grep "^$TOPATCH\$" >/dev/null ||
+stg series --applied --noprefix | grep "^$TOPATCH\$" >/dev/null ||
     die "cannot dispatch to unapplied patch '$TOPATCH'"
 
 CURRENTPATCH=$(stg top)
