@@ -1718,16 +1718,17 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
 	(error "Cannot find commit id for %s" patchsym))
       (match-string 1 result))))
 
+(defun stgit-whitespace-diff-arg (arg)
+  (when (numberp arg)
+    (cond ((> arg 4) "--ignore-all-space")
+          ((> arg 1) "--ignore-space-change"))))
+
 (defun stgit-show-patch (unmerged-stage ignore-whitespace)
   "Show the patch on the current line.
 
 UNMERGED-STAGE is the argument to `git-diff' that that selects
 which stage to diff against in the case of unmerged files."
-  (let ((space-arg (when (numberp ignore-whitespace)
-                     (cond ((> ignore-whitespace 4)
-                            "--ignore-all-space")
-                           ((> ignore-whitespace 1)
-                            "--ignore-space-change"))))
+  (let ((space-arg (stgit-whitespace-diff-arg ignore-whitespace))
         (patch-name (stgit-patch-name-at-point t)))
     (stgit-capture-output "*StGit patch*"
       (case (get-text-property (point) 'entry-type)
