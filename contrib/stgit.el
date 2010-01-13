@@ -2022,11 +2022,12 @@ patches."
                 (t (setq result :bottom)))))
       result)))
 
-(defun stgit-sort-patches (patchsyms)
+(defun stgit-sort-patches (patchsyms &optional allow-duplicates)
   "Returns the list of patches in PATCHSYMS sorted according to
 their position in the patch series, bottommost first.
 
-PATCHSYMS must not contain duplicate entries."
+PATCHSYMS must not contain duplicate entries, unless
+ALLOW-DUPLICATES is not nil."
   (let (sorted-patchsyms
         (series (with-output-to-string
                   (with-current-buffer standard-output
@@ -2039,8 +2040,9 @@ PATCHSYMS must not contain duplicate entries."
       (setq start (match-end 0)))
     (setq sorted-patchsyms (nreverse sorted-patchsyms))
 
-    (unless (= (length patchsyms) (length sorted-patchsyms))
-      (error "Internal error"))
+    (unless allow-duplicates
+      (unless (= (length patchsyms) (length sorted-patchsyms))
+        (error "Internal error")))
 
     sorted-patchsyms))
 
