@@ -940,6 +940,7 @@ file for (applied) copies and renames."
             ("c" .        stgit-diff-combined)
             ("m" .        stgit-find-file-merge)
             ("o" .        stgit-diff-ours)
+            ("r" .        stgit-diff-range)
             ("t" .        stgit-diff-theirs)))
     (suppress-keymap toggle-map)
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
@@ -1077,6 +1078,8 @@ file for (applied) copies and renames."
         "-"
         ["Show diff" stgit-diff
          :active (get-text-property (point) 'entry-type)]
+        ["Show diff for range of applied patches" stgit-diff-range
+         :active (= (length stgit-marked-patches) 1)]
         ("Merge"
          :active (stgit-git-index-unmerged-p)
          ["Combined diff" stgit-diff-combined
@@ -1191,6 +1194,7 @@ Display commands:
 
 Commands for diffs:
 \\[stgit-diff]	Show diff of patch or file
+\\[stgit-diff-range]	Show diff for range of patches
 \\[stgit-diff-base]	Show diff against the merge base
 \\[stgit-diff-ours]	Show diff against our branch
 \\[stgit-diff-theirs]	Show diff against their branch
@@ -1803,6 +1807,35 @@ greater than four (e.g., \\[universal-argument] \
 (stgit-define-diff stgit-diff-combined
                    "--cc"
                    "show a combined diff")
+
+(defun stgit-diff-range (&optional ignore-whitespace)
+  "Show diff for the range of patches between point and the marked patch.
+
+With a prefix argument, ignore whitespace. With a prefix argument
+greater than four (e.g., \\[universal-argument] \
+\\[universal-argument] \\[stgit-diff-range]), ignore all whitespace."
+  (interactive "p")
+  (stgit-assert-mode)
+  (unless (= (length stgit-marked-patches) 1)
+    (error "Need exactly one patch marked"))
+  (let* ((patches (stgit-sort-patches (cons (stgit-patch-name-at-point t t)
+                                            stgit-marked-patches)
+                                      t))
+         (first-patch (car patches))
+         (second-patch (if (cdr patches) (cadr patches) first-patch))
+         (whitespace-arg (stgit-whitespace-diff-arg ignore-whitespace))
+         (applied (stgit-applied-patchsyms t)))
+    (unless (and (memq first-patch applied) (memq second-patch applied))
+      (error "Can only show diff range for applied patches"))
+    (stgit-capture-output (format "*StGit diff %s..%s*"
+                                  first-patch second-patch)
+      (apply 'stgit-run-git (append '("diff" "--patch-with-stat")
+                                    (and whitespace-arg (list whitespace-arg))
+                                    (list (format "%s^" (stgit-id first-patch))
+                                          (stgit-id second-patch))))
+      (with-current-buffer standard-output
+        (goto-char (point-min))
+        (diff-mode)))))
 
 (defun stgit-move-change-to-index (file &optional force)
   "Copies the work tree state of FILE to index, using git add or git rm.
