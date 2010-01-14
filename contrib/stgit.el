@@ -317,6 +317,8 @@ Argument DIR is the repository path."
       (setq buffer-read-only t))
     buf))
 
+(def-edebug-spec stgit-capture-output
+  (form body))
 (defmacro stgit-capture-output (name &rest body)
   "Capture StGit output and, if there was any output, show it in a window
 at the end.
