@@ -1660,8 +1660,10 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
                     '(applied top)
                   '(applied top index work)))
         result)
-    (ewoc-map (lambda (patch) (when (memq (stgit-patch->status patch) states)
-                                (setq result (cons patch result))))
+    (ewoc-map (lambda (patch)
+                (when (memq (stgit-patch->status patch) states)
+                  (setq result (cons patch result)))
+                nil)
               stgit-ewoc)
     result))
 
