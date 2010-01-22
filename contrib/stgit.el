@@ -385,6 +385,10 @@ Returns nil if there was no output."
 (defvar stgit-index-node)
 (defvar stgit-worktree-node)
 
+(defvar stgit-did-advise nil
+  "Set to non-nil if appropriate (non-stgit) git functions have
+been advised to update the stgit status when necessary.")
+
 (defconst stgit-allowed-branch-name-re
   ;; Disallow control characters, space, del, and "/:@^{}~" in
   ;; "/"-separated parts; parts may not start with a period (.)
@@ -1238,18 +1242,53 @@ See also \\[customize-group] for the \"stgit\" group."
   (set (make-local-variable 'stgit-worktree-node) nil)
   (set (make-local-variable 'parse-sexp-lookup-properties) t)
   (set-variable 'truncate-lines 't)
-  (add-hook 'after-save-hook 'stgit-update-saved-file)
+  (add-hook 'after-save-hook 'stgit-update-stgit-for-buffer)
+  (unless stgit-did-advise
+    (stgit-advise)
+    (setq stgit-did-advise t))
   (run-hooks 'stgit-mode-hook))
 
-(defun stgit-update-saved-file ()
-  (let* ((file (expand-file-name buffer-file-name))
-         (dir (file-name-directory file))
-         (gitdir (condition-case nil (git-get-top-dir dir)
-                   (error nil)))
+(defun stgit-advise-funlist (funlist)
+  "Add advice to the functions in FUNLIST so we can refresh the
+stgit buffers as the git status of files change."
+  (mapc (lambda (sym)
+          (when (fboundp sym)
+            (eval `(defadvice ,sym (after stgit-update-stgit-for-buffer)
+                     (stgit-update-stgit-for-buffer t)))
+            (ad-activate sym)))
+        funlist))
+
+(defun stgit-advise ()
+  "Add advice to appropriate (non-stgit) git functions so we can
+refresh the stgit buffers as the git status of files change."
+  (mapc (lambda (arg)
+          (let ((feature (car arg))
+                (funlist (cdr arg)))
+            (if (featurep feature)
+                (stgit-advise-funlist funlist)
+              (add-to-list 'after-load-alist
+                           `(,feature (stgit-advise-funlist
+                                       (quote ,funlist)))))))
+        '((vc-git vc-git-rename-file vc-git-revert vc-git-register)
+          (git    git-add-file git-checkout git-revert-file git-remove-file))))
+
+(defun stgit-update-stgit-for-buffer (&optional refresh-index)
+  "Refresh worktree status in any `stgit-mode' buffer that shows
+the status of the current buffer.
+
+If REFRESH-INDEX is not-nil, also update the index."
+  (let* ((dir (cond ((eq major-mode 'git-status-mode)
+                     default-directory)
+                    (buffer-file-name
+                     (file-name-directory
+                      (expand-file-name buffer-file-name)))))
+         (gitdir (and dir (condition-case nil (git-get-top-dir dir)
+                            (error nil))))
 	 (buffer (and gitdir (stgit-find-buffer gitdir))))
     (when buffer
       (with-current-buffer buffer
-        (stgit-refresh-worktree)))))
+        (stgit-refresh-worktree)
+        (when refresh-index (stgit-refresh-index))))))
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
