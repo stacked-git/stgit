@@ -742,6 +742,8 @@ at point."
       (let ((standard-output (current-buffer)))
         (apply 'stgit-run-git
                (cond ((eq patchsym :work)
+                      (let (standard-output)
+                        (stgit-run-git "update-index" "--refresh"))
                       `("diff-files" "-0" ,@args))
                      ((eq patchsym :index)
                       `("diff-index" ,@args "--cached" "HEAD"))
