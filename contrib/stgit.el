@@ -43,7 +43,8 @@ instead of \"dir/old/file -> dir/new/file\"."
 (defcustom stgit-default-show-worktree t
   "Set to non-nil to by default show the working tree in a new stgit buffer.
 
-Use \\<stgit-mode-map>\\[stgit-toggle-worktree] to toggle the this setting in an already-started StGit buffer."
+Use \\<stgit-mode-map>\\[stgit-toggle-worktree] to toggle the
+this setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-worktree))
@@ -1350,7 +1351,9 @@ PATCHSYM."
     (when (and node file)
       (let* ((file-ewoc (stgit-patch->files-ewoc (ewoc-data node)))
              (file-node (ewoc-nth file-ewoc 0)))
-        (while (and file-node (not (equal (stgit-file->file (ewoc-data file-node)) file)))
+        (while (and file-node
+                    (not (equal (stgit-file->file (ewoc-data file-node))
+                                file)))
           (setq file-node (ewoc-next file-ewoc file-node)))
         (when file-node
           (ewoc-goto-node file-ewoc file-node)
