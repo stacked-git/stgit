@@ -25,7 +25,7 @@ from stgit.lib import git, transaction
 
 help = 'Squash two or more patches into one'
 kind = 'stack'
-usage = ['[options] <patches>']
+usage = ['[options] [--] <patches>']
 description = """
 Squash two or more patches, creating one big patch that contains all
 their changes. In more detail:

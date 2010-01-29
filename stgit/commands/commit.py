@@ -24,7 +24,7 @@ from stgit import argparse
 help = 'Permanently store the applied patches into the stack base'
 kind = 'stack'
 usage = ['',
-         '<patchnames>',
+         '[--] <patchnames>',
          '-n NUM',
          '--all']
 description = """

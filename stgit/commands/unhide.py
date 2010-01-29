@@ -22,7 +22,7 @@ from stgit.argparse import opt
 
 help = 'Unhide a hidden patch'
 kind = 'stack'
-usage = ['[options] <patch-range>']
+usage = ['[options] [--] <patch-range>']
 description = """
 Unhide a hidden range of patches so that they are shown in the plain
 'stg series' command output."""

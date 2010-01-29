@@ -26,7 +26,7 @@ from stgit.out import *
 
 help = 'edit a patch description or diff'
 kind = 'patch'
-usage = ['[options] [<patch>]']
+usage = ['[options] [--] [<patch>]']
 description = """
 Edit the description and author information of the given patch (or the
 current patch if no patch name was given). With --diff, also edit the

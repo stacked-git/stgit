@@ -25,7 +25,7 @@ from stgit import argparse
 
 help = 'Print the patch series'
 kind = 'stack'
-usage = ['[options] [<patch-range>]']
+usage = ['[options] [--] [<patch-range>]']
 description = """
 Show all the patches in the series, or just those in the given range,
 ordered from top to bottom.

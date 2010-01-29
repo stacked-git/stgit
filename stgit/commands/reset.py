@@ -25,7 +25,7 @@ from stgit import argparse
 
 help = 'Reset the patch stack to an earlier state'
 kind = 'stack'
-usage = ['[options] <state> [<patchnames>]']
+usage = ['[options] [--] <state> [<patchnames>]']
 description = """
 Reset the patch stack to an earlier state. The state is specified with
 a commit id from a stack log; "stg log" lets you view this log, and

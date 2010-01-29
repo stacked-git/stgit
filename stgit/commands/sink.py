@@ -23,7 +23,7 @@ from stgit import argparse
 
 help = 'Send patches deeper down the stack'
 kind = 'stack'
-usage = ['[-t <target patch>] [-n] [<patches>]']
+usage = ['[-t <target patch>] [-n] [--] [<patches>]']
 description = """
 This is the opposite operation of linkstg:float[]: move the specified
 patches down the stack.  It is for example useful to group stable

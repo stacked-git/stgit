@@ -23,7 +23,7 @@ from stgit.config import config
 
 help = 'Create a new, empty patch'
 kind = 'patch'
-usage = ['[options] [<name>]']
+usage = ['[options] [--] [<name>]']
 description = """
 Create a new, empty patch on the current stack. The new patch is
 created on top of the currently applied patches, and is made the new

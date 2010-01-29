@@ -25,7 +25,7 @@ from stgit import argparse, stack, git
 
 help = 'Pull changes from a remote repository'
 kind = 'stack'
-usage = ['[options] [<repository>]']
+usage = ['[options] [--] [<repository>]']
 description = """
 Pull the latest changes from the given remote repository (defaulting
 to branch.<name>.remote, or 'origin' if not set). This command works

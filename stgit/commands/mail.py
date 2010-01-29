@@ -28,7 +28,7 @@ from stgit.lib import git as gitlib
 
 help = 'Send a patch or series of patches by e-mail'
 kind = 'patch'
-usage = [' [options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+usage = [' [options] [--] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = r"""
 Send a patch or a range of patches by e-mail using the SMTP server
 specified by the 'stgit.smtpserver' configuration option, or the

@@ -22,7 +22,7 @@ from stgit import argparse
 
 help = 'Print the git hash value of a StGit reference'
 kind = 'repo'
-usage = ['[options] [id]']
+usage = ['[options] [--] [<id>]']
 description = """
 Print the SHA1 value of a Git id (defaulting to HEAD). In addition to the
 standard Git id's like heads and tags, this command also accepts

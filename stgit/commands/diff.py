@@ -27,7 +27,7 @@ from stgit.lib import git as gitlib
 
 help = 'Show the tree diff'
 kind = 'wc'
-usage = ['[options] [<files or dirs>]']
+usage = ['[options] [--] [<files or dirs>]']
 description = """
 Show the diff (default) or diffstat between the current working copy
 or a tree-ish object and another tree-ish object (defaulting to HEAD).

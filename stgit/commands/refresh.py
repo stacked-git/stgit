@@ -26,7 +26,7 @@ from stgit import argparse, utils
 
 help = 'Generate a new commit for the current patch'
 kind = 'patch'
-usage = ['[options] [<files or dirs>]']
+usage = ['[options] [--] [<files or dirs>]']
 description = """
 Include the latest work tree and index changes in the current patch.
 This command generates a new git commit object for the patch; the old

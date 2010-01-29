@@ -23,7 +23,7 @@ from stgit.argparse import opt
 
 help = 'Push one or more patches onto the stack'
 kind = 'stack'
-usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+usage = ['[options] [--] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Push one or more patches (defaulting to the first unapplied one) onto
 the stack. The 'push' operation allows patch reordering by commuting

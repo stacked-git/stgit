@@ -28,7 +28,7 @@ from stgit.lib import git as gitlib
 
 help = 'Export patches to a directory'
 kind = 'patch'
-usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+usage = ['[options] [--] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Export a range of applied patches to a given directory (defaults to
 'patches-<branch>') in a standard unified GNU diff format. A template

@@ -26,7 +26,7 @@ from stgit.lib import git as gitlib
 
 help = 'Show the files modified by a patch (or the current patch)'
 kind = 'patch'
-usage = ['[options] [[<branch>:]<patch>]']
+usage = ['[options] [--] [[<branch>:]<patch>]']
 description = """
 List the files modified by the given patch (defaulting to the current
 one). Passing the '--stat' option shows the diff statistics for the

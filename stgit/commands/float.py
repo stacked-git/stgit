@@ -25,7 +25,7 @@ from stgit import argparse
 
 help = 'Push patches to the top, even if applied'
 kind = 'stack'
-usage = ['<patches>',
+usage = ['[--] <patches>',
          '-s <series>']
 description = """
 Push a patch or a range of patches to the top even if applied. The

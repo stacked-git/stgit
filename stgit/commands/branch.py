@@ -26,15 +26,15 @@ from stgit.lib import log
 help = 'Branch operations: switch, list, create, rename, delete, ...'
 kind = 'stack'
 usage = ['',
-         '<branch>',
+         '[--] <branch>',
          '--list',
-         '--create <new-branch> [<committish>]',
-         '--clone [<new-branch>]',
-         '--rename <old-name> <new-name>',
-         '--protect [<branch>]',
-         '--unprotect [<branch>]',
-         '--delete [--force] <branch>',
-         '--description=<description> [<branch>]']
+         '--create [--] <new-branch> [<committish>]',
+         '--clone [--] [<new-branch>]',
+         '--rename [--] <old-name> <new-name>',
+         '--protect [--] [<branch>]',
+         '--unprotect [--] [<branch>]',
+         '--delete [--force] [--] <branch>',
+         '--description=<description> [--] [<branch>]']
 description = """
 Create, clone, switch between, rename, or delete development branches
 within a git repository.

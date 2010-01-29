@@ -23,7 +23,7 @@ from stgit import argparse
 
 help = 'Delete patches'
 kind = 'patch'
-usage = ['[options] <patch1> [<patch2>] [<patch3>..<patch4>]']
+usage = ['[options] [--] <patch1> [<patch2>] [<patch3>..<patch4>]']
 description = """
 Delete the patches passed as arguments."""
 

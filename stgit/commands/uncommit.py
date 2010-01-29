@@ -25,8 +25,8 @@ from stgit import argparse, utils
 
 help = 'Turn regular git commits into StGit patches'
 kind = 'stack'
-usage = ['<patch-name-1> [<patch-name-2> ...]',
-         '-n NUM [<prefix>]',
+usage = ['[--] <patch-name-1> [<patch-name-2> ...]',
+         '-n NUM [--] [<prefix>]',
          '-t <committish> [-x]']
 description = """
 Take one or more git commits at the base of the current stack and turn

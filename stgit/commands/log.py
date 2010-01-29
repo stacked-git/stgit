@@ -28,7 +28,7 @@ from stgit.out import out
 
 help = 'Display the patch changelog'
 kind = 'stack'
-usage = ['[options] [<patches>]']
+usage = ['[options] [--] [<patches>]']
 description = """
 List the history of the patch stack: the stack log. If one or more
 patch names are given, limit the list to the log entries that touch

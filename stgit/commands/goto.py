@@ -22,7 +22,7 @@ from stgit.argparse import opt
 
 help = 'Push or pop patches to the given one'
 kind = 'stack'
-usage = ['<patch-name>']
+usage = ['[options] [--] <patch-name>']
 description = """
 Push/pop patches to/from the stack until the one given on the command
 line becomes current."""

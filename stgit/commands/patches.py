@@ -25,7 +25,7 @@ from stgit import argparse, stack, git
 
 help = 'Show the applied patches modifying a file'
 kind = 'stack'
-usage = ['[options] [<files or dirs>]']
+usage = ['[options] [--] [<files or dirs>]']
 description = """
 Show the applied patches modifying the given files. Without arguments,
 it shows the patches affected by the local tree modifications. The

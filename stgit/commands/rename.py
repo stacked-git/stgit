@@ -24,7 +24,7 @@ from stgit import argparse, stack, git
 
 help = 'Rename a patch'
 kind = 'patch'
-usage = ['[options] [oldpatch] <newpatch>']
+usage = ['[options] [--] [oldpatch] <newpatch>']
 description = """
 Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not
 given, the top-most patch will be renamed."""

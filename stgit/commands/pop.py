@@ -23,7 +23,7 @@ from stgit.argparse import opt
 
 help = 'Pop one or more patches from the stack'
 kind = 'stack'
-usage = ['[options] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
+usage = ['[options] [--] [<patch1>] [<patch2>] [<patch3>..<patch4>]']
 description = """
 Pop the topmost patch or a range of patches from the stack. The
 command fails if there are conflicts or local changes (and --keep was

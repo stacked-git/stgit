@@ -25,7 +25,7 @@ from stgit import utils
 
 help = 'Push the stack changes to a merge-friendly branch'
 kind = 'stack'
-usage = ['[options] [branch]']
+usage = ['[options] [--] [branch]']
 description = """
 This command commits a set of changes on a separate (called public) branch
 based on the modifications of the given or current stack. The history of the
