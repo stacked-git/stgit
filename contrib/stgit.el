@@ -1434,7 +1434,7 @@ PATCHSYM."
   (stgit-assert-mode)
   (let ((old-patchsym (stgit-patch-name-at-point t t)))
     (stgit-capture-output nil
-      (stgit-run "rename" old-patchsym name))
+      (stgit-run "rename" "--" old-patchsym name))
     (let ((name-sym (intern name)))
       (when (memq old-patchsym stgit-expanded-patches)
         (setq stgit-expanded-patches
@@ -1535,7 +1535,7 @@ what git-config branch.<branch>.stgit.parentbranch is set to."
                                       nil nil
                                       (stgit-parent-branch))))
   (stgit-assert-mode)
-  (stgit-capture-output nil (stgit-run "rebase" new-base))
+  (stgit-capture-output nil (stgit-run "rebase" "--" new-base))
   (stgit-reload))
 
 (defun stgit-commit (count)
@@ -1756,7 +1756,7 @@ patches if used on a line after or before all patches."
       (:top    (stgit-push-or-pop-patches t t))
       (:bottom (stgit-push-or-pop-patches nil t))
       (t (stgit-capture-output nil
-           (stgit-run "goto" patchsym))
+           (stgit-run "goto" "--" patchsym))
          (stgit-reload)))))
 
 (defun stgit-id (patchsym)
@@ -1765,7 +1765,7 @@ If PATCHSYM is a keyword, returns PATCHSYM unmodified."
   (if (keywordp patchsym)
       patchsym
     (let ((result (with-output-to-string
-		    (stgit-run-silent "id" patchsym))))
+		    (stgit-run-silent "id" "--" patchsym))))
       (unless (string-match "^\\([0-9A-Fa-f]\\{40\\}\\)$" result)
 	(error "Cannot find commit id for %s" patchsym))
       (match-string 1 result))))
@@ -1818,6 +1818,7 @@ which stage to diff against in the case of unmerged files."
                                 (list unmerged-stage))))
              (let ((args (append '("show" "-O" "--patch-with-stat" "-O" "-M")
                                  (and space-arg (list "-O" space-arg))
+                                 '("--")
                                  (list (stgit-patch-name-at-point)))))
                (apply 'stgit-run args)))))
         (t
@@ -1984,14 +1985,14 @@ file ended up. You can then jump to the file with \
     (setq default-directory dir)
     (let ((standard-output edit-buf))
       (save-excursion
-        (stgit-run-silent "edit" "--save-template=-" patchsym)))))
+        (stgit-run-silent "edit" "--save-template=-" "--" patchsym)))))
 
 (defun stgit-confirm-edit ()
   (interactive)
   (let ((file (make-temp-file "stgit-edit-")))
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
-      (stgit-run "edit" "-f" file stgit-edit-patchsym))
+      (stgit-run "edit" "-f" file "--" stgit-edit-patchsym))
     (with-current-buffer log-edit-parent-buffer
       (stgit-reload))))
 
@@ -2076,9 +2077,9 @@ the work tree and index."
                                (if spill-p
                                    " (spilling contents to index)"
                                  "")))
-      (let ((args (if spill-p 
-                      (cons "--spill" patchsyms)
-                    patchsyms)))
+      (let ((args (append (when spill-p '("--spill"))
+                          '("--")
+                          patchsyms)))
         (stgit-capture-output nil
           (apply 'stgit-run "delete" args))
         (stgit-reload)))))
@@ -2146,7 +2147,7 @@ Interactively, move the marked patches to where the point is."
   (let ((sorted-patchsyms (stgit-sort-patches patchsyms)))
     (stgit-capture-output nil
       (if (eq target-patch :top)
-          (apply 'stgit-run "float" sorted-patchsyms)
+          (apply 'stgit-run "float" "--" sorted-patchsyms)
         (apply 'stgit-run
                "sink"
                (append (unless (eq target-patch :bottom)
@@ -2176,7 +2177,7 @@ deepest patch had before the squash."
     (let ((result (let ((standard-output edit-buf))
                     (save-excursion
                       (apply 'stgit-run-silent "squash"
-                             "--save-template=-" sorted-patchsyms)))))
+                             "--save-template=-" "--" sorted-patchsyms)))))
 
       ;; stg squash may have reordered the patches or caused conflicts
       (with-current-buffer stgit-buffer
@@ -2194,7 +2195,7 @@ deepest patch had before the squash."
   (let ((file (make-temp-file "stgit-edit-")))
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
-      (apply 'stgit-run "squash" "-f" file stgit-patchsyms))
+      (apply 'stgit-run "squash" "-f" file "--" stgit-patchsyms))
     (with-current-buffer log-edit-parent-buffer
       (stgit-clear-marks)
       ;; Go to first marked patch and stay there
