@@ -1006,7 +1006,8 @@ file for (applied) copies and renames."
             ("\C-c\C-b" . stgit-rebase)
             ("t" .        ,toggle-map)
             ("d" .        ,diff-map)
-            ("q" .        stgit-quit))))
+            ("q" .        stgit-quit)
+            ("!" .        stgit-execute))))
 
   (let ((at-unmerged-file '(let ((file (stgit-patched-file-at-point)))
                              (and file (eq (stgit-file->status file)
@@ -1147,6 +1148,8 @@ Basic commands:
 \\[stgit-redo]	Undo recent undo
 
 \\[stgit-git-status]	Run `git-status' (if available)
+
+\\[stgit-execute]	Run an stg shell command
 
 Movement commands:
 \\[stgit-previous-line]	Move to previous line
@@ -2210,6 +2213,59 @@ deepest patch had before the squash."
   "Display help for the StGit mode."
   (interactive)
   (describe-function 'stgit-mode))
+
+(defun stgit-execute-process-sentinel (process sentinel)
+  (let (old-sentinel stgit-buf)
+    (with-current-buffer (process-buffer process)
+      (setq old-sentinel old-process-sentinel
+            stgit-buf    stgit-buffer))
+    (and (memq (process-status process) '(exit signal))
+         (buffer-live-p stgit-buf)
+         (with-current-buffer stgit-buf
+           (stgit-reload)))
+    (funcall old-sentinel process sentinel)))
+
+(defun stgit-execute ()
+  "Prompt for an stg command to execute in a shell.
+
+The names of any marked patches or the patch at point are
+inserted in the command to be executed.
+
+If the command ends in an ampersand, run it asynchronously.
+
+When the command has finished, reload the stgit buffer."
+  (interactive)
+  (stgit-assert-mode)
+  (let* ((patches (stgit-patches-marked-or-at-point nil t))
+         (patch-names (mapcar 'symbol-name patches))
+         (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
+         (defaultcmd (if patches
+                         (concat "stg  "
+                                 (and hyphens "-- ")
+                                 (mapconcat 'identity patch-names " "))
+                       "stg "))
+         (cmd (read-from-minibuffer "Shell command: " (cons defaultcmd 5)
+                                    nil nil 'shell-command-history))
+         (async (string-match "&[ \t]*\\'" cmd))
+         (buffer (get-buffer-create
+                  (if async
+                      "*Async Shell Command*"
+                    "*Shell Command Output*"))))
+    ;; cannot use minibuffer as stgit-reload would overwrite it; if we
+    ;; show the buffer, shell-command will not use the minibuffer
+    (display-buffer buffer)
+    (shell-command cmd)
+    (if async
+        (let ((old-buffer (current-buffer)))
+          (with-current-buffer buffer
+            (let ((process (get-buffer-process buffer)))
+              (set (make-local-variable 'old-process-sentinel)
+                   (process-sentinel process))
+              (set (make-local-variable 'stgit-buffer)
+                   old-buffer)
+              (set-process-sentinel process 'stgit-execute-process-sentinel))))
+      (shrink-window-if-larger-than-buffer (get-buffer-window buffer))
+      (stgit-reload))))
 
 (defun stgit-undo-or-redo (redo hard)
   "Run stg undo or, if REDO is non-nil, stg redo.
