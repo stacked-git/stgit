@@ -10,7 +10,7 @@ test_expect_success 'Diff with no StGit data' '
 
 test_expect_success 'Make some local changes' '
     echo foo >> foo.txt &&
-    git add foo.txt
+    stg add foo.txt
 '
 
 test_expect_success 'Diff with some local changes' '

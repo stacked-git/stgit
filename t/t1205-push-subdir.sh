@@ -9,7 +9,7 @@ test_expect_success 'Create some patches' '
         stg new p$i -m p$i &&
         echo x$i >> x.txt &&
         echo y$i >> foo/y.txt &&
-        git add x.txt foo/y.txt &&
+        stg add x.txt foo/y.txt &&
         stg refresh
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
@@ -33,7 +33,7 @@ test_expect_success 'Modifying push from a subdir' '
     [ "$(echo $(cat foo/y.txt))" = "y0 y1" ] &&
     stg new extra -m extra &&
     echo extra >> extra.txt &&
-    git add extra.txt &&
+    stg add extra.txt &&
     stg refresh &&
     cd foo &&
     stg push &&
@@ -57,7 +57,7 @@ test_expect_success 'Conflicting add/unknown file in subdir' '
     stg new foo -m foo &&
     mkdir d &&
     echo foo > d/test &&
-    git add d/test &&
+    stg add d/test &&
     stg refresh &&
     stg pop &&
     mkdir -p d &&

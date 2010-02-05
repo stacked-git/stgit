@@ -7,7 +7,7 @@ test_description='Try a push that requires merging a file that is dirty'
 test_expect_success 'Initialize StGit stack with two patches' '
     stg init &&
     touch a &&
-    git add a &&
+    stg add a &&
     git commit -m a &&
     echo 1 > a &&
     git commit -a -m p1 &&

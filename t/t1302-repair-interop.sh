@@ -4,7 +4,7 @@ test_description='Test git/StGit interoperability with "stg repair"'
 
 test_expect_success 'Create some git-only history' '
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     git commit -a -m foo &&
     git tag foo-tag &&
     for i in 0 1 2 3 4; do

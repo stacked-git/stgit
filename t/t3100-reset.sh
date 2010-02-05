@@ -12,7 +12,7 @@ EOF
 test_expect_success 'Initialize StGit stack with three patches' '
     stg init &&
     echo 000 >> a &&
-    git add a &&
+    stg add a &&
     git commit -m a &&
     echo 111 >> a &&
     git commit -a -m p1 &&

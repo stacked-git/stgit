@@ -12,7 +12,7 @@ test_expect_success \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh
     '
 
@@ -47,7 +47,7 @@ test_expect_success \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh &&
     stg pop
     '
@@ -65,11 +65,11 @@ test_expect_success \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh &&
     stg new bar -m bar &&
     echo bar > bar.txt &&
-    git add bar.txt &&
+    stg add bar.txt &&
     stg refresh
     '
 
@@ -87,12 +87,12 @@ test_expect_success \
     stg branch --create br &&
     stg new baz -m baz &&
     echo baz > baz.txt &&
-    git add baz.txt &&
+    stg add baz.txt &&
     stg refresh &&
     stg branch master &&
     stg new baz -m baz &&
     echo baz > baz.txt &&
-    git add baz.txt &&
+    stg add baz.txt &&
     stg refresh
     '
 

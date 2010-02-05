@@ -7,7 +7,7 @@ test_description='Test "stg push" with hidden patches'
 test_expect_success 'Initialize StGit stack' '
     stg init &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg new -m hidden-patch &&
     stg refresh &&
     stg pop &&

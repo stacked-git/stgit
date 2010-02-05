@@ -20,7 +20,7 @@ test_expect_success 'Initialize StGit stack' '
     stg init &&
     echo x > x.txt &&
     echo y > y.txt &&
-    git add x.txt y.txt &&
+    stg add x.txt y.txt &&
     git commit -m "Add some files"
 '
 
@@ -28,9 +28,9 @@ cat > expected0.txt <<EOF
 D y.txt
 EOF
 printf '' > expected1.txt
-test_expect_success 'git rm a file' '
+test_expect_success 'stg rm a file' '
     stg new -m p0 &&
-    git rm y.txt &&
+    stg rm y.txt &&
     stg status > status0.txt &&
     test_cmp expected0.txt status0.txt &&
     stg refresh &&
@@ -47,10 +47,10 @@ D y.txt
 M x.txt
 EOF
 printf '' > expected1.txt
-test_expect_success 'git rm a file together with other changes' '
+test_expect_success 'stg rm a file together with other changes' '
     stg new -m p1 &&
     echo x2 >> x.txt &&
-    git rm y.txt &&
+    stg rm y.txt &&
     stg status > status0.txt &&
     test_cmp expected0.txt status0.txt &&
     stg refresh &&

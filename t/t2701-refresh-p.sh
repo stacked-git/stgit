@@ -15,7 +15,7 @@ test_expect_success 'Initialize StGit stack' '
     stg init &&
     for i in 1 2; do
         echo x > $i.txt &&
-        git add $i.txt &&
+        stg add $i.txt &&
         stg new p$i -m "Patch $i" &&
         stg refresh
     done
@@ -33,7 +33,7 @@ test_expect_success 'Add new file to non-top patch' '
     stg status > status1.txt &&
     test_cmp expected0.txt status1.txt &&
     echo y > new.txt &&
-    git add new.txt &&
+    stg add new.txt &&
     stg refresh -p p1 &&
     stg status > status2.txt &&
     test_cmp expected0.txt status2.txt &&

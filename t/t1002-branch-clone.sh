@@ -14,7 +14,7 @@ test_expect_success \
     'Create a GIT commit' \
     '
     echo bar > bar.txt &&
-    git add bar.txt &&
+    stg add bar.txt &&
     git commit -a -m bar
     '
 

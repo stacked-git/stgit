@@ -10,7 +10,7 @@ test_expect_success \
     for i in 1 2 3 4 5; do
       touch foo.txt &&
       echo "line $i" >> foo.txt &&
-      git add foo.txt &&
+      stg add foo.txt &&
       git commit -a -m "Patch $i"
     done &&
     stg init &&

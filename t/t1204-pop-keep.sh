@@ -8,7 +8,7 @@ test_expect_success 'Create a few patches' '
     for i in 0 1 2; do
         stg new p$i -m p$i &&
         echo "patch$i" >> patch$i.txt &&
-        git add patch$i.txt &&
+        stg add patch$i.txt &&
         stg refresh
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&

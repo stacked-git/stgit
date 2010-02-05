@@ -26,15 +26,15 @@ test_expect_success \
 	'
 	stg new p1 -m p1 &&
 	echo foo1 > foo1.txt &&
-	git add foo1.txt &&
+	stg add foo1.txt &&
 	stg refresh &&
 	stg new p2 -m p2 &&
 	echo foo2 > foo2.txt &&
-	git add foo2.txt &&
+	stg add foo2.txt &&
 	stg refresh &&
 	stg new p3 -m p3 &&
 	echo foo3 > foo3.txt &&
-	git add foo3.txt &&
+	stg add foo3.txt &&
 	stg refresh
 	'
 
@@ -64,11 +64,11 @@ test_expect_success \
 	'
 	stg new p4 -m p4 &&
 	echo foo4 > foo4.txt &&
-	git add foo4.txt &&
+	stg add foo4.txt &&
 	stg refresh &&
 	stg new p5 -m p5 &&
 	echo foo5 > foo5.txt &&
-	git add foo5.txt &&
+	stg add foo5.txt &&
 	stg refresh &&
 	stg new empty -m empty &&
 	old_public=$(stg id master.public) &&
@@ -83,7 +83,7 @@ test_expect_success \
 	'
 	stg pop -a &&
 	echo foo0 > foo0.txt &&
-	git add foo0.txt &&
+	stg add foo0.txt &&
 	git commit -m "foo0.txt added" &&
 	stg push -a &&
 	old_public=$(stg id master.public) &&

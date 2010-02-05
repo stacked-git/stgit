@@ -54,7 +54,7 @@ cat > expected.txt <<EOF
 A foo/bar
 EOF
 test_expect_success 'Status with an added file' '
-    git add foo &&
+    stg add foo &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '
@@ -95,7 +95,7 @@ test_expect_success 'Status after refresh' '
 
 test_expect_success 'Add another file' '
     echo lajbans > fie &&
-    git add fie &&
+    stg add fie &&
     stg refresh
 '
 
@@ -145,7 +145,7 @@ A fie
 M foo/bar
 EOF
 test_expect_success 'Status after resolving the push' '
-    git add --update &&
+    stg add --update &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '
@@ -166,7 +166,7 @@ EOF
 test_expect_success 'Status of disappeared newborn' '
     stg refresh &&
     touch foo/bar &&
-    git add foo/bar &&
+    stg add foo/bar &&
     rm foo/bar &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
@@ -177,8 +177,8 @@ A fay
 D fie
 EOF
 test_expect_success 'Status after renaming a file' '
-    git rm foo/bar &&
-    git mv fie fay &&
+    stg rm foo/bar &&
+    stg mv fie fay &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '

@@ -12,7 +12,7 @@ test_expect_success \
     '
     stg new p0 -m p0 &&
     echo p0 > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh &&
     for i in 1 2 3 4 5 6 7 8 9; do
         stg new p$i -m p$i &&

@@ -13,7 +13,7 @@ test_expect_success 'Initialize StGit stack' '
     for i in 1 2 3; do
         echo foo$i >> foo/bar &&
         stg new p$i -m p$i &&
-        git add foo/bar &&
+        stg add foo/bar &&
         stg refresh
     done
 '

@@ -5,7 +5,7 @@ test_description='Test "stg edit"'
 
 test_expect_success 'Setup' '
     printf "000\n111\n222\n333\n" >> foo &&
-    git add foo &&
+    stg add foo &&
     git commit -m "Initial commit" &&
     sed -i "s/000/000xx/" foo &&
     git commit -a -m "First change" &&

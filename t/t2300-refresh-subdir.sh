@@ -8,7 +8,7 @@ test_expect_success 'Refresh from a subdirectory' '
     echo foo >> foo.txt &&
     mkdir bar &&
     echo bar >> bar/bar.txt &&
-    git add foo.txt bar/bar.txt &&
+    stg add foo.txt bar/bar.txt &&
     cd bar &&
     stg refresh &&
     cd .. &&
@@ -48,7 +48,7 @@ test_expect_success 'Refresh subdirectories recursively' '
 test_expect_success 'refresh -u' '
     echo baz >> bar/baz.txt &&
     stg new p1 -m p1 &&
-    git add bar/baz.txt &&
+    stg add bar/baz.txt &&
     stg refresh --index &&
     echo xyzzy >> foo.txt &&
     echo xyzzy >> bar/bar.txt &&

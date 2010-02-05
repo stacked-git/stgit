@@ -9,7 +9,7 @@ test_expect_success 'Initialize the StGIT repository' '
 test_expect_success 'Create five applied and three unapplied patches' '
     for i in 0 1 2 3 4 5 6 7; do
         echo $i >> foo &&
-        git add foo &&
+        stg add foo &&
         git commit -m p$i
     done
     stg uncommit -n 8 &&

@@ -9,7 +9,7 @@ test_expect_success 'Initialize StGit stack' '
     stg new e0 -m e0 &&
     stg new p0 -m p0 &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh &&
     stg new e1 -m e1 &&
     stg new e2 -m e2 &&

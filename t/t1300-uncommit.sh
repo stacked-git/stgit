@@ -19,7 +19,7 @@ test_expect_success \
 	'
 	stg new foo -m "Foo Patch" &&
 	echo foo > test &&
-	git add test &&
+	stg add test &&
 	stg refresh
 	'
 
@@ -28,7 +28,7 @@ test_expect_success \
 	'
 	stg new bar -m "Bar Patch" &&
 	echo bar > test &&
-	git add test &&
+	stg add test &&
 	stg refresh
 	'
 

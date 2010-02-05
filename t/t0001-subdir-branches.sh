@@ -14,7 +14,7 @@ containing slashes (that is, branches living in a subdirectory of
 test_expect_success 'Create a patch' \
   'stg init &&
    echo "foo" > foo.txt &&
-   git add foo.txt &&
+   stg add foo.txt &&
    stg new foo -m "Add foo.txt" &&
    stg refresh'
 

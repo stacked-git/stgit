@@ -7,11 +7,11 @@ test_expect_success \
 	'Initialize the StGIT repository' \
 	'
 	stg init &&
-	stg new A -m "a" && echo A > a && git add a && stg refresh &&
-	stg new B -m "b" && echo B > b && git add b && stg refresh &&
+	stg new A -m "a" && echo A > a && stg add a && stg refresh &&
+	stg new B -m "b" && echo B > b && stg add b && stg refresh &&
 	stg branch --clone foo &&
-	stg new C -m "c" && echo C > c && git add c && stg refresh &&
-	stg new D-foo -m "d" && echo D > d && git add d && stg refresh &&
+	stg new C -m "c" && echo C > c && stg add c && stg refresh &&
+	stg new D-foo -m "d" && echo D > d && stg add d && stg refresh &&
 	stg branch master
 	'
 

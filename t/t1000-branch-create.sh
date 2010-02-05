@@ -78,9 +78,9 @@ test_expect_success \
     'Setup two commits including removal of generated files' '
     git init &&
     touch file1 file2 &&
-    git add file1 file2 &&
+    stg add file1 file2 &&
     git commit -m 1 &&
-    git rm file1 file2 &&
+    stg rm file1 file2 &&
     git commit -m 2 &&
     touch file2
 '

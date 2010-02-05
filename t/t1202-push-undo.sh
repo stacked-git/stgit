@@ -21,7 +21,7 @@ test_expect_success \
 	'
 	stg new foo -m foo &&
 	echo foo > test &&
-	git add test &&
+	stg add test &&
 	stg refresh
 	'
 
@@ -30,7 +30,7 @@ test_expect_success \
 	'
 	stg new bar -m bar &&
 	echo bar > test &&
-	git add test &&
+	stg add test &&
 	stg refresh
 	'
 
@@ -62,7 +62,7 @@ test_expect_success \
 	'Undo with disappeared newborn' \
 	'
 	touch newfile &&
-	git add newfile &&
+	stg add newfile &&
 	rm newfile &&
 	stg undo --hard
 	'

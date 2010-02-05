@@ -13,10 +13,10 @@ EOF
 test_expect_success 'Initialize StGit stack' '
     stg init &&
     echo 000 >> a &&
-    git add a &&
+    stg add a &&
     git commit -m p0 &&
     echo 111 >> a &&
-    git add a &&
+    stg add a &&
     git commit -m p1 &&
     stg uncommit -n 1
 '
@@ -29,7 +29,7 @@ EOF
 test_expect_success 'Make a git commit and turn it into a patch' '
     git rev-parse HEAD > head0.txt &&
     echo 222 >> a &&
-    git add a &&
+    stg add a &&
     git commit -m p2 &&
     git rev-parse HEAD > head1.txt &&
     stg repair &&

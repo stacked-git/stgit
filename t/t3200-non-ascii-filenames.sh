@@ -11,11 +11,11 @@ EOF
 
 test_expect_success 'Setup' '
     echo "Fjäderholmarna" > skärgårdsö.txt &&
-    git add skärgårdsö.txt &&
+    stg add skärgårdsö.txt &&
     git commit -m "Create island" &&
     stg init &&
     echo foo > unrelated.txt &&
-    git add unrelated.txt &&
+    stg add unrelated.txt &&
     stg new p0 -m "Unrelated file" &&
     stg refresh &&
     stg pop &&

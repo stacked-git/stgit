@@ -7,7 +7,7 @@ test_expect_success \
     'Initialize the StGIT repository' \
     '
     cp ../t1800-import/foo.txt . &&
-    git add foo.txt &&
+    stg add foo.txt &&
     git commit -a -m "initial version" &&
     stg init
     '
@@ -164,7 +164,7 @@ test_expect_success \
     'apply a series from a tarball' \
     '
     rm -f jabberwocky.txt && touch jabberwocky.txt &&
-    git add jabberwocky.txt && git commit -m "empty file" jabberwocky.txt &&
+    stg add jabberwocky.txt && git commit -m "empty file" jabberwocky.txt &&
     (cd ../t1800-import; tar -cjf jabberwocky.tar.bz2 patches) &&
     stg import --series ../t1800-import/jabberwocky.tar.bz2
     [ $(git cat-file -p $(stg id) \

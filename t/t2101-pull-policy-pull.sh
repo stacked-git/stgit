@@ -22,7 +22,7 @@ test_expect_success \
      git config branch.master.stgit.pull-policy pull &&
      git config --list &&
      stg new c1 -m c1 &&
-     echo a > file && git add file && stg refresh
+     echo a > file && stg add file && stg refresh
     )
     '
 
@@ -30,7 +30,7 @@ test_expect_success \
     'Add non-rewinding commit upstream and pull it from clone' \
     '
     (cd upstream && stg new u1 -m u1 &&
-     echo a > file2 && git add file2 && stg refresh) &&
+     echo a > file2 && stg add file2 && stg refresh) &&
     (cd clone && stg pull) &&
      test -e clone/file2
     '
@@ -49,7 +49,7 @@ test_expect_success \
 test_expect_success \
     '"Solve" the conflict (pretend there is none)' \
     '(cd clone &&
-      git add file2 && EDITOR=cat git commit)'
+      stg add file2 && EDITOR=cat git commit)'
 
 test_expect_success \
     'Push the stack back' \

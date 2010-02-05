@@ -6,22 +6,22 @@ test_description='Test "stg sink"'
 
 test_expect_success 'Initialize StGit stack' '
     echo 0 >> f0 &&
-    git add f0 &&
+    stg add f0 &&
     git commit -m initial &&
     echo 1 >> f1 &&
-    git add f1 &&
+    stg add f1 &&
     git commit -m p1 &&
     echo 2 >> f2 &&
-    git add f2 &&
+    stg add f2 &&
     git commit -m p2 &&
     echo 3 >> f3 &&
-    git add f3 &&
+    stg add f3 &&
     git commit -m p3 &&
     echo 4 >> f4 &&
-    git add f4 &&
+    stg add f4 &&
     git commit -m p4 &&
     echo 22 >> f2 &&
-    git add f2 &&
+    stg add f2 &&
     git commit -m p22 &&
     stg init &&
     stg uncommit p22 p4 p3 p2 p1 &&

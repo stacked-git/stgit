@@ -11,10 +11,10 @@ test_expect_success \
 	'Setup a multi-commit branch and fork an stgit stack' \
 	'
 	echo foo > file1 &&
-	git add file1 &&
+	stg add file1 &&
 	git commit -m a &&
 	echo foo > file2 &&
-	git add file2 &&
+	stg add file2 &&
 	git commit -m b &&
 
 	stg branch --create stack &&

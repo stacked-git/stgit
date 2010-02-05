@@ -20,7 +20,7 @@ test_expect_success \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
-    git add foo.txt &&
+    stg add foo.txt &&
     stg refresh
     '
 
@@ -32,7 +32,7 @@ test_expect_success \
     'Create a GIT commit' \
     '
     echo bar > bar.txt &&
-    git add bar.txt &&
+    stg add bar.txt &&
     git commit -a -m bar
     '
 
@@ -46,7 +46,7 @@ test_expect_success \
     'Create three more GIT commits' \
     '
     echo one > numbers.txt &&
-    git add numbers.txt &&
+    stg add numbers.txt &&
     git commit -a -m one &&
     echo two >> numbers.txt &&
     git commit -a -m two &&
@@ -65,7 +65,7 @@ test_expect_success \
     '
     git checkout -b br master^^ &&
     echo woof > woof.txt &&
-    git add woof.txt &&
+    stg add woof.txt &&
     git commit -a -m woof &&
     git checkout master &&
     git pull . br

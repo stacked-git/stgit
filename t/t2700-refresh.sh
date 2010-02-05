@@ -13,7 +13,7 @@ test_expect_success 'Initialize StGit stack' '
     stg new p0 -m "base" &&
     for i in 1 2 3; do
         echo base >> foo$i.txt &&
-        git add foo$i.txt
+        stg add foo$i.txt
     done
     stg refresh &&
     for i in 1 2 3; do
@@ -104,7 +104,7 @@ test_expect_success 'Refresh --index' '
     stg status &&
     stg new p4 -m "refresh_index" &&
     echo baz 1 >> foo1.txt &&
-    git add foo1.txt &&
+    stg add foo1.txt &&
     echo blah 1 >> foo1.txt &&
     echo baz 2 >> foo2.txt &&
     stg refresh --index &&
@@ -119,7 +119,7 @@ test_expect_success 'Refresh --index' '
 '
 
 test_expect_success 'Refresh moved files' '
-    git mv foo1.txt foo1-new.txt &&
+    stg mv foo1.txt foo1-new.txt &&
     stg refresh
 '
 

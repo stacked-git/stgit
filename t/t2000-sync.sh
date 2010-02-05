@@ -18,15 +18,15 @@ test_expect_success \
     '
     stg new p1 -m p1 &&
     echo foo1 > foo1.txt &&
-    git add foo1.txt &&
+    stg add foo1.txt &&
     stg refresh &&
     stg new p2 -m p2 &&
     echo foo2 > foo2.txt &&
-    git add foo2.txt &&
+    stg add foo2.txt &&
     stg refresh &&
     stg new p3 -m p3 &&
     echo foo3 > foo3.txt &&
-    git add foo3.txt &&
+    stg add foo3.txt &&
     stg refresh &&
     stg export &&
     stg pop &&
@@ -86,7 +86,7 @@ test_expect_success \
     stg refresh &&
     stg goto p2 &&
     echo bar2 > bar2.txt &&
-    git add bar2.txt &&
+    stg add bar2.txt &&
     stg refresh &&
     stg goto p3 &&
     echo bar3 >> foo3.txt &&
@@ -117,7 +117,7 @@ test_expect_success \
     '
     [ "$(echo $(stg series --applied --noprefix))" = "p1" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p2 p3" ] &&
-    git add --update &&
+    stg add --update &&
     stg refresh &&
     stg goto p3
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
@@ -135,7 +135,7 @@ test_expect_success \
     '
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    git add --update &&
+    stg add --update &&
     stg refresh &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]

@@ -12,7 +12,7 @@ test_expect_success \
     stg init &&
     stg new A -m A &&
     echo hello world > a &&
-    git add a &&
+    stg add a &&
     stg refresh
     stg new B -m B &&
     echo HELLO WORLD > a &&
