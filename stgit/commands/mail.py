@@ -247,12 +247,6 @@ def __send_message_git(msg, options):
         if getattr(options, x):
             cmd.extend('--%s=%s' % (x, a) for a in getattr(options, x))
 
-    # XXX: hack for now so that we don't duplicate To/Cc/Bcc headers
-    # in the mail, as git send-email inserts those for us.
-    del msg['To']
-    del msg['Cc']
-    del msg['Bcc']
-
     (fd, path) = mkstemp()
     os.write(fd, msg.as_string(options.mbox))
     os.close(fd)
@@ -277,13 +271,13 @@ def __send_message(type, tmpl, options, *args):
     msg_id = email.Utils.make_msgid('stgit')
     msg = build(tmpl, msg_id, options, *args)
 
-    from_addr, to_addrs = __parse_addresses(msg)
     msg_str = msg.as_string(options.mbox)
     if options.mbox:
         out.stdout_raw(msg_str + '\n')
         return msg_id
 
     if not options.git:
+        from_addr, to_addrs = __parse_addresses(msg)
         out.start('Sending ' + outstr)
 
     smtpserver = options.smtp_server or config.get('stgit.smtpserver')
@@ -499,7 +493,8 @@ def __build_cover(tmpl, msg_id, options, patches):
     except Exception, ex:
         raise CmdException, 'template parsing error: %s' % str(ex)
 
-    __build_address_headers(msg, options)
+    if not options.git:
+        __build_address_headers(msg, options)
     __build_extra_headers(msg, msg_id, options.refid)
     __encode_message(msg)
 
@@ -609,7 +604,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     else:
         extra_cc = []
 
-    __build_address_headers(msg, options, extra_cc)
+    if not options.git:
+        __build_address_headers(msg, options, extra_cc)
     __build_extra_headers(msg, msg_id, ref_id)
     __encode_message(msg)
 
