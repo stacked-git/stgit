@@ -370,7 +370,7 @@ def __edit_message(msg):
 
     return msg
 
-def __build_cover(tmpl, patches, msg_id, options):
+def __build_cover(tmpl, msg_id, options, patches):
     """Build the cover message (series description) to be sent via SMTP
     """
     sender = __get_sender()
@@ -439,7 +439,7 @@ def __build_cover(tmpl, patches, msg_id, options):
 
     return msg
 
-def __build_message(tmpl, patch, patch_nr, total_nr, msg_id, ref_id, options):
+def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     """Build the message to be sent via SMTP
     """
     p = crt_series.get_patch(patch)
@@ -600,7 +600,7 @@ def func(parser, options, args):
                 raise CmdException, 'No cover message template file found'
 
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_cover(tmpl, patches, msg_id, options)
+        msg = __build_cover(tmpl, msg_id, options, patches)
         from_addr, to_addr_list = __parse_addresses(msg)
 
         msg_string = msg.as_string(options.mbox)
@@ -630,8 +630,8 @@ def func(parser, options, args):
 
     for (p, patch_nr) in zip(patches, range(1, total_nr + 1)):
         msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_message(tmpl, p, patch_nr, total_nr, msg_id, ref_id,
-                              options)
+        msg = __build_message(tmpl, msg_id, options, p, patch_nr, total_nr,
+                              ref_id)
         from_addr, to_addr_list = __parse_addresses(msg)
 
         msg_string = msg.as_string(options.mbox)
