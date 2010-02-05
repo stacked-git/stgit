@@ -241,6 +241,10 @@ def __send_message_git(msg, options):
     cmd.append("--suppress-cc=self")
     if not options.auto:
         cmd.append("--suppress-cc=body")
+    if options.in_reply_to:
+        cmd.extend(["--in-reply-to", options.in_reply_to])
+    if options.no_thread:
+        cmd.append("--no-thread")
 
     # We only support To/Cc/Bcc in git send-email for now.
     for x in ['to', 'cc', 'bcc']:
