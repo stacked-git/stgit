@@ -90,7 +90,6 @@ class StackTransaction(object):
         self.__applied = list(self.__stack.patchorder.applied)
         self.__unapplied = list(self.__stack.patchorder.unapplied)
         self.__hidden = list(self.__stack.patchorder.hidden)
-        self.__conflicting_push = None
         self.__error = None
         self.__current_tree = self.__stack.head.data.tree
         self.__base = self.__stack.base
@@ -232,10 +231,9 @@ class StackTransaction(object):
             self.__stack.patchorder.hidden = self.__hidden
             log.log_entry(self.__stack, msg)
         old_applied = self.__stack.patchorder.applied
-        write(self.__msg)
-        if self.__conflicting_push != None:
-            self.__patches = _TransPatchMap(self.__stack)
-            self.__conflicting_push()
+        if not self.__conflicts:
+            write(self.__msg)
+        else:
             write(self.__msg + ' (CONFLICT)')
         if print_current_patch:
             _print_current_patch(old_applied, self.__applied)
@@ -358,26 +356,25 @@ class StackTransaction(object):
         elif not merge_conflict and cd.is_nochange():
             s = 'empty'
         out.done(s)
-        def update():
-            if comm:
-                self.patches[pn] = comm
-            if pn in self.hidden:
-                x = self.hidden
-            else:
-                x = self.unapplied
-            del x[x.index(pn)]
-            self.applied.append(pn)
+
         if merge_conflict:
             # We've just caused conflicts, so we must allow them in
             # the final checkout.
             self.__allow_conflicts = lambda trans: True
+            self.__patches = _TransPatchMap(self.__stack)
 
-            # Save this update so that we can run it a little later.
-            self.__conflicting_push = update
-            self.__halt("%d merge conflict(s)" % len(self.__conflicts))
+        # Update the stack state
+        if comm:
+            self.patches[pn] = comm
+        if pn in self.hidden:
+            x = self.hidden
         else:
-            # Update immediately.
-            update()
+            x = self.unapplied
+        del x[x.index(pn)]
+        self.applied.append(pn)
+
+        if merge_conflict:
+            self.__halt("%d merge conflict(s)" % len(self.__conflicts))
 
     def push_tree(self, pn):
         """Push the named patch without updating its tree."""
