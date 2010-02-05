@@ -28,16 +28,15 @@ class GitConfigException(StgException):
 
 class GitConfig:
     __defaults={
-        'stgit.smtpserver':	'localhost:25',
-        'stgit.smtpdelay':	'5',
-        'stgit.pullcmd':	'git pull',
-        'stgit.fetchcmd':	'git fetch',
-        'stgit.pull-policy':	'pull',
-        'stgit.autoimerge':	'no',
-        'stgit.keepoptimized':	'no',
-        'stgit.extensions':	'.ancestor .current .patched',
-        'stgit.shortnr': '5',
-        'stgit.pager':  'less'
+        'stgit.smtpserver':     ['localhost:25'],
+        'stgit.smtpdelay':      ['5'],
+        'stgit.pullcmd':        ['git pull'],
+        'stgit.fetchcmd':       ['git fetch'],
+        'stgit.pull-policy':    ['pull'],
+        'stgit.autoimerge':     ['no'],
+        'stgit.keepoptimized':  ['no'],
+        'stgit.shortnr':        ['5'],
+        'stgit.pager':          ['less']
         }
 
     __cache = None
@@ -47,7 +46,7 @@ class GitConfig:
         done already."""
         if self.__cache is not None:
             return
-        self.__cache = {}
+        self.__cache = self.__defaults
         lines = Run('git', 'config', '--null', '--list'
                    ).discard_exitcode().raw_output()
         for line in filter(None, lines.split('\0')):
@@ -56,9 +55,10 @@ class GitConfig:
 
     def get(self, name):
         self.load()
-        if name not in self.__cache:
-            self.__cache[name] = [self.__defaults.get(name, None)]
-        return self.__cache[name][-1]
+        try:
+            return self.__cache[name][-1]
+        except KeyError:
+            return None
 
     def getall(self, name):
         self.load()
