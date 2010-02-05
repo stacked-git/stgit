@@ -140,7 +140,9 @@ options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch'),
     opt('-m', '--mbox', action = 'store_true',
-        short = 'Generate an mbox file instead of sending')
+        short = 'Generate an mbox file instead of sending'),
+    opt('--git', action = 'store_true',
+        short = 'Use git send-email (EXPERIMENTAL)')
     ] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log = False)
@@ -228,6 +230,42 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
     s.quit()
 
+def __send_message_git(msg, options):
+    """Send the message using git send-email
+    """
+    from subprocess import call
+    from tempfile import mkstemp
+
+    cmd = ["git", "send-email", "--from=%s" % msg['From']]
+    cmd.append("--quiet")
+    cmd.append("--suppress-cc=self")
+    if not options.auto:
+        cmd.append("--suppress-cc=body")
+
+    # We only support To/Cc/Bcc in git send-email for now.
+    for x in ['to', 'cc', 'bcc']:
+        if getattr(options, x):
+            cmd.extend('--%s=%s' % (x, a) for a in getattr(options, x))
+
+    # XXX: hack for now so that we don't duplicate To/Cc/Bcc headers
+    # in the mail, as git send-email inserts those for us.
+    del msg['To']
+    del msg['Cc']
+    del msg['Bcc']
+
+    (fd, path) = mkstemp()
+    os.write(fd, msg.as_string(options.mbox))
+    os.close(fd)
+
+    try:
+        try:
+            cmd.append(path)
+            call(cmd)
+        except Exception, err:
+            raise CmdException, str(err)
+    finally:
+        os.unlink(path)
+
 def __send_message(type, tmpl, options, *args):
     """Message sending dispatcher.
     """
@@ -245,10 +283,13 @@ def __send_message(type, tmpl, options, *args):
         out.stdout_raw(msg_str + '\n')
         return msg_id
 
-    out.start('Sending ' + outstr)
+    if not options.git:
+        out.start('Sending ' + outstr)
 
     smtpserver = options.smtp_server or config.get('stgit.smtpserver')
-    if smtpserver.startswith('/'):
+    if options.git:
+        __send_message_git(msg, options)
+    elif smtpserver.startswith('/'):
         # Use the sendmail tool
         __send_message_sendmail(smtpserver, msg_str)
     else:
@@ -259,7 +300,8 @@ def __send_message(type, tmpl, options, *args):
     if type == 'cover' or (type == 'patch' and patch_nr < total_nr):
         sleep = options.sleep or config.getint('stgit.smtpdelay')
         time.sleep(sleep)
-    out.done()
+    if not options.git:
+        out.done()
     return msg_id
 
 def __update_header(msg, header, addr = '', ignore = ()):
