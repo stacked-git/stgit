@@ -85,6 +85,10 @@
 	# Behave as if the --keep option is always passed
 	#autokeep = no
 
+[stgit "alias"]
+	# Command aliases.
+	#add = git add
+
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org

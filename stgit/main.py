@@ -23,6 +23,30 @@ import sys, os, traceback
 import stgit.commands
 from stgit.out import *
 from stgit import argparse, run, utils
+from stgit.config import config
+
+class CommandAlias(object):
+    def __init__(self, name, command):
+        self.__command = command
+        self.__name__ = name
+        self.usage = ['<arguments>']
+        self.help = 'Alias for "%s <arguments>".' % self.__command
+        self.options = []
+
+    def func(self, args):
+        cmd = self.__command.split() + args
+        p = run.Run(*cmd)
+        p.discard_exitcode().run()
+        return p.exitcode
+
+def is_cmd_alias(cmd):
+    return isinstance(cmd, CommandAlias)
+
+def append_alias_commands(cmd_list):
+    for (name, command) in config.getstartswith('stgit.alias.'):
+        name = utils.strip_prefix('stgit.alias.', name)
+        cmd_list[name] = (CommandAlias(name, command),
+                          'Alias commands', command)
 
 #
 # The commands map
@@ -49,9 +73,13 @@ class Commands(dict):
         
     def __getitem__(self, key):
         cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))
-        return stgit.commands.get_command(cmd_mod)
+        if is_cmd_alias(cmd_mod):
+            return cmd_mod
+        else:
+            return stgit.commands.get_command(cmd_mod)
 
 cmd_list = stgit.commands.get_commands()
+append_alias_commands(cmd_list)
 commands = Commands((cmd, mod) for cmd, (mod, kind, help)
                     in cmd_list.iteritems())
 
@@ -100,6 +128,8 @@ def _main():
             sys.argv[0] += ' %s' % cmd
             command = commands[cmd]
             parser = argparse.make_option_parser(command)
+            if is_cmd_alias(command):
+                parser.remove_option('-h')
             from pydoc import pager
             pager(parser.format_help())
         else:
@@ -121,6 +151,9 @@ def _main():
     del(sys.argv[1])
 
     command = commands[cmd]
+    if is_cmd_alias(command):
+        sys.exit(command.func(sys.argv[1:]))
+
     parser = argparse.make_option_parser(command)
     options, args = parser.parse_args()
     directory = command.directory

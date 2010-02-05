@@ -28,7 +28,8 @@ def get_command(mod):
 _kinds = [('repo', 'Repository commands'),
           ('stack', 'Stack (branch) commands'),
           ('patch', 'Patch commands'),
-          ('wc', 'Index/worktree commands')]
+          ('wc', 'Index/worktree commands'),
+          ('alias', 'Alias commands')]
 _kind_order = [kind for kind, desc in _kinds]
 _kinds = dict(_kinds)
 

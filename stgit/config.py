@@ -36,7 +36,11 @@ class GitConfig:
         'stgit.autoimerge':     ['no'],
         'stgit.keepoptimized':  ['no'],
         'stgit.shortnr':        ['5'],
-        'stgit.pager':          ['less']
+        'stgit.pager':          ['less'],
+        'stgit.alias.add':      ['git add'],
+        'stgit.alias.rm':       ['git rm'],
+        'stgit.alias.mv':       ['git mv'],
+        'stgit.alias.resolved': ['git add']
         }
 
     __cache = None
@@ -75,6 +79,11 @@ class GitConfig:
             return int(value)
         else:
             raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
+
+    def getstartswith(self, name):
+        self.load()
+        return ((n, v[-1]) for (n, v) in self.__cache.iteritems()
+                if n.startswith(name))
 
     def rename_section(self, from_name, to_name):
         """Rename a section in the config file. Silently do nothing if
