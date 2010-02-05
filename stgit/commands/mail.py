@@ -56,7 +56,7 @@ specified file (defaulting to '.git/covermail.tmpl' or
 
 All the subsequent e-mails appear as replies to the first e-mail sent
 (either the preamble or the first patch). E-mails can be seen as
-replies to a different e-mail by using the '--refid' option.
+replies to a different e-mail by using the '--in-reply-to' option.
 
 SMTP authentication is also possible with '--smtp-user' and
 '--smtp-password' options, also available as configuration settings:
@@ -107,7 +107,7 @@ options = [
         short = 'Add BCC to the Bcc: list'),
     opt('--auto', action = 'store_true',
         short = 'Automatically cc the patch signers'),
-    opt('--noreply', action = 'store_true',
+    opt('--no-thread', action = 'store_true',
         short = 'Do not send subsequent messages as replies'),
     opt('--unrelated', action = 'store_true',
         short = 'Send patches without sequence numbering'),
@@ -127,7 +127,7 @@ options = [
         short = 'Edit each patch before sending'),
     opt('-s', '--sleep', type = 'int', metavar = 'SECONDS',
         short = 'Sleep for SECONDS between e-mails sending'),
-    opt('--refid',
+    opt('--in-reply-to', metavar = 'REFID',
         short = 'Use REFID as the reference id'),
     opt('--smtp-server', metavar = 'HOST[:PORT] or "/path/to/sendmail -t -i"',
         short = 'SMTP server or command to use for sending mail'),
@@ -495,7 +495,7 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     if not options.git:
         __build_address_headers(msg, options)
-    __build_extra_headers(msg, msg_id, options.refid)
+    __build_extra_headers(msg, msg_id, options.in_reply_to)
     __encode_message(msg)
 
     return msg
@@ -638,11 +638,11 @@ def func(parser, options, args):
     if total_nr == 0:
         raise CmdException, 'No patches to send'
 
-    if options.refid:
-        if options.noreply or options.unrelated:
+    if options.in_reply_to:
+        if options.no_thread or options.unrelated:
             raise CmdException, \
-                  '--refid option not allowed with --noreply or --unrelated'
-        ref_id = options.refid
+                  '--in-reply-to option not allowed with --no-thread or --unrelated'
+        ref_id = options.in_reply_to
     else:
         ref_id = None
 
@@ -663,7 +663,7 @@ def func(parser, options, args):
         msg_id = __send_message('cover', tmpl, options, patches)
 
         # subsequent e-mails are seen as replies to the first one
-        if not options.noreply:
+        if not options.no_thread:
             ref_id = msg_id
 
     # send the patches
@@ -681,5 +681,5 @@ def func(parser, options, args):
         msg_id = __send_message('patch', tmpl, options, p, n, total_nr, ref_id)
 
         # subsequent e-mails are seen as replies to the first one
-        if not options.noreply and not options.unrelated and not ref_id:
+        if not options.no_thread and not options.unrelated and not ref_id:
             ref_id = msg_id
