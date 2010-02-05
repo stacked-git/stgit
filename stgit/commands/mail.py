@@ -228,17 +228,39 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
     s.quit()
 
-def __send_message(from_addr, to_addr_list, msg, options):
+def __send_message(type, tmpl, options, *args):
     """Message sending dispatcher.
     """
-    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
+    (build, outstr) = {'cover': (__build_cover, 'the cover message'),
+                       'patch': (__build_message, 'patch "%s"' % args[0])}[type]
+    if type == 'patch':
+        (patch_nr, total_nr) = (args[1], args[2])
 
+    msg_id = email.Utils.make_msgid('stgit')
+    msg = build(tmpl, msg_id, options, *args)
+
+    from_addr, to_addrs = __parse_addresses(msg)
+    msg_str = msg.as_string(options.mbox)
+    if options.mbox:
+        out.stdout_raw(msg_str + '\n')
+        return msg_id
+
+    out.start('Sending ' + outstr)
+
+    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
     if smtpserver.startswith('/'):
         # Use the sendmail tool
-        __send_message_sendmail(smtpserver, msg)
+        __send_message_sendmail(smtpserver, msg_str)
     else:
         # Use the SMTP server (we have host and port information)
-        __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options)
+        __send_message_smtp(smtpserver, from_addr, to_addrs, msg_str, options)
+
+    # give recipients a chance of receiving related patches in correct order
+    if type == 'cover' or (type == 'patch' and patch_nr < total_nr):
+        sleep = options.sleep or config.getint('stgit.smtpdelay')
+        time.sleep(sleep)
+    out.done()
+    return msg_id
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
@@ -584,7 +606,6 @@ def func(parser, options, args):
     else:
         ref_id = None
 
-    sleep = options.sleep or config.getint('stgit.smtpdelay')
 
     # send the cover message (if any)
     if options.cover or options.edit_cover:
@@ -599,23 +620,11 @@ def func(parser, options, args):
             if not tmpl:
                 raise CmdException, 'No cover message template file found'
 
-        msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_cover(tmpl, msg_id, options, patches)
-        from_addr, to_addr_list = __parse_addresses(msg)
-
-        msg_string = msg.as_string(options.mbox)
+        msg_id = __send_message('cover', tmpl, options, patches)
 
         # subsequent e-mails are seen as replies to the first one
         if not options.noreply:
             ref_id = msg_id
-
-        if options.mbox:
-            out.stdout_raw(msg_string + '\n')
-        else:
-            out.start('Sending the cover message')
-            __send_message(from_addr, to_addr_list, msg_string, options)
-            time.sleep(sleep)
-            out.done()
 
     # send the patches
     if options.template:
@@ -628,25 +637,9 @@ def func(parser, options, args):
         if not tmpl:
             raise CmdException, 'No e-mail template file found'
 
-    for (p, patch_nr) in zip(patches, range(1, total_nr + 1)):
-        msg_id = email.Utils.make_msgid('stgit')
-        msg = __build_message(tmpl, msg_id, options, p, patch_nr, total_nr,
-                              ref_id)
-        from_addr, to_addr_list = __parse_addresses(msg)
-
-        msg_string = msg.as_string(options.mbox)
+    for (p, n) in zip(patches, range(1, total_nr + 1)):
+        msg_id = __send_message('patch', tmpl, options, p, n, total_nr, ref_id)
 
         # subsequent e-mails are seen as replies to the first one
         if not options.noreply and not options.unrelated and not ref_id:
             ref_id = msg_id
-
-        if options.mbox:
-            out.stdout_raw(msg_string + '\n')
-        else:
-            out.start('Sending patch "%s"' % p)
-            __send_message(from_addr, to_addr_list, msg_string, options)
-            # give recipients a chance of receiving related patches in the
-            # correct order.
-            if patch_nr < total_nr:
-                time.sleep(sleep)
-            out.done()
