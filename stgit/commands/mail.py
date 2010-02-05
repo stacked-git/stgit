@@ -190,10 +190,20 @@ def __send_message_sendmail(sendmail, msg):
     cmd = sendmail.split()
     Run(*cmd).raw_input(msg).discard_output()
 
-def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
-                        smtpuser, smtppassword, use_tls):
+def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
     """Send the message using the given SMTP server
     """
+    smtppassword = options.smtp_password or config.get('stgit.smtppassword')
+    smtpuser = options.smtp_user or config.get('stgit.smtpuser')
+    smtpusetls = options.smtp_tls or config.get('stgit.smtptls') == 'yes'
+
+    if (smtppassword and not smtpuser):
+        raise CmdException('SMTP password supplied, username needed')
+    if (smtpusetls and not smtpuser):
+        raise CmdException('SMTP over TLS requested, username needed')
+    if (smtpuser and not smtppassword):
+        smtppassword = getpass.getpass("Please enter SMTP password: ")
+
     try:
         s = smtplib.SMTP(smtpserver)
     except Exception, err:
@@ -203,7 +213,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
     try:
         if smtpuser and smtppassword:
             s.ehlo()
-            if use_tls:
+            if smtpusetls:
                 if not hasattr(socket, 'ssl'):
                     raise CmdException,  "cannot use TLS - no SSL support in Python"
                 s.starttls()
@@ -218,17 +228,17 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
 
     s.quit()
 
-def __send_message(smtpserver, from_addr, to_addr_list, msg,
-                   smtpuser, smtppassword, use_tls):
+def __send_message(from_addr, to_addr_list, msg, options):
     """Message sending dispatcher.
     """
+    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
+
     if smtpserver.startswith('/'):
         # Use the sendmail tool
         __send_message_sendmail(smtpserver, msg)
     else:
         # Use the SMTP server (we have host and port information)
-        __send_message_smtp(smtpserver, from_addr, to_addr_list, msg,
-                            smtpuser, smtppassword, use_tls)
+        __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options)
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
@@ -543,8 +553,6 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
-
     applied = crt_series.get_applied()
 
     if options.all:
@@ -563,17 +571,6 @@ def func(parser, options, args):
         if crt_series.empty_patch(p):
             raise CmdException, 'Cannot send empty patch "%s"' % p
     out.done()
-
-    smtppassword = options.smtp_password or config.get('stgit.smtppassword')
-    smtpuser = options.smtp_user or config.get('stgit.smtpuser')
-    smtpusetls = options.smtp_tls or config.get('stgit.smtptls') == 'yes'
-
-    if (smtppassword and not smtpuser):
-        raise CmdException, 'SMTP password supplied, username needed'
-    if (smtpusetls and not smtpuser):
-        raise CmdException, 'SMTP over TLS requested, username needed'
-    if (smtpuser and not smtppassword):
-        smtppassword = getpass.getpass("Please enter SMTP password: ")
 
     total_nr = len(patches)
     if total_nr == 0:
@@ -616,8 +613,7 @@ def func(parser, options, args):
             out.stdout_raw(msg_string + '\n')
         else:
             out.start('Sending the cover message')
-            __send_message(smtpserver, from_addr, to_addr_list, msg_string,
-                           smtpuser, smtppassword, smtpusetls)
+            __send_message(from_addr, to_addr_list, msg_string, options)
             time.sleep(sleep)
             out.done()
 
@@ -648,8 +644,7 @@ def func(parser, options, args):
             out.stdout_raw(msg_string + '\n')
         else:
             out.start('Sending patch "%s"' % p)
-            __send_message(smtpserver, from_addr, to_addr_list, msg_string,
-                           smtpuser, smtppassword, smtpusetls)
+            __send_message(from_addr, to_addr_list, msg_string, options)
             # give recipients a chance of receiving related patches in the
             # correct order.
             if patch_nr < total_nr:
