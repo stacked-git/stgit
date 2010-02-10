@@ -69,7 +69,10 @@ def _command_list(commands):
         kinds.setdefault(kind, {})[cmd] = help
     for kind in _kind_order:
         kind = _kinds[kind]
-        yield kind, sorted(kinds[kind].iteritems())
+        try:
+            yield kind, sorted(kinds[kind].iteritems())
+        except KeyError:
+            pass
 
 def pretty_command_list(commands, f):
     cmd_len = max(len(cmd) for cmd in commands.iterkeys())
