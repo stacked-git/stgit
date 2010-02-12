@@ -192,9 +192,18 @@ def __send_message_sendmail(sendmail, msg):
     cmd = sendmail.split()
     Run(*cmd).raw_input(msg).discard_output()
 
-def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
-    """Send the message using the given SMTP server
+__smtp_credentials = None
+
+def __set_smtp_credentials(options):
+    """Set the (smtpuser, smtppassword, smtpusetls) credentials if the method
+    of sending is SMTP.
     """
+    global __smtp_credentials
+
+    smtpserver = options.smtp_server or config.get('stgit.smtpserver')
+    if options.mbox or options.git or smtpserver.startswith('/'):
+        return
+
     smtppassword = options.smtp_password or config.get('stgit.smtppassword')
     smtpuser = options.smtp_user or config.get('stgit.smtpuser')
     smtpusetls = options.smtp_tls or config.get('stgit.smtptls') == 'yes'
@@ -205,6 +214,13 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         raise CmdException('SMTP over TLS requested, username needed')
     if (smtpuser and not smtppassword):
         smtppassword = getpass.getpass("Please enter SMTP password: ")
+
+    __smtp_credentials = (smtpuser, smtppassword, smtpusetls)
+
+def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
+    """Send the message using the given SMTP server
+    """
+    smtpuser, smtppassword, smtpusetls = __smtp_credentials
 
     try:
         s = smtplib.SMTP(smtpserver)
@@ -650,6 +666,8 @@ def func(parser, options, args):
     else:
         ref_id = None
 
+    # get username/password if sending by SMTP
+    __set_smtp_credentials(options)
 
     # send the cover message (if any)
     if options.cover or options.edit_cover:
