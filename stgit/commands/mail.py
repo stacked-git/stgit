@@ -426,6 +426,13 @@ def __encode_message(msg):
         new_val = ' '.join(words)
         msg.replace_header(header, new_val)
 
+    # replace the Subject string with a Header() object otherwise the long
+    # line folding is done using "\n\t" rather than "\n ", causing issues with
+    # some e-mail clients
+    subject = msg.get('subject', '')
+    msg.replace_header('subject',
+                       email.Header.Header(subject, header_name = 'subject'))
+
     # encode the body and set the MIME and encoding headers
     if msg.is_multipart():
         for p in msg.get_payload():
