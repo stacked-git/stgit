@@ -14,6 +14,7 @@
 
 (require 'git nil t)
 (require 'cl)
+(require 'comint)
 (require 'ewoc)
 (require 'easymenu)
 (require 'format-spec)
@@ -2223,6 +2224,19 @@ deepest patch had before the squash."
            (stgit-reload)))
     (funcall old-sentinel process sentinel)))
 
+(defun stgit-execute-process-filter (process output)
+  (with-current-buffer (process-buffer process)
+    (let* ((old-point (point))
+           (pmark     (process-mark process))
+           (insert-at (marker-position pmark))
+           (at-pmark  (= insert-at old-point)))
+      (goto-char insert-at)
+      (insert-before-markers output)
+      (comint-carriage-motion insert-at (point))
+      (set-marker pmark (point))
+      (unless at-pmark
+        (goto-char old-point)))))
+
 (defun stgit-execute ()
   "Prompt for an stg command to execute in a shell.
 
@@ -2261,7 +2275,10 @@ When the command has finished, reload the stgit buffer."
                    (process-sentinel process))
               (set (make-local-variable 'stgit-buffer)
                    old-buffer)
+              (set-process-filter process 'stgit-execute-process-filter)
               (set-process-sentinel process 'stgit-execute-process-sentinel))))
+      (with-current-buffer buffer
+        (comint-carriage-motion (point-min) (point-max)))
       (shrink-window-if-larger-than-buffer (get-buffer-window buffer))
       (stgit-reload))))
 
