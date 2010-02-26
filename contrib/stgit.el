@@ -943,7 +943,6 @@ file for (applied) copies and renames."
 (unless stgit-mode-map
   (let ((diff-map   (make-sparse-keymap))
         (toggle-map (make-sparse-keymap)))
-    (suppress-keymap diff-map)
     (mapc (lambda (arg) (define-key diff-map (car arg) (cdr arg)))
           '(("b" .        stgit-diff-base)
             ("c" .        stgit-diff-combined)
@@ -951,7 +950,6 @@ file for (applied) copies and renames."
             ("o" .        stgit-diff-ours)
             ("r" .        stgit-diff-range)
             ("t" .        stgit-diff-theirs)))
-    (suppress-keymap toggle-map)
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
           '(("n" .        stgit-toggle-patch-names)
             ("t" .        stgit-toggle-worktree)
