@@ -398,7 +398,8 @@ class StackTransaction(object):
         del x[x.index(pn)]
         self.applied.append(pn)
 
-    def reorder_patches(self, applied, unapplied, hidden = None, iw = None):
+    def reorder_patches(self, applied, unapplied, hidden = None, iw = None,
+                        allow_interactive = False):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
             hidden = self.hidden
@@ -407,7 +408,7 @@ class StackTransaction(object):
         to_pop = set(self.applied[common:])
         self.pop_patches(lambda pn: pn in to_pop)
         for pn in applied[common:]:
-            self.push_patch(pn, iw)
+            self.push_patch(pn, iw, allow_interactive = allow_interactive)
         assert self.applied == applied
         assert set(self.unapplied + self.hidden) == set(unapplied + hidden)
         self.unapplied = unapplied

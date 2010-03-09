@@ -79,7 +79,8 @@ def func(parser, options, args):
     applied = [p for p in trans.applied if not p in set(patches)]
     unapplied = patches + trans.unapplied
     try:
-        trans.reorder_patches(applied, unapplied, iw = iw)
+        trans.reorder_patches(applied, unapplied, iw = iw,
+                              allow_interactive = True)
     except transaction.TransactionException:
         pass
     return trans.run(iw)

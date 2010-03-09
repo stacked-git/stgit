@@ -89,7 +89,8 @@ def func(parser, options, args):
                                          check_clean_iw = clean_iw)
 
     try:
-        trans.reorder_patches(applied, unapplied, iw = iw)
+        trans.reorder_patches(applied, unapplied, iw = iw,
+                              allow_interactive = True)
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)
