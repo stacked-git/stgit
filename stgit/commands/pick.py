@@ -109,15 +109,20 @@ def __pick_commit(commit_id, patchname, options):
         message = commit.get_log()
         if options.revert:
             if message:
-                subject = message.splitlines()[0]
+                lines = message.splitlines()
+                subject = lines[0]
+                body = '\n'.join(lines[2:])
             else:
                 subject = commit.get_id_hash()
-            message = 'Revert "%s"\n\nThis reverts commit %s.\n' \
-                    % (subject, commit.get_id_hash())
+                body = ''
+            message = 'Revert "%s"\n\nThis reverts commit %s.\n\n%s\n' \
+                    % (subject, commit.get_id_hash(), body)
         elif options.expose:
             message += '(imported from commit %s)\n' % commit.get_id_hash()
         author_name, author_email, author_date = \
                      name_email_date(commit.get_author())
+        if options.revert:
+            author_name = author_email = None
 
         out.start('Importing commit %s' % commit_id)
 
