@@ -68,6 +68,7 @@ patch e-mail templates:
 
   %(diffstat)s     - diff statistics
   %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
+  %(snumber)s      - stripped version of '%(number)s'
   %(patchnr)s      - patch number
   %(sender)s       - 'sender'  or 'authname <authemail>' as per the config file
   %(totalnr)s      - total number of patches to be sent
@@ -495,6 +496,7 @@ def __build_cover(tmpl, msg_id, options, patches):
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
+                 'snumber':      number_str.strip(),
                  'shortlog':     stack.shortlog(crt_series.get_patch(p)
                                                 for p in reversed(patches)),
                  'diffstat':     gitlib.diffstat(git.diff(
@@ -597,6 +599,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
+                 'snumber':      number_str.strip(),
                  'fromauth':     fromauth,
                  'authname':     authname,
                  'authemail':    authemail,
