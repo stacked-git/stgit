@@ -19,7 +19,7 @@ from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.config import config
-from stgit.lib import git, stack
+from stgit.lib import git, stack, transaction
 from stgit.out import out
 from stgit import utils
 
@@ -54,6 +54,11 @@ described above are separated by a publish command in order to keep the public
 branch history cleaner (otherwise StGit would generate a big commit including
 several stack modifications).
 
+The '--unpublished' option can be used to check if there are applied patches
+that have not been published to the public branch. This is done by trying to
+revert the patches in the public tree (similar to the 'push --merged'
+detection).
+
 The public branch name can be set via the branch.<branch>.public configuration
 variable (defaulting to "<branch>.public").
 """
@@ -61,7 +66,9 @@ variable (defaulting to "<branch>.public").
 args = [argparse.all_branches]
 options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')
+        short = 'Use BRANCH instead of the default branch'),
+    opt('-u', '--unpublished', action = 'store_true',
+        short = 'Show applied patches that have not been published')
 ] + (argparse.author_options()
      + argparse.message_options(save_template = False)
      + argparse.sign_options())
@@ -76,6 +83,14 @@ def __create_commit(repository, tree, parents, options, message = ''):
     cd = common.update_commit_data(cd, options)
 
     return repository.commit(cd)
+
+def __get_published(stack, tree):
+    """Check the patches that were already published."""
+    trans = transaction.StackTransaction(stack, 'publish')
+    published = trans.check_merged(trans.applied, tree = tree, quiet = True)
+    trans.abort()
+
+    return published
 
 def func(parser, options, args):
     """Publish the stack changes."""
@@ -94,6 +109,8 @@ def func(parser, options, args):
 
     # just clone the stack if the public ref does not exist
     if not repository.refs.exists(public_ref):
+        if options.unpublished:
+            raise common.CmdException('"%s" does not exist' % public_ref)
         repository.refs.set(public_ref, stack.head, 'publish')
         out.info('Created "%s"' % public_ref)
         return
@@ -104,6 +121,14 @@ def func(parser, options, args):
     # check for same tree (already up to date)
     if public_tree.sha1 == stack.head.data.tree.sha1:
         out.info('"%s" already up to date' % public_ref)
+        return
+
+    # check for unpublished patches
+    if options.unpublished:
+        published = set(__get_published(stack, public_tree))
+        for p in stack.patchorder.applied:
+            if p not in published:
+                print p
         return
 
     # check for rebased stack. In this case we emulate a merge with the stack

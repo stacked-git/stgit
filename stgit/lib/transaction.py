@@ -414,11 +414,15 @@ class StackTransaction(object):
         self.unapplied = unapplied
         self.hidden = hidden
 
-    def check_merged(self, patches):
+    def check_merged(self, patches, tree = None, quiet = False):
         """Return a subset of patches already merged."""
-        out.start('Checking for patches merged upstream')
+        if not quiet:
+            out.start('Checking for patches merged upstream')
         merged = []
-        if self.temp_index_tree != self.stack.head.data.tree:
+        if tree:
+            self.temp_index.read_tree(tree)
+            self.temp_index_tree = tree
+        elif self.temp_index_tree != self.stack.head.data.tree:
             self.temp_index.read_tree(self.stack.head.data.tree)
             self.temp_index_tree = self.stack.head.data.tree
         for pn in reversed(patches):
@@ -435,5 +439,6 @@ class StackTransaction(object):
                 self.temp_index_tree = None
             except git.MergeException:
                 pass
-        out.done('%d found' % len(merged))
+        if not quiet:
+            out.done('%d found' % len(merged))
         return merged
