@@ -230,7 +230,7 @@ def patch_name_from_msg(msg):
         name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    return re.sub('[\W]+', '-', subject_line).strip('-')[:name_len]
+    return re.sub('[\W]+', '-', subject_line)[:name_len].strip('-')
 
 def make_patch_name(msg, unacceptable, default_name = 'patch'):
     """Return a patch name generated from the given commit message,
