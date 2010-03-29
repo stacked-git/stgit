@@ -734,10 +734,12 @@ Cf. `stgit-file-type-change-string'."
 (defun stgit-insert-patch-files (patch)
   "Expand (show modification of) the patch PATCH after the line
 at point."
-  (let* ((patchsym (stgit-patch->name patch))
-         (end      (point-marker))
-         (args     (list "-z" (stgit-find-copies-harder-diff-arg)))
-         (ewoc     (ewoc-create #'stgit-file-pp nil nil t)))
+  (let* ((patchsym     (stgit-patch->name patch))
+         (end          (point-marker))
+         (args         (list "-z" (stgit-find-copies-harder-diff-arg)))
+         (ewoc         (ewoc-create #'stgit-file-pp nil nil t))
+         (show-ignored stgit-show-ignored)
+         (show-unknown stgit-show-unknown))
     (set-marker-insertion-type end t)
     (setf (stgit-patch->files-ewoc patch) ewoc)
     (with-temp-buffer
@@ -753,9 +755,9 @@ at point."
                       `("diff-tree" ,@args "-r" ,(stgit-id patchsym)))))
 
         (when (and (eq patchsym :work))
-          (when stgit-show-ignored
+          (when show-ignored
             (stgit-insert-ls-files '("--ignored" "--others") "I"))
-          (when stgit-show-unknown
+          (when show-unknown
             (stgit-insert-ls-files '("--directory" "--no-empty-directory"
                                      "--others")
                                    "X"))
@@ -1245,6 +1247,8 @@ See also \\[customize-group] for the \"stgit\" group."
   (set (make-local-variable 'stgit-show-patch-names)
        stgit-default-show-patch-names)
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
+  (set (make-local-variable 'stgit-show-ignored) nil)
+  (set (make-local-variable 'stgit-show-unknown) nil)
   (set (make-local-variable 'stgit-index-node) nil)
   (set (make-local-variable 'stgit-worktree-node) nil)
   (set (make-local-variable 'parse-sexp-lookup-properties) t)
