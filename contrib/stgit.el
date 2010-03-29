@@ -844,6 +844,8 @@ See also `stgit-expand'."
         (stgit-process-files (lambda (f)
                                (setq node (ewoc-enter-after ewoc node f))))))
 
+    (move-to-column (stgit-goal-column))
+
     (let ((inhibit-read-only t))
       (put-text-property start end 'patch-data patch))))
 
