@@ -57,7 +57,9 @@ several stack modifications).
 The '--unpublished' option can be used to check if there are applied patches
 that have not been published to the public branch. This is done by trying to
 revert the patches in the public tree (similar to the 'push --merged'
-detection).
+detection). The '--last' option tries to find the last published patch by
+checking the SHA1 of the patch tree agains the public tree. This may fail if
+the stack was rebased since the last publish command.
 
 The public branch name can be set via the branch.<branch>.public configuration
 variable (defaulting to "<branch>.public").
@@ -67,6 +69,8 @@ args = [argparse.all_branches]
 options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch'),
+    opt('-l', '--last', action = 'store_true',
+        short = 'Show the last published patch'),
     opt('-u', '--unpublished', action = 'store_true',
         short = 'Show applied patches that have not been published')
 ] + (argparse.author_options()
@@ -92,6 +96,15 @@ def __get_published(stack, tree):
 
     return published
 
+def __get_last(stack, tree):
+    """Return the name of the last published patch."""
+    for p in reversed(stack.patchorder.applied):
+        pc = stack.patches.get(p).commit
+        if tree.sha1 == pc.data.tree.sha1:
+            return p
+
+    return None
+
 def func(parser, options, args):
     """Publish the stack changes."""
     repository = directory.repository
@@ -109,7 +122,7 @@ def func(parser, options, args):
 
     # just clone the stack if the public ref does not exist
     if not repository.refs.exists(public_ref):
-        if options.unpublished:
+        if options.unpublished or options.last:
             raise common.CmdException('"%s" does not exist' % public_ref)
         repository.refs.set(public_ref, stack.head, 'publish')
         out.info('Created "%s"' % public_ref)
@@ -117,6 +130,15 @@ def func(parser, options, args):
 
     public_head = repository.refs.get(public_ref)
     public_tree = public_head.data.tree
+
+    # find the last published patch
+    if options.last:
+        last = __get_last(stack, public_tree)
+        if not last:
+            raise common.CmdException('Unable to find the last published patch '
+                                      '(possibly rebased stack)')
+        out.info('%s' % last)
+        return
 
     # check for same tree (already up to date)
     if public_tree.sha1 == stack.head.data.tree.sha1:
