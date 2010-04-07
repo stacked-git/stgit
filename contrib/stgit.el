@@ -44,11 +44,29 @@ instead of \"dir/old/file -> dir/new/file\"."
 (defcustom stgit-default-show-worktree t
   "Set to non-nil to by default show the working tree in a new stgit buffer.
 
-Use \\<stgit-mode-map>\\[stgit-toggle-worktree] to toggle the
-this setting in an already-started StGit buffer."
+Use \\<stgit-mode-map>\\[stgit-toggle-worktree] to toggle this \
+setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-worktree))
+
+(defcustom stgit-default-show-unknown nil
+  "Set to non-nil to by default show unknown files a new stgit buffer.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-unknown] to toggle this \
+setting in an already-started StGit buffer."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-unknown))
+
+(defcustom stgit-default-show-ignored nil
+  "Set to non-nil to by default show ignored files a new stgit buffer.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-ignored] to toggle this \
+setting in an already-started StGit buffer."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-ignored))
 
 (defcustom stgit-find-copies-harder nil
   "Try harder to find copied files when listing patches.
@@ -1229,7 +1247,9 @@ Commands for branches:
 
 Customization variables:
 `stgit-abbreviate-copies-and-renames'
+`stgit-default-show-ignored'
 `stgit-default-show-patch-names'
+`stgit-default-show-unknown'
 `stgit-default-show-worktree'
 `stgit-find-copies-harder'
 `stgit-show-worktree-mode'
@@ -1247,8 +1267,8 @@ See also \\[customize-group] for the \"stgit\" group."
   (set (make-local-variable 'stgit-show-patch-names)
        stgit-default-show-patch-names)
   (set (make-local-variable 'stgit-show-worktree) stgit-default-show-worktree)
-  (set (make-local-variable 'stgit-show-ignored) nil)
-  (set (make-local-variable 'stgit-show-unknown) nil)
+  (set (make-local-variable 'stgit-show-ignored) stgit-default-show-ignored)
+  (set (make-local-variable 'stgit-show-unknown) stgit-default-show-unknown)
   (set (make-local-variable 'stgit-index-node) nil)
   (set (make-local-variable 'stgit-worktree-node) nil)
   (set (make-local-variable 'parse-sexp-lookup-properties) t)
@@ -2381,6 +2401,8 @@ work tree will show up."
   "Toggle the visibility of files ignored by git in the work
 tree. With ARG, show these files if ARG is positive.
 
+Its initial setting is controlled by `stgit-default-show-ignored'.
+
 Use \\[stgit-toggle-worktree] to show the work tree."
   (interactive)
   (stgit-assert-mode)
@@ -2393,6 +2415,8 @@ Use \\[stgit-toggle-worktree] to show the work tree."
 (defun stgit-toggle-unknown (&optional arg)
   "Toggle the visibility of files not registered with git in the
 work tree. With ARG, show these files if ARG is positive.
+
+Its initial setting is controlled by `stgit-default-show-unknown'.
 
 Use \\[stgit-toggle-worktree] to show the work tree."
   (interactive)
