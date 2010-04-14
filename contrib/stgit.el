@@ -1300,15 +1300,17 @@ refresh the stgit buffers as the git status of files change."
               (add-to-list 'after-load-alist
                            `(,feature (stgit-advise-funlist
                                        (quote ,funlist)))))))
+        ;; lists of (<feature> <function> <function> ...) to be advised
         '((vc-git vc-git-rename-file vc-git-revert vc-git-register)
-          (git    git-add-file git-checkout git-revert-file git-remove-file))))
+          (git    git-add-file git-checkout git-revert-file git-remove-file)
+          (dired  dired-delete-file))))
 
 (defun stgit-update-stgit-for-buffer (&optional refresh-index)
   "Refresh worktree status in any `stgit-mode' buffer that shows
 the status of the current buffer.
 
 If REFRESH-INDEX is not-nil, also update the index."
-  (let* ((dir (cond ((eq major-mode 'git-status-mode)
+  (let* ((dir (cond ((derived-mode-p 'stgit-status-mode 'dired-mode)
                      default-directory)
                     (buffer-file-name
                      (file-name-directory
