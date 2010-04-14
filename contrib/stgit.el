@@ -118,8 +118,8 @@ variable is used instead."
 (defcustom stgit-noname-patch-line-format "%s%m%e%D"
   "The alternate format string used to format patch lines.
 It has the same semantics as `stgit-patch-line-format', and the
-display can be toggled between the two formats using
-\\<stgit-mode-map>>\\[stgit-toggle-patch-names].
+display can be toggled between the two formats using \
+\\<stgit-mode-map>\\[stgit-toggle-patch-names].
 
 The alternate form is used when the patch name is hidden."
   :type 'string
@@ -129,8 +129,8 @@ The alternate form is used when the patch name is hidden."
 (defcustom stgit-default-show-patch-names t
   "If non-nil, default to showing patch names in a new stgit buffer.
 
-Use \\<stgit-mode-map>\\[stgit-toggle-patch-names] to toggle the
-this setting in an already-started StGit buffer."
+Use \\<stgit-mode-map>\\[stgit-toggle-patch-names] \
+to toggle the this setting in an already-started StGit buffer."
   :type 'boolean
   :group 'stgit
   :link '(variable-link stgit-show-patch-names))
