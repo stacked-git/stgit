@@ -580,8 +580,9 @@ been advised to update the stgit status when necessary.")
  shows the working tree\n")
                     'face 'stgit-description-face)))
     (stgit-run-series stgit-ewoc)
-    (if curpatch
-        (stgit-goto-patch curpatch (and curfile (stgit-file->file curfile)))
+    (unless (and curpatch
+                 (stgit-goto-patch curpatch
+                                   (and curfile (stgit-file->file curfile))))
       (goto-line curline)))
   (stgit-refresh-git-status))
 
@@ -1482,8 +1483,8 @@ allow historical commits; if nil, also allow work tree and index."
             (t nil)))))
 
 (defun stgit-goto-patch (patchsym &optional file)
-  "Move point to the line containing patch PATCHSYM.
-If that patch cannot be found, do nothing.
+  "Move point to the line containing patch PATCHSYM and return non-nil.
+If that patch cannot be found, do nothing and return nil.
 
 If the patch was found and FILE is not nil, instead move to that
 file's line. If FILE cannot be found, stay on the line of
