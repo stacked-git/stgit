@@ -289,14 +289,19 @@ A newline is appended."
     (error))
   (insert (match-string 1 text) ?\n))
 
+(defun stgit-line-format ()
+  "Return the current line format; one of
+`stgit-patch-line-format' and `stgit-noname-patch-line-format'"
+  (if stgit-show-patch-names
+      stgit-patch-line-format
+    stgit-noname-patch-line-format))
+
 (defun stgit-patch-pp (patch)
   (let* ((status (stgit-patch->status patch))
          (start (point))
          (name (stgit-patch->name patch))
          (face (cdr (assq status stgit-patch-status-face-alist)))
-         (fmt (if stgit-show-patch-names
-                  stgit-patch-line-format
-                stgit-noname-patch-line-format))
+         (fmt (stgit-line-format))
          (spec (format-spec-make
                 ?s (case status
                      ('applied "+")
