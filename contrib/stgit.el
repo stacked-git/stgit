@@ -2475,7 +2475,7 @@ With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
   (stgit-assert-mode)
   (let ((patchargs (if arg
-                       (let ((patches (stgit-patches-marked-or-at-point nil t)))
+                       (let ((patches (stgit-patches-marked-or-at-point t t)))
                          (when (> (length patches) 1)
                            (error "Too many patches marked"))
                          (cons "-p" patches))
