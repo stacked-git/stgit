@@ -973,6 +973,14 @@ By default, the patch description is shown but not the patch names.
 You can toggle showing the names using +t n+. To rename a patch, press
 +C-c C-r+.
 
+Showing Committed Patches
+-------------------------
+
+Sometimes it is convenient to be able to investigate already committed
+patches. Toggle showing these using +t h+. With a prefix argument, you
+can set how many to show; e.g., +M-7 t h+ will show seven already
+committed patches.
+
 Using the Index and Working Tree
 --------------------------------
 

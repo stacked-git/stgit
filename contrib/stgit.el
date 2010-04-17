@@ -126,6 +126,22 @@ The alternate form is used when the patch name is hidden."
   :group 'stgit
   :set 'stgit-set-default)
 
+(defcustom stgit-default-show-committed nil
+  "Set to nil to inhibit showing of historical git commits by default.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-committed] \
+to toggle this setting and to control how many commits are
+shown."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-committed))
+
+(defcustom stgit-default-committed-count 5
+  "The number of historical commits to show when `stgit-show-committed'
+is enabled."
+  :type 'number
+  :link '(variable-link stgit-committed-count))
+
 (defcustom stgit-default-show-patch-names t
   "If non-nil, default to showing patch names in a new stgit buffer.
 
@@ -175,6 +191,13 @@ format characters are recognized:
     (((background light)) (:foreground "orchid"))
     (t ()))
   "The face used for unapplied patch names"
+  :group 'stgit)
+
+(defface stgit-committed-patch-face
+  '((((background dark)) (:foreground "gray50"))
+    (((background light)) (:foreground "gray50"))
+    (t ()))
+  "The face used for already committed patch names"
   :group 'stgit)
 
 (defface stgit-description-face
@@ -446,55 +469,89 @@ been advised to update the stgit status when necessary.")
 (defun stgit-run-series (ewoc)
   (setq stgit-index-node nil
         stgit-worktree-node nil)
-  (let ((inserted-index (not stgit-show-worktree))
-        index-node
-        worktree-node
-        all-patchsyms)
-    (with-temp-buffer
-      (let* ((standard-output (current-buffer))
-             (exit-status (stgit-run-silent "series"
-                                            "--description" "--empty")))
-        (goto-char (point-min))
-        (if (not (zerop exit-status))
-            (cond ((looking-at "stg series: \\(.*\\)")
-                   (setq inserted-index t)
-                   (ewoc-set-hf ewoc (car (ewoc-get-hf ewoc))
-                                (substitute-command-keys
-                                 "-- not initialized; run \\[stgit-init]")))
-                  ((looking-at ".*")
-                   (error "Error running stg: %s"
-                          (match-string 0))))
-          (while (not (eobp))
-            (unless (looking-at
-                     "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
-              (error "Syntax error in output from stg series"))
-            (let* ((state-str (match-string 2))
-                   (state (cond ((string= state-str ">") 'top)
-                                ((string= state-str "+") 'applied)
-                                ((string= state-str "-") 'unapplied)))
-                   (name (intern (match-string 4)))
-                   (desc (match-string 5))
-                   (empty (string= (match-string 1) "0")))
-              (unless inserted-index
-                (when (or (eq stgit-show-worktree-mode 'top)
-                          (and (eq stgit-show-worktree-mode 'center)
-                               (eq state 'unapplied)))
-                  (setq inserted-index t)
-                  (stgit-run-series-insert-index ewoc)))
-              (setq all-patchsyms (cons name all-patchsyms))
-              (ewoc-enter-last ewoc
-                               (make-stgit-patch
-                                :status state
-                                :name   name
-                                :desc   desc
-                                :empty  empty)))
-            (forward-line 1))))
+  (let (all-patchsyms)
+    (when stgit-show-committed
+      (let* ((base (stgit-id "{base}"))
+             (range (format "%s~%d..%s" base stgit-committed-count base)))
+        (with-temp-buffer
+          (let* ((standard-output (current-buffer))
+                 (fmt (stgit-line-format))
+                 (commit-abbrev (when (string-match "%-\\([0-9]+\\)n" fmt)
+                                  (list (format "--abbrev=%s"
+                                                (match-string 1 fmt)))))
+                 (exit-status (apply 'stgit-run-git-silent
+                                     "--no-pager"
+                                     "log" "--reverse" "--pretty=oneline"
+                                     "--abbrev-commit"
+                                     `(,@commit-abbrev
+                                       ,range))))
+            (goto-char (point-min))
+            (if (not (zerop exit-status))
+                (message "Failed to run git log")
+              (while (not (eobp))
+                (unless (looking-at
+                         "\\([0-9a-f]+\\)\\(\\.\\.\\.\\)? \\(.*\\)")
+                  (error "Syntax error in output from git log"))
+                (let* ((state 'committed)
+                       (name (intern (match-string 1)))
+                       (desc (match-string 3))
+                       (empty nil))
+                  (setq all-patchsyms (cons name all-patchsyms))
+                  (ewoc-enter-last ewoc
+                                   (make-stgit-patch
+                                    :status state
+                                    :name   name
+                                    :desc   desc
+                                    :empty  empty)))
+                (forward-line 1)))))))
+    (let ((inserted-index (not stgit-show-worktree))
+          index-node
+          worktree-node)
+      (with-temp-buffer
+        (let* ((standard-output (current-buffer))
+               (exit-status (stgit-run-silent "series"
+                                              "--description" "--empty")))
+          (goto-char (point-min))
+          (if (not (zerop exit-status))
+              (cond ((looking-at "stg series: \\(.*\\)")
+                     (setq inserted-index t)
+                     (ewoc-set-hf ewoc (car (ewoc-get-hf ewoc))
+                                  (substitute-command-keys
+                                   "-- not initialized; run \\[stgit-init]")))
+                    ((looking-at ".*")
+                     (error "Error running stg: %s"
+                            (match-string 0))))
+            (while (not (eobp))
+              (unless (looking-at
+                       "\\([0 ]\\)\\([>+-]\\)\\( \\)\\([^ ]+\\) *[|#] \\(.*\\)")
+                (error "Syntax error in output from stg series"))
+              (let* ((state-str (match-string 2))
+                     (state (cond ((string= state-str ">") 'top)
+                                  ((string= state-str "+") 'applied)
+                                  ((string= state-str "-") 'unapplied)))
+                     (name (intern (match-string 4)))
+                     (desc (match-string 5))
+                     (empty (string= (match-string 1) "0")))
+                (unless inserted-index
+                  (when (or (eq stgit-show-worktree-mode 'top)
+                            (and (eq stgit-show-worktree-mode 'center)
+                                 (eq state 'unapplied)))
+                    (setq inserted-index t)
+                    (stgit-run-series-insert-index ewoc)))
+                (setq all-patchsyms (cons name all-patchsyms))
+                (ewoc-enter-last ewoc
+                                 (make-stgit-patch
+                                  :status state
+                                  :name   name
+                                  :desc   desc
+                                  :empty  empty)))
+              (forward-line 1)))))
       (unless inserted-index
-        (stgit-run-series-insert-index ewoc)))
-    (setq stgit-index-node    index-node
-          stgit-worktree-node worktree-node
-          stgit-marked-patches (intersection stgit-marked-patches
-                                             all-patchsyms))))
+        (stgit-run-series-insert-index ewoc))
+      (setq stgit-index-node     index-node
+            stgit-worktree-node  worktree-node
+            stgit-marked-patches (intersection stgit-marked-patches
+                                               all-patchsyms)))))
 
 (defun stgit-current-branch ()
   "Return the name of the current branch."
@@ -547,6 +604,7 @@ been advised to update the stgit status when necessary.")
   '((applied   . stgit-applied-patch-face)
     (top       . stgit-top-patch-face)
     (unapplied . stgit-unapplied-patch-face)
+    (committed . stgit-committed-patch-face)
     (index     . stgit-index-work-tree-title-face)
     (work      . stgit-index-work-tree-title-face))
   "Alist of face to use for a given patch status")
@@ -981,6 +1039,7 @@ file for (applied) copies and renames."
     (mapc (lambda (arg) (define-key toggle-map (car arg) (cdr arg)))
           '(("n" .        stgit-toggle-patch-names)
             ("t" .        stgit-toggle-worktree)
+            ("h" .        stgit-toggle-committed)
             ("i" .        stgit-toggle-ignored)
             ("u" .        stgit-toggle-unknown)))
     (setq stgit-mode-map (make-keymap))
@@ -1146,6 +1205,8 @@ file for (applied) copies and renames."
          :selected stgit-show-ignored :active stgit-show-worktree]
         ["Show patch names" stgit-toggle-patch-names :style toggle
          :selected stgit-show-patch-names]
+        ["Show recent commits" stgit-toggle-committed :style toggle
+         :selected stgit-show-committed]
         "-"
         ["Switch branches" stgit-branch t
          :help "Switch to or create another branch"]
@@ -1229,6 +1290,7 @@ Display commands:
 \\[stgit-toggle-worktree]	Toggle showing index and work tree
 \\[stgit-toggle-unknown]	Toggle showing unknown files
 \\[stgit-toggle-ignored]	Toggle showing ignored files
+\\[stgit-toggle-committed]	Toggle showing recent commits
 
 Commands for diffs:
 \\[stgit-diff]	Show diff of patch or file
@@ -1256,6 +1318,8 @@ Customization variables:
 `stgit-default-show-patch-names'
 `stgit-default-show-unknown'
 `stgit-default-show-worktree'
+`stgit-default-show-committed'
+`stgit-default-committed-count'
 `stgit-find-copies-harder'
 `stgit-show-worktree-mode'
 
@@ -1273,6 +1337,8 @@ See also \\[customize-group] for the \"stgit\" group."
           (stgit-index-node             . nil)
           (stgit-worktree-node          . nil)
           (stgit-marked-patches         . nil)
+          (stgit-committed-count        . ,stgit-default-committed-count)
+          (stgit-show-committed         . ,stgit-default-show-committed)
           (stgit-show-ignored           . ,stgit-default-show-ignored)
           (stgit-show-patch-names       . ,stgit-default-show-patch-names)
           (stgit-show-unknown           . ,stgit-default-show-unknown)
@@ -1377,15 +1443,21 @@ If REFRESH-INDEX is non-nil, also update the index."
 (defun stgit-patch-at-point (&optional cause-error)
   (get-text-property (point) 'patch-data))
 
-(defun stgit-patch-name-at-point (&optional cause-error only-patches)
+(defun stgit-patch-name-at-point (&optional cause-error types)
   "Return the patch name on the current line as a symbol.
 If CAUSE-ERROR is not nil, signal an error if none found.
-If ONLY-PATCHES is not nil, only allow real patches, and not
-index or work tree."
+
+TYPES controls which types of commits and patches can be returned.
+If it is t, only allow stgit patches; if 'allow-committed, also
+allow historical commits; if nil, also allow work tree and index."
   (let ((patch (stgit-patch-at-point)))
     (and patch
-         only-patches
-         (memq (stgit-patch->status patch) '(work index))
+         (memq (stgit-patch->status patch)
+               (case types
+                 ((nil) nil)
+                 ((allow-committed) '(work index))
+                 ((t) '(work index committed))
+                 (t (error "Bad value"))))
          (setq patch nil))
     (cond (patch
            (stgit-patch->name patch))
@@ -1395,13 +1467,16 @@ index or work tree."
 (defun stgit-patched-file-at-point ()
   (get-text-property (point) 'file-data))
 
-(defun stgit-patches-marked-or-at-point (&optional cause-error only-patches)
+(defun stgit-patches-marked-or-at-point (&optional cause-error types)
   "Return the symbols of the marked patches, or the patch on the current line.
 If CAUSE-ERRROR is not nil, signal an error if none found.
-If ONLY-PATCHES is not nil, do not include index or work tree."
+
+TYPES controls which types of commits and patches can be returned.
+If it is t, only allow stgit patches; if 'allow-committed, also
+allow historical commits; if nil, also allow work tree and index."
   (if stgit-marked-patches
       stgit-marked-patches
-    (let ((patch (stgit-patch-name-at-point nil only-patches)))
+    (let ((patch (stgit-patch-name-at-point nil types)))
       (cond (patch (list patch))
             (cause-error (error "No patches marked or at this line"))
             (t nil)))))
@@ -1453,12 +1528,11 @@ PATCHSYM."
   (interactive)
   (stgit-assert-mode)
   (let* ((node (ewoc-locate stgit-ewoc))
-         (patch (ewoc-data node))
-         (name (stgit-patch->name patch)))
-    (when (eq name :work)
-      (error "Cannot mark the work tree"))
-    (when (eq name :index)
-      (error "Cannot mark the index"))
+         (patch (ewoc-data node)))
+    (case (stgit-patch->status patch)
+      (work      (error "Cannot mark the work tree"))
+      (index     (error "Cannot mark the index"))
+      (committed (error "Cannot mark a committed patch")))
     (stgit-add-mark (stgit-patch->name patch))
     (let ((column (current-column)))
       (ewoc-invalidate stgit-ewoc node)
@@ -1808,11 +1882,14 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
   (stgit-reload))
 
 (defun stgit-goto-target ()
-  "Return the goto target a point; either a patchsym, :top,
+  "Return the goto target at point: a patchsym, :top,
 or :bottom."
-  (let ((patchsym (stgit-patch-name-at-point)))
-    (cond ((memq patchsym '(:work :index)) nil)
-          (patchsym)
+  (let ((patch (stgit-patch-at-point)))
+    (cond (patch
+           (case (stgit-patch->status patch)
+             ((work index) nil)
+             ((committed) :bottom)
+             (t (stgit-patch->name patch))))
           ((not (next-single-property-change (point) 'patch-data))
            :top)
           ((not (previous-single-property-change (point) 'patch-data))
@@ -1943,9 +2020,10 @@ greater than four (e.g., \\[universal-argument] \
   (stgit-assert-mode)
   (unless (= (length stgit-marked-patches) 1)
     (error "Need exactly one patch marked"))
-  (let* ((patches (stgit-sort-patches (cons (stgit-patch-name-at-point t t)
-                                            stgit-marked-patches)
-                                      t))
+  (let* ((patches (stgit-sort-patches
+                   (cons (stgit-patch-name-at-point t 'allow-committed)
+                         stgit-marked-patches)
+                   t))
          (first-patch (car patches))
          (second-patch (if (cdr patches) (cadr patches) first-patch))
          (whitespace-arg (stgit-whitespace-diff-arg ignore-whitespace))
@@ -2322,7 +2400,7 @@ If the command ends in an ampersand, run it asynchronously.
 When the command has finished, reload the stgit buffer."
   (interactive)
   (stgit-assert-mode)
-  (let* ((patches (stgit-patches-marked-or-at-point nil t))
+  (let* ((patches (stgit-patches-marked-or-at-point nil 'allow-committed))
          (patch-names (mapcar 'symbol-name patches))
          (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
          (defaultcmd (if patches
@@ -2422,6 +2500,12 @@ See also `stgit-show-worktree-mode'.")
 (defvar stgit-show-patch-names t
   "If nil, inhibit showing patch names.")
 
+(defvar stgit-show-committed nil
+  "If nil, inhibit showing recent commits.")
+
+(defvar stgit-committed-count nil
+  "The number of recent commits to show.")
+
 (defun stgit-toggle-worktree (&optional arg)
   "Toggle the visibility of the work tree.
 With ARG, show the work tree if ARG is positive.
@@ -2479,6 +2563,21 @@ The initial setting is controlled by `stgit-default-show-patch-names'."
         (if (numberp arg)
             (> arg 0)
           (not stgit-show-patch-names)))
+  (stgit-reload))
+
+(defun stgit-toggle-committed (&optional arg)
+  "Toggle the visibility of historical git commits.
+With ARG, set the number of commits to show to ARG, and disable
+them if ARG is zero.
+
+The initial setting is controlled by `stgit-default-show-committed'."
+  (interactive "P")
+  (stgit-assert-mode)
+  (if (null arg)
+      (setq stgit-show-committed (not stgit-show-committed))
+    (let ((n (prefix-numeric-value arg)))
+      (setq stgit-show-committed (> n 0))
+      (setq stgit-committed-count n)))
   (stgit-reload))
 
 (provide 'stgit)
