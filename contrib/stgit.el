@@ -583,7 +583,9 @@ been advised to update the stgit status when necessary.")
     (unless (and curpatch
                  (stgit-goto-patch curpatch
                                    (and curfile (stgit-file->file curfile))))
-      (goto-line curline)))
+      (goto-char (point-min))
+      (forward-line (1- curline))
+      (move-to-column (stgit-goal-column))))
   (stgit-refresh-git-status))
 
 (defconst stgit-file-status-code-strings
