@@ -2507,64 +2507,52 @@ See also `stgit-show-worktree-mode'.")
 (defvar stgit-committed-count nil
   "The number of recent commits to show.")
 
-(defun stgit-toggle-worktree (&optional arg)
+(defmacro stgit-define-toggle-view (sym help)
+  (declare (indent 1))
+  (let* ((name (symbol-name sym))
+         (fun  (intern (concat "stgit-toggle-" name)))
+         (flag (intern (concat "stgit-show-" name))))
+    ;; make help-follow find the correct function
+    `(put (quote ,fun) 'definition-name 'stgit-define-toggle-view)
+    `(defun ,fun (&optional arg)
+       ,help
+       (interactive "P")
+       (stgit-assert-mode)
+       (setq ,flag (if arg
+                       (> (prefix-numeric-value arg) 0)
+                     (not ,flag)))
+       (stgit-reload))))
+
+(stgit-define-toggle-view worktree
   "Toggle the visibility of the work tree.
 With ARG, show the work tree if ARG is positive.
 
 Its initial setting is controlled by `stgit-default-show-worktree'.
 
 `stgit-show-worktree-mode' controls where on screen the index and
-work tree will show up."
-  (interactive)
-  (stgit-assert-mode)
-  (setq stgit-show-worktree
-        (if (numberp arg)
-            (> arg 0)
-          (not stgit-show-worktree)))
-  (stgit-reload))
+work tree will show up.")
 
-(defun stgit-toggle-ignored (&optional arg)
+(stgit-define-toggle-view ignored
   "Toggle the visibility of files ignored by git in the work
 tree. With ARG, show these files if ARG is positive.
 
 Its initial setting is controlled by `stgit-default-show-ignored'.
 
-Use \\[stgit-toggle-worktree] to show the work tree."
-  (interactive)
-  (stgit-assert-mode)
-  (setq stgit-show-ignored
-        (if (numberp arg)
-            (> arg 0)
-          (not stgit-show-ignored)))
-  (stgit-reload))
+Use \\[stgit-toggle-worktree] to show the work tree.")
 
-(defun stgit-toggle-unknown (&optional arg)
+(stgit-define-toggle-view unknown
   "Toggle the visibility of files not registered with git in the
 work tree. With ARG, show these files if ARG is positive.
 
 Its initial setting is controlled by `stgit-default-show-unknown'.
 
-Use \\[stgit-toggle-worktree] to show the work tree."
-  (interactive)
-  (stgit-assert-mode)
-  (setq stgit-show-unknown
-        (if (numberp arg)
-            (> arg 0)
-          (not stgit-show-unknown)))
-  (stgit-reload))
+Use \\[stgit-toggle-worktree] to show the work tree.")
 
-(defun stgit-toggle-patch-names (&optional arg)
+(stgit-define-toggle-view patch-names
   "Toggle the visibility of patch names. With ARG, show patch names
 if ARG is positive.
 
-The initial setting is controlled by `stgit-default-show-patch-names'."
-  (interactive)
-  (stgit-assert-mode)
-  (setq stgit-show-patch-names
-        (if (numberp arg)
-            (> arg 0)
-          (not stgit-show-patch-names)))
-  (stgit-reload))
+The initial setting is controlled by `stgit-default-show-patch-names'.")
 
 (defun stgit-toggle-committed (&optional arg)
   "Toggle the visibility of historical git commits.
