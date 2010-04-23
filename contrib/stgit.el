@@ -410,27 +410,37 @@ Returns nil if there was no output."
                    (error "Bad element in stgit-make-run-args args: %S" x))))
           args))
 
-(defun stgit-run-silent (&rest args)
-  (setq args (stgit-make-run-args args))
-  (apply 'call-process "stg" nil standard-output nil args))
+(defvar stgit-inhibit-messages nil
+  "Set to non-nil to inhibit messages when running `stg' commands.
+See also `stgit-message'.")
+(defun stgit-message (format-spec &rest args)
+  "Call `message' on the arguments unless `stgit-inhibit-messages' is non-nil."
+  (unless stgit-inhibit-messages
+    (apply 'message format-spec args)))
 
 (defun stgit-run (&rest args)
   (setq args (stgit-make-run-args args))
   (let ((msgcmd (mapconcat #'identity args " ")))
-    (message "Running stg %s..." msgcmd)
-    (apply 'call-process "stg" nil standard-output nil args)
-    (message "Running stg %s...done" msgcmd)))
+    (stgit-message "Running stg %s..." msgcmd)
+    (prog1
+        (apply 'call-process "stg" nil standard-output nil args)
+      (stgit-message "Running stg %s...done" msgcmd))))
+
+(defun stgit-run-silent (&rest args)
+  (let ((stgit-inhibit-messages t))
+    (apply 'stgit-run args)))
 
 (defun stgit-run-git (&rest args)
   (setq args (stgit-make-run-args args))
   (let ((msgcmd (mapconcat #'identity args " ")))
-    (message "Running git %s..." msgcmd)
-    (apply 'call-process "git" nil standard-output nil args)
-    (message "Running git %s...done" msgcmd)))
+    (stgit-message "Running git %s..." msgcmd)
+    (prog1
+        (apply 'call-process "git" nil standard-output nil args)
+      (stgit-message "Running git %s...done" msgcmd))))
 
 (defun stgit-run-git-silent (&rest args)
-  (setq args (stgit-make-run-args args))
-  (apply 'call-process "git" nil standard-output nil args))
+  (let ((stgit-inhibit-messages t))
+    (apply 'stgit-run-git args)))
 
 (defun stgit-index-empty-p ()
   "Returns non-nil if the index contains no changes from HEAD."
