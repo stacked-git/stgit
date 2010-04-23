@@ -603,14 +603,20 @@ using (make-hash-table :test 'equal)."
                (stgit-run-silent "branch"))
              0 -1))
 
-(defun stgit-reload ()
-  "Update the contents of the StGit buffer."
+(defun stgit-reload (&optional description)
+  "Update the contents of the StGit buffer.
+
+If DESCRIPTION is non-nil, it is displayed as a status message
+during the operation."
   (interactive)
   (stgit-assert-mode)
+  (when description
+    (message "%s..." description))
   (let ((inhibit-read-only t)
         (curline (line-number-at-pos))
         (curpatch (stgit-patch-name-at-point))
-        (curfile (stgit-patched-file-at-point)))
+        (curfile (stgit-patched-file-at-point))
+        (stgit-inhibit-messages description))
     (ewoc-filter stgit-ewoc #'(lambda (x) nil))
     (ewoc-set-hf stgit-ewoc
                  (concat "Branch: "
@@ -629,8 +635,10 @@ using (make-hash-table :test 'equal)."
                                    (and curfile (stgit-file->file curfile))))
       (goto-char (point-min))
       (forward-line (1- curline))
-      (move-to-column (stgit-goal-column))))
-  (stgit-refresh-git-status))
+      (move-to-column (stgit-goal-column)))
+    (stgit-refresh-git-status))
+  (when description
+    (message "%s...done" description)))
 
 (defconst stgit-file-status-code-strings
   (mapcar (lambda (arg)
@@ -2563,7 +2571,7 @@ See also `stgit-show-worktree-mode'.")
 (defvar stgit-committed-count nil
   "The number of recent commits to show.")
 
-(defmacro stgit-define-toggle-view (sym help)
+(defmacro stgit-define-toggle-view (sym desc help)
   (declare (indent 1))
   (let* ((name (symbol-name sym))
          (fun  (intern (concat "stgit-toggle-" name)))
@@ -2577,9 +2585,10 @@ See also `stgit-show-worktree-mode'.")
        (setq ,flag (if arg
                        (> (prefix-numeric-value arg) 0)
                      (not ,flag)))
-       (stgit-reload))))
+       (stgit-reload (format "%s %s" (if ,flag "Showing" "Hiding") ,desc)))))
 
 (stgit-define-toggle-view worktree
+  "work tree and index"
   "Toggle the visibility of the work tree.
 With ARG, show the work tree if ARG is positive.
 
@@ -2589,6 +2598,7 @@ Its initial setting is controlled by `stgit-default-show-worktree'.
 work tree will show up.")
 
 (stgit-define-toggle-view ignored
+  "ignored files"
   "Toggle the visibility of files ignored by git in the work
 tree. With ARG, show these files if ARG is positive.
 
@@ -2597,6 +2607,7 @@ Its initial setting is controlled by `stgit-default-show-ignored'.
 Use \\[stgit-toggle-worktree] to show the work tree.")
 
 (stgit-define-toggle-view unknown
+  "unknown files"
   "Toggle the visibility of files not registered with git in the
 work tree. With ARG, show these files if ARG is positive.
 
@@ -2605,12 +2616,14 @@ Its initial setting is controlled by `stgit-default-show-unknown'.
 Use \\[stgit-toggle-worktree] to show the work tree.")
 
 (stgit-define-toggle-view patch-names
+  "patch names"
   "Toggle the visibility of patch names. With ARG, show patch names
 if ARG is positive.
 
 The initial setting is controlled by `stgit-default-show-patch-names'.")
 
 (stgit-define-toggle-view svn
+  "subversion revisions"
   "Toggle showing subversion information from git svn. With ARG,
 show svn information if ARG is positive.
 
@@ -2629,6 +2642,10 @@ The initial setting is controlled by `stgit-default-show-committed'."
     (let ((n (prefix-numeric-value arg)))
       (setq stgit-show-committed (> n 0))
       (setq stgit-committed-count n)))
-  (stgit-reload))
+  (stgit-reload (format "%s historical commits"
+                        (if (and stgit-show-committed
+                                 (> stgit-committed-count 0))
+                            "Showing"
+                          "Hiding"))))
 
 (provide 'stgit)
