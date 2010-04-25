@@ -1305,11 +1305,47 @@ refresh the stgit buffers as the git status of files change."
           (git    git-add-file git-checkout git-revert-file git-remove-file)
           (dired  dired-delete-file))))
 
-(defun stgit-update-stgit-for-buffer (&optional refresh-index)
-  "Refresh worktree status in any `stgit-mode' buffer that shows
-the status of the current buffer.
+(defvar stgit-pending-refresh-buffers nil
+  "Alist of (cons `buffer' `refresh-index') of buffers that need
+to be refreshed. `refresh-index' is non-nil if both work tree
+and index need to be refreshed.")
 
-If REFRESH-INDEX is not-nil, also update the index."
+(defun stgit-run-pending-refreshs ()
+  "Run all pending stgit buffer updates as posted by `stgit-post-refresh'."
+  (let ((buffers stgit-pending-refresh-buffers)
+        (stgit-inhibit-messages t))
+    (setq stgit-pending-refresh-buffers nil)
+    (while buffers
+      (let* ((elem (car buffers))
+             (buffer (car elem))
+             (refresh-index (cdr elem)))
+        (when (buffer-name buffer)
+          (with-current-buffer buffer
+            (stgit-refresh-worktree)
+            (when refresh-index (stgit-refresh-index)))))
+      (setq buffers (cdr buffers)))))
+
+(defun stgit-post-refresh (buffer refresh-index)
+  "Update worktree status in BUFFER when Emacs becomes idle. If
+REFRESH-INDEX is non-nil, also update the index."
+  (unless stgit-pending-refresh-buffers
+    (run-with-idle-timer 0.1 nil 'stgit-run-pending-refreshs))
+  (let ((elem (assq buffer stgit-pending-refresh-buffers)))
+    (if elem
+        ;; if buffer is already present, set its refresh-index flag if
+        ;; necessary
+        (when refresh-index
+          (setcdr elem t))
+      ;; new entry
+      (setq stgit-pending-refresh-buffers
+            (cons (cons buffer refresh-index)
+                  stgit-pending-refresh-buffers)))))
+
+(defun stgit-update-stgit-for-buffer (&optional refresh-index)
+  "When Emacs becomes idle, refresh worktree status in any
+`stgit-mode' buffer that shows the status of the current buffer.
+
+If REFRESH-INDEX is non-nil, also update the index."
   (let* ((dir (cond ((derived-mode-p 'stgit-status-mode 'dired-mode)
                      default-directory)
                     (buffer-file-name
@@ -1319,9 +1355,7 @@ If REFRESH-INDEX is not-nil, also update the index."
                             (error nil))))
 	 (buffer (and gitdir (stgit-find-buffer gitdir))))
     (when buffer
-      (with-current-buffer buffer
-        (stgit-refresh-worktree)
-        (when refresh-index (stgit-refresh-index))))))
+      (stgit-post-refresh buffer refresh-index))))
 
 (defun stgit-add-mark (patchsym)
   "Mark the patch PATCHSYM."
