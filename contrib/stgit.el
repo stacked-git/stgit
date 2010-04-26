@@ -68,6 +68,16 @@ setting in an already-started StGit buffer."
   :group 'stgit
   :link '(variable-link stgit-show-ignored))
 
+(defcustom stgit-default-show-svn t
+  "Set to non-nil to by default show subversion information in a
+new stgit buffer.
+
+Use \\<stgit-mode-map>\\[stgit-toggle-svn] to toggle this \
+setting in an already-started StGit buffer."
+  :type 'boolean
+  :group 'stgit
+  :link '(variable-link stgit-show-worktree))
+
 (defcustom stgit-find-copies-harder nil
   "Try harder to find copied files when listing patches.
 
@@ -463,25 +473,40 @@ been advised to update the stgit status when necessary.")
                                                    :desc nil
                                                    :empty nil)))))
 
+(defun stgit-svn-find-rev (sha1 hash)
+  "Return the subversion revision corresponding to SHA1 as
+reported by git svn.
+
+Cached data is stored in HASH, which must have been created
+using (make-hash-table :test 'equal)."
+  (let ((result (gethash sha1 hash t)))
+    (when (eq result t)
+      (let ((svn-rev (with-output-to-string
+                       (stgit-run-git-silent "svn" "find-rev"
+                                             "--" sha1))))
+        (setq result (when (string-match "\\`[0-9]+" svn-rev)
+                       (string-to-number (match-string 0 svn-rev))))
+        (puthash sha1 result hash)))
+    result))
+
 (defun stgit-run-series (ewoc)
   (setq stgit-index-node nil
         stgit-worktree-node nil)
   (let (all-patchsyms)
     (when stgit-show-committed
-      (let* ((base (stgit-id "{base}"))
+      (let* ((show-svn stgit-show-svn)
+             (svn-hash stgit-svn-find-rev-hash)
+             (base (stgit-id "{base}"))
              (range (format "%s~%d..%s" base stgit-committed-count base)))
         (with-temp-buffer
           (let* ((standard-output (current-buffer))
                  (fmt (stgit-line-format))
                  (commit-abbrev (when (string-match "%-\\([0-9]+\\)n" fmt)
-                                  (list (format "--abbrev=%s"
-                                                (match-string 1 fmt)))))
-                 (exit-status (apply 'stgit-run-git-silent
-                                     "--no-pager"
-                                     "log" "--reverse" "--pretty=oneline"
-                                     "--abbrev-commit"
-                                     `(,@commit-abbrev
-                                       ,range))))
+                                  (string-to-number (match-string 1 fmt))))
+                 (exit-status (stgit-run-git-silent "--no-pager" "log"
+                                                    "--reverse"
+                                                    "--pretty=oneline"
+                                                    range)))
             (goto-char (point-min))
             (if (not (zerop exit-status))
                 (message "Failed to run git log")
@@ -490,9 +515,21 @@ been advised to update the stgit status when necessary.")
                          "\\([0-9a-f]+\\)\\(\\.\\.\\.\\)? \\(.*\\)")
                   (error "Syntax error in output from git log"))
                 (let* ((state 'committed)
-                       (name (intern (match-string 1)))
+                       (name (match-string 1))
                        (desc (match-string 3))
                        (empty nil))
+
+                  (when show-svn
+                    (let ((svn-rev (stgit-svn-find-rev name svn-hash)))
+                      (when svn-rev
+                        (setq desc (format "(r%s) %s" svn-rev desc)))))
+
+                  (and commit-abbrev
+                       (< commit-abbrev (length name))
+                       (setq name (substring name 0 commit-abbrev)))
+
+                  (setq name (intern name))
+
                   (setq all-patchsyms (cons name all-patchsyms))
                   (ewoc-enter-last ewoc
                                    (make-stgit-patch
@@ -1041,7 +1078,8 @@ file for (applied) copies and renames."
             ("t" .        stgit-toggle-worktree)
             ("h" .        stgit-toggle-committed)
             ("i" .        stgit-toggle-ignored)
-            ("u" .        stgit-toggle-unknown)))
+            ("u" .        stgit-toggle-unknown)
+            ("s" .        stgit-toggle-svn)))
     (setq stgit-mode-map (make-keymap))
     (suppress-keymap stgit-mode-map)
     (mapc (lambda (arg) (define-key stgit-mode-map (car arg) (cdr arg)))
@@ -1207,6 +1245,8 @@ file for (applied) copies and renames."
          :selected stgit-show-patch-names]
         ["Show recent commits" stgit-toggle-committed :style toggle
          :selected stgit-show-committed]
+        ["Show subversion info" stgit-toggle-svn :style toggle
+         :selected stgit-show-svn]
         "-"
         ["Switch branches" stgit-branch t
          :help "Switch to or create another branch"]
@@ -1291,6 +1331,7 @@ Display commands:
 \\[stgit-toggle-unknown]	Toggle showing unknown files
 \\[stgit-toggle-ignored]	Toggle showing ignored files
 \\[stgit-toggle-committed]	Toggle showing recent commits
+\\[stgit-toggle-svn]	Toggle showing subversion information
 
 Commands for diffs:
 \\[stgit-diff]	Show diff of patch or file
@@ -1319,6 +1360,7 @@ Customization variables:
 `stgit-default-show-unknown'
 `stgit-default-show-worktree'
 `stgit-default-show-committed'
+`stgit-default-show-svn'
 `stgit-default-committed-count'
 `stgit-find-copies-harder'
 `stgit-show-worktree-mode'
@@ -1337,10 +1379,12 @@ See also \\[customize-group] for the \"stgit\" group."
           (stgit-index-node             . nil)
           (stgit-worktree-node          . nil)
           (stgit-marked-patches         . nil)
+          (stgit-svn-find-rev-hash      . ,(make-hash-table :test 'equal))
           (stgit-committed-count        . ,stgit-default-committed-count)
           (stgit-show-committed         . ,stgit-default-show-committed)
           (stgit-show-ignored           . ,stgit-default-show-ignored)
           (stgit-show-patch-names       . ,stgit-default-show-patch-names)
+          (stgit-show-svn               . ,stgit-default-show-svn)
           (stgit-show-unknown           . ,stgit-default-show-unknown)
           (stgit-show-worktree          . ,stgit-default-show-worktree)))
   (set-variable 'truncate-lines 't)
@@ -2503,6 +2547,9 @@ See also `stgit-show-worktree-mode'.")
 (defvar stgit-show-committed nil
   "If nil, inhibit showing recent commits.")
 
+(defvar stgit-show-svn nil
+  "If nil, inhibit showing git svn information.")
+
 (defvar stgit-committed-count nil
   "The number of recent commits to show.")
 
@@ -2552,6 +2599,12 @@ Use \\[stgit-toggle-worktree] to show the work tree.")
 if ARG is positive.
 
 The initial setting is controlled by `stgit-default-show-patch-names'.")
+
+(stgit-define-toggle-view svn
+  "Toggle showing subversion information from git svn. With ARG,
+show svn information if ARG is positive.
+
+The initial setting is controlled by `stgit-default-show-svn'.")
 
 (defun stgit-toggle-committed (&optional arg)
   "Toggle the visibility of historical git commits.
