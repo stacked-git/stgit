@@ -430,9 +430,6 @@ Returns nil if there was no output."
   "Returns non-nil if the work tree contains no changes from index."
   (zerop (stgit-run-git-silent "diff-files" "--quiet")))
 
-(defvar stgit-index-node)
-(defvar stgit-worktree-node)
-
 (defvar stgit-did-advise nil
   "Set to non-nil if appropriate (non-stgit) git functions have
 been advised to update the stgit status when necessary.")
