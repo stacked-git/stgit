@@ -2462,7 +2462,8 @@ If the command ends in an ampersand, run it asynchronously.
 When the command has finished, reload the stgit buffer."
   (interactive)
   (stgit-assert-mode)
-  (let* ((patches (stgit-patches-marked-or-at-point nil 'allow-committed))
+  (let* ((patches (stgit-sort-patches
+                   (stgit-patches-marked-or-at-point nil 'allow-committed)))
          (patch-names (mapcar 'symbol-name patches))
          (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
          (defaultcmd (if patches
