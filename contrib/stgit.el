@@ -1494,9 +1494,16 @@ If ALL is not nil, also return non-stgit branches."
               ((not (string-match stgit-allowed-branch-name-re branch))
                (error "Invalid branch name"))
               ((yes-or-no-p (format "Create branch \"%s\"? " branch))
-               (stgit-capture-output nil (stgit-run "branch" "--create" "--"
-                                                    branch))
-               t))
+               (let ((branch-point (completing-read
+                                    "Branch from (default current branch): "
+                                    (stgit-available-branches))))
+                 (stgit-capture-output nil
+                   (apply 'stgit-run
+                          `("branch" "--create" "--"
+                            ,branch
+                            ,@(unless (zerop (length branch-point))
+                                (list branch-point)))))
+                 t)))
     (stgit-reload)))
 
 (defun stgit-available-refs (&optional omit-stgit)
