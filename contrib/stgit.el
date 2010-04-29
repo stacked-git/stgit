@@ -2451,25 +2451,29 @@ deepest patch had before the squash."
       (unless at-pmark
         (goto-char old-point)))))
 
-(defun stgit-execute ()
+(defun stgit-execute (&optional git-mode)
   "Prompt for an stg command to execute in a shell.
 
 The names of any marked patches or the patch at point are
 inserted in the command to be executed.
 
+With a prefix argument, or if GIT-MODE is non-nil, insert SHA1
+sums of the marked patches instead, and prompt for a git command.
+
 If the command ends in an ampersand, run it asynchronously.
 
 When the command has finished, reload the stgit buffer."
-  (interactive)
+  (interactive "P")
   (stgit-assert-mode)
   (let* ((patches (stgit-sort-patches
                    (stgit-patches-marked-or-at-point nil 'allow-committed)))
          (patch-names (mapcar 'symbol-name patches))
          (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
          (defaultcmd (if patches
-                         (concat "stg  "
+                         (concat (if git-mode "git" "stg") "  "
                                  (and hyphens "-- ")
-                                 (mapconcat 'identity patch-names " "))
+                                 (mapconcat (if git-mode 'stgit-id 'identity)
+                                            patch-names " "))
                        "stg "))
          (cmd (read-from-minibuffer "Shell command: " (cons defaultcmd 5)
                                     nil nil 'shell-command-history))
