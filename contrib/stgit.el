@@ -2331,16 +2331,13 @@ their position in the patch series, bottommost first.
 
 PATCHSYMS must not contain duplicate entries, unless
 ALLOW-DUPLICATES is not nil."
-  (let (sorted-patchsyms
-        (series (with-output-to-string
-                  (with-current-buffer standard-output
-                    (stgit-run-silent "series" "--noprefix"))))
-        start)
-    (while (string-match "^\\(.+\\)" series start)
-      (let ((patchsym (intern (match-string 1 series))))
-        (when (memq patchsym patchsyms)
-          (setq sorted-patchsyms (cons patchsym sorted-patchsyms))))
-      (setq start (match-end 0)))
+  (let (sorted-patchsyms)
+    (ewoc-map #'(lambda (patch)
+                  (let ((name (stgit-patch->name patch)))
+                    (when (memq name patchsyms)
+                      (setq sorted-patchsyms (cons name sorted-patchsyms))))
+                  nil)
+              stgit-ewoc)
     (setq sorted-patchsyms (nreverse sorted-patchsyms))
 
     (unless allow-duplicates
