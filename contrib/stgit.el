@@ -508,8 +508,8 @@ using (make-hash-table :test 'equal)."
     (when stgit-show-committed
       (let* ((show-svn stgit-show-svn)
              (svn-hash stgit-svn-find-rev-hash)
-             (base (stgit-id "{base}"))
-             (range (format "%s~%d..%s" base stgit-committed-count base)))
+             (nentries (format "-%s" stgit-committed-count))
+             (base (stgit-id "{base}")))
         (with-temp-buffer
           (let* ((standard-output (current-buffer))
                  (fmt (stgit-line-format))
@@ -518,7 +518,8 @@ using (make-hash-table :test 'equal)."
                  (exit-status (stgit-run-git-silent "--no-pager" "log"
                                                     "--reverse"
                                                     "--pretty=oneline"
-                                                    range)))
+                                                    nentries
+                                                    base)))
             (goto-char (point-min))
             (if (not (zerop exit-status))
                 (message "Failed to run git log")
