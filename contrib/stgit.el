@@ -144,12 +144,14 @@ to toggle this setting and to control how many commits are
 shown."
   :type 'boolean
   :group 'stgit
+  :link '(variable-link stgit-default-committed-count)
   :link '(variable-link stgit-show-committed))
 
 (defcustom stgit-default-committed-count 5
   "The number of historical commits to show when `stgit-show-committed'
 is enabled."
   :type 'number
+  :link '(variable-link stgit-default-show-committed)
   :link '(variable-link stgit-committed-count))
 
 (defcustom stgit-default-show-patch-names t
