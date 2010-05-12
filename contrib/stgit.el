@@ -1067,15 +1067,80 @@ file for (applied) copies and renames."
   "Move cursor down ARG patches."
   (interactive "p")
   (stgit-assert-mode)
-  (ewoc-goto-next stgit-ewoc (or arg 1))
-  (move-to-column goal-column))
+  (unless arg (setq arg 1))
+  (cond ((< arg 0)
+         (stgit-previous-patch (- arg)))
+        ((zerop arg)
+         (move-to-column (stgit-goal-column)))
+        (t
+         (when (stgit-at-header-p)
+           (ewoc-goto-node stgit-ewoc (ewoc-nth stgit-ewoc 0))
+           (setq arg (1- arg)))
+         (ewoc-goto-next stgit-ewoc arg)
+         (move-to-column goal-column))))
 
 (defun stgit-previous-patch (&optional arg)
   "Move cursor up ARG patches."
   (interactive "p")
   (stgit-assert-mode)
-  (ewoc-goto-prev stgit-ewoc (or arg 1))
-  (move-to-column goal-column))
+  (unless arg (setq arg 1))
+  (cond ((< arg 0)
+         (stgit-next-patch (- arg)))
+        ((zerop arg)
+         (move-to-column (stgit-goal-column)))
+        ((stgit-at-header-p)
+         (goto-char (point-min)))
+        (t
+         (let ((opatch (stgit-patch-at-point)))
+           (ewoc-goto-prev stgit-ewoc arg)
+           (unless (zerop arg)
+             (when (eq opatch (stgit-patch-at-point))
+               (goto-char (point-min)))))
+         (move-to-column (stgit-goal-column)))))
+
+(defun stgit-previous-patch-group (&optional arg)
+  "Move to the previous group of patches.
+
+If ARG is non-nil, do this ARG times. If ARG is negative, move
+-ARG groups forward instead; cf. `stgit-next-patch-group'."
+  (interactive "p")
+  (stgit-assert-mode)
+  (if (< arg 0)
+      (stgit-previous-patch-group (- arg))
+    (while (and (not (bobp))
+                (> arg 0))
+      (stgit-previous-patch 1)
+      (let* ((opoint (point))
+             (patch  (stgit-patch-at-point))
+             (status (and patch (stgit-patch->status patch))))
+        (while (and (not (bobp))
+                    (let* ((npatch (stgit-patch-at-point))
+                           (nstatus (and npatch (stgit-patch->status npatch))))
+                      (eq status nstatus)))
+          (setq opoint (point))
+          (stgit-previous-patch 1))
+        (goto-char opoint))
+      (setq arg (1- arg)))))
+
+(defun stgit-next-patch-group (&optional arg)
+  "Move to the next group of patches.
+
+If ARG is non-nil, do this ARG times. If ARG is negative, move
+-ARG groups backwards instead; cf. `stgit-previous-patch-group'."
+  (interactive "p")
+  (stgit-assert-mode)
+  (if (< arg 0)
+      (stgit-previous-patch-group (- arg))
+    (while (and (not (eobp))
+                (> arg 0))
+      (let* ((patch  (stgit-patch-at-point))
+             (status (and patch (stgit-patch->status patch))))
+        (while (and (not (eobp))
+                    (let* ((npatch (stgit-patch-at-point))
+                           (nstatus (and npatch (stgit-patch->status npatch))))
+                      (eq status nstatus)))
+          (stgit-next-patch 1)))
+      (setq arg (1- arg)))))
 
 (defvar stgit-mode-hook nil
   "Run after `stgit-mode' is setup.")
@@ -1115,8 +1180,10 @@ file for (applied) copies and renames."
             ([down] .     stgit-next-line)
             ("p" .        stgit-previous-patch)
             ("n" .        stgit-next-patch)
-            ("\M-{" .     stgit-previous-patch)
-            ("\M-}" .     stgit-next-patch)
+            ("\M-{" .     stgit-previous-patch-group)
+            ("\M-}" .     stgit-next-patch-group)
+            ([(control up)] .   stgit-previous-patch-group)
+            ([(control down)] . stgit-next-patch-group)
             ("s" .        stgit-git-status)
             ("g" .        stgit-reload-or-repair)
             ("r" .        stgit-refresh)
@@ -1303,6 +1370,8 @@ Movement commands:
 \\[stgit-next-line]	Move to next line
 \\[stgit-previous-patch]	Move to previous patch
 \\[stgit-next-patch]	Move to next patch
+\\[stgit-previous-patch-group]	Move to previous patch group
+\\[stgit-next-patch-group]	Move to next patch group
 
 \\[stgit-mark-down]	Mark patch and move down
 \\[stgit-unmark-up]	Unmark patch and move up
@@ -1945,6 +2014,14 @@ If ONLY-PATCHES is not nil, exclude index and work tree."
              (stgit-sort-patches (if unapplied unapplied patchsyms)))))
   (stgit-reload))
 
+(defun stgit-at-header-p ()
+  "Return non-nil if point is in the header area above all patches."
+  (not (previous-single-property-change (point) 'patch-data)))
+
+(defun stgit-at-footer-p ()
+  "Return non-nil if point is in the footer area below all patches."
+  (not (next-single-property-change (point) 'patch-data)))
+
 (defun stgit-goto-target ()
   "Return the goto target at point: a patchsym, :top,
 or :bottom."
@@ -1954,9 +2031,9 @@ or :bottom."
              ((work index) nil)
              ((committed) :bottom)
              (t (stgit-patch->name patch))))
-          ((not (next-single-property-change (point) 'patch-data))
+          ((stgit-at-footer-p)
            :top)
-          ((not (previous-single-property-change (point) 'patch-data))
+          ((stgit-at-header-p)
            :bottom))))
 
 (defun stgit-goto ()
