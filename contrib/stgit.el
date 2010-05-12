@@ -2097,10 +2097,12 @@ greater than four (e.g., \\[universal-argument] \
       (error "Can only show diff range for applied patches"))
     (stgit-capture-output (format "*StGit diff %s..%s*"
                                   first-patch second-patch)
-      (apply 'stgit-run-git (append '("diff" "--patch-with-stat")
-                                    (and whitespace-arg (list whitespace-arg))
-                                    (list (format "%s^" (stgit-id first-patch))
-                                          (stgit-id second-patch))))
+      (apply 'stgit-run-git
+             "diff" "--patch-with-stat"
+             (stgit-find-copies-harder-diff-arg)
+             (append (and whitespace-arg (list whitespace-arg))
+                     (list (format "%s^" (stgit-id first-patch))
+                           (stgit-id second-patch))))
       (with-current-buffer standard-output
         (goto-char (point-min))
         (diff-mode)))))
