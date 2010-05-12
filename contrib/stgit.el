@@ -2016,6 +2016,8 @@ which stage to diff against in the case of unmerged files."
                                      (list unmerged-stage))
                                     (t
                                      (list (concat patch-id "^") patch-id)))
+                              (and (eq (stgit-file->status patched-file) 'copy)
+                                   '("--diff-filter=C"))
                               '("--")
                               (if (stgit-file->copy-or-rename patched-file)
                                   (list (stgit-file->cr-from patched-file)
