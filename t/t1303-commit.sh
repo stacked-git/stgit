@@ -6,6 +6,27 @@ test_expect_success 'Initialize the StGIT repository' '
     stg init
 '
 
+test_expect_success 'Commit middle patch' '
+    stg new -m p1 &&
+    stg new -m p2 &&
+    stg new -m p3 &&
+    stg new -m p4 &&
+    stg pop &&
+    stg commit p2 &&
+    test "$(echo $(stg series))" = "+ p1 > p3 - p4"
+'
+
+test_expect_success 'Commit first patch' '
+    stg commit &&
+    test "$(echo $(stg series))" = "> p3 - p4"
+'
+
+test_expect_success 'Commit all patches' '
+    stg push &&
+    stg commit -a &&
+    test "$(echo $(stg series))" = ""
+'
+
 # stg commit with top != head should not succeed, since the committed
 # patches are poptentially lost.
 test_expect_success 'Commit when top != head (should fail)' '

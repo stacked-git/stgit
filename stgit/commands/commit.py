@@ -87,9 +87,13 @@ def func(parser, options, args):
         for i in xrange(min(len(stack.patchorder.applied), len(patches))):
             if stack.patchorder.applied[i] == patches[i]:
                 common_prefix += 1
+            else:
+                break
         if common_prefix < len(patches):
-            to_push = trans.pop_patches(
-                lambda pn: pn in stack.patchorder.applied[common_prefix:])
+            to_push = [pn for pn in stack.patchorder.applied[common_prefix:]
+                       if pn not in patches[common_prefix:]]
+            # this pops all the applied patches from common_prefix
+            trans.pop_patches(lambda pn: pn in to_push)
             for pn in patches[common_prefix:]:
                 trans.push_patch(pn, iw)
         else:
