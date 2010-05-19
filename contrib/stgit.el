@@ -1340,6 +1340,8 @@ If ARG is non-nil, do this ARG times. If ARG is negative, move
          :help "Switch to or create another branch"]
         ["Rebase branch" stgit-rebase t
          :help "Rebase the current branch"]
+        "-"
+        ["Customize StGit" (customize-group 'stgit)]
         ))))
 
 ;; disable tool bar editing buttons
