@@ -581,13 +581,15 @@ class Repository(RunWithEnv):
     refs = property(lambda self: self.__refs)
     def cat_object(self, sha1):
         return self.run(['git', 'cat-file', '-p', sha1]).raw_output()
-    def rev_parse(self, rev, discard_stderr = False):
+    def rev_parse(self, rev, discard_stderr = False, object_type = 'commit'):
+        assert object_type in ('commit', 'tree', 'blob')
+        getter = getattr(self, 'get_' + object_type)
         try:
-            return self.get_commit(self.run(
-                    ['git', 'rev-parse', '%s^{commit}' % rev]
+            return getter(self.run(
+                    ['git', 'rev-parse', '%s^{%s}' % (rev, object_type)]
                     ).discard_stderr(discard_stderr).output_one_line())
         except run.RunException:
-            raise RepositoryException('%s: No such revision' % rev)
+            raise RepositoryException('%s: No such %s' % (rev, object_type))
     def get_blob(self, sha1):
         return self.__blobs[sha1]
     def get_tree(self, sha1):
