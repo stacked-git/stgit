@@ -180,6 +180,16 @@ format characters are recognized:
   :group 'stgit
   :set 'stgit-set-default)
 
+(defcustom stgit-git-program "git"
+  "The program used by `stgit-mode' to run git."
+  :type 'string
+  :group 'stgit)
+
+(defcustom stgit-stg-program "stg"
+  "The program used by `stgit-mode' to run StGit."
+  :type 'string
+  :group 'stgit)
+
 (defgroup stgit-faces nil
   "Faces for `stgit-mode'."
   :group 'stgit)
@@ -276,7 +286,7 @@ See `stgit-mode' for commands available."
     (let ((cdup (with-output-to-string
                   (with-current-buffer standard-output
                     (cd dir)
-                    (unless (eq 0 (call-process "git" nil t nil
+                    (unless (eq 0 (call-process stgit-git-program nil t nil
                                                 "rev-parse" "--show-cdup"))
                       (error "Cannot find top-level git tree for %s" dir))))))
       (expand-file-name (concat (file-name-as-directory dir)
@@ -427,11 +437,11 @@ See also `stgit-message'.")
 
 (defun stgit-run (&rest args)
   (setq args (stgit-make-run-args args))
-  (let ((msgcmd (mapconcat #'identity args " ")))
-    (stgit-message "Running stg %s..." msgcmd)
+  (let ((msgcmd (mapconcat #'identity (cons stgit-stg-program args) " ")))
+    (stgit-message "Running %s..." msgcmd)
     (prog1
-        (apply 'call-process "stg" nil standard-output nil args)
-      (stgit-message "Running stg %s...done" msgcmd))))
+        (apply 'call-process stgit-stg-program nil standard-output nil args)
+      (stgit-message "Running %s...done" msgcmd))))
 
 (defun stgit-run-silent (&rest args)
   (let ((stgit-inhibit-messages t))
@@ -439,11 +449,11 @@ See also `stgit-message'.")
 
 (defun stgit-run-git (&rest args)
   (setq args (stgit-make-run-args args))
-  (let ((msgcmd (mapconcat #'identity args " ")))
-    (stgit-message "Running git %s..." msgcmd)
+  (let ((msgcmd (mapconcat #'identity (cons stgit-git-program args) " ")))
+    (stgit-message "Running %s..." msgcmd)
     (prog1
-        (apply 'call-process "git" nil standard-output nil args)
-      (stgit-message "Running git %s...done" msgcmd))))
+        (apply 'call-process stgit-git-program nil standard-output nil args)
+      (stgit-message "Running %s...done" msgcmd))))
 
 (defun stgit-run-git-silent (&rest args)
   (let ((stgit-inhibit-messages t))
@@ -2558,13 +2568,16 @@ When the command has finished, reload the stgit buffer."
                    (stgit-patches-marked-or-at-point nil 'allow-committed)))
          (patch-names (mapcar 'symbol-name patches))
          (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
+         (program (if git-mode stgit-git-program stgit-stg-program))
          (defaultcmd (if patches
-                         (concat (if git-mode "git" "stg") "  "
+                         (concat program
+                                 "  "
                                  (and hyphens "-- ")
                                  (mapconcat (if git-mode 'stgit-id 'identity)
                                             patch-names " "))
-                       "stg "))
-         (cmd (read-from-minibuffer "Shell command: " (cons defaultcmd 5)
+                       (concat stgit-stg-program " ")))
+         (cmd (read-from-minibuffer "Shell command: "
+                                    (cons defaultcmd (+ (length program) 2))
                                     nil nil 'shell-command-history))
          (async (string-match "&[ \t]*\\'" cmd))
          (buffer (get-buffer-create
