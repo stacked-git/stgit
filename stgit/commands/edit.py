@@ -24,7 +24,7 @@ from stgit.commands import common
 from stgit.lib import git as gitlib, transaction, edit
 from stgit.out import *
 
-help = 'edit a patch description or diff'
+help = 'Edit a patch description or diff'
 kind = 'patch'
 usage = ['[options] [--] [<patch>]']
 description = """
@@ -52,18 +52,28 @@ invoked even if such command-line options are given.)
 
 If the patch diff is edited but does not apply, no changes are made to
 the patch at all. The edited patch is saved to a file which you can
-feed to "stg edit --file", once you have made sure it does apply."""
+feed to "stg edit --file", once you have made sure it does apply.
+
+With --set-tree you set the git tree of the patch to the specified
+TREE-ISH without changing the tree of any other patches. When used on
+the top patch, the index and work tree will be updated to match the
+tree.  This low-level option is primarily meant to be used by tools
+built on top of StGit, such as the Emacs mode. See also the --set-tree
+flag of stg push."""
 
 args = [argparse.applied_patches, argparse.unapplied_patches,
         argparse.hidden_patches]
-options = [
-    opt('-d', '--diff', action = 'store_true',
-        short = 'Edit the patch diff'),
-    opt('-e', '--edit', action = 'store_true',
-        short = 'Invoke interactive editor'),
-    ] + (argparse.sign_options() +
-         argparse.message_options(save_template = True) +
-         argparse.author_options() + argparse.diff_opts_option())
+options = (
+    [ opt('-d', '--diff', action = 'store_true',
+          short = 'Edit the patch diff'),
+      opt('-e', '--edit', action = 'store_true',
+          short = 'Invoke interactive editor') ] +
+    argparse.sign_options() +
+    argparse.message_options(save_template = True) +
+    argparse.author_options() + argparse.diff_opts_option() +
+    [ opt('-t', '--set-tree', action = 'store',
+          metavar = 'TREE-ISH',
+          short = 'Set the git tree of the patch to TREE-ISH') ])
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -85,6 +95,10 @@ def func(parser, options, args):
         parser.error('Cannot edit more than one patch')
 
     cd = orig_cd = stack.patches.get(patchname).commit.data
+
+    if options.set_tree:
+        cd = cd.set_tree(stack.repository.rev_parse(
+                options.set_tree, discard_stderr = True, object_type = 'tree'))
 
     cd, failed_diff = edit.auto_edit_patch(
         stack.repository, cd, msg = options.message, contains_diff = True,
@@ -128,7 +142,10 @@ def func(parser, options, args):
     trans.patches[patchname] = stack.repository.commit(cd)
     try:
         for pn in popped:
-            trans.push_patch(pn, iw, allow_interactive = True)
+            if options.set_tree:
+                trans.push_tree(pn)
+            else:
+                trans.push_patch(pn, iw, allow_interactive = True)
     except transaction.TransactionHalted:
         pass
     try:

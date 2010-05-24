@@ -212,4 +212,19 @@ test_expect_failure 'Fail to set invalid author date' '
     test "$(date HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
+test_expect_success 'Set patch tree' '
+    p2tree=$(git log -1 --pretty=format:%T $(stg id p2)) &&
+    p4commit=$(stg id p4) &&
+    stg edit --set-tree $p4commit &&
+    test $(git write-tree) = $(git rev-parse ${p4commit}^{tree}) &&
+    grep "^333zz$" foo &&
+    stg pop &&
+    stg edit --set-tree $p2tree p2 &&
+    stg push --set-tree &&
+    test $(git write-tree) = $p2tree &&
+    grep "^333$" foo &&
+    stg edit --set-tree $p2tree p1 &&
+    test "$(echo $(stg series --empty --all))" = "+ p1 0> p2 - p3 ! p4"
+'
+
 test_done
