@@ -978,7 +978,7 @@ Showing Committed Patches
 
 Sometimes it is convenient to be able to investigate already committed
 patches. Toggle showing these using +t h+. With a prefix argument, you
-can set how many to show; e.g., +M-7 t h+ will show seven already
+can set how many to show; e.g., +7 t h+ will show seven already
 committed patches.
 
 Using the Index and Working Tree
@@ -987,9 +987,9 @@ Using the Index and Working Tree
 You can move a changed file between the index and the working tree
 using +i+. This is useful if your working tree contains a number of
 changes and you want to create or refresh a patch using only some of
-the changed file. Once you have the correct set of files in the index,
-use +c+ to create or +r+ to refresh patches using only the files in
-the index.
+the changed files. Once you have the correct set of files in the
+index, use +c+ to create or +r+ to refresh patches using only the
+files in the index.
 
 If you want to revert a change in either the index or the working
 tree, move the point to that line and press +U+. If you press +U+ on
