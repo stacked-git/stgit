@@ -12,7 +12,9 @@ prefix option.
 
 Issues of note:
 
+- StGit requires git version 1.5.6 or later. (Specifically, it needs a
+  git that includes commit a8128ed6: "git-cat-file: Add --batch option".)
+
 - To build and install the documentation, you need to have the
   asciidoc/xmlto toolchain.  The default build target ("make all")
   does _not_ build them.
-

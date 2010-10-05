@@ -1,7 +1,7 @@
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
-import os, os.path, re
+import atexit, os, os.path, re, signal
 from datetime import datetime, timedelta, tzinfo
 
 from stgit import exception, run, utils
@@ -520,6 +520,43 @@ class RunWithEnvCwd(RunWithEnv):
         @param args: Command and argument vector"""
         return RunWithEnv.run(self, args, self.env_in_cwd)
 
+class CatFileProcess(object):
+    def __init__(self, repo):
+        self.__repo = repo
+        self.__proc = None
+        atexit.register(self.__shutdown)
+    def __get_process(self):
+        if not self.__proc:
+            self.__proc = self.__repo.run(['git', 'cat-file', '--batch']
+                                          ).run_background()
+        return self.__proc
+    def __shutdown(self):
+        p = self.__proc
+        if p:
+            os.kill(p.pid(), signal.SIGTERM)
+            p.wait()
+    def cat_file(self, sha1):
+        p = self.__get_process()
+        p.stdin.write('%s\n' % sha1)
+        p.stdin.flush()
+
+        # Read until we have the entire status line.
+        s = ''
+        while not '\n' in s:
+            s += os.read(p.stdout.fileno(), 4096)
+        h, b = s.split('\n', 1)
+        if h == '%s missing' % sha1:
+            raise SomeException()
+        hash, type, length = h.split()
+        assert hash == sha1
+        length = int(length)
+
+        # Read until we have the entire object plus the trailing
+        # newline.
+        while len(b) < length + 1:
+            b += os.read(p.stdout.fileno(), 4096)
+        return type, b[:-1]
+
 class Repository(RunWithEnv):
     """Represents a git repository."""
     def __init__(self, directory):
@@ -531,6 +568,7 @@ class Repository(RunWithEnv):
         self.__default_index = None
         self.__default_worktree = None
         self.__default_iw = None
+        self.__catfile = CatFileProcess(self)
     env = property(lambda self: { 'GIT_DIR': self.__git_dir })
     @classmethod
     def default(cls):
@@ -580,7 +618,7 @@ class Repository(RunWithEnv):
     directory = property(lambda self: self.__git_dir)
     refs = property(lambda self: self.__refs)
     def cat_object(self, sha1):
-        return self.run(['git', 'cat-file', '-p', sha1]).raw_output()
+        return self.__catfile.cat_file(sha1)[1]
     def rev_parse(self, rev, discard_stderr = False, object_type = 'commit'):
         assert object_type in ('commit', 'tree', 'blob')
         getter = getattr(self, 'get_' + object_type)

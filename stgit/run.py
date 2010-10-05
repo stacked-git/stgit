@@ -134,6 +134,21 @@ class Run:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
         self.__check_exitcode()
+    def __run_background(self):
+        """Run in background."""
+        assert self.__indata == None
+        try:
+            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
+                                 stdin = subprocess.PIPE,
+                                 stdout = subprocess.PIPE,
+                                 stderr = subprocess.PIPE)
+        except OSError, e:
+            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
+        self.stdin = p.stdin
+        self.stdout = p.stdout
+        self.stderr = p.stderr
+        self.wait = p.wait
+        self.pid = lambda: p.pid
     def returns(self, retvals):
         self.__good_retvals = retvals
         return self
@@ -185,6 +200,10 @@ class Run:
     def run(self):
         """Just run, with no IO redirection."""
         self.__run_noio()
+    def run_background(self):
+        """Run as a background process."""
+        self.__run_background()
+        return self
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
