@@ -121,6 +121,7 @@ def func(parser, options, args):
 
     orig_applied = crt_series.get_applied()
     orig_unapplied = crt_series.get_unapplied()
+    orig_hidden = crt_series.get_hidden()
 
     if crt_series.get_protected():
         raise CmdException(
@@ -184,22 +185,29 @@ def func(parser, options, args):
             names.add(name)
         out.done()
 
-    # Write the applied/unapplied files.
-    out.start('Checking patch appliedness')
-    unapplied = patches - set(applied)
-    applied_name_set = set(p.patch for p in applied)
-    unapplied_name_set = set(p.patch for p in unapplied)
-    patches_name_set = set(p.patch for p in patches)
-    orig_patches = orig_applied + orig_unapplied
+    # Figure out hidden
+    orig_patches = orig_applied + orig_unapplied + orig_hidden
     orig_applied_name_set = set(orig_applied)
     orig_unapplied_name_set = set(orig_unapplied)
+    orig_hidden_name_set = set(orig_hidden)
     orig_patches_name_set = set(orig_patches)
+    hidden = [p for p in patches if p.patch in orig_hidden_name_set]
+
+    # Write the applied/unapplied files.
+    out.start('Checking patch appliedness')
+    unapplied = patches - set(applied) - set(hidden)
+    applied_name_set = set(p.patch for p in applied)
+    unapplied_name_set = set(p.patch for p in unapplied)
+    hidden_name_set = set(p.patch for p in hidden)
+    patches_name_set = set(p.patch for p in patches)
     for name in orig_patches_name_set - patches_name_set:
         out.info('%s is gone' % name)
     for name in applied_name_set - orig_applied_name_set:
         out.info('%s is now applied' % name)
     for name in unapplied_name_set - orig_unapplied_name_set:
         out.info('%s is now unapplied' % name)
+    for name in hidden_name_set - orig_hidden_name_set:
+        out.info('%s is now hidden' % name)
     orig_order = dict(zip(orig_patches, xrange(len(orig_patches))))
     def patchname_cmp(p1, p2):
         i1 = orig_order.get(p1, len(orig_order))
@@ -207,4 +215,5 @@ def func(parser, options, args):
         return cmp((i1, p1), (i2, p2))
     crt_series.set_applied(p.patch for p in applied)
     crt_series.set_unapplied(sorted(unapplied_name_set, cmp = patchname_cmp))
+    crt_series.set_hidden(sorted(hidden_name_set, cmp = patchname_cmp))
     out.done()

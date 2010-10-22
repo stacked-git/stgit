@@ -438,6 +438,9 @@ class Series(PatchSet):
             return []
         return read_strings(self.__hidden_file)
 
+    def set_hidden(self, hidden):
+        write_strings(self.__hidden_file, hidden)
+
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
         if os.path.isfile(self.__applied_file):
