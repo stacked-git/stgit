@@ -230,7 +230,17 @@ def patch_name_from_msg(msg):
         name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    return re.sub('[\W]+', '-', subject_line)[:name_len].strip('-')
+    words = re.sub('[\W]+', ' ', subject_line).split()
+
+    # use loop to avoid truncating the last name
+    name = words and words[0] or 'unknown'
+    for word in words[1:]:
+        new = name + '-' + word
+        if len(new) > name_len:
+            break
+        name = new
+
+    return name
 
 def make_patch_name(msg, unacceptable, default_name = 'patch'):
     """Return a patch name generated from the given commit message,
