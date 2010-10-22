@@ -155,7 +155,7 @@ def func(parser, options, args):
 
     # check for rebased stack. In this case we emulate a merge with the stack
     # base by setting two parents.
-    merge_bases = repository.get_merge_bases(public_head, stack.base)
+    merge_bases = set(repository.get_merge_bases(public_head, stack.base))
     if public_head in merge_bases:
         # fast-forward the public ref
         repository.refs.set(public_ref, stack.head, 'publish')

@@ -653,7 +653,7 @@ class Repository(RunWithEnv):
         """Return a set of merge bases of two commits."""
         sha1_list = self.run(['git', 'merge-base', '--all',
                               commit1.sha1, commit2.sha1]).output_lines()
-        return set(self.get_commit(sha1) for sha1 in sha1_list)
+        return [self.get_commit(sha1) for sha1 in sha1_list]
     def describe(self, commit):
         """Use git describe --all on the given commit."""
         return self.run(['git', 'describe', '--all', commit.sha1]
