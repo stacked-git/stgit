@@ -71,6 +71,11 @@ def func(parser, options, args):
             parser.error('cannot specify patch name with --to')
         patch_nr = patchnames = None
         to_commit = stack.repository.rev_parse(options.to)
+        # check whether the --to commit is on a different branch
+        merge_bases = directory.repository.get_merge_bases(to_commit, stack.base)
+        if not to_commit in merge_bases:
+            to_commit = merge_bases[0]
+            options.exclusive = True
     elif options.number:
         if options.number <= 0:
             parser.error('invalid value passed to --number')
