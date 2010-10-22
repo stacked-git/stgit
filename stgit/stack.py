@@ -623,7 +623,7 @@ class Series(PatchSet):
         if value:
             config.set('branch.%s.stgit.parentbranch' % target_series, value)
 
-    def delete(self, force = False):
+    def delete(self, force = False, cleanup = False):
         """Deletes an stgit series
         """
         if self.is_initialised():
@@ -631,7 +631,8 @@ class Series(PatchSet):
                     self.get_hidden();
             if not force and patches:
                 raise StackException, \
-                      'Cannot delete: the series still contains patches'
+                      'Cannot %s: the series still contains patches' % \
+                        ('delete', 'clean up')[cleanup]
             for p in patches:
                 self.get_patch(p).delete()
 
@@ -663,12 +664,13 @@ class Series(PatchSet):
                 raise StackException('Series directory %s is not empty'
                                      % self._dir())
 
-        try:
-            git.delete_branch(self.get_name())
-        except git.GitException:
-            out.warn('Could not delete branch "%s"' % self.get_name())
+        if not cleanup:
+            try:
+                git.delete_branch(self.get_name())
+            except git.GitException:
+                out.warn('Could not delete branch "%s"' % self.get_name())
+            config.remove_section('branch.%s' % self.get_name())
 
-        config.remove_section('branch.%s' % self.get_name())
         config.remove_section('branch.%s.stgit' % self.get_name())
 
     def refresh_patch(self, files = None, message = None, edit = False,

@@ -34,6 +34,7 @@ usage = ['',
          '--protect [--] [<branch>]',
          '--unprotect [--] [<branch>]',
          '--delete [--force] [--] <branch>',
+         '--cleanup [--force] [--] [<branch>]',
          '--description=<description> [--] [<branch>]']
 description = """
 Create, clone, switch between, rename, or delete development branches
@@ -100,6 +101,17 @@ options = [
 
         If you delete the current branch, you are switched to the
         "master" branch, if it exists."""),
+    opt('--cleanup', action = 'store_true',
+        short = 'Clean up the StGit metadata for a branch', long = """
+        Remove the StGit information for the current or given branch. If there
+        are patches left in the branch, StGit refuses the operation unless
+        '--force' is given.
+
+        A protected branch cannot be cleaned up; it must be unprotected first
+        (see '--unprotect' above).
+
+        A cleaned up branch can be re-initialised using the 'stg init'
+        command."""),
     opt('-d', '--description', short = 'Set the branch description'),
     opt('--force', action = 'store_true',
         short = 'Force a delete when the series is not empty')]
@@ -135,6 +147,15 @@ def __delete_branch(doomed_name, force = False):
 
     out.start('Deleting branch "%s"' % doomed_name)
     doomed.delete(force)
+    out.done()
+
+def __cleanup_branch(name, force = False):
+    branch = stack.Series(name)
+    if branch.get_protected():
+        raise CmdExcpetion('This branch is protected. Clean up is not permitted')
+
+    out.start('Cleaning up branch "%s"' % name)
+    branch.delete(force = force, cleanup = True)
     out.done()
 
 def func(parser, options, args):
@@ -229,6 +250,18 @@ def func(parser, options, args):
             parser.error('incorrect number of arguments')
         __delete_branch(args[0], options.force)
         log.delete_log(log.default_repo(), args[0])
+        return
+
+    elif options.cleanup:
+
+        if not args:
+            name = crt_series.get_name()
+        elif len(args) == 1:
+            name = args[0]
+        else:
+            parser.error('incorrect number of arguments')
+        __cleanup_branch(name, options.force)
+        log.delete_log(log.default_repo(), name)
         return
 
     elif options.list:
