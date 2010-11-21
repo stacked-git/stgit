@@ -115,7 +115,7 @@ def func(parser, options, args):
 
     # note the base commit for this series
     if not options.stdout:
-        base_commit = stack.patches.get(patches[0]).commit.sha1
+        base_commit = stack.base.sha1
         print >> series, '# This series applies on GIT commit %s' % base_commit
 
     patch_no = 1;
