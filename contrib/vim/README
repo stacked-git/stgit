@@ -1,0 +1,10 @@
+To syntax highlight StGit commit messages in vim:
+
+ * For the current user only:
+    > mkdir -p ~/.vim/ftdetect ~/.vim/syntax
+    > cp syntax/*.vim ~/.vim/syntax/
+    > cp ftdetect/*.vim ~/.vim/ftdetect/
+
+ * For all users:
+    # cp syntax/*.vim /usr/share/vim/site/syntax/
+    # cp ftdetect/*.vim /usr/share/vim/site/ftdetect/
