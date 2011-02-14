@@ -404,8 +404,6 @@ class CommitData(Immutable, Repr):
                 cd = cd.set_author(Person.parse(value))
             elif key == 'committer':
                 cd = cd.set_committer(Person.parse(value))
-            else:
-                assert False
         assert False
 
 class Commit(GitObject):
