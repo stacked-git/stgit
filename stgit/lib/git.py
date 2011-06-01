@@ -555,6 +555,34 @@ class CatFileProcess(object):
             b += os.read(p.stdout.fileno(), 4096)
         return type, b[:-1]
 
+class DiffTreeProcesses(object):
+    def __init__(self, repo):
+        self.__repo = repo
+        self.__procs = {}
+        atexit.register(self.__shutdown)
+    def __get_process(self, args):
+        args = tuple(args)
+        if not args in self.__procs:
+            self.__procs[args] = self.__repo.run(
+                ['git', 'diff-tree', '--stdin'] + list(args)).run_background()
+        return self.__procs[args]
+    def __shutdown(self):
+        for p in self.__procs.values():
+            os.kill(p.pid(), signal.SIGTERM)
+            p.wait()
+    def diff_trees(self, args, sha1a, sha1b):
+        p = self.__get_process(args)
+        query = '%s %s\n' % (sha1a, sha1b)
+        end = 'EOF\n' # arbitrary string that's not a 40-digit hex number
+        p.stdin.write(query + end)
+        p.stdin.flush()
+        s = ''
+        while not (s.endswith('\n' + end) or s.endswith('\0' + end)):
+            s += os.read(p.stdout.fileno(), 4096)
+        assert s.startswith(query)
+        assert s.endswith(end)
+        return s[len(query):-len(end)]
+
 class Repository(RunWithEnv):
     """Represents a git repository."""
     def __init__(self, directory):
@@ -567,6 +595,7 @@ class Repository(RunWithEnv):
         self.__default_worktree = None
         self.__default_iw = None
         self.__catfile = CatFileProcess(self)
+        self.__difftree = DiffTreeProcesses(self)
     env = property(lambda self: { 'GIT_DIR': self.__git_dir })
     @classmethod
     def default(cls):
@@ -693,8 +722,8 @@ class Repository(RunWithEnv):
         diff_opts = list(diff_opts)
         if binary and not '--binary' in diff_opts:
             diff_opts.append('--binary')
-        return self.run(['git', 'diff-tree', '-p'] + diff_opts
-                        + [t1.sha1, t2.sha1]).raw_output()
+        return self.__difftree.diff_trees(['-p'] + diff_opts,
+                                          t1.sha1, t2.sha1)
     def diff_tree_files(self, t1, t2):
         """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
         which they differ. For each file, yield a tuple with the old
@@ -704,8 +733,8 @@ class Repository(RunWithEnv):
         identical."""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
-        i = iter(self.run(['git', 'diff-tree', '-r', '-z'] + [t1.sha1, t2.sha1]
-                          ).raw_output().split('\0'))
+        i = iter(self.__difftree.diff_trees(
+                ['-r', '-z'], t1.sha1, t2.sha1).split('\0'))
         try:
             while True:
                 x = i.next()
