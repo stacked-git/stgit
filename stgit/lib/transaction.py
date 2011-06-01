@@ -409,6 +409,8 @@ class StackTransaction(object):
         self.pop_patches(lambda pn: pn in to_pop)
         for pn in applied[common:]:
             self.push_patch(pn, iw, allow_interactive = allow_interactive)
+
+        # We only get here if all the pushes succeeded.
         assert self.applied == applied
         assert set(self.unapplied + self.hidden) == set(unapplied + hidden)
         self.unapplied = unapplied
