@@ -361,7 +361,6 @@ class StackTransaction(object):
             # We've just caused conflicts, so we must allow them in
             # the final checkout.
             self.__allow_conflicts = lambda trans: True
-            self.__patches = _TransPatchMap(self.__stack)
 
         # Update the stack state
         if comm:

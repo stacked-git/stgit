@@ -29,7 +29,7 @@ foo2
 >>>>>>> patched
 EOF
 
-test_expect_failure 'Float a patch, causing a conflict two patches down' '
+test_expect_success 'Float a patch, causing a conflict two patches down' '
     conflict stg float p1 &&
     test "$(echo $(stg series))" = "+ p0 + p2 > p3 - p1" &&
     test "$(stg id p3)" = "$(git rev-list HEAD~0 -n 1)" &&
