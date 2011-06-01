@@ -34,7 +34,7 @@ def _print_current_patch(old_applied, new_applied):
         now_at(new_applied[-1])
 
 class _TransPatchMap(dict):
-    """Maps patch names to sha1 strings."""
+    """Maps patch names to Commit objects."""
     def __init__(self, stack):
         dict.__init__(self)
         self.__stack = stack
