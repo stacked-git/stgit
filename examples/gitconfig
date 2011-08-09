@@ -76,7 +76,7 @@
 	#shortnr = 5
 
 	# The maximum length of an automatically generated patch name
-	#namelenth = 30
+	#namelength = 30
 
 	# Extra options to pass to "git diff" (extend/override with
 	# -O/--diff-opts). For example, -M turns on rename detection.
