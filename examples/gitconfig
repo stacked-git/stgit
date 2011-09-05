@@ -92,3 +92,10 @@
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org
+
+[stgit "color"]
+	# Specify output colors for series commands
+	applied = green_foreground
+	current = red_foreground
+	unapplied = white_foreground
+	hidden = cyan_foreground

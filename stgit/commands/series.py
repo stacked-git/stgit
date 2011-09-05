@@ -86,7 +86,32 @@ def __get_author(stack, patch):
     cd = stack.patches.get(patch).commit.data
     return cd.author.name
 
-def __print_patch(stack, patch, branch_str, prefix, length, options):
+def __render_text(text, effects):
+    _effects = { 'none'               : 0,
+                 'bright'             : 1,
+                 'dim'                : 2,
+                 'black_foreground'   : 30,
+                 'red_foreground'     : 31,
+                 'green_foreground'   : 32,
+                 'yellow_foreground'  : 33,
+                 'blue_foreground'    : 34,
+                 'magenta_foreground' : 35,
+                 'cyan_foreground'    : 36,
+                 'white_foreground'   : 37,
+                 'black_background'   : 40,
+                 'red_background'     : 41,
+                 'green_background'   : 42,
+                 'yellow_background'  : 44,
+                 'blue_background'    : 44,
+                 'magenta_background' : 45,
+                 'cyan_background'    : 46,
+                 'white_background'   : 47 }
+    start = [str(_effects[e]) for e in effects.split() if e in _effects]
+    start = '\033[' + ';'.join(start) + 'm'
+    stop = '\033[' + str(_effects['none']) + 'm'
+    return ''.join([start, text, stop])
+
+def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
     """Print a patch name, description and various markers.
     """
     if options.noprefix:
@@ -103,11 +128,15 @@ def __print_patch(stack, patch, branch_str, prefix, length, options):
         patch_str = patch_str.ljust(length)
 
     if options.description:
-        out.stdout(prefix + patch_str + ' # ' + __get_description(stack, patch))
+        output = prefix + patch_str + ' # ' + __get_description(stack, patch)
     elif options.author:
-        out.stdout(prefix + patch_str + ' # ' + __get_author(stack, patch))
+        output = prefix + patch_str + ' # ' + __get_author(stack, patch)
     else:
-        out.stdout(prefix + patch_str)
+        output = prefix + patch_str
+    if not effects:
+        out.stdout(output)
+    else:
+        out.stdout(__render_text(output, effects))
 
 def func(parser, options, args):
     """Show the patch series
@@ -190,12 +219,11 @@ def func(parser, options, args):
 
     if applied:
         for p in applied[:-1]:
-            __print_patch(stack, p, branch_str, '+ ', max_len, options)
-        __print_patch(stack, applied[-1], branch_str, '> ', max_len,
-                      options)
+            __print_patch(stack, p, branch_str, '+ ', max_len, options, config.get("stgit.color.applied"))
+        __print_patch(stack, applied[-1], branch_str, '> ', max_len, options, config.get("stgit.color.current"))
 
     for p in unapplied:
-        __print_patch(stack, p, branch_str, '- ', max_len, options)
+        __print_patch(stack, p, branch_str, '- ', max_len, options, config.get("stgit.color.unapplied"))
 
     for p in hidden:
-        __print_patch(stack, p, branch_str, '! ', max_len, options)
+        __print_patch(stack, p, branch_str, '! ', max_len, options, config.get("stgit.color.hidden"))
