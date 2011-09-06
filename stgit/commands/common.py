@@ -192,6 +192,16 @@ def pop_patches(crt_series, patches, keep = False):
         crt_series.pop_patch(p, keep)
         out.done()
 
+def get_patch_from_list(part_name, patch_list):
+    candidates = [full for full in patch_list if str.find(full, part_name) != -1]
+    if len(candidates) >= 2:
+        out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
+        raise CmdException, 'Ambiguous patch name "%s"' % part_name
+    elif len(candidates) == 1:
+        return candidates[0]
+    else:
+        return None
+
 def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     """Parse patch_args list for patch names in patch_list and return
     a list. The names can be individual patches and/or in the
