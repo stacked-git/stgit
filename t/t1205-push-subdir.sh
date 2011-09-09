@@ -53,7 +53,7 @@ test_expect_success 'Conflicting push from subdir' '
 '
 
 test_expect_success 'Conflicting add/unknown file in subdir' '
-    stg status --reset &&
+    stg reset --hard &&
     stg new foo -m foo &&
     mkdir d &&
     echo foo > d/test &&

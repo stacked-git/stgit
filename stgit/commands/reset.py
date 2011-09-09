@@ -21,18 +21,19 @@ from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import git, log, transaction
 from stgit.out import out
-from stgit import argparse
+from stgit import argparse, utils
 
 help = 'Reset the patch stack to an earlier state'
 kind = 'stack'
-usage = ['[options] [--] <state> [<patchnames>]']
+usage = ['[options] [--] [<state> [<patchnames>]]']
 description = """
-Reset the patch stack to an earlier state. The state is specified with
-a commit id from a stack log; "stg log" lets you view this log, and
-"stg reset" lets you reset to any state you see in the log.
+Reset the patch stack to an earlier state. If no state is specified,
+reset only the changes in the worktree.
 
-If one or more patch names are given, reset only those patches, and
-leave the rest alone."""
+The state is specified with a commit id from a stack log; "stg log" lets
+you view this log, and "stg reset" lets you reset to any state you see
+in the log. If one or more patch names are given, reset only those
+patches, and leave the rest alone."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
@@ -45,21 +46,25 @@ directory = common.DirectoryHasRepositoryLib()
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
+    iw = stack.repository.default_iw
     if len(args) >= 1:
         ref, patches = args[0], args[1:]
         state = log.get_log_entry(stack.repository, ref,
                                   stack.repository.rev_parse(ref))
+    elif options.hard:
+        iw.checkout_hard(stack.head.data.tree)
+        return utils.STGIT_SUCCESS
     else:
-        raise common.CmdException('Wrong number of arguments')
+        raise common.CmdException('Wrong options or number of arguments')
+
     trans = transaction.StackTransaction(stack, 'reset',
                                          discard_changes = options.hard,
                                          allow_bad_head = True)
     try:
         if patches:
-            log.reset_stack_partially(trans, stack.repository.default_iw,
-                                      state, patches)
+            log.reset_stack_partially(trans, iw, state, patches)
         else:
-            log.reset_stack(trans, stack.repository.default_iw, state)
+            log.reset_stack(trans, iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(stack.repository.default_iw, allow_bad_head = not patches)
+    return trans.run(iw, allow_bad_head = not patches)
