@@ -75,7 +75,7 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'sink',
+    trans = transaction.StackTransaction(stack, 'float',
                                          check_clean_iw = clean_iw)
 
     try:

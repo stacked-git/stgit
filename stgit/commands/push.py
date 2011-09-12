@@ -67,7 +67,7 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'pop',
+    trans = transaction.StackTransaction(stack, 'push',
                                          check_clean_iw = clean_iw)
 
     if options.number == 0:
