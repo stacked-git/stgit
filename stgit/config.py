@@ -40,7 +40,8 @@ class GitConfig:
         'stgit.alias.add':      ['git add'],
         'stgit.alias.rm':       ['git rm'],
         'stgit.alias.mv':       ['git mv'],
-        'stgit.alias.resolved': ['git add']
+        'stgit.alias.resolved': ['git add'],
+        'stgit.alias.status':   ['git status -s']
         }
 
     __cache = None

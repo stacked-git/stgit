@@ -38,7 +38,7 @@ test_expect_success 'Setup' '
 '
 
 cat > expected.txt <<EOF
-M skärgårdsö.txt
+ M "sk\303\244rg\303\245rds\303\266.txt"
 EOF
 test_expect_success 'Status of modified non-ASCII file' '
     stg status > output.txt &&

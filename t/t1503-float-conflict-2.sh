@@ -35,7 +35,7 @@ test_expect_success 'Float a patch, causing a conflict two patches down' '
     test "$(stg id p3)" = "$(git rev-list HEAD~0 -n 1)" &&
     test "$(stg id p2)" = "$(git rev-list HEAD~1 -n 1)" &&
     test "$(stg id p0)" = "$(git rev-list HEAD~2 -n 1)" &&
-    test "$(stg status)" = "C foo.txt" &&
+    test "$(stg status)" = "UU foo.txt" &&
     test_cmp foo.txt expected.txt
 '
 

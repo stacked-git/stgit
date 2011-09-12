@@ -24,7 +24,7 @@ test_expect_success 'Run status on empty' '
 '
 
 cat > expected.txt <<EOF
-? foo
+?? foo
 EOF
 test_expect_success 'Status with an untracked file' '
     touch foo &&
@@ -42,7 +42,7 @@ test_expect_success 'Status with an empty directory' '
 '
 
 cat > expected.txt <<EOF
-? foo/
+?? foo/
 EOF
 test_expect_success 'Status with an untracked file in a subdir' '
     touch foo/bar &&
@@ -51,19 +51,11 @@ test_expect_success 'Status with an untracked file in a subdir' '
 '
 
 cat > expected.txt <<EOF
-A foo/bar
+A  foo/bar
 EOF
 test_expect_success 'Status with an added file' '
     stg add foo &&
     stg status > output.txt &&
-    test_cmp expected.txt output.txt
-'
-
-cat > expected.txt <<EOF
-foo/bar
-EOF
-test_expect_success 'Status with an added file and -n option' '
-    stg status -n > output.txt &&
     test_cmp expected.txt output.txt
 '
 
@@ -77,7 +69,7 @@ test_expect_success 'Status after refresh' '
 '
 
 cat > expected.txt <<EOF
-M foo/bar
+ M foo/bar
 EOF
 test_expect_success 'Status after modification' '
     echo "wee" >> foo/bar &&
@@ -107,8 +99,8 @@ test_expect_success 'Make a conflicting patch' '
 '
 
 cat > expected.txt <<EOF
-A fie
-C foo/bar
+A  fie
+UU foo/bar
 EOF
 test_expect_success 'Status after conflicting push' '
     conflict stg push &&
@@ -117,7 +109,7 @@ test_expect_success 'Status after conflicting push' '
 '
 
 cat > expected.txt <<EOF
-C foo/bar
+UU foo/bar
 EOF
 test_expect_success 'Status of file' '
     stg status foo/bar > output.txt &&
@@ -125,7 +117,7 @@ test_expect_success 'Status of file' '
 '
 
 cat > expected.txt <<EOF
-C foo/bar
+UU foo/bar
 EOF
 test_expect_success 'Status of dir' '
     stg status foo > output.txt &&
@@ -133,7 +125,7 @@ test_expect_success 'Status of dir' '
 '
 
 cat > expected.txt <<EOF
-A fie
+A  fie
 EOF
 test_expect_success 'Status of other file' '
     stg status fie > output.txt &&
@@ -141,8 +133,8 @@ test_expect_success 'Status of other file' '
 '
 
 cat > expected.txt <<EOF
-A fie
-M foo/bar
+A  fie
+M  foo/bar
 EOF
 test_expect_success 'Status after resolving the push' '
     stg add --update &&
@@ -151,8 +143,8 @@ test_expect_success 'Status after resolving the push' '
 '
 
 cat > expected.txt <<EOF
-A fie
-D foo/bar
+A  fie
+MD foo/bar
 EOF
 test_expect_success 'Status after deleting a file' '
     rm foo/bar &&
@@ -161,7 +153,7 @@ test_expect_success 'Status after deleting a file' '
 '
 
 cat > expected.txt <<EOF
-D foo/bar
+AD foo/bar
 EOF
 test_expect_success 'Status of disappeared newborn' '
     stg refresh &&
@@ -173,18 +165,11 @@ test_expect_success 'Status of disappeared newborn' '
 '
 
 cat > expected.txt <<EOF
-A fay
-D fie
+R  fie -> fay
 EOF
 test_expect_success 'Status after renaming a file' '
     stg rm foo/bar &&
     stg mv fie fay &&
-    stg status > output.txt &&
-    test_cmp expected.txt output.txt
-'
-
-test_expect_success 'Status after renaming a file (with rename detection)' '
-    git config stgit.diff-opts -M &&
     stg status > output.txt &&
     test_cmp expected.txt output.txt
 '

@@ -49,7 +49,7 @@ test_expect_success 'Conflicting push from subdir' '
     cd foo &&
     conflict stg push p2 &&
     cd .. &&
-    [ "$(echo $(stg status --conflict))" = "foo/y.txt x.txt" ]
+    [ "$(echo $(stg status))" = "UU foo/y.txt UU x.txt" ]
 '
 
 test_expect_success 'Conflicting add/unknown file in subdir' '

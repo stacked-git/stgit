@@ -30,13 +30,13 @@ test_expect_success 'Refresh file in subdirectory' '
     cd bar &&
     stg refresh bar.txt &&
     cd .. &&
-    [ "$(stg status)" = "M foo.txt" ]
+    [ "$(stg status)" = " M foo.txt" ]
 '
 
 test_expect_success 'Refresh whole subdirectory' '
     echo bar4 >> bar/bar.txt &&
     stg refresh bar &&
-    [ "$(stg status)" = "M foo.txt" ]
+    [ "$(stg status)" = " M foo.txt" ]
 '
 
 test_expect_success 'Refresh subdirectories recursively' '
@@ -66,7 +66,7 @@ test_expect_success 'refresh -u -p <subdir>' '
 test_expect_success 'refresh an unapplied patch' '
     stg refresh -u &&
     stg goto --keep p0 &&
-    test "$(stg status)" = "M foo.txt" &&
+    test "$(stg status)" = " M foo.txt" &&
     stg refresh -p p1 &&
     test "$(stg status)" = "" &&
     test "$(echo $(stg files p1))" = "A bar/baz.txt M foo.txt"

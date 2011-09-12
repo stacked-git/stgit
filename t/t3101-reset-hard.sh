@@ -25,7 +25,7 @@ test_expect_success 'Initialize StGit stack with three patches' '
 '
 
 cat > expected.txt <<EOF
-C a
+UU a
 EOF
 test_expect_success 'Pop middle patch, creating a conflict' '
     conflict stg pop p2 &&

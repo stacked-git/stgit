@@ -25,7 +25,7 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 cat > expected0.txt <<EOF
-D y.txt
+D  y.txt
 EOF
 printf '' > expected1.txt
 test_expect_success 'stg rm a file' '
@@ -36,15 +36,15 @@ test_expect_success 'stg rm a file' '
     stg refresh &&
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
-    stg files | sort > files.txt &&
-    test_cmp expected0.txt files.txt
+    stg files > files.txt &&
+    test_cmp -w expected0.txt files.txt
 '
 
 reset
 
 cat > expected0.txt <<EOF
-D y.txt
-M x.txt
+ M x.txt
+D  y.txt
 EOF
 printf '' > expected1.txt
 test_expect_success 'stg rm a file together with other changes' '
@@ -56,14 +56,14 @@ test_expect_success 'stg rm a file together with other changes' '
     stg refresh &&
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
-    stg files | sort > files.txt &&
-    test_cmp expected0.txt files.txt
+    stg files > files.txt &&
+    test_cmp -w expected0.txt files.txt
 '
 
 reset
 
 cat > expected0.txt <<EOF
-D y.txt
+ D y.txt
 EOF
 printf '' > expected1.txt
 test_expect_success 'rm a file' '
@@ -74,15 +74,15 @@ test_expect_success 'rm a file' '
     stg refresh &&
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
-    stg files | sort > files.txt &&
-    test_cmp expected0.txt files.txt
+    stg files > files.txt &&
+    test_cmp -w expected0.txt files.txt
 '
 
 reset
 
 cat > expected0.txt <<EOF
-D y.txt
-M x.txt
+ M x.txt
+ D y.txt
 EOF
 printf '' > expected1.txt
 test_expect_success 'rm a file together with other changes' '
@@ -94,8 +94,8 @@ test_expect_success 'rm a file together with other changes' '
     stg refresh &&
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
-    stg files | sort > files.txt &&
-    test_cmp expected0.txt files.txt
+    stg files > files.txt &&
+    test_cmp -w expected0.txt files.txt
 '
 
 test_done
