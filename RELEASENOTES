@@ -1,4 +1,4 @@
-                      Stacked Git 0.15 released
+                      Stacked Git 0.16 released
                       -------------------------
 
 StGit is a Python application providing functionality similar to Quilt
@@ -7,59 +7,25 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         http://download.gna.org/stgit/stgit-0.15.tar.gz
+  Download:         http://download.gna.org/stgit/stgit-0.16.tar.gz
   Main repository:  git://repo.or.cz/stgit.git
   Project homepage: http://www.procode.org/stgit/
-  Mailing list:     git@vger.kernel.org (please use "StGit" in the subject)
+  Mailing list:     stgit-users@gna.org
   Bug tracker:      https://gna.org/bugs/?group=stgit
 
-The main changes since release 0.14.3 are
+The main changes since release 0.15 are:
 
-  - New core infrastructure for repository operations, including
+  - Several improvements to the Emacs mode (stgit.el).
+  - UI adjustments to better match the Git commands.
+    + "stg status" is an alias for "git status".
+    + "stg reset --hard" behaves similarly to the corresponding git command
+      and option.
+  - "stg branch --cleanup" option to remove the StGit metadata for a given
+    branch.
+  - "stg mail" can use "git send-email" directly.
+  - Vim syntax highlighting for StGit commit messages.
+  - Many bug-fixes.
 
-      + Infinite undo/redo operations and corresponding commands.
+Many thanks to all the StGit contributors.
 
-      + Automatic rollback of changes following a failed operation
-        (using transactions)---this ensures that StGit commands either
-        succeed or do nothing. Previously, every commands had its own
-        ad hoc implementation of this.
-
-  - Some commands were added, including
-
-      + "stg squash", for combining two or more patches into one.
-
-      + "stg publish", for maintaining merge-friendly branches (which
-        are not rebased).
-
-      + "stg prev/next" for printing the name of the previous or next
-        patch in the series.
-
-  - The commands "stg add", "stg rm", "stg cp", and "stg resolved"
-    were removed, since there are corresponding Git equivalents.
-
-  - The "stg import" and "stg fold" commands support the "-p N" option
-    for stripping leading slashes from diff paths.
-
-  - The "stg import" and "stg fold" commands support the "--reject"
-    option for leaving rejected hunks in corresponding *.rej files.
-
-  - New patch identification syntax: <branch>:<patch> (see
-    documentation for the "stg id" command).
-
-  - Autosigning of imported patches when "sign.autosign" configuration
-    option is set.
-
-  - A powerful Emacs mode for StGit was added to the "contrib"
-    directory. It displays the patch stack in an Emacs buffer, and can
-    handle all common StGit tasks.
-
-  - Improved bash tab-completion, automatically generated from the stg
-    command definitions.
-
-  - Man pages and an improved tutorial.
-
-Special thanks go to Karl Wiberg for the hard work done on the new
-StGit features, to Catalin Marinas for many new features and bugfixes,
-and to David Kågedal and Gustav Hållberg for the Emacs mode.
-
-[Insert output of "git shortlog v0.14.3..v0.15" here before sending!]
+[Insert output of "git shortlog v0.15..v0.16" here before sending!]
