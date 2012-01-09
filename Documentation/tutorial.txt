@@ -1,5 +1,5 @@
 StGit tutorial
-##############
+==============
 
 StGit is a command-line application that provides functionality
 similar to link:http://savannah.nongnu.org/projects/quilt/[Quilt]
