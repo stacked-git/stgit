@@ -1,3 +1,9 @@
+stgit (0.15-0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Catalin Marinas <catalin.marinas@gmail.com>  Sat, 24 Oct 2009 22:45:35 +0100
+
 stgit (0.14.3-0) unstable; urgency=low
 
   * New upstream release
