@@ -61,7 +61,7 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Create two patches' \
+    'Create three patches' \
     '
     stg new foo -m foo &&
     echo foo > foo.txt &&
@@ -70,7 +70,19 @@ test_expect_success \
     stg new bar -m bar &&
     echo bar > bar.txt &&
     stg add bar.txt &&
+    stg refresh &&
+    stg new baz -m baz &&
+    echo baz > baz.txt &&
+    stg add baz.txt &&
     stg refresh
+    '
+
+test_expect_success \
+    'Try to delete a topmost patch with --top option' \
+    '
+    [ $(stg series --applied -c) -eq 3 ] &&
+    stg delete --top &&
+    [ $(stg series --applied -c) -eq 2 ]
     '
 
 test_expect_success \

@@ -38,7 +38,9 @@ options = [
         worktree. This can be useful e.g. if you want to split a patch
         into several smaller pieces."""),
     opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')]
+        short = 'Use BRANCH instead of the default branch'),
+    opt('-t', '--top', action = 'store_true',
+        short = 'Delete top patch'),]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -49,9 +51,17 @@ def func(parser, options, args):
         iw = None # can't use index/workdir to manipulate another branch
     else:
         iw = stack.repository.default_iw
-    if args:
+    if args and options.top:
+        parser.error('Either --top or patches must be specified')
+    elif args:
         patches = set(common.parse_patches(args, list(stack.patchorder.all),
                                            len(stack.patchorder.applied)))
+    elif options.top:
+        applied = stack.patchorder.applied
+        if applied:
+            patches = set([applied[-1]])
+        else:
+            raise common.CmdException, 'No patches applied'
     else:
         parser.error('No patches specified')
 
