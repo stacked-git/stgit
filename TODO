@@ -1,8 +1,24 @@
 The TODO list before 1.0:
 
-- more regression tests
+- Convert the remaining commands to the new infrastructure. Commands
+  not converted yet:
+    branch
+    patches
+    pull
+    rebase
+    repair
+    unhide
+    files
+    fold
+    import
+    mail
+    pick
+    rename
+    show
+    sync
+    diff
 
-- Convert the remaining commands to the new infrastructure.
+- More regression tests
 
 - Go through the design of the UI and make sure there's nothing hard
   to change in there that we'll regret later.
@@ -12,20 +28,13 @@ The TODO list before 1.0:
 
 - Make sure the rest of the documentation is in good shape.
 
-- use a separate index for some commands (refresh, fold etc.) so that
-  files already added/removed are not automatically checked in
-
-    + This is easily done with the new infrastructure. refresh now
-      uses a separate index when appropriate. fold has not yet been
-      converted.
-
-- release 1.0
+- Release 1.0
 
 
 The future, when time allows or if someone else does them:
 
-- patch dependency tracking
-- multiple heads in a patch - useful for forking a patch,
+- Patch dependency tracking
+- Multiple heads in a patch - useful for forking a patch,
   synchronising with other patches (diff format or in other
   repositories)
-- numeric shortcuts for naming patches near top (eg. +1, -2)
+- Numeric shortcuts for naming patches near top (eg. +1, -2)
