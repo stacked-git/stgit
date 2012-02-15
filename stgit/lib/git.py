@@ -390,21 +390,31 @@ class CommitData(Immutable, Repr):
         @return: A new L{CommitData} object
         @rtype: L{CommitData}"""
         cd = cls(parents = [])
-        lines = list(s.splitlines(True))
-        for i in xrange(len(lines)):
-            line = lines[i].strip()
+        lines = []
+        raw_lines = s.split('\n')
+        # Collapse multi-line header lines
+        for i, line in enumerate(raw_lines):
             if not line:
-                return cd.set_message(''.join(lines[i+1:]))
-            key, value = line.split(None, 1)
-            if key == 'tree':
-                cd = cd.set_tree(repository.get_tree(value))
-            elif key == 'parent':
-                cd = cd.add_parent(repository.get_commit(value))
-            elif key == 'author':
-                cd = cd.set_author(Person.parse(value))
-            elif key == 'committer':
-                cd = cd.set_committer(Person.parse(value))
-        assert False
+                cd = cd.set_message('\n'.join(raw_lines[i+1:]))
+                break
+            if line.startswith(' '):
+                # continuation line
+                lines[-1] += '\n' + line[1:]
+            else:
+                lines.append(line)
+        for line in lines:
+            if ' ' in line:
+                key, value = line.split(' ', 1)
+                if key == 'tree':
+                    cd = cd.set_tree(repository.get_tree(value))
+                elif key == 'parent':
+                    cd = cd.add_parent(repository.get_commit(value))
+                elif key == 'author':
+                    cd = cd.set_author(Person.parse(value))
+                elif key == 'committer':
+                    cd = cd.set_committer(Person.parse(value))
+        return cd
+
 
 class Commit(GitObject):
     """Represents a git commit object. All the actual data contents of the
