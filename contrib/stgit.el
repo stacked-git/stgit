@@ -1664,30 +1664,37 @@ allow historical commits; if nil, also allow work tree and index."
             (t nil)))))
 
 (defun stgit-goto-patch (patchsym &optional file)
-  "Move point to the line containing patch PATCHSYM and return non-nil.
+  "Move point to the line containing patch PATCHSYM and return t.
 If that patch cannot be found, do nothing and return nil.
 
 If the patch was found and FILE is not nil, instead move to that
-file's line. If FILE cannot be found, stay on the line of
-PATCHSYM."
-  (let ((node (ewoc-nth stgit-ewoc 0)))
+file's line and return t. If FILE cannot be found, stay on the
+line of PATCHSYM and return :patch."
+  (let ((node (ewoc-nth stgit-ewoc 0))
+        result)
     (while (and node (not (eq (stgit-patch->name (ewoc-data node))
                               patchsym)))
       (setq node (ewoc-next stgit-ewoc node)))
-    (when (and node file)
-      (let* ((file-ewoc (stgit-patch->files-ewoc (ewoc-data node)))
-             (file-node (ewoc-nth file-ewoc 0)))
-        (while (and file-node
-                    (not (equal (stgit-file->file (ewoc-data file-node))
-                                file)))
-          (setq file-node (ewoc-next file-ewoc file-node)))
-        (when file-node
-          (ewoc-goto-node file-ewoc file-node)
-          (move-to-column (stgit-goal-column))
-          (setq node nil))))
-    (when node
-      (ewoc-goto-node stgit-ewoc node)
-      (move-to-column goal-column))))
+    (cond ((and node file)
+           (let* ((file-ewoc (stgit-patch->files-ewoc (ewoc-data node)))
+                  (file-node (ewoc-nth file-ewoc 0)))
+             (while (and file-node
+                         (not (equal (stgit-file->file
+                                      (ewoc-data file-node))
+                                     file)))
+               (setq file-node (ewoc-next file-ewoc file-node)))
+             (if file-node
+                 (progn
+                   (ewoc-goto-node file-ewoc file-node)
+                   (setq result t))
+               (ewoc-goto-node stgit-ewoc node)
+               (setq result :patch))))
+          (node
+           (ewoc-goto-node stgit-ewoc node)
+           (setq result t)))
+    (when result
+      (move-to-column (stgit-goal-column)))
+    result))
 
 (defun stgit-init ()
   "Run stg init."
