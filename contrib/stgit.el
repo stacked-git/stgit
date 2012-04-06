@@ -618,12 +618,15 @@ using (make-hash-table :test 'equal)."
 (defun stgit-run-series (ewoc)
   (setq stgit-index-node nil
         stgit-worktree-node nil)
-  (let (all-patchsyms)
-    (when stgit-show-committed
+  (let (all-patchsyms base)
+    (when (and stgit-show-committed
+	       (> stgit-committed-count 0)
+	       (setq base (condition-case nil
+			      (stgit-id "{base}")
+			    (error nil))))
       (let* ((show-svn stgit-show-svn)
              (svn-hash stgit-svn-find-rev-hash)
-             (nentries (format "-%s" stgit-committed-count))
-             (base (stgit-id "{base}")))
+	     (nentries (format "-%s" stgit-committed-count)))
         (with-temp-buffer
           (let* ((standard-output (current-buffer))
                  (fmt (stgit-line-format))
