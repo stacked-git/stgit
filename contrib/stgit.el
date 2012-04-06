@@ -1804,11 +1804,12 @@ line of PATCHSYM and return :patch."
     result))
 
 (defun stgit-init ()
-  "Run stg init."
+  "Run stg init to initialize the current branch for use with StGit."
   (interactive)
   (stgit-assert-mode)
-  (stgit-capture-output nil
-    (stgit-run "init"))
+  (unless (zerop (stgit-capture-output nil
+		   (stgit-run "init")))
+    (error "stg init failed"))
   (stgit-reload))
 
 (defun stgit-toggle-mark ()
