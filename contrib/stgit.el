@@ -2738,20 +2738,21 @@ See also `stgit-show-worktree-mode'.")
   "The number of recent commits to show.")
 
 (defmacro stgit-define-toggle-view (sym desc help)
-  (declare (indent 1))
+  (declare (indent 1) (debug (symbolp stringp stringp)))
   (let* ((name (symbol-name sym))
          (fun  (intern (concat "stgit-toggle-" name)))
          (flag (intern (concat "stgit-show-" name))))
-    ;; make help-follow find the correct function
-    `(put (quote ,fun) 'definition-name 'stgit-define-toggle-view)
-    `(defun ,fun (&optional arg)
-       ,help
-       (interactive "P")
-       (stgit-assert-mode)
-       (setq ,flag (if arg
-                       (> (prefix-numeric-value arg) 0)
-                     (not ,flag)))
-       (stgit-reload (format "%s %s" (if ,flag "Showing" "Hiding") ,desc)))))
+    `(progn
+       ;; make help-follow find the correct function
+       (put (quote ,fun) 'definition-name 'stgit-define-toggle-view)
+       (defun ,fun (&optional arg)
+         ,help
+         (interactive "P")
+         (stgit-assert-mode)
+         (setq ,flag (if arg
+                         (> (prefix-numeric-value arg) 0)
+                       (not ,flag)))
+         (stgit-reload (concat (if ,flag "Showing" "Hiding") " " ,desc))))))
 
 (stgit-define-toggle-view worktree
   "work tree and index"
