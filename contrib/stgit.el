@@ -859,13 +859,45 @@ Cf. `stgit-file-type-change-string'."
             (:conc-name stgit-file->))
   old-perm new-perm copy-or-rename cr-score cr-from cr-to status file)
 
+(defun stgit-escape-file-name-p (name)
+  "Return non-nil if NAME must be escaped."
+  (save-match-data (string-match "[\t\n\"\\]" name)))
+
+(defun stgit-escape-file-name (name &optional no-quotes)
+  "Escape NAME if necessary.
+
+If NO-QUOTES is non-nil, do not enclose the result in double quotes."
+  (if (stgit-escape-file-name-p name)
+    (concat (if no-quotes "" "\"")
+	    (mapconcat (lambda (c)
+			 (case c
+			   (?\t "\\t")
+			   (?\n "\\n")
+			   (?\" "\\\"")
+			   (?\\ "\\\\")
+			   (t (char-to-string c))))
+		       name "")
+	    (if no-quotes "" "\""))
+    name))
+
 (defun stgit-describe-copy-or-rename (file)
-  (let ((arrow (concat " " (propertize "->" 'face 'stgit-description-face) " "))
-        from to common-head common-tail)
+  (let* ((arrow    (concat " "
+			   (propertize "->" 'face 'stgit-description-face)
+			   " "))
+	 (esc-from (stgit-file->cr-from file))
+	 (esc-to   (stgit-file->cr-to   file))
+	 (quote    "")
+	 from to common-head common-tail)
+
+    (when (or (stgit-escape-file-name-p esc-from)
+	      (stgit-escape-file-name-p esc-to))
+      (setq esc-from (stgit-escape-file-name esc-from t)
+	    esc-to   (stgit-escape-file-name esc-to t)
+	    quote    "\""))
 
     (when stgit-abbreviate-copies-and-renames
-      (setq from (split-string (stgit-file->cr-from file) "/")
-            to   (split-string (stgit-file->cr-to   file) "/"))
+      (setq from (split-string esc-from "/")
+            to   (split-string esc-to   "/"))
 
       (while (and from to (cdr from) (cdr to)
                   (string-equal (car from) (car to)))
@@ -884,7 +916,8 @@ Cf. `stgit-file-type-change-string'."
             to   (nreverse to)))
 
     (if (or common-head common-tail)
-        (concat (if common-head
+        (concat quote
+		(if common-head
                     (mapconcat #'identity common-head "/")
                   "")
                 (if common-head "/" "")
@@ -896,8 +929,9 @@ Cf. `stgit-file-type-change-string'."
                 (if common-tail "/" "")
                 (if common-tail
                     (mapconcat #'identity common-tail "/")
-                  ""))
-      (concat (stgit-file->cr-from file) arrow (stgit-file->cr-to file)))))
+                  "")
+		quote)
+      (concat quote esc-from arrow esc-to quote))))
 
 (defun stgit-file-pp (file)
   (let ((start (point))
@@ -908,7 +942,7 @@ Cf. `stgit-file-type-change-string'."
                    (stgit-file->new-perm file))
                ?n (if (stgit-file->copy-or-rename file)
                       (stgit-describe-copy-or-rename file)
-                    (stgit-file->file file))
+                    (stgit-escape-file-name (stgit-file->file file)))
                ?c (propertize (stgit-file-type-change-string
                                (stgit-file->old-perm file)
                                (stgit-file->new-perm file))
