@@ -2327,6 +2327,7 @@ file ended up. You can then jump to the file with \
       (stgit-refresh-index)
       (stgit-goto-patch (if (eq patch-name :index) :work :index) mark-file)
       (push-mark nil t t)
+      (setq deactivate-mark t)
       (stgit-goto-patch patch-name point-file))))
 
 (defun stgit-toggle-index ()
@@ -2356,6 +2357,9 @@ file ended up. You can then jump to the file with \
             (stgit-run-git "reset" "--mixed" "-q")))
         (stgit-refresh-worktree)
         (stgit-refresh-index))
+      (stgit-goto-patch patch-name)
+      (push-mark nil t t)
+      (setq deactivate-mark t)
       (stgit-goto-patch (if (eq patch-name :index) :work :index)))))
 
 (defun stgit-edit ()
