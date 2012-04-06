@@ -1758,13 +1758,15 @@ was modified with git commands (`stgit-repair')."
     (stgit-run "repair"))
   (stgit-reload))
 
-(defun stgit-available-branches (&optional all)
+(defun stgit-available-branches (&optional all skip-current)
   "Returns a list of the names of the available stg branches as strings.
 
-If ALL is not nil, also return non-stgit branches."
+If ALL is not nil, also return non-stgit branches.
+If SKIP-CURRENT is not nil, do not include the current branch."
   (let ((output (with-output-to-string
                   (stgit-run "branch" "--list")))
-        (pattern (format "^>?\\s-+%c\\s-+\\(\\S-+\\)"
+        (pattern (format "^%c\\s-+%c\\s-+\\(\\S-+\\)"
+			 (if skip-current ?\  ?.)
                          (if all ?. ?s)))
         (start 0)
         result)
@@ -1776,8 +1778,7 @@ If ALL is not nil, also return non-stgit branches."
 (defun stgit-branch (branch)
   "Switch to or create branch BRANCH."
   (interactive (list (completing-read "Switch to branch: "
-                                      (stgit-available-branches))))
-
+                                      (stgit-available-branches nil t))))
   (stgit-assert-mode)
 
   (when (equal branch (stgit-current-branch))
