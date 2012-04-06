@@ -1337,6 +1337,8 @@ If ARG is non-nil, do this ARG times. If ARG is negative, move
             ("+" .        stgit-expand)
             ("-" .        stgit-collapse)
             ("o" .        stgit-find-file-other-window)
+            ("\C-o" .     stgit-new-here)
+            ([insertline] . stgit-new-here)
             ("i" .        stgit-toggle-index)
             (">" .        stgit-push-next)
             ("<" .        stgit-pop-next)
@@ -1525,6 +1527,7 @@ Commands for patches:
 
 \\[stgit-new-and-refresh]	Create a new patch from index or work tree
 \\[stgit-new]	Create a new, empty patch
+\\[stgit-new-here]	Create a new, empty patch before patch at point
 
 \\[stgit-rename]	Rename patch
 \\[stgit-edit]	Edit patch description
@@ -2529,10 +2532,36 @@ file ended up. You can then jump to the file with \
     (with-current-buffer log-edit-parent-buffer
       (stgit-reload))))
 
-(defun stgit-new (add-sign &optional refresh)
-  "Create a new patch.
+(defun stgit-new-here (add-sign)
+  "Create a new patch before the patch at point, asking for a
+commit message.
+
 With a prefix argument, include a \"Signed-off-by:\" line at the
-end of the patch."
+end of the patch description.
+
+This works like `stgit-new' followed by `stgit-move'."
+  (interactive "P")
+  (stgit-assert-mode)
+  (let ((patch (stgit-patch-at-point t)))
+    (case (stgit-patch->status patch)
+      ((index work) (stgit-new add-sign))
+      ((applied top)
+       (unless (and (stgit-index-empty-p)
+                    (stgit-work-tree-empty-p))
+         (error "Index and worktree must not contain any changes"))
+       (stgit-new add-sign nil (stgit-patch->name patch)))
+      (t (error "Can only be used on applied patches")))))
+
+(defun stgit-new (add-sign &optional refresh sink-to)
+  "Create a new patch, asking for a commit message.
+
+With a prefix argument, include a \"Signed-off-by:\" line at the
+end of the message.
+
+If REFRESH is non-nil, also refresh the patch after creating it.
+
+If SINK-TO is non-nil, sink the created patch to the patch with
+that name (a symbol)."
   (interactive "P")
   (stgit-assert-mode)
   (let ((edit-buf (get-buffer-create "*StGit edit*"))
@@ -2540,6 +2569,7 @@ end of the patch."
     (log-edit 'stgit-confirm-new t nil edit-buf)
     (setq default-directory dir)
     (set (make-local-variable 'stgit-refresh-after-new) refresh)
+    (set (make-local-variable 'stgit-sink-to) sink-to)
     (when add-sign
       (save-excursion
         (let ((standard-output (current-buffer)))
@@ -2548,17 +2578,27 @@ end of the patch."
 (defun stgit-confirm-new ()
   (interactive)
   (let ((file (make-temp-file "stgit-edit-"))
-        (refresh stgit-refresh-after-new))
+        (refresh stgit-refresh-after-new)
+        new-patch)
     (write-region (point-min) (point-max) file)
     (stgit-capture-output nil
       (stgit-run "new" "-f" file))
+
+    (let ((top (with-output-to-string (stgit-run "top"))))
+      (when (string-match "\\`\\(.+\\)" top)
+        (setq new-patch (intern (match-string 1 top)))))
+
+    (when stgit-sink-to
+      (stgit-run "sink" "-t" stgit-sink-to))
     (with-current-buffer log-edit-parent-buffer
       (if refresh
           (stgit-refresh)
-        (stgit-reload)))))
+        (stgit-reload))
+      (stgit-goto-patch new-patch))))
 
 (defun stgit-new-and-refresh (add-sign)
-  "Create a new patch and refresh it with the current changes.
+  "Create a new patch based on the current changes, asking for a
+commit message.
 
 With a prefix argument, include a \"Signed-off-by:\" line at the
 end of the patch.
