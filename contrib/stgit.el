@@ -516,6 +516,86 @@ been advised to update the stgit status when necessary.")
                                                    :desc nil
                                                    :empty nil)))))
 
+(defun stgit-get-position (&optional position)
+  "Return `stgit-mode' position information at POSITION (point by
+default) that can be used to restore the point using
+`stgit-restore-position'."
+  (let ((opoint (point)))
+    (and position (goto-char position))
+    (prog1
+        (list (stgit-patch-name-at-point)
+              (let ((f (stgit-patched-file-at-point)))
+                (and f (stgit-file->file f)))
+              (line-number-at-pos)
+              (current-column))
+      (goto-char opoint))))
+
+(defun stgit-restore-position (state)
+  "Move point to the position in STATE, as returned by
+`stgit-get-position'."
+  (destructuring-bind (patch file line column) state
+    (unless (and patch (case (stgit-goto-patch patch file)
+                         ((t) (move-to-column column) t)
+                         ((:patch) t)))
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (move-to-column (if patch
+                          (stgit-goal-column)
+                        column)))))
+
+(defun stgit-get-window-state ()
+  "Return the state of the buffer and its windows. Use
+`stgit-restore-window-state' to restore the state."
+  (list (current-buffer)
+        (mapcar (lambda (window)
+                  (cons window
+                        (stgit-get-position
+                         (window-point window))))
+                (get-buffer-window-list (current-buffer)
+                                        t t))
+        (stgit-get-position (point))
+        (let ((mark (mark)))
+          (and mark
+               (stgit-get-position mark)))
+        mark-active
+        transient-mark-mode))
+
+(defun stgit-restore-window-state (state)
+  "Restore the state of the stgit buffer and windows in STATE, as
+obtained from `stgit-get-window-state'."
+  (destructuring-bind
+      (buffer window-states buffer-state mark-state
+              old-mark-active old-transient-mark-mode)
+      state
+    (with-current-buffer buffer
+      (mapc (lambda (x) (let ((window (car x))
+                              (state  (cdr x)))
+                          (when (and (window-live-p window)
+                                     (eq (window-buffer window) buffer))
+                            (stgit-restore-position state)
+                            (set-window-point window (point)))))
+            window-states)
+      (let ((mark-point (when mark-state
+                          (stgit-restore-position mark-state)
+                          (point))))
+        (stgit-restore-position buffer-state)
+        (if (and mark-point (null old-mark-active))
+            (set-marker (mark-marker) mark-point)
+          (set-mark mark-point))
+        (setq mark-active         old-mark-active
+              transient-mark-mode old-transient-mark-mode)))))
+
+(defmacro stgit-save-excursion (&rest body)
+  "Execute BODY and, for each window displaying the current
+buffer, move point and mark back to the file, patch, or line
+where they were."
+  (declare (indent 0) (debug (body)))
+  (let ((state (make-symbol "state")))
+    `(let ((,state (stgit-get-window-state))
+           deactivate-mark)
+       ,@body
+       (stgit-restore-window-state ,state))))
+
 (defun stgit-svn-find-rev (sha1 hash)
   "Return the subversion revision corresponding to SHA1 as
 reported by git svn.
@@ -645,29 +725,21 @@ during the operation."
   (interactive)
   (stgit-assert-mode)
   (stgit-show-task-message description
-    (let ((inhibit-read-only t)
-          (curline (line-number-at-pos))
-          (curpatch (stgit-patch-name-at-point))
-          (curfile (stgit-patched-file-at-point)))
-      (ewoc-filter stgit-ewoc #'(lambda (x) nil))
-      (ewoc-set-hf stgit-ewoc
-                   (concat "Branch: "
-                           (propertize (stgit-current-branch)
-                                       'face 'stgit-branch-name-face)
-                           "\n\n")
-                   (if stgit-show-worktree
-                       "--"
-                     (propertize
-                      (substitute-command-keys "--\n\"\
+    (let ((inhibit-read-only t))
+      (stgit-save-excursion
+        (ewoc-filter stgit-ewoc #'(lambda (x) nil))
+        (ewoc-set-hf stgit-ewoc
+                     (concat "Branch: "
+                             (propertize (stgit-current-branch)
+                                         'face 'stgit-branch-name-face)
+                             "\n\n")
+                     (if stgit-show-worktree
+                         "--"
+                       (propertize
+                        (substitute-command-keys "--\n\"\
 \\[stgit-toggle-worktree]\" shows the working tree\n")
-                      'face 'stgit-description-face)))
-      (stgit-run-series stgit-ewoc)
-      (unless (and curpatch
-                   (stgit-goto-patch curpatch
-                                     (and curfile (stgit-file->file curfile))))
-        (goto-char (point-min))
-        (forward-line (1- curline))
-        (move-to-column (stgit-goal-column)))
+                        'face 'stgit-description-face)))
+        (stgit-run-series stgit-ewoc))
       (stgit-refresh-git-status))))
 
 (defconst stgit-file-status-code-strings
@@ -1562,11 +1634,12 @@ refreshed. See `stgit-post-refresh' for the different values of
              (mode   (cdr elem)))
         (when (buffer-name buffer)
           (with-current-buffer buffer
-            (if (eq mode :reload)
-                (stgit-reload)
-              (stgit-refresh-worktree)
-              (when (eq mode :index)
-                (stgit-refresh-index))))))
+            (stgit-save-excursion
+              (if (eq mode :reload)
+                  (stgit-reload)
+                (stgit-refresh-worktree)
+                (when (eq mode :index)
+                  (stgit-refresh-index)))))))
       (setq buffers (cdr buffers)))))
 
 (defun stgit-post-refresh (buffer mode)
@@ -2008,9 +2081,9 @@ tree, or a single change in either."
           (if (eq patch-name :index)
               (stgit-run-git-silent "reset" "--hard" "-q")
             (stgit-run-git-silent "checkout" "--" "."))
-          (stgit-refresh-index)
-          (stgit-refresh-worktree)
-          (stgit-goto-patch patch-name))))))
+          (stgit-save-excursion
+            (stgit-refresh-index)
+            (stgit-refresh-worktree)))))))
 
 (defun stgit-resolve-file ()
   "Resolve conflict in the file at point."
@@ -2323,8 +2396,9 @@ file ended up. You can then jump to the file with \
              (stgit-remove-change-from-index (stgit-file->file patched-file)))
             (t
              (error "Can only move files between working tree and index")))
-      (stgit-refresh-worktree)
-      (stgit-refresh-index)
+      (stgit-save-excursion
+        (stgit-refresh-worktree)
+        (stgit-refresh-index))
       (stgit-goto-patch (if (eq patch-name :index) :work :index) mark-file)
       (push-mark nil t t)
       (setq deactivate-mark t)
@@ -2355,8 +2429,9 @@ file ended up. You can then jump to the file with \
           (if (eq patch-name :work)
               (stgit-run-git "add" "--update")
             (stgit-run-git "reset" "--mixed" "-q")))
-        (stgit-refresh-worktree)
-        (stgit-refresh-index))
+        (stgit-save-excursion
+          (stgit-refresh-worktree)
+          (stgit-refresh-index)))
       (stgit-goto-patch patch-name)
       (push-mark nil t t)
       (setq deactivate-mark t)
