@@ -966,9 +966,14 @@ expand if COLLAPSE is not nil."
           (if collapse
               (set-difference stgit-expanded-patches patches-diff)
             (append stgit-expanded-patches patches-diff)))
-    (ewoc-map #'(lambda (patch)
-                  (memq (stgit-patch->name patch) patches-diff))
-              stgit-ewoc))
+    (stgit-show-task-message (concat (if collapse "Collapsing" "Expanding")
+                                     " "
+                                     (if (= 1 (length patches-diff))
+                                         "patch"
+                                       "patches"))
+      (ewoc-map #'(lambda (patch)
+                    (memq (stgit-patch->name patch) patches-diff))
+                stgit-ewoc)))
   (move-to-column (stgit-goal-column)))
 
 (defun stgit-collapse (&optional patches)
