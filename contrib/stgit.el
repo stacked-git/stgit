@@ -1013,16 +1013,42 @@ at point."
                                "\n")))))
     (goto-char end)))
 
-(defun stgit-find-file (&optional other-window)
+(defun stgit-find-file-revision (file patchsym &optional other-window)
+  (let ((filename (expand-file-name (concat (file-name-nondirectory file)
+                                            ".~" (symbol-name patchsym) "~")
+                                    (file-name-directory file))))
+    (let ((coding-system-for-read 'no-conversion)
+          (coding-system-for-write 'no-conversion))
+      (with-temp-file filename
+        (unless (zerop (stgit-run-git-silent "cat-file"
+                                             "blob"
+                                             (concat (if (eq patchsym :index)
+                                                         ""
+                                                       (stgit-id patchsym))
+                                                     ":" file)))
+          (error "git cat-file failed"))))
+    (funcall (if other-window
+                 'switch-to-buffer-other-window
+               'switch-to-buffer)
+             (find-file-noselect filename))
+    (set (make-local-variable 'vc-parent-buffer) filename)))
+
+(defun stgit-find-file (&optional other-window this-rev)
   (let* ((file (or (stgit-patched-file-at-point)
                    (error "No file at point")))
-         (filename (expand-file-name (stgit-file->file file))))
-    (unless (file-exists-p filename)
-      (error "File does not exist"))
-    (funcall (if other-window 'find-file-other-window 'find-file)
-             filename)
-    (when (eq (stgit-file->status file) 'unmerged)
-      (smerge-mode 1))))
+         (filename (expand-file-name (stgit-file->file file)))
+         (patchsym (stgit-patch-name-at-point)))
+
+    (if (and this-rev (not (eq patchsym :work)))
+        (stgit-find-file-revision (stgit-file->file file)
+                                  (stgit-patch-name-at-point)
+                                  other-window)
+      (unless (file-exists-p filename)
+        (error "File does not exist"))
+      (funcall (if other-window 'find-file-other-window 'find-file)
+               filename)
+      (when (eq (stgit-file->status file) 'unmerged)
+        (smerge-mode 1)))))
 
 (defun stgit-expand (&optional patches collapse)
   "Show the contents of marked patches, or the patch at point.
@@ -1118,11 +1144,13 @@ file for (applied) copies and renames."
     (t
      (error "No patch or file on line"))))
 
-(defun stgit-find-file-other-window ()
-  "Open file at point in other window"
-  (interactive)
+(defun stgit-find-file-other-window (&optional this-rev)
+  "Open file at point in other window.
+
+With prefix argument, open a buffer with that revision of the file."
+  (interactive "p")
   (stgit-assert-mode)
-  (stgit-find-file t))
+  (stgit-find-file t (> this-rev 1)))
 
 (defun stgit-find-file-merge ()
   "Open file at point and merge it using `smerge-ediff'."
