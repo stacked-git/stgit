@@ -1876,17 +1876,18 @@ line of PATCHSYM and return :patch."
                              (symbol-name (stgit-patch-name-at-point t t)))))
   (stgit-assert-mode)
   (let ((old-patchsym (stgit-patch-name-at-point t t)))
-    (stgit-capture-output nil
-      (stgit-run "rename" "--" old-patchsym name))
-    (let ((name-sym (intern name)))
-      (when (memq old-patchsym stgit-expanded-patches)
-        (setq stgit-expanded-patches
-              (cons name-sym (delq old-patchsym stgit-expanded-patches))))
-      (when (memq old-patchsym stgit-marked-patches)
-        (setq stgit-marked-patches
-              (cons name-sym (delq old-patchsym stgit-marked-patches))))
-      (stgit-reload)
-      (stgit-goto-patch name-sym))))
+    (unless (string-equal (symbol-name old-patchsym) name)
+      (stgit-capture-output nil
+	(stgit-run "rename" "--" old-patchsym name))
+      (let ((name-sym (intern name)))
+	(when (memq old-patchsym stgit-expanded-patches)
+	  (setq stgit-expanded-patches
+		(cons name-sym (delq old-patchsym stgit-expanded-patches))))
+	(when (memq old-patchsym stgit-marked-patches)
+	  (setq stgit-marked-patches
+		(cons name-sym (delq old-patchsym stgit-marked-patches))))
+	(stgit-reload)
+	(stgit-goto-patch name-sym)))))
 
 (defun stgit-reload-or-repair (repair)
   "Update the contents of the StGit buffer (`stgit-reload').
