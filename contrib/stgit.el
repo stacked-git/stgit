@@ -398,7 +398,7 @@ Argument DIR is the repository path."
 (defmacro stgit-capture-output (name &rest body)
   "Capture StGit output and, if there was any output, show it in a window
 at the end.
-Returns nil if there was no output."
+Returns the result of the last form in BODY."
   (declare (debug ([&or stringp null] body))
            (indent 1))
   `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
@@ -409,13 +409,14 @@ Returns nil if there was no output."
        (erase-buffer)
        (setq default-directory stgit-dir)
        (setq buffer-read-only t))
-     (let ((standard-output output-buf))
-       ,@body)
-     (with-current-buffer output-buf
-       (set-buffer-modified-p nil)
-       (setq buffer-read-only t)
-       (if (< (point-min) (point-max))
-           (display-buffer output-buf t)))))
+     (prog1
+	 (let ((standard-output output-buf))
+	   ,@body)
+       (with-current-buffer output-buf
+	 (set-buffer-modified-p nil)
+	 (setq buffer-read-only t)
+	 (if (< (point-min) (point-max))
+	     (display-buffer output-buf t))))))
 
 (defun stgit-make-run-args (args)
   "Return a copy of ARGS with its elements converted to strings."
