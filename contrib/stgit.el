@@ -2569,13 +2569,12 @@ When the command has finished, reload the stgit buffer."
          (patch-names (mapcar 'symbol-name patches))
          (hyphens (find-if (lambda (s) (string-match "^-" s)) patch-names))
          (program (if git-mode stgit-git-program stgit-stg-program))
-         (defaultcmd (if patches
-                         (concat program
-                                 "  "
-                                 (and hyphens "-- ")
-                                 (mapconcat (if git-mode 'stgit-id 'identity)
-                                            patch-names " "))
-                       (concat stgit-stg-program " ")))
+         (defaultcmd (concat program
+                             " "
+                             (and patch-names " ")
+                             (and hyphens patch-names "-- ")
+                             (mapconcat (if git-mode 'stgit-id 'identity)
+                                        patch-names " ")))
          (cmd (read-from-minibuffer "Shell command: "
                                     (cons defaultcmd (+ (length program) 2))
                                     nil nil 'shell-command-history))
