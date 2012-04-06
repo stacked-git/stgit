@@ -1814,6 +1814,12 @@ If SKIP-CURRENT is not nil, do not include the current branch."
 			      ,@(unless (zerop (length branch-point))
 				  (list branch-point)))))
 		   t)))
+
+      ;; Do not expand any (normal) patches in the new branch
+      (setq stgit-expanded-patches
+	    (remove-if-not (lambda (p) (memq p '(:work :index)))
+			   stgit-expanded-patches))
+
       (stgit-reload))))
 
 (defun stgit-available-refs (&optional omit-stgit)
