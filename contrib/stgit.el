@@ -306,12 +306,12 @@ directory DIR or `default-directory'"
 
 (defun stgit-find-buffer (dir)
   "Return the buffer displaying StGit patches for DIR, or nil if none."
-  (setq dir (file-name-as-directory dir))
+  (setq dir (file-truename (file-name-as-directory dir)))
   (let ((buffers (buffer-list)))
     (while (and buffers
                 (not (with-current-buffer (car buffers)
                        (and (eq major-mode 'stgit-mode)
-                            (string= default-directory dir)))))
+                            (string= (file-truename default-directory) dir)))))
       (setq buffers (cdr buffers)))
     (and buffers (car buffers))))
 
