@@ -2013,6 +2013,26 @@ previous file if point is at the last file within a patch."
       (goto-char old-point))
     neighbour-file))
 
+(defun stgit-unmerged-file-stages (file)
+  "Returns list of the merge stages that contain FILE, which
+must be an unmerged file.
+
+Stage 1, the common ancestor, is 'ancestor.
+Stage 2, HEAD, is 'head.
+Stage 3, MERGE_HEAD, is 'merge-head."
+  (let ((output (with-output-to-string
+		  (stgit-run-git-silent "ls-files" "-u" "-z" "--"
+					(stgit-file->file file))))
+	stages
+	start)
+    (while (string-match "\\([0-7]*\\) \\([0-9A-Fa-f]\\{40\\}\\) \\([1-3]\\)\t\\([^\0]*\\)\0"
+			 output start)
+      (setq stages (cons (elt [ancestor head merge-head]
+			      (1- (string-to-number (match-string 3 output))))
+			 stages)
+	    start (match-end 0)))
+    stages))
+
 (defun stgit-revert-file ()
   "Revert the file at point, which must be in the index or the
 working tree."
@@ -2024,34 +2044,49 @@ working tree."
          (file-status  (stgit-file->status patched-file))
          (rm-file      (cond ((stgit-file->copy-or-rename patched-file)
                               (stgit-file->cr-to patched-file))
-                             ((memq file-status '(add ignore unknown))
+                             ((eq file-status 'add)
                               (stgit-file->file patched-file))))
          (co-file      (cond ((eq file-status 'rename)
                               (stgit-file->cr-from patched-file))
-                             ((not (memq file-status '(copy add)))
+                             ((not (memq file-status '(copy add unknown)))
                               (stgit-file->file patched-file))))
-         (next-file    (stgit-neighbour-file)))
-
+         (next-file    (stgit-neighbour-file))
+	 (rm-disk-file (when (memq file-status '(ignore unknown))
+			 (stgit-file->file patched-file)))
+	 add-file)
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
 
-    (if (memq file-status '(ignore unknown))
-        (when (yes-or-no-p (format "Delete %s? " rm-file))
-          (dired-delete-file rm-file dired-recursive-deletes))
-      (let ((nfiles (+ (if rm-file 1 0) (if co-file 1 0))))
-        (when (yes-or-no-p (format "Revert %d file%s? "
-                                   nfiles
-                                   (if (= nfiles 1) "" "s")))
-          (stgit-capture-output nil
-            (when rm-file
-              (stgit-run-git "rm" "-f" "-q" "--" rm-file))
-            (when co-file
-              (let ((rev (and (eq patch-name :index) '("HEAD"))))
-                (apply #'stgit-run-git
-                       "checkout"
-                       `(,@rev "--" ,co-file)))))
-          (stgit-reload)
-          (stgit-goto-patch patch-name next-file))))))
+    (when (eq file-status 'unmerged)
+      (let ((stages (stgit-unmerged-file-stages patched-file)))
+	(if (memq 'head stages)
+	    (setq add-file (stgit-file->file patched-file))
+	  (setq rm-file (stgit-file->file patched-file)
+		co-file nil))))
+
+    (when (yes-or-no-p (cond (rm-disk-file
+			      (format "Delete %s? " rm-disk-file))
+			     ((and rm-file co-file)
+			      "Revert 2 files? ")
+			     (t
+			      (format "Revert %s? " (or rm-file co-file)))))
+      (when rm-disk-file
+	(dired-delete-file rm-disk-file dired-recursive-deletes))
+
+      (stgit-capture-output nil
+	(when rm-file
+	  (stgit-run-git "rm" "-f" "-q" "--" rm-file))
+	(when add-file
+	  (stgit-run-git "add" "--" add-file))
+	(when co-file
+	  (let ((rev (when (or (eq file-status 'unmerged)
+			       (eq patch-name :index))
+		       '("HEAD"))))
+	    (apply #'stgit-run-git
+		   "checkout"
+		   `(,@rev "--" ,co-file)))))
+      (stgit-reload)
+      (stgit-goto-patch patch-name next-file))))
 
 (defun stgit-revert ()
   "Revert the change at point, which must be the index, the work
