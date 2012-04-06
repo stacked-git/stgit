@@ -1196,7 +1196,9 @@ With prefix argument, open a buffer with that revision of the file."
   (interactive)
   (stgit-assert-mode)
   (stgit-find-file t)
-  (smerge-ediff))
+  (let ((filename (file-name-nondirectory buffer-file-name)))
+    (smerge-ediff (concat "*" filename " GIT*")
+		  (concat "*" filename " PATCH*"))))
 
 (defun stgit-quit ()
   "Hide the stgit buffer."
