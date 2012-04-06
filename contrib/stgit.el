@@ -435,13 +435,31 @@ See also `stgit-message'.")
   (unless stgit-inhibit-messages
     (apply 'message format-spec args)))
 
+(defmacro stgit-show-task-message (message &rest body)
+  "Display \"MESSAGE...\" before executing BODY and then display
+\"MESSAGE...done\" when done. MESSAGE will only be evaluated if
+necessary and no message will be shown if MESSAGE is nil.
+
+If `stgit-inhibit-messages' is non-nil, messages are
+suppressed. See also `stgit-message'. If MESSAGE is non-nil, BODY
+will be executed with `stgit-inhibit-messages' set to `t'.
+
+Returns the return value of BODY."
+  (declare (indent 1) (debug (form body)))
+  (let ((msg (make-symbol "msg")))
+    `(let ((,msg (and (not stgit-inhibit-messages)
+                      ,message)))
+       (when ,msg (message "%s..." ,msg))
+       (prog1
+           (let ((stgit-inhibit-messages (or ,msg stgit-inhibit-messages)))
+             ,@body)
+         (when ,msg (message "%s...done" ,msg))))))
+
 (defun stgit-run (&rest args)
   (setq args (stgit-make-run-args args))
-  (let ((msgcmd (mapconcat #'identity (cons stgit-stg-program args) " ")))
-    (stgit-message "Running %s..." msgcmd)
-    (prog1
-        (apply 'call-process stgit-stg-program nil standard-output nil args)
-      (stgit-message "Running %s...done" msgcmd))))
+  (stgit-show-task-message
+      (mapconcat #'identity `("Running" ,stgit-stg-program ,@args) " ")
+    (apply 'call-process stgit-stg-program nil standard-output nil args)))
 
 (defun stgit-run-silent (&rest args)
   (let ((stgit-inhibit-messages t))
@@ -449,11 +467,9 @@ See also `stgit-message'.")
 
 (defun stgit-run-git (&rest args)
   (setq args (stgit-make-run-args args))
-  (let ((msgcmd (mapconcat #'identity (cons stgit-git-program args) " ")))
-    (stgit-message "Running %s..." msgcmd)
-    (prog1
-        (apply 'call-process stgit-git-program nil standard-output nil args)
-      (stgit-message "Running %s...done" msgcmd))))
+  (stgit-show-task-message
+      (mapconcat #'identity `("Running" ,stgit-git-program ,@args) " ")
+    (apply 'call-process stgit-git-program nil standard-output nil args)))
 
 (defun stgit-run-git-silent (&rest args)
   (let ((stgit-inhibit-messages t))
@@ -628,35 +644,31 @@ If DESCRIPTION is non-nil, it is displayed as a status message
 during the operation."
   (interactive)
   (stgit-assert-mode)
-  (when description
-    (message "%s..." description))
-  (let ((inhibit-read-only t)
-        (curline (line-number-at-pos))
-        (curpatch (stgit-patch-name-at-point))
-        (curfile (stgit-patched-file-at-point))
-        (stgit-inhibit-messages description))
-    (ewoc-filter stgit-ewoc #'(lambda (x) nil))
-    (ewoc-set-hf stgit-ewoc
-                 (concat "Branch: "
-                         (propertize (stgit-current-branch)
-                                     'face 'stgit-branch-name-face)
-                         "\n\n")
-                 (if stgit-show-worktree
-                     "--"
-                   (propertize
-                    (substitute-command-keys "--\n\"\\[stgit-toggle-worktree]\"\
- shows the working tree\n")
-                    'face 'stgit-description-face)))
-    (stgit-run-series stgit-ewoc)
-    (unless (and curpatch
-                 (stgit-goto-patch curpatch
-                                   (and curfile (stgit-file->file curfile))))
-      (goto-char (point-min))
-      (forward-line (1- curline))
-      (move-to-column (stgit-goal-column)))
-    (stgit-refresh-git-status))
-  (when description
-    (message "%s...done" description)))
+  (stgit-show-task-message description
+    (let ((inhibit-read-only t)
+          (curline (line-number-at-pos))
+          (curpatch (stgit-patch-name-at-point))
+          (curfile (stgit-patched-file-at-point)))
+      (ewoc-filter stgit-ewoc #'(lambda (x) nil))
+      (ewoc-set-hf stgit-ewoc
+                   (concat "Branch: "
+                           (propertize (stgit-current-branch)
+                                       'face 'stgit-branch-name-face)
+                           "\n\n")
+                   (if stgit-show-worktree
+                       "--"
+                     (propertize
+                      (substitute-command-keys "--\n\"\
+\\[stgit-toggle-worktree]\" shows the working tree\n")
+                      'face 'stgit-description-face)))
+      (stgit-run-series stgit-ewoc)
+      (unless (and curpatch
+                   (stgit-goto-patch curpatch
+                                     (and curfile (stgit-file->file curfile))))
+        (goto-char (point-min))
+        (forward-line (1- curline))
+        (move-to-column (stgit-goal-column)))
+      (stgit-refresh-git-status))))
 
 (defconst stgit-file-status-code-strings
   (mapcar (lambda (arg)
