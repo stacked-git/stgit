@@ -404,6 +404,7 @@ Returns the result of the last form in BODY."
   `(let ((output-buf (get-buffer-create ,(or name "*StGit output*")))
          (stgit-dir default-directory)
          (inhibit-read-only t))
+     (set-buffer-major-mode output-buf)
      (with-current-buffer output-buf
        (buffer-disable-undo)
        (erase-buffer)
