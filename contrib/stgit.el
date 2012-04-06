@@ -2367,6 +2367,12 @@ If FORCE is not nil, use --force."
                                                      "--quiet" "HEAD")))))
     result))
 
+(defun stgit-assert-no-unmerged-changes ()
+  "Signal an error if there are any unmerged changes in the index."
+  (when (stgit-git-index-unmerged-p)
+    (error (substitute-command-keys
+            "Resolve unmerged changes with \\[stgit-resolve-file] first"))))
+
 (defun stgit-file-toggle-index ()
   "Move modified file in or out of the index.
 
@@ -2419,8 +2425,7 @@ file ended up. You can then jump to the file with \
     (let ((patch-name (stgit-patch-name-at-point)))
       (unless (memq patch-name '(:index :work))
         (error "Can only move changes between working tree and index"))
-      (when (stgit-git-index-unmerged-p)
-        (error "Resolve unmerged changes with \\[stgit-resolve-file] first"))
+      (stgit-assert-no-unmerged-changes)
       (if (if (eq patch-name :index)
               (stgit-index-empty-p)
             (stgit-work-tree-empty-p))
@@ -2497,6 +2502,7 @@ end of the patch.
 This works just like running `stgit-new' followed by `stgit-refresh'."
   (interactive "P")
   (stgit-assert-mode)
+  (stgit-assert-no-unmerged-changes)
   (stgit-new add-sign t))
 
 (defun stgit-create-patch-name (description)
@@ -2787,6 +2793,7 @@ If the index contains any changes, only refresh from index.
 With prefix argument, refresh the marked patch or the patch under point."
   (interactive "P")
   (stgit-assert-mode)
+  (stgit-assert-no-unmerged-changes)
   (let ((patchargs (if arg
                        (let ((patches (stgit-patches-marked-or-at-point t t)))
                          (when (> (length patches) 1)
