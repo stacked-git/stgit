@@ -15,6 +15,7 @@
 (require 'git nil t)
 (require 'cl)
 (require 'comint)
+(require 'dired)
 (require 'ewoc)
 (require 'easymenu)
 (require 'format-spec)
@@ -1672,7 +1673,7 @@ buffer that shows the status of the current buffer.
 
 MODE specifies how to update the buffer. See `stgit-post-refresh'
 for the different values MODE can have."
-  (let* ((dir (cond ((derived-mode-p 'stgit-status-mode 'dired-mode)
+  (let* ((dir (cond ((derived-mode-p 'stgit-mode 'stgit-status-mode 'dired-mode)
                      default-directory)
                     (buffer-file-name
                      (file-name-directory
@@ -2023,7 +2024,7 @@ working tree."
          (file-status  (stgit-file->status patched-file))
          (rm-file      (cond ((stgit-file->copy-or-rename patched-file)
                               (stgit-file->cr-to patched-file))
-                             ((eq file-status 'add)
+                             ((memq file-status '(add ignore unknown))
                               (stgit-file->file patched-file))))
          (co-file      (cond ((eq file-status 'rename)
                               (stgit-file->cr-from patched-file))
@@ -2034,23 +2035,23 @@ working tree."
     (unless (memq patch-name '(:work :index))
       (error "No index or working tree file on this line"))
 
-    (when (eq file-status 'ignore)
-      (error "Cannot revert ignored files"))
-
-    (when (eq file-status 'unknown)
-      (error "Cannot revert unknown files"))
-
-    (let ((nfiles (+ (if rm-file 1 0) (if co-file 1 0))))
-      (when (yes-or-no-p (format "Revert %d file%s? "
-                                 nfiles
-                                 (if (= nfiles 1) "" "s")))
-        (stgit-capture-output nil
-          (when rm-file
-            (stgit-run-git "rm" "-f" "-q" "--" rm-file))
-          (when co-file
-            (stgit-run-git "checkout" "HEAD" co-file)))
-        (stgit-reload)
-        (stgit-goto-patch patch-name next-file)))))
+    (if (memq file-status '(ignore unknown))
+        (when (yes-or-no-p (format "Delete %s? " rm-file))
+          (dired-delete-file rm-file dired-recursive-deletes))
+      (let ((nfiles (+ (if rm-file 1 0) (if co-file 1 0))))
+        (when (yes-or-no-p (format "Revert %d file%s? "
+                                   nfiles
+                                   (if (= nfiles 1) "" "s")))
+          (stgit-capture-output nil
+            (when rm-file
+              (stgit-run-git "rm" "-f" "-q" "--" rm-file))
+            (when co-file
+              (let ((rev (and (eq patch-name :index) '("HEAD"))))
+                (apply #'stgit-run-git
+                       "checkout"
+                       `(,@rev "--" ,co-file)))))
+          (stgit-reload)
+          (stgit-goto-patch patch-name next-file))))))
 
 (defun stgit-revert ()
   "Revert the change at point, which must be the index, the work
