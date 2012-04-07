@@ -1777,26 +1777,43 @@ If ALL is not nil, also return non-stgit branches."
   "Switch to or create branch BRANCH."
   (interactive (list (completing-read "Switch to branch: "
                                       (stgit-available-branches))))
+
   (stgit-assert-mode)
-  (when (cond ((equal branch (stgit-current-branch))
-               (error "Branch is already current"))
-              ((member branch (stgit-available-branches t))
-               (stgit-capture-output nil (stgit-run "branch" "--" branch))
-               t)
-              ((not (string-match stgit-allowed-branch-name-re branch))
-               (error "Invalid branch name"))
-              ((yes-or-no-p (format "Create branch \"%s\"? " branch))
-               (let ((branch-point (completing-read
-                                    "Branch from (default current branch): "
-                                    (stgit-available-branches))))
-                 (stgit-capture-output nil
-                   (apply 'stgit-run
-                          `("branch" "--create" "--"
-                            ,branch
-                            ,@(unless (zerop (length branch-point))
-                                (list branch-point)))))
-                 t)))
-    (stgit-reload)))
+
+  (when (equal branch (stgit-current-branch))
+    (error "Branch is already current"))
+
+  (let ((merge (not (and (stgit-index-empty-p) (stgit-work-tree-empty-p)))))
+
+    (when (cond ((and merge
+		      (not (yes-or-no-p
+			    "Attempt to merge uncommitted changes? ")))
+		 nil)
+
+		((member branch (stgit-available-branches t))
+		 (stgit-capture-output nil
+		   (apply 'stgit-run
+			  (append '("branch")
+				  (and merge '("--merge"))
+				  '("--")
+				  (list branch))))
+		 t)
+		((not (string-match stgit-allowed-branch-name-re branch))
+		 (error "Invalid branch name"))
+		(merge
+		 (error "Cannot merge changes into a new branch"))
+		((yes-or-no-p (format "Create branch \"%s\"? " branch))
+		 (let ((branch-point (completing-read
+				      "Branch from (default current branch): "
+				      (stgit-available-branches))))
+		   (stgit-capture-output nil
+		     (apply 'stgit-run
+			    `("branch" "--create" "--"
+			      ,branch
+			      ,@(unless (zerop (length branch-point))
+				  (list branch-point)))))
+		   t)))
+      (stgit-reload))))
 
 (defun stgit-available-refs (&optional omit-stgit)
   "Returns a list of the available git refs.
