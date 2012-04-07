@@ -1108,6 +1108,8 @@ file for (applied) copies and renames."
          (goto-char (point-min)))
         (t
          (let ((opatch (stgit-patch-at-point)))
+	   (when (stgit-patched-file-at-point)
+	     (setq arg (1- arg)))
            (ewoc-goto-prev stgit-ewoc arg)
            (unless (zerop arg)
              (when (eq opatch (stgit-patch-at-point))
