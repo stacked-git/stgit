@@ -26,7 +26,7 @@ from stgit.lib import log
 help = 'Branch operations: switch, list, create, rename, delete, ...'
 kind = 'stack'
 usage = ['',
-         '[--] <branch>',
+         '[--merge] [--] <branch>',
          '--list',
          '--create [--] <new-branch> [<committish>]',
          '--clone [--] [<new-branch>]',
@@ -113,6 +113,8 @@ options = [
         A cleaned up branch can be re-initialised using the 'stg init'
         command."""),
     opt('-d', '--description', short = 'Set the branch description'),
+    opt('--merge', action = 'store_true',
+        short = 'Merge work tree changes into the other branch'),
     opt('--force', action = 'store_true',
         short = 'Force a delete when the series is not empty')]
 
@@ -362,7 +364,8 @@ def func(parser, options, args):
             raise CmdException, 'Branch "%s" is already the current branch' \
                   % args[0]
 
-        check_local_changes()
+        if not options.merge:
+            check_local_changes()
         check_conflicts()
         check_head_top_equal(crt_series)
 
