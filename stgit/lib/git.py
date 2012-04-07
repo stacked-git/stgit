@@ -445,7 +445,14 @@ class Refs(object):
     def __cache_refs(self):
         """(Re-)Build the cache of all refs in the repository."""
         self.__refs = {}
-        for line in self.__repository.run(['git', 'show-ref']).output_lines():
+        runner = self.__repository.run(['git', 'show-ref'])
+        try:
+            lines = runner.output_lines()
+        except run.RunException:
+            # as this happens both in non-git trees and empty git
+            # trees, we silently ignore this error
+            return
+        for line in lines:
             m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line)
             sha1, ref = m.groups()
             self.__refs[ref] = sha1
