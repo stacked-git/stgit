@@ -2050,20 +2050,21 @@ what git-config branch.<branch>.stgit.parentbranch is set to."
   (stgit-reload))
 
 (defun stgit-commit (count)
-  "Run stg commit on COUNT commits.
+  "Run stg commit on (at most) COUNT commits.
 Interactively, the prefix argument is used as COUNT.
-A negative COUNT will uncommit instead."
+A negative COUNT will uncommit using `stgit-uncommit' instead."
   (interactive "p")
   (stgit-assert-mode)
   (if (< count 0)
       (stgit-uncommit (- count))
+    (setq count (min count (length (stgit-applied-patches t))))
     (stgit-capture-output nil (stgit-run "commit" "-n" count))
     (stgit-reload)))
 
 (defun stgit-uncommit (count)
   "Run stg uncommit on COUNT commits.
 Interactively, the prefix argument is used as COUNT.
-A negative COUNT will commit instead."
+A negative COUNT will commit using `stgit-commit' instead."
   (interactive "p")
   (stgit-assert-mode)
   (if (< count 0)
