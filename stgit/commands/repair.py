@@ -39,7 +39,7 @@ options:
      similar will work too.)
 
   2. Use "stg repair". This will fix up the StGit metadata to
-     accomodate the modifications to the branch. Specifically, it will
+     accommodate the modifications to the branch. Specifically, it will
      do the following:
 
        * If you have made regular git commits on top of your stack of
