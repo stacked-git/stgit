@@ -33,7 +33,7 @@ easily committed or pushed.
 
 If no patch is specified on command-line, the current patch gets sunk.
 By default patches are sunk to the bottom of the stack, but the '--to'
-option allows to place them under any applied patch.
+option allows one to place them under any applied patch.
 
 Sinking internally involves popping all patches (or all patches
 including <target patch>), then pushing the patches to sink, and then
