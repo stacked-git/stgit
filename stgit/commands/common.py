@@ -109,7 +109,7 @@ def color_diff_flags():
 def check_local_changes():
     if git.local_changes():
         raise CmdException('local changes in the tree. Use "refresh" or'
-                           ' "status --reset"')
+                           ' "reset --hard"')
 
 def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
@@ -121,7 +121,7 @@ def check_conflicts():
     if git.get_conflicts():
         raise CmdException('Unsolved conflicts. Please fix the conflicts'
                            ' then use "git add --update <files>" or revert the'
-                           ' changes with "status --reset".')
+                           ' changes with "reset --hard".')
 
 def print_crt_patch(crt_series, branch = None):
     if not branch:

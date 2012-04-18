@@ -152,9 +152,9 @@ class StackTransaction(object):
             self.__abort()
     def __assert_index_worktree_clean(self, iw):
         if not iw.worktree_clean():
-            self.__halt('Worktree not clean. Use "refresh" or "status --reset"')
+            self.__halt('Worktree not clean. Use "refresh" or "reset --hard"')
         if not iw.index.is_clean(self.stack.head):
-            self.__halt('Index not clean. Use "refresh" or "status --reset"')
+            self.__halt('Index not clean. Use "refresh" or "reset --hard"')
     def __checkout(self, tree, iw, allow_bad_head):
         if not allow_bad_head:
             self.__assert_head_top_equal()
