@@ -745,7 +745,7 @@ def reset(files = None, tree_id = None, check_out = True):
 
         checkout(files, tree_id, True)
         # checkout doesn't remove files
-        map(os.remove, rm_files)
+        map(os.remove, [f for f in rm_files if not os.path.isdir(f)])
 
     # if the reset refers to the whole tree, switch the HEAD as well
     if not files:
