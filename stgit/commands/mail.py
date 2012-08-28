@@ -114,6 +114,8 @@ options = [
         short = 'Send patches without sequence numbering'),
     opt('--attach', action = 'store_true',
         short = 'Send a patch as attachment'),
+    opt('--attach-inline', action = 'store_true',
+        short = 'Send a patch inline and as an attachment'),
     opt('-v', '--version', metavar = 'VERSION',
         short = 'Add VERSION to the [PATCH ...] prefix'),
     opt('--prefix', metavar = 'PREFIX',
@@ -704,6 +706,8 @@ def func(parser, options, args):
     else:
         if options.attach:
             tmpl = templates.get_template('mailattch.tmpl')
+        elif options.attach_inline:
+            tmpl = templates.get_template('patchandattch.tmpl')
         else:
             tmpl = templates.get_template('patchmail.tmpl')
         if not tmpl:

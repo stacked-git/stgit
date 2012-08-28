@@ -1,0 +1,23 @@
+From: %(sender)s
+Subject: [%(prefix)sPATCH%(version)s%(number)s] %(shortdescr)s
+Mime-Version: 1.0
+Content-Type: multipart/mixed; boundary=MIMEBOUNDARY
+
+This is a MIME message.
+
+--MIMEBOUNDARY
+Content-Type: text/plain
+Content-Disposition: inline
+
+%(fromauth)s%(longdescr)s
+---
+%(diffstat)s
+%(diff)s
+---
+%(diffstat)s
+--MIMEBOUNDARY
+Content-Type: text/plain; name=%(patch)s.patch
+Content-Disposition: attachment; filename=%(patch)s.patch
+
+%(diff)s
+--MIMEBOUNDARY-- 
