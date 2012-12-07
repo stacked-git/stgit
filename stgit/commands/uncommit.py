@@ -95,23 +95,24 @@ def func(parser, options, args):
         patchnames = args
         patch_nr = len(patchnames)
 
-    def get_parent(c):
-        next = c.data.parents
+    def check_and_append(c, n):
+        next = n.data.parents;
         try:
             [next] = next
         except ValueError:
+            out.done()
             raise common.CmdException(
                 'Trying to uncommit %s, which does not have exactly one parent'
-                % c.sha1)
-        return next
+                % n.sha1)
+        return c.append(n)
 
     commits = []
     next_commit = stack.base
     if patch_nr:
         out.start('Uncommitting %d patches' % patch_nr)
         for i in xrange(patch_nr):
-            commits.append(next_commit)
-            next_commit = get_parent(next_commit)
+            check_and_append(commits, next_commit)
+            next_commit = next_commit.data.parent
     else:
         if options.exclusive:
             out.start('Uncommitting to %s (exclusive)' % to_commit.sha1)
@@ -120,10 +121,10 @@ def func(parser, options, args):
         while True:
             if next_commit == to_commit:
                 if not options.exclusive:
-                    commits.append(next_commit)
+                    check_and_append(commits, next_commit)
                 break
-            commits.append(next_commit)
-            next_commit = get_parent(next_commit)
+            check_and_append(commits, next_commit)
+            next_commit = next_commit.data.parent
         patch_nr = len(commits)
 
     taken_names = set(stack.patchorder.all)
