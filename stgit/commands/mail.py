@@ -359,14 +359,12 @@ def __build_address_headers(msg, options, extra_cc = []):
         bcc_addr = autobcc
 
     # if an address is on a header, ignore it from the rest
+    from_set = __update_header(msg, 'From')
     to_set = __update_header(msg, 'To', to_addr)
+    # --auto generated addresses, don't include the sender
+    __update_header(msg, 'Cc', extra_cc_addr, from_set)
     cc_set = __update_header(msg, 'Cc', cc_addr, to_set)
     bcc_set = __update_header(msg, 'Bcc', bcc_addr, to_set.union(cc_set))
-
-    # --auto generated addresses, don't include the sender
-    from_set = __update_header(msg, 'From')
-    __update_header(msg, 'Cc', extra_cc_addr,
-                    to_set.union(bcc_set).union(from_set))
 
 def __get_signers_list(msg):
     """Return the address list generated from signed-off-by and
@@ -478,7 +476,7 @@ def __build_cover(tmpl, msg_id, options, patches):
             prefix_str = confprefix + ' '
         else:
             prefix_str = ''
-        
+
     total_nr_str = str(len(patches))
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if len(patches) > 1:
@@ -494,7 +492,7 @@ def __build_cover(tmpl, msg_id, options, patches):
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,
-                 'prefix':	 prefix_str,
+                 'prefix':       prefix_str,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
