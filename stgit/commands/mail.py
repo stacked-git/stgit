@@ -67,12 +67,14 @@ The following variables are accepted by both the preamble and the
 patch e-mail templates:
 
   %(diffstat)s     - diff statistics
-  %(number)s       - empty if only one patch is sent or ' patchnr/totalnr'
+  %(number)s       - empty if only one patch is sent or 'patchnr/totalnr'
   %(snumber)s      - stripped version of '%(number)s'
+  %(nspace)s       - ' ' if %(number)s is non-empty, otherwise empty string
   %(patchnr)s      - patch number
   %(sender)s       - 'sender'  or 'authname <authemail>' as per the config file
   %(totalnr)s      - total number of patches to be sent
-  %(version)s      - ' version' string passed on the command line (or empty)
+  %(version)s      - 'version' string passed on the command line (or empty)
+  %(vspace)s       - ' ' if %(version)s is non-empty, otherwise empty string
 
 In addition to the common variables, the preamble e-mail template
 accepts the following:
@@ -91,7 +93,8 @@ the following:
   %(fromauth)s     - 'From: author\n\n' if different from sender
   %(longdescr)s    - the rest of the patch description, after the first line
   %(patch)s        - patch name
-  %(prefix)s       - 'prefix ' string passed on the command line
+  %(prefix)s       - 'prefix' string passed on the command line
+  %(pspace)s       - ' ' if %(prefix)s is non-empty, otherwise empty string
   %(shortdescr)s   - the first line of the patch description"""
 
 args = [argparse.patch_range(argparse.applied_patches,
@@ -464,25 +467,30 @@ def __build_cover(tmpl, msg_id, options, patches):
     sender = __get_sender()
 
     if options.version:
-        version_str = ' %s' % options.version
+        version_str = '%s' % options.version
+        version_space = ' '
     else:
         version_str = ''
+        version_space = ''
 
     if options.prefix:
-        prefix_str = options.prefix + ' '
+        prefix_str = options.prefix
     else:
-        confprefix = config.get('stgit.mail.prefix')
-        if confprefix:
-            prefix_str = confprefix + ' '
-        else:
-            prefix_str = ''
+        prefix_str = config.get('stgit.mail.prefix')
+    if prefix_str:
+        prefix_space = ' '
+    else:
+        prefix_str = ''
+        prefix_space = ''
 
     total_nr_str = str(len(patches))
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if len(patches) > 1:
-        number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
+        number_str = '%s/%s' % (patch_nr_str, total_nr_str)
+        number_space = ' '
     else:
         number_str = ''
+        number_space = ''
 
     tmpl_dict = {'sender':       sender,
                  # for backward template compatibility
@@ -492,10 +500,13 @@ def __build_cover(tmpl, msg_id, options, patches):
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,
+                 'vspace':       version_space,
                  'prefix':       prefix_str,
+                 'pspace':       prefix_space,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
+                 'nspace':       number_space,
                  'snumber':      number_str.strip(),
                  'shortlog':     stack.shortlog(crt_series.get_patch(p)
                                                 for p in reversed(patches)),
@@ -559,25 +570,30 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         fromauth = ''
 
     if options.version:
-        version_str = ' %s' % options.version
+        version_str = '%s' % options.version
+        version_space = ' '
     else:
         version_str = ''
+        version_space = ''
 
     if options.prefix:
-        prefix_str = options.prefix + ' '
+        prefix_str = options.prefix
     else:
-        confprefix = config.get('stgit.mail.prefix')
-        if confprefix:
-            prefix_str = confprefix + ' '
-        else:
-            prefix_str = ''
+        prefix_str = config.get('stgit.mail.prefix')
+    if prefix_str:
+        prefix_space = ' '
+    else:
+        prefix_str = ''
+        prefix_space = ''
 
     total_nr_str = str(total_nr)
     patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
     if not options.unrelated and total_nr > 1:
-        number_str = ' %s/%s' % (patch_nr_str, total_nr_str)
+        number_str = '%s/%s' % (patch_nr_str, total_nr_str)
+        number_space = ' '
     else:
         number_str = ''
+        number_space = ''
 
     diff = git.diff(rev1 = git_id(crt_series, '%s^' % patch),
                     rev2 = git_id(crt_series, '%s' % patch),
@@ -595,10 +611,13 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                  # for backward template compatibility
                  'date':         '',
                  'version':      version_str,
+                 'vspace':       version_space,
                  'prefix':       prefix_str,
+                 'pspace':       prefix_space,
                  'patchnr':      patch_nr_str,
                  'totalnr':      total_nr_str,
                  'number':       number_str,
+                 'nspace':       number_space,
                  'snumber':      number_str.strip(),
                  'fromauth':     fromauth,
                  'authname':     authname,

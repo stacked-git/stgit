@@ -1,5 +1,5 @@
 From: %(sender)s
-Subject: [%(prefix)sPATCH%(version)s%(number)s] %(shortdescr)s
+Subject: [%(prefix)s%(pspace)sPATCH%(vspace)s%(version)s%(nspace)s%(number)s] %(shortdescr)s
 Mime-Version: 1.0
 Content-Type: multipart/mixed; boundary=MIMEBOUNDARY
 
@@ -23,4 +23,4 @@ Content-Disposition: attachment; filename=%(patch)s.patch
 ---
 %(diffstat)s
 %(diff)s
---MIMEBOUNDARY-- 
+--MIMEBOUNDARY--
