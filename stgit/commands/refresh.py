@@ -32,6 +32,10 @@ Include the latest work tree and index changes in the current patch.
 This command generates a new git commit object for the patch; the old
 commit is no longer visible.
 
+Refresh will warn if the index is dirty, and require use of either the '--index'
+or '--force' options to override this check. This is to prevent accidental full
+refresh when only some changes were staged using git add interative mode.
+
 You may optionally list one or more files or directories relative to
 the current working directory; if you do, only matching files will be
 updated.
@@ -56,6 +60,10 @@ options = [
         short = 'Refresh from index instead of worktree', long = """
         Instead of setting the patch top to the current contents of
         the worktree, set it to the current contents of the index."""),
+    opt('-F', '--force', action = 'store_true',
+        short = 'Force refresh even if index is dirty', long = """
+        Instead of warning the user when some work has already been staged (such
+        as with git add interactive mode) force a full refresh."""),
     opt('-p', '--patch', args = [argparse.other_applied_patches,
                                  argparse.unapplied_patches],
         short = 'Refresh (applied) PATCH instead of the top patch'),
@@ -231,9 +239,19 @@ def func(parser, options, args):
         raise common.CmdException(
             'Only full refresh is available with the --index option')
 
+    if options.index and options.force:
+        raise common.CmdException(
+            'You cannot --force a full refresh when using --index mode')
+
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
     paths = list_files(stack, patch_name, args, options.index, options.update)
+
+    # Make sure the index is clean before performing a full refresh
+    if not options.index and not options.force:
+        if not stack.repository.default_index.is_clean(stack.head):
+            raise common.CmdException(
+                'The index is dirty. Did you mean --index? To force a full refresh use --force.')
 
     # Make sure there are no conflicts in the files we want to
     # refresh.
