@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- python -*-
 import optparse, sys
 import stgit.main

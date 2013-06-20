@@ -1,6 +1,6 @@
 prefix	?= $(HOME)
 DESTDIR	?= /
-PYTHON	?= python
+PYTHON	?= python2
 
 TEST_PATCHES ?= ..
 
