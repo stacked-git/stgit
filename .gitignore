@@ -6,3 +6,4 @@ patches-*
 release.sh
 snapshot.sh
 stgit-completion.bash
+ChangeLog
