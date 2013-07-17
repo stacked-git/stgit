@@ -247,17 +247,18 @@ def func(parser, options, args):
     patch_name = get_patch(stack, options.patch)
     paths = list_files(stack, patch_name, args, options.index, options.update)
 
-    # Make sure the index is clean before performing a full refresh
-    if not options.index and not options.force:
-        if not stack.repository.default_index.is_clean(stack.head):
-            raise common.CmdException(
-                'The index is dirty. Did you mean --index? To force a full refresh use --force.')
-
     # Make sure there are no conflicts in the files we want to
     # refresh.
     if stack.repository.default_index.conflicts() & paths:
         raise common.CmdException(
             'Cannot refresh -- resolve conflicts first')
+
+    # Make sure the index is clean before performing a full refresh
+    if not options.index and not options.force:
+        if not (stack.repository.default_index.is_clean(stack.head) or
+                stack.repository.default_iw.worktree_clean()):
+            raise common.CmdException(
+                'The index is dirty. Did you mean --index? To force a full refresh use --force.')
 
     # Commit index to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(
