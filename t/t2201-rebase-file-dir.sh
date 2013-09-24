@@ -22,7 +22,7 @@ test_expect_success 'Rebase from file to dir' '
     stg rebase x-dir
 '
 
-test_expect_failure 'Rebase from dir to file' '
+test_expect_success 'Rebase from dir to file' '
     stg rebase x-file
 '
 

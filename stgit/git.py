@@ -739,13 +739,7 @@ def reset(files = None, tree_id = None, check_out = True):
         tree_id = get_head()
 
     if check_out:
-        cache_files = tree_status(files, tree_id)
-        # files which were added but need to be removed
-        rm_files =  [x[1] for x in cache_files if x[0] in ['A']]
-
         checkout(files, tree_id, True)
-        # checkout doesn't remove files
-        map(os.remove, [f for f in rm_files if not os.path.isdir(f)])
 
     # if the reset refers to the whole tree, switch the HEAD as well
     if not files:
