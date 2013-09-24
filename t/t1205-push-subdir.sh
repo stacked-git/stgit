@@ -16,7 +16,7 @@ test_expect_success 'Create some patches' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
-test_expect_failure 'Fast-forward push from a subdir' '
+test_expect_success 'Fast-forward push from a subdir' '
     stg pop &&
     [ "$(echo $(cat x.txt))" = "x0 x1" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0 y1" ] &&
@@ -27,7 +27,7 @@ test_expect_failure 'Fast-forward push from a subdir' '
     [ "$(echo $(cat foo/y.txt))" = "y0 y1 y2" ]
 '
 
-test_expect_failure 'Modifying push from a subdir' '
+test_expect_success 'Modifying push from a subdir' '
     stg pop &&
     [ "$(echo $(cat x.txt))" = "x0 x1" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0 y1" ] &&
@@ -42,7 +42,7 @@ test_expect_failure 'Modifying push from a subdir' '
     [ "$(echo $(cat foo/y.txt))" = "y0 y1 y2" ]
 '
 
-test_expect_failure 'Conflicting push from subdir' '
+test_expect_success 'Conflicting push from subdir' '
     stg pop p1 p2 &&
     [ "$(echo $(cat x.txt))" = "x0" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0" ] &&
@@ -52,7 +52,7 @@ test_expect_failure 'Conflicting push from subdir' '
     [ "$(echo $(stg status))" = "UU foo/y.txt UU x.txt" ]
 '
 
-test_expect_failure 'Conflicting add/unknown file in subdir' '
+test_expect_success 'Conflicting add/unknown file in subdir' '
     stg reset --hard &&
     stg new foo -m foo &&
     mkdir d &&

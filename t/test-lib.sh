@@ -389,8 +389,8 @@ fi
 PATH=$(pwd)/..:$PATH
 STG_ROOT=$(pwd)/..
 HOME=$SCRATCHDIR
-GIT_CONFIG=.git/config
-export PATH HOME GIT_CONFIG
+unset GIT_CONFIG
+export PATH HOME
 
 # Test repository
 test=$SCRATCHDIR
