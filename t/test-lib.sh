@@ -367,12 +367,16 @@ test_done () {
 		# we will leave things as they are.
 
 		say_color pass "passed all $msg"
-		exit 0 ;;
+		;;
 
 	*)
 		say_color error "failed $test_failure among $msg"
-		exit 1 ;;
+		;;
 
+	esac
+	case $(($test_failure+$test_fixed)) in
+	    0) exit 0 ;;
+	    *) exit 1 ;;
 	esac
 }
 
