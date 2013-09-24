@@ -155,7 +155,6 @@ def _main():
         sys.exit(command.func(sys.argv[1:]))
 
     parser = argparse.make_option_parser(command)
-    options, args = parser.parse_args()
     directory = command.directory
 
     # These modules are only used from this point onwards and do not
@@ -172,6 +171,7 @@ def _main():
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
     try:
+        (options, args) = parser.parse_args()
         directory.setup()
         config_setup()
 

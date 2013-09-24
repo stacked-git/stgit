@@ -202,12 +202,12 @@ test_expect_failure 'Set author date (RFC2822 format)' '
     test "$(date HEAD)" = "2013-07-10 23:39:00 -0300"
 '
 
-test_expect_failure 'Set author date (ISO 8601 format)' '
+test_expect_success 'Set author date (ISO 8601 format)' '
     stg edit p2 --authdate "2013-01-28 22:30:00 -0300" &&
     test "$(date HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
-test_expect_failure 'Fail to set invalid author date' '
+test_expect_success 'Fail to set invalid author date' '
     command_error stg edit p2 --authdate "28 Jan 1813" &&
     test "$(date HEAD)" = "2013-01-28 22:30:00 -0300"
 '
