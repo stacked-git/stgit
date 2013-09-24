@@ -20,7 +20,7 @@ test_expect_success \
 test_expect_success \
     'Put all the patches in an mbox' \
     'stg mail --to="Inge Ström <inge@example.com>" -a -m \
-       -t ../../templates/patchmail.tmpl > mbox0'
+       -t $STG_ROOT/templates/patchmail.tmpl > mbox0'
 
 test_expect_success \
     'Import the mbox and compare' \
@@ -35,7 +35,7 @@ test_expect_success \
 test_expect_success \
     'Put all the patches in an mbox with patch attachments' \
     'stg mail --to="Inge Ström <inge@example.com>" -a -m \
-       -t ../../templates/mailattch.tmpl > mbox1'
+       -t $STG_ROOT/templates/mailattch.tmpl > mbox1'
 
 test_expect_success \
     'Import the mbox containing patch attachments and compare' \
@@ -51,7 +51,7 @@ test_expect_success \
     'Check the To:, Cc: and Bcc: headers' \
     '
     stg mail --to=a@a --cc="b@b, c@c" --bcc=d@d $(stg top) -m \
-        -t ../../templates/patchmail.tmpl > mbox &&
+        -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
     test "$(cat mbox | grep -e "^To:")" = "To: a@a" &&
     test "$(cat mbox | grep -e "^Cc:")" = "Cc: b@b, c@c" &&
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
@@ -62,7 +62,7 @@ test_expect_success \
     '
     stg edit --sign &&
     stg mail --to=a@a --cc="b@b, c@c" --bcc=d@d --auto $(stg top) -m \
-        -t ../../templates/patchmail.tmpl > mbox &&
+        -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
     test "$(cat mbox | grep -e "^To:")" = "To: a@a" &&
     test "$(cat mbox | grep -e "^Cc:")" = \
         "Cc: C O Mitter <committer@example.com>, b@b, c@c" &&
@@ -74,7 +74,7 @@ test_expect_failure \
     '
     stg mail --to="a@a, b b <b@b>" --cc="b@b, c@c" \
         --bcc="c@c, d@d, committer@example.com" --auto $(stg top) -m \
-        -t ../../templates/patchmail.tmpl > mbox &&
+        -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
     test "$(cat mbox | grep -e "^To:")" = "To: b b <b@b>, a@a" &&
     test "$(cat mbox | grep -e "^Cc:")" = "Cc: c@c" &&
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: committer@example.com, d@d"

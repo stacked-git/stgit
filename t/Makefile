@@ -3,23 +3,13 @@
 # Copyright (c) 2005 Junio C Hamano
 #
 
-#GIT_TEST_OPTS=--verbose --debug
 SHELL_PATH ?= $(SHELL)
 TAR ?= $(TAR)
 
-# Shell quote;
-SHELL_PATH_SQ = $(subst ','\'',$(SHELL_PATH))
-
-T = $(wildcard t[0-9][0-9][0-9][0-9]-*.sh)
-
-all: $(T) clean
-
-$(T):
-	@echo "*** $@ ***"; '$(SHELL_PATH_SQ)' $@ $(GIT_TEST_OPTS)
+all:
+	python test.py
 
 clean:
-	rm -fr trash
+	rm -rf trash*
 
-.PHONY: $(T) clean
-.NOPARALLEL:
-
+.PHONY: all clean

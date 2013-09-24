@@ -359,7 +359,7 @@ test_done () {
 	case "$test_failure" in
 	0)
 		# We could:
-		# cd .. && rm -fr trash
+		# cd .. && rm -fr $SCRATCHDIR
 		# but that means we forbid any tests that use their own
 		# subdirectory from calling test_done without coming back
 		# to where they started from.
@@ -380,15 +380,20 @@ test_done () {
 	esac
 }
 
+if test -z "$SCRATCHDIR"; then
+    SCRATCHDIR=$(pwd)/trash
+fi
+
 # Test the binaries we have just built.  The tests are kept in
-# t/ subdirectory and are run in trash subdirectory.
+# t/ subdirectory and are run in $SCRATCHDIR subdirectory.
 PATH=$(pwd)/..:$PATH
-HOME=$(pwd)/trash
+STG_ROOT=$(pwd)/..
+HOME=$SCRATCHDIR
 GIT_CONFIG=.git/config
 export PATH HOME GIT_CONFIG
 
 # Test repository
-test=trash
+test=$SCRATCHDIR
 rm -fr "$test" || {
 	trap - exit
 	echo >&5 "FATAL: Cannot prepare test area"
