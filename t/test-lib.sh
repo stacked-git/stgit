@@ -83,7 +83,7 @@ do
 	-h|--h|--he|--hel|--help)
 		help=t; shift ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
-		export STGIT_DEBUG_LEVEL="-1"
+		export STGIT_DEBUG_LEVEL="1"
 		verbose=t; shift ;;
 	-q|--q|--qu|--qui|--quie|--quiet)
 		quiet=t; shift ;;
