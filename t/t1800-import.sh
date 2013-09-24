@@ -48,7 +48,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a patch created with "git diff" from a subdirectory' \
     '
     mkdir subdir && cd subdir &&
@@ -59,7 +59,7 @@ test_expect_success \
     cd ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a patch created with GNU diff' \
     '
     stg import ../t1800-import/gnu-diff &&
@@ -68,7 +68,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a patch created with "stg export"' \
     '
     stg import ../t1800-import/stg-export &&
@@ -77,7 +77,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a patch from an 8bit-encoded e-mail' \
     '
     stg import -m ../t1800-import/email-8bit &&
@@ -88,7 +88,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a patch from a QP-encoded e-mail' \
     '
     stg import -m ../t1800-import/email-qp &&
@@ -99,7 +99,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply several patches from an mbox file' \
     '
     stg import -M ../t1800-import/email-mbox &&
@@ -118,7 +118,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a bzip2 patch created with "git diff"' \
     '
     bzip2 -c ../t1800-import/git-diff >../t1800-import/bzip2-git-diff &&
@@ -128,7 +128,7 @@ test_expect_success \
     rm ../t1800-import/bzip2-git-diff &&
     stg delete .. 
     '
-test_expect_success \
+test_expect_failure \
     'Apply a bzip2 patch with a .bz2 suffix' \
     '
     bzip2 -c ../t1800-import/git-diff >../t1800-import/git-diff.bz2 &&
@@ -139,7 +139,7 @@ test_expect_success \
     stg delete .. 
     '
 
-test_expect_success \
+test_expect_failure \
     'Apply a gzip patch created with GNU diff' \
     '
     gzip -c ../t1800-import/gnu-diff >../t1800-import/gzip-gnu-diff &&
@@ -149,7 +149,7 @@ test_expect_success \
     rm ../t1800-import/gzip-gnu-diff &&
     stg delete ..
     '
-test_expect_success \
+test_expect_failure \
     'Apply a gzip patch with a .gz suffix' \
     '
     gzip -c ../t1800-import/gnu-diff >../t1800-import/gnu-diff.gz &&
@@ -160,7 +160,7 @@ test_expect_success \
     stg delete ..
     '
 
-test_expect_success \
+test_expect_failure \
     'apply a series from a tarball' \
     '
     rm -f jabberwocky.txt && touch jabberwocky.txt &&

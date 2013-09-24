@@ -69,7 +69,7 @@ test_expect_success \
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
     '
 
-test_expect_success \
+test_expect_failure \
     'Check the e-mail address duplicates' \
     '
     stg mail --to="a@a, b b <b@b>" --cc="b@b, c@c" \
