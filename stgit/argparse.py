@@ -5,6 +5,7 @@ help and asciidoc documentation (such as man pages)."""
 import optparse, sys, textwrap
 from stgit import utils
 from stgit.config import config
+from stgit.lib import git
 
 def _splitlist(lst, split_on):
     """Iterate over the sublists of lst that are separated by an element e
@@ -199,6 +200,8 @@ def _person_opts(person, short):
     according to the commandline options."""
     def short_callback(option, opt_str, value, parser, field):
         f = getattr(parser.values, person)
+        if field == "date":
+            value = git.Date(value)
         setattr(parser.values, person,
                 lambda p: getattr(f(p), 'set_' + field)(value))
     def full_callback(option, opt_str, value, parser):

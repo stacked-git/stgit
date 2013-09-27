@@ -9,7 +9,7 @@ test_description='Make sure that we can use old StGIT repositories'
 
 for ver in 0.12 0.8; do
 
-    tar zxf ../t4000-upgrade/$ver.tar.gz
+    tar zxf $STG_ROOT/t/t4000-upgrade/$ver.tar.gz
     cd $ver
 
     test_expect_success \

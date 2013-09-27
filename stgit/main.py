@@ -155,7 +155,6 @@ def _main():
         sys.exit(command.func(sys.argv[1:]))
 
     parser = argparse.make_option_parser(command)
-    options, args = parser.parse_args()
     directory = command.directory
 
     # These modules are only used from this point onwards and do not
@@ -172,6 +171,7 @@ def _main():
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
     try:
+        (options, args) = parser.parse_args()
         directory.setup()
         config_setup()
 
@@ -185,9 +185,9 @@ def _main():
         ret = command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError), err:
         directory.write_log(cmd)
-        out.error(str(err), title = '%s %s' % (prog, cmd))
         if debug_level > 0:
-            traceback.print_exc()
+            traceback.print_exc(file=sys.stderr)
+        out.error(str(err), title = '%s %s' % (prog, cmd))
         sys.exit(utils.STGIT_COMMAND_ERROR)
     except SystemExit:
         # Triggered by the option parser when it finds bad commandline
@@ -197,7 +197,7 @@ def _main():
         sys.exit(utils.STGIT_GENERAL_ERROR)
     except:
         out.error('Unhandled exception:')
-        traceback.print_exc()
+        traceback.print_exc(file=sys.stderr)
         sys.exit(utils.STGIT_BUG_ERROR)
 
     directory.write_log(cmd)

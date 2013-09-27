@@ -83,7 +83,7 @@ do
 	-h|--h|--he|--hel|--help)
 		help=t; shift ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
-		export STGIT_DEBUG_LEVEL="-1"
+		export STGIT_DEBUG_LEVEL="1"
 		verbose=t; shift ;;
 	-q|--q|--qu|--qui|--quie|--quiet)
 		quiet=t; shift ;;
@@ -359,7 +359,7 @@ test_done () {
 	case "$test_failure" in
 	0)
 		# We could:
-		# cd .. && rm -fr trash
+		# cd .. && rm -fr $SCRATCHDIR
 		# but that means we forbid any tests that use their own
 		# subdirectory from calling test_done without coming back
 		# to where they started from.
@@ -367,24 +367,33 @@ test_done () {
 		# we will leave things as they are.
 
 		say_color pass "passed all $msg"
-		exit 0 ;;
+		;;
 
 	*)
 		say_color error "failed $test_failure among $msg"
-		exit 1 ;;
+		;;
 
+	esac
+	case $(($test_failure+$test_fixed)) in
+	    0) exit 0 ;;
+	    *) exit 1 ;;
 	esac
 }
 
+if test -z "$SCRATCHDIR"; then
+    SCRATCHDIR=$(pwd)/trash
+fi
+
 # Test the binaries we have just built.  The tests are kept in
-# t/ subdirectory and are run in trash subdirectory.
+# t/ subdirectory and are run in $SCRATCHDIR subdirectory.
 PATH=$(pwd)/..:$PATH
-HOME=$(pwd)/trash
-GIT_CONFIG=.git/config
-export PATH HOME GIT_CONFIG
+STG_ROOT=$(pwd)/..
+HOME=$SCRATCHDIR
+unset GIT_CONFIG
+export PATH HOME
 
 # Test repository
-test=trash
+test=$SCRATCHDIR
 rm -fr "$test" || {
 	trap - exit
 	echo >&5 "FATAL: Cannot prepare test area"

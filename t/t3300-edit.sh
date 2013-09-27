@@ -25,7 +25,7 @@ test_expect_success 'Setup' '
 # Commit parse functions.
 msg () { git cat-file -p $1 | sed '1,/^$/d' | tr '\n' / | sed 's,/*$,,' ; }
 auth () { git log -n 1 --pretty=format:"%an, %ae" $1 ; }
-date () { git log -n 1 --pretty=format:%ai $1 ; }
+adate () { git log -n 1 --pretty=format:%ai $1 ; }
 
 test_expect_success 'Edit message of top patch' '
     test "$(msg HEAD)" = "Second change" &&
@@ -197,19 +197,26 @@ test_expect_success 'Set author email' '
     test "$(auth HEAD)" = "Jane Austen, jausten@example.com"
 '
 
-test_expect_failure 'Set author date (RFC2822 format)' '
-    stg edit p2 --authdate "Wed, 10 Jul 2013 23:39:00 pm -0300" &&
-    test "$(date HEAD)" = "2013-07-10 23:39:00 -0300"
+test_expect_success 'Set author date (RFC2822 format)' '
+    stg edit p2 --authdate "Wed, 10 Jul 2013 23:39:00 -0300" &&
+    test "$(adate HEAD)" = "2013-07-10 23:39:00 -0300"
 '
 
-test_expect_failure 'Set author date (ISO 8601 format)' '
+test_expect_success 'Set author date (ISO 8601 format)' '
     stg edit p2 --authdate "2013-01-28 22:30:00 -0300" &&
-    test "$(date HEAD)" = "2013-01-28 22:30:00 -0300"
+    test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
-test_expect_failure 'Fail to set invalid author date' '
+test_expect_success 'Fail to set invalid author date' '
     command_error stg edit p2 --authdate "28 Jan 1813" &&
-    test "$(date HEAD)" = "2013-01-28 22:30:00 -0300"
+    test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
+'
+
+test_expect_success 'Set author date to "now"' '
+    before=$(date "+%F %T %z") &&
+    stg edit p2 --authdate now &&
+    after=$(date "+%F %T %z") &&
+    printf "$before\n$(adate HEAD)\n$after\n" | sort -C -
 '
 
 test_expect_success 'Set patch tree' '

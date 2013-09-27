@@ -87,6 +87,30 @@ class TimeZone(tzinfo, Repr):
     def __str__(self):
         return self.__name
 
+def system_date(datestring):
+    m = re.match(r"^(.+)([+-]\d\d:?\d\d)$", datestring)
+    if m:
+        # Time zone included; we parse it ourselves, since "date"
+        # would convert it to the local time zone.
+        (ds, z) = m.groups()
+        try:
+            t = run.Run("date", "+%Y-%m-%d-%H-%M-%S", "-d", ds
+                        ).output_one_line()
+        except run.RunException:
+            return None
+    else:
+        # Time zone not included; we ask "date" to provide it for us.
+        try:
+            d = run.Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
+                        ).output_one_line()
+        except run.RunException:
+            return None
+        (t, z) = d.split("_")
+    try:
+        return datetime(*[int(x) for x in t.split("-")], tzinfo=TimeZone(z))
+    except ValueError:
+        raise DateException(datestring, "date")
+
 class Date(Immutable, Repr):
     """Represents a timestamp used in git commits."""
     def __init__(self, datestring):
@@ -110,6 +134,12 @@ class Date(Immutable, Repr):
                     **{'tzinfo': TimeZone(m.group(7))})
             except ValueError:
                 raise DateException(datestring, 'date')
+            return
+
+        # Try parsing with the system's "date" command.
+        sd = system_date(datestring)
+        if sd:
+            self.__time = sd
             return
 
         raise DateException(datestring, 'date')
