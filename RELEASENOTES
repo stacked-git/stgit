@@ -1,4 +1,4 @@
-                      Stacked Git 0.16 released
+                      Stacked Git 0.17 released
                       -------------------------
 
 StGit is a Python application providing functionality similar to Quilt
@@ -7,25 +7,22 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         http://download.gna.org/stgit/stgit-0.16.tar.gz
+  Download:         http://download.gna.org/stgit/stgit-0.17.tar.gz
   Main repository:  git://repo.or.cz/stgit.git
   Project homepage: http://www.procode.org/stgit/
   Mailing list:     stgit-users@gna.org
   Bug tracker:      https://gna.org/bugs/?group=stgit
 
-The main changes since release 0.15 are:
+The main changes since release 0.16:
 
-  - Several improvements to the Emacs mode (stgit.el).
-  - UI adjustments to better match the Git commands.
-    + "stg status" is an alias for "git status".
-    + "stg reset --hard" behaves similarly to the corresponding git command
-      and option.
-  - "stg branch --cleanup" option to remove the StGit metadata for a given
-    branch.
-  - "stg mail" can use "git send-email" directly.
-  - Vim syntax highlighting for StGit commit messages.
-  - Many bug-fixes.
-
-Many thanks to all the StGit contributors.
-
-[Insert output of "git shortlog v0.15..v0.16" here before sending!]
+- 'stg delete --top' option for deleting the top patch.
+- Fix for parsing the commit header correctly.
+- Several 'stgit.el' (Emacs mode) improvements.
+- 'stg branch --merge' option for merging the work tree changes into the
+  other branch.
+- Fix 'stg status --reset' error messages.
+- HTML documentation fix.
+- Support for sending patches both as attachment and inline.
+- 'stg mail' no longer filters explicitly added '--cc' sender address.
+- Email template fixes.
+- 'stg refresh' warns when index is dirty.
