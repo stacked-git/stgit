@@ -53,7 +53,7 @@ test_expect_success 'stg rm a file together with other changes' '
     stg rm y.txt &&
     stg status > status0.txt &&
     test_cmp expected0.txt status0.txt &&
-    stg refresh &&
+    stg refresh --force &&
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
     stg files > files.txt &&

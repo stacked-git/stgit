@@ -156,7 +156,7 @@ cat > expected.txt <<EOF
 AD foo/bar
 EOF
 test_expect_success 'Status of disappeared newborn' '
-    stg refresh &&
+    stg refresh --force &&
     touch foo/bar &&
     stg add foo/bar &&
     rm foo/bar &&
