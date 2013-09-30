@@ -1,5 +1,5 @@
-                      Stacked Git 0.17 released
-                      -------------------------
+                      Stacked Git 0.17.1 released
+                      ---------------------------
 
 StGit is a Python application providing functionality similar to Quilt
 (i.e. pushing/popping patches to/from a stack) on top of Git. These
@@ -7,11 +7,19 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         http://download.gna.org/stgit/stgit-0.17.tar.gz
+  Download:         http://download.gna.org/stgit/stgit-0.17.1.tar.gz
   Main repository:  git://repo.or.cz/stgit.git
   Project homepage: http://www.procode.org/stgit/
   Mailing list:     stgit-users@gna.org
   Bug tracker:      https://gna.org/bugs/?group=stgit
+
+The main changes since release 0.17:
+
+- Fix dirty index errors when resolving conflicts.
+- Test suite improvements.
+- Print tracebacks to stderr.
+- Run test suite in parallel.
+- Fix --authdate date parsing.
 
 The main changes since release 0.16:
 
