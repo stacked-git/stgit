@@ -359,10 +359,10 @@ class Fakestack(object):
 def compat_log_entry(msg):
     """Write a new log entry. (Convenience function intended for use by
     code not yet converted to the new infrastructure.)"""
-    repo = default_repo()
     try:
+        repo = default_repo()
         stack = repo.get_stack(repo.current_branch_name)
-    except libstack.StackException, e:
+    except (libstack.StackException, git.RepositoryException), e:
         out.warn(str(e), 'Could not write to stack log')
     else:
         if repo.default_index.conflicts() and stack.patchorder.applied:
