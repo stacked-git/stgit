@@ -93,6 +93,6 @@ def asciidoc_command_list(commands, f):
         _write_underlined(kind, '~', f)
         f.write('\n')
         for cmd, help in cmds:
-            f.write('linkstgsub:%s[]::\n' % cmd)
+            f.write('linkstg:%s[]::\n' % cmd)
             f.write('    %s\n' % help)
         f.write('\n')
