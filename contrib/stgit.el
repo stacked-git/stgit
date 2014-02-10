@@ -1,6 +1,30 @@
-;; stgit.el: An emacs mode for StGit
+;;; stgit.el --- major mode for StGit interaction
 ;;
-;; Copyright (C) 2007 David Kågedal <davidk@lysator.liu.se>
+;; Copyright (C) 2007-2013 David Kågedal
+;;
+;; Author: David Kågedal <davidk@lysator.liu.se>
+;; Homepage: http://www.procode.org/stgit
+;; Version: 0.17.1
+
+;;; Commentary:
+;;
+;; This is an interactive tool to interact with git branches using
+;; StGit.
+;;
+;; StGit is a command-line tool providing similar functionality to
+;; Quilt (i.e. pushing/popping patches to/from a stack) on top of Git.
+;; These operations are performed using Git commands and the patches
+;; are stored as Git commit objects, allowing easy merging of the
+;; StGit patches into other repositories using standard Git
+;; functionality.
+;;
+;; To start using the Emacs interface, run M-x stgit and select the
+;; git repository you are working in.
+;;
+;; To get quick help about the available keybindings in the buffer,
+;; press '?'
+
+;;; Installation:
 ;;
 ;; To install: put this file on the load-path and place the following
 ;; in your .emacs file:
@@ -8,6 +32,8 @@
 ;;    (require 'stgit)
 ;;
 ;; To start: `M-x stgit'
+
+;;; Code:
 
 (when (< emacs-major-version 22)
   (error "Emacs older than 22 is not supported by stgit.el"))
@@ -3057,3 +3083,4 @@ The initial setting is controlled by `stgit-default-show-committed'."
                           "Hiding"))))
 
 (provide 'stgit)
+;;; stgit.el ends here
