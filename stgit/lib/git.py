@@ -578,6 +578,7 @@ class CatFileProcess(object):
     def __shutdown(self):
         p = self.__proc
         if p:
+            p.stdin.close()
             os.kill(p.pid(), signal.SIGTERM)
             p.wait()
     def cat_file(self, sha1):
