@@ -2,6 +2,8 @@ prefix	?= $(HOME)
 DESTDIR	?= /
 PYTHON	?= python2
 
+export DESTDIR PYTHON
+
 TEST_PATCHES ?= ..
 
 all:

@@ -7,7 +7,7 @@ SHELL_PATH ?= $(SHELL)
 TAR ?= $(TAR)
 
 all:
-	python test.py
+	$(PYTHON) test.py
 
 clean:
 	rm -rf trash*
