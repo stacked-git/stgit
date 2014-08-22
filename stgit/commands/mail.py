@@ -373,13 +373,14 @@ def __get_signers_list(msg):
     acked-by lines in the message.
     """
     addr_list = []
-    tags = '%s|%s|%s|%s|%s|%s|%s' % (
+    tags = '%s|%s|%s|%s|%s|%s|%s|%s' % (
             'signed-off-by',
             'acked-by',
             'cc',
             'reviewed-by',
             'reported-by',
             'tested-by',
+            'suggested-by',
             'reported-and-tested-by')
     regex = '^(%s):\s+(.+)$' % tags
 

@@ -272,7 +272,9 @@ def add_sign_line(desc, sign_str, name, email):
     if sign_str in desc:
         return desc
     desc = desc.rstrip()
-    if not any(s in desc for s in ['\nSigned-off-by:', '\nAcked-by:']):
+    tags = ['\nCc:', '\nSigned-off-by:', '\nAcked-by:', '\nReported-by',
+            '\nTested-by:', '\nReviewed-by:', '\nSuggested-by:']
+    if not any(s in desc for s in tags):
         desc = desc + '\n'
     return '%s\n%s\n' % (desc, sign_str)
 
