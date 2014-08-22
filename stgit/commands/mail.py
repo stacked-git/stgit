@@ -533,8 +533,18 @@ def __build_cover(tmpl, msg_id, options, patches):
     except Exception, ex:
         raise CmdException, 'template parsing error: %s' % str(ex)
 
+    extra_cc = []
+    if options.auto:
+        for patch in patches:
+            p = crt_series.get_patch(patch)
+            if p.get_description():
+                descr = p.get_description().strip()
+                extra_cc.extend(__get_signers_list(descr))
+        extra_cc = list(set(extra_cc))
+
+
     if not options.git:
-        __build_address_headers(msg, options)
+        __build_address_headers(msg, options, extra_cc)
     __build_extra_headers(msg, msg_id, options.in_reply_to)
     __encode_message(msg)
 
