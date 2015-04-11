@@ -242,6 +242,16 @@ def __import_series(filename, options):
         patch = re.sub('#.*$', '', line).strip()
         if not patch:
             continue
+        # Quilt can have "-p0", "-p1" or "-pab" patches stacked in the
+        # series but as strip level default to 1, only "-p0" can actually
+        # be found in the series file, the other ones are implicit
+        m = re.match(r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch)
+        options.strip = 1
+        if m:
+            patch = m.group('patchfilename')
+            if m.group('striplevel') != '0':
+                raise CmdException, "error importing quilt series, patch '%s' has unsupported strip level: '-p%s'" % (patch, m.group('striplevel'))
+            options.strip = 0
         patchfile = os.path.join(patchdir, patch)
         patch = __replace_slashes_with_dashes(patch);
 
