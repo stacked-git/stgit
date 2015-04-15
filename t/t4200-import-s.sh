@@ -6,8 +6,16 @@ test_description='Test the import -s command'
 
 . ./test-lib.sh
 
-prepare_test_env () {
+quilt --version 2> /dev/null
 
+if [ "$?" = "127" ]
+then
+  echo "Cannot execute quilt, skipping this test..."
+  test_done
+  exit 0
+fi
+
+prepare_test_env () {
     # Initialize git tree
     mkdir s
     echo 0 > t
@@ -231,6 +239,59 @@ test_expect_code \
      mv series_messed patches/series &&
      check_test &&
      cleanup_test
+    '
+
+test_filename_with_spaces () {
+    echo 1 > 'filename with space.txt'
+
+    git add 'filename with space.txt'
+    git commit -m initial
+
+    quilt new patch-test-space-fn.diff
+    quilt add 'filename with space.txt'
+
+    echo 2 > 'filename with space.txt'
+
+    quilt refresh
+    quilt pop -a
+
+    stg import -s patches/series
+    stg series
+}
+
+test_subdir_patches () {
+    echo 1 > 'filename.txt'
+
+    git add 'filename.txt'
+    git commit -m initial
+
+    quilt new d1/patch-test-subdir-patches.diff
+    quilt add 'filename.txt'
+
+    echo 2 > 'filename.txt'
+
+    quilt refresh
+
+    quilt new d2/patch-test-subdir-patches.diff
+    quilt add 'filename.txt'
+
+    echo 3 > 'filename.txt'
+
+    quilt refresh
+    quilt pop -a
+
+    stg import -s patches/series
+    stg series
+}
+
+test_expect_success 'Quilt import filename with spaces' \
+    'test_filename_with_spaces && \
+     stg delete ..
+    '
+
+test_expect_success 'Quilt import series with subdirs' \
+    'test_subdir_patches && \
+     stg delete ..
     '
 
 test_done
