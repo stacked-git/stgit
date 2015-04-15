@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test_description='Test "stg pop -keep"'
+test_description='Test "stg pop --keep"'
 . ./test-lib.sh
 stg init
 
