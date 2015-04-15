@@ -37,6 +37,8 @@ args = [argparse.patch_range(argparse.applied_patches)]
 options = [
     opt('-a', '--all', action = 'store_true',
         short = 'Pop all the applied patches'),
+    opt('-s', '--spill', action = 'store_true',
+        short = 'Pop a patch, keeping its modifications in the tree'),
     opt('-n', '--number', type = 'int',
         short = 'Pop the specified number of patches', long = '''
         Pop the specified number of patches.
@@ -50,7 +52,7 @@ def func(parser, options, args):
     """Pop the given patches or the topmost one from the stack."""
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    clean_iw = (not options.keep and iw) or None
+    clean_iw = (not options.keep and not options.spill and iw) or None
     trans = transaction.StackTransaction(stack, 'pop',
                                          check_clean_iw = clean_iw)
 
@@ -73,7 +75,13 @@ def func(parser, options, args):
         patches = common.parse_patches(args, trans.applied, ordered = True)
 
     if not patches:
+		#FIXME: Why is this an error, and not just a noop ?
         raise common.CmdException('No patches to pop')
+
+    if options.spill:
+        if set(stack.patchorder.applied[-len(patches):]) != set(patches):
+            parser.error('Can only spill topmost applied patches')
+        iw = None # don't touch index+worktree
 
     applied = [p for p in trans.applied if not p in set(patches)]
     unapplied = patches + trans.unapplied
