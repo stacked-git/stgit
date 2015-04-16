@@ -24,11 +24,6 @@ cleanup_test () {
      rm -r patches .pc
 }
 
-before_test () {
-    # Initialize patch stacking tool
-    quilt init
-}
-
 after_test () {
     # Revert to master status : undedit files
     quilt pop -a
@@ -142,8 +137,7 @@ prepare_test_env
 
 test_expect_success \
     'Import a quilt series with an empty patch' \
-    'before_test &&
-     test_import_quilt_series_empty &&
+    'test_import_quilt_series_empty &&
      after_test &&
      check_test &&
      cleanup_test
@@ -151,8 +145,7 @@ test_expect_success \
 
 test_expect_success \
     'Import a quilt series with indented comments' \
-    'before_test &&
-     test_import_quilt_series_comment_whitespace &&
+    'test_import_quilt_series_comment_whitespace &&
      after_test &&
      check_test &&
      cleanup_test
@@ -160,8 +153,7 @@ test_expect_success \
 
 test_expect_success \
     'Import a quilt series with patches for toplevel files' \
-    'before_test &&
-     test_import_quilt_series_toplevel &&
+    'test_import_quilt_series_toplevel &&
      after_test &&
      check_test &&
      cleanup_test
@@ -169,8 +161,7 @@ test_expect_success \
 
 test_expect_success \
     'Import a quilt series with patches for subdirectories files' \
-    'before_test &&
-     test_import_quilt_series_subdir &&
+    'test_import_quilt_series_subdir &&
      after_test &&
      check_test &&
      cleanup_test
@@ -179,8 +170,7 @@ test_expect_success \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-p" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_unexpected '' &&
+    'test_import_quilt_series_should_fail_p_something_unexpected '' &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -p/g" patches/series > series_messed &&
      mv series_messed patches/series &&
@@ -191,8 +181,7 @@ test_expect_code \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-p1" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_ok 1 &&
+    'test_import_quilt_series_should_fail_p_something_ok 1 &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -p1/g" patches/series > series_messed &&
      mv series_messed patches/series &&
@@ -203,8 +192,7 @@ test_expect_code \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-pab" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_ok ab &&
+    'test_import_quilt_series_should_fail_p_something_ok ab &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -pab/g" patches/series > series_messed &&
      mv series_messed patches/series &&
@@ -215,8 +203,7 @@ test_expect_code \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-p000" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_unexpected 000 &&
+    'test_import_quilt_series_should_fail_p_something_unexpected 000 &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -p000/g" patches/series > series_messed &&
      mv series_messed patches/series &&
@@ -227,8 +214,7 @@ test_expect_code \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-p42" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_unexpected 42 &&
+    'test_import_quilt_series_should_fail_p_something_unexpected 42 &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -p42/g" patches/series > series_messed &&
      mv series_messed patches/series &&
@@ -239,8 +225,7 @@ test_expect_code \
 test_expect_code \
     2 \
     'Import a quilt series with unexpected "-pYo" in series' \
-    'before_test &&
-     test_import_quilt_series_should_fail_p_something_unexpected Yo &&
+    'test_import_quilt_series_should_fail_p_something_unexpected Yo &&
      after_test &&
      sed -e "s/^\(.*\)$/\1 -pYo/g" patches/series > series_messed &&
      mv series_messed patches/series &&
