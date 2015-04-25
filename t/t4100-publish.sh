@@ -56,7 +56,7 @@ test_expect_success \
 	stg publish -m "p2 updated" &&
 	test_same_tree &&
 	new_public=$(stg id master.public) &&
-	test "$(git rev-list $old_public..$new_public | wc -l)" = "1"
+	test $(git rev-list $old_public..$new_public | wc -l) -eq 1
 	'
 
 test_expect_success \
@@ -75,7 +75,7 @@ test_expect_success \
 	stg publish -m "Ignored message" &&
 	test_same_tree &&
 	new_public=$(stg id master.public) &&
-	test "$(git rev-list $old_public..$new_public | wc -l)" = "2"
+	test $(git rev-list $old_public..$new_public | wc -l) -eq 2
 	'
 
 test_expect_success \
@@ -90,7 +90,7 @@ test_expect_success \
 	stg publish -m "Merge with base" &&
 	test_same_tree &&
 	new_public=$(stg id master.public) &&
-	test "$(git rev-list $old_public..$new_public | wc -l)" = "2" &&
+	test $(git rev-list $old_public..$new_public | wc -l) -eq 2 &&
 	test "$(git merge-base master.public master)" = "$(stg id {base})"
 	'
 
@@ -123,7 +123,7 @@ test_expect_success \
 	stg publish -m "p3 removed" &&
 	test_same_tree &&
 	new_public=$(stg id master.public) &&
-	test "$(git rev-list $old_public..$new_public | wc -l)" = "1"
+	test $(git rev-list $old_public..$new_public | wc -l) -eq 1
 	'
 
 test_done

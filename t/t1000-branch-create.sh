@@ -32,7 +32,7 @@ test_expect_success \
 test_expect_success \
     'Check that no part of the branch was created' '
     test "$(find .git -name foo1 | tee /dev/stderr)" = ".git/patches/foo1" &&
-    test "$(git show-ref | grep foo1 | wc -l)" = 0 &&
+    test $(git show-ref | grep foo1 | wc -l) -eq 0 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
@@ -48,10 +48,10 @@ test_expect_success \
 
 test_expect_success \
     'Check that no part of the branch was created' '
-    test "$(find .git -name foo2 | tee /dev/stderr \
+    test $(find .git -name foo2 | tee /dev/stderr \
         | grep -v ^\\.git/refs/heads/foo2$ \
-        | grep -v ^\\.git/logs/refs/heads/foo2$ | wc -l)" = 0 &&
-    test "$(git show-ref | grep foo2 | wc -l)" = 1 &&
+        | grep -v ^\\.git/logs/refs/heads/foo2$ | wc -l) -eq 0 &&
+    test $(git show-ref | grep foo2 | wc -l) -eq 1 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
@@ -63,9 +63,9 @@ test_expect_success \
 
 test_expect_failure \
     'Check that no part of the branch was created' '
-    test "$(find .git -name foo3 | tee /dev/stderr \
-        | grep -v ^\\.git/refs/heads/foo3$ | wc -l)" = 0 &&
-    test "$(git show-ref | grep foo3 | wc -l)" = 0 &&
+    test $(find .git -name foo3 | tee /dev/stderr \
+        | grep -v ^\\.git/refs/heads/foo3$ | wc -l) -eq 0 &&
+    test $(git show-ref | grep foo3 | wc -l) -eq 0 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
@@ -93,8 +93,8 @@ test_expect_success \
 test_expect_success \
     'Check the branch was not created' '
     test ! -e file1 &&
-    test "$(find .git -name foo4 | tee /dev/stderr | wc -l)" = 0 &&
-    test "$(git show-ref | grep foo4 | wc -l)" = 0 &&
+    test $(find .git -name foo4 | tee /dev/stderr | wc -l) -eq 0 &&
+    test $(git show-ref | grep foo4 | wc -l) -eq 0 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
