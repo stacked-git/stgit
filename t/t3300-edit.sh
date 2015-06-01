@@ -177,6 +177,12 @@ test_expect_success 'Acknowledge a patch' '
     test "$(msg HEAD^)" = "$m//Acked-by: C O Mitter <committer@example.com>"
 '
 
+test_expect_success 'Review a patch' '
+    m=$(msg HEAD^) &&
+    stg edit --review p1 &&
+    test "$(msg HEAD^)" = "$m/Reviewed-by: C O Mitter <committer@example.com>"
+'
+
 test_expect_success 'Set author' '
     stg edit p2 --author "Jane Austin <jaustin@example.com>" &&
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"

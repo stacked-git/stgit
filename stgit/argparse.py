@@ -110,7 +110,7 @@ def sign_options():
     def callback(option, opt_str, value, parser, sign_str):
         if parser.values.sign_str not in [None, sign_str]:
             raise optparse.OptionValueError(
-                '--ack and --sign were both specified')
+                'Cannot give more than one of --ack, --sign, --review')
         parser.values.sign_str = sign_str
     return [
         opt('--sign', action = 'callback', dest = 'sign_str', args = [],
@@ -120,7 +120,11 @@ def sign_options():
         opt('--ack', action = 'callback', dest = 'sign_str', args = [],
             callback = callback, callback_args = ('Acked-by',),
             short = 'Add "Acked-by:" line', long = """
-            Add an "Acked-by:" line to the end of the patch.""")]
+            Add an "Acked-by:" line to the end of the patch."""),
+        opt('--review', action = 'callback', dest = 'sign_str', args = [],
+            callback = callback, callback_args = ('Reviewed-by',),
+            short = 'Add "Reviewed-by:" line', long = """
+            Add a "Reviewed-by:" line to the end of the patch.""")]
 
 def message_options(save_template):
     def no_dup(parser):
