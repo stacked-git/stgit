@@ -211,7 +211,7 @@ Normally, when you pop a patch, change something, and then later push
 it again, StGit sorts out everything for you automatically. For
 example, let's create two patches that modify different files:
 
-  $ stg clone http://homepage.ntlworld.com/cmarinas/stgit.git stgit
+  $ stg clone http://repo.or.cz/stgit.git stgit
   $ cd stgit
   $ stg new first --message 'First patch'
   $ echo '- Do something' >> TODO
@@ -532,7 +532,7 @@ history at the time, your stack base will grow ever more out of date.
 
 When you clone a repository,
 
-  $ stg clone http://homepage.ntlworld.com/cmarinas/stgit.git stgit
+  $ stg clone http://repo.or.cz/stgit.git stgit
 
 you initially get one local branch, +master+. You also get a number of
 'remote' branches, one for each branch in the repository you cloned.

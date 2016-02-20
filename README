@@ -9,7 +9,7 @@ previously initialised Git repository (unless it is cloned using StGit
 directly). For standard SCM operations, use plain Git commands.
 
 For the latest version see http://www.procode.org/stgit/
-For a tutorial see http://wiki.procode.org/cgi-bin/wiki.cgi/StGit_Tutorial
+For a tutorial see http://www.procode.org/stgit/doc/tutorial.html
 
-Bugs or feature requests should be sent to the git@vger.kernel.org
+Bugs or feature requests should be sent to the stgit-users@gna.org
 mailing list or the StGit project page - http://gna.org/projects/stgit/

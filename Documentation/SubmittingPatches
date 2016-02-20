@@ -37,7 +37,7 @@ Checklist (and a short version for the impatient):
           documentation should be updated as well.
         - If your name is not writable in ASCII, make sure that
           you send off a message in the correct encoding.
-        - Send the patch to the list (git@vger.kernel.org) and the
+        - Send the patch to the list (stgit-users@gna.org) and the
           maintainer (catalin.marinas@gmail.com) if (and only if) the
           patch is ready for inclusion.
 
@@ -81,8 +81,8 @@ Long version:
 
 3. Sending your patches.
 
-   StGit patches should be sent to the Git mailing list
-   (git@vger.kernel.org), and preferably CCed to the StGit maintainer
+   StGit patches should be sent to the StGit mailing list
+   (stgit-users@gna.org), and preferably CCed to the StGit maintainer
    (catalin.marinas@gmail.com). The recipients need to be able to read
    and comment on the changes you are submitting. It is important for
    a developer to be able to "quote" your changes, using standard
@@ -225,7 +225,7 @@ One test you could do yourself if your MUA is set up correctly is:
 * Try to apply to the tip of the "master" branch from the
   public repository:
 
-    $ git fetch http://homepage.ntlworld.com/cmarinas/stgit.git master:test-apply
+    $ git fetch http://repo.or.cz/stgit.git master:test-apply
     $ git checkout test-apply
     $ git reset --hard
     $ stg init
