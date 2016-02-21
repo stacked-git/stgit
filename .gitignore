@@ -8,3 +8,5 @@ snapshot.sh
 stgit-completion.bash
 ChangeLog
 .tox
+htmlcov/
+.coverage

@@ -5,7 +5,7 @@ test_description='Simple test cases for "stg redo"'
 . ./test-lib.sh
 
 # Ignore our own output files.
-cat > .git/info/exclude <<EOF
+cat >> .git/info/exclude <<EOF
 /expected.txt
 EOF
 

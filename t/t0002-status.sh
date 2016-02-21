@@ -11,7 +11,7 @@ Test that "stg status" works.'
 stg init
 
 # Ignore our own output files.
-cat > .git/info/exclude <<EOF
+cat >> .git/info/exclude <<EOF
 /expected.txt
 /output.txt
 EOF

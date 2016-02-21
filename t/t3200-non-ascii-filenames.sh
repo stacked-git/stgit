@@ -4,7 +4,7 @@ test_description='Handle files with non-ASCII characters in their names'
 . ./test-lib.sh
 
 # Ignore our own output files.
-cat > .git/info/exclude <<EOF
+cat >> .git/info/exclude <<EOF
 /expected.txt
 /output.txt
 EOF

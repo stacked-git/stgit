@@ -30,6 +30,14 @@ test_patches:
 		stg goto $$patch && $(MAKE) test || break; \
 	done
 
+coverage:
+	$(PYTHON) -m coverage run setup.py build
+	COVERAGE_PROCESS_START=$(PWD)/.coveragerc $(MAKE) -C t all
+	$(PYTHON) -m coverage combine $$(find . -name '.coverage.*')
+	$(PYTHON) -m coverage html --title="stgit coverage"
+	$(PYTHON) -m coverage report
+	@echo "HTML coverage report: file://$(PWD)/htmlcov/index.html"
+
 clean:
 	for dir in Documentation t; do \
 		$(MAKE) -C $$dir clean; \
@@ -47,4 +55,4 @@ TAGS:
 	ctags -e -R stgit/*
 
 .PHONY: all install doc install-doc install-html test test_patches \
-	clean tags TAGS
+	coverage clean tags TAGS

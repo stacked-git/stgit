@@ -39,4 +39,8 @@ if bin == 'bin' and prefix != sys.prefix:
 from stgit.main import main
 
 if __name__ == '__main__':
+    if os.environ.get('COVERAGE_PROCESS_START'):
+        import coverage
+        coverage.process_startup()
+
     main()

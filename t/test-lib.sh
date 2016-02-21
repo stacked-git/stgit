@@ -339,6 +339,7 @@ test_create_repo () {
 	    git commit-tree $(git write-tree) >.git/refs/heads/master 2>&4 || \
 	    error "cannot run git commit"
 	mv .git/hooks .git/hooks-disabled
+	echo ".coverage.*" >> .git/info/exclude
 	cd "$owd"
 }
 

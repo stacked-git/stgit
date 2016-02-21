@@ -5,7 +5,7 @@ test_description='Undo external modifications of the stack'
 . ./test-lib.sh
 
 # Ignore our own output files.
-cat > .git/info/exclude <<EOF
+cat >> .git/info/exclude <<EOF
 /expected.txt
 /head?.txt
 EOF
