@@ -175,6 +175,10 @@ def main():
         for t in sorted(failed):
             print "  ", t
         print "Done"
+        return 1
+    else:
+        return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
