@@ -13,7 +13,7 @@ install:
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
 
 doc:
-	cd Documentation && $(MAKE) all
+	$(MAKE) -C Documentation all
 
 install-doc:
 	$(MAKE) -C Documentation install
@@ -23,7 +23,7 @@ install-html:
 
 test:
 	$(PYTHON) setup.py build
-	cd t && $(MAKE) all
+	$(MAKE) -C t all
 
 test_patches:
 	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
@@ -32,7 +32,7 @@ test_patches:
 
 clean:
 	for dir in Documentation t; do \
-		(cd $$dir && $(MAKE) clean); \
+		$(MAKE) -C $$dir clean; \
 	done
 	rm -rf build
 	rm -f stgit/*.pyc
