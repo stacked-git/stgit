@@ -272,9 +272,9 @@ def add_sign_line(desc, sign_str, name, email):
     if sign_str in desc:
         return desc
     desc = desc.rstrip()
-    tags = ['\nCc:', '\nSigned-off-by:', '\nAcked-by:', '\nReported-by',
-            '\nTested-by:', '\nReviewed-by:', '\nSuggested-by:']
-    if not any(s in desc for s in tags):
+    preamble, lastblank, lastpara = desc.rpartition('\n\n')
+    is_signoff = re.compile(r'[A-Z][a-z]*(-[A-Za-z][a-z]*)*: ').match
+    if not (lastblank and all(is_signoff(l) for l in lastpara.split('\n'))):
         desc = desc + '\n'
     return '%s\n%s\n' % (desc, sign_str)
 
