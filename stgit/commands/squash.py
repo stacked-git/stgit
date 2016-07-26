@@ -47,15 +47,16 @@ resolve them."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
-options = [opt('-n', '--name', short = 'Name of squashed patch')
-           ] + argparse.message_options(save_template = True)
+options = ([opt('-n', '--name', short = 'Name of squashed patch')] +
+           argparse.message_options(save_template = True) +
+           argparse.hook_options())
 
 directory = common.DirectoryHasRepositoryLib()
 
 class SaveTemplateDone(Exception):
     pass
 
-def _squash_patches(trans, patches, msg, save_template):
+def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
     cd = git.CommitData(tree = cd.tree, parents = cd.parents)
     for pn in patches[1:]:
@@ -80,9 +81,12 @@ def _squash_patches(trans, patches, msg, save_template):
     msg = utils.strip_comment(msg).strip()
     cd = cd.set_message(msg)
 
+    if not no_verify:
+        cd = common.run_commit_msg_hook(trans.stack.repository, cd)
+
     return cd
 
-def _squash(stack, iw, name, msg, save_template, patches):
+def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
 
     # If a name was supplied on the command line, make sure it's OK.
     def bad_name(pn):
@@ -101,7 +105,8 @@ def _squash(stack, iw, name, msg, save_template, patches):
                                          allow_conflicts = True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        new_commit_data = _squash_patches(trans, patches, msg, save_template)
+        new_commit_data = _squash_patches(trans, patches, msg, save_template,
+                                          no_verify)
         if new_commit_data:
             # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
@@ -114,7 +119,7 @@ def _squash(stack, iw, name, msg, save_template, patches):
             for pn in patches:
                 trans.push_patch(pn, iw)
             new_commit_data = _squash_patches(trans, patches, msg,
-                                                save_template)
+                                                save_template, no_verify)
             assert not trans.delete_patches(lambda pn: pn in patches)
         make_squashed_patch(trans, new_commit_data)
 
@@ -137,4 +142,5 @@ def func(parser, options, args):
     if len(patches) < 2:
         raise common.CmdException('Need at least two patches')
     return _squash(stack, stack.repository.default_iw, options.name,
-                   options.message, options.save_template, patches)
+                   options.message, options.save_template, patches,
+                   options.no_verify)

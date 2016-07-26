@@ -71,6 +71,7 @@ options = [
     opt('-a', '--annotate', metavar = 'NOTE',
         short = 'Annotate the patch log entry')
     ] + (argparse.message_options(save_template = False) +
+         argparse.hook_options() +
          argparse.sign_options() + argparse.author_options())
 
 directory = common.DirectoryHasRepositoryLib()
@@ -265,6 +266,7 @@ def func(parser, options, args):
     if retval != utils.STGIT_SUCCESS:
         return retval
     def edit_fun(cd):
+        orig_msg = cd.message
         cd, failed_diff = edit.auto_edit_patch(
             stack.repository, cd, msg = options.message, contains_diff = False,
             author = options.author, committer = lambda p: p,
@@ -275,6 +277,8 @@ def func(parser, options, args):
                 stack.repository, cd, edit_diff = False,
                 diff_flags = [], replacement_diff = None)
             assert not failed_diff
+        if not options.no_verify and (options.edit or cd.message != orig_msg):
+            cd = common.run_commit_msg_hook(stack.repository, cd, options.edit)
         return cd
     return absorb(stack, patch_name, temp_name, edit_fun,
                   annotate = options.annotate)

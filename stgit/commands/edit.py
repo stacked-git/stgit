@@ -69,6 +69,7 @@ options = (
           short = 'Invoke interactive editor') ] +
     argparse.sign_options() +
     argparse.message_options(save_template = True) +
+    argparse.hook_options() +
     argparse.author_options() + argparse.diff_opts_option() +
     [ opt('-t', '--set-tree', action = 'store',
           metavar = 'TREE-ISH',
@@ -110,24 +111,33 @@ def func(parser, options, args):
                             options.diff, options.diff_flags, failed_diff))
         return utils.STGIT_SUCCESS
 
-    if cd == orig_cd or options.edit:
+    use_editor = cd == orig_cd or options.edit
+    if use_editor:
         cd, failed_diff = edit.interactive_edit_patch(
             stack.repository, cd, options.diff, options.diff_flags, failed_diff)
 
-    def failed():
+    def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'
         f = file(fn, 'w')
         f.write(edit.patch_desc(stack.repository, cd,
                                 options.diff, options.diff_flags, failed_diff))
         f.close()
-        out.error('Edited patch did not apply.',
-                  'It has been saved to "%s".' % fn)
+        out.error(reason,
+                  'The patch has been saved to "%s".' % fn)
         return utils.STGIT_COMMAND_ERROR
 
     # If we couldn't apply the patch, fail without even trying to
     # effect any of the changes.
     if failed_diff:
         return failed()
+
+    if not options.no_verify and (use_editor or cd.message != orig_cd.message):
+        try:
+            cd = common.run_commit_msg_hook(stack.repository, cd, use_editor)
+        except Exception:
+            if options.diff:
+                failed('The commit-msg hook failed.')
+            raise
 
     # The patch applied, so now we have to rewrite the StGit patch
     # (and any patches on top of it).

@@ -357,6 +357,17 @@ class CommitData(Immutable, Repr):
         self.__author = d(author, 'author', Person.author)
         self.__committer = d(committer, 'committer', Person.committer)
         self.__message = d(message, 'message')
+    @property
+    def env(self):
+        env = {}
+        for p, v1 in ((self.author, 'AUTHOR'),
+                       (self.committer, 'COMMITTER')):
+            if p != None:
+                for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
+                                 ('date', 'DATE')):
+                    if getattr(p, attr) != None:
+                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
+        return env
     tree = property(lambda self: self.__tree)
     parents = property(lambda self: self.__parents)
     @property
@@ -403,16 +414,8 @@ class CommitData(Immutable, Repr):
         for p in self.parents:
             c.append('-p')
             c.append(p.sha1)
-        env = {}
-        for p, v1 in ((self.author, 'AUTHOR'),
-                       (self.committer, 'COMMITTER')):
-            if p != None:
-                for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
-                                 ('date', 'DATE')):
-                    if getattr(p, attr) != None:
-                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
-        sha1 = repository.run(c, env = env).raw_input(self.message
-                                                      ).output_one_line()
+        sha1 = repository.run(c, env = self.env).raw_input(self.message
+                                                           ).output_one_line()
         return repository.get_commit(sha1)
     @classmethod
     def parse(cls, repository, s):

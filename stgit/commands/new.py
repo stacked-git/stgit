@@ -41,7 +41,8 @@ editor."""
 args = []
 options = (argparse.author_options()
            + argparse.message_options(save_template = True)
-           + argparse.sign_options())
+           + argparse.sign_options()
+           + argparse.hook_options())
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -71,6 +72,9 @@ def func(parser, options, args):
     if options.save_template:
         options.save_template(cd.message)
         return utils.STGIT_SUCCESS
+
+    if not options.no_verify:
+        cd = common.run_commit_msg_hook(stack.repository, cd)
 
     if name == None:
         name = utils.make_patch_name(cd.message,

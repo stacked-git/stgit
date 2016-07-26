@@ -126,6 +126,13 @@ def sign_options():
             short = 'Add "Reviewed-by:" line', long = """
             Add a "Reviewed-by:" line to the end of the patch.""")]
 
+def hook_options():
+    return [
+        opt('--no-verify', action = 'store_true', dest = 'no_verify',
+            default = False, short = 'Disable commit-msg hook', long = """
+            This option bypasses the commit-msg hook."""),
+    ]
+
 def message_options(save_template):
     def no_dup(parser):
         if parser.values.message != None:
