@@ -188,6 +188,28 @@ def call_editor(filename):
         raise EditorException, 'editor failed, exit code: %d' % err
     out.done()
 
+def get_hook(repository, hook_name, extra_env={}):
+    hook_path = os.path.join(repository.directory, 'hooks', hook_name)
+    if not (os.path.isfile(hook_path) and os.access(hook_path, os.X_OK)):
+        return None
+
+    default_iw = repository.default_iw
+    prefix_dir = os.path.relpath(os.getcwd(), default_iw.cwd)
+    if prefix_dir == os.curdir:
+        prefix = ''
+    else:
+        prefix = os.path.join(prefix_dir, '')
+    extra_env = add_dict(extra_env, {'GIT_PREFIX': prefix})
+
+    def hook(*parameters):
+        argv = [hook_path]
+        argv.extend(parameters)
+
+        default_iw.run(argv, extra_env).run()
+
+    hook.__name__ = hook_name
+    return hook
+
 def edit_string(s, filename):
     f = file(filename, 'w')
     f.write(s)
