@@ -58,6 +58,8 @@ def util():
              'esac'),
          fun('_stg_branches',
              'local g=$(_gitdir)', 'test "$g" && (cd $g/patches/ && echo *)'),
+         fun('_mail_aliases',
+             'git config --name-only --get-regexp "^mail\.alias\." | cut -d. -f 3'),
          ref_list_fun('_all_branches', 'refs/heads'),
          ref_list_fun('_tags', 'refs/tags'),
          ref_list_fun('_remotes', 'refs/remotes')]

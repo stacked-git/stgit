@@ -293,6 +293,7 @@ known_files = Compgen(['$(_known_files)'])
 repo = Compgen(actions = ['directory'])
 dir = Compgen(actions = ['directory'])
 files = Compgen(actions = ['file'])
+mail_aliases = Compgen(['$(_mail_aliases)'])
 def strings(*ss): return Compgen(ss)
 class patch_range(CompgenBase):
     def __init__(self, *endpoints):
