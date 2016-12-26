@@ -150,6 +150,9 @@ def start_cleaner(q):
     threading.Thread(target=w).start()
 
 def main():
+    this_dir = os.path.dirname(__file__)
+    if this_dir:
+        os.chdir(this_dir)
     p = optparse.OptionParser()
     p.add_option("-j", "--jobs", type="int",
                  help="number of tests to run in parallel")
