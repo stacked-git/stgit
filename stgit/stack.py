@@ -20,7 +20,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 import sys, os, re
 from email.Utils import formatdate
 
-from stgit.exception import *
+from stgit.exception import StackException
 from stgit.utils import *
 from stgit.out import *
 from stgit.run import *
@@ -29,9 +29,6 @@ from stgit.config import config
 from shutil import copyfile
 from stgit.lib import git as libgit, stackupgrade
 
-# stack exception class
-class StackException(StgException):
-    pass
 
 class FilterUntil:
     def __init__(self):

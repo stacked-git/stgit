@@ -2,6 +2,7 @@ import os.path
 from stgit import utils
 from stgit.out import out
 from stgit.config import config
+from stgit.exception import StackException
 
 # The current StGit metadata format version.
 FORMAT_VERSION = 2

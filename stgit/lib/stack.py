@@ -1,12 +1,11 @@
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
 
 import os.path
-from stgit import exception, utils
+from stgit import utils
+from stgit.exception import StackException
 from stgit.lib import git, stackupgrade
 from stgit.config import config
 
-class StackException(exception.StgException):
-    """Exception raised by L{stack} objects."""
 
 class Patch(object):
     """Represents an StGit patch. This class is mainly concerned with

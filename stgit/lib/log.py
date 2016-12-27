@@ -101,11 +101,12 @@ mainly ease of visualization."""
 
 import re
 from stgit.lib import git, stack as libstack
-from stgit import exception, utils
+from stgit import utils
+from stgit.exception import StgException, StackException
 from stgit.out import out
 import StringIO
 
-class LogException(exception.StgException):
+class LogException(StgException):
     pass
 
 class LogParseException(LogException):
@@ -362,7 +363,7 @@ def compat_log_entry(msg):
     try:
         repo = default_repo()
         stack = repo.get_stack(repo.current_branch_name)
-    except (libstack.StackException, git.RepositoryException), e:
+    except (StackException, git.RepositoryException) as e:
         out.warn(str(e), 'Could not write to stack log')
     else:
         if repo.default_index.conflicts() and stack.patchorder.applied:
@@ -518,7 +519,7 @@ def compat_log_external_mods():
         return
     try:
         stack = repo.get_stack(repo.current_branch_name)
-    except exception.StgException:
+    except StgException:
         # Stack doesn't exist, so we can't log.
         return
     log_external_mods(stack)
