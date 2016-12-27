@@ -324,19 +324,17 @@ def __send_message(type, tmpl, options, *args):
     return msg_id
 
 def __update_header(msg, header, addr = '', ignore = ()):
-    def __addr_pairs(msg, header, extra):
-        pairs = email.Utils.getaddresses(msg.get_all(header, []) + extra)
-        # remove pairs without an address and resolve the aliases
-        return [address_or_alias(p) for p in pairs if p[1]]
-
-    addr_pairs = __addr_pairs(msg, header, [addr])
+    addr_pairs = email.Utils.getaddresses(msg.get_all(header, []) + [addr])
     del msg[header]
+    # remove pairs without an address and resolve the aliases
+    addr_pairs = [address_or_alias(name_addr) for name_addr in addr_pairs
+                  if name_addr[1]]
     # remove the duplicates and filter the addresses
-    addr_dict = dict((addr, email.Utils.formataddr((name, addr)))
-                     for name, addr in addr_pairs if addr not in ignore)
-    if addr_dict:
-        msg[header] = ', '.join(addr_dict.itervalues())
-    return set(addr_dict.iterkeys())
+    addr_pairs = [name_addr for name_addr in addr_pairs
+                  if name_addr[1] not in ignore]
+    if addr_pairs:
+        msg[header] = ', '.join(map(email.Utils.formataddr, addr_pairs))
+    return set(addr for _, addr in addr_pairs)
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the

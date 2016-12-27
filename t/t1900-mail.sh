@@ -75,7 +75,7 @@ test_expect_success \
     stg mail --to="a@a, b b <b@b>" --cc="b@b, c@c" \
         --bcc="c@c, d@d, committer@example.com" --auto $(stg top) -m \
         -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
-    test "$(cat mbox | grep -e "^To:")" = "To: b b <b@b>, a@a" &&
+    test "$(cat mbox | grep -e "^To:")" = "To: a@a, b b <b@b>" &&
     test "$(cat mbox | grep -e "^Cc:")" = \
         "Cc: C O Mitter <committer@example.com>, c@c" &&
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
