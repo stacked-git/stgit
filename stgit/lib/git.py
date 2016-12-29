@@ -106,8 +106,10 @@ def system_date(datestring):
         except run.RunException:
             return None
         (t, z) = d.split("_")
+    year, month, day, hour, minute, second = [int(x) for x in t.split("-")]
     try:
-        return datetime(*[int(x) for x in t.split("-")], tzinfo=TimeZone(z))
+        return datetime(year, month, day, hour, minute, second,
+                        tzinfo=TimeZone(z))
     except ValueError:
         raise DateException(datestring, "date")
 
