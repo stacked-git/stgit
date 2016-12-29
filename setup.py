@@ -51,6 +51,7 @@ def __run_setup():
           author = 'Catalin Marinas',
           author_email = 'catalin.marinas@gmail.com',
           url = 'http://www.procode.org/stgit/',
+          download_url = 'http://repo.or.cz/stgit.git',
           description = 'Stacked GIT',
           long_description = 'Push/pop utility on top of GIT',
           scripts = ['stg'],
@@ -61,7 +62,25 @@ def __run_setup():
             ('share/stgit/examples', ['examples/gitconfig']),
             ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
             ('share/stgit/completion', ['stgit-completion.bash'])
-            ])
+          ],
+          classifiers = [
+              'Development Status :: 5 - Production/Stable',
+              'Environment :: Console',
+              'Intended Audience :: Developers',
+              'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'
+              'Natural Language :: English',
+              'Operating System :: OS Independent',
+              'Programming Language :: Python',
+              'Programming Language :: Python :: 2',
+              'Programming Language :: Python :: 2.4',
+              'Programming Language :: Python :: 2.5',
+              'Programming Language :: Python :: 2.6',
+              'Programming Language :: Python :: 2.7',
+              'Programming Language :: Python :: Implementation :: CPython',
+              'Programming Language :: Python :: Implementation :: PyPy',
+              'Topic :: Software Development :: Version Control',
+          ])
+
 
 # Check the minimum versions required
 __check_python_version()
