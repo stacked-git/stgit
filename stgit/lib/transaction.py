@@ -5,7 +5,7 @@ import atexit
 import itertools as it
 
 from stgit import exception, utils
-from stgit.utils import any, all
+from stgit.utils import any
 from stgit.out import *
 from stgit.lib import git, log
 from stgit.config import config

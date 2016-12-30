@@ -299,13 +299,18 @@ def make_patch_name(msg, unacceptable, default_name = 'patch'):
 
 # any and all functions are builtin in Python 2.5 and higher, but not
 # in 2.4.
-if not 'any' in dir(__builtins__):
+if 'any' in dir(__builtins__):
+    any = getattr(__builtins__, 'any')
+else:
     def any(bools):
         for b in bools:
             if b:
                 return True
         return False
-if not 'all' in dir(__builtins__):
+
+if 'all' in dir(__builtins__):
+    all = getattr(__builtins__, 'all')
+else:
     def all(bools):
         for b in bools:
             if not b:
