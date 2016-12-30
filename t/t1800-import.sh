@@ -128,6 +128,25 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply several patches from an mbox file from stdin' \
+    '
+    cat $STG_ROOT/t/t1800-import/email-mbox | stg import -M &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3) \
+        | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a bzip2 patch created with "git diff"' \
     '
     bzip2 -c $STG_ROOT/t/t1800-import/git-diff > \
