@@ -70,72 +70,97 @@ class TestQueue(object):
 
     # Yield free jobs until none are left.
     def next(self):
-        with self.lock:
+        self.lock.acquire()
+        try:
             if not self.__remaining:
                 raise StopIteration
             t = self.__remaining.pop()
             self.__running.add(t)
             self.__report()
             return t
+        finally:
+            self.lock.release()
 
     # Report that a job has completed.
     def finished(self, t, success):
-        with self.lock:
+        self.lock.acquire()
+        try:
             self.__running.remove(t)
-            (self.__success if success else self.__fail).add(t)
+            if success:
+                self.__success.add(t)
+            else:
+                self.__fail.add(t)
             self.__report()
+        finally:
+            self.lock.release()
 
     # Yield free cleaning jobs until none are left.
     def cleaning_jobs(self):
         while True:
-            with self.lock:
+            self.lock.acquire()
+            try:
                 if not self.__clean_todo:
                     return
                 c = self.__clean_todo.pop()
                 self.__clean_running.add(c)
+            finally:
+                self.lock.release()
             yield c
 
     # Report that a cleaning job has completed.
     def deleted(self, c):
-        with self.lock:
+        self.lock.acquire()
+        try:
             self.__clean_running.remove(c)
             self.__clean_done.add(c)
             self.__report()
+        finally:
+            self.lock.release()
 
     # Wait for all jobs to complete.
     def wait(self):
-        with self.lock:
+        self.lock.acquire()
+        try:
             while not self.__done():
                 self.__cv.wait()
             for c in self.__clean_jobs:
                 os.rmdir(c)
             return set(self.__fail)
+        finally:
+            self.lock.release()
 
 def start_worker(q):
     def w():
         for t in q:
             try:
-                ok = False  # assume the worst until proven otherwise
-                s = os.path.join("trash", t)
-                e = dict(os.environ)
-                e["SCRATCHDIR"] = s
-                p = subprocess.Popen([os.path.join(os.getcwd(), t), "-v"],
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT,
-                                     env=e)
-                (out, err) = p.communicate()
-                assert err is None
-                with open(os.path.join(s, "output"), "w") as f:
-                    f.write(out)
-                    f.write("\nExited with code %d\n" % p.returncode)
-                if p.returncode == 0:
-                    ok = True
-            except:
-                # Log the traceback. Use the mutex so that we
-                # won't write multiple tracebacks to stderr at the
-                # same time.
-                with q.lock:
-                    traceback.print_exc()
+                try:
+                    ok = False  # assume the worst until proven otherwise
+                    s = os.path.join("trash", t)
+                    e = dict(os.environ)
+                    e["SCRATCHDIR"] = s
+                    p = subprocess.Popen([os.path.join(os.getcwd(), t), "-v"],
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.STDOUT,
+                                         env=e)
+                    (out, err) = p.communicate()
+                    assert err is None
+                    f = open(os.path.join(s, "output"), "w")
+                    try:
+                        f.write(out)
+                        f.write("\nExited with code %d\n" % p.returncode)
+                    finally:
+                        f.close()
+                    if p.returncode == 0:
+                        ok = True
+                except:
+                    # Log the traceback. Use the mutex so that we
+                    # won't write multiple tracebacks to stderr at the
+                    # same time.
+                    q.lock.acquire()
+                    try:
+                        traceback.print_exc()
+                    finally:
+                        q.lock.release()
             finally:
                 q.finished(t, ok)
     threading.Thread(target=w).start()
@@ -144,7 +169,10 @@ def start_cleaner(q):
     def w():
         for c in q.cleaning_jobs():
             try:
-                (shutil.rmtree if os.path.isdir(c) else os.remove)(c)
+                if os.path.isdir(c):
+                    shutil.rmtree(c)
+                else:
+                    os.remove(c)
             finally:
                 q.deleted(c)
     threading.Thread(target=w).start()
