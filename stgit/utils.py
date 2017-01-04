@@ -205,6 +205,10 @@ def get_hook(repository, hook_name, extra_env={}):
         argv = [hook_path]
         argv.extend(parameters)
 
+        # On Windows, run the hook using "bash" explicitly
+        if os.name != 'posix':
+            argv.insert(0, 'bash')
+
         default_iw.run(argv, extra_env).run()
 
     hook.__name__ = hook_name
@@ -212,20 +216,22 @@ def get_hook(repository, hook_name, extra_env={}):
 
 def run_hook_on_string(hook, s, *args):
     if hook is not None:
-        temp = tempfile.NamedTemporaryFile('w')
+        temp = tempfile.NamedTemporaryFile('wb', delete=False)
         try:
-            temp.write(s)
-            temp.flush()
+            try:
+                temp.write(s)
+            finally:
+                temp.close()
 
             hook(temp.name, *args)
 
-            output = open(temp.name, 'r')
+            output = open(temp.name, 'rb')
             try:
                 s = output.read()
             finally:
                 output.close()
         finally:
-            temp.close()
+            os.unlink(temp.name)
 
     return s
 
