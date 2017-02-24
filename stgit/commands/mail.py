@@ -14,12 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, re, time, datetime, socket, smtplib, getpass
-import email, email.Utils, email.Header
+import email
+import email.charset
+import email.header
+import email.utils
+import getpass
+import os
+import re
+import smtplib
+import socket
+import time
+
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   address_or_alias,
+                                   git_id,
+                                   parse_patches)
+from stgit.utils import call_editor
+from stgit.out import out
 from stgit import argparse, stack, git, version, templates
 from stgit.config import config
 from stgit.run import Run
@@ -168,13 +181,13 @@ def __get_sender():
     if not sender:
         raise CmdException('Unknown sender name and e-mail; you should for '
                            'example set git config user.name and user.email')
-    sender = email.Utils.parseaddr(sender)
+    sender = email.utils.parseaddr(sender)
 
-    return email.Utils.formataddr(address_or_alias(sender))
+    return email.utils.formataddr(address_or_alias(sender))
 
 def __addr_list(msg, header):
     return [addr for name, addr in
-            email.Utils.getaddresses(msg.get_all(header, []))]
+            email.utils.getaddresses(msg.get_all(header, []))]
 
 def __parse_addresses(msg):
     """Return a two elements tuple: (from, [to])
@@ -293,7 +306,7 @@ def __send_message(type, tmpl, options, *args):
     if type == 'patch':
         (patch_nr, total_nr) = (args[1], args[2])
 
-    msg_id = email.Utils.make_msgid('stgit')
+    msg_id = email.utils.make_msgid('stgit')
     msg = build(tmpl, msg_id, options, *args)
 
     msg_str = msg.as_string(options.mbox)
@@ -324,7 +337,7 @@ def __send_message(type, tmpl, options, *args):
     return msg_id
 
 def __update_header(msg, header, addr = '', ignore = ()):
-    addr_pairs = email.Utils.getaddresses(msg.get_all(header, []) + [addr])
+    addr_pairs = email.utils.getaddresses(msg.get_all(header, []) + [addr])
     del msg[header]
     # remove pairs without an address and resolve the aliases
     addr_pairs = [address_or_alias(name_addr) for name_addr in addr_pairs
@@ -333,7 +346,7 @@ def __update_header(msg, header, addr = '', ignore = ()):
     addr_pairs = [name_addr for name_addr in addr_pairs
                   if name_addr[1] not in ignore]
     if addr_pairs:
-        msg[header] = ', '.join(map(email.Utils.formataddr, addr_pairs))
+        msg[header] = ', '.join(map(email.utils.formataddr, addr_pairs))
     return set(addr for _, addr in addr_pairs)
 
 def __build_address_headers(msg, options, extra_cc = []):
@@ -394,7 +407,7 @@ def __build_extra_headers(msg, msg_id, ref_id = None):
     """Build extra email headers and encoding
     """
     del msg['Date']
-    msg['Date'] = email.Utils.formatdate(localtime = True)
+    msg['Date'] = email.utils.formatdate(localtime = True)
     msg['Message-ID'] = msg_id
     if ref_id:
         # make sure the ref id has the angle brackets
@@ -411,7 +424,7 @@ def __build_extra_headers(msg, msg_id, ref_id = None):
 
 def __encode_message(msg):
     # 7 or 8 bit encoding
-    charset = email.Charset.Charset('utf-8')
+    charset = email.charset.Charset('utf-8')
     charset.body_encoding = None
 
     # encode headers
@@ -424,7 +437,7 @@ def __encode_message(msg):
                 # maybe we should try a different encoding or report
                 # the error. At the moment, we just ignore it
                 pass
-            words.append(email.Header.Header(uword).encode())
+            words.append(email.header.Header(uword).encode())
         new_val = ' '.join(words)
         msg.replace_header(header, new_val)
 
@@ -433,7 +446,7 @@ def __encode_message(msg):
     # some e-mail clients
     subject = msg.get('subject', '')
     msg.replace_header('subject',
-                       email.Header.Header(subject, header_name = 'subject'))
+                       email.header.Header(subject, header_name = 'subject'))
 
     # encode the body and set the MIME and encoding headers
     if msg.is_multipart():

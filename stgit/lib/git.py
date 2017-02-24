@@ -1,8 +1,11 @@
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
-import atexit, os, os.path, re, signal
 from datetime import datetime, timedelta, tzinfo
+import atexit
+import os
+import re
+import signal
 
 from stgit import exception, run, utils
 from stgit.config import config

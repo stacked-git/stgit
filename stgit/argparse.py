@@ -2,7 +2,10 @@
 C{optparse} module, so that we can easily generate both interactive
 help and asciidoc documentation (such as man pages)."""
 
-import optparse, sys, textwrap
+import optparse
+import sys
+import textwrap
+
 from stgit import utils
 from stgit.config import config
 from stgit.lib import git

@@ -17,13 +17,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, os.path, re, email.Utils
-from stgit.exception import *
-from stgit.utils import *
-from stgit.out import *
-from stgit.run import *
-from stgit import stack, git, basedir
-from stgit.config import config, file_extensions
+import email.utils
+import os
+import re
+import sys
+
+from stgit.exception import StgException
+from stgit.utils import (EditorException,
+                         add_sign_line,
+                         edit_string,
+                         get_hook,
+                         parse_name_email_date,
+                         run_hook_on_string,
+                         strip_prefix)
+from stgit.out import out
+from stgit.run import Run, RunException
+from stgit import stack, git
+from stgit.config import config
 from stgit.lib import stack as libstack
 from stgit.lib import git as libgit
 from stgit.lib import log
@@ -266,7 +276,7 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     return patches
 
 def name_email(address):
-    p = email.Utils.parseaddr(address)
+    p = email.utils.parseaddr(address)
     if p[1]:
         return p
     else:
@@ -398,7 +408,7 @@ def parse_mail(msg):
     """Parse the message object and return (description, authname,
     authemail, authdate, diff)
     """
-    from email.Header import decode_header, make_header
+    from email.header import decode_header, make_header
 
     def __decode_header(header):
         """Decode a qp-encoded e-mail header as per rfc2047"""

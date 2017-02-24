@@ -1,6 +1,9 @@
+import os
+import re
+import sys
+
 from stgit.exception import StgException
 from stgit import run, utils
-import os, os.path, re, sys
 
 class VersionUnavailable(StgException):
     pass

@@ -17,10 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os, re
-from stgit import basedir
-from stgit.exception import *
-from stgit.run import *
+import os
+import re
+
+from stgit.exception import StgException
+from stgit.run import Run
 
 class GitConfigException(StgException):
     pass

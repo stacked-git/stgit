@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import datetime, os, subprocess
+import datetime
+import os
+import subprocess
 
-from stgit.exception import *
-from stgit.out import *
+from stgit.exception import StgException
+from stgit.out import out, MessagePrinter
 
 class RunException(StgException):
     """Thrown when something bad happened when we tried to run the

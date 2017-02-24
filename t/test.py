@@ -1,7 +1,6 @@
 # Run the test suite in parallel.
 
 import glob
-import itertools as it
 import math
 import optparse
 import os
@@ -11,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 import traceback
 
 # Number of jobs to run in parallel.

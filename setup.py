@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 
-import sys, glob, os
+import glob
+import os
+import sys
 from distutils.core import setup
 
 from stgit import version

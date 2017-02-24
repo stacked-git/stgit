@@ -17,16 +17,27 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, re
-from email.Utils import formatdate
+import os
+import re
+from email.utils import formatdate
 
 from stgit.exception import StackException
-from stgit.utils import *
-from stgit.out import *
-from stgit.run import *
+from stgit.utils import (add_sign_line,
+                         append_string,
+                         append_strings,
+                         call_editor,
+                         create_empty_file,
+                         insert_string,
+                         make_patch_name,
+                         read_string,
+                         read_strings,
+                         rename,
+                         write_string,
+                         write_strings)
+from stgit.out import out
+from stgit.run import Run
 from stgit import git, basedir, templates
 from stgit.config import config
-from shutil import copyfile
 from stgit.lib import git as libgit, stackupgrade
 
 

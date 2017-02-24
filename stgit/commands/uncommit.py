@@ -19,7 +19,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
-from stgit.out import *
+from stgit.out import out
 from stgit import argparse, utils
 
 help = 'Turn regular git commits into StGit patches'

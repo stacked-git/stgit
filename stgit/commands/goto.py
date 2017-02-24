@@ -17,7 +17,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit import argparse
-from stgit.argparse import opt
 
 help = 'Push or pop patches to the given one'
 kind = 'stack'

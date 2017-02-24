@@ -17,10 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, traceback
+import os
+import sys
+import traceback
 
 import stgit.commands
-from stgit.out import *
+from stgit.out import out
 from stgit import argparse, run, utils
 from stgit.config import config
 

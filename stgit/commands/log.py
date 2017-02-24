@@ -18,7 +18,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 import os.path
-from optparse import make_option
 from stgit import argparse, run
 from stgit.argparse import opt
 from stgit.commands import common

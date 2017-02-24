@@ -1,7 +1,7 @@
-import textwrap
+import itertools
+
 import stgit.commands
 from stgit import argparse
-import itertools
 
 def fun(name, *body):
     return ['%s ()' % name, '{', list(body), '}']

@@ -18,7 +18,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 import os
-from stgit.run import *
+from stgit.run import Run, RunException
 
 # GIT_DIR value cached
 __base_dir = None

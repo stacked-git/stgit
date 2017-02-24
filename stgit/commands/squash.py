@@ -17,7 +17,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 from stgit.argparse import opt
-from stgit.out import *
 from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git, transaction

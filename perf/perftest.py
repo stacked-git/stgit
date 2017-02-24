@@ -1,4 +1,7 @@
-import datetime, os, os.path, subprocess, sys
+import datetime
+import os
+import subprocess
+import sys
 
 def duration(t1, t2):
     d = t2 - t1

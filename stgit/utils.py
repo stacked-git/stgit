@@ -1,10 +1,14 @@
 """Common utility functions
 """
 
-import errno, os, os.path, re, sys, tempfile
-from stgit.exception import *
+import errno
+import os
+import re
+import tempfile
+
+from stgit.exception import StgException
 from stgit.config import config
-from stgit.out import *
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>

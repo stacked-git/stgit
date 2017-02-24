@@ -14,12 +14,17 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os
+import os
+
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   check_local_changes,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   git_id)
+from stgit.out import out
+from stgit import argparse, git
 
 help = 'Integrate a GNU diff patch into the current patch'
 kind = 'patch'
