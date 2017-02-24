@@ -90,14 +90,12 @@ old_mask = os.umask(0o022)
 version.write_builtin_version()
 
 # generate the python command list
-f = file('stgit/commands/cmdlist.py', 'w')
-commands.py_commands(commands.get_commands(allow_cached = False), f)
-f.close()
+with open('stgit/commands/cmdlist.py', 'w') as f:
+    commands.py_commands(commands.get_commands(allow_cached = False), f)
 
 # generate the bash completion script
-f = file('stgit-completion.bash', 'w')
-completion.write_completion(f)
-f.close()
+with open('stgit-completion.bash', 'w') as f:
+    completion.write_completion(f)
 
 __run_setup()
 

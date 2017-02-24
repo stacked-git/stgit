@@ -72,39 +72,36 @@ def edit_file(series, line, comment, show_patch = True):
     fname = '.stgitmsg.txt'
     tmpl = templates.get_template('patchdescr.tmpl')
 
-    f = file(fname, 'w+')
-    if line:
-        print >> f, line
-    elif tmpl:
-        print >> f, tmpl,
-    else:
-        print >> f
-    print >> f, __comment_prefix, comment
-    print >> f, __comment_prefix, \
-          'Lines prefixed with "%s" will be automatically removed.' \
-          % __comment_prefix
-    print >> f, __comment_prefix, \
-          'Trailing empty lines will be automatically removed.'
+    with open(fname, 'w+') as f:
+        if line:
+            print >> f, line
+        elif tmpl:
+            print >> f, tmpl,
+        else:
+            print >> f
+        print >> f, __comment_prefix, comment
+        print >> f, __comment_prefix, \
+              'Lines prefixed with "%s" will be automatically removed.' \
+              % __comment_prefix
+        print >> f, __comment_prefix, \
+              'Trailing empty lines will be automatically removed.'
 
-    if show_patch:
-       print >> f, __patch_prefix
-       # series.get_patch(series.get_current()).get_top()
-       diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
-       f.write(diff_str)
+        if show_patch:
+           print >> f, __patch_prefix
+           # series.get_patch(series.get_current()).get_top()
+           diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
+           f.write(diff_str)
 
-    #Vim modeline must be near the end.
-    print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
-    f.close()
+        #Vim modeline must be near the end.
+        print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
 
     call_editor(fname)
 
-    f = file(fname, 'r+')
+    with open(fname, 'r+') as f:
+        __clean_comments(f)
+        f.seek(0)
+        result = f.read()
 
-    __clean_comments(f)
-    f.seek(0)
-    result = f.read()
-
-    f.close()
     os.remove(fname)
 
     return result
@@ -443,7 +440,8 @@ class Series(PatchSet):
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
         if os.path.isfile(self.__applied_file):
-            bottommost = file(self.__applied_file).readline().strip()
+            with open(self.__applied_file) as f:
+                bottommost = f.readline().strip()
             if bottommost:
                 return self.get_patch(bottommost).get_bottom()
         # No bottommost patch, so just return HEAD

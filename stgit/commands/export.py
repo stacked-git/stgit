@@ -87,7 +87,7 @@ def func(parser, options, args):
     if not options.stdout:
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
-        series = file(os.path.join(dirname, 'series'), 'w+')
+        series = open(os.path.join(dirname, 'series'), 'w+')
 
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
@@ -106,7 +106,8 @@ def func(parser, options, args):
 
     # get the template
     if options.template:
-        tmpl = file(options.template).read()
+        with open(options.template) as f:
+            tmpl = f.read()
     else:
         tmpl = templates.get_template('patchexport.tmpl')
         if not tmpl:

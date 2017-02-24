@@ -39,8 +39,9 @@ def write_builtin_version():
         v = git_describe_version()
     except VersionUnavailable:
         return
-    f = file(_builtin_version_file(), 'w')
-    f.write('# This file was generated automatically. Do not edit by hand.\n'
+    with open(_builtin_version_file(), 'w') as f:
+        f.write(
+            '# This file was generated automatically. Do not edit by hand.\n'
             'version = %r\n' % v)
 
 def get_version():

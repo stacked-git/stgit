@@ -77,13 +77,12 @@ def func(parser, options, args):
         patchdir = os.path.dirname(options.series)
 
         remote_patches = []
-        f = file(options.series)
-        for line in f:
-            p = re.sub('#.*$', '', line).strip()
-            if not p:
-                continue
-            remote_patches.append(p)
-        f.close()
+        with open(options.series) as f:
+            for line in f:
+                p = re.sub('#.*$', '', line).strip()
+                if not p:
+                    continue
+                remote_patches.append(p)
 
         # the merge function merge_patch(patch, pname)
         merge_patch = lambda patch, pname: \

@@ -152,9 +152,8 @@ def message_options(save_template):
         if value == '-':
             parser.values.message = sys.stdin.read()
         else:
-            f = file(value)
-            parser.values.message = f.read()
-            f.close()
+            with open(value) as f:
+                parser.values.message = f.read()
         no_combine(parser)
     def templ_callback(option, opt_str, value, parser):
         if value == '-':
@@ -162,9 +161,8 @@ def message_options(save_template):
                 sys.stdout.write(s)
         else:
             def w(s):
-                f = file(value, 'w+')
-                f.write(s)
-                f.close()
+                with open(value, 'w+') as f:
+                    f.write(s)
         parser.values.save_template = w
         no_combine(parser)
     opts = [

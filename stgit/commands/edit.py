@@ -118,10 +118,10 @@ def func(parser, options, args):
 
     def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'
-        f = file(fn, 'w')
-        f.write(edit.patch_desc(stack.repository, cd,
-                                options.diff, options.diff_flags, failed_diff))
-        f.close()
+        with open(fn, 'w') as f:
+            f.write(edit.patch_desc(stack.repository, cd,
+                                    options.diff, options.diff_flags,
+                                    failed_diff))
         out.error(reason,
                   'The patch has been saved to "%s".' % fn)
         return utils.STGIT_COMMAND_ERROR

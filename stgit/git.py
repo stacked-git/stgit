@@ -817,12 +817,10 @@ def apply_patch(filename = None, diff = None, base = None,
     """
     if diff is None:
         if filename:
-            f = file(filename)
+            with open(filename) as f:
+                diff = f.read()
         else:
-            f = sys.stdin
-        diff = f.read()
-        if filename:
-            f.close()
+            diff = sys.stdin.read()
 
     if base:
         orig_head = get_head()

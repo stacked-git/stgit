@@ -32,10 +32,9 @@ def get_template(tfile):
                   os.path.join(sys.prefix, 'share', 'stgit', 'templates',
                                tfile) ]
 
-    tmpl = None
     for t in tmpl_list:
         if os.path.isfile(t):
-            tmpl = file(t).read()
-            break
-
-    return tmpl
+            with open(t) as f:
+                return f.read()
+    else:
+        return None

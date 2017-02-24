@@ -446,16 +446,14 @@ def __edit_message(msg):
     fname = '.stgitmail.txt'
 
     # create the initial file
-    f = file(fname, 'w')
-    f.write(msg)
-    f.close()
+    with open(fname, 'w') as f:
+        f.write(msg)
 
     call_editor(fname)
 
     # read the message back
-    f = file(fname)
-    msg = f.read()
-    f.close()
+    with open(fname) as f:
+        msg = f.read()
 
     return msg
 
@@ -711,7 +709,8 @@ def func(parser, options, args):
 
         # find the template file
         if options.cover:
-            tmpl = file(options.cover).read()
+            with open(options.cover) as f:
+                tmpl = f.read()
         else:
             tmpl = templates.get_template('covermail.tmpl')
             if not tmpl:
@@ -725,7 +724,8 @@ def func(parser, options, args):
 
     # send the patches
     if options.template:
-        tmpl = file(options.template).read()
+        with open(options.template) as f:
+            tmpl = f.read()
     else:
         if options.attach:
             tmpl = templates.get_template('mailattch.tmpl')

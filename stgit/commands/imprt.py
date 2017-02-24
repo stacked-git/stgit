@@ -232,7 +232,7 @@ def __import_series(filename, options):
         if tarfile.is_tarfile(filename):
             __import_tarfile(filename, options)
             return
-        f = file(filename)
+        f = open(filename)
         patchdir = os.path.dirname(filename)
     else:
         f = sys.stdin
@@ -266,7 +266,7 @@ def __import_mbox(filename, options):
     """Import a series from an mbox file
     """
     if filename:
-        f = file(filename, 'rb')
+        f = open(filename, 'rb')
     else:
         f = StringIO(sys.stdin.read())
 
