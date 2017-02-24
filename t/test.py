@@ -56,15 +56,16 @@ class TestQueue(object):
         cd = len(self.__clean_done) + 1e-3  # clever way to avoid div by zero
         cr = len(self.__clean_running)
         ct = len(self.__clean_todo)
-        sys.stdout.write(("\rQueue: %3d,  Running: %3d,  OK: %3d,"
-                          "  Failed: %3d,  Cleanup: %3d%%")
-                         % (len(self.__remaining), len(self.__running),
-                            len(self.__success), len(self.__fail),
-                            math.floor(100.0 * cd / (cd + cr + ct))))
-        sys.stdout.flush()
+        print("\rQueue: %3d," % len(self.__remaining),
+              "Running: %3d," % len(self.__running),
+              "OK: %3d," % len(self.__success),
+              "Failed: %3d," % len(self.__fail),
+              "Cleanup: %3d%%" % math.floor(100.0 * cd / (cd + cr + ct)),
+              sep="  ", end='', file=sys.stdout)
         if self.__done():
-            sys.stdout.write("\n")
+            print(file=sys.stdout)
             self.__cv.notifyAll()
+        sys.stdout.flush()
 
     # Yield free jobs until none are left.
     def next(self):
@@ -127,8 +128,8 @@ def start_worker(q):
                 (out, err) = p.communicate()
                 assert err is None
                 with open(os.path.join(s, "output"), "w") as f:
-                    f.write(out)
-                    f.write("\nExited with code %d\n" % p.returncode)
+                    print(out, file=f)
+                    print("Exited with code %d" % p.returncode, file=f)
                 if p.returncode == 0:
                     ok = True
             except:
