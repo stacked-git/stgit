@@ -85,7 +85,7 @@ __check_python_version()
 __check_git_version()
 
 # ensure readable template files
-old_mask = os.umask(0022)
+old_mask = os.umask(0o022)
 
 version.write_builtin_version()
 
