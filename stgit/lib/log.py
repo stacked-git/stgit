@@ -299,7 +299,7 @@ class LogEntry(object):
 def get_log_entry(repo, ref, commit):
     try:
         return LogEntry.from_commit(repo, commit)
-    except LogException, e:
+    except LogException as e:
         raise LogException('While reading log from %s: %s' % (ref, e))
 
 def same_state(log1, log2):
@@ -321,7 +321,7 @@ def log_entry(stack, msg):
         else:
             last_log = None
         new_log = LogEntry.from_stack(last_log, stack, msg)
-    except LogException, e:
+    except LogException as e:
         out.warn(str(e), 'No log entry written.')
         return
     if last_log and same_state(last_log, new_log):

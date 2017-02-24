@@ -182,7 +182,7 @@ def _main():
                 command.crt_series = Series()
 
         ret = command.func(parser, options, args)
-    except (StgException, IOError, ParsingError, NoSectionError), err:
+    except (StgException, IOError, ParsingError, NoSectionError) as err:
         directory.write_log(cmd)
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)

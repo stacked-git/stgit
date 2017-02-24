@@ -150,7 +150,7 @@ def create_dirs(directory):
         create_dirs(os.path.dirname(directory))
         try:
             os.mkdir(directory)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST:
                 raise e
 

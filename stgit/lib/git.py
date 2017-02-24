@@ -975,7 +975,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                 else:
                     conflicts = [l for l in output if l.startswith('CONFLICT')]
                     raise MergeConflictException(conflicts)
-        except run.RunException, e:
+        except run.RunException:
             raise MergeException('Index/worktree dirty')
     def mergetool(self, files = ()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve

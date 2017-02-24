@@ -186,7 +186,7 @@ def __get_handle_and_name(filename):
             f.read(1)
             f.seek(0)
             return (f, __mkpatchname(filename, ext))
-        except IOError, e:
+        except IOError:
             pass
 
     # plain old file...
@@ -209,7 +209,7 @@ def __import_file(filename, options, patch = None):
     if options.mail:
         try:
             msg = email.message_from_file(f)
-        except Exception, ex:
+        except Exception as ex:
             raise CmdException('error parsing the e-mail file: %s' % str(ex))
         message, author_name, author_email, author_date, diff = \
                  parse_mail(msg)
@@ -272,7 +272,7 @@ def __import_mbox(filename, options):
 
     try:
         mbox = UnixMailbox(f, email.message_from_file)
-    except Exception, ex:
+    except Exception as ex:
         raise CmdException('error parsing the mbox file: %s' % str(ex))
 
     for msg in mbox:

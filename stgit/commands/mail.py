@@ -228,7 +228,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
     try:
         s = smtplib.SMTP(smtpserver)
-    except Exception, err:
+    except Exception as err:
         raise CmdException(str(err))
 
     s.set_debuglevel(0)
@@ -246,7 +246,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
             print "mail server refused delivery for the following recipients: %s" % result
-    except Exception, err:
+    except Exception as err:
         raise CmdException(str(err))
 
     s.quit()
@@ -280,7 +280,7 @@ def __send_message_git(msg, options):
         try:
             cmd.append(path)
             call(cmd)
-        except Exception, err:
+        except Exception as err:
             raise CmdException(str(err))
     finally:
         os.unlink(path)
@@ -515,7 +515,7 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     try:
         msg_string = tmpl % tmpl_dict
-    except KeyError, err:
+    except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
         raise CmdException('Only "%(name)s" variables are '
@@ -527,7 +527,7 @@ def __build_cover(tmpl, msg_id, options, patches):
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
-    except Exception, ex:
+    except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
     extra_cc = []
@@ -639,7 +639,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     try:
         msg_string = tmpl % tmpl_dict
-    except KeyError, err:
+    except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
         raise CmdException('Only "%(name)s" variables are '
@@ -651,7 +651,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
-    except Exception, ex:
+    except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
     if options.auto:

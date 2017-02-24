@@ -405,7 +405,7 @@ def parse_mail(msg):
         try:
             words_enc = decode_header(header)
             hobj = make_header(words_enc)
-        except Exception, ex:
+        except Exception as ex:
             raise CmdException('header decoding error: %s' % str(ex))
         return unicode(hobj).encode('utf-8')
 
@@ -489,7 +489,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
 
     try:
         new_msg = run_hook_on_string(commit_msg_hook, cd.message)
-    except RunException, exc:
+    except RunException as exc:
         raise EditorException(str(exc))
 
     return cd.set_message(new_msg)

@@ -158,7 +158,7 @@ def func(parser, options, args):
 
         try:
             descr = tmpl % tmpl_dict
-        except KeyError, err:
+        except KeyError as err:
             raise common.CmdException('Unknown patch template variable: %s' %
                                       err)
         except TypeError:

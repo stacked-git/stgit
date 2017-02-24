@@ -170,7 +170,7 @@ class Patch(StgitObject):
         try:
             # the reference might not exist if the repository was corrupted
             git.delete_ref(self.__top_ref)
-        except git.GitException, e:
+        except git.GitException as e:
             out.warn(str(e))
         if not keep_log and git.ref_exists(self.__log_ref):
             git.delete_ref(self.__log_ref)
@@ -287,7 +287,7 @@ class PatchSet(StgitObject):
             else:
                 self.set_name (git.get_head_file())
             self.__base_dir = basedir.get()
-        except git.GitException, ex:
+        except git.GitException as ex:
             raise StackException('GIT tree not initialised: %s' % ex)
 
         self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
@@ -1005,7 +1005,7 @@ class Series(PatchSet):
             # merge can fail but the patch needs to be pushed
             try:
                 git.merge_recursive(bottom, head, top)
-            except git.GitException, ex:
+            except git.GitException:
                 out.error('The merge failed during "push".',
                           'Revert the operation with "stg undo".')
 

@@ -115,7 +115,7 @@ class Run(object):
                 p.stdin.write(self.__indata)
             outdata, errdata = p.communicate()
             self.exitcode = p.returncode
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         if errdata and not self.__discard_stderr:
             out.err_raw(errdata)
@@ -129,7 +129,7 @@ class Run(object):
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd)
             self.exitcode = p.wait()
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
         self.__check_exitcode()
@@ -141,7 +141,7 @@ class Run(object):
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.PIPE)
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.stdin = p.stdin
         self.stdout = p.stdout

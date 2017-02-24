@@ -330,12 +330,12 @@ class StackTransaction(object):
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = 'modified'
-            except git.MergeConflictException, e:
+            except git.MergeConflictException as e:
                 tree = ours
                 merge_conflict = True
                 self.__conflicts = e.conflicts
                 s = 'conflict'
-            except git.MergeException, e:
+            except git.MergeException as e:
                 self.__halt(str(e))
         cd = cd.set_tree(tree)
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
