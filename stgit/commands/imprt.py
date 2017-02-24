@@ -302,15 +302,19 @@ def __import_mbox(filename, options):
 def __import_url(url, options):
     """Import a patch from a URL
     """
-    import urllib
+    try:
+        from urllib.request import urlretrieve
+        from urllib.parse import unquote
+    except ImportError:
+        from urllib import urlretrieve, unquote
     import tempfile
 
     if not url:
         raise CmdException('URL argument required')
 
-    patch = os.path.basename(urllib.unquote(url))
+    patch = os.path.basename(unquote(url))
     filename = os.path.join(tempfile.gettempdir(), patch)
-    urllib.urlretrieve(url, filename)
+    urlretrieve(url, filename)
     __import_file(filename, options)
 
 def __import_tarfile(tar, options):
