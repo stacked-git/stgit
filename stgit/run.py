@@ -109,11 +109,7 @@ class Run(object):
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.PIPE)
-            # TODO: only use communicate() once support for Python 2.4 is
-            # dropped (write() needed because of performance reasons)
-            if self.__indata:
-                p.stdin.write(self.__indata)
-            outdata, errdata = p.communicate()
+            outdata, errdata = p.communicate(self.__indata)
             self.exitcode = p.returncode
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
