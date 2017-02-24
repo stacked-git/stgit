@@ -69,14 +69,14 @@ def func(parser, options, args):
             repository = crt_series.get_parent_remote()
 
     if crt_series.get_protected():
-        raise CmdException, 'This branch is protected. Pulls are not permitted'
+        raise CmdException('This branch is protected. Pulls are not permitted')
 
     check_local_changes()
     check_conflicts()
     check_head_top_equal(crt_series)
 
     if policy not in ['pull', 'fetch-rebase', 'rebase']:
-        raise GitConfigException, 'Unsupported pull-policy "%s"' % policy
+        raise GitConfigException('Unsupported pull-policy "%s"' % policy)
 
     applied = prepare_rebase(crt_series)
 

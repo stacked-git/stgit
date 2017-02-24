@@ -60,7 +60,7 @@ def func(parser, options, args):
         if applied:
             patches = set([applied[-1]])
         else:
-            raise common.CmdException, 'No patches applied'
+            raise common.CmdException('No patches applied')
     else:
         parser.error('No patches specified')
 

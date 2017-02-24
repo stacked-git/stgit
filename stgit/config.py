@@ -78,7 +78,8 @@ class GitConfig(object):
         elif value.isdigit():
             return int(value)
         else:
-            raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
+            raise GitConfigException('Value for "%s" is not an integer: "%s"' %
+                                     (name, value))
 
     def getstartswith(self, name):
         self.load()
@@ -159,7 +160,7 @@ def file_extensions():
     if not __extensions:
         cfg_ext = config.get('stgit.extensions').split()
         if len(cfg_ext) != 3:
-            raise CmdException, '"extensions" configuration error'
+            raise CmdException('"extensions" configuration error')
 
         __extensions = { 'ancestor': cfg_ext[0],
                          'current':  cfg_ext[1],

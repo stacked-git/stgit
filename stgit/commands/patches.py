@@ -59,11 +59,11 @@ def func(parser, options, args):
     directory.cd_to_topdir()
 
     if not files:
-        raise CmdException, 'No files specified or no local changes'
+        raise CmdException('No files specified or no local changes')
 
     applied = crt_series.get_applied()
     if not applied:
-        raise CmdException, 'No patches applied'
+        raise CmdException('No patches applied')
 
     revs = git.modifying_revs(files, crt_series.get_base(),
                               crt_series.get_head())

@@ -144,7 +144,7 @@ def __delete_branch(doomed_name, force = False):
     if __is_current_branch(doomed_name):
         raise CmdException('Cannot delete the current branch')
     if doomed.get_protected():
-        raise CmdException, 'This branch is protected. Delete is not permitted'
+        raise CmdException('This branch is protected. Delete is not permitted')
 
     out.start('Deleting branch "%s"' % doomed_name)
     doomed.delete(force)
@@ -296,8 +296,8 @@ def func(parser, options, args):
         branch = stack.Series(branch_name)
 
         if not branch.is_initialised():
-            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
-                  % branch_name
+            raise CmdException('Branch "%s" is not controlled by StGIT' %
+                               branch_name)
 
         out.start('Protecting branch "%s"' % branch_name)
         branch.protect()
@@ -311,7 +311,7 @@ def func(parser, options, args):
             parser.error('incorrect number of arguments')
 
         if __is_current_branch(args[0]):
-            raise CmdException, 'Renaming the current branch is not supported'
+            raise CmdException('Renaming the current branch is not supported')
 
         stack.Series(args[0]).rename(args[1])
 
@@ -330,8 +330,8 @@ def func(parser, options, args):
         branch = stack.Series(branch_name)
 
         if not branch.is_initialised():
-            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
-                  % branch_name
+            raise CmdException('Branch "%s" is not controlled by StGIT' %
+                               branch_name)
 
         out.info('Unprotecting branch "%s"' % branch_name)
         branch.unprotect()
@@ -350,8 +350,8 @@ def func(parser, options, args):
         branch = stack.Series(branch_name)
 
         if not branch.is_initialised():
-            raise CmdException, 'Branch "%s" is not controlled by StGIT' \
-                  % branch_name
+            raise CmdException('Branch "%s" is not controlled by StGIT' %
+                               branch_name)
 
         branch.set_description(options.description)
 
@@ -360,8 +360,8 @@ def func(parser, options, args):
     elif len(args) == 1:
 
         if __is_current_branch(args[0]):
-            raise CmdException, 'Branch "%s" is already the current branch' \
-                  % args[0]
+            raise CmdException('Branch "%s" is already the current branch' %
+                               args[0])
 
         if not options.merge:
             check_local_changes()

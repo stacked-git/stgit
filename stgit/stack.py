@@ -288,7 +288,7 @@ class PatchSet(StgitObject):
                 self.set_name (git.get_head_file())
             self.__base_dir = basedir.get()
         except git.GitException, ex:
-            raise StackException, 'GIT tree not initialised: %s' % ex
+            raise StackException('GIT tree not initialised: %s' % ex)
 
         self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
 
@@ -385,7 +385,7 @@ class Series(PatchSet):
         """Raise an exception if the patch name is not valid.
         """
         if not name or re.search('[^\w.-]', name):
-            raise StackException, 'Invalid patch name: "%s"' % name
+            raise StackException('Invalid patch name: "%s"' % name)
 
     def get_patch(self, name):
         """Return a Patch object for the given name
@@ -416,7 +416,8 @@ class Series(PatchSet):
 
     def get_applied(self):
         if not os.path.isfile(self.__applied_file):
-            raise StackException, 'Branch "%s" not initialised' % self.get_name()
+            raise StackException('Branch "%s" not initialised' %
+                                 self.get_name())
         return read_strings(self.__applied_file)
 
     def set_applied(self, applied):
@@ -424,7 +425,8 @@ class Series(PatchSet):
 
     def get_unapplied(self):
         if not os.path.isfile(self.__unapplied_file):
-            raise StackException, 'Branch "%s" not initialised' % self.get_name()
+            raise StackException('Branch "%s" not initialised' %
+                                 self.get_name())
         return read_strings(self.__unapplied_file)
 
     def set_unapplied(self, unapplied):
@@ -459,7 +461,8 @@ class Series(PatchSet):
                       % (self.get_name(), self.get_name())))
             return 'origin'
         else:
-            raise StackException, 'Cannot find a parent remote for "%s"' % self.get_name()
+            raise StackException('Cannot find a parent remote for "%s"' %
+                                 self.get_name())
 
     def __set_parent_remote(self, remote):
         value = config.set('branch.%s.remote' % self.get_name(), remote)
@@ -475,7 +478,8 @@ class Series(PatchSet):
                       ' with "git config".' % self.get_name()))
             return 'heads/origin'
         else:
-            raise StackException, 'Cannot find a parent branch for "%s"' % self.get_name()
+            raise StackException('Cannot find a parent branch for "%s"' %
+                                 self.get_name())
 
     def __set_parent_branch(self, name):
         if config.get('branch.%s.remote' % self.get_name()):
@@ -491,7 +495,8 @@ class Series(PatchSet):
             self.__set_parent_branch(localbranch)
         # We'll enforce this later
 #         else:
-#             raise StackException, 'Parent branch (%s) should be specified for %s' % localbranch, self.get_name()
+#             raise StackException('Parent branch (%s) should be specified for %s' %
+#                                  localbranch, self.get_name())
 
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()
@@ -521,10 +526,10 @@ class Series(PatchSet):
         """Initialises the stgit series
         """
         if self.is_initialised():
-            raise StackException, '%s already initialized' % self.get_name()
+            raise StackException('%s already initialized' % self.get_name())
         for d in [self._dir()]:
             if os.path.exists(d):
-                raise StackException, '%s already exists' % d
+                raise StackException('%s already exists' % d)
 
         if (create_at!=False):
             git.create_branch(self.get_name(), create_at)
@@ -545,7 +550,7 @@ class Series(PatchSet):
         to_stack = Series(to_name)
 
         if to_stack.is_initialised():
-            raise StackException, '"%s" already exists' % to_stack.get_name()
+            raise StackException('"%s" already exists' % to_stack.get_name())
 
         patches = self.get_applied() + self.get_unapplied()
 
@@ -627,9 +632,9 @@ class Series(PatchSet):
             patches = self.get_unapplied() + self.get_applied() + \
                     self.get_hidden()
             if not force and patches:
-                raise StackException, \
-                      'Cannot %s: the series still contains patches' % \
-                        ('delete', 'clean up')[cleanup]
+                raise StackException(
+                    'Cannot %s: the series still contains patches' %
+                    ('delete', 'clean up')[cleanup])
             for p in patches:
                 self.get_patch(p).delete()
 
@@ -683,7 +688,7 @@ class Series(PatchSet):
         """
         patch = self.get_current_patch()
         if not patch:
-            raise StackException, 'No patches applied'
+            raise StackException('No patches applied')
 
         descr = patch.get_description()
         if not (message or descr):
@@ -762,7 +767,7 @@ class Series(PatchSet):
         if name is not None:
             self.__patch_name_valid(name)
             if self.patch_exists(name):
-                raise StackException, 'Patch "%s" already exists' % name
+                raise StackException('Patch "%s" already exists' % name)
 
         # TODO: move this out of the stgit.stack module, it is really
         # for higher level commands to handle the user interaction
@@ -840,10 +845,10 @@ class Series(PatchSet):
         if self.__patch_is_current(patch):
             self.pop_patch(name)
         elif self.patch_applied(name):
-            raise StackException, 'Cannot remove an applied patch, "%s", ' \
-                  'which is not current' % name
+            raise StackException('Cannot remove an applied patch, "%s", '
+                                 'which is not current' % name)
         elif name not in self.get_unapplied():
-            raise StackException, 'Unknown patch "%s"' % name
+            raise StackException('Unknown patch "%s"' % name)
 
         # save the commit id to a trash file
         write_string(os.path.join(self.__trash_dir, name), patch.get_top())
@@ -1022,7 +1027,7 @@ class Series(PatchSet):
             # working tree.
             self.refresh_patch(bottom = head, cache_update = False,
                                empty = True, log = 'push(c)')
-            raise StackException, str(ex)
+            raise StackException(str(ex))
 
         return modified
 
@@ -1079,10 +1084,10 @@ class Series(PatchSet):
         unapplied = self.get_unapplied()
 
         if oldname == newname:
-            raise StackException, '"To" name and "from" name are the same'
+            raise StackException('"To" name and "from" name are the same')
 
         if newname in applied or newname in unapplied:
-            raise StackException, 'Patch "%s" already exists' % newname
+            raise StackException('Patch "%s" already exists' % newname)
 
         if oldname in unapplied:
             self.get_patch(oldname).rename(newname)
@@ -1094,7 +1099,7 @@ class Series(PatchSet):
             applied[applied.index(oldname)] = newname
             write_strings(self.__applied_file, applied)
         else:
-            raise StackException, 'Unknown patch "%s"' % oldname
+            raise StackException('Unknown patch "%s"' % oldname)
 
     def log_patch(self, patch, message, notes = None):
         """Generate a log commit for a patch
@@ -1105,9 +1110,8 @@ class Series(PatchSet):
         if message is None:
             # replace the current log entry
             if not old_log:
-                raise StackException, \
-                      'No log entry to annotate for patch "%s"' \
-                      % patch.get_name()
+                raise StackException('No log entry to annotate for patch "%s"'
+                                     % patch.get_name())
             replace = True
             log_commit = git.get_commit(old_log)
             msg = log_commit.get_log().split('\n')[0]
@@ -1141,11 +1145,11 @@ class Series(PatchSet):
             # keep the checking order for backward compatibility with
             # the old hidden patches functionality
             if self.patch_applied(name):
-                raise StackException, 'Cannot hide applied patch "%s"' % name
+                raise StackException('Cannot hide applied patch "%s"' % name)
             elif self.patch_hidden(name):
-                raise StackException, 'Patch "%s" already hidden' % name
+                raise StackException('Patch "%s" already hidden' % name)
             else:
-                raise StackException, 'Unknown patch "%s"' % name
+                raise StackException('Unknown patch "%s"' % name)
 
         if not self.patch_hidden(name):
             # check needed for backward compatibility with the old
@@ -1161,9 +1165,9 @@ class Series(PatchSet):
         hidden = self.get_hidden()
         if name not in hidden:
             if self.patch_applied(name) or self.patch_unapplied(name):
-                raise StackException, 'Patch "%s" not hidden' % name
+                raise StackException('Patch "%s" not hidden' % name)
             else:
-                raise StackException, 'Unknown patch "%s"' % name
+                raise StackException('Unknown patch "%s"' % name)
 
         hidden.remove(name)
         write_strings(self.__hidden_file, hidden)

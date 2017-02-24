@@ -76,7 +76,7 @@ class Person(object):
         if self.name and self.email:
             return '%s <%s>' % (self.name, self.email)
         else:
-            raise GitException, 'not enough identity data'
+            raise GitException('not enough identity data')
 
 class Commit(object):
     """Handle the commit objects
@@ -185,8 +185,8 @@ def ls_files(files, tree = 'HEAD', full_name = True):
         fileset = set(GRun('ls-files', '--error-unmatch', *args).output_lines())
     except GitRunException:
         # just hide the details of the 'git ls-files' command we use
-        raise GitException, \
-            'Some of the given paths are either missing or not known to GIT'
+        raise GitException(
+            'Some of the given paths are either missing or not known to GIT')
     return list(fileset)
 
 def parse_git_ls(output):
@@ -330,14 +330,14 @@ def set_head_file(ref):
     try:
         GRun('symbolic-ref', 'HEAD', 'refs/heads/%s' % ref).run()
     except GitRunException:
-        raise GitException, 'Could not set head to "%s"' % ref
+        raise GitException('Could not set head to "%s"' % ref)
 
 def set_ref(ref, val):
     """Point ref at a new commit object."""
     try:
         GRun('update-ref', ref, val).run()
     except GitRunException:
-        raise GitException, 'Could not update %s to "%s".' % (ref, val)
+        raise GitException('Could not update %s to "%s".' % (ref, val))
 
 def set_branch(branch, val):
     set_ref('refs/heads/%s' % branch, val)
@@ -373,7 +373,7 @@ def rev_parse(git_id):
         return GRun('rev-parse', '--verify', git_id
                     ).discard_stderr().output_one_line()
     except GitRunException:
-        raise GitException, 'Unknown revision: %s' % git_id
+        raise GitException('Unknown revision: %s' % git_id)
 
 def ref_exists(ref):
     try:
@@ -389,7 +389,7 @@ def create_branch(new_branch, tree_id = None):
     """Create a new branch in the git repository
     """
     if branch_exists(new_branch):
-        raise GitException, 'Branch "%s" already exists' % new_branch
+        raise GitException('Branch "%s" already exists' % new_branch)
 
     current_head_file = get_head_file()
     current_head = get_head()
@@ -415,7 +415,7 @@ def switch_branch(new_branch):
     global __head
 
     if not branch_exists(new_branch):
-        raise GitException, 'Branch "%s" does not exist' % new_branch
+        raise GitException('Branch "%s" does not exist' % new_branch)
 
     tree_id = rev_parse('refs/heads/%s^{commit}' % new_branch)
     if tree_id != get_head():
@@ -423,7 +423,7 @@ def switch_branch(new_branch):
         try:
             GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
         except GitRunException:
-            raise GitException, 'read-tree failed (local changes maybe?)'
+            raise GitException('read-tree failed (local changes maybe?)')
         __head = tree_id
     set_head_file(new_branch)
 
@@ -432,31 +432,31 @@ def switch_branch(new_branch):
 
 def delete_ref(ref):
     if not ref_exists(ref):
-        raise GitException, '%s does not exist' % ref
+        raise GitException('%s does not exist' % ref)
     sha1 = GRun('show-ref', '-s', ref).output_one_line()
     try:
         GRun('update-ref', '-d', ref, sha1).run()
     except GitRunException:
-        raise GitException, 'Failed to delete ref %s' % ref
+        raise GitException('Failed to delete ref %s' % ref)
 
 def delete_branch(name):
     delete_ref('refs/heads/%s' % name)
 
 def rename_ref(from_ref, to_ref):
     if not ref_exists(from_ref):
-        raise GitException, '"%s" does not exist' % from_ref
+        raise GitException('"%s" does not exist' % from_ref)
     if ref_exists(to_ref):
-        raise GitException, '"%s" already exists' % to_ref
+        raise GitException('"%s" already exists' % to_ref)
 
     sha1 = GRun('show-ref', '-s', from_ref).output_one_line()
     try:
         GRun('update-ref', to_ref, sha1, '0'*40).run()
     except GitRunException:
-        raise GitException, 'Failed to create new ref %s' % to_ref
+        raise GitException('Failed to create new ref %s' % to_ref)
     try:
         GRun('update-ref', '-d', from_ref, sha1).run()
     except GitRunException:
-        raise GitException, 'Failed to delete ref %s' % from_ref
+        raise GitException('Failed to delete ref %s' % from_ref)
 
 def rename_branch(from_name, to_name):
     """Rename a git branch."""
@@ -534,7 +534,7 @@ def update_cache(files = None, force = False):
     # check for unresolved conflicts
     if not force and [x for x in cache_files
                       if x[0] not in ['M', 'N', 'A', 'D']]:
-        raise GitException, 'Updating cache failed: unresolved conflicts'
+        raise GitException('Updating cache failed: unresolved conflicts')
 
     # update the cache
     add_files = [x[1] for x in cache_files if x[0] in ['N', 'A']]
@@ -560,7 +560,7 @@ def commit(message, files = None, parents = None, allowempty = False,
     if cache_update and parents != []:
         changes = update_cache(files)
         if not changes and not allowempty:
-            raise GitException, 'No changes to commit'
+            raise GitException('No changes to commit')
 
     # get the commit message
     if not message:
@@ -636,7 +636,7 @@ def merge_recursive(base, head1, head2):
         else:
             conflicts = [l for l in output if l.startswith('CONFLICT')]
             out.info(*conflicts)
-            raise GitException, "%d conflict(s)" % len(conflicts)
+            raise GitException("%d conflict(s)" % len(conflicts))
 
 def mergetool(files = ()):
     """Invoke 'git mergetool' to resolve any outstanding conflicts. If 'not
@@ -647,7 +647,7 @@ def mergetool(files = ()):
     conflicts = ['CONFLICT ' + f for f in get_conflicts()]
     if conflicts:
         out.info(*conflicts)
-        raise GitException, "%d conflict(s)" % len(conflicts)
+        raise GitException("%d conflict(s)" % len(conflicts))
 
 def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
          binary = True):
@@ -705,7 +705,7 @@ def checkout(files = None, tree_id = None, force = False):
         try:
             GRun('read-tree', '--reset', tree_id).run()
         except GitRunException:
-            raise GitException, 'Failed "git read-tree" --reset %s' % tree_id
+            raise GitException('Failed "git read-tree" --reset %s' % tree_id)
 
     cmd = ['checkout-index', '-q', '-u']
     if force:
@@ -726,7 +726,7 @@ def switch(tree_id, keep = False):
         try:
             GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
         except GitRunException:
-            raise GitException, 'read-tree failed (local changes maybe?)'
+            raise GitException('read-tree failed (local changes maybe?)')
 
     __set_head(tree_id)
 
@@ -796,7 +796,7 @@ def rebase(tree_id = None):
     elif command:
         args = []
     else:
-        raise GitException, 'Default rebasing requires a commit id'
+        raise GitException('Default rebasing requires a commit id')
     if command:
         # clear the HEAD cache as the custom rebase command will update it
         __clear_head_cache()
@@ -910,7 +910,7 @@ def remotes_local_branches(remote):
         # old-style branches only declare one branch
         branches.append('refs/heads/'+remote)
     else:
-        raise GitException, 'Unknown remote "%s"' % remote
+        raise GitException('Unknown remote "%s"' % remote)
 
     return branches
 
@@ -938,7 +938,7 @@ def fetch_head():
         m = re.match('^([^\t]*)\t\t', line)
         if m:
             if fetch_head:
-                raise GitException, 'StGit does not support multiple FETCH_HEAD'
+                raise GitException('StGit does not support multiple FETCH_HEAD')
             else:
                 fetch_head=m.group(1)
     stream.close()

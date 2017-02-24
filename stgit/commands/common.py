@@ -195,7 +195,7 @@ def get_patch_from_list(part_name, patch_list):
     candidates = [full for full in patch_list if str.find(full, part_name) != -1]
     if len(candidates) >= 2:
         out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
-        raise CmdException, 'Ambiguous patch name "%s"' % part_name
+        raise CmdException('Ambiguous patch name "%s"' % part_name)
     elif len(candidates) == 1:
         return candidates[0]
     else:
@@ -214,7 +214,7 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
         pair = name.split('..')
         for p in pair:
             if p and p not in patch_list:
-                raise CmdException, 'Unknown patch name: %s' % p
+                raise CmdException('Unknown patch name: %s' % p)
 
         if len(pair) == 1:
             # single patch name
@@ -252,11 +252,11 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
                 pl = patch_list[(last - 1):(first + 1)]
                 pl.reverse()
         else:
-            raise CmdException, 'Malformed patch name: %s' % name
+            raise CmdException('Malformed patch name: %s' % name)
 
         for p in pl:
             if p in patches:
-                raise CmdException, 'Duplicate patch name: %s' % p
+                raise CmdException('Duplicate patch name: %s' % p)
 
         patches += pl
 
@@ -292,7 +292,7 @@ def address_or_alias(addr_pair):
     if alias:
         # it's an alias
         return name_email(alias)
-    raise CmdException, 'unknown e-mail alias: %s' % addr
+    raise CmdException('unknown e-mail alias: %s' % addr)
 
 def prepare_rebase(crt_series):
     # pop all patches
@@ -357,7 +357,7 @@ def __parse_description(descr):
 
     descr_lines = [line.rstrip() for line in  descr.split('\n')]
     if not descr_lines:
-        raise CmdException, "Empty patch description"
+        raise CmdException("Empty patch description")
 
     lasthdr = 0
     end = len(descr_lines)
@@ -406,7 +406,7 @@ def parse_mail(msg):
             words_enc = decode_header(header)
             hobj = make_header(words_enc)
         except Exception, ex:
-            raise CmdException, 'header decoding error: %s' % str(ex)
+            raise CmdException('header decoding error: %s' % str(ex))
         return unicode(hobj).encode('utf-8')
 
     # parse the headers
@@ -425,7 +425,7 @@ def parse_mail(msg):
         descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
     else:
-        raise CmdException, 'Subject: line not found'
+        raise CmdException('Subject: line not found')
 
     # the rest of the message
     msg_text = ''
@@ -490,7 +490,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
     try:
         new_msg = run_hook_on_string(commit_msg_hook, cd.message)
     except RunException, exc:
-        raise EditorException, str(exc)
+        raise EditorException(str(exc))
 
     return cd.set_message(new_msg)
 

@@ -45,4 +45,4 @@ def func(parser, options, args):
     if applied:
         out.stdout(applied[-1])
     else:
-        raise common.CmdException, 'No patches applied'
+        raise common.CmdException('No patches applied')

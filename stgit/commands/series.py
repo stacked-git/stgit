@@ -141,7 +141,7 @@ def func(parser, options, args):
     """Show the patch series
     """
     if options.all and options.short:
-        raise common.CmdException, 'combining --all and --short is meaningless'
+        raise common.CmdException('combining --all and --short is meaningless')
 
     stack = directory.repository.get_stack(options.branch)
     if options.missing:
@@ -152,8 +152,8 @@ def func(parser, options, args):
     applied = unapplied = hidden = ()
     if options.applied or options.unapplied or options.hidden:
         if options.all:
-            raise common.CmdException, \
-                '--all cannot be used with --applied/unapplied/hidden'
+            raise common.CmdException('--all cannot be used with'
+                                      ' --applied/unapplied/hidden')
         if options.applied:
             applied = stack.patchorder.applied
         if options.unapplied:

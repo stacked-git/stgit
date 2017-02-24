@@ -67,7 +67,7 @@ class Run(object):
         self.__cmd = list(cmd)
         for c in cmd:
             if type(c) != str:
-                raise Exception, 'Bad command: %r' % (cmd,)
+                raise Exception('Bad command: %r' % (cmd, ))
         self.__good_retvals = [0]
         self.__env = self.__cwd = None
         self.__indata = None
@@ -176,7 +176,7 @@ class Run(object):
     def no_output(self):
         outdata = self.__run_io()
         if outdata:
-            raise self.exc, '%s produced output' % self.__cmd[0]
+            raise self.exc('%s produced output' % self.__cmd[0])
     def discard_output(self):
         self.__run_io()
     def raw_output(self):

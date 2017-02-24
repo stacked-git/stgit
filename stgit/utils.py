@@ -186,7 +186,7 @@ def call_editor(filename):
     out.start('Invoking the editor: "%s"' % cmd)
     err = os.system(cmd)
     if err:
-        raise EditorException, 'editor failed, exit code: %d' % err
+        raise EditorException('editor failed, exit code: %d' % err)
     out.done()
 
 def get_hook(repository, hook_name, extra_env={}):

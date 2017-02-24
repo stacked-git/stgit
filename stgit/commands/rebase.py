@@ -55,7 +55,7 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     if crt_series.get_protected():
-        raise CmdException, 'This branch is protected. Rebase is not permitted'
+        raise CmdException('This branch is protected. Rebase is not permitted')
 
     check_local_changes()
     check_conflicts()
@@ -63,7 +63,7 @@ def func(parser, options, args):
 
     # ensure an exception is raised before popping on non-existent target
     if git_id(crt_series, args[0]) is None:
-        raise GitException, 'Unknown revision: %s' % args[0]
+        raise GitException('Unknown revision: %s' % args[0])
         
     applied = prepare_rebase(crt_series)
     rebase(crt_series, args[0])
