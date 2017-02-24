@@ -66,7 +66,7 @@ class Run(object):
     def __init__(self, *cmd):
         self.__cmd = list(cmd)
         for c in cmd:
-            if type(c) != str:
+            if not isinstance(c, str):
                 raise Exception('Bad command: %r' % (cmd, ))
         self.__good_retvals = [0]
         self.__env = self.__cwd = None
