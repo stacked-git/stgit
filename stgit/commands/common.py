@@ -410,7 +410,7 @@ def parse_mail(msg):
         return unicode(hobj).encode('utf-8')
 
     # parse the headers
-    if msg.has_key('from'):
+    if 'from' in msg:
         authname, authemail = name_email(__decode_header(msg['from']))
     else:
         authname = authemail = None
