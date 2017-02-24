@@ -25,7 +25,7 @@ from stgit.run import *
 class GitConfigException(StgException):
     pass
 
-class GitConfig:
+class GitConfig(object):
     __defaults={
         'stgit.smtpserver':     ['localhost:25'],
         'stgit.smtpdelay':      ['5'],
@@ -134,7 +134,7 @@ def config_setup():
     os.environ.setdefault('LESS', '-FRSX')
     # FIXME: handle EDITOR the same way ?
 
-class ConfigOption:
+class ConfigOption(object):
     """Delayed cached reading of a configuration option.
     """
     def __init__(self, section, option):

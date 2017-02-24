@@ -46,7 +46,7 @@ class GRun(Run):
 # Classes
 #
 
-class Person:
+class Person(object):
     """An author, committer, etc."""
     def __init__(self, name = None, email = None, date = '',
                  desc = None):
@@ -78,7 +78,7 @@ class Person:
         else:
             raise GitException, 'not enough identity data'
 
-class Commit:
+class Commit(object):
     """Handle the commit objects
     """
     def __init__(self, id_hash):

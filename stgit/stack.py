@@ -30,7 +30,7 @@ from shutil import copyfile
 from stgit.lib import git as libgit, stackupgrade
 
 
-class FilterUntil:
+class FilterUntil(object):
     def __init__(self):
         self.should_print = True
     def __call__(self, x, until_test, prefix):
@@ -112,7 +112,7 @@ def edit_file(series, line, comment, show_patch = True):
 # Classes
 #
 
-class StgitObject:
+class StgitObject(object):
     """An object with stgit-like properties stored as files in a directory
     """
     def _set_dir(self, dir):

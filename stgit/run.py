@@ -61,7 +61,7 @@ def finish_logging():
                   'Remaining time: %1.3f s (%1.1f%%)'
                   % (rtime, 100*rtime/ttime))
 
-class Run:
+class Run(object):
     exc = RunException
     def __init__(self, *cmd):
         self.__cmd = list(cmd)
