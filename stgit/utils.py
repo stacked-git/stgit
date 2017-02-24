@@ -298,25 +298,6 @@ def make_patch_name(msg, unacceptable, default_name = 'patch'):
         patchname = default_name
     return find_patch_name(patchname, unacceptable)
 
-# any and all functions are builtin in Python 2.5 and higher, but not
-# in 2.4.
-if 'any' in dir(__builtins__):
-    any = getattr(__builtins__, 'any')
-else:
-    def any(bools):
-        for b in bools:
-            if b:
-                return True
-        return False
-
-if 'all' in dir(__builtins__):
-    all = getattr(__builtins__, 'all')
-else:
-    def all(bools):
-        for b in bools:
-            if not b:
-                return False
-        return True
 
 def add_sign_line(desc, sign_str, name, email):
     if not sign_str:
