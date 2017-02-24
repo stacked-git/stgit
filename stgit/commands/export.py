@@ -1,5 +1,6 @@
 """Export command
 """
+from __future__ import print_function
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -116,7 +117,7 @@ def func(parser, options, args):
     # note the base commit for this series
     if not options.stdout:
         base_commit = stack.base.sha1
-        print >> series, '# This series applies on GIT commit %s' % base_commit
+        print('# This series applies on GIT commit %s' % base_commit, file=series)
 
     patch_no = 1
     for p in patches:
@@ -129,7 +130,7 @@ def func(parser, options, args):
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
         pfile = os.path.join(dirname, pname)
         if not options.stdout:
-            print >> series, pname
+            print(pname, file=series)
 
         # get the patch description
         patch = stack.patches.get(p)
@@ -171,9 +172,9 @@ def func(parser, options, args):
             f = open(pfile, 'w+')
 
         if options.stdout and num > 1:
-            print '-'*79
-            print patch.name
-            print '-'*79
+            print('-'*79)
+            print(patch.name)
+            print('-'*79)
 
         f.write(descr)
         f.write(diff)

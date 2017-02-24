@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-
+from __future__ import print_function
 import glob
 import os
 import sys
@@ -32,8 +32,8 @@ def __check_python_version():
     """
     pyver = '.'.join(map(str, sys.version_info))
     if not __check_min_version(version.python_min_ver, pyver):
-        print >> sys.stderr, 'Python version %s or newer required. Found %s' \
-              % (version.python_min_ver, pyver)
+        print('Python version %s or newer required. Found %s'
+              % (version.python_min_ver, pyver), file=sys.stderr)
         sys.exit(1)
 
 def __check_git_version():
@@ -42,8 +42,8 @@ def __check_git_version():
     from stgit.run import Run
     gitver = Run('git', '--version').output_one_line().split()[2]
     if not __check_min_version(version.git_min_ver, gitver):
-        print >> sys.stderr, 'GIT version %s or newer required. Found %s' \
-              % (version.git_min_ver, gitver)
+        print('GIT version %s or newer required. Found %s'
+              % (version.git_min_ver, gitver), file=sys.stderr)
         sys.exit(1)
 
 def __run_setup():

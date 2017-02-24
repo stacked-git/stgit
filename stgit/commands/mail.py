@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -258,7 +260,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
-            print "mail server refused delivery for the following recipients: %s" % result
+            print("mail server refused delivery for the following recipients: %s" % result)
     except Exception as err:
         raise CmdException(str(err))
 

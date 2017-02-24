@@ -1,5 +1,5 @@
 # Feed this with git rev-list HEAD --parents
-
+from __future__ import print_function
 import sys
 
 parents = {}
@@ -28,4 +28,4 @@ for commit in parents.keys():
 
 (num, commit) = max((num, commit) for (commit, num)
                     in sequence_num.iteritems())
-print '%s is a sequence of %d patches' % (commit, num)
+print('%s is a sequence of %d patches' % (commit, num))

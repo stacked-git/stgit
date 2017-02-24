@@ -1,5 +1,5 @@
 # Run the test suite in parallel.
-
+from __future__ import print_function
 import glob
 import math
 import optparse
@@ -165,7 +165,7 @@ def main():
         tests = glob.glob("t[0-9][0-9][0-9][0-9]-*.sh")
     if opts.jobs is None:
         opts.jobs = default_num_jobs()
-    print "Running %d tests in parallel" % opts.jobs
+    print("Running %d tests in parallel" % opts.jobs)
 
     if os.path.exists("trash"):
         os.rename("trash", "trash-being-deleted-%016x" % random.getrandbits(64))
@@ -178,10 +178,10 @@ def main():
         start_cleaner(q)
     failed = q.wait()
     if failed:
-        print "Failed:"
+        print("Failed:")
         for t in sorted(failed):
-            print "  ", t
-        print "Done"
+            print("  ", t)
+        print("Done")
         return 1
     else:
         return 0

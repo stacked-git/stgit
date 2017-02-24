@@ -1,5 +1,6 @@
 """Basic quilt-like functionality
 """
+from __future__ import print_function
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -85,13 +86,13 @@ commands = Commands((cmd, mod) for cmd, (mod, kind, help)
                     in cmd_list.iteritems())
 
 def print_help():
-    print 'usage: %s <command> [options]' % os.path.basename(sys.argv[0])
-    print
-    print 'Generic commands:'
-    print '  help        print the detailed command usage'
-    print '  version     display version information'
-    print '  copyright   display copyright information'
-    print
+    print('usage: %s <command> [options]' % os.path.basename(sys.argv[0]))
+    print()
+    print('Generic commands:')
+    print('  help        print the detailed command usage')
+    print('  version     display version information')
+    print('  copyright   display copyright information')
+    print()
     stgit.commands.pretty_command_list(cmd_list, sys.stdout)
 
 #
@@ -105,9 +106,8 @@ def _main():
     prog = os.path.basename(sys.argv[0])
 
     if len(sys.argv) < 2:
-        print >> sys.stderr, 'usage: %s <command>' % prog
-        print >> sys.stderr, \
-              '  Try "%s --help" for a list of supported commands' % prog
+        print('usage: %s <command>' % prog, file=sys.stderr)
+        print('  Try "%s --help" for a list of supported commands' % prog, file=sys.stderr)
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
     cmd = sys.argv[1]
@@ -138,12 +138,12 @@ def _main():
         sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['-v', '--version', 'version']:
         from stgit.version import version
-        print 'Stacked GIT %s' % version
+        print('Stacked GIT %s' % version)
         os.system('git --version')
-        print 'Python version %s' % sys.version
+        print('Python version %s' % sys.version)
         sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['copyright']:
-        print __copyright__
+        print(__copyright__)
         sys.exit(utils.STGIT_SUCCESS)
 
     # re-build the command line arguments

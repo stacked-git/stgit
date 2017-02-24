@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
 
@@ -383,4 +385,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    print crt_series.get_name()
+    print(crt_series.get_name())

@@ -1,6 +1,6 @@
 """Common utility functions
 """
-
+from __future__ import print_function
 import errno
 import os
 import re
@@ -57,23 +57,22 @@ def write_string(filename, line, multiline = False):
     """Writes 'line' to file and truncates it
     """
     with mkdir_file(filename, 'w+') as f:
-        if multiline:
-            f.write(line)
-        else:
-            print >> f, line
+        print(line,
+              end='' if multiline else '\n',
+              file=f)
 
 def append_strings(filename, lines):
     """Appends 'lines' sequence to file
     """
     with mkdir_file(filename, 'a+') as f:
         for line in lines:
-            print >> f, line
+            print(line, file=f)
 
 def append_string(filename, line):
     """Appends 'line' to file
     """
     with mkdir_file(filename, 'a+') as f:
-        print >> f, line
+        print(line, file=f)
 
 def insert_string(filename, line):
     """Inserts 'line' at the beginning of the file
@@ -82,7 +81,7 @@ def insert_string(filename, line):
         lines = f.readlines()
         f.seek(0)
         f.truncate()
-        print >> f, line
+        print(line, file=f)
         f.writelines(lines)
 
 def create_empty_file(name):

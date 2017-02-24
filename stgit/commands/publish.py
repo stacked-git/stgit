@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __copyright__ = """
 Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -148,7 +150,7 @@ def func(parser, options, args):
         published = set(__get_published(stack, public_tree))
         for p in stack.patchorder.applied:
             if p not in published:
-                print p
+                print(p)
         return
 
     # check for rebased stack. In this case we emulate a merge with the stack

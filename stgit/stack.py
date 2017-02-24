@@ -1,5 +1,6 @@
 """Basic quilt-like functionality
 """
+from __future__ import print_function
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -85,26 +86,26 @@ def edit_file(series, line, comment, show_patch = True):
 
     with open(fname, 'w+') as f:
         if line:
-            print >> f, line
+            print(line, file=f)
         elif tmpl:
-            print >> f, tmpl,
+            print(tmpl, end=' ', file=f)
         else:
-            print >> f
-        print >> f, __comment_prefix, comment
-        print >> f, __comment_prefix, \
-              'Lines prefixed with "%s" will be automatically removed.' \
-              % __comment_prefix
-        print >> f, __comment_prefix, \
-              'Trailing empty lines will be automatically removed.'
+            print(file=f)
+        print(__comment_prefix, comment, file=f)
+        print(__comment_prefix,
+              'Lines prefixed with "%s" will be automatically removed.'
+              % __comment_prefix, file=f)
+        print(__comment_prefix,
+              'Trailing empty lines will be automatically removed.', file=f)
 
         if show_patch:
-           print >> f, __patch_prefix
+           print(__patch_prefix, file=f)
            # series.get_patch(series.get_current()).get_top()
            diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
            f.write(diff_str)
 
         #Vim modeline must be near the end.
-        print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
+        print(__comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:', file=f)
 
     call_editor(fname)
 

@@ -1,3 +1,6 @@
+from __future__ import print_function
+
+
 next_mark = 1
 def get_mark():
     global next_mark
@@ -5,33 +8,33 @@ def get_mark():
     return (next_mark - 1)
 
 def write_data(s):
-    print 'data %d' % len(s)
-    print s
+    print('data %d' % len(s))
+    print(s)
 
 def write_blob(s):
-    print 'blob'
+    print('blob')
     m = get_mark()
-    print 'mark :%d' % m
+    print('mark :%d' % m)
     write_data(s)
     return m
 
 def write_commit(branch, files, msg, parent = None):
-    print 'commit %s' % branch
+    print('commit %s' % branch)
     m = get_mark()
-    print 'mark :%d' % m
+    print('mark :%d' % m)
     auth = 'X Ample <xa@example.com> %d +0000' % (1000000000 + m)
-    print 'author %s' % auth
-    print 'committer %s' % auth
+    print('author %s' % auth)
+    print('committer %s' % auth)
     write_data(msg)
     if parent is not None:
-        print 'from :%d' % parent
+        print('from :%d' % parent)
     for fn, fm in sorted(files.iteritems()):
-        print 'M 100644 :%d %s' % (fm, fn)
+        print('M 100644 :%d %s' % (fm, fn))
     return m
 
 def set_ref(ref, mark):
-    print 'reset %s' % ref
-    print 'from :%d' % mark
+    print('reset %s' % ref)
+    print('from :%d' % mark)
 
 def stdblob(fn):
     return ''.join('%d %s\n' % (x, fn) for x in xrange(10))
