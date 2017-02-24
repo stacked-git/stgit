@@ -208,11 +208,12 @@ def func(parser, options, args):
     for name in hidden_name_set - orig_hidden_name_set:
         out.info('%s is now hidden' % name)
     orig_order = dict(zip(orig_patches, xrange(len(orig_patches))))
-    def patchname_cmp(p1, p2):
-        i1 = orig_order.get(p1, len(orig_order))
-        i2 = orig_order.get(p2, len(orig_order))
-        return cmp((i1, p1), (i2, p2))
+
+    def patchname_key(p):
+        i = orig_order.get(p, len(orig_order))
+        return i, p
+
     crt_series.set_applied(p.patch for p in applied)
-    crt_series.set_unapplied(sorted(unapplied_name_set, cmp = patchname_cmp))
-    crt_series.set_hidden(sorted(hidden_name_set, cmp = patchname_cmp))
+    crt_series.set_unapplied(sorted(unapplied_name_set, key=patchname_key))
+    crt_series.set_hidden(sorted(hidden_name_set, key=patchname_key))
     out.done()
