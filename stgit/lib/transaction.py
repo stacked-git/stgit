@@ -213,7 +213,7 @@ class StackTransaction(object):
             'Command aborted (all changes rolled back)')
     def __check_consistency(self):
         remaining = set(self.all_patches)
-        for pn, commit in self.__patches.iteritems():
+        for pn, commit in self.__patches.items():
             if commit is None:
                 assert self.__stack.patches.exists(pn)
             else:
@@ -250,7 +250,7 @@ class StackTransaction(object):
 
         # Write patches.
         def write(msg):
-            for pn, commit in self.__patches.iteritems():
+            for pn, commit in self.__patches.items():
                 if self.__stack.patches.exists(pn):
                     p = self.__stack.patches.get(pn)
                     if commit is None:

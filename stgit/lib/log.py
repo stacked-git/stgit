@@ -216,7 +216,7 @@ class LogEntry(object):
         head = repo.get_commit(parsed['Head'])
         lists = { 'Applied': [], 'Unapplied': [], 'Hidden': [] }
         patches = {}
-        for lst in lists.keys():
+        for lst in lists:
             for entry in parsed[lst]:
                 pn, sha1 = [x.strip() for x in entry.split(':')]
                 lists[lst].append(pn)
@@ -272,13 +272,13 @@ class LogEntry(object):
             # Map from Commit object to patch_file() results taken
             # from the previous log entry.
             c2b = dict((self.prev.patches[pn], pf) for pn, pf
-                       in prev_patch_tree.data.entries.iteritems())
+                       in prev_patch_tree.data.entries.items())
             def pf(c):
                 r = c2b.get(c, None)
                 if not r:
                     r = patch_file(self.__repo, c.data)
                 return r
-        patches = dict((pn, pf(c)) for pn, c in self.patches.iteritems())
+        patches = dict((pn, pf(c)) for pn, c in self.patches.items())
         return self.__repo.commit(git.TreeData({
                     'meta': self.__repo.commit(git.BlobData(metadata)),
                     'patches': self.__repo.commit(git.TreeData(patches)) }))

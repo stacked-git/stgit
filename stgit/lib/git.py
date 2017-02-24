@@ -300,7 +300,7 @@ class TreeData(Immutable, Repr):
         (strings) to either (I{permission}, I{object}) tuples or just
         objects."""
         self.__entries = ImmutableDict((name, self.__x(po))
-                                       for (name, po) in entries.iteritems())
+                                       for (name, po) in entries.items())
 
     @property
     def entries(self):
@@ -337,7 +337,7 @@ class TreeData(Immutable, Repr):
         @rtype: L{Tree}"""
         listing = ''.join(
             '%s %s %s\t%s\0' % (mode, obj.typename, obj.sha1, name)
-            for (name, (mode, obj)) in self.entries.iteritems())
+            for (name, (mode, obj)) in self.entries.items())
         sha1 = repository.run(['git', 'mktree', '-z']
                               ).raw_input(listing).output_one_line()
         return repository.get_tree(sha1)

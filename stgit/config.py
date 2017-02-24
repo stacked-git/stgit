@@ -84,7 +84,7 @@ class GitConfig(object):
 
     def getstartswith(self, name):
         self.load()
-        return ((n, v[-1]) for (n, v) in self.__cache.iteritems()
+        return ((n, v[-1]) for (n, v) in self.__cache.items()
                 if n.startswith(name))
 
     def rename_section(self, from_name, to_name):

@@ -9,7 +9,7 @@ for line in sys.stdin.readlines():
 
 sequence_num = {}
 stack = []
-for commit in parents.keys():
+for commit in parents:
     stack.append(commit)
     while stack:
         c = stack.pop()
@@ -27,5 +27,5 @@ for commit in parents.keys():
             sequence_num[c] = 0
 
 (num, commit) = max((num, commit) for (commit, num)
-                    in sequence_num.iteritems())
+                    in sequence_num.items())
 print('%s is a sequence of %d patches' % (commit, num))

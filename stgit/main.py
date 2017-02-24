@@ -60,7 +60,7 @@ class Commands(dict):
         """Return the canonical name for a possibly-shortenned
         command name.
         """
-        candidates = [cmd for cmd in self.keys() if cmd.startswith(key)]
+        candidates = [cmd for cmd in self if cmd.startswith(key)]
 
         if not candidates:
             out.error('Unknown command: %s' % key,
@@ -83,7 +83,7 @@ class Commands(dict):
 cmd_list = stgit.commands.get_commands()
 append_alias_commands(cmd_list)
 commands = Commands((cmd, mod) for cmd, (mod, kind, help)
-                    in cmd_list.iteritems())
+                    in cmd_list.items())
 
 def print_help():
     print('usage: %s <command> [options]' % os.path.basename(sys.argv[0]))

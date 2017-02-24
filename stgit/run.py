@@ -81,7 +81,7 @@ class Run(object):
             if self.__cwd is not None:
                 _logfile.info('cwd: %s' % self.__cwd)
             if self.__env is not None:
-                for k in sorted(self.__env.iterkeys()):
+                for k in sorted(self.__env):
                     if k not in os.environ or os.environ[k] != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':

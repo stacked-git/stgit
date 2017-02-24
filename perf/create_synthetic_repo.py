@@ -28,7 +28,7 @@ def write_commit(branch, files, msg, parent = None):
     write_data(msg)
     if parent is not None:
         print('from :%d' % parent)
-    for fn, fm in sorted(files.iteritems()):
+    for fn, fm in sorted(files.items()):
         print('M 100644 :%d %s' % (fm, fn))
     return m
 
