@@ -75,9 +75,9 @@ class Run(object):
     def __log_start(self):
         if _log_mode == 'debug':
             _logfile.start('Running subprocess %s' % self.__cmd)
-            if self.__cwd != None:
+            if self.__cwd is not None:
                 _logfile.info('cwd: %s' % self.__cwd)
-            if self.__env != None:
+            if self.__env is not None:
                 for k in sorted(self.__env.iterkeys()):
                     if k not in os.environ or os.environ[k] != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
@@ -96,7 +96,7 @@ class Run(object):
             _logfile.info('Time since program start: %1.3f s'
                           % duration(_log_starttime, n))
     def __check_exitcode(self):
-        if self.__good_retvals == None:
+        if self.__good_retvals is None:
             return
         if self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d'
@@ -124,7 +124,7 @@ class Run(object):
         return outdata
     def __run_noio(self):
         """Run without captured IO."""
-        assert self.__indata == None
+        assert self.__indata is None
         self.__log_start()
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd)
@@ -135,7 +135,7 @@ class Run(object):
         self.__check_exitcode()
     def __run_background(self):
         """Run in background."""
-        assert self.__indata == None
+        assert self.__indata is None
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
                                  stdin = subprocess.PIPE,

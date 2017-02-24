@@ -23,7 +23,7 @@ def write_commit(branch, files, msg, parent = None):
     print 'author %s' % auth
     print 'committer %s' % auth
     write_data(msg)
-    if parent != None:
+    if parent is not None:
         print 'from :%d' % parent
     for fn, fm in sorted(files.iteritems()):
         print 'M 100644 :%d %s' % (fm, fn)

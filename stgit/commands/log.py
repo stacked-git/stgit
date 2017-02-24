@@ -57,7 +57,7 @@ directory = common.DirectoryHasRepositoryLib()
 
 def show_log(stacklog, pathlim, num, full, show_diff):
     cmd = ['git', 'log']
-    if num != None and num > 0:
+    if num is not None and num > 0:
         cmd.append('-%d' % num)
     if show_diff:
         cmd.append('-p')

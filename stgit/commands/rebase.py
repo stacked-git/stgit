@@ -62,7 +62,7 @@ def func(parser, options, args):
     check_head_top_equal(crt_series)
 
     # ensure an exception is raised before popping on non-existent target
-    if git_id(crt_series, args[0]) == None:
+    if git_id(crt_series, args[0]) is None:
         raise GitException, 'Unknown revision: %s' % args[0]
         
     applied = prepare_rebase(crt_series)

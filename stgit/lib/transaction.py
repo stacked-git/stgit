@@ -163,12 +163,12 @@ class StackTransaction(object):
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
             # carrying them along to another patch is confusing.
-            if (self.__allow_conflicts(self) or iw == None
+            if (self.__allow_conflicts(self) or iw is None
                 or not iw.index.conflicts()):
                 return
             out.error('Need to resolve conflicts first')
             self.__abort()
-        assert iw != None
+        assert iw is not None
         if self.__discard_changes:
             iw.checkout_hard(tree)
         else:
@@ -181,7 +181,7 @@ class StackTransaction(object):
     def __check_consistency(self):
         remaining = set(self.all_patches)
         for pn, commit in self.__patches.iteritems():
-            if commit == None:
+            if commit is None:
                 assert self.__stack.patches.exists(pn)
             else:
                 assert pn in remaining
@@ -220,7 +220,7 @@ class StackTransaction(object):
             for pn, commit in self.__patches.iteritems():
                 if self.__stack.patches.exists(pn):
                     p = self.__stack.patches.get(pn)
-                    if commit == None:
+                    if commit is None:
                         p.delete()
                     else:
                         p.set_commit(commit, msg)
@@ -317,7 +317,7 @@ class StackTransaction(object):
         s = ''
         merge_conflict = False
         if not tree:
-            if iw == None:
+            if iw is None:
                 self.__halt('%s does not apply cleanly' % pn)
             try:
                 self.__checkout(ours, iw, allow_bad_head = False)

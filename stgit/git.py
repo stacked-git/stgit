@@ -199,7 +199,7 @@ def parse_git_ls(output):
             # There's a zero byte at the end of the output, which
             # gives us an empty string as the last "line".
             continue
-        if t == None:
+        if t is None:
             mode_a, mode_b, sha1_a, sha1_b, t = line.split(' ')
         else:
             yield (t, line)
@@ -569,7 +569,7 @@ def commit(message, files = None, parents = None, allowempty = False,
         message += '\n'
 
     # write the index to repository
-    if tree_id == None:
+    if tree_id is None:
         tree_id = GRun('write-tree').output_one_line()
         set_head = True
 
@@ -833,7 +833,7 @@ def apply_patch(filename = None, diff = None, base = None,
     cmd = ['apply', '--index']
     if reject:
         cmd += ['--reject']
-    if strip != None:
+    if strip is not None:
         cmd += ['-p%s' % (strip,)]
     try:
         GRun(*cmd).raw_input(diff).no_output()

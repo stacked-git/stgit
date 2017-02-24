@@ -346,7 +346,7 @@ class PatchSet(StgitObject):
         """Checks if series is already initialised
         """
         return config.get(stackupgrade.format_version_key(self.get_name())
-                          ) != None
+                          ) is not None
 
 
 def shortlog(patches):
@@ -758,7 +758,7 @@ class Series(PatchSet):
         assert (top and bottom) or (not top and not bottom)
         assert commit or (not top or (bottom == git.get_commit(top).get_parent()))
 
-        if name != None:
+        if name is not None:
             self.__patch_name_valid(name)
             if self.patch_exists(name):
                 raise StackException, 'Patch "%s" already exists' % name
@@ -779,7 +779,7 @@ class Series(PatchSet):
 
         head = git.get_head()
 
-        if name == None:
+        if name is None:
             name = make_patch_name(descr, self.patch_exists)
 
         patch = self.get_patch(name)

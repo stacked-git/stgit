@@ -76,7 +76,7 @@ def func(parser, options, args):
     if not options.no_verify:
         cd = common.run_commit_msg_hook(stack.repository, cd)
 
-    if name == None:
+    if name is None:
         name = utils.make_patch_name(cd.message,
                                      lambda name: stack.patches.exists(name))
 

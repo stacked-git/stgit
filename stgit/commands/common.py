@@ -505,11 +505,11 @@ def update_commit_data(cd, options):
     cd = cd.set_author(options.author(cd.author))
 
     # Add Signed-off-by: or similar.
-    if options.sign_str != None:
+    if options.sign_str is not None:
         sign_str = options.sign_str
     else:
         sign_str = config.get("stgit.autosign")
-    if sign_str != None:
+    if sign_str is not None:
         cd = cd.set_message(
             add_sign_line(cd.message, sign_str,
                           cd.committer.name, cd.committer.email))

@@ -73,7 +73,7 @@ class GitConfig(object):
 
     def getint(self, name):
         value = self.get(name)
-        if value == None:
+        if value is None:
             return None
         elif value.isdigit():
             return int(value)
