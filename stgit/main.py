@@ -160,9 +160,12 @@ def _main():
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
+    try:
+        from configparser import ParsingError, NoSectionError
+    except ImportError:
+        from ConfigParser import ParsingError, NoSectionError
     from stgit.exception import StgException
     from stgit.config import config_setup
-    from ConfigParser import ParsingError, NoSectionError
     from stgit.stack import Series
 
     try:
