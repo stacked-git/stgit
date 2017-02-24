@@ -117,7 +117,7 @@ def func(parser, options, args):
         base_commit = stack.base.sha1
         print >> series, '# This series applies on GIT commit %s' % base_commit
 
-    patch_no = 1;
+    patch_no = 1
     for p in patches:
         pname = p
         if options.patch:

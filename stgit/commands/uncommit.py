@@ -95,7 +95,7 @@ def func(parser, options, args):
         patch_nr = len(patchnames)
 
     def check_and_append(c, n):
-        next = n.data.parents;
+        next = n.data.parents
         try:
             [next] = next
         except ValueError:

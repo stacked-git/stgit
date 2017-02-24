@@ -62,7 +62,8 @@ def __clean_comments(f):
     while len(lines) != 0 and lines[-1] == '\n':
         del lines[-1]
 
-    f.seek(0); f.truncate()
+    f.seek(0)
+    f.truncate()
     f.writelines(lines)
 
 # TODO: move this out of the stgit.stack module, it is really for
@@ -624,7 +625,7 @@ class Series(PatchSet):
         """
         if self.is_initialised():
             patches = self.get_unapplied() + self.get_applied() + \
-                    self.get_hidden();
+                    self.get_hidden()
             if not force and patches:
                 raise StackException, \
                       'Cannot %s: the series still contains patches' % \

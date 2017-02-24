@@ -184,7 +184,7 @@ def func(parser, options, args):
                         # args[1] is a valid ref from the branchpoint
                         # setting above
                         parentbranch = args[1]
-                        break;
+                        break
             except git.GitException:
                 # should use a more specific exception to catch only
                 # non-git refs ?

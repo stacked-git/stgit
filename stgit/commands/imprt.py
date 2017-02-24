@@ -253,7 +253,7 @@ def __import_series(filename, options):
                 raise CmdException, "error importing quilt series, patch '%s' has unsupported strip level: '-p%s'" % (patch, m.group('striplevel'))
             options.strip = 0
         patchfile = os.path.join(patchdir, patch)
-        patch = __replace_slashes_with_dashes(patch);
+        patch = __replace_slashes_with_dashes(patch)
 
         __import_file(patchfile, options, patch)
 
@@ -315,7 +315,7 @@ def __import_tarfile(tar, options):
             raise CmdException, "Relative path found in %s" % tar
 
     # find the series file
-    seriesfile = '';
+    seriesfile = ''
     for m in names:
         if m.endswith('/series') or m == 'series':
             seriesfile = m

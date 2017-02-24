@@ -84,7 +84,8 @@ def insert_string(filename, line):
     """
     f = mkdir_file(filename, 'r+')
     lines = f.readlines()
-    f.seek(0); f.truncate()
+    f.seek(0)
+    f.truncate()
     print >> f, line
     f.writelines(lines)
     f.close()

@@ -484,7 +484,7 @@ def user():
         name=config.get('user.name')
         email=config.get('user.email')
         __user = Person(name, email)
-    return __user;
+    return __user
 
 def author():
     """Return the author information.
@@ -908,7 +908,7 @@ def remotes_local_branches(remote):
         stream.close()
     elif remote in __remotes_from_dir('branches'):
         # old-style branches only declare one branch
-        branches.append('refs/heads/'+remote);
+        branches.append('refs/heads/'+remote)
     else:
         raise GitException, 'Unknown remote "%s"' % remote
 

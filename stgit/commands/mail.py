@@ -564,10 +564,10 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     short_descr = descr_lines[0].strip()
     long_descr = '\n'.join(l.rstrip() for l in descr_lines[1:]).lstrip('\n')
 
-    authname = p.get_authname();
-    authemail = p.get_authemail();
-    commname = p.get_commname();
-    commemail = p.get_commemail();
+    authname = p.get_authname()
+    authemail = p.get_authemail()
+    commname = p.get_commname()
+    commemail = p.get_commemail()
 
     sender = __get_sender()
 
