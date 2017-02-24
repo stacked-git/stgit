@@ -402,7 +402,7 @@ class StackTransaction(object):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
             hidden = self.hidden
-        common = len(list(it.takewhile(lambda (a, b): a == b,
+        common = len(list(it.takewhile(lambda a: a[0] == a[1],
                                        zip(self.applied, applied))))
         to_pop = set(self.applied[common:])
         self.pop_patches(lambda pn: pn in to_pop)
