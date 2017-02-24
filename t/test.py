@@ -68,7 +68,7 @@ class TestQueue(object):
         sys.stdout.flush()
 
     # Yield free jobs until none are left.
-    def next(self):
+    def __next__(self):
         with self.lock:
             if not self.__remaining:
                 raise StopIteration
@@ -76,6 +76,8 @@ class TestQueue(object):
             self.__running.add(t)
             self.__report()
             return t
+
+    next = __next__
 
     # Report that a job has completed.
     def finished(self, t, success):

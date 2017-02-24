@@ -793,13 +793,13 @@ class Repository(RunWithEnv):
                 ['-r', '-z'], t1.sha1, t2.sha1).split('\0'))
         try:
             while True:
-                x = i.next()
+                x = next(i)
                 if not x:
                     continue
                 omode, nmode, osha1, nsha1, status = x[1:].split(' ')
-                fn1 = i.next()
+                fn1 = next(i)
                 if status[0] in ['C', 'R']:
-                    fn2 = i.next()
+                    fn2 = next(i)
                 else:
                     fn2 = fn1
                 yield (omode, nmode, self.get_blob(osha1),
