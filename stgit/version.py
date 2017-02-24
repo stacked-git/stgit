@@ -25,7 +25,7 @@ def git_describe_version():
 
 def builtin_version():
     try:
-        import builtin_version as bv
+        import stgit.builtin_version as bv
     except ImportError:
         raise VersionUnavailable()
     else:
