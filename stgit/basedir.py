@@ -38,9 +38,3 @@ def get():
                 __base_dir = ''
 
     return __base_dir
-
-def clear_cache():
-    """Clear the cached location of .git
-    """
-    global __base_dir
-    __base_dir = None

@@ -148,23 +148,3 @@ class ConfigOption(object):
         if not self.__value:
             self.__value = config.get(self.__section + '.' + self.__option)
         return self.__value
-
-
-# cached extensions
-__extensions = None
-
-def file_extensions():
-    """Returns a dictionary with the conflict file extensions
-    """
-    global __extensions
-
-    if not __extensions:
-        cfg_ext = config.get('stgit.extensions').split()
-        if len(cfg_ext) != 3:
-            raise CmdException('"extensions" configuration error')
-
-        __extensions = { 'ancestor': cfg_ext[0],
-                         'current':  cfg_ext[1],
-                         'patched':  cfg_ext[2] }
-
-    return __extensions
