@@ -138,8 +138,7 @@ def func(parser, options, args):
         descr_lines = descr.split('\n')
 
         short_descr = descr_lines[0].rstrip()
-        long_descr = reduce(lambda x, y: x + '\n' + y,
-                            descr_lines[1:], '').strip()
+        long_descr = '\n'.join(descr_lines[1:]).strip()
 
         diff = stack.repository.diff_tree(cd.parent.data.tree, cd.tree, options.diff_flags)
 
