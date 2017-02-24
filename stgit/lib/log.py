@@ -420,7 +420,7 @@ def reset_stack_partially(trans, iw, state, only_patches):
     # In one go, do all the popping we have to in order to pop the
     # patches we're going to delete or modify.
     def mod(pn):
-        if not pn in only_patches:
+        if pn not in only_patches:
             return False
         if pn in to_delete:
             return True

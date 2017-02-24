@@ -213,7 +213,7 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     for name in patch_args:
         pair = name.split('..')
         for p in pair:
-            if p and not p in patch_list:
+            if p and p not in patch_list:
                 raise CmdException, 'Unknown patch name: %s' % p
 
         if len(pair) == 1:

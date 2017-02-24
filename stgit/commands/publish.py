@@ -160,7 +160,7 @@ def func(parser, options, args):
         repository.refs.set(public_ref, stack.head, 'publish')
         out.info('Fast-forwarded "%s"' % public_ref)
         return
-    if not stack.base in merge_bases:
+    if stack.base not in merge_bases:
         message = 'Merge %s into %s' % (repository.describe(stack.base).strip(),
                                         utils.strip_prefix('refs/heads/',
                                                            public_ref))

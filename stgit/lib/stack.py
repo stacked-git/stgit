@@ -111,7 +111,7 @@ class PatchOrder(object):
     def __write_file(self, fn, val):
         utils.write_strings(os.path.join(self.__stack.directory, fn), val)
     def __get_list(self, name):
-        if not name in self.__lists:
+        if name not in self.__lists:
             self.__lists[name] = self.__read_file(name)
         return self.__lists[name]
     def __set_list(self, name, val):
@@ -155,7 +155,7 @@ class Patches(object):
     def get(self, name):
         return self.__patches[name]
     def new(self, name, commit, msg):
-        assert not name in self.__patches
+        assert name not in self.__patches
         p = Patch(self.__stack, name)
         p.set_commit(commit, msg)
         self.__patches[name] = p
@@ -259,6 +259,6 @@ class Repository(git.Repository):
     def get_stack(self, name = None):
         if not name:
             name = self.current_branch_name
-        if not name in self.__stacks:
+        if name not in self.__stacks:
             self.__stacks[name] = Stack(self, name)
         return self.__stacks[name]

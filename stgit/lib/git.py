@@ -532,13 +532,13 @@ class ObjectCache(object):
         self.__objects = {}
         self.__create = create
     def __getitem__(self, name):
-        if not name in self.__objects:
+        if name not in self.__objects:
             self.__objects[name] = self.__create(name)
         return self.__objects[name]
     def __contains__(self, name):
         return name in self.__objects
     def __setitem__(self, name, val):
-        assert not name in self.__objects
+        assert name not in self.__objects
         self.__objects[name] = val
 
 class RunWithEnv(object):
@@ -593,7 +593,7 @@ class CatFileProcess(object):
 
         # Read until we have the entire status line.
         s = ''
-        while not '\n' in s:
+        while '\n' not in s:
             s += os.read(p.stdout.fileno(), 4096)
         h, b = s.split('\n', 1)
         if h == '%s missing' % sha1:
@@ -615,7 +615,7 @@ class DiffTreeProcesses(object):
         atexit.register(self.__shutdown)
     def __get_process(self, args):
         args = tuple(args)
-        if not args in self.__procs:
+        if args not in self.__procs:
             self.__procs[args] = self.__repo.run(
                 ['git', 'diff-tree', '--stdin'] + list(args)).run_background()
         return self.__procs[args]
@@ -773,7 +773,7 @@ class Repository(RunWithEnv):
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
         diff_opts = list(diff_opts)
-        if binary and not '--binary' in diff_opts:
+        if binary and '--binary' not in diff_opts:
             diff_opts.append('--binary')
         return self.__difftree.diff_trees(['-p'] + diff_opts,
                                           t1.sha1, t2.sha1)

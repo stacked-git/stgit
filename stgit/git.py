@@ -257,7 +257,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         for t, fn in parse_git_ls(GRun('diff-index', '-z', *args).raw_output()):
             # the condition is needed in case files is emtpy and
             # diff-index lists those already reported
-            if not fn in reported_files:
+            if fn not in reported_files:
                 cache_files.append((t, fn))
                 reported_files.add(fn)
         files_left = [f for f in files if f not in reported_files]
@@ -273,7 +273,7 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         for t, fn in parse_git_ls(GRun('diff-files', '-z', *args).raw_output()):
             # the condition is needed in case files is empty and
             # diff-files lists those already reported
-            if not fn in reported_files:
+            if fn not in reported_files:
                 cache_files.append((t, fn))
                 reported_files.add(fn)
 

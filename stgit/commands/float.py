@@ -70,7 +70,7 @@ def func(parser, options, args):
 
     applied = [p for p in stack.patchorder.applied if p not in patches] + \
             patches
-    unapplied = [p for p in stack.patchorder.unapplied if not p in patches]
+    unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None

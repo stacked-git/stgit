@@ -841,7 +841,7 @@ class Series(PatchSet):
         elif self.patch_applied(name):
             raise StackException, 'Cannot remove an applied patch, "%s", ' \
                   'which is not current' % name
-        elif not name in self.get_unapplied():
+        elif name not in self.get_unapplied():
             raise StackException, 'Unknown patch "%s"' % name
 
         # save the commit id to a trash file
@@ -1158,7 +1158,7 @@ class Series(PatchSet):
         """Remove the patch from the hidden list.
         """
         hidden = self.get_hidden()
-        if not name in hidden:
+        if name not in hidden:
             if self.patch_applied(name) or self.patch_unapplied(name):
                 raise StackException, 'Patch "%s" not hidden' % name
             else:

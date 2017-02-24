@@ -27,11 +27,11 @@ class RunException(StgException):
     pass
 
 def get_log_mode(spec):
-    if not ':' in spec:
+    if ':' not in spec:
         spec += ':'
     (log_mode, outfile) = spec.split(':', 1)
     all_log_modes = ['debug', 'profile']
-    if log_mode and not log_mode in all_log_modes:
+    if log_mode and log_mode not in all_log_modes:
         out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
                   % log_mode),
                  'Valid values are: %s' % ', '.join(all_log_modes))

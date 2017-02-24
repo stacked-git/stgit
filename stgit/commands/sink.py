@@ -59,7 +59,7 @@ def func(parser, options, args):
     """
     stack = directory.repository.current_stack
 
-    if options.to and not options.to in stack.patchorder.applied:
+    if options.to and options.to not in stack.patchorder.applied:
         raise common.CmdException('Cannot sink below %s since it is not applied'
                                   % options.to)
 
