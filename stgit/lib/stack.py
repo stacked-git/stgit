@@ -13,7 +13,11 @@ class Patch(object):
     def __init__(self, stack, name):
         self.__stack = stack
         self.__name = name
-    name = property(lambda self: self.__name)
+
+    @property
+    def name(self):
+        return self.__name
+
     @property
     def __ref(self):
         return 'refs/patches/%s/%s' % (self.__stack.name, self.__name)
@@ -119,14 +123,38 @@ class PatchOrder(object):
         if val != self.__lists.get(name, None):
             self.__lists[name] = val
             self.__write_file(name, val)
-    applied = property(lambda self: self.__get_list('applied'),
-                       lambda self, val: self.__set_list('applied', val))
-    unapplied = property(lambda self: self.__get_list('unapplied'),
-                         lambda self, val: self.__set_list('unapplied', val))
-    hidden = property(lambda self: self.__get_list('hidden'),
-                      lambda self, val: self.__set_list('hidden', val))
-    all = property(lambda self: self.applied + self.unapplied + self.hidden)
-    all_visible = property(lambda self: self.applied + self.unapplied)
+
+    @property
+    def applied(self):
+        return self.__get_list('applied')
+
+    @applied.setter
+    def applied(self, value):
+        self.__set_list('applied', value)
+
+    @property
+    def unapplied(self):
+        return self.__get_list('unapplied')
+
+    @unapplied.setter
+    def unapplied(self, value):
+        self.__set_list('unapplied', value)
+
+    @property
+    def hidden(self):
+        return self.__get_list('hidden')
+
+    @hidden.setter
+    def hidden(self, value):
+        self.__set_list('hidden', value)
+
+    @property
+    def all(self):
+        return self.applied + self.unapplied + self.hidden
+
+    @property
+    def all_visible(self):
+        return self.applied + self.unapplied
 
     @staticmethod
     def create(stackdir):
@@ -172,8 +200,15 @@ class Stack(git.Branch):
         self.__patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
             raise StackException('%s: branch not initialized' % name)
-    patchorder = property(lambda self: self.__patchorder)
-    patches = property(lambda self: self.__patches)
+
+    @property
+    def patchorder(self):
+        return self.__patchorder
+
+    @property
+    def patches(self):
+        return self.__patches
+
     @property
     def directory(self):
         return os.path.join(self.repository.directory, self.__repo_subdir, self.name)

@@ -172,10 +172,23 @@ class Person(Immutable, Repr):
         self.__email = d(email, 'email')
         self.__date = d(date, 'date')
         assert isinstance(self.__date, Date) or self.__date in [None, NoValue]
-    name = property(lambda self: self.__name)
-    email = property(lambda self: self.__email)
-    name_email = property(lambda self: '%s <%s>' % (self.name, self.email))
-    date = property(lambda self: self.__date)
+
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def email(self):
+        return self.__email
+
+    @property
+    def name_email(self):
+        return '%s <%s>' % (self.name, self.email)
+
+    @property
+    def date(self):
+        return self.__date
+
     def set_name(self, name):
         return type(self)(name = name, defaults = self)
     def set_email(self, email):
@@ -228,7 +241,11 @@ class BlobData(Immutable, Repr):
     """Represents the data contents of a git blob object."""
     def __init__(self, string):
         self.__string = str(string)
-    str = property(lambda self: self.__string)
+
+    @property
+    def str(self):
+        return self.__string
+
     def commit(self, repository):
         """Commit the blob.
         @return: The committed blob
@@ -246,7 +263,11 @@ class Blob(GitObject):
     def __init__(self, repository, sha1):
         self.__repository = repository
         self.__sha1 = sha1
-    sha1 = property(lambda self: self.__sha1)
+
+    @property
+    def sha1(self):
+        return self.__sha1
+
     def __str__(self):
         return 'Blob<%s>' % self.sha1
     @property
@@ -280,7 +301,11 @@ class TreeData(Immutable, Repr):
         objects."""
         self.__entries = ImmutableDict((name, self.__x(po))
                                        for (name, po) in entries.iteritems())
-    entries = property(lambda self: self.__entries)
+
+    @property
+    def entries(self):
+        return self.__entries
+
     """Map from name to (I{permission}, I{object}) tuple."""
     def set_entry(self, name, po):
         """Create a new L{TreeData} object identical to this one, except that
@@ -340,7 +365,11 @@ class Tree(GitObject):
         self.__sha1 = sha1
         self.__repository = repository
         self.__data = None
-    sha1 = property(lambda self: self.__sha1)
+
+    @property
+    def sha1(self):
+        return self.__sha1
+
     @property
     def data(self):
         if self.__data is None:
@@ -373,15 +402,32 @@ class CommitData(Immutable, Repr):
                     if getattr(p, attr) is not None:
                         env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
         return env
-    tree = property(lambda self: self.__tree)
-    parents = property(lambda self: self.__parents)
+
+    @property
+    def tree(self):
+        return self.__tree
+
+    @property
+    def parents(self):
+        return self.__parents
+
     @property
     def parent(self):
         assert len(self.__parents) == 1
         return self.__parents[0]
-    author = property(lambda self: self.__author)
-    committer = property(lambda self: self.__committer)
-    message = property(lambda self: self.__message)
+
+    @property
+    def author(self):
+        return self.__author
+
+    @property
+    def committer(self):
+        return self.__committer
+
+    @property
+    def message(self):
+        return self.__message
+
     def set_tree(self, tree):
         return type(self)(tree = tree, defaults = self)
     def set_parents(self, parents):
@@ -463,7 +509,11 @@ class Commit(GitObject):
         self.__sha1 = sha1
         self.__repository = repository
         self.__data = None
-    sha1 = property(lambda self: self.__sha1)
+
+    @property
+    def sha1(self):
+        return self.__sha1
+
     @property
     def data(self):
         if self.__data is None:
@@ -652,7 +702,11 @@ class Repository(RunWithEnv):
         self.__default_iw = None
         self.__catfile = CatFileProcess(self)
         self.__difftree = DiffTreeProcesses(self)
-    env = property(lambda self: { 'GIT_DIR': self.__git_dir })
+
+    @property
+    def env(self):
+        return {'GIT_DIR': self.__git_dir}
+
     @classmethod
     def default(cls):
         """Return the default repository."""
@@ -698,8 +752,15 @@ class Repository(RunWithEnv):
             self.__default_iw = IndexAndWorktree(self.default_index,
                                                  self.default_worktree)
         return self.__default_iw
-    directory = property(lambda self: self.__git_dir)
-    refs = property(lambda self: self.__refs)
+
+    @property
+    def directory(self):
+        return self.__git_dir
+
+    @property
+    def refs(self):
+        return self.__refs
+
     def cat_object(self, sha1):
         return self.__catfile.cat_file(sha1)[1]
     def rev_parse(self, rev, discard_stderr = False, object_type = 'commit'):
@@ -827,8 +888,12 @@ class Index(RunWithEnv):
             self.delete()
         else:
             self.__filename = filename
-    env = property(lambda self: utils.add_dict(
-            self.__repository.env, { 'GIT_INDEX_FILE': self.__filename }))
+
+    @property
+    def env(self):
+        return utils.add_dict(self.__repository.env,
+                              {'GIT_INDEX_FILE': self.__filename})
+
     def read_tree(self, tree):
         self.run(['git', 'read-tree', tree.sha1]).no_output()
     def write_tree(self):
@@ -923,9 +988,18 @@ class Worktree(object):
     """Represents a git worktree (that is, a checked-out file tree)."""
     def __init__(self, directory):
         self.__directory = directory
-    env = property(lambda self: { 'GIT_WORK_TREE': '.' })
-    env_in_cwd = property(lambda self: { 'GIT_WORK_TREE': self.directory })
-    directory = property(lambda self: self.__directory)
+
+    @property
+    def env(self):
+        return {'GIT_WORK_TREE': '.'}
+
+    @property
+    def env_in_cwd(self):
+        return {'GIT_WORK_TREE': self.directory}
+
+    @property
+    def directory(self):
+        return self.__directory
 
 class CheckoutException(exception.StgException):
     """Exception raised when a checkout fails."""
@@ -938,11 +1012,23 @@ class IndexAndWorktree(RunWithEnvCwd):
     def __init__(self, index, worktree):
         self.__index = index
         self.__worktree = worktree
-    index = property(lambda self: self.__index)
-    env = property(lambda self: utils.add_dict(self.__index.env,
-                                               self.__worktree.env))
-    env_in_cwd = property(lambda self: self.__worktree.env_in_cwd)
-    cwd = property(lambda self: self.__worktree.directory)
+
+    @property
+    def index(self):
+        return self.__index
+
+    @property
+    def env(self):
+        return utils.add_dict(self.__index.env, self.__worktree.env)
+
+    @property
+    def env_in_cwd(self):
+        return self.__worktree.env_in_cwd
+
+    @property
+    def cwd(self):
+        return self.__worktree.directory
+
     def checkout_hard(self, tree):
         assert isinstance(tree, Tree)
         self.run(['git', 'read-tree', '--reset', '-u', tree.sha1]
@@ -1027,8 +1113,13 @@ class Branch(object):
         except KeyError:
             raise BranchException('%s: no such branch' % name)
 
-    name = property(lambda self: self.__name)
-    repository = property(lambda self: self.__repository)
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def repository(self):
+        return self.__repository
 
     def __ref(self):
         return 'refs/heads/%s' % self.__name

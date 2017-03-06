@@ -165,8 +165,11 @@ class LogEntry(object):
             return self.patches[self.applied[-1]]
         else:
             return self.head
-    all_patches = property(lambda self: (self.applied + self.unapplied
-                                         + self.hidden))
+
+    @property
+    def all_patches(self):
+        return self.applied + self.unapplied + self.hidden
+
     @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(
