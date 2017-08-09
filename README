@@ -11,5 +11,5 @@ directly). For standard SCM operations, use plain Git commands.
 For the latest version see http://www.procode.org/stgit/
 For a tutorial see http://www.procode.org/stgit/doc/tutorial.html
 
-Bugs or feature requests should be sent to the stgit-users@gna.org
-mailing list or the StGit project page - http://gna.org/projects/stgit/
+Bugs or feature requests should be raised on the StGit project page:
+https://github.com/ctmarinas/stgit.
