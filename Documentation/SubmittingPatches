@@ -1,3 +1,9 @@
+IMPORTANT: The StGit mailing list is no longer available due to the
+	   shutdown of the gna.org website. Until a decision is made on
+	   setting up a new mailing list, please send patches to
+	   catalin.marinas@gmail.com or via the project page at
+	   https://github.com/ctmarinas/stgit.
+
 Checklist (and a short version for the impatient):
 
         Commits:
@@ -37,7 +43,7 @@ Checklist (and a short version for the impatient):
           documentation should be updated as well.
         - If your name is not writable in ASCII, make sure that
           you send off a message in the correct encoding.
-        - Send the patch to the list (stgit-users@gna.org) and the
+        - Send the patch to the list (TBD) and the
           maintainer (catalin.marinas@gmail.com) if (and only if) the
           patch is ready for inclusion.
 
@@ -82,7 +88,7 @@ Long version:
 3. Sending your patches.
 
    StGit patches should be sent to the StGit mailing list
-   (stgit-users@gna.org), and preferably CCed to the StGit maintainer
+   (TBD), and preferably CCed to the StGit maintainer
    (catalin.marinas@gmail.com). The recipients need to be able to read
    and comment on the changes you are submitting. It is important for
    a developer to be able to "quote" your changes, using standard

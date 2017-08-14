@@ -92,7 +92,6 @@
 [mail "alias"]
 	# E-mail aliases used with the 'mail' command
 	git = git@vger.kernel.org
-	stgit = stgit-users@gna.org
 
 [stgit "color"]
 	# Specify output colors for series commands

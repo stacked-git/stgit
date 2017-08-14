@@ -39,5 +39,3 @@ put $SRCRPM; \
 echo Uploading $DEBPKG; \
 put $DEBPKG; \
 exit"
-
-$UPLOAD && scp $TARBALL $TARBALL.sig username@download.gna.org:/upload/stgit/
