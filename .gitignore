@@ -10,3 +10,4 @@ ChangeLog
 .tox
 htmlcov/
 .coverage
+.DS_Store
