@@ -67,7 +67,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
         if not tree:
             return None
         cd = cd.set_tree(tree)
-    if msg == None:
+    if msg is None:
         msg = utils.append_comment(
             trans.patches[patches[0]].data.message,
             '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),

@@ -72,7 +72,7 @@ def func(parser, options, args):
         to_commit = stack.repository.rev_parse(options.to)
         # check whether the --to commit is on a different branch
         merge_bases = directory.repository.get_merge_bases(to_commit, stack.base)
-        if not to_commit in merge_bases:
+        if to_commit not in merge_bases:
             to_commit = merge_bases[0]
             options.exclusive = True
     elif options.number:
@@ -95,7 +95,7 @@ def func(parser, options, args):
         patch_nr = len(patchnames)
 
     def check_and_append(c, n):
-        next = n.data.parents;
+        next = n.data.parents
         try:
             [next] = next
         except ValueError:

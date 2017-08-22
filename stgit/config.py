@@ -25,7 +25,7 @@ from stgit.run import *
 class GitConfigException(StgException):
     pass
 
-class GitConfig:
+class GitConfig(object):
     __defaults={
         'stgit.smtpserver':     ['localhost:25'],
         'stgit.smtpdelay':      ['5'],
@@ -73,12 +73,13 @@ class GitConfig:
 
     def getint(self, name):
         value = self.get(name)
-        if value == None:
+        if value is None:
             return None
         elif value.isdigit():
             return int(value)
         else:
-            raise GitConfigException, 'Value for "%s" is not an integer: "%s"' % (name, value)
+            raise GitConfigException('Value for "%s" is not an integer: "%s"' %
+                                     (name, value))
 
     def getstartswith(self, name):
         self.load()
@@ -134,7 +135,7 @@ def config_setup():
     os.environ.setdefault('LESS', '-FRSX')
     # FIXME: handle EDITOR the same way ?
 
-class ConfigOption:
+class ConfigOption(object):
     """Delayed cached reading of a configuration option.
     """
     def __init__(self, section, option):
@@ -159,7 +160,7 @@ def file_extensions():
     if not __extensions:
         cfg_ext = config.get('stgit.extensions').split()
         if len(cfg_ext) != 3:
-            raise CmdException, '"extensions" configuration error'
+            raise CmdException('"extensions" configuration error')
 
         __extensions = { 'ancestor': cfg_ext[0],
                          'current':  cfg_ext[1],

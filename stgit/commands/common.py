@@ -195,7 +195,7 @@ def get_patch_from_list(part_name, patch_list):
     candidates = [full for full in patch_list if str.find(full, part_name) != -1]
     if len(candidates) >= 2:
         out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
-        raise CmdException, 'Ambiguous patch name "%s"' % part_name
+        raise CmdException('Ambiguous patch name "%s"' % part_name)
     elif len(candidates) == 1:
         return candidates[0]
     else:
@@ -213,8 +213,8 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     for name in patch_args:
         pair = name.split('..')
         for p in pair:
-            if p and not p in patch_list:
-                raise CmdException, 'Unknown patch name: %s' % p
+            if p and p not in patch_list:
+                raise CmdException('Unknown patch name: %s' % p)
 
         if len(pair) == 1:
             # single patch name
@@ -252,11 +252,11 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
                 pl = patch_list[(last - 1):(first + 1)]
                 pl.reverse()
         else:
-            raise CmdException, 'Malformed patch name: %s' % name
+            raise CmdException('Malformed patch name: %s' % name)
 
         for p in pl:
             if p in patches:
-                raise CmdException, 'Duplicate patch name: %s' % p
+                raise CmdException('Duplicate patch name: %s' % p)
 
         patches += pl
 
@@ -292,7 +292,7 @@ def address_or_alias(addr_pair):
     if alias:
         # it's an alias
         return name_email(alias)
-    raise CmdException, 'unknown e-mail alias: %s' % addr
+    raise CmdException('unknown e-mail alias: %s' % addr)
 
 def prepare_rebase(crt_series):
     # pop all patches
@@ -357,7 +357,7 @@ def __parse_description(descr):
 
     descr_lines = [line.rstrip() for line in  descr.split('\n')]
     if not descr_lines:
-        raise CmdException, "Empty patch description"
+        raise CmdException("Empty patch description")
 
     lasthdr = 0
     end = len(descr_lines)
@@ -405,12 +405,12 @@ def parse_mail(msg):
         try:
             words_enc = decode_header(header)
             hobj = make_header(words_enc)
-        except Exception, ex:
-            raise CmdException, 'header decoding error: %s' % str(ex)
+        except Exception as ex:
+            raise CmdException('header decoding error: %s' % str(ex))
         return unicode(hobj).encode('utf-8')
 
     # parse the headers
-    if msg.has_key('from'):
+    if 'from' in msg:
         authname, authemail = name_email(__decode_header(msg['from']))
     else:
         authname = authemail = None
@@ -425,7 +425,7 @@ def parse_mail(msg):
         descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
     else:
-        raise CmdException, 'Subject: line not found'
+        raise CmdException('Subject: line not found')
 
     # the rest of the message
     msg_text = ''
@@ -489,8 +489,8 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
 
     try:
         new_msg = run_hook_on_string(commit_msg_hook, cd.message)
-    except RunException, exc:
-        raise EditorException, str(exc)
+    except RunException as exc:
+        raise EditorException(str(exc))
 
     return cd.set_message(new_msg)
 
@@ -505,11 +505,11 @@ def update_commit_data(cd, options):
     cd = cd.set_author(options.author(cd.author))
 
     # Add Signed-off-by: or similar.
-    if options.sign_str != None:
+    if options.sign_str is not None:
         sign_str = options.sign_str
     else:
         sign_str = config.get("stgit.autosign")
-    if sign_str != None:
+    if sign_str is not None:
         cd = cd.set_message(
             add_sign_line(cd.message, sign_str,
                           cd.committer.name, cd.committer.email))

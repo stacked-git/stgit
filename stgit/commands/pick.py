@@ -101,7 +101,7 @@ def __pick_commit(commit_id, patchname, options):
         out.start('Updating with commit %s' % commit_id)
 
         if not git.apply_diff(bottom, top, files = files):
-            raise CmdException, 'Patch updating failed'
+            raise CmdException('Patch updating failed')
 
         out.done()
     else:
@@ -198,12 +198,12 @@ def func(parser, options, args):
 
     if not commit_id and len(patches) > 1:
         if options.name:
-            raise CmdException, '--name can only be specified with one patch'
+            raise CmdException('--name can only be specified with one patch')
         if options.parent:
-            raise CmdException, '--parent can only be specified with one patch'
+            raise CmdException('--parent can only be specified with one patch')
 
     if options.update and not crt_series.get_current():
-        raise CmdException, 'No patches applied'
+        raise CmdException('No patches applied')
 
     if commit_id:
         # Try to guess a patch name if the argument was <branch>:<patch>

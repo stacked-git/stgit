@@ -100,7 +100,7 @@ def read_commit_dag(branch):
     for line in Run('git', 'rev-list', '--parents', '--all').output_lines():
         cs = line.split()
         for id in cs:
-            if not id in commits:
+            if id not in commits:
                 commits[id] = Commit(id)
         for id in cs[1:]:
             commits[cs[0]].parents.add(commits[id])

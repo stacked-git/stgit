@@ -45,7 +45,7 @@ def func(parser, options, args):
         old, new = args
     elif len(args) == 1:
         if not crt:
-            raise CmdException, "No applied top patch to rename exists."
+            raise CmdException("No applied top patch to rename exists.")
         old, [new] = crt, args
     else:
         parser.error('incorrect number of arguments')

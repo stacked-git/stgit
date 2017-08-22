@@ -150,7 +150,7 @@ class LogEntry(object):
         return self.__simplified
     @property
     def prev(self):
-        if self.__prev != None and not isinstance(self.__prev, LogEntry):
+        if self.__prev is not None and not isinstance(self.__prev, LogEntry):
             self.__prev = self.from_commit(self.__repo, self.__prev)
         return self.__prev
     @property
@@ -236,7 +236,7 @@ class LogEntry(object):
     def __metadata_string(self):
         e = StringIO.StringIO()
         e.write('Version: 1\n')
-        if self.prev == None:
+        if self.prev is None:
             e.write('Previous: None\n')
         else:
             e.write('Previous: %s\n' % self.prev.commit.sha1)
@@ -255,12 +255,12 @@ class LogEntry(object):
                                     for pn in self.unapplied + self.hidden)
         if self.applied:
             xp.add(self.patches[self.applied[-1]])
-        if self.prev != None:
+        if self.prev is not None:
             xp.add(self.prev.commit)
             xp -= set(self.prev.patches.values())
         return xp
     def __tree(self, metadata):
-        if self.prev == None:
+        if self.prev is None:
             def pf(c):
                 return patch_file(self.__repo, c.data)
         else:
@@ -285,7 +285,7 @@ class LogEntry(object):
         self.__simplified = self.__repo.commit(git.CommitData(
                 tree = tree, message = self.message,
                 parents = [prev.simplified for prev in [self.prev]
-                           if prev != None]))
+                           if prev is not None]))
         parents = list(self.__parents())
         while len(parents) >= self.__max_parents:
             g = self.__repo.commit(git.CommitData(
@@ -299,7 +299,7 @@ class LogEntry(object):
 def get_log_entry(repo, ref, commit):
     try:
         return LogEntry.from_commit(repo, commit)
-    except LogException, e:
+    except LogException as e:
         raise LogException('While reading log from %s: %s' % (ref, e))
 
 def same_state(log1, log2):
@@ -321,7 +321,7 @@ def log_entry(stack, msg):
         else:
             last_log = None
         new_log = LogEntry.from_stack(last_log, stack, msg)
-    except LogException, e:
+    except LogException as e:
         out.warn(str(e), 'No log entry written.')
         return
     if last_log and same_state(last_log, new_log):
@@ -420,7 +420,7 @@ def reset_stack_partially(trans, iw, state, only_patches):
     # In one go, do all the popping we have to in order to pop the
     # patches we're going to delete or modify.
     def mod(pn):
-        if not pn in only_patches:
+        if pn not in only_patches:
             return False
         if pn in to_delete:
             return True

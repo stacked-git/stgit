@@ -43,12 +43,12 @@ def func(parser, options, args):
 
     patches = common.parse_patches(args, trans.all_patches)
     for p in patches:
-        if not p in trans.hidden:
+        if p not in trans.hidden:
             raise common.CmdException('Patch "%s" not hidden' % p)
 
     applied = list(trans.applied)
     unapplied = trans.unapplied + patches
-    hidden = [p for p in trans.hidden if not p in set(patches)]
+    hidden = [p for p in trans.hidden if p not in set(patches)]
 
     trans.reorder_patches(applied, unapplied, hidden)
     return trans.run()

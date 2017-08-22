@@ -27,11 +27,11 @@ class RunException(StgException):
     pass
 
 def get_log_mode(spec):
-    if not ':' in spec:
+    if ':' not in spec:
         spec += ':'
     (log_mode, outfile) = spec.split(':', 1)
     all_log_modes = ['debug', 'profile']
-    if log_mode and not log_mode in all_log_modes:
+    if log_mode and log_mode not in all_log_modes:
         out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
                   % log_mode),
                  'Valid values are: %s' % ', '.join(all_log_modes))
@@ -61,13 +61,13 @@ def finish_logging():
                   'Remaining time: %1.3f s (%1.1f%%)'
                   % (rtime, 100*rtime/ttime))
 
-class Run:
+class Run(object):
     exc = RunException
     def __init__(self, *cmd):
         self.__cmd = list(cmd)
         for c in cmd:
-            if type(c) != str:
-                raise Exception, 'Bad command: %r' % (cmd,)
+            if not isinstance(c, str):
+                raise Exception('Bad command: %r' % (cmd, ))
         self.__good_retvals = [0]
         self.__env = self.__cwd = None
         self.__indata = None
@@ -75,9 +75,9 @@ class Run:
     def __log_start(self):
         if _log_mode == 'debug':
             _logfile.start('Running subprocess %s' % self.__cmd)
-            if self.__cwd != None:
+            if self.__cwd is not None:
                 _logfile.info('cwd: %s' % self.__cwd)
-            if self.__env != None:
+            if self.__env is not None:
                 for k in sorted(self.__env.iterkeys()):
                     if k not in os.environ or os.environ[k] != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
@@ -96,7 +96,7 @@ class Run:
             _logfile.info('Time since program start: %1.3f s'
                           % duration(_log_starttime, n))
     def __check_exitcode(self):
-        if self.__good_retvals == None:
+        if self.__good_retvals is None:
             return
         if self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d'
@@ -115,7 +115,7 @@ class Run:
                 p.stdin.write(self.__indata)
             outdata, errdata = p.communicate()
             self.exitcode = p.returncode
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         if errdata and not self.__discard_stderr:
             out.err_raw(errdata)
@@ -124,24 +124,24 @@ class Run:
         return outdata
     def __run_noio(self):
         """Run without captured IO."""
-        assert self.__indata == None
+        assert self.__indata is None
         self.__log_start()
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd)
             self.exitcode = p.wait()
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
         self.__check_exitcode()
     def __run_background(self):
         """Run in background."""
-        assert self.__indata == None
+        assert self.__indata is None
         try:
             p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.PIPE)
-        except OSError, e:
+        except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.stdin = p.stdin
         self.stdout = p.stdout
@@ -176,7 +176,7 @@ class Run:
     def no_output(self):
         outdata = self.__run_io()
         if outdata:
-            raise self.exc, '%s produced output' % self.__cmd[0]
+            raise self.exc('%s produced output' % self.__cmd[0])
     def discard_output(self):
         self.__run_io()
     def raw_output(self):

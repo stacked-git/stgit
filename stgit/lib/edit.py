@@ -17,13 +17,13 @@ def update_patch_description(repo, cd, text, contains_diff):
     a = cd.author
     for val, setter in [(authname, 'set_name'), (authemail, 'set_email'),
                         (git.Date.maybe(authdate), 'set_date')]:
-        if val != None:
+        if val is not None:
             a = getattr(a, setter)(val)
     cd = cd.set_message(message).set_author(a)
     failed_diff = None
     if diff:
         tree = repo.apply(cd.parent.data.tree, diff, quiet = False)
-        if tree == None:
+        if tree is None:
             failed_diff = diff
         else:
             cd = cd.set_tree(tree)
@@ -85,14 +85,14 @@ def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
 
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
-    if msg == None:
+    if msg is None:
         failed_diff = None
     else:
         cd, failed_diff = update_patch_description(repo, cd, msg, contains_diff)
     a, c = author(cd.author), committer(cd.committer)
     if (a, c) != (cd.author, cd.committer):
         cd = cd.set_author(a).set_committer(c)
-    if sign_str != None:
+    if sign_str is not None:
         cd = cd.set_message(utils.add_sign_line(
                 cd.message, sign_str, git.Person.committer().name,
                 git.Person.committer().email))

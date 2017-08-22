@@ -10,14 +10,14 @@ def git_describe_version():
     try:
         v = run.Run('git', 'describe', '--tags', '--abbrev=4'
                     ).cwd(path).output_one_line()
-    except run.RunException, e:
+    except run.RunException as e:
         raise VersionUnavailable(str(e))
     if not re.match(r'^v[0-9]', v):
         raise VersionUnavailable('%s: bad version' % v)
     try:
         dirty = run.Run('git', 'diff-index', '--name-only', 'HEAD'
                         ).cwd(path).raw_output()
-    except run.RunException, e:
+    except run.RunException as e:
         raise VersionUnavailable(str(e))
     if dirty:
         v += '-dirty'
@@ -25,7 +25,7 @@ def git_describe_version():
 
 def builtin_version():
     try:
-        import builtin_version as bv
+        import stgit.builtin_version as bv
     except ImportError:
         raise VersionUnavailable()
     else:

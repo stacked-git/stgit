@@ -98,7 +98,7 @@ def func(parser, options, args):
 
     num = len(patches)
     if num == 0:
-        raise common.CmdException, 'No patches applied'
+        raise common.CmdException('No patches applied')
 
     zpadding = len(str(num))
     if zpadding < 2:
@@ -117,7 +117,7 @@ def func(parser, options, args):
         base_commit = stack.base.sha1
         print >> series, '# This series applies on GIT commit %s' % base_commit
 
-    patch_no = 1;
+    patch_no = 1
     for p in patches:
         pname = p
         if options.patch:
@@ -138,8 +138,7 @@ def func(parser, options, args):
         descr_lines = descr.split('\n')
 
         short_descr = descr_lines[0].rstrip()
-        long_descr = reduce(lambda x, y: x + '\n' + y,
-                            descr_lines[1:], '').strip()
+        long_descr = '\n'.join(descr_lines[1:]).strip()
 
         diff = stack.repository.diff_tree(cd.parent.data.tree, cd.tree, options.diff_flags)
 
@@ -158,12 +157,12 @@ def func(parser, options, args):
 
         try:
             descr = tmpl % tmpl_dict
-        except KeyError, err:
-            raise common.CmdException, 'Unknown patch template variable: %s' \
-                  % err
+        except KeyError as err:
+            raise common.CmdException('Unknown patch template variable: %s' %
+                                      err)
         except TypeError:
-            raise common.CmdException, 'Only "%(name)s" variables are ' \
-                  'supported in the patch template'
+            raise common.CmdException('Only "%(name)s" variables are '
+                                      'supported in the patch template')
 
         if options.stdout:
             f = sys.stdout

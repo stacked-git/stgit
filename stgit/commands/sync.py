@@ -67,7 +67,7 @@ def func(parser, options, args):
     if options.ref_branch:
         remote_series = stack.Series(options.ref_branch)
         if options.ref_branch == crt_series.get_name():
-            raise CmdException, 'Cannot synchronise with the current branch'
+            raise CmdException('Cannot synchronise with the current branch')
         remote_patches = remote_series.get_applied()
 
         # the merge function merge_patch(patch, pname)
@@ -89,7 +89,7 @@ def func(parser, options, args):
         merge_patch = lambda patch, pname: \
                       __series_merge_patch(patch.get_bottom(), patchdir, pname)
     else:
-        raise CmdException, 'No remote branch or series specified'
+        raise CmdException('No remote branch or series specified')
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
@@ -105,14 +105,14 @@ def func(parser, options, args):
         parser.error('no patches applied')
 
     if not patches:
-        raise CmdException, 'No patches to synchronise'
+        raise CmdException('No patches to synchronise')
 
     __check_all()
 
     # only keep the patches to be synchronised
     sync_patches = [p for p in patches if p in remote_patches]
     if not sync_patches:
-        raise CmdException, 'No common patches to be synchronised'
+        raise CmdException('No common patches to be synchronised')
 
     # pop to the one before the first patch to be synchronised
     first_patch = sync_patches[0]

@@ -42,7 +42,7 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'goto',
                                          check_clean_iw = clean_iw)
 
-    if not patch in trans.all_patches:
+    if patch not in trans.all_patches:
         candidate = common.get_patch_from_list(patch, trans.all_patches)
         if candidate is None:
             raise common.CmdException('Patch "%s" does not exist' % patch)

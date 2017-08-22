@@ -62,13 +62,13 @@ def func(parser, options, args):
 
     current = crt_series.get_current()
     if not current:
-        raise CmdException, 'No patches applied'
+        raise CmdException('No patches applied')
 
     if filename:
         if os.path.exists(filename):
             out.start('Folding patch "%s"' % filename)
         else:
-            raise CmdException, 'No such file: %s' % filename
+            raise CmdException('No such file: %s' % filename)
     else:
         out.start('Folding patch from stdin')
 

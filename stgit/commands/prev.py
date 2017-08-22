@@ -44,4 +44,4 @@ def func(parser, options, args):
     if applied and len(applied) >= 2:
         out.stdout(applied[-2])
     else:
-        raise common.CmdException, 'Not enough applied patches'
+        raise common.CmdException('Not enough applied patches')

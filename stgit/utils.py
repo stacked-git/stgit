@@ -84,7 +84,8 @@ def insert_string(filename, line):
     """
     f = mkdir_file(filename, 'r+')
     lines = f.readlines()
-    f.seek(0); f.truncate()
+    f.seek(0)
+    f.truncate()
     print >> f, line
     f.writelines(lines)
     f.close()
@@ -149,7 +150,7 @@ def create_dirs(directory):
         create_dirs(os.path.dirname(directory))
         try:
             os.mkdir(directory)
-        except OSError, e:
+        except OSError as e:
             if e.errno != errno.EEXIST:
                 raise e
 
@@ -185,7 +186,7 @@ def call_editor(filename):
     out.start('Invoking the editor: "%s"' % cmd)
     err = os.system(cmd)
     if err:
-        raise EditorException, 'editor failed, exit code: %d' % err
+        raise EditorException('editor failed, exit code: %d' % err)
     out.done()
 
 def get_hook(repository, hook_name, extra_env={}):

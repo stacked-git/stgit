@@ -340,7 +340,7 @@ class Tree(GitObject):
     sha1 = property(lambda self: self.__sha1)
     @property
     def data(self):
-        if self.__data == None:
+        if self.__data is None:
             self.__data = TreeData.parse(
                 self.__repository,
                 self.__repository.run(['git', 'ls-tree', '-z', self.sha1]
@@ -364,10 +364,10 @@ class CommitData(Immutable, Repr):
         env = {}
         for p, v1 in ((self.author, 'AUTHOR'),
                        (self.committer, 'COMMITTER')):
-            if p != None:
+            if p is not None:
                 for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
                                  ('date', 'DATE')):
-                    if getattr(p, attr) != None:
+                    if getattr(p, attr) is not None:
                         env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
         return env
     tree = property(lambda self: self.__tree)
@@ -397,11 +397,11 @@ class CommitData(Immutable, Repr):
     def is_nochange(self):
         return len(self.parents) == 1 and self.tree == self.parent.data.tree
     def __str__(self):
-        if self.tree == None:
+        if self.tree is None:
             tree = None
         else:
             tree = self.tree.sha1
-        if self.parents == None:
+        if self.parents is None:
             parents = None
         else:
             parents = [p.sha1 for p in self.parents]
@@ -463,7 +463,7 @@ class Commit(GitObject):
     sha1 = property(lambda self: self.__sha1)
     @property
     def data(self):
-        if self.__data == None:
+        if self.__data is None:
             self.__data = CommitData.parse(
                 self.__repository,
                 self.__repository.cat_object(self.sha1))
@@ -494,7 +494,7 @@ class Refs(object):
     def get(self, ref):
         """Get the Commit the given ref points to. Throws KeyError if ref
         doesn't exist."""
-        if self.__refs == None:
+        if self.__refs is None:
             self.__cache_refs()
         return self.__repository.get_commit(self.__refs[ref])
     def exists(self, ref):
@@ -508,7 +508,7 @@ class Refs(object):
     def set(self, ref, commit, msg):
         """Write the sha1 of the given Commit to the ref. The ref may or may
         not already exist."""
-        if self.__refs == None:
+        if self.__refs is None:
             self.__cache_refs()
         old_sha1 = self.__refs.get(ref, '0'*40)
         new_sha1 = commit.sha1
@@ -518,7 +518,7 @@ class Refs(object):
             self.__refs[ref] = new_sha1
     def delete(self, ref):
         """Delete the given ref. Throws KeyError if ref doesn't exist."""
-        if self.__refs == None:
+        if self.__refs is None:
             self.__cache_refs()
         self.__repository.run(['git', 'update-ref',
                                '-d', ref, self.__refs[ref]]).no_output()
@@ -532,13 +532,13 @@ class ObjectCache(object):
         self.__objects = {}
         self.__create = create
     def __getitem__(self, name):
-        if not name in self.__objects:
+        if name not in self.__objects:
             self.__objects[name] = self.__create(name)
         return self.__objects[name]
     def __contains__(self, name):
         return name in self.__objects
     def __setitem__(self, name, val):
-        assert not name in self.__objects
+        assert name not in self.__objects
         self.__objects[name] = val
 
 class RunWithEnv(object):
@@ -593,7 +593,7 @@ class CatFileProcess(object):
 
         # Read until we have the entire status line.
         s = ''
-        while not '\n' in s:
+        while '\n' not in s:
             s += os.read(p.stdout.fileno(), 4096)
         h, b = s.split('\n', 1)
         if h == '%s missing' % sha1:
@@ -615,7 +615,7 @@ class DiffTreeProcesses(object):
         atexit.register(self.__shutdown)
     def __get_process(self, args):
         args = tuple(args)
-        if not args in self.__procs:
+        if args not in self.__procs:
             self.__procs[args] = self.__repo.run(
                 ['git', 'diff-tree', '--stdin'] + list(args)).run_background()
         return self.__procs[args]
@@ -666,7 +666,7 @@ class Repository(RunWithEnv):
     def default_index(self):
         """An L{Index} object representing the default index file for the
         repository."""
-        if self.__default_index == None:
+        if self.__default_index is None:
             self.__default_index = Index(
                 self, (os.environ.get('GIT_INDEX_FILE', None)
                        or os.path.join(self.__git_dir, 'index')))
@@ -678,7 +678,7 @@ class Repository(RunWithEnv):
     @property
     def default_worktree(self):
         """A L{Worktree} object representing the default work tree."""
-        if self.__default_worktree == None:
+        if self.__default_worktree is None:
             path = os.environ.get('GIT_WORK_TREE', None)
             if not path:
                 o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
@@ -691,7 +691,7 @@ class Repository(RunWithEnv):
     def default_iw(self):
         """An L{IndexAndWorktree} object representing the default index and
         work tree for this repository."""
-        if self.__default_iw == None:
+        if self.__default_iw is None:
             self.__default_iw = IndexAndWorktree(self.default_index,
                                                  self.default_worktree)
         return self.__default_iw
@@ -773,7 +773,7 @@ class Repository(RunWithEnv):
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
         diff_opts = list(diff_opts)
-        if binary and not '--binary' in diff_opts:
+        if binary and '--binary' not in diff_opts:
             diff_opts.append('--binary')
         return self.__difftree.diff_trees(['-p'] + diff_opts,
                                           t1.sha1, t2.sha1)
@@ -881,7 +881,7 @@ class Index(RunWithEnv):
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
-        assert current == None or isinstance(current, Tree)
+        assert current is None or isinstance(current, Tree)
 
         # Take care of the really trivial cases.
         if base == ours:
@@ -975,7 +975,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                 else:
                     conflicts = [l for l in output if l.startswith('CONFLICT')]
                     raise MergeConflictException(conflicts)
-        except run.RunException, e:
+        except run.RunException:
             raise MergeException('Index/worktree dirty')
     def mergetool(self, files = ()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve

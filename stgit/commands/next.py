@@ -44,4 +44,4 @@ def func(parser, options, args):
     if unapplied:
         out.stdout(unapplied[0])
     else:
-        raise common.CmdException, 'No unapplied patches'
+        raise common.CmdException('No unapplied patches')

@@ -166,9 +166,8 @@ def __get_sender():
             except git.GitException:
                 pass
     if not sender:
-        raise CmdException, ('Unknown sender name and e-mail; you should'
-                             ' for example set git config user.name and'
-                             ' user.email')
+        raise CmdException('Unknown sender name and e-mail; you should for '
+                           'example set git config user.name and user.email')
     sender = email.Utils.parseaddr(sender)
 
     return email.Utils.formataddr(address_or_alias(sender))
@@ -182,12 +181,12 @@ def __parse_addresses(msg):
     """
     from_addr_list = __addr_list(msg, 'From')
     if len(from_addr_list) == 0:
-        raise CmdException, 'No "From" address'
+        raise CmdException('No "From" address')
 
     to_addr_list = __addr_list(msg, 'To') + __addr_list(msg, 'Cc') \
                    + __addr_list(msg, 'Bcc')
     if len(to_addr_list) == 0:
-        raise CmdException, 'No "To/Cc/Bcc" addresses'
+        raise CmdException('No "To/Cc/Bcc" addresses')
 
     return (from_addr_list[0], set(to_addr_list))
 
@@ -229,8 +228,8 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
     try:
         s = smtplib.SMTP(smtpserver)
-    except Exception, err:
-        raise CmdException, str(err)
+    except Exception as err:
+        raise CmdException(str(err))
 
     s.set_debuglevel(0)
     try:
@@ -238,7 +237,8 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
             s.ehlo()
             if smtpusetls:
                 if not hasattr(socket, 'ssl'):
-                    raise CmdException,  "cannot use TLS - no SSL support in Python"
+                    raise CmdException(
+                        "cannot use TLS - no SSL support in Python")
                 s.starttls()
                 s.ehlo()
             s.login(smtpuser, smtppassword)
@@ -246,8 +246,8 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
             print "mail server refused delivery for the following recipients: %s" % result
-    except Exception, err:
-        raise CmdException, str(err)
+    except Exception as err:
+        raise CmdException(str(err))
 
     s.quit()
 
@@ -280,8 +280,8 @@ def __send_message_git(msg, options):
         try:
             cmd.append(path)
             call(cmd)
-        except Exception, err:
-            raise CmdException, str(err)
+        except Exception as err:
+            raise CmdException(str(err))
     finally:
         os.unlink(path)
 
@@ -515,12 +515,11 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     try:
         msg_string = tmpl % tmpl_dict
-    except KeyError, err:
-        raise CmdException, 'Unknown patch template variable: %s' \
-              % err
+    except KeyError as err:
+        raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
-        raise CmdException, 'Only "%(name)s" variables are ' \
-              'supported in the patch template'
+        raise CmdException('Only "%(name)s" variables are '
+                           'supported in the patch template')
 
     if options.edit_cover:
         msg_string = __edit_message(msg_string)
@@ -528,8 +527,8 @@ def __build_cover(tmpl, msg_id, options, patches):
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
-    except Exception, ex:
-        raise CmdException, 'template parsing error: %s' % str(ex)
+    except Exception as ex:
+        raise CmdException('template parsing error: %s' % str(ex))
 
     extra_cc = []
     if options.auto:
@@ -564,10 +563,10 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     short_descr = descr_lines[0].strip()
     long_descr = '\n'.join(l.rstrip() for l in descr_lines[1:]).lstrip('\n')
 
-    authname = p.get_authname();
-    authemail = p.get_authemail();
-    commname = p.get_commname();
-    commemail = p.get_commemail();
+    authname = p.get_authname()
+    authemail = p.get_authemail()
+    commname = p.get_commname()
+    commemail = p.get_commemail()
 
     sender = __get_sender()
 
@@ -640,12 +639,11 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     try:
         msg_string = tmpl % tmpl_dict
-    except KeyError, err:
-        raise CmdException, 'Unknown patch template variable: %s' \
-              % err
+    except KeyError as err:
+        raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
-        raise CmdException, 'Only "%(name)s" variables are ' \
-              'supported in the patch template'
+        raise CmdException('Only "%(name)s" variables are '
+                           'supported in the patch template')
 
     if options.edit_patches:
         msg_string = __edit_message(msg_string)
@@ -653,8 +651,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     # The Python email message
     try:
         msg = email.message_from_string(msg_string)
-    except Exception, ex:
-        raise CmdException, 'template parsing error: %s' % str(ex)
+    except Exception as ex:
+        raise CmdException('template parsing error: %s' % str(ex))
 
     if options.auto:
         extra_cc = __get_signers_list(descr)
@@ -680,7 +678,7 @@ def func(parser, options, args):
         unapplied = crt_series.get_unapplied()
         patches = parse_patches(args, applied + unapplied, len(applied))
     else:
-        raise CmdException, 'Incorrect options. Unknown patches to send'
+        raise CmdException('Incorrect options. Unknown patches to send')
 
     # early test for sender identity
     __get_sender()
@@ -688,17 +686,17 @@ def func(parser, options, args):
     out.start('Checking the validity of the patches')
     for p in patches:
         if crt_series.empty_patch(p):
-            raise CmdException, 'Cannot send empty patch "%s"' % p
+            raise CmdException('Cannot send empty patch "%s"' % p)
     out.done()
 
     total_nr = len(patches)
     if total_nr == 0:
-        raise CmdException, 'No patches to send'
+        raise CmdException('No patches to send')
 
     if options.in_reply_to:
         if options.no_thread or options.unrelated:
-            raise CmdException, \
-                  '--in-reply-to option not allowed with --no-thread or --unrelated'
+            raise CmdException('--in-reply-to option not allowed with '
+                               '--no-thread or --unrelated')
         ref_id = options.in_reply_to
     else:
         ref_id = None
@@ -709,7 +707,7 @@ def func(parser, options, args):
     # send the cover message (if any)
     if options.cover or options.edit_cover:
         if options.unrelated:
-            raise CmdException, 'cover sending not allowed with --unrelated'
+            raise CmdException('cover sending not allowed with --unrelated')
 
         # find the template file
         if options.cover:
@@ -717,7 +715,7 @@ def func(parser, options, args):
         else:
             tmpl = templates.get_template('covermail.tmpl')
             if not tmpl:
-                raise CmdException, 'No cover message template file found'
+                raise CmdException('No cover message template file found')
 
         msg_id = __send_message('cover', tmpl, options, patches)
 
@@ -736,7 +734,7 @@ def func(parser, options, args):
         else:
             tmpl = templates.get_template('patchmail.tmpl')
         if not tmpl:
-            raise CmdException, 'No e-mail template file found'
+            raise CmdException('No e-mail template file found')
 
     for (p, n) in zip(patches, range(1, total_nr + 1)):
         msg_id = __send_message('patch', tmpl, options, p, n, total_nr, ref_id)

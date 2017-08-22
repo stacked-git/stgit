@@ -120,7 +120,7 @@ def _main():
     if cmd == 'help':
         if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
             cmd = commands.canonical_cmd(sys.argv[2])
-            if not cmd in commands:
+            if cmd not in commands:
                 out.error('%s help: "%s" command unknown' % (prog, cmd))
                 sys.exit(utils.STGIT_GENERAL_ERROR)
 
@@ -182,7 +182,7 @@ def _main():
                 command.crt_series = Series()
 
         ret = command.func(parser, options, args)
-    except (StgException, IOError, ParsingError, NoSectionError), err:
+    except (StgException, IOError, ParsingError, NoSectionError) as err:
         directory.write_log(cmd)
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)

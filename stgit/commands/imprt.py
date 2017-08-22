@@ -186,7 +186,7 @@ def __get_handle_and_name(filename):
             f.read(1)
             f.seek(0)
             return (f, __mkpatchname(filename, ext))
-        except IOError, e:
+        except IOError:
             pass
 
     # plain old file...
@@ -209,8 +209,8 @@ def __import_file(filename, options, patch = None):
     if options.mail:
         try:
             msg = email.message_from_file(f)
-        except Exception, ex:
-            raise CmdException, 'error parsing the e-mail file: %s' % str(ex)
+        except Exception as ex:
+            raise CmdException('error parsing the e-mail file: %s' % str(ex))
         message, author_name, author_email, author_date, diff = \
                  parse_mail(msg)
     else:
@@ -250,10 +250,12 @@ def __import_series(filename, options):
         if m:
             patch = m.group('patchfilename')
             if m.group('striplevel') != '0':
-                raise CmdException, "error importing quilt series, patch '%s' has unsupported strip level: '-p%s'" % (patch, m.group('striplevel'))
+                raise CmdException("error importing quilt series, patch '%s'"
+                                   " has unsupported strip level: '-p%s'" %
+                                   (patch, m.group('striplevel')))
             options.strip = 0
         patchfile = os.path.join(patchdir, patch)
-        patch = __replace_slashes_with_dashes(patch);
+        patch = __replace_slashes_with_dashes(patch)
 
         __import_file(patchfile, options, patch)
 
@@ -270,8 +272,8 @@ def __import_mbox(filename, options):
 
     try:
         mbox = UnixMailbox(f, email.message_from_file)
-    except Exception, ex:
-        raise CmdException, 'error parsing the mbox file: %s' % str(ex)
+    except Exception as ex:
+        raise CmdException('error parsing the mbox file: %s' % str(ex))
 
     for msg in mbox:
         message, author_name, author_email, author_date, diff = \
@@ -302,7 +304,7 @@ def __import_tarfile(tar, options):
     import shutil
 
     if not tarfile.is_tarfile(tar):
-        raise CmdException, "%s is not a tarfile!" % tar
+        raise CmdException("%s is not a tarfile!" % tar)
 
     t = tarfile.open(tar, 'r')
     names = t.getnames()
@@ -310,18 +312,18 @@ def __import_tarfile(tar, options):
     # verify paths in the tarfile are safe
     for n in names:
         if n.startswith('/'):
-            raise CmdException, "Absolute path found in %s" % tar
+            raise CmdException("Absolute path found in %s" % tar)
         if n.find("..") > -1:
-            raise CmdException, "Relative path found in %s" % tar
+            raise CmdException("Relative path found in %s" % tar)
 
     # find the series file
-    seriesfile = '';
+    seriesfile = ''
     for m in names:
         if m.endswith('/series') or m == 'series':
             seriesfile = m
             break
     if seriesfile == '':
-        raise CmdException, "no 'series' file found in %s" % tar
+        raise CmdException("no 'series' file found in %s" % tar)
 
     # unpack into a tmp dir
     tmpdir = tempfile.mkdtemp('.stg')

@@ -46,10 +46,10 @@ def func(parser, options, args):
     for p in patches:
         if p in trans.hidden:
             out.warn('Patch "%s" already hidden' % p)
-    patches = [p for p in patches if not p in set(trans.hidden)]
+    patches = [p for p in patches if p not in set(trans.hidden)]
 
-    applied = [p for p in trans.applied if not p in set(patches)]
-    unapplied = [p for p in trans.unapplied if not p in set(patches)]
+    applied = [p for p in trans.applied if p not in set(patches)]
+    unapplied = [p for p in trans.unapplied if p not in set(patches)]
     hidden = patches + trans.hidden
 
     trans.reorder_patches(applied, unapplied, hidden)

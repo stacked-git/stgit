@@ -135,12 +135,12 @@ def hook_options():
 
 def message_options(save_template):
     def no_dup(parser):
-        if parser.values.message != None:
+        if parser.values.message is not None:
             raise optparse.OptionValueError(
                 'Cannot give more than one --message or --file')
     def no_combine(parser):
-        if (save_template and parser.values.message != None
-            and parser.values.save_template != None):
+        if (save_template and parser.values.message is not None
+            and parser.values.save_template is not None):
             raise optparse.OptionValueError(
                 'Cannot give both --message/--file and --save-template')
     def msg_callback(option, opt_str, value, parser):
