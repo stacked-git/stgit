@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>

@@ -1,5 +1,5 @@
 # Run the test suite in parallel.
-from __future__ import print_function
+from __future__ import division, print_function
 import glob
 import math
 import optparse
@@ -60,7 +60,7 @@ class TestQueue(object):
               "Running: %3d," % len(self.__running),
               "OK: %3d," % len(self.__success),
               "Failed: %3d," % len(self.__fail),
-              "Cleanup: %3d%%" % math.floor(100.0 * cd / (cd + cr + ct)),
+              "Cleanup: %3d%%" % math.floor(100 * cd / (cd + cr + ct)),
               sep="  ", end='', file=sys.stdout)
         if self.__done():
             print(file=sys.stdout)
@@ -175,7 +175,7 @@ def main():
     w = min(opts.jobs, len(tests))
     for i in range(w):
         start_worker(q)
-    for i in range(max(w / 4, 1)):
+    for i in range(max(w // 4, 1)):
         start_cleaner(q)
     failed = q.wait()
     if failed:
