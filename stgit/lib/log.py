@@ -99,12 +99,12 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
+import StringIO
 import re
 from stgit.lib import git, stack as libstack
 from stgit import utils
 from stgit.exception import StgException, StackException
 from stgit.out import out
-import StringIO
 
 class LogException(StgException):
     pass
@@ -165,8 +165,11 @@ class LogEntry(object):
             return self.patches[self.applied[-1]]
         else:
             return self.head
-    all_patches = property(lambda self: (self.applied + self.unapplied
-                                         + self.hidden))
+
+    @property
+    def all_patches(self):
+        return self.applied + self.unapplied + self.hidden
+
     @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(

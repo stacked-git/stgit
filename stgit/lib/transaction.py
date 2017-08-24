@@ -5,8 +5,7 @@ import atexit
 import itertools as it
 
 from stgit import exception, utils
-from stgit.utils import any
-from stgit.out import *
+from stgit.out import out
 from stgit.lib import git, log
 from stgit.config import config
 
@@ -105,44 +104,78 @@ class StackTransaction(object):
             self.__assert_head_top_equal()
         if check_clean_iw:
             self.__assert_index_worktree_clean(check_clean_iw)
-    stack = property(lambda self: self.__stack)
-    patches = property(lambda self: self.__patches)
-    def __set_applied(self, val):
-        self.__applied = list(val)
-    applied = property(lambda self: self.__applied, __set_applied)
-    def __set_unapplied(self, val):
-        self.__unapplied = list(val)
-    unapplied = property(lambda self: self.__unapplied, __set_unapplied)
-    def __set_hidden(self, val):
-        self.__hidden = list(val)
-    hidden = property(lambda self: self.__hidden, __set_hidden)
-    all_patches = property(lambda self: (self.__applied + self.__unapplied
-                                         + self.__hidden))
-    def __set_base(self, val):
+
+    @property
+    def stack(self):
+        return self.__stack
+
+    @property
+    def patches(self):
+        return self.__patches
+
+    @property
+    def applied(self):
+        return self.__applied
+
+    @applied.setter
+    def applied(self, value):
+        self.__applied = list(value)
+
+    @property
+    def unapplied(self):
+        return self.__unapplied
+
+    @unapplied.setter
+    def unapplied(self, value):
+        self.__unapplied = list(value)
+
+    @property
+    def hidden(self):
+        return self.__hidden
+
+    @hidden.setter
+    def hidden(self, value):
+        self.__hidden = list(value)
+
+    @property
+    def all_patches(self):
+        return self.__applied + self.__unapplied + self.__hidden
+
+    @property
+    def base(self):
+        return self.__base
+
+    @base.setter
+    def base(self, value):
         assert (not self.__applied
-                or self.patches[self.applied[0]].data.parent == val)
-        self.__base = val
-    base = property(lambda self: self.__base, __set_base)
+                or self.patches[self.applied[0]].data.parent == value)
+        self.__base = value
+
     @property
     def temp_index(self):
         if not self.__temp_index:
             self.__temp_index = self.__stack.repository.temp_index()
             atexit.register(self.__temp_index.delete)
         return self.__temp_index
+
     @property
     def top(self):
         if self.__applied:
             return self.__patches[self.__applied[-1]]
         else:
             return self.__base
-    def __get_head(self):
+
+    @property
+    def head(self):
         if self.__bad_head:
             return self.__bad_head
         else:
             return self.top
-    def __set_head(self, val):
-        self.__bad_head = val
-    head = property(__get_head, __set_head)
+
+    @head.setter
+    def head(self, value):
+        self.__bad_head = value
+
     def __assert_head_top_equal(self):
         if not self.__stack.head_top_equal():
             out.error(

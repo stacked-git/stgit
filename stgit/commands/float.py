@@ -55,7 +55,7 @@ def func(parser, options, args):
         if options.series == '-':
             f = sys.stdin
         else:
-            f = file(options.series)
+            f = open(options.series)
 
         patches = []
         for line in f:

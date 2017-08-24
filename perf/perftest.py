@@ -1,4 +1,8 @@
-import datetime, os, os.path, subprocess, sys
+from __future__ import print_function
+import datetime
+import os
+import subprocess
+import sys
 
 def duration(t1, t2):
     d = t2 - t1
@@ -36,8 +40,8 @@ class Run(object):
         cl = max(len(pcmd(c)) for c in cs)
         tl = max(len(ptime(t)) for t in list(times) + [ttime])
         for (c, t) in self.__log:
-            print '%*s  %*s' % (tl, ptime(t), -cl, pcmd(c))
-        print '%*s' % (tl, ptime(ttime))
+            print('%*s  %*s' % (tl, ptime(t), -cl, pcmd(c)))
+        print('%*s' % (tl, ptime(ttime)))
 
 perftests = {}
 perftestdesc = {}
@@ -90,7 +94,7 @@ for rebase in ['old', 'new']:
 args = sys.argv[1:]
 if len(args) == 0:
     for (fun, desc) in sorted(perftestdesc.iteritems()):
-        print '%s: %s' % (fun, desc)
+        print('%s: %s' % (fun, desc))
 else:
     for test in args:
         perftests[test]()

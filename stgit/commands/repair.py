@@ -16,13 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os
-from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit.run import *
-from stgit import stack, git
+import re
+
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   name_email_date)
+from stgit.utils import make_patch_name
+from stgit.out import out
+from stgit.run import Run
+from stgit import git
 
 help = 'Fix StGit metadata if branch was modified with git commands'
 kind = 'stack'
@@ -208,11 +210,12 @@ def func(parser, options, args):
     for name in hidden_name_set - orig_hidden_name_set:
         out.info('%s is now hidden' % name)
     orig_order = dict(zip(orig_patches, xrange(len(orig_patches))))
-    def patchname_cmp(p1, p2):
-        i1 = orig_order.get(p1, len(orig_order))
-        i2 = orig_order.get(p2, len(orig_order))
-        return cmp((i1, p1), (i2, p2))
+
+    def patchname_key(p):
+        i = orig_order.get(p, len(orig_order))
+        return i, p
+
     crt_series.set_applied(p.patch for p in applied)
-    crt_series.set_unapplied(sorted(unapplied_name_set, cmp = patchname_cmp))
-    crt_series.set_hidden(sorted(hidden_name_set, cmp = patchname_cmp))
+    crt_series.set_unapplied(sorted(unapplied_name_set, key=patchname_key))
+    crt_series.set_hidden(sorted(hidden_name_set, key=patchname_key))
     out.done()

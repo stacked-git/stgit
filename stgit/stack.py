@@ -1,5 +1,6 @@
 """Basic quilt-like functionality
 """
+from __future__ import print_function
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,16 +18,27 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, re
-from email.Utils import formatdate
+import os
+import re
+from email.utils import formatdate
 
 from stgit.exception import StackException
-from stgit.utils import *
-from stgit.out import *
-from stgit.run import *
+from stgit.utils import (add_sign_line,
+                         append_string,
+                         append_strings,
+                         call_editor,
+                         create_empty_file,
+                         insert_string,
+                         make_patch_name,
+                         read_string,
+                         read_strings,
+                         rename,
+                         write_string,
+                         write_strings)
+from stgit.out import out
+from stgit.run import Run
 from stgit import git, basedir, templates
 from stgit.config import config
-from shutil import copyfile
 from stgit.lib import git as libgit, stackupgrade
 
 
@@ -72,39 +84,36 @@ def edit_file(series, line, comment, show_patch = True):
     fname = '.stgitmsg.txt'
     tmpl = templates.get_template('patchdescr.tmpl')
 
-    f = file(fname, 'w+')
-    if line:
-        print >> f, line
-    elif tmpl:
-        print >> f, tmpl,
-    else:
-        print >> f
-    print >> f, __comment_prefix, comment
-    print >> f, __comment_prefix, \
-          'Lines prefixed with "%s" will be automatically removed.' \
-          % __comment_prefix
-    print >> f, __comment_prefix, \
-          'Trailing empty lines will be automatically removed.'
+    with open(fname, 'w+') as f:
+        if line:
+            print(line, file=f)
+        elif tmpl:
+            print(tmpl, end=' ', file=f)
+        else:
+            print(file=f)
+        print(__comment_prefix, comment, file=f)
+        print(__comment_prefix,
+              'Lines prefixed with "%s" will be automatically removed.'
+              % __comment_prefix, file=f)
+        print(__comment_prefix,
+              'Trailing empty lines will be automatically removed.', file=f)
 
-    if show_patch:
-       print >> f, __patch_prefix
-       # series.get_patch(series.get_current()).get_top()
-       diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
-       f.write(diff_str)
+        if show_patch:
+           print(__patch_prefix, file=f)
+           # series.get_patch(series.get_current()).get_top()
+           diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
+           f.write(diff_str)
 
-    #Vim modeline must be near the end.
-    print >> f, __comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:'
-    f.close()
+        #Vim modeline must be near the end.
+        print(__comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:', file=f)
 
     call_editor(fname)
 
-    f = file(fname, 'r+')
+    with open(fname, 'r+') as f:
+        __clean_comments(f)
+        f.seek(0)
+        result = f.read()
 
-    __clean_comments(f)
-    f.seek(0)
-    result = f.read()
-
-    f.close()
     os.remove(fname)
 
     return result
@@ -443,7 +452,8 @@ class Series(PatchSet):
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
         if os.path.isfile(self.__applied_file):
-            bottommost = file(self.__applied_file).readline().strip()
+            with open(self.__applied_file) as f:
+                bottommost = f.readline().strip()
             if bottommost:
                 return self.get_patch(bottommost).get_bottom()
         # No bottommost patch, so just return HEAD

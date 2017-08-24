@@ -17,14 +17,15 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, re
-from shutil import copyfile
+import os
+import re
+import sys
 
-from stgit.exception import *
+from stgit.exception import StgException
 from stgit import basedir
-from stgit.utils import *
-from stgit.out import *
-from stgit.run import *
+from stgit.utils import rename, strip_prefix
+from stgit.out import out
+from stgit.run import Run
 from stgit.config import config
 
 # git exception class
@@ -817,12 +818,10 @@ def apply_patch(filename = None, diff = None, base = None,
     """
     if diff is None:
         if filename:
-            f = file(filename)
+            with open(filename) as f:
+                diff = f.read()
         else:
-            f = sys.stdin
-        diff = f.read()
-        if filename:
-            f.close()
+            diff = sys.stdin.read()
 
     if base:
         orig_head = get_head()

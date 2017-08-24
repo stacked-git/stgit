@@ -14,12 +14,19 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os
-import stgit.commands.common
+import os
+import re
+
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_local_changes,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   parse_patches,
+                                   pop_patches,
+                                   push_patches)
+from stgit.out import out
 from stgit import argparse, stack, git
 
 help = 'Synchronise patches with a branch or a series'
@@ -77,13 +84,12 @@ def func(parser, options, args):
         patchdir = os.path.dirname(options.series)
 
         remote_patches = []
-        f = file(options.series)
-        for line in f:
-            p = re.sub('#.*$', '', line).strip()
-            if not p:
-                continue
-            remote_patches.append(p)
-        f.close()
+        with open(options.series) as f:
+            for line in f:
+                p = re.sub('#.*$', '', line).strip()
+                if not p:
+                    continue
+                remote_patches.append(p)
 
         # the merge function merge_patch(patch, pname)
         merge_patch = lambda patch, pname: \

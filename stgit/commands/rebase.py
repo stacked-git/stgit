@@ -1,3 +1,17 @@
+from stgit.argparse import opt
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   check_local_changes,
+                                   git_id,
+                                   post_rebase,
+                                   prepare_rebase,
+                                   print_crt_patch,
+                                   rebase)
+from stgit import argparse
+from stgit.git import GitException
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,12 +27,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import sys, os
-from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit import argparse, stack, git
 
 help = 'Move the stack base to another point in history'
 kind = 'stack'

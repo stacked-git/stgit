@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
-
-import sys, glob, os
+from __future__ import print_function
+import glob
+import os
+import sys
 from distutils.core import setup
 
 from stgit import version
@@ -30,8 +32,8 @@ def __check_python_version():
     """
     pyver = '.'.join(map(str, sys.version_info))
     if not __check_min_version(version.python_min_ver, pyver):
-        print >> sys.stderr, 'Python version %s or newer required. Found %s' \
-              % (version.python_min_ver, pyver)
+        print('Python version %s or newer required. Found %s'
+              % (version.python_min_ver, pyver), file=sys.stderr)
         sys.exit(1)
 
 def __check_git_version():
@@ -40,8 +42,8 @@ def __check_git_version():
     from stgit.run import Run
     gitver = Run('git', '--version').output_one_line().split()[2]
     if not __check_min_version(version.git_min_ver, gitver):
-        print >> sys.stderr, 'GIT version %s or newer required. Found %s' \
-              % (version.git_min_ver, gitver)
+        print('GIT version %s or newer required. Found %s'
+              % (version.git_min_ver, gitver), file=sys.stderr)
         sys.exit(1)
 
 def __run_setup():
@@ -72,8 +74,6 @@ def __run_setup():
               'Operating System :: OS Independent',
               'Programming Language :: Python',
               'Programming Language :: Python :: 2',
-              'Programming Language :: Python :: 2.4',
-              'Programming Language :: Python :: 2.5',
               'Programming Language :: Python :: 2.6',
               'Programming Language :: Python :: 2.7',
               'Programming Language :: Python :: Implementation :: CPython',
@@ -87,19 +87,17 @@ __check_python_version()
 __check_git_version()
 
 # ensure readable template files
-old_mask = os.umask(0022)
+old_mask = os.umask(0o022)
 
 version.write_builtin_version()
 
 # generate the python command list
-f = file('stgit/commands/cmdlist.py', 'w')
-commands.py_commands(commands.get_commands(allow_cached = False), f)
-f.close()
+with open('stgit/commands/cmdlist.py', 'w') as f:
+    commands.py_commands(commands.get_commands(allow_cached = False), f)
 
 # generate the bash completion script
-f = file('stgit-completion.bash', 'w')
-completion.write_completion(f)
-f.close()
+with open('stgit-completion.bash', 'w') as f:
+    completion.write_completion(f)
 
 __run_setup()
 

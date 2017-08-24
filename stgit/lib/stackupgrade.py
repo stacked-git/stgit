@@ -64,8 +64,11 @@ def update_to_current_format_version(repository, branch):
         patch_dir = os.path.join(branch_dir, 'patches')
         mkdir(patch_dir)
         refs_base = 'refs/patches/%s' % branch
-        for patch in (file(os.path.join(branch_dir, 'unapplied')).readlines()
-                      + file(os.path.join(branch_dir, 'applied')).readlines()):
+        with open(os.path.join(branch_dir, 'unapplied')) as f:
+            patches = f.readlines()
+        with open(os.path.join(branch_dir, 'applied')) as f:
+            patches.extend(f.readlines())
+        for patch in patches:
             patch = patch.strip()
             os.rename(os.path.join(branch_dir, patch),
                       os.path.join(patch_dir, patch))

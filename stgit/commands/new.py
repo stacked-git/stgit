@@ -18,7 +18,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 from stgit import argparse, utils
 from stgit.commands import common
 from stgit.lib import git as gitlib, transaction
-from stgit.config import config
 
 help = 'Create a new, empty patch'
 kind = 'patch'

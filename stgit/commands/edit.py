@@ -18,10 +18,10 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 from stgit.argparse import opt
-from stgit import argparse, git, utils
+from stgit import argparse, utils
 from stgit.commands import common
-from stgit.lib import git as gitlib, transaction, edit
-from stgit.out import *
+from stgit.lib import transaction, edit
+from stgit.out import out
 
 help = 'Edit a patch description or diff'
 kind = 'patch'
@@ -118,10 +118,10 @@ def func(parser, options, args):
 
     def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'
-        f = file(fn, 'w')
-        f.write(edit.patch_desc(stack.repository, cd,
-                                options.diff, options.diff_flags, failed_diff))
-        f.close()
+        with open(fn, 'w') as f:
+            f.write(edit.patch_desc(stack.repository, cd,
+                                    options.diff, options.diff_flags,
+                                    failed_diff))
         out.error(reason,
                   'The patch has been saved to "%s".' % fn)
         return utils.STGIT_COMMAND_ERROR

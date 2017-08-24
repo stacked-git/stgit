@@ -1,6 +1,9 @@
+import os
+import re
+import sys
+
 from stgit.exception import StgException
 from stgit import run, utils
-import os, os.path, re, sys
 
 class VersionUnavailable(StgException):
     pass
@@ -39,8 +42,9 @@ def write_builtin_version():
         v = git_describe_version()
     except VersionUnavailable:
         return
-    f = file(_builtin_version_file(), 'w')
-    f.write('# This file was generated automatically. Do not edit by hand.\n'
+    with open(_builtin_version_file(), 'w') as f:
+        f.write(
+            '# This file was generated automatically. Do not edit by hand.\n'
             'version = %r\n' % v)
 
 def get_version():
@@ -55,4 +59,4 @@ version = get_version()
 
 # minimum version requirements
 git_min_ver = '1.5.2'
-python_min_ver = '2.4'
+python_min_ver = '2.6'

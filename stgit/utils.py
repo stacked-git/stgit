@@ -1,10 +1,14 @@
 """Common utility functions
 """
+from __future__ import print_function
+import errno
+import os
+import re
+import tempfile
 
-import errno, os, os.path, re, sys, tempfile
-from stgit.exception import *
+from stgit.exception import StgException
 from stgit.config import config
-from stgit.out import *
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -26,69 +30,59 @@ def mkdir_file(filename, mode):
     """Opens filename with the given mode, creating the directory it's
     in if it doesn't already exist."""
     create_dirs(os.path.dirname(filename))
-    return file(filename, mode)
+    return open(filename, mode)
 
 def read_strings(filename):
     """Reads the lines from a file
     """
-    f = file(filename, 'r')
-    lines = [line.strip() for line in f.readlines()]
-    f.close()
-    return lines
+    with open(filename) as f:
+        return [line.strip() for line in f.readlines()]
 
 def read_string(filename, multiline = False):
     """Reads the first line from a file
     """
-    f = file(filename, 'r')
-    if multiline:
-        result = f.read()
-    else:
-        result = f.readline().strip()
-    f.close()
-    return result
+    with open(filename) as f:
+        if multiline:
+            return f.read()
+        else:
+            return f.readline().strip()
 
 def write_strings(filename, lines):
     """Write 'lines' sequence to file
     """
-    f = file(filename, 'w+')
-    f.writelines([line + '\n' for line in lines])
-    f.close()
+    with open(filename, 'w+') as f:
+        f.writelines([line + '\n' for line in lines])
 
 def write_string(filename, line, multiline = False):
     """Writes 'line' to file and truncates it
     """
-    f = mkdir_file(filename, 'w+')
-    if multiline:
-        f.write(line)
-    else:
-        print >> f, line
-    f.close()
+    with mkdir_file(filename, 'w+') as f:
+        print(line,
+              end='' if multiline else '\n',
+              file=f)
 
 def append_strings(filename, lines):
     """Appends 'lines' sequence to file
     """
-    f = mkdir_file(filename, 'a+')
-    for line in lines:
-        print >> f, line
-    f.close()
+    with mkdir_file(filename, 'a+') as f:
+        for line in lines:
+            print(line, file=f)
 
 def append_string(filename, line):
     """Appends 'line' to file
     """
-    f = mkdir_file(filename, 'a+')
-    print >> f, line
-    f.close()
+    with mkdir_file(filename, 'a+') as f:
+        print(line, file=f)
 
 def insert_string(filename, line):
     """Inserts 'line' at the beginning of the file
     """
-    f = mkdir_file(filename, 'r+')
-    lines = f.readlines()
-    f.seek(0)
-    f.truncate()
-    print >> f, line
-    f.writelines(lines)
-    f.close()
+    with mkdir_file(filename, 'r+') as f:
+        lines = f.readlines()
+        f.seek(0)
+        f.truncate()
+        print(line, file=f)
+        f.writelines(lines)
 
 def create_empty_file(name):
     """Creates an empty file
@@ -237,13 +231,11 @@ def run_hook_on_string(hook, s, *args):
     return s
 
 def edit_string(s, filename):
-    f = file(filename, 'w')
-    f.write(s)
-    f.close()
+    with open(filename, 'w') as f:
+        f.write(s)
     call_editor(filename)
-    f = file(filename)
-    s = f.read()
-    f.close()
+    with open(filename) as f:
+        s = f.read()
     os.remove(filename)
     return s
 
@@ -298,25 +290,6 @@ def make_patch_name(msg, unacceptable, default_name = 'patch'):
         patchname = default_name
     return find_patch_name(patchname, unacceptable)
 
-# any and all functions are builtin in Python 2.5 and higher, but not
-# in 2.4.
-if 'any' in dir(__builtins__):
-    any = getattr(__builtins__, 'any')
-else:
-    def any(bools):
-        for b in bools:
-            if b:
-                return True
-        return False
-
-if 'all' in dir(__builtins__):
-    all = getattr(__builtins__, 'all')
-else:
-    def all(bools):
-        for b in bools:
-            if not b:
-                return False
-        return True
 
 def add_sign_line(desc, sign_str, name, email):
     if not sign_str:

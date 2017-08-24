@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
 
@@ -14,12 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, time, re
+import re
+import time
+
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git, basedir
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_local_changes,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   git_id)
+from stgit.out import out
+from stgit import argparse, stack, git
 from stgit.lib import log
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
@@ -377,4 +385,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    print crt_series.get_name()
+    print(crt_series.get_name())

@@ -18,7 +18,6 @@ import os
 from stgit.commands import common
 from stgit.lib import git, stack
 from stgit import argparse
-from stgit.out import out
 
 help = 'Make a local clone of a remote repository'
 kind = 'repo'

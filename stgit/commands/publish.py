@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __copyright__ = """
 Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -17,8 +19,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.config import config
-from stgit.lib import git, stack, transaction
+from stgit.lib import git, transaction
 from stgit.out import out
 from stgit import utils
 
@@ -149,7 +150,7 @@ def func(parser, options, args):
         published = set(__get_published(stack, public_tree))
         for p in stack.patchorder.applied:
             if p not in published:
-                print p
+                print(p)
         return
 
     # check for rebased stack. In this case we emulate a merge with the stack

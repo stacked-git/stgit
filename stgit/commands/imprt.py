@@ -14,14 +14,31 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os, re, email, tarfile
-from mailbox import UnixMailbox
 from StringIO import StringIO
+from mailbox import UnixMailbox
+import bz2
+import email
+import gzip
+import os
+import re
+import sys
+import tarfile
+
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   check_local_changes,
+                                   git_id,
+                                   name_email,
+                                   parse_mail,
+                                   parse_patch,
+                                   print_crt_patch)
+from stgit.utils import make_patch_name
+from stgit.config import config
+from stgit.out import out
+from stgit import argparse, git
 
 name = 'import'
 help = 'Import a GNU diff file as a new patch'
@@ -179,7 +196,6 @@ def __get_handle_and_name(filename):
     """Return a file object and a patch name derived from filename
     """
     # see if it's a gzip'ed or bzip2'ed patch
-    import bz2, gzip
     for copen, ext in [(gzip.open, '.gz'), (bz2.BZ2File, '.bz2')]:
         try:
             f = copen(filename)
@@ -232,7 +248,7 @@ def __import_series(filename, options):
         if tarfile.is_tarfile(filename):
             __import_tarfile(filename, options)
             return
-        f = file(filename)
+        f = open(filename)
         patchdir = os.path.dirname(filename)
     else:
         f = sys.stdin
@@ -266,7 +282,7 @@ def __import_mbox(filename, options):
     """Import a series from an mbox file
     """
     if filename:
-        f = file(filename, 'rb')
+        f = open(filename, 'rb')
     else:
         f = StringIO(sys.stdin.read())
 
@@ -286,15 +302,19 @@ def __import_mbox(filename, options):
 def __import_url(url, options):
     """Import a patch from a URL
     """
-    import urllib
+    try:
+        from urllib.request import urlretrieve
+        from urllib.parse import unquote
+    except ImportError:
+        from urllib import urlretrieve, unquote
     import tempfile
 
     if not url:
         raise CmdException('URL argument required')
 
-    patch = os.path.basename(urllib.unquote(url))
+    patch = os.path.basename(unquote(url))
     filename = os.path.join(tempfile.gettempdir(), patch)
-    urllib.urlretrieve(url, filename)
+    urlretrieve(url, filename)
     __import_file(filename, options)
 
 def __import_tarfile(tar, options):

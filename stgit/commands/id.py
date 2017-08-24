@@ -16,7 +16,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 from stgit.out import out
 from stgit.commands import common
-from stgit.lib import stack
 from stgit import argparse
 
 help = 'Print the git hash value of a StGit reference'

@@ -18,8 +18,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import git, log, transaction
-from stgit.out import out
+from stgit.lib import log, transaction
 from stgit import argparse, utils
 
 help = 'Reset the patch stack to an earlier state'

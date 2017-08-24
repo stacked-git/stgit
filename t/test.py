@@ -1,7 +1,6 @@
 # Run the test suite in parallel.
-
+from __future__ import division, print_function
 import glob
-import itertools as it
 import math
 import optparse
 import os
@@ -11,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 import traceback
 
 # Number of jobs to run in parallel.
@@ -58,109 +56,90 @@ class TestQueue(object):
         cd = len(self.__clean_done) + 1e-3  # clever way to avoid div by zero
         cr = len(self.__clean_running)
         ct = len(self.__clean_todo)
-        sys.stdout.write(("\rQueue: %3d,  Running: %3d,  OK: %3d,"
-                          "  Failed: %3d,  Cleanup: %3d%%")
-                         % (len(self.__remaining), len(self.__running),
-                            len(self.__success), len(self.__fail),
-                            math.floor(100.0 * cd / (cd + cr + ct))))
-        sys.stdout.flush()
+        print("\rQueue: %3d," % len(self.__remaining),
+              "Running: %3d," % len(self.__running),
+              "OK: %3d," % len(self.__success),
+              "Failed: %3d," % len(self.__fail),
+              "Cleanup: %3d%%" % math.floor(100 * cd / (cd + cr + ct)),
+              sep="  ", end='', file=sys.stdout)
         if self.__done():
-            sys.stdout.write("\n")
+            print(file=sys.stdout)
             self.__cv.notifyAll()
+        sys.stdout.flush()
 
     # Yield free jobs until none are left.
-    def next(self):
-        self.lock.acquire()
-        try:
+    def __next__(self):
+        with self.lock:
             if not self.__remaining:
                 raise StopIteration
             t = self.__remaining.pop()
             self.__running.add(t)
             self.__report()
             return t
-        finally:
-            self.lock.release()
+
+    next = __next__
 
     # Report that a job has completed.
     def finished(self, t, success):
-        self.lock.acquire()
-        try:
+        with self.lock:
             self.__running.remove(t)
             if success:
                 self.__success.add(t)
             else:
                 self.__fail.add(t)
             self.__report()
-        finally:
-            self.lock.release()
 
     # Yield free cleaning jobs until none are left.
     def cleaning_jobs(self):
         while True:
-            self.lock.acquire()
-            try:
+            with self.lock:
                 if not self.__clean_todo:
                     return
                 c = self.__clean_todo.pop()
                 self.__clean_running.add(c)
-            finally:
-                self.lock.release()
             yield c
 
     # Report that a cleaning job has completed.
     def deleted(self, c):
-        self.lock.acquire()
-        try:
+        with self.lock:
             self.__clean_running.remove(c)
             self.__clean_done.add(c)
             self.__report()
-        finally:
-            self.lock.release()
 
     # Wait for all jobs to complete.
     def wait(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             while not self.__done():
                 self.__cv.wait()
             for c in self.__clean_jobs:
                 os.rmdir(c)
             return set(self.__fail)
-        finally:
-            self.lock.release()
 
 def start_worker(q):
     def w():
         for t in q:
             try:
-                try:
-                    ok = False  # assume the worst until proven otherwise
-                    s = os.path.join("trash", t)
-                    e = dict(os.environ)
-                    e["SCRATCHDIR"] = s
-                    p = subprocess.Popen([os.path.join(os.getcwd(), t), "-v"],
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.STDOUT,
-                                         env=e)
-                    (out, err) = p.communicate()
-                    assert err is None
-                    f = open(os.path.join(s, "output"), "w")
-                    try:
-                        f.write(out)
-                        f.write("\nExited with code %d\n" % p.returncode)
-                    finally:
-                        f.close()
-                    if p.returncode == 0:
-                        ok = True
-                except:
-                    # Log the traceback. Use the mutex so that we
-                    # won't write multiple tracebacks to stderr at the
-                    # same time.
-                    q.lock.acquire()
-                    try:
-                        traceback.print_exc()
-                    finally:
-                        q.lock.release()
+                ok = False  # assume the worst until proven otherwise
+                s = os.path.join("trash", t)
+                e = dict(os.environ)
+                e["SCRATCHDIR"] = s
+                p = subprocess.Popen([os.path.join(os.getcwd(), t), "-v"],
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.STDOUT,
+                                     env=e)
+                (out, err) = p.communicate()
+                assert err is None
+                with open(os.path.join(s, "output"), "w") as f:
+                    print(out, file=f)
+                    print("Exited with code %d" % p.returncode, file=f)
+                if p.returncode == 0:
+                    ok = True
+            except:
+                # Log the traceback. Use the mutex so that we
+                # won't write multiple tracebacks to stderr at the
+                # same time.
+                with q.lock:
+                    traceback.print_exc()
             finally:
                 q.finished(t, ok)
     threading.Thread(target=w).start()
@@ -189,7 +168,7 @@ def main():
         tests = glob.glob("t[0-9][0-9][0-9][0-9]-*.sh")
     if opts.jobs is None:
         opts.jobs = default_num_jobs()
-    print "Running %d tests in parallel" % opts.jobs
+    print("Running %d tests in parallel" % opts.jobs)
 
     if os.path.exists("trash"):
         os.rename("trash", "trash-being-deleted-%016x" % random.getrandbits(64))
@@ -198,14 +177,14 @@ def main():
     w = min(opts.jobs, len(tests))
     for i in range(w):
         start_worker(q)
-    for i in range(max(w / 4, 1)):
+    for i in range(max(w // 4, 1)):
         start_cleaner(q)
     failed = q.wait()
     if failed:
-        print "Failed:"
+        print("Failed:")
         for t in sorted(failed):
-            print "  ", t
-        print "Done"
+            print("  ", t)
+        print("Done")
         return 1
     else:
         return 0

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import division
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>
@@ -16,10 +17,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import datetime, os, subprocess
+import datetime
+import os
+import subprocess
 
-from stgit.exception import *
-from stgit.out import *
+from stgit.exception import StgException
+from stgit.out import out, MessagePrinter
 
 class RunException(StgException):
     """Thrown when something bad happened when we tried to run the
@@ -109,11 +112,7 @@ class Run(object):
                                  stdin = subprocess.PIPE,
                                  stdout = subprocess.PIPE,
                                  stderr = subprocess.PIPE)
-            # TODO: only use communicate() once support for Python 2.4 is
-            # dropped (write() needed because of performance reasons)
-            if self.__indata:
-                p.stdin.write(self.__indata)
-            outdata, errdata = p.communicate()
+            outdata, errdata = p.communicate(self.__indata)
             self.exitcode = p.returncode
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))

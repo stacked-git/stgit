@@ -14,12 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys, os
 from stgit.argparse import opt
-from stgit.commands.common import *
-from stgit.utils import *
-from stgit.out import *
-from stgit import argparse, stack, git
+from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.out import out
+from stgit import argparse
 
 help = 'Rename a patch'
 kind = 'patch'
