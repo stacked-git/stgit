@@ -1,6 +1,8 @@
 #!/usr/bin/env python2
 # -*- python -*-
-import optparse, sys
+from __future__ import print_function
+import optparse
+import sys
 import stgit.main
 from stgit import argparse, commands, completion
 
@@ -24,7 +26,7 @@ def main():
                                 sys.stdout)
     elif options.commands:
         for cmd in sorted(commands.get_commands(allow_cached=False)):
-            print cmd
+            print(cmd)
     elif options.cmd_list:
         commands.asciidoc_command_list(
             commands.get_commands(allow_cached = False), sys.stdout)
