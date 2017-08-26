@@ -130,9 +130,10 @@ def start_worker(q):
                                      env=e)
                 (out, err) = p.communicate()
                 assert err is None
-                with open(os.path.join(s, "output"), "w") as f:
-                    print(out, file=f)
-                    print("Exited with code %d" % p.returncode, file=f)
+                with open(os.path.join(s, "output"), "wb") as f:
+                    f.write(out)
+                    msg = '\nExited with code %d\n' % p.returncode
+                    f.write(msg.encode())
                 if p.returncode == 0:
                     ok = True
             except:
