@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from pydoc import pager
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.commands.common import (DirectoryHasRepository,
+                                   color_diff_flags,
+                                   git_id,
+                                   parse_patches)
+from stgit.lib import git as gitlib
+
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,15 +25,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from pydoc import pager
-from stgit.argparse import opt
-from stgit.commands.common import (DirectoryHasRepository,
-                                   color_diff_flags,
-                                   git_id,
-                                   parse_patches)
-from stgit import argparse, git
-from stgit.lib import git as gitlib
 
 help = 'Show the commit corresponding to a patch'
 kind = 'patch'

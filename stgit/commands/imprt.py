@@ -1,3 +1,31 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from contextlib import closing
+import bz2
+import email
+import gzip
+import mailbox
+import os
+import re
+import sys
+import tarfile
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.config import config
+from stgit.out import out
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   check_local_changes,
+                                   git_id,
+                                   name_email,
+                                   parse_mail,
+                                   parse_patch,
+                                   print_crt_patch)
+from stgit.utils import make_patch_name
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,32 +41,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from contextlib import closing
-import bz2
-import email
-import gzip
-import mailbox
-import os
-import re
-import sys
-import tarfile
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryHasRepository,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   check_local_changes,
-                                   git_id,
-                                   name_email,
-                                   parse_mail,
-                                   parse_patch,
-                                   print_crt_patch)
-from stgit.utils import make_patch_name
-from stgit.config import config
-from stgit.out import out
-from stgit import argparse, git
 
 name = 'import'
 help = 'Import a GNU diff file as a new patch'

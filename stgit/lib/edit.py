@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
 """This module contains utility functions for patch editing."""
+
+from __future__ import absolute_import, division, print_function
 
 from stgit import utils
 from stgit.commands import common
 from stgit.lib import git
+
 
 def update_patch_description(repo, cd, text, contains_diff):
     """Update the given L{CommitData<stgit.lib.git.CommitData>} with the

@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import re
+
+from stgit import git
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   name_email_date)
+from stgit.out import out
+from stgit.run import Run
+from stgit.utils import make_patch_name
 
 __copyright__ = """
 Copyright (C) 2006, Karl Hasselström <kha@treskal.com>
@@ -15,16 +25,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import re
-
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   name_email_date)
-from stgit.utils import make_patch_name
-from stgit.out import out
-from stgit.run import Run
-from stgit import git
 
 help = 'Fix StGit metadata if branch was modified with git commands'
 kind = 'stack'

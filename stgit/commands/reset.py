@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse, utils
+from stgit.argparse import opt
+from stgit.commands import common
+from stgit.lib import log, transaction
 
 __copyright__ = """
 Copyright (C) 2008, Karl Hasselström <kha@treskal.com>
@@ -15,11 +21,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from stgit.argparse import opt
-from stgit.commands import common
-from stgit.lib import log, transaction
-from stgit import argparse, utils
 
 help = 'Reset the patch stack to an earlier state'
 kind = 'stack'

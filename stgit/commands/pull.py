@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   check_local_changes,
+                                   post_rebase,
+                                   prepare_rebase,
+                                   print_crt_patch,
+                                   rebase)
+from stgit.config import config, GitConfigException
+from stgit.out import out
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,20 +30,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   check_local_changes,
-                                   post_rebase,
-                                   prepare_rebase,
-                                   print_crt_patch,
-                                   rebase)
-from stgit.out import out
-from stgit.config import config, GitConfigException
-from stgit import argparse, git
 
 help = 'Pull changes from a remote repository'
 kind = 'stack'

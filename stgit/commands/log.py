@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+
+from stgit import argparse, run
+from stgit.argparse import opt
+from stgit.commands import common
+from stgit.lib import log
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -16,13 +24,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os.path
-from stgit import argparse, run
-from stgit.argparse import opt
-from stgit.commands import common
-from stgit.lib import log
-from stgit.out import out
 
 help = 'Display the patch changelog'
 kind = 'stack'

@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse
+from stgit.commands import common
+from stgit.lib import transaction
+
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,10 +20,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from stgit.commands import common
-from stgit.lib import transaction
-from stgit import argparse
 
 help = 'Push or pop patches to the given one'
 kind = 'stack'

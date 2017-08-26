@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+
+from stgit import argparse
+from stgit.commands import common
+from stgit.lib import git, stack
+
 __copyright__ = """
 Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,11 +21,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os
-from stgit.commands import common
-from stgit.lib import git, stack
-from stgit import argparse
 
 help = 'Make a local clone of a remote repository'
 kind = 'repo'

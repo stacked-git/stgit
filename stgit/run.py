@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
+from __future__ import absolute_import, division, print_function
+import datetime
+import os
+import subprocess
+
+from stgit.exception import StgException
+from stgit.out import out, MessagePrinter
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>
@@ -17,12 +23,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import datetime
-import os
-import subprocess
-
-from stgit.exception import StgException
-from stgit.out import out, MessagePrinter
 
 class RunException(StgException):
     """Thrown when something bad happened when we tried to run the

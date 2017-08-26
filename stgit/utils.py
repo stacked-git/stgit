@@ -1,13 +1,14 @@
-"""Common utility functions
-"""
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+"""Common utility functions"""
+
+from __future__ import absolute_import, division, print_function
 import errno
 import os
 import re
 import tempfile
 
-from stgit.exception import StgException
 from stgit.config import config
+from stgit.exception import StgException
 from stgit.out import out
 
 __copyright__ = """
@@ -25,6 +26,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
+
 
 def mkdir_file(filename, mode):
     """Opens filename with the given mode, creating the directory it's

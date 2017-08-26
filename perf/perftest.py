@@ -1,8 +1,10 @@
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import datetime
 import os
 import subprocess
 import sys
+
 
 def duration(t1, t2):
     d = t2 - t1

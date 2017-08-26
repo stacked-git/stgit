@@ -1,6 +1,8 @@
+# -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
+from __future__ import absolute_import, division, print_function
 from datetime import datetime, timedelta, tzinfo
 import atexit
 import os
@@ -9,6 +11,7 @@ import signal
 
 from stgit import exception, run, utils
 from stgit.config import config
+
 
 class Immutable(object):
     """I{Immutable} objects cannot be modified once created. Any

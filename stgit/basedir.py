@@ -1,5 +1,10 @@
-"""Access to the GIT base directory
-"""
+# -*- coding: utf-8 -*-
+"""Access to the GIT base directory."""
+
+from __future__ import absolute_import, division, print_function
+import os
+
+from stgit.run import Run, RunException
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -16,9 +21,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os
-from stgit.run import Run, RunException
 
 # GIT_DIR value cached
 __base_dir = None

@@ -1,5 +1,26 @@
-"""Function/variables common to all the commands
-"""
+# -*- coding: utf-8 -*-
+"""Function/variables common to all the commands"""
+from __future__ import absolute_import, division, print_function
+import email.utils
+import os
+import re
+import sys
+
+from stgit import stack, git
+from stgit.config import config
+from stgit.exception import StgException
+from stgit.lib import git as libgit
+from stgit.lib import log
+from stgit.lib import stack as libstack
+from stgit.out import out
+from stgit.run import Run, RunException
+from stgit.utils import (EditorException,
+                         add_sign_line,
+                         edit_string,
+                         get_hook,
+                         parse_name_email_date,
+                         run_hook_on_string,
+                         strip_prefix)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,26 +38,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import email.utils
-import os
-import re
-import sys
-
-from stgit.exception import StgException
-from stgit.utils import (EditorException,
-                         add_sign_line,
-                         edit_string,
-                         get_hook,
-                         parse_name_email_date,
-                         run_hook_on_string,
-                         strip_prefix)
-from stgit.out import out
-from stgit.run import Run, RunException
-from stgit import stack, git
-from stgit.config import config
-from stgit.lib import stack as libstack
-from stgit.lib import git as libgit
-from stgit.lib import log
 
 # Command exception class
 class CmdException(StgException):

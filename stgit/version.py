@@ -1,9 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import os
 import re
 import sys
 
-from stgit.exception import StgException
 from stgit import run, utils
+from stgit.exception import StgException
+
 
 class VersionUnavailable(StgException):
     pass

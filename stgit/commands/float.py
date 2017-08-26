@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import re
+import sys
+
+from stgit import argparse
+from stgit.argparse import opt
+from stgit.commands import common
+from stgit.lib import transaction
+
 __copyright__ = """
 Copyright (C) 2006, Robin Rosenberg <robin.rosenberg@dewire.com>
 Modified by Catalin Marinas
@@ -14,13 +24,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import re
-import sys
-from stgit.argparse import opt
-from stgit.commands import common
-from stgit.lib import transaction
-from stgit import argparse
 
 help = 'Push patches to the top, even if applied'
 kind = 'stack'

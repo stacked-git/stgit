@@ -1,6 +1,15 @@
-"""Export command
-"""
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+"""Export command"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+
+from stgit import argparse, git, templates
+from stgit.argparse import opt
+from stgit.commands import common
+from stgit.lib import git as gitlib
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,14 +26,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os
-import sys
-from stgit.argparse import opt
-from stgit.commands import common
-from stgit import argparse, git, templates
-from stgit.out import out
-from stgit.lib import git as gitlib
 
 help = 'Export patches to a directory'
 kind = 'patch'

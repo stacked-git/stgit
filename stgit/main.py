@@ -1,6 +1,15 @@
-"""Basic quilt-like functionality
-"""
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+"""Basic quilt-like functionality"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import sys
+import traceback
+
+from stgit import argparse, run, utils
+from stgit.config import config
+from stgit.out import out
+import stgit.commands
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -18,14 +27,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os
-import sys
-import traceback
-
-import stgit.commands
-from stgit.out import out
-from stgit import argparse, run, utils
-from stgit.config import config
 
 class CommandAlias(object):
     def __init__(self, name, command):

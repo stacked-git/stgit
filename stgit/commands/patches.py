@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from pydoc import pager
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.out import out
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,13 +22,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from pydoc import pager
-
-from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepository
-from stgit.out import out
-from stgit import argparse, git
 
 help = 'Show the applied patches modifying a file'
 kind = 'stack'

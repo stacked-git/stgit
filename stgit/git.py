@@ -1,5 +1,17 @@
-"""Python GIT interface
-"""
+# -*- coding: utf-8 -*-
+"""Python GIT interface"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import re
+import sys
+
+from stgit import basedir
+from stgit.config import config
+from stgit.exception import StgException
+from stgit.out import out
+from stgit.run import Run
+from stgit.utils import rename, strip_prefix
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,16 +29,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os
-import re
-import sys
-
-from stgit.exception import StgException
-from stgit import basedir
-from stgit.utils import rename, strip_prefix
-from stgit.out import out
-from stgit.run import Run
-from stgit.config import config
 
 # git exception class
 class GitException(StgException):

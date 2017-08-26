@@ -1,26 +1,13 @@
 #!/usr/bin/env python2
+# -*- coding: utf-8 -*-
 # -*- python-mode -*-
-"""Takes care of starting the Init function
-"""
-
-__copyright__ = """
-Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License version 2 as
-published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, see http://www.gnu.org/licenses/.
-"""
-
-import sys, os
-import profile, pstats, time
+"""Run stg with profiling enabled."""
+from __future__ import absolute_import, division, print_function
+import os
+import profile
+import pstats
+import sys
+import time
 
 # Try to detect where it is run from and set prefix and the search path.
 # It is assumed that the user installed StGIT using the --prefix= option
@@ -38,6 +25,22 @@ if bin == 'bin' and prefix != sys.prefix:
     sys.path = local_path + sys.path
 
 from stgit.main import main
+
+__copyright__ = """
+Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, see http://www.gnu.org/licenses/.
+"""
 
 if __name__ == '__main__':
     start_time = time.time()

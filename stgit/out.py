@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import sys
+import textwrap
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>
@@ -16,8 +19,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import sys
-import textwrap
 
 class MessagePrinter(object):
     def __init__(self, file = None):

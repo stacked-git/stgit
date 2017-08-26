@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 """This module provides a layer on top of the standard library's
 C{optparse} module, so that we can easily generate both interactive
 help and asciidoc documentation (such as man pages)."""
 
+from __future__ import absolute_import, division, print_function
 import optparse
 import sys
 import textwrap
@@ -9,6 +11,7 @@ import textwrap
 from stgit import utils
 from stgit.config import config
 from stgit.lib import git
+
 
 def _splitlist(lst, split_on):
     """Iterate over the sublists of lst that are separated by an element e

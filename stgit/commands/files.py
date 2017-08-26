@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.commands.common import DirectoryHasRepository, git_id
+from stgit.lib import git as gitlib
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -14,12 +22,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from stgit.argparse import opt
-from stgit.commands.common import DirectoryHasRepository, git_id
-from stgit.out import out
-from stgit import argparse, git
-from stgit.lib import git as gitlib
 
 help = 'Show the files modified by a patch (or the current patch)'
 kind = 'patch'

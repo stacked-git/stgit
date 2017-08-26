@@ -1,5 +1,12 @@
-"""Handles the Stacked GIT configuration files
-"""
+# -*- coding: utf-8 -*-
+"""Handles the Stacked GIT configuration files"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import re
+
+from stgit.exception import StgException
+from stgit.run import Run
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,11 +24,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os
-import re
-
-from stgit.exception import StgException
-from stgit.run import Run
 
 class GitConfigException(StgException):
     pass

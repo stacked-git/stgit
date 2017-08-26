@@ -1,4 +1,5 @@
-r"""This module contains functions and classes for manipulating
+# -*- coding: utf-8 -*-
+"""This module contains functions and classes for manipulating
 I{patch stack logs} (or just I{stack logs}).
 
 A stack log is a git branch. Each commit contains the complete state
@@ -99,12 +100,15 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
+from __future__ import absolute_import, division, print_function
 import StringIO
 import re
-from stgit.lib import git, stack as libstack
+
 from stgit import utils
 from stgit.exception import StgException, StackException
+from stgit.lib import git, stack as libstack
 from stgit.out import out
+
 
 class LogException(StgException):
     pass
