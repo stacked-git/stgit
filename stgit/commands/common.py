@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Function/variables common to all the commands"""
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import email.utils
 import os
 import re

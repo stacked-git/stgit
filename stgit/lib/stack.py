@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import os
 
 from stgit import utils

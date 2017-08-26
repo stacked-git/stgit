@@ -2,7 +2,8 @@
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 from datetime import datetime, timedelta, tzinfo
 import atexit
 import os
