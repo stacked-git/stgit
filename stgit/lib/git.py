@@ -157,7 +157,7 @@ class Date(Immutable, Repr):
         return self.isoformat()
     def isoformat(self):
         """Human-friendly ISO 8601 format."""
-        return '%s %s' % (self.__time.replace(tzinfo = None).isoformat(' '),
+        return '%s %s' % (self.__time.replace(tzinfo=None).isoformat(str(' ')),
                           self.__time.tzinfo)
     @classmethod
     def maybe(cls, datestring):
