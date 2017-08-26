@@ -208,7 +208,7 @@ class Run(object):
         run as many times as needed to consume them all."""
         step = 100
         basecmd = self.__cmd
-        for i in xrange(0, len(xargs), step):
+        for i in range(0, len(xargs), step):
             self.__cmd = basecmd + xargs[i:i+step]
             self.__run_noio()
         self.__cmd = basecmd

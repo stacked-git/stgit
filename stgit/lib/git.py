@@ -135,7 +135,7 @@ class Date(Immutable, Repr):
         if m:
             try:
                 self.__time = datetime(
-                    *[int(m.group(i + 1)) for i in xrange(6)],
+                    *[int(m.group(i + 1)) for i in range(6)],
                     **{'tzinfo': TimeZone(m.group(7))})
             except ValueError:
                 raise DateException(datestring, 'date')

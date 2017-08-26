@@ -294,7 +294,7 @@ class StackTransaction(object):
         other patches that had to be popped to accomplish this. Always
         succeeds."""
         popped = []
-        for i in xrange(len(self.applied)):
+        for i in range(len(self.applied)):
             if p(self.applied[i]):
                 popped = self.applied[i:]
                 del self.applied[i:]
@@ -311,7 +311,7 @@ class StackTransaction(object):
         succeeds."""
         popped = []
         all_patches = self.applied + self.unapplied + self.hidden
-        for i in xrange(len(self.applied)):
+        for i in range(len(self.applied)):
             if p(self.applied[i]):
                 popped = self.applied[i:]
                 del self.applied[i:]

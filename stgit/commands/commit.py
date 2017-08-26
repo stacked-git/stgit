@@ -83,7 +83,7 @@ def func(parser, options, args):
                                          allow_conflicts = allow_conflicts)
     try:
         common_prefix = 0
-        for i in xrange(min(len(stack.patchorder.applied), len(patches))):
+        for i in range(min(len(stack.patchorder.applied), len(patches))):
             if stack.patchorder.applied[i] == patches[i]:
                 common_prefix += 1
             else:
