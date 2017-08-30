@@ -146,8 +146,8 @@ class Run(object):
         self.__log_end(self.exitcode)
         self.__check_exitcode()
 
-    def __run_background(self):
-        """Run in background."""
+    def run_background(self):
+        """Run as a background process."""
         assert self.__indata is None
         try:
             p = subprocess.Popen(self.__cmd,
@@ -163,6 +163,7 @@ class Run(object):
         self.stderr = p.stderr
         self.wait = p.wait
         self.pid = lambda: p.pid
+        return self
 
     def returns(self, retvals):
         self.__good_retvals = retvals
@@ -224,11 +225,6 @@ class Run(object):
     def run(self):
         """Just run, with no IO redirection."""
         self.__run_noio()
-
-    def run_background(self):
-        """Run as a background process."""
-        self.__run_background()
-        return self
 
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
