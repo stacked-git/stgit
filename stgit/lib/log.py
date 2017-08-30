@@ -102,7 +102,7 @@ mainly ease of visualization."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import StringIO
+from io import StringIO
 import re
 
 from stgit import utils
@@ -246,7 +246,7 @@ class LogEntry(object):
         lg.commit = commit
         return lg
     def __metadata_string(self):
-        e = StringIO.StringIO()
+        e = StringIO()
         e.write('Version: 1\n')
         if self.prev is None:
             e.write('Previous: None\n')
