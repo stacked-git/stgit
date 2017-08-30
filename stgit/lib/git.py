@@ -339,20 +339,19 @@ class TreeData(Immutable, Repr):
         """Commit the tree.
         @return: The committed tree
         @rtype: L{Tree}"""
-        listing = ''.join(
-            '%s %s %s\t%s\0' % (mode, obj.typename, obj.sha1, name)
-            for (name, (mode, obj)) in self.entries.items())
+        listing = ['%s %s %s\t%s' % (mode, obj.typename, obj.sha1, name)
+                   for (name, (mode, obj)) in self.entries.items()]
         sha1 = repository.run(['git', 'mktree', '-z']
-                              ).raw_input(listing).output_one_line()
+                              ).input_nulterm(listing).output_one_line()
         return repository.get_tree(sha1)
     @classmethod
-    def parse(cls, repository, s):
+    def parse(cls, repository, lines):
         """Parse a raw git tree description.
 
         @return: A new L{TreeData} object
         @rtype: L{TreeData}"""
         entries = {}
-        for line in s.split('\0')[:-1]:
+        for line in lines:
             m = re.match(r'^([0-7]{6}) ([a-z]+) ([0-9a-f]{40})\t(.*)$', line)
             assert m
             perm, type, sha1, name = m.groups()
@@ -380,7 +379,7 @@ class Tree(GitObject):
             self.__data = TreeData.parse(
                 self.__repository,
                 self.__repository.run(['git', 'ls-tree', '-z', self.sha1]
-                                      ).raw_output())
+                                      ).output_lines('\0'))
         return self.__data
     def __str__(self):
         return 'Tree<sha1: %s>' % self.sha1
@@ -982,7 +981,7 @@ class Index(RunWithEnv):
         """The set of conflicting paths."""
         paths = set()
         for line in self.run(['git', 'ls-files', '-z', '--unmerged']
-                             ).raw_output().split('\0')[:-1]:
+                             ).output_lines('\0'):
             stat, path = line.split('\t', 1)
             paths.add(path)
         return paths
@@ -1090,7 +1089,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         assert isinstance(tree, Tree)
         return set(self.run_in_cwd(
                 ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
-                + list(pathlimits)).raw_output().split('\0')[:-1])
+                + list(pathlimits)).output_lines('\0'))
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""

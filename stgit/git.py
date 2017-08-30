@@ -156,8 +156,7 @@ def get_conflicts():
     """Return the list of file conflicts
     """
     names = set()
-    for line in GRun('ls-files', '-z', '--unmerged'
-                     ).raw_output().split('\0')[:-1]:
+    for line in GRun('ls-files', '-z', '--unmerged').output_lines('\0'):
         stat, path = line.split('\t', 1)
         names.add(path)
     return list(names)
@@ -192,16 +191,12 @@ def ls_files(files, tree = 'HEAD', full_name = True):
             'Some of the given paths are either missing or not known to GIT')
     return list(fileset)
 
-def parse_git_ls(output):
+def parse_git_ls(lines):
     """Parse the output of git diff-index, diff-files, etc. Doesn't handle
     rename/copy output, so don't feed it output generated with the -M
     or -C flags."""
     t = None
-    for line in output.split('\0'):
-        if not line:
-            # There's a zero byte at the end of the output, which
-            # gives us an empty string as the last "line".
-            continue
+    for line in lines:
         if t is None:
             mode_a, mode_b, sha1_a, sha1_b, t = line.split(' ')
         else:
@@ -240,8 +235,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
                     for fn in exclude_files()
                     if os.path.exists(fn)]
 
-        lines = GRun(*cmd).raw_output().split('\0')
-        cache_files += [('?', line) for line in lines if line]
+        lines = GRun(*cmd).output_lines('\0')
+        cache_files += [('?', line) for line in lines]
 
     # conflicted files
     conflicts = get_conflicts()
@@ -257,7 +252,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = [tree_id]
         if files_left:
             args += ['--'] + files_left
-        for t, fn in parse_git_ls(GRun('diff-index', '-z', *args).raw_output()):
+        diff_index_lines = GRun('diff-index', '-z', *args).output_lines('\0')
+        for t, fn in parse_git_ls(diff_index_lines):
             # the condition is needed in case files is emtpy and
             # diff-index lists those already reported
             if fn not in reported_files:
@@ -273,7 +269,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = []
         if files_left:
             args += ['--'] + files_left
-        for t, fn in parse_git_ls(GRun('diff-files', '-z', *args).raw_output()):
+        diff_files_lines = GRun('diff-files', '-z', *args).output_lines('\0')
+        for t, fn in parse_git_ls(diff_files_lines):
             # the condition is needed in case files is empty and
             # diff-files lists those already reported
             if fn not in reported_files:

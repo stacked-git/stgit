@@ -189,12 +189,8 @@ class Run(object):
         self.__indata = indata
         return self
 
-    def input_lines(self, lines):
-        self.__indata = ''.join(['%s\n' % line for line in lines])
-        return self
-
     def input_nulterm(self, lines):
-        self.__indata = ''.join('%s\0' % line for line in lines)
+        self.__indata = '\0'.join(lines)
         return self
 
     def no_output(self):
@@ -208,17 +204,17 @@ class Run(object):
     def raw_output(self):
         return self.__run_io()
 
-    def output_lines(self):
+    def output_lines(self, sep='\n'):
         outdata = self.__run_io()
-        if outdata.endswith('\n'):
+        if outdata.endswith(sep):
             outdata = outdata[:-1]
         if outdata:
-            return outdata.split('\n')
+            return outdata.split(sep)
         else:
             return []
 
-    def output_one_line(self):
-        outlines = self.output_lines()
+    def output_one_line(self, sep='\n'):
+        outlines = self.output_lines(sep)
         if len(outlines) == 1:
             return outlines[0]
         else:

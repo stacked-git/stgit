@@ -55,8 +55,8 @@ class GitConfig(object):
             return
         self.__cache = self.__defaults
         lines = Run('git', 'config', '--null', '--list'
-                   ).discard_exitcode().raw_output()
-        for line in filter(None, lines.split('\0')):
+                    ).discard_exitcode().output_lines('\0')
+        for line in lines:
             key, value = line.split('\n', 1)
             self.__cache.setdefault(key, []).append(value)
 
