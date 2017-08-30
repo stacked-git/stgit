@@ -203,17 +203,13 @@ def parse_git_ls(lines):
             yield (t, line)
             t = None
 
-def tree_status(files = None, tree_id = 'HEAD', unknown = False,
-                  noexclude = True, verbose = False):
+def tree_status(files=None, tree_id='HEAD', verbose=False):
     """Get the status of all changed files, or of a selected set of
     files. Returns a list of pairs - (status, filename).
 
-    If 'not files', it will check all files, and optionally all
-    unknown files.  If 'files' is a list, it will only check the files
-    in the list.
+    If 'not files', it will check all files. If 'files' is a list, it will only
+    check the files in the list.
     """
-    assert not files or not unknown
-
     if verbose:
         out.start('Checking for changes in the working directory')
 
@@ -222,21 +218,6 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     if files is None:
         files = []
     cache_files = []
-
-    # unknown files
-    if unknown:
-        cmd = ['ls-files', '-z', '--others', '--directory',
-               '--no-empty-directory']
-        if not noexclude:
-            cmd += ['--exclude=%s' % s for s in
-                    ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
-            cmd += ['--exclude-per-directory=.gitignore']
-            cmd += ['--exclude-from=%s' % fn
-                    for fn in exclude_files()
-                    if os.path.exists(fn)]
-
-        lines = GRun(*cmd).output_lines('\0')
-        cache_files += [('?', line) for line in lines]
 
     # conflicted files
     conflicts = get_conflicts()
