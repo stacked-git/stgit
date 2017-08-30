@@ -29,6 +29,7 @@ class RunException(StgException):
     subprocess."""
     pass
 
+
 def get_log_mode(spec):
     if ':' not in spec:
         spec += ':'
@@ -44,14 +45,17 @@ def get_log_mode(spec):
         f = out
     return (log_mode, f)
 
-(_log_mode, _logfile) = get_log_mode(os.environ.get('STGIT_SUBPROCESS_LOG', ''))
+
+_log_mode, _logfile = get_log_mode(os.environ.get('STGIT_SUBPROCESS_LOG', ''))
 if _log_mode == 'profile':
     _log_starttime = datetime.datetime.now()
     _log_subproctime = 0.0
 
+
 def duration(t1, t2):
     d = t2 - t1
     return 86400*d.days + d.seconds + 1e-6*d.microseconds
+
 
 def finish_logging():
     if _log_mode != 'profile':
@@ -64,8 +68,10 @@ def finish_logging():
                   'Remaining time: %1.3f s (%1.1f%%)'
                   % (rtime, 100*rtime/ttime))
 
+
 class Run(object):
     exc = RunException
+
     def __init__(self, *cmd):
         self.__cmd = list(cmd)
         for c in cmd:
@@ -75,6 +81,7 @@ class Run(object):
         self.__env = self.__cwd = None
         self.__indata = None
         self.__discard_stderr = False
+
     def __log_start(self):
         if _log_mode == 'debug':
             _logfile.start('Running subprocess %s' % self.__cmd)
@@ -87,6 +94,7 @@ class Run(object):
         elif _log_mode == 'profile':
             _logfile.start('Running subprocess %s' % self.__cmd)
             self.__starttime = datetime.datetime.now()
+
     def __log_end(self, retcode):
         global _log_subproctime, _log_starttime
         if _log_mode == 'debug':
@@ -98,20 +106,24 @@ class Run(object):
             _log_subproctime += d
             _logfile.info('Time since program start: %1.3f s'
                           % duration(_log_starttime, n))
+
     def __check_exitcode(self):
         if self.__good_retvals is None:
             return
         if self.exitcode not in self.__good_retvals:
             raise self.exc('%s failed with code %d'
                            % (self.__cmd[0], self.exitcode))
+
     def __run_io(self):
         """Run with captured IO."""
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
-                                 stdin = subprocess.PIPE,
-                                 stdout = subprocess.PIPE,
-                                 stderr = subprocess.PIPE)
+            p = subprocess.Popen(self.__cmd,
+                                 env=self.__env,
+                                 cwd=self.__cwd,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
             outdata, errdata = p.communicate(self.__indata)
             self.exitcode = p.returncode
         except OSError as e:
@@ -121,25 +133,29 @@ class Run(object):
         self.__log_end(self.exitcode)
         self.__check_exitcode()
         return outdata
+
     def __run_noio(self):
         """Run without captured IO."""
         assert self.__indata is None
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd)
+            p = subprocess.Popen(self.__cmd, env=self.__env, cwd=self.__cwd)
             self.exitcode = p.wait()
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.__log_end(self.exitcode)
         self.__check_exitcode()
+
     def __run_background(self):
         """Run in background."""
         assert self.__indata is None
         try:
-            p = subprocess.Popen(self.__cmd, env = self.__env, cwd = self.__cwd,
-                                 stdin = subprocess.PIPE,
-                                 stdout = subprocess.PIPE,
-                                 stderr = subprocess.PIPE)
+            p = subprocess.Popen(self.__cmd,
+                                 env=self.__env,
+                                 cwd=self.__cwd,
+                                 stdin=subprocess.PIPE,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         self.stdin = p.stdin
@@ -147,39 +163,51 @@ class Run(object):
         self.stderr = p.stderr
         self.wait = p.wait
         self.pid = lambda: p.pid
+
     def returns(self, retvals):
         self.__good_retvals = retvals
         return self
+
     def discard_exitcode(self):
         self.__good_retvals = None
         return self
-    def discard_stderr(self, discard = True):
+
+    def discard_stderr(self, discard=True):
         self.__discard_stderr = discard
         return self
+
     def env(self, env):
         self.__env = dict(os.environ)
         self.__env.update(env)
         return self
+
     def cwd(self, cwd):
         self.__cwd = cwd
         return self
+
     def raw_input(self, indata):
         self.__indata = indata
         return self
+
     def input_lines(self, lines):
         self.__indata = ''.join(['%s\n' % line for line in lines])
         return self
+
     def input_nulterm(self, lines):
         self.__indata = ''.join('%s\0' % line for line in lines)
         return self
+
     def no_output(self):
         outdata = self.__run_io()
         if outdata:
             raise self.exc('%s produced output' % self.__cmd[0])
+
     def discard_output(self):
         self.__run_io()
+
     def raw_output(self):
         return self.__run_io()
+
     def output_lines(self):
         outdata = self.__run_io()
         if outdata.endswith('\n'):
@@ -188,6 +216,7 @@ class Run(object):
             return outdata.split('\n')
         else:
             return []
+
     def output_one_line(self):
         outlines = self.output_lines()
         if len(outlines) == 1:
@@ -195,13 +224,16 @@ class Run(object):
         else:
             raise self.exc('%s produced %d lines, expected 1'
                            % (self.__cmd[0], len(outlines)))
+
     def run(self):
         """Just run, with no IO redirection."""
         self.__run_noio()
+
     def run_background(self):
         """Run as a background process."""
         self.__run_background()
         return self
+
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
