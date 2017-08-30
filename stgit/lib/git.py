@@ -9,7 +9,8 @@ import os
 import re
 import signal
 
-from stgit import exception, run, utils
+from stgit import exception, utils
+from stgit.run import Run, RunException
 from stgit.config import config
 
 
@@ -100,16 +101,16 @@ def system_date(datestring):
         # would convert it to the local time zone.
         (ds, z) = m.groups()
         try:
-            t = run.Run("date", "+%Y-%m-%d-%H-%M-%S", "-d", ds
-                        ).output_one_line()
-        except run.RunException:
+            t = Run("date", "+%Y-%m-%d-%H-%M-%S", "-d", ds
+                    ).output_one_line()
+        except RunException:
             return None
     else:
         # Time zone not included; we ask "date" to provide it for us.
         try:
-            d = run.Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
-                        ).output_one_line()
-        except run.RunException:
+            d = Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
+                    ).output_one_line()
+        except RunException:
             return None
         (t, z) = d.split("_")
     year, month, day, hour, minute, second = [int(x) for x in t.split("-")]
@@ -539,7 +540,7 @@ class Refs(object):
         runner = self.__repository.run(['git', 'show-ref'])
         try:
             lines = runner.output_lines()
-        except run.RunException:
+        except RunException:
             # as this happens both in non-git trees and empty git
             # trees, we silently ignore this error
             return
@@ -605,7 +606,7 @@ class RunWithEnv(object):
         @param args: Command and argument vector
         @type env: dict
         @param env: Extra environment"""
-        return run.Run(*args).env(utils.add_dict(self.env, env))
+        return Run(*args).env(utils.add_dict(self.env, env))
 
 class RunWithEnvCwd(RunWithEnv):
     def run(self, args, env = {}):
@@ -714,9 +715,8 @@ class Repository(RunWithEnv):
     def default(cls):
         """Return the default repository."""
         try:
-            return cls(run.Run('git', 'rev-parse', '--git-dir'
-                               ).output_one_line())
-        except run.RunException:
+            return cls(Run('git', 'rev-parse', '--git-dir').output_one_line())
+        except RunException:
             raise RepositoryException('Cannot find git repository')
     @property
     def current_branch_name(self):
@@ -741,7 +741,7 @@ class Repository(RunWithEnv):
         if self.__default_worktree is None:
             path = os.environ.get('GIT_WORK_TREE', None)
             if not path:
-                o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
+                o = Run('git', 'rev-parse', '--show-cdup').output_lines()
                 o = o or ['.']
                 assert len(o) == 1
                 path = o[0]
@@ -773,7 +773,7 @@ class Repository(RunWithEnv):
             return getter(self.run(
                     ['git', 'rev-parse', '%s^{%s}' % (rev, object_type)]
                     ).discard_stderr(discard_stderr).output_one_line())
-        except run.RunException:
+        except RunException:
             raise RepositoryException('%s: No such %s' % (rev, object_type))
     def get_blob(self, sha1):
         return self.__blobs[sha1]
@@ -792,7 +792,7 @@ class Repository(RunWithEnv):
         try:
             return self.run(['git', 'symbolic-ref', '-q', 'HEAD']
                             ).output_one_line()
-        except run.RunException:
+        except RunException:
             raise DetachedHeadException()
     def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
@@ -907,14 +907,14 @@ class Index(RunWithEnv):
             return self.__repository.get_tree(
                 self.run(['git', 'write-tree']).discard_stderr(
                     ).output_one_line())
-        except run.RunException:
+        except RunException:
             raise MergeException('Conflicting merge')
     def is_clean(self, tree):
         """Check whether the index is clean relative to the given treeish."""
         try:
             self.run(['git', 'diff-index', '--quiet', '--cached', tree.sha1]
                     ).discard_output()
-        except run.RunException:
+        except RunException:
             return False
         else:
             return True
@@ -925,7 +925,7 @@ class Index(RunWithEnv):
             if quiet:
                 r = r.discard_stderr()
             r.no_output()
-        except run.RunException:
+        except RunException:
             raise MergeException('Patch does not apply cleanly')
     def apply_treediff(self, tree1, tree2, quiet):
         """Apply the diff from C{tree1} to C{tree2} to the index."""
@@ -1046,7 +1046,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                       '--exclude-per-directory=.gitignore',
                       old_tree.sha1, new_tree.sha1]
                      ).discard_output()
-        except run.RunException:
+        except RunException:
             raise CheckoutException('Index/workdir dirty')
     def merge(self, base, ours, theirs, interactive = False):
         assert isinstance(base, Tree)
@@ -1067,7 +1067,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                 else:
                     conflicts = [l for l in output if l.startswith('CONFLICT')]
                     raise MergeConflictException(conflicts)
-        except run.RunException:
+        except RunException:
             raise MergeException('Index/worktree dirty')
     def mergetool(self, files = ()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
@@ -1101,7 +1101,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         """Check whether the worktree is clean relative to index."""
         try:
             self.run(['git', 'update-index', '--refresh']).discard_output()
-        except run.RunException:
+        except RunException:
             return False
         else:
             return True
@@ -1160,9 +1160,9 @@ class Branch(object):
 
 def diffstat(diff):
     """Return the diffstat of the supplied diff."""
-    return run.Run('git', 'apply', '--stat', '--summary'
-                   ).raw_input(diff).raw_output()
+    return Run('git', 'apply', '--stat', '--summary'
+               ).raw_input(diff).raw_output()
 
 def clone(remote, local):
     """Clone a remote repository using 'git clone'."""
-    run.Run('git', 'clone', remote, local).run()
+    Run('git', 'clone', remote, local).run()

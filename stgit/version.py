@@ -6,6 +6,7 @@ import sys
 
 from stgit import run, utils
 from stgit.exception import StgException
+from stgit.run import Run, RunException
 
 
 class VersionUnavailable(StgException):
@@ -14,16 +15,16 @@ class VersionUnavailable(StgException):
 def git_describe_version():
     path = sys.path[0]
     try:
-        v = run.Run('git', 'describe', '--tags', '--abbrev=4'
-                    ).cwd(path).output_one_line()
-    except run.RunException as e:
+        v = Run('git', 'describe', '--tags', '--abbrev=4'
+                ).cwd(path).output_one_line()
+    except RunException as e:
         raise VersionUnavailable(str(e))
     if not re.match(r'^v[0-9]', v):
         raise VersionUnavailable('%s: bad version' % v)
     try:
-        dirty = run.Run('git', 'diff-index', '--name-only', 'HEAD'
-                        ).cwd(path).raw_output()
-    except run.RunException as e:
+        dirty = Run('git', 'diff-index', '--name-only', 'HEAD'
+                    ).cwd(path).raw_output()
+    except RunException as e:
         raise VersionUnavailable(str(e))
     if dirty:
         v += '-dirty'
