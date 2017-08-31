@@ -8,6 +8,7 @@ import os
 import re
 
 from stgit import git, basedir, templates
+from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import git as libgit, stackupgrade
@@ -538,7 +539,7 @@ class Series(PatchSet):
         self.create_empty_field('unapplied')
 
         config.set(stackupgrade.format_version_key(self.get_name()),
-                   str(stackupgrade.FORMAT_VERSION))
+                   text(stackupgrade.FORMAT_VERSION))
 
     def rename(self, to_name):
         """Renames a series
