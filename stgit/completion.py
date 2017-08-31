@@ -4,6 +4,7 @@ from __future__ import (absolute_import, division, print_function,
 import itertools
 
 from stgit import argparse
+from stgit.compat import text
 import stgit.commands
 
 
@@ -22,7 +23,7 @@ def flatten(stuff, sep):
 
 def write(f, stuff, indent = 0):
     for s in stuff:
-        if isinstance(s, str):
+        if isinstance(s, text):
             f.write((' '*4*indent + s).rstrip() + '\n')
         else:
             write(f, s, indent + 1)
@@ -154,3 +155,8 @@ def write_completion(f):
         r.append(command_fun(cmd, modname))
     r += [main_switch(commands), install()]
     write(f, flatten(r, ''))
+
+
+if __name__ == '__main__':
+    import sys
+    write_completion(sys.stdout)
