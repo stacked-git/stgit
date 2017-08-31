@@ -104,8 +104,8 @@ options = [
 directory = DirectoryHasRepository(log = True)
 
 def __strip_patch_name(name):
-    stripped = re.sub('^[0-9]+-(.*)$', '\g<1>', name)
-    stripped = re.sub('^(.*)\.(diff|patch)$', '\g<1>', stripped)
+    stripped = re.sub('^[0-9]+-(.*)$', r'\g<1>', name)
+    stripped = re.sub(r'^(.*)\.(diff|patch)$', r'\g<1>', stripped)
 
     return stripped
 
@@ -135,7 +135,7 @@ def __create_patch(filename, message, author_name, author_email,
         patch = make_patch_name(message, unacceptable_name)
     else:
         # fix possible invalid characters in the patch name
-        patch = re.sub('[^\w.]+', '-', patch).strip('-')
+        patch = re.sub(r'[^\w.]+', '-', patch).strip('-')
 
     if options.ignore and patch in crt_series.get_applied():
         out.info('Ignoring already applied patch "%s"' % patch)

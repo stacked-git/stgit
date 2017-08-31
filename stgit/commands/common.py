@@ -339,7 +339,7 @@ def post_rebase(crt_series, applied, nopush, merged):
 # Patch description/e-mail/diff parsing
 #
 def __end_descr(line):
-    return re.match('---\s*$', line) or re.match('diff -', line) or \
+    return re.match(r'---\s*$', line) or re.match('diff -', line) or \
             re.match('Index: ', line) or re.match('--- \w', line)
 
 def __split_descr_diff(string):
@@ -379,21 +379,21 @@ def __parse_description(descr):
         if not descr_lines[pos]:
            continue
         # check for a "From|Author:" line
-        if re.match('\s*(?:from|author):\s+', descr_lines[pos], re.I):
-            auth = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*(?:from|author):\s+', descr_lines[pos], re.I):
+            auth = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
             authname, authemail = name_email(auth)
             lasthdr = pos + 1
             continue
         # check for a "Date:" line
-        if re.match('\s*date:\s+', descr_lines[pos], re.I):
-            authdate = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*date:\s+', descr_lines[pos], re.I):
+            authdate = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
             lasthdr = pos + 1
             continue
         if subject:
             break
         # get the subject
         subject = descr_lines[pos][descr_strip:]
-        if re.match('commit [\da-f]{40}$', subject):
+        if re.match(r'commit [\da-f]{40}$', subject):
             # 'git show' output, look for the real subject
             subject = ''
             descr_strip = 4
@@ -433,7 +433,7 @@ def parse_mail(msg):
 
     # remove the '[*PATCH*]' expression in the subject
     if descr:
-        descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
+        descr = re.findall(r'^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
     else:
         raise CmdException('Subject: line not found')

@@ -259,7 +259,7 @@ class Patch(StgitObject):
         if not date:
             return date
 
-        if re.match('[0-9]+\s+[+-][0-9]+', date):
+        if re.match(r'[0-9]+\s+[+-][0-9]+', date):
             # Unix time (seconds) + time zone
             secs_tz = date.split()
             date = formatdate(int(secs_tz[0]))[:-5] + secs_tz[1]
@@ -393,7 +393,7 @@ class Series(PatchSet):
     def __patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
         """
-        if not name or re.search('[^\w.-]', name):
+        if not name or re.search(r'[^\w.-]', name):
             raise StackException('Invalid patch name: "%s"' % name)
 
     def get_patch(self, name):

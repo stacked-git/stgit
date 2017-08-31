@@ -271,7 +271,7 @@ def patch_name_from_msg(msg):
         name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    words = re.sub('[\W]+', ' ', subject_line).split()
+    words = re.sub(r'[\W]+', ' ', subject_line).split()
 
     # use loop to avoid truncating the last name
     name = words and words[0] or 'unknown'
@@ -322,7 +322,7 @@ def parse_name_email_date(address):
     """Return a tuple consisting of the name, email and date parsed
     from a 'name <email> date' string."""
     address = re.sub(r'[\\"]', r'\\\g<0>', address)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
+    str_list = re.findall(r'^(.*)\s*<(.*)>\s*(.*)\s*$', address)
     if not str_list:
         return None
     return str_list[0]

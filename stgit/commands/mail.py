@@ -395,7 +395,7 @@ def __get_signers_list(msg):
             'tested-by',
             'suggested-by',
             'reported-and-tested-by')
-    regex = '^(%s):\s+(.+)$' % tags
+    regex = r'^(%s):\s+(.+)$' % tags
 
     r = re.compile(regex, re.I)
     for line in msg.split('\n'):
