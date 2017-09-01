@@ -93,7 +93,7 @@ for rebase in ['old', 'new']:
 
 args = sys.argv[1:]
 if len(args) == 0:
-    for (fun, desc) in sorted(perftestdesc.iteritems()):
+    for (fun, desc) in sorted(perftestdesc.items()):
         print('%s: %s' % (fun, desc))
 else:
     for test in args:

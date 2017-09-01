@@ -202,7 +202,7 @@ def pop_patches(crt_series, patches, keep = False):
         out.done()
 
 def get_patch_from_list(part_name, patch_list):
-    candidates = [full for full in patch_list if str.find(full, part_name) != -1]
+    candidates = [full for full in patch_list if part_name in full]
     if len(candidates) >= 2:
         out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
         raise CmdException('Ambiguous patch name "%s"' % part_name)

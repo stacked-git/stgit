@@ -209,7 +209,7 @@ def func(parser, options, args):
         out.info('%s is now unapplied' % name)
     for name in hidden_name_set - orig_hidden_name_set:
         out.info('%s is now hidden' % name)
-    orig_order = dict(zip(orig_patches, xrange(len(orig_patches))))
+    orig_order = dict(zip(orig_patches, range(len(orig_patches))))
 
     def patchname_key(p):
         i = orig_order.get(p, len(orig_order))

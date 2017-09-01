@@ -865,13 +865,6 @@ def refspec_localpart(refspec):
     else:
         raise GitException('Cannot parse refspec "%s"' % refspec)
 
-def refspec_remotepart(refspec):
-    m = re.match('^([^:]*):[^:]*$', refspec)
-    if m:
-        return m.group(1)
-    else:
-        raise GitException('Cannot parse refspec "%s"' % refspec)
-
 def __remotes_from_config():
     return config.sections_matching(r'remote\.(.*)\.url')
 

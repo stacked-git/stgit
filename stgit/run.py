@@ -81,7 +81,7 @@ class Run(object):
             if self.__cwd is not None:
                 _logfile.info('cwd: %s' % self.__cwd)
             if self.__env is not None:
-                for k in sorted(self.__env.iterkeys()):
+                for k in sorted(self.__env):
                     if k not in os.environ or os.environ[k] != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':
@@ -208,7 +208,7 @@ class Run(object):
         run as many times as needed to consume them all."""
         step = 100
         basecmd = self.__cmd
-        for i in xrange(0, len(xargs), step):
+        for i in range(0, len(xargs), step):
             self.__cmd = basecmd + xargs[i:i+step]
             self.__run_noio()
         self.__cmd = basecmd

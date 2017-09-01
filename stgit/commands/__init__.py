@@ -58,23 +58,23 @@ def get_commands(allow_cached = True):
 
 def py_commands(commands, f):
     f.write('command_list = {\n')
-    for key, val in sorted(commands.iteritems()):
+    for key, val in sorted(commands.items()):
         f.write('    %r: %r,\n' % (key, val))
     f.write('    }\n')
 
 def _command_list(commands):
     kinds = {}
-    for cmd, (mod, kind, help) in commands.iteritems():
+    for cmd, (mod, kind, help) in commands.items():
         kinds.setdefault(kind, {})[cmd] = help
     for kind in _kind_order:
         kind = _kinds[kind]
         try:
-            yield kind, sorted(kinds[kind].iteritems())
+            yield kind, sorted(kinds[kind].items())
         except KeyError:
             pass
 
 def pretty_command_list(commands, f):
-    cmd_len = max(len(cmd) for cmd in commands.iterkeys())
+    cmd_len = max(len(cmd) for cmd in commands)
     sep = ''
     for kind, cmds in _command_list(commands):
         f.write(sep)

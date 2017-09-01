@@ -14,11 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-from StringIO import StringIO
-from mailbox import UnixMailbox
+from contextlib import closing
 import bz2
 import email
 import gzip
+import mailbox
 import os
 import re
 import sys
@@ -282,22 +282,35 @@ def __import_mbox(filename, options):
     """Import a series from an mbox file
     """
     if filename:
-        f = open(filename, 'rb')
+        namedtemp = None
     else:
-        f = StringIO(sys.stdin.read())
+        from tempfile import NamedTemporaryFile
+        stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+        namedtemp = NamedTemporaryFile('wb', suffix='.mbox', delete=False)
+        namedtemp.write(stdin.read())
+        namedtemp.close()
+        filename = namedtemp.name
 
     try:
-        mbox = UnixMailbox(f, email.message_from_file)
-    except Exception as ex:
-        raise CmdException('error parsing the mbox file: %s' % str(ex))
+        try:
+            mbox = mailbox.mbox(filename, email.message_from_file,
+                                create=False)
+        except Exception as ex:
+            raise CmdException('error parsing the mbox file: %s' % str(ex))
 
-    for msg in mbox:
-        message, author_name, author_email, author_date, diff = \
-                 parse_mail(msg)
-        __create_patch(None, message, author_name, author_email,
-                       author_date, diff, options)
+        with closing(mbox):
+            for msg in mbox:
+                (message,
+                 author_name,
+                 author_email,
+                 author_date,
+                 diff) = parse_mail(msg)
+                __create_patch(None, message, author_name, author_email,
+                               author_date, diff, options)
+    finally:
+        if namedtemp is not None:
+            os.unlink(namedtemp.name)
 
-    f.close()
 
 def __import_url(url, options):
     """Import a patch from a URL

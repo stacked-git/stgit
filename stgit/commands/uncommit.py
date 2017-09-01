@@ -84,7 +84,7 @@ def func(parser, options, args):
         elif len(args) == 1:
             # prefix specified
             patchnames = ['%s%d' % (args[0], i)
-                          for i in xrange(patch_nr, 0, -1)]
+                          for i in range(patch_nr, 0, -1)]
         else:
             parser.error('when using --number, specify at most one patch name')
     elif len(args) == 0:
@@ -109,7 +109,7 @@ def func(parser, options, args):
     next_commit = stack.base
     if patch_nr:
         out.start('Uncommitting %d patches' % patch_nr)
-        for i in xrange(patch_nr):
+        for i in range(patch_nr):
             check_and_append(commits, next_commit)
             next_commit = next_commit.data.parent
     else:
