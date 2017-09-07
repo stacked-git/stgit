@@ -653,7 +653,7 @@ class CatFileProcess(object):
             s += os.read(p.stdout.fileno(), 4096)
         h, b = s.split('\n', 1)
         if h == '%s missing' % sha1:
-            raise SomeException()
+            raise RepositoryException('Cannot cat %s' % sha1)
         hash, type, length = h.split()
         assert hash == sha1
         length = int(length)
