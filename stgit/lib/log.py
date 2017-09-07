@@ -116,19 +116,23 @@ class LogException(StgException):
 class LogParseException(LogException):
     pass
 
+
 def patch_file(repo, cd):
-    return repo.commit(git.BlobData(''.join(s + '\n' for s in [
-                    'Bottom: %s' % cd.parent.data.tree.sha1,
-                    'Top:    %s' % cd.tree.sha1,
-                    'Author: %s' % cd.author.name_email,
-                    'Date:   %s' % cd.author.date,
-                    '',
-                    cd.message,
-                    '',
-                    '---',
-                    '',
-                    repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']
-                                   ).strip()])))
+    metadata = '\n'.join([
+        'Bottom: %s' % cd.parent.data.tree.sha1,
+        'Top:    %s' % cd.tree.sha1,
+        'Author: %s' % cd.author.name_email,
+        'Date:   %s' % cd.author.date,
+        '',
+        cd.message,
+        '',
+        '---',
+        '',
+        repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip(),
+        '',
+    ])
+    return repo.commit(git.BlobData(metadata))
+
 
 def log_ref(branch):
     return 'refs/heads/%s.stgit' % branch
