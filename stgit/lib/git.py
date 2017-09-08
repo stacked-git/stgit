@@ -310,31 +310,6 @@ class TreeData(Immutable, Repr):
     def entries(self):
         return self.__entries
 
-    """Map from name to (I{permission}, I{object}) tuple."""
-    def set_entry(self, name, po):
-        """Create a new L{TreeData} object identical to this one, except that
-        it maps C{name} to C{po}.
-
-        @param name: Name of the changed mapping
-        @type name: C{str}
-        @param po: Value of the changed mapping
-        @type po: L{Blob} or L{Tree} or (C{str}, L{Blob} or L{Tree})
-        @return: The new L{TreeData} object
-        @rtype: L{TreeData}"""
-        e = dict(self.entries)
-        e[name] = self.__x(po)
-        return type(self)(e)
-    def del_entry(self, name):
-        """Create a new L{TreeData} object identical to this one, except that
-        it doesn't map C{name} to anything.
-
-        @param name: Name of the deleted mapping
-        @type name: C{str}
-        @return: The new L{TreeData} object
-        @rtype: L{TreeData}"""
-        e = dict(self.entries)
-        del e[name]
-        return type(self)(e)
     def commit(self, repository):
         """Commit the tree.
         @return: The committed tree
