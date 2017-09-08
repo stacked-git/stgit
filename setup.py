@@ -60,7 +60,7 @@ def __run_setup():
           description = 'Stacked GIT',
           long_description = 'Push/pop utility on top of GIT',
           scripts = ['stg'],
-          packages = ['stgit', 'stgit.commands', 'stgit.lib'],
+          packages = list(map(str, ['stgit', 'stgit.commands', 'stgit.lib'])),
           data_files = [
             ('share/stgit/templates', glob.glob('templates/*.tmpl')),
             ('share/stgit/examples', glob.glob('examples/*.tmpl')),
