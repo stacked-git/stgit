@@ -146,7 +146,6 @@ def func(parser, options, args):
         out.start('Synchronising "%s"' % p)
 
         patch = crt_series.get_patch(p)
-        bottom = patch.get_bottom()
         top = patch.get_top()
 
         # reset the patch backup information.
