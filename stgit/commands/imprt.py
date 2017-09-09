@@ -244,8 +244,6 @@ def __import_file(filename, options, patch = None):
 def __import_series(filename, options):
     """Import a series of patches
     """
-    applied = crt_series.get_applied()
-
     if filename:
         if tarfile.is_tarfile(filename):
             __import_tarfile(filename, options)
