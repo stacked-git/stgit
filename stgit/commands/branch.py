@@ -125,7 +125,9 @@ options = [
     opt('--force', action = 'store_true',
         short = 'Force a delete when the series is not empty')]
 
-directory = DirectoryGotoToplevel(log = False)
+directory = DirectoryGotoToplevel(log=False)
+crt_series = None
+
 
 def __is_current_branch(branch_name):
     return crt_series.get_name() == branch_name

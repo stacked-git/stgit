@@ -47,7 +47,9 @@ options = [
         short = 'Show a diffstat summary of the specified patches'),
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log = False)
+directory = DirectoryHasRepository(log=False)
+crt_series = None
+
 
 def func(parser, options, args):
     """Show commit log and diff

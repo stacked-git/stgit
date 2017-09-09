@@ -39,7 +39,8 @@ options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'Use BRANCH instead of the default branch')]
 
-directory = DirectoryHasRepository(log = False)
+directory = DirectoryHasRepository(log=False)
+crt_series = None
 
 diff_tmpl = \
           '-------------------------------------------------------------------------------\n' \

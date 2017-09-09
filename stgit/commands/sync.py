@@ -51,7 +51,9 @@ options = [
     opt('-s', '--series', args = [argparse.files],
         short = 'Syncronise patches with SERIES')]
 
-directory = DirectoryGotoToplevel(log = True)
+directory = DirectoryGotoToplevel(log=True)
+crt_series = None
+
 
 def __check_all():
     check_local_changes()

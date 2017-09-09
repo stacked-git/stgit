@@ -42,7 +42,9 @@ options = [
         short = 'Bare file names (useful for scripting)'),
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log = False)
+directory = DirectoryHasRepository(log=False)
+crt_series = None
+
 
 def func(parser, options, args):
     """Show the files modified by a patch (or the current patch)

@@ -165,7 +165,9 @@ options = [
         short = 'Use git send-email (EXPERIMENTAL)')
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log = False)
+directory = DirectoryHasRepository(log=False)
+crt_series = None
+
 
 def __get_sender():
     """Return the 'authname <authemail>' string as read from the

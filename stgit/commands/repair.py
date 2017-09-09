@@ -73,7 +73,9 @@ repair" is _not_ what you want. In that case, what you want is option
 args = []
 options = []
 
-directory = DirectoryGotoToplevel(log = True)
+directory = DirectoryGotoToplevel(log=True)
+crt_series = None
+
 
 class Commit(object):
     def __init__(self, id):

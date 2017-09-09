@@ -50,7 +50,9 @@ options = [
     opt('--reject', action = 'store_true',
         short = 'Leave the rejected hunks in corresponding *.rej files')]
 
-directory = DirectoryHasRepository(log = True)
+directory = DirectoryHasRepository(log=True)
+crt_series = None
+
 
 def func(parser, options, args):
     """Integrate a GNU diff patch into the current patch

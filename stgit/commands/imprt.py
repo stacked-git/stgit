@@ -101,7 +101,9 @@ options = [
         short = 'Use AUTHDATE as the author date'),
     ] + argparse.sign_options()
 
-directory = DirectoryHasRepository(log = True)
+directory = DirectoryHasRepository(log=True)
+crt_series = None
+
 
 def __strip_patch_name(name):
     stripped = re.sub('^[0-9]+-(.*)$', r'\g<1>', name)
