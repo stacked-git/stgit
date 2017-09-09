@@ -143,11 +143,6 @@ def __create_patch(filename, message, author_name, author_email,
     if options.replace and patch in crt_series.get_unapplied():
         crt_series.delete_patch(patch, keep_log = True)
 
-    # refresh_patch() will invoke the editor in this case, with correct
-    # patch content
-    if not message:
-        can_edit = False
-
     if options.author:
         options.authname, options.authemail = name_email(options.author)
 
