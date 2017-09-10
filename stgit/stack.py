@@ -208,14 +208,8 @@ class Patch(StgitObject):
     def __update_log_ref(self, ref):
         git.set_ref(self.__log_ref, ref)
 
-    def get_old_bottom(self):
-        return git.get_commit(self.get_old_top()).get_parent()
-
     def get_bottom(self):
         return git.get_commit(self.get_top()).get_parent()
-
-    def get_old_top(self):
-        return self._get_field('top.old')
 
     def get_top(self):
         return git.rev_parse(self.__top_ref)
@@ -226,15 +220,6 @@ class Patch(StgitObject):
             self._set_field('top.old', curr_top)
             self._set_field('bottom.old', git.get_commit(curr_top).get_parent())
         self.__update_top_ref(value)
-
-    def restore_old_boundaries(self):
-        top = self._get_field('top.old')
-
-        if top:
-            self.__update_top_ref(top)
-            return True
-        else:
-            return False
 
     def get_description(self):
         return self._get_field('description', True)
