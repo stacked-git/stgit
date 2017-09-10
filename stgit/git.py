@@ -827,11 +827,6 @@ def apply_patch(filename = None, diff = None, base = None,
         switch(orig_head)
         merge_recursive(base, orig_head, top)
 
-def clone(repository, local_dir):
-    """Clone a remote repository. At the moment, just use the
-    'git clone' script
-    """
-    GRun('clone', repository, local_dir).run()
 
 def modifying_revs(files, base_rev, head_rev):
     """Return the revisions from the list modifying the given files."""
