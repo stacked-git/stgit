@@ -1,6 +1,29 @@
-"""Basic quilt-like functionality
-"""
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+"""Basic quilt-like functionality"""
+
+from __future__ import absolute_import, division, print_function
+from email.utils import formatdate
+import os
+import re
+
+from stgit import git, basedir, templates
+from stgit.config import config
+from stgit.exception import StackException
+from stgit.lib import git as libgit, stackupgrade
+from stgit.out import out
+from stgit.run import Run
+from stgit.utils import (add_sign_line,
+                         append_string,
+                         append_strings,
+                         call_editor,
+                         create_empty_file,
+                         insert_string,
+                         make_patch_name,
+                         read_string,
+                         read_strings,
+                         rename,
+                         write_string,
+                         write_strings)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,29 +40,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os
-import re
-from email.utils import formatdate
-
-from stgit.exception import StackException
-from stgit.utils import (add_sign_line,
-                         append_string,
-                         append_strings,
-                         call_editor,
-                         create_empty_file,
-                         insert_string,
-                         make_patch_name,
-                         read_string,
-                         read_strings,
-                         rename,
-                         write_string,
-                         write_strings)
-from stgit.out import out
-from stgit.run import Run
-from stgit import git, basedir, templates
-from stgit.config import config
-from stgit.lib import git as libgit, stackupgrade
 
 
 class FilterUntil(object):
@@ -208,14 +208,8 @@ class Patch(StgitObject):
     def __update_log_ref(self, ref):
         git.set_ref(self.__log_ref, ref)
 
-    def get_old_bottom(self):
-        return git.get_commit(self.get_old_top()).get_parent()
-
     def get_bottom(self):
         return git.get_commit(self.get_top()).get_parent()
-
-    def get_old_top(self):
-        return self._get_field('top.old')
 
     def get_top(self):
         return git.rev_parse(self.__top_ref)
@@ -226,15 +220,6 @@ class Patch(StgitObject):
             self._set_field('top.old', curr_top)
             self._set_field('bottom.old', git.get_commit(curr_top).get_parent())
         self.__update_top_ref(value)
-
-    def restore_old_boundaries(self):
-        top = self._get_field('top.old')
-
-        if top:
-            self.__update_top_ref(top)
-            return True
-        else:
-            return False
 
     def get_description(self):
         return self._get_field('description', True)
@@ -259,7 +244,7 @@ class Patch(StgitObject):
         if not date:
             return date
 
-        if re.match('[0-9]+\s+[+-][0-9]+', date):
+        if re.match(r'[0-9]+\s+[+-][0-9]+', date):
             # Unix time (seconds) + time zone
             secs_tz = date.split()
             date = formatdate(int(secs_tz[0]))[:-5] + secs_tz[1]
@@ -393,7 +378,7 @@ class Series(PatchSet):
     def __patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
         """
-        if not name or re.search('[^\w.-]', name):
+        if not name or re.search(r'[^\w.-]', name):
             raise StackException('Invalid patch name: "%s"' % name)
 
     def get_patch(self, name):

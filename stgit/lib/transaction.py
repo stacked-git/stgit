@@ -1,13 +1,16 @@
+# -*- coding: utf-8 -*-
 """The L{StackTransaction} class makes it possible to make complex
 updates to an StGit stack in a safe and convenient way."""
 
+from __future__ import absolute_import, division, print_function
+from itertools import takewhile
 import atexit
-import itertools as it
 
 from stgit import exception, utils
-from stgit.out import out
-from stgit.lib import git, log
 from stgit.config import config
+from stgit.lib import git, log
+from stgit.out import out
+
 
 class TransactionException(exception.StgException):
     """Exception raised when something goes wrong with a
@@ -435,8 +438,8 @@ class StackTransaction(object):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
             hidden = self.hidden
-        common = len(list(it.takewhile(lambda a: a[0] == a[1],
-                                       zip(self.applied, applied))))
+        common = len(list(takewhile(lambda a: a[0] == a[1],
+                                    zip(self.applied, applied))))
         to_pop = set(self.applied[common:])
         self.pop_patches(lambda pn: pn in to_pop)
         for pn in applied[common:]:

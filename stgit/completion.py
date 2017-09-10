@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import itertools
 
-import stgit.commands
 from stgit import argparse
+import stgit.commands
+
 
 def fun(name, *body):
     return ['%s ()' % name, '{', list(body), '}']

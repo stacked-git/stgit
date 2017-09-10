@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+import re
+
+from stgit import argparse, stack, git
+from stgit.argparse import opt
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_local_changes,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   parse_patches,
+                                   pop_patches,
+                                   push_patches)
+from stgit.out import out
+
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,21 +30,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import os
-import re
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_local_changes,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   parse_patches,
-                                   pop_patches,
-                                   push_patches)
-from stgit.out import out
-from stgit import argparse, stack, git
 
 help = 'Synchronise patches with a branch or a series'
 kind = 'patch'
@@ -49,7 +51,9 @@ options = [
     opt('-s', '--series', args = [argparse.files],
         short = 'Syncronise patches with SERIES')]
 
-directory = DirectoryGotoToplevel(log = True)
+directory = DirectoryGotoToplevel(log=True)
+crt_series = None
+
 
 def __check_all():
     check_local_changes()
@@ -144,7 +148,6 @@ def func(parser, options, args):
         out.start('Synchronising "%s"' % p)
 
         patch = crt_series.get_patch(p)
-        bottom = patch.get_bottom()
         top = patch.get_top()
 
         # reset the patch backup information.

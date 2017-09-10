@@ -1,13 +1,14 @@
-"""Common utility functions
-"""
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+"""Common utility functions"""
+
+from __future__ import absolute_import, division, print_function
 import errno
 import os
 import re
 import tempfile
 
-from stgit.exception import StgException
 from stgit.config import config
+from stgit.exception import StgException
 from stgit.out import out
 
 __copyright__ = """
@@ -25,6 +26,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
+
 
 def mkdir_file(filename, mode):
     """Opens filename with the given mode, creating the directory it's
@@ -269,7 +271,7 @@ def patch_name_from_msg(msg):
         name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    words = re.sub('[\W]+', ' ', subject_line).split()
+    words = re.sub(r'[\W]+', ' ', subject_line).split()
 
     # use loop to avoid truncating the last name
     name = words and words[0] or 'unknown'
@@ -320,7 +322,7 @@ def parse_name_email_date(address):
     """Return a tuple consisting of the name, email and date parsed
     from a 'name <email> date' string."""
     address = re.sub(r'[\\"]', r'\\\g<0>', address)
-    str_list = re.findall('^(.*)\s*<(.*)>\s*(.*)\s*$', address)
+    str_list = re.findall(r'^(.*)\s*<(.*)>\s*(.*)\s*$', address)
     if not str_list:
         return None
     return str_list[0]

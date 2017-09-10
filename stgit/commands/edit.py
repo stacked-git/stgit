@@ -1,5 +1,12 @@
-"""Patch editing command
-"""
+# -*- coding: utf-8 -*-
+"""Patch editing command"""
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse, utils
+from stgit.argparse import opt
+from stgit.commands import common
+from stgit.lib import transaction, edit
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2007, Catalin Marinas <catalin.marinas@gmail.com>
@@ -16,12 +23,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from stgit.argparse import opt
-from stgit import argparse, utils
-from stgit.commands import common
-from stgit.lib import transaction, edit
-from stgit.out import out
 
 help = 'Edit a patch description or diff'
 kind = 'patch'

@@ -1,5 +1,17 @@
-"""Python GIT interface
-"""
+# -*- coding: utf-8 -*-
+"""Python GIT interface"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import re
+import sys
+
+from stgit import basedir
+from stgit.config import config
+from stgit.exception import StgException
+from stgit.out import out
+from stgit.run import Run
+from stgit.utils import rename, strip_prefix
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,16 +29,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os
-import re
-import sys
-
-from stgit.exception import StgException
-from stgit import basedir
-from stgit.utils import rename, strip_prefix
-from stgit.out import out
-from stgit.run import Run
-from stgit.config import config
 
 # git exception class
 class GitException(StgException):
@@ -154,18 +156,11 @@ def get_conflicts():
     """Return the list of file conflicts
     """
     names = set()
-    for line in GRun('ls-files', '-z', '--unmerged'
-                     ).raw_output().split('\0')[:-1]:
+    for line in GRun('ls-files', '-z', '--unmerged').output_lines('\0'):
         stat, path = line.split('\t', 1)
         names.add(path)
     return list(names)
 
-def exclude_files():
-    files = [os.path.join(basedir.get(), 'info', 'exclude')]
-    user_exclude = config.get('core.excludesfile')
-    if user_exclude:
-        files.append(user_exclude)
-    return files
 
 def ls_files(files, tree = 'HEAD', full_name = True):
     """Return the files known to GIT or raise an error otherwise. It also
@@ -190,33 +185,25 @@ def ls_files(files, tree = 'HEAD', full_name = True):
             'Some of the given paths are either missing or not known to GIT')
     return list(fileset)
 
-def parse_git_ls(output):
+def parse_git_ls(lines):
     """Parse the output of git diff-index, diff-files, etc. Doesn't handle
     rename/copy output, so don't feed it output generated with the -M
     or -C flags."""
     t = None
-    for line in output.split('\0'):
-        if not line:
-            # There's a zero byte at the end of the output, which
-            # gives us an empty string as the last "line".
-            continue
+    for line in lines:
         if t is None:
             mode_a, mode_b, sha1_a, sha1_b, t = line.split(' ')
         else:
             yield (t, line)
             t = None
 
-def tree_status(files = None, tree_id = 'HEAD', unknown = False,
-                  noexclude = True, verbose = False):
+def tree_status(files=None, tree_id='HEAD', verbose=False):
     """Get the status of all changed files, or of a selected set of
     files. Returns a list of pairs - (status, filename).
 
-    If 'not files', it will check all files, and optionally all
-    unknown files.  If 'files' is a list, it will only check the files
-    in the list.
+    If 'not files', it will check all files. If 'files' is a list, it will only
+    check the files in the list.
     """
-    assert not files or not unknown
-
     if verbose:
         out.start('Checking for changes in the working directory')
 
@@ -225,21 +212,6 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
     if files is None:
         files = []
     cache_files = []
-
-    # unknown files
-    if unknown:
-        cmd = ['ls-files', '-z', '--others', '--directory',
-               '--no-empty-directory']
-        if not noexclude:
-            cmd += ['--exclude=%s' % s for s in
-                    ['*.[ao]', '*.pyc', '.*', '*~', '#*', 'TAGS', 'tags']]
-            cmd += ['--exclude-per-directory=.gitignore']
-            cmd += ['--exclude-from=%s' % fn
-                    for fn in exclude_files()
-                    if os.path.exists(fn)]
-
-        lines = GRun(*cmd).raw_output().split('\0')
-        cache_files += [('?', line) for line in lines if line]
 
     # conflicted files
     conflicts = get_conflicts()
@@ -255,7 +227,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = [tree_id]
         if files_left:
             args += ['--'] + files_left
-        for t, fn in parse_git_ls(GRun('diff-index', '-z', *args).raw_output()):
+        diff_index_lines = GRun('diff-index', '-z', *args).output_lines('\0')
+        for t, fn in parse_git_ls(diff_index_lines):
             # the condition is needed in case files is emtpy and
             # diff-index lists those already reported
             if fn not in reported_files:
@@ -271,7 +244,8 @@ def tree_status(files = None, tree_id = 'HEAD', unknown = False,
         args = []
         if files_left:
             args += ['--'] + files_left
-        for t, fn in parse_git_ls(GRun('diff-files', '-z', *args).raw_output()):
+        diff_files_lines = GRun('diff-files', '-z', *args).output_lines('\0')
+        for t, fn in parse_git_ls(diff_files_lines):
             # the condition is needed in case files is empty and
             # diff-files lists those already reported
             if fn not in reported_files:
@@ -745,15 +719,6 @@ def reset(files = None, tree_id = None, check_out = True):
     if not files:
         __set_head(tree_id)
 
-def resolved(filenames, reset = None):
-    if reset:
-        stage = {'ancestor': 1, 'current': 2, 'patched': 3}[reset]
-        GRun('checkout-index', '--no-create', '--stage=%d' % stage,
-             '--stdin', '-z').input_nulterm(filenames).no_output()
-    GRun('update-index', '--add', '--').xargs(filenames)
-    for filename in filenames:
-        # update the access and modificatied times
-        os.utime(filename, None)
 
 def fetch(repository = 'origin', refspec = None):
     """Fetches changes from the remote repository, using 'git fetch'
@@ -847,11 +812,6 @@ def apply_patch(filename = None, diff = None, base = None,
         switch(orig_head)
         merge_recursive(base, orig_head, top)
 
-def clone(repository, local_dir):
-    """Clone a remote repository. At the moment, just use the
-    'git clone' script
-    """
-    GRun('clone', repository, local_dir).run()
 
 def modifying_revs(files, base_rev, head_rev):
     """Return the revisions from the list modifying the given files."""

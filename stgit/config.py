@@ -1,5 +1,12 @@
-"""Handles the Stacked GIT configuration files
-"""
+# -*- coding: utf-8 -*-
+"""Handles the Stacked GIT configuration files"""
+
+from __future__ import absolute_import, division, print_function
+import os
+import re
+
+from stgit.exception import StgException
+from stgit.run import Run
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,17 +24,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import os
-import re
-
-from stgit.exception import StgException
-from stgit.run import Run
 
 class GitConfigException(StgException):
     pass
 
+
 class GitConfig(object):
-    __defaults={
+    __defaults = {
         'stgit.smtpserver':     ['localhost:25'],
         'stgit.smtpdelay':      ['5'],
         'stgit.pullcmd':        ['git pull'],
@@ -42,7 +45,7 @@ class GitConfig(object):
         'stgit.alias.mv':       ['git mv'],
         'stgit.alias.resolved': ['git add'],
         'stgit.alias.status':   ['git status -s']
-        }
+    }
 
     __cache = None
 
@@ -53,8 +56,8 @@ class GitConfig(object):
             return
         self.__cache = self.__defaults
         lines = Run('git', 'config', '--null', '--list'
-                   ).discard_exitcode().raw_output()
-        for line in filter(None, lines.split('\0')):
+                    ).discard_exitcode().output_lines('\0')
+        for line in lines:
             key, value = line.split('\n', 1)
             self.__cache.setdefault(key, []).append(value)
 
@@ -126,8 +129,10 @@ class GitConfig(object):
         """Invoke 'git config --get-colorbool' and return the result."""
         return Run('git', 'config', '--get-colorbool', name,
                    stdout_is_tty).output_one_line()
-        
-config=GitConfig()
+
+
+config = GitConfig()
+
 
 def config_setup():
     global config
@@ -135,16 +140,3 @@ def config_setup():
     os.environ.setdefault('PAGER', config.get('stgit.pager'))
     os.environ.setdefault('LESS', '-FRSX')
     # FIXME: handle EDITOR the same way ?
-
-class ConfigOption(object):
-    """Delayed cached reading of a configuration option.
-    """
-    def __init__(self, section, option):
-        self.__section = section
-        self.__option = option
-        self.__value = None
-
-    def __str__(self):
-        if not self.__value:
-            self.__value = config.get(self.__section + '.' + self.__option)
-        return self.__value

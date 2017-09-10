@@ -1,4 +1,28 @@
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import email
+import email.charset
+import email.header
+import email.utils
+import getpass
+import os
+import re
+import smtplib
+import socket
+import time
+
+from stgit import argparse, stack, git, version, templates
+from stgit.argparse import opt
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   address_or_alias,
+                                   git_id,
+                                   parse_patches)
+from stgit.config import config
+from stgit.lib import git as gitlib
+from stgit.out import out
+from stgit.run import Run
+from stgit.utils import call_editor
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -15,30 +39,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import email
-import email.charset
-import email.header
-import email.utils
-import getpass
-import os
-import re
-import smtplib
-import socket
-import time
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryHasRepository,
-                                   address_or_alias,
-                                   git_id,
-                                   parse_patches)
-from stgit.utils import call_editor
-from stgit.out import out
-from stgit import argparse, stack, git, version, templates
-from stgit.config import config
-from stgit.run import Run
-from stgit.lib import git as gitlib
 
 help = 'Send a patch or series of patches by e-mail'
 kind = 'patch'
@@ -165,7 +165,9 @@ options = [
         short = 'Use git send-email (EXPERIMENTAL)')
     ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log = False)
+directory = DirectoryHasRepository(log=False)
+crt_series = None
+
 
 def __get_sender():
     """Return the 'authname <authemail>' string as read from the
@@ -395,7 +397,7 @@ def __get_signers_list(msg):
             'tested-by',
             'suggested-by',
             'reported-and-tested-by')
-    regex = '^(%s):\s+(.+)$' % tags
+    regex = r'^(%s):\s+(.+)$' % tags
 
     r = re.compile(regex, re.I)
     for line in msg.split('\n'):

@@ -1,4 +1,18 @@
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import re
+import time
+
+from stgit import argparse, stack, git
+from stgit.argparse import opt
+from stgit.commands.common import (CmdException,
+                                   DirectoryGotoToplevel,
+                                   check_local_changes,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   git_id)
+from stgit.lib import log
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
@@ -15,20 +29,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-import re
-import time
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_local_changes,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   git_id)
-from stgit.out import out
-from stgit import argparse, stack, git
-from stgit.lib import log
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
 kind = 'stack'
@@ -125,7 +125,9 @@ options = [
     opt('--force', action = 'store_true',
         short = 'Force a delete when the series is not empty')]
 
-directory = DirectoryGotoToplevel(log = False)
+directory = DirectoryGotoToplevel(log=False)
+crt_series = None
+
 
 def __is_current_branch(branch_name):
     return crt_series.get_name() == branch_name

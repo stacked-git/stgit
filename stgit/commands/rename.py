@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+
+from stgit import argparse
+from stgit.argparse import opt
+from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.out import out
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -14,11 +22,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepository
-from stgit.out import out
-from stgit import argparse
-
 help = 'Rename a patch'
 kind = 'patch'
 usage = ['[options] [--] [oldpatch] <newpatch>']
@@ -32,7 +35,9 @@ options = [
     opt('-b', '--branch', args = [argparse.stg_branches],
         short = 'use BRANCH instead of the default one')]
 
-directory = DirectoryHasRepository(log = True)
+directory = DirectoryHasRepository(log=True)
+crt_series = None
+
 
 def func(parser, options, args):
     """Rename a patch in the series

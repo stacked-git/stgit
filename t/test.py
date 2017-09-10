@@ -1,16 +1,16 @@
-# Run the test suite in parallel.
-from __future__ import division, print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
 import glob
 import math
 import optparse
 import os
-import os.path
 import random
 import shutil
 import subprocess
 import sys
 import threading
 import traceback
+
 
 # Number of jobs to run in parallel.
 def default_num_jobs():

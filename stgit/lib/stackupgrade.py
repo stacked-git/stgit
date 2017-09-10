@@ -1,8 +1,11 @@
-import os.path
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+import os
+
 from stgit import utils
-from stgit.out import out
 from stgit.config import config
 from stgit.exception import StackException
+from stgit.out import out
 
 # The current StGit metadata format version.
 FORMAT_VERSION = 2

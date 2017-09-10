@@ -1,3 +1,31 @@
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from contextlib import closing
+import bz2
+import email
+import gzip
+import mailbox
+import os
+import re
+import sys
+import tarfile
+
+from stgit import argparse, git
+from stgit.argparse import opt
+from stgit.config import config
+from stgit.out import out
+from stgit.commands.common import (CmdException,
+                                   DirectoryHasRepository,
+                                   check_conflicts,
+                                   check_head_top_equal,
+                                   check_local_changes,
+                                   git_id,
+                                   name_email,
+                                   parse_mail,
+                                   parse_patch,
+                                   print_crt_patch)
+from stgit.utils import make_patch_name
+
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -13,32 +41,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
-
-from contextlib import closing
-import bz2
-import email
-import gzip
-import mailbox
-import os
-import re
-import sys
-import tarfile
-
-from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryHasRepository,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   check_local_changes,
-                                   git_id,
-                                   name_email,
-                                   parse_mail,
-                                   parse_patch,
-                                   print_crt_patch)
-from stgit.utils import make_patch_name
-from stgit.config import config
-from stgit.out import out
-from stgit import argparse, git
 
 name = 'import'
 help = 'Import a GNU diff file as a new patch'
@@ -99,11 +101,13 @@ options = [
         short = 'Use AUTHDATE as the author date'),
     ] + argparse.sign_options()
 
-directory = DirectoryHasRepository(log = True)
+directory = DirectoryHasRepository(log=True)
+crt_series = None
+
 
 def __strip_patch_name(name):
-    stripped = re.sub('^[0-9]+-(.*)$', '\g<1>', name)
-    stripped = re.sub('^(.*)\.(diff|patch)$', '\g<1>', stripped)
+    stripped = re.sub('^[0-9]+-(.*)$', r'\g<1>', name)
+    stripped = re.sub(r'^(.*)\.(diff|patch)$', r'\g<1>', stripped)
 
     return stripped
 
@@ -133,18 +137,13 @@ def __create_patch(filename, message, author_name, author_email,
         patch = make_patch_name(message, unacceptable_name)
     else:
         # fix possible invalid characters in the patch name
-        patch = re.sub('[^\w.]+', '-', patch).strip('-')
+        patch = re.sub(r'[^\w.]+', '-', patch).strip('-')
 
     if options.ignore and patch in crt_series.get_applied():
         out.info('Ignoring already applied patch "%s"' % patch)
         return
     if options.replace and patch in crt_series.get_unapplied():
         crt_series.delete_patch(patch, keep_log = True)
-
-    # refresh_patch() will invoke the editor in this case, with correct
-    # patch content
-    if not message:
-        can_edit = False
 
     if options.author:
         options.authname, options.authemail = name_email(options.author)
@@ -242,8 +241,6 @@ def __import_file(filename, options, patch = None):
 def __import_series(filename, options):
     """Import a series of patches
     """
-    applied = crt_series.get_applied()
-
     if filename:
         if tarfile.is_tarfile(filename):
             __import_tarfile(filename, options)

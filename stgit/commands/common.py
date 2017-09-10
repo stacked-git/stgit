@@ -1,5 +1,26 @@
-"""Function/variables common to all the commands
-"""
+# -*- coding: utf-8 -*-
+"""Function/variables common to all the commands"""
+from __future__ import absolute_import, division, print_function
+import email.utils
+import os
+import re
+import sys
+
+from stgit import stack, git
+from stgit.config import config
+from stgit.exception import StgException
+from stgit.lib import git as libgit
+from stgit.lib import log
+from stgit.lib import stack as libstack
+from stgit.out import out
+from stgit.run import Run, RunException
+from stgit.utils import (EditorException,
+                         add_sign_line,
+                         edit_string,
+                         get_hook,
+                         parse_name_email_date,
+                         run_hook_on_string,
+                         strip_prefix)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -17,26 +38,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-import email.utils
-import os
-import re
-import sys
-
-from stgit.exception import StgException
-from stgit.utils import (EditorException,
-                         add_sign_line,
-                         edit_string,
-                         get_hook,
-                         parse_name_email_date,
-                         run_hook_on_string,
-                         strip_prefix)
-from stgit.out import out
-from stgit.run import Run, RunException
-from stgit import stack, git
-from stgit.config import config
-from stgit.lib import stack as libstack
-from stgit.lib import git as libgit
-from stgit.lib import log
 
 # Command exception class
 class CmdException(StgException):
@@ -143,9 +144,6 @@ def print_crt_patch(crt_series, branch = None):
     else:
         out.info('No patches applied')
 
-def resolved_all(reset = None):
-    conflicts = git.get_conflicts()
-    git.resolved(conflicts, reset)
 
 def push_patches(crt_series, patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared
@@ -338,7 +336,7 @@ def post_rebase(crt_series, applied, nopush, merged):
 # Patch description/e-mail/diff parsing
 #
 def __end_descr(line):
-    return re.match('---\s*$', line) or re.match('diff -', line) or \
+    return re.match(r'---\s*$', line) or re.match('diff -', line) or \
             re.match('Index: ', line) or re.match('--- \w', line)
 
 def __split_descr_diff(string):
@@ -378,21 +376,21 @@ def __parse_description(descr):
         if not descr_lines[pos]:
            continue
         # check for a "From|Author:" line
-        if re.match('\s*(?:from|author):\s+', descr_lines[pos], re.I):
-            auth = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*(?:from|author):\s+', descr_lines[pos], re.I):
+            auth = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
             authname, authemail = name_email(auth)
             lasthdr = pos + 1
             continue
         # check for a "Date:" line
-        if re.match('\s*date:\s+', descr_lines[pos], re.I):
-            authdate = re.findall('^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*date:\s+', descr_lines[pos], re.I):
+            authdate = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
             lasthdr = pos + 1
             continue
         if subject:
             break
         # get the subject
         subject = descr_lines[pos][descr_strip:]
-        if re.match('commit [\da-f]{40}$', subject):
+        if re.match(r'commit [\da-f]{40}$', subject):
             # 'git show' output, look for the real subject
             subject = ''
             descr_strip = 4
@@ -432,7 +430,7 @@ def parse_mail(msg):
 
     # remove the '[*PATCH*]' expression in the subject
     if descr:
-        descr = re.findall('^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
+        descr = re.findall(r'^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
                            descr)[0][1]
     else:
         raise CmdException('Subject: line not found')

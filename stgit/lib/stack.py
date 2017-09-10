@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
 
-import os.path
+from __future__ import absolute_import, division, print_function
+import os
+
 from stgit import utils
+from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import git, stackupgrade
-from stgit.config import config
 
 
 class Patch(object):

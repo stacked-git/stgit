@@ -1,14 +1,18 @@
+# -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
+from __future__ import absolute_import, division, print_function
 from datetime import datetime, timedelta, tzinfo
 import atexit
 import os
 import re
 import signal
 
-from stgit import exception, run, utils
+from stgit import exception, utils
+from stgit.run import Run, RunException
 from stgit.config import config
+
 
 class Immutable(object):
     """I{Immutable} objects cannot be modified once created. Any
@@ -97,16 +101,16 @@ def system_date(datestring):
         # would convert it to the local time zone.
         (ds, z) = m.groups()
         try:
-            t = run.Run("date", "+%Y-%m-%d-%H-%M-%S", "-d", ds
-                        ).output_one_line()
-        except run.RunException:
+            t = Run("date", "+%Y-%m-%d-%H-%M-%S", "-d", ds
+                    ).output_one_line()
+        except RunException:
             return None
     else:
         # Time zone not included; we ask "date" to provide it for us.
         try:
-            d = run.Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
-                        ).output_one_line()
-        except run.RunException:
+            d = Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
+                    ).output_one_line()
+        except RunException:
             return None
         (t, z) = d.split("_")
     year, month, day, hour, minute, second = [int(x) for x in t.split("-")]
@@ -306,49 +310,23 @@ class TreeData(Immutable, Repr):
     def entries(self):
         return self.__entries
 
-    """Map from name to (I{permission}, I{object}) tuple."""
-    def set_entry(self, name, po):
-        """Create a new L{TreeData} object identical to this one, except that
-        it maps C{name} to C{po}.
-
-        @param name: Name of the changed mapping
-        @type name: C{str}
-        @param po: Value of the changed mapping
-        @type po: L{Blob} or L{Tree} or (C{str}, L{Blob} or L{Tree})
-        @return: The new L{TreeData} object
-        @rtype: L{TreeData}"""
-        e = dict(self.entries)
-        e[name] = self.__x(po)
-        return type(self)(e)
-    def del_entry(self, name):
-        """Create a new L{TreeData} object identical to this one, except that
-        it doesn't map C{name} to anything.
-
-        @param name: Name of the deleted mapping
-        @type name: C{str}
-        @return: The new L{TreeData} object
-        @rtype: L{TreeData}"""
-        e = dict(self.entries)
-        del e[name]
-        return type(self)(e)
     def commit(self, repository):
         """Commit the tree.
         @return: The committed tree
         @rtype: L{Tree}"""
-        listing = ''.join(
-            '%s %s %s\t%s\0' % (mode, obj.typename, obj.sha1, name)
-            for (name, (mode, obj)) in self.entries.items())
+        listing = ['%s %s %s\t%s' % (mode, obj.typename, obj.sha1, name)
+                   for (name, (mode, obj)) in self.entries.items()]
         sha1 = repository.run(['git', 'mktree', '-z']
-                              ).raw_input(listing).output_one_line()
+                              ).input_nulterm(listing).output_one_line()
         return repository.get_tree(sha1)
     @classmethod
-    def parse(cls, repository, s):
+    def parse(cls, repository, lines):
         """Parse a raw git tree description.
 
         @return: A new L{TreeData} object
         @rtype: L{TreeData}"""
         entries = {}
-        for line in s.split('\0')[:-1]:
+        for line in lines:
             m = re.match(r'^([0-7]{6}) ([a-z]+) ([0-9a-f]{40})\t(.*)$', line)
             assert m
             perm, type, sha1, name = m.groups()
@@ -376,7 +354,7 @@ class Tree(GitObject):
             self.__data = TreeData.parse(
                 self.__repository,
                 self.__repository.run(['git', 'ls-tree', '-z', self.sha1]
-                                      ).raw_output())
+                                      ).output_lines('\0'))
         return self.__data
     def __str__(self):
         return 'Tree<sha1: %s>' % self.sha1
@@ -536,7 +514,7 @@ class Refs(object):
         runner = self.__repository.run(['git', 'show-ref'])
         try:
             lines = runner.output_lines()
-        except run.RunException:
+        except RunException:
             # as this happens both in non-git trees and empty git
             # trees, we silently ignore this error
             return
@@ -602,7 +580,7 @@ class RunWithEnv(object):
         @param args: Command and argument vector
         @type env: dict
         @param env: Extra environment"""
-        return run.Run(*args).env(utils.add_dict(self.env, env))
+        return Run(*args).env(utils.add_dict(self.env, env))
 
 class RunWithEnvCwd(RunWithEnv):
     def run(self, args, env = {}):
@@ -650,7 +628,7 @@ class CatFileProcess(object):
             s += os.read(p.stdout.fileno(), 4096)
         h, b = s.split('\n', 1)
         if h == '%s missing' % sha1:
-            raise SomeException()
+            raise RepositoryException('Cannot cat %s' % sha1)
         hash, type, length = h.split()
         assert hash == sha1
         length = int(length)
@@ -711,9 +689,8 @@ class Repository(RunWithEnv):
     def default(cls):
         """Return the default repository."""
         try:
-            return cls(run.Run('git', 'rev-parse', '--git-dir'
-                               ).output_one_line())
-        except run.RunException:
+            return cls(Run('git', 'rev-parse', '--git-dir').output_one_line())
+        except RunException:
             raise RepositoryException('Cannot find git repository')
     @property
     def current_branch_name(self):
@@ -738,7 +715,7 @@ class Repository(RunWithEnv):
         if self.__default_worktree is None:
             path = os.environ.get('GIT_WORK_TREE', None)
             if not path:
-                o = run.Run('git', 'rev-parse', '--show-cdup').output_lines()
+                o = Run('git', 'rev-parse', '--show-cdup').output_lines()
                 o = o or ['.']
                 assert len(o) == 1
                 path = o[0]
@@ -770,7 +747,7 @@ class Repository(RunWithEnv):
             return getter(self.run(
                     ['git', 'rev-parse', '%s^{%s}' % (rev, object_type)]
                     ).discard_stderr(discard_stderr).output_one_line())
-        except run.RunException:
+        except RunException:
             raise RepositoryException('%s: No such %s' % (rev, object_type))
     def get_blob(self, sha1):
         return self.__blobs[sha1]
@@ -789,7 +766,7 @@ class Repository(RunWithEnv):
         try:
             return self.run(['git', 'symbolic-ref', '-q', 'HEAD']
                             ).output_one_line()
-        except run.RunException:
+        except RunException:
             raise DetachedHeadException()
     def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
@@ -904,14 +881,14 @@ class Index(RunWithEnv):
             return self.__repository.get_tree(
                 self.run(['git', 'write-tree']).discard_stderr(
                     ).output_one_line())
-        except run.RunException:
+        except RunException:
             raise MergeException('Conflicting merge')
     def is_clean(self, tree):
         """Check whether the index is clean relative to the given treeish."""
         try:
             self.run(['git', 'diff-index', '--quiet', '--cached', tree.sha1]
                     ).discard_output()
-        except run.RunException:
+        except RunException:
             return False
         else:
             return True
@@ -922,7 +899,7 @@ class Index(RunWithEnv):
             if quiet:
                 r = r.discard_stderr()
             r.no_output()
-        except run.RunException:
+        except RunException:
             raise MergeException('Patch does not apply cleanly')
     def apply_treediff(self, tree1, tree2, quiet):
         """Apply the diff from C{tree1} to C{tree2} to the index."""
@@ -979,7 +956,7 @@ class Index(RunWithEnv):
         """The set of conflicting paths."""
         paths = set()
         for line in self.run(['git', 'ls-files', '-z', '--unmerged']
-                             ).raw_output().split('\0')[:-1]:
+                             ).output_lines('\0'):
             stat, path = line.split('\t', 1)
             paths.add(path)
         return paths
@@ -1043,7 +1020,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                       '--exclude-per-directory=.gitignore',
                       old_tree.sha1, new_tree.sha1]
                      ).discard_output()
-        except run.RunException:
+        except RunException:
             raise CheckoutException('Index/workdir dirty')
     def merge(self, base, ours, theirs, interactive = False):
         assert isinstance(base, Tree)
@@ -1064,7 +1041,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                 else:
                     conflicts = [l for l in output if l.startswith('CONFLICT')]
                     raise MergeConflictException(conflicts)
-        except run.RunException:
+        except RunException:
             raise MergeException('Index/worktree dirty')
     def mergetool(self, files = ()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
@@ -1087,7 +1064,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         assert isinstance(tree, Tree)
         return set(self.run_in_cwd(
                 ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
-                + list(pathlimits)).raw_output().split('\0')[:-1])
+                + list(pathlimits)).output_lines('\0'))
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""
@@ -1098,7 +1075,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         """Check whether the worktree is clean relative to index."""
         try:
             self.run(['git', 'update-index', '--refresh']).discard_output()
-        except run.RunException:
+        except RunException:
             return False
         else:
             return True
@@ -1157,9 +1134,9 @@ class Branch(object):
 
 def diffstat(diff):
     """Return the diffstat of the supplied diff."""
-    return run.Run('git', 'apply', '--stat', '--summary'
-                   ).raw_input(diff).raw_output()
+    return Run('git', 'apply', '--stat', '--summary'
+               ).raw_input(diff).raw_output()
 
 def clone(remote, local):
     """Clone a remote repository using 'git clone'."""
-    run.Run('git', 'clone', remote, local).run()
+    Run('git', 'clone', remote, local).run()

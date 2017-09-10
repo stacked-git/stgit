@@ -1,12 +1,14 @@
 #!/usr/bin/env python2
-from __future__ import print_function
+# -*- coding: utf-8 -*-
+from __future__ import absolute_import, division, print_function
+from distutils.core import setup
 import glob
 import os
 import sys
-from distutils.core import setup
 
 from stgit import version
 from stgit import commands, completion
+
 
 def __version_to_list(version):
     """Convert a version string to a list of numbers or strings
