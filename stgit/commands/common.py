@@ -144,9 +144,6 @@ def print_crt_patch(crt_series, branch = None):
     else:
         out.info('No patches applied')
 
-def resolved_all(reset = None):
-    conflicts = git.get_conflicts()
-    git.resolved(conflicts, reset)
 
 def push_patches(crt_series, patches, check_merged = False):
     """Push multiple patches onto the stack. This function is shared

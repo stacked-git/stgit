@@ -161,12 +161,6 @@ def get_conflicts():
         names.add(path)
     return list(names)
 
-def exclude_files():
-    files = [os.path.join(basedir.get(), 'info', 'exclude')]
-    user_exclude = config.get('core.excludesfile')
-    if user_exclude:
-        files.append(user_exclude)
-    return files
 
 def ls_files(files, tree = 'HEAD', full_name = True):
     """Return the files known to GIT or raise an error otherwise. It also
@@ -725,15 +719,6 @@ def reset(files = None, tree_id = None, check_out = True):
     if not files:
         __set_head(tree_id)
 
-def resolved(filenames, reset = None):
-    if reset:
-        stage = {'ancestor': 1, 'current': 2, 'patched': 3}[reset]
-        GRun('checkout-index', '--no-create', '--stage=%d' % stage,
-             '--stdin', '-z').input_nulterm(filenames).no_output()
-    GRun('update-index', '--add', '--').xargs(filenames)
-    for filename in filenames:
-        # update the access and modificatied times
-        os.utime(filename, None)
 
 def fetch(repository = 'origin', refspec = None):
     """Fetches changes from the remote repository, using 'git fetch'
