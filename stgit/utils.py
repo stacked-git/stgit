@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division, print_function,
 import errno
 import os
 import re
+import sys
 import tempfile
 
 from stgit.config import config
@@ -209,21 +210,25 @@ def get_hook(repository, hook_name, extra_env={}):
 
         default_iw.run(argv, extra_env).run()
 
-    hook.__name__ = hook_name
+    hook.__name__ = str(hook_name)
     return hook
 
 def run_hook_on_string(hook, s, *args):
     if hook is not None:
-        temp = tempfile.NamedTemporaryFile('wb', delete=False)
+        temp = tempfile.NamedTemporaryFile('w', delete=False)
         try:
             try:
                 temp.write(s)
             finally:
                 temp.close()
 
-            hook(temp.name, *args)
+            if sys.version_info[0] >= 3:
+                hook_path = temp.name
+            else:
+                hook_path = temp.name.decode(sys.getfilesystemencoding())
+            hook(hook_path, *args)
 
-            output = open(temp.name, 'rb')
+            output = open(hook_path, 'r')
             try:
                 s = output.read()
             finally:
