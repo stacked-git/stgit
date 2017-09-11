@@ -3,7 +3,8 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import os
 
-from stgit import utils
+from stgit.compat import text
+from stgit.utils import strip_suffix
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -40,7 +41,7 @@ def _find_commands():
         for fn in os.listdir(p):
             if not fn.endswith('.py'):
                 continue
-            mod = utils.strip_suffix('.py', fn)
+            mod = text(strip_suffix('.py', fn))
             m = get_command(mod)
             if not hasattr(m, 'usage'):
                 continue
@@ -56,14 +57,19 @@ def get_commands(allow_cached = True):
         except ImportError:
             # cmdlist.py doesn't exist, so do it the expensive way.
             pass
-    return dict((getattr(m, 'name', mod), (mod, _kinds[m.kind], m.help))
+    return dict((text(getattr(m, 'name', mod)), (mod, _kinds[m.kind], m.help))
                 for mod, m in _find_commands())
 
 def py_commands(commands, f):
+    f.write('from __future__ import unicode_literals\n\n')
     f.write('command_list = {\n')
-    for key, val in sorted(commands.items()):
-        f.write('    %r: %r,\n' % (key, val))
-    f.write('    }\n')
+    for name, (mod, kind, help) in commands.items():
+        f.write('    %r: (\n' % name)
+        f.write('        %r,\n' % mod)
+        f.write('        %r,\n' % kind)
+        f.write('        %r,\n' % help)
+        f.write('    ),\n')
+    f.write('}\n')
 
 def _command_list(commands):
     kinds = {}
