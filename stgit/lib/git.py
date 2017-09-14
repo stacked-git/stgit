@@ -244,19 +244,20 @@ class GitObject(Immutable, Repr):
 
 class BlobData(Immutable, Repr):
     """Represents the data contents of a git blob object."""
-    def __init__(self, string):
-        self.__string = str(string)
+    def __init__(self, data):
+        assert isinstance(data, bytes)
+        self.__bytes = data
 
     @property
-    def str(self):
-        return self.__string
+    def bytes(self):
+        return self.__bytes
 
     def commit(self, repository):
         """Commit the blob.
         @return: The committed blob
         @rtype: L{Blob}"""
-        sha1 = repository.run(['git', 'hash-object', '-w', '--stdin']
-                              ).raw_input(self.str).output_one_line()
+        runner = repository.run(['git', 'hash-object', '-w', '--stdin'])
+        sha1 = runner.encoding(None).raw_input(self.bytes).output_one_line()
         return repository.get_blob(sha1)
 
 class Blob(GitObject):
@@ -277,7 +278,7 @@ class Blob(GitObject):
         return 'Blob<%s>' % self.sha1
     @property
     def data(self):
-        return BlobData(self.__repository.cat_object(self.sha1))
+        return BlobData(self.__repository.cat_object(self.sha1, encoding=None))
 
 class ImmutableDict(dict):
     """A dictionary that cannot be modified once it's been created."""
@@ -618,27 +619,32 @@ class CatFileProcess(object):
             p.stdin.close()
             os.kill(p.pid(), signal.SIGTERM)
             p.wait()
-    def cat_file(self, sha1):
+    def cat_file(self, sha1, encoding):
         p = self.__get_process()
         p.stdin.write('%s\n' % sha1)
         p.stdin.flush()
 
         # Read until we have the entire status line.
-        s = ''
-        while '\n' not in s:
+        s = b''
+        while b'\n' not in s:
             s += os.read(p.stdout.fileno(), 4096)
-        h, b = s.split('\n', 1)
-        if h == '%s missing' % sha1:
+        h, b = s.split(b'\n', 1)
+        header = h.decode('utf-8')
+        if header == '%s missing' % sha1:
             raise RepositoryException('Cannot cat %s' % sha1)
-        hash, type, length = h.split()
-        assert hash == sha1
-        length = int(length)
+        name, type_, size = header.split()
+        assert name == sha1
+        size = int(size)
 
         # Read until we have the entire object plus the trailing
         # newline.
-        while len(b) < length + 1:
+        while len(b) < size + 1:
             b += os.read(p.stdout.fileno(), 4096)
-        return type, b[:-1]
+        content = b[:size]
+        if encoding:
+            return type_, content.decode(encoding)
+        else:
+            return type_, content
 
 class DiffTreeProcesses(object):
     def __init__(self, repo):
@@ -649,7 +655,8 @@ class DiffTreeProcesses(object):
         args = tuple(args)
         if args not in self.__procs:
             self.__procs[args] = self.__repo.run(
-                ['git', 'diff-tree', '--stdin'] + list(args)).run_background()
+                ['git', 'diff-tree', '--stdin', '--encoding=utf-8'] +
+                list(args)).run_background()
         return self.__procs[args]
     def __shutdown(self):
         for p in self.__procs.values():
@@ -658,12 +665,15 @@ class DiffTreeProcesses(object):
     def diff_trees(self, args, sha1a, sha1b):
         p = self.__get_process(args)
         query = '%s %s\n' % (sha1a, sha1b)
-        end = 'EOF\n' # arbitrary string that's not a 40-digit hex number
-        p.stdin.write(query + end)
+        end = 'EOF\n'  # arbitrary string that's not a 40-digit hex number
+        b_end = end.encode('utf-8')
+        os.write(p.stdin.fileno(), query.encode('utf-8') + b_end)
         p.stdin.flush()
-        s = ''
-        while not (s.endswith('\n' + end) or s.endswith('\0' + end)):
-            s += os.read(p.stdout.fileno(), 4096)
+        data = bytes()
+        while not (data.endswith(b'\n' + b_end) or
+                   data.endswith(b'\0' + b_end)):
+            data += os.read(p.stdout.fileno(), 4096)
+        s = data.decode('utf-8')
         assert s.startswith(query)
         assert s.endswith(end)
         return s[len(query):-len(end)]
@@ -739,8 +749,9 @@ class Repository(RunWithEnv):
     def refs(self):
         return self.__refs
 
-    def cat_object(self, sha1):
-        return self.__catfile.cat_file(sha1)[1]
+    def cat_object(self, sha1, encoding='utf-8'):
+        return self.__catfile.cat_file(sha1, encoding)[1]
+
     def rev_parse(self, rev, discard_stderr = False, object_type = 'commit'):
         assert object_type in ('commit', 'tree', 'blob')
         getter = getattr(self, 'get_' + object_type)
