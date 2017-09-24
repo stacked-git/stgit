@@ -8,12 +8,15 @@
 ORIGINAL_TERM=$TERM
 
 # For repeatability, reset the environment to known value.
-LANG=C
-LC_ALL=C
+if ! (( STGIT_TEST_KEEP_LOCALE )); then
+	LANG=C
+	LC_ALL=C
+	export LANG LC_ALL
+fi
 PAGER=cat
 TZ=UTC
 TERM=dumb
-export LANG LC_ALL PAGER TERM TZ
+export PAGER TERM TZ
 unset EDITOR
 unset VISUAL
 unset GIT_EDITOR
