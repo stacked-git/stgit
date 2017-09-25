@@ -53,3 +53,25 @@ else:  # Python 3
             return os.fsencode(s)
         except UnicodeEncodeError:
             return s.encode('utf-8')
+
+
+class file_wrapper(object):
+    """Wrap file object with missing methods needed by TextIOWrapper."""
+
+    def __init__(self, f, readable=False, writable=False, seekable=False):
+        self.__f = f
+        self.__readable = readable
+        self.__writable = writable
+        self.__seekable = seekable
+
+    def __getattr__(self, name):
+        return getattr(self.__f, name)
+
+    def readable(self):
+        return self.__readable
+
+    def writable(self):
+        return self.__writable
+
+    def seekable(self):
+        return self.__seekable
