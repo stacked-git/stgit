@@ -19,6 +19,7 @@ from stgit.commands.common import (CmdException,
                                    address_or_alias,
                                    git_id,
                                    parse_patches)
+from stgit.compat import text
 from stgit.config import config
 from stgit.lib import git as gitlib
 from stgit.out import out
@@ -174,13 +175,13 @@ def __get_sender():
     """Return the 'authname <authemail>' string as read from the
     configuration file
     """
-    sender=config.get('stgit.sender')
+    sender = config.get('stgit.sender')
     if not sender:
         try:
-            sender = str(git.user())
+            sender = git.user()
         except git.GitException:
             try:
-                sender = str(git.author())
+                sender = git.author()
             except git.GitException:
                 pass
     if not sender:
@@ -436,13 +437,7 @@ def __encode_message(msg):
     for header, value in msg.items():
         words = []
         for word in value.split(' '):
-            try:
-                uword = unicode(word, 'utf-8')
-            except UnicodeDecodeError:
-                # maybe we should try a different encoding or report
-                # the error. At the moment, we just ignore it
-                pass
-            words.append(email.header.Header(uword).encode())
+            words.append(email.header.Header(word).encode())
         new_val = ' '.join(words)
         msg.replace_header(header, new_val)
 
@@ -497,7 +492,7 @@ def __build_cover(tmpl, msg_id, options, patches):
         prefix_str = ''
         prefix_space = ''
 
-    total_nr_str = str(len(patches))
+    total_nr_str = text(len(patches))
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if len(patches) > 1:
         number_str = '%s/%s' % (patch_nr_str, total_nr_str)
@@ -609,8 +604,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         prefix_str = ''
         prefix_space = ''
 
-    total_nr_str = str(total_nr)
-    patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
+    total_nr_str = text(total_nr)
+    patch_nr_str = text(patch_nr).zfill(len(total_nr_str))
     if not options.unrelated and total_nr > 1:
         number_str = '%s/%s' % (patch_nr_str, total_nr_str)
         number_space = ' '

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import email
 import os
 import sys
 
@@ -75,3 +76,9 @@ class file_wrapper(object):
 
     def seekable(self):
         return self.__seekable
+
+
+# Python 2 only has email.message_from_file(), but it behaves like Python 3's
+# email.message_from_binary_file().
+message_from_binary_file = getattr(email, 'message_from_binary_file',
+                                   email.message_from_file)

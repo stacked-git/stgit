@@ -8,6 +8,7 @@ import re
 import sys
 
 from stgit import stack, git
+from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.lib import git as libgit
@@ -416,7 +417,7 @@ def parse_mail(msg):
             hobj = make_header(words_enc)
         except Exception as ex:
             raise CmdException('header decoding error: %s' % str(ex))
-        return unicode(hobj).encode('utf-8')
+        return text(hobj)
 
     # parse the headers
     if 'from' in msg:
@@ -441,7 +442,9 @@ def parse_mail(msg):
     for part in msg.walk():
         if part.get_content_type() in ['text/plain',
                                        'application/octet-stream']:
-            msg_text += part.get_payload(decode = True)
+            payload = part.get_payload(decode=True)
+            charset = part.get_content_charset()
+            msg_text += payload.decode(charset)
 
     rem_descr, diff = __split_descr_diff(msg_text)
     if rem_descr:
