@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Common utility functions"""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from io import open
 import errno
 import os
 import re
+import sys
 import tempfile
 
+from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out
@@ -28,58 +32,58 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 
-def mkdir_file(filename, mode):
+def mkdir_file(filename, mode, encoding='utf-8'):
     """Opens filename with the given mode, creating the directory it's
     in if it doesn't already exist."""
     create_dirs(os.path.dirname(filename))
-    return open(filename, mode)
+    return open(filename, mode, encoding=encoding)
 
-def read_strings(filename):
+def read_strings(filename, encoding='utf-8'):
     """Reads the lines from a file
     """
-    with open(filename) as f:
+    with open(filename, encoding=encoding) as f:
         return [line.strip() for line in f.readlines()]
 
-def read_string(filename, multiline = False):
+def read_string(filename, multiline=False, encoding='utf-8'):
     """Reads the first line from a file
     """
-    with open(filename) as f:
+    with open(filename, encoding=encoding) as f:
         if multiline:
             return f.read()
         else:
             return f.readline().strip()
 
-def write_strings(filename, lines):
+def write_strings(filename, lines, encoding='utf-8'):
     """Write 'lines' sequence to file
     """
-    with open(filename, 'w+') as f:
-        f.writelines([line + '\n' for line in lines])
-
-def write_string(filename, line, multiline = False):
-    """Writes 'line' to file and truncates it
-    """
-    with mkdir_file(filename, 'w+') as f:
-        print(line,
-              end='' if multiline else '\n',
-              file=f)
-
-def append_strings(filename, lines):
-    """Appends 'lines' sequence to file
-    """
-    with mkdir_file(filename, 'a+') as f:
+    with open(filename, 'w+', encoding=encoding) as f:
         for line in lines:
             print(line, file=f)
 
-def append_string(filename, line):
+def write_string(filename, line, multiline=False, encoding='utf-8'):
+    """Writes 'line' to file and truncates it
+    """
+    with mkdir_file(filename, 'w+', encoding) as f:
+        line = text(line)
+        print(line, end='' if multiline else '\n', file=f)
+
+def append_strings(filename, lines, encoding='utf-8'):
+    """Appends 'lines' sequence to file
+    """
+    with mkdir_file(filename, 'a+', encoding) as f:
+        for line in lines:
+            print(line, file=f)
+
+def append_string(filename, line, encoding='utf-8'):
     """Appends 'line' to file
     """
-    with mkdir_file(filename, 'a+') as f:
+    with mkdir_file(filename, 'a+', encoding) as f:
         print(line, file=f)
 
-def insert_string(filename, line):
+def insert_string(filename, line, encoding='utf-8'):
     """Inserts 'line' at the beginning of the file
     """
-    with mkdir_file(filename, 'r+') as f:
+    with mkdir_file(filename, 'r+', encoding) as f:
         lines = f.readlines()
         f.seek(0)
         f.truncate()
@@ -208,21 +212,25 @@ def get_hook(repository, hook_name, extra_env={}):
 
         default_iw.run(argv, extra_env).run()
 
-    hook.__name__ = hook_name
+    hook.__name__ = str(hook_name)
     return hook
 
 def run_hook_on_string(hook, s, *args):
     if hook is not None:
-        temp = tempfile.NamedTemporaryFile('wb', delete=False)
+        temp = tempfile.NamedTemporaryFile('w', delete=False)
         try:
             try:
                 temp.write(s)
             finally:
                 temp.close()
 
-            hook(temp.name, *args)
+            if sys.version_info[0] >= 3:
+                hook_path = temp.name
+            else:
+                hook_path = temp.name.decode(sys.getfilesystemencoding())
+            hook(hook_path, *args)
 
-            output = open(temp.name, 'rb')
+            output = open(hook_path, 'r')
             try:
                 s = output.read()
             finally:
@@ -232,11 +240,11 @@ def run_hook_on_string(hook, s, *args):
 
     return s
 
-def edit_string(s, filename):
-    with open(filename, 'w') as f:
+def edit_string(s, filename, encoding='utf-8'):
+    with open(filename, 'w', encoding=encoding) as f:
         f.write(s)
     call_editor(filename)
-    with open(filename) as f:
+    with open(filename, encoding=encoding) as f:
         s = f.read()
     os.remove(filename)
     return s

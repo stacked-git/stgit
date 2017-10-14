@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import os
 
 from stgit import utils
+from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import git, stackupgrade
@@ -264,7 +266,7 @@ class Stack(git.Branch):
         utils.create_dirs(compat_dir)
         PatchOrder.create(dir)
         config.set(stackupgrade.format_version_key(name),
-                   str(stackupgrade.FORMAT_VERSION))
+                   text(stackupgrade.FORMAT_VERSION))
 
         return repository.get_stack(name)
 

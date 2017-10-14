@@ -1,6 +1,6 @@
 prefix	?= $(HOME)
 DESTDIR	?= /
-PYTHON	?= python2
+PYTHON	?= python
 
 export DESTDIR PYTHON
 

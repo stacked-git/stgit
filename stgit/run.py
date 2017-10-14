@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import datetime
+import io
 import os
 import subprocess
+import sys
 
+from stgit.compat import text, file_wrapper, fsencode_utf8
 from stgit.exception import StgException
 from stgit.out import out, MessagePrinter
 
@@ -75,12 +79,24 @@ class Run(object):
     def __init__(self, *cmd):
         self.__cmd = list(cmd)
         for c in cmd:
-            if not isinstance(c, str):
+            if not isinstance(c, text):
                 raise Exception('Bad command: %r' % (cmd, ))
         self.__good_retvals = [0]
         self.__env = self.__cwd = None
         self.__indata = None
+        self.__in_encoding = 'utf-8'
+        self.__out_encoding = 'utf-8'
         self.__discard_stderr = False
+
+    def __prep_cmd(self):
+        return [fsencode_utf8(c) for c in self.__cmd]
+
+    def __prep_env(self):
+        if self.__env:
+            return {fsencode_utf8(k): fsencode_utf8(v)
+                    for k, v in self.__env.items()}
+        else:
+            return self.__env
 
     def __log_start(self):
         if _log_mode == 'debug':
@@ -118,8 +134,8 @@ class Run(object):
         """Run with captured IO."""
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd,
-                                 env=self.__env,
+            p = subprocess.Popen(self.__prep_cmd(),
+                                 env=self.__prep_env(),
                                  cwd=self.__cwd,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
@@ -129,17 +145,22 @@ class Run(object):
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         if errdata and not self.__discard_stderr:
-            out.err_raw(errdata)
+            out.err_raw(errdata.decode(self.__out_encoding))
         self.__log_end(self.exitcode)
         self.__check_exitcode()
-        return outdata
+        if self.__out_encoding:
+            return outdata.decode(self.__out_encoding)
+        else:
+            return outdata
 
     def __run_noio(self):
         """Run without captured IO."""
         assert self.__indata is None
         self.__log_start()
         try:
-            p = subprocess.Popen(self.__cmd, env=self.__env, cwd=self.__cwd)
+            p = subprocess.Popen(self.__prep_cmd(),
+                                 env=self.__prep_env(),
+                                 cwd=self.__cwd)
             self.exitcode = p.wait()
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
@@ -150,15 +171,24 @@ class Run(object):
         """Run as a background process."""
         assert self.__indata is None
         try:
-            p = subprocess.Popen(self.__cmd,
-                                 env=self.__env,
+            p = subprocess.Popen(self.__prep_cmd(),
+                                 env=self.__prep_env(),
                                  cwd=self.__cwd,
                                  stdin=subprocess.PIPE,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
         except OSError as e:
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
-        self.stdin = p.stdin
+        if self.__in_encoding:
+            if hasattr(p.stdin, 'readable'):
+                self.stdin = io.TextIOWrapper(
+                    p.stdin, encoding=self.__in_encoding)
+            else:
+                self.stdin = io.TextIOWrapper(
+                    file_wrapper(p.stdin, writable=True),
+                    encoding=self.__in_encoding)
+        else:
+            self.stdin = p.stdin
         self.stdout = p.stdout
         self.stderr = p.stderr
         self.wait = p.wait
@@ -186,13 +216,23 @@ class Run(object):
         self.__cwd = cwd
         return self
 
+    def encoding(self, encoding):
+        self.__in_encoding = encoding
+        return self
+
+    def decoding(self, encoding):
+        self.__out_encoding = encoding
+        return self
+
     def raw_input(self, indata):
-        self.__indata = indata
+        if self.__in_encoding:
+            self.__indata = indata.encode(self.__in_encoding)
+        else:
+            self.__indata = indata
         return self
 
     def input_nulterm(self, lines):
-        self.__indata = '\0'.join(lines)
-        return self
+        return self.raw_input('\0'.join(lines))
 
     def no_output(self):
         outdata = self.__run_io()

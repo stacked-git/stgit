@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """Basic quilt-like functionality"""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import os
 import sys
 import traceback
 
 from stgit import argparse, run, utils
+from stgit.compat import fsdecode_utf8
 from stgit.config import config
 from stgit.out import out
 import stgit.commands
@@ -103,6 +105,8 @@ def _main():
     """The main function
     """
     global prog
+
+    sys.argv = list(map(fsdecode_utf8, sys.argv))
 
     prog = os.path.basename(sys.argv[0])
 

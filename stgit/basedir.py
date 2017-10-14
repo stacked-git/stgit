@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Access to the GIT base directory."""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import os
 
 from stgit.run import Run, RunException

@@ -3,7 +3,8 @@
 C{optparse} module, so that we can easily generate both interactive
 help and asciidoc documentation (such as man pages)."""
 
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 import optparse
 import sys
 import textwrap

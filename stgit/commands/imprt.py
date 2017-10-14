@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 from contextlib import closing
 import bz2
-import email
 import gzip
 import mailbox
 import os
@@ -12,6 +12,7 @@ import tarfile
 
 from stgit import argparse, git
 from stgit.argparse import opt
+from stgit.compat import message_from_binary_file
 from stgit.config import config
 from stgit.out import out
 from stgit.commands.common import (CmdException,
@@ -205,7 +206,7 @@ def __get_handle_and_name(filename):
             pass
 
     # plain old file...
-    return (open(filename), filename)
+    return (open(filename, 'rb'), filename)
 
 def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
@@ -214,7 +215,7 @@ def __import_file(filename, options, patch = None):
     if filename:
         (f, pname) = __get_handle_and_name(filename)
     else:
-        f = sys.stdin
+        f = os.fdopen(sys.__stdin__.fileno(), 'rb')
 
     if patch:
         pname = patch
@@ -223,14 +224,15 @@ def __import_file(filename, options, patch = None):
 
     if options.mail:
         try:
-            msg = email.message_from_file(f)
+            msg = message_from_binary_file(f)
         except Exception as ex:
             raise CmdException('error parsing the e-mail file: %s' % str(ex))
         message, author_name, author_email, author_date, diff = \
                  parse_mail(msg)
     else:
+        patch_str = f.read().decode('utf-8')
         message, author_name, author_email, author_date, diff = \
-                 parse_patch(f.read(), contains_diff = True)
+                 parse_patch(patch_str, contains_diff=True)
 
     if filename:
         f.close()
@@ -282,7 +284,7 @@ def __import_mbox(filename, options):
         namedtemp = None
     else:
         from tempfile import NamedTemporaryFile
-        stdin = os.fdopen(sys.stdin.fileno(), 'rb')
+        stdin = os.fdopen(sys.__stdin__.fileno(), 'rb')
         namedtemp = NamedTemporaryFile('wb', suffix='.mbox', delete=False)
         namedtemp.write(stdin.read())
         namedtemp.close()
@@ -290,7 +292,7 @@ def __import_mbox(filename, options):
 
     try:
         try:
-            mbox = mailbox.mbox(filename, email.message_from_file,
+            mbox = mailbox.mbox(filename, message_from_binary_file,
                                 create=False)
         except Exception as ex:
             raise CmdException('error parsing the mbox file: %s' % str(ex))

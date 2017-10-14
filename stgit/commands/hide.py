@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 from stgit import argparse, out
 from stgit.argparse import opt

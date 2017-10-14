@@ -1,6 +1,7 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 from distutils.core import setup
 import glob
 import os
@@ -59,7 +60,7 @@ def __run_setup():
           description = 'Stacked GIT',
           long_description = 'Push/pop utility on top of GIT',
           scripts = ['stg'],
-          packages = ['stgit', 'stgit.commands', 'stgit.lib'],
+          packages = list(map(str, ['stgit', 'stgit.commands', 'stgit.lib'])),
           data_files = [
             ('share/stgit/templates', glob.glob('templates/*.tmpl')),
             ('share/stgit/examples', glob.glob('examples/*.tmpl')),
@@ -76,8 +77,12 @@ def __run_setup():
               'Operating System :: OS Independent',
               'Programming Language :: Python',
               'Programming Language :: Python :: 2',
-              'Programming Language :: Python :: 2.6',
               'Programming Language :: Python :: 2.7',
+              'Programming Language :: Python :: 3',
+              'Programming Language :: Python :: 3.3',
+              'Programming Language :: Python :: 3.4',
+              'Programming Language :: Python :: 3.5',
+              'Programming Language :: Python :: 3.6',
               'Programming Language :: Python :: Implementation :: CPython',
               'Programming Language :: Python :: Implementation :: PyPy',
               'Topic :: Software Development :: Version Control',

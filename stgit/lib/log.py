@@ -100,8 +100,9 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
-from __future__ import absolute_import, division, print_function
-import StringIO
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
+from io import StringIO
 import re
 
 from stgit import utils
@@ -131,7 +132,7 @@ def patch_file(repo, cd):
         repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip(),
         '',
     ])
-    return repo.commit(git.BlobData(metadata))
+    return repo.commit(git.BlobData(metadata.encode('utf-8')))
 
 
 def log_ref(branch):
@@ -240,12 +241,12 @@ class LogEntry(object):
         except KeyError:
             raise LogParseException('Not a stack log')
         (prev, head, applied, unapplied, hidden, patches
-         ) = cls.__parse_metadata(repo, meta.data.str)
+         ) = cls.__parse_metadata(repo, meta.data.bytes.decode('utf-8'))
         lg = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
         lg.commit = commit
         return lg
     def __metadata_string(self):
-        e = StringIO.StringIO()
+        e = StringIO()
         e.write('Version: 1\n')
         if self.prev is None:
             e.write('Previous: None\n')
@@ -288,7 +289,7 @@ class LogEntry(object):
                 return r
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
         return self.__repo.commit(git.TreeData({
-                    'meta': self.__repo.commit(git.BlobData(metadata)),
+                    'meta': self.__repo.commit(git.BlobData(metadata.encode('utf-8'))),
                     'patches': self.__repo.commit(git.TreeData(patches)) }))
     def write_commit(self):
         metadata = self.__metadata_string()
