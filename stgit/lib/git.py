@@ -1086,7 +1086,7 @@ class IndexAndWorktree(RunWithEnvCwd):
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
         try:
-            self.run(['git', 'update-index', '--refresh']).discard_output()
+            self.run(['git', 'update-index', '--ignore-submodules', '--refresh']).discard_output()
         except RunException:
             return False
         else:
