@@ -207,8 +207,10 @@ class LogEntry(object):
         if version > 1:
             raise LogException('Log is version %d, which is too new' % version)
         parsed = {}
+        key = None
         for line in metadata:
             if line.startswith(' '):
+                assert key is not None
                 parsed[key].append(line.strip())
             else:
                 key, val = [x.strip() for x in line.split(':', 1)]
