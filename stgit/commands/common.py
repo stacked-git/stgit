@@ -7,7 +7,7 @@ import os
 import re
 import sys
 
-from stgit import stack, git
+from stgit import stack, git, templates
 from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StgException
@@ -529,6 +529,9 @@ def update_commit_data(cd, options):
     # Let user edit the commit message manually, unless
     # --save-template or --message was specified.
     if not getattr(options, 'save_template', None) and options.message is None:
+        tmpl = templates.get_template('patchdescr.tmpl')
+        if tmpl:
+            cd = cd.set_message(cd.message + tmpl)
         cd = cd.set_message(edit_string(cd.message, '.stgit-new.txt'))
 
     return cd
