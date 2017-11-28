@@ -362,7 +362,7 @@ class StackTransaction(object):
                 self.__halt('Index/worktree dirty')
             try:
                 interactive = (allow_interactive and
-                               config.get('stgit.autoimerge') == 'yes')
+                               config.getbool('stgit.autoimerge'))
                 iw.merge(base, ours, theirs, interactive = interactive)
                 tree = iw.index.write_tree()
                 self.__current_tree = tree

@@ -91,6 +91,30 @@ class GitConfig(object):
             raise GitConfigException('Value for "%s" is not an integer: "%s"' %
                                      (name, value))
 
+    def getbool(self, name):
+        """Report the canonicalized boolean value for a given key."""
+        # We cannot directly call get() because we need to use the KeyError in
+        # order to distinguish between the case of a key with an undefined
+        # value, and a completely undefined key. Git expects the former to be
+        # reported as "true".
+        self.load()
+        try:
+            value = self.__cache[name][-1]
+        except KeyError:
+            return None
+        if value is None:
+            # The key is defined, but the value is not, so treat it as true.
+            return True
+        elif value in ['yes', 'on', 'true']:
+            return True
+        elif value in ['no', 'off', 'false', '']:
+            return False
+        elif value.isdigit():
+            return bool(value)
+        else:
+            raise GitConfigException('Value for "%s" is not a booleain: "%s"' %
+                                     (name, value))
+
     def getstartswith(self, name):
         self.load()
         return ((n, v[-1]) for (n, v) in self.__cache.items()

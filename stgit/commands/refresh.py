@@ -270,7 +270,7 @@ def func(parser, options, args):
     # If submodules was not specified on the command line, infer a default
     # from configuration.
     if options.submodules is None:
-        options.submodules = (config.get('stgit.refreshsubmodules') == 'yes')
+        options.submodules = (config.getbool('stgit.refreshsubmodules'))
 
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
