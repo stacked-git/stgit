@@ -60,7 +60,11 @@ class GitConfig(object):
         lines = Run('git', 'config', '--null', '--list'
                     ).discard_exitcode().output_lines('\0')
         for line in lines:
-            key, value = line.split('\n', 1)
+            try:
+                key, value = line.split('\n', 1)
+            except ValueError:
+                key = line
+                value = None
             self.__cache.setdefault(key, []).append(value)
 
     def get(self, name):
