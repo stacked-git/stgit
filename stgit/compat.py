@@ -39,6 +39,18 @@ if sys.version_info[0] <= 2:
             return s.encode(_fs_enc)
         except UnicodeEncodeError:
             return s.encode('utf-8')
+
+    def environ_get(key, default=None):
+        b = os.environ.get(key, default)
+        if b is default:
+            return default
+        else:
+            return fsdecode_utf8(b)
+
+    def environ_copy():
+        return {fsdecode_utf8(k): fsdecode_utf8(v)
+                for k, v in os.environ.iteritems()}
+
 else:  # Python 3
     def fsdecode_utf8(b):
         if isinstance(b, bytes):
@@ -54,6 +66,16 @@ else:  # Python 3
             return os.fsencode(s)
         except UnicodeEncodeError:
             return s.encode('utf-8')
+
+    def environ_get(key, default=None):
+        s = os.environ.get(key, default)
+        if s is default:
+            return default
+        else:
+            return s.encode('utf-8', 'surrogateescape').decode('utf-8')
+
+    def environ_copy():
+        return os.environ.copy()
 
 
 class file_wrapper(object):

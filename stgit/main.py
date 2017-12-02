@@ -8,7 +8,7 @@ import sys
 import traceback
 
 from stgit import argparse, run, utils
-from stgit.compat import fsdecode_utf8
+from stgit.compat import environ_get, fsdecode_utf8
 from stgit.config import config
 from stgit.out import out
 import stgit.commands
@@ -174,7 +174,7 @@ def _main():
     from stgit.stack import Series
 
     try:
-        debug_level = int(os.environ.get('STGIT_DEBUG_LEVEL', 0))
+        debug_level = int(environ_get('STGIT_DEBUG_LEVEL', 0))
     except ValueError:
         out.error('Invalid STGIT_DEBUG_LEVEL environment variable')
         sys.exit(utils.STGIT_GENERAL_ERROR)
