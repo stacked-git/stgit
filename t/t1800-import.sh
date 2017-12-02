@@ -204,4 +204,29 @@ test_expect_success \
     rm $STG_ROOT/t/t1800-import/jabberwocky.tar.bz2
     '
 
+test_expect_success \
+    'Import from git format-patch output' '
+    (
+        test_create_repo upstream &&
+        cd upstream &&
+        echo "something" > some.txt &&
+        git add some.txt &&
+        git commit -m "Add something"
+        stg init
+    ) &&
+    (
+        git clone upstream downstream
+        cd downstream &&
+        echo "else µ" >> some.txt &&
+        git commit -a --author "Éd <ed@example.com>" -m "something else" &&
+        git format-patch --stdout HEAD~1 > ../downstream.mbox
+    ) &&
+    (
+        cd upstream &&
+        stg import --mbox ../downstream.mbox &&
+        stg top | grep "something-else" &&
+        grep "else µ" some.txt
+    )
+    '
+
 test_done
