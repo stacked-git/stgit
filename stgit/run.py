@@ -43,7 +43,7 @@ def get_log_mode(spec):
                   % log_mode),
                  'Valid values are: %s' % ', '.join(all_log_modes))
     if outfile:
-        f = MessagePrinter(open(outfile, 'a'))
+        f = MessagePrinter(io.open(outfile, 'a', encoding='utf-8'))
     else:
         f = out
     return (log_mode, f)
