@@ -443,7 +443,7 @@ def parse_mail(msg):
         if part.get_content_type() in ['text/plain',
                                        'application/octet-stream']:
             payload = part.get_payload(decode=True)
-            charset = part.get_content_charset()
+            charset = part.get_content_charset('utf-8')
             msg_text += payload.decode(charset)
 
     rem_descr, diff = __split_descr_diff(msg_text)
