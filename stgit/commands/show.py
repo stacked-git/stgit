@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (DirectoryHasRepository,
                                    color_diff_flags,
                                    git_id,
                                    parse_patches)
-from stgit.lib import git as gitlib
+from stgit.lib import git
 from stgit.pager import pager
+from stgit.run import Run
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -73,10 +74,10 @@ def func(parser, options, args):
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
     commit_ids = [git_id(crt_series, patch) for patch in patches]
-    commit_str = '\n'.join([git.pretty_commit(commit_id,
-                                              flags = options.diff_flags)
-                            for commit_id in commit_ids])
+    commit_str = '\n'.join(
+        Run('git', 'show', *(options.diff_flags + [commit_id])).raw_output()
+        for commit_id in commit_ids)
     if options.stat:
-        commit_str = gitlib.diffstat(commit_str)
+        commit_str = git.diffstat(commit_str)
     if commit_str:
         pager(commit_str.encode('utf-8'))

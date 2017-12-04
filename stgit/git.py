@@ -665,11 +665,6 @@ def barefiles(rev1, rev2):
 
     return '\n'.join(result)
 
-def pretty_commit(commit_id = 'HEAD', flags = []):
-    """Return a given commit (log + diff)
-    """
-    return GRun('show', *(flags + [commit_id])).raw_output()
-
 def checkout(tree_id):
     """Check out the given tree_id
     """
