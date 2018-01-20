@@ -3,8 +3,8 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import os
 
+from stgit.compat import environ_get
 from stgit.run import Run, RunException
 
 __copyright__ = """
@@ -32,9 +32,8 @@ def get():
     global __base_dir
 
     if not __base_dir:
-        if 'GIT_DIR' in os.environ:
-            __base_dir = os.environ['GIT_DIR']
-        else:
+        __base_dir = environ_get('GIT_DIR')
+        if __base_dir is None:
             try:
                 __base_dir = Run('git', 'rev-parse', '--git-dir').output_one_line()
             except RunException:

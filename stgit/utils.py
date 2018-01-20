@@ -10,7 +10,7 @@ import re
 import sys
 import tempfile
 
-from stgit.compat import text
+from stgit.compat import text, environ_get
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out
@@ -171,11 +171,11 @@ class EditorException(StgException):
     pass
 
 def get_editor():
-    for editor in [os.environ.get('GIT_EDITOR'),
+    for editor in [environ_get('GIT_EDITOR'),
                    config.get('stgit.editor'), # legacy
                    config.get('core.editor'),
-                   os.environ.get('VISUAL'),
-                   os.environ.get('EDITOR'),
+                   environ_get('VISUAL'),
+                   environ_get('EDITOR'),
                    'vi']:
         if editor:
             return editor

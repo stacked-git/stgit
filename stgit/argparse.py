@@ -5,6 +5,7 @@ help and asciidoc documentation (such as man pages)."""
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 import optparse
 import sys
 import textwrap
@@ -12,6 +13,7 @@ import textwrap
 from stgit import utils
 from stgit.config import config
 from stgit.lib import git
+from stgit.out import out
 
 
 def _splitlist(lst, split_on):
@@ -165,10 +167,10 @@ def message_options(save_template):
     def templ_callback(option, opt_str, value, parser):
         if value == '-':
             def w(s):
-                sys.stdout.write(s)
+                out.stdout_raw(s)
         else:
             def w(s):
-                with open(value, 'w+') as f:
+                with io.open(value, 'w', encoding='utf-8') as f:
                     f.write(s)
         parser.values.save_template = w
         no_combine(parser)

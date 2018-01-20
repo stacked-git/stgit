@@ -3,11 +3,10 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import datetime
 import io
-import os
 import subprocess
-import sys
 
-from stgit.compat import text, file_wrapper, fsencode_utf8
+from stgit.compat import (text, environ_get, environ_copy, file_wrapper,
+                          fsencode_utf8)
 from stgit.exception import StgException
 from stgit.out import out, MessagePrinter
 
@@ -44,13 +43,13 @@ def get_log_mode(spec):
                   % log_mode),
                  'Valid values are: %s' % ', '.join(all_log_modes))
     if outfile:
-        f = MessagePrinter(open(outfile, 'a'))
+        f = MessagePrinter(io.open(outfile, 'a', encoding='utf-8'))
     else:
         f = out
     return (log_mode, f)
 
 
-_log_mode, _logfile = get_log_mode(os.environ.get('STGIT_SUBPROCESS_LOG', ''))
+_log_mode, _logfile = get_log_mode(environ_get('STGIT_SUBPROCESS_LOG', ''))
 if _log_mode == 'profile':
     _log_starttime = datetime.datetime.now()
     _log_subproctime = 0.0
@@ -105,7 +104,8 @@ class Run(object):
                 _logfile.info('cwd: %s' % self.__cwd)
             if self.__env is not None:
                 for k in sorted(self.__env):
-                    if k not in os.environ or os.environ[k] != self.__env[k]:
+                    v = environ_get(k)
+                    if v is None or v != self.__env[k]:
                         _logfile.info('%s: %s' % (k, self.__env[k]))
         elif _log_mode == 'profile':
             _logfile.start('Running subprocess %s' % self.__cmd)
@@ -208,7 +208,7 @@ class Run(object):
         return self
 
     def env(self, env):
-        self.__env = dict(os.environ)
+        self.__env = environ_copy()
         self.__env.update(env)
         return self
 

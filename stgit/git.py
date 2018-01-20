@@ -8,6 +8,7 @@ import re
 import sys
 
 from stgit import basedir
+from stgit.compat import environ_get
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out
@@ -467,17 +468,14 @@ def author():
     """
     global __author
     if not __author:
-        try:
-            # the environment variables take priority over config
-            try:
-                date = os.environ['GIT_AUTHOR_DATE']
-            except KeyError:
-                date = ''
-            __author = Person(os.environ['GIT_AUTHOR_NAME'],
-                              os.environ['GIT_AUTHOR_EMAIL'],
-                              date)
-        except KeyError:
+        # the environment variables take priority over config
+        name = environ_get('GIT_AUTHOR_NAME')
+        email = environ_get('GIT_AUTHOR_EMAIL')
+        if name is None or email is None:
             __author = user()
+        else:
+            date = environ_get('GIT_AUTHOR_DATE', '')
+            __author = Person(name, email, date)
     return __author
 
 def committer():
@@ -485,17 +483,14 @@ def committer():
     """
     global __committer
     if not __committer:
-        try:
-            # the environment variables take priority over config
-            try:
-                date = os.environ['GIT_COMMITTER_DATE']
-            except KeyError:
-                date = ''
-            __committer = Person(os.environ['GIT_COMMITTER_NAME'],
-                                 os.environ['GIT_COMMITTER_EMAIL'],
-                                 date)
-        except KeyError:
+        # the environment variables take priority over config
+        name = environ_get('GIT_COMMITTER_NAME')
+        email = environ_get('GIT_COMMITTER_EMAIL')
+        if name is None or email is None:
             __committer = user()
+        else:
+            date = environ_get('GIT_COMMITTER_DATE', '')
+            __committer = Person(name, email, date)
     return __committer
 
 def update_cache(files = None, force = False):

@@ -19,7 +19,7 @@ from stgit.commands.common import (CmdException,
                                    address_or_alias,
                                    git_id,
                                    parse_patches)
-from stgit.compat import text
+from stgit.compat import text, message_from_string
 from stgit.config import config
 from stgit.lib import git as gitlib
 from stgit.out import out
@@ -316,6 +316,8 @@ def __send_message(type, tmpl, options, *args):
     msg = build(tmpl, msg_id, options, *args)
 
     msg_str = msg.as_string(options.mbox)
+    if not isinstance(msg_str, text):
+        msg_str = msg_str.decode('utf-8')
     if options.mbox:
         out.stdout_raw(msg_str + '\n')
         return msg_id
@@ -537,7 +539,7 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     # The Python email message
     try:
-        msg = email.message_from_string(msg_string)
+        msg = message_from_string(msg_string)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
@@ -661,7 +663,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     # The Python email message
     try:
-        msg = email.message_from_string(msg_string)
+        msg = message_from_string(msg_string)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 

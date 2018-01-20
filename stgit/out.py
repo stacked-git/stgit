@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import codecs
+import io
 import sys
 import textwrap
 
@@ -80,8 +82,20 @@ class MessagePrinter(object):
         if file:
             self.__stdout = self.__stderr = Output(file.write, file.flush)
         else:
-            self.__stdout = Output(sys.stdout.write, sys.stdout.flush)
-            self.__stderr = Output(sys.stderr.write, sys.stderr.flush)
+            if (not sys.stdout.encoding or
+                    codecs.lookup(sys.stdout.encoding).name == 'ascii'):
+                stdout = io.open(sys.stdout.fileno(), 'w',
+                                 buffering=1, encoding='utf-8')
+            else:
+                stdout = sys.stdout
+            if (not sys.stderr.encoding or
+                    codecs.lookup(sys.stderr.encoding).name == 'ascii'):
+                stderr = io.open(sys.stderr.fileno(), 'w',
+                                 buffering=1, encoding='utf-8')
+            else:
+                stderr = sys.stderr
+            self.__stdout = Output(stdout.write, stdout.flush)
+            self.__stderr = Output(stderr.write, stderr.flush)
         if file or sys.stdout.isatty():
             self.__out = self.__stdout
         else:

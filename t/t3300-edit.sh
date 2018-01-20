@@ -63,7 +63,7 @@ test_expect_success 'Set patch message with --file -' '
     test "$(msg HEAD)" = "Pride and Prejudice"
 '
 
-( printf 'From: A U Thor <author@example.com>\nDate: <omitted>'
+( printf 'From: A Ú Thor <author@example.com>\nDate: <omitted>'
   printf '\n\nPride and Prejudice' ) > expected-tmpl
 omit_date () { sed "s/^Date:.*$/Date: <omitted>/" ; }
 
@@ -168,19 +168,19 @@ rm -f diffedit
 test_expect_success 'Sign a patch' '
     m=$(msg HEAD) &&
     stg edit --sign p2 &&
-    test "$(msg HEAD)" = "$m//Signed-off-by: C O Mitter <committer@example.com>"
+    test "$(msg HEAD)" = "$m//Signed-off-by: C Ó Mitter <committer@example.com>"
 '
 
 test_expect_success 'Acknowledge a patch' '
     m=$(msg HEAD^) &&
     stg edit --ack p1 &&
-    test "$(msg HEAD^)" = "$m//Acked-by: C O Mitter <committer@example.com>"
+    test "$(msg HEAD^)" = "$m//Acked-by: C Ó Mitter <committer@example.com>"
 '
 
 test_expect_success 'Review a patch' '
     m=$(msg HEAD^) &&
     stg edit --review p1 &&
-    test "$(msg HEAD^)" = "$m/Reviewed-by: C O Mitter <committer@example.com>"
+    test "$(msg HEAD^)" = "$m/Reviewed-by: C Ó Mitter <committer@example.com>"
 '
 
 test_expect_success 'Set author' '

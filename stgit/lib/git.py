@@ -12,6 +12,7 @@ import signal
 
 from stgit import exception, utils
 from stgit.run import Run, RunException
+from stgit.compat import environ_get, text
 from stgit.config import config
 
 
@@ -220,20 +221,19 @@ class Person(Immutable, Repr):
     def author(cls):
         if not hasattr(cls, '__author'):
             cls.__author = cls(
-                name = os.environ.get('GIT_AUTHOR_NAME', NoValue),
-                email = os.environ.get('GIT_AUTHOR_EMAIL', NoValue),
-                date = Date.maybe(os.environ.get('GIT_AUTHOR_DATE', NoValue)),
-                defaults = cls.user())
+                name=environ_get('GIT_AUTHOR_NAME', NoValue),
+                email=environ_get('GIT_AUTHOR_EMAIL', NoValue),
+                date=Date.maybe(environ_get('GIT_AUTHOR_DATE', NoValue)),
+                defaults=cls.user())
         return cls.__author
     @classmethod
     def committer(cls):
         if not hasattr(cls, '__committer'):
             cls.__committer = cls(
-                name = os.environ.get('GIT_COMMITTER_NAME', NoValue),
-                email = os.environ.get('GIT_COMMITTER_EMAIL', NoValue),
-                date = Date.maybe(
-                    os.environ.get('GIT_COMMITTER_DATE', NoValue)),
-                defaults = cls.user())
+                name=environ_get('GIT_COMMITTER_NAME', NoValue),
+                email=environ_get('GIT_COMMITTER_EMAIL', NoValue),
+                date=Date.maybe(environ_get('GIT_COMMITTER_DATE', NoValue)),
+                defaults=cls.user())
         return cls.__committer
 
 class GitObject(Immutable, Repr):
@@ -380,7 +380,7 @@ class CommitData(Immutable, Repr):
                 for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
                                  ('date', 'DATE')):
                     if getattr(p, attr) is not None:
-                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
+                        env['GIT_%s_%s' % (v1, v2)] = text(getattr(p, attr))
         return env
 
     @property
@@ -713,7 +713,7 @@ class Repository(RunWithEnv):
         repository."""
         if self.__default_index is None:
             self.__default_index = Index(
-                self, (os.environ.get('GIT_INDEX_FILE', None)
+                self, (environ_get('GIT_INDEX_FILE', None)
                        or os.path.join(self.__git_dir, 'index')))
         return self.__default_index
     def temp_index(self):
@@ -724,7 +724,7 @@ class Repository(RunWithEnv):
     def default_worktree(self):
         """A L{Worktree} object representing the default work tree."""
         if self.__default_worktree is None:
-            path = os.environ.get('GIT_WORK_TREE', None)
+            path = environ_get('GIT_WORK_TREE', None)
             if not path:
                 o = Run('git', 'rev-parse', '--show-cdup').output_lines()
                 o = o or ['.']

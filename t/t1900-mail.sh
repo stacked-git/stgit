@@ -64,8 +64,7 @@ test_expect_success \
     stg mail --to=a@a --cc="b@b, c@c" --bcc=d@d --auto $(stg top) -m \
         -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
     test "$(cat mbox | grep -e "^To:")" = "To: a@a" &&
-    test "$(cat mbox | grep -e "^Cc:")" = \
-        "Cc: C O Mitter <committer@example.com>, b@b, c@c" &&
+    grep -E "^Cc: (C =\?utf-8\?b\?w5M=\?= Mitter|=\?utf-8\?q\?C_=C3=93_Mitter\?=) <committer@example.com>, b@b, c@c$" mbox &&
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
     '
 
@@ -76,8 +75,7 @@ test_expect_success \
         --bcc="c@c, d@d, committer@example.com" --auto $(stg top) -m \
         -t $STG_ROOT/templates/patchmail.tmpl > mbox &&
     test "$(cat mbox | grep -e "^To:")" = "To: a@a, b b <b@b>" &&
-    test "$(cat mbox | grep -e "^Cc:")" = \
-        "Cc: C O Mitter <committer@example.com>, c@c" &&
+    grep -E "^Cc: (C =\?utf-8\?b\?w5M=\?= Mitter|=\?utf-8\?q\?C_=C3=93_Mitter\?=) <committer@example.com>, c@c$" mbox &&
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
     '
 
