@@ -6,6 +6,7 @@ from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import git, transaction, edit
+from stgit.config import config, GitConfigException
 from stgit.out import out
 
 __copyright__ = """
@@ -71,7 +72,11 @@ options = [
     opt('-e', '--edit', action = 'store_true',
         short = 'Invoke an editor for the patch description'),
     opt('-a', '--annotate', metavar = 'NOTE',
-        short = 'Annotate the patch log entry')
+        short = 'Annotate the patch log entry'),
+    opt('-s', '--submodules', action = 'store_true',
+        short = 'Include submodules when refreshing patch contents'),
+    opt('', '--no-submodules', action = 'store_false', dest = 'submodules',
+        short = 'Exclude submodules when refreshing patch contents')
     ] + (argparse.message_options(save_template = False) +
          argparse.hook_options() +
          argparse.sign_options() + argparse.author_options())
@@ -91,7 +96,7 @@ def get_patch(stack, given_patch):
                 'Cannot refresh top patch, because no patches are applied')
         return stack.patchorder.applied[-1]
 
-def list_files(stack, patch_name, args, index, update):
+def list_files(stack, patch_name, args, index, update, submodules):
     """Figure out which files to update."""
     if index:
         # --index: Don't update the index.
@@ -102,6 +107,15 @@ def list_files(stack, patch_name, args, index, update):
         # --update: Restrict update to the paths that were already
         # part of the patch.
         paths &= stack.patches.get(patch_name).files()
+    else:
+        # Avoid including submodule files by default. This is to ensure that
+        # users in repositories with submodueles do not accidentally include
+        # submodule changes to patches just because they happen to have not
+        # run "git submodule update" prior to running stg refresh. We won't
+        # exclude them if we're explicitly told to include them, or if we're
+        # given explicit paths.
+        if not args and not submodules:
+            paths -= stack.repository.submodules(stack.head.data.tree)
     return paths
 
 def write_tree(stack, paths, temp_index):
@@ -245,9 +259,22 @@ def func(parser, options, args):
         raise common.CmdException(
             'You cannot --force a full refresh when using --index mode')
 
+    if options.update and options.submodules:
+        raise common.CmdException(
+            '--submodules is meaningless when only updating modified files')
+
+    if options.index and options.submodules:
+        raise common.CmdException(
+            '--submodules is meaningless when keeping the current index')
+
+    # If submodules was not specified on the command line, infer a default
+    # from configuration.
+    if options.submodules is None:
+        options.submodules = (config.getbool('stgit.refreshsubmodules'))
+
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
-    paths = list_files(stack, patch_name, args, options.index, options.update)
+    paths = list_files(stack, patch_name, args, options.index, options.update, options.submodules)
 
     # Make sure there are no conflicts in the files we want to
     # refresh.

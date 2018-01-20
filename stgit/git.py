@@ -607,7 +607,7 @@ def merge_recursive(base, head1, head2):
     output = p.output_lines()
     if p.exitcode:
         # There were conflicts
-        if config.get('stgit.autoimerge') == 'yes':
+        if config.getbool('stgit.autoimerge'):
             mergetool()
         else:
             conflicts = [l for l in output if l.startswith('CONFLICT')]

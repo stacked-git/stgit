@@ -815,6 +815,15 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
+    def submodules(self, tree):
+        """Given a L{Tree}, return list of paths which are submodules."""
+        assert isinstance(tree, Tree)
+        # A simple regex to match submodule entries
+        regex = re.compile(r'160000 commit [0-9a-f]{40}\t(.*)$')
+        # First, use ls-tree to get all the trees and links
+        files = self.run(['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]).output_lines('\0')
+        # Then extract the paths of any submodules
+        return set(m.group(1) for m in map(regex.match, files) if m)
     def diff_tree(self, t1, t2, diff_opts, binary = True):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
@@ -1086,7 +1095,7 @@ class IndexAndWorktree(RunWithEnvCwd):
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
         try:
-            self.run(['git', 'update-index', '--refresh']).discard_output()
+            self.run(['git', 'update-index', '--ignore-submodules', '--refresh']).discard_output()
         except RunException:
             return False
         else:

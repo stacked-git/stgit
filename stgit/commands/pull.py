@@ -114,7 +114,7 @@ def func(parser, options, args):
     post_rebase(crt_series, applied, options.nopush, options.merged)
 
     # maybe tidy up
-    if config.get('stgit.keepoptimized') == 'yes':
+    if config.getbool('stgit.keepoptimized'):
         git.repack()
 
     print_crt_patch(crt_series)

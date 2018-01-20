@@ -32,20 +32,21 @@ class GitConfigException(StgException):
 
 class GitConfig(object):
     __defaults = {
-        'stgit.smtpserver':     ['localhost:25'],
-        'stgit.smtpdelay':      ['5'],
-        'stgit.pullcmd':        ['git pull'],
-        'stgit.fetchcmd':       ['git fetch'],
-        'stgit.pull-policy':    ['pull'],
-        'stgit.autoimerge':     ['no'],
-        'stgit.keepoptimized':  ['no'],
-        'stgit.shortnr':        ['5'],
-        'stgit.pager':          ['less'],
-        'stgit.alias.add':      ['git add'],
-        'stgit.alias.rm':       ['git rm'],
-        'stgit.alias.mv':       ['git mv'],
-        'stgit.alias.resolved': ['git add'],
-        'stgit.alias.status':   ['git status -s']
+        'stgit.smtpserver':        ['localhost:25'],
+        'stgit.smtpdelay':         ['5'],
+        'stgit.pullcmd':           ['git pull'],
+        'stgit.fetchcmd':          ['git fetch'],
+        'stgit.pull-policy':       ['pull'],
+        'stgit.autoimerge':        ['no'],
+        'stgit.keepoptimized':     ['no'],
+        'stgit.refreshsubmodules': ['no'],
+        'stgit.shortnr':           ['5'],
+        'stgit.pager':             ['less'],
+        'stgit.alias.add':         ['git add'],
+        'stgit.alias.rm':          ['git rm'],
+        'stgit.alias.mv':          ['git mv'],
+        'stgit.alias.resolved':    ['git add'],
+        'stgit.alias.status':      ['git status -s']
     }
 
     __cache = None
@@ -59,7 +60,11 @@ class GitConfig(object):
         lines = Run('git', 'config', '--null', '--list'
                     ).discard_exitcode().output_lines('\0')
         for line in lines:
-            key, value = line.split('\n', 1)
+            try:
+                key, value = line.split('\n', 1)
+            except ValueError:
+                key = line
+                value = None
             self.__cache.setdefault(key, []).append(value)
 
     def get(self, name):
@@ -84,6 +89,30 @@ class GitConfig(object):
             return int(value)
         else:
             raise GitConfigException('Value for "%s" is not an integer: "%s"' %
+                                     (name, value))
+
+    def getbool(self, name):
+        """Report the canonicalized boolean value for a given key."""
+        # We cannot directly call get() because we need to use the KeyError in
+        # order to distinguish between the case of a key with an undefined
+        # value, and a completely undefined key. Git expects the former to be
+        # reported as "true".
+        self.load()
+        try:
+            value = self.__cache[name][-1]
+        except KeyError:
+            return None
+        if value is None:
+            # The key is defined, but the value is not, so treat it as true.
+            return True
+        elif value in ['yes', 'on', 'true']:
+            return True
+        elif value in ['no', 'off', 'false', '']:
+            return False
+        elif value.isdigit():
+            return bool(value)
+        else:
+            raise GitConfigException('Value for "%s" is not a booleain: "%s"' %
                                      (name, value))
 
     def getstartswith(self, name):

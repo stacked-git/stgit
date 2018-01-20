@@ -71,4 +71,20 @@ test_expect_success \
     )
 '
 
+test_expect_success \
+    'pop then push a patch with a change to a submodule should not produce a conflict' '
+    (
+        cd bar &&
+        stg clone ../foo baz &&
+        stg new p3 -m p3 &&
+        git submodule add ../foo baz &&
+        stg refresh &&
+        (cd baz && git reset --hard HEAD^) &&
+        stg new p4 -m p4 &&
+        stg refresh &&
+        stg pop &&
+        stg push
+    )
+'
+
 test_done
