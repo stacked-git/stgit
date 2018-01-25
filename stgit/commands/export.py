@@ -3,6 +3,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 import os
 import sys
 
@@ -171,7 +172,7 @@ def func(parser, options, args):
         if options.stdout:
             f = sys.stdout
         else:
-            f = open(pfile, 'w+')
+            f = io.open(pfile, 'w+', encoding='utf-8')
 
         if options.stdout and num > 1:
             print('-'*79)
