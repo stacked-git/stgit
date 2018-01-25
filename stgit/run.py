@@ -92,8 +92,8 @@ class Run(object):
 
     def __prep_env(self):
         if self.__env:
-            return {fsencode_utf8(k): fsencode_utf8(v)
-                    for k, v in self.__env.items()}
+            return dict((fsencode_utf8(k), fsencode_utf8(v))
+                        for k, v in self.__env.items())
         else:
             return self.__env
 
