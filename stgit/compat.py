@@ -110,3 +110,28 @@ if sys.version_info[0] <= 2:
         return email.message_from_string(s.encode('utf-8'), *args, **kwargs)
 else:
     message_from_string = email.message_from_string
+
+
+def decode_utf8_with_latin1(input, errors='strict'):
+    """Decode utf-8 bytes with possible latin-1 encoded bytes.
+
+    There are cases where encoded byte streams may nominally be utf-8 encoded,
+    but contain stray latin-1 (iso8859-1) characters. The input bytes are
+    decoded as utf-8, but with any non-utf-8 byte sequences decoded as latin-1.
+
+    This is the decode strategy employed by git when decoding utf-8 email
+    bodies.
+
+    """
+    s = ''
+    while True:
+        try:
+            s += input.decode('utf-8', 'strict')
+        except UnicodeDecodeError as e:
+            _, _, start, end, _ = e.args
+            s += input[:start].decode('utf-8')
+            s += input[start:end].decode('latin1')
+            input = input[end:]
+        else:
+            break
+    return s

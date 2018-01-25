@@ -2,13 +2,14 @@
 """Function/variables common to all the commands"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import codecs
 import email.utils
 import os
 import re
 import sys
 
 from stgit import stack, git, templates
-from stgit.compat import text
+from stgit.compat import text, decode_utf8_with_latin1
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.lib import git as libgit
@@ -444,7 +445,10 @@ def parse_mail(msg):
                                        'application/octet-stream']:
             payload = part.get_payload(decode=True)
             charset = part.get_content_charset('utf-8')
-            msg_text += payload.decode(charset)
+            if codecs.lookup(charset).name == 'utf-8':
+                msg_text += decode_utf8_with_latin1(payload)
+            else:
+                msg_text += payload.decode(charset)
 
     rem_descr, diff = __split_descr_diff(msg_text)
     if rem_descr:
