@@ -48,8 +48,8 @@ if sys.version_info[0] <= 2:
             return fsdecode_utf8(b)
 
     def environ_copy():
-        return {fsdecode_utf8(k): fsdecode_utf8(v)
-                for k, v in os.environ.iteritems()}
+        return dict((fsdecode_utf8(k), fsdecode_utf8(v))
+                    for k, v in os.environ.iteritems())
 
 else:  # Python 3
     def fsdecode_utf8(b):
