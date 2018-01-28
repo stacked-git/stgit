@@ -3,6 +3,7 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 import os
 import re
 import sys
@@ -779,7 +780,7 @@ def apply_patch(filename = None, diff = None, base = None,
     """
     if diff is None:
         if filename:
-            with open(filename) as f:
+            with io.open(filename, encoding='utf-8') as f:
                 diff = f.read()
         else:
             diff = sys.stdin.read()
