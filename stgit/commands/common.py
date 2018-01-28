@@ -408,16 +408,29 @@ def parse_mail(msg):
     """Parse the message object and return (description, authname,
     authemail, authdate, diff)
     """
-    from email.header import decode_header, make_header
+    import email.header
+    if sys.version_info[0] <= 2:
+        # Python 2's decode_header() fails to decode encoded words if they are
+        # quoted. This does not match the behavior of Python3 or `git mailinfo`.
+        # For example, Python2 does not handle this header correctly:
+        #
+        #    From: "=?UTF-8?q?Christian=20K=C3=B6nig?=" <name@example.com>
+        #
+        # By replacing the encoded words regex in the email.header module, we can
+        # bless Python2 with the same behavior as Python3.
+        email.header.ecre = re.compile(
+            (r'=\? (?P<charset>[^?]*?)'
+             r' \? (?P<encoding>[QqBb])'
+             r' \? (?P<encoded>.*?)'
+             r' \?='), re.VERBOSE | re.MULTILINE)
 
     def __decode_header(header):
         """Decode a qp-encoded e-mail header as per rfc2047"""
         try:
-            words_enc = decode_header(header)
-            hobj = make_header(words_enc)
+            decoded_words = email.header.decode_header(header)
+            return text(email.header.make_header(decoded_words))
         except Exception as ex:
             raise CmdException('header decoding error: %s' % str(ex))
-        return text(hobj)
 
     # parse the headers
     if 'from' in msg:
