@@ -110,6 +110,17 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply a patch from email with quoted "From" header' \
+    '
+    stg import -m $STG_ROOT/t/t1800-import/email-quoted-from &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a patch from a QP-encoded e-mail' \
     '
     stg import -m $STG_ROOT/t/t1800-import/email-qp &&
