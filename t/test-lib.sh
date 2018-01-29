@@ -8,7 +8,7 @@
 ORIGINAL_TERM=$TERM
 
 # For repeatability, reset the environment to known value.
-if ! (( STGIT_TEST_KEEP_LOCALE )); then
+if [ -z "$STGIT_TEST_KEEP_LOCALE" ]; then
 	LANG=C
 	LC_ALL=C
 	export LANG LC_ALL
