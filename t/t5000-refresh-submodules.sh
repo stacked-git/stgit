@@ -20,31 +20,31 @@ test_expect_success 'refresh with a submodule does not include by default' '
   ) &&
   stg new p1 -m p1 &&
   stg refresh &&
-  [ "$(stg status)" == " M foo" ]
+  [ "$(stg status)" = " M foo" ]
 '
 
 test_expect_success 'refresh includes non-submodule changes' '
   touch file2 &&
   git add file2 &&
   stg refresh &&
-  [ "$(stg status)" == " M foo" ]
+  [ "$(stg status)" = " M foo" ]
 '
 
 test_expect_success 'refresh with --submodules' '
   stg refresh --submodules &&
-  [ "$(stg status)" == "" ]
+  [ "$(stg status)" = "" ]
 '
 
 test_expect_success 'refresh --no-submodules overrides config' '
   stg undo && stg undo &&
   git config stgit.refreshsubmodules yes &&
   stg refresh --no-submodules &&
-  [ "$(stg status)" == " M foo" ]
+  [ "$(stg status)" = " M foo" ]
 '
 
 test_expect_success 'refresh with config' '
    stg refresh &&
-   [ "$(stg status)" == "" ]
+   [ "$(stg status)" = "" ]
 '
 
 test_done
