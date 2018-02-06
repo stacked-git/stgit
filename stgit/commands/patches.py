@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-from pydoc import pager
 
 from stgit import argparse, git
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.compat import pager
 from stgit.out import out
 
 __copyright__ = """

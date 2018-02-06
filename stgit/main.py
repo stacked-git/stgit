@@ -8,7 +8,7 @@ import sys
 import traceback
 
 from stgit import argparse, run, utils
-from stgit.compat import environ_get, fsdecode_utf8
+from stgit.compat import environ_get, fsdecode_utf8, pager
 from stgit.config import config
 from stgit.out import out
 import stgit.commands
@@ -136,7 +136,6 @@ def _main():
             parser = argparse.make_option_parser(command)
             if is_cmd_alias(command):
                 parser.remove_option('-h')
-            from pydoc import pager
             pager(parser.format_help())
         else:
             print_help()
