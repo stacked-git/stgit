@@ -5,8 +5,8 @@ from __future__ import (absolute_import, division, print_function,
 from stgit import argparse, git
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
-from stgit.compat import pager
 from stgit.out import out
+from stgit.pager import pager
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -92,4 +92,4 @@ def func(parser, options, args):
                 out.stdout(patch.get_name())
 
     if options.diff:
-        pager(diff_output)
+        pager(diff_output.encode('utf-8'))

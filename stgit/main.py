@@ -8,9 +8,10 @@ import sys
 import traceback
 
 from stgit import argparse, run, utils
-from stgit.compat import environ_get, fsdecode_utf8, pager
+from stgit.compat import environ_get, fsdecode_utf8
 from stgit.config import config
 from stgit.out import out
+from stgit.pager import pager
 import stgit.commands
 
 __copyright__ = """
@@ -136,7 +137,7 @@ def _main():
             parser = argparse.make_option_parser(command)
             if is_cmd_alias(command):
                 parser.remove_option('-h')
-            pager(parser.format_help())
+            pager(parser.format_help().encode())
         else:
             print_help()
         sys.exit(utils.STGIT_SUCCESS)

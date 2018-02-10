@@ -3,7 +3,6 @@ from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 import email
 import os
-import pydoc
 import sys
 
 # With unicode_literals enabled, the type of a string literal will be `unicode`
@@ -136,13 +135,3 @@ def decode_utf8_with_latin1(input, errors='strict'):
         else:
             break
     return s
-
-
-if sys.version_info[0:2] <= (2, 6):
-    def pager(text):
-        import locale
-        encoding = locale.getpreferredencoding()
-        b = text.encode(encoding, 'xmlcharrefreplace')
-        return pydoc.pager(b)
-else:
-    pager = pydoc.pager

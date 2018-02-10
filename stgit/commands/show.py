@@ -7,8 +7,8 @@ from stgit.commands.common import (DirectoryHasRepository,
                                    color_diff_flags,
                                    git_id,
                                    parse_patches)
-from stgit.compat import pager
 from stgit.lib import git as gitlib
+from stgit.pager import pager
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -79,4 +79,4 @@ def func(parser, options, args):
     if options.stat:
         commit_str = gitlib.diffstat(commit_str)
     if commit_str:
-        pager(commit_str)
+        pager(commit_str.encode('utf-8'))
