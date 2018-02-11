@@ -25,9 +25,14 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 class Output(object):
 
-    def __init__(self, write, flush):
-        self.write = write
-        self.flush = flush
+    def __init__(self, file):
+        if file is not None:
+            self.write = file.write
+            self.write_bytes = file.buffer.write
+            self.flush = file.flush
+        else:
+            self.write = self.write_bytes = lambda s: None
+            self.flush = lambda: None
         self.at_start_of_line = True
         self.level = 0
 
@@ -75,32 +80,36 @@ class Output(object):
         self.write(string)
         self.at_start_of_line = string.endswith('\n')
 
+    def write_bytes(self, byte_data):
+        self.new_line()
+        self.write_bytes(byte_data)
+        self.at_start_of_line = byte_data.endswith(b'\n')
+
 
 class MessagePrinter(object):
 
     def __init__(self, file=None):
         if file:
-            self.__stdout = self.__stderr = Output(file.write, file.flush)
+            self.__stdout = self.__stderr = Output(file)
         else:
-            if (not sys.stdout.encoding or
-                    codecs.lookup(sys.stdout.encoding).name == 'ascii'):
-                stdout = io.open(sys.stdout.fileno(), 'w',
-                                 buffering=1, encoding='utf-8')
-            else:
+            if (isinstance(sys.stdout, io.TextIOWrapper) and
+                    sys.stdout.encoding and
+                    codecs.lookup(sys.stdout.encoding).name != 'ascii'):
                 stdout = sys.stdout
-            if (not sys.stderr.encoding or
-                    codecs.lookup(sys.stderr.encoding).name == 'ascii'):
-                stderr = io.open(sys.stderr.fileno(), 'w',
-                                 buffering=1, encoding='utf-8')
             else:
+                stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf-8')
+            if (isinstance(sys.stderr, io.TextIOWrapper) and
+                    sys.stderr.encoding and
+                    codecs.lookup(sys.stderr.encoding).name != 'ascii'):
                 stderr = sys.stderr
-            self.__stdout = Output(stdout.write, stdout.flush)
-            self.__stderr = Output(stderr.write, stderr.flush)
+            else:
+                stderr = io.open(sys.stderr.fileno(), 'w', encoding='utf-8')
+            self.__stdout = Output(stdout)
+            self.__stderr = Output(stderr)
         if file or sys.stdout.isatty():
             self.__out = self.__stdout
         else:
-            self.__out = Output(lambda msg: None, lambda: None)
-        self.__err = self.__stderr
+            self.__out = Output(None)
 
     def stdout(self, line):
         """Write a line to stdout."""
@@ -110,10 +119,13 @@ class MessagePrinter(object):
         """Write a string possibly containing newlines to stdout."""
         self.__stdout.write_raw(string)
 
+    def stdout_bytes(self, byte_data):
+        self.__stdout.write_bytes(byte_data)
+
     def err_raw(self, string):
         """Write a string possibly containing newlines to the error
         output."""
-        self.__err.write_raw(string)
+        self.__stderr.write_raw(string)
 
     def info(self, *msgs):
         for msg in msgs:
@@ -123,10 +135,10 @@ class MessagePrinter(object):
         self.__out.tagged_lines(kw.get('title', 'Notice'), msgs)
 
     def warn(self, *msgs, **kw):
-        self.__err.tagged_lines(kw.get('title', 'Warning'), msgs)
+        self.__stderr.tagged_lines(kw.get('title', 'Warning'), msgs)
 
     def error(self, *msgs, **kw):
-        self.__err.tagged_lines(kw.get('title', 'Error'), msgs)
+        self.__stderr.tagged_lines(kw.get('title', 'Error'), msgs)
 
     def start(self, msg):
         """Start a long-running operation."""
