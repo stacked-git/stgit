@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 import re
 import sys
 
@@ -57,9 +58,9 @@ def func(parser, options, args):
 
     if options.series:
         if options.series == '-':
-            f = sys.stdin
+            f = io.open(sys.stdin.fileno())
         else:
-            f = open(options.series)
+            f = io.open(options.series)
 
         patches = []
         for line in f:

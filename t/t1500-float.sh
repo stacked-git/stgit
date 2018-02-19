@@ -53,4 +53,51 @@ test_expect_success \
 	'stg float G F &&
 	 test "$(echo $(stg series --applied --noprefix))" = "D B C A E G F"
 	'
+
+cat > series.txt <<EOF
+A
+B
+C
+D
+E
+F
+G
+EOF
+test_expect_success \
+  'Float with series file' \
+  'stg float --series series.txt &&
+	 test "$(echo $(stg series --applied --noprefix))" = "A B C D E F G"
+  '
+
+cat > rev-series.txt <<EOF
+G
+F
+E
+D
+C
+B
+A
+EOF
+test_expect_success \
+  'Float with series from stdin' \
+  'cat rev-series.txt | stg float -s - &&
+	 test "$(echo $(stg series --applied --noprefix))" = "G F E D C B A"
+  '
+test_expect_success \
+  'Attempt float with empty series' \
+  'echo "" |
+   command_error stg float -s - 2>&1 |
+   grep -e "No patches to float"
+  '
+test_expect_success \
+  'Attempt float with series file and arguments' \
+  'command_error stg float --series series.txt A 2>&1 |
+   grep -e "<patches> cannot be used with --series"
+  '
+test_expect_success \
+  'Attempt float with no series file and no arguments' \
+  'command_error stg float 2>&1 |
+   grep -e "incorrect number of arguments"
+  '
+
 test_done
