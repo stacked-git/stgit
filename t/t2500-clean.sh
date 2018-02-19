@@ -16,11 +16,42 @@ test_expect_success 'Initialize StGit stack' '
     stg pop
 '
 
+test_expect_success 'Test too many arguments' '
+    command_error stg clean p0 2>&1 |
+    grep -e "incorrect number of arguments"
+'
+
 test_expect_success 'Clean empty patches' '
     [ "$(echo $(stg series --applied --noprefix))" = "e0 p0 e1" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "e2" ] &&
     stg clean &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+'
+
+test_expect_success 'Selectively clean applied and unapplied patches' '
+    stg new e3 -m e3 &&
+    stg new e4 -m e4 &&
+    stg pop &&
+    stg clean --applied &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "e4" ] &&
+    stg clean --unapplied &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+'
+
+test_expect_success 'Ensure hidden patches are not cleaned' '
+    stg new e5 -m e5 &&
+    stg hide e5 &&
+    stg clean &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --hidden --noprefix))" = "e5" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
+    stg unhide e5 &&
+    stg clean &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
+    [ "$(echo $(stg series --hidden --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
