@@ -2,10 +2,10 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
 
-from stgit import argparse, out
-from stgit.argparse import opt
+from stgit import argparse
 from stgit.commands import common
 from stgit.lib import transaction
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
@@ -33,8 +33,8 @@ the plain 'series' command output."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')]
+    argparse.opt('-b', '--branch', args=[argparse.stg_branches],
+                 short='Use BRANCH instead of the default branch')]
 
 directory = common.DirectoryHasRepositoryLib()
 
