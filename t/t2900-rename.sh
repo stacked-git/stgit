@@ -13,7 +13,8 @@ Tests some parts of the stg rename command.'
 stg init
 
 test_expect_success 'Rename in empty' '
-   command_error stg rename foo
+   command_error stg rename foo 2>&1 |
+   grep -e "No applied top patch to rename exists"
 '
 
 test_expect_success 'Rename single top-most' '
@@ -32,12 +33,19 @@ test_expect_success 'Rename with two arguments' '
 '
 # foo,baz
 
+test_expect_success 'Rename with too many arguments' '
+   command_error stg rename foo bar baz 2>&1 |
+   grep -e "incorrect number of arguments"
+'
+
 test_expect_success 'Rename to existing name' '
-   command_error stg rename foo baz
+   command_error stg rename foo baz 2>&1 |
+   grep -e "Patch \"baz\" already exists"
 '
 
 test_expect_success 'Rename to same name' '
-   command_error stg rename foo foo
+   command_error stg rename foo foo 2>&1 |
+   grep -e "\"To\" name and \"from\" name are the same"
 '
 
 test_expect_success 'Rename top-most when others exist' '
