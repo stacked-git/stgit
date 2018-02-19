@@ -7,12 +7,15 @@ test_description='Test stgit initialization'
 . ./test-lib.sh
 
 test_expect_success \
+    'check invalid argument count' \
+    'command_error stg init arg'
+
+test_expect_success \
     'check stgit initialization' \
     'stg init'
 
-test_expect_code \
-	2 \
+test_expect_success \
     'check stgit duplicated initialization' \
-    'stg init'
+    'command_error stg init'
 
 test_done
