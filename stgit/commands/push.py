@@ -86,10 +86,19 @@ def func(parser, options, args):
     elif not args:
         patches = [trans.unapplied[0]]
     else:
-        patches = common.parse_patches(args, trans.unapplied)
+        try:
+            patches = common.parse_patches(args, trans.unapplied)
+        except common.CmdException as e:
+            try:
+                patches = common.parse_patches(args, trans.applied)
+            except common.CmdException:
+                raise e
+            else:
+                raise common.CmdException('Patch%s already applied: %s' % (
+                    'es' if len(patches) > 1 else '',
+                    ', '.join(patches)))
 
-    if not patches:
-        raise common.CmdException('No patches to push')
+    assert patches
 
     if options.reverse:
         patches.reverse()
