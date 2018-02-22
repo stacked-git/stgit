@@ -1,0 +1,39 @@
+dist: trusty
+sudo: false
+
+language: python
+
+matrix:
+  include:
+    - python: '2.6'
+      env: MAKE_TARGET=test
+    - python: '2.7'
+      env: MAKE_TARGET=coverage-test
+    - python: 'pypy'
+      env: MAKE_TARGET=test
+    - python: '3.3'
+      env: MAKE_TARGET=test
+    - python: '3.4'
+      env: MAKE_TARGET=test
+    - python: '3.5'
+      env: MAKE_TARGET=test
+    - python: '3.6'
+      env: MAKE_TARGET=coverage-test
+    - python: 'pypy3'
+      env: MAKE_TARGET=test
+    - python: 'nightly'
+      env: MAKE_TARGET=test
+  allow_failures:
+    - python: 'nightly'
+    - python: '2.6'
+
+install:
+  - pip install coveralls
+
+script: make $MAKE_TARGET
+
+after_success:
+  coveralls
+
+cache:
+- pip
