@@ -104,12 +104,8 @@ class file_wrapper(object):
 # email.message_from_binary_file().
 message_from_binary_file = getattr(email, 'message_from_binary_file',
                                    email.message_from_file)
-
-if sys.version_info[0] <= 2:
-    def message_from_string(s, *args, **kwargs):
-        return email.message_from_string(s.encode('utf-8'), *args, **kwargs)
-else:
-    message_from_string = email.message_from_string
+message_from_bytes = getattr(email, 'message_from_bytes',
+                             email.message_from_string)
 
 
 def decode_utf8_with_latin1(input, errors='strict'):

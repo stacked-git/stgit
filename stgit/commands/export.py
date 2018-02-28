@@ -91,7 +91,7 @@ def func(parser, options, args):
     if not options.stdout:
         if not os.path.isdir(dirname):
             os.makedirs(dirname)
-        series = open(os.path.join(dirname, 'series'), 'w+')
+        series = io.open(os.path.join(dirname, 'series'), 'w+')
 
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
@@ -110,12 +110,12 @@ def func(parser, options, args):
 
     # get the template
     if options.template:
-        with open(options.template) as f:
+        with io.open(options.template, 'rb') as f:
             tmpl = f.read()
     else:
         tmpl = templates.get_template('patchexport.tmpl')
         if not tmpl:
-            tmpl = ''
+            tmpl = b''
 
     # note the base commit for this series
     if not options.stdout:
@@ -156,12 +156,9 @@ def func(parser, options, args):
                      'authdate': cd.author.date.isoformat(),
                      'commname': cd.committer.name,
                      'commemail': cd.committer.email}
-        for key in tmpl_dict:
-            if not tmpl_dict[key]:
-                tmpl_dict[key] = ''
 
         try:
-            descr = tmpl % tmpl_dict
+            descr = templates.specialize_template(tmpl, tmpl_dict)
         except KeyError as err:
             raise common.CmdException('Unknown patch template variable: %s' %
                                       err)
@@ -170,7 +167,10 @@ def func(parser, options, args):
                                       'supported in the patch template')
 
         if options.stdout:
-            f = sys.stdout
+            if hasattr(sys.stdout, 'buffer'):
+                f = sys.stdout.buffer
+            else:
+                f = sys.stdout
         else:
             f = io.open(pfile, 'wb+')
 
@@ -180,7 +180,7 @@ def func(parser, options, args):
                                '-' * 79,
                                '']).encode('utf-8'))
 
-        f.write(descr.encode('utf-8'))
+        f.write(descr)
         f.write(diff)
         if not options.stdout:
             f.close()

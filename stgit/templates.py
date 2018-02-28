@@ -3,10 +3,12 @@
 
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 import os
 import sys
 
 from stgit import basedir
+from stgit.compat import text
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -29,15 +31,29 @@ def get_template(tfile):
     """Return the string in the template file passed as argument or
     None if the file wasn't found.
     """
-    tmpl_list = [ os.path.join(basedir.get(), tfile),
-                  os.path.join(os.path.expanduser('~'), '.stgit', 'templates',
-                               tfile),
-                  os.path.join(sys.prefix, 'share', 'stgit', 'templates',
-                               tfile) ]
+    tmpl_dirs = [
+        basedir.get(),
+        os.path.join(os.path.expanduser('~'), '.stgit', 'templates'),
+        os.path.join(sys.prefix, 'share', 'stgit', 'templates'),
+    ]
 
-    for t in tmpl_list:
-        if os.path.isfile(t):
-            with open(t) as f:
+    for d in tmpl_dirs:
+        tmpl_path = os.path.join(d, tfile)
+        if os.path.isfile(tmpl_path):
+            with io.open(tmpl_path, 'rb') as f:
                 return f.read()
     else:
         return None
+
+
+def specialize_template(tmpl, tmpl_dict):
+    tmpl_dict_b = {}
+    for k, v in tmpl_dict.items():
+        if isinstance(k, text):
+            k = k.encode('utf-8')
+        if v is None:
+            v = b''
+        elif isinstance(v, text):
+            v = v.encode('utf-8')
+        tmpl_dict_b[k] = v
+    return tmpl % tmpl_dict_b

@@ -6,6 +6,7 @@ import email.charset
 import email.header
 import email.utils
 import getpass
+import io
 import os
 import re
 import smtplib
@@ -19,12 +20,12 @@ from stgit.commands.common import (CmdException,
                                    address_or_alias,
                                    git_id,
                                    parse_patches)
-from stgit.compat import text, message_from_string
+from stgit.compat import text, message_from_bytes
 from stgit.config import config
 from stgit.lib import git as gitlib
 from stgit.out import out
 from stgit.run import Run
-from stgit.utils import call_editor
+from stgit.utils import edit_bytes
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -209,11 +210,11 @@ def __parse_addresses(msg):
 
     return (from_addr_list[0], set(to_addr_list))
 
-def __send_message_sendmail(sendmail, msg):
+def __send_message_sendmail(sendmail, msg_bytes):
     """Send the message using the sendmail command.
     """
     cmd = sendmail.split()
-    Run(*cmd).raw_input(msg).discard_output()
+    Run(*cmd).encoding(None).raw_input(msg_bytes).discard_output()
 
 __smtp_credentials = None
 
@@ -270,13 +271,13 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
     s.quit()
 
-def __send_message_git(msg, options):
+def __send_message_git(msg_bytes, from_, options):
     """Send the message using git send-email
     """
     from subprocess import call
     from tempfile import mkstemp
 
-    cmd = ["git", "send-email", "--from=%s" % msg['From']]
+    cmd = ["git", "send-email", "--from=%s" % from_]
     cmd.append("--quiet")
     cmd.append("--suppress-cc=self")
     if not options.auto:
@@ -292,10 +293,9 @@ def __send_message_git(msg, options):
             cmd.extend('--%s=%s' % (x, a) for a in getattr(options, x))
 
     (fd, path) = mkstemp()
-    os.write(fd, msg.as_string(options.mbox))
-    os.close(fd)
-
     try:
+        os.write(fd, msg_bytes)
+        os.close(fd)
         try:
             cmd.append(path)
             call(cmd)
@@ -315,11 +315,12 @@ def __send_message(type, tmpl, options, *args):
     msg_id = email.utils.make_msgid('stgit')
     msg = build(tmpl, msg_id, options, *args)
 
-    msg_str = msg.as_string(options.mbox)
-    if not isinstance(msg_str, text):
-        msg_str = msg_str.decode('utf-8')
+    if hasattr(msg, 'as_bytes'):
+        msg_bytes = msg.as_bytes(options.mbox)
+    else:
+        msg_bytes = msg.as_string(options.mbox)
     if options.mbox:
-        out.stdout_raw(msg_str + '\n')
+        out.stdout_bytes(msg_bytes + b'\n')
         return msg_id
 
     if not options.git:
@@ -328,13 +329,13 @@ def __send_message(type, tmpl, options, *args):
 
     smtpserver = options.smtp_server or config.get('stgit.smtpserver')
     if options.git:
-        __send_message_git(msg, options)
+        __send_message_git(msg_bytes, msg['From'], options)
     elif smtpserver.startswith('/'):
         # Use the sendmail tool
-        __send_message_sendmail(smtpserver, msg_str)
+        __send_message_sendmail(smtpserver, msg_bytes)
     else:
         # Use the SMTP server (we have host and port information)
-        __send_message_smtp(smtpserver, from_addr, to_addrs, msg_str, options)
+        __send_message_smtp(smtpserver, from_addr, to_addrs, msg_bytes, options)
 
     # give recipients a chance of receiving related patches in correct order
     if type == 'cover' or (type == 'patch' and patch_nr < total_nr):
@@ -453,24 +454,12 @@ def __encode_message(msg):
     # encode the body and set the MIME and encoding headers
     if msg.is_multipart():
         for p in msg.get_payload():
+            # TODO test if payload can be encoded with charset. Perhaps
+            # iterate email.charset.CHARSETS to find an encodable one?
             p.set_charset(charset)
     else:
         msg.set_charset(charset)
 
-def __edit_message(msg):
-    fname = '.stgitmail.txt'
-
-    # create the initial file
-    with open(fname, 'w') as f:
-        f.write(msg)
-
-    call_editor(fname)
-
-    # read the message back
-    with open(fname) as f:
-        msg = f.read()
-
-    return msg
 
 def __build_cover(tmpl, msg_id, options, patches):
     """Build the cover message (series description) to be sent via SMTP
@@ -527,7 +516,7 @@ def __build_cover(tmpl, msg_id, options, patches):
                      diff_flags = options.diff_flags))}
 
     try:
-        msg_string = tmpl % tmpl_dict
+        msg_bytes = templates.specialize_template(tmpl, tmpl_dict)
     except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
@@ -535,11 +524,11 @@ def __build_cover(tmpl, msg_id, options, patches):
                            'supported in the patch template')
 
     if options.edit_cover:
-        msg_string = __edit_message(msg_string)
+        msg_bytes = edit_bytes(msg_bytes, '.stgitmail.txt')
 
     # The Python email message
     try:
-        msg = message_from_string(msg_string)
+        msg = message_from_bytes(msg_bytes)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
@@ -626,7 +615,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                  'longdescr':    long_descr,
                  # for backward template compatibility
                  'endofheaders': '',
-                 'diff':         diff.decode('utf-8'),
+                 'diff':         diff,
                  'diffstat':     gitlib.diffstat(diff),
                  # for backward template compatibility
                  'date':         '',
@@ -645,13 +634,9 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                  'authdate':     p.get_authdate(),
                  'commname':     commname,
                  'commemail':    commemail}
-    # change None to ''
-    for key in tmpl_dict:
-        if not tmpl_dict[key]:
-            tmpl_dict[key] = ''
 
     try:
-        msg_string = tmpl % tmpl_dict
+        msg_bytes = templates.specialize_template(tmpl, tmpl_dict)
     except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
@@ -659,11 +644,11 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                            'supported in the patch template')
 
     if options.edit_patches:
-        msg_string = __edit_message(msg_string)
+        msg_bytes = edit_bytes(msg_bytes, '.stgitmail.txt')
 
     # The Python email message
     try:
-        msg = message_from_string(msg_string)
+        msg = message_from_bytes(msg_bytes)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
@@ -724,7 +709,7 @@ def func(parser, options, args):
 
         # find the template file
         if options.cover:
-            with open(options.cover) as f:
+            with io.open(options.cover, 'rb') as f:
                 tmpl = f.read()
         else:
             tmpl = templates.get_template('covermail.tmpl')
@@ -739,7 +724,7 @@ def func(parser, options, args):
 
     # send the patches
     if options.template:
-        with open(options.template) as f:
+        with io.open(options.template, 'rb') as f:
             tmpl = f.read()
     else:
         if options.attach:
