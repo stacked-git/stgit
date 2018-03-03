@@ -14,6 +14,22 @@ test_expect_success 'Initialize StGit stack' '
     done
 '
 
+test_expect_success 'Too few arguments' '
+    command_error stg squash p0 2>&1 |
+    grep -e "Need at least two patches"
+'
+
+test_expect_success 'Attempt duplicate patch name' '
+    command_error stg squash -n p3 -- p0 p1 2>&1 |
+    grep -e "Patch name \"p3\" already taken"
+'
+
+test_expect_success 'Save template' '
+    stg squash --save-template mytemplate p0 p1 &&
+    test -e mytemplate &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ]
+'
+
 test_expect_success 'Squash some patches' '
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&

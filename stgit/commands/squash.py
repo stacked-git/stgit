@@ -95,7 +95,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     def get_name(cd):
         return name or utils.make_patch_name(cd.message, bad_name)
     if name and bad_name(name):
-        raise common.CmdException('Patch name "%s" already taken')
+        raise common.CmdException('Patch name "%s" already taken' % name)
 
     def make_squashed_patch(trans, new_commit_data):
         name = get_name(new_commit_data)
