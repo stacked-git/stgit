@@ -88,11 +88,6 @@ def func(parser, options, args):
         out.warn('Local changes in the tree;'
                  ' you might want to commit them first')
 
-    if not options.stdout:
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname)
-        series = io.open(os.path.join(dirname, 'series'), 'w+')
-
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
     if len(args) != 0:
@@ -117,13 +112,15 @@ def func(parser, options, args):
         if not tmpl:
             tmpl = ''
 
-    # note the base commit for this series
     if not options.stdout:
+        if not os.path.isdir(dirname):
+            os.makedirs(dirname)
+        series = io.open(os.path.join(dirname, 'series'), 'w')
+        # note the base commit for this series
         base_commit = stack.base.sha1
         print('# This series applies on GIT commit %s' % base_commit, file=series)
 
-    patch_no = 1
-    for p in patches:
+    for patch_no, p in enumerate(patches, 1):
         pname = p
         if options.patch:
             pname = '%s.patch' % pname
@@ -172,7 +169,7 @@ def func(parser, options, args):
             else:
                 f = sys.stdout
         else:
-            f = io.open(pfile, 'wb+')
+            f = io.open(pfile, 'wb')
 
         if options.stdout and num > 1:
             f.write('\n'.join(['-' * 79,
@@ -184,7 +181,6 @@ def func(parser, options, args):
         f.write(diff)
         if not options.stdout:
             f.close()
-        patch_no += 1
 
     if not options.stdout:
         series.close()
