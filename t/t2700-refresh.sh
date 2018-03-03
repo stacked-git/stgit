@@ -123,4 +123,64 @@ test_expect_success 'Refresh moved files' '
     stg refresh
 '
 
+test_expect_success 'Attempt invalid options with --index' '
+    echo foo4 > foo4.txt &&
+    stg add foo4.txt &&
+    command_error stg refresh -i . 2>&1 |
+    grep -e "Only full refresh is available with the --index option" &&
+    command_error stg refresh -i --force 2>&1 |
+    grep -e "You cannot --force a full refresh when using --index mode" &&
+    command_error stg refresh -i --submodules 2>&1 |
+    grep -e "--submodules is meaningless when keeping the current index"
+    '
+
+test_expect_success 'Attempt refresh with changed index and working tree' '
+    echo "more foo" >> foo4.txt &&
+    command_error stg refresh 2>&1 |
+    grep -e "The index is dirty. Did you mean --index? To force a full refresh use --force"
+'
+
+test_expect_success 'Attempt to refresh to invalid patch name' '
+    stg add foo4.txt &&
+    command_error stg refresh -p bad-patchname 2>&1 |
+    grep -e "bad-patchname: no such patch"
+'
+
+test_expect_success 'Attempt to refresh with no applied patches' '
+    git rm -f foo4.txt &&
+    stg pop -a &&
+    echo foo5 > foo5.txt &&
+    git add foo5.txt &&
+    command_error stg refresh 2>&1 |
+    grep -e "Cannot refresh top patch because no patches are applied" &&
+    git rm -f foo5.txt
+'
+
+test_expect_success 'Attempt update with submodules' '
+    stg push -a &&
+    echo more >> foo2.txt &&
+    command_error stg refresh --update --submodules 2>&1 |
+    grep -e "--submodules is meaningless when only updating modified files"
+'
+
+test_expect_success 'Test annotate' '
+    stg refresh --annotate "My Annotation" &&
+    stg log -f | grep -e "My Annotation"
+'
+
+test_expect_success 'Attempt refresh with open conflict' '
+    stg new -m p6 &&
+    echo "foo" > conflicting.txt &&
+    stg add conflicting.txt &&
+    stg refresh &&
+    stg pop &&
+    stg new -m p7 &&
+    echo "bar" > conflicting.txt &&
+    stg add conflicting.txt &&
+    stg refresh &&
+    conflict stg push p6 &&
+    command_error stg refresh 2>&1 |
+    grep -e "resolve conflicts first"
+'
+
 test_done

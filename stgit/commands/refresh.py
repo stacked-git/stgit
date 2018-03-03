@@ -93,7 +93,7 @@ def get_patch(stack, given_patch):
     else:
         if not stack.patchorder.applied:
             raise common.CmdException(
-                'Cannot refresh top patch, because no patches are applied')
+                'Cannot refresh top patch because no patches are applied')
         return stack.patchorder.applied[-1]
 
 def list_files(stack, patch_name, args, index, update, submodules):
