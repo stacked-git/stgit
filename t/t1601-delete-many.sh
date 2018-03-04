@@ -52,4 +52,16 @@ test_expect_success \
     [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ]
     '
 
+test_expect_success \
+    'Delete leading to conflict when re-pushing' \
+    '
+    echo "stuff" > foo.txt &&
+    stg new -m p-stuff &&
+    stg refresh
+    echo "other stuff" > foo.txt &&
+    stg new -m p-other &&
+    stg refresh &&
+    conflict stg delete p-stuff
+    '
+
 test_done
