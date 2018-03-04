@@ -24,6 +24,11 @@ test_expect_success 'Initialize StGit stack with three patches' '
     stg uncommit -n 3
 '
 
+test_expect_success 'Invalid arguments' '
+    command_error stg reset 2>&1 |
+    grep -e "Wrong options"
+'
+
 cat > expected.txt <<EOF
 UU a
 EOF
