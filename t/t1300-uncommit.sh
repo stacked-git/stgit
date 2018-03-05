@@ -39,6 +39,34 @@ test_expect_success \
 	'
 
 test_expect_success \
+  'Invalid --to and --number arguments' \
+  '
+  command_error stg uncommit --to HEAD^ --number 1 2>&1 |
+  grep -e "cannot give both --to and --number"
+  '
+
+test_expect_success \
+  'Invalid --to with patch args' \
+  '
+  command_error stg uncommit --to HEAD^ p0 2>&1 |
+  grep -e "cannot specify patch name with --to"
+  '
+
+test_expect_success \
+  'Invalid --number' \
+  '
+  command_error stg uncommit --number -1 2>&1 |
+  grep -e "invalid value passed to --number"
+  '
+
+test_expect_success \
+  'Too many patch names with --number' \
+  '
+  command_error stg uncommit --number 2 p0 p1 2>&1 |
+  grep -e "when using --number, specify at most one patch name"
+  '
+
+test_expect_success \
 	'Uncommit the patches using names' \
 	'
 	stg uncommit bar foo &&
@@ -76,6 +104,22 @@ test_expect_success \
     stg uncommit --to HEAD^ &&
     [ "$(stg id foo-patch)" = "$(stg id bar-patch^)" ] &&
     stg commit --all
+'
+
+test_expect_success \
+  'Use --exclusive' \
+  '
+  stg uncommit --to HEAD^ --exclusive &&
+  [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
+  stg commit --all
+  '
+
+test_expect_success 'Attempt to reuse patch name' '
+  stg uncommit &&
+  [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
+  command_error stg uncommit bar-patch 2>&1 |
+  grep -e "Patch name \"bar-patch\" already taken" &&
+  stg commit --all
 '
 
 test_expect_success 'Uncommit a commit with not precisely one parent' '
