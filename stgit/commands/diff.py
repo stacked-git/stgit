@@ -74,11 +74,10 @@ def func(parser, options, args):
 
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
-    diff_str = git.diff(args, rev1 and git_id(crt_series, rev1),
-                        rev2 and git_id(crt_series, rev2),
-                        diff_flags = options.diff_flags)
+    diff = git.diff(args, rev1 and git_id(crt_series, rev1),
+                    rev2 and git_id(crt_series, rev2),
+                    diff_flags = options.diff_flags)
     if options.stat:
-        out.stdout_raw(gitlib.diffstat(diff_str) + '\n')
-    else:
-        if diff_str:
-            pager(diff_str.encode('utf-8'))
+        out.stdout_raw(gitlib.diffstat(diff) + '\n')
+    elif diff:
+        pager(diff)

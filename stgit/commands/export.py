@@ -172,14 +172,15 @@ def func(parser, options, args):
         if options.stdout:
             f = sys.stdout
         else:
-            f = io.open(pfile, 'w+', encoding='utf-8')
+            f = io.open(pfile, 'wb+')
 
         if options.stdout and num > 1:
-            print('-'*79)
-            print(patch.name)
-            print('-'*79)
+            f.write('\n'.join(['-' * 79,
+                               patch.name,
+                               '-' * 79,
+                               '']).encode('utf-8'))
 
-        f.write(descr)
+        f.write(descr.encode('utf-8'))
         f.write(diff)
         if not options.stdout:
             f.close()

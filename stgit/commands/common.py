@@ -19,6 +19,7 @@ from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (EditorException,
                          add_sign_line,
+                         edit_bytes,
                          edit_string,
                          get_hook,
                          parse_name_email_date,
@@ -339,23 +340,25 @@ def post_rebase(crt_series, applied, nopush, merged):
 # Patch description/e-mail/diff parsing
 #
 def __end_descr(line):
-    return re.match(r'---\s*$', line) or re.match('diff -', line) or \
-            re.match('Index: ', line) or re.match('--- \w', line)
+    return (re.match(br'---\s*$', line) or
+            re.match(b'diff -', line) or
+            re.match(b'Index: ', line) or
+            re.match(br'--- \w', line))
 
 def __split_descr_diff(string):
     """Return the description and the diff from the given string
     """
-    descr = diff = ''
+    descr = diff = b''
     top = True
 
-    for line in string.split('\n'):
+    for line in string.split(b'\n'):
         if top:
             if not __end_descr(line):
-                descr += line + '\n'
+                descr += line + b'\n'
                 continue
             else:
                 top = False
-        diff += line + '\n'
+        diff += line + b'\n'
 
     return (descr.rstrip(), diff)
 
@@ -452,20 +455,16 @@ def parse_mail(msg):
         raise CmdException('Subject: line not found')
 
     # the rest of the message
-    msg_text = ''
+    msg_data = b''
     for part in msg.walk():
         if part.get_content_type() in ['text/plain',
                                        'application/octet-stream']:
             payload = part.get_payload(decode=True)
-            charset = part.get_content_charset('utf-8')
-            if codecs.lookup(charset).name == 'utf-8':
-                msg_text += decode_utf8_with_latin1(payload)
-            else:
-                msg_text += payload.decode(charset)
+            msg_data += payload
 
-    rem_descr, diff = __split_descr_diff(msg_text)
+    rem_descr, diff = __split_descr_diff(msg_data)
     if rem_descr:
-        descr += '\n\n' + rem_descr
+        descr += '\n\n' + decode_utf8_with_latin1(rem_descr)
 
     # parse the description for author information
     descr, descr_authname, descr_authemail, descr_authdate = \
@@ -479,15 +478,20 @@ def parse_mail(msg):
 
     return (descr, authname, authemail, authdate, diff)
 
-def parse_patch(text, contains_diff):
-    """Parse the input text and return (description, authname,
-    authemail, authdate, diff)
+def parse_patch(patch_data, contains_diff):
+    """Parse patch data.
+
+    Returns (description, authname, authemail, authdate, diff)
+
     """
+    assert isinstance(patch_data, bytes)
     if contains_diff:
-        (text, diff) = __split_descr_diff(text)
+        (descr, diff) = __split_descr_diff(patch_data)
     else:
+        descr = patch_data
         diff = None
-    (descr, authname, authemail, authdate) = __parse_description(text)
+    (descr, authname, authemail, authdate) = __parse_description(
+        decode_utf8_with_latin1(descr))
 
     # we don't yet have an agreed place for the creation date.
     # Just return None

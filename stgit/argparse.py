@@ -167,10 +167,10 @@ def message_options(save_template):
     def templ_callback(option, opt_str, value, parser):
         if value == '-':
             def w(s):
-                out.stdout_raw(s)
+                out.stdout_bytes(s)
         else:
             def w(s):
-                with io.open(value, 'w', encoding='utf-8') as f:
+                with io.open(value, 'wb') as f:
                     f.write(s)
         parser.values.save_template = w
         no_combine(parser)

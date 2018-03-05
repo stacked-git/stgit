@@ -75,7 +75,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
                                       trans.patches[pn].data.message)
                         for pn in patches[1:]))
         if save_template:
-            save_template(msg)
+            save_template(msg.encode('utf-8'))
             raise SaveTemplateDone()
         else:
             msg = utils.edit_string(msg, '.stgit-squash.txt')

@@ -626,7 +626,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
                  'longdescr':    long_descr,
                  # for backward template compatibility
                  'endofheaders': '',
-                 'diff':         diff,
+                 'diff':         diff.decode('utf-8'),
                  'diffstat':     gitlib.diffstat(diff),
                  # for backward template compatibility
                  'date':         '',

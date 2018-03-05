@@ -582,7 +582,7 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
     diff_str = diff(files, rev1, rev2)
     if diff_str:
         try:
-            GRun('apply', *index_opt).raw_input(
+            GRun('apply', *index_opt).encoding(None).raw_input(
                 diff_str).discard_stderr().no_output()
         except GitRunException:
             return False
@@ -631,18 +631,20 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
         diff_flags = diff_flags + ['--binary']
 
     if rev1 and rev2:
-        return GRun('diff-tree', '-p',
-                    *(diff_flags + [rev1, rev2, '--'] + files)).raw_output()
+        runner = GRun('diff-tree', '-p',
+                      *(diff_flags + [rev1, rev2, '--'] + files))
+        return runner.decoding(None).raw_output()
     elif rev1 or rev2:
         refresh_index()
         if rev2:
-            return GRun('diff-index', '-p', '-R',
-                        *(diff_flags + [rev2, '--'] + files)).raw_output()
+            runner = GRun('diff-index', '-p', '-R',
+                          *(diff_flags + [rev2, '--'] + files))
         else:
-            return GRun('diff-index', '-p',
-                        *(diff_flags + [rev1, '--'] + files)).raw_output()
+            runner = GRun('diff-index', '-p',
+                          *(diff_flags + [rev1, '--'] + files))
+        return runner.decoding(None).raw_output()
     else:
-        return ''
+        return b''
 
 def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2
@@ -762,10 +764,13 @@ def apply_patch(filename = None, diff = None, base = None,
     """
     if diff is None:
         if filename:
-            with io.open(filename, encoding='utf-8') as f:
+            with io.open(filename, 'rb') as f:
                 diff = f.read()
         else:
-            diff = sys.stdin.read()
+            if hasattr(sys.stdin, 'buffer'):
+                diff = sys.stdin.buffer.read()
+            else:
+                diff = sys.stdin.read()
 
     if base:
         orig_head = get_head()
@@ -779,7 +784,7 @@ def apply_patch(filename = None, diff = None, base = None,
     if strip is not None:
         cmd += ['-p%s' % (strip,)]
     try:
-        GRun(*cmd).raw_input(diff).no_output()
+        GRun(*cmd).encoding(None).raw_input(diff).no_output()
     except GitRunException:
         if base:
             switch(orig_head)

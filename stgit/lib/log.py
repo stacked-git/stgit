@@ -129,10 +129,9 @@ def patch_file(repo, cd):
         '',
         '---',
         '',
-        repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip(),
-        '',
-    ])
-    return repo.commit(git.BlobData(metadata.encode('utf-8')))
+    ]).encode('utf-8')
+    diff = repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip()
+    return repo.commit(git.BlobData(metadata + diff + b'\n'))
 
 
 def log_ref(branch):

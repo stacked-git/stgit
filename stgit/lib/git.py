@@ -665,18 +665,18 @@ class DiffTreeProcesses(object):
     def diff_trees(self, args, sha1a, sha1b):
         p = self.__get_process(args)
         query = '%s %s\n' % (sha1a, sha1b)
+        b_query = query.encode('utf-8')
         end = 'EOF\n'  # arbitrary string that's not a 40-digit hex number
         b_end = end.encode('utf-8')
-        os.write(p.stdin.fileno(), query.encode('utf-8') + b_end)
+        os.write(p.stdin.fileno(), b_query + b_end)
         p.stdin.flush()
         data = bytes()
         while not (data.endswith(b'\n' + b_end) or
                    data.endswith(b'\0' + b_end)):
             data += os.read(p.stdout.fileno(), 4096)
-        s = data.decode('utf-8')
-        assert s.startswith(query)
-        assert s.endswith(end)
-        return s[len(query):-len(end)]
+        assert data.startswith(b_query)
+        assert data.endswith(b_end)
+        return data[len(b_query):-len(b_end)]
 
 class Repository(RunWithEnv):
     """Represents a git repository."""
@@ -798,18 +798,18 @@ class Repository(RunWithEnv):
         finally:
             index.delete()
         return result
-    def apply(self, tree, patch_text, quiet):
+    def apply(self, tree, patch_bytes, quiet):
         """Given a L{Tree} and a patch, will either return the new L{Tree}
         that results when the patch is applied, or None if the patch
         couldn't be applied."""
         assert isinstance(tree, Tree)
-        if not patch_text:
+        if not patch_bytes:
             return tree
         index = self.temp_index()
         try:
             index.read_tree(tree)
             try:
-                index.apply(patch_text, quiet)
+                index.apply(patch_bytes, quiet)
                 return index.write_tree()
             except MergeException:
                 return None
@@ -848,8 +848,8 @@ class Repository(RunWithEnv):
         identical."""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
-        i = iter(self.__difftree.diff_trees(
-                ['-r', '-z'], t1.sha1, t2.sha1).split('\0'))
+        dt = self.__difftree.diff_trees(['-r', '-z'], t1.sha1, t2.sha1)
+        i = iter(dt.decode('utf-8').split('\0'))
         try:
             while True:
                 x = next(i)
@@ -913,10 +913,11 @@ class Index(RunWithEnv):
             return False
         else:
             return True
-    def apply(self, patch_text, quiet):
+    def apply(self, patch_bytes, quiet):
         """In-index patch application, no worktree involved."""
         try:
-            r = self.run(['git', 'apply', '--cached']).raw_input(patch_text)
+            r = self.run(['git', 'apply', '--cached'])
+            r.encoding(None).raw_input(patch_bytes)
             if quiet:
                 r = r.discard_stderr()
             r.no_output()
@@ -1155,8 +1156,9 @@ class Branch(object):
 
 def diffstat(diff):
     """Return the diffstat of the supplied diff."""
-    return Run('git', 'apply', '--stat', '--summary'
-               ).raw_input(diff).raw_output()
+    return (Run('git', 'apply', '--stat', '--summary')
+            .encoding(None).raw_input(diff)
+            .decoding('utf-8').raw_output())
 
 def clone(remote, local):
     """Clone a remote repository using 'git clone'."""

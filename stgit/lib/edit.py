@@ -47,18 +47,20 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     @param replacement_diff: Diff text to use; or C{None} if it should
                              be computed from C{cd}
     @type replacement_diff: C{str} or C{None}"""
-    desc = ['From: %s <%s>' % (cd.author.name, cd.author.email),
-            'Date: %s' % cd.author.date.isoformat(),
-            '',
-            cd.message]
+    desc = '\n'.join([
+        'From: %s <%s>' % (cd.author.name, cd.author.email),
+        'Date: %s' % cd.author.date.isoformat(),
+        '',
+        cd.message]).encode('utf-8')
     if append_diff:
         if replacement_diff:
             diff = replacement_diff
         else:
             just_diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
-            diff = '\n'.join([git.diffstat(just_diff), just_diff])
-        desc += ['---', '', diff]
-    return '\n'.join(desc)
+            diff = b'\n'.join([git.diffstat(just_diff).encode('utf-8'),
+                               just_diff])
+        desc += b'\n'.join([b'', b'---', b'', diff])
+    return desc
 
 def interactive_edit_patch(repo, cd, edit_diff, diff_flags, replacement_diff):
     """Edit the patch interactively. If C{edit_diff} is true, edit the
@@ -68,7 +70,7 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags, replacement_diff):
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
     return update_patch_description(
-        repo, cd, utils.edit_string(
+        repo, cd, utils.edit_bytes(
             patch_desc(repo, cd, edit_diff, diff_flags, replacement_diff),
             '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]),
         edit_diff)

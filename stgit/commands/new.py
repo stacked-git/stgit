@@ -72,7 +72,7 @@ def func(parser, options, args):
     cd = common.update_commit_data(cd, options)
 
     if options.save_template:
-        options.save_template(cd.message)
+        options.save_template(cd.message.encode('utf-8'))
         return utils.STGIT_SUCCESS
 
     if not options.no_verify:

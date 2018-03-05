@@ -230,7 +230,7 @@ def __import_file(filename, options, patch = None):
         message, author_name, author_email, author_date, diff = \
                  parse_mail(msg)
     else:
-        patch_str = f.read().decode('utf-8')
+        patch_str = f.read()
         message, author_name, author_email, author_date, diff = \
                  parse_patch(patch_str, contains_diff=True)
 

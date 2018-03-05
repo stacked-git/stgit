@@ -74,10 +74,11 @@ def func(parser, options, args):
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
     commit_ids = [git_id(crt_series, patch) for patch in patches]
-    commit_str = '\n'.join(
-        Run('git', 'show', *(options.diff_flags + [commit_id])).raw_output()
+    commit_bytes = b'\n'.join(
+        (Run('git', 'show', *(options.diff_flags + [commit_id]))
+         .decoding(None).raw_output())
         for commit_id in commit_ids)
     if options.stat:
-        commit_str = git.diffstat(commit_str)
-    if commit_str:
-        pager(commit_str.encode('utf-8'))
+        commit_bytes = git.diffstat(commit_bytes).encode('utf-8')
+    if commit_bytes:
+        pager(commit_bytes)

@@ -2,6 +2,7 @@
 """Patch editing command"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+import io
 
 from stgit import argparse, utils
 from stgit.argparse import opt
@@ -103,9 +104,13 @@ def func(parser, options, args):
                 options.set_tree, discard_stderr = True, object_type = 'tree'))
 
     cd, failed_diff = edit.auto_edit_patch(
-        stack.repository, cd, msg = options.message, contains_diff = True,
-        author = options.author, committer = lambda p: p,
-        sign_str = options.sign_str)
+        stack.repository, cd,
+        msg=(None if options.message is None else
+             options.message.encode('utf-8')),
+        contains_diff=True,
+        author=options.author,
+        committer=lambda p: p,
+        sign_str=options.sign_str)
 
     if options.save_template:
         options.save_template(
@@ -120,7 +125,7 @@ def func(parser, options, args):
 
     def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'
-        with open(fn, 'w') as f:
+        with io.open(fn, 'wb') as f:
             f.write(edit.patch_desc(stack.repository, cd,
                                     options.diff, options.diff_flags,
                                     failed_diff))

@@ -249,6 +249,15 @@ def edit_string(s, filename, encoding='utf-8'):
     os.remove(filename)
     return s
 
+def edit_bytes(s, filename):
+    with open(filename, 'wb') as f:
+        f.write(s)
+    call_editor(filename)
+    with open(filename, 'rb') as f:
+        s = f.read()
+    os.remove(filename)
+    return s
+
 def append_comment(s, comment, separator = '---'):
     return ('%s\n\n%s\nEverything following the line with "%s" will be'
             ' ignored\n\n%s' % (s, separator, separator, comment))
