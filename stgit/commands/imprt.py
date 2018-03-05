@@ -12,8 +12,9 @@ import tarfile
 
 from stgit import argparse, git
 from stgit.argparse import opt
-from stgit.compat import message_from_binary_file
+from stgit.compat import message_from_binary_file, text
 from stgit.config import config
+from stgit.lib import git as gitlib
 from stgit.out import out
 from stgit.commands.common import (CmdException,
                                    DirectoryHasRepository,
@@ -92,15 +93,7 @@ options = [
         short = 'Invoke an editor for the patch description'),
     opt('-d', '--showdiff', action = 'store_true',
         short = 'Show the patch content in the editor buffer'),
-    opt('-a', '--author', metavar = '"NAME <EMAIL>"',
-        short = 'Use "NAME <EMAIL>" as the author details'),
-    opt('--authname',
-        short = 'Use AUTHNAME as the author name'),
-    opt('--authemail',
-        short = 'Use AUTHEMAIL as the author e-mail'),
-    opt('--authdate',
-        short = 'Use AUTHDATE as the author date'),
-    ] + argparse.sign_options()
+    ] + argparse.author_options() + argparse.sign_options()
 
 directory = DirectoryHasRepository(log=True)
 crt_series = None
@@ -146,16 +139,14 @@ def __create_patch(filename, message, author_name, author_email,
     if options.replace and patch in crt_series.get_unapplied():
         crt_series.delete_patch(patch, keep_log = True)
 
-    if options.author:
-        options.authname, options.authemail = name_email(options.author)
-
     # override the automatically parsed settings
-    if options.authname:
-        author_name = options.authname
-    if options.authemail:
-        author_email = options.authemail
-    if options.authdate:
-        author_date = options.authdate
+    author = options.author(gitlib.Person())
+    if author.name:
+        author_name = author.name
+    if author.email:
+        author_email = author.email
+    if author.date:
+        author_date = text(author.date)
 
     sign_str = options.sign_str
     if not options.sign_str:
