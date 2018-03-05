@@ -33,4 +33,16 @@ test_expect_success \
     'stg clone deeper under a git tree' \
     "stg clone foo bar"
 
+test_expect_success \
+    'Too many arguments' '
+    command_error stg clone foo bar2 bar3 2>&1 |
+    grep -e "incorrect number of arguments"
+    '
+
+test_expect_success \
+    'Attempt clone to existing destination' '
+    command_error stg clone foo bar 2>&1 |
+    grep -e "\"bar\" exists. Remove it first"
+    '
+
 test_done
