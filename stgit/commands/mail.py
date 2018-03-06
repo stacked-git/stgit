@@ -178,10 +178,10 @@ def __get_sender():
     sender = config.get('stgit.sender')
     if not sender:
         try:
-            sender = git.user()
+            sender = text(git.user())
         except git.GitException:
             try:
-                sender = git.author()
+                sender = text(git.author())
             except git.GitException:
                 pass
     if not sender:
