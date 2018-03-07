@@ -92,20 +92,10 @@ class MessagePrinter(object):
         if file:
             self.__stdout = self.__stderr = Output(file)
         else:
-            if (isinstance(sys.stdout, io.TextIOWrapper) and
-                    sys.stdout.encoding and
-                    codecs.lookup(sys.stdout.encoding).name != 'ascii'):
-                stdout = sys.stdout
-            else:
-                stdout = io.open(sys.stdout.fileno(), 'w', encoding='utf-8')
-            if (isinstance(sys.stderr, io.TextIOWrapper) and
-                    sys.stderr.encoding and
-                    codecs.lookup(sys.stderr.encoding).name != 'ascii'):
-                stderr = sys.stderr
-            else:
-                stderr = io.open(sys.stderr.fileno(), 'w', encoding='utf-8')
-            self.__stdout = Output(stdout)
-            self.__stderr = Output(stderr)
+            self.__stdout = Output(io.open(sys.stdout.fileno(), 'w',
+                                           buffering=1, encoding='utf-8'))
+            self.__stderr = Output(io.open(sys.stderr.fileno(), 'w',
+                                           buffering=1, encoding='utf-8'))
         if file or sys.stdout.isatty():
             self.__out = self.__stdout
         else:
