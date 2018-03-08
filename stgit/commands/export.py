@@ -110,12 +110,12 @@ def func(parser, options, args):
 
     # get the template
     if options.template:
-        with io.open(options.template, 'rb') as f:
+        with io.open(options.template, 'r') as f:
             tmpl = f.read()
     else:
         tmpl = templates.get_template('patchexport.tmpl')
         if not tmpl:
-            tmpl = b''
+            tmpl = ''
 
     # note the base commit for this series
     if not options.stdout:

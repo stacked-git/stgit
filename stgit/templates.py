@@ -40,20 +40,30 @@ def get_template(tfile):
     for d in tmpl_dirs:
         tmpl_path = os.path.join(d, tfile)
         if os.path.isfile(tmpl_path):
-            with io.open(tmpl_path, 'rb') as f:
+            with io.open(tmpl_path, 'r') as f:
                 return f.read()
     else:
         return None
 
 
 def specialize_template(tmpl, tmpl_dict):
-    tmpl_dict_b = {}
+    """Specialize template string using template dict.
+
+    Returns specialized template as bytes.
+
+    Since Python 3.3 and 3.4 do not support the interpolation operator (%) on
+    bytes objects; and since we expect at least one tmpl_dict value (diff) to
+    be bytes (not str); we use a recursive approach to specialize the str
+    specifiers using normal interpolation while handling interpolation of bytes
+    values ourselves.
+
+    """
     for k, v in tmpl_dict.items():
-        if isinstance(k, text):
-            k = k.encode('utf-8')
         if v is None:
-            v = b''
-        elif isinstance(v, text):
-            v = v.encode('utf-8')
-        tmpl_dict_b[k] = v
-    return tmpl % tmpl_dict_b
+            tmpl_dict[k] = ''
+        elif isinstance(v, bytes):
+            tmpl_dict.pop(k)
+            return v.join(specialize_template(part, tmpl_dict)
+                          for part in tmpl.split('%%(%s)s' % k))
+    else:
+        return (tmpl % tmpl_dict).encode('utf-8')

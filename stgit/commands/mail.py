@@ -319,6 +319,10 @@ def __send_message(type, tmpl, options, *args):
         msg_bytes = msg.as_bytes(options.mbox)
     else:
         msg_bytes = msg.as_string(options.mbox)
+        # Python 3.3 only has Message.as_string(). We encode it back to bytes
+        # and hope for the best.
+        if isinstance(msg_bytes, text):
+            msg_bytes = msg_bytes.encode('utf-8')
     if options.mbox:
         out.stdout_bytes(msg_bytes + b'\n')
         return msg_id
@@ -709,7 +713,7 @@ def func(parser, options, args):
 
         # find the template file
         if options.cover:
-            with io.open(options.cover, 'rb') as f:
+            with io.open(options.cover, 'r') as f:
                 tmpl = f.read()
         else:
             tmpl = templates.get_template('covermail.tmpl')
@@ -724,7 +728,7 @@ def func(parser, options, args):
 
     # send the patches
     if options.template:
-        with io.open(options.template, 'rb') as f:
+        with io.open(options.template, 'r') as f:
             tmpl = f.read()
     else:
         if options.attach:
