@@ -14,7 +14,7 @@ test_expect_success \
     'Create a branch when the current one is not an StGIT stack' '
     git branch origin &&
     stg branch --create new origin &&
-    test $(stg branch) = "new"
+    test "$(stg branch)" = "new"
 '
 
 test_expect_success \

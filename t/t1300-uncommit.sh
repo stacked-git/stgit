@@ -134,7 +134,7 @@ test_expect_success 'Uncommit when top != head' '
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD)
     stg uncommit bar &&
-    test $(git rev-parse HEAD) = $h &&
+    test "$(git rev-parse HEAD)" = "$h" &&
     test "$(echo $(stg series))" = "+ bar > foo"
 '
 

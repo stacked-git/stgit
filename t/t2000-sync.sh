@@ -51,7 +51,7 @@ test_expect_success \
     stg sync -B master p2 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    test $(cat foo2.txt) = "foo2"
+    test "$(cat foo2.txt)" = "foo2"
     '
 
 test_expect_success \
@@ -60,8 +60,8 @@ test_expect_success \
     stg sync -B master -a &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    test $(cat foo1.txt) = "foo1" &&
-    test $(cat foo2.txt) = "foo2"
+    test "$(cat foo1.txt)" = "foo1" &&
+    test "$(cat foo2.txt)" = "foo2"
     '
 
 test_expect_success \
@@ -70,9 +70,9 @@ test_expect_success \
     stg sync -s patches-master/series -a &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    test $(cat foo1.txt) = "foo1" &&
-    test $(cat foo2.txt) = "foo2" &&
-    test $(cat foo3.txt) = "foo3"
+    test "$(cat foo1.txt)" = "foo1" &&
+    test "$(cat foo2.txt)" = "foo2" &&
+    test "$(cat foo3.txt)" = "foo3"
     '
 
 test_expect_success \
@@ -103,7 +103,7 @@ test_expect_success \
     stg sync -B master p2 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    test $(cat bar2.txt) = "bar2"
+    test "$(cat bar2.txt)" = "bar2"
     '
 
 test_expect_success \

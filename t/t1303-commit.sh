@@ -34,7 +34,7 @@ test_expect_success 'Commit when top != head (should fail)' '
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD)
     command_error stg commit &&
-    test $(git rev-parse HEAD) = $h &&
+    test "$(git rev-parse HEAD)" = "$h" &&
     test "$(echo $(stg series))" = "> foo"
 '
 

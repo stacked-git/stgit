@@ -29,16 +29,16 @@ test_expect_success \
     '
     stg branch --clone foo &&
     stg new p1 -m "p1" &&
-    test $(stg series --applied -c) -eq 1
+    test "$(stg series --applied -c)" -eq 1
     '
 
 test_expect_success \
     'Clone the current StGIT branch' \
     '
     stg branch --clone bar &&
-    test $(stg series --applied -c) -eq 1 &&
+    test "$(stg series --applied -c)" -eq 1 &&
     stg new p2 -m "p2" &&
-    test $(stg series --applied -c) -eq 2
+    test "$(stg series --applied -c)" -eq 2
     '
 
 test_done

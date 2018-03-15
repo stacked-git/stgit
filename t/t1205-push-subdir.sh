@@ -63,7 +63,7 @@ test_expect_success 'Conflicting add/unknown file in subdir' '
     mkdir -p d &&
     echo bar > d/test &&
     command_error stg push foo &&
-    [ $(stg top) != "foo" ]
+    [ "$(stg top)" != "foo" ]
 '
 
 test_done

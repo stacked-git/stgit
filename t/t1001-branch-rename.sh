@@ -26,8 +26,8 @@ test_expect_success \
     'Rename an stgit branch' \
     'stg branch -c buz &&
      stg branch -r foo bar &&
-     [ -z $(find .git -type f | grep foo | tee /dev/stderr) ] &&
-     test -z $(git config -l | grep branch\\.foo)
+     [ -z "$(find .git -type f | grep foo | tee /dev/stderr)" ] &&
+     test -z "$(git config -l | grep branch\\.foo)"
 '
 
 test_done
