@@ -76,7 +76,7 @@ class Commands(dict):
             sys.exit(utils.STGIT_GENERAL_ERROR)
 
         return candidates[0]
-        
+
     def __getitem__(self, key):
         cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))
         if is_cmd_alias(cmd_mod):
@@ -128,10 +128,6 @@ def _main():
     if cmd == 'help':
         if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
             cmd = commands.canonical_cmd(sys.argv[2])
-            if cmd not in commands:
-                out.error('%s help: "%s" command unknown' % (prog, cmd))
-                sys.exit(utils.STGIT_GENERAL_ERROR)
-
             sys.argv[0] += ' %s' % cmd
             command = commands[cmd]
             parser = argparse.make_option_parser(command)
@@ -154,7 +150,7 @@ def _main():
     # re-build the command line arguments
     cmd = commands.canonical_cmd(cmd)
     sys.argv[0] += ' %s' % cmd
-    del(sys.argv[1])
+    del sys.argv[1]
 
     command = commands[cmd]
     if is_cmd_alias(command):
