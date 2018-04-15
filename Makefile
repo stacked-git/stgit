@@ -21,6 +21,9 @@ install-doc:
 install-html:
 	$(MAKE) -C Documentation install-html
 
+lint:
+	$(PYTHON) -m flake8 . stg stg-build stg-dbg stg-prof
+
 test:
 	$(PYTHON) setup.py build
 	$(MAKE) -C t all
@@ -67,4 +70,4 @@ TAGS:
 	ctags -e -R stgit/*
 
 .PHONY: all install doc install-doc install-html test test_patches \
-	coverage coverage-test coverage-report clean tags TAGS
+	lint coverage coverage-test coverage-report clean tags TAGS

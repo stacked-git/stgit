@@ -4,6 +4,11 @@ cache: pip
 
 matrix:
   include:
+    - python: '2.7'
+      env: MAKE_TARGET=lint
+    - python: '3.7'
+      env: MAKE_TARGET=lint
+      dist: xenial
     - python: '2.6'
       env: MAKE_TARGET=test
     - python: '2.7'
@@ -35,6 +40,7 @@ matrix:
     - python: '2.6'
 
 install:
+  - if [ $MAKE_TARGET = lint ]; then pip install flake8; fi
   - if [ $MAKE_TARGET = coverage-test ]; then pip install coveralls; fi
   - git describe --tags --abbrev=4 || git pull --unshallow --tags
 
