@@ -76,4 +76,21 @@ test_expect_success 'Show by name' '
     test $(cat show-a-d.txt | grep --count -e "\+\(bbb\|ccc\)") = "0"
 '
 
+test_expect_success 'Run show on empty patch' '
+    stg pop -a &&
+    stg new -m "empty message" empty &&
+    stg show empty > show-empty.txt &&
+    grep "empty message" show-empty.txt
+'
+
+test_expect_success 'Run show --stat on empty patch' '
+    test "$(stg show --stat)" = "$(cat show-empty.txt)"
+'
+
+test_expect_success 'Run show --stat on patches' '
+    stg show --stat patch-aaa patch-ddd > show-a-d-stat.txt &&
+    test $(cat show-a-d-stat.txt | grep --count -e " foo.txt | 1 \+") = "2" &&
+    test $(cat show-a-d-stat.txt | grep --count -e "patch-aaa\|patch-ddd") = "2"
+'
+
 test_done

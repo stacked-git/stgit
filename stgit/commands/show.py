@@ -119,13 +119,12 @@ def func(parser, options, args):
                         '%s: Unknown patch or revision name' % name
                     )
 
-    if not options.stat:
-        options.diff_flags.extend(color_diff_flags())
-    commit_bytes = b'\n'.join(
-        (Run('git', 'show', *(options.diff_flags + [commit.sha1]))
-         .decoding(None).raw_output())
-        for commit in commits)
+    cmd = ['git', 'show']
     if options.stat:
-        commit_bytes = git.diffstat(commit_bytes).encode('utf-8')
-    if commit_bytes:
-        pager(commit_bytes)
+        cmd.extend(['--stat', '--summary'])
+    else:
+        cmd.append('--patch')
+        cmd.extend(options.diff_flags)
+    cmd.extend(color_diff_flags())
+    cmd.extend(commit.sha1 for commit in commits)
+    pager(Run(*cmd).decoding(None).raw_output())
