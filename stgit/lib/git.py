@@ -64,13 +64,6 @@ class DetachedHeadException(RepositoryException):
         RepositoryException.__init__(self, 'Not on any branch')
 
 
-class Repr(object):
-    """Utility class that defines C{__reps__} in terms of C{__str__}."""
-
-    def __repr__(self):
-        return str(self)
-
-
 class NoValue(object):
     """A handy default value that is guaranteed to be distinct from any
     real argument value."""
@@ -90,7 +83,7 @@ def make_defaults(defaults):
     return d
 
 
-class TimeZone(tzinfo, Repr):
+class TimeZone(tzinfo):
     """A simple time zone class for static offsets from UTC. (We have to
     define our own since Python's standard library doesn't define any
     time zone classes.)"""
@@ -118,7 +111,7 @@ class TimeZone(tzinfo, Repr):
     def dst(self, dt):
         return timedelta(0)
 
-    def __str__(self):
+    def __repr__(self):
         return self.__name
 
 
@@ -149,7 +142,7 @@ def system_date(datestring):
         raise DateException(datestring, "date")
 
 
-class Date(Immutable, Repr):
+class Date(Immutable):
     """Represents a timestamp used in git commits."""
 
     def __init__(self, datestring):
@@ -183,7 +176,7 @@ class Date(Immutable, Repr):
 
         raise DateException(datestring, 'date')
 
-    def __str__(self):
+    def __repr__(self):
         return self.isoformat()
 
     def isoformat(self):
@@ -200,7 +193,7 @@ class Date(Immutable, Repr):
         return cls(datestring)
 
 
-class Person(Immutable, Repr):
+class Person(Immutable):
     """Represents an author or committer in a git commit object. Contains
     name, email and timestamp."""
 
@@ -237,7 +230,7 @@ class Person(Immutable, Repr):
     def set_date(self, date):
         return type(self)(date=date, defaults=self)
 
-    def __str__(self):
+    def __repr__(self):
         return '%s %s' % (self.name_email, self.date)
 
     @classmethod
@@ -277,14 +270,14 @@ class Person(Immutable, Repr):
         return cls.__committer
 
 
-class GitObject(Immutable, Repr):
+class GitObject(Immutable):
     """Base class for all git objects. One git object is represented by at
     most one C{GitObject}, which makes it possible to compare them
     using normal Python object comparison; it also ensures we don't
     waste more memory than necessary."""
 
 
-class BlobData(Immutable, Repr):
+class BlobData(Immutable):
     """Represents the data contents of a git blob object."""
 
     def __init__(self, data):
@@ -320,7 +313,7 @@ class Blob(GitObject):
     def sha1(self):
         return self.__sha1
 
-    def __str__(self):
+    def __repr__(self):
         return 'Blob<%s>' % self.sha1
 
     @property
@@ -343,7 +336,7 @@ class ImmutableDict(dict):
     update = error
 
 
-class TreeData(Immutable, Repr):
+class TreeData(Immutable):
     """Represents the data contents of a git tree object."""
 
     @staticmethod
@@ -416,11 +409,11 @@ class Tree(GitObject):
                                       ).output_lines('\0'))
         return self.__data
 
-    def __str__(self):
+    def __repr__(self):
         return 'Tree<sha1: %s>' % self.sha1
 
 
-class CommitData(Immutable, Repr):
+class CommitData(Immutable):
     """Represents the data contents of a git commit object."""
 
     def __init__(self, tree=NoValue, parents=NoValue, author=NoValue,
@@ -499,7 +492,7 @@ class CommitData(Immutable, Repr):
     def is_nochange(self):
         return len(self.parents) == 1 and self.tree == self.parent.data.tree
 
-    def __str__(self):
+    def __repr__(self):
         if self.tree is None:
             tree = None
         else:
@@ -583,7 +576,7 @@ class Commit(GitObject):
                 self.__repository.cat_object(self.sha1))
         return self.__data
 
-    def __str__(self):
+    def __repr__(self):
         return 'Commit<sha1: %s, data: %s>' % (self.sha1, self.__data)
 
 
