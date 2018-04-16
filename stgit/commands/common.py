@@ -645,6 +645,11 @@ class _Directory(object):
 
 
 class DirectoryAnywhere(_Directory):
+    def __init__(self):
+        super(DirectoryAnywhere, self).__init__(
+            needs_current_series=False, log=False
+        )
+
     def setup(self):
         pass
 
@@ -672,8 +677,9 @@ class DirectoryHasRepositoryLib(_Directory):
     """For commands that use the new infrastructure in stgit.lib.*."""
 
     def __init__(self):
-        self.needs_current_series = False
-        self.log = False  # stgit.lib.transaction handles logging
+        super(DirectoryHasRepositoryLib, self).__init__(
+            needs_current_series=False, log=False
+        )
 
     def setup(self):
         # This will throw an exception if we don't have a repository.

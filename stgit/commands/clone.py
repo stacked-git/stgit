@@ -46,7 +46,7 @@ not already exist."""
 args = [argparse.repo, argparse.dir]
 options = []
 
-directory = common.DirectoryAnywhere(needs_current_series=False, log=False)
+directory = common.DirectoryAnywhere()
 
 
 def func(parser, options, args):
