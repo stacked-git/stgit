@@ -47,10 +47,18 @@ clean:
 		$(MAKE) -C $$dir clean; \
 	done
 	rm -rf build
-	rm -f stgit/*.pyc
-	rm -f stgit/commands/*.pyc
-	rm -f TAGS
-	rm -f stgit/commands/cmdlist.py
+	rm -rf dist
+	rm  -f stgit/*.pyc
+	rm -rf stgit/__pycache__
+	rm  -f stgit/builtin_version.py
+	rm  -f stgit/commands/*.pyc
+	rm -rf stgit/commands/__pycache__
+	rm  -f stgit/commands/cmdlist.py
+	rm  -f stgit/lib/*.pyc
+	rm -rf stgit/lib/__pycache__
+	rm  -f TAGS tags
+	rm  -f MANIFEST
+	rm  -f stgit-completion.bash
 
 tags:
 	ctags -R stgit/*
