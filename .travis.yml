@@ -1,7 +1,6 @@
-dist: trusty
-sudo: false
-
+group: travis_latest
 language: python
+cache: pip
 
 matrix:
   include:
@@ -28,12 +27,11 @@ matrix:
     - python: '2.6'
 
 install:
-  - pip install coveralls
+  - if [ $MAKE_TARGET = coverage-test ]; then pip install coveralls; fi
+  - git describe --tags --abbrev=4 || git pull --unshallow
 
-script: make $MAKE_TARGET
+script:
+  - make $MAKE_TARGET
 
 after_success:
-  coveralls
-
-cache:
-- pip
+  - if [ $MAKE_TARGET = coverage-test ]; then coveralls; fi
