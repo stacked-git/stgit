@@ -36,7 +36,7 @@ matrix:
 
 install:
   - if [ $MAKE_TARGET = coverage-test ]; then pip install coveralls; fi
-  - git describe --tags --abbrev=4 || git pull --unshallow
+  - git describe --tags --abbrev=4 || git pull --unshallow --tags
 
 script:
   - make $MAKE_TARGET
