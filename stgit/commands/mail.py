@@ -412,7 +412,7 @@ def __get_signers_list(msg):
     for line in msg.split('\n'):
         m = r.match(line)
         if m:
-            addr_list.append(m.expand('\g<2>'))
+            addr_list.append(m.expand(r'\g<2>'))
 
     return addr_list
 

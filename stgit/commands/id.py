@@ -25,7 +25,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 help = 'Print the git hash value of a StGit reference'
 kind = 'repo'
 usage = ['[options] [--] [<id>]']
-description = """
+description = r"""
 Print the SHA1 value of a Git id (defaulting to HEAD). In addition to the
 standard Git id's like heads and tags, this command also accepts
 '[<branch>:]<patch>' for the id of a patch, '[<branch>:]\{base\}' for the base
