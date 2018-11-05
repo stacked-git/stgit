@@ -138,8 +138,8 @@ def _main():
             print_help()
         sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['-v', '--version', 'version']:
-        from stgit.version import version
-        print('Stacked GIT %s' % version)
+        from stgit.version import get_version
+        print('Stacked GIT %s' % get_version())
         os.system('git --version')
         print('Python version %s' % sys.version)
         sys.exit(utils.STGIT_SUCCESS)
