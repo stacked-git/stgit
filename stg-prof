@@ -10,23 +10,6 @@ import pstats
 import sys
 import time
 
-# Try to detect where it is run from and set prefix and the search path.
-# It is assumed that the user installed StGIT using the --prefix= option
-prefix, bin = os.path.split(sys.path[0])
-
-if bin == 'bin' and prefix != sys.prefix:
-    sys.prefix = prefix
-    sys.exec_prefix = prefix
-
-    major, minor = sys.version_info[0:2]
-    local_path = [os.path.join(prefix, 'lib', 'python'),
-                  os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
-                  os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
-                               'site-packages')]
-    sys.path = local_path + sys.path
-
-from stgit.main import main
-
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -44,7 +27,26 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 if __name__ == '__main__':
+    # Try to detect where it is run from and set prefix and the search path.
+    # It is assumed that the user installed StGIT using the --prefix= option
+    prefix, bin = os.path.split(sys.path[0])
+
+    if bin == 'bin' and prefix != sys.prefix:
+        sys.prefix = prefix
+        sys.exec_prefix = prefix
+
+        major, minor = sys.version_info[0:2]
+        local_path = [
+            os.path.join(prefix, 'lib', 'python'),
+            os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
+            os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
+                         'site-packages')]
+        sys.path = local_path + sys.path
+
+    from stgit.main import main  # noqa
+
     start_time = time.time()
+
     def timer():
         return time.time() - start_time
 
@@ -53,4 +55,5 @@ if __name__ == '__main__':
         prof.run('main()')
     except SystemExit:
         pass
-    pstats.Stats(prof).strip_dirs().sort_stats(-1).print_stats().print_callees()
+    stats = pstats.Stats(prof)
+    stats.strip_dirs().sort_stats(-1).print_stats().print_callees()
