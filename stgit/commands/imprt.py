@@ -22,7 +22,6 @@ from stgit.commands.common import (CmdException,
                                    check_head_top_equal,
                                    check_local_changes,
                                    git_id,
-                                   name_email,
                                    parse_mail,
                                    parse_patch,
                                    print_crt_patch)

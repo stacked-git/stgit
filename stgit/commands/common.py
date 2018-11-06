@@ -2,7 +2,6 @@
 """Function/variables common to all the commands"""
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
-import codecs
 import email.utils
 import os
 import re
@@ -19,7 +18,6 @@ from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (EditorException,
                          add_sign_line,
-                         edit_bytes,
                          edit_string,
                          get_hook,
                          parse_name_email_date,

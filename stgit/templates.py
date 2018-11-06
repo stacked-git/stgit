@@ -8,7 +8,6 @@ import os
 import sys
 
 from stgit import basedir
-from stgit.compat import text
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>

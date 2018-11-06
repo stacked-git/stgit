@@ -6,7 +6,7 @@ from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import git, transaction, edit
-from stgit.config import config, GitConfigException
+from stgit.config import config
 from stgit.out import out
 
 __copyright__ = """
