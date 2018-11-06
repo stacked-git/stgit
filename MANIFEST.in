@@ -1,4 +1,4 @@
-include README Makefile MANIFEST.in AUTHORS COPYING INSTALL ChangeLog TODO
+include README Makefile MANIFEST.in AUTHORS COPYING INSTALL TODO
 include RELEASENOTES
 include stg-build
 include stg-prof
@@ -7,7 +7,6 @@ include templates/*.tmpl
 include examples/*.tmpl
 include examples/gitconfig
 include contrib/*.sh
-include contrib/*.bash
 include contrib/stg-*
 include contrib/Makefile
 include contrib/stgit.el
