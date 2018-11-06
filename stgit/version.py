@@ -22,7 +22,7 @@ def git_describe_version():
         raise VersionUnavailable(str(e))
     m = re.match(r'^v([0-9].*)', v)
     if m:
-        v = m.group()
+        v = m.group(1)
     else:
         raise VersionUnavailable('bad version: %s' % v)
     try:
@@ -37,19 +37,22 @@ def git_describe_version():
 
 
 def git_archival_version():
-    tag_re = re.compile(r'(?<=\btag: )([^,]+)\b')
     archival_path = os.path.join(sys.path[0], '.git_archival.txt')
+    if not os.path.isfile(archival_path):
+        # The archival file will not be present in sdist archives.
+        raise VersionUnavailable('%s does not exist' % archival_path)
+    tag_re = re.compile(r'(?<=\btag: )([^,]+)\b')
     with open(archival_path) as f:
         for line in f:
             if line.startswith('ref-names:'):
-                tags = tag_re.findall(line)
-                if tags:
-                    return tags[0]
+                for tag in tag_re.findall(line):
+                    if tag.startswith('v'):
+                        return tag[1:]
         else:
             raise VersionUnavailable('no tags found in %s' % archival_path)
 
 
-def builtin_version():
+def get_builtin_version():
     try:
         import stgit.builtin_version
     except ImportError:
@@ -59,7 +62,7 @@ def builtin_version():
 
 
 def get_version():
-    for v in [builtin_version, git_describe_version, git_archival_version]:
+    for v in [get_builtin_version, git_describe_version, git_archival_version]:
         try:
             return v()
         except VersionUnavailable:
