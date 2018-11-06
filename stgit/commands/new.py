@@ -83,7 +83,7 @@ def func(parser, options, args):
                                      lambda name: stack.patches.exists(name))
 
     # Write the new patch.
-    iw = stack.repository.default_iw
+    stack.repository.default_iw
     trans = transaction.StackTransaction(stack, 'new')
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)

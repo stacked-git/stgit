@@ -462,7 +462,7 @@ class Series(PatchSet):
                                  self.get_name())
 
     def __set_parent_remote(self, remote):
-        value = config.set('branch.%s.remote' % self.get_name(), remote)
+        config.set('branch.%s.remote' % self.get_name(), remote)
 
     def get_parent_branch(self):
         value = config.get('branch.%s.stgit.parentbranch' % self.get_name())
@@ -1109,7 +1109,6 @@ class Series(PatchSet):
             if not old_log:
                 raise StackException('No log entry to annotate for patch "%s"'
                                      % patch.get_name())
-            replace = True
             log_commit = git.get_commit(old_log)
             msg = log_commit.get_log().split('\n')[0]
             log_parent = log_commit.get_parent()
@@ -1119,7 +1118,6 @@ class Series(PatchSet):
                 parents = []
         else:
             # generate a new log entry
-            replace = False
             msg = '%s\t%s' % (message, top.get_id_hash())
             if old_log:
                 parents = [old_log]

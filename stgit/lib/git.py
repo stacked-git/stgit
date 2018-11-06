@@ -1129,7 +1129,8 @@ class Branch(object):
         self.__repository.refs.set(self.__ref(), commit, msg)
 
     def set_parent_remote(self, name):
-        value = config.set('branch.%s.remote' % self.__name, name)
+        config.set('branch.%s.remote' % self.__name, name)
+
     def set_parent_branch(self, name):
         if config.get('branch.%s.remote' % self.__name):
             # Never set merge if remote is not set to avoid

@@ -390,7 +390,7 @@ def __build_address_headers(msg, options, extra_cc = []):
     # --auto generated addresses, don't include the sender
     __update_header(msg, 'Cc', extra_cc_addr, from_set)
     cc_set = __update_header(msg, 'Cc', cc_addr, to_set)
-    bcc_set = __update_header(msg, 'Bcc', bcc_addr, to_set.union(cc_set))
+    __update_header(msg, 'Bcc', bcc_addr, to_set.union(cc_set))
 
 def __get_signers_list(msg):
     """Return the address list generated from signed-off-by and
