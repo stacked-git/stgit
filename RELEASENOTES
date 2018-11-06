@@ -1,4 +1,4 @@
-                      Stacked Git 0.18 released
+                      Stacked Git 0.19 released
                       -------------------------
 
 StGit is a Python application providing functionality similar to Quilt
@@ -7,27 +7,28 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         https://github.com/ctmarinas/stgit/archive/v0.18.tar.gz
-  Main repository:  git://repo.or.cz/stgit.git
+  Download:         https://github.com/ctmarinas/stgit/archive/v0.19.tar.gz
+  Main repository:  https://repo.or.cz/stgit.git
   Project homepage: http://www.procode.org/stgit/
   Issue tracker:    https://github.com/ctmarinas/stgit/issues
 
-The main changes since release 0.17.1:
+The main changes since release 0.18:
 
-- 'commit-msg' hook support for easier integration with Gerrit, allowing
-  a Change-Id line to be inserted in the commit message
+- Python 3 support. StGit supports Python 2.6, 2.7, 3.3, 3.4, 3.5, 3.6,
+  and 3.7. PyPy interpreters are also supported.
 
-- 'stg mail' improvements for 'Suggested-by:' tag and auto generation of
-  Cc for the cover letter based on all tags in the series
+- Submodules are now ignored when checking if working tree is clean. Submodules
+  are also not included by default when refreshing a patch.
 
-- 'stg mail' bash completion for the --to, --cc and --bcc options based
-  on the content of the [mail "alias"] section of GIT configuration
+- Config booleans are now parsed similarly to git-config.
 
-- 'stg edit --review' option to add a 'Reviewed-by:' tag
+- contrib/stgit.el is now licenced with GPLv2.
 
-- 'stg pop --spill' functionality to allow popping a patch from the
-  stack while keeping its modification in the tree
+- Repair handling of emails with utf-8 bodies containing latin-1 characters.
+  Also correctly decode email headers containing quoted encoded words.
 
-- Various fixes and test coverage improvements
+- StGit's version is now correct/available the release archive.
 
-- Project page details updated (gna.org has been shut down)
+- Add continuous integration (travis-ci) and code coverage (coveralls) support.
+
+- Many new test cases were added.

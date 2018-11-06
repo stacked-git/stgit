@@ -1,3 +1,9 @@
+stgit (0.19) unstable; urgency=low
+
+  * New upstream release
+
+ -- Peter Grayson <pete@jpgrayson.net>  Mon, 06 Nov 2018 03:40:00 +0000
+
 stgit (0.18) unstable; urgency=low
 
   * New upstream release
