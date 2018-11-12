@@ -38,15 +38,31 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-a', '--applied', action = 'store_true',
-        short = 'Show the applied patches'),
-    opt('-u', '--unapplied', action = 'store_true',
-        short = 'Show the unapplied patches'),
-    opt('-s', '--stat', action = 'store_true',
-        short = 'Show a diffstat summary of the specified patches'),
-    ] + argparse.diff_opts_option()
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt(
+        '-a',
+        '--applied',
+        action='store_true',
+        short='Show the applied patches',
+    ),
+    opt(
+        '-u',
+        '--unapplied',
+        action='store_true',
+        short='Show the unapplied patches',
+    ),
+    opt(
+        '-s',
+        '--stat',
+        action='store_true',
+        short='Show a diffstat summary of the specified patches',
+    ),
+] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None

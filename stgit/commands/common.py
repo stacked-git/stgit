@@ -76,7 +76,7 @@ def get_public_ref(branch_name):
     return public_ref
 
 
-def git_commit(name, repository, branch_name = None):
+def git_commit(name, repository, branch_name=None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
     The patch names allowed are in the form '<branch>:<patch>' and can
     be followed by standard symbols used by git rev-parse. If <patch>
@@ -98,18 +98,18 @@ def git_commit(name, repository, branch_name = None):
         public_ref = get_public_ref(branch)
         return repository.rev_parse(public_ref +
                                     strip_prefix('{public}', patch),
-                                    discard_stderr = True)
+                                    discard_stderr=True)
 
     # Other combination of branch and patch
     try:
         return repository.rev_parse('patches/%s/%s' % (branch, patch),
-                                    discard_stderr = True)
+                                    discard_stderr=True)
     except libgit.RepositoryException:
         pass
 
     # Try a Git commit
     try:
-        return repository.rev_parse(name, discard_stderr = True)
+        return repository.rev_parse(name, discard_stderr=True)
     except libgit.RepositoryException:
         raise CmdException('%s: Unknown patch or revision name' % name)
 
@@ -144,7 +144,7 @@ def check_conflicts():
                            ' changes with "reset --hard".')
 
 
-def print_crt_patch(crt_series, branch = None):
+def print_crt_patch(crt_series, branch=None):
     if not branch:
         patch = crt_series.get_current()
     else:
@@ -156,7 +156,7 @@ def print_crt_patch(crt_series, branch = None):
         out.info('No patches applied')
 
 
-def push_patches(crt_series, patches, check_merged = False):
+def push_patches(crt_series, patches, check_merged=False):
     """Push multiple patches onto the stack. This function is shared
     between the push and pull commands
     """
@@ -196,7 +196,7 @@ def push_patches(crt_series, patches, check_merged = False):
                 out.done()
 
 
-def pop_patches(crt_series, patches, keep = False):
+def pop_patches(crt_series, patches, keep=False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
     """
@@ -223,7 +223,7 @@ def get_patch_from_list(part_name, patch_list):
         return None
 
 
-def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
+def parse_patches(patch_args, patch_list, boundary=0, ordered=False):
     """Parse patch_args list for patch names in patch_list and return
     a list. The names can be individual patches and/or in the
     patch1..patch2 format.
@@ -341,7 +341,7 @@ def rebase(crt_series, target):
         out.start('Rebasing to "%s"' % target)
     else:
         out.start('Rebasing to the default target')
-    git.rebase(tree_id = tree_id)
+    git.rebase(tree_id=tree_id)
     out.done()
 
 
@@ -388,7 +388,7 @@ def __parse_description(descr):
     subject = body = ''
     authname = authemail = authdate = None
 
-    descr_lines = [line.rstrip() for line in  descr.split('\n')]
+    descr_lines = [line.rstrip() for line in descr.split('\n')]
     if not descr_lines:
         raise CmdException("Empty patch description")
 
@@ -587,8 +587,8 @@ class DirectoryException(StgException):
 
 
 class _Directory(object):
-    def __init__(self, needs_current_series = True, log = True):
-        self.needs_current_series =  needs_current_series
+    def __init__(self, needs_current_series=True, log=True):
+        self.needs_current_series = needs_current_series
         self.log = log
 
     @readonly_constant_property
@@ -615,15 +615,15 @@ class _Directory(object):
 
     @readonly_constant_property
     def is_inside_git_dir(self):
-        return { 'true': True, 'false': False
-                 }[Run('git', 'rev-parse', '--is-inside-git-dir'
-                       ).output_one_line()]
+        return {'true': True, 'false': False}[
+            Run('git', 'rev-parse', '--is-inside-git-dir').output_one_line()
+        ]
 
     @readonly_constant_property
     def is_inside_worktree(self):
-        return { 'true': True, 'false': False
-                 }[Run('git', 'rev-parse', '--is-inside-work-tree'
-                       ).output_one_line()]
+        return {'true': True, 'false': False}[
+            Run('git', 'rev-parse', '--is-inside-work-tree').output_one_line()
+        ]
 
     def cd_to_topdir(self):
         os.chdir(self.__topdir_path)
@@ -640,7 +640,7 @@ class DirectoryAnywhere(_Directory):
 
 class DirectoryHasRepository(_Directory):
     def setup(self):
-        self.git_dir # might throw an exception
+        self.git_dir  # might throw an exception
         log.compat_log_external_mods()
 
 
@@ -662,7 +662,7 @@ class DirectoryHasRepositoryLib(_Directory):
 
     def __init__(self):
         self.needs_current_series = False
-        self.log = False # stgit.lib.transaction handles logging
+        self.log = False  # stgit.lib.transaction handles logging
 
     def setup(self):
         # This will throw an exception if we don't have a repository.

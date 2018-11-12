@@ -42,18 +42,42 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default one'),
-    opt('-d', '--diff', action = 'store_true',
-        short = 'Show the refresh diffs'),
-    opt('-n', '--number', type = 'int',
-        short = 'Limit the output to NUMBER commits'),
-    opt('-f', '--full', action = 'store_true',
-        short = 'Show the full commit ids'),
-    opt('-g', '--graphical', action = 'store_true',
-        short = 'Run gitk instead of printing'),
-    opt('--clear', action = 'store_true',
-        short = 'Clear the log history')]
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default one',
+    ),
+    opt(
+        '-d',
+        '--diff',
+        action='store_true',
+        short='Show the refresh diffs',
+    ),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Limit the output to NUMBER commits',
+    ),
+    opt(
+        '-f',
+        '--full',
+        action='store_true',
+        short='Show the full commit ids',
+    ),
+    opt(
+        '-g',
+        '--graphical',
+        action='store_true',
+        short='Run gitk instead of printing',
+    ),
+    opt(
+        '--clear',
+        action='store_true',
+        short='Clear the log history',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 

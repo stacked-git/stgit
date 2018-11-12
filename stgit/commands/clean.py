@@ -32,16 +32,25 @@ representing its boundaries refer to the same tree object."""
 
 args = []
 options = [
-    opt('-a', '--applied', action = 'store_true',
-        short = 'Delete the empty applied patches'),
-    opt('-u', '--unapplied', action = 'store_true',
-        short = 'Delete the empty unapplied patches')]
+    opt(
+        '-a',
+        '--applied',
+        action='store_true',
+        short='Delete the empty applied patches',
+    ),
+    opt(
+        '-u',
+        '--unapplied',
+        action='store_true',
+        short='Delete the empty unapplied patches',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
 
 def _clean(stack, clean_applied, clean_unapplied):
-    trans = transaction.StackTransaction(stack, 'clean', allow_conflicts = True)
+    trans = transaction.StackTransaction(stack, 'clean', allow_conflicts=True)
 
     def del_patch(pn):
         if pn in stack.patchorder.applied:

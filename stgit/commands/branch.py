@@ -56,15 +56,24 @@ within a git repository.
 
 args = [argparse.all_branches]
 options = [
-    opt('-l', '--list', action = 'store_true',
-        short = 'List the branches contained in this repository', long = """
+    opt(
+        '-l',
+        '--list',
+        action='store_true',
+        short='List the branches contained in this repository',
+        long="""
         List each branch in the current repository, followed by its
         branch description (if any). The current branch is prefixed
         with '>'. Branches that have been initialized for StGit (with
         linkstg:init[]) are prefixed with 's'. Protected branches are
-        prefixed with 'p'."""),
-    opt('-c', '--create', action = 'store_true',
-        short = 'Create (and switch to) a new branch', long = """
+        prefixed with 'p'.""",
+    ),
+    opt(
+        '-c',
+        '--create',
+        action='store_true',
+        short='Create (and switch to) a new branch',
+        long="""
         Create (and switch to) a new branch. The new branch is already
         initialized as an StGit patch stack, so you do not have to run
         linkstg:init[] manually. If you give a committish argument,
@@ -77,29 +86,51 @@ options = [
         linkstg:pull[] will automatically pull new commits from the
         correct branch. It will warn if it cannot guess the parent
         branch (e.g. if you do not specify a branch name as
-        committish)."""),
-    opt('--clone', action = 'store_true',
-        short = 'Clone the contents of the current branch', long = """
+        committish).""",
+    ),
+    opt(
+        '--clone',
+        action='store_true',
+        short='Clone the contents of the current branch',
+        long="""
         Clone the current branch, under the name <new-branch> if
         specified, or using the current branch's name plus a
         timestamp.
 
         The description of the new branch is set to tell it is a clone
         of the current branch. The parent information of the new
-        branch is copied from the current branch."""),
-    opt('-r', '--rename', action = 'store_true',
-        short = 'Rename an existing branch'),
-    opt('-p', '--protect', action = 'store_true',
-        short = 'Prevent StGit from modifying a branch', long = """
+        branch is copied from the current branch.""",
+    ),
+    opt(
+        '-r',
+        '--rename',
+        action='store_true',
+        short='Rename an existing branch',
+    ),
+    opt(
+        '-p',
+        '--protect',
+        action='store_true',
+        short='Prevent StGit from modifying a branch',
+        long="""
         Prevent StGit from modifying a branch -- either the current
-        one, or one named on the command line."""),
-    opt('-u', '--unprotect', action = 'store_true',
-        short = 'Allow StGit to modify a branch', long = """
+        one, or one named on the command line.""",
+    ),
+    opt(
+        '-u',
+        '--unprotect',
+        action='store_true',
+        short='Allow StGit to modify a branch',
+        long="""
         Allow StGit to modify a branch -- either the current one, or
         one named on the command line. This undoes the effect of an
-        earlier 'stg branch --protect' command."""),
-    opt('--delete', action = 'store_true',
-        short = 'Delete a branch', long = """
+        earlier 'stg branch --protect' command.""",
+    ),
+    opt(
+        '--delete',
+        action='store_true',
+        short='Delete a branch',
+        long="""
         Delete the named branch. If there are any patches left in the
         branch, StGit will refuse to delete it unless you give the
         '--force' flag.
@@ -108,9 +139,13 @@ options = [
         first (see '--unprotect' above).
 
         If you delete the current branch, you are switched to the
-        "master" branch, if it exists."""),
-    opt('--cleanup', action = 'store_true',
-        short = 'Clean up the StGit metadata for a branch', long = """
+        "master" branch, if it exists.""",
+    ),
+    opt(
+        '--cleanup',
+        action='store_true',
+        short='Clean up the StGit metadata for a branch',
+        long="""
         Remove the StGit information for the current or given branch. If there
         are patches left in the branch, StGit refuses the operation unless
         '--force' is given.
@@ -119,12 +154,20 @@ options = [
         (see '--unprotect' above).
 
         A cleaned up branch can be re-initialised using the 'stg init'
-        command."""),
-    opt('-d', '--description', short = 'Set the branch description'),
-    opt('--merge', action = 'store_true',
-        short = 'Merge work tree changes into the other branch'),
-    opt('--force', action = 'store_true',
-        short = 'Force a delete when the series is not empty')]
+        command.""",
+    ),
+    opt('-d', '--description', short='Set the branch description'),
+    opt(
+        '--merge',
+        action='store_true',
+        short='Merge work tree changes into the other branch',
+    ),
+    opt(
+        '--force',
+        action='store_true',
+        short='Force a delete when the series is not empty',
+    ),
+]
 
 directory = DirectoryGotoToplevel(log=False)
 crt_series = None
@@ -151,7 +194,7 @@ def __print_branch(branch_name, length):
                + branch_name.ljust(length) + '  | ' + branch.get_description())
 
 
-def __delete_branch(doomed_name, force = False):
+def __delete_branch(doomed_name, force=False):
     doomed = stack.Series(doomed_name)
 
     if __is_current_branch(doomed_name):
@@ -164,13 +207,13 @@ def __delete_branch(doomed_name, force = False):
     out.done()
 
 
-def __cleanup_branch(name, force = False):
+def __cleanup_branch(name, force=False):
     branch = stack.Series(name)
     if branch.get_protected():
         raise CmdException('This branch is protected. Clean up is not permitted')
 
     out.start('Cleaning up branch "%s"' % name)
-    branch.delete(force = force, cleanup = True)
+    branch.delete(force=force, cleanup=True)
     out.done()
 
 
@@ -230,9 +273,11 @@ def func(parser, options, args):
             # no known parent branch, can't guess the remote
             parentremote = None
 
-        stack.Series(args[0]).init(create_at = tree_id,
-                                   parent_remote = parentremote,
-                                   parent_branch = parentbranch)
+        stack.Series(args[0]).init(
+            create_at=tree_id,
+            parent_remote=parentremote,
+            parent_branch=parentbranch,
+        )
 
         out.info('Branch "%s" created' % args[0])
         log.compat_log_entry('branch --create')

@@ -52,12 +52,25 @@ words, you can't uncommit a merge."""
 
 args = []
 options = [
-    opt('-n', '--number', type = 'int',
-        short = 'Uncommit the specified number of commits'),
-    opt('-t', '--to', args = [argparse.commit],
-        short = 'Uncommit to the specified commit'),
-    opt('-x', '--exclusive', action = 'store_true',
-        short = 'Exclude the commit specified by the --to option')]
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Uncommit the specified number of commits',
+    ),
+    opt(
+        '-t',
+        '--to',
+        args=[argparse.commit],
+        short='Uncommit to the specified commit',
+    ),
+    opt(
+        '-x',
+        '--exclusive',
+        action='store_true',
+        short='Exclude the commit specified by the --to option',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -145,10 +158,10 @@ def func(parser, options, args):
         patchnames.reverse()
 
     trans = transaction.StackTransaction(stack, 'uncommit',
-                                         allow_conflicts = True,
-                                         allow_bad_head = True)
+                                         allow_conflicts=True,
+                                         allow_bad_head=True)
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied
-    trans.run(set_head = False)
+    trans.run(set_head=False)
     out.done()

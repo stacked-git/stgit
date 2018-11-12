@@ -41,10 +41,12 @@ the patch, unless the '--message' flag already specified one. The
 editor."""
 
 args = []
-options = (argparse.author_options()
-           + argparse.message_options(save_template = True)
-           + argparse.sign_options()
-           + argparse.hook_options())
+options = (
+    argparse.author_options()
+    + argparse.message_options(save_template=True)
+    + argparse.sign_options()
+    + argparse.hook_options()
+)
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -68,8 +70,12 @@ def func(parser, options, args):
         parser.error('incorrect number of arguments')
 
     cd = gitlib.CommitData(
-        tree = stack.head.data.tree, parents = [stack.head], message = '',
-        author = gitlib.Person.author(), committer = gitlib.Person.committer())
+        tree=stack.head.data.tree,
+        parents=[stack.head],
+        message='',
+        author=gitlib.Person.author(),
+        committer=gitlib.Person.committer(),
+    )
     cd = common.update_commit_data(cd, options)
 
     if options.save_template:

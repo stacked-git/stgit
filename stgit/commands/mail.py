@@ -118,55 +118,143 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-a', '--all', action = 'store_true',
-        short = 'E-mail all the applied patches'),
-    opt('--to', action = 'append', args = [argparse.mail_aliases],
-        short = 'Add TO to the To: list'),
-    opt('--cc', action = 'append', args = [argparse.mail_aliases],
-        short = 'Add CC to the Cc: list'),
-    opt('--bcc', action = 'append', args = [argparse.mail_aliases],
-        short = 'Add BCC to the Bcc: list'),
-    opt('--auto', action = 'store_true',
-        short = 'Automatically cc the patch signers'),
-    opt('--no-thread', action = 'store_true',
-        short = 'Do not send subsequent messages as replies'),
-    opt('--unrelated', action = 'store_true',
-        short = 'Send patches without sequence numbering'),
-    opt('--attach', action = 'store_true',
-        short = 'Send a patch as attachment'),
-    opt('--attach-inline', action = 'store_true',
-        short = 'Send a patch inline and as an attachment'),
-    opt('-v', '--version', metavar = 'VERSION',
-        short = 'Add VERSION to the [PATCH ...] prefix'),
-    opt('--prefix', metavar = 'PREFIX',
-        short = 'Add PREFIX to the [... PATCH ...] prefix'),
-    opt('-t', '--template', metavar = 'FILE',
-        short = 'Use FILE as the message template'),
-    opt('-c', '--cover', metavar = 'FILE',
-        short = 'Send FILE as the cover message'),
-    opt('-e', '--edit-cover', action = 'store_true',
-        short = 'Edit the cover message before sending'),
-    opt('-E', '--edit-patches', action = 'store_true',
-        short = 'Edit each patch before sending'),
-    opt('-s', '--sleep', type = 'int', metavar = 'SECONDS',
-        short = 'Sleep for SECONDS between e-mails sending'),
-    opt('--in-reply-to', metavar = 'REFID',
-        short = 'Use REFID as the reference id'),
-    opt('--smtp-server', metavar = 'HOST[:PORT] or "/path/to/sendmail -t -i"',
-        short = 'SMTP server or command to use for sending mail'),
-    opt('-u', '--smtp-user', metavar = 'USER',
-        short = 'Username for SMTP authentication'),
-    opt('-p', '--smtp-password', metavar = 'PASSWORD',
-        short = 'Password for SMTP authentication'),
-    opt('-T', '--smtp-tls', action = 'store_true',
-        short = 'Use SMTP with TLS encryption'),
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-m', '--mbox', action = 'store_true',
-        short = 'Generate an mbox file instead of sending'),
-    opt('--git', action = 'store_true',
-        short = 'Use git send-email (EXPERIMENTAL)')
-    ] + argparse.diff_opts_option()
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='E-mail all the applied patches',
+    ),
+    opt(
+        '--to',
+        action='append',
+        args=[argparse.mail_aliases],
+        short='Add TO to the To: list',
+    ),
+    opt(
+        '--cc',
+        action='append',
+        args=[argparse.mail_aliases],
+        short='Add CC to the Cc: list',
+    ),
+    opt(
+        '--bcc',
+        action='append',
+        args=[argparse.mail_aliases],
+        short='Add BCC to the Bcc: list',
+    ),
+    opt(
+        '--auto',
+        action='store_true',
+        short='Automatically cc the patch signers',
+    ),
+    opt(
+        '--no-thread',
+        action='store_true',
+        short='Do not send subsequent messages as replies',
+    ),
+    opt(
+        '--unrelated',
+        action='store_true',
+        short='Send patches without sequence numbering',
+    ),
+    opt(
+        '--attach',
+        action='store_true',
+        short='Send a patch as attachment',
+    ),
+    opt(
+        '--attach-inline',
+        action='store_true',
+        short='Send a patch inline and as an attachment',
+    ),
+    opt(
+        '-v',
+        '--version',
+        metavar='VERSION',
+        short='Add VERSION to the [PATCH ...] prefix',
+    ),
+    opt(
+        '--prefix',
+        metavar='PREFIX',
+        short='Add PREFIX to the [... PATCH ...] prefix',
+    ),
+    opt(
+        '-t',
+        '--template',
+        metavar='FILE',
+        short='Use FILE as the message template',
+    ),
+    opt(
+        '-c',
+        '--cover',
+        metavar='FILE',
+        short='Send FILE as the cover message',
+    ),
+    opt(
+        '-e',
+        '--edit-cover',
+        action='store_true',
+        short='Edit the cover message before sending',
+    ),
+    opt(
+        '-E',
+        '--edit-patches',
+        action='store_true',
+        short='Edit each patch before sending',
+    ),
+    opt(
+        '-s',
+        '--sleep',
+        type='int',
+        metavar='SECONDS',
+        short='Sleep for SECONDS between e-mails sending',
+    ),
+    opt(
+        '--in-reply-to',
+        metavar='REFID',
+        short='Use REFID as the reference id',
+    ),
+    opt(
+        '--smtp-server',
+        metavar='HOST[:PORT] or "/path/to/sendmail -t -i"',
+        short='SMTP server or command to use for sending mail',
+    ),
+    opt(
+        '-u',
+        '--smtp-user',
+        metavar='USER',
+        short='Username for SMTP authentication',
+    ),
+    opt(
+        '-p',
+        '--smtp-password',
+        metavar='PASSWORD',
+        short='Password for SMTP authentication',
+    ),
+    opt(
+        '-T',
+        '--smtp-tls',
+        action='store_true',
+        short='Use SMTP with TLS encryption',
+    ),
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt(
+        '-m',
+        '--mbox',
+        action='store_true',
+        short='Generate an mbox file instead of sending',
+    ),
+    opt(
+        '--git',
+        action='store_true',
+        short='Use git send-email (EXPERIMENTAL)',
+    ),
+] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None
@@ -358,7 +446,7 @@ def __send_message(type, tmpl, options, *args):
     return msg_id
 
 
-def __update_header(msg, header, addr = '', ignore = ()):
+def __update_header(msg, header, addr='', ignore=()):
     addr_pairs = email.utils.getaddresses(msg.get_all(header, []) + [addr])
     del msg[header]
     # remove pairs without an address and resolve the aliases
@@ -372,7 +460,7 @@ def __update_header(msg, header, addr = '', ignore = ()):
     return set(addr for _, addr in addr_pairs)
 
 
-def __build_address_headers(msg, options, extra_cc = []):
+def __build_address_headers(msg, options, extra_cc=[]):
     """Build the address headers and check existing headers in the
     template.
     """
@@ -428,11 +516,11 @@ def __get_signers_list(msg):
     return addr_list
 
 
-def __build_extra_headers(msg, msg_id, ref_id = None):
+def __build_extra_headers(msg, msg_id, ref_id=None):
     """Build extra email headers and encoding
     """
     del msg['Date']
-    msg['Date'] = email.utils.formatdate(localtime = True)
+    msg['Date'] = email.utils.formatdate(localtime=True)
     msg['Message-ID'] = msg_id
     if ref_id:
         # make sure the ref id has the angle brackets
@@ -465,7 +553,7 @@ def __encode_message(msg):
     # some e-mail clients
     subject = msg.get('subject', '')
     msg.replace_header('subject',
-                       email.header.Header(subject, header_name = 'subject'))
+                       email.header.Header(subject, header_name='subject'))
 
     # encode the body and set the MIME and encoding headers
     if msg.is_multipart():
@@ -508,28 +596,32 @@ def __build_cover(tmpl, msg_id, options, patches):
         number_str = ''
         number_space = ''
 
-    tmpl_dict = {'sender':       sender,
-                 # for backward template compatibility
-                 'maintainer':   sender,
-                 # for backward template compatibility
-                 'endofheaders': '',
-                 # for backward template compatibility
-                 'date':         '',
-                 'version':      version_str,
-                 'vspace':       version_space,
-                 'prefix':       prefix_str,
-                 'pspace':       prefix_space,
-                 'patchnr':      patch_nr_str,
-                 'totalnr':      total_nr_str,
-                 'number':       number_str,
-                 'nspace':       number_space,
-                 'snumber':      number_str.strip(),
-                 'shortlog':     stack.shortlog(crt_series.get_patch(p)
-                                                for p in reversed(patches)),
-                 'diffstat':     gitlib.diffstat(git.diff(
-                     rev1 = git_id(crt_series, '%s^' % patches[0]),
-                     rev2 = git_id(crt_series, '%s' % patches[-1]),
-                     diff_flags = options.diff_flags))}
+    tmpl_dict = {
+        'sender': sender,      # for backward template compatibility
+        'maintainer': sender,  # for backward template compatibility
+        'endofheaders': '',    # for backward template compatibility
+        'date': '',
+        'version': version_str,
+        'vspace': version_space,
+        'prefix': prefix_str,
+        'pspace': prefix_space,
+        'patchnr': patch_nr_str,
+        'totalnr': total_nr_str,
+        'number': number_str,
+        'nspace': number_space,
+        'snumber': number_str.strip(),
+        'shortlog': stack.shortlog(
+            crt_series.get_patch(p)
+            for p in reversed(patches)
+        ),
+        'diffstat': gitlib.diffstat(
+            git.diff(
+                rev1=git_id(crt_series, '%s^' % patches[0]),
+                rev2=git_id(crt_series, '%s' % patches[-1]),
+                diff_flags=options.diff_flags,
+            )
+        ),
+    }
 
     try:
         msg_bytes = templates.specialize_template(tmpl, tmpl_dict)
@@ -620,36 +712,37 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         number_str = ''
         number_space = ''
 
-    diff = git.diff(rev1 = git_id(crt_series, '%s^' % patch),
-                    rev2 = git_id(crt_series, '%s' % patch),
-                    diff_flags = options.diff_flags)
-    tmpl_dict = {'patch':        patch,
-                 'sender':       sender,
-                 # for backward template compatibility
-                 'maintainer':   sender,
-                 'shortdescr':   short_descr,
-                 'longdescr':    long_descr,
-                 # for backward template compatibility
-                 'endofheaders': '',
-                 'diff':         diff,
-                 'diffstat':     gitlib.diffstat(diff),
-                 # for backward template compatibility
-                 'date':         '',
-                 'version':      version_str,
-                 'vspace':       version_space,
-                 'prefix':       prefix_str,
-                 'pspace':       prefix_space,
-                 'patchnr':      patch_nr_str,
-                 'totalnr':      total_nr_str,
-                 'number':       number_str,
-                 'nspace':       number_space,
-                 'snumber':      number_str.strip(),
-                 'fromauth':     fromauth,
-                 'authname':     authname,
-                 'authemail':    authemail,
-                 'authdate':     p.get_authdate(),
-                 'commname':     commname,
-                 'commemail':    commemail}
+    diff = git.diff(
+        rev1=git_id(crt_series, '%s^' % patch),
+        rev2=git_id(crt_series, '%s' % patch),
+        diff_flags=options.diff_flags,
+    )
+    tmpl_dict = {
+        'patch': patch,
+        'sender': sender,
+        'maintainer': sender,  # for backward template compatibility
+        'shortdescr': short_descr,
+        'longdescr': long_descr,
+        'endofheaders': '',  # for backward template compatibility
+        'diff': diff,
+        'diffstat': gitlib.diffstat(diff),
+        'date': '',  # for backward template compatibility
+        'version': version_str,
+        'vspace': version_space,
+        'prefix': prefix_str,
+        'pspace': prefix_space,
+        'patchnr': patch_nr_str,
+        'totalnr': total_nr_str,
+        'number': number_str,
+        'nspace': number_space,
+        'snumber': number_str.strip(),
+        'fromauth': fromauth,
+        'authname': authname,
+        'authemail': authemail,
+        'authdate': p.get_authdate(),
+        'commname': commname,
+        'commemail': commemail,
+    }
 
     try:
         msg_bytes = templates.specialize_template(tmpl, tmpl_dict)

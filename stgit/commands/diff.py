@@ -38,14 +38,27 @@ tree-ish object has the format accepted by the linkstg:id[] command."""
 
 args = [argparse.known_files, argparse.dirty_files]
 options = [
-    opt('-r', '--range', metavar = 'rev1[..[rev2]]', dest = 'revs',
-        args = [argparse.patch_range(argparse.applied_patches,
-                                     argparse.unapplied_patches,
-                                     argparse.hidden_patches)],
-        short = 'Show the diff between revisions'),
-    opt('-s', '--stat', action = 'store_true',
-        short = 'Show the stat instead of the diff'),
-    ] + argparse.diff_opts_option()
+    opt(
+        '-r',
+        '--range',
+        metavar='rev1[..[rev2]]',
+        dest='revs',
+        args=[
+            argparse.patch_range(
+                argparse.applied_patches,
+                argparse.unapplied_patches,
+                argparse.hidden_patches,
+            )
+        ],
+        short='Show the diff between revisions',
+    ),
+    opt(
+        '-s',
+        '--stat',
+        action='store_true',
+        short='Show the stat instead of the diff',
+    ),
+] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None
@@ -74,9 +87,12 @@ def func(parser, options, args):
 
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
-    diff = git.diff(args, rev1 and git_id(crt_series, rev1),
-                    rev2 and git_id(crt_series, rev2),
-                    diff_flags = options.diff_flags)
+    diff = git.diff(
+        args,
+        rev1 and git_id(crt_series, rev1),
+        rev2 and git_id(crt_series, rev2),
+        diff_flags=options.diff_flags,
+    )
     if options.stat:
         out.stdout_raw(gitlib.diffstat(diff) + '\n')
     elif diff:

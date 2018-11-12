@@ -49,24 +49,58 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-n', '--name',
-        short = 'Use NAME as the patch name'),
-    opt('-B', '--ref-branch', args = [argparse.stg_branches],
-        short = 'Pick patches from BRANCH'),
-    opt('-r', '--revert', action = 'store_true',
-        short = 'Revert the given commit object'),
-    opt('-p', '--parent', metavar = 'COMMITID', args = [argparse.commit],
-        short = 'Use COMMITID as parent'),
-    opt('-x', '--expose', action = 'store_true',
-        short = 'Append the imported commit id to the patch log'),
-    opt('--fold', action = 'store_true',
-        short = 'Fold the commit object into the current patch'),
-    opt('--update', action = 'store_true',
-        short = 'Like fold but only update the current patch files'),
-    opt('-f', '--file', action = 'append',
-        short = 'Only fold the given file (can be used multiple times)'),
-    opt('--unapplied', action = 'store_true',
-        short = 'Keep the patch unapplied')]
+    opt(
+        '-n',
+        '--name',
+        short='Use NAME as the patch name',
+    ),
+    opt(
+        '-B',
+        '--ref-branch',
+        args=[argparse.stg_branches],
+        short='Pick patches from BRANCH',
+    ),
+    opt(
+        '-r',
+        '--revert',
+        action='store_true',
+        short='Revert the given commit object',
+    ),
+    opt(
+        '-p',
+        '--parent',
+        metavar='COMMITID',
+        args=[argparse.commit],
+        short='Use COMMITID as parent',
+    ),
+    opt(
+        '-x',
+        '--expose',
+        action='store_true',
+        short='Append the imported commit id to the patch log',
+    ),
+    opt(
+        '--fold',
+        action='store_true',
+        short='Fold the commit object into the current patch',
+    ),
+    opt(
+        '--update',
+        action='store_true',
+        short='Like fold but only update the current patch files',
+    ),
+    opt(
+        '-f',
+        '--file',
+        action='append',
+        short='Only fold the given file (can be used multiple times)',
+    ),
+    opt(
+        '--unapplied',
+        action='store_true',
+        short='Keep the patch unapplied',
+    ),
+]
 
 directory = DirectoryGotoToplevel(log=True)
 crt_series = None
@@ -100,7 +134,7 @@ def __pick_commit(commit_id, patchname, options):
         out.start('Folding commit %s' % commit_id)
 
         # try a direct git apply first
-        if not git.apply_diff(bottom, top, files = options.file):
+        if not git.apply_diff(bottom, top, files=options.file):
             if options.file:
                 raise CmdException('Patch folding failed')
             else:
@@ -114,7 +148,7 @@ def __pick_commit(commit_id, patchname, options):
 
         out.start('Updating with commit %s' % commit_id)
 
-        if not git.apply_diff(bottom, top, files = files):
+        if not git.apply_diff(bottom, top, files=files):
             raise CmdException('Patch updating failed')
 
         out.done()
@@ -141,11 +175,17 @@ def __pick_commit(commit_id, patchname, options):
 
         out.start('Importing commit %s' % commit_id)
 
-        newpatch = crt_series.new_patch(patchname, message = message, can_edit = False,
-                                        unapplied = True, bottom = bottom, top = top,
-                                        author_name = author_name,
-                                        author_email = author_email,
-                                        author_date = author_date)
+        newpatch = crt_series.new_patch(
+            patchname,
+            message=message,
+            can_edit=False,
+            unapplied=True,
+            bottom=bottom,
+            top=top,
+            author_name=author_name,
+            author_email=author_email,
+            author_date=author_date,
+        )
         # in case the patch name was automatically generated
         patchname = newpatch.get_name()
 
@@ -161,7 +201,7 @@ def __pick_commit(commit_id, patchname, options):
             patch = refseries.get_patch(refpatchname)
             if patch.get_log():
                 out.info("Log was %s" % newpatch.get_log())
-                out.info("Setting log to %s\n" %  patch.get_log())
+                out.info("Setting log to %s\n" % patch.get_log())
                 newpatch.set_log(patch.get_log())
                 out.info("Log is now %s" % newpatch.get_log())
             else:

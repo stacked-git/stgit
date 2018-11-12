@@ -43,8 +43,9 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'goto',
-                                         check_clean_iw = clean_iw)
+    trans = transaction.StackTransaction(
+        stack, 'goto', check_clean_iw=clean_iw
+    )
 
     if patch not in trans.all_patches:
         candidate = common.get_patch_from_list(patch, trans.all_patches)
@@ -53,18 +54,19 @@ def func(parser, options, args):
         patch = candidate
 
     if patch in trans.applied:
-        to_pop = set(trans.applied[trans.applied.index(patch)+1:])
+        to_pop = set(trans.applied[trans.applied.index(patch) + 1:])
         assert not trans.pop_patches(lambda pn: pn in to_pop)
     elif patch in trans.unapplied:
         try:
-            to_push = trans.unapplied[:trans.unapplied.index(patch)+1]
+            to_push = trans.unapplied[:trans.unapplied.index(patch) + 1]
             if options.merged:
                 merged = set(trans.check_merged(to_push))
             else:
                 merged = set()
             for pn in to_push:
-                trans.push_patch(pn, iw, allow_interactive = True,
-                                 already_merged = pn in merged)
+                trans.push_patch(
+                    pn, iw, allow_interactive=True, already_merged=pn in merged
+                )
         except transaction.TransactionHalted:
             pass
     else:

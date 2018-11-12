@@ -39,8 +39,12 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('--hard', action = 'store_true',
-        short = 'Discard changes in your index/worktree')]
+    opt(
+        '--hard',
+        action='store_true',
+        short='Discard changes in your index/worktree',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -58,9 +62,12 @@ def func(parser, options, args):
     else:
         raise common.CmdException('Wrong options or number of arguments')
 
-    trans = transaction.StackTransaction(stack, 'reset',
-                                         discard_changes = options.hard,
-                                         allow_bad_head = True)
+    trans = transaction.StackTransaction(
+        stack,
+        'reset',
+        discard_changes=options.hard,
+        allow_bad_head=True,
+    )
     try:
         if patches:
             log.reset_stack_partially(trans, iw, state, patches)
@@ -68,4 +75,4 @@ def func(parser, options, args):
             log.reset_stack(trans, iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(iw, allow_bad_head = not patches)
+    return trans.run(iw, allow_bad_head=not patches)

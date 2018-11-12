@@ -25,7 +25,7 @@ def write_blob(s):
     return m
 
 
-def write_commit(branch, files, msg, parent = None):
+def write_commit(branch, files, msg, parent=None):
     print('commit %s' % branch)
     m = get_mark()
     print('mark :%d' % m)
@@ -62,15 +62,25 @@ def setup():
     initial = write_commit(t('bomb-base'), files, 'Initial commit')
     set_ref(t('bomb-top'), initial)
     for fn in iter_paths():
-        write_commit(t('bomb-top'),
-                     { fn: write_blob(stdblob(fn) + 'Last line\n') },
-                     'Add last line to %s' % fn)
-    write_commit(t('add-file'), { 'woo-hoo.txt': write_blob('woo-hoo\n') },
-                 'Add a new file', parent = initial)
+        write_commit(
+            t('bomb-top'),
+            {fn: write_blob(stdblob(fn) + 'Last line\n')},
+            'Add last line to %s' % fn,
+        )
+    write_commit(
+        t('add-file'),
+        {'woo-hoo.txt': write_blob('woo-hoo\n')},
+        'Add a new file',
+        parent=initial,
+    )
     files = dict((fn, write_blob('First line\n' + stdblob(fn)))
                  for fn in iter_paths())
-    write_commit(t('modify-all'), files, 'Add first line to all files',
-                 parent = initial)
+    write_commit(
+        t('modify-all'),
+        files,
+        'Add first line to all files',
+        parent=initial,
+    )
 
 
 setup()

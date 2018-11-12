@@ -9,7 +9,7 @@ import sys
 
 def duration(t1, t2):
     d = t2 - t1
-    return 86400*d.days + d.seconds + 1e-6*d.microseconds
+    return 86400 * d.days + d.seconds + 1e-6 * d.microseconds
 
 
 class Run(object):
@@ -20,14 +20,14 @@ class Run(object):
     def __logfile(self, cmd):
         fn = os.path.join(os.getcwd(), '%04d.log' % len(self.__log))
         f = open(fn, 'w')
-        f.write(' '.join(cmd) + '\n' + '-'*70 + '\n\n')
+        f.write(' '.join(cmd) + '\n' + '-' * 70 + '\n\n')
         f.close()
         return fn
 
     def __call__(self, *cmd, **args):
         env = dict(os.environ)
         env['STGIT_SUBPROCESS_LOG'] = 'profile:' + self.__logfile(cmd)
-        kwargs = { 'cwd': self.__cwd, 'env': env }
+        kwargs = {'cwd': self.__cwd, 'env': env}
         if args.get('capture_stdout', False):
             kwargs['stdout'] = subprocess.PIPE
         start = datetime.datetime.now()
@@ -60,7 +60,7 @@ perftests = {}
 perftestdesc = {}
 
 
-def perftest(desc, name = None):
+def perftest(desc, name=None):
     def decorator(f):
         def g():
             r = Run()
@@ -80,7 +80,7 @@ def copy_testdir(dir):
 
 
 def new_rebase(r, ref):
-    top = r('stg', 'top', capture_stdout = True)
+    top = r('stg', 'top', capture_stdout=True)
     r('stg', 'pop', '-a')
     r('git', 'reset', '--hard', ref)
     r('stg', 'goto', top.strip())

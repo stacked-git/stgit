@@ -32,21 +32,21 @@ class GitConfigException(StgException):
 
 class GitConfig(object):
     __defaults = {
-        'stgit.smtpserver':        ['localhost:25'],
-        'stgit.smtpdelay':         ['5'],
-        'stgit.pullcmd':           ['git pull'],
-        'stgit.fetchcmd':          ['git fetch'],
-        'stgit.pull-policy':       ['pull'],
-        'stgit.autoimerge':        ['no'],
-        'stgit.keepoptimized':     ['no'],
+        'stgit.smtpserver': ['localhost:25'],
+        'stgit.smtpdelay': ['5'],
+        'stgit.pullcmd': ['git pull'],
+        'stgit.fetchcmd': ['git fetch'],
+        'stgit.pull-policy': ['pull'],
+        'stgit.autoimerge': ['no'],
+        'stgit.keepoptimized': ['no'],
         'stgit.refreshsubmodules': ['no'],
-        'stgit.shortnr':           ['5'],
-        'stgit.pager':             ['less'],
-        'stgit.alias.add':         ['git add'],
-        'stgit.alias.rm':          ['git rm'],
-        'stgit.alias.mv':          ['git mv'],
-        'stgit.alias.resolved':    ['git add'],
-        'stgit.alias.status':      ['git status -s']
+        'stgit.shortnr': ['5'],
+        'stgit.pager': ['less'],
+        'stgit.alias.add': ['git add'],
+        'stgit.alias.rm': ['git rm'],
+        'stgit.alias.mv': ['git mv'],
+        'stgit.alias.resolved': ['git add'],
+        'stgit.alias.status': ['git status -s']
     }
 
     __cache = None

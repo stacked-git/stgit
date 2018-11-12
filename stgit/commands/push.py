@@ -40,17 +40,32 @@ upstream) or is modified (three-way merged) by the 'push' operation."""
 
 args = [argparse.patch_range(argparse.unapplied_patches)]
 options = [
-    opt('-a', '--all', action = 'store_true',
-        short = 'Push all the unapplied patches'),
-    opt('-n', '--number', type = 'int',
-        short = 'Push the specified number of patches', long = '''
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='Push all the unapplied patches',
+    ),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Push the specified number of patches',
+        long='''
         Push the specified number of patches.
 
-        With a negative number, push all but that many patches.'''),
-    opt('--reverse', action = 'store_true',
-        short = 'Push the patches in reverse order'),
-    opt('--set-tree', action = 'store_true',
-        short = 'Push the patch with the original tree', long = """
+        With a negative number, push all but that many patches.''',
+    ),
+    opt(
+        '--reverse',
+        action='store_true',
+        short='Push the patches in reverse order',
+    ),
+    opt(
+        '--set-tree',
+        action='store_true',
+        short='Push the patch with the original tree',
+        long="""
         Push the patches, but don't perform a merge. Instead, the
         resulting tree will be identical to the tree that the patch
         previously created.
@@ -59,8 +74,9 @@ options = [
         patch and creating a new patch with some of the
         changes. Pushing the original patch with '--set-tree' will
         avoid conflicts and only the remaining changes will be in the
-        patch.""")
-    ] + argparse.keep_option() + argparse.merged_option()
+        patch.""",
+    )
+] + argparse.keep_option() + argparse.merged_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -71,7 +87,7 @@ def func(parser, options, args):
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
     trans = transaction.StackTransaction(stack, 'push',
-                                         check_clean_iw = clean_iw)
+                                         check_clean_iw=clean_iw)
 
     if options.number == 0:
         # explicitly allow this without any warning/error message
@@ -114,8 +130,8 @@ def func(parser, options, args):
             else:
                 merged = set()
             for pn in patches:
-                trans.push_patch(pn, iw, allow_interactive = True,
-                                 already_merged = pn in merged)
+                trans.push_patch(pn, iw, allow_interactive=True,
+                                 already_merged=pn in merged)
         except transaction.TransactionHalted:
             pass
     return trans.run(iw)

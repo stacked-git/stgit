@@ -50,7 +50,7 @@ def _find_commands():
             yield mod, m
 
 
-def get_commands(allow_cached = True):
+def get_commands(allow_cached=True):
     """Return a map from command name to a tuple of module name, command
     type, and one-line command help."""
     if allow_cached:
@@ -102,7 +102,7 @@ def pretty_command_list(commands, f):
 
 def _write_underlined(s, u, f):
     f.write(s + '\n')
-    f.write(u*len(s) + '\n')
+    f.write(u * len(s) + '\n')
 
 
 def asciidoc_command_list(commands, f):

@@ -55,21 +55,45 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-d', '--dir', args = [argparse.dir],
-        short = 'Export patches to DIR instead of the default'),
-    opt('-p', '--patch', action = 'store_true',
-        short = 'Append .patch to the patch names'),
-    opt('-e', '--extension',
-        short = 'Append .EXTENSION to the patch names'),
-    opt('-n', '--numbered', action = 'store_true',
-        short = 'Prefix the patch names with order numbers'),
-    opt('-t', '--template', metavar = 'FILE', args = [argparse.files],
-        short = 'Use FILE as a template'),
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-s', '--stdout', action = 'store_true',
-        short = 'Dump the patches to the standard output'),
-    ] + argparse.diff_opts_option()
+    opt(
+        '-d',
+        '--dir',
+        args=[argparse.dir],
+        short='Export patches to DIR instead of the default',
+    ),
+    opt(
+        '-p',
+        '--patch',
+        action='store_true',
+        short='Append .patch to the patch names',
+    ),
+    opt('-e', '--extension', short='Append .EXTENSION to the patch names'),
+    opt(
+        '-n',
+        '--numbered',
+        action='store_true',
+        short='Prefix the patch names with order numbers',
+    ),
+    opt(
+        '-t',
+        '--template',
+        metavar='FILE',
+        args=[argparse.files],
+        short='Use FILE as a template',
+    ),
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt(
+        '-s',
+        '--stdout',
+        action='store_true',
+        short='Dump the patches to the standard output',
+    ),
+] + argparse.diff_opts_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

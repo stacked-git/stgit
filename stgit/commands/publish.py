@@ -68,24 +68,42 @@ variable (defaulting to "<branch>.public").
 
 args = [argparse.all_branches]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-l', '--last', action = 'store_true',
-        short = 'Show the last published patch'),
-    opt('-u', '--unpublished', action = 'store_true',
-        short = 'Show applied patches that have not been published')
-] + (argparse.author_options()
-     + argparse.message_options(save_template = False)
-     + argparse.sign_options())
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt(
+        '-l',
+        '--last',
+        action='store_true',
+        short='Show the last published patch',
+    ),
+    opt(
+        '-u',
+        '--unpublished',
+        action='store_true',
+        short='Show applied patches that have not been published',
+    ),
+] + (
+    argparse.author_options()
+    + argparse.message_options(save_template=False)
+    + argparse.sign_options()
+)
 
 directory = common.DirectoryHasRepositoryLib()
 
 
-def __create_commit(repository, tree, parents, options, message = ''):
+def __create_commit(repository, tree, parents, options, message=''):
     """Return a new Commit object."""
     cd = git.CommitData(
-        tree = tree, parents = parents, message = message,
-        author = git.Person.author(), committer = git.Person.committer())
+        tree=tree,
+        parents=parents,
+        message=message,
+        author=git.Person.author(),
+        committer=git.Person.committer(),
+    )
     cd = common.update_commit_data(cd, options)
     return repository.commit(cd)
 
@@ -93,7 +111,7 @@ def __create_commit(repository, tree, parents, options, message = ''):
 def __get_published(stack, tree):
     """Check the patches that were already published."""
     trans = transaction.StackTransaction(stack, 'publish')
-    published = trans.check_merged(trans.applied, tree = tree, quiet = True)
+    published = trans.check_merged(trans.applied, tree=tree, quiet=True)
     trans.abort()
     return published
 

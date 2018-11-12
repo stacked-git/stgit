@@ -42,14 +42,31 @@ with the current top."""
 
 args = [argparse.files]
 options = [
-    opt('-t', '--threeway', action = 'store_true',
-        short = 'Perform a three-way merge with the current patch'),
-    opt('-b', '--base', args = [argparse.commit],
-        short = 'Use BASE instead of HEAD when applying the patch'),
-    opt('-p', '--strip', type = 'int', metavar = 'N',
-        short = 'Remove N leading slashes from diff paths (default 1)'),
-    opt('--reject', action = 'store_true',
-        short = 'Leave the rejected hunks in corresponding *.rej files')]
+    opt(
+        '-t',
+        '--threeway',
+        action='store_true',
+        short='Perform a three-way merge with the current patch',
+    ),
+    opt(
+        '-b',
+        '--base',
+        args=[argparse.commit],
+        short='Use BASE instead of HEAD when applying the patch',
+    ),
+    opt(
+        '-p',
+        '--strip',
+        type='int',
+        metavar='N',
+        short='Remove N leading slashes from diff paths (default 1)',
+    ),
+    opt(
+        '--reject',
+        action='store_true',
+        short='Leave the rejected hunks in corresponding *.rej files',
+    ),
+]
 
 directory = DirectoryHasRepository(log=True)
 crt_series = None
@@ -85,14 +102,24 @@ def func(parser, options, args):
     if options.threeway:
         crt_patch = crt_series.get_patch(current)
         bottom = crt_patch.get_bottom()
-        git.apply_patch(filename = filename, base = bottom,
-                        strip = options.strip, reject = options.reject)
+        git.apply_patch(
+            filename=filename,
+            base=bottom,
+            strip=options.strip,
+            reject=options.reject,
+        )
     elif options.base:
-        git.apply_patch(filename = filename, reject = options.reject,
-                        strip = options.strip,
-                        base = git_id(crt_series, options.base))
+        git.apply_patch(
+            filename=filename,
+            reject=options.reject,
+            strip=options.strip,
+            base=git_id(crt_series, options.base),
+        )
     else:
-        git.apply_patch(filename = filename, strip = options.strip,
-                        reject = options.reject)
+        git.apply_patch(
+            filename=filename,
+            strip=options.strip,
+            reject=options.reject,
+        )
 
     out.done()

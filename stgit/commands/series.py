@@ -42,35 +42,87 @@ args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
                              argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-a', '--all', action = 'store_true',
-        short = 'Show all patches, including the hidden ones'),
-    opt('-A', '--applied', action = 'store_true',
-        short = 'Show the applied patches only'),
-    opt('-U', '--unapplied', action = 'store_true',
-        short = 'Show the unapplied patches only'),
-    opt('-H', '--hidden', action = 'store_true',
-        short = 'Show the hidden patches only'),
-    opt('-m', '--missing', metavar = 'BRANCH',  args = [argparse.stg_branches],
-        short = 'Show patches in BRANCH missing in current'),
-    opt('-c', '--count', action = 'store_true',
-        short = 'Print the number of patches in the series'),
-    opt('-d', '--description', action = 'store_true',
-        short = 'Show a short description for each patch'),
-    opt('--author', action = 'store_true',
-        short = 'Show the author name for each patch'),
-    opt('-e', '--empty', action = 'store_true',
-        short = 'Check whether patches are empty', long = """
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='Show all patches, including the hidden ones',
+    ),
+    opt(
+        '-A',
+        '--applied',
+        action='store_true',
+        short='Show the applied patches only',
+    ),
+    opt(
+        '-U',
+        '--unapplied',
+        action='store_true',
+        short='Show the unapplied patches only',
+    ),
+    opt(
+        '-H',
+        '--hidden',
+        action='store_true',
+        short='Show the hidden patches only',
+    ),
+    opt(
+        '-m',
+        '--missing',
+        metavar='BRANCH',
+        args=[argparse.stg_branches],
+        short='Show patches in BRANCH missing in current',
+    ),
+    opt(
+        '-c',
+        '--count',
+        action='store_true',
+        short='Print the number of patches in the series',
+    ),
+    opt(
+        '-d',
+        '--description',
+        action='store_true',
+        short='Show a short description for each patch',
+    ),
+    opt(
+        '--author',
+        action='store_true',
+        short='Show the author name for each patch',
+    ),
+    opt(
+        '-e',
+        '--empty',
+        action='store_true',
+        short='Check whether patches are empty',
+        long="""
         Before the +++, +>+, +-+, and +!+ prefixes, print a column
         that contains either +0+ (for empty patches) or a space (for
-        non-empty patches)."""),
-    opt('--showbranch', action = 'store_true',
-        short = 'Append the branch name to the listed patches'),
-    opt('--noprefix', action = 'store_true',
-        short = 'Do not show the patch status prefix'),
-    opt('-s', '--short', action = 'store_true',
-        short = 'List just the patches around the topmost patch')]
+        non-empty patches).""",
+    ),
+    opt(
+        '--showbranch',
+        action='store_true',
+        short='Append the branch name to the listed patches',
+    ),
+    opt(
+        '--noprefix',
+        action='store_true',
+        short='Do not show the patch status prefix',
+    ),
+    opt(
+        '-s',
+        '--short',
+        action='store_true',
+        short='List just the patches around the topmost patch',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -92,25 +144,27 @@ def __get_author(stack, patch):
 
 
 def __render_text(text, effects):
-    _effects = { 'none'               : 0,
-                 'bright'             : 1,
-                 'dim'                : 2,
-                 'black_foreground'   : 30,
-                 'red_foreground'     : 31,
-                 'green_foreground'   : 32,
-                 'yellow_foreground'  : 33,
-                 'blue_foreground'    : 34,
-                 'magenta_foreground' : 35,
-                 'cyan_foreground'    : 36,
-                 'white_foreground'   : 37,
-                 'black_background'   : 40,
-                 'red_background'     : 41,
-                 'green_background'   : 42,
-                 'yellow_background'  : 44,
-                 'blue_background'    : 44,
-                 'magenta_background' : 45,
-                 'cyan_background'    : 46,
-                 'white_background'   : 47 }
+    _effects = {
+        'none': 0,
+        'bright': 1,
+        'dim': 2,
+        'black_foreground': 30,
+        'red_foreground': 31,
+        'green_foreground': 32,
+        'yellow_foreground': 33,
+        'blue_foreground': 34,
+        'magenta_foreground': 35,
+        'cyan_foreground': 36,
+        'white_foreground': 37,
+        'black_background': 40,
+        'red_background': 41,
+        'green_background': 42,
+        'yellow_background': 44,
+        'blue_background': 44,
+        'magenta_background': 45,
+        'cyan_background': 46,
+        'white_background': 47,
+    }
     start = [str(_effects[e]) for e in effects.split() if e in _effects]
     start = '\033[' + ';'.join(start) + 'm'
     stop = '\033[' + str(_effects['none']) + 'm'
@@ -199,12 +253,12 @@ def func(parser, options, args):
     if options.short:
         nr = int(config.get('stgit.shortnr'))
         if len(applied) > nr:
-            applied = applied[-(nr+1):]
+            applied = applied[-(nr + 1):]
         n = len(unapplied)
         if n > nr:
             unapplied = unapplied[:nr]
         elif n < nr:
-            hidden = hidden[:nr-n]
+            hidden = hidden[:nr - n]
 
     patches = applied + unapplied + hidden
 

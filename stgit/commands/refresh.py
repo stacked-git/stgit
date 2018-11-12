@@ -56,30 +56,70 @@ additionally get rid of the temp patch."""
 
 args = [argparse.dirty_files]
 options = [
-    opt('-u', '--update', action = 'store_true',
-        short = 'Only update the current patch files'),
-    opt('-i', '--index', action = 'store_true',
-        short = 'Refresh from index instead of worktree', long = """
+    opt(
+        '-u',
+        '--update',
+        action='store_true',
+        short='Only update the current patch files',
+    ),
+    opt(
+        '-i',
+        '--index',
+        action='store_true',
+        short='Refresh from index instead of worktree',
+        long="""
         Instead of setting the patch top to the current contents of
-        the worktree, set it to the current contents of the index."""),
-    opt('-F', '--force', action = 'store_true',
-        short = 'Force refresh even if index is dirty', long = """
+        the worktree, set it to the current contents of the index.""",
+    ),
+    opt(
+        '-F',
+        '--force',
+        action='store_true',
+        short='Force refresh even if index is dirty',
+        long="""
         Instead of warning the user when some work has already been staged (such
-        as with git add interactive mode) force a full refresh."""),
-    opt('-p', '--patch', args = [argparse.other_applied_patches,
-                                 argparse.unapplied_patches],
-        short = 'Refresh (applied) PATCH instead of the top patch'),
-    opt('-e', '--edit', action = 'store_true',
-        short = 'Invoke an editor for the patch description'),
-    opt('-a', '--annotate', metavar = 'NOTE',
-        short = 'Annotate the patch log entry'),
-    opt('-s', '--submodules', action = 'store_true',
-        short = 'Include submodules when refreshing patch contents'),
-    opt('', '--no-submodules', action = 'store_false', dest = 'submodules',
-        short = 'Exclude submodules when refreshing patch contents')
-    ] + (argparse.message_options(save_template = False) +
-         argparse.hook_options() +
-         argparse.sign_options() + argparse.author_options())
+        as with git add interactive mode) force a full refresh.""",
+    ),
+    opt(
+        '-p',
+        '--patch',
+        args=[
+            argparse.other_applied_patches,
+            argparse.unapplied_patches,
+        ],
+        short='Refresh (applied) PATCH instead of the top patch',
+    ),
+    opt(
+        '-e',
+        '--edit',
+        action='store_true',
+        short='Invoke an editor for the patch description',
+    ),
+    opt(
+        '-a',
+        '--annotate',
+        metavar='NOTE',
+        short='Annotate the patch log entry',
+    ),
+    opt(
+        '-s',
+        '--submodules',
+        action='store_true',
+        short='Include submodules when refreshing patch contents',
+    ),
+    opt(
+        '',
+        '--no-submodules',
+        action='store_false',
+        dest='submodules',
+        short='Exclude submodules when refreshing patch contents',
+    )
+] + (
+    argparse.message_options(save_template=False)
+    + argparse.hook_options()
+    + argparse.sign_options()
+    + argparse.author_options()
+)
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -146,16 +186,22 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
     """Commit index to temp patch, in a complete transaction. If any path
     limiting is in effect, use a temp index."""
     tree = write_tree(stack, paths, temp_index)
-    commit = stack.repository.commit(git.CommitData(
-            tree = tree, parents = [stack.head],
-            message = 'Refresh of %s' % patch_name))
+    commit = stack.repository.commit(
+        git.CommitData(
+            tree=tree,
+            parents=[stack.head],
+            message='Refresh of %s' % patch_name,
+        )
+    )
     temp_name = utils.make_patch_name('refresh-temp', stack.patches.exists)
     trans = transaction.StackTransaction(stack,
                                          'refresh (create temporary patch)')
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)
-    return trans.run(stack.repository.default_iw,
-                     print_current_patch = False), temp_name
+    return (
+        trans.run(stack.repository.default_iw, print_current_patch=False),
+        temp_name
+    )
 
 
 def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
@@ -170,10 +216,10 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
     temp_absorbed = False
     try:
         # Pop any patch on top of the patch we're refreshing.
-        to_pop = trans.applied[trans.applied.index(patch_name)+1:]
+        to_pop = trans.applied[trans.applied.index(patch_name) + 1:]
         if len(to_pop) > 1:
             popped = trans.pop_patches(lambda pn: pn in to_pop)
-            assert not popped # no other patches were popped
+            assert not popped  # no other patches were popped
             trans.push_patch(temp_name, iw)
         assert to_pop.pop() == temp_name
 
@@ -182,8 +228,8 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
         assert trans.patches[patch_name] == temp_cd.parent
         trans.patches[patch_name] = trans.stack.repository.commit(
             edit_fun(trans.patches[patch_name].data.set_tree(temp_cd.tree)))
-        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet = True)
-        assert not popped # the temp patch was topmost
+        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
+        assert not popped  # the temp patch was topmost
         temp_absorbed = True
 
         # Push back any patch we were forced to pop earlier.
@@ -207,7 +253,7 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
 
     # Pop the temp patch.
     popped = trans.pop_patches(lambda pn: pn == temp_name)
-    assert not popped # the temp patch was topmost
+    assert not popped  # the temp patch was topmost
 
     # Try to create the new tree of the refreshed patch. (This is the
     # same operation as pushing the temp patch onto the patch we're
@@ -217,15 +263,17 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
     patch_cd = trans.patches[patch_name].data
     temp_cd = trans.patches[temp_name].data
     new_tree = trans.stack.repository.simple_merge(
-        base = temp_cd.parent.data.tree,
-        ours = patch_cd.tree, theirs = temp_cd.tree)
+        base=temp_cd.parent.data.tree,
+        ours=patch_cd.tree,
+        theirs=temp_cd.tree,
+    )
     if new_tree:
         # It worked. Refresh the patch with the new tree, and delete
         # the temp patch.
         trans.patches[patch_name] = trans.stack.repository.commit(
             edit_fun(patch_cd.set_tree(new_tree)))
-        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet = True)
-        assert not popped # the temp patch was not applied
+        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
+        assert not popped  # the temp patch was not applied
         return True
     else:
         # Nope, we couldn't create the new tree, so we'll just have to
@@ -233,7 +281,7 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
         return False
 
 
-def absorb(stack, patch_name, temp_name, edit_fun, annotate = None):
+def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     """Absorb the temp patch into the target patch."""
     if annotate:
         log_msg = 'refresh\n\n' + annotate
@@ -241,8 +289,10 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate = None):
         log_msg = 'refresh'
     trans = transaction.StackTransaction(stack, log_msg)
     iw = stack.repository.default_iw
-    f = { True: absorb_applied, False: absorb_unapplied
-          }[patch_name in trans.applied]
+    f = {
+        True: absorb_applied,
+        False: absorb_unapplied
+    }[patch_name in trans.applied]
     if f(trans, iw, patch_name, temp_name, edit_fun):
         def info_msg(): pass
     else:
@@ -299,7 +349,7 @@ def func(parser, options, args):
 
     # Commit index to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(
-        stack, patch_name, paths, temp_index = path_limiting)
+        stack, patch_name, paths, temp_index=path_limiting)
     if retval != utils.STGIT_SUCCESS:
         return retval
 
@@ -316,12 +366,16 @@ def func(parser, options, args):
         assert not failed_diff
         if options.edit:
             cd, failed_diff = edit.interactive_edit_patch(
-                stack.repository, cd, edit_diff = False,
-                diff_flags = [], replacement_diff = None)
+                stack.repository,
+                cd,
+                edit_diff=False,
+                diff_flags=[],
+                replacement_diff=None,
+            )
             assert not failed_diff
         if not options.no_verify and (options.edit or cd.message != orig_msg):
             cd = common.run_commit_msg_hook(stack.repository, cd, options.edit)
         return cd
 
     return absorb(stack, patch_name, temp_name, edit_fun,
-                  annotate = options.annotate)
+                  annotate=options.annotate)

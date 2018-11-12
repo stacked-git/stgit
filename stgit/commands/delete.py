@@ -32,17 +32,25 @@ Delete the patches passed as arguments."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('--spill', action = 'store_true',
-        short = 'Spill patch contents to worktree and index', long = """
+    opt(
+        '--spill',
+        action='store_true',
+        short='Spill patch contents to worktree and index',
+        long="""
         Delete the patches, but do not touch the index and worktree.
         This only works with applied patches at the top of the stack.
         The effect is to "spill" the patch contents into the index and
         worktree. This can be useful e.g. if you want to split a patch
-        into several smaller pieces."""),
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch'),
-    opt('-t', '--top', action = 'store_true',
-        short = 'Delete top patch'),]
+        into several smaller pieces.""",
+    ),
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+    opt('-t', '--top', action='store_true', short='Delete top patch'),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -51,7 +59,7 @@ def func(parser, options, args):
     """Delete one or more patches."""
     stack = directory.repository.get_stack(options.branch)
     if options.branch:
-        iw = None # can't use index/workdir to manipulate another branch
+        iw = None  # can't use index/workdir to manipulate another branch
     else:
         iw = stack.repository.default_iw
     if args and options.top:
@@ -71,7 +79,7 @@ def func(parser, options, args):
     if options.spill:
         if set(stack.patchorder.applied[-len(patches):]) != patches:
             parser.error('Can only spill topmost applied patches')
-        iw = None # don't touch index+worktree
+        iw = None  # don't touch index+worktree
 
     def allow_conflicts(trans):
         # Allow conflicts if the topmost patch stays the same.
@@ -82,7 +90,7 @@ def func(parser, options, args):
             return not trans.applied
 
     trans = transaction.StackTransaction(stack, 'delete',
-                                         allow_conflicts = allow_conflicts)
+                                         allow_conflicts=allow_conflicts)
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:

@@ -40,9 +40,13 @@ as specified by the given series file (or the standard input)."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-s', '--series', metavar = 'FILE',
-        short = 'Rearrange according to the series FILE')
-    ] + argparse.keep_option()
+    opt(
+        '-s',
+        '--series',
+        metavar='FILE',
+        short='Rearrange according to the series FILE',
+    )
+] + argparse.keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -80,11 +84,12 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'float',
-                                         check_clean_iw = clean_iw)
+    trans = transaction.StackTransaction(
+        stack, 'float', check_clean_iw=clean_iw
+    )
 
     try:
-        trans.reorder_patches(applied, unapplied, iw = iw)
+        trans.reorder_patches(applied, unapplied, iw=iw)
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)

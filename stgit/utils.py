@@ -188,12 +188,14 @@ class EditorException(StgException):
 
 
 def get_editor():
-    for editor in [environ_get('GIT_EDITOR'),
-                   config.get('stgit.editor'), # legacy
-                   config.get('core.editor'),
-                   environ_get('VISUAL'),
-                   environ_get('EDITOR'),
-                   'vi']:
+    for editor in [
+        environ_get('GIT_EDITOR'),
+        config.get('stgit.editor'),  # legacy
+        config.get('core.editor'),
+        environ_get('VISUAL'),
+        environ_get('EDITOR'),
+        'vi'
+    ]:
         if editor:
             return editor
 
@@ -281,12 +283,12 @@ def edit_bytes(s, filename):
     return s
 
 
-def append_comment(s, comment, separator = '---'):
+def append_comment(s, comment, separator='---'):
     return ('%s\n\n%s\nEverything following the line with "%s" will be'
             ' ignored\n\n%s' % (s, separator, separator, comment))
 
 
-def strip_comment(s, separator = '---'):
+def strip_comment(s, separator='---'):
     try:
         return s[:s.index('\n%s\n' % separator)]
     except ValueError:
@@ -327,7 +329,7 @@ def patch_name_from_msg(msg):
     return name
 
 
-def make_patch_name(msg, unacceptable, default_name = 'patch'):
+def make_patch_name(msg, unacceptable, default_name='patch'):
     """Return a patch name generated from the given commit message,
     guaranteed to make unacceptable(name) be false. If the commit
     message is empty, base the name on default_name instead."""

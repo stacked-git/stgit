@@ -74,7 +74,7 @@ class NoValue(object):
 
 
 def make_defaults(defaults):
-    def d(val, attr, default_fun = lambda: None):
+    def d(val, attr, default_fun=lambda: None):
         if val != NoValue:
             return val
         elif defaults != NoValue:
@@ -96,8 +96,10 @@ class TimeZone(tzinfo, Repr):
             raise DateException(tzstring, 'time zone')
         sign = int(m.group(1) + '1')
         try:
-            self.__offset = timedelta(hours = sign*int(m.group(2)),
-                                      minutes = sign*int(m.group(3)))
+            self.__offset = timedelta(
+                hours=sign * int(m.group(2)),
+                minutes=sign * int(m.group(3)),
+            )
         except OverflowError:
             raise DateException(tzstring, 'time zone')
         self.__name = tzstring
@@ -197,8 +199,8 @@ class Person(Immutable, Repr):
     """Represents an author or committer in a git commit object. Contains
     name, email and timestamp."""
 
-    def __init__(self, name = NoValue, email = NoValue,
-                 date = NoValue, defaults = NoValue):
+    def __init__(self, name=NoValue, email=NoValue,
+                 date=NoValue, defaults=NoValue):
         d = make_defaults(defaults)
         self.__name = d(name, 'name')
         self.__email = d(email, 'email')
@@ -222,13 +224,13 @@ class Person(Immutable, Repr):
         return self.__date
 
     def set_name(self, name):
-        return type(self)(name = name, defaults = self)
+        return type(self)(name=name, defaults=self)
 
     def set_email(self, email):
-        return type(self)(email = email, defaults = self)
+        return type(self)(email=email, defaults=self)
 
     def set_date(self, date):
-        return type(self)(date = date, defaults = self)
+        return type(self)(date=date, defaults=self)
 
     def __str__(self):
         return '%s %s' % (self.name_email, self.date)
@@ -245,8 +247,8 @@ class Person(Immutable, Repr):
     @classmethod
     def user(cls):
         if not hasattr(cls, '__user'):
-            cls.__user = cls(name = config.get('user.name'),
-                             email = config.get('user.email'))
+            cls.__user = cls(name=config.get('user.name'),
+                             email=config.get('user.email'))
         return cls.__user
 
     @classmethod
@@ -416,8 +418,8 @@ class Tree(GitObject):
 class CommitData(Immutable, Repr):
     """Represents the data contents of a git commit object."""
 
-    def __init__(self, tree = NoValue, parents = NoValue, author = NoValue,
-                 committer = NoValue, message = NoValue, defaults = NoValue):
+    def __init__(self, tree=NoValue, parents=NoValue, author=NoValue,
+                 committer=NoValue, message=NoValue, defaults=NoValue):
         d = make_defaults(defaults)
         self.__tree = d(tree, 'tree')
         self.__parents = d(parents, 'parents')
@@ -463,26 +465,26 @@ class CommitData(Immutable, Repr):
         return self.__message
 
     def set_tree(self, tree):
-        return type(self)(tree = tree, defaults = self)
+        return type(self)(tree=tree, defaults=self)
 
     def set_parents(self, parents):
-        return type(self)(parents = parents, defaults = self)
+        return type(self)(parents=parents, defaults=self)
 
     def add_parent(self, parent):
-        return type(self)(parents = list(self.parents or []) + [parent],
-                          defaults = self)
+        return type(self)(parents=list(self.parents or []) + [parent],
+                          defaults=self)
 
     def set_parent(self, parent):
         return self.set_parents([parent])
 
     def set_author(self, author):
-        return type(self)(author = author, defaults = self)
+        return type(self)(author=author, defaults=self)
 
     def set_committer(self, committer):
-        return type(self)(committer = committer, defaults = self)
+        return type(self)(committer=committer, defaults=self)
 
     def set_message(self, message):
-        return type(self)(message = message, defaults = self)
+        return type(self)(message=message, defaults=self)
 
     def is_nochange(self):
         return len(self.parents) == 1 and self.tree == self.parent.data.tree
@@ -508,8 +510,11 @@ class CommitData(Immutable, Repr):
         for p in self.parents:
             c.append('-p')
             c.append(p.sha1)
-        sha1 = repository.run(c, env = self.env).raw_input(self.message
-                                                           ).output_one_line()
+        sha1 = (
+            repository.run(c, env=self.env)
+            .raw_input(self.message)
+            .output_one_line()
+        )
         return repository.get_commit(sha1)
 
     @classmethod
@@ -517,13 +522,13 @@ class CommitData(Immutable, Repr):
         """Parse a raw git commit description.
         @return: A new L{CommitData} object
         @rtype: L{CommitData}"""
-        cd = cls(parents = [])
+        cd = cls(parents=[])
         lines = []
         raw_lines = s.split('\n')
         # Collapse multi-line header lines
         for i, line in enumerate(raw_lines):
             if not line:
-                cd = cd.set_message('\n'.join(raw_lines[i+1:]))
+                cd = cd.set_message('\n'.join(raw_lines[i + 1:]))
                 break
             if line.startswith(' '):
                 # continuation line
@@ -616,7 +621,7 @@ class Refs(object):
         not already exist."""
         if self.__refs is None:
             self.__cache_refs()
-        old_sha1 = self.__refs.get(ref, '0'*40)
+        old_sha1 = self.__refs.get(ref, '0' * 40)
         new_sha1 = commit.sha1
         if old_sha1 != new_sha1:
             self.__repository.run(['git', 'update-ref', '-m', msg,
@@ -655,7 +660,7 @@ class ObjectCache(object):
 
 
 class RunWithEnv(object):
-    def run(self, args, env = {}):
+    def run(self, args, env={}):
         """Run the given command with an environment given by self.env.
 
         @type args: list of strings
@@ -666,7 +671,7 @@ class RunWithEnv(object):
 
 
 class RunWithEnvCwd(RunWithEnv):
-    def run(self, args, env = {}):
+    def run(self, args, env={}):
         """Run the given command with an environment given by self.env, and
         current working directory given by self.cwd.
 
@@ -849,7 +854,7 @@ class Repository(RunWithEnv):
     def cat_object(self, sha1, encoding='utf-8'):
         return self.__catfile.cat_file(sha1, encoding)[1]
 
-    def rev_parse(self, rev, discard_stderr = False, object_type = 'commit'):
+    def rev_parse(self, rev, discard_stderr=False, object_type='commit'):
         assert object_type in ('commit', 'tree', 'blob')
         getter = getattr(self, 'get_' + object_type)
         try:
@@ -869,9 +874,11 @@ class Repository(RunWithEnv):
         return self.__commits[sha1]
 
     def get_object(self, type, sha1):
-        return { Blob.typename: self.get_blob,
-                 Tree.typename: self.get_tree,
-                 Commit.typename: self.get_commit }[type](sha1)
+        return {
+            Blob.typename: self.get_blob,
+            Tree.typename: self.get_tree,
+            Commit.typename: self.get_commit,
+        }[type](sha1)
 
     def commit(self, objectdata):
         return objectdata.commit(self)
@@ -934,7 +941,7 @@ class Repository(RunWithEnv):
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
 
-    def diff_tree(self, t1, t2, diff_opts, binary = True):
+    def diff_tree(self, t1, t2, diff_opts, binary=True):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
 
@@ -1052,7 +1059,7 @@ class Index(RunWithEnv):
         self.apply(self.__repository.diff_tree(tree1, tree2, ['--full-index']),
                    quiet)
 
-    def merge(self, base, ours, theirs, current = None):
+    def merge(self, base, ours, theirs, current=None):
         """Use the index (and only the index) to do a 3-way merge of the
         L{Tree}s C{base}, C{ours} and C{theirs}. The merge will either
         succeed (in which case the first half of the return value is
@@ -1087,7 +1094,7 @@ class Index(RunWithEnv):
         if current != ours:
             self.read_tree(ours)
         try:
-            self.apply_treediff(base, theirs, quiet = True)
+            self.apply_treediff(base, theirs, quiet=True)
             result = self.write_tree()
             return (result, result)
         except MergeException:
@@ -1174,16 +1181,26 @@ class IndexAndWorktree(RunWithEnvCwd):
         except RunException:
             raise CheckoutException('Index/workdir dirty')
 
-    def merge(self, base, ours, theirs, interactive = False):
+    def merge(self, base, ours, theirs, interactive=False):
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
         try:
-            r = self.run(['git', 'merge-recursive', base.sha1, '--', ours.sha1,
-                          theirs.sha1],
-                         env = { 'GITHEAD_%s' % base.sha1: 'ancestor',
-                                 'GITHEAD_%s' % ours.sha1: 'current',
-                                 'GITHEAD_%s' % theirs.sha1: 'patched'})
+            r = self.run(
+                [
+                    'git',
+                    'merge-recursive',
+                    base.sha1,
+                    '--',
+                    ours.sha1,
+                    theirs.sha1,
+                ],
+                env={
+                    'GITHEAD_%s' % base.sha1: 'ancestor',
+                    'GITHEAD_%s' % ours.sha1: 'current',
+                    'GITHEAD_%s' % theirs.sha1: 'patched',
+                }
+            )
             r.returns([0, 1])
             output = r.output_lines()
             if r.exitcode:
@@ -1196,7 +1213,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         except RunException:
             raise MergeException('Index/worktree dirty')
 
-    def mergetool(self, files = ()):
+    def mergetool(self, files=()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
         any outstanding conflicts. If 'not files', all the files in an
         unmerged state will be processed."""
@@ -1207,7 +1224,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         if conflicts:
             raise MergeConflictException(conflicts)
 
-    def changed_files(self, tree, pathlimits = []):
+    def changed_files(self, tree, pathlimits=[]):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
         those files that match any of the path limiters given.
@@ -1276,7 +1293,7 @@ class Branch(object):
             config.set('branch.%s.merge' % self.__name, name)
 
     @classmethod
-    def create(cls, repository, name, create_at = None):
+    def create(cls, repository, name, create_at=None):
         """Create a new Git branch and return the corresponding
         L{Branch} object."""
         try:

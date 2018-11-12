@@ -45,12 +45,25 @@ in the series must apply cleanly."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-a', '--all', action = 'store_true',
-        short = 'Synchronise all the applied patches'),
-    opt('-B', '--ref-branch', args = [argparse.stg_branches],
-        short = 'Syncronise patches with BRANCH'),
-    opt('-s', '--series', args = [argparse.files],
-        short = 'Syncronise patches with SERIES')]
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='Synchronise all the applied patches',
+    ),
+    opt(
+        '-B',
+        '--ref-branch',
+        args=[argparse.stg_branches],
+        short='Syncronise patches with BRANCH',
+    ),
+    opt(
+        '-s',
+        '--series',
+        args=[argparse.files],
+        short='Syncronise patches with SERIES',
+    ),
+]
 
 directory = DirectoryGotoToplevel(log=True)
 crt_series = None
@@ -73,7 +86,7 @@ def __series_merge_patch(base, patchdir, pname):
     """Merge a patch file with the given StGIT patch.
     """
     patchfile = os.path.join(patchdir, pname)
-    git.apply_patch(filename = patchfile, base = base)
+    git.apply_patch(filename=patchfile, base=base)
 
 
 def func(parser, options, args):
@@ -107,12 +120,12 @@ def func(parser, options, args):
 
     applied = crt_series.get_applied()
     unapplied = crt_series.get_unapplied()
-    
+
     if options.all:
         patches = applied
     elif len(args) != 0:
         patches = parse_patches(args, applied + unapplied, len(applied),
-                                ordered = True)
+                                ordered=True)
     elif applied:
         patches = [crt_series.get_current()]
     else:
@@ -155,16 +168,17 @@ def func(parser, options, args):
         top = patch.get_top()
 
         # reset the patch backup information.
-        patch.set_top(top, backup = True)
+        patch.set_top(top, backup=True)
 
         # the actual merging (either from a branch or an external file)
         merge_patch(patch, p)
 
-        if git.local_changes(verbose = False):
+        if git.local_changes(verbose=False):
             # index (cache) already updated by the git merge. The
             # backup information was already reset above
-            crt_series.refresh_patch(cache_update = False, backup = False,
-                                     log = 'sync')
+            crt_series.refresh_patch(
+                cache_update=False, backup=False, log='sync'
+            )
             out.done('updated')
         else:
             out.done()

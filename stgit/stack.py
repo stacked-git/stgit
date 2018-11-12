@@ -86,7 +86,7 @@ def __clean_comments(f):
 
 # TODO: move this out of the stgit.stack module, it is really for
 # higher level commands to handle the user interaction
-def edit_file(series, line, comment, show_patch = True):
+def edit_file(series, line, comment, show_patch=True):
     fname = '.stgitmsg.txt'
     tmpl = templates.get_template('patchdescr.tmpl')
 
@@ -107,10 +107,10 @@ def edit_file(series, line, comment, show_patch = True):
         if show_patch:
            print(__patch_prefix, file=f)
            # series.get_patch(series.get_current()).get_top()
-           diff_str = git.diff(rev1 = series.get_patch(series.get_current()).get_bottom())
+           diff_str = git.diff(rev1=series.get_patch(series.get_current()).get_bottom())
            f.write(diff_str)
 
-        #Vim modeline must be near the end.
+        # Vim modeline must be near the end.
         print(__comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:', file=f)
 
     call_editor(fname)
@@ -142,7 +142,7 @@ class StgitObject(object):
     def create_empty_field(self, name):
         create_empty_file(os.path.join(self.__dir, name))
 
-    def _get_field(self, name, multiline = False):
+    def _get_field(self, name, multiline=False):
         id_file = os.path.join(self.__dir, name)
         if os.path.isfile(id_file):
             line = read_string(id_file, multiline)
@@ -153,7 +153,7 @@ class StgitObject(object):
         else:
             return None
 
-    def _set_field(self, name, value, multiline = False):
+    def _set_field(self, name, value, multiline=False):
         fname = os.path.join(self.__dir, name)
         if value and value != '':
             write_string(fname, value, multiline)
@@ -179,7 +179,7 @@ class Patch(StgitObject):
     def create(self):
         os.mkdir(self._dir())
 
-    def delete(self, keep_log = False):
+    def delete(self, keep_log=False):
         if os.path.isdir(self._dir()):
             for f in os.listdir(self._dir()):
                 os.remove(os.path.join(self._dir(), f))
@@ -224,7 +224,7 @@ class Patch(StgitObject):
     def get_top(self):
         return git.rev_parse(self.__top_ref)
 
-    def set_top(self, value, backup = False):
+    def set_top(self, value, backup=False):
         if backup:
             curr_top = self.get_top()
             self._set_field('top.old', curr_top)
@@ -279,18 +279,18 @@ class Patch(StgitObject):
     def get_log(self):
         return self._get_field('log')
 
-    def set_log(self, value, backup = False):
+    def set_log(self, value, backup=False):
         self._set_field('log', value)
         self.__update_log_ref(value)
 
 
 class PatchSet(StgitObject):
-    def __init__(self, name = None):
+    def __init__(self, name=None):
         try:
             if name:
-                self.set_name (name)
+                self.set_name(name)
             else:
-                self.set_name (git.get_head_file())
+                self.set_name(git.get_head_file())
             self.__base_dir = basedir.get()
         except git.GitException as ex:
             raise StackException('GIT tree not initialised: %s' % ex)
@@ -367,7 +367,7 @@ class Series(PatchSet):
     """Class including the operations on series
     """
 
-    def __init__(self, name = None):
+    def __init__(self, name=None):
         """Takes a series name as the parameter.
         """
         PatchSet.__init__(self, name)
@@ -540,7 +540,7 @@ class Series(PatchSet):
             if os.path.exists(d):
                 raise StackException('%s already exists' % d)
 
-        if (create_at!=False):
+        if create_at != False:
             git.create_branch(self.get_name(), create_at)
 
         os.makedirs(self.__patch_dir)
@@ -588,7 +588,7 @@ class Series(PatchSet):
             base = self.get_base()
         except:
             base = git.get_head()
-        Series(target_series).init(create_at = base)
+        Series(target_series).init(create_at=base)
         new_series = Series(target_series)
 
         # generate an artificial description file
@@ -605,15 +605,19 @@ class Series(PatchSet):
             patches = applied = unapplied = []
         for p in patches:
             patch = self.get_patch(p)
-            newpatch = new_series.new_patch(p, message = patch.get_description(),
-                                            can_edit = False, unapplied = True,
-                                            bottom = patch.get_bottom(),
-                                            top = patch.get_top(),
-                                            author_name = patch.get_authname(),
-                                            author_email = patch.get_authemail(),
-                                            author_date = patch.get_authdate())
+            newpatch = new_series.new_patch(
+                p,
+                message=patch.get_description(),
+                can_edit=False,
+                unapplied=True,
+                bottom=patch.get_bottom(),
+                top=patch.get_top(),
+                author_name=patch.get_authname(),
+                author_email=patch.get_authemail(),
+                author_date=patch.get_authdate(),
+            )
             if patch.get_log():
-                out.info('Setting log to %s' %  patch.get_log())
+                out.info('Setting log to %s' % patch.get_log())
                 newpatch.set_log(patch.get_log())
             else:
                 out.info('No log for %s' % p)
@@ -634,7 +638,7 @@ class Series(PatchSet):
         if value:
             config.set('branch.%s.stgit.parentbranch' % target_series, value)
 
-    def delete(self, force = False, cleanup = False):
+    def delete(self, force=False, cleanup=False):
         """Deletes an stgit series
         """
         if self.is_initialised():
@@ -661,8 +665,8 @@ class Series(PatchSet):
                 os.remove(self.__unapplied_file)
             if os.path.exists(self.__hidden_file):
                 os.remove(self.__hidden_file)
-            if os.path.exists(self._dir()+'/orig-base'):
-                os.remove(self._dir()+'/orig-base')
+            if os.path.exists(self._dir() + '/orig-base'):
+                os.remove(self._dir() + '/orig-base')
 
             if not os.listdir(self.__patch_dir):
                 os.rmdir(self.__patch_dir)
@@ -684,15 +688,25 @@ class Series(PatchSet):
 
         config.remove_section('branch.%s.stgit' % self.get_name())
 
-    def refresh_patch(self, files = None, message = None, edit = False,
-                      empty = False,
-                      show_patch = False,
-                      cache_update = True,
-                      author_name = None, author_email = None,
-                      author_date = None,
-                      committer_name = None, committer_email = None,
-                      backup = True, sign_str = None, log = 'refresh',
-                      notes = None, bottom = None):
+    def refresh_patch(
+        self,
+        files=None,
+        message=None,
+        edit=False,
+        empty=False,
+        show_patch=False,
+        cache_update=True,
+        author_name=None,
+        author_email=None,
+        author_date=None,
+        committer_name=None,
+        committer_email=None,
+        backup=True,
+        sign_str=None,
+        log='refresh',
+        notes=None,
+        bottom=None
+    ):
         """Generates a new commit for the topmost patch
         """
         patch = self.get_current_patch()
@@ -732,19 +746,22 @@ class Series(PatchSet):
         else:
             tree_id = None
 
-        commit_id = git.commit(files = files,
-                               message = descr, parents = [bottom],
-                               cache_update = cache_update,
-                               tree_id = tree_id,
-                               set_head = True,
-                               allowempty = True,
-                               author_name = author_name,
-                               author_email = author_email,
-                               author_date = author_date,
-                               committer_name = committer_name,
-                               committer_email = committer_email)
+        commit_id = git.commit(
+            files=files,
+            message=descr,
+            parents=[bottom],
+            cache_update=cache_update,
+            tree_id=tree_id,
+            set_head=True,
+            allowempty=True,
+            author_name=author_name,
+            author_email=author_email,
+            author_date=author_date,
+            committer_name=committer_name,
+            committer_email=committer_email
+        )
 
-        patch.set_top(commit_id, backup = backup)
+        patch.set_top(commit_id, backup=backup)
         patch.set_description(descr)
         patch.set_authname(author_name)
         patch.set_authemail(author_email)
@@ -757,12 +774,24 @@ class Series(PatchSet):
 
         return commit_id
 
-    def new_patch(self, name, message = None, can_edit = True,
-                  unapplied = False, show_patch = False,
-                  top = None, bottom = None, commit = True,
-                  author_name = None, author_email = None, author_date = None,
-                  committer_name = None, committer_email = None,
-                  before_existing = False, sign_str = None):
+    def new_patch(
+        self,
+        name,
+        message=None,
+        can_edit=True,
+        unapplied=False,
+        show_patch=False,
+        top=None,
+        bottom=None,
+        commit=True,
+        author_name=None,
+        author_email=None,
+        author_date=None,
+        committer_name=None,
+        committer_email=None,
+        before_existing=False,
+        sign_str=None,
+    ):
         """Creates a new patch, either pointing to an existing commit object,
         or by creating a new commit object.
         """
@@ -827,15 +856,19 @@ class Series(PatchSet):
             # create a commit for the patch (may be empty if top == bottom);
             # only commit on top of the current branch
             assert(unapplied or bottom == head)
-            commit_id = git.commit(message = descr, parents = [bottom],
-                                   cache_update = False,
-                                   tree_id = top_commit.get_tree(),
-                                   allowempty = True, set_head = set_head,
-                                   author_name = author_name,
-                                   author_email = author_email,
-                                   author_date = author_date,
-                                   committer_name = committer_name,
-                                   committer_email = committer_email)
+            commit_id = git.commit(
+                message=descr,
+                parents=[bottom],
+                cache_update=False,
+                tree_id=top_commit.get_tree(),
+                allowempty=True,
+                set_head=set_head,
+                author_name=author_name,
+                author_email=author_email,
+                author_date=author_date,
+                committer_name=committer_name,
+                committer_email=committer_email,
+            )
             # set the patch top to the new commit
             patch.set_top(commit_id)
         else:
@@ -845,7 +878,7 @@ class Series(PatchSet):
 
         return patch
 
-    def delete_patch(self, name, keep_log = False):
+    def delete_patch(self, name, keep_log=False):
         """Deletes a patch
         """
         self.__patch_name_valid(name)
@@ -862,7 +895,7 @@ class Series(PatchSet):
         # save the commit id to a trash file
         write_string(os.path.join(self.__trash_dir, name), patch.get_top())
 
-        patch.delete(keep_log = keep_log)
+        patch.delete(keep_log=keep_log)
 
         unapplied = self.get_unapplied()
         unapplied.remove(name)
@@ -892,7 +925,7 @@ class Series(PatchSet):
             if head == bottom:
                 # reset the backup information. No logging since the
                 # patch hasn't changed
-                patch.set_top(top, backup = True)
+                patch.set_top(top, backup=True)
 
             else:
                 head_tree = git.get_commit(head).get_tree()
@@ -909,17 +942,20 @@ class Series(PatchSet):
 
                     top_tree = git.get_commit(top).get_tree()
 
-                    top = git.commit(message = descr, parents = [head],
-                                     cache_update = False,
-                                     tree_id = top_tree,
-                                     allowempty = True,
-                                     author_name = author_name,
-                                     author_email = author_email,
-                                     author_date = author_date,
-                                     committer_name = committer_name,
-                                     committer_email = committer_email)
+                    top = git.commit(
+                        message=descr,
+                        parents=[head],
+                        cache_update=False,
+                        tree_id=top_tree,
+                        allowempty=True,
+                        author_name=author_name,
+                        author_email=author_email,
+                        author_date=author_date,
+                        committer_name=committer_name,
+                        committer_email=committer_email,
+                    )
 
-                    patch.set_top(top, backup = True)
+                    patch.set_top(top, backup=True)
 
                     self.log_patch(patch, 'push(f)')
                 else:
@@ -927,7 +963,7 @@ class Series(PatchSet):
                     # stop the fast-forwarding, must do a real merge
                     break
 
-            forwarded+=1
+            forwarded += 1
             unapplied.remove(name)
 
         if forwarded == 0:
@@ -973,7 +1009,7 @@ class Series(PatchSet):
         unapplied.remove(name)
         write_strings(self.__unapplied_file, unapplied)
 
-        self.refresh_patch(bottom = head, cache_update = False, log = 'push(m)')
+        self.refresh_patch(bottom=head, cache_update=False, log='push(m)')
 
     def push_patch(self, name):
         """Pushes a patch on the stack
@@ -991,7 +1027,7 @@ class Series(PatchSet):
         if head == bottom:
             # A fast-forward push. Just reset the backup
             # information. No need for logging
-            patch.set_top(top, backup = True)
+            patch.set_top(top, backup=True)
 
             git.switch(top)
             append_string(self.__applied_file, name)
@@ -1030,17 +1066,21 @@ class Series(PatchSet):
                 log = 'push(m)'
             else:
                 log = 'push'
-            self.refresh_patch(bottom = head, cache_update = False, log = log)
+            self.refresh_patch(bottom=head, cache_update=False, log=log)
         else:
             # we make the patch empty, with the merged state in the
             # working tree.
-            self.refresh_patch(bottom = head, cache_update = False,
-                               empty = True, log = 'push(c)')
+            self.refresh_patch(
+                bottom=head,
+                cache_update=False,
+                empty=True,
+                log='push(c)',
+            )
             raise StackException(str(ex))
 
         return modified
 
-    def pop_patch(self, name, keep = False):
+    def pop_patch(self, name, keep=False):
         """Pops the top patch from the stack
         """
         applied = self.get_applied()
@@ -1051,7 +1091,7 @@ class Series(PatchSet):
 
         if git.get_head_file() == self.get_name():
             if keep and not git.apply_diff(git.get_head(), patch.get_bottom(),
-                                           check_index = False):
+                                           check_index=False):
                 raise StackException(
                     'Failed to pop patches while preserving the local changes')
             git.switch(patch.get_bottom(), keep)
@@ -1110,7 +1150,7 @@ class Series(PatchSet):
         else:
             raise StackException('Unknown patch "%s"' % oldname)
 
-    def log_patch(self, patch, message, notes = None):
+    def log_patch(self, patch, message, notes=None):
         """Generate a log commit for a patch
         """
         top = git.get_commit(patch.get_top())
@@ -1139,7 +1179,11 @@ class Series(PatchSet):
         if notes:
             msg += '\n\n' + notes
 
-        log = git.commit(message = msg, parents = parents,
-                         cache_update = False, tree_id = top.get_tree(),
-                         allowempty = True)
+        log = git.commit(
+            message=msg,
+            parents=parents,
+            cache_update=False,
+            tree_id=top.get_tree(),
+            allowempty=True,
+        )
         patch.set_log(log)

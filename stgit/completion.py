@@ -24,10 +24,10 @@ def flatten(stuff, sep):
     return r
 
 
-def write(f, stuff, indent = 0):
+def write(f, stuff, indent=0):
     for s in stuff:
         if isinstance(s, text):
-            f.write((' '*4*indent + s).rstrip() + '\n')
+            f.write((' ' * 4 * indent + s).rstrip() + '\n')
         else:
             write(f, s, indent + 1)
 
@@ -149,12 +149,14 @@ def main_switch(commands):
 
 
 def install():
-    return ['complete -o bashdefault -o default -F _stg stg 2>/dev/null \\', [
-            '|| complete -o default -F _stg stg' ] ]
+    return [
+        'complete -o bashdefault -o default -F _stg stg 2>/dev/null \\',
+        ['|| complete -o default -F _stg stg'],
+    ]
 
 
 def write_completion(f):
-    commands = stgit.commands.get_commands(allow_cached = False)
+    commands = stgit.commands.get_commands(allow_cached=False)
     r = [["""# -*- shell-script -*-
 # bash completion script for StGit (automatically generated)
 #

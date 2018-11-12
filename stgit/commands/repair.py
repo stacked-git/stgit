@@ -140,8 +140,8 @@ def func(parser, options, args):
     head = git.get_commit(git.get_head()).get_id_hash()
     commits, patches = read_commit_dag(crt_series.get_name())
     c = commits[head]
-    patchify = []       # commits to definitely patchify
-    maybe_patchify = [] # commits to patchify if we find a patch below them
+    patchify = []        # commits to definitely patchify
+    maybe_patchify = []  # commits to patchify if we find a patch below them
     applied = []
     while len(c.parents) == 1:
         parent, = c.parents
@@ -187,10 +187,18 @@ def func(parser, options, args):
             cname, cmail, cdate = name_email_date(p.commit.get_committer())
             parent, = p.parents
             crt_series.new_patch(
-                name, can_edit = False, commit = False,
-                top = p.id, bottom = parent.id, message = p.commit.get_log(),
-                author_name = aname, author_email = amail, author_date = adate,
-                committer_name = cname, committer_email = cmail)
+                name,
+                can_edit=False,
+                commit=False,
+                top=p.id,
+                bottom=parent.id,
+                message=p.commit.get_log(),
+                author_name=aname,
+                author_email=amail,
+                author_date=adate,
+                committer_name=cname,
+                committer_email=cmail,
+            )
             p.patch = name
             applied.append(p)
             names.add(name)

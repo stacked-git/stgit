@@ -46,7 +46,7 @@ class Output(object):
         if need_newline:
             self.new_line()
         if self.at_start_of_line:
-            self.write('  '*self.level)
+            self.write('  ' * self.level)
         self.write(msg)
         if print_newline:
             self.write('\n')
@@ -57,12 +57,12 @@ class Output(object):
 
     def tagged_lines(self, tag, lines):
         tag += ': '
-        width = 79 - 2*self.level - len(tag)
+        width = 79 - (2 * self.level) - len(tag)
         lines = [wl for line in lines
                  for wl in textwrap.wrap(line, width, break_long_words=False)]
         for line in lines:
             self.single_line(tag + line)
-            tag = ' '*len(tag)
+            tag = ' ' * len(tag)
 
     def write_line(self, line):
         """Write one line of text on a lines of its own, not
@@ -132,7 +132,7 @@ class MessagePrinter(object):
         self.__out.single_line('%s ... ' % msg, print_newline=False)
         self.__out.level += 1
 
-    def done(self, extramsg = None):
+    def done(self, extramsg=None):
         """Finish long-running operation."""
         self.__out.level -= 1
         if extramsg:

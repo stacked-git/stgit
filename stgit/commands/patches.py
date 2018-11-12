@@ -35,10 +35,19 @@ files."""
 
 args = [argparse.known_files]
 options = [
-    opt('-d', '--diff', action = 'store_true',
-        short = 'Show the diff for the given files'),
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')]
+    opt(
+        '-d',
+        '--diff',
+        action='store_true',
+        short='Show the diff for the given files',
+    ),
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    ),
+]
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None
@@ -56,7 +65,7 @@ def func(parser, options, args):
     """Show the patches modifying a file
     """
     if not args:
-        files = [path for (stat,path) in git.tree_status(verbose = True)]
+        files = [path for (stat, path) in git.tree_status(verbose=True)]
         # git.tree_status returns absolute paths
     else:
         files = git.ls_files(args)

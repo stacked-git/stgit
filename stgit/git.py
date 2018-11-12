@@ -61,8 +61,7 @@ class GRun(Run):
 class Person(object):
     """An author, committer, etc."""
 
-    def __init__(self, name = None, email = None, date = '',
-                 desc = None):
+    def __init__(self, name=None, email=None, date='', desc=None):
         self.name = self.email = self.date = None
         if name or email or date:
             assert not desc
@@ -109,7 +108,7 @@ class Commit(object):
         for i in range(len(lines)):
             line = lines[i]
             if not line:
-                break # we've seen all the header fields
+                break  # we've seen all the header fields
             key, val = line.split(' ', 1)
             if key == 'tree':
                 self.__tree = val
@@ -118,8 +117,8 @@ class Commit(object):
             elif key == 'committer':
                 self.__committer = val
             else:
-                pass # ignore other headers
-        self.__log = '\n'.join(lines[i+1:])
+                pass  # ignore other headers
+        self.__log = '\n'.join(lines[i + 1:])
 
     def get_id_hash(self):
         return self.__id_hash
@@ -183,7 +182,7 @@ def get_conflicts():
     return list(names)
 
 
-def ls_files(files, tree = 'HEAD', full_name = True):
+def ls_files(files, tree='HEAD', full_name=True):
     """Return the files known to GIT or raise an error otherwise. It also
     converts the file to the full path relative the the .git directory.
     """
@@ -281,10 +280,10 @@ def tree_status(files=None, tree_id='HEAD', verbose=False):
     return cache_files
 
 
-def local_changes(verbose = True):
+def local_changes(verbose=True):
     """Return true if there are local changes in the tree
     """
-    return len(tree_status(verbose = verbose)) != 0
+    return len(tree_status(verbose=verbose)) != 0
 
 
 def get_heads():
@@ -398,7 +397,7 @@ def branch_exists(branch):
     return ref_exists('refs/heads/%s' % branch)
 
 
-def create_branch(new_branch, tree_id = None):
+def create_branch(new_branch, tree_id=None):
     """Create a new branch in the git repository
     """
     if branch_exists(new_branch):
@@ -467,7 +466,7 @@ def rename_ref(from_ref, to_ref):
 
     sha1 = GRun('show-ref', '-s', from_ref).output_one_line()
     try:
-        GRun('update-ref', to_ref, sha1, '0'*40).run()
+        GRun('update-ref', to_ref, sha1, '0' * 40).run()
     except GitRunException:
         raise GitException('Failed to create new ref %s' % to_ref)
     try:
@@ -483,7 +482,7 @@ def rename_branch(from_name, to_name):
         if get_head_file() == from_name:
             set_head_file(to_name)
     except DetachedHeadException:
-        pass # detached HEAD, so the renamee can't be the current branch
+        pass  # detached HEAD, so the renamee can't be the current branch
     reflog_dir = os.path.join(basedir.get(), 'logs', 'refs', 'heads')
     if os.path.exists(reflog_dir) \
            and os.path.exists(os.path.join(reflog_dir, from_name)):
@@ -501,8 +500,8 @@ def user():
     """
     global __user
     if not __user:
-        name=config.get('user.name')
-        email=config.get('user.email')
+        name = config.get('user.name')
+        email = config.get('user.email')
         __user = Person(name, email)
     return __user
 
@@ -539,10 +538,10 @@ def committer():
     return __committer
 
 
-def update_cache(files = None, force = False):
+def update_cache(files=None, force=False):
     """Update the cache information for the given files
     """
-    cache_files = tree_status(files, verbose = False)
+    cache_files = tree_status(files, verbose=False)
 
     # everything is up-to-date
     if len(cache_files) == 0:
@@ -555,8 +554,8 @@ def update_cache(files = None, force = False):
 
     # update the cache
     add_files = [x[1] for x in cache_files if x[0] in ['N', 'A']]
-    rm_files =  [x[1] for x in cache_files if x[0] in ['D']]
-    m_files =   [x[1] for x in cache_files if x[0] in ['M']]
+    rm_files = [x[1] for x in cache_files if x[0] in ['D']]
+    m_files = [x[1] for x in cache_files if x[0] in ['M']]
 
     GRun('update-index', '--add', '--').xargs(add_files)
     GRun('update-index', '--force-remove', '--').xargs(rm_files)
@@ -565,10 +564,20 @@ def update_cache(files = None, force = False):
     return True
 
 
-def commit(message, files = None, parents = None, allowempty = False,
-           cache_update = True, tree_id = None, set_head = False,
-           author_name = None, author_email = None, author_date = None,
-           committer_name = None, committer_email = None):
+def commit(
+    message,
+    files=None,
+    parents=None,
+    allowempty=False,
+    cache_update=True,
+    tree_id=None,
+    set_head=False,
+    author_name=None,
+    author_email=None,
+    author_date=None,
+    committer_name=None,
+    committer_email=None
+):
     """Commit the current tree to repository
     """
     if not parents:
@@ -612,7 +621,7 @@ def commit(message, files = None, parents = None, allowempty = False,
     return commit_id
 
 
-def apply_diff(rev1, rev2, check_index = True, files = None):
+def apply_diff(rev1, rev2, check_index=True, files=None):
     """Apply the diff between rev1 and rev2 onto the current
     index. This function doesn't need to raise an exception since it
     is only used for fast-pushing a patch. If this operation fails,
@@ -646,9 +655,12 @@ def merge_recursive(base, head1, head2):
     """
     refresh_index()
     p = GRun('merge-recursive', base, '--', head1, head2).env(
-        { 'GITHEAD_%s' % base: 'ancestor',
-          'GITHEAD_%s' % head1: 'current',
-          'GITHEAD_%s' % head2: 'patched'}).returns([0, 1])
+        {
+            'GITHEAD_%s' % base: 'ancestor',
+            'GITHEAD_%s' % head1: 'current',
+            'GITHEAD_%s' % head2: 'patched',
+        }
+    ).returns([0, 1])
     output = p.output_lines()
     if p.exitcode:
         # There were conflicts
@@ -660,7 +672,7 @@ def merge_recursive(base, head1, head2):
             raise GitException("%d conflict(s)" % len(conflicts))
 
 
-def mergetool(files = ()):
+def mergetool(files=()):
     """Invoke 'git mergetool' to resolve any outstanding conflicts. If 'not
     files', all the files in an unmerged state will be processed."""
     GRun('mergetool', *list(files)).returns([0, 1]).run()
@@ -672,8 +684,7 @@ def mergetool(files = ()):
         raise GitException("%d conflict(s)" % len(conflicts))
 
 
-def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
-         binary = True):
+def diff(files=None, rev1='HEAD', rev2=None, diff_flags=[], binary=True):
     """Show the diff between rev1 and rev2
     """
     if not files:
@@ -698,7 +709,7 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
         return b''
 
 
-def files(rev1, rev2, diff_flags = []):
+def files(rev1, rev2, diff_flags=[]):
     """Return the files modified between rev1 and rev2
     """
     result = []
@@ -728,7 +739,7 @@ def checkout(tree_id):
         raise GitException('Failed "git read-tree" --reset %s' % tree_id)
 
 
-def switch(tree_id, keep = False):
+def switch(tree_id, keep=False):
     """Switch the tree to the given id
     """
     if keep:
@@ -744,7 +755,7 @@ def switch(tree_id, keep = False):
     __set_head(tree_id)
 
 
-def reset(tree_id = None):
+def reset(tree_id=None):
     """Revert the tree changes relative to the given tree_id. It removes
     any local changes
     """
@@ -755,7 +766,7 @@ def reset(tree_id = None):
     __set_head(tree_id)
 
 
-def fetch(repository = 'origin', refspec = None):
+def fetch(repository='origin', refspec=None):
     """Fetches changes from the remote repository, using 'git fetch'
     by default.
     """
@@ -771,7 +782,7 @@ def fetch(repository = 'origin', refspec = None):
     Run(*(command.split() + args)).run()
 
 
-def pull(repository = 'origin', refspec = None):
+def pull(repository='origin', refspec=None):
     """Fetches changes from the remote repository, using 'git pull'
     by default.
     """
@@ -787,7 +798,7 @@ def pull(repository = 'origin', refspec = None):
     Run(*(command.split() + args)).run()
 
 
-def rebase(tree_id = None):
+def rebase(tree_id=None):
     """Rebase the current tree to the give tree_id. The tree_id
     argument may be something other than a GIT id if an external
     command is invoked.
@@ -815,8 +826,7 @@ def repack():
     GRun('repack', '-a', '-d', '-f').run()
 
 
-def apply_patch(filename = None, diff = None, base = None,
-                reject = False, strip = None):
+def apply_patch(filename=None, diff=None, base=None, reject=False, strip=None):
     """Apply a patch onto the current or given index. There must not
     be any local changes in the tree, otherwise the command fails
     """
@@ -849,8 +859,10 @@ def apply_patch(filename = None, diff = None, base = None,
         raise GitException('Diff does not apply cleanly')
 
     if base:
-        top = commit(message = 'temporary commit used for applying a patch',
-                     parents = [base])
+        top = commit(
+            message='temporary commit used for applying a patch',
+            parents=[base],
+        )
         switch(orig_head)
         merge_recursive(base, orig_head, top)
 
@@ -906,7 +918,7 @@ def remotes_local_branches(remote):
         stream.close()
     elif remote in __remotes_from_dir('branches'):
         # old-style branches only declare one branch
-        branches.append('refs/heads/'+remote)
+        branches.append('refs/heads/' + remote)
     else:
         raise GitException('Unknown remote "%s"' % remote)
 
@@ -929,7 +941,7 @@ def fetch_head():
     """Return the git id for the tip of the parent branch as left by
     'git fetch'.
     """
-    fetch_head=None
+    fetch_head = None
     stream = open(os.path.join(basedir.get(), 'FETCH_HEAD'), "r")
     for line in stream:
         # Only consider lines not tagged not-for-merge
@@ -938,7 +950,7 @@ def fetch_head():
             if fetch_head:
                 raise GitException('StGit does not support multiple FETCH_HEAD')
             else:
-                fetch_head=m.group(1)
+                fetch_head = m.group(1)
     stream.close()
 
     if not fetch_head:

@@ -70,7 +70,7 @@ class opt(object):
             f.write('::\n')
         paras = _paragraphs(self.kwargs.get('long', self.kwargs['short'] + '.'))
         for line in paras[0]:
-            f.write(' '*8 + line + '\n')
+            f.write(' ' * 8 + line + '\n')
         for para in paras[1:]:
             f.write('+\n')
             for line in para:
@@ -94,17 +94,21 @@ def _cmd_name(cmd_mod):
 
 
 def make_option_parser(cmd):
-    pad = ' '*len('Usage: ')
+    pad = ' ' * len('Usage: ')
     return optparse.OptionParser(
-        prog = 'stg %s' % _cmd_name(cmd),
-        usage = (('\n' + pad).join('%%prog %s' % u for u in cmd.usage) +
-                 '\n\n' + cmd.help),
-        option_list = [o.get_option() for o in cmd.options])
+        prog='stg %s' % _cmd_name(cmd),
+        usage=(
+            ('\n' + pad).join('%%prog %s' % u for u in cmd.usage)
+            + '\n\n'
+            + cmd.help
+        ),
+        option_list=[o.get_option() for o in cmd.options],
+    )
 
 
 def _write_underlined(s, u, f):
     f.write(s + '\n')
-    f.write(u*len(s) + '\n')
+    f.write(u * len(s) + '\n')
 
 
 def write_asciidoc(cmd, f):
@@ -136,25 +140,49 @@ def sign_options():
         parser.values.sign_str = sign_str
 
     return [
-        opt('--sign', action = 'callback', dest = 'sign_str', args = [],
-            callback = callback, callback_args = ('Signed-off-by',),
-            short = 'Add "Signed-off-by:" line', long = """
-            Add a "Signed-off-by:" to the end of the patch."""),
-        opt('--ack', action = 'callback', dest = 'sign_str', args = [],
-            callback = callback, callback_args = ('Acked-by',),
-            short = 'Add "Acked-by:" line', long = """
-            Add an "Acked-by:" line to the end of the patch."""),
-        opt('--review', action = 'callback', dest = 'sign_str', args = [],
-            callback = callback, callback_args = ('Reviewed-by',),
-            short = 'Add "Reviewed-by:" line', long = """
-            Add a "Reviewed-by:" line to the end of the patch.""")]
+        opt(
+            '--sign',
+            action='callback',
+            dest='sign_str',
+            args=[],
+            callback=callback,
+            callback_args=('Signed-off-by',),
+            short='Add "Signed-off-by:" line',
+            long='Add a "Signed-off-by:" to the end of the patch.',
+        ),
+        opt(
+            '--ack',
+            action='callback',
+            dest='sign_str',
+            args=[],
+            callback=callback,
+            callback_args=('Acked-by',),
+            short='Add "Acked-by:" line',
+            long='Add an "Acked-by:" line to the end of the patch.',
+        ),
+        opt(
+            '--review',
+            action='callback',
+            dest='sign_str',
+            args=[],
+            callback=callback,
+            callback_args=('Reviewed-by',),
+            short='Add "Reviewed-by:" line',
+            long='Add a "Reviewed-by:" line to the end of the patch.',
+        ),
+    ]
 
 
 def hook_options():
     return [
-        opt('--no-verify', action = 'store_true', dest = 'no_verify',
-            default = False, short = 'Disable commit-msg hook', long = """
-            This option bypasses the commit-msg hook."""),
+        opt(
+            '--no-verify',
+            action='store_true',
+            dest='no_verify',
+            default=False,
+            short='Disable commit-msg hook',
+            long="This option bypasses the commit-msg hook.",
+        )
     ]
 
 
@@ -200,20 +228,41 @@ def message_options(save_template):
         no_combine(parser)
 
     opts = [
-        opt('-m', '--message', action = 'callback',
-            callback = msg_callback, dest = 'message', type = 'string',
-            short = 'Use MESSAGE instead of invoking the editor'),
-        opt('-f', '--file', action = 'callback', callback = file_callback,
-            dest = 'message', type = 'string', args = [files],
-            metavar = 'FILE',
-            short = 'Use FILE instead of invoking the editor', long = """
+        opt(
+            '-m',
+            '--message',
+            action='callback',
+            callback=msg_callback,
+            dest='message',
+            type='string',
+            short='Use MESSAGE instead of invoking the editor',
+        ),
+        opt(
+            '-f',
+            '--file',
+            action='callback',
+            callback=file_callback,
+            dest='message',
+            type='string',
+            args=[files],
+            metavar='FILE',
+            short='Use FILE instead of invoking the editor',
+            long="""
             Use the contents of FILE instead of invoking the editor.
-            (If FILE is "-", write to stdout.)""")]
+            (If FILE is "-", write to stdout.)""",
+        ),
+    ]
     if save_template:
         opts.append(
-            opt('--save-template', action = 'callback', dest = 'save_template',
-                callback = templ_callback, metavar = 'FILE', type = 'string',
-                short = 'Save the message template to FILE and exit', long = """
+            opt(
+                '--save-template',
+                action='callback',
+                dest='save_template',
+                callback=templ_callback,
+                metavar='FILE',
+                type='string',
+                short='Save the message template to FILE and exit',
+                long="""
                 Instead of running the command, just write the message
                 template to FILE, and exit. (If FILE is "-", write to
                 stdout.)
@@ -221,7 +270,9 @@ def message_options(save_template):
                 When driving StGit from another program, it is often
                 useful to first call a command with '--save-template',
                 then let the user edit the message, and then call the
-                same command with '--file'."""))
+                same command with '--file'.""",
+            )
+        )
     return opts
 
 
@@ -232,12 +283,19 @@ def diff_opts_option():
         else:
             parser.values.diff_flags = []
     return [
-        opt('-O', '--diff-opts', dest = 'diff_flags',
-            default = (config.get('stgit.diff-opts') or '').split(),
-            action = 'callback', callback = diff_opts_callback,
-            type = 'string', metavar = 'OPTIONS',
-            args = [strings('-M', '-C')],
-            short = 'Extra options to pass to "git diff"')]
+        opt(
+            '-O',
+            '--diff-opts',
+            dest='diff_flags',
+            default=(config.get('stgit.diff-opts') or '').split(),
+            action='callback',
+            callback=diff_opts_callback,
+            type='string',
+            metavar='OPTIONS',
+            args=[strings('-M', '-C')],
+            short='Extra options to pass to "git diff"',
+        )
+    ]
 
 
 def _person_opts(person, short):
@@ -260,14 +318,30 @@ def _person_opts(person, short):
         short_callback(option, opt_str, name, parser, 'name')
         short_callback(option, opt_str, email, parser, 'email')
 
-    return (
-        [opt('--%s' % person, metavar = '"NAME <EMAIL>"', type = 'string',
-             action = 'callback', callback = full_callback, dest = person,
-             default = lambda p: p, short = 'Set the %s details' % person)] +
-        [opt('--%s%s' % (short, f), metavar = f.upper(), type = 'string',
-             action = 'callback', callback = short_callback, dest = person,
-             callback_args = (f,), short = 'Set the %s %s' % (person, f))
-         for f in ['name', 'email', 'date']])
+    return [
+        opt(
+            '--%s' % person,
+            metavar='"NAME <EMAIL>"',
+            type='string',
+            action='callback',
+            callback=full_callback,
+            dest=person,
+            default=lambda p: p,
+            short='Set the %s details' % person,
+        )
+    ] + [
+        opt(
+            '--%s%s' % (short, f),
+            metavar=f.upper(),
+            type='string',
+            action='callback',
+            callback=short_callback,
+            dest=person,
+            callback_args=(f,),
+            short='Set the %s %s' % (person, f),
+        )
+        for f in ['name', 'email', 'date']
+    ]
 
 
 def author_options():
@@ -275,14 +349,26 @@ def author_options():
 
 
 def keep_option():
-    return [opt('-k', '--keep', action = 'store_true',
-                short = 'Keep the local changes',
-                default = config.get('stgit.autokeep') == 'yes')]
+    return [
+        opt(
+            '-k',
+            '--keep',
+            action='store_true',
+            short='Keep the local changes',
+            default=config.get('stgit.autokeep') == 'yes',
+        )
+    ]
 
 
 def merged_option():
-    return [opt('-m', '--merged', action = 'store_true',
-                short = 'Check for patches merged upstream')]
+    return [
+        opt(
+            '-m',
+            '--merged',
+            action='store_true',
+            short='Check for patches merged upstream',
+        )
+    ]
 
 
 class CompgenBase(object):
@@ -314,7 +400,7 @@ class CompgenJoin(CompgenBase):
 
 
 class Compgen(CompgenBase):
-    def __init__(self, words = frozenset(), actions = frozenset()):
+    def __init__(self, words=frozenset(), actions=frozenset()):
         self.__words = set(words)
         self.__actions = set(actions)
 
@@ -341,9 +427,9 @@ conflicting_files = Compgen(['$(_conflicting_files)'])
 dirty_files = Compgen(['$(_dirty_files)'])
 unknown_files = Compgen(['$(_unknown_files)'])
 known_files = Compgen(['$(_known_files)'])
-repo = Compgen(actions = ['directory'])
-dir = Compgen(actions = ['directory'])
-files = Compgen(actions = ['file'])
+repo = Compgen(actions=['directory'])
+dir = Compgen(actions=['directory'])
+files = Compgen(actions=['file'])
 mail_aliases = Compgen(['$(_mail_aliases)'])
 
 

@@ -48,9 +48,11 @@ resolve them."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
-options = ([opt('-n', '--name', short = 'Name of squashed patch')] +
-           argparse.message_options(save_template = True) +
-           argparse.hook_options())
+options = (
+    [opt('-n', '--name', short='Name of squashed patch')]
+    + argparse.message_options(save_template=True)
+    + argparse.hook_options()
+)
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -61,12 +63,14 @@ class SaveTemplateDone(Exception):
 
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
-    cd = git.CommitData(tree = cd.tree, parents = cd.parents)
+    cd = git.CommitData(tree=cd.tree, parents=cd.parents)
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
-            base = c.data.parent.data.tree,
-            ours = cd.tree, theirs = c.data.tree)
+            base=c.data.parent.data.tree,
+            ours=cd.tree,
+            theirs=c.data.tree,
+        )
         if not tree:
             return None
         cd = cd.set_tree(tree)
@@ -106,8 +110,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
         trans.patches[name] = stack.repository.commit(new_commit_data)
         trans.unapplied.insert(0, name)
 
-    trans = transaction.StackTransaction(stack, 'squash',
-                                         allow_conflicts = True)
+    trans = transaction.StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
         new_commit_data = _squash_patches(trans, patches, msg, save_template,

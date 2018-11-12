@@ -31,8 +31,13 @@ Print the name of the current (topmost) patch."""
 
 args = []
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')]
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    )
+]
 
 directory = common.DirectoryHasRepositoryLib()
 

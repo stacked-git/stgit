@@ -200,7 +200,7 @@ def _main():
         directory.write_log(cmd)
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)
-        out.error(str(err), title = '%s %s' % (prog, cmd))
+        out.error(str(err), title='%s %s' % (prog, cmd))
         sys.exit(utils.STGIT_COMMAND_ERROR)
     except SystemExit:
         # Triggered by the option parser when it finds bad commandline

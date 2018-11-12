@@ -63,20 +63,36 @@ tree.  This low-level option is primarily meant to be used by tools
 built on top of StGit, such as the Emacs mode. See also the --set-tree
 flag of stg push."""
 
-args = [argparse.applied_patches, argparse.unapplied_patches,
-        argparse.hidden_patches]
+args = [
+    argparse.applied_patches,
+    argparse.unapplied_patches,
+    argparse.hidden_patches,
+]
 options = (
-    [ opt('-d', '--diff', action = 'store_true',
-          short = 'Edit the patch diff'),
-      opt('-e', '--edit', action = 'store_true',
-          short = 'Invoke interactive editor') ] +
-    argparse.sign_options() +
-    argparse.message_options(save_template = True) +
-    argparse.hook_options() +
-    argparse.author_options() + argparse.diff_opts_option() +
-    [ opt('-t', '--set-tree', action = 'store',
-          metavar = 'TREE-ISH',
-          short = 'Set the git tree of the patch to TREE-ISH') ])
+    [
+        opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
+        opt(
+            '-e',
+            '--edit',
+            action='store_true',
+            short='Invoke interactive editor',
+        ),
+    ]
+    + argparse.sign_options()
+    + argparse.message_options(save_template=True)
+    + argparse.hook_options()
+    + argparse.author_options()
+    + argparse.diff_opts_option()
+    + [
+        opt(
+            '-t',
+            '--set-tree',
+            action='store',
+            metavar='TREE-ISH',
+            short='Set the git tree of the patch to TREE-ISH',
+        )
+    ]
+)
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -101,8 +117,11 @@ def func(parser, options, args):
     cd = orig_cd = stack.patches.get(patchname).commit.data
 
     if options.set_tree:
-        cd = cd.set_tree(stack.repository.rev_parse(
-                options.set_tree, discard_stderr = True, object_type = 'tree'))
+        cd = cd.set_tree(
+            stack.repository.rev_parse(
+                options.set_tree, discard_stderr=True, object_type='tree'
+            )
+        )
 
     cd, failed_diff = edit.auto_edit_patch(
         stack.repository, cd,
@@ -150,9 +169,9 @@ def func(parser, options, args):
     # The patch applied, so now we have to rewrite the StGit patch
     # (and any patches on top of it).
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'edit', allow_conflicts = True)
+    trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
     if patchname in trans.applied:
-        popped = trans.applied[trans.applied.index(patchname)+1:]
+        popped = trans.applied[trans.applied.index(patchname) + 1:]
         assert not trans.pop_patches(lambda pn: pn in popped)
     else:
         popped = []
@@ -162,7 +181,7 @@ def func(parser, options, args):
             if options.set_tree:
                 trans.push_tree(pn)
             else:
-                trans.push_patch(pn, iw, allow_interactive = True)
+                trans.push_patch(pn, iw, allow_interactive=True)
     except transaction.TransactionHalted:
         pass
     try:

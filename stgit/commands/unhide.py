@@ -32,8 +32,13 @@ Unhide a hidden range of patches so that they are shown in the plain
 
 args = [argparse.patch_range(argparse.hidden_patches)]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'Use BRANCH instead of the default branch')]
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    )
+]
 
 directory = common.DirectoryHasRepositoryLib()
 

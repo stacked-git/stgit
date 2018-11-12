@@ -50,7 +50,7 @@ class Patch(object):
 
     def __write_compat_files(self, new_commit, msg):
         """Write files used by the old infrastructure."""
-        def write(name, val, multiline = False):
+        def write(name, val, multiline=False):
             fn = os.path.join(self.__compat_dir, name)
             if val:
                 utils.write_string(fn, val, multiline)
@@ -62,8 +62,11 @@ class Patch(object):
                 old_log = [self.__stack.repository.refs.get(self.__log_ref)]
             except KeyError:
                 old_log = []
-            cd = git.CommitData(tree = new_commit.data.tree, parents = old_log,
-                                message = '%s\t%s' % (msg, new_commit.sha1))
+            cd = git.CommitData(
+                tree=new_commit.data.tree,
+                parents=old_log,
+                message='%s\t%s' % (msg, new_commit.sha1),
+            )
             c = self.__stack.repository.commit(cd)
             self.__stack.repository.refs.set(self.__log_ref, c, msg)
             return c
@@ -74,7 +77,7 @@ class Patch(object):
         write('authdate', d.author.date)
         write('commname', d.committer.name)
         write('commemail', d.committer.email)
-        write('description', d.message, multiline = True)
+        write('description', d.message, multiline=True)
         write('log', write_patchlog().sha1)
         write('top', new_commit.sha1)
         write('bottom', d.parent.sha1)
@@ -199,10 +202,10 @@ class Patches(object):
 
         def create_patch(name):
             p = Patch(self.__stack, name)
-            p.commit # raise exception if the patch doesn't exist
+            p.commit  # raise exception if the patch doesn't exist
             return p
 
-        self.__patches = git.ObjectCache(create_patch) # name -> Patch
+        self.__patches = git.ObjectCache(create_patch)  # name -> Patch
 
     def exists(self, name):
         try:
@@ -277,7 +280,7 @@ class Stack(git.Branch):
             self.set_parent_branch(branch)
 
     @classmethod
-    def initialise(cls, repository, name = None):
+    def initialise(cls, repository, name=None):
         """Initialise a Git branch to handle patch series.
 
         @param repository: The L{Repository} where the L{Stack} will be created
@@ -304,7 +307,7 @@ class Stack(git.Branch):
 
     @classmethod
     def create(cls, repository, name,
-               create_at = None, parent_remote = None, parent_branch = None):
+               create_at=None, parent_remote=None, parent_branch=None):
         """Create and initialise a Git branch returning the L{Stack} object.
 
         @param repository: The L{Repository} where the L{Stack} will be created
@@ -314,7 +317,7 @@ class Stack(git.Branch):
         @param parent_remote: The name of the remote Git branch
         @param parent_branch: The name of the parent Git branch
         """
-        git.Branch.create(repository, name, create_at = create_at)
+        git.Branch.create(repository, name, create_at=create_at)
         stack = cls.initialise(repository, name)
         stack.set_parents(parent_remote, parent_branch)
         return stack
@@ -326,13 +329,13 @@ class Repository(git.Repository):
 
     def __init__(self, *args, **kwargs):
         git.Repository.__init__(self, *args, **kwargs)
-        self.__stacks = {} # name -> Stack
+        self.__stacks = {}  # name -> Stack
 
     @property
     def current_stack(self):
         return self.get_stack()
 
-    def get_stack(self, name = None):
+    def get_stack(self, name=None):
         if not name:
             name = self.current_branch_name
         if name not in self.__stacks:

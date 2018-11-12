@@ -33,8 +33,13 @@ given, the top-most patch will be renamed."""
 args = [argparse.applied_patches, argparse.unapplied_patches,
         argparse.hidden_patches]
 options = [
-    opt('-b', '--branch', args = [argparse.stg_branches],
-        short = 'use BRANCH instead of the default one')]
+    opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='use BRANCH instead of the default one',
+    )
+]
 
 directory = DirectoryHasRepository(log=True)
 crt_series = None

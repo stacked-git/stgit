@@ -27,7 +27,7 @@ def update_patch_description(repo, cd, text, contains_diff):
     cd = cd.set_message(message).set_author(a)
     failed_diff = None
     if diff:
-        tree = repo.apply(cd.parent.data.tree, diff, quiet = False)
+        tree = repo.apply(cd.parent.data.tree, diff, quiet=False)
         if tree is None:
             failed_diff = diff
         else:

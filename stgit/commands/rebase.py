@@ -53,10 +53,19 @@ Or if you want to skip that patch:
 
 args = [argparse.commit]
 options = [
-    opt('-n', '--nopush', action = 'store_true',
-        short = 'Do not push the patches back after rebasing'),
-    opt('-m', '--merged', action = 'store_true',
-        short = 'Check for patches merged upstream')]
+    opt(
+        '-n',
+        '--nopush',
+        action='store_true',
+        short='Do not push the patches back after rebasing',
+    ),
+    opt(
+        '-m',
+        '--merged',
+        action='store_true',
+        short='Check for patches merged upstream',
+    ),
+]
 
 directory = DirectoryGotoToplevel(log=True)
 crt_series = None

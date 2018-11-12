@@ -45,15 +45,26 @@ formerly-applied patches."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-n', '--nopush', action = 'store_true',
-        short = 'Do not push the patches back after sinking', long = """
+    opt(
+        '-n',
+        '--nopush',
+        action='store_true',
+        short='Do not push the patches back after sinking',
+        long="""
         Do not push back on the stack the formerly-applied patches.
-        Only the patches to sink are pushed."""),
-    opt('-t', '--to', metavar = 'TARGET', args = [argparse.applied_patches],
-        short = 'Sink patches below the TARGET patch', long = """
+        Only the patches to sink are pushed.""",
+    ),
+    opt(
+        '-t',
+        '--to',
+        metavar='TARGET',
+        args=[argparse.applied_patches],
+        short='Sink patches below the TARGET patch',
+        long="""
         Specify a target patch to place the patches below, instead of
-        sinking them to the bottom of the stack.""")
-    ] + argparse.keep_option()
+        sinking them to the bottom of the stack.""",
+    )
+] + argparse.keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -88,12 +99,14 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'sink',
-                                         check_clean_iw = clean_iw)
+    trans = transaction.StackTransaction(
+        stack, 'sink', check_clean_iw=clean_iw
+    )
 
     try:
-        trans.reorder_patches(applied, unapplied, iw = iw,
-                              allow_interactive = True)
+        trans.reorder_patches(
+            applied, unapplied, iw=iw, allow_interactive=True
+        )
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)

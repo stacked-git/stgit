@@ -65,34 +65,85 @@ line."""
 
 args = [argparse.files]
 options = [
-    opt('-m', '--mail', action = 'store_true',
-        short = 'Import the patch from a standard e-mail file'),
-    opt('-M', '--mbox', action = 'store_true',
-        short = 'Import a series of patches from an mbox file'),
-    opt('-s', '--series', action = 'store_true',
-        short = 'Import a series of patches', long = """
-        Import a series of patches from a series file or a tar archive."""),
-    opt('-u', '--url', action = 'store_true',
-        short = 'Import a patch from a URL'),
-    opt('-n', '--name',
-        short = 'Use NAME as the patch name'),
-    opt('-p', '--strip', type = 'int', metavar = 'N',
-        short = 'Remove N leading slashes from diff paths (default 1)'),
-    opt('-t', '--stripname', action = 'store_true',
-        short = 'Strip numbering and extension from patch name'),
-    opt('-i', '--ignore', action = 'store_true',
-        short = 'Ignore the applied patches in the series'),
-    opt('--replace', action = 'store_true',
-        short = 'Replace the unapplied patches in the series'),
-    opt('-b', '--base', args = [argparse.commit],
-        short = 'Use BASE instead of HEAD for file importing'),
-    opt('--reject', action = 'store_true',
-        short = 'Leave the rejected hunks in corresponding *.rej files'),
-    opt('-e', '--edit', action = 'store_true',
-        short = 'Invoke an editor for the patch description'),
-    opt('-d', '--showdiff', action = 'store_true',
-        short = 'Show the patch content in the editor buffer'),
-    ] + argparse.author_options() + argparse.sign_options()
+    opt(
+        '-m',
+        '--mail',
+        action='store_true',
+        short='Import the patch from a standard e-mail file',
+    ),
+    opt(
+        '-M',
+        '--mbox',
+        action='store_true',
+        short='Import a series of patches from an mbox file',
+    ),
+    opt(
+        '-s',
+        '--series',
+        action='store_true',
+        short='Import a series of patches',
+        long="""
+        Import a series of patches from a series file or a tar archive.""",
+    ),
+    opt(
+        '-u',
+        '--url',
+        action='store_true',
+        short='Import a patch from a URL',
+    ),
+    opt(
+        '-n',
+        '--name',
+        short='Use NAME as the patch name',
+    ),
+    opt(
+        '-p',
+        '--strip',
+        type='int',
+        metavar='N',
+        short='Remove N leading slashes from diff paths (default 1)',
+    ),
+    opt(
+        '-t',
+        '--stripname',
+        action='store_true',
+        short='Strip numbering and extension from patch name',
+    ),
+    opt(
+        '-i',
+        '--ignore',
+        action='store_true',
+        short='Ignore the applied patches in the series',
+    ),
+    opt(
+        '--replace',
+        action='store_true',
+        short='Replace the unapplied patches in the series',
+    ),
+    opt(
+        '-b',
+        '--base',
+        args=[argparse.commit],
+        short='Use BASE instead of HEAD for file importing',
+    ),
+    opt(
+        '--reject',
+        action='store_true',
+        short='Leave the rejected hunks in corresponding *.rej files',
+    ),
+    opt(
+        '-e',
+        '--edit',
+        action='store_true',
+        short='Invoke an editor for the patch description',
+    ),
+    opt(
+        '-d',
+        '--showdiff',
+        action='store_true',
+        short='Show the patch content in the editor buffer',
+    ),
+] + argparse.author_options() + argparse.sign_options()
 
 directory = DirectoryHasRepository(log=True)
 crt_series = None
@@ -136,7 +187,7 @@ def __create_patch(filename, message, author_name, author_email,
         out.info('Ignoring already applied patch "%s"' % patch)
         return
     if options.replace and patch in crt_series.get_unapplied():
-        crt_series.delete_patch(patch, keep_log = True)
+        crt_series.delete_patch(patch, keep_log=True)
 
     # override the automatically parsed settings
     author = options.author(gitlib.Person())
@@ -151,10 +202,15 @@ def __create_patch(filename, message, author_name, author_email,
     if not options.sign_str:
         sign_str = config.get('stgit.autosign')
 
-    crt_series.new_patch(patch, message = message, can_edit = False,
-                         author_name = author_name,
-                         author_email = author_email,
-                         author_date = author_date, sign_str = sign_str)
+    crt_series.new_patch(
+        patch,
+        message=message,
+        can_edit=False,
+        author_name=author_name,
+        author_email=author_email,
+        author_date=author_date,
+        sign_str=sign_str,
+    )
 
     if not diff:
         out.warn('No diff found, creating empty patch')
@@ -165,16 +221,22 @@ def __create_patch(filename, message, author_name, author_email,
         else:
             base = None
         try:
-            git.apply_patch(diff = diff, base = base, reject = options.reject,
-                            strip = options.strip)
+            git.apply_patch(
+                diff=diff,
+                base=base,
+                reject=options.reject,
+                strip=options.strip,
+            )
         except git.GitException:
             if not options.reject:
                 crt_series.delete_patch(patch)
             raise
-        crt_series.refresh_patch(edit = options.edit,
-                                 show_patch = options.showdiff,
-                                 author_date = author_date,
-                                 backup = False)
+        crt_series.refresh_patch(
+            edit=options.edit,
+            show_patch=options.showdiff,
+            author_date=author_date,
+            backup=False,
+        )
         out.done()
 
 
@@ -201,7 +263,7 @@ def __get_handle_and_name(filename):
     return (open(filename, 'rb'), filename)
 
 
-def __import_file(filename, options, patch = None):
+def __import_file(filename, options, patch=None):
     """Import a patch from a file or standard input
     """
     pname = None

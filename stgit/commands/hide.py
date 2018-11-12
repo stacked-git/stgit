@@ -33,8 +33,13 @@ the plain 'series' command output."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    argparse.opt('-b', '--branch', args=[argparse.stg_branches],
-                 short='Use BRANCH instead of the default branch')]
+    argparse.opt(
+        '-b',
+        '--branch',
+        args=[argparse.stg_branches],
+        short='Use BRANCH instead of the default branch',
+    )
+]
 
 directory = common.DirectoryHasRepositoryLib()
 

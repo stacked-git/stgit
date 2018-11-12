@@ -35,10 +35,20 @@ undo."""
 
 args = []
 options = [
-    opt('-n', '--number', type = 'int', metavar = 'N', default = 1,
-        short = 'Undo the last N undos'),
-    opt('--hard', action = 'store_true',
-        short = 'Discard changes in your index/worktree')]
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        metavar='N',
+        default=1,
+        short='Undo the last N undos',
+    ),
+    opt(
+        '--hard',
+        action='store_true',
+        short='Discard changes in your index/worktree',
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -48,11 +58,14 @@ def func(parser, options, args):
     if options.number < 1:
         raise common.CmdException('Bad number of undos to redo')
     state = log.undo_state(stack, -options.number)
-    trans = transaction.StackTransaction(stack, 'redo %d' % options.number,
-                                         discard_changes = options.hard,
-                                         allow_bad_head = True)
+    trans = transaction.StackTransaction(
+        stack,
+        'redo %d' % options.number,
+        discard_changes=options.hard,
+        allow_bad_head=True,
+    )
     try:
         log.reset_stack(trans, stack.repository.default_iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(stack.repository.default_iw, allow_bad_head = True)
+    return trans.run(stack.repository.default_iw, allow_bad_head=True)

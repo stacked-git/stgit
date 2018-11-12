@@ -86,9 +86,15 @@ class StackTransaction(object):
       your refs and index+worktree, or fail without having done
       anything."""
 
-    def __init__(self, stack, msg, discard_changes = False,
-                 allow_conflicts = False, allow_bad_head = False,
-                 check_clean_iw = None):
+    def __init__(
+        self,
+        stack,
+        msg,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    ):
         """Create a new L{StackTransaction}.
 
         @param discard_changes: Discard any changes in index+worktree
@@ -235,14 +241,17 @@ class StackTransaction(object):
             else:
                 assert pn in remaining
 
-    def abort(self, iw = None):
+    def abort(self, iw=None):
         # The only state we need to restore is index+worktree.
         if iw:
-            self.__checkout(self.__stack.head.data.tree, iw,
-                            allow_bad_head = True)
+            self.__checkout(
+                self.__stack.head.data.tree,
+                iw,
+                allow_bad_head=True,
+            )
 
-    def run(self, iw = None, set_head = True, allow_bad_head = False,
-            print_current_patch = True):
+    def run(self, iw=None, set_head=True, allow_bad_head=False,
+            print_current_patch=True):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self.__check_consistency()
@@ -324,7 +333,7 @@ class StackTransaction(object):
         self.__print_popped(popped)
         return popped1
 
-    def delete_patches(self, p, quiet = False):
+    def delete_patches(self, p, quiet=False):
         """Delete all patches pn for which p(pn) is true. Return the list of
         other patches that had to be popped to accomplish this. Always
         succeeds."""
@@ -347,8 +356,8 @@ class StackTransaction(object):
                     out.info('Deleted %s%s' % (pn, s))
         return popped
 
-    def push_patch(self, pn, iw = None, allow_interactive = False,
-                   already_merged = False):
+    def push_patch(self, pn, iw=None, allow_interactive=False,
+                   already_merged=False):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
@@ -372,13 +381,13 @@ class StackTransaction(object):
             if iw is None:
                 self.__halt('%s does not apply cleanly' % pn)
             try:
-                self.__checkout(ours, iw, allow_bad_head = False)
+                self.__checkout(ours, iw, allow_bad_head=False)
             except git.CheckoutException:
                 self.__halt('Index/worktree dirty')
             try:
                 interactive = (allow_interactive and
                                config.getbool('stgit.autoimerge'))
-                iw.merge(base, ours, theirs, interactive = interactive)
+                iw.merge(base, ours, theirs, interactive=interactive)
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = 'modified'
@@ -449,8 +458,8 @@ class StackTransaction(object):
         del x[x.index(pn)]
         self.applied.append(pn)
 
-    def reorder_patches(self, applied, unapplied, hidden = None, iw = None,
-                        allow_interactive = False):
+    def reorder_patches(self, applied, unapplied, hidden=None, iw=None,
+                        allow_interactive=False):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
             hidden = self.hidden
@@ -459,7 +468,7 @@ class StackTransaction(object):
         to_pop = set(self.applied[common:])
         self.pop_patches(lambda pn: pn in to_pop)
         for pn in applied[common:]:
-            self.push_patch(pn, iw, allow_interactive = allow_interactive)
+            self.push_patch(pn, iw, allow_interactive=allow_interactive)
 
         # We only get here if all the pushes succeeded.
         assert self.applied == applied
@@ -467,7 +476,7 @@ class StackTransaction(object):
         self.unapplied = unapplied
         self.hidden = hidden
 
-    def check_merged(self, patches, tree = None, quiet = False):
+    def check_merged(self, patches, tree=None, quiet=False):
         """Return a subset of patches already merged."""
         if not quiet:
             out.start('Checking for patches merged upstream')
@@ -484,8 +493,11 @@ class StackTransaction(object):
             if cd.is_nochange():
                 continue
             try:
-                self.temp_index.apply_treediff(cd.tree, cd.parent.data.tree,
-                                               quiet = True)
+                self.temp_index.apply_treediff(
+                    cd.tree,
+                    cd.parent.data.tree,
+                    quiet=True,
+                )
                 merged.append(pn)
                 # The self.temp_index was modified by apply_treediff() so
                 # force read_tree() the next time merge() is used.

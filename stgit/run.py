@@ -58,7 +58,11 @@ if _log_mode == 'profile':
 
 def duration(t1, t2):
     d = t2 - t1
-    return 86400*d.days + d.seconds + 1e-6*d.microseconds
+    return (
+        86400 * d.days
+        + d.seconds
+        + 1e-6 * d.microseconds
+    )
 
 
 def finish_logging():
@@ -66,11 +70,12 @@ def finish_logging():
         return
     ttime = duration(_log_starttime, datetime.datetime.now())
     rtime = ttime - _log_subproctime
-    _logfile.info('Total time: %1.3f s' % ttime,
-                  'Time spent in subprocess calls: %1.3f s (%1.1f%%)'
-                  % (_log_subproctime, 100*_log_subproctime/ttime),
-                  'Remaining time: %1.3f s (%1.1f%%)'
-                  % (rtime, 100*rtime/ttime))
+    _logfile.info(
+        'Total time: %1.3f s' % ttime,
+        'Time spent in subprocess calls: %1.3f s (%1.1f%%)' % (
+            _log_subproctime, 100 * _log_subproctime / ttime),
+        'Remaining time: %1.3f s (%1.1f%%)' % (
+            rtime, 100 * rtime / ttime))
 
 
 class Run(object):
@@ -274,6 +279,6 @@ class Run(object):
         step = 100
         basecmd = self.__cmd
         for i in range(0, len(xargs), step):
-            self.__cmd = basecmd + xargs[i:i+step]
+            self.__cmd = basecmd + xargs[i:i + step]
             self.__run_noio()
         self.__cmd = basecmd

@@ -37,11 +37,13 @@ command. Use the 'diff' or 'status' commands for these files."""
 args = [argparse.applied_patches, argparse.unapplied_patches,
         argparse.hidden_patches]
 options = [
-    opt('-s', '--stat', action = 'store_true',
-        short = 'Show the diffstat'),
-    opt('--bare', action = 'store_true',
-        short = 'Bare file names (useful for scripting)'),
-    ] + argparse.diff_opts_option()
+    opt('-s', '--stat', action='store_true', short='Show the diffstat'),
+    opt(
+        '--bare',
+        action='store_true',
+        short='Bare file names (useful for scripting)',
+    ),
+] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None
@@ -61,12 +63,13 @@ def func(parser, options, args):
     rev2 = git_id(crt_series, '%s' % patch)
 
     if options.stat:
-        output = gitlib.diffstat(git.diff(rev1 = rev1, rev2 = rev2,
-                                          diff_flags = options.diff_flags))
+        output = gitlib.diffstat(
+            git.diff(rev1, rev2, diff_flags=options.diff_flags)
+        )
     elif options.bare:
         output = git.barefiles(rev1, rev2)
     else:
-        output = git.files(rev1, rev2, diff_flags = options.diff_flags)
+        output = git.files(rev1, rev2, diff_flags=options.diff_flags)
     if output:
         if not output.endswith('\n'):
             output += '\n'

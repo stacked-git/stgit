@@ -48,10 +48,19 @@ Check the 'git fetch' documentation for the <repository> format."""
 
 args = [argparse.repo]
 options = [
-    opt('-n', '--nopush', action = 'store_true',
-        short = 'Do not push the patches back after pulling'),
-    opt('-m', '--merged', action = 'store_true',
-        short = 'Check for patches merged upstream')]
+    opt(
+        '-n',
+        '--nopush',
+        action='store_true',
+        short='Do not push the patches back after pulling',
+    ),
+    opt(
+        '-m',
+        '--merged',
+        action='store_true',
+        short='Check for patches merged upstream',
+    ),
+]
 
 directory = DirectoryGotoToplevel(log=True)
 crt_series = None

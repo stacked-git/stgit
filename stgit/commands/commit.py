@@ -47,10 +47,16 @@ all applied patches are committed."""
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches)]
 options = [
-    opt('-n', '--number', type = 'int',
-        short = 'Commit the specified number of patches'),
-    opt('-a', '--all', action = 'store_true',
-        short = 'Commit all applied patches')]
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Commit the specified number of patches',
+    ),
+    opt(
+        '-a', '--all', action='store_true', short='Commit all applied patches'
+    ),
+]
 
 directory = common.DirectoryHasRepositoryLib()
 
@@ -87,7 +93,7 @@ def func(parser, options, args):
         return len(trans.applied) >= 1
 
     trans = transaction.StackTransaction(stack, 'commit',
-                                         allow_conflicts = allow_conflicts)
+                                         allow_conflicts=allow_conflicts)
     try:
         common_prefix = 0
         for i in range(min(len(stack.patchorder.applied), len(patches))):

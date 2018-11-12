@@ -188,15 +188,18 @@ class LogEntry(object):
     @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(
-            repo = stack.repository,
-            prev = prev,
-            head = stack.head,
-            applied = list(stack.patchorder.applied),
-            unapplied = list(stack.patchorder.unapplied),
-            hidden = list(stack.patchorder.hidden),
-            patches = dict((pn, stack.patches.get(pn).commit)
-                           for pn in stack.patchorder.all),
-            message = message)
+            repo=stack.repository,
+            prev=prev,
+            head=stack.head,
+            applied=list(stack.patchorder.applied),
+            unapplied=list(stack.patchorder.unapplied),
+            hidden=list(stack.patchorder.hidden),
+            patches=dict(
+                (pn, stack.patches.get(pn).commit)
+                for pn in stack.patchorder.all
+            ),
+            message=message,
+        )
 
     @staticmethod
     def __parse_metadata(repo, metadata):
@@ -232,7 +235,7 @@ class LogEntry(object):
         else:
             prev = repo.get_commit(prev)
         head = repo.get_commit(parsed['Head'])
-        lists = { 'Applied': [], 'Unapplied': [], 'Hidden': [] }
+        lists = {'Applied': [], 'Unapplied': [], 'Hidden': []}
         patches = {}
         for lst in lists:
             for entry in parsed[lst]:
@@ -303,26 +306,46 @@ class LogEntry(object):
                 return r
 
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
-        return self.__repo.commit(git.TreeData({
+        return self.__repo.commit(
+            git.TreeData(
+                {
                     'meta': self.__repo.commit(git.BlobData(metadata.encode('utf-8'))),
-                    'patches': self.__repo.commit(git.TreeData(patches)) }))
+                    'patches': self.__repo.commit(git.TreeData(patches)),
+                }
+            )
+        )
 
     def write_commit(self):
         metadata = self.__metadata_string()
         tree = self.__tree(metadata)
-        self.__simplified = self.__repo.commit(git.CommitData(
-                tree = tree, message = self.message,
-                parents = [prev.simplified for prev in [self.prev]
-                           if prev is not None]))
+        self.__simplified = self.__repo.commit(
+            git.CommitData(
+                tree=tree,
+                message=self.message,
+                parents=[
+                    prev.simplified
+                    for prev in [self.prev]
+                    if prev is not None
+                ]
+            )
+        )
         parents = list(self.__parents())
         while len(parents) >= self.__max_parents:
-            g = self.__repo.commit(git.CommitData(
-                    tree = tree, parents = parents[-self.__max_parents:],
-                    message = 'Stack log parent grouping'))
+            g = self.__repo.commit(
+                git.CommitData(
+                    tree=tree,
+                    parents=parents[-self.__max_parents:],
+                    message='Stack log parent grouping',
+                )
+            )
             parents[-self.__max_parents:] = [g]
-        self.commit = self.__repo.commit(git.CommitData(
-                tree = tree, message = self.message,
-                parents = [self.simplified] + parents))
+        self.commit = self.__repo.commit(
+            git.CommitData(
+                tree=tree,
+                message=self.message,
+                parents=[self.simplified] + parents,
+            )
+        )
 
 
 def get_log_entry(repo, ref, commit):
