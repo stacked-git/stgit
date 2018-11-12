@@ -34,6 +34,7 @@ options = argparse.keep_option() + argparse.merged_option()
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')

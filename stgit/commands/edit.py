@@ -80,6 +80,7 @@ options = (
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Edit the given patch or the current one.
     """

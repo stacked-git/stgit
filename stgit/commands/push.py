@@ -64,6 +64,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Pushes the given patches or the first unapplied onto the stack."""
     stack = directory.repository.current_stack

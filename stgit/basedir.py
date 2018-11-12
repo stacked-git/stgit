@@ -26,6 +26,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 # GIT_DIR value cached
 __base_dir = None
 
+
 def get():
     """Return the .git directory location
     """

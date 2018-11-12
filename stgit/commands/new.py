@@ -48,6 +48,7 @@ options = (argparse.author_options()
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Create a new patch."""
     stack = directory.repository.current_stack

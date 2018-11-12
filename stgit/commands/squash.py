@@ -54,8 +54,10 @@ options = ([opt('-n', '--name', short = 'Name of squashed patch')] +
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 class SaveTemplateDone(Exception):
     pass
+
 
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
@@ -87,13 +89,15 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
 
     return cd
 
-def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
 
+def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     # If a name was supplied on the command line, make sure it's OK.
     def bad_name(pn):
         return pn not in patches and stack.patches.exists(pn)
+
     def get_name(cd):
         return name or utils.make_patch_name(cd.message, bad_name)
+
     if name and bad_name(name):
         raise common.CmdException('Patch name "%s" already taken' % name)
 
@@ -136,6 +140,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)
+
 
 def func(parser, options, args):
     stack = directory.repository.current_stack

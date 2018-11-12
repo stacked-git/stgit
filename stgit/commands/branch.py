@@ -133,6 +133,7 @@ crt_series = None
 def __is_current_branch(branch_name):
     return crt_series.get_name() == branch_name
 
+
 def __print_branch(branch_name, length):
     initialized = ' '
     current = ' '
@@ -149,6 +150,7 @@ def __print_branch(branch_name, length):
     out.stdout(current + ' ' + initialized + protected + '\t'
                + branch_name.ljust(length) + '  | ' + branch.get_description())
 
+
 def __delete_branch(doomed_name, force = False):
     doomed = stack.Series(doomed_name)
 
@@ -161,6 +163,7 @@ def __delete_branch(doomed_name, force = False):
     doomed.delete(force)
     out.done()
 
+
 def __cleanup_branch(name, force = False):
     branch = stack.Series(name)
     if branch.get_protected():
@@ -169,6 +172,7 @@ def __cleanup_branch(name, force = False):
     out.start('Cleaning up branch "%s"' % name)
     branch.delete(force = force, cleanup = True)
     out.done()
+
 
 def func(parser, options, args):
 
@@ -210,7 +214,7 @@ def func(parser, options, args):
                 out.info('Recording "%s" as parent branch' % parentbranch)
             else:
                 out.info('Don\'t know how to determine parent branch'
-                         ' from "%s"' % args[1])                
+                         ' from "%s"' % args[1])
         else:
             # branch stack off current branch
             parentbranch = git.get_head_file()

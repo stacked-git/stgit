@@ -38,11 +38,13 @@ def mkdir_file(filename, mode, encoding='utf-8'):
     create_dirs(os.path.dirname(filename))
     return open(filename, mode, encoding=encoding)
 
+
 def read_strings(filename, encoding='utf-8'):
     """Reads the lines from a file
     """
     with open(filename, encoding=encoding) as f:
         return [line.strip() for line in f.readlines()]
+
 
 def read_string(filename, multiline=False, encoding='utf-8'):
     """Reads the first line from a file
@@ -53,12 +55,14 @@ def read_string(filename, multiline=False, encoding='utf-8'):
         else:
             return f.readline().strip()
 
+
 def write_strings(filename, lines, encoding='utf-8'):
     """Write 'lines' sequence to file
     """
     with open(filename, 'w+', encoding=encoding) as f:
         for line in lines:
             print(line, file=f)
+
 
 def write_string(filename, line, multiline=False, encoding='utf-8'):
     """Writes 'line' to file and truncates it
@@ -67,6 +71,7 @@ def write_string(filename, line, multiline=False, encoding='utf-8'):
         line = text(line)
         print(line, end='' if multiline else '\n', file=f)
 
+
 def append_strings(filename, lines, encoding='utf-8'):
     """Appends 'lines' sequence to file
     """
@@ -74,11 +79,13 @@ def append_strings(filename, lines, encoding='utf-8'):
         for line in lines:
             print(line, file=f)
 
+
 def append_string(filename, line, encoding='utf-8'):
     """Appends 'line' to file
     """
     with mkdir_file(filename, 'a+', encoding) as f:
         print(line, file=f)
+
 
 def insert_string(filename, line, encoding='utf-8'):
     """Inserts 'line' at the beginning of the file
@@ -90,10 +97,12 @@ def insert_string(filename, line, encoding='utf-8'):
         print(line, file=f)
         f.writelines(lines)
 
+
 def create_empty_file(name):
     """Creates an empty file
     """
     mkdir_file(name, 'w+').close()
+
 
 def list_files_and_dirs(path):
     """Return the sets of filenames and directory names in a
@@ -106,6 +115,7 @@ def list_files_and_dirs(path):
         elif os.path.isdir(full_fd):
             dirs.append(fd)
     return files, dirs
+
 
 def walk_tree(basedir):
     """Starting in the given directory, iterate through all its
@@ -121,17 +131,20 @@ def walk_tree(basedir):
             subdirs.append(os.path.join(subdir, d))
         yield subdir, files, dirs
 
+
 def strip_prefix(prefix, string):
     """Return string, without the prefix. Blow up if string doesn't
     start with prefix."""
     assert string.startswith(prefix)
     return string[len(prefix):]
 
+
 def strip_suffix(suffix, string):
     """Return string, without the suffix. Blow up if string doesn't
     end with suffix."""
     assert string.endswith(suffix)
     return string[:-len(suffix)]
+
 
 def remove_file_and_dirs(basedir, file):
     """Remove join(basedir, file), and then remove the directory it
@@ -144,6 +157,7 @@ def remove_file_and_dirs(basedir, file):
         # file's parent dir may not be empty after removal
         pass
 
+
 def create_dirs(directory):
     """Create the given directory, if the path doesn't already exist."""
     if directory and not os.path.isdir(directory):
@@ -153,6 +167,7 @@ def create_dirs(directory):
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise e
+
 
 def rename(basedir, file1, file2):
     """Rename join(basedir, file1) to join(basedir, file2), not
@@ -167,8 +182,10 @@ def rename(basedir, file1, file2):
         # file1's parent dir may not be empty after move
         pass
 
+
 class EditorException(StgException):
     pass
+
 
 def get_editor():
     for editor in [environ_get('GIT_EDITOR'),
@@ -180,6 +197,7 @@ def get_editor():
         if editor:
             return editor
 
+
 def call_editor(filename):
     """Run the editor on the specified filename."""
     cmd = '%s %s' % (get_editor(), filename)
@@ -188,6 +206,7 @@ def call_editor(filename):
     if err:
         raise EditorException('editor failed, exit code: %d' % err)
     out.done()
+
 
 def get_hook(repository, hook_name, extra_env={}):
     hook_path = os.path.join(repository.directory, 'hooks', hook_name)
@@ -215,6 +234,7 @@ def get_hook(repository, hook_name, extra_env={}):
     hook.__name__ = str(hook_name)
     return hook
 
+
 def run_hook_on_string(hook, s, *args):
     if hook is not None:
         temp = tempfile.NamedTemporaryFile('w', delete=False)
@@ -240,6 +260,7 @@ def run_hook_on_string(hook, s, *args):
 
     return s
 
+
 def edit_string(s, filename, encoding='utf-8'):
     with open(filename, 'w', encoding=encoding) as f:
         f.write(s)
@@ -248,6 +269,7 @@ def edit_string(s, filename, encoding='utf-8'):
         s = f.read()
     os.remove(filename)
     return s
+
 
 def edit_bytes(s, filename):
     with open(filename, 'wb') as f:
@@ -258,15 +280,18 @@ def edit_bytes(s, filename):
     os.remove(filename)
     return s
 
+
 def append_comment(s, comment, separator = '---'):
     return ('%s\n\n%s\nEverything following the line with "%s" will be'
             ' ignored\n\n%s' % (s, separator, separator, comment))
+
 
 def strip_comment(s, separator = '---'):
     try:
         return s[:s.index('\n%s\n' % separator)]
     except ValueError:
         return s
+
 
 def find_patch_name(patchname, unacceptable):
     """Find a patch name which is acceptable."""
@@ -276,6 +301,7 @@ def find_patch_name(patchname, unacceptable):
             suffix += 1
         patchname = '%s-%d' % (patchname, suffix)
     return patchname
+
 
 def patch_name_from_msg(msg):
     """Return a string to be used as a patch name. This is generated
@@ -300,6 +326,7 @@ def patch_name_from_msg(msg):
 
     return name
 
+
 def make_patch_name(msg, unacceptable, default_name = 'patch'):
     """Return a patch name generated from the given commit message,
     guaranteed to make unacceptable(name) be false. If the commit
@@ -323,6 +350,7 @@ def add_sign_line(desc, sign_str, name, email):
         desc = desc + '\n'
     return '%s\n%s\n' % (desc, sign_str)
 
+
 def parse_name_email(address):
     """Return a tuple consisting of the name and email parsed from a
     standard 'name <email>' or 'email (name)' string."""
@@ -335,6 +363,7 @@ def parse_name_email(address):
         return (str_list[0][1], str_list[0][0])
     return str_list[0]
 
+
 def parse_name_email_date(address):
     """Return a tuple consisting of the name, email and date parsed
     from a 'name <email> date' string."""
@@ -344,12 +373,14 @@ def parse_name_email_date(address):
         return None
     return str_list[0]
 
+
 # Exit codes.
 STGIT_SUCCESS = 0        # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
 STGIT_COMMAND_ERROR = 2  # seems to be a command that failed
 STGIT_CONFLICT = 3       # merge conflict, otherwise OK
 STGIT_BUG_ERROR = 4      # a bug in StGit
+
 
 def add_dict(d1, d2):
     """Return a new dict with the contents of both d1 and d2. In case of

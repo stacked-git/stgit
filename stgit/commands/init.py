@@ -34,6 +34,7 @@ options = []
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Performs the repository initialisation
     """

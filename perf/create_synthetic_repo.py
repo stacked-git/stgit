@@ -4,14 +4,18 @@ from __future__ import (absolute_import, division, print_function,
 
 
 next_mark = 1
+
+
 def get_mark():
     global next_mark
     next_mark += 1
     return (next_mark - 1)
 
+
 def write_data(s):
     print('data %d' % len(s))
     print(s)
+
 
 def write_blob(s):
     print('blob')
@@ -19,6 +23,7 @@ def write_blob(s):
     print('mark :%d' % m)
     write_data(s)
     return m
+
 
 def write_commit(branch, files, msg, parent = None):
     print('commit %s' % branch)
@@ -34,18 +39,22 @@ def write_commit(branch, files, msg, parent = None):
         print('M 100644 :%d %s' % (fm, fn))
     return m
 
+
 def set_ref(ref, mark):
     print('reset %s' % ref)
     print('from :%d' % mark)
 
+
 def stdblob(fn):
     return ''.join('%d %s\n' % (x, fn) for x in range(10))
+
 
 def iter_paths():
     for i in range(32):
         for j in range(32):
             for k in range(32):
                 yield '%02d/%02d/%02d' % (i, j, k)
+
 
 def setup():
     def t(name): return 'refs/tags/%s' % name
@@ -62,5 +71,6 @@ def setup():
                  for fn in iter_paths())
     write_commit(t('modify-all'), files, 'Add first line to all files',
                  parent = initial)
+
 
 setup()

@@ -45,6 +45,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 class CmdException(StgException):
     pass
 
+
 # Utility functions
 def parse_rev(rev):
     """Parse a revision specification into its branch:patch parts.
@@ -57,6 +58,7 @@ def parse_rev(rev):
 
     return (branch, patch)
 
+
 def git_id(crt_series, rev):
     """Return the GIT id
     """
@@ -65,12 +67,14 @@ def git_id(crt_series, rev):
     repository = libstack.Repository.default()
     return git_commit(rev, repository, crt_series.get_name()).sha1
 
+
 def get_public_ref(branch_name):
     """Return the public ref of the branch."""
     public_ref = config.get('branch.%s.public' % branch_name)
     if not public_ref:
         public_ref = 'refs/heads/%s.public' % branch_name
     return public_ref
+
 
 def git_commit(name, repository, branch_name = None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
@@ -109,6 +113,7 @@ def git_commit(name, repository, branch_name = None):
     except libgit.RepositoryException:
         raise CmdException('%s: Unknown patch or revision name' % name)
 
+
 def color_diff_flags():
     """Return the git flags for coloured diff output if the configuration and
     stdout allows."""
@@ -118,10 +123,12 @@ def color_diff_flags():
     else:
         return []
 
+
 def check_local_changes():
     if git.local_changes():
         raise CmdException('local changes in the tree. Use "refresh" or'
                            ' "reset --hard"')
+
 
 def check_head_top_equal(crt_series):
     if not crt_series.head_top_equal():
@@ -129,11 +136,13 @@ def check_head_top_equal(crt_series):
                            ' if you modify a branch with git. "stg repair'
                            ' --help" explains more about what to do next.')
 
+
 def check_conflicts():
     if git.get_conflicts():
         raise CmdException('Unsolved conflicts. Please fix the conflicts'
                            ' then use "git add --update <files>" or revert the'
                            ' changes with "reset --hard".')
+
 
 def print_crt_patch(crt_series, branch = None):
     if not branch:
@@ -186,6 +195,7 @@ def push_patches(crt_series, patches, check_merged = False):
             else:
                 out.done()
 
+
 def pop_patches(crt_series, patches, keep = False):
     """Pop the patches in the list from the stack. It is assumed that
     the patches are listed in the stack reverse order.
@@ -201,6 +211,7 @@ def pop_patches(crt_series, patches, keep = False):
         crt_series.pop_patch(p, keep)
         out.done()
 
+
 def get_patch_from_list(part_name, patch_list):
     candidates = [full for full in patch_list if part_name in full]
     if len(candidates) >= 2:
@@ -210,6 +221,7 @@ def get_patch_from_list(part_name, patch_list):
         return candidates[0]
     else:
         return None
+
 
 def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
     """Parse patch_args list for patch names in patch_list and return
@@ -275,6 +287,7 @@ def parse_patches(patch_args, patch_list, boundary = 0, ordered = False):
 
     return patches
 
+
 def name_email(address):
     p = email.utils.parseaddr(address)
     if p[1]:
@@ -283,12 +296,14 @@ def name_email(address):
         raise CmdException('Incorrect "name <email>"/"email (name)" string: %s'
                            % address)
 
+
 def name_email_date(address):
     p = parse_name_email_date(address)
     if p:
         return p
     else:
         raise CmdException('Incorrect "name <email> date" string: %s' % address)
+
 
 def address_or_alias(addr_pair):
     """Return a name-email tuple the e-mail address is valid or look up
@@ -304,6 +319,7 @@ def address_or_alias(addr_pair):
         return name_email(alias)
     raise CmdException('unknown e-mail alias: %s' % addr)
 
+
 def prepare_rebase(crt_series):
     # pop all patches
     applied = crt_series.get_applied()
@@ -312,6 +328,7 @@ def prepare_rebase(crt_series):
         crt_series.pop_patch(applied[0])
         out.done()
     return applied
+
 
 def rebase(crt_series, target):
     try:
@@ -327,12 +344,14 @@ def rebase(crt_series, target):
     git.rebase(tree_id = tree_id)
     out.done()
 
+
 def post_rebase(crt_series, applied, nopush, merged):
     # memorize that we rebased to here
     crt_series._set_field('orig-base', git.get_head())
     # push the patches back
     if not nopush:
         push_patches(crt_series, applied, merged)
+
 
 #
 # Patch description/e-mail/diff parsing
@@ -342,6 +361,7 @@ def __end_descr(line):
             re.match(b'diff -', line) or
             re.match(b'Index: ', line) or
             re.match(br'--- \w', line))
+
 
 def __split_descr_diff(string):
     """Return the description and the diff from the given string
@@ -359,6 +379,7 @@ def __split_descr_diff(string):
         diff += line + b'\n'
 
     return (descr.rstrip(), diff)
+
 
 def __parse_description(descr):
     """Parse the patch description and return the new description and
@@ -405,6 +426,7 @@ def __parse_description(descr):
         body = '\n' + '\n'.join(l[descr_strip:] for l in descr_lines[lasthdr:])
 
     return (subject + body, authname, authemail, authdate)
+
 
 def parse_mail(msg):
     """Parse the message object and return (description, authname,
@@ -476,6 +498,7 @@ def parse_mail(msg):
 
     return (descr, authname, authemail, authdate, diff)
 
+
 def parse_patch(patch_data, contains_diff):
     """Parse patch data.
 
@@ -495,6 +518,7 @@ def parse_patch(patch_data, contains_diff):
     # Just return None
     return (descr, authname, authemail, authdate, diff)
 
+
 def readonly_constant_property(f):
     """Decorator that converts a function that computes a value to an
     attribute that returns the value. The value is computed only once,
@@ -505,6 +529,7 @@ def readonly_constant_property(f):
             setattr(self, n, f(self))
         return getattr(self, n)
     return property(new_f)
+
 
 def run_commit_msg_hook(repo, cd, editor_is_used=True):
     """Run the commit-msg hook (if any) on a commit.
@@ -524,6 +549,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
         raise EditorException(str(exc))
 
     return cd.set_message(new_msg)
+
 
 def update_commit_data(cd, options):
     """Return a new CommitData object updated according to the command line
@@ -555,13 +581,16 @@ def update_commit_data(cd, options):
 
     return cd
 
+
 class DirectoryException(StgException):
     pass
+
 
 class _Directory(object):
     def __init__(self, needs_current_series = True, log = True):
         self.needs_current_series =  needs_current_series
         self.log = log
+
     @readonly_constant_property
     def git_dir(self):
         try:
@@ -569,6 +598,7 @@ class _Directory(object):
                        ).discard_stderr().output_one_line()
         except RunException:
             raise DirectoryException('No git repository found')
+
     @readonly_constant_property
     def __topdir_path(self):
         try:
@@ -582,30 +612,37 @@ class _Directory(object):
                 raise RunException('Too much output')
         except RunException:
             raise DirectoryException('No git repository found')
+
     @readonly_constant_property
     def is_inside_git_dir(self):
         return { 'true': True, 'false': False
                  }[Run('git', 'rev-parse', '--is-inside-git-dir'
                        ).output_one_line()]
+
     @readonly_constant_property
     def is_inside_worktree(self):
         return { 'true': True, 'false': False
                  }[Run('git', 'rev-parse', '--is-inside-work-tree'
                        ).output_one_line()]
+
     def cd_to_topdir(self):
         os.chdir(self.__topdir_path)
+
     def write_log(self, msg):
         if self.log:
             log.compat_log_entry(msg)
+
 
 class DirectoryAnywhere(_Directory):
     def setup(self):
         pass
 
+
 class DirectoryHasRepository(_Directory):
     def setup(self):
         self.git_dir # might throw an exception
         log.compat_log_external_mods()
+
 
 class DirectoryInWorktree(DirectoryHasRepository):
     def setup(self):
@@ -613,16 +650,20 @@ class DirectoryInWorktree(DirectoryHasRepository):
         if not self.is_inside_worktree:
             raise DirectoryException('Not inside a git worktree')
 
+
 class DirectoryGotoToplevel(DirectoryInWorktree):
     def setup(self):
         DirectoryInWorktree.setup(self)
         self.cd_to_topdir()
 
+
 class DirectoryHasRepositoryLib(_Directory):
     """For commands that use the new infrastructure in stgit.lib.*."""
+
     def __init__(self):
         self.needs_current_series = False
         self.log = False # stgit.lib.transaction handles logging
+
     def setup(self):
         # This will throw an exception if we don't have a repository.
         self.repository = libstack.Repository.default()

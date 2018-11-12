@@ -73,6 +73,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Export a range of patches.
     """

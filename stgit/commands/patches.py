@@ -51,6 +51,7 @@ diff_tmpl = \
           '---\n\n' \
           '%s'
 
+
 def func(parser, options, args):
     """Show the patches modifying a file
     """

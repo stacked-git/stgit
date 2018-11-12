@@ -57,6 +57,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def show_log(stacklog, pathlim, num, full, show_diff):
     cmd = ['git', 'log']
     if num is not None and num > 0:
@@ -68,6 +69,7 @@ def show_log(stacklog, pathlim, num, full, show_diff):
     cmd.extend([stacklog.sha1, '--'])
     cmd.extend(pathlim)
     Run(*cmd).run()
+
 
 def func(parser, options, args):
     if options.branch:

@@ -36,6 +36,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Show the name of the next patch
     """

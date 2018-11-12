@@ -11,8 +11,10 @@ import stgit.commands
 def fun(name, *body):
     return ['%s ()' % name, '{', list(body), '}']
 
+
 def fun_desc(name, desc, *body):
     return ['# %s' % desc] + fun(name, *body)
+
 
 def flatten(stuff, sep):
     r = stuff[0]
@@ -21,6 +23,7 @@ def flatten(stuff, sep):
         r.extend(s)
     return r
 
+
 def write(f, stuff, indent = 0):
     for s in stuff:
         if isinstance(s, text):
@@ -28,18 +31,22 @@ def write(f, stuff, indent = 0):
         else:
             write(f, s, indent + 1)
 
+
 def patch_list_fun(type):
     return fun('_%s_patches' % type, 'local g=$(_gitdir)',
                'test "$g" && cat "$g/patches/$(_current_branch)/%s"' % type)
+
 
 def file_list_fun(name, cmd):
     return fun('_%s_files' % name, 'local g=$(_gitdir)',
                'test "$g" && %s' % cmd)
 
+
 def ref_list_fun(name, prefix):
     return fun(name, 'local g=$(_gitdir)',
                ("test \"$g\" && git show-ref | grep ' %s/' | sed 's,.* %s/,,'"
                 % (prefix, prefix)))
+
 
 def util():
     r = [fun_desc('_gitdir',
@@ -78,14 +85,18 @@ def util():
         r.append(file_list_fun(name, cmd))
     return flatten(r, '')
 
+
 def command_list(commands):
     return ['_stg_commands="%s"\n' % ' '.join(sorted(commands))]
 
+
 def command_fun(cmd, modname):
     mod = stgit.commands.get_command(modname)
+
     def cg(args, flags):
         return argparse.compjoin(list(args) + [argparse.strings(*flags)]
                                  ).command('$cur')
+
     return fun(
         '_stg_%s' % cmd,
         'local flags="%s"' % ' '.join(sorted(
@@ -100,6 +111,7 @@ def command_fun(cmd, modname):
             for opt in mod.options if opt.args] + [
             '*) COMPREPLY=($(%s)) ;;' % cg(mod.args, ['$flags'])],
         'esac')
+
 
 def main_switch(commands):
     return fun(
@@ -135,9 +147,11 @@ def main_switch(commands):
             for cmd in sorted(commands)],
         'esac')
 
+
 def install():
     return ['complete -o bashdefault -o default -F _stg stg 2>/dev/null \\', [
             '|| complete -o default -F _stg stg' ] ]
+
 
 def write_completion(f):
     commands = stgit.commands.get_commands(allow_cached = False)

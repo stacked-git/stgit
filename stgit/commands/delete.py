@@ -46,6 +46,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Delete one or more patches."""
     stack = directory.repository.get_stack(options.branch)
@@ -79,6 +80,7 @@ def func(parser, options, args):
                     and trans.applied[-1] == stack.patchorder.applied[-1])
         else:
             return not trans.applied
+
     trans = transaction.StackTransaction(stack, 'delete',
                                          allow_conflicts = allow_conflicts)
     try:

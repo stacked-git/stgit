@@ -23,7 +23,6 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 
 class Output(object):
-
     def __init__(self, file):
         if file is not None:
             self.write = file.write
@@ -86,7 +85,6 @@ class Output(object):
 
 
 class MessagePrinter(object):
-
     def __init__(self, file=None):
         if file:
             self.__stdout = self.__stderr = Output(file)

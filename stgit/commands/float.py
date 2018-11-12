@@ -46,6 +46,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Reorder patches to make the named patch the topmost one.
     """

@@ -15,6 +15,7 @@ from stgit.lib import git, stackupgrade
 class Patch(object):
     """Represents an StGit patch. This class is mainly concerned with
     reading and writing the on-disk representation of a patch."""
+
     def __init__(self, stack, name):
         self.__stack = stack
         self.__name = name
@@ -26,12 +27,15 @@ class Patch(object):
     @property
     def __ref(self):
         return 'refs/patches/%s/%s' % (self.__stack.name, self.__name)
+
     @property
     def __log_ref(self):
         return self.__ref + '.log'
+
     @property
     def commit(self):
         return self.__stack.repository.refs.get(self.__ref)
+
     @property
     def old_commit(self):
         """Return the previous commit for this patch."""
@@ -39,9 +43,11 @@ class Patch(object):
         if not os.path.isfile(fn):
             return None
         return self.__stack.repository.get_commit(utils.read_string(fn))
+
     @property
     def __compat_dir(self):
         return os.path.join(self.__stack.directory, 'patches', self.__name)
+
     def __write_compat_files(self, new_commit, msg):
         """Write files used by the old infrastructure."""
         def write(name, val, multiline = False):
@@ -50,6 +56,7 @@ class Patch(object):
                 utils.write_string(fn, val, multiline)
             elif os.path.isfile(fn):
                 os.remove(fn)
+
         def write_patchlog():
             try:
                 old_log = [self.__stack.repository.refs.get(self.__log_ref)]
@@ -60,6 +67,7 @@ class Patch(object):
             c = self.__stack.repository.commit(cd)
             self.__stack.repository.refs.set(self.__log_ref, c, msg)
             return c
+
         d = new_commit.data
         write('authname', d.author.name)
         write('authemail', d.author.email)
@@ -78,6 +86,7 @@ class Patch(object):
             old_bottom_sha1 = None
         write('top.old', old_top_sha1)
         write('bottom.old', old_bottom_sha1)
+
     def __delete_compat_files(self):
         if os.path.isdir(self.__compat_dir):
             for f in os.listdir(self.__compat_dir):
@@ -88,16 +97,21 @@ class Patch(object):
             self.__stack.repository.refs.delete(self.__log_ref)
         except KeyError:
             pass
+
     def set_commit(self, commit, msg):
         self.__write_compat_files(commit, msg)
         self.__stack.repository.refs.set(self.__ref, commit, msg)
+
     def delete(self):
         self.__delete_compat_files()
         self.__stack.repository.refs.delete(self.__ref)
+
     def is_applied(self):
         return self.name in self.__stack.patchorder.applied
+
     def is_empty(self):
         return self.commit.data.is_nochange()
+
     def files(self):
         """Return the set of files this patch touches."""
         fs = set()
@@ -108,21 +122,27 @@ class Patch(object):
             fs.add(newname)
         return fs
 
+
 class PatchOrder(object):
     """Keeps track of patch order, and which patches are applied.
     Works with patch names, not actual patches."""
+
     def __init__(self, stack):
         self.__stack = stack
         self.__lists = {}
+
     def __read_file(self, fn):
         return tuple(utils.read_strings(
             os.path.join(self.__stack.directory, fn)))
+
     def __write_file(self, fn, val):
         utils.write_strings(os.path.join(self.__stack.directory, fn), val)
+
     def __get_list(self, name):
         if name not in self.__lists:
             self.__lists[name] = self.__read_file(name)
         return self.__lists[name]
+
     def __set_list(self, name, val):
         val = tuple(val)
         if val != self.__lists.get(name, None):
@@ -169,24 +189,31 @@ class PatchOrder(object):
         utils.create_empty_file(os.path.join(stackdir, 'unapplied'))
         utils.create_empty_file(os.path.join(stackdir, 'hidden'))
 
+
 class Patches(object):
     """Creates L{Patch} objects. Makes sure there is only one such object
     per patch."""
+
     def __init__(self, stack):
         self.__stack = stack
+
         def create_patch(name):
             p = Patch(self.__stack, name)
             p.commit # raise exception if the patch doesn't exist
             return p
+
         self.__patches = git.ObjectCache(create_patch) # name -> Patch
+
     def exists(self, name):
         try:
             self.get(name)
             return True
         except KeyError:
             return False
+
     def get(self, name):
         return self.__patches[name]
+
     def new(self, name, commit, msg):
         assert name not in self.__patches
         p = Patch(self.__stack, name)
@@ -194,9 +221,11 @@ class Patches(object):
         self.__patches[name] = p
         return p
 
+
 class Stack(git.Branch):
     """Represents an StGit stack (that is, a git branch with some extra
     metadata)."""
+
     __repo_subdir = 'patches'
 
     def __init__(self, repository, name):
@@ -217,6 +246,7 @@ class Stack(git.Branch):
     @property
     def directory(self):
         return os.path.join(self.repository.directory, self.__repo_subdir, self.name)
+
     @property
     def base(self):
         if self.patchorder.applied:
@@ -224,6 +254,7 @@ class Stack(git.Branch):
                                     ).commit.data.parent
         else:
             return self.head
+
     @property
     def top(self):
         """Commit of the topmost patch, or the stack base if no patches are
@@ -233,6 +264,7 @@ class Stack(git.Branch):
         else:
             # When no patches are applied, base == head.
             return self.head
+
     def head_top_equal(self):
         if not self.patchorder.applied:
             return True
@@ -287,15 +319,19 @@ class Stack(git.Branch):
         stack.set_parents(parent_remote, parent_branch)
         return stack
 
+
 class Repository(git.Repository):
     """A git L{Repository<git.Repository>} with some added StGit-specific
     operations."""
+
     def __init__(self, *args, **kwargs):
         git.Repository.__init__(self, *args, **kwargs)
         self.__stacks = {} # name -> Stack
+
     @property
     def current_stack(self):
         return self.get_stack()
+
     def get_stack(self, name = None):
         if not name:
             name = self.current_branch_name

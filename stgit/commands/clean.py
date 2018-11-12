@@ -39,8 +39,10 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def _clean(stack, clean_applied, clean_unapplied):
     trans = transaction.StackTransaction(stack, 'clean', allow_conflicts = True)
+
     def del_patch(pn):
         if pn in stack.patchorder.applied:
             if pn == stack.patchorder.applied[-1]:
@@ -53,9 +55,11 @@ def _clean(stack, clean_applied, clean_unapplied):
             return clean_applied and trans.patches[pn].data.is_nochange()
         elif pn in stack.patchorder.unapplied:
             return clean_unapplied and trans.patches[pn].data.is_nochange()
+
     for pn in trans.delete_patches(del_patch):
         trans.push_patch(pn)
     trans.run()
+
 
 def func(parser, options, args):
     """Delete the empty patches in the series

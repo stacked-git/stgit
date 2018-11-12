@@ -61,17 +61,20 @@ def __check_all():
     check_conflicts()
     check_head_top_equal(crt_series)
 
+
 def __branch_merge_patch(remote_series, pname):
     """Merge a patch from a remote branch into the current tree.
     """
     patch = remote_series.get_patch(pname)
     git.merge_recursive(patch.get_bottom(), git.get_head(), patch.get_top())
 
+
 def __series_merge_patch(base, patchdir, pname):
     """Merge a patch file with the given StGIT patch.
     """
     patchfile = os.path.join(patchdir, pname)
     git.apply_patch(filename = patchfile, base = base)
+
 
 def func(parser, options, args):
     """Synchronise a range of patches

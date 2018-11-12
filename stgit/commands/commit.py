@@ -54,6 +54,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Commit a number of patches."""
     stack = directory.repository.current_stack
@@ -79,10 +80,12 @@ def func(parser, options, args):
         raise common.CmdException('No patches to commit')
 
     iw = stack.repository.default_iw
+
     def allow_conflicts(trans):
         # As long as the topmost patch stays where it is, it's OK to
         # run "stg commit" with conflicts in the index.
         return len(trans.applied) >= 1
+
     trans = transaction.StackTransaction(stack, 'commit',
                                          allow_conflicts = allow_conflicts)
     try:

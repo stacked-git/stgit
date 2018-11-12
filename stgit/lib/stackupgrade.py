@@ -11,8 +11,10 @@ from stgit.out import out
 # The current StGit metadata format version.
 FORMAT_VERSION = 2
 
+
 def format_version_key(branch):
     return 'branch.%s.stgit.stackformatversion' % branch
+
 
 def update_to_current_format_version(repository, branch):
     """Update a potentially older StGit directory structure to the latest
@@ -23,6 +25,7 @@ def update_to_current_format_version(repository, branch):
     branch_dir = os.path.join(repository.directory, 'patches', branch)
     key = format_version_key(branch)
     old_key = 'branch.%s.stgitformatversion' % branch
+
     def get_format_version():
         """Return the integer format version number, or None if the
         branch doesn't have any StGit metadata at all, of any version."""
@@ -49,15 +52,19 @@ def update_to_current_format_version(repository, branch):
         else:
             # The branch doesn't seem to be initialized at all.
             return None
+
     def set_format_version(v):
         out.info('Upgraded branch %s to format version %d' % (branch, v))
         config.set(key, '%d' % v)
+
     def mkdir(d):
         if not os.path.isdir(d):
             os.makedirs(d)
+
     def rm(f):
         if os.path.exists(f):
             os.remove(f)
+
     def rm_ref(ref):
         if repository.refs.exists(ref):
             repository.refs.delete(ref)

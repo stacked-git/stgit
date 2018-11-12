@@ -37,6 +37,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Unhide a range of patch in the series."""
     stack = directory.repository.current_stack

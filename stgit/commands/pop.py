@@ -51,6 +51,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Pop the given patches or the topmost one from the stack."""
     stack = directory.repository.current_stack

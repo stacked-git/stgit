@@ -80,22 +80,23 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def __create_commit(repository, tree, parents, options, message = ''):
     """Return a new Commit object."""
     cd = git.CommitData(
         tree = tree, parents = parents, message = message,
         author = git.Person.author(), committer = git.Person.committer())
     cd = common.update_commit_data(cd, options)
-
     return repository.commit(cd)
+
 
 def __get_published(stack, tree):
     """Check the patches that were already published."""
     trans = transaction.StackTransaction(stack, 'publish')
     published = trans.check_merged(trans.applied, tree = tree, quiet = True)
     trans.abort()
-
     return published
+
 
 def __get_last(stack, tree):
     """Return the name of the last published patch."""
@@ -103,8 +104,8 @@ def __get_last(stack, tree):
         pc = stack.patches.get(p).commit
         if tree.sha1 == pc.data.tree.sha1:
             return p
-
     return None
+
 
 def func(parser, options, args):
     """Publish the stack changes."""

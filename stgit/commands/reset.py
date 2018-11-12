@@ -44,6 +44,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw

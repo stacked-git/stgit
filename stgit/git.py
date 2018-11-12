@@ -37,23 +37,30 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 class GitException(StgException):
     pass
 
+
 # When a subprocess has a problem, we want the exception to be a
 # subclass of GitException.
 class GitRunException(GitException):
     pass
+
+
 class GRun(Run):
     exc = GitRunException
+
     def __init__(self, *cmd):
         """Initialise the Run object and insert the 'git' command name.
         """
         Run.__init__(self, 'git', *cmd)
 
+
 #
 # Classes
 #
 
+
 class Person(object):
     """An author, committer, etc."""
+
     def __init__(self, name = None, email = None, date = '',
                  desc = None):
         self.name = self.email = self.date = None
@@ -64,29 +71,37 @@ class Person(object):
             self.date = date
         elif desc:
             assert not (name or email or date)
+
             def parse_desc(s):
                 m = re.match(r'^(.+)<(.+)>(.*)$', s)
                 assert m
                 return [x.strip() or None for x in m.groups()]
+
             self.name, self.email, self.date = parse_desc(desc)
+
     def set_name(self, val):
         if val:
             self.name = val
+
     def set_email(self, val):
         if val:
             self.email = val
+
     def set_date(self, val):
         if val:
             self.date = val
+
     def __str__(self):
         if self.name and self.email:
             return '%s <%s>' % (self.name, self.email)
         else:
             raise GitException('not enough identity data')
 
+
 class Commit(object):
     """Handle the commit objects
     """
+
     def __init__(self, id_hash):
         self.__id_hash = id_hash
 
@@ -135,12 +150,14 @@ class Commit(object):
     def __str__(self):
         return self.get_id_hash()
 
+
 # dictionary of Commit objects, used to avoid multiple calls to git
 __commits = dict()
 
 #
 # Functions
 #
+
 
 def get_commit(id_hash):
     """Commit objects factory. Save/look-up them in the __commits
@@ -154,6 +171,7 @@ def get_commit(id_hash):
         commit = Commit(id_hash)
         __commits[id_hash] = commit
         return commit
+
 
 def get_conflicts():
     """Return the list of file conflicts
@@ -188,6 +206,7 @@ def ls_files(files, tree = 'HEAD', full_name = True):
             'Some of the given paths are either missing or not known to GIT')
     return list(fileset)
 
+
 def parse_git_ls(lines):
     """Parse the output of git diff-index, diff-files, etc. Doesn't handle
     rename/copy output, so don't feed it output generated with the -M
@@ -199,6 +218,7 @@ def parse_git_ls(lines):
         else:
             yield (t, line)
             t = None
+
 
 def tree_status(files=None, tree_id='HEAD', verbose=False):
     """Get the status of all changed files, or of a selected set of
@@ -260,10 +280,12 @@ def tree_status(files=None, tree_id='HEAD', verbose=False):
 
     return cache_files
 
+
 def local_changes(verbose = True):
     """Return true if there are local changes in the tree
     """
     return len(tree_status(verbose = verbose)) != 0
+
 
 def get_heads():
     heads = []
@@ -273,8 +295,10 @@ def get_heads():
         heads.append(m.group(1))
     return heads
 
+
 # HEAD value cached
 __head = None
+
 
 def get_head():
     """Verifies the HEAD and returns the SHA1 id that represents it
@@ -285,9 +309,11 @@ def get_head():
         __head = rev_parse('HEAD')
     return __head
 
+
 class DetachedHeadException(GitException):
     def __init__(self):
         GitException.__init__(self, 'Not on any branch')
+
 
 def get_head_file():
     """Return the name of the file pointed to by the HEAD symref.
@@ -298,6 +324,7 @@ def get_head_file():
                                 ).output_one_line())
     except GitRunException:
         raise DetachedHeadException()
+
 
 def set_head_file(ref):
     """Resets HEAD to point to a new ref
@@ -310,6 +337,7 @@ def set_head_file(ref):
     except GitRunException:
         raise GitException('Could not set head to "%s"' % ref)
 
+
 def set_ref(ref, val):
     """Point ref at a new commit object."""
     try:
@@ -317,8 +345,10 @@ def set_ref(ref, val):
     except GitRunException:
         raise GitException('Could not update %s to "%s".' % (ref, val))
 
+
 def set_branch(branch, val):
     set_ref('refs/heads/%s' % branch, val)
+
 
 def __set_head(val):
     """Sets the HEAD value
@@ -332,17 +362,19 @@ def __set_head(val):
     # only allow SHA1 hashes
     assert(len(__head) == 40)
 
+
 def __clear_head_cache():
     """Sets the __head to None so that a re-read is forced
     """
     global __head
-
     __head = None
+
 
 def refresh_index():
     """Refresh index with stat() information from the working directory.
     """
     GRun('update-index', '-q', '--unmerged', '--refresh').run()
+
 
 def rev_parse(git_id):
     """Parse the string and return a verified SHA1 id
@@ -353,6 +385,7 @@ def rev_parse(git_id):
     except GitRunException:
         raise GitException('Unknown revision: %s' % git_id)
 
+
 def ref_exists(ref):
     try:
         rev_parse(ref)
@@ -360,8 +393,10 @@ def ref_exists(ref):
     except GitException:
         return False
 
+
 def branch_exists(branch):
     return ref_exists('refs/heads/%s' % branch)
+
 
 def create_branch(new_branch, tree_id = None):
     """Create a new branch in the git repository
@@ -387,6 +422,7 @@ def create_branch(new_branch, tree_id = None):
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))
 
+
 def switch_branch(new_branch):
     """Switch to a git branch
     """
@@ -408,6 +444,7 @@ def switch_branch(new_branch):
     if os.path.isfile(os.path.join(basedir.get(), 'MERGE_HEAD')):
         os.remove(os.path.join(basedir.get(), 'MERGE_HEAD'))
 
+
 def delete_ref(ref):
     if not ref_exists(ref):
         raise GitException('%s does not exist' % ref)
@@ -417,8 +454,10 @@ def delete_ref(ref):
     except GitRunException:
         raise GitException('Failed to delete ref %s' % ref)
 
+
 def delete_branch(name):
     delete_ref('refs/heads/%s' % name)
+
 
 def rename_ref(from_ref, to_ref):
     if not ref_exists(from_ref):
@@ -436,6 +475,7 @@ def rename_ref(from_ref, to_ref):
     except GitRunException:
         raise GitException('Failed to delete ref %s' % from_ref)
 
+
 def rename_branch(from_name, to_name):
     """Rename a git branch."""
     rename_ref('refs/heads/%s' % from_name, 'refs/heads/%s' % to_name)
@@ -449,10 +489,12 @@ def rename_branch(from_name, to_name):
            and os.path.exists(os.path.join(reflog_dir, from_name)):
         rename(reflog_dir, from_name, to_name)
 
+
 # Persons caching
 __user = None
 __author = None
 __committer = None
+
 
 def user():
     """Return the user information.
@@ -463,6 +505,7 @@ def user():
         email=config.get('user.email')
         __user = Person(name, email)
     return __user
+
 
 def author():
     """Return the author information.
@@ -479,6 +522,7 @@ def author():
             __author = Person(name, email, date)
     return __author
 
+
 def committer():
     """Return the author information.
     """
@@ -493,6 +537,7 @@ def committer():
             date = environ_get('GIT_COMMITTER_DATE', '')
             __committer = Person(name, email, date)
     return __committer
+
 
 def update_cache(files = None, force = False):
     """Update the cache information for the given files
@@ -518,6 +563,7 @@ def update_cache(files = None, force = False):
     GRun('update-index', '--').xargs(m_files)
 
     return True
+
 
 def commit(message, files = None, parents = None, allowempty = False,
            cache_update = True, tree_id = None, set_head = False,
@@ -565,6 +611,7 @@ def commit(message, files = None, parents = None, allowempty = False,
 
     return commit_id
 
+
 def apply_diff(rev1, rev2, check_index = True, files = None):
     """Apply the diff between rev1 and rev2 onto the current
     index. This function doesn't need to raise an exception since it
@@ -589,7 +636,9 @@ def apply_diff(rev1, rev2, check_index = True, files = None):
 
     return True
 
+
 stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
+
 
 def merge_recursive(base, head1, head2):
     """Perform a 3-way merge between base, head1 and head2 into the
@@ -610,6 +659,7 @@ def merge_recursive(base, head1, head2):
             out.info(*conflicts)
             raise GitException("%d conflict(s)" % len(conflicts))
 
+
 def mergetool(files = ()):
     """Invoke 'git mergetool' to resolve any outstanding conflicts. If 'not
     files', all the files in an unmerged state will be processed."""
@@ -620,6 +670,7 @@ def mergetool(files = ()):
     if conflicts:
         out.info(*conflicts)
         raise GitException("%d conflict(s)" % len(conflicts))
+
 
 def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
          binary = True):
@@ -646,10 +697,10 @@ def diff(files = None, rev1 = 'HEAD', rev2 = None, diff_flags = [],
     else:
         return b''
 
+
 def files(rev1, rev2, diff_flags = []):
     """Return the files modified between rev1 and rev2
     """
-
     result = []
     for line in GRun('diff-tree', *(diff_flags + ['-r', rev1, rev2])
                      ).output_lines():
@@ -657,15 +708,16 @@ def files(rev1, rev2, diff_flags = []):
 
     return '\n'.join(result)
 
+
 def barefiles(rev1, rev2):
     """Return the files modified between rev1 and rev2, without status info
     """
-
     result = []
     for line in GRun('diff-tree', '-r', rev1, rev2).output_lines():
         result.append(line.split(' ', 4)[-1].split('\t', 1)[-1])
 
     return '\n'.join(result)
+
 
 def checkout(tree_id):
     """Check out the given tree_id
@@ -674,6 +726,7 @@ def checkout(tree_id):
         GRun('read-tree', '--reset', '-u', tree_id).run()
     except GitRunException:
         raise GitException('Failed "git read-tree" --reset %s' % tree_id)
+
 
 def switch(tree_id, keep = False):
     """Switch the tree to the given id
@@ -689,6 +742,7 @@ def switch(tree_id, keep = False):
             raise GitException('read-tree failed (local changes maybe?)')
 
     __set_head(tree_id)
+
 
 def reset(tree_id = None):
     """Revert the tree changes relative to the given tree_id. It removes
@@ -716,6 +770,7 @@ def fetch(repository = 'origin', refspec = None):
               config.get('stgit.fetchcmd')
     Run(*(command.split() + args)).run()
 
+
 def pull(repository = 'origin', refspec = None):
     """Fetches changes from the remote repository, using 'git pull'
     by default.
@@ -730,6 +785,7 @@ def pull(repository = 'origin', refspec = None):
     command = config.get('branch.%s.stgit.pullcmd' % get_head_file()) or \
               config.get('stgit.pullcmd')
     Run(*(command.split() + args)).run()
+
 
 def rebase(tree_id = None):
     """Rebase the current tree to the give tree_id. The tree_id
@@ -752,10 +808,12 @@ def rebase(tree_id = None):
         # default rebasing
         reset(tree_id)
 
+
 def repack():
     """Repack all objects into a single pack
     """
     GRun('repack', '-a', '-d', '-f').run()
+
 
 def apply_patch(filename = None, diff = None, base = None,
                 reject = False, strip = None):
@@ -802,6 +860,7 @@ def modifying_revs(files, base_rev, head_rev):
     return GRun('rev-list', '%s..%s' % (base_rev, head_rev), '--', *files
                 ).output_lines()
 
+
 def refspec_localpart(refspec):
     m = re.match('^[^:]*:([^:]*)$', refspec)
     if m:
@@ -809,8 +868,10 @@ def refspec_localpart(refspec):
     else:
         raise GitException('Cannot parse refspec "%s"' % refspec)
 
+
 def __remotes_from_config():
     return config.sections_matching(r'remote\.(.*)\.url')
+
 
 def __remotes_from_dir(dir):
     d = os.path.join(basedir.get(), dir)
@@ -819,6 +880,7 @@ def __remotes_from_dir(dir):
     else:
         return []
 
+
 def remotes_list():
     """Return the list of remotes in the repository
     """
@@ -826,10 +888,10 @@ def remotes_list():
             | set(__remotes_from_dir('remotes'))
             | set(__remotes_from_dir('branches')))
 
+
 def remotes_local_branches(remote):
     """Returns the list of local branches fetched from given remote
     """
-
     branches = []
     if remote in __remotes_from_config():
         for line in config.getall('remote.%s.fetch' % remote):
@@ -850,11 +912,11 @@ def remotes_local_branches(remote):
 
     return branches
 
+
 def identify_remote(branchname):
     """Return the name for the remote to pull the given branchname
     from, or None if we believe it is a local branch.
     """
-
     for remote in remotes_list():
         if branchname in remotes_local_branches(remote):
             return remote
@@ -862,11 +924,11 @@ def identify_remote(branchname):
     # if we get here we've found nothing, the branch is a local one
     return None
 
+
 def fetch_head():
     """Return the git id for the tip of the parent branch as left by
     'git fetch'.
     """
-
     fetch_head=None
     stream = open(os.path.join(basedir.get(), 'FETCH_HEAD'), "r")
     for line in stream:
@@ -885,8 +947,8 @@ def fetch_head():
     # here we are sure to have a single fetch_head
     return fetch_head
 
+
 def all_refs():
     """Return a list of all refs in the current repository.
     """
-
     return [line.split()[1] for line in GRun('show-ref').output_lines()]

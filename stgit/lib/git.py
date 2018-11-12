@@ -33,34 +33,45 @@ class Immutable(object):
     that is up to the individual immutable subclasses. It just serves
     as documentation."""
 
+
 class RepositoryException(exception.StgException):
     """Base class for all exceptions due to failed L{Repository}
     operations."""
 
+
 class BranchException(exception.StgException):
     """Exception raised by failed L{Branch} operations."""
 
+
 class DateException(exception.StgException):
     """Exception raised when a date+time string could not be parsed."""
+
     def __init__(self, string, type):
         exception.StgException.__init__(
             self, '"%s" is not a valid %s' % (string, type))
 
+
 class DetachedHeadException(RepositoryException):
     """Exception raised when HEAD is detached (that is, there is no
     current branch)."""
+
     def __init__(self):
         RepositoryException.__init__(self, 'Not on any branch')
 
+
 class Repr(object):
     """Utility class that defines C{__reps__} in terms of C{__str__}."""
+
     def __repr__(self):
         return str(self)
+
 
 class NoValue(object):
     """A handy default value that is guaranteed to be distinct from any
     real argument value."""
+
     pass
+
 
 def make_defaults(defaults):
     def d(val, attr, default_fun = lambda: None):
@@ -70,12 +81,15 @@ def make_defaults(defaults):
             return getattr(defaults, attr)
         else:
             return default_fun()
+
     return d
+
 
 class TimeZone(tzinfo, Repr):
     """A simple time zone class for static offsets from UTC. (We have to
     define our own since Python's standard library doesn't define any
     time zone classes.)"""
+
     def __init__(self, tzstring):
         m = re.match(r'^([+-])(\d{2}):?(\d{2})$', tzstring)
         if not m:
@@ -87,14 +101,19 @@ class TimeZone(tzinfo, Repr):
         except OverflowError:
             raise DateException(tzstring, 'time zone')
         self.__name = tzstring
+
     def utcoffset(self, dt):
         return self.__offset
+
     def tzname(self, dt):
         return self.__name
+
     def dst(self, dt):
         return timedelta(0)
+
     def __str__(self):
         return self.__name
+
 
 def system_date(datestring):
     m = re.match(r"^(.+)([+-]\d\d:?\d\d)$", datestring)
@@ -122,8 +141,10 @@ def system_date(datestring):
     except ValueError:
         raise DateException(datestring, "date")
 
+
 class Date(Immutable, Repr):
     """Represents a timestamp used in git commits."""
+
     def __init__(self, datestring):
         # Try git-formatted date.
         m = re.match(r'^(\d+)\s+([+-]\d\d:?\d\d)$', datestring)
@@ -154,12 +175,15 @@ class Date(Immutable, Repr):
             return
 
         raise DateException(datestring, 'date')
+
     def __str__(self):
         return self.isoformat()
+
     def isoformat(self):
         """Human-friendly ISO 8601 format."""
         return '%s %s' % (self.__time.replace(tzinfo=None).isoformat(str(' ')),
                           self.__time.tzinfo)
+
     @classmethod
     def maybe(cls, datestring):
         """Return a new object initialized with the argument if it contains a
@@ -168,9 +192,11 @@ class Date(Immutable, Repr):
             return datestring
         return cls(datestring)
 
+
 class Person(Immutable, Repr):
     """Represents an author or committer in a git commit object. Contains
     name, email and timestamp."""
+
     def __init__(self, name = NoValue, email = NoValue,
                  date = NoValue, defaults = NoValue):
         d = make_defaults(defaults)
@@ -197,12 +223,16 @@ class Person(Immutable, Repr):
 
     def set_name(self, name):
         return type(self)(name = name, defaults = self)
+
     def set_email(self, email):
         return type(self)(email = email, defaults = self)
+
     def set_date(self, date):
         return type(self)(date = date, defaults = self)
+
     def __str__(self):
         return '%s %s' % (self.name_email, self.date)
+
     @classmethod
     def parse(cls, s):
         m = re.match(r'^([^<]*)<([^>]*)>\s+(\d+\s+[+-]\d{4})$', s)
@@ -211,12 +241,14 @@ class Person(Immutable, Repr):
         email = m.group(2)
         date = Date(m.group(3))
         return cls(name, email, date)
+
     @classmethod
     def user(cls):
         if not hasattr(cls, '__user'):
             cls.__user = cls(name = config.get('user.name'),
                              email = config.get('user.email'))
         return cls.__user
+
     @classmethod
     def author(cls):
         if not hasattr(cls, '__author'):
@@ -226,6 +258,7 @@ class Person(Immutable, Repr):
                 date=Date.maybe(environ_get('GIT_AUTHOR_DATE', NoValue)),
                 defaults=cls.user())
         return cls.__author
+
     @classmethod
     def committer(cls):
         if not hasattr(cls, '__committer'):
@@ -236,14 +269,17 @@ class Person(Immutable, Repr):
                 defaults=cls.user())
         return cls.__committer
 
+
 class GitObject(Immutable, Repr):
     """Base class for all git objects. One git object is represented by at
     most one C{GitObject}, which makes it possible to compare them
     using normal Python object comparison; it also ensures we don't
     waste more memory than necessary."""
 
+
 class BlobData(Immutable, Repr):
     """Represents the data contents of a git blob object."""
+
     def __init__(self, data):
         assert isinstance(data, bytes)
         self.__bytes = data
@@ -260,12 +296,15 @@ class BlobData(Immutable, Repr):
         sha1 = runner.encoding(None).raw_input(self.bytes).output_one_line()
         return repository.get_blob(sha1)
 
+
 class Blob(GitObject):
     """Represents a git blob object. All the actual data contents of the
     blob object is stored in the L{data} member, which is a
     L{BlobData} object."""
+
     typename = 'blob'
     default_perm = '100644'
+
     def __init__(self, repository, sha1):
         self.__repository = repository
         self.__sha1 = sha1
@@ -276,14 +315,18 @@ class Blob(GitObject):
 
     def __str__(self):
         return 'Blob<%s>' % self.sha1
+
     @property
     def data(self):
         return BlobData(self.__repository.cat_object(self.sha1, encoding=None))
 
+
 class ImmutableDict(dict):
     """A dictionary that cannot be modified once it's been created."""
+
     def error(*args, **kwargs):
         raise TypeError('Cannot modify immutable dict')
+
     __delitem__ = error
     __setitem__ = error
     clear = error
@@ -292,8 +335,10 @@ class ImmutableDict(dict):
     setdefault = error
     update = error
 
+
 class TreeData(Immutable, Repr):
     """Represents the data contents of a git tree object."""
+
     @staticmethod
     def __x(po):
         if isinstance(po, GitObject):
@@ -301,6 +346,7 @@ class TreeData(Immutable, Repr):
         else:
             perm, object = po
         return perm, object
+
     def __init__(self, entries):
         """Create a new L{TreeData} object from the given mapping from names
         (strings) to either (I{permission}, I{object}) tuples or just
@@ -321,6 +367,7 @@ class TreeData(Immutable, Repr):
         sha1 = repository.run(['git', 'mktree', '-z']
                               ).input_nulterm(listing).output_one_line()
         return repository.get_tree(sha1)
+
     @classmethod
     def parse(cls, repository, lines):
         """Parse a raw git tree description.
@@ -335,12 +382,15 @@ class TreeData(Immutable, Repr):
             entries[name] = (perm, repository.get_object(type, sha1))
         return cls(entries)
 
+
 class Tree(GitObject):
     """Represents a git tree object. All the actual data contents of the
     tree object is stored in the L{data} member, which is a
     L{TreeData} object."""
+
     typename = 'tree'
     default_perm = '040000'
+
     def __init__(self, repository, sha1):
         self.__sha1 = sha1
         self.__repository = repository
@@ -358,11 +408,14 @@ class Tree(GitObject):
                 self.__repository.run(['git', 'ls-tree', '-z', self.sha1]
                                       ).output_lines('\0'))
         return self.__data
+
     def __str__(self):
         return 'Tree<sha1: %s>' % self.sha1
 
+
 class CommitData(Immutable, Repr):
     """Represents the data contents of a git commit object."""
+
     def __init__(self, tree = NoValue, parents = NoValue, author = NoValue,
                  committer = NoValue, message = NoValue, defaults = NoValue):
         d = make_defaults(defaults)
@@ -371,6 +424,7 @@ class CommitData(Immutable, Repr):
         self.__author = d(author, 'author', Person.author)
         self.__committer = d(committer, 'committer', Person.committer)
         self.__message = d(message, 'message')
+
     @property
     def env(self):
         env = {}
@@ -410,21 +464,29 @@ class CommitData(Immutable, Repr):
 
     def set_tree(self, tree):
         return type(self)(tree = tree, defaults = self)
+
     def set_parents(self, parents):
         return type(self)(parents = parents, defaults = self)
+
     def add_parent(self, parent):
         return type(self)(parents = list(self.parents or []) + [parent],
                           defaults = self)
+
     def set_parent(self, parent):
         return self.set_parents([parent])
+
     def set_author(self, author):
         return type(self)(author = author, defaults = self)
+
     def set_committer(self, committer):
         return type(self)(committer = committer, defaults = self)
+
     def set_message(self, message):
         return type(self)(message = message, defaults = self)
+
     def is_nochange(self):
         return len(self.parents) == 1 and self.tree == self.parent.data.tree
+
     def __str__(self):
         if self.tree is None:
             tree = None
@@ -437,6 +499,7 @@ class CommitData(Immutable, Repr):
         return ('CommitData<tree: %s, parents: %s, author: %s,'
                 ' committer: %s, message: "%s">'
                 ) % (tree, parents, self.author, self.committer, self.message)
+
     def commit(self, repository):
         """Commit the commit.
         @return: The committed commit
@@ -448,6 +511,7 @@ class CommitData(Immutable, Repr):
         sha1 = repository.run(c, env = self.env).raw_input(self.message
                                                            ).output_one_line()
         return repository.get_commit(sha1)
+
     @classmethod
     def parse(cls, repository, s):
         """Parse a raw git commit description.
@@ -484,7 +548,9 @@ class Commit(GitObject):
     """Represents a git commit object. All the actual data contents of the
     commit object is stored in the L{data} member, which is a
     L{CommitData} object."""
+
     typename = 'commit'
+
     def __init__(self, repository, sha1):
         self.__sha1 = sha1
         self.__repository = repository
@@ -501,15 +567,19 @@ class Commit(GitObject):
                 self.__repository,
                 self.__repository.cat_object(self.sha1))
         return self.__data
+
     def __str__(self):
         return 'Commit<sha1: %s, data: %s>' % (self.sha1, self.__data)
+
 
 class Refs(object):
     """Accessor for the refs stored in a git repository. Will
     transparently cache the values of all refs."""
+
     def __init__(self, repository):
         self.__repository = repository
         self.__refs = None
+
     def __cache_refs(self):
         """(Re-)Build the cache of all refs in the repository."""
         self.__refs = {}
@@ -524,12 +594,14 @@ class Refs(object):
             m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line)
             sha1, ref = m.groups()
             self.__refs[ref] = sha1
+
     def get(self, ref):
         """Get the Commit the given ref points to. Throws KeyError if ref
         doesn't exist."""
         if self.__refs is None:
             self.__cache_refs()
         return self.__repository.get_commit(self.__refs[ref])
+
     def exists(self, ref):
         """Check if the given ref exists."""
         try:
@@ -538,6 +610,7 @@ class Refs(object):
             return False
         else:
             return True
+
     def set(self, ref, commit, msg):
         """Write the sha1 of the given Commit to the ref. The ref may or may
         not already exist."""
@@ -549,6 +622,7 @@ class Refs(object):
             self.__repository.run(['git', 'update-ref', '-m', msg,
                                    ref, new_sha1, old_sha1]).no_output()
             self.__refs[ref] = new_sha1
+
     def delete(self, ref):
         """Delete the given ref. Throws KeyError if ref doesn't exist."""
         if self.__refs is None:
@@ -557,22 +631,28 @@ class Refs(object):
                                '-d', ref, self.__refs[ref]]).no_output()
         del self.__refs[ref]
 
+
 class ObjectCache(object):
     """Cache for Python objects, for making sure that we create only one
     Python object per git object. This reduces memory consumption and
     makes object comparison very cheap."""
+
     def __init__(self, create):
         self.__objects = {}
         self.__create = create
+
     def __getitem__(self, name):
         if name not in self.__objects:
             self.__objects[name] = self.__create(name)
         return self.__objects[name]
+
     def __contains__(self, name):
         return name in self.__objects
+
     def __setitem__(self, name, val):
         assert name not in self.__objects
         self.__objects[name] = val
+
 
 class RunWithEnv(object):
     def run(self, args, env = {}):
@@ -584,6 +664,7 @@ class RunWithEnv(object):
         @param env: Extra environment"""
         return Run(*args).env(utils.add_dict(self.env, env))
 
+
 class RunWithEnvCwd(RunWithEnv):
     def run(self, args, env = {}):
         """Run the given command with an environment given by self.env, and
@@ -594,6 +675,7 @@ class RunWithEnvCwd(RunWithEnv):
         @type env: dict
         @param env: Extra environment"""
         return RunWithEnv.run(self, args, env).cwd(self.cwd)
+
     def run_in_cwd(self, args):
         """Run the given command with an environment given by self.env and
         self.env_in_cwd, without changing the current working
@@ -603,22 +685,26 @@ class RunWithEnvCwd(RunWithEnv):
         @param args: Command and argument vector"""
         return RunWithEnv.run(self, args, self.env_in_cwd)
 
+
 class CatFileProcess(object):
     def __init__(self, repo):
         self.__repo = repo
         self.__proc = None
         atexit.register(self.__shutdown)
+
     def __get_process(self):
         if not self.__proc:
             self.__proc = self.__repo.run(['git', 'cat-file', '--batch']
                                           ).run_background()
         return self.__proc
+
     def __shutdown(self):
         p = self.__proc
         if p:
             p.stdin.close()
             os.kill(p.pid(), signal.SIGTERM)
             p.wait()
+
     def cat_file(self, sha1, encoding):
         p = self.__get_process()
         p.stdin.write('%s\n' % sha1)
@@ -646,11 +732,13 @@ class CatFileProcess(object):
         else:
             return type_, content
 
+
 class DiffTreeProcesses(object):
     def __init__(self, repo):
         self.__repo = repo
         self.__procs = {}
         atexit.register(self.__shutdown)
+
     def __get_process(self, args):
         args = tuple(args)
         if args not in self.__procs:
@@ -658,10 +746,12 @@ class DiffTreeProcesses(object):
                 ['git', 'diff-tree', '--stdin', '--encoding=utf-8'] +
                 list(args)).run_background()
         return self.__procs[args]
+
     def __shutdown(self):
         for p in self.__procs.values():
             os.kill(p.pid(), signal.SIGTERM)
             p.wait()
+
     def diff_trees(self, args, sha1a, sha1b):
         p = self.__get_process(args)
         query = '%s %s\n' % (sha1a, sha1b)
@@ -678,8 +768,10 @@ class DiffTreeProcesses(object):
         assert data.endswith(b_end)
         return data[len(b_query):-len(b_end)]
 
+
 class Repository(RunWithEnv):
     """Represents a git repository."""
+
     def __init__(self, directory):
         self.__git_dir = directory
         self.__refs = Refs(self)
@@ -703,10 +795,12 @@ class Repository(RunWithEnv):
             return cls(Run('git', 'rev-parse', '--git-dir').output_one_line())
         except RunException:
             raise RepositoryException('Cannot find git repository')
+
     @property
     def current_branch_name(self):
         """Return the name of the current branch."""
         return utils.strip_prefix('refs/heads/', self.head_ref)
+
     @property
     def default_index(self):
         """An L{Index} object representing the default index file for the
@@ -716,10 +810,12 @@ class Repository(RunWithEnv):
                 self, (environ_get('GIT_INDEX_FILE', None)
                        or os.path.join(self.__git_dir, 'index')))
         return self.__default_index
+
     def temp_index(self):
         """Return an L{Index} object representing a new temporary index file
         for the repository."""
         return Index(self, self.__git_dir)
+
     @property
     def default_worktree(self):
         """A L{Worktree} object representing the default work tree."""
@@ -732,6 +828,7 @@ class Repository(RunWithEnv):
                 path = o[0]
             self.__default_worktree = Worktree(path)
         return self.__default_worktree
+
     @property
     def default_iw(self):
         """An L{IndexAndWorktree} object representing the default index and
@@ -761,18 +858,24 @@ class Repository(RunWithEnv):
                     ).discard_stderr(discard_stderr).output_one_line())
         except RunException:
             raise RepositoryException('%s: No such %s' % (rev, object_type))
+
     def get_blob(self, sha1):
         return self.__blobs[sha1]
+
     def get_tree(self, sha1):
         return self.__trees[sha1]
+
     def get_commit(self, sha1):
         return self.__commits[sha1]
+
     def get_object(self, type, sha1):
         return { Blob.typename: self.get_blob,
                  Tree.typename: self.get_tree,
                  Commit.typename: self.get_commit }[type](sha1)
+
     def commit(self, objectdata):
         return objectdata.commit(self)
+
     @property
     def head_ref(self):
         try:
@@ -780,17 +883,21 @@ class Repository(RunWithEnv):
                             ).output_one_line()
         except RunException:
             raise DetachedHeadException()
+
     def set_head_ref(self, ref, msg):
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
+
     def get_merge_bases(self, commit1, commit2):
         """Return a set of merge bases of two commits."""
         sha1_list = self.run(['git', 'merge-base', '--all',
                               commit1.sha1, commit2.sha1]).output_lines()
         return [self.get_commit(sha1) for sha1 in sha1_list]
+
     def describe(self, commit):
         """Use git describe --all on the given commit."""
         return self.run(['git', 'describe', '--all', commit.sha1]
                        ).discard_stderr().discard_exitcode().raw_output()
+
     def simple_merge(self, base, ours, theirs):
         index = self.temp_index()
         try:
@@ -798,6 +905,7 @@ class Repository(RunWithEnv):
         finally:
             index.delete()
         return result
+
     def apply(self, tree, patch_bytes, quiet):
         """Given a L{Tree} and a patch, will either return the new L{Tree}
         that results when the patch is applied, or None if the patch
@@ -815,6 +923,7 @@ class Repository(RunWithEnv):
                 return None
         finally:
             index.delete()
+
     def submodules(self, tree):
         """Given a L{Tree}, return list of paths which are submodules."""
         assert isinstance(tree, Tree)
@@ -824,6 +933,7 @@ class Repository(RunWithEnv):
         files = self.run(['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]).output_lines('\0')
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
+
     def diff_tree(self, t1, t2, diff_opts, binary = True):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
@@ -839,6 +949,7 @@ class Repository(RunWithEnv):
             diff_opts.append('--binary')
         return self.__difftree.diff_trees(['-p'] + diff_opts,
                                           t1.sha1, t2.sha1)
+
     def diff_tree_files(self, t1, t2):
         """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
         which they differ. For each file, yield a tuple with the old
@@ -866,17 +977,22 @@ class Repository(RunWithEnv):
         except StopIteration:
             pass
 
+
 class MergeException(exception.StgException):
     """Exception raised when a merge fails for some reason."""
 
+
 class MergeConflictException(MergeException):
     """Exception raised when a merge fails due to conflicts."""
+
     def __init__(self, conflicts):
         MergeException.__init__(self)
         self.conflicts = conflicts
 
+
 class Index(RunWithEnv):
     """Represents a git index file."""
+
     def __init__(self, repository, filename):
         self.__repository = repository
         if os.path.isdir(filename):
@@ -894,6 +1010,7 @@ class Index(RunWithEnv):
 
     def read_tree(self, tree):
         self.run(['git', 'read-tree', tree.sha1]).no_output()
+
     def write_tree(self):
         """Write the index contents to the repository.
         @return: The resulting L{Tree}
@@ -904,6 +1021,7 @@ class Index(RunWithEnv):
                     ).output_one_line())
         except RunException:
             raise MergeException('Conflicting merge')
+
     def is_clean(self, tree):
         """Check whether the index is clean relative to the given treeish."""
         try:
@@ -913,6 +1031,7 @@ class Index(RunWithEnv):
             return False
         else:
             return True
+
     def apply(self, patch_bytes, quiet):
         """In-index patch application, no worktree involved."""
         try:
@@ -923,6 +1042,7 @@ class Index(RunWithEnv):
             r.no_output()
         except RunException:
             raise MergeException('Patch does not apply cleanly')
+
     def apply_treediff(self, tree1, tree2, quiet):
         """Apply the diff from C{tree1} to C{tree2} to the index."""
         # Passing --full-index here is necessary to support binary
@@ -931,6 +1051,7 @@ class Index(RunWithEnv):
         # to use --binary.
         self.apply(self.__repository.diff_tree(tree1, tree2, ['--full-index']),
                    quiet)
+
     def merge(self, base, ours, theirs, current = None):
         """Use the index (and only the index) to do a 3-way merge of the
         L{Tree}s C{base}, C{ours} and C{theirs}. The merge will either
@@ -971,9 +1092,11 @@ class Index(RunWithEnv):
             return (result, result)
         except MergeException:
             return (None, ours)
+
     def delete(self):
         if os.path.isfile(self.__filename):
             os.remove(self.__filename)
+
     def conflicts(self):
         """The set of conflicting paths."""
         paths = set()
@@ -983,8 +1106,10 @@ class Index(RunWithEnv):
             paths.add(path)
         return paths
 
+
 class Worktree(object):
     """Represents a git worktree (that is, a checked-out file tree)."""
+
     def __init__(self, directory):
         self.__directory = directory
 
@@ -1000,14 +1125,17 @@ class Worktree(object):
     def directory(self):
         return self.__directory
 
+
 class CheckoutException(exception.StgException):
     """Exception raised when a checkout fails."""
+
 
 class IndexAndWorktree(RunWithEnvCwd):
     """Represents a git index and a worktree. Anything that an index or
     worktree can do on their own are handled by the L{Index} and
     L{Worktree} classes; this class concerns itself with the
     operations that require both."""
+
     def __init__(self, index, worktree):
         self.__index = index
         self.__worktree = worktree
@@ -1032,6 +1160,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         assert isinstance(tree, Tree)
         self.run(['git', 'read-tree', '--reset', '-u', tree.sha1]
                  ).discard_output()
+
     def checkout(self, old_tree, new_tree):
         # TODO: Optionally do a 3-way instead of doing nothing when we
         # have a problem. Or maybe we should stash changes in a patch?
@@ -1044,6 +1173,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                      ).discard_output()
         except RunException:
             raise CheckoutException('Index/workdir dirty')
+
     def merge(self, base, ours, theirs, interactive = False):
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
@@ -1065,6 +1195,7 @@ class IndexAndWorktree(RunWithEnvCwd):
                     raise MergeConflictException(conflicts)
         except RunException:
             raise MergeException('Index/worktree dirty')
+
     def mergetool(self, files = ()):
         """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
         any outstanding conflicts. If 'not files', all the files in an
@@ -1075,6 +1206,7 @@ class IndexAndWorktree(RunWithEnvCwd):
         conflicts = ['CONFLICT ' + f for f in self.index.conflicts()]
         if conflicts:
             raise MergeConflictException(conflicts)
+
     def changed_files(self, tree, pathlimits = []):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
@@ -1087,12 +1219,14 @@ class IndexAndWorktree(RunWithEnvCwd):
         return set(self.run_in_cwd(
                 ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
                 + list(pathlimits)).output_lines('\0'))
+
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""
         cmd = ['git', 'update-index', '--remove']
         self.run(cmd + ['-z', '--stdin']
                  ).input_nulterm(paths).discard_output()
+
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
         try:
@@ -1102,8 +1236,10 @@ class IndexAndWorktree(RunWithEnvCwd):
         else:
             return True
 
+
 class Branch(object):
     """Represents a Git branch."""
+
     def __init__(self, repository, name):
         self.__repository = repository
         self.__name = name
@@ -1122,9 +1258,11 @@ class Branch(object):
 
     def __ref(self):
         return 'refs/heads/%s' % self.__name
+
     @property
     def head(self):
         return self.__repository.refs.get(self.__ref())
+
     def set_head(self, commit, msg):
         self.__repository.refs.set(self.__ref(), commit, msg)
 
@@ -1155,11 +1293,13 @@ class Branch(object):
 
         return cls(repository, name)
 
+
 def diffstat(diff):
     """Return the diffstat of the supplied diff."""
     return (Run('git', 'apply', '--stat', '--summary')
             .encoding(None).raw_input(diff)
             .decoding('utf-8').raw_output())
+
 
 def clone(remote, local):
     """Clone a remote repository using 'git clone'."""

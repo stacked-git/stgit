@@ -83,6 +83,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def get_patch(stack, given_patch):
     """Get the name of the patch we are to refresh."""
     if given_patch:
@@ -95,6 +96,7 @@ def get_patch(stack, given_patch):
             raise common.CmdException(
                 'Cannot refresh top patch because no patches are applied')
         return stack.patchorder.applied[-1]
+
 
 def list_files(stack, patch_name, args, index, update, submodules):
     """Figure out which files to update."""
@@ -118,6 +120,7 @@ def list_files(stack, patch_name, args, index, update, submodules):
             paths -= stack.repository.submodules(stack.head.data.tree)
     return paths
 
+
 def write_tree(stack, paths, temp_index):
     """Possibly update the index, and then write its tree.
     @return: The written tree.
@@ -138,6 +141,7 @@ def write_tree(stack, paths, temp_index):
     else:
         return go(stack.repository.default_index)
 
+
 def make_temp_patch(stack, patch_name, paths, temp_index):
     """Commit index to temp patch, in a complete transaction. If any path
     limiting is in effect, use a temp index."""
@@ -152,6 +156,7 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
     trans.applied.append(temp_name)
     return trans.run(stack.repository.default_iw,
                      print_current_patch = False), temp_name
+
 
 def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
     """Absorb the temp patch (C{temp_name}) into the given patch
@@ -187,6 +192,7 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
     except transaction.TransactionHalted:
         pass
     return temp_absorbed
+
 
 def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
     """Absorb the temp patch (C{temp_name}) into the given patch
@@ -226,6 +232,7 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
         # leave the temp patch for the user.
         return False
 
+
 def absorb(stack, patch_name, temp_name, edit_fun, annotate = None):
     """Absorb the temp patch into the target patch."""
     if annotate:
@@ -245,6 +252,7 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate = None):
     r = trans.run(iw)
     info_msg()
     return r
+
 
 def func(parser, options, args):
     """Generate a new commit for the current or given patch."""
@@ -294,6 +302,7 @@ def func(parser, options, args):
         stack, patch_name, paths, temp_index = path_limiting)
     if retval != utils.STGIT_SUCCESS:
         return retval
+
     def edit_fun(cd):
         orig_msg = cd.message
         cd, failed_diff = edit.auto_edit_patch(
@@ -313,5 +322,6 @@ def func(parser, options, args):
         if not options.no_verify and (options.edit or cd.message != orig_msg):
             cd = common.run_commit_msg_hook(stack.repository, cd, options.edit)
         return cd
+
     return absorb(stack, patch_name, temp_name, edit_fun,
                   annotate = options.annotate)

@@ -192,9 +192,11 @@ def __get_sender():
 
     return email.utils.formataddr(address_or_alias(sender))
 
+
 def __addr_list(msg, header):
     return [addr for name, addr in
             email.utils.getaddresses(msg.get_all(header, []))]
+
 
 def __parse_addresses(msg):
     """Return a two elements tuple: (from, [to])
@@ -210,13 +212,16 @@ def __parse_addresses(msg):
 
     return (from_addr_list[0], set(to_addr_list))
 
+
 def __send_message_sendmail(sendmail, msg_bytes):
     """Send the message using the sendmail command.
     """
     cmd = sendmail.split()
     Run(*cmd).encoding(None).raw_input(msg_bytes).discard_output()
 
+
 __smtp_credentials = None
+
 
 def __set_smtp_credentials(options):
     """Set the (smtpuser, smtppassword, smtpusetls) credentials if the method
@@ -240,6 +245,7 @@ def __set_smtp_credentials(options):
         smtppassword = getpass.getpass("Please enter SMTP password: ")
 
     __smtp_credentials = (smtpuser, smtppassword, smtpusetls)
+
 
 def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
     """Send the message using the given SMTP server
@@ -270,6 +276,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         raise CmdException(str(err))
 
     s.quit()
+
 
 def __send_message_git(msg_bytes, from_, options):
     """Send the message using git send-email
@@ -303,6 +310,7 @@ def __send_message_git(msg_bytes, from_, options):
             raise CmdException(str(err))
     finally:
         os.unlink(path)
+
 
 def __send_message(type, tmpl, options, *args):
     """Message sending dispatcher.
@@ -349,6 +357,7 @@ def __send_message(type, tmpl, options, *args):
         out.done()
     return msg_id
 
+
 def __update_header(msg, header, addr = '', ignore = ()):
     addr_pairs = email.utils.getaddresses(msg.get_all(header, []) + [addr])
     del msg[header]
@@ -361,6 +370,7 @@ def __update_header(msg, header, addr = '', ignore = ()):
     if addr_pairs:
         msg[header] = ', '.join(map(email.utils.formataddr, addr_pairs))
     return set(addr for _, addr in addr_pairs)
+
 
 def __build_address_headers(msg, options, extra_cc = []):
     """Build the address headers and check existing headers in the
@@ -392,6 +402,7 @@ def __build_address_headers(msg, options, extra_cc = []):
     cc_set = __update_header(msg, 'Cc', cc_addr, to_set)
     __update_header(msg, 'Bcc', bcc_addr, to_set.union(cc_set))
 
+
 def __get_signers_list(msg):
     """Return the address list generated from signed-off-by and
     acked-by lines in the message.
@@ -415,6 +426,7 @@ def __get_signers_list(msg):
             addr_list.append(m.expand(r'\g<2>'))
 
     return addr_list
+
 
 def __build_extra_headers(msg, msg_id, ref_id = None):
     """Build extra email headers and encoding
@@ -545,13 +557,13 @@ def __build_cover(tmpl, msg_id, options, patches):
                 extra_cc.extend(__get_signers_list(descr))
         extra_cc = list(set(extra_cc))
 
-
     if not options.git:
         __build_address_headers(msg, options, extra_cc)
     __build_extra_headers(msg, msg_id, options.in_reply_to)
     __encode_message(msg)
 
     return msg
+
 
 def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     """Build the message to be sent via SMTP
@@ -667,6 +679,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     __encode_message(msg)
 
     return msg
+
 
 def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as

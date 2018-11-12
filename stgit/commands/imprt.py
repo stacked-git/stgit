@@ -101,13 +101,13 @@ crt_series = None
 def __strip_patch_name(name):
     stripped = re.sub('^[0-9]+-(.*)$', r'\g<1>', name)
     stripped = re.sub(r'^(.*)\.(diff|patch)$', r'\g<1>', stripped)
-
     return stripped
+
 
 def __replace_slashes_with_dashes(name):
     stripped = name.replace('/', '-')
-
     return stripped
+
 
 def __create_patch(filename, message, author_name, author_email,
                    author_date, diff, options):
@@ -177,10 +177,12 @@ def __create_patch(filename, message, author_name, author_email,
                                  backup = False)
         out.done()
 
+
 def __mkpatchname(name, suffix):
     if name.lower().endswith(suffix.lower()):
         return name[:-len(suffix)]
     return name
+
 
 def __get_handle_and_name(filename):
     """Return a file object and a patch name derived from filename
@@ -197,6 +199,7 @@ def __get_handle_and_name(filename):
 
     # plain old file...
     return (open(filename, 'rb'), filename)
+
 
 def __import_file(filename, options, patch = None):
     """Import a patch from a file or standard input
@@ -229,6 +232,7 @@ def __import_file(filename, options, patch = None):
 
     __create_patch(pname, message, author_name, author_email,
                    author_date, diff, options)
+
 
 def __import_series(filename, options):
     """Import a series of patches
@@ -266,6 +270,7 @@ def __import_series(filename, options):
 
     if filename:
         f.close()
+
 
 def __import_mbox(filename, options):
     """Import a series from an mbox file
@@ -319,6 +324,7 @@ def __import_url(url, options):
     urlretrieve(url, filename)
     __import_file(filename, options)
 
+
 def __import_tarfile(tar, options):
     """Import patch series from a tar archive
     """
@@ -356,6 +362,7 @@ def __import_tarfile(tar, options):
 
     # cleanup the tmpdir
     shutil.rmtree(tmpdir)
+
 
 def func(parser, options, args):
     """Import a GNU diff file as a new patch

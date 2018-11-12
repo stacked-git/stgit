@@ -45,8 +45,10 @@ class CommandAlias(object):
         p.discard_exitcode().run()
         return p.exitcode
 
+
 def is_cmd_alias(cmd):
     return isinstance(cmd, CommandAlias)
+
 
 def append_alias_commands(cmd_list):
     for (name, command) in config.getstartswith('stgit.alias.'):
@@ -54,12 +56,14 @@ def append_alias_commands(cmd_list):
         cmd_list[name] = (CommandAlias(name, command),
                           'Alias commands', command)
 
+
 #
 # The commands map
 #
 class Commands(dict):
     """Commands class. It performs on-demand module loading
     """
+
     def canonical_cmd(self, key):
         """Return the canonical name for a possibly-shortenned
         command name.
@@ -84,10 +88,12 @@ class Commands(dict):
         else:
             return stgit.commands.get_command(cmd_mod)
 
+
 cmd_list = stgit.commands.get_commands()
 append_alias_commands(cmd_list)
 commands = Commands((cmd, mod) for cmd, (mod, kind, help)
                     in cmd_list.items())
+
 
 def print_help():
     print('usage: %s <command> [options]' % os.path.basename(sys.argv[0]))
@@ -98,6 +104,7 @@ def print_help():
     print('  copyright   display copyright information')
     print()
     stgit.commands.pretty_command_list(cmd_list, sys.stdout)
+
 
 #
 # The main function (command dispatcher)
@@ -139,6 +146,7 @@ def _main():
         sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['-v', '--version', 'version']:
         from stgit.version import get_version
+
         print('Stacked GIT %s' % get_version())
         os.system('git --version')
         print('Python version %s' % sys.version)
@@ -207,6 +215,7 @@ def _main():
 
     directory.write_log(cmd)
     sys.exit(ret or utils.STGIT_SUCCESS)
+
 
 def main():
     try:

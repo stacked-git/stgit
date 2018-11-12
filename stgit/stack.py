@@ -47,6 +47,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 class FilterUntil(object):
     def __init__(self):
         self.should_print = True
+
     def __call__(self, x, until_test, prefix):
         if until_test(x):
             self.should_print = False
@@ -54,11 +55,13 @@ class FilterUntil(object):
             return x[0:len(prefix)] != prefix
         return False
 
+
 #
 # Functions
 #
 __comment_prefix = 'STG:'
 __patch_prefix = 'STG_PATCH:'
+
 
 def __clean_comments(f):
     """Removes lines marked for status in a commit file
@@ -79,6 +82,7 @@ def __clean_comments(f):
     f.seek(0)
     f.truncate()
     f.writelines(lines)
+
 
 # TODO: move this out of the stgit.stack module, it is really for
 # higher level commands to handle the user interaction
@@ -120,6 +124,7 @@ def edit_file(series, line, comment, show_patch = True):
 
     return result
 
+
 #
 # Classes
 #
@@ -127,8 +132,10 @@ def edit_file(series, line, comment, show_patch = True):
 class StgitObject(object):
     """An object with stgit-like properties stored as files in a directory
     """
+
     def _set_dir(self, dir):
         self.__dir = dir
+
     def _dir(self):
         return self.__dir
 
@@ -157,6 +164,7 @@ class StgitObject(object):
 class Patch(StgitObject):
     """Basic patch implementation
     """
+
     def __init_refs(self):
         self.__top_ref = self.__refs_base + '/' + self.__name
         self.__log_ref = self.__top_ref + '.log'
@@ -275,6 +283,7 @@ class Patch(StgitObject):
         self._set_field('log', value)
         self.__update_log_ref(value)
 
+
 class PatchSet(StgitObject):
     def __init__(self, name = None):
         try:
@@ -290,6 +299,7 @@ class PatchSet(StgitObject):
 
     def get_name(self):
         return self.__name
+
     def set_name(self, name):
         self.__name = name
 
@@ -352,9 +362,11 @@ def shortlog(patches):
                   for p in patches)
     return Run('git', 'shortlog').raw_input(log).raw_output()
 
+
 class Series(PatchSet):
     """Class including the operations on series
     """
+
     def __init__(self, name = None):
         """Takes a series name as the parameter.
         """

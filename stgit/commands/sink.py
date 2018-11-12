@@ -57,6 +57,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Sink patches down the stack.
     """

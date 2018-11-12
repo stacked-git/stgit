@@ -74,6 +74,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def __get_description(stack, patch):
     """Extract and return a patch's short description
     """
@@ -82,11 +83,13 @@ def __get_description(stack, patch):
     descr_lines = descr.split('\n')
     return descr_lines[0].rstrip()
 
+
 def __get_author(stack, patch):
     """Extract and return a patch's short description
     """
     cd = stack.patches.get(patch).commit.data
     return cd.author.name
+
 
 def __render_text(text, effects):
     _effects = { 'none'               : 0,
@@ -112,6 +115,7 @@ def __render_text(text, effects):
     start = '\033[' + ';'.join(start) + 'm'
     stop = '\033[' + str(_effects['none']) + 'm'
     return ''.join([start, text, stop])
+
 
 def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
     """Print a patch name, description and various markers.
@@ -139,6 +143,7 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
         out.stdout(output)
     else:
         out.stdout(__render_text(output, effects))
+
 
 def func(parser, options, args):
     """Show the patch series

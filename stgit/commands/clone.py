@@ -43,6 +43,7 @@ options = []
 
 directory = common.DirectoryAnywhere(needs_current_series = False, log = False)
 
+
 def func(parser, options, args):
     """Clone the <repository> into the local <dir> and initialises the
     stack

@@ -17,14 +17,17 @@ class TransactionException(exception.StgException):
     """Exception raised when something goes wrong with a
     L{StackTransaction}."""
 
+
 class TransactionHalted(TransactionException):
     """Exception raised when a L{StackTransaction} stops part-way through.
     Used to make a non-local jump from the transaction setup to the
     part of the transaction code where the transaction is run."""
 
+
 def _print_current_patch(old_applied, new_applied):
     def now_at(pn):
         out.info('Now at patch "%s"' % pn)
+
     if not old_applied and not new_applied:
         pass
     elif not old_applied:
@@ -36,16 +39,20 @@ def _print_current_patch(old_applied, new_applied):
     else:
         now_at(new_applied[-1])
 
+
 class _TransPatchMap(dict):
     """Maps patch names to Commit objects."""
+
     def __init__(self, stack):
         dict.__init__(self)
         self.__stack = stack
+
     def __getitem__(self, pn):
         try:
             return dict.__getitem__(self, pn)
         except KeyError:
             return self.__stack.patches.get(pn).commit
+
 
 class StackTransaction(object):
     """A stack transaction, used for making complex updates to an StGit
@@ -78,6 +85,7 @@ class StackTransaction(object):
       method. This will either succeed in writing the updated state to
       your refs and index+worktree, or fail without having done
       anything."""
+
     def __init__(self, stack, msg, discard_changes = False,
                  allow_conflicts = False, allow_bad_head = False,
                  check_clean_iw = None):
@@ -187,11 +195,13 @@ class StackTransaction(object):
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
             self.__abort()
+
     def __assert_index_worktree_clean(self, iw):
         if not iw.worktree_clean():
             self.__halt('Worktree not clean. Use "refresh" or "reset --hard"')
         if not iw.index.is_clean(self.stack.head):
             self.__halt('Index not clean. Use "refresh" or "reset --hard"')
+
     def __checkout(self, tree, iw, allow_bad_head):
         if not allow_bad_head:
             self.__assert_head_top_equal()
@@ -211,10 +221,12 @@ class StackTransaction(object):
         else:
             iw.checkout(self.__current_tree, tree)
         self.__current_tree = tree
+
     @staticmethod
     def __abort():
         raise TransactionException(
             'Command aborted (all changes rolled back)')
+
     def __check_consistency(self):
         remaining = set(self.all_patches)
         for pn, commit in self.__patches.items():
@@ -222,11 +234,13 @@ class StackTransaction(object):
                 assert self.__stack.patches.exists(pn)
             else:
                 assert pn in remaining
+
     def abort(self, iw = None):
         # The only state we need to restore is index+worktree.
         if iw:
             self.__checkout(self.__stack.head.data.tree, iw,
                             allow_bad_head = True)
+
     def run(self, iw = None, set_head = True, allow_bad_head = False,
             print_current_patch = True):
         """Execute the transaction. Will either succeed, or fail (with an
@@ -267,6 +281,7 @@ class StackTransaction(object):
             self.__stack.patchorder.unapplied = self.__unapplied
             self.__stack.patchorder.hidden = self.__hidden
             log.log_entry(self.__stack, msg)
+
         old_applied = self.__stack.patchorder.applied
         if not self.__conflicts:
             write(self.__msg)

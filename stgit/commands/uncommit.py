@@ -61,6 +61,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Uncommit a number of patches.
     """

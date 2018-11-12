@@ -85,18 +85,22 @@ class Commit(object):
         self.children = set()
         self.patch = None
         self.__commit = None
+
     def __get_commit(self):
         if not self.__commit:
             self.__commit = git.get_commit(self.id)
         return self.__commit
     commit = property(__get_commit)
+
     def __str__(self):
         if self.patch:
             return '%s (%s)' % (self.id, self.patch)
         else:
             return self.id
+
     def __repr__(self):
         return '<%s>' % str(self)
+
 
 def read_commit_dag(branch):
     out.start('Reading commit DAG')
@@ -119,6 +123,7 @@ def read_commit_dag(branch):
             patches.add(c)
     out.done()
     return commits, patches
+
 
 def func(parser, options, args):
     """Repair inconsistencies in StGit metadata."""
@@ -168,8 +173,10 @@ def func(parser, options, args):
 
     # Make patches of any linear sequence of commits on top of a patch.
     names = set(p.patch for p in patches)
+
     def name_taken(name):
         return name in names
+
     if applied and patchify:
         out.start('Creating %d new patch%s'
                   % (len(patchify), ['es', ''][len(patchify) == 1]))

@@ -34,6 +34,7 @@ def update_patch_description(repo, cd, text, contains_diff):
             cd = cd.set_tree(tree)
     return cd, failed_diff
 
+
 def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     """Return a description text for the patch, suitable for editing
     and/or reimporting with L{update_patch_description()}.
@@ -62,6 +63,7 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
         desc += b'\n'.join([b'', b'---', b'', diff])
     return desc
 
+
 def interactive_edit_patch(repo, cd, edit_diff, diff_flags, replacement_diff):
     """Edit the patch interactively. If C{edit_diff} is true, edit the
     diff as well. If C{replacement_diff} is not C{None}, it contains a
@@ -74,6 +76,7 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags, replacement_diff):
             patch_desc(repo, cd, edit_diff, diff_flags, replacement_diff),
             '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]),
         edit_diff)
+
 
 def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
     """Edit the patch noninteractively in a couple of ways:

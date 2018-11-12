@@ -24,6 +24,7 @@ def default_num_jobs():
         # Python version is < 2.6); use a conservative fallback.
         return 4
 
+
 class TestQueue(object):
     def __init__(self, tests, cleanup):
 
@@ -42,6 +43,7 @@ class TestQueue(object):
         self.__clean_done = set()
         self.lock = threading.Lock()
         self.__cv = threading.Condition(self.lock)
+
     def __iter__(self):
         return self
 
@@ -116,6 +118,7 @@ class TestQueue(object):
                 os.rmdir(c)
             return set(self.__fail)
 
+
 def start_worker(q):
     def w():
         for t in q:
@@ -144,7 +147,9 @@ def start_worker(q):
                     traceback.print_exc()
             finally:
                 q.finished(t, ok)
+
     threading.Thread(target=w).start()
+
 
 def start_cleaner(q):
     def w():
@@ -156,7 +161,9 @@ def start_cleaner(q):
                     os.remove(c)
             finally:
                 q.deleted(c)
+
     threading.Thread(target=w).start()
+
 
 def main():
     this_dir = os.path.dirname(__file__)

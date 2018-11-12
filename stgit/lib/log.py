@@ -114,6 +114,7 @@ from stgit.out import out
 class LogException(StgException):
     pass
 
+
 class LogParseException(LogException):
     pass
 
@@ -137,9 +138,11 @@ def patch_file(repo, cd):
 def log_ref(branch):
     return 'refs/heads/%s.stgit' % branch
 
+
 class LogEntry(object):
     __separator = '\n---\n'
     __max_parents = 16
+
     def __init__(self, repo, prev, head, applied, unapplied, hidden,
                  patches, message):
         self.__repo = repo
@@ -151,22 +154,26 @@ class LogEntry(object):
         self.hidden = hidden
         self.patches = patches
         self.message = message
+
     @property
     def simplified(self):
         if not self.__simplified:
             self.__simplified = self.commit.data.parents[0]
         return self.__simplified
+
     @property
     def prev(self):
         if self.__prev is not None and not isinstance(self.__prev, LogEntry):
             self.__prev = self.from_commit(self.__repo, self.__prev)
         return self.__prev
+
     @property
     def base(self):
         if self.applied:
             return self.patches[self.applied[0]].data.parent
         else:
             return self.head
+
     @property
     def top(self):
         if self.applied:
@@ -190,6 +197,7 @@ class LogEntry(object):
             patches = dict((pn, stack.patches.get(pn).commit)
                            for pn in stack.patchorder.all),
             message = message)
+
     @staticmethod
     def __parse_metadata(repo, metadata):
         """Parse a stack log metadata string."""
@@ -233,6 +241,7 @@ class LogEntry(object):
                 patches[pn] = repo.get_commit(sha1)
         return (prev, head, lists['Applied'], lists['Unapplied'],
                 lists['Hidden'], patches)
+
     @classmethod
     def from_commit(cls, repo, commit):
         """Parse a (full or simplified) stack log commit."""
@@ -246,6 +255,7 @@ class LogEntry(object):
         lg = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
         lg.commit = commit
         return lg
+
     def __metadata_string(self):
         e = StringIO()
         e.write('Version: 1\n')
@@ -261,6 +271,7 @@ class LogEntry(object):
             for pn in lst:
                 e.write('  %s: %s\n' % (pn, self.patches[pn].sha1))
         return e.getvalue()
+
     def __parents(self):
         """Return the set of parents this log entry needs in order to be a
         descendant of all the commits it refers to."""
@@ -272,6 +283,7 @@ class LogEntry(object):
             xp.add(self.prev.commit)
             xp -= set(self.prev.patches.values())
         return xp
+
     def __tree(self, metadata):
         if self.prev is None:
             def pf(c):
@@ -283,15 +295,18 @@ class LogEntry(object):
             # from the previous log entry.
             c2b = dict((self.prev.patches[pn], pf) for pn, pf
                        in prev_patch_tree.data.entries.items())
+
             def pf(c):
                 r = c2b.get(c, None)
                 if not r:
                     r = patch_file(self.__repo, c.data)
                 return r
+
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
         return self.__repo.commit(git.TreeData({
                     'meta': self.__repo.commit(git.BlobData(metadata.encode('utf-8'))),
                     'patches': self.__repo.commit(git.TreeData(patches)) }))
+
     def write_commit(self):
         metadata = self.__metadata_string()
         tree = self.__tree(metadata)
@@ -309,17 +324,20 @@ class LogEntry(object):
                 tree = tree, message = self.message,
                 parents = [self.simplified] + parents))
 
+
 def get_log_entry(repo, ref, commit):
     try:
         return LogEntry.from_commit(repo, commit)
     except LogException as e:
         raise LogException('While reading log from %s: %s' % (ref, e))
 
+
 def same_state(log1, log2):
     """Check whether two log entries describe the same current state."""
     s = [[lg.head, lg.applied, lg.unapplied, lg.hidden, lg.patches]
          for lg in [log1, log2]]
     return s[0] == s[1]
+
 
 def log_entry(stack, msg):
     """Write a new log entry for the stack."""
@@ -342,19 +360,24 @@ def log_entry(stack, msg):
     new_log.write_commit()
     stack.repository.refs.set(ref, new_log.commit, msg)
 
+
 class Fakestack(object):
     """Imitates a real L{Stack<stgit.lib.stack.Stack>}, but with the
     topmost patch popped."""
+
     def __init__(self, stack):
         appl = list(stack.patchorder.applied)
         unappl = list(stack.patchorder.unapplied)
         hidd = list(stack.patchorder.hidden)
+
         class patchorder(object):
             applied = appl[:-1]
             unapplied = [appl[-1]] + unappl
             hidden = hidd
             all = appl + unappl + hidd
+
         self.patchorder = patchorder
+
         class patches(object):
             @staticmethod
             def get(pn):
@@ -364,12 +387,15 @@ class Fakestack(object):
                     return patch
                 else:
                     return stack.patches.get(pn)
+
         self.patches = patches
         self.head = stack.head.data.parent
         self.top = stack.top.data.parent
         self.base = stack.base
         self.name = stack.name
         self.repository = stack.repository
+
+
 def compat_log_entry(msg):
     """Write a new log entry. (Convenience function intended for use by
     code not yet converted to the new infrastructure.)"""
@@ -385,10 +411,12 @@ def compat_log_entry(msg):
         else:
             log_entry(stack, msg)
 
+
 def delete_log(repo, branch):
     ref = log_ref(branch)
     if repo.refs.exists(ref):
         repo.refs.delete(ref)
+
 
 def rename_log(repo, old_branch, new_branch, msg):
     old_ref = log_ref(old_branch)
@@ -397,14 +425,17 @@ def rename_log(repo, old_branch, new_branch, msg):
         repo.refs.set(new_ref, repo.refs.get(old_ref), msg)
         repo.refs.delete(old_ref)
 
+
 def copy_log(repo, src_branch, dst_branch, msg):
     src_ref = log_ref(src_branch)
     dst_ref = log_ref(dst_branch)
     if repo.refs.exists(src_ref):
         repo.refs.set(dst_ref, repo.refs.get(src_ref), msg)
 
+
 def default_repo():
     return libstack.Repository.default()
+
 
 def reset_stack(trans, iw, state):
     """Reset the stack to a given previous state."""
@@ -417,6 +448,7 @@ def reset_stack(trans, iw, state):
     trans.hidden = state.hidden
     trans.base = state.base
     trans.head = state.head
+
 
 def reset_stack_partially(trans, iw, state, only_patches):
     """Reset the stack to a given previous state -- but only the given
@@ -440,6 +472,7 @@ def reset_stack_partially(trans, iw, state, only_patches):
         if trans.patches[pn] != state.patches.get(pn, None):
             return True
         return False
+
     trans.pop_patches(mod)
 
     # Delete and modify/create patches. We've previously popped all
@@ -465,6 +498,7 @@ def reset_stack_partially(trans, iw, state, only_patches):
     for pn in original_applied_order:
         if pn in pushable:
             trans.push_patch(pn, iw)
+
 
 def undo_state(stack, undo_steps):
     """Find the log entry C{undo_steps} steps in the past. (Successive
@@ -504,6 +538,7 @@ def undo_state(stack, undo_steps):
         log = log.prev
     return log
 
+
 def log_external_mods(stack):
     ref = log_ref(stack.name)
     try:
@@ -523,6 +558,7 @@ def log_external_mods(stack):
     log_entry(stack, '\n'.join([
                 'external modifications', '',
                 'Modifications by tools other than StGit (e.g. git).']))
+
 
 def compat_log_external_mods():
     try:

@@ -11,16 +11,19 @@ def duration(t1, t2):
     d = t2 - t1
     return 86400*d.days + d.seconds + 1e-6*d.microseconds
 
+
 class Run(object):
     def __init__(self):
         self.__cwd = None
         self.__log = []
+
     def __logfile(self, cmd):
         fn = os.path.join(os.getcwd(), '%04d.log' % len(self.__log))
         f = open(fn, 'w')
         f.write(' '.join(cmd) + '\n' + '-'*70 + '\n\n')
         f.close()
         return fn
+
     def __call__(self, *cmd, **args):
         env = dict(os.environ)
         env['STGIT_SUBPROCESS_LOG'] = 'profile:' + self.__logfile(cmd)
@@ -33,11 +36,17 @@ class Run(object):
         stop = datetime.datetime.now()
         self.__log.append((cmd, duration(start, stop)))
         return out
+
     def cd(self, dir):
         self.__cwd = dir
+
     def summary(self):
-        def pcmd(c): return ' '.join(c)
-        def ptime(t): return '%.3f' % t
+        def pcmd(c):
+            return ' '.join(c)
+
+        def ptime(t):
+            return '%.3f' % t
+
         (cs, times) = zip(*self.__log)
         ttime = sum(times)
         cl = max(len(pcmd(c)) for c in cs)
@@ -46,8 +55,11 @@ class Run(object):
             print('%*s  %*s' % (tl, ptime(t), -cl, pcmd(c)))
         print('%*s' % (tl, ptime(ttime)))
 
+
 perftests = {}
 perftestdesc = {}
+
+
 def perftest(desc, name = None):
     def decorator(f):
         def g():
@@ -59,11 +71,13 @@ def perftest(desc, name = None):
         return g
     return decorator
 
+
 def copy_testdir(dir):
     tmp = dir + '.trash'
     r = Run()
     r('rsync', '-a', '--delete', dir + '.orig/', tmp)
     return tmp
+
 
 def new_rebase(r, ref):
     top = r('stg', 'top', capture_stdout = True)
@@ -71,8 +85,10 @@ def new_rebase(r, ref):
     r('git', 'reset', '--hard', ref)
     r('stg', 'goto', top.strip())
 
+
 def old_rebase(r, ref):
     r('stg', 'rebase', ref)
+
 
 def def_rebasetest(rebase, dir, tag):
     @perftest('%s rebase onto %s in %s' % (rebase, tag, dir),
@@ -88,6 +104,8 @@ def def_rebasetest(rebase, dir, tag):
             new_rebase(r, tag)
         else:
             old_rebase(r, tag)
+
+
 for rebase in ['old', 'new']:
     for (dir, tag) in [('synt', 'add-file'),
                        ('synt', 'modify-all'),

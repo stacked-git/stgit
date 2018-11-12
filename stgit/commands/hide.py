@@ -38,6 +38,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     """Hide a range of patch in the series."""
     stack = directory.repository.current_stack

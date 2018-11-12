@@ -42,6 +42,7 @@ options = [
 
 directory = common.DirectoryHasRepositoryLib()
 
+
 def func(parser, options, args):
     stack = directory.repository.current_stack
     if options.number < 1:
