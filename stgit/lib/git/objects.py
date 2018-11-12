@@ -64,21 +64,23 @@ class Blob(GitObject):
 class TreeData(Immutable):
     """Represents the data contents of a git tree object."""
 
-    @staticmethod
-    def _x(po):
-        if isinstance(po, GitObject):
-            perm, object = po.default_perm, po
-        else:
-            perm, object = po
-        return perm, object
-
     def __init__(self, entries):
         """Create a new L{TreeData} object from the given mapping from names
         (strings) to either (I{permission}, I{object}) tuples or just
         objects."""
-        self.entries = ImmutableDict(
-            (name, self._x(po)) for (name, po) in entries.items()
-        )
+        self.entries = ImmutableDict(self._iter_entries(entries))
+
+    @staticmethod
+    def _iter_entries(entries):
+        for name, po in entries.items():
+            assert '/' not in name, (
+                'tree entry name contains slash: %s' % name
+            )
+            if isinstance(po, GitObject):
+                perm, obj = po.default_perm, po
+            else:
+                perm, obj = po
+            yield name, (perm, obj)
 
     def commit(self, repository):
         """Commit the tree.
