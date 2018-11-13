@@ -198,7 +198,9 @@ def ls_files(files, tree='HEAD', full_name=True):
     args.extend(files)
     try:
         # use a set to avoid file names duplication due to different stages
-        fileset = set(GRun('ls-files', '--error-unmatch', *args).output_lines())
+        fileset = set(
+            GRun('ls-files', '--error-unmatch', *args).output_lines()
+        )
     except GitRunException:
         # just hide the details of the 'git ls-files' command we use
         raise GitException(
@@ -948,7 +950,9 @@ def fetch_head():
         m = re.match('^([^\t]*)\t\t', line)
         if m:
             if fetch_head:
-                raise GitException('StGit does not support multiple FETCH_HEAD')
+                raise GitException(
+                    'StGit does not support multiple FETCH_HEAD'
+                )
             else:
                 fetch_head = m.group(1)
     stream.close()

@@ -155,8 +155,10 @@ def func(parser, options, args):
     if options.last:
         last = __get_last(stack, public_tree)
         if not last:
-            raise common.CmdException('Unable to find the last published patch '
-                                      '(possibly rebased stack)')
+            raise common.CmdException(
+                'Unable to find the last published patch '
+                '(possibly rebased stack)'
+            )
         out.info('%s' % last)
         return
 
@@ -182,12 +184,17 @@ def func(parser, options, args):
         out.info('Fast-forwarded "%s"' % public_ref)
         return
     if stack.base not in merge_bases:
-        message = 'Merge %s into %s' % (repository.describe(stack.base).strip(),
-                                        utils.strip_prefix('refs/heads/',
-                                                           public_ref))
-        public_head = __create_commit(repository, stack.head.data.tree,
-                                      [public_head, stack.base], options,
-                                      message)
+        message = 'Merge %s into %s' % (
+            repository.describe(stack.base).strip(),
+            utils.strip_prefix('refs/heads/', public_ref),
+        )
+        public_head = __create_commit(
+            repository,
+            stack.head.data.tree,
+            [public_head, stack.base],
+            options,
+            message,
+        )
         repository.refs.set(public_ref, public_head, 'publish')
         out.info('Merged the stack base into "%s"' % public_ref)
         return

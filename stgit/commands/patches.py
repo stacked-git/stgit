@@ -52,13 +52,16 @@ options = [
 directory = DirectoryHasRepository(log=False)
 crt_series = None
 
-diff_tmpl = \
-          '-------------------------------------------------------------------------------\n' \
-          '%s\n' \
-          '-------------------------------------------------------------------------------\n' \
-          '%s' \
-          '---\n\n' \
-          '%s'
+diff_tmpl = '\n'.join(
+    [
+        '-' * 79,
+        '%s',
+        '-' * 79,
+        '%s---',
+        '',
+        '%s',
+    ]
+)
 
 
 def func(parser, options, args):
@@ -94,10 +97,11 @@ def func(parser, options, args):
         if rev in rev_patch:
             patch = rev_patch[rev]
             if options.diff:
-                diff_output += diff_tmpl \
-                               % (patch.get_name(), patch.get_description(),
-                                  git.diff(files, patch.get_bottom(),
-                                           patch.get_top()))
+                diff_output += diff_tmpl % (
+                    patch.get_name(),
+                    patch.get_description(),
+                    git.diff(files, patch.get_bottom(), patch.get_top()),
+                )
             else:
                 out.stdout(patch.get_name())
 

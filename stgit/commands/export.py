@@ -143,7 +143,10 @@ def func(parser, options, args):
         series = io.open(os.path.join(dirname, 'series'), 'w')
         # note the base commit for this series
         base_commit = stack.base.sha1
-        print('# This series applies on GIT commit %s' % base_commit, file=series)
+        print(
+            '# This series applies on GIT commit %s' % base_commit,
+            file=series,
+        )
 
     for patch_no, p in enumerate(patches, 1):
         pname = p
@@ -167,17 +170,23 @@ def func(parser, options, args):
         short_descr = descr_lines[0].rstrip()
         long_descr = '\n'.join(descr_lines[1:]).strip()
 
-        diff = stack.repository.diff_tree(cd.parent.data.tree, cd.tree, options.diff_flags)
+        diff = stack.repository.diff_tree(
+            cd.parent.data.tree,
+            cd.tree,
+            options.diff_flags,
+        )
 
-        tmpl_dict = {'description': descr,
-                     'shortdescr': short_descr,
-                     'longdescr': long_descr,
-                     'diffstat': gitlib.diffstat(diff).rstrip(),
-                     'authname': cd.author.name,
-                     'authemail': cd.author.email,
-                     'authdate': cd.author.date.isoformat(),
-                     'commname': cd.committer.name,
-                     'commemail': cd.committer.email}
+        tmpl_dict = {
+            'description': descr,
+            'shortdescr': short_descr,
+            'longdescr': long_descr,
+            'diffstat': gitlib.diffstat(diff).rstrip(),
+            'authname': cd.author.name,
+            'authemail': cd.author.email,
+            'authdate': cd.author.date.isoformat(),
+            'commname': cd.committer.name,
+            'commemail': cd.committer.email,
+        }
 
         try:
             descr = templates.specialize_template(tmpl, tmpl_dict)

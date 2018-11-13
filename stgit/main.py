@@ -120,7 +120,8 @@ def _main():
 
     if len(sys.argv) < 2:
         print('usage: %s <command>' % prog, file=sys.stderr)
-        print('  Try "%s --help" for a list of supported commands' % prog, file=sys.stderr)
+        print('  Try "%s --help" for a list of supported commands' % prog,
+              file=sys.stderr)
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
     cmd = sys.argv[1]

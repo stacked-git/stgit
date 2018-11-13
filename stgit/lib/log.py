@@ -253,9 +253,12 @@ class LogEntry(object):
             perm, meta = commit.data.tree.data.entries['meta']
         except KeyError:
             raise LogParseException('Not a stack log')
-        (prev, head, applied, unapplied, hidden, patches
-         ) = cls.__parse_metadata(repo, meta.data.bytes.decode('utf-8'))
-        lg = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
+        (
+            prev, head, applied, unapplied, hidden, patches
+        ) = cls.__parse_metadata(repo, meta.data.bytes.decode('utf-8'))
+        lg = cls(
+            repo, prev, head, applied, unapplied, hidden, patches, message
+        )
         lg.commit = commit
         return lg
 
@@ -309,7 +312,9 @@ class LogEntry(object):
         return self.__repo.commit(
             git.TreeData(
                 {
-                    'meta': self.__repo.commit(git.BlobData(metadata.encode('utf-8'))),
+                    'meta': self.__repo.commit(
+                        git.BlobData(metadata.encode('utf-8'))
+                    ),
                     'patches': self.__repo.commit(git.TreeData(patches)),
                 }
             )

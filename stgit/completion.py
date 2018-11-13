@@ -49,32 +49,60 @@ def ref_list_fun(name, prefix):
 
 
 def util():
-    r = [fun_desc('_gitdir',
-                  "The path to .git, or empty if we're not in a repository.",
-                  'echo "$(git rev-parse --git-dir 2>/dev/null)"'),
-         fun_desc('_current_branch',
-                  "Name of the current branch, or empty if there isn't one.",
-                  'local b=$(git symbolic-ref HEAD 2>/dev/null)',
-                  'echo ${b#refs/heads/}'),
-         fun_desc('_other_applied_patches',
-                  'List of all applied patches except the current patch.',
-                  'local b=$(_current_branch)',
-                  'local g=$(_gitdir)',
-                  ('test "$g" && cat "$g/patches/$b/applied" | grep -v'
-                   ' "^$(tail -n 1 $g/patches/$b/applied 2> /dev/null)$"')),
-         fun('_patch_range', 'local patches="$1"', 'local cur="$2"',
-             'case "$cur" in', [
-                '*..*)', ['local pfx="${cur%..*}.."', 'cur="${cur#*..}"',
-                          'compgen -P "$pfx" -W "$patches" -- "$cur"', ';;'],
-                '*)', ['compgen -W "$patches" -- "$cur"', ';;']],
-             'esac'),
-         fun('_stg_branches',
-             'local g=$(_gitdir)', 'test "$g" && (cd $g/patches/ && echo *)'),
-         fun('_mail_aliases',
-             'git config --name-only --get-regexp "^mail\\.alias\\." | cut -d. -f 3'),
-         ref_list_fun('_all_branches', 'refs/heads'),
-         ref_list_fun('_tags', 'refs/tags'),
-         ref_list_fun('_remotes', 'refs/remotes')]
+    r = [
+        fun_desc(
+            '_gitdir',
+            "The path to .git, or empty if we're not in a repository.",
+            'echo "$(git rev-parse --git-dir 2>/dev/null)"',
+        ),
+        fun_desc(
+            '_current_branch',
+            "Name of the current branch, or empty if there isn't one.",
+            'local b=$(git symbolic-ref HEAD 2>/dev/null)',
+            'echo ${b#refs/heads/}'),
+        fun_desc(
+            '_other_applied_patches',
+            'List of all applied patches except the current patch.',
+            'local b=$(_current_branch)',
+            'local g=$(_gitdir)',
+            (
+                'test "$g" && cat "$g/patches/$b/applied" | grep -v'
+                ' "^$(tail -n 1 $g/patches/$b/applied 2> /dev/null)$"'
+            )
+        ),
+        fun(
+            '_patch_range',
+            'local patches="$1"',
+            'local cur="$2"',
+            'case "$cur" in', [
+                '*..*)',
+                [
+                    'local pfx="${cur%..*}.."',
+                    'cur="${cur#*..}"',
+                    'compgen -P "$pfx" -W "$patches" -- "$cur"',
+                    ';;'
+                ],
+                '*)',
+                ['compgen -W "$patches" -- "$cur"', ';;'],
+            ],
+            'esac',
+        ),
+        fun(
+            '_stg_branches',
+            'local g=$(_gitdir)',
+            'test "$g" && (cd $g/patches/ && echo *)',
+        ),
+        fun(
+            '_mail_aliases',
+            (
+                'git config --name-only --get-regexp "^mail\\.alias\\." '
+                '| cut -d. -f 3'
+            )
+        ),
+        ref_list_fun('_all_branches', 'refs/heads'),
+        ref_list_fun('_tags', 'refs/tags'),
+        ref_list_fun('_remotes', 'refs/remotes'),
+    ]
     for type in ['applied', 'unapplied', 'hidden']:
         r.append(patch_list_fun(type))
     for name, cmd in [('conflicting',
@@ -107,10 +135,16 @@ def command_fun(cmd, modname):
         'local prev="${COMP_WORDS[COMP_CWORD-1]}"',
         'local cur="${COMP_WORDS[COMP_CWORD]}"',
         'case "$prev" in', [
-            '%s) COMPREPLY=($(%s)) ;;' % ('|'.join(opt.flags), cg(opt.args, []))
-            for opt in mod.options if opt.args] + [
-            '*) COMPREPLY=($(%s)) ;;' % cg(mod.args, ['$flags'])],
-        'esac')
+            '%s) COMPREPLY=($(%s)) ;;' % (
+                '|'.join(opt.flags),
+                cg(opt.args, [])
+            )
+            for opt in mod.options if opt.args
+        ] + [
+            '*) COMPREPLY=($(%s)) ;;' % cg(mod.args, ['$flags'])
+        ],
+        'esac',
+    )
 
 
 def main_switch(commands):
@@ -130,8 +164,8 @@ def main_switch(commands):
         ('# Complete name of subcommand if the user has not finished'
          ' typing it yet.'),
         'if test $c -eq $COMP_CWORD -a -z "$command"; then', [
-            ('COMPREPLY=($(compgen -W "help version copyright $_stg_commands" --'
-             ' "${COMP_WORDS[COMP_CWORD]}"))'),
+            ('COMPREPLY=($(compgen -W "help version copyright $_stg_commands" '
+             '-- "${COMP_WORDS[COMP_CWORD]}"))'),
             'return'],
         'fi',
         '',

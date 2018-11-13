@@ -180,7 +180,10 @@ def main():
     print("Running %d tests in parallel" % opts.jobs)
 
     if os.path.exists("trash"):
-        os.rename("trash", "trash-being-deleted-%016x" % random.getrandbits(64))
+        os.rename(
+            "trash",
+            "trash-being-deleted-%016x" % random.getrandbits(64)
+        )
     os.mkdir("trash")
     q = TestQueue(tests, glob.glob("trash-being-deleted-*"))
     w = min(opts.jobs, len(tests))

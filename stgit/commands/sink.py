@@ -75,8 +75,9 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
 
     if options.to and options.to not in stack.patchorder.applied:
-        raise common.CmdException('Cannot sink below %s since it is not applied'
-                                  % options.to)
+        raise common.CmdException(
+            'Cannot sink below %s since it is not applied' % options.to
+        )
 
     if len(args) > 0:
         patches = common.parse_patches(args, stack.patchorder.all)

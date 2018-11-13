@@ -280,11 +280,43 @@ def func(parser, options, args):
 
     if applied:
         for p in applied[:-1]:
-            __print_patch(stack, p, branch_str, '+ ', max_len, options, config.get("stgit.color.applied"))
-        __print_patch(stack, applied[-1], branch_str, '> ', max_len, options, config.get("stgit.color.current"))
+            __print_patch(
+                stack,
+                p,
+                branch_str,
+                '+ ',
+                max_len,
+                options,
+                config.get("stgit.color.applied"),
+            )
+        __print_patch(
+            stack,
+            applied[-1],
+            branch_str,
+            '> ',
+            max_len,
+            options,
+            config.get("stgit.color.current"),
+        )
 
     for p in unapplied:
-        __print_patch(stack, p, branch_str, '- ', max_len, options, config.get("stgit.color.unapplied"))
+        __print_patch(
+            stack,
+            p,
+            branch_str,
+            '- ',
+            max_len,
+            options,
+            config.get("stgit.color.unapplied"),
+        )
 
     for p in hidden:
-        __print_patch(stack, p, branch_str, '! ', max_len, options, config.get("stgit.color.hidden"))
+        __print_patch(
+            stack,
+            p,
+            branch_str,
+            '! ',
+            max_len,
+            options,
+            config.get("stgit.color.hidden"),
+        )

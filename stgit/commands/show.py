@@ -81,8 +81,11 @@ def func(parser, options, args):
         # patch ranges
         applied = crt_series.get_applied()
         unapplied = crt_series.get_unapplied()
-        patches = parse_patches(args, applied + unapplied + \
-                                crt_series.get_hidden(), len(applied))
+        patches = parse_patches(
+            args,
+            applied + unapplied + crt_series.get_hidden(),
+            len(applied),
+        )
     else:
         # individual patches or commit ids
         patches = args

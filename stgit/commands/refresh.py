@@ -34,9 +34,10 @@ Include the latest work tree and index changes in the current patch.
 This command generates a new git commit object for the patch; the old
 commit is no longer visible.
 
-Refresh will warn if the index is dirty, and require use of either the '--index'
-or '--force' options to override this check. This is to prevent accidental full
-refresh when only some changes were staged using git add interative mode.
+Refresh will warn if the index is dirty, and require use of either the
+'--index' or '--force' options to override this check. This is to prevent
+accidental full refresh when only some changes were staged using git add
+interative mode.
 
 You may optionally list one or more files or directories relative to
 the current working directory; if you do, only matching files will be
@@ -77,8 +78,8 @@ options = [
         action='store_true',
         short='Force refresh even if index is dirty',
         long="""
-        Instead of warning the user when some work has already been staged (such
-        as with git add interactive mode) force a full refresh.""",
+        Instead of warning the user when some work has already been staged
+        (such as with git add interactive mode) force a full refresh.""",
     ),
     opt(
         '-p',
@@ -332,7 +333,14 @@ def func(parser, options, args):
 
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
-    paths = list_files(stack, patch_name, args, options.index, options.update, options.submodules)
+    paths = list_files(
+        stack,
+        patch_name,
+        args,
+        options.index,
+        options.update,
+        options.submodules,
+    )
 
     # Make sure there are no conflicts in the files we want to
     # refresh.
@@ -345,7 +353,9 @@ def func(parser, options, args):
         if not (stack.repository.default_index.is_clean(stack.head) or
                 stack.repository.default_iw.worktree_clean()):
             raise common.CmdException(
-                'The index is dirty. Did you mean --index? To force a full refresh use --force.')
+                'The index is dirty. Did you mean --index? '
+                'To force a full refresh use --force.'
+            )
 
     # Commit index to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(

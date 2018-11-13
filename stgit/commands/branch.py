@@ -210,7 +210,9 @@ def __delete_branch(doomed_name, force=False):
 def __cleanup_branch(name, force=False):
     branch = stack.Series(name)
     if branch.get_protected():
-        raise CmdException('This branch is protected. Clean up is not permitted')
+        raise CmdException(
+            'This branch is protected. Clean up is not permitted'
+        )
 
     out.start('Cleaning up branch "%s"' % name)
     branch.delete(force=force, cleanup=True)

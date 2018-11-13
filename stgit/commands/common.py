@@ -302,7 +302,9 @@ def name_email_date(address):
     if p:
         return p
     else:
-        raise CmdException('Incorrect "name <email> date" string: %s' % address)
+        raise CmdException(
+            'Incorrect "name <email> date" string: %s' % address
+        )
 
 
 def address_or_alias(addr_pair):
@@ -435,13 +437,14 @@ def parse_mail(msg):
     import email.header
     if sys.version_info[0] <= 2:
         # Python 2's decode_header() fails to decode encoded words if they are
-        # quoted. This does not match the behavior of Python3 or `git mailinfo`.
-        # For example, Python2 does not handle this header correctly:
+        # quoted. This does not match the behavior of Python3 or `git
+        # mailinfo`. For example, Python2 does not handle this header
+        # correctly:
         #
         #    From: "=?UTF-8?q?Christian=20K=C3=B6nig?=" <name@example.com>
         #
-        # By replacing the encoded words regex in the email.header module, we can
-        # bless Python2 with the same behavior as Python3.
+        # By replacing the encoded words regex in the email.header module, we
+        # can bless Python2 with the same behavior as Python3.
         email.header.ecre = re.compile(
             (r'=\? (?P<charset>[^?]*?)'
              r' \? (?P<encoding>[QqBb])'

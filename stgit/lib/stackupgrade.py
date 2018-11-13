@@ -89,8 +89,11 @@ def update_to_current_format_version(repository, branch):
             else:
                 top = None
             if top:
-                repository.refs.set(refs_base + '/' + patch,
-                                    repository.get_commit(top), 'StGit upgrade')
+                repository.refs.set(
+                    refs_base + '/' + patch,
+                    repository.get_commit(top),
+                    'StGit upgrade',
+                )
         set_format_version(1)
 
     # Update 1 -> 2.

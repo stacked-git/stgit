@@ -107,11 +107,17 @@ def edit_file(series, line, comment, show_patch=True):
         if show_patch:
            print(__patch_prefix, file=f)
            # series.get_patch(series.get_current()).get_top()
-           diff_str = git.diff(rev1=series.get_patch(series.get_current()).get_bottom())
+           diff_str = git.diff(
+               rev1=series.get_patch(series.get_current()).get_bottom()
+           )
            f.write(diff_str)
 
         # Vim modeline must be near the end.
-        print(__comment_prefix, 'vi: set textwidth=75 filetype=diff nobackup:', file=f)
+        print(
+            __comment_prefix,
+            'vi: set textwidth=75 filetype=diff nobackup:',
+            file=f,
+        )
 
     call_editor(fname)
 
@@ -228,7 +234,10 @@ class Patch(StgitObject):
         if backup:
             curr_top = self.get_top()
             self._set_field('top.old', curr_top)
-            self._set_field('bottom.old', git.get_commit(curr_top).get_parent())
+            self._set_field(
+                'bottom.old',
+                git.get_commit(curr_top).get_parent(),
+            )
         self.__update_top_ref(value)
 
     def get_description(self):
@@ -295,7 +304,9 @@ class PatchSet(StgitObject):
         except git.GitException as ex:
             raise StackException('GIT tree not initialised: %s' % ex)
 
-        self._set_dir(os.path.join(self.__base_dir, 'patches', self.get_name()))
+        self._set_dir(
+            os.path.join(self.__base_dir, 'patches', self.get_name())
+        )
 
     def get_name(self):
         return self.__name
@@ -503,9 +514,12 @@ class Series(PatchSet):
                 self.__set_parent_remote(remote)
             self.__set_parent_branch(localbranch)
         # We'll enforce this later
-#         else:
-#             raise StackException('Parent branch (%s) should be specified for %s' %
-#                                  localbranch, self.get_name())
+        # else:
+        #     raise StackException(
+        #         'Parent branch (%s) should be specified for %s' % (
+        #             localbranch, self.get_name()
+        #         )
+        #     )
 
     def __patch_is_current(self, patch):
         return patch.get_name() == self.get_current()
@@ -723,9 +737,14 @@ class Series(PatchSet):
         # TODO: move this out of the stgit.stack module, it is really
         # for higher level commands to handle the user interaction
         if not message and edit:
-            descr = edit_file(self, descr.rstrip(), \
-                              'Please edit the description for patch "%s" ' \
-                              'above.' % patch.get_name(), show_patch)
+            descr = edit_file(
+                self,
+                descr.rstrip(),
+                'Please edit the description for patch "%s" above.' % (
+                    patch.get_name(),
+                    show_patch,
+                )
+            )
 
         if not author_name:
             author_name = patch.get_authname()
@@ -800,7 +819,10 @@ class Series(PatchSet):
         assert not before_existing or (top and bottom)
         assert not (commit and before_existing)
         assert (top and bottom) or (not top and not bottom)
-        assert commit or (not top or (bottom == git.get_commit(top).get_parent()))
+        assert commit or (
+            not top
+            or bottom == git.get_commit(top).get_parent()
+        )
 
         if name is not None:
             self.__patch_name_valid(name)

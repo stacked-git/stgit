@@ -316,7 +316,10 @@ def __import_series(filename, options):
         # Quilt can have "-p0", "-p1" or "-pab" patches stacked in the
         # series but as strip level default to 1, only "-p0" can actually
         # be found in the series file, the other ones are implicit
-        m = re.match(r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch)
+        m = re.match(
+            r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$',
+            patch,
+        )
         options.strip = 1
         if m:
             patch = m.group('patchfilename')

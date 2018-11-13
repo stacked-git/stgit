@@ -937,7 +937,9 @@ class Repository(RunWithEnv):
         # A simple regex to match submodule entries
         regex = re.compile(r'160000 commit [0-9a-f]{40}\t(.*)$')
         # First, use ls-tree to get all the trees and links
-        files = self.run(['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]).output_lines('\0')
+        files = self.run(
+            ['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]
+        ).output_lines('\0')
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
 
@@ -1247,7 +1249,9 @@ class IndexAndWorktree(RunWithEnvCwd):
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
         try:
-            self.run(['git', 'update-index', '--ignore-submodules', '--refresh']).discard_output()
+            self.run(
+                ['git', 'update-index', '--ignore-submodules', '--refresh']
+            ).discard_output()
         except RunException:
             return False
         else:

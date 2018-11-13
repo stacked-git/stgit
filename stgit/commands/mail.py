@@ -359,7 +359,10 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
-            print("mail server refused delivery for the following recipients: %s" % result)
+            print(
+                "mail server refused delivery for the following recipients:",
+                result,
+            )
     except Exception as err:
         raise CmdException(str(err))
 
@@ -403,8 +406,10 @@ def __send_message_git(msg_bytes, from_, options):
 def __send_message(type, tmpl, options, *args):
     """Message sending dispatcher.
     """
-    (build, outstr) = {'cover': (__build_cover, 'the cover message'),
-                       'patch': (__build_message, 'patch "%s"' % args[0])}[type]
+    (build, outstr) = {
+        'cover': (__build_cover, 'the cover message'),
+        'patch': (__build_message, 'patch "%s"' % args[0]),
+    }[type]
     if type == 'patch':
         (patch_nr, total_nr) = (args[1], args[2])
 
@@ -435,7 +440,9 @@ def __send_message(type, tmpl, options, *args):
         __send_message_sendmail(smtpserver, msg_bytes)
     else:
         # Use the SMTP server (we have host and port information)
-        __send_message_smtp(smtpserver, from_addr, to_addrs, msg_bytes, options)
+        __send_message_smtp(
+            smtpserver, from_addr, to_addrs, msg_bytes, options
+        )
 
     # give recipients a chance of receiving related patches in correct order
     if type == 'cover' or (type == 'patch' and patch_nr < total_nr):

@@ -69,13 +69,19 @@ crt_series = None
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
-    policy = config.get('branch.%s.stgit.pull-policy' % crt_series.get_name()) or \
-             config.get('stgit.pull-policy')
+    policy = (
+        config.get('branch.%s.stgit.pull-policy' % crt_series.get_name())
+        or config.get('stgit.pull-policy')
+    )
 
     if policy == 'rebase':
         # parent is local
         if len(args) == 1:
-            parser.error('specifying a repository is meaningless for policy="%s"' % policy)
+            parser.error(
+                'specifying a repository is meaningless for policy="%s"' % (
+                    policy,
+                )
+            )
         if len(args) > 0:
             parser.error('incorrect number of arguments')
 
@@ -111,7 +117,10 @@ def func(parser, options, args):
         try:
             target = git.fetch_head()
         except git.GitException:
-            out.error('Could not find the remote head to rebase onto - fix branch.%s.merge in .git/config' % crt_series.get_name())
+            out.error(
+                'Could not find the remote head to rebase onto - '
+                'fix branch.%s.merge in .git/config' % crt_series.get_name()
+            )
             out.error('Pushing any patches back...')
             post_rebase(crt_series, applied, False, False)
             raise

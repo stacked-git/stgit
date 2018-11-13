@@ -36,7 +36,9 @@ def get():
         __base_dir = environ_get('GIT_DIR')
         if __base_dir is None:
             try:
-                __base_dir = Run('git', 'rev-parse', '--git-dir').output_one_line()
+                __base_dir = Run(
+                    'git', 'rev-parse', '--git-dir'
+                ).output_one_line()
             except RunException:
                 __base_dir = ''
 

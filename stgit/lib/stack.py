@@ -248,13 +248,16 @@ class Stack(git.Branch):
 
     @property
     def directory(self):
-        return os.path.join(self.repository.directory, self.__repo_subdir, self.name)
+        return os.path.join(
+            self.repository.directory, self.__repo_subdir, self.name
+        )
 
     @property
     def base(self):
         if self.patchorder.applied:
-            return self.patches.get(self.patchorder.applied[0]
-                                    ).commit.data.parent
+            return self.patches.get(
+                self.patchorder.applied[0]
+            ).commit.data.parent
         else:
             return self.head
 
@@ -271,7 +274,8 @@ class Stack(git.Branch):
     def head_top_equal(self):
         if not self.patchorder.applied:
             return True
-        return self.head == self.patches.get(self.patchorder.applied[-1]).commit
+        top = self.patches.get(self.patchorder.applied[-1]).commit
+        return self.head == top
 
     def set_parents(self, remote, branch):
         if remote:

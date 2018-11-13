@@ -68,7 +68,9 @@ class opt(object):
             if m:
                 f.write(' ' + m)
             f.write('::\n')
-        paras = _paragraphs(self.kwargs.get('long', self.kwargs['short'] + '.'))
+        paras = _paragraphs(
+            self.kwargs.get('long', self.kwargs['short'] + '.')
+        )
         for line in paras[0]:
             f.write(' ' * 8 + line + '\n')
         for para in paras[1:]:
@@ -394,9 +396,11 @@ class CompgenJoin(CompgenBase):
         self.__a = a
         self.__b = b
 
-    def words(self, var): return self.__a.words(var) | self.__b.words(var)
+    def words(self, var):
+        return self.__a.words(var) | self.__b.words(var)
 
-    def actions(self, var): return self.__a.actions(var) | self.__b.actions(var)
+    def actions(self, var):
+        return self.__a.actions(var) | self.__b.actions(var)
 
 
 class Compgen(CompgenBase):

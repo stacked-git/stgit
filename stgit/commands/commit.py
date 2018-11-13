@@ -65,19 +65,25 @@ def func(parser, options, args):
     """Commit a number of patches."""
     stack = directory.repository.current_stack
     args = common.parse_patches(args, list(stack.patchorder.all_visible))
-    if len([x for x in [args, options.number is not None, options.all] if x]) > 1:
+    exclusive = [args, options.number is not None, options.all]
+    if sum(map(bool, exclusive)) > 1:
         parser.error('too many options')
     if args:
         patches = [pn for pn in stack.patchorder.all_visible if pn in args]
         bad = set(args) - set(patches)
         if bad:
-            raise common.CmdException('Nonexistent or hidden patch names: %s'
-                                      % ', '.join(sorted(bad)))
+            raise common.CmdException(
+                'Nonexistent or hidden patch names: %s' % (
+                    ', '.join(sorted(bad)),
+                )
+            )
     elif options.number is not None:
         if options.number <= len(stack.patchorder.applied):
             patches = stack.patchorder.applied[:options.number]
         else:
-            raise common.CmdException('There are not that many applied patches')
+            raise common.CmdException(
+                'There are not that many applied patches'
+            )
     elif options.all:
         patches = stack.patchorder.applied
     else:

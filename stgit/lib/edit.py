@@ -57,7 +57,11 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
         if replacement_diff:
             diff = replacement_diff
         else:
-            just_diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
+            just_diff = repo.diff_tree(
+                cd.parent.data.tree,
+                cd.tree,
+                diff_flags,
+            )
             diff = b'\n'.join([git.diffstat(just_diff).encode('utf-8'),
                                just_diff])
         desc += b'\n'.join([b'', b'---', b'', diff])
@@ -98,7 +102,9 @@ def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
     if msg is None:
         failed_diff = None
     else:
-        cd, failed_diff = update_patch_description(repo, cd, msg, contains_diff)
+        cd, failed_diff = update_patch_description(
+            repo, cd, msg, contains_diff
+        )
     a, c = author(cd.author), committer(cd.committer)
     if (a, c) != (cd.author, cd.committer):
         cd = cd.set_author(a).set_committer(c)

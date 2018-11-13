@@ -36,7 +36,9 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Import a patch from a different branch or a commit object'
 kind = 'patch'
-usage = ['[options] [--] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>']
+usage = [
+    '[options] [--] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>'
+]
 description = """
 Import one or more patches from a different branch or a commit object
 into the current series. By default, the name of the imported patch is

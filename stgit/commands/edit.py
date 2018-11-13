@@ -141,7 +141,12 @@ def func(parser, options, args):
     use_editor = cd == orig_cd or options.edit
     if use_editor:
         cd, failed_diff = edit.interactive_edit_patch(
-            stack.repository, cd, options.diff, options.diff_flags, failed_diff)
+            stack.repository,
+            cd,
+            options.diff,
+            options.diff_flags,
+            failed_diff,
+        )
 
     def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'

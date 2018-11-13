@@ -87,7 +87,9 @@ def func(parser, options, args):
         patch_nr = patchnames = None
         to_commit = stack.repository.rev_parse(options.to)
         # check whether the --to commit is on a different branch
-        merge_bases = directory.repository.get_merge_bases(to_commit, stack.base)
+        merge_bases = directory.repository.get_merge_bases(
+            to_commit, stack.base
+        )
         if to_commit not in merge_bases:
             to_commit = merge_bases[0]
             options.exclusive = True
