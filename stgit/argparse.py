@@ -377,9 +377,11 @@ def merged_option():
 
 
 class CompgenBase(object):
-    def actions(self, var): return set()
+    def actions(self, var):
+        return set()
 
-    def words(self, var): return set()
+    def words(self, var):
+        return set()
 
     def command(self, var):
         cmd = ['compgen']
@@ -411,9 +413,11 @@ class Compgen(CompgenBase):
         self.__words = set(words)
         self.__actions = set(actions)
 
-    def actions(self, var): return self.__actions
+    def actions(self, var):
+        return self.__actions
 
-    def words(self, var): return self.__words
+    def words(self, var):
+        return self.__words
 
 
 def compjoin(compgens):

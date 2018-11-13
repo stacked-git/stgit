@@ -175,7 +175,8 @@ def __create_patch(filename, message, author_name, author_email,
 
     if not patch:
         if options.ignore or options.replace:
-            unacceptable_name = lambda name: False
+            def unacceptable_name(name):
+                return False
         else:
             unacceptable_name = crt_series.patch_exists
         patch = make_patch_name(message, unacceptable_name)

@@ -72,7 +72,10 @@ def __clean_comments(f):
     lines = f.readlines()
 
     patch_filter = FilterUntil()
-    until_test = lambda t: t == (__patch_prefix + '\n')
+
+    def until_test(t):
+        return t == (__patch_prefix + '\n')
+
     lines = [l for l in lines if patch_filter(l, until_test, __comment_prefix)]
 
     # remove empty lines at the end
@@ -557,7 +560,7 @@ class Series(PatchSet):
             if os.path.exists(d):
                 raise StackException('%s already exists' % d)
 
-        if create_at != False:
+        if create_at is not False:
             git.create_branch(self.get_name(), create_at)
 
         os.makedirs(self.__patch_dir)
@@ -603,7 +606,7 @@ class Series(PatchSet):
         try:
             # allow cloning of branches not under StGIT control
             base = self.get_base()
-        except:
+        except BaseException:
             base = git.get_head()
         Series(target_series).init(create_at=base)
         new_series = Series(target_series)
@@ -618,7 +621,7 @@ class Series(PatchSet):
             unapplied = self.get_unapplied()
             patches = applied + unapplied
             patches.reverse()
-        except:
+        except BaseException:
             patches = applied = unapplied = []
         for p in patches:
             patch = self.get_patch(p)

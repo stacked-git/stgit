@@ -209,7 +209,7 @@ def _main():
         sys.exit(utils.STGIT_COMMAND_ERROR)
     except KeyboardInterrupt:
         sys.exit(utils.STGIT_GENERAL_ERROR)
-    except:
+    except BaseException:
         out.error('Unhandled exception:')
         traceback.print_exc(file=sys.stderr)
         sys.exit(utils.STGIT_BUG_ERROR)

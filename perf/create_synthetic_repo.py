@@ -57,7 +57,8 @@ def iter_paths():
 
 
 def setup():
-    def t(name): return 'refs/tags/%s' % name
+    def t(name):
+        return 'refs/tags/%s' % name
     files = dict((fn, write_blob(stdblob(fn))) for fn in iter_paths())
     initial = write_commit(t('bomb-base'), files, 'Initial commit')
     set_ref(t('bomb-top'), initial)

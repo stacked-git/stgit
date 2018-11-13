@@ -335,7 +335,7 @@ def prepare_rebase(crt_series):
 def rebase(crt_series, target):
     try:
         tree_id = git_id(crt_series, target)
-    except:
+    except StgException:
         # it might be that we use a custom rebase command with its own
         # target type
         tree_id = target

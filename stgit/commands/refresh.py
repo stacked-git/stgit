@@ -295,7 +295,8 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
         False: absorb_unapplied
     }[patch_name in trans.applied]
     if f(trans, iw, patch_name, temp_name, edit_fun):
-        def info_msg(): pass
+        def info_msg():
+            pass
     else:
         def info_msg():
             out.warn('The new changes did not apply cleanly to %s.'

@@ -139,7 +139,7 @@ def start_worker(q):
                     f.write(msg.encode())
                 if p.returncode == 0:
                     ok = True
-            except:
+            except BaseException:
                 # Log the traceback. Use the mutex so that we
                 # won't write multiple tracebacks to stderr at the
                 # same time.
