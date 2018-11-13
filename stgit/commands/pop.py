@@ -91,7 +91,7 @@ def func(parser, options, args):
         patches = common.parse_patches(args, trans.applied, ordered=True)
 
     if not patches:
-		# FIXME: Why is this an error, and not just a noop ?
+        # FIXME: Why is this an error, and not just a noop ?
         raise common.CmdException('No patches to pop')
 
     if options.spill:

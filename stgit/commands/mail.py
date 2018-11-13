@@ -293,8 +293,11 @@ def __parse_addresses(msg):
     if len(from_addr_list) == 0:
         raise CmdException('No "From" address')
 
-    to_addr_list = __addr_list(msg, 'To') + __addr_list(msg, 'Cc') \
-                   + __addr_list(msg, 'Bcc')
+    to_addr_list = (
+        __addr_list(msg, 'To')
+        + __addr_list(msg, 'Cc')
+        + __addr_list(msg, 'Bcc')
+    )
     if len(to_addr_list) == 0:
         raise CmdException('No "To/Cc/Bcc" addresses')
 
@@ -504,14 +507,15 @@ def __get_signers_list(msg):
     """
     addr_list = []
     tags = '%s|%s|%s|%s|%s|%s|%s|%s' % (
-            'signed-off-by',
-            'acked-by',
-            'cc',
-            'reviewed-by',
-            'reported-by',
-            'tested-by',
-            'suggested-by',
-            'reported-and-tested-by')
+        'signed-off-by',
+        'acked-by',
+        'cc',
+        'reviewed-by',
+        'reported-by',
+        'tested-by',
+        'suggested-by',
+        'reported-and-tested-by',
+    )
     regex = r'^(%s):\s+(.+)$' % tags
 
     r = re.compile(regex, re.I)

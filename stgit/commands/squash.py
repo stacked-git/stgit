@@ -126,8 +126,9 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
             to_push = trans.pop_patches(lambda pn: pn in patches)
             for pn in patches:
                 trans.push_patch(pn, iw)
-            new_commit_data = _squash_patches(trans, patches, msg,
-                                                save_template, no_verify)
+            new_commit_data = _squash_patches(
+                trans, patches, msg, save_template, no_verify
+            )
             assert not trans.delete_patches(lambda pn: pn in patches)
         make_squashed_patch(trans, new_commit_data)
 

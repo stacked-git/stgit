@@ -78,8 +78,9 @@ def func(parser, options, args):
     if not patches:
         raise common.CmdException('No patches to float')
 
-    applied = [p for p in stack.patchorder.applied if p not in patches] + \
-            patches
+    applied = [
+        p for p in stack.patchorder.applied if p not in patches
+    ] + patches
     unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
 
     iw = stack.repository.default_iw

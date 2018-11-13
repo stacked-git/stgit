@@ -583,9 +583,16 @@ def log_external_mods(stack):
     if log.head == stack.head:
         # No external modifications.
         return
-    log_entry(stack, '\n'.join([
-                'external modifications', '',
-                'Modifications by tools other than StGit (e.g. git).']))
+    log_entry(
+        stack,
+        '\n'.join(
+            [
+                'external modifications',
+                '',
+                'Modifications by tools other than StGit (e.g. git).',
+            ]
+        )
+    )
 
 
 def compat_log_external_mods():

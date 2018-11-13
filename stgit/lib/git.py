@@ -430,11 +430,16 @@ class CommitData(Immutable, Repr):
     @property
     def env(self):
         env = {}
-        for p, v1 in ((self.author, 'AUTHOR'),
-                       (self.committer, 'COMMITTER')):
+        for p, v1 in [
+            (self.author, 'AUTHOR'),
+            (self.committer, 'COMMITTER'),
+        ]:
             if p is not None:
-                for attr, v2 in (('name', 'NAME'), ('email', 'EMAIL'),
-                                 ('date', 'DATE')):
+                for attr, v2 in [
+                    ('name', 'NAME'),
+                    ('email', 'EMAIL'),
+                    ('date', 'DATE'),
+                ]:
                     if getattr(p, attr) is not None:
                         env['GIT_%s_%s' % (v1, v2)] = text(getattr(p, attr))
         return env
@@ -858,9 +863,11 @@ class Repository(RunWithEnv):
         assert object_type in ('commit', 'tree', 'blob')
         getter = getattr(self, 'get_' + object_type)
         try:
-            return getter(self.run(
+            return getter(
+                self.run(
                     ['git', 'rev-parse', '%s^{%s}' % (rev, object_type)]
-                    ).discard_stderr(discard_stderr).output_one_line())
+                ).discard_stderr(discard_stderr).output_one_line()
+            )
         except RunException:
             raise RepositoryException('%s: No such %s' % (rev, object_type))
 
@@ -902,8 +909,9 @@ class Repository(RunWithEnv):
 
     def describe(self, commit):
         """Use git describe --all on the given commit."""
-        return self.run(['git', 'describe', '--all', commit.sha1]
-                       ).discard_stderr().discard_exitcode().raw_output()
+        return self.run(
+            ['git', 'describe', '--all', commit.sha1]
+        ).discard_stderr().discard_exitcode().raw_output()
 
     def simple_merge(self, base, ours, theirs):
         index = self.temp_index()
@@ -1026,16 +1034,19 @@ class Index(RunWithEnv):
         @rtype: L{Tree}"""
         try:
             return self.__repository.get_tree(
-                self.run(['git', 'write-tree']).discard_stderr(
-                    ).output_one_line())
+                self.run(['git', 'write-tree'])
+                .discard_stderr()
+                .output_one_line()
+            )
         except RunException:
             raise MergeException('Conflicting merge')
 
     def is_clean(self, tree):
         """Check whether the index is clean relative to the given treeish."""
         try:
-            self.run(['git', 'diff-index', '--quiet', '--cached', tree.sha1]
-                    ).discard_output()
+            self.run(
+                ['git', 'diff-index', '--quiet', '--cached', tree.sha1]
+            ).discard_output()
         except RunException:
             return False
         else:
@@ -1235,9 +1246,12 @@ class IndexAndWorktree(RunWithEnvCwd):
         directory; the returned file names are relative to the
         repository root."""
         assert isinstance(tree, Tree)
-        return set(self.run_in_cwd(
+        return set(
+            self.run_in_cwd(
                 ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
-                + list(pathlimits)).output_lines('\0'))
+                + list(pathlimits)
+            ).output_lines('\0')
+        )
 
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an

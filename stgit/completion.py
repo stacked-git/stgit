@@ -127,11 +127,15 @@ def command_fun(cmd, modname):
 
     return fun(
         '_stg_%s' % cmd,
-        'local flags="%s"' % ' '.join(sorted(
+        'local flags="%s"' % ' '.join(
+            sorted(
                 itertools.chain(
                     ('--help',),
                     (flag for opt in mod.options
-                     for flag in opt.flags if flag.startswith('--'))))),
+                     for flag in opt.flags if flag.startswith('--'))
+                )
+            )
+        ),
         'local prev="${COMP_WORDS[COMP_CWORD-1]}"',
         'local cur="${COMP_WORDS[COMP_CWORD]}"',
         'case "$prev" in', [
@@ -172,14 +176,17 @@ def main_switch(commands):
         '# Complete arguments to subcommands.',
         'case "$command" in', [
             'help) ', [
-            ('COMPREPLY=($(compgen -W "$_stg_commands" --'
-             ' "${COMP_WORDS[COMP_CWORD]}"))'),
-            'return ;;'],
+                ('COMPREPLY=($(compgen -W "$_stg_commands" --'
+                 ' "${COMP_WORDS[COMP_CWORD]}"))'),
+                'return ;;'],
             'version) return ;;',
-            'copyright) return ;;'], [
+            'copyright) return ;;'
+        ], [
             '%s) _stg_%s ;;' % (cmd, cmd)
-            for cmd in sorted(commands)],
-        'esac')
+            for cmd in sorted(commands)
+        ],
+        'esac'
+    )
 
 
 def install():

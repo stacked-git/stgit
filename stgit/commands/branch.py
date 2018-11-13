@@ -288,8 +288,7 @@ def func(parser, options, args):
     elif options.clone:
 
         if len(args) == 0:
-            clone = crt_series.get_name() + \
-                    time.strftime('-%C%y%m%d-%H%M%S')
+            clone = crt_series.get_name() + time.strftime('-%C%y%m%d-%H%M%S')
         elif len(args) == 1:
             clone = args[0]
         else:

@@ -282,12 +282,14 @@ def __import_file(filename, options, patch=None):
             msg = message_from_binary_file(f)
         except Exception as ex:
             raise CmdException('error parsing the e-mail file: %s' % str(ex))
-        message, author_name, author_email, author_date, diff = \
-                 parse_mail(msg)
+        (
+            message, author_name, author_email, author_date, diff
+        ) = parse_mail(msg)
     else:
         patch_str = f.read()
-        message, author_name, author_email, author_date, diff = \
-                 parse_patch(patch_str, contains_diff=True)
+        (
+            message, author_name, author_email, author_date, diff
+        ) = parse_patch(patch_str, contains_diff=True)
 
     if filename:
         f.close()

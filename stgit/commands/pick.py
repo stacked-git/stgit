@@ -164,14 +164,16 @@ def __pick_commit(commit_id, patchname, options):
             else:
                 subject = commit.get_id_hash()
                 body = ''
-            message = 'Revert "%s"\n\nThis reverts commit %s.\n\n%s\n' \
-                    % (subject, commit.get_id_hash(), body)
+            message = 'Revert "%s"\n\nThis reverts commit %s.\n\n%s\n' % (
+                subject, commit.get_id_hash(), body
+            )
         elif options.expose:
             if not message.endswith('\n'):
                 message += '\n'
             message += '(imported from commit %s)\n' % commit.get_id_hash()
-        author_name, author_email, author_date = \
-                     name_email_date(commit.get_author())
+        (
+            author_name, author_email, author_date
+        ) = name_email_date(commit.get_author())
         if options.revert:
             author_name = author_email = None
 

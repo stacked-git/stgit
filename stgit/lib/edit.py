@@ -76,10 +76,14 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags, replacement_diff):
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
     return update_patch_description(
-        repo, cd, utils.edit_bytes(
+        repo,
+        cd,
+        utils.edit_bytes(
             patch_desc(repo, cd, edit_diff, diff_flags, replacement_diff),
-            '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]),
-        edit_diff)
+            '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]
+        ),
+        edit_diff,
+    )
 
 
 def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
@@ -109,7 +113,12 @@ def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
     if (a, c) != (cd.author, cd.committer):
         cd = cd.set_author(a).set_committer(c)
     if sign_str is not None:
-        cd = cd.set_message(utils.add_sign_line(
-                cd.message, sign_str, git.Person.committer().name,
-                git.Person.committer().email))
+        cd = cd.set_message(
+            utils.add_sign_line(
+                cd.message,
+                sign_str,
+                git.Person.committer().name,
+                git.Person.committer().email,
+            )
+        )
     return cd, failed_diff

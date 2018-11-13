@@ -98,9 +98,8 @@ def func(parser, options, args):
             raise CmdException('Cannot synchronise with the current branch')
         remote_patches = remote_series.get_applied()
 
-        # the merge function merge_patch(patch, pname)
-        merge_patch = lambda patch, pname: \
-                      __branch_merge_patch(remote_series, pname)
+        def merge_patch(patch, pname):
+            return __branch_merge_patch(remote_series, pname)
     elif options.series:
         patchdir = os.path.dirname(options.series)
 
@@ -112,9 +111,12 @@ def func(parser, options, args):
                     continue
                 remote_patches.append(p)
 
-        # the merge function merge_patch(patch, pname)
-        merge_patch = lambda patch, pname: \
-                      __series_merge_patch(patch.get_bottom(), patchdir, pname)
+        def merge_patch(patch, pname):
+            return __series_merge_patch(
+                patch.get_bottom(),
+                patchdir,
+                pname,
+            )
     else:
         raise CmdException('No remote branch or series specified')
 

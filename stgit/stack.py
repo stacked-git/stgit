@@ -105,12 +105,12 @@ def edit_file(series, line, comment, show_patch=True):
               'Trailing empty lines will be automatically removed.', file=f)
 
         if show_patch:
-           print(__patch_prefix, file=f)
-           # series.get_patch(series.get_current()).get_top()
-           diff_str = git.diff(
-               rev1=series.get_patch(series.get_current()).get_bottom()
-           )
-           f.write(diff_str)
+            print(__patch_prefix, file=f)
+            # series.get_patch(series.get_current()).get_top()
+            diff_str = git.diff(
+                rev1=series.get_patch(series.get_current()).get_bottom()
+            )
+            f.write(diff_str)
 
         # Vim modeline must be near the end.
         print(
@@ -542,8 +542,11 @@ class Series(PatchSet):
     def patch_exists(self, name):
         """Return true if there is a patch with the given name, false
         otherwise."""
-        return self.patch_applied(name) or self.patch_unapplied(name) \
-               or self.patch_hidden(name)
+        return (
+            self.patch_applied(name)
+            or self.patch_unapplied(name)
+            or self.patch_hidden(name)
+        )
 
     def init(self, create_at=False, parent_remote=None, parent_branch=None):
         """Initialises the stgit series
@@ -656,8 +659,11 @@ class Series(PatchSet):
         """Deletes an stgit series
         """
         if self.is_initialised():
-            patches = self.get_unapplied() + self.get_applied() + \
-                    self.get_hidden()
+            patches = (
+                self.get_unapplied()
+                + self.get_applied()
+                + self.get_hidden()
+            )
             if not force and patches:
                 raise StackException(
                     'Cannot %s: the series still contains patches' %
@@ -1142,11 +1148,10 @@ class Series(PatchSet):
 
         if bottom == top:
             return True
-        elif git.get_commit(top).get_tree() \
-                 == git.get_commit(bottom).get_tree():
-            return True
-
-        return False
+        else:
+            top_tree = git.get_commit(top).get_tree()
+            bottom_tree = git.get_commit(bottom).get_tree()
+            return top_tree == bottom_tree
 
     def rename_patch(self, oldname, newname):
         self.__patch_name_valid(newname)

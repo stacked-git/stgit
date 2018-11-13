@@ -195,8 +195,11 @@ def message_options(save_template):
                 'Cannot give more than one --message or --file')
 
     def no_combine(parser):
-        if (save_template and parser.values.message is not None
-            and parser.values.save_template is not None):
+        if (
+            save_template
+            and parser.values.message is not None
+            and parser.values.save_template is not None
+        ):
             raise optparse.OptionValueError(
                 'Cannot give both --message/--file and --save-template')
 

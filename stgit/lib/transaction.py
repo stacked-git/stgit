@@ -216,8 +216,11 @@ class StackTransaction(object):
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
             # carrying them along to another patch is confusing.
-            if (self.__allow_conflicts(self) or iw is None
-                or not iw.index.conflicts()):
+            if (
+                self.__allow_conflicts(self)
+                or iw is None
+                or not iw.index.conflicts()
+            ):
                 return
             out.error('Need to resolve conflicts first')
             self.__abort()

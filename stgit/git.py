@@ -486,8 +486,10 @@ def rename_branch(from_name, to_name):
     except DetachedHeadException:
         pass  # detached HEAD, so the renamee can't be the current branch
     reflog_dir = os.path.join(basedir.get(), 'logs', 'refs', 'heads')
-    if os.path.exists(reflog_dir) \
-           and os.path.exists(os.path.join(reflog_dir, from_name)):
+    if (
+        os.path.exists(reflog_dir)
+        and os.path.exists(os.path.join(reflog_dir, from_name))
+    ):
         rename(reflog_dir, from_name, to_name)
 
 
@@ -779,8 +781,10 @@ def fetch(repository='origin', refspec=None):
     if refspec:
         args.append(refspec)
 
-    command = config.get('branch.%s.stgit.fetchcmd' % get_head_file()) or \
-              config.get('stgit.fetchcmd')
+    command = (
+        config.get('branch.%s.stgit.fetchcmd' % get_head_file())
+        or config.get('stgit.fetchcmd')
+    )
     Run(*(command.split() + args)).run()
 
 
@@ -795,8 +799,10 @@ def pull(repository='origin', refspec=None):
     if refspec:
         args.append(refspec)
 
-    command = config.get('branch.%s.stgit.pullcmd' % get_head_file()) or \
-              config.get('stgit.pullcmd')
+    command = (
+        config.get('branch.%s.stgit.pullcmd' % get_head_file())
+        or config.get('stgit.pullcmd')
+    )
     Run(*(command.split() + args)).run()
 
 
@@ -805,8 +811,10 @@ def rebase(tree_id=None):
     argument may be something other than a GIT id if an external
     command is invoked.
     """
-    command = config.get('branch.%s.stgit.rebasecmd' % get_head_file()) \
-                or config.get('stgit.rebasecmd')
+    command = (
+        config.get('branch.%s.stgit.rebasecmd' % get_head_file())
+        or config.get('stgit.rebasecmd')
+    )
     if tree_id:
         args = [tree_id]
     elif command:

@@ -401,7 +401,7 @@ def __parse_description(descr):
     # Parse the patch header
     for pos in range(0, end):
         if not descr_lines[pos]:
-           continue
+            continue
         # check for a "From|Author:" line
         if re.match(r'\s*(?:from|author):\s+', descr_lines[pos], re.I):
             auth = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
@@ -490,14 +490,15 @@ def parse_mail(msg):
         descr += '\n\n' + decode_utf8_with_latin1(rem_descr)
 
     # parse the description for author information
-    descr, descr_authname, descr_authemail, descr_authdate = \
-           __parse_description(descr)
+    (
+        descr, descr_authname, descr_authemail, descr_authdate
+    ) = __parse_description(descr)
     if descr_authname:
         authname = descr_authname
     if descr_authemail:
         authemail = descr_authemail
     if descr_authdate:
-       authdate = descr_authdate
+        authdate = descr_authdate
 
     return (descr, authname, authemail, authdate, diff)
 
