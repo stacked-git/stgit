@@ -106,10 +106,10 @@ def func(parser, options, args):
         remote_patches = []
         with open(options.series) as f:
             for line in f:
-                p = re.sub('#.*$', '', line).strip()
-                if not p:
+                pn = re.sub('#.*$', '', line).strip()
+                if not pn:
                     continue
-                remote_patches.append(p)
+                remote_patches.append(pn)
 
         def merge_patch(patch, pname):
             return __series_merge_patch(
