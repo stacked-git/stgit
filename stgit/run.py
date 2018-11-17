@@ -1,14 +1,24 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import datetime
 import io
 import subprocess
 
-from stgit.compat import (text, environ_get, environ_copy, file_wrapper,
-                          fsencode_utf8)
+from stgit.compat import (
+    environ_copy,
+    environ_get,
+    file_wrapper,
+    fsencode_utf8,
+    text,
+)
 from stgit.exception import StgException
-from stgit.out import out, MessagePrinter
+from stgit.out import MessagePrinter, out
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>

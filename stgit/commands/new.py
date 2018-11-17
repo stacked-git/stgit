@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 from stgit import argparse, utils
 from stgit.commands import common
-from stgit.lib import git as gitlib, transaction
+from stgit.lib import git as gitlib
+from stgit.lib import transaction
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>

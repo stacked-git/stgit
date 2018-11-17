@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """Common utility functions"""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from io import open
 import errno
 import os
@@ -10,7 +15,7 @@ import re
 import sys
 import tempfile
 
-from stgit.compat import text, environ_get
+from stgit.compat import environ_get, text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out

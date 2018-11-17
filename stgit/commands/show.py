@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import (DirectoryHasRepository,
-                                   color_diff_flags,
-                                   git_id,
-                                   parse_patches)
+from stgit.commands.common import (
+    DirectoryHasRepository,
+    color_diff_flags,
+    git_id,
+    parse_patches,
+)
 from stgit.lib import git
 from stgit.pager import pager
 from stgit.run import Run

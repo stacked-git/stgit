@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import re
 
 from stgit import git
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   name_email_date)
+from stgit.commands.common import (
+    CmdException,
+    DirectoryGotoToplevel,
+    name_email_date,
+)
 from stgit.out import out
 from stgit.run import Run
 from stgit.utils import make_patch_name

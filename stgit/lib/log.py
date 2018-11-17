@@ -100,14 +100,20 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from io import StringIO
 import re
 
 from stgit import utils
-from stgit.exception import StgException, StackException
-from stgit.lib import git, stack as libstack
+from stgit.exception import StackException, StgException
+from stgit.lib import git
+from stgit.lib import stack as libstack
 from stgit.out import out
 
 

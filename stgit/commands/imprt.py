@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from contextlib import closing
 import bz2
 import gzip
@@ -12,19 +17,21 @@ import tarfile
 
 from stgit import argparse, git
 from stgit.argparse import opt
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    check_conflicts,
+    check_head_top_equal,
+    check_local_changes,
+    git_id,
+    parse_mail,
+    parse_patch,
+    print_crt_patch,
+)
 from stgit.compat import message_from_binary_file, text
 from stgit.config import config
 from stgit.lib import git as gitlib
 from stgit.out import out
-from stgit.commands.common import (CmdException,
-                                   DirectoryHasRepository,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   check_local_changes,
-                                   git_id,
-                                   parse_mail,
-                                   parse_patch,
-                                   print_crt_patch)
 from stgit.utils import make_patch_name
 
 __copyright__ = """

@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import email
 import email.charset
 import email.header
@@ -13,14 +18,16 @@ import smtplib
 import socket
 import time
 
-from stgit import argparse, stack, git, version, templates
+from stgit import argparse, git, stack, templates, version
 from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryHasRepository,
-                                   address_or_alias,
-                                   git_id,
-                                   parse_patches)
-from stgit.compat import text, message_from_bytes
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    address_or_alias,
+    git_id,
+    parse_patches,
+)
+from stgit.compat import message_from_bytes, text
 from stgit.config import config
 from stgit.lib import git as gitlib
 from stgit.out import out

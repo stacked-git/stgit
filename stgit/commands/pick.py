@@ -1,19 +1,25 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 from stgit import argparse, git
 from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_head_top_equal,
-                                   check_local_changes,
-                                   check_conflicts,
-                                   git_id,
-                                   name_email_date,
-                                   parse_patches,
-                                   parse_rev,
-                                   print_crt_patch)
+from stgit.commands.common import (
+    CmdException,
+    DirectoryGotoToplevel,
+    check_conflicts,
+    check_head_top_equal,
+    check_local_changes,
+    git_id,
+    name_email_date,
+    parse_patches,
+    parse_rev,
+    print_crt_patch,
+)
 from stgit.out import out
 from stgit.stack import Series
 from stgit.utils import find_patch_name

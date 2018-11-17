@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 """Function/variables common to all the commands"""
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import email.utils
 import os
 import re
 import sys
 
-from stgit import stack, git, templates
-from stgit.compat import text, decode_utf8_with_latin1
+from stgit import git, stack, templates
+from stgit.compat import decode_utf8_with_latin1, text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.lib import git as libgit
@@ -16,13 +21,15 @@ from stgit.lib import log
 from stgit.lib import stack as libstack
 from stgit.out import out
 from stgit.run import Run, RunException
-from stgit.utils import (EditorException,
-                         add_sign_line,
-                         edit_string,
-                         get_hook,
-                         parse_name_email_date,
-                         run_hook_on_string,
-                         strip_prefix)
+from stgit.utils import (
+    EditorException,
+    add_sign_line,
+    edit_string,
+    get_hook,
+    parse_name_email_date,
+    run_hook_on_string,
+    strip_prefix,
+)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>

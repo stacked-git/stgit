@@ -1,31 +1,39 @@
 # -*- coding: utf-8 -*-
 """Basic quilt-like functionality"""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from email.utils import formatdate
 import os
 import re
 
-from stgit import git, basedir, templates
+from stgit import basedir, git, templates
 from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
-from stgit.lib import git as libgit, stackupgrade
+from stgit.lib import git as libgit
+from stgit.lib import stackupgrade
 from stgit.out import out
 from stgit.run import Run
-from stgit.utils import (add_sign_line,
-                         append_string,
-                         append_strings,
-                         call_editor,
-                         create_empty_file,
-                         insert_string,
-                         make_patch_name,
-                         read_string,
-                         read_strings,
-                         rename,
-                         write_string,
-                         write_strings)
+from stgit.utils import (
+    add_sign_line,
+    append_string,
+    append_strings,
+    call_editor,
+    create_empty_file,
+    insert_string,
+    make_patch_name,
+    read_string,
+    read_strings,
+    rename,
+    write_string,
+    write_strings,
+)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>

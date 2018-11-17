@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- python -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 import optparse
 import sys
 
-import stgit.main
 from stgit import argparse, commands, completion
+import stgit.main
 
 
 def main():

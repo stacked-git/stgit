@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import re
 import time
 
-from stgit import argparse, stack, git
+from stgit import argparse, git, stack
 from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_local_changes,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   git_id)
+from stgit.commands.common import (
+    CmdException,
+    DirectoryGotoToplevel,
+    check_conflicts,
+    check_head_top_equal,
+    check_local_changes,
+    git_id,
+)
 from stgit.lib import log
 from stgit.out import out
 

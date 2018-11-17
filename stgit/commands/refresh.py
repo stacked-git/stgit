@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
 
 from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import git, transaction, edit
 from stgit.config import config
+from stgit.lib import edit, git, transaction
 from stgit.out import out
 
 __copyright__ = """

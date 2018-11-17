@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 """Patch editing command"""
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import io
 
 from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import transaction, edit
+from stgit.lib import edit, transaction
 from stgit.out import out
 
 __copyright__ = """

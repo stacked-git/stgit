@@ -23,6 +23,7 @@ install-html:
 
 lint:
 	$(PYTHON) -m flake8 . stg stg-build stg-dbg stg-prof
+	$(PYTHON) -m isort --check-only --quiet --recursive stgit stg stg-build stg-dbg stg-prof t/test.py
 
 test:
 	$(PYTHON) setup.py build

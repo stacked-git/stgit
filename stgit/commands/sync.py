@@ -1,19 +1,26 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 import os
 import re
 
-from stgit import argparse, stack, git
+from stgit import argparse, git, stack
 from stgit.argparse import opt
-from stgit.commands.common import (CmdException,
-                                   DirectoryGotoToplevel,
-                                   check_local_changes,
-                                   check_conflicts,
-                                   check_head_top_equal,
-                                   parse_patches,
-                                   pop_patches,
-                                   push_patches)
+from stgit.commands.common import (
+    CmdException,
+    DirectoryGotoToplevel,
+    check_conflicts,
+    check_head_top_equal,
+    check_local_changes,
+    parse_patches,
+    pop_patches,
+    push_patches,
+)
 from stgit.out import out
 
 __copyright__ = """

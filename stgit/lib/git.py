@@ -2,8 +2,13 @@
 """A Python class hierarchy wrapping a git repository and its
 contents."""
 
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from datetime import datetime, timedelta, tzinfo
 import atexit
 import os
@@ -11,9 +16,9 @@ import re
 import signal
 
 from stgit import exception, utils
-from stgit.run import Run, RunException
 from stgit.compat import environ_get, text
 from stgit.config import config
+from stgit.run import Run, RunException
 
 
 class Immutable(object):
