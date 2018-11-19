@@ -9,9 +9,8 @@ from __future__ import (
 from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
-    DirectoryHasRepository,
+    DirectoryHasRepositoryLib,
     color_diff_flags,
-    git_id,
     parse_patches,
 )
 from stgit.lib import git
@@ -75,8 +74,7 @@ options = [
     ),
 ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log=False)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
@@ -86,32 +84,47 @@ def func(parser, options, args):
     elif options.applied and options.unapplied:
         parser.error('cannot use both --applied and --unapplied')
 
+    repository = directory.repository
+    stack = repository.get_stack(options.branch)
+    patchorder = stack.patchorder
+
     if options.applied:
-        patches = crt_series.get_applied()
+        commits = [stack.patches.get(pn).commit for pn in patchorder.applied]
     elif options.unapplied:
-        patches = crt_series.get_unapplied()
-    elif len(args) == 0:
-        patches = ['HEAD']
+        commits = [stack.patches.get(pn).commit for pn in patchorder.unapplied]
+    elif not args:
+        commits = [stack.top]
     elif '..' in ' '.join(args):
         # patch ranges
-        applied = crt_series.get_applied()
-        unapplied = crt_series.get_unapplied()
-        patches = parse_patches(
+        patch_names = parse_patches(
             args,
-            applied + unapplied + crt_series.get_hidden(),
-            len(applied),
+            patchorder.all,
+            len(patchorder.applied),
         )
+        commits = [stack.patches.get(pn).commit for pn in patch_names]
     else:
-        # individual patches or commit ids
-        patches = args
+        commits = []
+        for name in args:
+            if stack.patches.exists(name):
+                commits.append(stack.patches.get(name).commit)
+            else:
+                try:
+                    commits.append(
+                        repository.rev_parse(
+                            name, object_type='commit', discard_stderr=True
+                        )
+                    )
+                except git.RepositoryException:
+                    raise git.RepositoryException(
+                        '%s: Unknown patch or revision name' % name
+                    )
 
     if not options.stat:
         options.diff_flags.extend(color_diff_flags())
-    commit_ids = [git_id(crt_series, patch) for patch in patches]
     commit_bytes = b'\n'.join(
-        (Run('git', 'show', *(options.diff_flags + [commit_id]))
+        (Run('git', 'show', *(options.diff_flags + [commit.sha1]))
          .decoding(None).raw_output())
-        for commit_id in commit_ids)
+        for commit in commits)
     if options.stat:
         commit_bytes = git.diffstat(commit_bytes).encode('utf-8')
     if commit_bytes:
