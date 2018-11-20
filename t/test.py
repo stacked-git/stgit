@@ -172,12 +172,21 @@ def start_cleaner(q):
 
 def main():
     this_dir = os.path.dirname(__file__)
-    if this_dir:
-        os.chdir(this_dir)
     p = optparse.OptionParser()
     p.add_option("-j", "--jobs", type="int",
                  help="number of tests to run in parallel")
-    (opts, tests) = p.parse_args()
+    (opts, user_tests) = p.parse_args()
+    tests = []
+    for test in user_tests:
+        if os.path.exists(os.path.join(this_dir, test)):
+            tests.append(test)
+        elif os.path.exists(test):
+            tests.append(os.path.relpath(test, this_dir))
+        else:
+            print('test not found:', test, file=sys.stderr)
+            return 1
+    if this_dir and this_dir != os.getcwd():
+        os.chdir(this_dir)
     if not tests:
         tests = glob.glob("t[0-9][0-9][0-9][0-9]-*.sh")
     if opts.jobs is None:
