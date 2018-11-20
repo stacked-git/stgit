@@ -115,9 +115,12 @@ class MessagePrinter(object):
         self.__stdout.write_bytes(byte_data)
 
     def err_raw(self, string):
-        """Write a string possibly containing newlines to the error
-        output."""
+        """Write a string possibly containing newlines to the error output."""
         self.__stderr.write_raw(string)
+
+    def err_bytes(self, byte_data):
+        """Write encoded byte data to the error output."""
+        self.__stderr.write_bytes(byte_data)
 
     def info(self, *msgs):
         for msg in msgs:

@@ -17,6 +17,10 @@ test_expect_success 'Diff with some local changes' '
     stg diff
 '
 
+test_expect_success 'Diff with bad diff-opts' '
+    command_error stg diff --diff-opts=--bad-diff-opt
+'
+
 test_expect_success 'Initialize StGit stuff' '
     stg init &&
     stg new foo -m foo
