@@ -71,7 +71,7 @@ test_expect_success 'Patches relative to dir' '
     )
 '
 
-test_expect_failure 'With diff output' '
+test_expect_success 'With diff output' '
     stg patches --diff even.txt > even-diff.log &&
     test $(cat even-diff.log | grep -c -E b'\\\'') = "0" &&
     test $(cat even-diff.log | grep -c -E "\+(zero|two|four)") = "3" &&

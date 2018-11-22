@@ -56,17 +56,6 @@ options = [
 directory = DirectoryHasRepository(log=False)
 crt_series = None
 
-diff_tmpl = '\n'.join(
-    [
-        '-' * 79,
-        '%s',
-        '-' * 79,
-        '%s---',
-        '',
-        '%s',
-    ]
-)
-
 
 def func(parser, options, args):
     """Show the patches modifying a file
@@ -96,18 +85,23 @@ def func(parser, options, args):
         rev_patch[patch.get_top()] = patch
 
     # print the patch names
-    diff_output = ''
+    diff_lines = []
     for rev in revs:
-        if rev in rev_patch:
-            patch = rev_patch[rev]
-            if options.diff:
-                diff_output += diff_tmpl % (
-                    patch.get_name(),
-                    patch.get_description(),
+        patch = rev_patch[rev]
+        if options.diff:
+            diff_lines.extend(
+                [
+                    b'-' * 79,
+                    patch.get_name().encode('utf-8'),
+                    b'-' * 79,
+                    patch.get_description().encode('utf-8'),
+                    b'---',
+                    b'',
                     git.diff(files, patch.get_bottom(), patch.get_top()),
-                )
-            else:
-                out.stdout(patch.get_name())
+                ]
+            )
+        else:
+            out.stdout(patch.get_name())
 
     if options.diff:
-        pager(diff_output.encode('utf-8'))
+        pager(b'\n'.join(diff_lines))
