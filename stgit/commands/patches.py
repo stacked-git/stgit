@@ -8,7 +8,11 @@ from __future__ import (
 
 from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepositoryLib
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepositoryLib,
+    color_diff_flags,
+)
 from stgit.out import out
 from stgit.pager import pager
 
@@ -51,7 +55,7 @@ options = [
         args=[argparse.stg_branches],
         short='Use BRANCH instead of the default branch',
     ),
-]
+] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepositoryLib()
 
@@ -108,8 +112,7 @@ def func(parser, options, args):
                         patch.commit.data.parent.data.tree,
                         patch.commit.data.tree,
                         pathlimits=files,
-                        # TODO: diff flags
-                        diff_opts=(),
+                        diff_opts=options.diff_flags + color_diff_flags(),
                     )
                 ]
             )
