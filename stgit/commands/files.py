@@ -6,10 +6,14 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepository, git_id
-from stgit.lib import git as gitlib
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepositoryLib,
+    color_diff_flags,
+    parse_rev,
+)
 from stgit.out import out
 
 __copyright__ = """
@@ -49,8 +53,7 @@ options = [
     ),
 ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log=False)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
@@ -58,25 +61,38 @@ def func(parser, options, args):
     """
     if options.bare and options.stat:
         raise CmdException('Cannot specify both --bare and --stat')
+    repository = directory.repository
     if len(args) == 0:
-        patch = 'HEAD'
+        stack = repository.current_stack
+        commit = stack.top
     elif len(args) == 1:
-        patch = args[0]
+        branch, name = parse_rev(args[0])
+        stack = repository.get_stack(branch)
+        if not stack.patches.exists(name):
+            raise CmdException('%s: Unknown patch name' % name)
+        commit = stack.patches.get(name).commit
     else:
         parser.error('incorrect number of arguments')
 
-    rev1 = git_id(crt_series, '%s^' % patch)
-    rev2 = git_id(crt_series, '%s' % patch)
-
     if options.stat:
-        output = gitlib.diffstat(
-            git.diff(rev1=rev1, rev2=rev2, diff_flags=options.diff_flags)
-        )
-    elif options.bare:
-        output = git.barefiles(rev1, rev2)
+        cmd = ['git', 'diff-tree', '--stat', '--summary', '--no-commit-id']
+        cmd.extend(options.diff_flags)
+        cmd.extend(color_diff_flags())
+        cmd.append(commit.sha1)
+        out.stdout_bytes(repository.run(cmd).decoding(None).raw_output())
     else:
-        output = git.files(rev1, rev2, diff_flags=options.diff_flags)
-    if output:
-        if not output.endswith('\n'):
-            output += '\n'
-        out.stdout_raw(output)
+        used = set()
+        for dt in repository.diff_tree_files(
+            commit.data.parent.data.tree, commit.data.tree
+        ):
+            _, _, _, _, status, oldname, newname = dt
+            for filename in [oldname, newname]:
+                if filename in used:
+                    continue
+                else:
+                    used.add(filename)
+
+                if options.bare:
+                    out.stdout(filename)
+                else:
+                    out.stdout('%s %s' % (status, filename))

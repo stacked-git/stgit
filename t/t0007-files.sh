@@ -27,7 +27,7 @@ test_expect_success 'Too many arguments' '
     command_error stg files patch-a-b patch-b-c
 '
 
-test_expect_failure 'Invalid patch name' '
+test_expect_success 'Invalid patch name' '
     command_error stg files bad-patch-name 2>&1 |
     grep -e "bad-patch-name: Unknown patch"
 '
@@ -55,8 +55,8 @@ test_expect_success 'Bare file names' '
 '
 
 cat > expected-b-c-stat.log <<EOF
- b.txt |    1 +
- c.txt |    1 +
+ b.txt | 1 +
+ c.txt | 1 +
  2 files changed, 2 insertions(+)
  create mode 100644 c.txt
 EOF
