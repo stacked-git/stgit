@@ -6,15 +6,13 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
-    DirectoryHasRepository,
+    DirectoryHasRepositoryLib,
     color_diff_flags,
-    git_id,
+    git_commit,
 )
-from stgit.lib import git as gitlib
-from stgit.out import out
 from stgit.pager import pager
 
 __copyright__ = """
@@ -66,43 +64,53 @@ options = [
     ),
 ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepository(log=False)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
-    """Show the tree diff
-    """
-    args = git.ls_files(args)
-    directory.cd_to_topdir()
+    """Show the tree diff"""
+    repository = directory.repository
 
     if options.revs:
         rev_list = options.revs.split('..')
         if len(rev_list) not in [1, 2] or not rev_list[0]:
             parser.error('incorrect parameters to -r')
-        if len(rev_list) == 1:
-            rev1 = rev_list[0]
+        elif len(rev_list) == 1:
+            rev1 = git_commit(rev_list[0], repository)
             rev2 = None
         else:
-            rev1 = rev_list[0]
+            rev1 = git_commit(rev_list[0], repository)
             if rev_list[1]:
-                rev2 = rev_list[1]
+                rev2 = git_commit(rev_list[1], repository)
             else:
                 rev2 = None
     else:
-        rev1 = 'HEAD'
+        rev1 = repository.rev_parse('HEAD')
         rev2 = None
 
-    if not options.stat:
-        options.diff_flags.extend(color_diff_flags())
-    diff = git.diff(
-        args,
-        rev1 and git_id(crt_series, rev1),
-        rev2 and git_id(crt_series, rev2),
-        diff_flags=options.diff_flags,
-        binary=False,
-    )
-    if options.stat:
-        out.stdout_raw(gitlib.diffstat(diff) + '\n')
-    elif diff:
-        pager(diff)
+    iw = repository.default_iw
+
+    files = iw.ls_files(rev1.data.tree, args)
+
+    diff_opts = color_diff_flags()
+    diff_opts.extend(options.diff_flags)
+
+    if rev1 and rev2:
+        diff = repository.diff_tree(
+            rev1.data.tree,
+            rev2.data.tree,
+            diff_opts=diff_opts,
+            pathlimits=files,
+            stat=options.stat,
+            binary=False,
+        )
+    else:
+        diff = iw.diff(
+            rev1.data.tree,
+            diff_opts=diff_opts,
+            pathlimits=files,
+            stat=options.stat,
+            binary=False,
+        )
+
+    pager(diff)

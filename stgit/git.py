@@ -187,32 +187,6 @@ def get_conflicts():
     return list(names)
 
 
-def ls_files(files, tree='HEAD', full_name=True):
-    """Return the files known to GIT or raise an error otherwise. It also
-    converts the file to the full path relative the the .git directory.
-    """
-    if not files:
-        return []
-
-    args = []
-    if tree:
-        args.append('--with-tree=%s' % tree)
-    if full_name:
-        args.append('--full-name')
-    args.append('--')
-    args.extend(files)
-    try:
-        # use a set to avoid file names duplication due to different stages
-        fileset = set(
-            GRun('ls-files', '--error-unmatch', *args).output_lines()
-        )
-    except GitRunException:
-        # just hide the details of the 'git ls-files' command we use
-        raise GitException(
-            'Some of the given paths are either missing or not known to GIT')
-    return list(fileset)
-
-
 def parse_git_ls(lines):
     """Parse the output of git diff-index, diff-files, etc. Doesn't handle
     rename/copy output, so don't feed it output generated with the -M

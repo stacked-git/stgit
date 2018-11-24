@@ -23,10 +23,9 @@ test_expect_success 'Diff with some local changes' '
 '
 
 cat > expected-add-foo-stat.diff <<EOF
- foo.txt |    1 +
+ foo.txt | 1 +
  1 file changed, 1 insertion(+)
  create mode 100644 foo.txt
-
 EOF
 
 test_expect_success 'Diff stat with some local changes' '
@@ -99,12 +98,11 @@ test_expect_success 'Diff invalid rev no rev1' '
 '
 
 cat > expected-bar-head-stat.diff <<EOF
- bar.txt           |    2 ++
- dir0/dir1/baz.txt |    2 ++
- foo.txt           |    1 +
+ bar.txt           | 2 ++
+ dir0/dir1/baz.txt | 2 ++
+ foo.txt           | 1 +
  3 files changed, 5 insertions(+)
  create mode 100644 dir0/dir1/baz.txt
-
 EOF
 
 test_expect_success 'Diff range just rev1' '
@@ -156,10 +154,9 @@ test_expect_success 'Binary diff with user --binary' '
 '
 
 cat > expected-num-stat.diff <<EOF
- num.bin |  Bin
+ num.bin | Bin 0 -> 4 bytes
  1 file changed, 0 insertions(+), 0 deletions(-)
  create mode 100644 num.bin
-
 EOF
 
 test_expect_success 'Binary diff stat' '
