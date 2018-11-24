@@ -123,11 +123,10 @@ class Patch(object):
     def files(self):
         """Return the set of files this patch touches."""
         fs = set()
-        for (
-            _, _, _, _, _, oldname, newname
-        ) in self.__stack.repository.diff_tree_files(
-            self.commit.data.tree, self.commit.data.parent.data.tree
+        for dt in self.__stack.repository.diff_tree_files(
+            self.commit.data.parent.data.tree, self.commit.data.tree,
         ):
+            _, _, _, _, _, oldname, newname = dt
             fs.add(oldname)
             fs.add(newname)
         return fs
