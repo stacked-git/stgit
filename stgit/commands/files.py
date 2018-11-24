@@ -8,7 +8,7 @@ from __future__ import (
 
 from stgit import argparse, git
 from stgit.argparse import opt
-from stgit.commands.common import DirectoryHasRepository, git_id
+from stgit.commands.common import CmdException, DirectoryHasRepository, git_id
 from stgit.lib import git as gitlib
 from stgit.out import out
 
@@ -56,6 +56,8 @@ crt_series = None
 def func(parser, options, args):
     """Show the files modified by a patch (or the current patch)
     """
+    if options.bare and options.stat:
+        raise CmdException('Cannot specify both --bare and --stat')
     if len(args) == 0:
         patch = 'HEAD'
     elif len(args) == 1:
@@ -68,7 +70,7 @@ def func(parser, options, args):
 
     if options.stat:
         output = gitlib.diffstat(
-            git.diff(rev1, rev2, diff_flags=options.diff_flags)
+            git.diff(rev1=rev1, rev2=rev2, diff_flags=options.diff_flags)
         )
     elif options.bare:
         output = git.barefiles(rev1, rev2)
