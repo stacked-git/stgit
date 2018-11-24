@@ -6,9 +6,9 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.commands.common import CmdException, DirectoryHasRepositoryLib
 from stgit.out import out
 from stgit.pager import pager
 
@@ -53,55 +53,68 @@ options = [
     ),
 ]
 
-directory = DirectoryHasRepository(log=False)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
-    """Show the patches modifying a file
-    """
+    """Show the patches modifying a file."""
+    repository = directory.repository
+    stack = repository.get_stack(options.branch)
+
+    if not stack.patchorder.applied:
+        raise CmdException('No patches applied')
+
+    iw = repository.default_iw
+
     if not args:
-        files = [path for (stat, path) in git.tree_status(verbose=True)]
-        # git.tree_status returns absolute paths
+        files = iw.changed_files(stack.head.data.tree)
     else:
-        files = git.ls_files(args)
-    directory.cd_to_topdir()
+        files = iw.ls_files(stack.head.data.tree, args)
 
     if not files:
         raise CmdException('No files specified or no local changes')
 
-    applied = crt_series.get_applied()
-    if not applied:
-        raise CmdException('No patches applied')
+    directory.cd_to_topdir()
 
-    revs = git.modifying_revs(files, crt_series.get_base(),
-                              crt_series.get_head())
-    revs.reverse()
+    # Find set of revisions that modify the selected files.
+    revs = set(
+        repository.run(
+            [
+                'git',
+                'rev-list',
+                '--stdin',
+                stack.base.sha1 + '..' + stack.top.sha1,
+            ]
+        )
+        .raw_input('--\n' + '\n'.join(files))
+        .output_lines()
+    )
 
-    # build the patch/revision mapping
-    rev_patch = dict()
-    for name in applied:
-        patch = crt_series.get_patch(name)
-        rev_patch[patch.get_top()] = patch
-
-    # print the patch names
     diff_lines = []
-    for rev in revs:
-        patch = rev_patch[rev]
+    for name in stack.patchorder.applied:
+        patch = stack.patches.get(name)
+        if patch.commit.sha1 not in revs:
+            continue
         if options.diff:
             diff_lines.extend(
                 [
                     b'-' * 79,
-                    patch.get_name().encode('utf-8'),
+                    patch.name.encode('utf-8'),
                     b'-' * 79,
-                    patch.get_description().encode('utf-8'),
+                    patch.commit.data.message.encode('utf-8'),
                     b'---',
                     b'',
-                    git.diff(files, patch.get_bottom(), patch.get_top()),
+                    repository.diff_tree(
+                        patch.commit.data.parent.data.tree,
+                        patch.commit.data.tree,
+                        pathlimits=files,
+                        # TODO: diff flags
+                        diff_opts=(),
+                    )
                 ]
             )
         else:
-            out.stdout(patch.get_name())
+            out.stdout(patch.name)
 
     if options.diff:
         pager(b'\n'.join(diff_lines))

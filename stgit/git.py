@@ -882,12 +882,6 @@ def apply_patch(filename=None, diff=None, base=None, reject=False, strip=None):
         merge_recursive(base, orig_head, top)
 
 
-def modifying_revs(files, base_rev, head_rev):
-    """Return the revisions from the list modifying the given files."""
-    return GRun('rev-list', '%s..%s' % (base_rev, head_rev), '--', *files
-                ).output_lines()
-
-
 def refspec_localpart(refspec):
     m = re.match('^[^:]*:([^:]*)$', refspec)
     if m:
