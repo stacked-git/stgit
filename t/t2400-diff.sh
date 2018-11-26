@@ -93,7 +93,7 @@ test_expect_success 'Diff invalid rev too many ..' '
     grep -e "incorrect parameters to -r"
 '
 
-test_expect_failure 'Diff invalid rev no rev1' '
+test_expect_success 'Diff invalid rev no rev1' '
     command_error stg diff -r ..baz 2>&1 |
     grep -e "incorrect parameters to -r"
 '

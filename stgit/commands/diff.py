@@ -78,15 +78,17 @@ def func(parser, options, args):
 
     if options.revs:
         rev_list = options.revs.split('..')
-        rev_list_len = len(rev_list)
-        if rev_list_len == 1:
+        if len(rev_list) not in [1, 2] or not rev_list[0]:
+            parser.error('incorrect parameters to -r')
+        if len(rev_list) == 1:
             rev1 = rev_list[0]
             rev2 = None
-        elif rev_list_len == 2:
-            rev1 = rev_list[0]
-            rev2 = rev_list[1]
         else:
-            parser.error('incorrect parameters to -r')
+            rev1 = rev_list[0]
+            if rev_list[1]:
+                rev2 = rev_list[1]
+            else:
+                rev2 = None
     else:
         rev1 = 'HEAD'
         rev2 = None
