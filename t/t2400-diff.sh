@@ -143,7 +143,7 @@ test_expect_success 'Refresh changes' '
     stg refresh
 '
 
-test_expect_failure 'Binary diff' '
+test_expect_success 'Binary diff' '
     printf "\000\001\002\003" > num.bin &&
     stg add num.bin &&
     stg diff > num.diff &&

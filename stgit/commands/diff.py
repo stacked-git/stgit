@@ -100,6 +100,7 @@ def func(parser, options, args):
         rev1 and git_id(crt_series, rev1),
         rev2 and git_id(crt_series, rev2),
         diff_flags=options.diff_flags,
+        binary=False,
     )
     if options.stat:
         out.stdout_raw(gitlib.diffstat(diff) + '\n')
