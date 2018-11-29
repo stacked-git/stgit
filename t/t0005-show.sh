@@ -31,7 +31,7 @@ test_expect_success 'Invalid patch name' '
 
 test_expect_success 'Show patch' '
     stg show patch-bbb |
-    grep -e "\+bbb"
+    grep -E "\+bbb"
 '
 
 test_expect_success 'Bad diff opts' '
@@ -41,15 +41,15 @@ test_expect_success 'Bad diff opts' '
 
 test_expect_success 'Show patch range' '
     stg show patch-bbb..patch-ddd > show-range.txt &&
-    test $(cat show-range.txt | grep --count -e "\+\(aaa\|bbb\|ccc\|ddd\)") = "3" &&
-    test $(cat show-range.txt | grep --count -e "\+aaa") = "0"
+    test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-range.txt) = "3" &&
+    test $(grep -c -E "\+aaa" show-range.txt) = "0"
 '
 
 test_expect_success 'Show unapplied' '
     stg goto patch-bbb &&
     stg show --unapplied > show-unapplied.txt &&
-    test $(cat show-unapplied.txt | grep --count -e "\+\(aaa\|bbb\|ccc\|ddd\)") = "2" &&
-    test $(cat show-unapplied.txt | grep --count -e "\+\(aaa\|bbb\)") = "0" &&
+    test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-unapplied.txt) = "2" &&
+    test $(grep -c -E "\+(aaa|bbb)" show-unapplied.txt) = "0" &&
     for pn in $(stg series --unapplied --noprefix); do
         grep -e "$pn" show-unapplied.txt
     done
@@ -57,8 +57,8 @@ test_expect_success 'Show unapplied' '
 
 test_expect_success 'Show applied' '
     stg show --applied > show-applied.txt &&
-    test $(cat show-applied.txt | grep --count -e "\+\(aaa\|bbb\|ccc\|ddd\)") = "2" &&
-    test $(cat show-applied.txt | grep --count -e "\+\(ccc\|ddd\)") = "0"
+    test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-applied.txt) = "2" &&
+    test $(grep -c -E "\+(ccc|ddd)" show-applied.txt) = "0"
     for pn in $(stg series --applied --noprefix); do
         grep -e "$pn" show-applied.txt
     done
@@ -72,8 +72,8 @@ test_expect_success 'Show head' '
 
 test_expect_success 'Show by name' '
     stg show patch-aaa patch-ddd > show-a-d.txt &&
-    test $(cat show-a-d.txt | grep --count -e "\+\(aaa\|bbb\|ccc\|ddd\)") = "2" &&
-    test $(cat show-a-d.txt | grep --count -e "\+\(bbb\|ccc\)") = "0"
+    test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-a-d.txt) = "2" &&
+    test $(grep -c -E "\+(bbb|ccc)" show-a-d.txt) = "0"
 '
 
 test_expect_success 'Run show on empty patch' '
@@ -89,8 +89,8 @@ test_expect_success 'Run show --stat on empty patch' '
 
 test_expect_success 'Run show --stat on patches' '
     stg show --stat patch-aaa patch-ddd > show-a-d-stat.txt &&
-    test $(cat show-a-d-stat.txt | grep --count -e " foo.txt | 1 \+") = "2" &&
-    test $(cat show-a-d-stat.txt | grep --count -e "patch-aaa\|patch-ddd") = "2"
+    test $(grep -c -e " foo.txt | 1 \+" show-a-d-stat.txt) = "2" &&
+    test $(grep -c -E "patch-aaa|patch-ddd" show-a-d-stat.txt) = "2"
 '
 
 test_done
