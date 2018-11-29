@@ -17,8 +17,8 @@ test_expect_success 'Add utf-8 encoded text' '
 '
 
 test_expect_success 'Add more encodings' '
-    for e in ISO8859-5 KOI8-R UTF-16 UTF-32 CP866; do
-      iconv --from-code=UTF-8 --to-code=$e -o $e.txt glass.txt &&
+    for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
+      iconv -f UTF-8 -t $e glass.txt > $e.txt &&
       stg new -m "Add $e.txt" $e &&
       stg add $e.txt &&
       stg diff &&
@@ -27,8 +27,8 @@ test_expect_success 'Add more encodings' '
     done &&
     stg pop -a &&
     stg push -a &&
-    for e in ISO8859-5 KOI8-R UTF-16 UTF-32 CP866; do
-      iconv --from-code=$e --to-code=UTF-8 -o glass-from-$e.txt $e.txt &&
+    for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
+      iconv -f $e -t UTF-8 $e.txt > glass-from-$e.txt &&
       diff -q glass.txt glass-from-$e.txt || return 1
     done
 '
@@ -37,17 +37,17 @@ test_expect_success 'Test export and import' '
     stg export --dir export-dir &&
     stg delete .. &&
     stg import -s export-dir/series &&
-    for e in ISO8859-5 KOI8-R UTF-16 UTF-32 CP866; do
-      iconv --from-code=$e --to-code=UTF-8 -o glass-from-$e.txt $e.txt &&
+    for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
+      iconv -f $e -t UTF-8 $e.txt > glass-from-$e.txt &&
       diff -q glass.txt glass-from-$e.txt || return 1
     done
 '
 
 test_expect_success 'Squash' '
-    stg squash -n UTF -m "Squash UTF patches" -- UTF-16 UTF-32 &&
+    stg squash -n UTF -m "Squash UTF patches" -- UTF-16 UTF-32BE &&
     stg show UTF | grep -e "Squash UTF patches" &&
-    for e in UTF-16 UTF-32; do
-      iconv --from-code=$e --to-code=UTF-8 -o glass-from-$e.txt $e.txt &&
+    for e in UTF-16 UTF-32BE; do
+      iconv -f $e -t UTF-8 $e.txt > glass-from-$e.txt &&
       diff -q glass.txt glass-from-$e.txt || return 1
     done
 '
@@ -61,8 +61,8 @@ body='
     stg mail --all --mbox > export.mbox &&
     stg delete .. &&
     stg import --mbox export.mbox &&
-    for e in ISO8859-5 KOI8-R UTF-16 UTF-32 CP866; do
-      iconv --from-code=$e --to-code=UTF-8 -o glass-from-$e.txt $e.txt &&
+    for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
+      iconv -f $e -t UTF-8 $e.txt > glass-from-$e.txt &&
       diff -q glass.txt glass-from-$e.txt || return 1
     done
 '
