@@ -103,12 +103,21 @@ setup(
     scripts=['stg'],
     packages=list(map(str, ['stgit', 'stgit.commands', 'stgit.lib'])),
     data_files=[
-        ('share/stgit/templates', glob('templates/*.tmpl')),
+        ('share/stgit/templates', glob('stgit/templates/*.tmpl')),
         ('share/stgit/examples', glob('examples/*.tmpl')),
         ('share/stgit/examples', ['examples/gitconfig']),
         ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
         ('share/stgit/completion', ['stgit-completion.bash']),
     ],
+    package_data={
+        'stgit': [
+            'templates/covermail.tmpl',
+            'templates/mailattch.tmpl',
+            'templates/patchandattch.tmpl',
+            'templates/patchexport.tmpl',
+            'templates/patchmail.tmpl',
+        ],
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',

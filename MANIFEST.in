@@ -3,7 +3,6 @@ include RELEASENOTES
 include stg-build
 include stg-prof
 include stg-dbg
-include templates/*.tmpl
 include examples/*.tmpl
 include examples/gitconfig
 include contrib/*.sh
@@ -11,6 +10,6 @@ include contrib/stg-*
 include contrib/Makefile
 include contrib/stgit.el
 recursive-include contrib/vim *.vim
-include t/t*.sh t/t*/* t/Makefile t/README
+include t/t*.sh t/t[0-9]*/* t/Makefile t/README
 include Documentation/*.txt Documentation/Makefile Documentation/*.conf
 include Documentation/build-docdep.perl Documentation/callouts.xsl

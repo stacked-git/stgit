@@ -20,7 +20,7 @@ test_expect_success \
 test_expect_success \
     'Put all the patches in an mbox' \
     'stg mail --to="Inge Ström <inge@example.com>" -a -m \
-       -t $STG_ROOT/templates/patchmail.tmpl > mbox0'
+       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0'
 
 test_expect_success \
     'Import the mbox and compare' \

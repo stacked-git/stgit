@@ -39,7 +39,7 @@ def get_template(tfile):
         basedir.get(),
         os.path.join(os.path.expanduser('~'), '.stgit', 'templates'),
         os.path.join(sys.prefix, 'share', 'stgit', 'templates'),
-        os.path.join(os.path.dirname(__file__), os.pardir, 'templates'),
+        os.path.join(os.path.dirname(__file__), 'templates'),
     ]
 
     for d in tmpl_dirs:
