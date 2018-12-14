@@ -6,11 +6,15 @@ export DESTDIR PYTHON
 
 TEST_PATCHES ?= ..
 
-all:
+all: build
+
+build:
 	$(PYTHON) setup.py build
 
 install:
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
+
+.PHONY: all build install
 
 doc:
 	$(MAKE) -C Documentation all
@@ -21,18 +25,21 @@ install-doc:
 install-html:
 	$(MAKE) -C Documentation install-html
 
+.PHONY: doc install-doc install-html
+
 lint:
 	$(PYTHON) -m flake8 . stg stg-build stg-dbg stg-prof
 	$(PYTHON) -m isort --check-only --quiet --recursive stgit stg stg-build stg-dbg stg-prof t/test.py
 
-test:
-	$(PYTHON) setup.py build
+test: build
 	$(MAKE) -C t all
 
-test_patches:
+test-patches:
 	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
 		stg goto $$patch && $(MAKE) test || break; \
 	done
+
+.PHONY: lint test test-patches
 
 coverage: coverage-test coverage-report
 
@@ -45,6 +52,8 @@ coverage-report:
 	$(PYTHON) -m coverage html --title="stgit coverage"
 	$(PYTHON) -m coverage report
 	@echo "HTML coverage report: file://$(PWD)/htmlcov/index.html"
+
+.PHONY: coverage coverage-test coverage-report
 
 clean:
 	for dir in Documentation t; do \
@@ -70,5 +79,4 @@ tags:
 TAGS:
 	ctags -e -R stgit/*
 
-.PHONY: all install doc install-doc install-html test test_patches \
-	lint coverage coverage-test coverage-report clean tags TAGS
+.PHONY: clean tags TAGS
