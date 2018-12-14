@@ -7,13 +7,13 @@ test_expect_success 'Setup' '
     printf "000\n111\n222\n333\n" >> foo &&
     stg add foo &&
     git commit -m "Initial commit" &&
-    sed -i "s/000/000xx/" foo &&
+    sed "s/000/000xx/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "First change" &&
-    sed -i "s/111/111yy/" foo &&
+    sed "s/111/111yy/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Second change" &&
-    sed -i "s/222/222zz/" foo &&
+    sed "s/222/222zz/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Third change" &&
-    sed -i "s/333/333zz/" foo &&
+    sed "s/333/333zz/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Fourth change" &&
     stg init &&
     stg uncommit -n 4 p &&
@@ -156,7 +156,7 @@ rm -f twoliner
 
 cat > diffedit <<EOF
 #!/bin/sh
-sed -i 's/111yy/111YY/' "\$1"
+sed 's/111yy/111YY/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
 EOF
 chmod a+x diffedit
 test_expect_success 'Edit patch diff' '
