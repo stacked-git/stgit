@@ -142,6 +142,23 @@ def system_date(datestring):
         raise DateException(datestring, "date")
 
 
+def git_date(datestring=''):
+    try:
+        ident = Run(
+            'git', 'var', 'GIT_AUTHOR_IDENT'
+        ).env(
+            {
+                'GIT_AUTHOR_NAME': 'XXX',
+                'GIT_AUTHOR_EMAIL': 'XXX',
+                'GIT_AUTHOR_DATE': datestring,
+            }
+        ).output_one_line()
+    except RunException:
+        return None
+    _, _, timestamp, offset = ident.split()
+    return datetime.fromtimestamp(int(timestamp), TimeZone(offset))
+
+
 class Date(Immutable):
     """Represents a timestamp used in git commits."""
 
@@ -166,6 +183,17 @@ class Date(Immutable):
                     **{'tzinfo': TimeZone(m.group(7))})
             except ValueError:
                 raise DateException(datestring, 'date')
+            return
+
+        if datestring == 'now':
+            self.__time = git_date()
+            assert self.__time
+            return
+
+        # Try parsing with `git var`.
+        gd = git_date(datestring)
+        if gd:
+            self.__time = gd
             return
 
         # Try parsing with the system's "date" command.
