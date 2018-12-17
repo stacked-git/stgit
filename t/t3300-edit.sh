@@ -222,7 +222,7 @@ test_expect_success 'Set author date to "now"' '
     before=$(date "+%F %T %z") &&
     stg edit p2 --authdate now &&
     after=$(date "+%F %T %z") &&
-    printf "$before\n$(adate HEAD)\n$after\n" | sort -C -
+    printf "$before\n$(adate HEAD)\n$after\n" | sort -c -
 '
 
 test_expect_success 'Set patch tree' '
