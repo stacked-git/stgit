@@ -91,15 +91,14 @@ test_expect_success 'Save template to stdout' '
 
 mkeditor ()
 {
-    cat > "$1" <<EOF
-#!/bin/sh
+    write_script "$1" <<EOF
 printf "\n$1" >> "\$1"
 EOF
-    chmod a+x "$1"
 }
 
 mkeditor vi
 test_expect_success 'Edit commit message interactively (vi)' '
+    unset EDITOR
     m=$(msg HEAD) &&
     PATH=.:$PATH stg edit p2 &&
     test "$(msg HEAD)" = "$m/vi"
@@ -154,11 +153,9 @@ test_expect_success 'Both noninterative and interactive editing' '
 '
 rm -f twoliner
 
-cat > diffedit <<EOF
-#!/bin/sh
+write_script diffedit <<EOF
 sed 's/111yy/111YY/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
 EOF
-chmod a+x diffedit
 test_expect_success 'Edit patch diff' '
     EDITOR=./diffedit stg edit -d p2 &&
     test "$(grep 111 foo)" = "111YY"

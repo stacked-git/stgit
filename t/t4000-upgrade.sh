@@ -9,8 +9,8 @@ test_description='Make sure that we can use old StGIT repositories'
 
 for ver in 0.12 0.8; do
 
-    tar zxf $STG_ROOT/t/t4000-upgrade/$ver.tar.gz
-    cd $ver
+    tar zxf $TEST_DIRECTORY/t4000-upgrade/$ver.tar.gz
+    cd $ver || exit 1
 
     test_expect_success \
         "v$ver: Check the list of applied and unapplied patches" '
@@ -31,7 +31,7 @@ for ver in 0.12 0.8; do
 
     test_expect_success \
         "v$ver: Make sure the base ref is no longer there" '
-        must_fail git show-ref --verify --quiet refs/bases/master
+        test_must_fail git show-ref --verify --quiet refs/bases/master
     '
 
     cd ..

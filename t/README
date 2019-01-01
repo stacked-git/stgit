@@ -1,3 +1,7 @@
+The mechanism that powers this testsuite is directly imported from the
+Core GIT Tests, in directory t/ of the git repository.  Files are base
+on git version 2.20.0.
+
 Core GIT Tests
 ==============
 
@@ -117,37 +121,6 @@ appropriately before running "make".
 	<test-selector>.  See section "Skipping Tests" below for
 	<test-selector> syntax.
 
---valgrind=<tool>::
-	Execute all Git binaries under valgrind tool <tool> and exit
-	with status 126 on errors (just like regular tests, this will
-	only stop the test script when running under -i).
-
-	Since it makes no sense to run the tests with --valgrind and
-	not see any output, this option implies --verbose.  For
-	convenience, it also implies --tee.
-
-	<tool> defaults to 'memcheck', just like valgrind itself.
-	Other particularly useful choices include 'helgrind' and
-	'drd', but you may use any tool recognized by your valgrind
-	installation.
-
-	As a special case, <tool> can be 'memcheck-fast', which uses
-	memcheck but disables --track-origins.  Use this if you are
-	running tests in bulk, to see if there are _any_ memory
-	issues.
-
-	Note that memcheck is run with the option --leak-check=no,
-	as the git process is short-lived and some errors are not
-	interesting. In order to run a single command under the same
-	conditions manually, you should set GIT_VALGRIND to point to
-	the 't/valgrind/' directory and use the commands under
-	't/valgrind/bin/'.
-
---valgrind-only=<pattern>::
-	Like --valgrind, but the effect is limited to tests with
-	numbers matching <pattern>.  The number matched against is
-	simply the running count of the test within the file.
-
 --tee::
 	In addition to printing the test output to the terminal,
 	write it to files named 't/test-results/$TEST_NAME.out'.
@@ -161,42 +134,18 @@ appropriately before running "make".
 	is safe to use when stdout is being consumed by a TAP parser
 	like `prove`. Implies `--tee` and `--verbose`.
 
---with-dashes::
-	By default tests are run without dashed forms of
-	commands (like git-commit) in the PATH (it only uses
-	wrappers from ../bin-wrappers).  Use this option to include
-	the build directory (..) in the PATH, which contains all
-	the dashed forms of commands.  This option is currently
-	implied by other options like --valgrind and
-	GIT_TEST_INSTALLED.
-
 --root=<directory>::
 	Create "trash" directories used to store all temporary data during
 	testing under <directory>, instead of the t/ directory.
 	Using this option with a RAM-based filesystem (such as tmpfs)
 	can massively speed up the test suite.
 
---chain-lint::
---no-chain-lint::
-	If --chain-lint is enabled, the test harness will check each
-	test to make sure that it properly "&&-chains" all commands (so
-	that a failure in the middle does not go unnoticed by the final
-	exit code of the test). This check is performed in addition to
-	running the tests themselves. You may also enable or disable
-	this feature by setting the GIT_TEST_CHAIN_LINT environment
-	variable to "1" or "0", respectively.
-
-You can also set the GIT_TEST_INSTALLED environment variable to
+You can also set the STG_TEST_INSTALLED environment variable to
 the bindir of an existing git installation to test that installation.
 You still need to have built this git sandbox, from which various
 test-* support programs, templates, and perl libraries are used.
 If your installed git is incomplete, it will silently test parts of
 your built version instead.
-
-When using GIT_TEST_INSTALLED, you can also set GIT_TEST_EXEC_PATH to
-override the location of the dashed-form subcommands (what
-GIT_EXEC_PATH would be used for during normal operation).
-GIT_TEST_EXEC_PATH defaults to `$GIT_TEST_INSTALLED/git --exec-path`.
 
 
 Skipping Tests
@@ -209,11 +158,11 @@ as pathnames.
 
 You should be able to say something like
 
-    $ GIT_SKIP_TESTS=t9200.8 sh ./t9200-git-cvsexport-commit.sh
+    $ STG_SKIP_TESTS=t9200.8 sh ./t9200-git-cvsexport-commit.sh
 
 and even:
 
-    $ GIT_SKIP_TESTS='t[0-4]??? t91?? t9200.8' make
+    $ STG_SKIP_TESTS='t[0-4]??? t91?? t9200.8' make
 
 to omit such tests.  The value of the environment variable is a
 SP separated list of patterns that tells which tests to skip,
@@ -299,64 +248,27 @@ Running tests with special setups
 
 The whole test suite could be run to test some special features
 that cannot be easily covered by a few specific test cases. These
-could be enabled by running the test suite with correct GIT_TEST_
+could be enabled by running the test suite with correct STG_TEST_
 environment set.
 
-GIT_TEST_GETTEXT_POISON=<non-empty?> turns all strings marked for
-translation into gibberish if non-empty (think "test -n"). Used for
-spotting those tests that need to be marked with a C_LOCALE_OUTPUT
-prerequisite when adding more strings for translation. See "Testing
-marked strings" in po/README for details.
+PYTHON=<python executable> use alternative python executable to
+run stg in tests. By default `python` is used. Alternatives such
+as `python2.7` or `python3.4` may be specified. The build must
+have been previously performed using this PYTHON variable. Some
+example uses:
 
-GIT_TEST_SPLIT_INDEX=<boolean> forces split-index mode on the whole
-test suite. Accept any boolean values that are accepted by git-config.
+    $ make PYTHON=python3.4 test
+    $ make PYTHON=python2.6
+    $ cd t/
+    $ make PYTHON=python2.6 prove
+    $ PYTHON=python3.4 ./t3300-edit.sh
 
-GIT_TEST_FULL_IN_PACK_ARRAY=<boolean> exercises the uncommon
-pack-objects code path where there are more than 1024 packs even if
-the actual number of packs in repository is below this limit. Accept
-any boolean values that are accepted by git-config.
-
-GIT_TEST_OE_SIZE=<n> exercises the uncommon pack-objects code path
-where we do not cache object size in memory and read it from existing
-packs on demand. This normally only happens when the object size is
-over 2GB. This variable forces the code path on any object larger than
-<n> bytes.
-
-GIT_TEST_OE_DELTA_SIZE=<n> exercises the uncommon pack-objects code
-path where deltas larger than this limit require extra memory
-allocation for bookkeeping.
-
-GIT_TEST_VALIDATE_INDEX_CACHE_ENTRIES=<boolean> checks that cache-tree
-records are valid when the index is written out or after a merge. This
-is mostly to catch missing invalidation. Default is true.
-
-GIT_TEST_COMMIT_GRAPH=<boolean>, when true, forces the commit-graph to
-be written after every 'git commit' command, and overrides the
-'core.commitGraph' setting to true.
-
-GIT_TEST_FSMONITOR=$PWD/t7519/fsmonitor-all exercises the fsmonitor
-code path for utilizing a file system monitor to speed up detecting
-new or changed files.
+STG_TEST_LANG=<encoding> use an encoding other than the default C
+encoding. Affects LANG and LC_ALL environment variables.
 
 GIT_TEST_INDEX_VERSION=<n> exercises the index read/write code path
 for the index version specified.  Can be set to any valid version
 (currently 2, 3, or 4).
-
-GIT_TEST_PRELOAD_INDEX=<boolean> exercises the preload-index code path
-by overriding the minimum number of cache entries required per thread.
-
-GIT_TEST_REBASE_USE_BUILTIN=<boolean>, when false, disables the
-builtin version of git-rebase. See 'rebase.useBuiltin' in
-git-config(1).
-
-GIT_TEST_INDEX_THREADS=<n> enables exercising the multi-threaded loading
-of the index for the whole test suite by bypassing the default number of
-cache entries and thread minimums. Setting this to 1 will make the
-index loading single threaded.
-
-GIT_TEST_MULTI_PACK_INDEX=<boolean>, when true, forces the multi-pack-
-index to be written after every 'git repack' command, and overrides the
-'core.multiPackIndex' setting to true.
 
 Naming Tests
 ------------
@@ -902,77 +814,9 @@ See the prereq argument to the test_* functions in the "Test harness
 library" section above and the "test_have_prereq" function for how to
 use these, and "test_set_prereq" for how to define your own.
 
- - PYTHON
+ - QUILT
 
-   Git wasn't compiled with NO_PYTHON=YesPlease. Wrap any tests that
-   need Python with this.
-
- - PERL
-
-   Git wasn't compiled with NO_PERL=YesPlease.
-
-   Even without the PERL prerequisite, tests can assume there is a
-   usable perl interpreter at $PERL_PATH, though it need not be
-   particularly modern.
-
- - POSIXPERM
-
-   The filesystem supports POSIX style permission bits.
-
- - BSLASHPSPEC
-
-   Backslashes in pathspec are not directory separators. This is not
-   set on Windows. See 6fd1106a for details.
-
- - EXECKEEPSPID
-
-   The process retains the same pid across exec(2). See fb9a2bea for
-   details.
-
- - PIPE
-
-   The filesystem we're on supports creation of FIFOs (named pipes)
-   via mkfifo(1).
-
- - SYMLINKS
-
-   The filesystem we're on supports symbolic links. E.g. a FAT
-   filesystem doesn't support these. See 704a3143 for details.
-
- - SANITY
-
-   Test is not run by root user, and an attempt to write to an
-   unwritable file is expected to fail correctly.
-
- - PCRE
-
-   Git was compiled with support for PCRE. Wrap any tests
-   that use git-grep --perl-regexp or git-grep -P in these.
-
- - LIBPCRE1
-
-   Git was compiled with PCRE v1 support via
-   USE_LIBPCRE1=YesPlease. Wrap any PCRE using tests that for some
-   reason need v1 of the PCRE library instead of v2 in these.
-
- - LIBPCRE2
-
-   Git was compiled with PCRE v2 support via
-   USE_LIBPCRE2=YesPlease. Wrap any PCRE using tests that for some
-   reason need v2 of the PCRE library instead of v1 in these.
-
- - CASE_INSENSITIVE_FS
-
-   Test is run on a case insensitive file system.
-
- - UTF8_NFD_TO_NFC
-
-   Test is run on a filesystem which converts decomposed utf-8 (nfd)
-   to precomposed utf-8 (nfc).
-
- - PTHREADS
-
-   Git wasn't compiled with NO_PTHREADS=YesPlease.
+   The `quilt` binary is avaialable on this system.
 
 Tips for Writing Tests
 ----------------------
@@ -1012,30 +856,11 @@ directory):
 
     make coverage
 
-That'll compile Git with GCC's coverage arguments, and generate a test
-report with gcov after the tests finish. Running the coverage tests
-can take a while, since running the tests in parallel is incompatible
-with GCC's coverage mode.
+That will run the test suite with each stg invocation capturing
+coverage information. Coverage information from each stg invocation
+is combined into a .coverage file which is used to generate
+coverage reports.
 
-After the tests have run you can generate a list of untested
-functions:
-
-    make coverage-untested-functions
-
-You can also generate a detailed per-file HTML report using the
-Devel::Cover module. To install it do:
-
-   # On Debian or Ubuntu:
-   sudo aptitude install libdevel-cover-perl
-
-   # From the CPAN with cpanminus
-   curl -L http://cpanmin.us | perl - --sudo --self-upgrade
-   cpanm --sudo Devel::Cover
-
-Then, at the top-level:
-
-    make cover_db_html
-
-That'll generate a detailed cover report in the "cover_db_html"
+A detailed HTML coverage report is generated in the "htmlcov"
 directory, which you can then copy to a webserver, or inspect locally
 in a browser.

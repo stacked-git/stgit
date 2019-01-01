@@ -127,23 +127,13 @@ class TestQueue(object):
 def start_worker(q):
     def w():
         for t in q:
+            ok = False  # assume the worst until proven otherwise
             try:
-                ok = False  # assume the worst until proven otherwise
-                s = os.path.join("trash", t)
-                e = dict(os.environ)
-                e["SCRATCHDIR"] = s
-                p = subprocess.Popen([os.path.join(os.getcwd(), t), "-v"],
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.STDOUT,
-                                     env=e)
-                (out, err) = p.communicate()
-                assert err is None
-                with open(os.path.join(s, "output"), "wb") as f:
-                    f.write(out)
-                    msg = '\nExited with code %d\n' % p.returncode
-                    f.write(msg.encode())
-                if p.returncode == 0:
-                    ok = True
+                ok = subprocess.call(
+                    [os.path.join(os.getcwd(), t), "--verbose-log"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                ) == 0
             except BaseException:
                 # Log the traceback. Use the mutex so that we
                 # won't write multiple tracebacks to stderr at the
@@ -171,40 +161,53 @@ def start_cleaner(q):
 
 
 def main():
-    this_dir = os.path.dirname(__file__)
     p = optparse.OptionParser()
     p.add_option("-j", "--jobs", type="int",
                  help="number of tests to run in parallel")
     (opts, user_tests) = p.parse_args()
+
+    this_dir = os.path.dirname(__file__)
+    if this_dir and this_dir != os.getcwd():
+        os.chdir(this_dir)
+
+    test_dir = os.environ.get('TEST_DIRECTORY', this_dir)
+    if test_dir != this_dir:
+        os.chdir(test_dir)
+
+    test_output_dir = os.environ.get('TEST_OUTPUT_DIRECTORY', test_dir)
+    results_dir = os.path.join(test_output_dir, 'test-results')
+
     tests = []
     for test in user_tests:
-        if os.path.exists(os.path.join(this_dir, test)):
+        if os.path.exists(os.path.join(test_dir, test)):
             tests.append(test)
         elif os.path.exists(test):
-            tests.append(os.path.relpath(test, this_dir))
+            tests.append(os.path.relpath(test, test_dir))
         else:
             print('test not found:', test, file=sys.stderr)
             return 1
-    if this_dir and this_dir != os.getcwd():
-        os.chdir(this_dir)
+
     if not tests:
         tests = glob.glob("t[0-9][0-9][0-9][0-9]-*.sh")
+
     if opts.jobs is None:
         opts.jobs = default_num_jobs()
     print("Running %d tests in parallel" % opts.jobs)
 
-    if os.path.exists("trash"):
+    if os.path.exists(results_dir):
         os.rename(
-            "trash",
-            "trash-being-deleted-%016x" % random.getrandbits(64)
+            results_dir,
+            "%s-being-deleted-%016x" % (results_dir, random.getrandbits(64))
         )
-    os.mkdir("trash")
-    q = TestQueue(tests, glob.glob("trash-being-deleted-*"))
+    os.mkdir(results_dir)
+
+    q = TestQueue(tests, glob.glob(results_dir + "-being-deleted-*"))
     w = min(opts.jobs, len(tests))
     for i in range(w):
         start_worker(q)
     for i in range(max(w // 4, 1)):
         start_cleaner(q)
+
     failed = q.wait()
     if failed:
         print("Failed:")

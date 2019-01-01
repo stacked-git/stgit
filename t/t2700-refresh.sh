@@ -137,7 +137,7 @@ test_expect_success 'Attempt invalid options with --index' '
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >> foo4.txt &&
     command_error stg refresh 2>&1 |
-    grep -e "The index is dirty. Did you mean --index? To force a full refresh use --force"
+    grep -e "The index is dirty. Did you mean --index?"
 '
 
 test_expect_success 'Attempt to refresh to invalid patch name' '

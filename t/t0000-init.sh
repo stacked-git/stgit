@@ -7,6 +7,10 @@ test_description='Test stgit initialization'
 . ./test-lib.sh
 
 test_expect_success \
+    'check stgit can be run' \
+    'stg version'
+
+test_expect_success \
     'check invalid argument count' \
     'command_error stg init arg'
 

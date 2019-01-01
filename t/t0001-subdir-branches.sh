@@ -47,11 +47,11 @@ test_expect_success 'Create patch in slashy branch' \
 
 test_expect_success 'Rename branches' \
   'stg branch --rename master goo/gaa &&
-   must_fail git show-ref --verify --quiet refs/heads/master &&
+   test_must_fail git show-ref --verify --quiet refs/heads/master &&
    stg branch --rename goo/gaa x1/x2/x3/x4 &&
-   must_fail git show-ref --verify --quiet refs/heads/goo/gaa &&
+   test_must_fail git show-ref --verify --quiet refs/heads/goo/gaa &&
    stg branch --rename x1/x2/x3/x4 servant &&
-   must_fail git show-ref --verify --quiet refs/heads/x1/x2/x3/x4
+   test_must_fail git show-ref --verify --quiet refs/heads/x1/x2/x3/x4
 '
 
 test_done

@@ -1,6 +1,7 @@
-# Test framework for git.  See t/README for usage.
+# Test framework for git, adapted for StGit.  See t/README for usage.
 #
 # Copyright (c) 2005 Junio C Hamano
+# Copyright (c) 2006 Yann Dirson - tuning for stgit
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,8 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/ .
 
-# Test the binaries we have just built.  The tests are kept in
-# t/ subdirectory and are run in 'trash directory' subdirectory.
 if test -z "$TEST_DIRECTORY"
 then
 	# We allow tests to override this, in case they want to run tests
@@ -34,39 +33,35 @@ then
 	# elsewhere
 	TEST_OUTPUT_DIRECTORY=$TEST_DIRECTORY
 fi
-GIT_BUILD_DIR="$TEST_DIRECTORY"/..
+STG_ROOT=$(cd "$TEST_DIRECTORY"/.. && pwd) || exit 1
+export STG_ROOT
+stg_build_dir="$STG_ROOT"/build
+PYTHON="${PYTHON:-python}"
+python_major_minor="$($PYTHON -c '
+import sys
+print(".".join(map(str, sys.version_info[:2])))')"
+stg_bin_dir="$stg_build_dir"/scripts-"$python_major_minor"
 
-# If we were built with ASAN, it may complain about leaks
-# of program-lifetime variables. Disable it by default to lower
-# the noise level. This needs to happen at the start of the script,
-# before we even do our "did we build git yet" check (since we don't
-# want that one to complain to stderr).
-: ${ASAN_OPTIONS=detect_leaks=0:abort_on_error=1}
-export ASAN_OPTIONS
-
-# If LSAN is in effect we _do_ want leak checking, but we still
-# want to abort so that we notice the problems.
-: ${LSAN_OPTIONS=abort_on_error=1}
-export LSAN_OPTIONS
-
-if test ! -f "$GIT_BUILD_DIR"/GIT-BUILD-OPTIONS
+if test ! -f "$stg_bin_dir"/stg
 then
-	echo >&2 'error: GIT-BUILD-OPTIONS missing (has Git been built?).'
+	echo >&2 "error: $stg_bin_dir missing (has stg been built?)."
 	exit 1
 fi
-. "$GIT_BUILD_DIR"/GIT-BUILD-OPTIONS
+PERL_PATH=${PERL:-perl}
+SHELL_PATH=${SHELL_PATH:-/bin/sh}
+TEST_SHELL_PATH=${TEST_SHELL_PATH:-$SHELL_PATH}
 export PERL_PATH SHELL_PATH
 
 ################################################################
 # It appears that people try to run tests without building...
-"${GIT_TEST_INSTALLED:-$GIT_BUILD_DIR}/git$X" >/dev/null
+"${STG_TEST_INSTALLED:-$stg_bin_dir}/stg" 2> /dev/null
 if test $? != 1
 then
-	if test -n "$GIT_TEST_INSTALLED"
+	if test -n "$STG_TEST_INSTALLED"
 	then
-		echo >&2 "error: there is no working Git at '$GIT_TEST_INSTALLED'"
+		echo >&2 "error: there is no working stg at '$STG_TEST_INSTALLED'"
 	else
-		echo >&2 'error: you do not seem to have built git yet.'
+		echo >&2 'error: you do not seem to have built stg yet.'
 	fi
 	exit 1
 fi
@@ -99,21 +94,12 @@ esac
 
 # For repeatability, reset the environment to known value.
 # TERM is sanitized below, after saving color control sequences.
-LANG=C
-LC_ALL=C
+LANG=${STG_TEST_LANG:-C}
+LC_ALL=$LANG
 PAGER=cat
 TZ=UTC
 export LANG LC_ALL PAGER TZ
 EDITOR=:
-
-# GIT_TEST_GETTEXT_POISON should not influence git commands executed
-# during initialization of test-lib and the test repo. Back it up,
-# unset and then restore after initialization is finished.
-if test -n "$GIT_TEST_GETTEXT_POISON"
-then
-	GIT_TEST_GETTEXT_POISON_ORIG=$GIT_TEST_GETTEXT_POISON
-	unset GIT_TEST_GETTEXT_POISON
-fi
 
 # A call to "unset" with no arguments causes at least Solaris 10
 # /usr/xpg4/bin/sh and /bin/ksh to bail out.  So keep the unsets
@@ -139,10 +125,20 @@ unset VISUAL EMAIL LANGUAGE COLUMNS $("$PERL_PATH" -e '
 unset XDG_CACHE_HOME
 unset XDG_CONFIG_HOME
 unset GITPERLLIB
+unset GIT_EDITOR
+unset GIT_ALTERNATE_OBJECT_DIRECTORIES
+unset GIT_AUTHOR_DATE  # Use test_tick()
 GIT_AUTHOR_EMAIL=author@example.com
-GIT_AUTHOR_NAME='A U Thor'
+GIT_AUTHOR_NAME='A Ú Thor'
+unset GIT_COMMITTER_DATE  # Use test_tick()
 GIT_COMMITTER_EMAIL=committer@example.com
-GIT_COMMITTER_NAME='C O Mitter'
+GIT_COMMITTER_NAME='C Ó Mitter'
+unset GIT_DIFF_OPTS
+unset GIT_DIR
+unset GIT_WORK_TREE
+unset GIT_EXTERNAL_DIFF
+unset GIT_INDEX_FILE
+unset GIT_OBJECT_DIRECTORY
 GIT_MERGE_VERBOSITY=5
 GIT_MERGE_AUTOEDIT=no
 export GIT_MERGE_VERBOSITY GIT_MERGE_AUTOEDIT
@@ -154,62 +150,11 @@ export EDITOR
 GIT_TRACE_BARE=1
 export GIT_TRACE_BARE
 
-check_var_migration () {
-	# the warnings and hints given from this helper depends
-	# on end-user settings, which will disrupt the self-test
-	# done on the test framework itself.
-	case "$GIT_TEST_FRAMEWORK_SELFTEST" in
-	t)	return ;;
-	esac
-
-	old_name=$1 new_name=$2
-	eval "old_isset=\${${old_name}:+isset}"
-	eval "new_isset=\${${new_name}:+isset}"
-
-	case "$old_isset,$new_isset" in
-	isset,)
-		echo >&2 "warning: $old_name is now $new_name"
-		echo >&2 "hint: set $new_name too during the transition period"
-		eval "$new_name=\$$old_name"
-		;;
-	isset,isset)
-		# do this later
-		# echo >&2 "warning: $old_name is now $new_name"
-		# echo >&2 "hint: remove $old_name"
-		;;
-	esac
-}
-
-check_var_migration GIT_FSMONITOR_TEST GIT_TEST_FSMONITOR
-check_var_migration TEST_GIT_INDEX_VERSION GIT_TEST_INDEX_VERSION
-check_var_migration GIT_FORCE_PRELOAD_TEST GIT_TEST_PRELOAD_INDEX
-
 # Use specific version of the index file format
 if test -n "${GIT_TEST_INDEX_VERSION:+isset}"
 then
 	GIT_INDEX_VERSION="$GIT_TEST_INDEX_VERSION"
 	export GIT_INDEX_VERSION
-fi
-
-# Add libc MALLOC and MALLOC_PERTURB test
-# only if we are not executing the test with valgrind
-if expr " $GIT_TEST_OPTS " : ".* --valgrind " >/dev/null ||
-   test -n "$TEST_NO_MALLOC_CHECK"
-then
-	setup_malloc_check () {
-		: nothing
-	}
-	teardown_malloc_check () {
-		: nothing
-	}
-else
-	setup_malloc_check () {
-		MALLOC_CHECK_=3	MALLOC_PERTURB_=165
-		export MALLOC_CHECK_ MALLOC_PERTURB_
-	}
-	teardown_malloc_check () {
-		unset MALLOC_CHECK_ MALLOC_PERTURB_
-	}
 fi
 
 # Protect ourselves from common misconfiguration to export
@@ -264,6 +209,8 @@ test "x$TERM" != "xdumb" && (
 	) &&
 	color=t
 
+STGIT_DEBUG_LEVEL=0
+
 while test "$#" -ne 0
 do
 	case "$1" in
@@ -284,6 +231,7 @@ do
 	-h|--h|--he|--hel|--help)
 		help=t; shift ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
+		STGIT_DEBUG_LEVEL=1
 		verbose=t; shift ;;
 	--verbose-only=*)
 		verbose_only=${1#--*=}
@@ -292,29 +240,12 @@ do
 		# Ignore --quiet under a TAP::Harness. Saying how many tests
 		# passed without the ok/not ok details is always an error.
 		test -z "$HARNESS_ACTIVE" && quiet=t; shift ;;
-	--with-dashes)
-		with_dashes=t; shift ;;
 	--no-color)
 		color=; shift ;;
-	--va|--val|--valg|--valgr|--valgri|--valgrin|--valgrind)
-		valgrind=memcheck
-		shift ;;
-	--valgrind=*)
-		valgrind=${1#--*=}
-		shift ;;
-	--valgrind-only=*)
-		valgrind_only=${1#--*=}
-		shift ;;
 	--tee)
 		shift ;; # was handled already
 	--root=*)
 		root=${1#--*=}
-		shift ;;
-	--chain-lint)
-		GIT_TEST_CHAIN_LINT=1
-		shift ;;
-	--no-chain-lint)
-		GIT_TEST_CHAIN_LINT=0
 		shift ;;
 	-x)
 		# Some test scripts can't be reliably traced  with '-x',
@@ -344,19 +275,13 @@ do
 	esac
 done
 
-if test -n "$valgrind_only"
-then
-	test -z "$valgrind" && valgrind=memcheck
-	test -z "$verbose" && verbose_only="$valgrind_only"
-elif test -n "$valgrind"
-then
-	test -z "$verbose_log" && verbose=t
-fi
-
 if test -n "$trace" && test -z "$verbose_log"
 then
+	STGIT_DEBUG_LEVEL=1
 	verbose=t
 fi
+
+export STGIT_DEBUG_LEVEL
 
 if test -n "$color"
 then
@@ -645,25 +570,6 @@ maybe_setup_verbose () {
 	last_verbose=$verbose
 }
 
-maybe_teardown_valgrind () {
-	test -z "$GIT_VALGRIND" && return
-	GIT_VALGRIND_ENABLED=
-}
-
-maybe_setup_valgrind () {
-	test -z "$GIT_VALGRIND" && return
-	if test -z "$valgrind_only"
-	then
-		GIT_VALGRIND_ENABLED=t
-		return
-	fi
-	GIT_VALGRIND_ENABLED=
-	if match_pattern_list $test_count $valgrind_only
-	then
-		GIT_VALGRIND_ENABLED=t
-	fi
-}
-
 want_trace () {
 	test "$trace" = t && {
 		test "$verbose" = t || test "$verbose_log" = t
@@ -723,32 +629,13 @@ test_run_ () {
 	test_cleanup=:
 	expecting_failure=$2
 
-	if test "${GIT_TEST_CHAIN_LINT:-1}" != 0; then
-		# turn off tracing for this test-eval, as it simply creates
-		# confusing noise in the "-x" output
-		trace_tmp=$trace
-		trace=
-		# 117 is magic because it is unlikely to match the exit
-		# code of other programs
-		if $(printf '%s\n' "$1" | sed -f "$GIT_BUILD_DIR/t/chainlint.sed" | grep -q '?![A-Z][A-Z]*?!') ||
-			test "OK-117" != "$(test_eval_ "(exit 117) && $1${LF}${LF}echo OK-\$?" 3>&1)"
-		then
-			BUG "broken &&-chain or run-away HERE-DOC: $1"
-		fi
-		trace=$trace_tmp
-	fi
-
-	setup_malloc_check
 	test_eval_ "$1"
 	eval_ret=$?
-	teardown_malloc_check
 
 	if test -z "$immediate" || test $eval_ret = 0 ||
 	   test -n "$expecting_failure" && test "$test_cleanup" != ":"
 	then
-		setup_malloc_check
 		test_eval_ "$test_cleanup"
-		teardown_malloc_check
 	fi
 	if test "$verbose" = "t" && test -n "$HARNESS_ACTIVE"
 	then
@@ -760,22 +647,20 @@ test_run_ () {
 test_start_ () {
 	test_count=$(($test_count+1))
 	maybe_setup_verbose
-	maybe_setup_valgrind
 }
 
 test_finish_ () {
 	echo >&3 ""
-	maybe_teardown_valgrind
 	maybe_teardown_verbose
 }
 
 test_skip () {
 	to_skip=
 	skipped_reason=
-	if match_pattern_list $this_test.$test_count $GIT_SKIP_TESTS
+	if match_pattern_list $this_test.$test_count $STG_SKIP_TESTS
 	then
 		to_skip=t
-		skipped_reason="GIT_SKIP_TESTS"
+		skipped_reason="STG_SKIP_TESTS"
 	fi
 	if test -z "$to_skip" && test -n "$test_prereq" &&
 	   ! test_have_prereq "$test_prereq"
@@ -897,135 +782,28 @@ test_done () {
 	esac
 }
 
-if test -n "$valgrind"
+if test -n "$STG_TEST_INSTALLED"
 then
-	make_symlink () {
-		test -h "$2" &&
-		test "$1" = "$(readlink "$2")" || {
-			# be super paranoid
-			if mkdir "$2".lock
-			then
-				rm -f "$2" &&
-				ln -s "$1" "$2" &&
-				rm -r "$2".lock
-			else
-				while test -d "$2".lock
-				do
-					say "Waiting for lock on $2."
-					sleep 1
-				done
-			fi
-		}
-	}
-
-	make_valgrind_symlink () {
-		# handle only executables, unless they are shell libraries that
-		# need to be in the exec-path.
-		test -x "$1" ||
-		test "# " = "$(test_copy_bytes 2 <"$1")" ||
-		return;
-
-		base=$(basename "$1")
-		case "$base" in
-		test-*)
-			symlink_target="$GIT_BUILD_DIR/t/helper/$base"
-			;;
-		*)
-			symlink_target="$GIT_BUILD_DIR/$base"
-			;;
-		esac
-		# do not override scripts
-		if test -x "$symlink_target" &&
-		    test ! -d "$symlink_target" &&
-		    test "#!" != "$(test_copy_bytes 2 <"$symlink_target")"
-		then
-			symlink_target=../valgrind.sh
-		fi
-		case "$base" in
-		*.sh|*.perl)
-			symlink_target=../unprocessed-script
-		esac
-		# create the link, or replace it if it is out of date
-		make_symlink "$symlink_target" "$GIT_VALGRIND/bin/$base" || exit
-	}
-
-	# override all git executables in TEST_DIRECTORY/..
-	GIT_VALGRIND=$TEST_DIRECTORY/valgrind
-	mkdir -p "$GIT_VALGRIND"/bin
-	for file in $GIT_BUILD_DIR/git* $GIT_BUILD_DIR/t/helper/test-*
-	do
-		make_valgrind_symlink $file
-	done
-	# special-case the mergetools loadables
-	make_symlink "$GIT_BUILD_DIR"/mergetools "$GIT_VALGRIND/bin/mergetools"
-	OLDIFS=$IFS
-	IFS=:
-	for path in $PATH
-	do
-		ls "$path"/git-* 2> /dev/null |
-		while read file
-		do
-			make_valgrind_symlink "$file"
-		done
-	done
-	IFS=$OLDIFS
-	PATH=$GIT_VALGRIND/bin:$PATH
-	GIT_EXEC_PATH=$GIT_VALGRIND/bin
-	export GIT_VALGRIND
-	GIT_VALGRIND_MODE="$valgrind"
-	export GIT_VALGRIND_MODE
-	GIT_VALGRIND_ENABLED=t
-	test -n "$valgrind_only" && GIT_VALGRIND_ENABLED=
-	export GIT_VALGRIND_ENABLED
-elif test -n "$GIT_TEST_INSTALLED"
-then
-	GIT_EXEC_PATH=$($GIT_TEST_INSTALLED/git --exec-path)  ||
-	error "Cannot run git from $GIT_TEST_INSTALLED."
-	PATH=$GIT_TEST_INSTALLED:$GIT_BUILD_DIR/t/helper:$PATH
-	GIT_EXEC_PATH=${GIT_TEST_EXEC_PATH:-$GIT_EXEC_PATH}
-else # normal case, use ../bin-wrappers only unless $with_dashes:
-	git_bin_dir="$GIT_BUILD_DIR/bin-wrappers"
-	if ! test -x "$git_bin_dir/git"
-	then
-		if test -z "$with_dashes"
-		then
-			say "$git_bin_dir/git is not executable; using GIT_EXEC_PATH"
-		fi
-		with_dashes=t
-	fi
-	PATH="$git_bin_dir:$PATH"
-	GIT_EXEC_PATH=$GIT_BUILD_DIR
-	if test -n "$with_dashes"
-	then
-		PATH="$GIT_BUILD_DIR:$PATH"
-	fi
+	PATH=$STG_TEST_INSTALLED:$PATH
+else
+	PATH="$stg_bin_dir:$PATH"
+	PYTHONPATH="$STG_ROOT":"$PYTHONPATH"
 fi
-GIT_TEMPLATE_DIR="$GIT_BUILD_DIR"/templates/blt
+GIT_EXEC_PATH=$(git --exec-path) || error "Cannot run git"
+unset GIT_TEMPLATE_DIR
 GIT_CONFIG_NOSYSTEM=1
 GIT_ATTR_NOSYSTEM=1
-export PATH GIT_EXEC_PATH GIT_TEMPLATE_DIR GIT_CONFIG_NOSYSTEM GIT_ATTR_NOSYSTEM
+export PATH GIT_EXEC_PATH PYTHONPATH GIT_CONFIG_NOSYSTEM GIT_ATTR_NOSYSTEM
 
 if test -z "$GIT_TEST_CMP"
 then
+	DIFF="${DIFF:-diff}"
 	if test -n "$GIT_TEST_CMP_USE_COPIED_CONTEXT"
 	then
 		GIT_TEST_CMP="$DIFF -c"
 	else
 		GIT_TEST_CMP="$DIFF -u"
 	fi
-fi
-
-GITPERLLIB="$GIT_BUILD_DIR"/perl/build/lib
-export GITPERLLIB
-test -d "$GIT_BUILD_DIR"/templates/blt || {
-	error "You haven't built things yet, have you?"
-}
-
-if ! test -x "$GIT_BUILD_DIR"/t/helper/test-tool
-then
-	echo >&2 'You need to build test-tool:'
-	echo >&2 'Run "make t/helper/test-tool" in the source (toplevel) directory'
-	exit 1
 fi
 
 # Test repository
@@ -1057,7 +835,7 @@ cd -P "$TRASH_DIRECTORY" || exit 1
 
 this_test=${0##*/}
 this_test=${this_test%%-*}
-if match_pattern_list "$this_test" $GIT_SKIP_TESTS
+if match_pattern_list "$this_test" $STG_SKIP_TESTS
 then
 	say_color info >&3 "skipping test $this_test altogether"
 	skip_all="skip all tests in $this_test"
@@ -1119,182 +897,7 @@ case $uname_s in
 	;;
 esac
 
-( COLUMNS=1 && test $COLUMNS = 1 ) && test_set_prereq COLUMNS_CAN_BE_1
-test -z "$NO_PERL" && test_set_prereq PERL
-test -z "$NO_PTHREADS" && test_set_prereq PTHREADS
-test -z "$NO_PYTHON" && test_set_prereq PYTHON
-test -n "$USE_LIBPCRE1$USE_LIBPCRE2" && test_set_prereq PCRE
-test -n "$USE_LIBPCRE1" && test_set_prereq LIBPCRE1
-test -n "$USE_LIBPCRE2" && test_set_prereq LIBPCRE2
-test -z "$NO_GETTEXT" && test_set_prereq GETTEXT
-
-if test -n "$GIT_TEST_GETTEXT_POISON_ORIG"
-then
-	GIT_TEST_GETTEXT_POISON=$GIT_TEST_GETTEXT_POISON_ORIG
-	unset GIT_TEST_GETTEXT_POISON_ORIG
-fi
-
-# Can we rely on git's output in the C locale?
-if test -z "$GIT_TEST_GETTEXT_POISON"
-then
-	test_set_prereq C_LOCALE_OUTPUT
-fi
-
-if test -z "$GIT_TEST_CHECK_CACHE_TREE"
-then
-	GIT_TEST_CHECK_CACHE_TREE=true
-	export GIT_TEST_CHECK_CACHE_TREE
-fi
-
-test_lazy_prereq PIPE '
-	# test whether the filesystem supports FIFOs
-	test_have_prereq !MINGW,!CYGWIN &&
-	rm -f testfifo && mkfifo testfifo
-'
-
-test_lazy_prereq SYMLINKS '
-	# test whether the filesystem supports symbolic links
-	ln -s x y && test -h y
-'
-
-test_lazy_prereq FILEMODE '
-	test "$(git config --bool core.filemode)" = true
-'
-
-test_lazy_prereq CASE_INSENSITIVE_FS '
-	echo good >CamelCase &&
-	echo bad >camelcase &&
-	test "$(cat CamelCase)" != good
-'
-
-test_lazy_prereq FUNNYNAMES '
-	test_have_prereq !MINGW &&
-	touch -- \
-		"FUNNYNAMES tab	embedded" \
-		"FUNNYNAMES \"quote embedded\"" \
-		"FUNNYNAMES newline
-embedded" 2>/dev/null &&
-	rm -- \
-		"FUNNYNAMES tab	embedded" \
-		"FUNNYNAMES \"quote embedded\"" \
-		"FUNNYNAMES newline
-embedded" 2>/dev/null
-'
-
-test_lazy_prereq UTF8_NFD_TO_NFC '
-	# check whether FS converts nfd unicode to nfc
-	auml=$(printf "\303\244")
-	aumlcdiar=$(printf "\141\314\210")
-	>"$auml" &&
-	test -f "$aumlcdiar"
-'
-
-test_lazy_prereq AUTOIDENT '
-	sane_unset GIT_AUTHOR_NAME &&
-	sane_unset GIT_AUTHOR_EMAIL &&
-	git var GIT_AUTHOR_IDENT
-'
-
-test_lazy_prereq EXPENSIVE '
-	test -n "$GIT_TEST_LONG"
-'
-
-test_lazy_prereq EXPENSIVE_ON_WINDOWS '
-	test_have_prereq EXPENSIVE || test_have_prereq !MINGW,!CYGWIN
-'
-
-test_lazy_prereq USR_BIN_TIME '
-	test -x /usr/bin/time
-'
-
-test_lazy_prereq NOT_ROOT '
-	uid=$(id -u) &&
-	test "$uid" != 0
-'
-
-test_lazy_prereq JGIT '
-	type jgit
-'
-
-# SANITY is about "can you correctly predict what the filesystem would
-# do by only looking at the permission bits of the files and
-# directories?"  A typical example of !SANITY is running the test
-# suite as root, where a test may expect "chmod -r file && cat file"
-# to fail because file is supposed to be unreadable after a successful
-# chmod.  In an environment (i.e. combination of what filesystem is
-# being used and who is running the tests) that lacks SANITY, you may
-# be able to delete or create a file when the containing directory
-# doesn't have write permissions, or access a file even if the
-# containing directory doesn't have read or execute permissions.
-
-test_lazy_prereq SANITY '
-	mkdir SANETESTD.1 SANETESTD.2 &&
-
-	chmod +w SANETESTD.1 SANETESTD.2 &&
-	>SANETESTD.1/x 2>SANETESTD.2/x &&
-	chmod -w SANETESTD.1 &&
-	chmod -r SANETESTD.1/x &&
-	chmod -rx SANETESTD.2 ||
-	BUG "cannot prepare SANETESTD"
-
-	! test -r SANETESTD.1/x &&
-	! rm SANETESTD.1/x && ! test -f SANETESTD.2/x
-	status=$?
-
-	chmod +rwx SANETESTD.1 SANETESTD.2 &&
-	rm -rf SANETESTD.1 SANETESTD.2 ||
-	BUG "cannot clean SANETESTD"
-	return $status
-'
-
-test FreeBSD != $uname_s || GIT_UNZIP=${GIT_UNZIP:-/usr/local/bin/unzip}
-GIT_UNZIP=${GIT_UNZIP:-unzip}
-test_lazy_prereq UNZIP '
-	"$GIT_UNZIP" -v
-	test $? -ne 127
-'
-
-run_with_limited_cmdline () {
-	(ulimit -s 128 && "$@")
-}
-
-test_lazy_prereq CMDLINE_LIMIT '
-	test_have_prereq !MINGW,!CYGWIN &&
-	run_with_limited_cmdline true
-'
-
-run_with_limited_stack () {
-	(ulimit -s 128 && "$@")
-}
-
-test_lazy_prereq ULIMIT_STACK_SIZE '
-	test_have_prereq !MINGW,!CYGWIN &&
-	run_with_limited_stack true
-'
-
-build_option () {
-	git version --build-options |
-	sed -ne "s/^$1: //p"
-}
-
-test_lazy_prereq LONG_IS_64BIT '
-	test 8 -le "$(build_option sizeof-long)"
-'
-
-test_lazy_prereq TIME_IS_64BIT 'test-tool date is64bit'
-test_lazy_prereq TIME_T_IS_64BIT 'test-tool date time_t-is64bit'
-
-test_lazy_prereq CURL '
-	curl --version
-'
-
-# SHA1 is a test if the hash algorithm in use is SHA-1.  This is both for tests
-# which will not work with other hash algorithms and tests that work but don't
-# test anything meaningful (e.g. special values which cause short collisions).
-test_lazy_prereq SHA1 '
-	test $(git hash-object /dev/null) = e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
-'
-
-test_lazy_prereq REBASE_P '
-	test -z "$GIT_TEST_SKIP_REBASE_P"
+test_lazy_prereq QUILT '
+	# test whether quilt is installed
+	quilt --version 2>/dev/null >/dev/null
 '

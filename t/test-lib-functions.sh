@@ -936,10 +936,13 @@ test_create_repo () {
 	mkdir -p "$repo"
 	(
 		cd "$repo" || error "Cannot setup test environment"
-		"${GIT_TEST_INSTALLED:-$GIT_EXEC_PATH}/git$X" init \
-			"--template=$GIT_BUILD_DIR/templates/blt/" >&3 2>&4 ||
-		error "cannot run git init -- have you built things yet?"
+		git init >&3 2>&4 ||
+		error "cannot run git init"
+		echo "empty start" |
+		    git commit-tree $(git write-tree) >.git/refs/heads/master 2>&4 ||
+		    error "cannot run git commit"
 		mv .git/hooks .git/hooks-disabled
+		echo ".coverage.*" >> .git/info/exclude
 	) || exit
 }
 
@@ -1263,3 +1266,14 @@ test_oid () {
 	fi &&
 	eval "printf '%s' \"\${$var}\""
 }
+
+# When running an StGit command that should exit with an error, use
+# these instead of testing for any non-zero exit code with !.
+general_error () { test_expect_code 1 "$@" ; }
+command_error () { test_expect_code 2 "$@" ; }
+conflict () { test_expect_code 3 "$@" ; }
+
+# Old-infrastructure commands don't exit with the proper value on
+# conflicts. But we don't want half the tests to fail because of that,
+# so use this instead of "conflict" for them.
+conflict_old () { command_error "$@" ; }

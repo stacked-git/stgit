@@ -48,76 +48,67 @@ test_expect_success 'Pop last patch, keeping its modifications in the tree' '
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-test_expect_code 2 'Try to pop from an empty stack' '
-    stg pop --spill
+test_expect_success 'Try to pop from an empty stack' '
+    test_when_finished reset_test &&
+    test_expect_code 2 stg pop --spill
 '
 
-reset_test
-
 test_expect_success 'Pop all patches, keeping modifications in the tree' '
+    test_when_finished reset_test &&
     stg pop --spill --all &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-reset_test
-
 test_expect_success 'Pop zero patch, keeping modifications in the tree' '
+    # No need to reset, nothing popped
+    # test_when_finished reset_test
     stg pop --spill -n 0 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-# No need, nothing popped
-#reset_test
-
 test_expect_success 'Pop one single patch, keeping modifications in the tree' '
+    test_when_finished reset_test &&
     stg pop --spill -n 1 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p2" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-reset_test
-
 test_expect_success 'Pop all but one patch, keeping modifications in the tree' '
+    test_when_finished reset_test &&
     stg pop --spill -n -1 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p1 p2" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-reset_test
-
 test_expect_success 'Pop more than stack length, keeping modifications in the tree' '
+    test_when_finished reset_test &&
     stg pop --spill -n 3 &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-reset_test
-
 test_expect_success 'Pop more than stack length, keeping modifications in the tree' '
+    test_when_finished reset_test &&
     stg pop --spill -n 4 &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-reset_test
-
-test_expect_code 2 'Pop all but more than stack length, keeping modifications in the tree' '
-    stg pop --spill -n -4 &&
+test_expect_success 'Pop all but more than stack length, keeping modifications in the tree' '
+    # test_when_finished reset_test &&
+    test_expect_code 2 stg pop --spill -n -4 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
-
-# No need, nothing popped
-#reset_test
 
 test_expect_success 'Create a few patches that touch separate files' '
     stg delete .. &&
@@ -180,7 +171,7 @@ test_expect_success 'Pop an empty patch' '
     echo "spillemptypatch" > p.txt &&
     git add p.txt &&
     git commit -m spillempty p.txt &&
-	stg new spillempty -m spillempty &&
+    stg new spillempty -m spillempty &&
     stg refresh &&
     [ "$(echo $(stg series --applied --noprefix))" = "spillempty" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
