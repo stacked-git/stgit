@@ -26,7 +26,7 @@ test_expect_success 'Attempt duplicate patch name' '
 
 test_expect_success 'Save template' '
     stg squash --save-template mytemplate p0 p1 &&
-    test -e mytemplate &&
+    test_path_is_file mytemplate &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ]
 '
 
@@ -54,7 +54,7 @@ test_expect_success 'Squash with top != head' '
     git commit -a -m "a new commit" &&
     EDITOR=./editor command_error stg squash --name=r0 p0 q1 &&
     test "$(echo $(stg series))" = "+ p0 > q1" &&
-    test ! -e editor-invoked
+    test_path_is_missing editor-invoked
 '
 
 test_done

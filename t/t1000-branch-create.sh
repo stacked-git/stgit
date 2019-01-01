@@ -92,7 +92,7 @@ test_expect_success \
 
 test_expect_success \
     'Check the branch was not created' '
-    test ! -e file1 &&
+    test_path_is_missing file1 &&
     test $(find .git -name foo4 | tee /dev/stderr | wc -l) -eq 0 &&
     test $(git show-ref | grep foo4 | wc -l) -eq 0 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"

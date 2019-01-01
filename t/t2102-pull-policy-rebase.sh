@@ -25,7 +25,7 @@ test_expect_success \
     stg branch parent && stg new u1 -m u1 &&
     echo b > file2 && stg add file2 && stg refresh &&
     stg branch stack && stg pull &&
-    test -e file2
+    test_path_is_file file2
     '
 
 test_expect_success \
@@ -33,7 +33,7 @@ test_expect_success \
     '
     stg branch parent && echo b >> file2 && stg refresh &&
     stg branch stack && stg pull &&
-    test `wc -l <file2` = 2
+    test_line_count = 2 file2
     '
 
 test_done

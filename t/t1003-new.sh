@@ -59,7 +59,7 @@ test_expect_success \
 test_expect_success \
     'Save template' '
     stg new --save-template new-tmpl.txt &&
-    test -e new-tmpl.txt
+    test_path_is_file new-tmpl.txt
 '
 
 test_done

@@ -32,7 +32,7 @@ test_expect_success \
     (cd upstream && stg new u1 -m u1 &&
      echo a > file2 && stg add file2 && stg refresh) &&
     (cd clone && stg pull) &&
-    test -e clone/file2
+    test_path_is_file clone/file2
     '
 
 # note: with pre-1.5 Git the clone is not automatically recorded
@@ -43,7 +43,7 @@ test_expect_success \
     '
     (cd upstream && echo b >> file2 && stg refresh) &&
     (cd clone && stg pull) &&
-    test `wc -l <clone/file2` = 2
+    test_line_count = 2 clone/file2
     '
 
 # this one ensures the guard against commits does not unduly trigger
@@ -52,7 +52,7 @@ test_expect_success \
     '
     (cd upstream && echo c >> file2 && stg refresh) &&
     (cd clone && git fetch && stg pull) &&
-    test `wc -l <clone/file2` = 3
+    test_line_count = 3 clone/file2
     '
 
 test_done

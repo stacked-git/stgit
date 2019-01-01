@@ -18,7 +18,7 @@ test_expect_success 'Initialize repo with patches' '
 test_expect_success 'Export to directory' '
     stg export -d export1 &&
     for i in 1 2 3 4 5; do
-      test -e export1/patch-$i
+      test_path_is_file export1/patch-$i
     done
     '
 
@@ -40,7 +40,7 @@ test_expect_success 'Export with none applied' '
     stg pop -a &&
     command_error stg export --dir export3 2>&1 |
     grep -e "No patches applied" &&
-    test ! -e export3 &&
+    test_path_is_missing export3 &&
     stg push -a
     '
 
@@ -48,8 +48,8 @@ test_expect_success 'Export with dirty working tree' '
     echo "another line" >> foo.txt &&
     stg export -d export4 patch-1 2>&1 |
     grep -e "Warning: Local changes in the tree" &&
-    test -e export4/series &&
-    test -e export4/patch-1 &&
+    test_path_is_file export4/series &&
+    test_path_is_file export4/patch-1 &&
     git checkout foo.txt
     '
 
@@ -61,8 +61,8 @@ test_expect_success 'Use custom template' '
 
 test_expect_success 'Export numbered patches with custom extension' '
     stg export -d export5 -n -e mydiff patch-1 patch-2 &&
-    test -e export5/01-patch-1.mydiff &&
-    test -e export5/02-patch-2.mydiff &&
+    test_path_is_file export5/01-patch-1.mydiff &&
+    test_path_is_file export5/02-patch-2.mydiff &&
     grep -e "02-patch-2\.mydiff" export5/series
     '
 

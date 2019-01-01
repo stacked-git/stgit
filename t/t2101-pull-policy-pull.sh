@@ -32,7 +32,7 @@ test_expect_success \
     (cd upstream && stg new u1 -m u1 &&
      echo a > file2 && stg add file2 && stg refresh) &&
     (cd clone && stg pull) &&
-     test -e clone/file2
+     test_path_is_file clone/file2
     '
 
 # note: with pre-1.5 Git the clone is not automatically recorded
