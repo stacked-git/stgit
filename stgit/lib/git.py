@@ -779,8 +779,8 @@ class DiffTreeProcesses(object):
         args = tuple(args)
         if args not in self.__procs:
             self.__procs[args] = self.__repo.run(
-                ['git', 'diff-tree', '--stdin', '--encoding=utf-8'] +
-                list(args)).run_background()
+                ['git', 'diff-tree', '--stdin'] + list(args)
+            ).run_background()
         return self.__procs[args]
 
     def __shutdown(self):
@@ -790,19 +790,16 @@ class DiffTreeProcesses(object):
 
     def diff_trees(self, args, sha1a, sha1b):
         p = self.__get_process(args)
-        query = '%s %s\n' % (sha1a, sha1b)
-        b_query = query.encode('utf-8')
-        end = 'EOF\n'  # arbitrary string that's not a 40-digit hex number
-        b_end = end.encode('utf-8')
-        os.write(p.stdin.fileno(), b_query + b_end)
+        query = ('%s %s\n' % (sha1a, sha1b)).encode('utf-8')
+        end = b'EOF\n'  # arbitrary string that's not a 40-digit hex number
+        os.write(p.stdin.fileno(), query + end)
         p.stdin.flush()
         data = bytes()
-        while not (data.endswith(b'\n' + b_end) or
-                   data.endswith(b'\0' + b_end)):
+        while not (data.endswith(b'\n' + end) or data.endswith(b'\0' + end)):
             data += os.read(p.stdout.fileno(), 4096)
-        assert data.startswith(b_query)
-        assert data.endswith(b_end)
-        return data[len(b_query):-len(b_end)]
+        assert data.startswith(query)
+        assert data.endswith(end)
+        return data[len(query):-len(end)]
 
 
 class Repository(RunWithEnv):
