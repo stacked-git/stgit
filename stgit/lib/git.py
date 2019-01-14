@@ -974,7 +974,9 @@ class Repository(RunWithEnv):
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
 
-    def diff_tree(self, t1, t2, diff_opts, binary=True):
+    def diff_tree(
+        self, t1, t2, diff_opts, pathlimits=(), binary=True, stat=False
+    ):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
 
@@ -984,11 +986,18 @@ class Repository(RunWithEnv):
         @return: Patch text"""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
-        diff_opts = list(diff_opts)
-        if binary and '--binary' not in diff_opts:
-            diff_opts.append('--binary')
-        return self.__difftree.diff_trees(['-p'] + diff_opts,
-                                          t1.sha1, t2.sha1)
+        if stat:
+            args = ['--stat', '--summary']
+            args.extend(o for o in diff_opts if o != '--binary')
+        else:
+            args = ['--patch']
+            if binary and '--binary' not in diff_opts:
+                args.append('--binary')
+            args.extend(diff_opts)
+        if pathlimits:
+            args.append('--')
+            args.extend(pathlimits)
+        return self.__difftree.diff_trees(args, t1.sha1, t2.sha1)
 
     def diff_tree_files(self, t1, t2):
         """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
