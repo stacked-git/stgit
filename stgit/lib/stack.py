@@ -15,7 +15,8 @@ from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import stackupgrade
-from stgit.lib.git import Branch, CommitData, ObjectCache, Repository
+from stgit.lib.git import Branch, CommitData, Repository
+from stgit.lib.objcache import ObjectCache
 
 
 class Patch(object):
