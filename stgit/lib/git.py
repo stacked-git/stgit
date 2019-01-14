@@ -1290,6 +1290,23 @@ class IndexAndWorktree(RunWithEnvCwd):
         cmd.extend(pathlimits)
         return set(self.run_in_cwd(cmd).output_lines('\0'))
 
+    def diff(self, tree, diff_opts=(), pathlimits=(), binary=True, stat=False):
+        self.run(
+            ['git', 'update-index', '-q', '--unmerged', '--refresh']
+        ).discard_output()
+        cmd = ['git', 'diff-index']
+        if stat:
+            cmd.extend(['--stat', '--summary'])
+            cmd.extend(o for o in diff_opts if o != '--binary')
+        else:
+            cmd.append('--patch')
+            if binary and '--binary' not in diff_opts:
+                cmd.append('--binary')
+            cmd.extend(diff_opts)
+        cmd.extend([tree.sha1, '--'])
+        cmd.extend(pathlimits)
+        return self.run(cmd).decoding(None).raw_output()
+
     def changed_files(self, tree, pathlimits=[]):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
