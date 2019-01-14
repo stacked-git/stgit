@@ -1260,6 +1260,27 @@ class IndexAndWorktree(RunWithEnvCwd):
         if conflicts:
             raise MergeConflictException(conflicts)
 
+    def ls_files(self, tree, pathlimits):
+        """Given a sequence of file paths, return files known to git.
+
+        The input path limits are specified relative to the current directory.
+        The output files are relative to the repository root. A RunException
+        will be raised if any of the path limits are unknown to git.
+        """
+        if not pathlimits:
+            return set()
+        cmd = [
+            'git',
+            'ls-files',
+            '-z',
+            '--with-tree=' + tree.sha1,
+            '--error-unmatch',
+            '--full-name',
+            '--',
+        ]
+        cmd.extend(pathlimits)
+        return set(self.run_in_cwd(cmd).output_lines('\0'))
+
     def changed_files(self, tree, pathlimits=[]):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
