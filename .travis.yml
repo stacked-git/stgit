@@ -2,6 +2,12 @@ group: travis_latest
 language: python
 cache: pip
 
+env:
+  global:
+    - DEFAULT_TEST_TARGET=prove
+    - STG_PROVE_OPTS=--jobs=4
+    - STG_TEST_OPTS=--verbose-log
+
 matrix:
   include:
     - python: '2.7'
