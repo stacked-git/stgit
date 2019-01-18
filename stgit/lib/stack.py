@@ -14,7 +14,8 @@ from stgit import utils
 from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
-from stgit.lib import git, stackupgrade
+from stgit.lib import stackupgrade
+from stgit.lib.git import Branch, CommitData, ObjectCache, Repository
 
 
 class Patch(object):
@@ -67,7 +68,7 @@ class Patch(object):
                 old_log = [self.__stack.repository.refs.get(self.__log_ref)]
             except KeyError:
                 old_log = []
-            cd = git.CommitData(
+            cd = CommitData(
                 tree=new_commit.data.tree,
                 parents=old_log,
                 message='%s\t%s' % (msg, new_commit.sha1),
@@ -211,7 +212,7 @@ class Patches(object):
             p.commit  # raise exception if the patch doesn't exist
             return p
 
-        self.__patches = git.ObjectCache(create_patch)  # name -> Patch
+        self.__patches = ObjectCache(create_patch)  # name -> Patch
 
     def exists(self, name):
         try:
@@ -231,14 +232,14 @@ class Patches(object):
         return p
 
 
-class Stack(git.Branch):
+class Stack(Branch):
     """Represents an StGit stack (that is, a git branch with some extra
     metadata)."""
 
     __repo_subdir = 'patches'
 
     def __init__(self, repository, name):
-        git.Branch.__init__(self, repository, name)
+        Branch.__init__(self, repository, name)
         self.__patchorder = PatchOrder(self)
         self.__patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
@@ -299,7 +300,7 @@ class Stack(git.Branch):
         if not name:
             name = repository.current_branch_name
         # make sure that the corresponding Git branch exists
-        git.Branch(repository, name)
+        Branch(repository, name)
 
         dir = os.path.join(repository.directory, cls.__repo_subdir, name)
         compat_dir = os.path.join(dir, 'patches')
@@ -327,18 +328,18 @@ class Stack(git.Branch):
         @param parent_remote: The name of the remote Git branch
         @param parent_branch: The name of the parent Git branch
         """
-        git.Branch.create(repository, name, create_at=create_at)
+        Branch.create(repository, name, create_at=create_at)
         stack = cls.initialise(repository, name)
         stack.set_parents(parent_remote, parent_branch)
         return stack
 
 
-class Repository(git.Repository):
-    """A git L{Repository<git.Repository>} with some added StGit-specific
+class StackRepository(Repository):
+    """A git L{Repository<Repository>} with some added StGit-specific
     operations."""
 
     def __init__(self, *args, **kwargs):
-        git.Repository.__init__(self, *args, **kwargs)
+        Repository.__init__(self, *args, **kwargs)
         self.__stacks = {}  # name -> Stack
 
     @property

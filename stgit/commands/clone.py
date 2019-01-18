@@ -10,7 +10,8 @@ import os
 
 from stgit import argparse
 from stgit.commands import common
-from stgit.lib import git, stack
+from stgit.lib.git import clone
+from stgit.lib.stack import Stack
 
 __copyright__ = """
 Copyright (C) 2009, Catalin Marinas <catalin.marinas@gmail.com>
@@ -62,8 +63,8 @@ def func(parser, options, args):
     if os.path.exists(local_dir):
         raise common.CmdException('"%s" exists. Remove it first' % local_dir)
 
-    git.clone(repository, local_dir)
+    clone(repository, local_dir)
     os.chdir(local_dir)
     directory = common.DirectoryHasRepositoryLib()
     directory.setup()
-    stack.Stack.initialise(directory.repository)
+    Stack.initialise(directory.repository)

@@ -29,7 +29,7 @@ from stgit.commands.common import (
 )
 from stgit.compat import message_from_bytes, text
 from stgit.config import config
-from stgit.lib import git as gitlib
+from stgit.lib.git import diffstat
 from stgit.out import out
 from stgit.run import Run
 from stgit.utils import edit_bytes
@@ -632,7 +632,7 @@ def __build_cover(tmpl, msg_id, options, patches):
             crt_series.get_patch(p)
             for p in reversed(patches)
         ),
-        'diffstat': gitlib.diffstat(
+        'diffstat': diffstat(
             git.diff(
                 rev1=git_id(crt_series, '%s^' % patches[0]),
                 rev2=git_id(crt_series, '%s' % patches[-1]),
@@ -743,7 +743,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         'longdescr': long_descr,
         'endofheaders': '',  # for backward template compatibility
         'diff': diff,
-        'diffstat': gitlib.diffstat(diff),
+        'diffstat': diffstat(diff),
         'date': '',  # for backward template compatibility
         'version': version_str,
         'vspace': version_space,

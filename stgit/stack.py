@@ -16,8 +16,8 @@ from stgit import basedir, git, templates
 from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
-from stgit.lib import git as libgit
 from stgit.lib import stackupgrade
+from stgit.lib.git import Repository
 from stgit.out import out
 from stgit.run import Run
 from stgit.utils import (
@@ -397,7 +397,8 @@ class Series(PatchSet):
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
         stackupgrade.update_to_current_format_version(
-            libgit.Repository.default(), self.get_name())
+            Repository.default(), self.get_name()
+        )
 
         self.__refs_base = 'refs/patches/%s' % self.get_name()
 

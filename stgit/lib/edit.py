@@ -10,7 +10,7 @@ from __future__ import (
 
 from stgit import utils
 from stgit.commands import common
-from stgit.lib import git
+from stgit.lib.git import Date, Person, diffstat
 
 
 def update_patch_description(repo, cd, text, contains_diff):
@@ -24,8 +24,11 @@ def update_patch_description(repo, cd, text, contains_diff):
     (message, authname, authemail, authdate, diff
      ) = common.parse_patch(text, contains_diff)
     a = cd.author
-    for val, setter in [(authname, 'set_name'), (authemail, 'set_email'),
-                        (git.Date.maybe(authdate), 'set_date')]:
+    for val, setter in [
+        (authname, 'set_name'),
+        (authemail, 'set_email'),
+        (Date.maybe(authdate), 'set_date')
+    ]:
         if val is not None:
             a = getattr(a, setter)(val)
     cd = cd.set_message(message).set_author(a)
@@ -66,8 +69,12 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
                 cd.tree,
                 diff_flags,
             )
-            diff = b'\n'.join([git.diffstat(just_diff).encode('utf-8'),
-                               just_diff])
+            diff = b'\n'.join(
+                [
+                    diffstat(just_diff).encode('utf-8'),
+                    just_diff,
+                ]
+            )
         desc += b'\n'.join([b'', b'---', b'', diff])
     return desc
 
@@ -121,8 +128,8 @@ def auto_edit_patch(repo, cd, msg, contains_diff, author, committer, sign_str):
             utils.add_sign_line(
                 cd.message,
                 sign_str,
-                git.Person.committer().name,
-                git.Person.committer().email,
+                Person.committer().name,
+                Person.committer().email,
             )
         )
     return cd, failed_diff

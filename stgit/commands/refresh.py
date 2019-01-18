@@ -10,7 +10,8 @@ from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.config import config
-from stgit.lib import edit, git, transaction
+from stgit.lib import edit, transaction
+from stgit.lib.git import CommitData, IndexAndWorktree
 from stgit.out import out
 
 __copyright__ = """
@@ -172,7 +173,7 @@ def write_tree(stack, paths, temp_index):
     @rtype: L{Tree<stgit.git.Tree>}"""
     def go(index):
         if paths:
-            iw = git.IndexAndWorktree(index, stack.repository.default_worktree)
+            iw = IndexAndWorktree(index, stack.repository.default_worktree)
             iw.update_index(paths)
         return index.write_tree()
     if temp_index:
@@ -192,7 +193,7 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
     limiting is in effect, use a temp index."""
     tree = write_tree(stack, paths, temp_index)
     commit = stack.repository.commit(
-        git.CommitData(
+        CommitData(
             tree=tree,
             parents=[stack.head],
             message='Refresh of %s' % patch_name,

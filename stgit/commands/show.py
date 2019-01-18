@@ -13,7 +13,7 @@ from stgit.commands.common import (
     color_diff_flags,
     parse_patches,
 )
-from stgit.lib import git
+from stgit.lib.git import RepositoryException
 from stgit.pager import pager
 from stgit.run import Run
 
@@ -114,8 +114,8 @@ def func(parser, options, args):
                             name, object_type='commit', discard_stderr=True
                         )
                     )
-                except git.RepositoryException:
-                    raise git.RepositoryException(
+                except RepositoryException:
+                    raise RepositoryException(
                         '%s: Unknown patch or revision name' % name
                     )
 

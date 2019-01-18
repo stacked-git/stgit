@@ -14,7 +14,12 @@ import atexit
 
 from stgit import exception, utils
 from stgit.config import config
-from stgit.lib import git, log
+from stgit.lib.git import (
+    CheckoutException,
+    MergeConflictException,
+    MergeException,
+)
+from stgit.lib.log import log_entry, log_external_mods
 from stgit.out import out
 
 
@@ -263,7 +268,7 @@ class StackTransaction(object):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self.__check_consistency()
-        log.log_external_mods(self.__stack)
+        log_external_mods(self.__stack)
         new_head = self.head
 
         # Set branch head.
@@ -271,7 +276,7 @@ class StackTransaction(object):
             if iw:
                 try:
                     self.__checkout(new_head.data.tree, iw, allow_bad_head)
-                except git.CheckoutException:
+                except CheckoutException:
                     # We have to abort the transaction.
                     self.abort(iw)
                     self.__abort()
@@ -297,7 +302,7 @@ class StackTransaction(object):
             self.__stack.patchorder.applied = self.__applied
             self.__stack.patchorder.unapplied = self.__unapplied
             self.__stack.patchorder.hidden = self.__hidden
-            log.log_entry(self.__stack, msg)
+            log_entry(self.__stack, msg)
 
         old_applied = self.__stack.patchorder.applied
         if not self.__conflicts:
@@ -390,7 +395,7 @@ class StackTransaction(object):
                 self.__halt('%s does not apply cleanly' % pn)
             try:
                 self.__checkout(ours, iw, allow_bad_head=False)
-            except git.CheckoutException:
+            except CheckoutException:
                 self.__halt('Index/worktree dirty')
             try:
                 interactive = (allow_interactive and
@@ -399,12 +404,12 @@ class StackTransaction(object):
                 tree = iw.index.write_tree()
                 self.__current_tree = tree
                 s = 'modified'
-            except git.MergeConflictException as e:
+            except MergeConflictException as e:
                 tree = ours
                 merge_conflict = True
                 self.__conflicts = e.conflicts
                 s = 'conflict'
-            except git.MergeException as e:
+            except MergeException as e:
                 self.__halt(str(e))
         cd = cd.set_tree(tree)
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
@@ -510,7 +515,7 @@ class StackTransaction(object):
                 # The self.temp_index was modified by apply_treediff() so
                 # force read_tree() the next time merge() is used.
                 self.temp_index_tree = None
-            except git.MergeException:
+            except MergeException:
                 pass
         if not quiet:
             out.done('%d found' % len(merged))

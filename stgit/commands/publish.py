@@ -9,7 +9,8 @@ from __future__ import (
 from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import git, transaction
+from stgit.lib.git import CommitData, Person
+from stgit.lib.transaction import StackTransaction
 from stgit.out import out
 
 __copyright__ = """
@@ -101,12 +102,12 @@ directory = common.DirectoryHasRepositoryLib()
 
 def __create_commit(repository, tree, parents, options, message=''):
     """Return a new Commit object."""
-    cd = git.CommitData(
+    cd = CommitData(
         tree=tree,
         parents=parents,
         message=message,
-        author=git.Person.author(),
-        committer=git.Person.committer(),
+        author=Person.author(),
+        committer=Person.committer(),
     )
     cd = common.update_commit_data(cd, options)
     return repository.commit(cd)
@@ -114,7 +115,7 @@ def __create_commit(repository, tree, parents, options, message=''):
 
 def __get_published(stack, tree):
     """Check the patches that were already published."""
-    trans = transaction.StackTransaction(stack, 'publish')
+    trans = StackTransaction(stack, 'publish')
     published = trans.check_merged(trans.applied, tree=tree, quiet=True)
     trans.abort()
     return published

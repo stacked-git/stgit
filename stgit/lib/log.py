@@ -112,8 +112,8 @@ import re
 
 from stgit import utils
 from stgit.exception import StackException, StgException
-from stgit.lib import git
-from stgit.lib import stack as libstack
+from stgit.lib.git import BlobData, CommitData, RepositoryException, TreeData
+from stgit.lib.stack import StackRepository
 from stgit.out import out
 
 
@@ -138,7 +138,7 @@ def patch_file(repo, cd):
         '',
     ]).encode('utf-8')
     diff = repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip()
-    return repo.commit(git.BlobData(metadata + diff + b'\n'))
+    return repo.commit(BlobData(metadata + diff + b'\n'))
 
 
 def log_ref(branch):
@@ -316,12 +316,12 @@ class LogEntry(object):
 
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
         return self.__repo.commit(
-            git.TreeData(
+            TreeData(
                 {
                     'meta': self.__repo.commit(
-                        git.BlobData(metadata.encode('utf-8'))
+                        BlobData(metadata.encode('utf-8'))
                     ),
-                    'patches': self.__repo.commit(git.TreeData(patches)),
+                    'patches': self.__repo.commit(TreeData(patches)),
                 }
             )
         )
@@ -330,7 +330,7 @@ class LogEntry(object):
         metadata = self.__metadata_string()
         tree = self.__tree(metadata)
         self.__simplified = self.__repo.commit(
-            git.CommitData(
+            CommitData(
                 tree=tree,
                 message=self.message,
                 parents=[
@@ -343,7 +343,7 @@ class LogEntry(object):
         parents = list(self.__parents())
         while len(parents) >= self.__max_parents:
             g = self.__repo.commit(
-                git.CommitData(
+                CommitData(
                     tree=tree,
                     parents=parents[-self.__max_parents:],
                     message='Stack log parent grouping',
@@ -351,7 +351,7 @@ class LogEntry(object):
             )
             parents[-self.__max_parents:] = [g]
         self.commit = self.__repo.commit(
-            git.CommitData(
+            CommitData(
                 tree=tree,
                 message=self.message,
                 parents=[self.simplified] + parents,
@@ -436,7 +436,7 @@ def compat_log_entry(msg):
     try:
         repo = default_repo()
         stack = repo.get_stack(repo.current_branch_name)
-    except (StackException, git.RepositoryException) as e:
+    except (StackException, RepositoryException) as e:
         out.warn(str(e), 'Could not write to stack log')
     else:
         if repo.default_index.conflicts() and stack.patchorder.applied:
@@ -468,7 +468,7 @@ def copy_log(repo, src_branch, dst_branch, msg):
 
 
 def default_repo():
-    return libstack.Repository.default()
+    return StackRepository.default()
 
 
 def reset_stack(trans, iw, state):
@@ -604,7 +604,7 @@ def log_external_mods(stack):
 def compat_log_external_mods():
     try:
         repo = default_repo()
-    except git.RepositoryException:
+    except RepositoryException:
         # No repository, so we couldn't log even if we wanted to.
         return
     try:

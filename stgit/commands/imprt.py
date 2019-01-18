@@ -30,7 +30,7 @@ from stgit.commands.common import (
 )
 from stgit.compat import message_from_binary_file, text
 from stgit.config import config
-from stgit.lib import git as gitlib
+from stgit.lib.git import Person
 from stgit.out import out
 from stgit.utils import make_patch_name
 
@@ -198,7 +198,7 @@ def __create_patch(filename, message, author_name, author_email,
         crt_series.delete_patch(patch, keep_log=True)
 
     # override the automatically parsed settings
-    author = options.author(gitlib.Person())
+    author = options.author(Person())
     if author.name:
         author_name = author.name
     if author.email:

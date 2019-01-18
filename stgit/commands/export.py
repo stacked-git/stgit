@@ -15,7 +15,7 @@ import sys
 from stgit import argparse, git, templates
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import git as gitlib
+from stgit.lib.git import diffstat
 from stgit.out import out
 
 __copyright__ = """
@@ -185,7 +185,7 @@ def func(parser, options, args):
             'description': descr,
             'shortdescr': short_descr,
             'longdescr': long_descr,
-            'diffstat': gitlib.diffstat(diff).rstrip(),
+            'diffstat': diffstat(diff).rstrip(),
             'authname': cd.author.name,
             'authemail': cd.author.email,
             'authdate': cd.author.date.isoformat(),

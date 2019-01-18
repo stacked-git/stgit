@@ -9,7 +9,8 @@ from __future__ import (
 from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands import common
-from stgit.lib import git, transaction
+from stgit.lib.git import CommitData
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 
 __copyright__ = """
 Copyright (C) 2007, Karl Hasselström <kha@treskal.com>
@@ -67,7 +68,7 @@ class SaveTemplateDone(Exception):
 
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
-    cd = git.CommitData(tree=cd.tree, parents=cd.parents)
+    cd = CommitData(tree=cd.tree, parents=cd.parents)
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
@@ -114,7 +115,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
         trans.patches[name] = stack.repository.commit(new_commit_data)
         trans.unapplied.insert(0, name)
 
-    trans = transaction.StackTransaction(stack, 'squash', allow_conflicts=True)
+    trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
         new_commit_data = _squash_patches(trans, patches, msg, save_template,
@@ -145,7 +146,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     except SaveTemplateDone:
         trans.abort(iw)
         return
-    except transaction.TransactionHalted:
+    except TransactionHalted:
         pass
     return trans.run(iw)
 

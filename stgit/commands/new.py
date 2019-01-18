@@ -8,8 +8,8 @@ from __future__ import (
 
 from stgit import argparse, utils
 from stgit.commands import common
-from stgit.lib import git as gitlib
-from stgit.lib import transaction
+from stgit.lib.git import CommitData, Person
+from stgit.lib.transaction import StackTransaction
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -74,12 +74,12 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    cd = gitlib.CommitData(
+    cd = CommitData(
         tree=stack.head.data.tree,
         parents=[stack.head],
         message='',
-        author=gitlib.Person.author(),
-        committer=gitlib.Person.committer(),
+        author=Person.author(),
+        committer=Person.committer(),
     )
     cd = common.update_commit_data(cd, options)
 
@@ -96,7 +96,7 @@ def func(parser, options, args):
 
     # Write the new patch.
     stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'new')
+    trans = StackTransaction(stack, 'new')
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)
     return trans.run()

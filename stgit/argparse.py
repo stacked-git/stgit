@@ -17,7 +17,7 @@ import textwrap
 
 from stgit import utils
 from stgit.config import config
-from stgit.lib import git
+from stgit.lib.git import Date
 from stgit.out import out
 
 
@@ -315,7 +315,7 @@ def _person_opts(person, short):
     def short_callback(option, opt_str, value, parser, field):
         f = getattr(parser.values, person)
         if field == "date":
-            value = git.Date(value)
+            value = Date(value)
         setattr(parser.values, person,
                 lambda p: getattr(f(p), 'set_' + field)(value))
 

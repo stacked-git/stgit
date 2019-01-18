@@ -16,9 +16,9 @@ from stgit import git, stack, templates
 from stgit.compat import decode_utf8_with_latin1, text
 from stgit.config import config
 from stgit.exception import StgException
-from stgit.lib import git as libgit
-from stgit.lib import log
-from stgit.lib import stack as libstack
+from stgit.lib.git import RepositoryException
+from stgit.lib.log import compat_log_entry, compat_log_external_mods
+from stgit.lib.stack import StackRepository
 from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (
@@ -71,7 +71,7 @@ def git_id(crt_series, rev):
     """
     # TODO: remove this function once all the occurrences were converted
     # to git_commit()
-    repository = libstack.Repository.default()
+    repository = StackRepository.default()
     return git_commit(rev, repository, crt_series.get_name()).sha1
 
 
@@ -111,13 +111,13 @@ def git_commit(name, repository, branch_name=None):
     try:
         return repository.rev_parse('patches/%s/%s' % (branch, patch),
                                     discard_stderr=True)
-    except libgit.RepositoryException:
+    except RepositoryException:
         pass
 
     # Try a Git commit
     try:
         return repository.rev_parse(name, discard_stderr=True)
-    except libgit.RepositoryException:
+    except RepositoryException:
         raise CmdException('%s: Unknown patch or revision name' % name)
 
 
@@ -641,7 +641,7 @@ class _Directory(object):
 
     def write_log(self, msg):
         if self.log:
-            log.compat_log_entry(msg)
+            compat_log_entry(msg)
 
 
 class DirectoryAnywhere(_Directory):
@@ -657,7 +657,7 @@ class DirectoryAnywhere(_Directory):
 class DirectoryHasRepository(_Directory):
     def setup(self):
         self.git_dir  # might throw an exception
-        log.compat_log_external_mods()
+        compat_log_external_mods()
 
 
 class DirectoryInWorktree(DirectoryHasRepository):
@@ -683,4 +683,4 @@ class DirectoryHasRepositoryLib(_Directory):
 
     def setup(self):
         # This will throw an exception if we don't have a repository.
-        self.repository = libstack.Repository.default()
+        self.repository = StackRepository.default()
