@@ -44,9 +44,14 @@ test-patches:
 coverage: coverage-test coverage-report
 
 coverage-test:
+	-mkdir .cov-files
+	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
 	$(PYTHON) -m coverage run setup.py build
-	COVERAGE_PROCESS_START=$(PWD)/.coveragerc $(MAKE) -C t all
-	$(PYTHON) -m coverage combine $$(find . -name '.coverage.*')
+	COVERAGE_PROCESS_START=$(PWD)/.coveragerc \
+	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
+	$(MAKE) -C t all
+	$(PYTHON) -m coverage combine .cov-files/.coverage.*
+	rm -r .cov-files
 
 coverage-report:
 	$(PYTHON) -m coverage html --title="stgit coverage"
@@ -72,6 +77,8 @@ clean:
 	rm  -f TAGS tags
 	rm  -f MANIFEST
 	rm  -f stgit-completion.bash
+	rm  -f .coverage
+	rm -rf .cov-files
 
 tags:
 	ctags -R stgit/*

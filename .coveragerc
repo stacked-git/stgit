@@ -2,4 +2,3 @@
 source = stgit
 branch = True
 parallel = True
-data_file = .coverage
