@@ -6,9 +6,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit.run import Run
-from stgit.utils import add_dict
-
 
 class Immutable(object):
     """I{Immutable} objects cannot be modified once created. Any
@@ -57,35 +54,3 @@ def make_defaults(defaults):
             return default_fun()
 
     return d
-
-
-class RunWithEnv(object):
-    def run(self, args, env={}):
-        """Run the given command with an environment given by self.env.
-
-        @type args: list of strings
-        @param args: Command and argument vector
-        @type env: dict
-        @param env: Extra environment"""
-        return Run(*args).env(add_dict(self.env, env))
-
-
-class RunWithEnvCwd(RunWithEnv):
-    def run(self, args, env={}):
-        """Run the given command with an environment given by self.env, and
-        current working directory given by self.cwd.
-
-        @type args: list of strings
-        @param args: Command and argument vector
-        @type env: dict
-        @param env: Extra environment"""
-        return RunWithEnv.run(self, args, env).cwd(self.cwd)
-
-    def run_in_cwd(self, args):
-        """Run the given command with an environment given by self.env and
-        self.env_in_cwd, without changing the current working
-        directory.
-
-        @type args: list of strings
-        @param args: Command and argument vector"""
-        return RunWithEnv.run(self, args, self.env_in_cwd)

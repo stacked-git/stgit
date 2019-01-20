@@ -16,8 +16,8 @@ from stgit.compat import environ_get
 from stgit.exception import StgException
 from stgit.lib.objcache import ObjectCache
 from stgit.run import Run, RunException
+from stgit.utils import add_dict
 
-from .base import RunWithEnv
 from .iw import Index, IndexAndWorktree, MergeException, Worktree
 from .objects import Blob, Commit, Tree
 
@@ -177,7 +177,7 @@ class DiffTreeProcesses(object):
         return data[len(query):-len(end)]
 
 
-class Repository(RunWithEnv):
+class Repository(object):
     """Represents a git repository."""
 
     def __init__(self, directory):
@@ -258,6 +258,9 @@ class Repository(RunWithEnv):
     @property
     def refs(self):
         return self.__refs
+
+    def run(self, args, env=()):
+        return Run(*args).env(add_dict(self.env, env))
 
     def cat_object(self, sha1, encoding='utf-8'):
         return self.__catfile.cat_file(sha1, encoding)[1]

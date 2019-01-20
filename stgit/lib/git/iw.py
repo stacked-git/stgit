@@ -9,10 +9,9 @@ from __future__ import (
 import os
 
 from stgit.exception import StgException
-from stgit.run import RunException
+from stgit.run import Run, RunException
 from stgit.utils import add_dict
 
-from .base import RunWithEnv, RunWithEnvCwd
 from .objects import Tree
 
 
@@ -32,7 +31,7 @@ class CheckoutException(StgException):
     """Exception raised when a checkout fails."""
 
 
-class Index(RunWithEnv):
+class Index(object):
     """Represents a git index file."""
 
     def __init__(self, repository, filename):
@@ -51,6 +50,9 @@ class Index(RunWithEnv):
         return add_dict(
             self.__repository.env, {'GIT_INDEX_FILE': self.__filename}
         )
+
+    def run(self, args, env=()):
+        return Run(*args).env(add_dict(self.env, env))
 
     def read_tree(self, tree):
         self.run(['git', 'read-tree', tree.sha1]).no_output()
@@ -175,7 +177,7 @@ class Worktree(object):
         return self.__directory
 
 
-class IndexAndWorktree(RunWithEnvCwd):
+class IndexAndWorktree(object):
     """Represents a git index and a worktree. Anything that an index or
     worktree can do on their own are handled by the L{Index} and
     L{Worktree} classes; this class concerns itself with the
@@ -200,6 +202,12 @@ class IndexAndWorktree(RunWithEnvCwd):
     @property
     def cwd(self):
         return self.__worktree.directory
+
+    def run(self, args, env=()):
+        return Run(*args).env(add_dict(self.env, env)).cwd(self.cwd)
+
+    def run_in_cwd(self, args):
+        return Run(*args).env(add_dict(self.env, self.env_in_cwd))
 
     def checkout_hard(self, tree):
         assert isinstance(tree, Tree)
