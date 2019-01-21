@@ -30,7 +30,7 @@ EOF
 
 test_expect_success 'Diff stat with some local changes' '
     stg diff --stat > add-foo-stat.diff &&
-    diff -u add-foo-stat.diff expected-add-foo-stat.diff
+    test_cmp add-foo-stat.diff expected-add-foo-stat.diff
 '
 
 test_expect_success 'Diff with bad diff-opts' '
@@ -44,7 +44,7 @@ test_expect_success 'Initialize StGit stuff' '
 
 test_expect_success 'Diff with some local changes' '
     stg diff > add-foo2.diff &&
-    diff -u add-foo.diff add-foo2.diff
+    test_cmp add-foo.diff add-foo2.diff
 '
 
 test_expect_success 'Refresh patch' '
@@ -77,9 +77,9 @@ test_expect_success 'Add more patches' '
 
 test_expect_success 'Diff revs parent-child' '
     stg diff -r foo..bar > foo-bar.diff &&
-    diff -u foo-bar.diff bar.diff &&
+    test_cmp foo-bar.diff bar.diff &&
     stg diff -r foo..bar --stat > foo-bar-stat.diff &&
-    diff -u foo-bar-stat.diff bar-stat.diff
+    test_cmp foo-bar-stat.diff bar-stat.diff
 '
 
 test_expect_success 'Diff invalid rev patch name' '
@@ -108,11 +108,11 @@ EOF
 test_expect_success 'Diff range just rev1' '
     stg diff -r bar.. > bar-head.diff &&
     stg diff -r bar.. --stat > bar-head-stat.diff &&
-    diff -u bar-head-stat.diff expected-bar-head-stat.diff &&
+    test_cmp bar-head-stat.diff expected-bar-head-stat.diff &&
     stg diff -r bar..p4 > bar-p4.diff &&
-    diff -u bar-head.diff bar-p4.diff &&
+    test_cmp bar-head.diff bar-p4.diff &&
     stg diff -r bar > bar-only.diff &&
-    diff -u bar-head.diff bar-only.diff
+    test_cmp bar-head.diff bar-only.diff
 '
 
 test_expect_success 'Diff range with path' '
@@ -129,9 +129,9 @@ test_expect_success 'Diff from dir' '
     (
         cd dir0 &&
         stg diff > threes2.diff &&
-        diff -u ../threes.diff threes2.diff &&
+        test_cmp ../threes.diff threes2.diff &&
         stg diff ../bar.txt > threes-bar2.diff &&
-        diff -u ../threes-bar.diff threes-bar2.diff &&
+        test_cmp ../threes-bar.diff threes-bar2.diff &&
         test -z "$(stg diff dir1/baz.txt)"
     )
 '
@@ -161,7 +161,7 @@ EOF
 
 test_expect_success 'Binary diff stat' '
     stg diff --stat > num-stat.diff &&
-    diff -u num-stat.diff expected-num-stat.diff
+    test_cmp num-stat.diff expected-num-stat.diff
 '
 
 test_expect_success 'Refresh binary' '
@@ -171,12 +171,12 @@ test_expect_success 'Refresh binary' '
 
 test_expect_success 'Binary diff range' '
     stg diff -r p5..p6 > num2.diff &&
-    diff -u num.diff num2.diff
+    test_cmp num.diff num2.diff
 '
 
 test_expect_success 'Binary diff range with --binary' '
     stg diff -r p5..p6 --diff-opts=--binary > num-binary2.diff &&
-    diff -u num-binary.diff num-binary2.diff
+    test_cmp num-binary.diff num-binary2.diff
 '
 
 test_done

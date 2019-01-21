@@ -39,9 +39,9 @@ EOF
 
 test_expect_success 'No patch args' '
     stg files > b-c.log &&
-    diff -u b-c.log expected-b-c.log &&
+    test_cmp b-c.log expected-b-c.log &&
     stg files -- patch-b-c > b-c2.log &&
-    diff -u b-c.log b-c2.log
+    test_cmp b-c.log b-c2.log
 '
 
 cat > expected-a-b-bare.log <<EOF
@@ -51,7 +51,7 @@ EOF
 
 test_expect_success 'Bare file names' '
     stg files --bare patch-a-b > a-b-bare.log &&
-    diff -u a-b-bare.log expected-a-b-bare.log
+    test_cmp a-b-bare.log expected-a-b-bare.log
 '
 
 cat > expected-b-c-stat.log <<EOF
@@ -63,7 +63,7 @@ EOF
 
 test_expect_success 'Stat output' '
     stg files --stat patch-b-c > b-c-stat.log &&
-    diff -u b-c-stat.log expected-b-c-stat.log
+    test_cmp b-c-stat.log expected-b-c-stat.log
 '
 
 test_expect_success 'Empty patch' '
@@ -81,7 +81,7 @@ test_expect_success 'Moved file' '
     git mv a.txt d.txt &&
     stg refresh &&
     stg files > a-d.log &&
-    diff -u a-d.log expected-a-d.log
+    test_cmp a-d.log expected-a-d.log
 '
 
 cat > expected-a-d-bare.log <<EOF
@@ -91,7 +91,7 @@ EOF
 
 test_expect_success 'Moved file bare' '
     stg files --bare -- patch-a-d > a-d-bare.log &&
-    diff -u a-d-bare.log expected-a-d-bare.log
+    test_cmp a-d-bare.log expected-a-d-bare.log
 '
 
 test_done

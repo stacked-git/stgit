@@ -42,7 +42,7 @@ EOF
 test_expect_success 'Modifications and no file args' '
     echo "six" >> even.txt &&
     stg patches > mod-no-files.log &&
-    diff -u mod-no-files.log expected-evens.log &&
+    test_cmp mod-no-files.log expected-evens.log &&
     git checkout even.txt
 '
 
@@ -57,16 +57,16 @@ test_expect_success 'Patches relative to dir' '
     (
         cd dir0 &&
         stg patches dir1/odd.txt > relative-odd.log &&
-        diff -u relative-odd.log ../expected-odds.log &&
+        test_cmp relative-odd.log ../expected-odds.log &&
         echo "seven" > dir1/odd.txt &&
         stg patches > relative-odd-mod.log &&
-        diff -u relative-odd-mod.log ../expected-odds.log &&
+        test_cmp relative-odd-mod.log ../expected-odds.log &&
         stg patches ../even.txt > relative-even.log &&
-        diff -u relative-even.log ../expected-evens.log &&
+        test_cmp relative-even.log ../expected-evens.log &&
         git checkout dir1/odd.txt &&
         echo "six" >> ../even.txt &&
         stg patches > relative-even-mod.log &&
-        diff -u relative-even-mod.log ../expected-evens.log &&
+        test_cmp relative-even-mod.log ../expected-evens.log &&
         git checkout ../even.txt
     )
 '

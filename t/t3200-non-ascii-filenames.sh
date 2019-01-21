@@ -42,7 +42,7 @@ cat > expected.txt <<EOF
 EOF
 test_expect_success 'Status of modified non-ASCII file' '
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 test_expect_success 'Refresh changes to non-ASCII file' '
@@ -53,7 +53,7 @@ cat > expected.txt <<EOF
 EOF
 test_expect_success 'Status after refresh' '
     stg status > output.txt &&
-    diff -u expected.txt output.txt
+    test_cmp expected.txt output.txt
 '
 
 test_done
