@@ -83,21 +83,22 @@ class Output(object):
         self.write(string)
         self.at_start_of_line = string.endswith('\n')
 
-    def write_bytes(self, byte_data):
-        self.new_line()
-        self.write_bytes(byte_data)
-        self.at_start_of_line = byte_data.endswith(b'\n')
-
 
 class MessagePrinter(object):
     def __init__(self, file=None):
         if file:
             self.__stdout = self.__stderr = Output(file)
         else:
-            self.__stdout = Output(io.open(sys.stdout.fileno(), 'w',
-                                           buffering=1, encoding='utf-8'))
-            self.__stderr = Output(io.open(sys.stderr.fileno(), 'w',
-                                           buffering=1, encoding='utf-8'))
+            self.__stdout = Output(
+                io.open(
+                    sys.stdout.fileno(), 'w', buffering=1, encoding='utf-8'
+                )
+            )
+            self.__stderr = Output(
+                io.open(
+                    sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8'
+                )
+            )
         if file or sys.stdout.isatty():
             self.__out = self.__stdout
         else:
@@ -113,6 +114,7 @@ class MessagePrinter(object):
 
     def stdout_bytes(self, byte_data):
         self.__stdout.write_bytes(byte_data)
+        self.__stdout.flush()
 
     def err_raw(self, string):
         """Write a string possibly containing newlines to the error output."""
@@ -121,6 +123,7 @@ class MessagePrinter(object):
     def err_bytes(self, byte_data):
         """Write encoded byte data to the error output."""
         self.__stderr.write_bytes(byte_data)
+        self.__stderr.flush()
 
     def info(self, *msgs):
         for msg in msgs:
