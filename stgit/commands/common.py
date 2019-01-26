@@ -701,3 +701,16 @@ class DirectoryHasRepositoryLib(_Directory):
     def setup(self):
         # This will throw an exception if we don't have a repository.
         self.repository = StackRepository.default()
+
+
+class DirectoryInWorktreeLib(DirectoryHasRepositoryLib):
+    def setup(self):
+        DirectoryHasRepositoryLib.setup(self)
+        if not self.is_inside_worktree:
+            raise DirectoryException('Not inside a git worktree')
+
+
+class DirectoryGotoTopLevelLib(DirectoryInWorktreeLib):
+    def setup(self):
+        DirectoryInWorktreeLib.setup(self)
+        self.cd_to_topdir()

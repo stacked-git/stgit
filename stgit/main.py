@@ -181,7 +181,6 @@ def _main():
         from ConfigParser import ParsingError, NoSectionError
     from stgit.exception import StgException
     from stgit.config import config_setup
-    from stgit.stack import Series
 
     try:
         debug_level = int(environ_get('STGIT_DEBUG_LEVEL', 0))
@@ -196,10 +195,9 @@ def _main():
 
         # Some commands don't (always) need an initialized series.
         if directory.needs_current_series:
-            if hasattr(options, 'branch') and options.branch:
-                command.crt_series = Series(options.branch)
-            else:
-                command.crt_series = Series()
+            from stgit.stack import Series
+            branch = getattr(options, 'branch', None)
+            command.crt_series = Series(branch)
 
         ret = command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError) as err:
