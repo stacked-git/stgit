@@ -23,6 +23,12 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Invalid num args to rename' \
+    'command_error stg branch --rename baz 2>&1 |
+     grep "incorrect number of arguments"
+'
+
+test_expect_success \
     'Rename an stgit branch' \
     'stg branch -c buz &&
      stg branch -r foo bar &&

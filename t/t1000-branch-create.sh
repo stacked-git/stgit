@@ -18,6 +18,11 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Too many args to --create' '
+    command_error stg branch --create aname acommit anextra
+'
+
+test_expect_success \
     'Create a spurious patches/ entry' '
     stg branch master &&
     stg init &&
@@ -44,6 +49,24 @@ test_expect_success \
 test_expect_success \
     'Try to create an stgit branch with an existing git branch by that name' '
     command_error stg branch -c foo2
+'
+
+test_expect_success \
+    'Attempt switching to current branch' '
+    command_error stg branch $(stg branch) 2>&1 |
+    grep "is already the current branch"
+'
+
+test_expect_success \
+    'Attempt no branch command' '
+    command_error stg branch foo bar 2>&1 |
+    grep "incorrect number of arguments"
+'
+
+test_expect_success \
+    'Invalid num arguments to branch list' '
+    command_error stg branch --list new 2>&1 |
+    grep "incorrect number of arguments"
 '
 
 test_expect_success \

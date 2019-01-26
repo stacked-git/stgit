@@ -27,6 +27,16 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Check protection' \
+    '(cd clone &&
+      stg branch --protect &&
+      command_error stg pull 2>&1 |
+      grep "This branch is protected" &&
+      stg branch --unprotect
+     )
+     '
+
+test_expect_success \
     'Add non-rewinding commit upstream and pull it from clone' \
     '
     (cd upstream && stg new u1 -m u1 &&

@@ -14,6 +14,15 @@ test_expect_success 'Delete a branch' '
     stg branch --delete master
     '
 
+test_expect_success 'Attempt to delete current branch' '
+    command_error stg branch --delete $(stg branch)
+'
+
+test_expect_success 'Invalid num args to delete' '
+    command_error stg branch --delete &&
+    command_error stg branch --delete foo extra
+'
+
 test_expect_success 'Create a non-StGIT branch and delete it' '
     git branch bar &&
     stg branch --delete bar

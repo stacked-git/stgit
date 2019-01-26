@@ -41,4 +41,18 @@ test_expect_success \
     test "$(stg series --applied -c)" -eq 2
     '
 
+test_expect_success \
+    'Anonymous clone' \
+    '
+    stg branch --clone &&
+    stg branch |
+    grep -E "^bar-[0-9]+-[0-9]+"
+    '
+
+test_expect_success \
+    'Invalid clone args' \
+    '
+    command_error stg branch --clone bname extra
+    '
+
 test_done
