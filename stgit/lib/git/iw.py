@@ -300,9 +300,7 @@ class IndexAndWorktree(object):
         return set(self.run_in_cwd(cmd).output_lines('\0'))
 
     def diff(self, tree, diff_opts=(), pathlimits=(), binary=True, stat=False):
-        self.run(
-            ['git', 'update-index', '-q', '--unmerged', '--refresh']
-        ).discard_output()
+        self.refresh_index()
         cmd = ['git', 'diff-index']
         if stat:
             cmd.extend(['--stat', '--summary'])
@@ -332,11 +330,18 @@ class IndexAndWorktree(object):
             ).output_lines('\0')
         )
 
+    def refresh_index(self):
+        """Refresh index with stat() information from the working directory."""
+        self.run(
+            ['git', 'update-index', '-q', '--unmerged', '--refresh']
+        ).discard_output()
+
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""
-        cmd = ['git', 'update-index', '--remove']
-        self.run(cmd + ['-z', '--stdin']).input_nulterm(paths).discard_output()
+        self.run(
+            ['git', 'update-index', '--remove', '-z', '--stdin']
+        ).input_nulterm(paths).discard_output()
 
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
