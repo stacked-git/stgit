@@ -131,24 +131,41 @@ def color_diff_flags():
         return []
 
 
-def check_local_changes():
-    if git.local_changes():
-        raise CmdException('local changes in the tree. Use "refresh" or'
-                           ' "reset --hard"')
+def check_local_changes(iw=None):
+    out.start('Checking for changes in the working directory')
+    if iw:
+        local_changes = iw.changed_files()
+    else:
+        local_changes = git.local_changes()
+    out.done()
+    if local_changes:
+        raise CmdException(
+            'local changes in the tree. Use "refresh" or "reset --hard"'
+        )
 
 
-def check_head_top_equal(crt_series):
-    if not crt_series.head_top_equal():
-        raise CmdException('HEAD and top are not the same. This can happen'
-                           ' if you modify a branch with git. "stg repair'
-                           ' --help" explains more about what to do next.')
+def check_head_top_equal(stack_or_series):
+    # N.B. stack_or_series may be either an old-style PatchSet instance (e.g.
+    # crt_series) or a new-style Stack instance since both have a
+    # head_top_equal() method. TODO: eliminate instances of the former.
+    if not stack_or_series.head_top_equal():
+        raise CmdException(
+            'HEAD and top are not the same. This can happen if you modify a '
+            'branch with git. "stg repair --help" explains more about what to '
+            'do next.'
+        )
 
 
-def check_conflicts():
-    if git.get_conflicts():
-        raise CmdException('Unsolved conflicts. Please fix the conflicts'
-                           ' then use "git add --update <files>" or revert the'
-                           ' changes with "reset --hard".')
+def check_conflicts(iw=None):
+    if iw:
+        conflicts = iw.index.conflicts()
+    else:
+        conflicts = git.get_conflicts()
+    if conflicts:
+        raise CmdException(
+            'Unsolved conflicts. Please fix the conflicts then use "git add '
+            '--update <files>" or revert the changes with "reset --hard".'
+        )
 
 
 def print_crt_patch(crt_series, branch=None):

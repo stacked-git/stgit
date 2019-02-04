@@ -200,16 +200,13 @@ def parse_git_ls(lines):
             t = None
 
 
-def tree_status(files=None, tree_id='HEAD', verbose=False):
+def tree_status(files=None, tree_id='HEAD'):
     """Get the status of all changed files, or of a selected set of
     files. Returns a list of pairs - (status, filename).
 
     If 'not files', it will check all files. If 'files' is a list, it will only
     check the files in the list.
     """
-    if verbose:
-        out.start('Checking for changes in the working directory')
-
     refresh_index()
 
     if files is None:
@@ -255,16 +252,12 @@ def tree_status(files=None, tree_id='HEAD', verbose=False):
                 cache_files.append((t, fn))
                 reported_files.add(fn)
 
-    if verbose:
-        out.done()
-
     return cache_files
 
 
-def local_changes(verbose=True):
-    """Return true if there are local changes in the tree
-    """
-    return len(tree_status(verbose=verbose)) != 0
+def local_changes():
+    """Return true if there are local changes in the tree."""
+    return len(tree_status()) != 0
 
 
 def get_heads():
@@ -524,7 +517,7 @@ def committer():
 def update_cache(files=None, force=False):
     """Update the cache information for the given files
     """
-    cache_files = tree_status(files, verbose=False)
+    cache_files = tree_status(files)
 
     # everything is up-to-date
     if len(cache_files) == 0:

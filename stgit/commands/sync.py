@@ -182,7 +182,7 @@ def func(parser, options, args):
         # the actual merging (either from a branch or an external file)
         merge_patch(patch, p)
 
-        if git.local_changes(verbose=False):
+        if git.local_changes():
             # index (cache) already updated by the git merge. The
             # backup information was already reset above
             crt_series.refresh_patch(
