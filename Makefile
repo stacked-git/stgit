@@ -41,9 +41,16 @@ test-patches:
 
 .PHONY: lint test test-patches
 
-coverage: coverage-test coverage-report
+coverage:
+	$(MAKE) coverage-test
+	$(MAKE) coverage-report
 
 coverage-test:
+	rm -f .coverage
+	$(MAKE) .coverage
+
+.coverage:
+	rm -rf build
 	-mkdir .cov-files
 	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
 	$(PYTHON) -m coverage run setup.py build
@@ -53,7 +60,7 @@ coverage-test:
 	$(PYTHON) -m coverage combine .cov-files/.coverage.*
 	rm -r .cov-files
 
-coverage-report:
+coverage-report: .coverage
 	$(PYTHON) -m coverage html --title="stgit coverage"
 	$(PYTHON) -m coverage report
 	@echo "HTML coverage report: file://$(PWD)/htmlcov/index.html"
@@ -79,6 +86,7 @@ clean:
 	rm  -f stgit-completion.bash
 	rm  -f .coverage
 	rm -rf .cov-files
+	rm -rf htmlcov
 
 tags:
 	ctags -R stgit/*
