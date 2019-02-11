@@ -685,27 +685,6 @@ def diff(files=None, rev1='HEAD', rev2=None, diff_flags=[], binary=True):
         return b''
 
 
-def files(rev1, rev2, diff_flags=[]):
-    """Return the files modified between rev1 and rev2
-    """
-    result = []
-    for line in GRun('diff-tree', *(diff_flags + ['-r', rev1, rev2])
-                     ).output_lines():
-        result.append('%s %s' % tuple(line.split(' ', 4)[-1].split('\t', 1)))
-
-    return '\n'.join(result)
-
-
-def barefiles(rev1, rev2):
-    """Return the files modified between rev1 and rev2, without status info
-    """
-    result = []
-    for line in GRun('diff-tree', '-r', rev1, rev2).output_lines():
-        result.append(line.split(' ', 4)[-1].split('\t', 1)[-1])
-
-    return '\n'.join(result)
-
-
 def checkout(tree_id):
     """Check out the given tree_id
     """
