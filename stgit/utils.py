@@ -92,17 +92,6 @@ def append_string(filename, line, encoding='utf-8'):
         print(line, file=f)
 
 
-def insert_string(filename, line, encoding='utf-8'):
-    """Inserts 'line' at the beginning of the file
-    """
-    with mkdir_file(filename, 'r+', encoding) as f:
-        lines = f.readlines()
-        f.seek(0)
-        f.truncate()
-        print(line, file=f)
-        f.writelines(lines)
-
-
 def create_empty_file(name):
     """Creates an empty file
     """

@@ -26,7 +26,6 @@ from stgit.utils import (
     append_strings,
     call_editor,
     create_empty_file,
-    insert_string,
     make_patch_name,
     read_string,
     read_strings,
@@ -826,7 +825,6 @@ class Series(PatchSet):
         author_date=None,
         committer_name=None,
         committer_email=None,
-        before_existing=False,
         sign_str=None,
     ):
         """Creates a new patch, either pointing to an existing commit object,
@@ -834,8 +832,6 @@ class Series(PatchSet):
         """
 
         assert commit or (top and bottom)
-        assert not before_existing or (top and bottom)
-        assert not (commit and before_existing)
         assert (top and bottom) or (not top and not bottom)
         assert commit or (
             not top
@@ -876,9 +872,7 @@ class Series(PatchSet):
         patch.set_commname(committer_name)
         patch.set_commemail(committer_email)
 
-        if before_existing:
-            insert_string(self.__applied_file, patch.get_name())
-        elif unapplied:
+        if unapplied:
             patches = [patch.get_name()] + self.get_unapplied()
             write_strings(self.__unapplied_file, patches)
             set_head = False
