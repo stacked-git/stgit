@@ -6,23 +6,28 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoToplevel,
+    DirectoryGotoTopLevelLib,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
-    git_id,
-    name_email_date,
+    git_commit,
     parse_patches,
     parse_rev,
-    print_crt_patch,
+    print_current_patch,
 )
+from stgit.lib.git import (
+    CommitData,
+    MergeConflictException,
+    MergeException,
+    Person,
+)
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
-from stgit.stack import Series
-from stgit.utils import find_patch_name
+from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS, find_patch_name
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -110,124 +115,143 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoToplevel(log=True)
-crt_series = None
+directory = DirectoryGotoTopLevelLib()
 
 
-def __pick_commit(commit_id, patchname, options):
-    """Pick a commit id.
-    """
-    commit = git.Commit(commit_id)
+def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
+    """Pick a commit."""
+    repository = stack.repository
 
     if options.name:
         patchname = options.name
     elif patchname and options.revert:
         patchname = 'revert-' + patchname
+
     if patchname:
-        patchname = find_patch_name(patchname, crt_series.patch_exists)
+        patchname = find_patch_name(patchname, stack.patches.exists)
 
     if options.parent:
-        parent = git_id(crt_series, options.parent)
+        parent = git_commit(options.parent, repository, ref_stack.name)
     else:
-        parent = commit.get_parent()
+        parent = commit.data.parent
 
     if not options.revert:
         bottom = parent
-        top = commit_id
+        top = commit
     else:
-        bottom = commit_id
+        bottom = commit
         top = parent
 
     if options.fold:
-        out.start('Folding commit %s' % commit_id)
+        out.start('Folding commit %s' % commit.sha1)
 
-        # try a direct git apply first
-        if not git.apply_diff(bottom, top, files=options.file):
-            if options.file:
-                raise CmdException('Patch folding failed')
-            else:
-                git.merge_recursive(bottom, git.get_head(), top)
+        diff = repository.diff_tree(
+            bottom.data.tree, top.data.tree, pathlimits=options.file
+        )
 
-        out.done()
+        if diff:
+            try:
+                # try a direct git apply first
+                iw.apply(diff, quiet=True)
+            except MergeException:
+                if options.file:
+                    out.done('conflict(s)')
+                    out.error('%s does not apply cleanly' % patchname)
+                    return STGIT_CONFLICT
+                else:
+                    try:
+                        iw.merge(
+                            bottom.data.tree,
+                            stack.head.data.tree,
+                            top.data.tree,
+                        )
+                    except MergeConflictException as e:
+                        out.done('%s conflicts' % len(e.conflicts))
+                        out.error(
+                            '%s does not apply cleanly' % patchname,
+                            *e.conflicts
+                        )
+                        return STGIT_CONFLICT
+            out.done()
+        else:
+            out.done('no changes')
+        return STGIT_SUCCESS
     elif options.update:
-        rev1 = git_id(crt_series, 'HEAD^')
-        rev2 = git_id(crt_series, 'HEAD')
-        files = git.barefiles(rev1, rev2).split('\n')
+        files = [
+            fn1 for _, _, _, _, _, fn1, fn2 in repository.diff_tree_files(
+                stack.top.data.parent.data.tree, stack.top.data.tree
+            )
+        ]
 
-        out.start('Updating with commit %s' % commit_id)
+        diff = repository.diff_tree(
+            bottom.data.tree, top.data.tree, pathlimits=files
+        )
 
-        if not git.apply_diff(bottom, top, files=files):
-            raise CmdException('Patch updating failed')
+        out.start('Updating with commit %s' % commit.sha1)
 
-        out.done()
+        try:
+            iw.apply(diff, quiet=True)
+        except MergeException:
+            out.done('conflict(s)')
+            out.error('%s does not apply cleanly' % patchname)
+            return STGIT_CONFLICT
+        else:
+            out.done()
+            return STGIT_SUCCESS
     else:
-        message = commit.get_log()
+        author = commit.data.author
+        message = commit.data.message
+
         if options.revert:
+            author = Person.author()
             if message:
                 lines = message.splitlines()
                 subject = lines[0]
                 body = '\n'.join(lines[2:])
             else:
-                subject = commit.get_id_hash()
+                subject = commit.sha1
                 body = ''
             message = 'Revert "%s"\n\nThis reverts commit %s.\n\n%s\n' % (
-                subject, commit.get_id_hash(), body
+                subject, commit.sha1, body
             )
         elif options.expose:
-            if not message.endswith('\n'):
-                message += '\n'
-            message += '(imported from commit %s)\n' % commit.get_id_hash()
-        (
-            author_name, author_email, author_date
-        ) = name_email_date(commit.get_author())
-        if options.revert:
-            author_name = author_email = None
+            message = '%s\n\n(imported from commit %s)\n' % (
+                message.rstrip(), commit.sha1
+            )
 
-        out.start('Importing commit %s' % commit_id)
+        out.start('Importing commit %s' % commit.sha1)
 
-        newpatch = crt_series.new_patch(
-            patchname,
-            message=message,
-            can_edit=False,
-            unapplied=True,
-            bottom=bottom,
-            top=top,
-            author_name=author_name,
-            author_email=author_email,
-            author_date=author_date,
+        new_commit = repository.commit(
+            CommitData(
+                tree=top.data.tree,
+                parents=[bottom],
+                message=message,
+                author=author,
+            )
         )
-        # in case the patch name was automatically generated
-        patchname = newpatch.get_name()
 
-        # find a patchlog to fork from
-        refbranchname, refpatchname = parse_rev(patchname)
-        if refpatchname:
-            if refbranchname:
-                # assume the refseries is OK, since we already resolved
-                # commit_str to a git_id
-                refseries = Series(refbranchname)
-            else:
-                refseries = crt_series
-            patch = refseries.get_patch(refpatchname)
-            if patch.get_log():
-                out.info("Log was %s" % newpatch.get_log())
-                out.info("Setting log to %s\n" % patch.get_log())
-                newpatch.set_log(patch.get_log())
-                out.info("Log is now %s" % newpatch.get_log())
-            else:
-                out.info("No log for %s\n" % patchname)
+        trans = StackTransaction(
+            stack, 'pick %s from %s' % (patchname, ref_stack.name)
+        )
+        trans.patches[patchname] = new_commit
 
+        trans.unapplied.append(patchname)
         if not options.unapplied:
-            modified = crt_series.push_patch(patchname)
-        else:
-            modified = False
+            try:
+                trans.push_patch(patchname, iw, allow_interactive=True)
+            except TransactionHalted:
+                pass
 
-        if crt_series.empty_patch(patchname):
+        retval = trans.run(iw, print_current_patch=False)
+
+        if retval == STGIT_CONFLICT:
+            out.done('conflict(s)')
+        elif stack.patches.get(patchname).is_empty():
             out.done('empty patch')
-        elif modified:
-            out.done('modified')
         else:
             out.done()
+
+        return retval
 
 
 def func(parser, options, args):
@@ -239,47 +263,71 @@ def func(parser, options, args):
     if options.file and not options.fold:
         parser.error('--file can only be specified with --fold')
 
+    repository = directory.repository
+    stack = repository.get_stack()
+    iw = repository.default_iw
+
     if not options.unapplied:
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal(crt_series)
+        check_local_changes(stack)
+        check_conflicts(iw)
+        check_head_top_equal(stack)
 
     if options.ref_branch:
-        remote_series = Series(options.ref_branch)
+        ref_stack = repository.get_stack(options.ref_branch)
     else:
-        remote_series = crt_series
+        ref_stack = stack
 
-    applied = remote_series.get_applied()
-    unapplied = remote_series.get_unapplied()
     try:
-        patches = parse_patches(args, applied + unapplied, len(applied))
-        commit_id = None
+        patches = parse_patches(
+            args,
+            ref_stack.patchorder.all_visible,
+            len(ref_stack.patchorder.applied),
+        )
+        commit = None
     except CmdException:
         if len(args) > 1:
             raise
-        # no patches found, try a commit id
-        commit_id = git_id(remote_series, args[0])
 
-    if not commit_id and len(patches) > 1:
+        branch, patch = parse_rev(args[0])
+
+        if not branch:
+            commit = git_commit(patch, repository, options.ref_branch)
+            patches = []
+        else:
+            ref_stack = repository.get_stack(branch)
+            patches = parse_patches(
+                [patch],
+                ref_stack.patchorder.all_visible,
+                len(ref_stack.patchorder.applied),
+            )
+            commit = None
+
+    if not commit and len(patches) > 1:
         if options.name:
             raise CmdException('--name can only be specified with one patch')
         if options.parent:
             raise CmdException('--parent can only be specified with one patch')
 
-    if options.update and not crt_series.get_current():
+    if options.update and not stack.patchorder.applied:
         raise CmdException('No patches applied')
 
-    if commit_id:
-        # Try to guess a patch name if the argument was <branch>:<patch>
-        try:
-            patchname = args[0].split(':')[1]
-        except IndexError:
-            patchname = None
-        __pick_commit(commit_id, patchname, options)
+    if commit:
+        patchname = None
+        retval = __pick_commit(
+            stack, ref_stack, iw, commit, patchname, options
+        )
     else:
         if options.unapplied:
             patches.reverse()
-        for patch in patches:
-            __pick_commit(git_id(remote_series, patch), patch, options)
+        for patchname in patches:
+            commit = git_commit(patchname, repository, ref_stack.name)
+            retval = __pick_commit(
+                stack, ref_stack, iw, commit, patchname, options
+            )
+            if retval != STGIT_SUCCESS:
+                break
 
-    print_crt_patch(crt_series)
+    if retval == STGIT_SUCCESS:
+        print_current_patch(stack)
+
+    return retval

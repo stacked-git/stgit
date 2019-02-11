@@ -131,10 +131,12 @@ def color_diff_flags():
         return []
 
 
-def check_local_changes(iw=None):
+def check_local_changes(stack=None):
     out.start('Checking for changes in the working directory')
-    if iw:
-        local_changes = iw.changed_files()
+    if stack:
+        local_changes = stack.repository.default_iw.changed_files(
+            stack.head.data.tree
+        )
     else:
         local_changes = git.local_changes()
     out.done()
@@ -166,6 +168,13 @@ def check_conflicts(iw=None):
             'Unsolved conflicts. Please fix the conflicts then use "git add '
             '--update <files>" or revert the changes with "reset --hard".'
         )
+
+
+def print_current_patch(stack):
+    if stack.patchorder.applied:
+        out.info('Now at patch "%s"' % stack.patchorder.applied[-1])
+    else:
+        out.info('No patches applied')
 
 
 def print_crt_patch(crt_series, branch=None):

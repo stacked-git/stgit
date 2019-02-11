@@ -7,7 +7,7 @@ test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
 	command_error stg pick foo 2>&1 |
-	grep "Branch \"master\" not initialised"
+	grep "master: branch not initialized"
 	'
 
 test_expect_success \
@@ -22,6 +22,8 @@ test_expect_success \
 	stg new E -m "e" &&
 	echo AA >> a && echo BB >> b && echo CC >> c &&
 	stg refresh &&
+	stg new AAA -m "aaa" &&
+	echo "A" > a && echo "AAA" >> a && echo "AA" >> a && stg refresh &&
 	stg branch master
 	'
 
@@ -168,6 +170,44 @@ test_expect_success \
 	'
 	command_error stg pick --ref-branch foo $(cat C-id) D-foo 2>&1 |
 	grep "Unknown patch name"
+	'
+
+test_expect_success \
+	'Pick with conflict' \
+	'
+	rm C-id &&
+	stg push A &&
+	conflict stg pick foo:AAA 2>&1 |
+	grep "1 merge conflict(s)" &&
+	test "$(stg top)" = "AAA" &&
+	test "$(echo $(stg series -A --noprefix))" = "C2 A AAA" &&
+	test "$(echo $(stg status))" = "UU a" &&
+	stg reset --hard &&
+	stg undo
+	'
+
+test_expect_success \
+	'Pick --fold with conflict' \
+	'
+	conflict stg pick --fold --ref-branch=foo AAA 2>&1 |
+	grep "Merge conflict in a" &&
+	stg reset --hard
+	'
+
+test_expect_success \
+	'Pick --fold --file with conflict' \
+	'
+	conflict stg pick --fold --file a -Bfoo AAA 2>&1 |
+	grep "AAA does not apply cleanly" &&
+	stg reset --hard
+	'
+
+test_expect_success \
+	'Pick --update with conflict' \
+	'
+	conflict stg pick --update foo:AAA 2>&1 |
+	grep "AAA does not apply cleanly" &&
+	stg reset --hard
 	'
 
 test_done

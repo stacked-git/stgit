@@ -363,7 +363,7 @@ class Repository(object):
         return set(m.group(1) for m in map(regex.match, files) if m)
 
     def diff_tree(
-        self, t1, t2, diff_opts, pathlimits=(), binary=True, stat=False
+        self, t1, t2, diff_opts=(), pathlimits=(), binary=True, stat=False
     ):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.

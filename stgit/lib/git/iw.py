@@ -314,6 +314,20 @@ class IndexAndWorktree(object):
         cmd.extend(pathlimits)
         return self.run(cmd).decoding(None).raw_output()
 
+    def apply(self, patch_bytes, quiet):
+        """Apply patch to worktree."""
+        try:
+            r = (
+                self.run(['git', 'apply', '--index'])
+                .encoding(None)
+                .raw_input(patch_bytes)
+            )
+            if quiet:
+                r.discard_stderr()
+            r.no_output()
+        except RunException:
+            raise MergeException('Patch does not apply cleanly')
+
     def changed_files(self, tree, pathlimits=[]):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
@@ -322,7 +336,7 @@ class IndexAndWorktree(object):
         The path limiters are relative to the current working
         directory; the returned file names are relative to the
         repository root."""
-        assert isinstance(tree, Tree)
+        assert isinstance(tree, Tree), tree
         return set(
             self.run_in_cwd(
                 ['git', 'diff-index', tree.sha1, '--name-only', '-z', '--']
