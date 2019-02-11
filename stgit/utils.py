@@ -98,34 +98,6 @@ def create_empty_file(name):
     mkdir_file(name, 'w+').close()
 
 
-def list_files_and_dirs(path):
-    """Return the sets of filenames and directory names in a
-    directory."""
-    files, dirs = [], []
-    for fd in os.listdir(path):
-        full_fd = os.path.join(path, fd)
-        if os.path.isfile(full_fd):
-            files.append(fd)
-        elif os.path.isdir(full_fd):
-            dirs.append(fd)
-    return files, dirs
-
-
-def walk_tree(basedir):
-    """Starting in the given directory, iterate through all its
-    subdirectories. For each subdirectory, yield the name of the
-    subdirectory (relative to the base directory), the list of
-    filenames in the subdirectory, and the list of directory names in
-    the subdirectory."""
-    subdirs = ['']
-    while subdirs:
-        subdir = subdirs.pop()
-        files, dirs = list_files_and_dirs(os.path.join(basedir, subdir))
-        for d in dirs:
-            subdirs.append(os.path.join(subdir, d))
-        yield subdir, files, dirs
-
-
 def strip_prefix(prefix, string):
     """Return string, without the prefix. Blow up if string doesn't
     start with prefix."""
@@ -138,18 +110,6 @@ def strip_suffix(suffix, string):
     end with suffix."""
     assert string.endswith(suffix)
     return string[:-len(suffix)]
-
-
-def remove_file_and_dirs(basedir, file):
-    """Remove join(basedir, file), and then remove the directory it
-    was in if empty, and try the same with its parent, until we find a
-    nonempty directory or reach basedir."""
-    os.remove(os.path.join(basedir, file))
-    try:
-        os.removedirs(os.path.join(basedir, os.path.dirname(file)))
-    except OSError:
-        # file's parent dir may not be empty after removal
-        pass
 
 
 def create_dirs(directory):
