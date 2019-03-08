@@ -91,6 +91,11 @@ options = [
         action='store_true',
         short='Show applied patches that have not been published',
     ),
+    opt(
+        '--overwrite',
+        action='store_true',
+        short='Overwrite branch instead of creating new commits',
+    ),
 ] + (
     argparse.author_options()
     + argparse.message_options(save_template=False)
@@ -178,6 +183,11 @@ def func(parser, options, args):
         for p in stack.patchorder.applied:
             if p not in published:
                 print(p)
+        return
+
+    if options.overwrite:
+        repository.refs.set(public_ref, stack.head, 'publish')
+        out.info('Overwrote "%s"' % public_ref)
         return
 
     # check for rebased stack. In this case we emulate a merge with the stack

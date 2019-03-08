@@ -46,6 +46,18 @@ test_expect_success \
 	'
 
 test_expect_success \
+	'Fix a mistake and overwrite publish the fix' \
+	'
+	initial_patch_count=$(git rev-list master.public | wc -l) &&
+	echo fix >> fix.txt &&
+	stg add fix.txt &&
+	stg refresh &&
+	stg publish --overwrite &&
+	test_same_tree &&
+	test $(git rev-list master.public | wc -l) -eq $initial_patch_count
+	'
+
+test_expect_success \
 	'Modify a patch and publish the changes' \
 	'
 	stg pop &&
