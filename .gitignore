@@ -5,7 +5,6 @@ patches-*
 *-stamp
 release.sh
 snapshot.sh
-completion/
 completion/stg.fish
 completion/stgit.bash
 ChangeLog

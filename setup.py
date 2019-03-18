@@ -118,6 +118,7 @@ setup(
         ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
         ('share/stgit/completion', ['completion/stg.fish']),
         ('share/stgit/completion', ['completion/stgit.bash']),
+        ('share/stgit/completion', ['completion/stgit.zsh']),
     ],
     package_data={
         'stgit': [
