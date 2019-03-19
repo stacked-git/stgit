@@ -32,7 +32,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-help = 'Display the patch changelog'
+help = 'Display or optionally clear the patch changelog'
 kind = 'stack'
 usage = ['[options] [--] [<patches>]']
 description = """
@@ -41,7 +41,11 @@ patch names are given, limit the list to the log entries that touch
 the named patches.
 
 "stg undo" and "stg redo" let you step back and forth in the patch
-stack. "stg reset" lets you go directly to any state."""
+stack. "stg reset" lets you go directly to any state.
+
+Given the --clear option, the log history will be deleted.
+This may be useful if the tree view has become too cluttered
+to be useful."""
 
 args = [argparse.patch_range(argparse.applied_patches,
                              argparse.unapplied_patches,
