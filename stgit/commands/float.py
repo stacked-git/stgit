@@ -10,8 +10,7 @@ import io
 import re
 import sys
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import keep_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 
@@ -42,8 +41,7 @@ necessary pop and push operations will be performed to accomplish
 this. The '--series' option can be used to rearrange the (top) patches
 as specified by the given series file (or the standard input)."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
         '-s',
@@ -51,7 +49,7 @@ options = [
         metavar='FILE',
         short='Rearrange according to the series FILE',
     )
-] + argparse.keep_option()
+] + keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

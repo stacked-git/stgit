@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import keep_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 
@@ -40,7 +39,7 @@ patches passed on the command line are popped from the stack. Some of
 the push operations may fail because of conflicts ("stg undo" would
 revert the last push operation)."""
 
-args = [argparse.patch_range(argparse.applied_patches)]
+args = [patch_range('applied_patches')]
 options = [
     opt(
         '-a',
@@ -64,7 +63,7 @@ options = [
 
         With a negative number, pop all but that many patches.'''
     ),
-] + argparse.keep_option()
+] + keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

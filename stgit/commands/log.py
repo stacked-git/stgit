@@ -8,8 +8,7 @@ from __future__ import (
 
 import os
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib import log
 from stgit.out import out
@@ -47,14 +46,12 @@ Given the --clear option, the log history will be deleted.
 This may be useful if the tree view has become too cluttered
 to be useful."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default one',
     ),
     opt(

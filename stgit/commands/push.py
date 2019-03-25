@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import keep_option, merged_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 
@@ -42,7 +41,7 @@ undo the conflicting push with 'stg undo').
 The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
-args = [argparse.patch_range(argparse.unapplied_patches)]
+args = [patch_range('unapplied_patches')]
 options = [
     opt(
         '-a',
@@ -80,7 +79,7 @@ options = [
         avoid conflicts and only the remaining changes will be in the
         patch.""",
     )
-] + argparse.keep_option() + argparse.merged_option()
+] + keep_option() + merged_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

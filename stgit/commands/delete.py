@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 
@@ -33,8 +32,7 @@ usage = ['[options] [--] <patch1> [<patch2>] [<patch3>..<patch4>]']
 description = """
 Delete the patches passed as arguments."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
         '--spill',
@@ -50,7 +48,7 @@ options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
     opt('-t', '--top', action='store_true', short='Delete top patch'),

@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import keep_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 
@@ -46,8 +45,7 @@ including <target patch>), then pushing the patches to sink, and then
 (unless '--nopush' is also given) pushing back into place the
 formerly-applied patches."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
         '-n',
@@ -62,13 +60,13 @@ options = [
         '-t',
         '--to',
         metavar='TARGET',
-        args=[argparse.applied_patches],
+        args=['applied_patches'],
         short='Sink patches below the TARGET patch',
         long="""
         Specify a target patch to place the patches below, instead of
         sinking them to the bottom of the stack.""",
     )
-] + argparse.keep_option()
+] + keep_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

@@ -33,7 +33,7 @@ description = """
 Push/pop patches to/from the stack until the one given on the command
 line becomes current."""
 
-args = [argparse.other_applied_patches, argparse.unapplied_patches]
+args = ['other_applied_patches', 'unapplied_patches']
 options = argparse.keep_option() + argparse.merged_option()
 
 directory = common.DirectoryHasRepositoryLib()

@@ -6,8 +6,8 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, utils
-from stgit.argparse import opt
+from stgit import utils
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib import log, transaction
 
@@ -39,9 +39,7 @@ you view this log, and "stg reset" lets you reset to any state you see
 in the log. If one or more patch names are given, reset only those
 patches, and leave the rest alone."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '--hard',

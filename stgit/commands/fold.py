@@ -8,7 +8,7 @@ from __future__ import (
 
 import os
 
-from stgit import argparse, git
+from stgit import git
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
@@ -47,7 +47,7 @@ performed with the current top. With the --base option, the patch is
 applied onto the specified base and a three-way merged is performed
 with the current top."""
 
-args = [argparse.files]
+args = ['files']
 options = [
     opt(
         '-t',
@@ -58,7 +58,7 @@ options = [
     opt(
         '-b',
         '--base',
-        args=[argparse.commit],
+        args=['commit'],
         short='Use BASE instead of HEAD when applying the patch',
     ),
     opt(

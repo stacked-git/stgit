@@ -9,7 +9,7 @@ from __future__ import (
 import re
 import time
 
-from stgit import argparse, git, stack
+from stgit import git, stack
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
@@ -61,7 +61,7 @@ within a git repository.
 'stg branch' <branch>::
         Switch to the given branch."""
 
-args = [argparse.all_branches]
+args = ['all_branches']
 options = [
     opt(
         '-l',

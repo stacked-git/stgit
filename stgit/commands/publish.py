@@ -71,12 +71,12 @@ The public branch name can be set via the branch.<branch>.public configuration
 variable (defaulting to "<branch>.public").
 """
 
-args = [argparse.all_branches]
+args = ['all_branches']
 options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
     opt(

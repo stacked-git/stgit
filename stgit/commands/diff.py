@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
     DirectoryHasRepositoryLib,
     color_diff_flags,
@@ -40,7 +39,7 @@ or a tree-ish object and another tree-ish object (defaulting to HEAD).
 File names can also be given to restrict the diff output. The
 tree-ish object has the format accepted by the linkstg:id[] command."""
 
-args = [argparse.known_files, argparse.dirty_files]
+args = ['known_files', 'dirty_files']
 options = [
     opt(
         '-r',
@@ -48,10 +47,10 @@ options = [
         metavar='rev1[..[rev2]]',
         dest='revs',
         args=[
-            argparse.patch_range(
-                argparse.applied_patches,
-                argparse.unapplied_patches,
-                argparse.hidden_patches,
+            patch_range(
+                'applied_patches',
+                'unapplied_patches',
+                'hidden_patches',
             )
         ],
         short='Show the diff between revisions',
@@ -62,7 +61,7 @@ options = [
         action='store_true',
         short='Show the stat instead of the diff',
     ),
-] + argparse.diff_opts_option()
+] + diff_opts_option()
 
 directory = DirectoryHasRepositoryLib()
 

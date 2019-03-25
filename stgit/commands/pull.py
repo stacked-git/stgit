@@ -6,7 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, git
+from stgit import git
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
@@ -52,7 +52,7 @@ resolved and the patch pushed again.
 
 Check the 'git fetch' documentation for the <repository> format."""
 
-args = [argparse.repo]
+args = ['repo']
 options = [
     opt(
         '-n',

@@ -6,7 +6,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
@@ -57,7 +56,7 @@ Or if you want to skip that patch:
         $ stg undo --hard
         $ stg push next-patch..top-patch"""
 
-args = [argparse.commit]
+args = ['commit']
 options = [
     opt(
         '-n',

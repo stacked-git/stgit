@@ -12,8 +12,8 @@ import io
 import os
 import sys
 
-from stgit import argparse, git, templates
-from stgit.argparse import opt
+from stgit import git, templates
+from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib.git import diffstat
 from stgit.out import out
@@ -56,14 +56,12 @@ file:
   %(commname)s    - committer's name
   %(commemail)s   - committer's e-mail"""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '-d',
         '--dir',
-        args=[argparse.dir],
+        args=['dir'],
         short='Export patches to DIR instead of the default',
     ),
     opt(
@@ -83,13 +81,13 @@ options = [
         '-t',
         '--template',
         metavar='FILE',
-        args=[argparse.files],
+        args=['files'],
         short='Use FILE as a template',
     ),
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
     opt(
@@ -98,7 +96,7 @@ options = [
         action='store_true',
         short='Dump the patches to the standard output',
     ),
-] + argparse.diff_opts_option()
+] + diff_opts_option()
 
 directory = common.DirectoryHasRepositoryLib()
 

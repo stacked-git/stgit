@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.commands.common import parse_patches
 from stgit.config import config
@@ -42,14 +41,12 @@ the hidden patches with a +!+.
 
 Empty patches are prefixed with a '0'."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
     opt(
@@ -80,7 +77,7 @@ options = [
         '-m',
         '--missing',
         metavar='BRANCH',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Show patches in BRANCH missing in current',
     ),
     opt(

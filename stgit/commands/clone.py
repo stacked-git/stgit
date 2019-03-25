@@ -8,7 +8,6 @@ from __future__ import (
 
 import os
 
-from stgit import argparse
 from stgit.commands import common
 from stgit.lib.git import clone
 from stgit.lib.stack import Stack
@@ -44,7 +43,7 @@ commands of linkstg:branch[].
 The target directory <dir> will be created by this command, and must
 not already exist."""
 
-args = [argparse.repo, argparse.dir]
+args = ['repo', 'dir']
 options = []
 
 directory = common.DirectoryAnywhere()

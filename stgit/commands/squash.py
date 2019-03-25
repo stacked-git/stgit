@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit import argparse, utils
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib.git import CommitData
 from stgit.lib.transaction import StackTransaction, TransactionHalted
@@ -51,8 +51,7 @@ Conflicts can occur whenever we push a patch; that is, in step (2) and
 (5). If there are conflicts, the command will stop so that you can
 resolve them."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = (
     [opt('-n', '--name', short='Name of squashed patch')]
     + argparse.message_options(save_template=True)

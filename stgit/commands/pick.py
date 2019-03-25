@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
     CmdException,
     DirectoryGotoTopLevelLib,
@@ -58,9 +57,7 @@ used as the name of the current patch. It can be overridden with the
 option. The log and author information are those of the commit
 object."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '-n',
@@ -70,7 +67,7 @@ options = [
     opt(
         '-B',
         '--ref-branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Pick patches from BRANCH',
     ),
     opt(
@@ -83,7 +80,7 @@ options = [
         '-p',
         '--parent',
         metavar='COMMITID',
-        args=[argparse.commit],
+        args=['commit'],
         short='Use COMMITID as parent',
     ),
     opt(

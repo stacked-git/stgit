@@ -60,7 +60,7 @@ the patch stack log; this means that one undo step will undo the merge
 between the other patch and the temp patch, and two undo steps will
 additionally get rid of the temp patch."""
 
-args = [argparse.dirty_files]
+args = ['dirty_files']
 options = [
     opt(
         '-u',
@@ -89,10 +89,7 @@ options = [
     opt(
         '-p',
         '--patch',
-        args=[
-            argparse.other_applied_patches,
-            argparse.unapplied_patches,
-        ],
+        args=['other_applied_patches', 'unapplied_patches'],
         short='Refresh (applied) PATCH instead of the top patch',
     ),
     opt(

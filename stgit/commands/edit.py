@@ -68,11 +68,7 @@ tree.  This low-level option is primarily meant to be used by tools
 built on top of StGit, such as the Emacs mode. See also the --set-tree
 flag of stg push."""
 
-args = [
-    argparse.applied_patches,
-    argparse.unapplied_patches,
-    argparse.hidden_patches,
-]
+args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = (
     [
         opt('-d', '--diff', action='store_true', short='Edit the patch diff'),

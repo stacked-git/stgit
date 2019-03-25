@@ -18,8 +18,8 @@ import smtplib
 import socket
 import time
 
-from stgit import argparse, git, stack, templates, version
-from stgit.argparse import opt
+from stgit import git, stack, templates, version
+from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
     CmdException,
     DirectoryHasRepository,
@@ -121,9 +121,7 @@ the following:
   %(pspace)s       - ' ' if %(prefix)s is non-empty, otherwise empty string
   %(shortdescr)s   - the first line of the patch description"""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches,
-                             argparse.hidden_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
     opt(
         '-a',
@@ -134,19 +132,19 @@ options = [
     opt(
         '--to',
         action='append',
-        args=[argparse.mail_aliases],
+        args=['mail_aliases'],
         short='Add TO to the To: list',
     ),
     opt(
         '--cc',
         action='append',
-        args=[argparse.mail_aliases],
+        args=['mail_aliases'],
         short='Add CC to the Cc: list',
     ),
     opt(
         '--bcc',
         action='append',
-        args=[argparse.mail_aliases],
+        args=['mail_aliases'],
         short='Add BCC to the Bcc: list',
     ),
     opt(
@@ -247,7 +245,7 @@ options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
     opt(
@@ -261,7 +259,7 @@ options = [
         action='store_true',
         short='Use git send-email (EXPERIMENTAL)',
     ),
-] + argparse.diff_opts_option()
+] + diff_opts_option()
 
 directory = DirectoryHasRepository(log=False)
 crt_series = None

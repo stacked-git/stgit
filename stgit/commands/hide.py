@@ -6,7 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import out
@@ -34,13 +34,12 @@ description = """
 Hide a range of unapplied patches so that they are no longer shown in
 the plain 'series' command output."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
-    argparse.opt(
+    opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     )
 ]

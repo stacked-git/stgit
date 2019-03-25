@@ -70,7 +70,7 @@ stack.
 The patch description has to be separated from the data with a '---'
 line."""
 
-args = [argparse.files]
+args = ['files']
 options = [
     opt(
         '-m',
@@ -130,7 +130,7 @@ options = [
     opt(
         '-b',
         '--base',
-        args=[argparse.commit],
+        args=['commit'],
         short='Use BASE instead of HEAD for file importing',
     ),
     opt(

@@ -6,8 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
-from stgit.argparse import opt
+from stgit.argparse import opt, patch_range
 from stgit.commands import common
 from stgit.lib import transaction
 from stgit.out import out
@@ -48,8 +47,7 @@ The -n/--number option specifies the number of applied patches to
 commit (counting from the bottom of the stack). If -a/--all is given,
 all applied patches are committed."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
         '-n',

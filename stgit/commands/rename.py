@@ -6,7 +6,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.out import out
@@ -34,13 +33,12 @@ description = """
 Rename <oldpatch> into <newpatch> in a series. If <oldpatch> is not
 given, the top-most patch will be renamed."""
 
-args = [argparse.applied_patches, argparse.unapplied_patches,
-        argparse.hidden_patches]
+args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='use BRANCH instead of the default one',
     )
 ]

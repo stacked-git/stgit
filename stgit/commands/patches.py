@@ -41,7 +41,7 @@ it shows the patches affected by the local tree modifications. The
 '--diff' option also lists the patch log and the diff for the given
 files."""
 
-args = [argparse.known_files]
+args = ['known_files']
 options = [
     opt(
         '-d',
@@ -52,7 +52,7 @@ options = [
     opt(
         '-b',
         '--branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
 ] + argparse.diff_opts_option()

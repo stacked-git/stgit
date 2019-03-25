@@ -13,6 +13,110 @@ from stgit.compat import text
 import stgit.commands
 
 
+class CompgenBase(object):
+    def actions(self, var):
+        return []
+
+    def words(self, var):
+        return []
+
+    def command(self, var):
+        cmd = ['compgen']
+        for act in self.actions(var):
+            cmd += ['-A', act]
+        words = self.words(var)
+        if words:
+            cmd += ['-W', '"%s"' % ' '.join(words)]
+        cmd += ['--', '"%s"' % var]
+        return ' '.join(cmd)
+
+
+class CompgenJoin(CompgenBase):
+    def __init__(self, a, b):
+        assert isinstance(a, CompgenBase)
+        assert isinstance(b, CompgenBase)
+        self.__a = a
+        self.__b = b
+
+    def words(self, var):
+        union_words = self.__a.words(var)
+        for b_word in self.__b.words(var):
+            if b_word not in union_words:
+                union_words.append(b_word)
+        return union_words
+
+    def actions(self, var):
+        union_actions = self.__a.actions(var)
+        for b_action in self.__b.actions(var):
+            if b_action not in union_actions:
+                union_actions.append(b_action)
+        return union_actions
+
+
+class Compgen(CompgenBase):
+    def __init__(self, words=(), actions=()):
+        self.__words = list(words)
+        self.__actions = list(actions)
+
+    def actions(self, var):
+        return self.__actions
+
+    def words(self, var):
+        return self.__words
+
+
+class patch_range(CompgenBase):
+    def __init__(self, *endpoints):
+        self.__endpoints = endpoints
+
+    def words(self, var):
+        words = []
+        for e in self.__endpoints:
+            assert not e.actions(var)
+            for e_word in e.words(var):
+                if e_word not in words:
+                    words.append(e_word)
+        return ['$(_patch_range "%s" "%s")' % (' '.join(words), var)]
+
+
+def compjoin(compgens):
+    comp = Compgen()
+    for c in compgens:
+        comp = CompgenJoin(comp, c)
+    return comp
+
+
+_arg_to_compgen = dict(
+    all_branches=Compgen(['$(_all_branches)']),
+    stg_branches=Compgen(['$(_stg_branches)']),
+    applied_patches=Compgen(['$(_applied_patches)']),
+    other_applied_patches=Compgen(['$(_other_applied_patches)']),
+    unapplied_patches=Compgen(['$(_unapplied_patches)']),
+    hidden_patches=Compgen(['$(_hidden_patches)']),
+    commit=Compgen(['$(_all_branches) $(_tags) $(_remotes)']),
+    conflicting_files=Compgen(['$(_conflicting_files)']),
+    dirty_files=Compgen(['$(_dirty_files)']),
+    unknown_files=Compgen(['$(_unknown_files)']),
+    known_files=Compgen(['$(_known_files)']),
+    repo=Compgen(actions=['directory']),
+    dir=Compgen(actions=['directory']),
+    files=Compgen(actions=['file']),
+    mail_aliases=Compgen(['$(_mail_aliases)']),
+)
+
+
+def arg_to_compgen(arg):
+    if isinstance(arg, argparse.patch_range):
+        range_args = []
+        for range_arg in arg:
+            range_args.append(_arg_to_compgen[range_arg])
+        return patch_range(*range_args)
+    elif isinstance(arg, argparse.strings):
+        return Compgen(arg)
+    else:
+        return _arg_to_compgen[arg]
+
+
 def fun(name, *body):
     return ['%s ()' % name, '{', list(body), '}']
 
@@ -127,8 +231,9 @@ def command_fun(cmd, modname):
     mod = stgit.commands.get_command(modname)
 
     def cg(args, flags):
-        return argparse.compjoin(list(args) + [argparse.strings(*flags)]
-                                 ).command('$cur')
+        return compjoin(
+            [arg_to_compgen(arg) for arg in args] + [Compgen(flags)]
+        ).command('$cur')
 
     return fun(
         '_stg_%s' % cmd,

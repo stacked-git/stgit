@@ -6,7 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse, utils
+from stgit import utils
 from stgit.argparse import opt
 from stgit.commands import common
 from stgit.lib import transaction
@@ -65,7 +65,7 @@ options = [
     opt(
         '-t',
         '--to',
-        args=[argparse.commit],
+        args=['commit'],
         short='Uncommit to the specified commit',
     ),
     opt(

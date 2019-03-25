@@ -9,8 +9,8 @@ from __future__ import (
 import os
 import re
 
-from stgit import argparse, git, stack
-from stgit.argparse import opt
+from stgit import git, stack
+from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
     CmdException,
     DirectoryGotoToplevel,
@@ -49,8 +49,7 @@ for keeping patches on several branches in sync. Note that the
 operation may fail for some patches because of conflicts. The patches
 in the series must apply cleanly."""
 
-args = [argparse.patch_range(argparse.applied_patches,
-                             argparse.unapplied_patches)]
+args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
         '-a',
@@ -61,13 +60,13 @@ options = [
     opt(
         '-B',
         '--ref-branch',
-        args=[argparse.stg_branches],
+        args=['stg_branches'],
         short='Syncronise patches with BRANCH',
     ),
     opt(
         '-s',
         '--series',
-        args=[argparse.files],
+        args=['files'],
         short='Syncronise patches with SERIES',
     ),
 ]

@@ -6,7 +6,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import argparse
 from stgit.commands import common
 from stgit.out import out
 
@@ -38,8 +37,7 @@ to the stack (see the 'publish' command for details). If no branch is
 specified, it defaults to the current one. The bottom of a patch is accessible
 with the '[<branch>:]<patch>^' format."""
 
-args = [argparse.applied_patches, argparse.unapplied_patches,
-        argparse.hidden_patches]
+args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = []
 
 directory = common.DirectoryHasRepositoryLib()
