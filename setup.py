@@ -9,6 +9,7 @@ import sys
 
 from stgit import commands, version
 from stgit.completion.bash import write_bash_completion
+from stgit.completion.fish import write_fish_completion
 
 
 def __version_to_list(version):
@@ -94,6 +95,10 @@ if not os.path.exists('completion'):
 with open(os.path.join('completion', 'stgit.bash'), 'w') as f:
     write_bash_completion(f)
 
+# generate the fish completion script
+with open(os.path.join('completion', 'stg.fish'), 'w') as f:
+    write_fish_completion(f)
+
 setup(
     name='stgit',
     version=ver,
@@ -111,6 +116,7 @@ setup(
         ('share/stgit/examples', glob('examples/*.tmpl')),
         ('share/stgit/examples', ['examples/gitconfig']),
         ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
+        ('share/stgit/completion', ['completion/stg.fish']),
         ('share/stgit/completion', ['completion/stgit.bash']),
     ],
     package_data={

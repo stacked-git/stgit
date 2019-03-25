@@ -83,6 +83,7 @@ clean:
 	rm -rf stgit/lib/__pycache__
 	rm  -f TAGS tags
 	rm  -f MANIFEST
+	rm  -f completion/stg.fish
 	rm  -f completion/stgit.bash
 	rm  -f .coverage
 	rm -rf .cov-files

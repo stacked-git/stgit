@@ -13,6 +13,7 @@ import sys
 
 from stgit import argparse, commands
 from stgit.completion.bash import write_bash_completion
+from stgit.completion.fish import write_fish_completion
 import stgit.main
 
 
@@ -39,6 +40,11 @@ def main():
         action='store_true',
         help='Write bash completion code',
     )
+    op.add_option(
+        '--fish-completion',
+        action='store_true',
+        help='Write fish completion code',
+    )
     options, args = op.parse_args()
     if args:
         op.error('Wrong number of arguments')
@@ -58,6 +64,8 @@ def main():
         )
     elif options.bash_completion:
         write_bash_completion(sys.stdout)
+    elif options.fish_completion:
+        write_fish_completion(sys.stdout)
     else:
         op.error('No command')
 
