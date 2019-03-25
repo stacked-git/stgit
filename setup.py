@@ -7,7 +7,8 @@ from glob import glob
 import os
 import sys
 
-from stgit import commands, completion, version
+from stgit import commands, version
+from stgit.completion.bash import write_bash_completion
 
 
 def __version_to_list(version):
@@ -86,9 +87,12 @@ with open('stgit/builtin_version.py', 'w') as f:
 with open('stgit/commands/cmdlist.py', 'w') as f:
     commands.py_commands(commands.get_commands(allow_cached=False), f)
 
+if not os.path.exists('completion'):
+    os.mkdir('completion')
+
 # generate the bash completion script
-with open('stgit-completion.bash', 'w') as f:
-    completion.write_completion(f)
+with open(os.path.join('completion', 'stgit.bash'), 'w') as f:
+    write_bash_completion(f)
 
 setup(
     name='stgit',
@@ -107,7 +111,7 @@ setup(
         ('share/stgit/examples', glob('examples/*.tmpl')),
         ('share/stgit/examples', ['examples/gitconfig']),
         ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
-        ('share/stgit/completion', ['stgit-completion.bash']),
+        ('share/stgit/completion', ['completion/stgit.bash']),
     ],
     package_data={
         'stgit': [

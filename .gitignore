@@ -5,7 +5,8 @@ patches-*
 *-stamp
 release.sh
 snapshot.sh
-stgit-completion.bash
+completion/
+completion/stgit.bash
 ChangeLog
 .tox
 htmlcov/

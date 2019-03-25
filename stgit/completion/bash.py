@@ -201,7 +201,7 @@ def install():
     ]
 
 
-def write_completion(f):
+def write_bash_completion(f):
     commands = stgit.commands.get_commands(allow_cached=False)
     r = [["""# -*- shell-script -*-
 # bash completion script for StGit (automatically generated)
@@ -221,4 +221,4 @@ def write_completion(f):
 
 if __name__ == '__main__':
     import sys
-    write_completion(sys.stdout)
+    write_bash_completion(sys.stdout)

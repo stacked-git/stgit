@@ -11,7 +11,8 @@ from __future__ import (
 import optparse
 import sys
 
-from stgit import argparse, commands, completion
+from stgit import argparse, commands
+from stgit.completion.bash import write_bash_completion
 import stgit.main
 
 
@@ -56,7 +57,7 @@ def main():
             commands.get_commands(allow_cached=False), sys.stdout
         )
     elif options.bash_completion:
-        completion.write_completion(sys.stdout)
+        write_bash_completion(sys.stdout)
     else:
         op.error('No command')
 
