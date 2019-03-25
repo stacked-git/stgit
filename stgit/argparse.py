@@ -383,10 +383,10 @@ def merged_option():
 
 class CompgenBase(object):
     def actions(self, var):
-        return set()
+        return []
 
     def words(self, var):
-        return set()
+        return []
 
     def command(self, var):
         cmd = ['compgen']
@@ -407,16 +407,24 @@ class CompgenJoin(CompgenBase):
         self.__b = b
 
     def words(self, var):
-        return self.__a.words(var) | self.__b.words(var)
+        union_words = self.__a.words(var)
+        for b_word in self.__b.words(var):
+            if b_word not in union_words:
+                union_words.append(b_word)
+        return union_words
 
     def actions(self, var):
-        return self.__a.actions(var) | self.__b.actions(var)
+        union_actions = self.__a.actions(var)
+        for b_action in self.__b.actions(var):
+            if b_action not in union_actions:
+                union_actions.append(b_action)
+        return union_actions
 
 
 class Compgen(CompgenBase):
-    def __init__(self, words=frozenset(), actions=frozenset()):
-        self.__words = set(words)
-        self.__actions = set(actions)
+    def __init__(self, words=(), actions=()):
+        self.__words = list(words)
+        self.__actions = list(actions)
 
     def actions(self, var):
         return self.__actions
@@ -458,8 +466,10 @@ class patch_range(CompgenBase):
         self.__endpoints = endpoints
 
     def words(self, var):
-        words = set()
+        words = []
         for e in self.__endpoints:
             assert not e.actions(var)
-            words |= e.words(var)
-        return set(['$(_patch_range "%s" "%s")' % (' '.join(words), var)])
+            for e_word in e.words(var):
+                if e_word not in words:
+                    words.append(e_word)
+        return ['$(_patch_range "%s" "%s")' % (' '.join(words), var)]
