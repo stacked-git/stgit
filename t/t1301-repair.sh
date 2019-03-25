@@ -16,6 +16,13 @@ test_expect_success \
     'stg repair'
 
 test_expect_success \
+    'Repair with invalid arguments' \
+    '
+    command_error stg repair xxx 2>&1 |
+    grep -e "incorrect number of arguments"
+    '
+
+test_expect_success \
     'Create a patch' \
     '
     stg new foo -m foo &&

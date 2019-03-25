@@ -134,6 +134,8 @@ def read_commit_dag(branch):
 
 def func(parser, options, args):
     """Repair inconsistencies in StGit metadata."""
+    if args:
+        parser.error('incorrect number of arguments')
 
     orig_applied = crt_series.get_applied()
     orig_unapplied = crt_series.get_unapplied()
