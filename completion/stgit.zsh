@@ -319,16 +319,16 @@ _stg-pick() {
     __stg_add_args_help
     subcmd_args+=(
         '(-n --name)'{-n,--name=}'[name for picked patch]:name'
-        '(-B --ref-branch)'{-b,--ref-branch=}'[pick patches from branch]: :__stg_branch_stgit'
+        '(-B --ref-branch)'{-B,--ref-branch=}'[pick patches from branch]: :__stg_branch_stgit'
         '(-r --revert)'{-r,--revert}'[revert given commit object]'
         '(-p --parent=)'{-p,--parent}'[use commit id as parent]:commit'
         '(-x --expose)'{-x,--expose}'[append imported commit id to patch log]'
-        '*'{-f,--file=}'[only fold given file]: :_files'
         '--unapplied[keep patch unapplied]'
+        '*'{-f,--file=}'[only fold given file]: :_files'
+        '*:patches:__stg_patches_all'
         + '(mode)'
         '--fold[fold the commit into current patch]'
         '--update[fold limited to current patch files]'
-        '*:patches:__stg_patches_all'
     )
     _arguments -s -S $subcmd_args
 }
