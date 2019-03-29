@@ -27,6 +27,17 @@ msg () { git cat-file -p $1 | sed '1,/^$/d' | tr '\n' / | sed 's,/*$,,' ; }
 auth () { git log -n 1 --pretty=format:"%an, %ae" $1 ; }
 adate () { git log -n 1 --pretty=format:%ai $1 ; }
 
+write_script diffedit <<EOF
+sed 's/empty-patch/Empty Patch/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
+EOF
+test_expect_failure 'Edit new patch with no diff' '
+    stg new -m empty-patch &&
+    test_when_finished stg delete empty-patch &&
+    EDITOR=./diffedit stg edit -d &&
+    test "$(msg HEAD)" = "Empty Patch"
+'
+rm -f diffedit
+
 test_expect_success 'Edit message of top patch' '
     test "$(msg HEAD)" = "Second change" &&
     stg edit p2 -m "Second change 2" &&
