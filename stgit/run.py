@@ -162,7 +162,7 @@ class Run(object):
             raise self.exc('%s failed: %s' % (self.__cmd[0], e))
         if errdata and not self.__discard_stderr:
             out.err_bytes(errdata)
-            self.__log_end(self.exitcode)
+        self.__log_end(self.exitcode)
         self.__check_exitcode()
         if self.__out_encoding:
             return outdata.decode(self.__out_encoding)
