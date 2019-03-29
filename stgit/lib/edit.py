@@ -8,6 +8,8 @@ from __future__ import (
     unicode_literals,
 )
 
+import re
+
 from stgit import utils
 from stgit.commands import common
 from stgit.lib.git import Date, Person, diffstat
@@ -21,8 +23,9 @@ def update_patch_description(repo, cd, text, contains_diff):
 
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
-    (message, authname, authemail, authdate, diff
-     ) = common.parse_patch(text, contains_diff)
+    (
+        message, authname, authemail, authdate, diff
+    ) = common.parse_patch(text, contains_diff)
     a = cd.author
     for val, setter in [
         (authname, 'set_name'),
@@ -33,7 +36,7 @@ def update_patch_description(repo, cd, text, contains_diff):
             a = getattr(a, setter)(val)
     cd = cd.set_message(message).set_author(a)
     failed_diff = None
-    if diff:
+    if diff and not re.match(br'---\s*\Z', diff, re.MULTILINE):
         tree = repo.apply(cd.parent.data.tree, diff, quiet=False)
         if tree is None:
             failed_diff = diff
@@ -55,27 +58,22 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     @param replacement_diff: Diff text to use; or C{None} if it should
                              be computed from C{cd}
     @type replacement_diff: C{str} or C{None}"""
-    desc = '\n'.join([
-        'From: %s <%s>' % (cd.author.name, cd.author.email),
-        'Date: %s' % cd.author.date.isoformat(),
-        '',
-        cd.message]).encode('utf-8')
+    desc = '\n'.join(
+        [
+            'From: %s <%s>' % (cd.author.name, cd.author.email),
+            'Date: %s' % cd.author.date.isoformat(),
+            '',
+            cd.message,
+        ]
+    ).encode('utf-8')
     if append_diff:
+        desc += b'\n---\n'
         if replacement_diff:
-            diff = replacement_diff
+            desc += b'\n' + replacement_diff
         else:
-            just_diff = repo.diff_tree(
-                cd.parent.data.tree,
-                cd.tree,
-                diff_flags,
-            )
-            diff = b'\n'.join(
-                [
-                    diffstat(just_diff).encode('utf-8'),
-                    just_diff,
-                ]
-            )
-        desc += b'\n'.join([b'', b'---', b'', diff])
+            diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
+            if diff:
+                desc += b'\n'.join([b'', diffstat(diff).encode('utf-8'), diff])
     return desc
 
 

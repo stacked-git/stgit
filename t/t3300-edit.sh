@@ -30,7 +30,7 @@ adate () { git log -n 1 --pretty=format:%ai $1 ; }
 write_script diffedit <<EOF
 sed 's/empty-patch/Empty Patch/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
 EOF
-test_expect_failure 'Edit new patch with no diff' '
+test_expect_success 'Edit new patch with no diff' '
     stg new -m empty-patch &&
     test_when_finished stg delete empty-patch &&
     EDITOR=./diffedit stg edit -d &&
