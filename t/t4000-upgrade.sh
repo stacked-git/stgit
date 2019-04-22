@@ -7,7 +7,7 @@ test_description='Make sure that we can use old StGIT repositories'
 
 . ./test-lib.sh
 
-for ver in 0.12 0.8; do
+for ver in 0.19 0.12 0.8; do
 
     tar zxf $TEST_DIRECTORY/t4000-upgrade/$ver.tar.gz
     cd $ver || exit 1
@@ -32,6 +32,11 @@ for ver in 0.12 0.8; do
     test_expect_success \
         "v$ver: Make sure the base ref is no longer there" '
         test_must_fail git show-ref --verify --quiet refs/bases/master
+    '
+
+    test_expect_success \
+        "v$ver: Make sure the 'protected' file is no longer there" '
+        test_path_is_missing .git/patches/master/protected
     '
 
     cd ..

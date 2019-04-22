@@ -28,7 +28,7 @@ unset SHA1_FILE_DIRECTORY
 export GIT_AUTHOR_EMAIL GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL GIT_COMMITTER_NAME
 
-for ver in 0.12 0.8; do
+for ver in 0.19 0.12 0.8; do
     if [ -e $ver.tar.gz ]; then continue; fi
 
     # Get the required stgit version.
@@ -52,7 +52,8 @@ for ver in 0.12 0.8; do
 
         stg --version
         stg init
-        echo 'cool branch' > .git/patches/master/description
+        stg branch --description='cool branch' || \
+            echo 'cool branch' > .git/patches/master/description
 
         for i in 0 1 2 3 4; do
             stg new p$i -m "Patch $i"
@@ -60,6 +61,8 @@ for ver in 0.12 0.8; do
             stg refresh
         done
         stg pop -n 2
+        stg branch --protect || \
+            echo "'stg branch --protect' not available"
     )
 
     # Reduce the number of small files.

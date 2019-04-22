@@ -336,18 +336,18 @@ class PatchSet(StgitObject):
         else:
             return self.get_base()
 
+    def __branch_protect(self):
+        return 'branch.%s.stgit.protect' % self.get_name()
+
     def get_protected(self):
-        return os.path.isfile(os.path.join(self._dir(), 'protected'))
+        return config.getbool(self.__branch_protect())
 
     def protect(self):
-        protect_file = os.path.join(self._dir(), 'protected')
-        if not os.path.isfile(protect_file):
-            create_empty_file(protect_file)
+        config.set(self.__branch_protect(), 'true')
 
     def unprotect(self):
-        protect_file = os.path.join(self._dir(), 'protected')
-        if os.path.isfile(protect_file):
-            os.remove(protect_file)
+        if self.get_protected():
+            config.unset(self.__branch_protect())
 
     def __branch_descr(self):
         return 'branch.%s.description' % self.get_name()

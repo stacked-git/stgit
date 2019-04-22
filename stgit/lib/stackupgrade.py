@@ -14,7 +14,7 @@ from stgit.exception import StackException
 from stgit.out import out
 
 # The current StGit metadata format version.
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 
 
 def format_version_key(branch):
@@ -113,9 +113,17 @@ def update_to_current_format_version(repository, branch):
         rm_ref('refs/bases/%s' % branch)
         set_format_version(2)
 
+    # Update 2 -> 3
+    if get_format_version() == 2:
+        protect_file = os.path.join(branch_dir, 'protected')
+        if os.path.isfile(protect_file):
+            config.set('branch.%s.stgit.protect' % branch, 'true')
+            os.remove(protect_file)
+        set_format_version(3)
+
     # compatibility with the new infrastructure. The changes here do not
     # affect the compatibility with the old infrastructure (format version 2)
-    if get_format_version() == 2:
+    if get_format_version() == 3:
         hidden_file = os.path.join(branch_dir, 'hidden')
         if not os.path.isfile(hidden_file):
             utils.create_empty_file(hidden_file)
