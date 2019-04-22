@@ -19,6 +19,11 @@ from stgit.exception import StgException
 from stgit.lib.git import RepositoryException
 from stgit.lib.log import compat_log_entry, compat_log_external_mods
 from stgit.lib.stack import StackRepository
+from stgit.lib.transaction import (
+    StackTransaction,
+    TransactionException,
+    TransactionHalted,
+)
 from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (
@@ -355,37 +360,66 @@ def address_or_alias(addr_pair):
     raise CmdException('unknown e-mail alias: %s' % addr)
 
 
-def prepare_rebase(crt_series):
+def prepare_rebase(stack, cmd_name):
     # pop all patches
-    applied = crt_series.get_applied()
-    if len(applied) > 0:
-        out.start('Popping all applied patches')
-        crt_series.pop_patch(applied[0])
-        out.done()
-    return applied
-
-
-def rebase(crt_series, target):
+    iw = stack.repository.default_iw
+    trans = StackTransaction(stack, '%s (pop)' % cmd_name, check_clean_iw=iw)
+    out.start('Popping all applied patches')
     try:
-        tree_id = git_id(crt_series, target)
-    except StgException:
-        # it might be that we use a custom rebase command with its own
-        # target type
-        tree_id = target
-    if target:
-        out.start('Rebasing to "%s"' % target)
+        trans.reorder_patches(
+            applied=[],
+            unapplied=trans.applied + trans.unapplied,
+            iw=iw,
+            allow_interactive=True,
+        )
+    except TransactionException:
+        pass
+    retval = trans.run(iw, print_current_patch=False)
+    if retval:
+        out.done('Failed to pop applied patches')
+    else:
+        out.done()
+    return retval
+
+
+def rebase(stack, iw, target_commit=None):
+    command = (
+        config.get('branch.%s.stgit.rebasecmd' % stack.name)
+        or config.get('stgit.rebasecmd')
+    )
+    if not command and not target_commit:
+        raise CmdException('Default rebasing requires a commit')
+    elif target_commit:
+        out.start('Rebasing to "%s"' % target_commit.sha1)
     else:
         out.start('Rebasing to the default target')
-    git.rebase(tree_id=tree_id)
+
+    if command:
+        command = command.split()
+        if target_commit is not None:
+            command.append(target_commit.sha1)
+        iw.run(command).run()
+    else:
+        iw.checkout_hard(target_commit)
+        stack.set_head(target_commit, 'rebase')
     out.done()
 
 
-def post_rebase(crt_series, applied, nopush, merged):
-    # memorize that we rebased to here
-    crt_series._set_field('orig-base', git.get_head())
-    # push the patches back
-    if not nopush:
-        push_patches(crt_series, applied, merged)
+def post_rebase(stack, applied, cmd_name, check_merged):
+    iw = stack.repository.default_iw
+    trans = StackTransaction(stack, '%s (reapply)' % cmd_name)
+    try:
+        if check_merged:
+            merged = set(trans.check_merged(applied))
+        else:
+            merged = set()
+        for pn in applied:
+            trans.push_patch(
+                pn, iw, allow_interactive=True, already_merged=pn in merged
+            )
+    except TransactionHalted:
+        pass
+    return trans.run(iw)
 
 
 #

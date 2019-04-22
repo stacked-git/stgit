@@ -43,6 +43,19 @@ class Branch(object):
     def set_head(self, commit, msg):
         self.__repository.refs.set(self.__ref(), commit, msg)
 
+    @property
+    def parent_remote(self):
+        remote_key = 'branch.%s.remote' % self.__name
+        remote = config.get(remote_key)
+        if remote is None:
+            raise BranchException(
+                '%s: no parent remote; consider configuring "%s"' % (
+                    self.__name, remote_key
+                )
+            )
+        else:
+            return remote
+
     def set_parent_remote(self, name):
         config.set('branch.%s.remote' % self.__name, name)
 

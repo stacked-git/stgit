@@ -6,20 +6,17 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit import git
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoToplevel,
-    check_conflicts,
-    check_head_top_equal,
-    check_local_changes,
+    DirectoryGotoTopLevelLib,
+    git_commit,
     post_rebase,
     prepare_rebase,
-    print_crt_patch,
     rebase,
 )
 from stgit.config import GitConfigException, config
+from stgit.lib.git import RepositoryException
 from stgit.out import out
 
 __copyright__ = """
@@ -68,15 +65,38 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoToplevel(log=True)
-crt_series = None
+directory = DirectoryGotoTopLevelLib()
+
+
+def pull(repository, remote_repository):
+    """Pull changes from remote repository using 'git pull' by default."""
+    command = (
+        config.get('branch.%s.stgit.pullcmd' % repository.current_branch_name)
+        or config.get('stgit.pullcmd')
+    ).split()
+    command.append(remote_repository)
+    repository.run(command).run()
+    repository.refs.reset_cache()
+
+
+def fetch(repository, remote_repository):
+    """Fetch changes from remote repository using 'git fetch' by default"""
+    command = (
+        config.get('branch.%s.stgit.fetchcmd' % repository.current_branch_name)
+        or config.get('stgit.fetchcmd')
+    ).split()
+    command.append(remote_repository)
+    repository.run(command).run()
 
 
 def func(parser, options, args):
     """Pull the changes from a remote repository
     """
+    repository = directory.repository
+    iw = repository.default_iw
+    stack = repository.get_stack()
     policy = (
-        config.get('branch.%s.stgit.pull-policy' % crt_series.get_name())
+        config.get('branch.%s.stgit.pull-policy' % stack.name)
         or config.get('stgit.pull-policy')
     )
 
@@ -88,57 +108,72 @@ def func(parser, options, args):
                     policy,
                 )
             )
-        if len(args) > 0:
+        elif len(args) > 0:
             parser.error('incorrect number of arguments')
-
     else:
         # parent is remote
         if len(args) > 1:
             parser.error('incorrect number of arguments')
 
         if len(args) >= 1:
-            repository = args[0]
+            remote_name = args[0]
         else:
-            repository = crt_series.get_parent_remote()
+            remote_name = stack.parent_remote
 
-    if crt_series.get_protected():
+    if stack.protected:
         raise CmdException('This branch is protected. Pulls are not permitted')
-
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
 
     if policy not in ['pull', 'fetch-rebase', 'rebase']:
         raise GitConfigException('Unsupported pull-policy "%s"' % policy)
 
-    applied = prepare_rebase(crt_series)
+    applied = stack.patchorder.applied
+
+    retval = prepare_rebase(stack, 'pull')
+    if retval:
+        return retval
 
     # pull the remote changes
     if policy == 'pull':
-        out.info('Pulling from "%s"' % repository)
-        git.pull(repository)
+        out.info('Pulling from "%s"' % remote_name)
+        pull(repository, remote_name)
     elif policy == 'fetch-rebase':
-        out.info('Fetching from "%s"' % repository)
-        git.fetch(repository)
+        out.info('Fetching from "%s"' % remote_name)
+        fetch(repository, remote_name)
         try:
-            target = git.fetch_head()
-        except git.GitException:
+            target = repository.rev_parse('FETCH_HEAD')
+        except RepositoryException:
             out.error(
                 'Could not find the remote head to rebase onto - '
-                'fix branch.%s.merge in .git/config' % crt_series.get_name()
+                'fix branch.%s.merge in .git/config' % stack.name
             )
             out.error('Pushing any patches back...')
-            post_rebase(crt_series, applied, False, False)
+            post_rebase(stack, applied, 'pull', check_merged=False)
             raise
 
-        rebase(crt_series, target)
+        rebase(stack, iw, target)
     elif policy == 'rebase':
-        rebase(crt_series, crt_series.get_parent_branch())
+        value = config.get('branch.%s.stgit.parentbranch' % stack.name)
+        if value:
+            parent_commit = git_commit(value, repository)
+        else:
+            try:
+                parent_commit = repository.rev_parse('heads/origin')
+            except RepositoryException:
+                raise CmdException(
+                    'Cannot find a parent branch for "%s"' % stack.name
+                )
+            else:
+                out.note(
+                    'No parent branch declared for stack "%s", defaulting to'
+                    '"heads/origin".' % stack.name,
+                    'Consider setting "branch.%s.stgit.parentbranch" with '
+                    '"git config".' % stack.name,
+                )
+        rebase(stack, iw, parent_commit)
 
-    post_rebase(crt_series, applied, options.nopush, options.merged)
+    if not options.nopush:
+        post_rebase(stack, applied, 'pull', check_merged=options.merged)
 
     # maybe tidy up
     if config.getbool('stgit.keepoptimized'):
-        git.repack()
-
-    print_crt_patch(crt_series)
+        repository.repack()

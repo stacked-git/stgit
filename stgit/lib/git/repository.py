@@ -57,6 +57,15 @@ class Refs(object):
             sha1, ref = m.groups()
             self.__refs[ref] = sha1
 
+    def reset_cache(self):
+        """Reset cached refs such that cache is rebuilt on next access.
+
+        Useful if refs are known to have changed due to an external command
+        such as `git pull`.
+
+        """
+        self.__refs = None
+
     def get(self, ref):
         """Get the Commit the given ref points to. Throws KeyError if ref
         doesn't exist."""
@@ -420,3 +429,7 @@ class Repository(object):
                 )
         except StopIteration:
             pass
+
+    def repack(self):
+        """Repack all objects into a single pack."""
+        self.run(['git', 'repack', '-a', '-d', '-f']).run()

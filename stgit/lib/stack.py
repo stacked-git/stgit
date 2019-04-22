@@ -291,6 +291,18 @@ class Stack(Branch):
         if branch:
             self.set_parent_branch(branch)
 
+    @property
+    def protected(self):
+        return config.getbool('branch.%s.stgit.protect' % self.name)
+
+    @protected.setter
+    def protected(self, protect):
+        protect_key = 'branch.%s.stgit.protect' % self.name
+        if protect:
+            config.set(protect_key, 'true')
+        elif self.protected:
+            config.unset(protect_key)
+
     @classmethod
     def initialise(cls, repository, name=None):
         """Initialise a Git branch to handle patch series.

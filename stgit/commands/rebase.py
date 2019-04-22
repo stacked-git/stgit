@@ -9,17 +9,12 @@ from __future__ import (
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoToplevel,
-    check_conflicts,
-    check_head_top_equal,
-    check_local_changes,
-    git_id,
+    DirectoryGotoTopLevelLib,
+    git_commit,
     post_rebase,
     prepare_rebase,
-    print_crt_patch,
     rebase,
 )
-from stgit.git import GitException
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -72,8 +67,7 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoToplevel(log=True)
-crt_series = None
+directory = DirectoryGotoTopLevelLib()
 
 
 def func(parser, options, args):
@@ -82,19 +76,21 @@ def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 
-    if crt_series.get_protected():
+    repository = directory.repository
+    stack = repository.get_stack()
+    iw = repository.default_iw
+
+    if stack.protected:
         raise CmdException('This branch is protected. Rebase is not permitted')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    target = git_commit(args[0], repository)
 
-    # ensure an exception is raised before popping on non-existent target
-    if git_id(crt_series, args[0]) is None:
-        raise GitException('Unknown revision: %s' % args[0])
+    applied = stack.patchorder.applied
 
-    applied = prepare_rebase(crt_series)
-    rebase(crt_series, args[0])
-    post_rebase(crt_series, applied, options.nopush, options.merged)
+    retval = prepare_rebase(stack, 'rebase')
+    if retval:
+        return retval
 
-    print_crt_patch(crt_series)
+    rebase(stack, iw, target)
+    if not options.nopush:
+        post_rebase(stack, applied, 'rebase', check_merged=options.merged)

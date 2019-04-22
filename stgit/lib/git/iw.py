@@ -12,7 +12,7 @@ from stgit.exception import StgException
 from stgit.run import Run, RunException
 from stgit.utils import add_dict
 
-from .objects import Tree
+from .objects import Commit, Tree
 
 
 class MergeException(StgException):
@@ -210,7 +210,7 @@ class IndexAndWorktree(object):
         return Run(*args).env(add_dict(self.env, self.env_in_cwd))
 
     def checkout_hard(self, tree):
-        assert isinstance(tree, Tree)
+        assert isinstance(tree, (Commit, Tree))
         self.run(
             ['git', 'read-tree', '--reset', '-u', tree.sha1]
         ).discard_output()
