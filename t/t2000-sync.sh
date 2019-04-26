@@ -46,6 +46,38 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Attempt sync with current branch' \
+    '
+    command_error stg sync -B foo 2>&1 |
+    grep -e "Cannot synchronise with the current branch"
+    '
+
+test_expect_success \
+    'Attempt sync without remote branch or series' \
+    '
+    command_error stg sync -a 2>&1 |
+    grep -e "No remote branch or series specified"
+    '
+
+test_expect_success \
+    'Attempt apply top patch without any applied' \
+    '
+    test_when_finished "stg goto p3" &&
+    stg pop -a &&
+    command_error stg sync -B master 2>&1 |
+    grep -e "no patches applied"
+    '
+
+test_expect_success \
+    'Attempt to sync patch not in ref branch' \
+    '
+    stg new -m p4 &&
+    test_when_finished "stg delete p4" &&
+    command_error stg sync -B master 2>&1 |
+    grep -e "No common patches to be synchronised"
+    '
+
+test_expect_success \
     'Synchronise second patch with the master branch' \
     '
     stg sync -B master p2 &&
