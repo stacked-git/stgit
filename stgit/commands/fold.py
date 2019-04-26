@@ -118,9 +118,9 @@ def func(parser, options, args):
     elif options.base:
         git.apply_patch(
             filename=filename,
+            base=git_id(crt_series, options.base),
             reject=options.reject,
             strip=options.strip,
-            base=git_id(crt_series, options.base),
         )
     else:
         git.apply_patch(
