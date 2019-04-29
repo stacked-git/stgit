@@ -306,14 +306,15 @@ class IndexAndWorktree(object):
         cmd.extend(pathlimits)
         return self.run(cmd).decoding(None).raw_output()
 
-    def apply(self, patch_bytes, quiet):
+    def apply(self, patch_bytes, quiet, reject=False, strip=None):
         """Apply patch to worktree."""
+        cmd = ['git', 'apply', '--index']
+        if reject:
+            cmd.append('--reject')
+        if strip is not None:
+            cmd.append('-p%s' % (strip, ))
         try:
-            r = (
-                self.run(['git', 'apply', '--index'])
-                .encoding(None)
-                .raw_input(patch_bytes)
-            )
+            r = self.run(cmd).encoding(None).raw_input(patch_bytes)
             if quiet:
                 r.discard_stderr()
             r.no_output()

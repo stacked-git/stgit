@@ -76,7 +76,7 @@ test_expect_success 'Attempt to fold conflicting patch' '
     echo "from p2" >> foo.txt &&
     stg refresh &&
     command_error stg fold fold1.diff 2>&1 |
-    grep "Diff does not apply cleanly" &&
+    grep "Patch does not apply cleanly" &&
     test -z "$(echo $(stg status --porcelain foo.txt))"
     test ! -e foo.txt.rej
 '
@@ -87,7 +87,7 @@ test_expect_success 'Attempt to fold conflicting patch with rejects' '
     echo "from p2" >> foo.txt &&
     stg refresh &&
     command_error stg fold --reject fold1.diff 2>&1 |
-    grep "Diff does not apply cleanly" &&
+    grep "Patch does not apply cleanly" &&
     test -z "$(echo $(stg status --porcelain foo.txt))" &&
     test -e foo.txt.rej &&
     rm foo.txt.rej

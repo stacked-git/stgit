@@ -16,7 +16,7 @@ from stgit import git, stack, templates
 from stgit.compat import decode_utf8_with_latin1, text
 from stgit.config import config
 from stgit.exception import StgException
-from stgit.lib.git import RepositoryException
+from stgit.lib.git import CommitData, MergeException, RepositoryException
 from stgit.lib.log import compat_log_entry, compat_log_external_mods
 from stgit.lib.stack import StackRepository
 from stgit.lib.transaction import (
@@ -344,6 +344,35 @@ def address_or_alias(addr_pair):
         # it's an alias
         return name_email(alias)
     raise CmdException('unknown e-mail alias: %s' % addr)
+
+
+def apply_patch(stack, diff, base=None, reject=False, strip=None):
+    iw = stack.repository.default_iw
+    iw.refresh_index()
+    if base:
+        orig_head = stack.head
+        iw.checkout(orig_head.data.tree, base.data.tree)
+        stack.set_head(base, msg='apply patch')
+
+    try:
+        iw.apply(diff, quiet=False, reject=reject, strip=strip)
+    except MergeException:
+        if base:
+            iw.checkout_hard(orig_head.data.tree)
+        raise
+
+    if base:
+        iw.update_index(iw.changed_files(base.data.tree))
+        top = stack.repository.commit(
+            CommitData(
+                tree=stack.repository.default_index.write_tree(),
+                message='temporary commit used for applying a patch',
+                parents=[base],
+            )
+        )
+        iw.checkout(top.data.tree, orig_head.data.tree)
+        stack.set_head(orig_head, msg='post apply')
+        iw.merge(base.data.tree, orig_head.data.tree, top.data.tree)
 
 
 def prepare_rebase(stack, cmd_name):

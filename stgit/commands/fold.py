@@ -6,17 +6,19 @@ from __future__ import (
     unicode_literals,
 )
 
+import io
 import os
+import sys
 
-from stgit import git
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepository,
+    DirectoryHasRepositoryLib,
+    apply_patch,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
-    git_id,
+    git_commit,
 )
 from stgit.out import out
 
@@ -75,8 +77,7 @@ options = [
     ),
 ]
 
-directory = DirectoryHasRepository(log=True)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
@@ -85,46 +86,59 @@ def func(parser, options, args):
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    stack = directory.repository.get_stack()
+    iw = directory.repository.default_iw
+
+    check_local_changes(stack)
+    check_conflicts(iw)
+    check_head_top_equal(stack)
 
     if len(args) == 1:
         filename = args[0]
     else:
         filename = None
 
-    current = crt_series.get_current()
-    if not current:
+    applied = stack.patchorder.applied
+    if not applied:
         raise CmdException('No patches applied')
+
+    current = applied[-1]
 
     if filename:
         if os.path.exists(filename):
             out.start('Folding patch "%s"' % filename)
+            with io.open(filename, 'rb') as f:
+                diff = f.read()
         else:
             raise CmdException('No such file: %s' % filename)
     else:
         out.start('Folding patch from stdin')
+        if hasattr(sys.stdin, 'buffer'):
+            diff = sys.stdin.buffer.read()
+        else:
+            diff = sys.stdin.read()
 
     if options.threeway:
-        crt_patch = crt_series.get_patch(current)
-        bottom = crt_patch.get_bottom()
-        git.apply_patch(
-            filename=filename,
-            base=bottom,
+        top_patch = stack.patches.get(current)
+        apply_patch(
+            stack,
+            diff,
+            base=top_patch.commit.data.parent,
             strip=options.strip,
             reject=options.reject,
         )
     elif options.base:
-        git.apply_patch(
-            filename=filename,
-            base=git_id(crt_series, options.base),
+        apply_patch(
+            stack,
+            diff,
+            base=git_commit(options.base, stack.repository),
             reject=options.reject,
             strip=options.strip,
         )
     else:
-        git.apply_patch(
-            filename=filename,
+        apply_patch(
+            stack,
+            diff,
             strip=options.strip,
             reject=options.reject,
         )
