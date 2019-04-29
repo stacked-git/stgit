@@ -989,41 +989,6 @@ class Series(PatchSet):
 
         return forwarded
 
-    def merged_patches(self, names):
-        """Test which patches were merged upstream by reverse-applying
-        them in reverse order. The function returns the list of
-        patches detected to have been applied. The state of the tree
-        is restored to the original one
-        """
-        patches = [self.get_patch(name) for name in names]
-        patches.reverse()
-
-        merged = []
-        for p in patches:
-            if git.apply_diff(p.get_top(), p.get_bottom()):
-                merged.append(p.name)
-        merged.reverse()
-
-        git.reset()
-
-        return merged
-
-    def push_empty_patch(self, name):
-        """Pushes an empty patch on the stack
-        """
-        unapplied = self.get_unapplied()
-        assert(name in unapplied)
-
-        # patch = self.get_patch(name)
-        head = git.get_head()
-
-        append_string(self._applied_file, name)
-
-        unapplied.remove(name)
-        write_strings(self._unapplied_file, unapplied)
-
-        self.refresh_patch(bottom=head, cache_update=False, log='push(m)')
-
     def push_patch(self, name):
         """Pushes a patch on the stack
         """

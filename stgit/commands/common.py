@@ -194,7 +194,7 @@ def print_crt_patch(crt_series, branch=None):
         out.info('No patches applied')
 
 
-def push_patches(crt_series, patches, check_merged=False):
+def push_patches(crt_series, patches):
     """Push multiple patches onto the stack. This function is shared
     between the push and pull commands
     """
@@ -207,31 +207,17 @@ def push_patches(crt_series, patches, check_merged=False):
 
     names = patches[forwarded:]
 
-    # check for patches merged upstream
-    if names and check_merged:
-        out.start('Checking for patches merged upstream')
-
-        merged = crt_series.merged_patches(names)
-
-        out.done('%d found' % len(merged))
-    else:
-        merged = []
-
     for p in names:
         out.start('Pushing patch "%s"' % p)
 
-        if p in merged:
-            crt_series.push_empty_patch(p)
-            out.done('merged upstream')
-        else:
-            modified = crt_series.push_patch(p)
+        modified = crt_series.push_patch(p)
 
-            if crt_series.empty_patch(p):
-                out.done('empty patch')
-            elif modified:
-                out.done('modified')
-            else:
-                out.done()
+        if crt_series.empty_patch(p):
+            out.done('empty patch')
+        elif modified:
+            out.done('modified')
+        else:
+            out.done()
 
 
 def pop_patches(crt_series, patches, keep=False):
