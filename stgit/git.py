@@ -685,15 +685,6 @@ def diff(files=None, rev1='HEAD', rev2=None, diff_flags=[], binary=True):
         return b''
 
 
-def checkout(tree_id):
-    """Check out the given tree_id
-    """
-    try:
-        GRun('read-tree', '--reset', '-u', tree_id).run()
-    except GitRunException:
-        raise GitException('Failed "git read-tree" --reset %s' % tree_id)
-
-
 def switch(tree_id, keep=False):
     """Switch the tree to the given id
     """
@@ -707,17 +698,6 @@ def switch(tree_id, keep=False):
         except GitRunException:
             raise GitException('read-tree failed (local changes maybe?)')
 
-    __set_head(tree_id)
-
-
-def reset(tree_id=None):
-    """Revert the tree changes relative to the given tree_id. It removes
-    any local changes
-    """
-    if not tree_id:
-        tree_id = get_head()
-
-    checkout(tree_id)
     __set_head(tree_id)
 
 
