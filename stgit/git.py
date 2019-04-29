@@ -826,31 +826,6 @@ def identify_remote(branchname):
     return None
 
 
-def fetch_head():
-    """Return the git id for the tip of the parent branch as left by
-    'git fetch'.
-    """
-    fetch_head = None
-    stream = open(os.path.join(basedir.get(), 'FETCH_HEAD'), "r")
-    for line in stream:
-        # Only consider lines not tagged not-for-merge
-        m = re.match('^([^\t]*)\t\t', line)
-        if m:
-            if fetch_head:
-                raise GitException(
-                    'StGit does not support multiple FETCH_HEAD'
-                )
-            else:
-                fetch_head = m.group(1)
-    stream.close()
-
-    if not fetch_head:
-        out.warn('No for-merge remote head found in FETCH_HEAD')
-
-    # here we are sure to have a single fetch_head
-    return fetch_head
-
-
 def all_refs():
     """Return a list of all refs in the current repository.
     """
