@@ -668,11 +668,43 @@ __stg_branch_stgit() {
     _wanted -V branches expl "branch" compadd $stg_branches
 }
 
+__stg_files_relative() {
+    local prefix
+    prefix=$(_call_program gitprefix git rev-parse --show-prefix 2>/dev/null)
+    if (( $#prefix == 0 )); then
+        print $1
+        return
+    fi
+
+    local file
+    local -a files
+
+    files=()
+    # Collapse "//" and "/./" into "/". Strip any remaining "/." and "/".
+    for file in ${${${${${(0)1}//\/\///}//\/.\///}%/.}%/}; do
+        integer i n
+        (( n = $#file > $#prefix ? $#file : $#prefix ))
+        for (( i = 1; i <= n; i++ )); do
+            if [[ $file[i] != $prefix[i] ]]; then
+                while (( i > 0 )) && [[ $file[i-1] != / ]]; do
+                    (( i-- ))
+                done
+                break
+            fi
+        done
+
+        files+=${(l@${#prefix[i,-1]//[^\/]}*3@@../@)}${file[i,-1]}
+    done
+
+    print ${(pj:\0:)files}
+}
+
 __stg_files_dirty() {
     declare -a dirty_files
     dirty_files=(
         ${(f)"$(_call_program dirty-files git diff-index --name-only HEAD 2>/dev/null)"}
     )
+    dirty_files=(${(0)"$(__stg_files_relative $dirty_files)"})
     local expl
     _wanted -V dirty-files expl "dirty files" _multi_parts - / dirty_files
 }
