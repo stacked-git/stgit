@@ -265,6 +265,7 @@ _stg-mail() {
         '(-E --edit-patches)'{-E,--edit-patches}'[edit patches before sending]'
         '(-s --sleep)'{-s,--sleep=}'[seconds to sleep between sending emails]:seconds'
         '--in-reply-to=[reply reference id]:refid'
+        '--domain=[domain to use for message ID]:domain'
         '(-u --user)'{-u,--user=}'[username for SMTP authentication]:user'
         '(-p --password)'{-p,--password=}'[password for SMTP authentication]:password'
         '(-T --smtp-tls)'{-t,--smtp-tls}'[use TLS for SMTP authentication]'

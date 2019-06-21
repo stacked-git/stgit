@@ -16,6 +16,7 @@ import os
 import re
 import smtplib
 import socket
+import sys
 import time
 
 from stgit import git, stack, templates, version
@@ -255,6 +256,12 @@ options = [
         short='Generate an mbox file instead of sending',
     ),
     opt(
+        '--domain',
+        metavar='DOMAIN',
+        short='Use DOMAIN when generating message IDs '
+        '(instead of the system hostname)',
+    ),
+    opt(
         '--git',
         action='store_true',
         short='Use git send-email (EXPERIMENTAL)',
@@ -421,7 +428,14 @@ def __send_message(type, tmpl, options, *args):
     if type == 'patch':
         (patch_nr, total_nr) = (args[1], args[2])
 
-    msg_id = email.utils.make_msgid('stgit')
+    domain = options.domain or config.get('stgit.domain')
+
+    if domain:
+        if sys.version_info < (3, 2):
+            raise CmdException("Setting domain requires Python version 3.2+")
+        msg_id = email.utils.make_msgid('stgit', domain=domain)
+    else:
+        msg_id = email.utils.make_msgid('stgit')
     msg = build(tmpl, msg_id, options, *args)
 
     if hasattr(msg, 'as_bytes'):
