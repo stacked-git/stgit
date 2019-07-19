@@ -93,4 +93,6 @@ def func(parser, options, args):
 
     rebase(stack, iw, target)
     if not options.nopush:
-        post_rebase(stack, applied, 'rebase', check_merged=options.merged)
+        return post_rebase(
+            stack, applied, 'rebase', check_merged=options.merged
+        )
