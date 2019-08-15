@@ -99,10 +99,7 @@ class MessagePrinter(object):
                     sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8'
                 )
             )
-        if file or sys.stdout.isatty():
-            self.__out = self.__stdout
-        else:
-            self.__out = Output(None)
+        self.__out = self.__stdout
 
     def stdout(self, line):
         """Write a line to stdout."""
