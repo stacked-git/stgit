@@ -26,7 +26,12 @@ from stgit.lib.git import (
 )
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
-from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS, find_patch_name
+from stgit.utils import (
+    STGIT_CONFLICT,
+    STGIT_SUCCESS,
+    find_patch_name,
+    make_patch_name,
+)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -126,6 +131,8 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
 
     if patchname:
         patchname = find_patch_name(patchname, stack.patches.exists)
+    else:
+        patchname = make_patch_name(commit.data.message, stack.patches.exists)
 
     if options.parent:
         parent = git_commit(options.parent, repository, ref_stack.name)
