@@ -127,10 +127,10 @@ class MessagePrinter(object):
 
     def info(self, *msgs):
         for msg in msgs:
-            self.__out.single_line(msg)
+            self.__stderr.single_line(msg)
 
     def note(self, *msgs, **kw):
-        self.__out.tagged_lines(kw.get('title', 'Notice'), msgs)
+        self.__stderr.tagged_lines(kw.get('title', 'Notice'), msgs)
 
     def warn(self, *msgs, **kw):
         self.__stderr.tagged_lines(kw.get('title', 'Warning'), msgs)
