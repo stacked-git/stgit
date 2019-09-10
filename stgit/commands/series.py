@@ -116,6 +116,12 @@ options = [
         action='store_true',
         short='List just the patches around the topmost patch',
     ),
+    opt(
+        '-n',
+        '--numbered',
+        action='store_true',
+        short='Display the sequence number for each patch',
+    ),
 ]
 
 
@@ -176,7 +182,8 @@ def __render_text(text, effects):
     return ''.join([start, text, stop])
 
 
-def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
+def __print_patch(stack, patch, branch_str, prefix, length, options, effects,
+                  patch_num, highest_patch):
     """Print a patch name, description and various markers."""
     tokens = []
 
@@ -188,6 +195,12 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
             else:
                 prefix = ' ' + prefix
         tokens.append(prefix)
+
+    # Patch order
+    if options.numbered:
+        num_len = len(str(highest_patch))
+        num_str = "[{:0{}}]".format(patch_num, num_len)
+        tokens.append(num_str)
 
     justify = options.description or options.author
 
@@ -269,12 +282,14 @@ def func(parser, options, args):
 
     # Make a first-pass to determine column width, final visibility, etc:
     patch_column_width = 0
-    for patch in mpatches:
+    highest_patch = 0
+    for patch_num, patch in enumerate(mpatches, start=1):
         cfg = cat[patch.status]
         patch.show = cfg['show'] and patch.show
         if not patch.show:
             continue
         patch_column_width = max(patch_column_width, len(patch.name))
+        highest_patch = patch_num
 
     if options.count:
         out.stdout(sum((1 for x in mpatches if x.show)))
@@ -291,5 +306,7 @@ def func(parser, options, args):
             cat[patch.status]['cursor'],
             patch_column_width,
             options,
-            config.get("stgit.color.{}".format(patch.status))
+            config.get("stgit.color.{}".format(patch.status)),
+            patch_num,
+            highest_patch,
         )
