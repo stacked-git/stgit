@@ -161,25 +161,34 @@ def __render_text(text, effects):
 
 def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
     """Print a patch name, description and various markers."""
-    if options.noprefix:
-        prefix = ''
-    elif options.empty:
-        if stack.patches.get(patch).is_empty():
-            prefix = '0' + prefix
-        else:
-            prefix = ' ' + prefix
+    tokens = []
 
-    patch_str = branch_str + patch
+    # Prefix
+    if not options.noprefix:
+        if options.empty:
+            if stack.patches.get(patch).is_empty():
+                prefix = '0' + prefix
+            else:
+                prefix = ' ' + prefix
+        tokens.append(prefix)
 
-    if options.description or options.author:
-        patch_str = patch_str.ljust(length)
+    justify = options.description or options.author
 
+    name = patch
+    if justify:
+        name = name.ljust(length)
+    if branch_str:
+        name = branch_str + ':' + name
+    tokens.append(name)
+
+    if justify:
+        tokens.append('#')
     if options.description:
-        output = prefix + patch_str + ' # ' + __get_description(stack, patch)
+        tokens.append(__get_description(stack, patch))
     elif options.author:
-        output = prefix + patch_str + ' # ' + __get_author(stack, patch)
-    else:
-        output = prefix + patch_str
+        tokens.append(__get_author(stack, patch))
+
+    output = ' '.join(tokens)
     if not effects or not out.isatty:
         out.stdout(output)
     else:
@@ -254,11 +263,11 @@ def func(parser, options, args):
         return
 
     if options.showbranch:
-        branch_str = stack.name + ':'
+        branch_str = stack.name
     else:
         branch_str = ''
 
-    max_len = len(branch_str) + max(len(p) for p in patches)
+    max_len = max(len(p) for p in patches)
 
     if applied:
         for p in applied[:-1]:
@@ -266,7 +275,7 @@ def func(parser, options, args):
                 stack,
                 p,
                 branch_str,
-                '+ ',
+                '+',
                 max_len,
                 options,
                 config.get("stgit.color.applied"),
@@ -275,7 +284,7 @@ def func(parser, options, args):
             stack,
             applied[-1],
             branch_str,
-            '> ',
+            '>',
             max_len,
             options,
             config.get("stgit.color.current"),
@@ -286,7 +295,7 @@ def func(parser, options, args):
             stack,
             p,
             branch_str,
-            '- ',
+            '-',
             max_len,
             options,
             config.get("stgit.color.unapplied"),
@@ -297,7 +306,7 @@ def func(parser, options, args):
             stack,
             p,
             branch_str,
-            '! ',
+            '!',
             max_len,
             options,
             config.get("stgit.color.hidden"),
