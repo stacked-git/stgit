@@ -99,7 +99,6 @@ class MessagePrinter(object):
                     sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8'
                 )
             )
-        self.__out = self.__stdout
 
     def stdout(self, line):
         """Write a line to stdout."""
@@ -137,17 +136,17 @@ class MessagePrinter(object):
 
     def start(self, msg):
         """Start a long-running operation."""
-        self.__out.single_line('%s ... ' % msg, print_newline=False)
-        self.__out.level += 1
+        self.__stderr.single_line('%s ... ' % msg, print_newline=False)
+        self.__stderr.level += 1
 
     def done(self, extramsg=None):
         """Finish long-running operation."""
-        self.__out.level -= 1
+        self.__stderr.level -= 1
         if extramsg:
             msg = 'done (%s)' % extramsg
         else:
             msg = 'done'
-        self.__out.single_line(msg, need_newline=False)
+        self.__stderr.single_line(msg, need_newline=False)
 
 
 out = MessagePrinter()
