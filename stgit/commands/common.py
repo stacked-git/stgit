@@ -590,18 +590,6 @@ def parse_patch(patch_data, contains_diff):
     return (descr, authname, authemail, authdate, diff)
 
 
-def readonly_constant_property(f):
-    """Decorator that converts a function that computes a value to an
-    attribute that returns the value. The value is computed only once,
-    the first time it is accessed."""
-    def new_f(self):
-        n = '__' + f.__name__
-        if not hasattr(self, n):
-            setattr(self, n, f(self))
-        return getattr(self, n)
-    return property(new_f)
-
-
 def run_commit_msg_hook(repo, cd, editor_is_used=True):
     """Run the commit-msg hook (if any) on a commit.
 
@@ -662,42 +650,25 @@ class _Directory(object):
         self.needs_current_series = needs_current_series
         self.log = log
 
-    @readonly_constant_property
-    def git_dir(self):
+    def _get_git_dir(self):
         try:
-            return Run('git', 'rev-parse', '--git-dir'
-                       ).discard_stderr().output_one_line()
+            return Run(
+                'git', 'rev-parse', '--git-dir'
+            ).discard_stderr().output_one_line()
         except RunException:
-            raise DirectoryException('No git repository found')
+            return None
 
-    @readonly_constant_property
-    def __topdir_path(self):
-        try:
-            lines = Run('git', 'rev-parse', '--show-cdup'
-                        ).discard_stderr().output_lines()
-            if len(lines) == 0:
-                return '.'
-            elif len(lines) == 1:
-                return lines[0]
-            else:
-                raise RunException('Too much output')
-        except RunException:
-            raise DirectoryException('No git repository found')
-
-    @readonly_constant_property
-    def is_inside_git_dir(self):
-        return {'true': True, 'false': False}[
-            Run('git', 'rev-parse', '--is-inside-git-dir').output_one_line()
-        ]
-
-    @readonly_constant_property
-    def is_inside_worktree(self):
-        return {'true': True, 'false': False}[
-            Run('git', 'rev-parse', '--is-inside-work-tree').output_one_line()
-        ]
+    def _is_inside_worktree(self):
+        return Run(
+            'git', 'rev-parse', '--is-inside-work-tree'
+        ).output_one_line() == 'true'
 
     def cd_to_topdir(self):
-        os.chdir(self.__topdir_path)
+        worktree_top = Run(
+            'git', 'rev-parse', '--show-cdup'
+        ).discard_stderr().raw_output().rstrip()
+        if worktree_top:
+            os.chdir(worktree_top)
 
     def write_log(self, msg):
         if self.log:
@@ -716,14 +687,15 @@ class DirectoryAnywhere(_Directory):
 
 class DirectoryHasRepository(_Directory):
     def setup(self):
-        self.git_dir  # might throw an exception
+        if not self._get_git_dir():
+            raise DirectoryException('No git repository found')
         compat_log_external_mods()
 
 
 class DirectoryInWorktree(DirectoryHasRepository):
     def setup(self):
         DirectoryHasRepository.setup(self)
-        if not self.is_inside_worktree:
+        if not self._is_inside_worktree():
             raise DirectoryException('Not inside a git worktree')
 
 
@@ -749,7 +721,7 @@ class DirectoryHasRepositoryLib(_Directory):
 class DirectoryInWorktreeLib(DirectoryHasRepositoryLib):
     def setup(self):
         DirectoryHasRepositoryLib.setup(self)
-        if not self.is_inside_worktree:
+        if not self._is_inside_worktree():
             raise DirectoryException('Not inside a git worktree')
 
 
