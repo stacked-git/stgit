@@ -275,9 +275,7 @@ def func(parser, options, args):
     else:
         branch_str = ''
 
-    max_len = 0
-    if len(patches) > 0:
-        max_len = max([len(i + branch_str) for i in patches])
+    max_len = len(branch_str) + max(len(p) for p in patches)
 
     if applied:
         for p in applied[:-1]:
