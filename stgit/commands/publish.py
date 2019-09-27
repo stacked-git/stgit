@@ -182,7 +182,7 @@ def func(parser, options, args):
         published = set(__get_published(stack, public_tree))
         for p in stack.patchorder.applied:
             if p not in published:
-                print(p)
+                out.stdout(p)
         return
 
     if options.overwrite:

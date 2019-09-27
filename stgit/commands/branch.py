@@ -445,4 +445,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    print(crt_series.get_name())
+    out.stdout(crt_series.get_name())
