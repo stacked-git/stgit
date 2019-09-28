@@ -79,8 +79,12 @@ clean:
 	rm  -f stgit/commands/*.pyc
 	rm -rf stgit/commands/__pycache__
 	rm  -f stgit/commands/cmdlist.py
+	rm  -f stgit/completion/*.pyc
+	rm -rf stgit/completion/__pycache__
 	rm  -f stgit/lib/*.pyc
 	rm -rf stgit/lib/__pycache__
+	rm  -f stgit/lib/git/*.pyc
+	rm -rf stgit/lib/git/__pycache__
 	rm  -f TAGS tags
 	rm  -f MANIFEST
 	rm  -f completion/stg.fish
