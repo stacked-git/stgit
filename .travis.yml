@@ -15,11 +15,13 @@ matrix:
     - python: '3.7'
       env: MAKE_TARGET=lint
       dist: xenial
-    - python: '2.6'
-      dist: trusty
-      env: MAKE_TARGET=test
     - python: '2.7'
       env: MAKE_TARGET=coverage-test
+    - python: '3.7'
+      env: MAKE_TARGET=coverage-test
+      dist: xenial
+    - python: 'pypy3'
+      env: MAKE_TARGET=test
     - python: 'pypy'
       env: MAKE_TARGET=test
     - python: '3.3'
@@ -31,16 +33,14 @@ matrix:
       env: MAKE_TARGET=test
     - python: '3.6'
       env: MAKE_TARGET=test
-    - python: '3.7'
-      env: MAKE_TARGET=coverage-test
-      dist: xenial
-    - python: 'pypy3'
-      env: MAKE_TARGET=test
     - python: '3.8-dev'
       env: MAKE_TARGET=test
       dist: xenial
     - python: 'nightly'
       dist: xenial
+      env: MAKE_TARGET=test
+    - python: '2.6'
+      dist: trusty
       env: MAKE_TARGET=test
   allow_failures:
     - python: '3.8-dev'
