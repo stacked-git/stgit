@@ -60,6 +60,8 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 clean:
 	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT) command-list.txt
 
+build-txt: $(COMMANDS_TXT) command-list.txt
+
 ALL_PY = $(shell find ../stgit -name '*.py')
 
 $(COMMANDS_TXT): $(ALL_PY)

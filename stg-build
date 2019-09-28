@@ -9,6 +9,7 @@ from __future__ import (
 )
 
 import optparse
+import os
 import sys
 
 from stgit import argparse, commands
@@ -71,4 +72,9 @@ def main():
 
 
 if __name__ == '__main__':
+    if os.environ.get('COVERAGE_PROCESS_START'):
+        import coverage
+
+        coverage.process_startup()
+
     main()

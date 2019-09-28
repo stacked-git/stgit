@@ -57,6 +57,9 @@ coverage-test:
 	COVERAGE_PROCESS_START=$(PWD)/.coveragerc \
 	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
 	$(MAKE) -C t all
+	COVERAGE_PROCESS_START=$(PWD)/.coveragerc \
+	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
+	$(MAKE) -C Documentation build-txt
 	$(PYTHON) -m coverage combine .cov-files/.coverage.*
 	rm -r .cov-files
 
