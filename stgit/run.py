@@ -92,117 +92,123 @@ class Run(object):
     exc = RunException
 
     def __init__(self, *cmd):
-        self.__cmd = list(cmd)
+        self._cmd = list(cmd)
         for c in cmd:
             if not isinstance(c, text):
                 raise Exception('Bad command: %r' % (cmd, ))
-        self.__good_retvals = [0]
-        self.__env = self.__cwd = None
-        self.__indata = None
-        self.__in_encoding = 'utf-8'
-        self.__out_encoding = 'utf-8'
-        self.__discard_stderr = False
+        self._good_retvals = [0]
+        self._env = self._cwd = None
+        self._indata = None
+        self._in_encoding = 'utf-8'
+        self._out_encoding = 'utf-8'
+        self._discard_stderr = False
 
-    def __prep_cmd(self):
-        return [fsencode_utf8(c) for c in self.__cmd]
+    def _prep_cmd(self):
+        return [fsencode_utf8(c) for c in self._cmd]
 
-    def __prep_env(self):
-        if self.__env:
+    def _prep_env(self):
+        if self._env:
             return dict((fsencode_utf8(k), fsencode_utf8(v))
-                        for k, v in self.__env.items())
+                        for k, v in self._env.items())
         else:
-            return self.__env
+            return self._env
 
-    def __log_start(self):
+    def _log_start(self):
         if _log_mode == 'debug':
-            _logfile.start('Running subprocess %s' % self.__cmd)
-            if self.__cwd is not None:
-                _logfile.info('cwd: %s' % self.__cwd)
-            if self.__env is not None:
-                for k in sorted(self.__env):
+            _logfile.start('Running subprocess %s' % self._cmd)
+            if self._cwd is not None:
+                _logfile.info('cwd: %s' % self._cwd)
+            if self._env is not None:
+                for k in sorted(self._env):
                     v = environ_get(k)
-                    if v is None or v != self.__env[k]:
-                        _logfile.info('%s: %s' % (k, self.__env[k]))
+                    if v is None or v != self._env[k]:
+                        _logfile.info('%s: %s' % (k, self._env[k]))
         elif _log_mode == 'profile':
-            _logfile.start('Running subprocess %s' % self.__cmd)
-            self.__starttime = datetime.datetime.now()
+            _logfile.start('Running subprocess %s' % self._cmd)
+            self._starttime = datetime.datetime.now()
 
-    def __log_end(self, retcode):
+    def _log_end(self, retcode):
         global _log_subproctime, _log_starttime
         if _log_mode == 'debug':
             _logfile.done('return code: %d' % retcode)
         elif _log_mode == 'profile':
             n = datetime.datetime.now()
-            d = duration(self.__starttime, n)
+            d = duration(self._starttime, n)
             _logfile.done('%1.3f s' % d)
             _log_subproctime += d
             _logfile.info('Time since program start: %1.3f s'
                           % duration(_log_starttime, n))
 
-    def __check_exitcode(self):
-        if self.__good_retvals is None:
+    def _check_exitcode(self):
+        if self._good_retvals is None:
             return
-        if self.exitcode not in self.__good_retvals:
+        if self.exitcode not in self._good_retvals:
             raise self.exc('%s failed with code %d'
-                           % (self.__cmd[0], self.exitcode))
+                           % (self._cmd[0], self.exitcode))
 
-    def __run_io(self):
+    def _run_io(self):
         """Run with captured IO."""
-        self.__log_start()
+        self._log_start()
         try:
-            p = subprocess.Popen(self.__prep_cmd(),
-                                 env=self.__prep_env(),
-                                 cwd=self.__cwd,
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            outdata, errdata = p.communicate(self.__indata)
+            p = subprocess.Popen(
+                self._prep_cmd(),
+                env=self._prep_env(),
+                cwd=self._cwd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            outdata, errdata = p.communicate(self._indata)
             self.exitcode = p.returncode
         except OSError as e:
-            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
-        if errdata and not self.__discard_stderr:
+            raise self.exc('%s failed: %s' % (self._cmd[0], e))
+        if errdata and not self._discard_stderr:
             out.err_bytes(errdata)
-        self.__log_end(self.exitcode)
-        self.__check_exitcode()
-        if self.__out_encoding:
-            return outdata.decode(self.__out_encoding)
+        self._log_end(self.exitcode)
+        self._check_exitcode()
+        if self._out_encoding:
+            return outdata.decode(self._out_encoding)
         else:
             return outdata
 
-    def __run_noio(self):
+    def _run_noio(self):
         """Run without captured IO."""
-        assert self.__indata is None
-        self.__log_start()
+        assert self._indata is None
+        self._log_start()
         try:
-            p = subprocess.Popen(self.__prep_cmd(),
-                                 env=self.__prep_env(),
-                                 cwd=self.__cwd)
+            p = subprocess.Popen(
+                self._prep_cmd(),
+                env=self._prep_env(),
+                cwd=self._cwd,
+            )
             self.exitcode = p.wait()
         except OSError as e:
-            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
-        self.__log_end(self.exitcode)
-        self.__check_exitcode()
+            raise self.exc('%s failed: %s' % (self._cmd[0], e))
+        self._log_end(self.exitcode)
+        self._check_exitcode()
 
     def run_background(self):
         """Run as a background process."""
-        assert self.__indata is None
+        assert self._indata is None
         try:
-            p = subprocess.Popen(self.__prep_cmd(),
-                                 env=self.__prep_env(),
-                                 cwd=self.__cwd,
-                                 stdin=subprocess.PIPE,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+            p = subprocess.Popen(
+                self._prep_cmd(),
+                env=self._prep_env(),
+                cwd=self._cwd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
         except OSError as e:
-            raise self.exc('%s failed: %s' % (self.__cmd[0], e))
-        if self.__in_encoding:
+            raise self.exc('%s failed: %s' % (self._cmd[0], e))
+        if self._in_encoding:
             if hasattr(p.stdin, 'readable'):
                 self.stdin = io.TextIOWrapper(
-                    p.stdin, encoding=self.__in_encoding)
+                    p.stdin, encoding=self._in_encoding)
             else:
                 self.stdin = io.TextIOWrapper(
                     file_wrapper(p.stdin, writable=True),
-                    encoding=self.__in_encoding)
+                    encoding=self._in_encoding)
         else:
             self.stdin = p.stdin
         self.stdout = p.stdout
@@ -212,57 +218,57 @@ class Run(object):
         return self
 
     def returns(self, retvals):
-        self.__good_retvals = retvals
+        self._good_retvals = retvals
         return self
 
     def discard_exitcode(self):
-        self.__good_retvals = None
+        self._good_retvals = None
         return self
 
     def discard_stderr(self, discard=True):
-        self.__discard_stderr = discard
+        self._discard_stderr = discard
         return self
 
     def env(self, env):
-        self.__env = environ_copy()
-        self.__env.update(env)
+        self._env = environ_copy()
+        self._env.update(env)
         return self
 
     def cwd(self, cwd):
-        self.__cwd = cwd
+        self._cwd = cwd
         return self
 
     def encoding(self, encoding):
-        self.__in_encoding = encoding
+        self._in_encoding = encoding
         return self
 
     def decoding(self, encoding):
-        self.__out_encoding = encoding
+        self._out_encoding = encoding
         return self
 
     def raw_input(self, indata):
-        if self.__in_encoding:
-            self.__indata = indata.encode(self.__in_encoding)
+        if self._in_encoding:
+            self._indata = indata.encode(self._in_encoding)
         else:
-            self.__indata = indata
+            self._indata = indata
         return self
 
     def input_nulterm(self, lines):
         return self.raw_input('\0'.join(lines))
 
     def no_output(self):
-        outdata = self.__run_io()
+        outdata = self._run_io()
         if outdata:
-            raise self.exc('%s produced output' % self.__cmd[0])
+            raise self.exc('%s produced output' % self._cmd[0])
 
     def discard_output(self):
-        self.__run_io()
+        self._run_io()
 
     def raw_output(self):
-        return self.__run_io()
+        return self._run_io()
 
     def output_lines(self, sep='\n'):
-        outdata = self.__run_io()
+        outdata = self._run_io()
         if outdata.endswith(sep):
             outdata = outdata[:-1]
         if outdata:
@@ -276,19 +282,19 @@ class Run(object):
             return outlines[0]
         else:
             raise self.exc('%s produced %d lines, expected 1'
-                           % (self.__cmd[0], len(outlines)))
+                           % (self._cmd[0], len(outlines)))
 
     def run(self):
         """Just run, with no IO redirection."""
-        self.__run_noio()
+        self._run_noio()
 
     def xargs(self, xargs):
         """Just run, with no IO redirection. The extra arguments are
         appended to the command line a few at a time; the command is
         run as many times as needed to consume them all."""
         step = 100
-        basecmd = self.__cmd
+        basecmd = self._cmd
         for i in range(0, len(xargs), step):
-            self.__cmd = basecmd + xargs[i:i + step]
-            self.__run_noio()
-        self.__cmd = basecmd
+            self._cmd = basecmd + xargs[i:i + step]
+            self._run_noio()
+        self._cmd = basecmd

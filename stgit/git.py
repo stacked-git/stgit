@@ -107,7 +107,7 @@ class Commit(object):
     """
 
     def __init__(self, id_hash):
-        self.__id_hash = id_hash
+        self._id_hash = id_hash
 
         lines = GRun('cat-file', 'commit', id_hash).output_lines()
         for i in range(len(lines)):
@@ -116,20 +116,20 @@ class Commit(object):
                 break  # we've seen all the header fields
             key, val = line.split(' ', 1)
             if key == 'tree':
-                self.__tree = val
+                self._tree = val
             elif key == 'author':
-                self.__author = val
+                self._author = val
             elif key == 'committer':
-                self.__committer = val
+                self._committer = val
             else:
                 pass  # ignore other headers
-        self.__log = '\n'.join(lines[i + 1:])
+        self._log = '\n'.join(lines[i + 1:])
 
     def get_id_hash(self):
-        return self.__id_hash
+        return self._id_hash
 
     def get_tree(self):
-        return self.__tree
+        return self._tree
 
     def get_parent(self):
         parents = self.get_parents()
@@ -139,17 +139,17 @@ class Commit(object):
             return None
 
     def get_parents(self):
-        return GRun('rev-list', '--parents', '--max-count=1', self.__id_hash
+        return GRun('rev-list', '--parents', '--max-count=1', self._id_hash
                     ).output_one_line().split()[1:]
 
     def get_author(self):
-        return self.__author
+        return self._author
 
     def get_committer(self):
-        return self.__committer
+        return self._committer
 
     def get_log(self):
-        return self.__log
+        return self._log
 
     def __str__(self):
         return self.get_id_hash()

@@ -91,13 +91,13 @@ class Commit(object):
         self.parents = set()
         self.children = set()
         self.patch = None
-        self.__commit = None
+        self._commit = None
 
-    def __get_commit(self):
-        if not self.__commit:
-            self.__commit = git.get_commit(self.id)
-        return self.__commit
-    commit = property(__get_commit)
+    @property
+    def commit(self):
+        if not self._commit:
+            self._commit = git.get_commit(self.id)
+        return self._commit
 
     def __str__(self):
         if self.patch:
@@ -147,7 +147,7 @@ def func(parser, options, args):
 
     # Find commits that aren't patches, and applied patches.
     head = git.get_commit(git.get_head()).get_id_hash()
-    commits, patches = read_commit_dag(crt_series.get_name())
+    commits, patches = read_commit_dag(crt_series.name)
     c = commits[head]
     patchify = []        # commits to definitely patchify
     maybe_patchify = []  # commits to patchify if we find a patch below them

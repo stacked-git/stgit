@@ -77,7 +77,7 @@ def git_id(crt_series, rev):
     # TODO: remove this function once all the occurrences were converted
     # to git_commit()
     repository = StackRepository.default()
-    return git_commit(rev, repository, crt_series.get_name()).sha1
+    return git_commit(rev, repository, crt_series.name).sha1
 
 
 def get_public_ref(branch_name):

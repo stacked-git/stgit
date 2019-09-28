@@ -100,7 +100,7 @@ def func(parser, options, args):
     """
     if options.ref_branch:
         remote_series = stack.Series(options.ref_branch)
-        if options.ref_branch == crt_series.get_name():
+        if options.ref_branch == crt_series.name:
             raise CmdException('Cannot synchronise with the current branch')
         remote_patches = remote_series.get_applied()
 

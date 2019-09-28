@@ -18,52 +18,48 @@ class Branch(object):
     """Represents a Git branch."""
 
     def __init__(self, repository, name):
-        self.__repository = repository
-        self.__name = name
+        self.repository = repository
+        self.name = name
         try:
             self.head
         except KeyError:
             raise BranchException('%s: no such branch' % name)
 
     @property
-    def name(self):
-        return self.__name
+    def _ref(self):
+        return 'refs/heads/%s' % self.name
 
     @property
-    def repository(self):
-        return self.__repository
-
-    def __ref(self):
-        return 'refs/heads/%s' % self.__name
+    def _remote_key(self):
+        return 'branch.%s.remote' % self.name
 
     @property
     def head(self):
-        return self.__repository.refs.get(self.__ref())
+        return self.repository.refs.get(self._ref)
 
     def set_head(self, commit, msg):
-        self.__repository.refs.set(self.__ref(), commit, msg)
+        self.repository.refs.set(self._ref, commit, msg)
 
     @property
     def parent_remote(self):
-        remote_key = 'branch.%s.remote' % self.__name
-        remote = config.get(remote_key)
+        remote = config.get(self._remote_key)
         if remote is None:
             raise BranchException(
                 '%s: no parent remote; consider configuring "%s"' % (
-                    self.__name, remote_key
+                    self.name, self._remote_key
                 )
             )
         else:
             return remote
 
     def set_parent_remote(self, name):
-        config.set('branch.%s.remote' % self.__name, name)
+        config.set('branch.%s.remote' % self.name, name)
 
     def set_parent_branch(self, name):
-        if config.get('branch.%s.remote' % self.__name):
+        if config.get(self._remote_key):
             # Never set merge if remote is not set to avoid
             # possibly-erroneous lookups into 'origin'
-            config.set('branch.%s.merge' % self.__name, name)
+            config.set('branch.%s.merge' % self.name, name)
 
     @classmethod
     def create(cls, repository, name, create_at=None):

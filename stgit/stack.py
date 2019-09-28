@@ -149,17 +149,11 @@ class StgitObject(object):
     """An object with stgit-like properties stored as files in a directory
     """
 
-    def _set_dir(self, dir):
-        self.__dir = dir
-
-    def _dir(self):
-        return self.__dir
-
     def create_empty_field(self, name):
-        create_empty_file(os.path.join(self.__dir, name))
+        create_empty_file(os.path.join(self._dir, name))
 
     def _get_field(self, name, multiline=False):
-        id_file = os.path.join(self.__dir, name)
+        id_file = os.path.join(self._dir, name)
         if os.path.isfile(id_file):
             line = read_string(id_file, multiline)
             if line == '':
@@ -170,7 +164,7 @@ class StgitObject(object):
             return None
 
     def _set_field(self, name, value, multiline=False):
-        fname = os.path.join(self.__dir, name)
+        fname = os.path.join(self._dir, name)
         if value and value != '':
             write_string(fname, value, multiline)
         elif os.path.isfile(fname):
@@ -181,64 +175,61 @@ class Patch(StgitObject):
     """Basic patch implementation
     """
 
-    def __init_refs(self):
-        self.__top_ref = self.__refs_base + '/' + self.__name
-        self.__log_ref = self.__top_ref + '.log'
+    def _init_refs(self):
+        self._top_ref = self._refs_base + '/' + self.name
+        self._log_ref = self._top_ref + '.log'
 
     def __init__(self, name, series_dir, refs_base):
-        self.__series_dir = series_dir
-        self.__name = name
-        self._set_dir(os.path.join(self.__series_dir, self.__name))
-        self.__refs_base = refs_base
-        self.__init_refs()
+        self.name = name
+        self._series_dir = series_dir
+        self._dir = os.path.join(self._series_dir, self.name)
+        self._refs_base = refs_base
+        self._init_refs()
 
     def create(self):
-        os.mkdir(self._dir())
+        os.mkdir(self._dir)
 
     def delete(self, keep_log=False):
-        if os.path.isdir(self._dir()):
-            for f in os.listdir(self._dir()):
-                os.remove(os.path.join(self._dir(), f))
-            os.rmdir(self._dir())
+        if os.path.isdir(self._dir):
+            for f in os.listdir(self._dir):
+                os.remove(os.path.join(self._dir, f))
+            os.rmdir(self._dir)
         else:
-            out.warn('Patch directory "%s" does not exist' % self._dir())
+            out.warn('Patch directory "%s" does not exist' % self._dir)
         try:
             # the reference might not exist if the repository was corrupted
-            git.delete_ref(self.__top_ref)
+            git.delete_ref(self._top_ref)
         except git.GitException as e:
             out.warn(str(e))
-        if not keep_log and git.ref_exists(self.__log_ref):
-            git.delete_ref(self.__log_ref)
-
-    def get_name(self):
-        return self.__name
+        if not keep_log and git.ref_exists(self._log_ref):
+            git.delete_ref(self._log_ref)
 
     def rename(self, newname):
-        olddir = self._dir()
-        old_top_ref = self.__top_ref
-        old_log_ref = self.__log_ref
-        self.__name = newname
-        self._set_dir(os.path.join(self.__series_dir, self.__name))
-        self.__init_refs()
+        olddir = self._dir
+        old_top_ref = self._top_ref
+        old_log_ref = self._log_ref
+        self.name = newname
+        self._dir = os.path.join(self._series_dir, self.name)
+        self._init_refs()
 
-        git.rename_ref(old_top_ref, self.__top_ref)
+        git.rename_ref(old_top_ref, self._top_ref)
         if git.ref_exists(old_log_ref):
-            git.rename_ref(old_log_ref, self.__log_ref)
-        os.rename(olddir, self._dir())
+            git.rename_ref(old_log_ref, self._log_ref)
+        os.rename(olddir, self._dir)
 
-    def __update_top_ref(self, ref):
-        git.set_ref(self.__top_ref, ref)
+    def _update_top_ref(self, ref):
+        git.set_ref(self._top_ref, ref)
         self._set_field('top', ref)
         self._set_field('bottom', git.get_commit(ref).get_parent())
 
-    def __update_log_ref(self, ref):
-        git.set_ref(self.__log_ref, ref)
+    def _update_log_ref(self, ref):
+        git.set_ref(self._log_ref, ref)
 
     def get_bottom(self):
         return git.get_commit(self.get_top()).get_parent()
 
     def get_top(self):
-        return git.rev_parse(self.__top_ref)
+        return git.rev_parse(self._top_ref)
 
     def set_top(self, value, backup=False):
         if backup:
@@ -248,7 +239,7 @@ class Patch(StgitObject):
                 'bottom.old',
                 git.get_commit(curr_top).get_parent(),
             )
-        self.__update_top_ref(value)
+        self._update_top_ref(value)
 
     def get_description(self):
         return self._get_field('description', True)
@@ -300,32 +291,21 @@ class Patch(StgitObject):
 
     def set_log(self, value, backup=False):
         self._set_field('log', value)
-        self.__update_log_ref(value)
+        self._update_log_ref(value)
 
 
 class PatchSet(StgitObject):
     def __init__(self, name=None):
         try:
             if name:
-                self.set_name(name)
+                self.name = name
             else:
-                self.set_name(git.get_head_file())
-            self.__base_dir = basedir.get()
+                self.name = git.get_head_file()
+            self._base_dir = basedir.get()
         except git.GitException as ex:
             raise StackException('GIT tree not initialised: %s' % ex)
 
-        self._set_dir(
-            os.path.join(self.__base_dir, 'patches', self.get_name())
-        )
-
-    def get_name(self):
-        return self.__name
-
-    def set_name(self, name):
-        self.__name = name
-
-    def _basedir(self):
-        return self.__base_dir
+        self._dir = os.path.join(self._base_dir, 'patches', self.name)
 
     def get_head(self):
         """Return the head of the branch
@@ -336,30 +316,30 @@ class PatchSet(StgitObject):
         else:
             return self.get_base()
 
-    def __branch_protect(self):
-        return 'branch.%s.stgit.protect' % self.get_name()
+    def _branch_protect(self):
+        return 'branch.%s.stgit.protect' % self.name
 
     def get_protected(self):
-        return config.getbool(self.__branch_protect())
+        return config.getbool(self._branch_protect())
 
     def protect(self):
-        config.set(self.__branch_protect(), 'true')
+        config.set(self._branch_protect(), 'true')
 
     def unprotect(self):
         if self.get_protected():
-            config.unset(self.__branch_protect())
+            config.unset(self._branch_protect())
 
-    def __branch_descr(self):
-        return 'branch.%s.description' % self.get_name()
+    def _branch_descr(self):
+        return 'branch.%s.description' % self.name
 
     def get_description(self):
-        return config.get(self.__branch_descr()) or ''
+        return config.get(self._branch_descr()) or ''
 
     def set_description(self, line):
         if line:
-            config.set(self.__branch_descr(), line)
+            config.set(self._branch_descr(), line)
         else:
-            config.unset(self.__branch_descr())
+            config.unset(self._branch_descr())
 
     def head_top_equal(self):
         """Return true if the head and the top are the same
@@ -373,8 +353,9 @@ class PatchSet(StgitObject):
     def is_initialised(self):
         """Checks if series is already initialised
         """
-        return config.get(stackupgrade.format_version_key(self.get_name())
-                          ) is not None
+        return config.get(
+            stackupgrade.format_version_key(self.name)
+        ) is not None
 
 
 def shortlog(patches):
@@ -396,22 +377,22 @@ class Series(PatchSet):
         # Update the branch to the latest format version if it is
         # initialized, but don't touch it if it isn't.
         stackupgrade.update_to_current_format_version(
-            Repository.default(), self.get_name()
+            Repository.default(), self.name
         )
 
-        self.__refs_base = 'refs/patches/%s' % self.get_name()
+        self._refs_base = 'refs/patches/%s' % self.name
 
-        self.__applied_file = os.path.join(self._dir(), 'applied')
-        self.__unapplied_file = os.path.join(self._dir(), 'unapplied')
-        self.__hidden_file = os.path.join(self._dir(), 'hidden')
+        self._applied_file = os.path.join(self._dir, 'applied')
+        self._unapplied_file = os.path.join(self._dir, 'unapplied')
+        self._hidden_file = os.path.join(self._dir, 'hidden')
 
         # where this series keeps its patches
-        self.__patch_dir = os.path.join(self._dir(), 'patches')
+        self._patch_dir = os.path.join(self._dir, 'patches')
 
         # trash directory
-        self.__trash_dir = os.path.join(self._dir(), 'trash')
+        self._trash_dir = os.path.join(self._dir, 'trash')
 
-    def __patch_name_valid(self, name):
+    def _patch_name_valid(self, name):
         """Raise an exception if the patch name is not valid.
         """
         if not name or re.search(r'[^\w.-]', name):
@@ -420,7 +401,7 @@ class Series(PatchSet):
     def get_patch(self, name):
         """Return a Patch object for the given name
         """
-        return Patch(name, self.__patch_dir, self.__refs_base)
+        return Patch(name, self._patch_dir, self._refs_base)
 
     def get_current_patch(self):
         """Return a Patch object representing the topmost patch, or
@@ -445,35 +426,33 @@ class Series(PatchSet):
             return None
 
     def get_applied(self):
-        if not os.path.isfile(self.__applied_file):
-            raise StackException('Branch "%s" not initialised' %
-                                 self.get_name())
-        return read_strings(self.__applied_file)
+        if not os.path.isfile(self._applied_file):
+            raise StackException('Branch "%s" not initialised' % self.name)
+        return read_strings(self._applied_file)
 
     def set_applied(self, applied):
-        write_strings(self.__applied_file, applied)
+        write_strings(self._applied_file, applied)
 
     def get_unapplied(self):
-        if not os.path.isfile(self.__unapplied_file):
-            raise StackException('Branch "%s" not initialised' %
-                                 self.get_name())
-        return read_strings(self.__unapplied_file)
+        if not os.path.isfile(self._unapplied_file):
+            raise StackException('Branch "%s" not initialised' % self.name)
+        return read_strings(self._unapplied_file)
 
     def set_unapplied(self, unapplied):
-        write_strings(self.__unapplied_file, unapplied)
+        write_strings(self._unapplied_file, unapplied)
 
     def get_hidden(self):
-        if not os.path.isfile(self.__hidden_file):
+        if not os.path.isfile(self._hidden_file):
             return []
-        return read_strings(self.__hidden_file)
+        return read_strings(self._hidden_file)
 
     def set_hidden(self, hidden):
-        write_strings(self.__hidden_file, hidden)
+        write_strings(self._hidden_file, hidden)
 
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
-        if os.path.isfile(self.__applied_file):
-            with open(self.__applied_file) as f:
+        if os.path.isfile(self._applied_file):
+            with open(self._applied_file) as f:
                 bottommost = f.readline().strip()
             if bottommost:
                 return self.get_patch(bottommost).get_bottom()
@@ -481,59 +460,59 @@ class Series(PatchSet):
         return git.get_head()
 
     def get_parent_remote(self):
-        value = config.get('branch.%s.remote' % self.get_name())
+        value = config.get('branch.%s.remote' % self.name)
         if value:
             return value
         elif 'origin' in git.remotes_list():
             out.note(('No parent remote declared for stack "%s",'
-                      ' defaulting to "origin".' % self.get_name()),
+                      ' defaulting to "origin".' % self.name),
                      ('Consider setting "branch.%s.remote" and'
                       ' "branch.%s.merge" with "git config".'
-                      % (self.get_name(), self.get_name())))
+                      % (self.name, self.name)))
             return 'origin'
         else:
             raise StackException('Cannot find a parent remote for "%s"' %
-                                 self.get_name())
+                                 self.name)
 
-    def __set_parent_remote(self, remote):
-        config.set('branch.%s.remote' % self.get_name(), remote)
+    def _set_parent_remote(self, remote):
+        config.set('branch.%s.remote' % self.name, remote)
 
     def get_parent_branch(self):
-        value = config.get('branch.%s.stgit.parentbranch' % self.get_name())
+        value = config.get('branch.%s.stgit.parentbranch' % self.name)
         if value:
             return value
         elif git.rev_parse('heads/origin'):
             out.note(('No parent branch declared for stack "%s",'
-                      ' defaulting to "heads/origin".' % self.get_name()),
+                      ' defaulting to "heads/origin".' % self.name),
                      ('Consider setting "branch.%s.stgit.parentbranch"'
-                      ' with "git config".' % self.get_name()))
+                      ' with "git config".' % self.name))
             return 'heads/origin'
         else:
             raise StackException('Cannot find a parent branch for "%s"' %
-                                 self.get_name())
+                                 self.name)
 
-    def __set_parent_branch(self, name):
-        if config.get('branch.%s.remote' % self.get_name()):
+    def _set_parent_branch(self, name):
+        if config.get('branch.%s.remote' % self.name):
             # Never set merge if remote is not set to avoid
             # possibly-erroneous lookups into 'origin'
-            config.set('branch.%s.merge' % self.get_name(), name)
-        config.set('branch.%s.stgit.parentbranch' % self.get_name(), name)
+            config.set('branch.%s.merge' % self.name, name)
+        config.set('branch.%s.stgit.parentbranch' % self.name, name)
 
     def set_parent(self, remote, localbranch):
         if localbranch:
             if remote:
-                self.__set_parent_remote(remote)
-            self.__set_parent_branch(localbranch)
+                self._set_parent_remote(remote)
+            self._set_parent_branch(localbranch)
         # We'll enforce this later
         # else:
         #     raise StackException(
         #         'Parent branch (%s) should be specified for %s' % (
-        #             localbranch, self.get_name()
+        #             localbranch, self.name
         #         )
         #     )
 
-    def __patch_is_current(self, patch):
-        return patch.get_name() == self.get_current()
+    def _patch_is_current(self, patch):
+        return patch.name == self.get_current()
 
     def patch_applied(self, name):
         """Return true if the patch exists in the applied list
@@ -563,22 +542,22 @@ class Series(PatchSet):
         """Initialises the stgit series
         """
         if self.is_initialised():
-            raise StackException('%s already initialized' % self.get_name())
-        for d in [self._dir()]:
+            raise StackException('%s already initialized' % self.name)
+        for d in [self._dir]:
             if os.path.exists(d):
                 raise StackException('%s already exists' % d)
 
         if create_at is not False:
-            git.create_branch(self.get_name(), create_at)
+            git.create_branch(self.name, create_at)
 
-        os.makedirs(self.__patch_dir)
+        os.makedirs(self._patch_dir)
 
         self.set_parent(parent_remote, parent_branch)
 
         self.create_empty_field('applied')
         self.create_empty_field('unapplied')
 
-        config.set(stackupgrade.format_version_key(self.get_name()),
+        config.set(stackupgrade.format_version_key(self.name),
                    text(stackupgrade.FORMAT_VERSION))
 
     def rename(self, to_name):
@@ -587,24 +566,24 @@ class Series(PatchSet):
         to_stack = Series(to_name)
 
         if to_stack.is_initialised():
-            raise StackException('"%s" already exists' % to_stack.get_name())
+            raise StackException('"%s" already exists' % to_stack.name)
 
         patches = self.get_applied() + self.get_unapplied()
 
-        git.rename_branch(self.get_name(), to_name)
+        git.rename_branch(self.name, to_name)
 
         for patch in patches:
-            git.rename_ref('refs/patches/%s/%s' % (self.get_name(), patch),
+            git.rename_ref('refs/patches/%s/%s' % (self.name, patch),
                            'refs/patches/%s/%s' % (to_name, patch))
-            git.rename_ref('refs/patches/%s/%s.log' % (self.get_name(), patch),
+            git.rename_ref('refs/patches/%s/%s.log' % (self.name, patch),
                            'refs/patches/%s/%s.log' % (to_name, patch))
-        if os.path.isdir(self._dir()):
-            rename(os.path.join(self._basedir(), 'patches'),
-                   self.get_name(), to_stack.get_name())
+        if os.path.isdir(self._dir):
+            rename(os.path.join(self._base_dir, 'patches'),
+                   self.name, to_stack.name)
 
         # Rename the config section
         for k in ['branch.%s', 'branch.%s.stgit']:
-            config.rename_section(k % self.get_name(), k % to_name)
+            config.rename_section(k % self.name, k % to_name)
 
         self.__init__(to_name)
 
@@ -620,7 +599,7 @@ class Series(PatchSet):
         new_series = Series(target_series)
 
         # generate an artificial description file
-        new_series.set_description('clone of "%s"' % self.get_name())
+        new_series.set_description('clone of "%s"' % self.name)
 
         # clone self's entire series as unapplied patches
         try:
@@ -654,15 +633,15 @@ class Series(PatchSet):
         new_series.forward_patches(applied)
 
         # Clone parent informations
-        value = config.get('branch.%s.remote' % self.get_name())
+        value = config.get('branch.%s.remote' % self.name)
         if value:
             config.set('branch.%s.remote' % target_series, value)
 
-        value = config.get('branch.%s.merge' % self.get_name())
+        value = config.get('branch.%s.merge' % self.name)
         if value:
             config.set('branch.%s.merge' % target_series, value)
 
-        value = config.get('branch.%s.stgit.parentbranch' % self.get_name())
+        value = config.get('branch.%s.stgit.parentbranch' % self.name)
         if value:
             config.set('branch.%s.stgit.parentbranch' % target_series, value)
 
@@ -683,41 +662,41 @@ class Series(PatchSet):
                 self.get_patch(p).delete()
 
             # remove the trash directory if any
-            if os.path.exists(self.__trash_dir):
-                for fname in os.listdir(self.__trash_dir):
-                    os.remove(os.path.join(self.__trash_dir, fname))
-                os.rmdir(self.__trash_dir)
+            if os.path.exists(self._trash_dir):
+                for fname in os.listdir(self._trash_dir):
+                    os.remove(os.path.join(self._trash_dir, fname))
+                os.rmdir(self._trash_dir)
 
             # FIXME: find a way to get rid of those manual removals
             # (move functionality to StgitObject ?)
-            if os.path.exists(self.__applied_file):
-                os.remove(self.__applied_file)
-            if os.path.exists(self.__unapplied_file):
-                os.remove(self.__unapplied_file)
-            if os.path.exists(self.__hidden_file):
-                os.remove(self.__hidden_file)
-            if os.path.exists(self._dir() + '/orig-base'):
-                os.remove(self._dir() + '/orig-base')
+            if os.path.exists(self._applied_file):
+                os.remove(self._applied_file)
+            if os.path.exists(self._unapplied_file):
+                os.remove(self._unapplied_file)
+            if os.path.exists(self._hidden_file):
+                os.remove(self._hidden_file)
+            if os.path.exists(self._dir + '/orig-base'):
+                os.remove(self._dir + '/orig-base')
 
-            if not os.listdir(self.__patch_dir):
-                os.rmdir(self.__patch_dir)
+            if not os.listdir(self._patch_dir):
+                os.rmdir(self._patch_dir)
             else:
-                out.warn('Patch directory %s is not empty' % self.__patch_dir)
+                out.warn('Patch directory %s is not empty' % self._patch_dir)
 
             try:
-                os.removedirs(self._dir())
+                os.removedirs(self._dir)
             except OSError:
                 raise StackException('Series directory %s is not empty'
-                                     % self._dir())
+                                     % self._dir)
 
         if not cleanup:
             try:
-                git.delete_branch(self.get_name())
+                git.delete_branch(self.name)
             except git.GitException:
-                out.warn('Could not delete branch "%s"' % self.get_name())
-            config.remove_section('branch.%s' % self.get_name())
+                out.warn('Could not delete branch "%s"' % self.name)
+            config.remove_section('branch.%s' % self.name)
 
-        config.remove_section('branch.%s.stgit' % self.get_name())
+        config.remove_section('branch.%s.stgit' % self.name)
 
     def refresh_patch(
         self,
@@ -758,7 +737,7 @@ class Series(PatchSet):
                 self,
                 descr.rstrip(),
                 'Please edit the description for patch "%s" above.' % (
-                    patch.get_name(),
+                    patch.name,
                     show_patch,
                 )
             )
@@ -839,7 +818,7 @@ class Series(PatchSet):
         )
 
         if name is not None:
-            self.__patch_name_valid(name)
+            self._patch_name_valid(name)
             if self.patch_exists(name):
                 raise StackException('Patch "%s" already exists' % name)
 
@@ -873,11 +852,11 @@ class Series(PatchSet):
         patch.set_commemail(committer_email)
 
         if unapplied:
-            patches = [patch.get_name()] + self.get_unapplied()
-            write_strings(self.__unapplied_file, patches)
+            patches = [patch.name] + self.get_unapplied()
+            write_strings(self._unapplied_file, patches)
             set_head = False
         else:
-            append_string(self.__applied_file, patch.get_name())
+            append_string(self._applied_file, patch.name)
             set_head = True
 
         if commit:
@@ -915,10 +894,10 @@ class Series(PatchSet):
     def delete_patch(self, name, keep_log=False):
         """Deletes a patch
         """
-        self.__patch_name_valid(name)
+        self._patch_name_valid(name)
         patch = self.get_patch(name)
 
-        if self.__patch_is_current(patch):
+        if self._patch_is_current(patch):
             self.pop_patch(name)
         elif self.patch_applied(name):
             raise StackException('Cannot remove an applied patch, "%s", '
@@ -927,13 +906,13 @@ class Series(PatchSet):
             raise StackException('Unknown patch "%s"' % name)
 
         # save the commit id to a trash file
-        write_string(os.path.join(self.__trash_dir, name), patch.get_top())
+        write_string(os.path.join(self._trash_dir, name), patch.get_top())
 
         patch.delete(keep_log=keep_log)
 
         unapplied = self.get_unapplied()
         unapplied.remove(name)
-        write_strings(self.__unapplied_file, unapplied)
+        write_strings(self._unapplied_file, unapplied)
 
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
@@ -1005,8 +984,8 @@ class Series(PatchSet):
 
         git.switch(top)
 
-        append_strings(self.__applied_file, names[0:forwarded])
-        write_strings(self.__unapplied_file, unapplied)
+        append_strings(self._applied_file, names[0:forwarded])
+        write_strings(self._unapplied_file, unapplied)
 
         return forwarded
 
@@ -1022,7 +1001,7 @@ class Series(PatchSet):
         merged = []
         for p in patches:
             if git.apply_diff(p.get_top(), p.get_bottom()):
-                merged.append(p.get_name())
+                merged.append(p.name)
         merged.reverse()
 
         git.reset()
@@ -1038,10 +1017,10 @@ class Series(PatchSet):
         # patch = self.get_patch(name)
         head = git.get_head()
 
-        append_string(self.__applied_file, name)
+        append_string(self._applied_file, name)
 
         unapplied.remove(name)
-        write_strings(self.__unapplied_file, unapplied)
+        write_strings(self._unapplied_file, unapplied)
 
         self.refresh_patch(bottom=head, cache_update=False, log='push(m)')
 
@@ -1064,10 +1043,10 @@ class Series(PatchSet):
             patch.set_top(top, backup=True)
 
             git.switch(top)
-            append_string(self.__applied_file, name)
+            append_string(self._applied_file, name)
 
             unapplied.remove(name)
-            write_strings(self.__unapplied_file, unapplied)
+            write_strings(self._unapplied_file, unapplied)
             return False
 
         # Need to create a new commit an merge in the old patch
@@ -1088,10 +1067,10 @@ class Series(PatchSet):
                 out.error('The merge failed during "push".',
                           'Revert the operation with "stg undo".')
 
-        append_string(self.__applied_file, name)
+        append_string(self._applied_file, name)
 
         unapplied.remove(name)
-        write_strings(self.__unapplied_file, unapplied)
+        write_strings(self._unapplied_file, unapplied)
 
         if not ex:
             # if the merge was OK and no conflicts, just refresh the patch
@@ -1123,14 +1102,14 @@ class Series(PatchSet):
 
         patch = self.get_patch(name)
 
-        if git.get_head_file() == self.get_name():
+        if git.get_head_file() == self.name:
             if keep and not git.apply_diff(git.get_head(), patch.get_bottom(),
                                            check_index=False):
                 raise StackException(
                     'Failed to pop patches while preserving the local changes')
             git.switch(patch.get_bottom(), keep)
         else:
-            git.set_branch(self.get_name(), patch.get_bottom())
+            git.set_branch(self.name, patch.get_bottom())
 
         # save the new applied list
         idx = applied.index(name) + 1
@@ -1138,16 +1117,16 @@ class Series(PatchSet):
         popped = applied[:idx]
         popped.reverse()
         unapplied = popped + self.get_unapplied()
-        write_strings(self.__unapplied_file, unapplied)
+        write_strings(self._unapplied_file, unapplied)
 
         del applied[:idx]
         applied.reverse()
-        write_strings(self.__applied_file, applied)
+        write_strings(self._applied_file, applied)
 
     def empty_patch(self, name):
         """Returns True if the patch is empty
         """
-        self.__patch_name_valid(name)
+        self._patch_name_valid(name)
         patch = self.get_patch(name)
         bottom = patch.get_bottom()
         top = patch.get_top()
@@ -1160,7 +1139,7 @@ class Series(PatchSet):
             return top_tree == bottom_tree
 
     def rename_patch(self, oldname, newname):
-        self.__patch_name_valid(newname)
+        self._patch_name_valid(newname)
 
         applied = self.get_applied()
         unapplied = self.get_unapplied()
@@ -1174,12 +1153,12 @@ class Series(PatchSet):
         if oldname in unapplied:
             self.get_patch(oldname).rename(newname)
             unapplied[unapplied.index(oldname)] = newname
-            write_strings(self.__unapplied_file, unapplied)
+            write_strings(self._unapplied_file, unapplied)
         elif oldname in applied:
             self.get_patch(oldname).rename(newname)
 
             applied[applied.index(oldname)] = newname
-            write_strings(self.__applied_file, applied)
+            write_strings(self._applied_file, applied)
         else:
             raise StackException('Unknown patch "%s"' % oldname)
 
@@ -1192,8 +1171,9 @@ class Series(PatchSet):
         if message is None:
             # replace the current log entry
             if not old_log:
-                raise StackException('No log entry to annotate for patch "%s"'
-                                     % patch.get_name())
+                raise StackException(
+                    'No log entry to annotate for patch "%s"' % patch.name
+                )
             log_commit = git.get_commit(old_log)
             msg = log_commit.get_log().split('\n')[0]
             log_parent = log_commit.get_parent()

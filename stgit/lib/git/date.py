@@ -32,24 +32,24 @@ class TimeZone(tzinfo):
             raise DateException(tzstring, 'time zone')
         sign = int(m.group(1) + '1')
         try:
-            self.__offset = timedelta(
+            self._offset = timedelta(
                 hours=sign * int(m.group(2)), minutes=sign * int(m.group(3))
             )
         except OverflowError:
             raise DateException(tzstring, 'time zone')
-        self.__name = tzstring
+        self._name = tzstring
 
     def utcoffset(self, dt):
-        return self.__offset
+        return self._offset
 
     def tzname(self, dt):
-        return self.__name
+        return self._name
 
     def dst(self, dt):
         return timedelta(0)
 
     def __repr__(self):
-        return self.__name
+        return self._name
 
 
 def system_date(datestring):
@@ -107,7 +107,7 @@ class Date(Immutable):
         m = re.match(r'^(\d+)\s+([+-]\d\d:?\d\d)$', datestring)
         if m:
             try:
-                self.__time = datetime.fromtimestamp(
+                self._time = datetime.fromtimestamp(
                     int(m.group(1)), TimeZone(m.group(2))
                 )
             except ValueError:
@@ -122,7 +122,7 @@ class Date(Immutable):
         )
         if m:
             try:
-                self.__time = datetime(
+                self._time = datetime(
                     *[int(m.group(i + 1)) for i in range(6)],
                     **{'tzinfo': TimeZone(m.group(7))}
                 )
@@ -131,20 +131,20 @@ class Date(Immutable):
             return
 
         if datestring == 'now':
-            self.__time = git_date()
-            assert self.__time
+            self._time = git_date()
+            assert self._time
             return
 
         # Try parsing with `git var`.
         gd = git_date(datestring)
         if gd:
-            self.__time = gd
+            self._time = gd
             return
 
         # Try parsing with the system's "date" command.
         sd = system_date(datestring)
         if sd:
-            self.__time = sd
+            self._time = sd
             return
 
         raise DateException(datestring, 'date')
@@ -155,8 +155,8 @@ class Date(Immutable):
     def isoformat(self):
         """Human-friendly ISO 8601 format."""
         return '%s %s' % (
-            self.__time.replace(tzinfo=None).isoformat(str(' ')),
-            self.__time.tzinfo,
+            self._time.replace(tzinfo=None).isoformat(str(' ')),
+            self._time.tzinfo,
         )
 
     @classmethod

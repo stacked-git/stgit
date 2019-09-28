@@ -55,13 +55,13 @@ class _TransPatchMap(dict):
 
     def __init__(self, stack):
         dict.__init__(self)
-        self.__stack = stack
+        self._stack = stack
 
     def __getitem__(self, pn):
         try:
             return dict.__getitem__(self, pn)
         except KeyError:
-            return self.__stack.patches.get(pn).commit
+            return self._stack.patches.get(pn).commit
 
 
 class StackTransaction(object):
@@ -111,218 +111,205 @@ class StackTransaction(object):
         @type discard_changes: bool
         @param allow_conflicts: Whether to allow pre-existing conflicts
         @type allow_conflicts: bool or function of L{StackTransaction}"""
-        self.__stack = stack
-        self.__msg = msg
-        self.__patches = _TransPatchMap(stack)
-        self.__applied = list(self.__stack.patchorder.applied)
-        self.__unapplied = list(self.__stack.patchorder.unapplied)
-        self.__hidden = list(self.__stack.patchorder.hidden)
-        self.__error = None
-        self.__current_tree = self.__stack.head.data.tree
-        self.__base = self.__stack.base
-        self.__discard_changes = discard_changes
-        self.__bad_head = None
-        self.__conflicts = None
+        self.stack = stack
+        self._msg = msg
+        self.patches = _TransPatchMap(stack)
+        self._applied = list(self.stack.patchorder.applied)
+        self._unapplied = list(self.stack.patchorder.unapplied)
+        self._hidden = list(self.stack.patchorder.hidden)
+        self._error = None
+        self._current_tree = self.stack.head.data.tree
+        self._base = self.stack.base
+        self._discard_changes = discard_changes
+        self._bad_head = None
+        self._conflicts = None
         if isinstance(allow_conflicts, bool):
-            self.__allow_conflicts = lambda trans: allow_conflicts
+            self._allow_conflicts = lambda trans: allow_conflicts
         else:
-            self.__allow_conflicts = allow_conflicts
-        self.__temp_index = self.temp_index_tree = None
+            self._allow_conflicts = allow_conflicts
+        self._temp_index = self.temp_index_tree = None
         if not allow_bad_head:
-            self.__assert_head_top_equal()
+            self._assert_head_top_equal()
         if check_clean_iw:
-            self.__assert_index_worktree_clean(check_clean_iw)
-
-    @property
-    def stack(self):
-        return self.__stack
-
-    @property
-    def patches(self):
-        return self.__patches
+            self._assert_index_worktree_clean(check_clean_iw)
 
     @property
     def applied(self):
-        return self.__applied
+        return self._applied
 
     @applied.setter
     def applied(self, value):
-        self.__applied = list(value)
+        self._applied = list(value)
 
     @property
     def unapplied(self):
-        return self.__unapplied
+        return self._unapplied
 
     @unapplied.setter
     def unapplied(self, value):
-        self.__unapplied = list(value)
+        self._unapplied = list(value)
 
     @property
     def hidden(self):
-        return self.__hidden
+        return self._hidden
 
     @hidden.setter
     def hidden(self, value):
-        self.__hidden = list(value)
+        self._hidden = list(value)
 
     @property
     def all_patches(self):
-        return self.__applied + self.__unapplied + self.__hidden
+        return self._applied + self._unapplied + self._hidden
 
     @property
     def base(self):
-        return self.__base
+        return self._base
 
     @base.setter
     def base(self, value):
-        assert (not self.__applied
+        assert (not self._applied
                 or self.patches[self.applied[0]].data.parent == value)
-        self.__base = value
+        self._base = value
 
     @property
     def temp_index(self):
-        if not self.__temp_index:
-            self.__temp_index = self.__stack.repository.temp_index()
-            atexit.register(self.__temp_index.delete)
-        return self.__temp_index
+        if not self._temp_index:
+            self._temp_index = self.stack.repository.temp_index()
+            atexit.register(self._temp_index.delete)
+        return self._temp_index
 
     @property
     def top(self):
-        if self.__applied:
-            return self.__patches[self.__applied[-1]]
+        if self._applied:
+            return self.patches[self._applied[-1]]
         else:
-            return self.__base
+            return self._base
 
     @property
     def head(self):
-        if self.__bad_head:
-            return self.__bad_head
+        if self._bad_head:
+            return self._bad_head
         else:
             return self.top
 
     @head.setter
     def head(self, value):
-        self.__bad_head = value
+        self._bad_head = value
 
-    def __assert_head_top_equal(self):
-        if not self.__stack.head_top_equal():
+    def _assert_head_top_equal(self):
+        if not self.stack.head_top_equal():
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.')
-            self.__abort()
+            self._abort()
 
-    def __assert_index_worktree_clean(self, iw):
+    def _assert_index_worktree_clean(self, iw):
         if not iw.worktree_clean():
-            self.__halt('Worktree not clean. Use "refresh" or "reset --hard"')
+            self._halt('Worktree not clean. Use "refresh" or "reset --hard"')
         if not iw.index.is_clean(self.stack.head):
-            self.__halt('Index not clean. Use "refresh" or "reset --hard"')
+            self._halt('Index not clean. Use "refresh" or "reset --hard"')
 
-    def __checkout(self, tree, iw, allow_bad_head):
+    def _checkout(self, tree, iw, allow_bad_head):
         if not allow_bad_head:
-            self.__assert_head_top_equal()
-        if self.__current_tree == tree and not self.__discard_changes:
+            self._assert_head_top_equal()
+        if self._current_tree == tree and not self._discard_changes:
             # No tree change, but we still want to make sure that
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
             # carrying them along to another patch is confusing.
             if (
-                self.__allow_conflicts(self)
+                self._allow_conflicts(self)
                 or iw is None
                 or not iw.index.conflicts()
             ):
                 return
             out.error('Need to resolve conflicts first')
-            self.__abort()
+            self._abort()
         assert iw is not None
-        if self.__discard_changes:
+        if self._discard_changes:
             iw.checkout_hard(tree)
         else:
-            iw.checkout(self.__current_tree, tree)
-        self.__current_tree = tree
+            iw.checkout(self._current_tree, tree)
+        self._current_tree = tree
 
     @staticmethod
-    def __abort():
-        raise TransactionException(
-            'Command aborted (all changes rolled back)')
+    def _abort():
+        raise TransactionException('Command aborted (all changes rolled back)')
 
-    def __check_consistency(self):
+    def _check_consistency(self):
         remaining = set(self.all_patches)
-        for pn, commit in self.__patches.items():
+        for pn, commit in self.patches.items():
             if commit is None:
-                assert self.__stack.patches.exists(pn)
+                assert self.stack.patches.exists(pn)
             else:
                 assert pn in remaining
 
     def abort(self, iw=None):
         # The only state we need to restore is index+worktree.
         if iw:
-            self.__checkout(
-                self.__stack.head.data.tree,
-                iw,
-                allow_bad_head=True,
-            )
+            self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
 
     def run(self, iw=None, set_head=True, allow_bad_head=False,
             print_current_patch=True):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
-        self.__check_consistency()
-        log_external_mods(self.__stack)
+        self._check_consistency()
+        log_external_mods(self.stack)
         new_head = self.head
 
         # Set branch head.
         if set_head:
             if iw:
                 try:
-                    self.__checkout(new_head.data.tree, iw, allow_bad_head)
+                    self._checkout(new_head.data.tree, iw, allow_bad_head)
                 except CheckoutException:
                     # We have to abort the transaction.
                     self.abort(iw)
-                    self.__abort()
-            self.__stack.set_head(new_head, self.__msg)
+                    self._abort()
+            self.stack.set_head(new_head, self._msg)
 
-        if self.__error:
-            if self.__conflicts:
-                out.error(*([self.__error] + self.__conflicts))
+        if self._error:
+            if self._conflicts:
+                out.error(*([self._error] + self._conflicts))
             else:
-                out.error(self.__error)
+                out.error(self._error)
 
         # Write patches.
         def write(msg):
-            for pn, commit in self.__patches.items():
-                if self.__stack.patches.exists(pn):
-                    p = self.__stack.patches.get(pn)
+            for pn, commit in self.patches.items():
+                if self.stack.patches.exists(pn):
+                    p = self.stack.patches.get(pn)
                     if commit is None:
                         p.delete()
                     else:
                         p.set_commit(commit, msg)
                 else:
-                    self.__stack.patches.new(pn, commit, msg)
-            self.__stack.patchorder.applied = self.__applied
-            self.__stack.patchorder.unapplied = self.__unapplied
-            self.__stack.patchorder.hidden = self.__hidden
-            log_entry(self.__stack, msg)
+                    self.stack.patches.new(pn, commit, msg)
+            self.stack.patchorder.applied = self._applied
+            self.stack.patchorder.unapplied = self._unapplied
+            self.stack.patchorder.hidden = self._hidden
+            log_entry(self.stack, msg)
 
-        old_applied = self.__stack.patchorder.applied
-        if not self.__conflicts:
-            write(self.__msg)
+        old_applied = self.stack.patchorder.applied
+        if not self._conflicts:
+            write(self._msg)
         else:
-            write(self.__msg + ' (CONFLICT)')
+            write(self._msg + ' (CONFLICT)')
         if print_current_patch:
-            _print_current_patch(old_applied, self.__applied)
+            _print_current_patch(old_applied, self._applied)
 
-        if self.__error:
+        if self._error:
             return utils.STGIT_CONFLICT
         else:
             return utils.STGIT_SUCCESS
 
-    def __halt(self, msg):
-        self.__error = msg
+    def _halt(self, msg):
+        self._error = msg
         raise TransactionHalted(msg)
 
     @staticmethod
-    def __print_popped(popped):
+    def _print_popped(popped):
         if len(popped) == 0:
             pass
         elif len(popped) == 1:
@@ -343,7 +330,7 @@ class StackTransaction(object):
         popped1 = [pn for pn in popped if not p(pn)]
         popped2 = [pn for pn in popped if p(pn)]
         self.unapplied = popped1 + popped2 + self.unapplied
-        self.__print_popped(popped)
+        self._print_popped(popped)
         return popped1
 
     def delete_patches(self, p, quiet=False):
@@ -360,7 +347,7 @@ class StackTransaction(object):
         popped = [pn for pn in popped if not p(pn)]
         self.unapplied = popped + [pn for pn in self.unapplied if not p(pn)]
         self.hidden = [pn for pn in self.hidden if not p(pn)]
-        self.__print_popped(popped)
+        self._print_popped(popped)
         for pn in all_patches:
             if p(pn):
                 s = ['', ' (empty)'][self.patches[pn].data.is_nochange()]
@@ -392,29 +379,29 @@ class StackTransaction(object):
         merge_conflict = False
         if not tree:
             if iw is None:
-                self.__halt('%s does not apply cleanly' % pn)
+                self._halt('%s does not apply cleanly' % pn)
             try:
-                self.__checkout(ours, iw, allow_bad_head=False)
+                self._checkout(ours, iw, allow_bad_head=False)
             except CheckoutException:
-                self.__halt('Index/worktree dirty')
+                self._halt('Index/worktree dirty')
             try:
                 interactive = (allow_interactive and
                                config.getbool('stgit.autoimerge'))
                 iw.merge(base, ours, theirs, interactive=interactive)
                 tree = iw.index.write_tree()
-                self.__current_tree = tree
+                self._current_tree = tree
                 s = 'modified'
             except MergeConflictException as e:
                 tree = ours
                 merge_conflict = True
-                self.__conflicts = e.conflicts
+                self._conflicts = e.conflicts
                 s = 'conflict'
             except MergeException as e:
-                self.__halt(str(e))
+                self._halt(str(e))
         cd = cd.set_tree(tree)
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
                ['parent', 'tree', 'author', 'message']):
-            comm = self.__stack.repository.commit(cd)
+            comm = self.stack.repository.commit(cd)
             if merge_conflict:
                 # When we produce a conflict, we'll run the update()
                 # function defined below _after_ having done the
@@ -434,7 +421,7 @@ class StackTransaction(object):
         if merge_conflict:
             # We've just caused conflicts, so we must allow them in
             # the final checkout.
-            self.__allow_conflicts = lambda trans: True
+            self._allow_conflicts = lambda trans: True
 
         # Update the stack state
         if comm:
@@ -447,7 +434,7 @@ class StackTransaction(object):
         self.applied.append(pn)
 
         if merge_conflict:
-            self.__halt("%d merge conflict(s)" % len(self.__conflicts))
+            self._halt("%d merge conflict(s)" % len(self._conflicts))
 
     def push_tree(self, pn):
         """Push the named patch without updating its tree."""
@@ -457,7 +444,7 @@ class StackTransaction(object):
         s = ''
         if any(getattr(cd, a) != getattr(orig_cd, a) for a in
                ['parent', 'tree', 'author', 'message']):
-            self.patches[pn] = self.__stack.repository.commit(cd)
+            self.patches[pn] = self.stack.repository.commit(cd)
         else:
             s = ' (unmodified)'
         if cd.is_nochange():

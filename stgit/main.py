@@ -38,14 +38,14 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 class CommandAlias(object):
     def __init__(self, name, command):
-        self.__command = command
+        self._command = command
         self.__name__ = name
         self.usage = ['<arguments>']
-        self.help = 'Alias for "%s <arguments>".' % self.__command
+        self.help = 'Alias for "%s <arguments>".' % self._command
         self.options = []
 
     def func(self, args):
-        cmd = self.__command.split() + args
+        cmd = self._command.split() + args
         p = run.Run(*cmd)
         p.discard_exitcode().run()
         return p.exitcode

@@ -55,14 +55,13 @@ class GitConfigException(StgException):
 
 class GitConfig(object):
 
-    __cache = None
+    _cache = None
 
     def load(self):
-        """Load the whole configuration in __cache unless it has been
-        done already."""
-        if self.__cache is not None:
+        """Load the configuration in _cache unless it has been done already."""
+        if self._cache is not None:
             return
-        self.__cache = DEFAULTS.copy()
+        self._cache = DEFAULTS.copy()
         lines = Run('git', 'config', '--null', '--list'
                     ).discard_exitcode().output_lines('\0')
         for line in lines:
@@ -71,19 +70,19 @@ class GitConfig(object):
             except ValueError:
                 key = line
                 value = None
-            self.__cache.setdefault(key, []).append(value)
+            self._cache.setdefault(key, []).append(value)
 
     def get(self, name):
         self.load()
         try:
-            return self.__cache[name][-1]
+            return self._cache[name][-1]
         except KeyError:
             return None
 
     def getall(self, name):
         self.load()
         try:
-            return self.__cache[name]
+            return self._cache[name]
         except KeyError:
             return []
 
@@ -105,7 +104,7 @@ class GitConfig(object):
         # reported as "true".
         self.load()
         try:
-            value = self.__cache[name][-1]
+            value = self._cache[name][-1]
         except KeyError:
             return None
         if value is None:
@@ -123,7 +122,7 @@ class GitConfig(object):
 
     def getstartswith(self, name):
         self.load()
-        return ((n, v[-1]) for (n, v) in self.__cache.items()
+        return ((n, v[-1]) for (n, v) in self._cache.items()
                 if n.startswith(name))
 
     def rename_section(self, from_name, to_name):
@@ -131,22 +130,22 @@ class GitConfig(object):
         the section doesn't exist."""
         Run('git', 'config', '--rename-section', from_name, to_name
             ).returns([0, 1, 128]).run()
-        self.__cache.clear()
+        self._cache.clear()
 
     def remove_section(self, name):
         """Remove a section in the config file. Silently do nothing if
         the section doesn't exist."""
         Run('git', 'config', '--remove-section', name
             ).returns([0, 1, 128]).discard_stderr().discard_output()
-        self.__cache.clear()
+        self._cache.clear()
 
     def set(self, name, value):
         Run('git', 'config', name, value).run()
-        self.__cache[name] = value
+        self._cache[name] = value
 
     def unset(self, name):
         Run('git', 'config', '--unset', name).run()
-        self.__cache[name] = [None]
+        self._cache[name] = [None]
 
     def sections_matching(self, regexp):
         """Takes a regexp with a single group, matches it against all

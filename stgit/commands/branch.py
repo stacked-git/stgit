@@ -181,7 +181,7 @@ crt_series = None
 
 
 def __is_current_branch(branch_name):
-    return crt_series.get_name() == branch_name
+    return crt_series.name == branch_name
 
 
 def __print_branch(branch_name, length):
@@ -295,7 +295,7 @@ def func(parser, options, args):
     elif options.clone:
 
         if len(args) == 0:
-            clone = crt_series.get_name() + time.strftime('-%C%y%m%d-%H%M%S')
+            clone = crt_series.name + time.strftime('-%C%y%m%d-%H%M%S')
         elif len(args) == 1:
             clone = args[0]
         else:
@@ -309,7 +309,7 @@ def func(parser, options, args):
         crt_series.clone(clone)
         out.done()
 
-        log.copy_log(log.default_repo(), crt_series.get_name(), clone,
+        log.copy_log(log.default_repo(), crt_series.name, clone,
                      'branch --clone')
         return
 
@@ -324,7 +324,7 @@ def func(parser, options, args):
     elif options.cleanup:
 
         if not args:
-            name = crt_series.get_name()
+            name = crt_series.name
         elif len(args) == 1:
             name = args[0]
         else:
@@ -356,7 +356,7 @@ def func(parser, options, args):
     elif options.protect:
 
         if len(args) == 0:
-            branch_name = crt_series.get_name()
+            branch_name = crt_series.name
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -390,7 +390,7 @@ def func(parser, options, args):
     elif options.unprotect:
 
         if len(args) == 0:
-            branch_name = crt_series.get_name()
+            branch_name = crt_series.name
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -410,7 +410,7 @@ def func(parser, options, args):
     elif options.description is not None:
 
         if len(args) == 0:
-            branch_name = crt_series.get_name()
+            branch_name = crt_series.name
         elif len(args) == 1:
             branch_name = args[0]
         else:
@@ -445,4 +445,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    out.stdout(crt_series.get_name())
+    out.stdout(crt_series.name)

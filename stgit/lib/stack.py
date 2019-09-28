@@ -24,41 +24,37 @@ class Patch(object):
     reading and writing the on-disk representation of a patch."""
 
     def __init__(self, stack, name):
-        self.__stack = stack
-        self.__name = name
+        self._stack = stack
+        self.name = name
 
     @property
-    def name(self):
-        return self.__name
+    def _ref(self):
+        return 'refs/patches/%s/%s' % (self._stack.name, self.name)
 
     @property
-    def __ref(self):
-        return 'refs/patches/%s/%s' % (self.__stack.name, self.__name)
-
-    @property
-    def __log_ref(self):
-        return self.__ref + '.log'
+    def _log_ref(self):
+        return self._ref + '.log'
 
     @property
     def commit(self):
-        return self.__stack.repository.refs.get(self.__ref)
+        return self._stack.repository.refs.get(self._ref)
 
     @property
     def old_commit(self):
         """Return the previous commit for this patch."""
-        fn = os.path.join(self.__compat_dir, 'top.old')
+        fn = os.path.join(self._compat_dir, 'top.old')
         if not os.path.isfile(fn):
             return None
-        return self.__stack.repository.get_commit(utils.read_string(fn))
+        return self._stack.repository.get_commit(utils.read_string(fn))
 
     @property
-    def __compat_dir(self):
-        return os.path.join(self.__stack.directory, 'patches', self.__name)
+    def _compat_dir(self):
+        return os.path.join(self._stack.directory, 'patches', self.name)
 
-    def __write_compat_files(self, new_commit, msg):
+    def _write_compat_files(self, new_commit, msg):
         """Write files used by the old infrastructure."""
         def write(name, val, multiline=False):
-            fn = os.path.join(self.__compat_dir, name)
+            fn = os.path.join(self._compat_dir, name)
             if val:
                 utils.write_string(fn, val, multiline)
             elif os.path.isfile(fn):
@@ -66,7 +62,7 @@ class Patch(object):
 
         def write_patchlog():
             try:
-                old_log = [self.__stack.repository.refs.get(self.__log_ref)]
+                old_log = [self._stack.repository.refs.get(self._log_ref)]
             except KeyError:
                 old_log = []
             cd = CommitData(
@@ -74,8 +70,8 @@ class Patch(object):
                 parents=old_log,
                 message='%s\t%s' % (msg, new_commit.sha1),
             )
-            c = self.__stack.repository.commit(cd)
-            self.__stack.repository.refs.set(self.__log_ref, c, msg)
+            c = self._stack.repository.commit(cd)
+            self._stack.repository.refs.set(self._log_ref, c, msg)
             return c
 
         d = new_commit.data
@@ -97,27 +93,27 @@ class Patch(object):
         write('top.old', old_top_sha1)
         write('bottom.old', old_bottom_sha1)
 
-    def __delete_compat_files(self):
-        if os.path.isdir(self.__compat_dir):
-            for f in os.listdir(self.__compat_dir):
-                os.remove(os.path.join(self.__compat_dir, f))
-            os.rmdir(self.__compat_dir)
+    def _delete_compat_files(self):
+        if os.path.isdir(self._compat_dir):
+            for f in os.listdir(self._compat_dir):
+                os.remove(os.path.join(self._compat_dir, f))
+            os.rmdir(self._compat_dir)
         try:
             # this compatibility log ref might not exist
-            self.__stack.repository.refs.delete(self.__log_ref)
+            self._stack.repository.refs.delete(self._log_ref)
         except KeyError:
             pass
 
     def set_commit(self, commit, msg):
-        self.__write_compat_files(commit, msg)
-        self.__stack.repository.refs.set(self.__ref, commit, msg)
+        self._write_compat_files(commit, msg)
+        self._stack.repository.refs.set(self._ref, commit, msg)
 
     def delete(self):
-        self.__delete_compat_files()
-        self.__stack.repository.refs.delete(self.__ref)
+        self._delete_compat_files()
+        self._stack.repository.refs.delete(self._ref)
 
     def is_applied(self):
-        return self.name in self.__stack.patchorder.applied
+        return self.name in self._stack.patchorder.applied
 
     def is_empty(self):
         return self.commit.data.is_nochange()
@@ -125,7 +121,7 @@ class Patch(object):
     def files(self):
         """Return the set of files this patch touches."""
         fs = set()
-        for dt in self.__stack.repository.diff_tree_files(
+        for dt in self._stack.repository.diff_tree_files(
             self.commit.data.parent.data.tree, self.commit.data.tree,
         ):
             _, _, _, _, _, oldname, newname = dt
@@ -139,50 +135,51 @@ class PatchOrder(object):
     Works with patch names, not actual patches."""
 
     def __init__(self, stack):
-        self.__stack = stack
-        self.__lists = {}
+        self._stack = stack
+        self._lists = {}
 
-    def __read_file(self, fn):
+    def _read_file(self, fn):
         return tuple(utils.read_strings(
-            os.path.join(self.__stack.directory, fn)))
+            os.path.join(self._stack.directory, fn))
+        )
 
-    def __write_file(self, fn, val):
-        utils.write_strings(os.path.join(self.__stack.directory, fn), val)
+    def _write_file(self, fn, val):
+        utils.write_strings(os.path.join(self._stack.directory, fn), val)
 
-    def __get_list(self, name):
-        if name not in self.__lists:
-            self.__lists[name] = self.__read_file(name)
-        return self.__lists[name]
+    def _get_list(self, name):
+        if name not in self._lists:
+            self._lists[name] = self._read_file(name)
+        return self._lists[name]
 
-    def __set_list(self, name, val):
+    def _set_list(self, name, val):
         val = tuple(val)
-        if val != self.__lists.get(name, None):
-            self.__lists[name] = val
-            self.__write_file(name, val)
+        if val != self._lists.get(name, None):
+            self._lists[name] = val
+            self._write_file(name, val)
 
     @property
     def applied(self):
-        return self.__get_list('applied')
+        return self._get_list('applied')
 
     @applied.setter
     def applied(self, value):
-        self.__set_list('applied', value)
+        self._set_list('applied', value)
 
     @property
     def unapplied(self):
-        return self.__get_list('unapplied')
+        return self._get_list('unapplied')
 
     @unapplied.setter
     def unapplied(self, value):
-        self.__set_list('unapplied', value)
+        self._set_list('unapplied', value)
 
     @property
     def hidden(self):
-        return self.__get_list('hidden')
+        return self._get_list('hidden')
 
     @hidden.setter
     def hidden(self, value):
-        self.__set_list('hidden', value)
+        self._set_list('hidden', value)
 
     @property
     def all(self):
@@ -206,14 +203,14 @@ class Patches(object):
     per patch."""
 
     def __init__(self, stack):
-        self.__stack = stack
+        self._stack = stack
 
         def create_patch(name):
-            p = Patch(self.__stack, name)
+            p = Patch(self._stack, name)
             p.commit  # raise exception if the patch doesn't exist
             return p
 
-        self.__patches = ObjectCache(create_patch)  # name -> Patch
+        self._patches = ObjectCache(create_patch)  # name -> Patch
 
     def exists(self, name):
         try:
@@ -223,13 +220,13 @@ class Patches(object):
             return False
 
     def get(self, name):
-        return self.__patches[name]
+        return self._patches[name]
 
     def new(self, name, commit, msg):
-        assert name not in self.__patches
-        p = Patch(self.__stack, name)
+        assert name not in self._patches
+        p = Patch(self._stack, name)
         p.set_commit(commit, msg)
-        self.__patches[name] = p
+        self._patches[name] = p
         return p
 
 
@@ -237,27 +234,19 @@ class Stack(Branch):
     """Represents an StGit stack (that is, a git branch with some extra
     metadata)."""
 
-    __repo_subdir = 'patches'
+    _repo_subdir = 'patches'
 
     def __init__(self, repository, name):
         Branch.__init__(self, repository, name)
-        self.__patchorder = PatchOrder(self)
-        self.__patches = Patches(self)
+        self.patchorder = PatchOrder(self)
+        self.patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
             raise StackException('%s: branch not initialized' % name)
 
     @property
-    def patchorder(self):
-        return self.__patchorder
-
-    @property
-    def patches(self):
-        return self.__patches
-
-    @property
     def directory(self):
         return os.path.join(
-            self.repository.directory, self.__repo_subdir, self.name
+            self.repository.directory, self._repo_subdir, self.name
         )
 
     @property
@@ -315,7 +304,7 @@ class Stack(Branch):
         # make sure that the corresponding Git branch exists
         Branch(repository, name)
 
-        dir = os.path.join(repository.directory, cls.__repo_subdir, name)
+        dir = os.path.join(repository.directory, cls._repo_subdir, name)
         compat_dir = os.path.join(dir, 'patches')
         if os.path.exists(dir):
             raise StackException('%s: branch already initialized' % name)
@@ -353,7 +342,7 @@ class StackRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         Repository.__init__(self, *args, **kwargs)
-        self.__stacks = {}  # name -> Stack
+        self._stacks = {}  # name -> Stack
 
     @property
     def current_stack(self):
@@ -362,6 +351,6 @@ class StackRepository(Repository):
     def get_stack(self, name=None):
         if not name:
             name = self.current_branch_name
-        if name not in self.__stacks:
-            self.__stacks[name] = Stack(self, name)
-        return self.__stacks[name]
+        if name not in self._stacks:
+            self._stacks[name] = Stack(self, name)
+        return self._stacks[name]

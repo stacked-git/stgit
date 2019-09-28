@@ -39,13 +39,13 @@ class Refs(object):
     transparently cache the values of all refs."""
 
     def __init__(self, repository):
-        self.__repository = repository
-        self.__refs = None
+        self._repository = repository
+        self._refs = None
 
-    def __cache_refs(self):
+    def _cache_refs(self):
         """(Re-)Build the cache of all refs in the repository."""
-        self.__refs = {}
-        runner = self.__repository.run(['git', 'show-ref'])
+        self._refs = {}
+        runner = self._repository.run(['git', 'show-ref'])
         try:
             lines = runner.output_lines()
         except RunException:
@@ -55,7 +55,7 @@ class Refs(object):
         for line in lines:
             m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line)
             sha1, ref = m.groups()
-            self.__refs[ref] = sha1
+            self._refs[ref] = sha1
 
     def reset_cache(self):
         """Reset cached refs such that cache is rebuilt on next access.
@@ -64,14 +64,14 @@ class Refs(object):
         such as `git pull`.
 
         """
-        self.__refs = None
+        self._refs = None
 
     def get(self, ref):
         """Get the Commit the given ref points to. Throws KeyError if ref
         doesn't exist."""
-        if self.__refs is None:
-            self.__cache_refs()
-        return self.__repository.get_commit(self.__refs[ref])
+        if self._refs is None:
+            self._cache_refs()
+        return self._repository.get_commit(self._refs[ref])
 
     def exists(self, ref):
         """Check if the given ref exists."""
@@ -85,48 +85,47 @@ class Refs(object):
     def set(self, ref, commit, msg):
         """Write the sha1 of the given Commit to the ref. The ref may or may
         not already exist."""
-        if self.__refs is None:
-            self.__cache_refs()
-        old_sha1 = self.__refs.get(ref, '0' * 40)
+        if self._refs is None:
+            self._cache_refs()
+        old_sha1 = self._refs.get(ref, '0' * 40)
         new_sha1 = commit.sha1
         if old_sha1 != new_sha1:
-            self.__repository.run(
+            self._repository.run(
                 ['git', 'update-ref', '-m', msg, ref, new_sha1, old_sha1]
             ).no_output()
-            self.__refs[ref] = new_sha1
+            self._refs[ref] = new_sha1
 
     def delete(self, ref):
         """Delete the given ref. Throws KeyError if ref doesn't exist."""
-        if self.__refs is None:
-            self.__cache_refs()
-        self.__repository.run(
-            ['git', 'update-ref', '-d', ref, self.__refs[ref]]
+        if self._refs is None:
+            self._cache_refs()
+        self._repository.run(
+            ['git', 'update-ref', '-d', ref, self._refs[ref]]
         ).no_output()
-        del self.__refs[ref]
+        del self._refs[ref]
 
 
 class CatFileProcess(object):
     def __init__(self, repo):
-        self.__repo = repo
-        self.__proc = None
-        atexit.register(self.__shutdown)
+        self._repository = repo
+        self._proc = None
+        atexit.register(self._shutdown)
 
-    def __get_process(self):
-        if not self.__proc:
-            self.__proc = self.__repo.run(
+    def _get_process(self):
+        if not self._proc:
+            self._proc = self._repository.run(
                 ['git', 'cat-file', '--batch']
             ).run_background()
-        return self.__proc
+        return self._proc
 
-    def __shutdown(self):
-        p = self.__proc
-        if p:
-            p.stdin.close()
-            os.kill(p.pid(), signal.SIGTERM)
-            p.wait()
+    def _shutdown(self):
+        if self._proc:
+            self._proc.stdin.close()
+            os.kill(self._proc.pid(), signal.SIGTERM)
+            self._proc.wait()
 
     def cat_file(self, sha1, encoding):
-        p = self.__get_process()
+        p = self._get_process()
         p.stdin.write('%s\n' % sha1)
         p.stdin.flush()
 
@@ -155,25 +154,25 @@ class CatFileProcess(object):
 
 class DiffTreeProcesses(object):
     def __init__(self, repo):
-        self.__repo = repo
-        self.__procs = {}
-        atexit.register(self.__shutdown)
+        self._repository = repo
+        self._procs = {}
+        atexit.register(self._shutdown)
 
-    def __get_process(self, args):
+    def _get_process(self, args):
         args = tuple(args)
-        if args not in self.__procs:
-            self.__procs[args] = self.__repo.run(
+        if args not in self._procs:
+            self._procs[args] = self._repository.run(
                 ['git', 'diff-tree', '--stdin'] + list(args)
             ).run_background()
-        return self.__procs[args]
+        return self._procs[args]
 
-    def __shutdown(self):
-        for p in self.__procs.values():
+    def _shutdown(self):
+        for p in self._procs.values():
             os.kill(p.pid(), signal.SIGTERM)
             p.wait()
 
     def diff_trees(self, args, sha1a, sha1b):
-        p = self.__get_process(args)
+        p = self._get_process(args)
         query = ('%s %s\n' % (sha1a, sha1b)).encode('utf-8')
         end = b'EOF\n'  # arbitrary string that's not a 40-digit hex number
         os.write(p.stdin.fileno(), query + end)
@@ -190,20 +189,20 @@ class Repository(object):
     """Represents a git repository."""
 
     def __init__(self, directory):
-        self.__git_dir = directory
-        self.__refs = Refs(self)
-        self.__blobs = ObjectCache(lambda sha1: Blob(self, sha1))
-        self.__trees = ObjectCache(lambda sha1: Tree(self, sha1))
-        self.__commits = ObjectCache(lambda sha1: Commit(self, sha1))
-        self.__default_index = None
-        self.__default_worktree = None
-        self.__default_iw = None
-        self.__catfile = CatFileProcess(self)
-        self.__difftree = DiffTreeProcesses(self)
+        self._git_dir = directory
+        self.refs = Refs(self)
+        self._blobs = ObjectCache(lambda sha1: Blob(self, sha1))
+        self._trees = ObjectCache(lambda sha1: Tree(self, sha1))
+        self._commits = ObjectCache(lambda sha1: Commit(self, sha1))
+        self._default_index = None
+        self._default_worktree = None
+        self._default_iw = None
+        self._catfile = CatFileProcess(self)
+        self._difftree = DiffTreeProcesses(self)
 
     @property
     def env(self):
-        return {'GIT_DIR': self.__git_dir}
+        return {'GIT_DIR': self._git_dir}
 
     @classmethod
     def default(cls):
@@ -222,57 +221,53 @@ class Repository(object):
     def default_index(self):
         """An L{Index} object representing the default index file for the
         repository."""
-        if self.__default_index is None:
-            self.__default_index = Index(
+        if self._default_index is None:
+            self._default_index = Index(
                 self,
                 (
                     environ_get('GIT_INDEX_FILE', None)
-                    or os.path.join(self.__git_dir, 'index')
+                    or os.path.join(self._git_dir, 'index')
                 ),
             )
-        return self.__default_index
+        return self._default_index
 
     def temp_index(self):
         """Return an L{Index} object representing a new temporary index file
         for the repository."""
-        return Index(self, self.__git_dir)
+        return Index(self, self._git_dir)
 
     @property
     def default_worktree(self):
         """A L{Worktree} object representing the default work tree."""
-        if self.__default_worktree is None:
+        if self._default_worktree is None:
             path = environ_get('GIT_WORK_TREE', None)
             if not path:
                 o = Run('git', 'rev-parse', '--show-cdup').output_lines()
                 o = o or ['.']
                 assert len(o) == 1
                 path = o[0]
-            self.__default_worktree = Worktree(path)
-        return self.__default_worktree
+            self._default_worktree = Worktree(path)
+        return self._default_worktree
 
     @property
     def default_iw(self):
         """An L{IndexAndWorktree} object representing the default index and
         work tree for this repository."""
-        if self.__default_iw is None:
-            self.__default_iw = IndexAndWorktree(
+        if self._default_iw is None:
+            self._default_iw = IndexAndWorktree(
                 self.default_index, self.default_worktree
             )
-        return self.__default_iw
+        return self._default_iw
 
     @property
     def directory(self):
-        return self.__git_dir
-
-    @property
-    def refs(self):
-        return self.__refs
+        return self._git_dir
 
     def run(self, args, env=()):
         return Run(*args).env(add_dict(self.env, env))
 
     def cat_object(self, sha1, encoding='utf-8'):
-        return self.__catfile.cat_file(sha1, encoding)[1]
+        return self._catfile.cat_file(sha1, encoding)[1]
 
     def rev_parse(self, rev, discard_stderr=False, object_type='commit'):
         assert object_type in ('commit', 'tree', 'blob')
@@ -287,13 +282,13 @@ class Repository(object):
             raise RepositoryException('%s: No such %s' % (rev, object_type))
 
     def get_blob(self, sha1):
-        return self.__blobs[sha1]
+        return self._blobs[sha1]
 
     def get_tree(self, sha1):
-        return self.__trees[sha1]
+        return self._trees[sha1]
 
     def get_commit(self, sha1):
-        return self.__commits[sha1]
+        return self._commits[sha1]
 
     def get_object(self, type, sha1):
         return {
@@ -394,7 +389,7 @@ class Repository(object):
         if pathlimits:
             args.append('--')
             args.extend(pathlimits)
-        return self.__difftree.diff_trees(args, t1.sha1, t2.sha1)
+        return self._difftree.diff_trees(args, t1.sha1, t2.sha1)
 
     def diff_tree_files(self, t1, t2):
         """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
@@ -405,7 +400,7 @@ class Repository(object):
         identical."""
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
-        dt = self.__difftree.diff_trees(['-r', '-z'], t1.sha1, t2.sha1)
+        dt = self._difftree.diff_trees(['-r', '-z'], t1.sha1, t2.sha1)
         i = iter(dt.decode('utf-8').split('\0'))
         try:
             while True:

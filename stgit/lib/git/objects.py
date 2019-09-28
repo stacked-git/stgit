@@ -26,11 +26,7 @@ class BlobData(Immutable):
 
     def __init__(self, data):
         assert isinstance(data, bytes)
-        self.__bytes = data
-
-    @property
-    def bytes(self):
-        return self.__bytes
+        self.bytes = data
 
     def commit(self, repository):
         """Commit the blob.
@@ -54,26 +50,22 @@ class Blob(GitObject):
     default_perm = '100644'
 
     def __init__(self, repository, sha1):
-        self.__repository = repository
-        self.__sha1 = sha1
-
-    @property
-    def sha1(self):
-        return self.__sha1
+        self._repository = repository
+        self.sha1 = sha1
 
     def __repr__(self):
         return 'Blob<%s>' % self.sha1
 
     @property
     def data(self):
-        return BlobData(self.__repository.cat_object(self.sha1, encoding=None))
+        return BlobData(self._repository.cat_object(self.sha1, encoding=None))
 
 
 class TreeData(Immutable):
     """Represents the data contents of a git tree object."""
 
     @staticmethod
-    def __x(po):
+    def _x(po):
         if isinstance(po, GitObject):
             perm, object = po.default_perm, po
         else:
@@ -84,13 +76,9 @@ class TreeData(Immutable):
         """Create a new L{TreeData} object from the given mapping from names
         (strings) to either (I{permission}, I{object}) tuples or just
         objects."""
-        self.__entries = ImmutableDict(
-            (name, self.__x(po)) for (name, po) in entries.items()
+        self.entries = ImmutableDict(
+            (name, self._x(po)) for (name, po) in entries.items()
         )
-
-    @property
-    def entries(self):
-        return self.__entries
 
     def commit(self, repository):
         """Commit the tree.
@@ -130,24 +118,20 @@ class Tree(GitObject):
     default_perm = '040000'
 
     def __init__(self, repository, sha1):
-        self.__sha1 = sha1
-        self.__repository = repository
-        self.__data = None
-
-    @property
-    def sha1(self):
-        return self.__sha1
+        self.sha1 = sha1
+        self._repository = repository
+        self._data = None
 
     @property
     def data(self):
-        if self.__data is None:
-            self.__data = TreeData.parse(
-                self.__repository,
-                self.__repository.run(
+        if self._data is None:
+            self._data = TreeData.parse(
+                self._repository,
+                self._repository.run(
                     ['git', 'ls-tree', '-z', self.sha1]
                 ).output_lines('\0'),
             )
-        return self.__data
+        return self._data
 
     def __repr__(self):
         return 'Tree<sha1: %s>' % self.sha1
@@ -166,11 +150,11 @@ class CommitData(Immutable):
         defaults=NoValue,
     ):
         d = make_defaults(defaults)
-        self.__tree = d(tree, 'tree')
-        self.__parents = d(parents, 'parents')
-        self.__author = d(author, 'author', Person.author)
-        self.__committer = d(committer, 'committer', Person.committer)
-        self.__message = d(message, 'message')
+        self.tree = d(tree, 'tree')
+        self.parents = d(parents, 'parents')
+        self.author = d(author, 'author', Person.author)
+        self.committer = d(committer, 'committer', Person.committer)
+        self.message = d(message, 'message')
 
     @property
     def env(self):
@@ -187,29 +171,9 @@ class CommitData(Immutable):
         return env
 
     @property
-    def tree(self):
-        return self.__tree
-
-    @property
-    def parents(self):
-        return self.__parents
-
-    @property
     def parent(self):
-        assert len(self.__parents) == 1
-        return self.__parents[0]
-
-    @property
-    def author(self):
-        return self.__author
-
-    @property
-    def committer(self):
-        return self.__committer
-
-    @property
-    def message(self):
-        return self.__message
+        assert len(self.parents) == 1
+        return self.parents[0]
 
     def set_tree(self, tree):
         return type(self)(tree=tree, defaults=self)
@@ -306,21 +270,17 @@ class Commit(GitObject):
     typename = 'commit'
 
     def __init__(self, repository, sha1):
-        self.__sha1 = sha1
-        self.__repository = repository
-        self.__data = None
-
-    @property
-    def sha1(self):
-        return self.__sha1
+        self.sha1 = sha1
+        self._repository = repository
+        self._data = None
 
     @property
     def data(self):
-        if self.__data is None:
-            self.__data = CommitData.parse(
-                self.__repository, self.__repository.cat_object(self.sha1)
+        if self._data is None:
+            self._data = CommitData.parse(
+                self._repository, self._repository.cat_object(self.sha1)
             )
-        return self.__data
+        return self._data
 
     def __repr__(self):
-        return 'Commit<sha1: %s, data: %s>' % (self.sha1, self.__data)
+        return 'Commit<sha1: %s, data: %s>' % (self.sha1, self._data)

@@ -87,14 +87,14 @@ class Output(object):
 class MessagePrinter(object):
     def __init__(self, file=None):
         if file:
-            self.__stdout = self.__stderr = Output(file)
+            self._stdout = self._stderr = Output(file)
         else:
-            self.__stdout = Output(
+            self._stdout = Output(
                 io.open(
                     sys.stdout.fileno(), 'w', buffering=1, encoding='utf-8'
                 )
             )
-            self.__stderr = Output(
+            self._stderr = Output(
                 io.open(
                     sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8'
                 )
@@ -102,51 +102,51 @@ class MessagePrinter(object):
 
     def stdout(self, line):
         """Write a line to stdout."""
-        self.__stdout.write_line(line)
+        self._stdout.write_line(line)
 
     def stdout_raw(self, string):
         """Write a string possibly containing newlines to stdout."""
-        self.__stdout.write_raw(string)
+        self._stdout.write_raw(string)
 
     def stdout_bytes(self, byte_data):
-        self.__stdout.write_bytes(byte_data)
-        self.__stdout.flush()
+        self._stdout.write_bytes(byte_data)
+        self._stdout.flush()
 
     def err_raw(self, string):
         """Write a string possibly containing newlines to the error output."""
-        self.__stderr.write_raw(string)
+        self._stderr.write_raw(string)
 
     def err_bytes(self, byte_data):
         """Write encoded byte data to the error output."""
-        self.__stderr.write_bytes(byte_data)
-        self.__stderr.flush()
+        self._stderr.write_bytes(byte_data)
+        self._stderr.flush()
 
     def info(self, *msgs):
         for msg in msgs:
-            self.__stderr.single_line(msg)
+            self._stderr.single_line(msg)
 
     def note(self, *msgs, **kw):
-        self.__stderr.tagged_lines(kw.get('title', 'Notice'), msgs)
+        self._stderr.tagged_lines(kw.get('title', 'Notice'), msgs)
 
     def warn(self, *msgs, **kw):
-        self.__stderr.tagged_lines(kw.get('title', 'Warning'), msgs)
+        self._stderr.tagged_lines(kw.get('title', 'Warning'), msgs)
 
     def error(self, *msgs, **kw):
-        self.__stderr.tagged_lines(kw.get('title', 'Error'), msgs)
+        self._stderr.tagged_lines(kw.get('title', 'Error'), msgs)
 
     def start(self, msg):
         """Start a long-running operation."""
-        self.__stderr.single_line('%s ... ' % msg, print_newline=False)
-        self.__stderr.level += 1
+        self._stderr.single_line('%s ... ' % msg, print_newline=False)
+        self._stderr.level += 1
 
     def done(self, extramsg=None):
         """Finish long-running operation."""
-        self.__stderr.level -= 1
+        self._stderr.level -= 1
         if extramsg:
             msg = 'done (%s)' % extramsg
         else:
             msg = 'done'
-        self.__stderr.single_line(msg, need_newline=False)
+        self._stderr.single_line(msg, need_newline=False)
 
 
 out = MessagePrinter()

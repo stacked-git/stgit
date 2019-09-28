@@ -146,14 +146,13 @@ def log_ref(branch):
 
 
 class LogEntry(object):
-    __separator = '\n---\n'
-    __max_parents = 16
+    _max_parents = 16
 
     def __init__(self, repo, prev, head, applied, unapplied, hidden,
                  patches, message):
-        self.__repo = repo
-        self.__prev = prev
-        self.__simplified = None
+        self._repo = repo
+        self._prev = prev
+        self._simplified = None
         self.head = head
         self.applied = applied
         self.unapplied = unapplied
@@ -163,15 +162,15 @@ class LogEntry(object):
 
     @property
     def simplified(self):
-        if not self.__simplified:
-            self.__simplified = self.commit.data.parents[0]
-        return self.__simplified
+        if not self._simplified:
+            self._simplified = self.commit.data.parents[0]
+        return self._simplified
 
     @property
     def prev(self):
-        if self.__prev is not None and not isinstance(self.__prev, LogEntry):
-            self.__prev = self.from_commit(self.__repo, self.__prev)
-        return self.__prev
+        if self._prev is not None and not isinstance(self._prev, LogEntry):
+            self._prev = self.from_commit(self._repo, self._prev)
+        return self._prev
 
     @property
     def base(self):
@@ -208,7 +207,7 @@ class LogEntry(object):
         )
 
     @staticmethod
-    def __parse_metadata(repo, metadata):
+    def _parse_metadata(repo, metadata):
         """Parse a stack log metadata string."""
         if not metadata.startswith('Version:'):
             raise LogParseException('Malformed log metadata')
@@ -261,14 +260,14 @@ class LogEntry(object):
             raise LogParseException('Not a stack log')
         (
             prev, head, applied, unapplied, hidden, patches
-        ) = cls.__parse_metadata(repo, meta.data.bytes.decode('utf-8'))
+        ) = cls._parse_metadata(repo, meta.data.bytes.decode('utf-8'))
         lg = cls(
             repo, prev, head, applied, unapplied, hidden, patches, message
         )
         lg.commit = commit
         return lg
 
-    def __metadata_string(self):
+    def _metadata_string(self):
         e = StringIO()
         e.write('Version: 1\n')
         if self.prev is None:
@@ -284,7 +283,7 @@ class LogEntry(object):
                 e.write('  %s: %s\n' % (pn, self.patches[pn].sha1))
         return e.getvalue()
 
-    def __parents(self):
+    def _parents(self):
         """Return the set of parents this log entry needs in order to be a
         descendant of all the commits it refers to."""
         xp = set([self.head]) | set(self.patches[pn]
@@ -296,10 +295,10 @@ class LogEntry(object):
             xp -= set(self.prev.patches.values())
         return xp
 
-    def __tree(self, metadata):
+    def _tree(self, metadata):
         if self.prev is None:
             def pf(c):
-                return patch_file(self.__repo, c.data)
+                return patch_file(self._repo, c.data)
         else:
             prev_top_tree = self.prev.commit.data.tree
             perm, prev_patch_tree = prev_top_tree.data.entries['patches']
@@ -311,25 +310,25 @@ class LogEntry(object):
             def pf(c):
                 r = c2b.get(c, None)
                 if not r:
-                    r = patch_file(self.__repo, c.data)
+                    r = patch_file(self._repo, c.data)
                 return r
 
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
-        return self.__repo.commit(
+        return self._repo.commit(
             TreeData(
                 {
-                    'meta': self.__repo.commit(
+                    'meta': self._repo.commit(
                         BlobData(metadata.encode('utf-8'))
                     ),
-                    'patches': self.__repo.commit(TreeData(patches)),
+                    'patches': self._repo.commit(TreeData(patches)),
                 }
             )
         )
 
     def write_commit(self):
-        metadata = self.__metadata_string()
-        tree = self.__tree(metadata)
-        self.__simplified = self.__repo.commit(
+        metadata = self._metadata_string()
+        tree = self._tree(metadata)
+        self._simplified = self._repo.commit(
             CommitData(
                 tree=tree,
                 message=self.message,
@@ -340,17 +339,17 @@ class LogEntry(object):
                 ]
             )
         )
-        parents = list(self.__parents())
-        while len(parents) >= self.__max_parents:
-            g = self.__repo.commit(
+        parents = list(self._parents())
+        while len(parents) >= self._max_parents:
+            g = self._repo.commit(
                 CommitData(
                     tree=tree,
-                    parents=parents[-self.__max_parents:],
+                    parents=parents[-self._max_parents:],
                     message='Stack log parent grouping',
                 )
             )
-            parents[-self.__max_parents:] = [g]
-        self.commit = self.__repo.commit(
+            parents[-self._max_parents:] = [g]
+        self.commit = self._repo.commit(
             CommitData(
                 tree=tree,
                 message=self.message,

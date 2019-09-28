@@ -35,20 +35,20 @@ class Index(object):
     """Represents a git index file."""
 
     def __init__(self, repository, filename):
-        self.__repository = repository
+        self._repository = repository
         if os.path.isdir(filename):
             # Create a temp index in the given directory.
-            self.__filename = os.path.join(
+            self._filename = os.path.join(
                 filename, 'index.temp-%d-%x' % (os.getpid(), id(self))
             )
             self.delete()
         else:
-            self.__filename = filename
+            self._filename = filename
 
     @property
     def env(self):
         return add_dict(
-            self.__repository.env, {'GIT_INDEX_FILE': self.__filename}
+            self._repository.env, {'GIT_INDEX_FILE': self._filename}
         )
 
     def run(self, args, env=()):
@@ -62,7 +62,7 @@ class Index(object):
         @return: The resulting L{Tree}
         @rtype: L{Tree}"""
         try:
-            return self.__repository.get_tree(
+            return self._repository.get_tree(
                 self.run(['git', 'write-tree'])
                 .discard_stderr()
                 .output_one_line()
@@ -99,7 +99,7 @@ class Index(object):
         # contains all involved objects; in other words, we don't have
         # to use --binary.
         self.apply(
-            self.__repository.diff_tree(tree1, tree2, ['--full-index']), quiet
+            self._repository.diff_tree(tree1, tree2, ['--full-index']), quiet
         )
 
     def merge(self, base, ours, theirs, current=None):
@@ -144,8 +144,8 @@ class Index(object):
             return (None, ours)
 
     def delete(self):
-        if os.path.isfile(self.__filename):
-            os.remove(self.__filename)
+        if os.path.isfile(self._filename):
+            os.remove(self._filename)
 
     def conflicts(self):
         """The set of conflicting paths."""
@@ -162,7 +162,7 @@ class Worktree(object):
     """Represents a git worktree (that is, a checked-out file tree)."""
 
     def __init__(self, directory):
-        self.__directory = directory
+        self.directory = directory
 
     @property
     def env(self):
@@ -172,10 +172,6 @@ class Worktree(object):
     def env_in_cwd(self):
         return {'GIT_WORK_TREE': self.directory}
 
-    @property
-    def directory(self):
-        return self.__directory
-
 
 class IndexAndWorktree(object):
     """Represents a git index and a worktree. Anything that an index or
@@ -184,24 +180,20 @@ class IndexAndWorktree(object):
     operations that require both."""
 
     def __init__(self, index, worktree):
-        self.__index = index
-        self.__worktree = worktree
-
-    @property
-    def index(self):
-        return self.__index
+        self.index = index
+        self._worktree = worktree
 
     @property
     def env(self):
-        return add_dict(self.__index.env, self.__worktree.env)
+        return add_dict(self.index.env, self._worktree.env)
 
     @property
     def env_in_cwd(self):
-        return self.__worktree.env_in_cwd
+        return self._worktree.env_in_cwd
 
     @property
     def cwd(self):
-        return self.__worktree.directory
+        return self._worktree.directory
 
     def run(self, args, env=()):
         return Run(*args).env(add_dict(self.env, env)).cwd(self.cwd)

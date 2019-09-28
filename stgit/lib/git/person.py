@@ -23,26 +23,14 @@ class Person(Immutable):
         self, name=NoValue, email=NoValue, date=NoValue, defaults=NoValue
     ):
         d = make_defaults(defaults)
-        self.__name = d(name, 'name')
-        self.__email = d(email, 'email')
-        self.__date = d(date, 'date')
-        assert isinstance(self.__date, Date) or self.__date in [None, NoValue]
-
-    @property
-    def name(self):
-        return self.__name
-
-    @property
-    def email(self):
-        return self.__email
+        self.name = d(name, 'name')
+        self.email = d(email, 'email')
+        self.date = d(date, 'date')
+        assert isinstance(self.date, Date) or self.date in [None, NoValue]
 
     @property
     def name_email(self):
         return '%s <%s>' % (self.name, self.email)
-
-    @property
-    def date(self):
-        return self.__date
 
     def set_name(self, name):
         return type(self)(name=name, defaults=self)
@@ -66,30 +54,30 @@ class Person(Immutable):
 
     @classmethod
     def user(cls):
-        if not hasattr(cls, '__user'):
-            cls.__user = cls(
+        if not hasattr(cls, '_user'):
+            cls._user = cls(
                 name=config.get('user.name'), email=config.get('user.email')
             )
-        return cls.__user
+        return cls._user
 
     @classmethod
     def author(cls):
-        if not hasattr(cls, '__author'):
-            cls.__author = cls(
+        if not hasattr(cls, '_author'):
+            cls._author = cls(
                 name=environ_get('GIT_AUTHOR_NAME', NoValue),
                 email=environ_get('GIT_AUTHOR_EMAIL', NoValue),
                 date=Date.maybe(environ_get('GIT_AUTHOR_DATE', NoValue)),
                 defaults=cls.user(),
             )
-        return cls.__author
+        return cls._author
 
     @classmethod
     def committer(cls):
-        if not hasattr(cls, '__committer'):
-            cls.__committer = cls(
+        if not hasattr(cls, '_committer'):
+            cls._committer = cls(
                 name=environ_get('GIT_COMMITTER_NAME', NoValue),
                 email=environ_get('GIT_COMMITTER_EMAIL', NoValue),
                 date=Date.maybe(environ_get('GIT_COMMITTER_DATE', NoValue)),
                 defaults=cls.user(),
             )
-        return cls.__committer
+        return cls._committer
