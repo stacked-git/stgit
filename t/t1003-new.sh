@@ -62,4 +62,9 @@ test_expect_success \
     test_path_is_file new-tmpl.txt
 '
 
+test_expect_failure \
+    'Patch with slash in name' '
+    stg new bar/foo -m "patch bar/foo"
+'
+
 test_done
