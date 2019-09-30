@@ -1,16 +1,9 @@
-IMPORTANT: The StGit mailing list is no longer available due to the
-	   shutdown of the gna.org website. Until a decision is made on
-	   setting up a new mailing list, please send patches to
-	   catalin.marinas@gmail.com or via the project page at
-	   https://github.com/ctmarinas/stgit.
-
 Checklist (and a short version for the impatient):
 
         Commits:
 
         - Make commits of logical units.
-        - Check for unnecessary whitespace with "git diff --check"
-          before committing.
+        - Run "make lint" before committing.
         - Do not check in commented out code or unneeded files.
         - Provide a meaningful commit message.
         - The first line of the commit message should be a short
@@ -21,7 +14,8 @@ Checklist (and a short version for the impatient):
           committing) to confirm that you agree to the Developer's
           Certificate of Origin.
         - Make sure that you have tests for the bug you are fixing.
-        - Make sure that the test suite passes after your commit.
+        - Make sure that the test suite passes after your commit
+          with "make test".
 
         Patch:
 
@@ -29,9 +23,9 @@ Checklist (and a short version for the impatient):
           it's a good idea to try to mail the patches to yourself to
           see that everything works.
         - Do not PGP sign your patch.
-        - Do not attach your patch, but read in the mail.
-          body, unless you cannot teach your mailer to
-          leave the formatting of the patch alone.
+        - Do not attach your patch, but inline in the mail body,
+          unless you cannot teach your mailer to leave the formatting
+          of the patch alone.
         - Be careful doing cut & paste into your mailer, not to
           corrupt whitespaces.
         - Provide additional information (which is unsuitable for the
@@ -43,9 +37,11 @@ Checklist (and a short version for the impatient):
           documentation should be updated as well.
         - If your name is not writable in ASCII, make sure that
           you send off a message in the correct encoding.
-        - Send the patch to the list (TBD) and the
-          maintainer (catalin.marinas@gmail.com) if (and only if) the
-          patch is ready for inclusion.
+        - Make a pull request at the GitHub repo
+          (https://github.com/ctmarinas/stgit) or send the patch to
+          the list (stgit@googlegroups.com) and the maintainer
+          (catalin.marinas@gmail.com) if (and only if) the patch is
+          ready for inclusion.
 
 
 Long version:
@@ -64,8 +60,9 @@ Long version:
    If your description starts to get too long, that's a sign that you
    probably need to split up your commit to finer grained pieces.
 
-   Oh, another thing. I am picky about whitespaces. Please run git
-   diff --check on your changes before you commit.
+   The stgit code should conform to PEP-8 standards. Please run
+   "make lint" to make sure the code meets these standards. The lint
+   requires that flake8 and isort be installed.
 
 
 2. Generate your patch using Git tools out of your commits.
@@ -87,15 +84,20 @@ Long version:
 
 3. Sending your patches.
 
+   Changes to StGit may be either submitted by creating a pull request
+   for the project on GitHub (https://github.com/ctmarinas/stgit) or
+   by sending patches via email. The email process is detailed below.
+
    StGit patches should be sent to the StGit mailing list
-   (TBD), and preferably CCed to the StGit maintainer
-   (catalin.marinas@gmail.com). The recipients need to be able to read
-   and comment on the changes you are submitting. It is important for
-   a developer to be able to "quote" your changes, using standard
-   e-mail tools, so that they may comment on specific portions of your
-   code. For this reason, all patches should be submitted "inline".
-   WARNING: Be wary of your MUAs word-wrap corrupting your patch. Do
-   not cut-n-paste your patch; you can lose tabs that way if you are
+   (stgit@googlegroups.com), and preferably CCed to the StGit
+   maintainer (catalin.marinas@gmail.com). The recipients need to be
+   able to read and comment on the changes you are submitting. It is
+   important for a developer to be able to "quote" your changes, using
+   standard e-mail tools, so that they may comment on specific
+   portions of your code. For this reason, all patches should be
+   submitted "inline". WARNING: Be wary of your MUAs word-wrap
+   corrupting your patch. Do not cut-n-paste your patch; you can lose
+   tabs that way if you are
    not careful.
 
    It is a common convention to prefix your subject line with [StGit
