@@ -10,7 +10,7 @@ them in various ways.
 
 This tutorial assumes you are already familiar with the basics of Git
 (for example, branches, commits, and conflicts). For more information
-on Git, see linkman:git[1] or link:http://git.or.cz/[the Git home
+on Git, see linkman:git[1] or link:https://git-scm.com/[the Git home
 page].
 
 
