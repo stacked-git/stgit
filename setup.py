@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import (
+    absolute_import,
+    division,
+    print_function,
+    unicode_literals,
+)
+
 from distutils.core import setup
 from glob import glob
 import os
@@ -110,8 +115,18 @@ setup(
     description='Stacked GIT',
     long_description='Push/pop utility on top of GIT',
     scripts=['stg'],
-    packages=list(map(str, ['stgit', 'stgit.commands',
-                            'stgit.lib', 'stgit.lib.git'])),
+    packages=list(
+        map(
+            str,
+            [
+                'stgit',
+                'stgit.commands',
+                'stgit.completion',
+                'stgit.lib',
+                'stgit.lib.git',
+            ],
+        )
+    ),
     data_files=[
         ('share/stgit/templates', glob('stgit/templates/*.tmpl')),
         ('share/stgit/examples', glob('examples/*.tmpl')),
