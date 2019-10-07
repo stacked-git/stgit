@@ -102,11 +102,13 @@ def func(parser, options, args):
             parser.error('Can only spill topmost applied patches')
         iw = None  # don't touch index+worktree
 
-    applied = [p for p in trans.applied if p not in set(patches)]
-    unapplied = patches + trans.unapplied
     try:
-        trans.reorder_patches(applied, unapplied, iw=iw,
-                              allow_interactive=True)
+        trans.reorder_patches(
+            applied=[p for p in trans.applied if p not in patches],
+            unapplied=patches + trans.unapplied,
+            iw=iw,
+            allow_interactive=True,
+        )
     except transaction.TransactionException:
         pass
     return trans.run(iw)
