@@ -297,11 +297,11 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
         log_msg = 'refresh'
     trans = transaction.StackTransaction(stack, log_msg)
     iw = stack.repository.default_iw
-    f = {
-        True: absorb_applied,
-        False: absorb_unapplied
-    }[patch_name in trans.applied]
-    if f(trans, iw, patch_name, temp_name, edit_fun):
+    if patch_name in trans.applied:
+        absorb_func = absorb_applied
+    else:
+        absorb_func = absorb_unapplied
+    if absorb_func(trans, iw, patch_name, temp_name, edit_fun):
         def info_msg():
             pass
     else:
