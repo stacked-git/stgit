@@ -26,7 +26,7 @@ class CompgenBase(object):
             cmd += ['-A', act]
         words = self.words(var)
         if words:
-            cmd += ['-W', '"%s"' % ' '.join(words)]
+            cmd += ['-W', '"%s"' % ' '.join(sorted(words))]
         cmd += ['--', '"%s"' % var]
         return ' '.join(cmd)
 
@@ -76,7 +76,7 @@ class patch_range(CompgenBase):
             for e_word in e.words(var):
                 if e_word not in words:
                     words.append(e_word)
-        return ['$(_patch_range "%s" "%s")' % (' '.join(words), var)]
+        return ['$(_patch_range "%s" "%s")' % (' '.join(sorted(words)), var)]
 
 
 def compjoin(compgens):

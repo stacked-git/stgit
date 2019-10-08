@@ -73,7 +73,7 @@ def get_commands(allow_cached=True):
 def py_commands(commands, f):
     f.write('from __future__ import unicode_literals\n\n')
     f.write('command_list = {\n')
-    for name, (mod, kind, help) in commands.items():
+    for name, (mod, kind, help) in sorted(commands.items()):
         f.write('    %r: (\n' % name)
         f.write('        %r,\n' % mod)
         f.write('        %r,\n' % kind)
