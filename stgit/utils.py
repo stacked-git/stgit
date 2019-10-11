@@ -105,13 +105,6 @@ def strip_prefix(prefix, string):
     return string[len(prefix):]
 
 
-def strip_suffix(suffix, string):
-    """Return string, without the suffix. Blow up if string doesn't
-    end with suffix."""
-    assert string.endswith(suffix)
-    return string[:-len(suffix)]
-
-
 def create_dirs(directory):
     """Create the given directory, if the path doesn't already exist."""
     if directory and not os.path.isdir(directory):

@@ -224,7 +224,9 @@ def util():
 
 
 def command_list(commands):
-    return ['_stg_commands="%s"\n' % ' '.join(sorted(commands))]
+    return [
+        '_stg_commands="%s"\n' % ' '.join(cmd for cmd, _, _, _ in commands)
+    ]
 
 
 def command_fun(cmd, modname):
@@ -293,7 +295,7 @@ def main_switch(commands):
             'copyright) return ;;'
         ], [
             '%s) _stg_%s ;;' % (cmd, cmd)
-            for cmd in sorted(commands)
+            for cmd, _, _, _ in commands
         ],
         'esac'
     )
@@ -318,7 +320,7 @@ def write_bash_completion(f):
 #    2. Add the following line to your .bashrc:
 #         . ~/.stgit-completion.bash"""]]
     r += [util(), command_list(commands)]
-    for cmd, (modname, _, _) in sorted(commands.items()):
+    for cmd, modname, _, _ in commands:
         r.append(command_fun(cmd, modname))
     r += [main_switch(commands), install()]
     write(f, flatten(r, ''))

@@ -58,8 +58,9 @@ def is_cmd_alias(cmd):
 def append_alias_commands(cmd_list):
     for (name, command) in config.getstartswith('stgit.alias.'):
         name = utils.strip_prefix('stgit.alias.', name)
-        cmd_list[name] = (CommandAlias(name, command),
-                          'Alias commands', command)
+        cmd_list.append(
+            (name, CommandAlias(name, command), 'Alias commands', command)
+        )
 
 
 #
@@ -96,8 +97,7 @@ class Commands(dict):
 
 cmd_list = stgit.commands.get_commands()
 append_alias_commands(cmd_list)
-commands = Commands((cmd, mod) for cmd, (mod, kind, help)
-                    in cmd_list.items())
+commands = Commands((cmd, mod) for cmd, mod, _, _ in cmd_list)
 
 
 def print_help():

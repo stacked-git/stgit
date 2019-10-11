@@ -10,23 +10,21 @@ from stgit import argparse
 import stgit.commands
 import stgit.config
 
-_file_args = set(['files', 'dir', 'repo'])
-_has_fish_func_args = set(
-    [
-        'stg_branches',
-        'all_branches',
-        'applied_patches',
-        'unapplied_patches',
-        'hidden_patches',
-        'other_applied_patches',
-        'commit',
-        'conflicting_files',
-        'dirty_files',
-        'unknown_files',
-        'known_files',
-        'mail_aliases',
-    ]
-)
+_file_args = ['files', 'dir', 'repo']
+_has_fish_func_args = [
+    'stg_branches',
+    'all_branches',
+    'applied_patches',
+    'unapplied_patches',
+    'hidden_patches',
+    'other_applied_patches',
+    'commit',
+    'conflicting_files',
+    'dirty_files',
+    'unknown_files',
+    'known_files',
+    'mail_aliases',
+]
 
 
 def _get_file_completion_flag(args):
@@ -60,11 +58,12 @@ def write_fish_completion(f):
         print(*args, **kwargs)
 
     commands = stgit.commands.get_commands(allow_cached=False)
-    aliases = {}
-    for (name, values) in stgit.config.DEFAULTS.items():
+    aliases = []
+    for name, values in stgit.config.DEFAULTS:
         if name.startswith('stgit.alias.'):
             alias = name.replace('stgit.alias.', '', 1)
-            aliases[alias] = values[0]
+            command = values[0]
+            aliases.append((alias, command))
 
     put(
         '''\
@@ -150,7 +149,7 @@ function __fish_stg_is_alias
                 return 1
         end
     end
-end''' % ' '.join(aliases)
+end''' % ' '.join(alias for alias, _ in aliases)
     )
 
     put(
@@ -161,7 +160,7 @@ function __fish_stg_complete_alias
     set --erase tokens[1 2]
     switch "$cmd"'''
     )
-    for alias, command in sorted(aliases.items()):
+    for alias, command in aliases:
         put('        case', alias)
         put('            set --prepend tokens', command)
     put(
@@ -172,12 +171,12 @@ end
 '''
     )
 
-    put('### Aliases: %s' % ' '.join(aliases))
+    put('### Aliases: %s' % ' '.join(alias for alias, _ in aliases))
     put(
         "complete    -c stg -n '__fish_stg_is_alias' -x",
         "-a '(__fish_stg_complete_alias)'"
     )
-    for alias, command in sorted(aliases.items()):
+    for alias, command in aliases:
         put(
             "complete    -c stg -n '__fish_use_subcommand' -x",
             """-a %s -d 'Alias for "%s"'""" % (alias, command),
@@ -190,19 +189,19 @@ end
         "complete -f -c stg -n '__fish_use_subcommand' -x",
         "-a help -d 'print the detailed command usage'",
     )
-    for cmd, (modname, _, _) in sorted(commands.items()):
+    for cmd, modname, _, _ in commands:
         mod = stgit.commands.get_command(modname)
         put(
             "complete -f -c stg -n '__fish_seen_subcommand_from help'",
             "-a %s -d '%s'" % (cmd, mod.help),
         )
-    for alias, command in sorted(aliases.items()):
+    for alias, command in aliases:
         put(
             "complete -f -c stg -n '__fish_seen_subcommand_from help'",
             """-a %s -d 'Alias for "%s"'""" % (alias, command),
         )
 
-    for cmd, (modname, _, _) in sorted(commands.items()):
+    for cmd, modname, _, _ in commands:
         mod = stgit.commands.get_command(modname)
         completions = []
         put('', '### %s' % cmd, sep='\n')

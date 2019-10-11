@@ -30,23 +30,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-DEFAULTS = {
-    'stgit.smtpserver': ['localhost:25'],
-    'stgit.smtpdelay': ['5'],
-    'stgit.pullcmd': ['git pull'],
-    'stgit.fetchcmd': ['git fetch'],
-    'stgit.pull-policy': ['pull'],
-    'stgit.autoimerge': ['no'],
-    'stgit.keepoptimized': ['no'],
-    'stgit.refreshsubmodules': ['no'],
-    'stgit.shortnr': ['5'],
-    'stgit.pager': ['less'],
-    'stgit.alias.add': ['git add'],
-    'stgit.alias.rm': ['git rm'],
-    'stgit.alias.mv': ['git mv'],
-    'stgit.alias.resolved': ['git add'],
-    'stgit.alias.status': ['git status -s']
-}
+DEFAULTS = [
+    ('stgit.alias.add', ['git add']),
+    ('stgit.alias.mv', ['git mv']),
+    ('stgit.alias.resolved', ['git add']),
+    ('stgit.alias.rm', ['git rm']),
+    ('stgit.alias.status', ['git status -s']),
+    ('stgit.autoimerge', ['no']),
+    ('stgit.fetchcmd', ['git fetch']),
+    ('stgit.keepoptimized', ['no']),
+    ('stgit.pager', ['less']),
+    ('stgit.pull-policy', ['pull']),
+    ('stgit.pullcmd', ['git pull']),
+    ('stgit.refreshsubmodules', ['no']),
+    ('stgit.shortnr', ['5']),
+    ('stgit.smtpdelay', ['5']),
+    ('stgit.smtpserver', ['localhost:25']),
+]
 
 
 class GitConfigException(StgException):
@@ -61,7 +61,7 @@ class GitConfig(object):
         """Load the configuration in _cache unless it has been done already."""
         if self._cache is not None:
             return
-        self._cache = DEFAULTS.copy()
+        self._cache = dict(DEFAULTS)
         lines = Run('git', 'config', '--null', '--list'
                     ).discard_exitcode().output_lines('\0')
         for line in lines:

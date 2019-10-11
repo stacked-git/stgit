@@ -53,7 +53,7 @@ def main():
         argparse.write_asciidoc(stgit.main.commands[options.asciidoc],
                                 sys.stdout)
     elif options.commands:
-        for cmd in sorted(commands.get_commands(allow_cached=False)):
+        for cmd, _, _, _ in commands.get_commands(allow_cached=False):
             print(cmd)
     elif options.cmd_list:
         commands.asciidoc_command_list(
