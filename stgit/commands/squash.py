@@ -133,7 +133,8 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
             new_commit_data = _squash_patches(
                 trans, patches, msg, save_template, no_verify
             )
-            assert not trans.delete_patches(lambda pn: pn in patches)
+            popped_extra = trans.delete_patches(lambda pn: pn in patches)
+            assert not popped_extra
         make_squashed_patch(trans, new_commit_data)
 
         # Push the new patch if necessary, and any unrelated patches we've

@@ -59,7 +59,8 @@ def func(parser, options, args):
 
     if patch in trans.applied:
         to_pop = set(trans.applied[trans.applied.index(patch) + 1:])
-        assert not trans.pop_patches(lambda pn: pn in to_pop)
+        popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
+        assert not popped_extra
     elif patch in trans.unapplied:
         try:
             to_push = trans.unapplied[:trans.unapplied.index(patch) + 1]

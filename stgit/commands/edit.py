@@ -178,7 +178,8 @@ def func(parser, options, args):
     trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
     if patchname in trans.applied:
         popped = trans.applied[trans.applied.index(patchname) + 1:]
-        assert not trans.pop_patches(lambda pn: pn in popped)
+        popped_extra = trans.pop_patches(lambda pn: pn in popped)
+        assert not popped_extra
     else:
         popped = []
     trans.patches[patchname] = stack.repository.commit(cd)

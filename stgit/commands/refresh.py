@@ -221,18 +221,21 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
         # Pop any patch on top of the patch we're refreshing.
         to_pop = trans.applied[trans.applied.index(patch_name) + 1:]
         if len(to_pop) > 1:
-            popped = trans.pop_patches(lambda pn: pn in to_pop)
-            assert not popped  # no other patches were popped
+            popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
+            assert not popped_extra  # no other patches were popped
             trans.push_patch(temp_name, iw)
-        assert to_pop.pop() == temp_name
+        top_name = to_pop.pop()
+        assert top_name == temp_name
 
         # Absorb the temp patch.
         temp_cd = trans.patches[temp_name].data
         assert trans.patches[patch_name] == temp_cd.parent
         trans.patches[patch_name] = trans.stack.repository.commit(
             edit_fun(trans.patches[patch_name].data.set_tree(temp_cd.tree)))
-        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
-        assert not popped  # the temp patch was topmost
+        popped_extra = trans.delete_patches(
+            lambda pn: pn == temp_name, quiet=True
+        )
+        assert not popped_extra  # the temp patch was topmost
         temp_absorbed = True
 
         # Push back any patch we were forced to pop earlier.
@@ -255,8 +258,8 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
              if we had to leave it for the user to deal with."""
 
     # Pop the temp patch.
-    popped = trans.pop_patches(lambda pn: pn == temp_name)
-    assert not popped  # the temp patch was topmost
+    popped_extra = trans.pop_patches(lambda pn: pn == temp_name)
+    assert not popped_extra  # the temp patch was topmost
 
     # Try to create the new tree of the refreshed patch. (This is the
     # same operation as pushing the temp patch onto the patch we're
@@ -275,8 +278,10 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
         # the temp patch.
         trans.patches[patch_name] = trans.stack.repository.commit(
             edit_fun(patch_cd.set_tree(new_tree)))
-        popped = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
-        assert not popped  # the temp patch was not applied
+        popped_extra = trans.delete_patches(
+            lambda pn: pn == temp_name, quiet=True
+        )
+        assert not popped_extra  # the temp patch was not applied
         return True
     else:
         # Nope, we couldn't create the new tree, so we'll just have to
