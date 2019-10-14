@@ -8,10 +8,15 @@ from __future__ import (
 
 from stgit import argparse, utils
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepositoryLib,
+    run_commit_msg_hook,
+)
 from stgit.config import config
-from stgit.lib import edit, transaction
+from stgit.lib.edit import auto_edit_patch, interactive_edit_patch
 from stgit.lib.git import CommitData, IndexAndWorktree
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 
 __copyright__ = """
@@ -124,7 +129,7 @@ options = [
     + argparse.author_options()
 )
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepositoryLib()
 
 
 def get_patch(stack, given_patch):
@@ -132,11 +137,11 @@ def get_patch(stack, given_patch):
     if given_patch:
         patch_name = given_patch
         if not stack.patches.exists(patch_name):
-            raise common.CmdException('%s: no such patch' % patch_name)
+            raise CmdException('%s: no such patch' % patch_name)
         return patch_name
     else:
         if not stack.patchorder.applied:
-            raise common.CmdException(
+            raise CmdException(
                 'Cannot refresh top patch because no patches are applied')
         return stack.patchorder.applied[-1]
 
@@ -197,8 +202,7 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
         )
     )
     temp_name = utils.make_patch_name('refresh-temp', stack.patches.exists)
-    trans = transaction.StackTransaction(stack,
-                                         'refresh (create temporary patch)')
+    trans = StackTransaction(stack, 'refresh (create temporary patch)')
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)
     return (
@@ -241,7 +245,7 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
         # Push back any patch we were forced to pop earlier.
         for pn in to_pop:
             trans.push_patch(pn, iw)
-    except transaction.TransactionHalted:
+    except TransactionHalted:
         pass
     return temp_absorbed
 
@@ -295,7 +299,7 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
         log_msg = 'refresh\n\n' + annotate
     else:
         log_msg = 'refresh'
-    trans = transaction.StackTransaction(stack, log_msg)
+    trans = StackTransaction(stack, log_msg)
     iw = stack.repository.default_iw
     if patch_name in trans.applied:
         absorb_func = absorb_applied
@@ -319,19 +323,19 @@ def func(parser, options, args):
     # Catch illegal argument combinations.
     path_limiting = bool(args or options.update)
     if options.index and path_limiting:
-        raise common.CmdException(
+        raise CmdException(
             'Only full refresh is available with the --index option')
 
     if options.index and options.force:
-        raise common.CmdException(
+        raise CmdException(
             'You cannot --force a full refresh when using --index mode')
 
     if options.update and options.submodules:
-        raise common.CmdException(
+        raise CmdException(
             '--submodules is meaningless when only updating modified files')
 
     if options.index and options.submodules:
-        raise common.CmdException(
+        raise CmdException(
             '--submodules is meaningless when keeping the current index')
 
     # If submodules was not specified on the command line, infer a default
@@ -353,14 +357,13 @@ def func(parser, options, args):
     # Make sure there are no conflicts in the files we want to
     # refresh.
     if stack.repository.default_index.conflicts() & paths:
-        raise common.CmdException(
-            'Cannot refresh -- resolve conflicts first')
+        raise CmdException('Cannot refresh -- resolve conflicts first')
 
     # Make sure the index is clean before performing a full refresh
     if not options.index and not options.force:
         if not (stack.repository.default_index.is_clean(stack.head) or
                 stack.repository.default_iw.worktree_clean()):
-            raise common.CmdException(
+            raise CmdException(
                 'The index is dirty. Did you mean --index? '
                 'To force a full refresh use --force.'
             )
@@ -373,7 +376,7 @@ def func(parser, options, args):
 
     def edit_fun(cd):
         orig_msg = cd.message
-        cd, failed_diff = edit.auto_edit_patch(
+        cd, failed_diff = auto_edit_patch(
             stack.repository, cd,
             msg=(None if options.message is None else
                  options.message.encode('utf-8')),
@@ -383,7 +386,7 @@ def func(parser, options, args):
             sign_str=options.sign_str)
         assert not failed_diff
         if options.edit:
-            cd, failed_diff = edit.interactive_edit_patch(
+            cd, failed_diff = interactive_edit_patch(
                 stack.repository,
                 cd,
                 edit_diff=False,
@@ -392,7 +395,7 @@ def func(parser, options, args):
             )
             assert not failed_diff
         if not options.no_verify and (options.edit or cd.message != orig_msg):
-            cd = common.run_commit_msg_hook(stack.repository, cd, options.edit)
+            cd = run_commit_msg_hook(stack.repository, cd, options.edit)
         return cd
 
     return absorb(stack, patch_name, temp_name, edit_fun,
