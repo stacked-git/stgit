@@ -6,21 +6,18 @@ from __future__ import (
     unicode_literals,
 )
 
+import io
 import os
 import re
 
-from stgit import git, stack
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoToplevel,
-    check_conflicts,
-    check_head_top_equal,
-    check_local_changes,
+    DirectoryGotoTopLevelLib,
     parse_patches,
-    pop_patches,
-    push_patches,
 )
+from stgit.lib.git import CommitData
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 
 __copyright__ = """
@@ -71,41 +68,71 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoToplevel(log=True)
-crt_series = None
+directory = DirectoryGotoTopLevelLib()
 
 
-def __check_all():
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
-
-def __branch_merge_patch(remote_series, pname):
+def __branch_merge_patch(remote_stack, stack, commit, pname):
     """Merge a patch from a remote branch into the current tree.
     """
-    patch = remote_series.get_patch(pname)
-    git.merge_recursive(patch.get_bottom(), git.get_head(), patch.get_top())
+    remote = remote_stack.patches.get(pname).commit
+    iw = stack.repository.default_iw
+    iw.checkout(new_tree=commit.data.tree, old_tree=stack.head.data.tree)
+    iw.refresh_index()
+    iw.merge(
+        base=remote.data.parent.data.tree,
+        ours=commit.data.tree,
+        theirs=remote.data.tree,
+    )
+    if iw.index.is_clean(commit.data.tree):
+        return None
+    else:
+        return iw.index.write_tree()
 
 
-def __series_merge_patch(base, patchdir, pname):
+def __series_merge_patch(patchdir, stack, commit, pname):
     """Merge a patch file with the given StGIT patch.
     """
-    patchfile = os.path.join(patchdir, pname)
-    git.apply_patch(filename=patchfile, base=base)
+    with io.open(os.path.join(patchdir, pname), 'rb') as f:
+        diff = f.read()
+    base = commit.data.parent
+    orig_head = stack.head
+    iw = stack.repository.default_iw
+    iw.refresh_index()
+    iw.checkout(new_tree=base.data.tree, old_tree=orig_head.data.tree)
+    stack.set_head(base, msg='apply patch')
+    iw.apply(diff, quiet=False)
+    iw.update_index(iw.changed_files(base.data.tree))
+    new_tree = iw.index.write_tree()
+    stack.repository.commit(
+        CommitData(
+            tree=new_tree,
+            message='temp commit for applying patch',
+            parents=[base],
+        )
+    )
+    iw.checkout(new_tree=orig_head.data.tree, old_tree=new_tree)
+    stack.set_head(orig_head, msg='post apply')
+    iw.merge(base=base.data.tree, ours=orig_head.data.tree, theirs=new_tree)
+    if iw.index.is_clean(orig_head.data.tree):
+        return None
+    else:
+        return new_tree
 
 
 def func(parser, options, args):
     """Synchronise a range of patches
     """
-    if options.ref_branch:
-        remote_series = stack.Series(options.ref_branch)
-        if options.ref_branch == crt_series.name:
-            raise CmdException('Cannot synchronise with the current branch')
-        remote_patches = remote_series.get_applied()
+    repository = directory.repository
+    stack = repository.get_stack()
 
-        def merge_patch(patch, pname):
-            return __branch_merge_patch(remote_series, pname)
+    if options.ref_branch:
+        remote_stack = repository.get_stack(options.ref_branch)
+        if remote_stack.name == stack.name:
+            raise CmdException('Cannot synchronise with the current branch')
+        remote_patches = remote_stack.patchorder.applied
+
+        def merge_patch(commit, pname):
+            return __branch_merge_patch(remote_stack, stack, commit, pname)
     elif options.series:
         patchdir = os.path.dirname(options.series)
 
@@ -117,17 +144,13 @@ def func(parser, options, args):
                     continue
                 remote_patches.append(pn)
 
-        def merge_patch(patch, pname):
-            return __series_merge_patch(
-                patch.get_bottom(),
-                patchdir,
-                pname,
-            )
+        def merge_patch(commit, pname):
+            return __series_merge_patch(patchdir, stack, commit, pname)
     else:
         raise CmdException('No remote branch or series specified')
 
-    applied = crt_series.get_applied()
-    unapplied = crt_series.get_unapplied()
+    applied = list(stack.patchorder.applied)
+    unapplied = list(stack.patchorder.unapplied)
 
     if options.all:
         patches = applied
@@ -136,57 +159,59 @@ def func(parser, options, args):
             args, applied + unapplied, len(applied), ordered=True
         )
     elif applied:
-        patches = [crt_series.get_current()]
+        patches = [applied[-1]]
     else:
         parser.error('no patches applied')
 
     assert patches
-
-    __check_all()
 
     # only keep the patches to be synchronised
     sync_patches = [p for p in patches if p in remote_patches]
     if not sync_patches:
         raise CmdException('No common patches to be synchronised')
 
+    iw = repository.default_iw
+
     # pop to the one before the first patch to be synchronised
     first_patch = sync_patches[0]
     if first_patch in applied:
         to_pop = applied[applied.index(first_patch) + 1:]
         if to_pop:
-            pop_patches(crt_series, to_pop[::-1])
+            trans = StackTransaction(stack, 'sync (pop)', check_clean_iw=iw)
+            popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
+            assert not popped_extra
+            retval = trans.run(iw)
+            assert not retval
         pushed = [first_patch]
     else:
         to_pop = []
         pushed = []
     popped = to_pop + [p for p in patches if p in unapplied]
 
-    for p in pushed + popped:
-        if p in popped:
-            # push this patch
-            push_patches(crt_series, [p])
-        if p not in sync_patches:
-            # nothing to synchronise
-            continue
+    trans = StackTransaction(stack, 'sync', check_clean_iw=iw)
+    try:
+        for p in pushed + popped:
+            if p in popped:
+                trans.push_patch(p, iw=iw)
 
-        # the actual sync
-        out.start('Synchronising "%s"' % p)
+            if p not in sync_patches:
+                # nothing to synchronise
+                continue
 
-        patch = crt_series.get_patch(p)
-        top = patch.get_top()
+            # the actual sync
+            out.start('Synchronising "%s"' % p)
 
-        # reset the patch backup information.
-        patch.set_top(top, backup=True)
+            commit = trans.patches[p]
 
-        # the actual merging (either from a branch or an external file)
-        merge_patch(patch, p)
-
-        if git.local_changes():
-            # index (cache) already updated by the git merge. The
-            # backup information was already reset above
-            crt_series.refresh_patch(
-                cache_update=False, backup=False, log='sync'
-            )
-            out.done('updated')
-        else:
-            out.done()
+            # the actual merging (either from a branch or an external file)
+            tree = merge_patch(commit, p)
+            if tree:
+                trans.patches[p] = commit.data.set_tree(tree).commit(
+                    repository
+                )
+                out.done('updated')
+            else:
+                out.done()
+    except TransactionHalted:
+        pass
+    return trans.run(iw)
