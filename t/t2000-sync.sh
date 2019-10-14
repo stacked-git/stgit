@@ -132,9 +132,10 @@ test_expect_success \
 test_expect_success \
     'Synchronise second patch with the master branch' \
     '
+    stg goto p1 &&
     stg sync -B master p2 &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p3" ] &&
     test "$(cat bar2.txt)" = "bar2"
     '
 
