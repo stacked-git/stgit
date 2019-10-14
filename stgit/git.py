@@ -597,31 +597,6 @@ def commit(
     return commit_id
 
 
-def apply_diff(rev1, rev2, check_index=True, files=None):
-    """Apply the diff between rev1 and rev2 onto the current
-    index. This function doesn't need to raise an exception since it
-    is only used for fast-pushing a patch. If this operation fails,
-    the pushing would fall back to the three-way merge.
-    """
-    if check_index:
-        index_opt = ['--index']
-    else:
-        index_opt = []
-
-    if not files:
-        files = []
-
-    diff_str = diff(files, rev1, rev2)
-    if diff_str:
-        try:
-            GRun('apply', *index_opt).encoding(None).raw_input(
-                diff_str).discard_stderr().no_output()
-        except GitRunException:
-            return False
-
-    return True
-
-
 stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
 
 
@@ -685,18 +660,14 @@ def diff(files=None, rev1='HEAD', rev2=None, diff_flags=[], binary=True):
         return b''
 
 
-def switch(tree_id, keep=False):
+def switch(tree_id):
     """Switch the tree to the given id
     """
-    if keep:
-        # only update the index while keeping the local changes
-        GRun('read-tree', tree_id).run()
-    else:
-        refresh_index()
-        try:
-            GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
-        except GitRunException:
-            raise GitException('read-tree failed (local changes maybe?)')
+    refresh_index()
+    try:
+        GRun('read-tree', '-u', '-m', get_head(), tree_id).run()
+    except GitRunException:
+        raise GitException('read-tree failed (local changes maybe?)')
 
     __set_head(tree_id)
 

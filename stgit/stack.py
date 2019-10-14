@@ -989,76 +989,7 @@ class Series(PatchSet):
 
         return forwarded
 
-    def push_patch(self, name):
-        """Pushes a patch on the stack
-        """
-        unapplied = self.get_unapplied()
-        assert(name in unapplied)
-
-        patch = self.get_patch(name)
-
-        head = git.get_head()
-        bottom = patch.get_bottom()
-        top = patch.get_top()
-        # top != bottom always since we have a commit for each patch
-
-        if head == bottom:
-            # A fast-forward push. Just reset the backup
-            # information. No need for logging
-            patch.set_top(top, backup=True)
-
-            git.switch(top)
-            append_string(self._applied_file, name)
-
-            unapplied.remove(name)
-            write_strings(self._unapplied_file, unapplied)
-            return False
-
-        # Need to create a new commit an merge in the old patch
-        ex = None
-        modified = False
-
-        # Try the fast applying first. If this fails, fall back to the
-        # three-way merge
-        if not git.apply_diff(bottom, top):
-            # if git.apply_diff() fails, the patch requires a diff3
-            # merge and can be reported as modified
-            modified = True
-
-            # merge can fail but the patch needs to be pushed
-            try:
-                git.merge_recursive(bottom, head, top)
-            except git.GitException:
-                out.error('The merge failed during "push".',
-                          'Revert the operation with "stg undo".')
-
-        append_string(self._applied_file, name)
-
-        unapplied.remove(name)
-        write_strings(self._unapplied_file, unapplied)
-
-        if not ex:
-            # if the merge was OK and no conflicts, just refresh the patch
-            # The GIT cache was already updated by the merge operation
-            if modified:
-                log = 'push(m)'
-            else:
-                log = 'push'
-            self.refresh_patch(bottom=head, cache_update=False, log=log)
-        else:
-            # we make the patch empty, with the merged state in the
-            # working tree.
-            self.refresh_patch(
-                bottom=head,
-                cache_update=False,
-                empty=True,
-                log='push(c)',
-            )
-            raise StackException(str(ex))
-
-        return modified
-
-    def pop_patch(self, name, keep=False):
+    def pop_patch(self, name):
         """Pops the top patch from the stack
         """
         applied = self.get_applied()
@@ -1068,11 +999,7 @@ class Series(PatchSet):
         patch = self.get_patch(name)
 
         if git.get_head_file() == self.name:
-            if keep and not git.apply_diff(git.get_head(), patch.get_bottom(),
-                                           check_index=False):
-                raise StackException(
-                    'Failed to pop patches while preserving the local changes')
-            git.switch(patch.get_bottom(), keep)
+            git.switch(patch.get_bottom())
         else:
             git.set_branch(self.name, patch.get_bottom())
 

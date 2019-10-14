@@ -194,48 +194,6 @@ def print_crt_patch(crt_series, branch=None):
         out.info('No patches applied')
 
 
-def push_patches(crt_series, patches):
-    """Push multiple patches onto the stack. This function is shared
-    between the push and pull commands
-    """
-    forwarded = crt_series.forward_patches(patches)
-    if forwarded > 1:
-        out.info('Fast-forwarded patches "%s" - "%s"'
-                 % (patches[0], patches[forwarded - 1]))
-    elif forwarded == 1:
-        out.info('Fast-forwarded patch "%s"' % patches[0])
-
-    names = patches[forwarded:]
-
-    for p in names:
-        out.start('Pushing patch "%s"' % p)
-
-        modified = crt_series.push_patch(p)
-
-        if crt_series.empty_patch(p):
-            out.done('empty patch')
-        elif modified:
-            out.done('modified')
-        else:
-            out.done()
-
-
-def pop_patches(crt_series, patches, keep=False):
-    """Pop the patches in the list from the stack. It is assumed that
-    the patches are listed in the stack reverse order.
-    """
-    if len(patches) == 0:
-        out.info('Nothing to push/pop')
-    else:
-        p = patches[-1]
-        if len(patches) == 1:
-            out.start('Popping patch "%s"' % p)
-        else:
-            out.start('Popping patches "%s" - "%s"' % (patches[0], p))
-        crt_series.pop_patch(p, keep)
-        out.done()
-
-
 def get_patch_from_list(part_name, patch_list):
     candidates = [full for full in patch_list if part_name in full]
     if len(candidates) >= 2:
