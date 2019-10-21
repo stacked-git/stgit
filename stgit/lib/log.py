@@ -136,8 +136,9 @@ def patch_file(repo, cd):
         '',
         '---',
         '',
+        '',
     ]).encode('utf-8')
-    diff = repo.diff_tree(cd.parent.data.tree, cd.tree, ['-M']).strip()
+    diff = repo.diff_tree(cd.parent.data.tree, cd.tree, stat=True).strip()
     return repo.commit(BlobData(metadata + diff + b'\n'))
 
 
