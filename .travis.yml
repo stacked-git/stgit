@@ -12,39 +12,34 @@ matrix:
   include:
     - python: '2.7'
       env: MAKE_TARGET=lint
-    - python: '3.7'
+    - python: '3.8'
       env: MAKE_TARGET=lint
       dist: xenial
     - python: '2.7'
       env: MAKE_TARGET=coverage-test
-    - python: '3.7'
+    - python: '3.8'
       env: MAKE_TARGET=coverage-test
       dist: xenial
     - python: 'pypy3'
       env: MAKE_TARGET=test
     - python: 'pypy'
       env: MAKE_TARGET=test
-    - python: '3.3'
-      dist: trusty
+    - python: '3.7'
       env: MAKE_TARGET=test
-    - python: '3.4'
+      dist: xenial
+    - python: '3.6'
       env: MAKE_TARGET=test
     - python: '3.5'
       env: MAKE_TARGET=test
-    - python: '3.6'
+    - python: '3.4'
       env: MAKE_TARGET=test
-    - python: '3.8-dev'
-      env: MAKE_TARGET=test
-      dist: xenial
-    - python: 'nightly'
-      dist: xenial
+    - python: '3.3'
+      dist: trusty
       env: MAKE_TARGET=test
     - python: '2.6'
       dist: trusty
       env: MAKE_TARGET=test
   allow_failures:
-    - python: '3.8-dev'
-    - python: 'nightly'
     - python: '2.6'
 
 install:
