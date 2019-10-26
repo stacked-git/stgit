@@ -1,6 +1,8 @@
 prefix	?= $(HOME)
 DESTDIR	?= /
 PYTHON	?= python
+DEFAULT_TEST_TARGET ?= test
+STG_PROVE_OPTS ?=
 
 export DESTDIR PYTHON
 

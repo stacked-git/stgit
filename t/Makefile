@@ -6,6 +6,7 @@
 PYTHON ?= python
 # STG_TEST_OPTS = --verbose-log
 # STG_PROVE_OPTS = --jobs=9
+STG_PROVE_OPTS ?=
 SHELL_PATH ?= $(SHELL)
 TEST_SHELL_PATH ?= $(SHELL_PATH)
 PERL_PATH ?= /usr/bin/perl
