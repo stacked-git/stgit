@@ -1,5 +1,5 @@
-                      Stacked Git 0.20 released
-                      -------------------------
+Stacked Git 0.21 released
+=========================
 
 StGit is a Python application providing functionality similar to Quilt
 (i.e. pushing/popping patches to/from a stack) on top of Git. These
@@ -7,59 +7,16 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         https://github.com/ctmarinas/stgit/releases/download/v0.20/stgit-0.20.tar.gz
-  Main repository:  https://repo.or.cz/stgit.git
+  Download:         https://github.com/ctmarinas/stgit/releases/download/v0.21/stgit-0.21.tar.gz
+  Main repository:  https://github.com/ctmarinas/stgit
   Project homepage: http://www.procode.org/stgit/
   Issue tracker:    https://github.com/ctmarinas/stgit/issues
 
-Changes since 0.19:
-===================
+Changes since 0.20:
+-------------------
 
-Features:
-- `stg patches -d` can now output colored diffs.
-- `stg publish --overwrite` allows branch to be overwritten instead of creating
-  new commits.
-- `stg log --clear` deletes the stack's log history. Use with caution.
-- Fish shell completions for stg.
-- Zsh completions for stg.
-- Branch protection metadata now captured in config instead of
-  .git/patches/<branch>protect file. This updates stgit's metadata format from
-  v2 to v3.
-- `stg mail --domain` option overrides the host's domain in the message ID.
-
-Bug fixes:
-- `stg show` detects conflicting --applied and --unapplied options.
-- `stg show --stat` now shows commit headers.
-- `stg patches --diff` now shows proper diff instead of `b'...'` repr of diff.
-- `stg diff --range` detects some invalid values (e.g. `-r ..`).
-- `stg diff` no longer shows binary diffs by default. Use `-O--binary` or add
-  `--binary` to stgit.diff-opts in config.
-- Date parsing is now more portable, only use platform specific `date` as last
-  parsing option. Affects, e.g., `stg refresh --authdate`.
-- Repaired seach path for templates to avoid looking in Python site-packages
-  directory.
-- Ensure stdout and stderr are flushed. Rarely affected `stg diff`.
-- `stg repair` will now fail if extra command line arguments are provided.
-- Bash completions are now generated in a reproducible manner.
-- `stg edit --diff` on an empty patch no longer crashes.
-- Diagnostic output is now routed to stderr instead of stdout. Diagnostic output
-  is also now sent to stderr unconditionally, i.e. no more isatty() test (#35).
-- `stg pick` no longer fails when picked commit has empty message (#39).
-- `stg rebase` no longer crashes when there are conflicts (#34).
-- `stg pick` no longer crashes if --name is not provided when picking a regular
-  commit object.
-
-Code quality:
-- Converted to "new" lib infrastructure: show, patches, diff, pick, pull,
-  rebase, and fold.
-- Improved test coverage for: branch, diff, pick, sync,
-- New tests for: files, patches, fold, series
-- Portable use of iconv, sort, and sed in tests.
-- Linting using flake8 and isort.
-- All Python code now conforms to PEP-8.
-- Updated test infrastructure from git 2.20.
-- Parallel tests with coverage (`make -j4 coverage`) now works.
-- Documentation build is not included in code coverage.
-- Repaired log end messages when using STGIT_SUBPROCESS_LOG=debug.
-- Renamed "dunder" instance attributes to improve debugging.
-- Fail faster when patch name has slash ('/') (#24).
+- Build reproducibility repairs (Thanks reproducible-builds.org team!)
+- Faster handling of large patches (#44)
+- Python can now be run with optimizations (`python -O`)
+- `stg log` now prints trailing newline
+- Improved command line option parsing for `stg log`
