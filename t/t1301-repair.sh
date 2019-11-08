@@ -27,6 +27,13 @@ test_expect_success 'Create a patch' '
     stg refresh
 '
 
+test_expect_success 'Attempt repair of protected branch' '
+    test_when_finished "stg branch --unprotect" &&
+    stg branch --protect &&
+    command_error stg repair 2>&1 |
+    grep -e "This branch is protected"
+'
+
 test_expect_success 'Repair when there is nothing to do' '
     stg repair
 '
