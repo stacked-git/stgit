@@ -40,19 +40,20 @@ test_expect_success 'Repair when there is nothing to do' '
 
 test_expect_success 'Create a GIT commit' '
     echo bar > bar.txt &&
-    stg add bar.txt &&
+    git add bar.txt &&
     git commit -a -m bar
 '
 
 test_expect_success 'Turn one GIT commit into a patch' '
-    [ $(stg series --applied -c) -eq 1 ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "foo" ]
     stg repair &&
-    [ $(stg series --applied -c) -eq 2 ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
+    [ $(stg series --unapplied -c) -eq 0 ]
 '
 
 test_expect_success 'Create three more GIT commits' '
     echo one > numbers.txt &&
-    stg add numbers.txt &&
+    git add numbers.txt &&
     git commit -a -m one &&
     echo two >> numbers.txt &&
     git commit -a -m two &&
@@ -61,9 +62,10 @@ test_expect_success 'Create three more GIT commits' '
 '
 
 test_expect_success 'Turn three GIT commits into patches' '
-    [ $(stg series --applied -c) -eq 2 ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
     stg repair &&
-    [ $(stg series --applied -c) -eq 5 ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ]
+    [ $(stg series --unapplied -c) -eq 0 ]
 '
 
 test_expect_success 'Create a merge commit' '
@@ -76,8 +78,9 @@ test_expect_success 'Create a merge commit' '
 '
 
 test_expect_success 'Repair in the presence of a merge commit' '
-    [ $(stg series --applied -c) -eq 5 ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ]
     stg repair &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "foo bar one two three" ]
     [ $(stg series --applied -c) -eq 0 ]
 '
 
