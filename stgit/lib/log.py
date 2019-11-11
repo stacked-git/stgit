@@ -107,7 +107,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from io import StringIO
 import re
 
 from stgit import utils
@@ -269,20 +268,22 @@ class LogEntry(object):
         return lg
 
     def _metadata_string(self):
-        e = StringIO()
-        e.write('Version: 1\n')
-        if self.prev is None:
-            e.write('Previous: None\n')
-        else:
-            e.write('Previous: %s\n' % self.prev.commit.sha1)
-        e.write('Head: %s\n' % self.head.sha1)
-        for lst, title in [(self.applied, 'Applied'),
-                           (self.unapplied, 'Unapplied'),
-                           (self.hidden, 'Hidden')]:
-            e.write('%s:\n' % title)
+        lines = ['Version: 1']
+        lines.append(
+            'Previous: %s' % (
+                'None' if self.prev is None else self.prev.commit.sha1
+            )
+        )
+        lines.append('Head: %s' % self.head.sha1)
+        for lst, title in [
+            (self.applied, 'Applied'),
+            (self.unapplied, 'Unapplied'),
+            (self.hidden, 'Hidden'),
+        ]:
+            lines.append('%s:' % title)
             for pn in lst:
-                e.write('  %s: %s\n' % (pn, self.patches[pn].sha1))
-        return e.getvalue()
+                lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
+        return '\n'.join(lines)
 
     def _parents(self):
         """Return the set of parents this log entry needs in order to be a
