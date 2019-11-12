@@ -6,16 +6,9 @@ from __future__ import (
     unicode_literals,
 )
 
-import re
-
-from stgit import git
-from stgit.commands.common import (
-    CmdException,
-    DirectoryGotoToplevel,
-    name_email_date,
-)
+from stgit.commands.common import CmdException, DirectoryGotoTopLevelLib
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
-from stgit.run import Run
 from stgit.utils import make_patch_name
 
 __copyright__ = """
@@ -81,55 +74,7 @@ repair" is _not_ what you want. In that case, what you want is option
 args = []
 options = []
 
-directory = DirectoryGotoToplevel(log=True)
-crt_series = None
-
-
-class Commit(object):
-    def __init__(self, id):
-        self.id = id
-        self.parents = set()
-        self.children = set()
-        self.patch = None
-        self._commit = None
-
-    @property
-    def commit(self):
-        if not self._commit:
-            self._commit = git.get_commit(self.id)
-        return self._commit
-
-    def __str__(self):
-        if self.patch:
-            return '%s (%s)' % (self.id, self.patch)
-        else:
-            return self.id
-
-    def __repr__(self):
-        return '<%s>' % str(self)
-
-
-def read_commit_dag(branch):
-    out.start('Reading commit DAG')
-    commits = {}
-    patches = set()
-    for line in Run('git', 'rev-list', '--parents', '--all').output_lines():
-        cs = line.split()
-        for id in cs:
-            if id not in commits:
-                commits[id] = Commit(id)
-        for id in cs[1:]:
-            commits[cs[0]].parents.add(commits[id])
-            commits[id].children.add(commits[cs[0]])
-    for line in Run('git', 'show-ref').output_lines():
-        id, ref = line.split()
-        m = re.match(r'^refs/patches/%s/(.+)$' % re.escape(branch), ref)
-        if m and not m.group(1).endswith('.log'):
-            c = commits[id]
-            c.patch = m.group(1)
-            patches.add(c)
-    out.done()
-    return commits, patches
+directory = DirectoryGotoTopLevelLib()
 
 
 def func(parser, options, args):
@@ -137,112 +82,108 @@ def func(parser, options, args):
     if args:
         parser.error('incorrect number of arguments')
 
-    orig_applied = crt_series.get_applied()
-    orig_unapplied = crt_series.get_unapplied()
-    orig_hidden = crt_series.get_hidden()
+    repository = directory.repository
+    stack = repository.get_stack()
 
-    if crt_series.get_protected():
+    if stack.protected:
         raise CmdException(
-            'This branch is protected. Modification is not permitted.')
+            'This branch is protected. Modification is not permitted.'
+        )
+
+    patchorder = stack.patchorder
+    patches = [stack.patches.get(pn) for pn in patchorder.all]
 
     # Find commits that aren't patches, and applied patches.
-    head = git.get_commit(git.get_head()).get_id_hash()
-    commits, patches = read_commit_dag(crt_series.name)
-    c = commits[head]
     patchify = []        # commits to definitely patchify
     maybe_patchify = []  # commits to patchify if we find a patch below them
     applied = []
-    while len(c.parents) == 1:
-        parent, = c.parents
-        if c.patch:
-            applied.append(c)
-            patchify.extend(maybe_patchify)
-            maybe_patchify = []
+    c = stack.head
+    while len(c.data.parents) == 1:
+        for p in patches:
+            if p.commit == c:
+                applied.append(p)
+                patchify.extend(maybe_patchify)
+                maybe_patchify = []
+                break
         else:
             maybe_patchify.append(c)
-        c = parent
+        c = c.data.parent
     applied.reverse()
     patchify.reverse()
 
-    # Find patches hidden behind a merge.
+    # Find patches unreachable behind a merge.
     merge = c
     todo = set([c])
     seen = set()
-    hidden = set()
+    unreachable = set()
     while todo:
         c = todo.pop()
         seen.add(c)
-        todo |= c.parents - seen
-        if c.patch:
-            hidden.add(c)
-    if hidden:
-        out.warn(('%d patch%s are hidden below the merge commit'
-                  % (len(hidden), ['es', ''][len(hidden) == 1])),
-                 '%s,' % merge.id, 'and will be considered unapplied.')
+        todo |= set(c.data.parents) - seen
+        if any(p.commit == c for p in patches):
+            unreachable.add(c)
+    if unreachable:
+        out.warn(
+            (
+                '%d patch%s are hidden below the merge commit'
+                % (len(unreachable), ['es', ''][len(unreachable) == 1])
+            ),
+            '%s,' % merge.sha1,
+            'and will be considered unapplied.'
+        )
 
     # Make patches of any linear sequence of commits on top of a patch.
-    names = set(p.patch for p in patches)
-
-    def name_taken(name):
-        return name in names
-
     if applied and patchify:
-        out.start('Creating %d new patch%s'
-                  % (len(patchify), ['es', ''][len(patchify) == 1]))
-        for p in patchify:
-            name = make_patch_name(p.commit.get_log(), name_taken)
-            out.info('Creating patch %s from commit %s' % (name, p.id))
-            aname, amail, adate = name_email_date(p.commit.get_author())
-            cname, cmail, cdate = name_email_date(p.commit.get_committer())
-            parent, = p.parents
-            crt_series.new_patch(
-                name,
-                can_edit=False,
-                commit=False,
-                top=p.id,
-                bottom=parent.id,
-                message=p.commit.get_log(),
-                author_name=aname,
-                author_email=amail,
-                author_date=adate,
-                committer_name=cname,
-                committer_email=cmail,
+        out.start(
+            'Creating %d new patch%s' % (
+                len(patchify), ['es', ''][len(patchify) == 1]
             )
-            p.patch = name
-            applied.append(p)
-            names.add(name)
+        )
+
+        for c in patchify:
+            pn = make_patch_name(
+                c.data.message,
+                unacceptable=lambda name: any(p.name == name for p in patches),
+            )
+            out.info('Creating patch %s from commit %s' % (pn, c.sha1))
+            applied.append(stack.patches.new(pn, c, 'repair'))
         out.done()
 
     # Figure out hidden
-    orig_patches = orig_applied + orig_unapplied + orig_hidden
-    orig_applied_name_set = set(orig_applied)
-    orig_unapplied_name_set = set(orig_unapplied)
-    orig_hidden_name_set = set(orig_hidden)
-    orig_patches_name_set = set(orig_patches)
-    hidden = [p for p in patches if p.patch in orig_hidden_name_set]
+    hidden = [p for p in patches if p.name in patchorder.hidden]
 
     # Write the applied/unapplied files.
     out.start('Checking patch appliedness')
-    unapplied = patches - set(applied) - set(hidden)
-    applied_name_set = set(p.patch for p in applied)
-    unapplied_name_set = set(p.patch for p in unapplied)
-    hidden_name_set = set(p.patch for p in hidden)
-    patches_name_set = set(p.patch for p in patches)
-    for name in orig_patches_name_set - patches_name_set:
-        out.info('%s is gone' % name)
-    for name in applied_name_set - orig_applied_name_set:
-        out.info('%s is now applied' % name)
-    for name in unapplied_name_set - orig_unapplied_name_set:
-        out.info('%s is now unapplied' % name)
-    for name in hidden_name_set - orig_hidden_name_set:
-        out.info('%s is now hidden' % name)
-    orig_order = dict(zip(orig_patches, range(len(orig_patches))))
+    unapplied = [p for p in patches if p not in applied and p not in hidden]
+    for pn in patchorder.all:
+        if all(pn != p.name for p in patches):
+            out.info('%s is gone' % pn)
+    for p in applied:
+        if p.name not in patchorder.applied:
+            out.info('%s is now applied' % p.name)
+    for p in unapplied:
+        if p.name not in patchorder.unapplied:
+            out.info('%s is now unapplied' % p.name)
+    for p in hidden:
+        if p.name not in patchorder.hidden:
+            out.info('%s is now hidden' % p.name)
+    out.done()
+
+    orig_order = dict((pn, i) for i, pn in enumerate(patchorder.all))
 
     def patchname_key(p):
         i = orig_order.get(p, len(orig_order))
         return i, p
 
-    crt_series.set_applied(p.patch for p in applied)
-    crt_series.set_unapplied(sorted(unapplied_name_set, key=patchname_key))
-    crt_series.set_hidden(sorted(hidden_name_set, key=patchname_key))
-    out.done()
+    trans = StackTransaction(
+        stack, 'repair', check_clean_iw=False, allow_bad_head=True
+    )
+    try:
+        trans.applied = [p.name for p in applied]
+        trans.unapplied = sorted(
+            (p.name for p in unapplied), key=patchname_key
+        )
+        trans.hidden = sorted((p.name for p in hidden), key=patchname_key)
+    except TransactionHalted:
+        pass
+    return trans.run()
