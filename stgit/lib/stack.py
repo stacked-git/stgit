@@ -107,8 +107,14 @@ class Patch(object):
             pass
 
     def set_commit(self, commit, msg):
+        try:
+            old_sha1 = self.commit.sha1
+        except KeyError:
+            old_sha1 = None
         self._write_compat_files(commit, msg)
         self._stack.repository.refs.set(self._ref, commit, msg)
+        if old_sha1 and old_sha1 != commit.sha1:
+            self._stack.repository.copy_notes(old_sha1, commit.sha1)
 
     def set_name(self, name, msg):
         commit = self.commit

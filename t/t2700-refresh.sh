@@ -11,6 +11,7 @@ test_expect_success 'Initialize StGit stack' '
     echo show.txt >> .git/info/exclude &&
     echo diff.txt >> .git/info/exclude &&
     stg new p0 -m "base" &&
+    git notes add -m note0 &&
     for i in 1 2 3; do
         echo base >> foo$i.txt &&
         stg add foo$i.txt
@@ -18,6 +19,7 @@ test_expect_success 'Initialize StGit stack' '
     stg refresh &&
     for i in 1 2 3; do
         stg new p$i -m "foo $i" &&
+        git notes add -m note$i &&
         echo "foo $i" >> foo$i.txt &&
         stg refresh
     done
@@ -30,6 +32,7 @@ EOF
 test_expect_success 'Refresh top patch' '
     echo bar 3 >> foo3.txt &&
     stg refresh &&
+    test "$(git notes show)" = "note3" &&
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo3.txt > patches.txt &&
@@ -44,6 +47,8 @@ test_expect_success 'Refresh middle patch' '
     stg status &&
     echo bar 2 >> foo2.txt &&
     stg refresh -p p2 &&
+    test "$(git notes show $(stg id p2))" = "note2" &&
+    test "$(git notes show)" = "note3" &&
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo2.txt > patches.txt &&
@@ -58,6 +63,9 @@ test_expect_success 'Refresh bottom patch' '
     stg status &&
     echo bar 1 >> foo1.txt &&
     stg refresh -p p1 &&
+    test "$(git notes show $(stg id p1))" = "note1" &&
+    test "$(git notes show $(stg id p2))" = "note2" &&
+    test "$(git notes show)" = "note3" &&
     stg status &&
     test -z "$(stg status)" &&
     stg patches foo1.txt > patches.txt &&
@@ -103,11 +111,13 @@ EOF
 test_expect_success 'Refresh --index' '
     stg status &&
     stg new p4 -m "refresh_index" &&
+    git notes add -m note4
     echo baz 1 >> foo1.txt &&
     stg add foo1.txt &&
     echo blah 1 >> foo1.txt &&
     echo baz 2 >> foo2.txt &&
     stg refresh --index &&
+    test "$(git notes show)" = "note4" &&
     stg patches foo1.txt > patches.txt &&
     git diff HEAD^..HEAD > show.txt &&
     stg diff > diff.txt &&

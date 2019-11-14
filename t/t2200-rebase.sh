@@ -19,6 +19,7 @@ test_expect_success \
 
 	stg branch --create stack &&
 	stg new p -m . &&
+	git notes add -m note &&
 	echo bar >> file1 &&
 	stg refresh
 	'
@@ -28,7 +29,8 @@ test_expect_success \
 	'
 	stg rebase master~1 &&
 	test `stg id stack:{base}` = `git rev-parse master~1` &&
-	test `stg series --applied -c` = 1
+	test `stg series --applied -c` = 1 &&
+	test "$(git notes show)" = "note"
 	'
 
 test_expect_success \
