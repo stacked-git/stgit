@@ -396,7 +396,8 @@ def func(parser, options, args):
             assert not failed_diff
         if not options.no_verify and (options.edit or cd.message != orig_msg):
             cd = run_commit_msg_hook(stack.repository, cd, options.edit)
-        return cd
+        # Refresh the committer information
+        return cd.set_committer(None)
 
     return absorb(stack, patch_name, temp_name, edit_fun,
                   annotate=options.annotate)

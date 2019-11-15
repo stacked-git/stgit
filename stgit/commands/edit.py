@@ -177,6 +177,9 @@ def func(parser, options, args):
                 failed('The commit-msg hook failed.')
             raise
 
+    # Refresh the committer information
+    cd = cd.set_committer(None)
+
     # The patch applied, so now we have to rewrite the StGit patch
     # (and any patches on top of it).
     iw = stack.repository.default_iw
