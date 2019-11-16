@@ -31,7 +31,6 @@ from stgit.utils import (
     add_sign_line,
     edit_string,
     get_hook,
-    parse_name_email_date,
     run_hook_on_string,
     strip_prefix,
 )
@@ -277,16 +276,6 @@ def name_email(address):
     else:
         raise CmdException('Incorrect "name <email>"/"email (name)" string: %s'
                            % address)
-
-
-def name_email_date(address):
-    p = parse_name_email_date(address)
-    if p:
-        return p
-    else:
-        raise CmdException(
-            'Incorrect "name <email> date" string: %s' % address
-        )
 
 
 def address_or_alias(addr_pair):

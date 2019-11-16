@@ -313,16 +313,6 @@ def parse_name_email(address):
     return str_list[0]
 
 
-def parse_name_email_date(address):
-    """Return a tuple consisting of the name, email and date parsed
-    from a 'name <email> date' string."""
-    address = re.sub(r'[\\"]', r'\\\g<0>', address)
-    str_list = re.findall(r'^(.*)\s*<(.*)>\s*(.*)\s*$', address)
-    if not str_list:
-        return None
-    return str_list[0]
-
-
 # Exit codes.
 STGIT_SUCCESS = 0        # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
