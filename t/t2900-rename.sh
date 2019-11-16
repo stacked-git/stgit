@@ -52,6 +52,21 @@ test_expect_success 'Rename top-most when others exist' '
    stg rename bar
 '
 
+test_expect_success 'Rename to invalid patch name: space' '
+   command_error stg rename bar "bar fo" 2>&1 |
+   grep -e "Invalid patch name: \"bar fo\""
+'
+
+test_expect_success 'Rename to invalid patch name: colon' '
+   command_error stg rename bar "bar:fo" 2>&1 |
+   grep -e "Invalid patch name: \"bar:fo\""
+'
+
+test_expect_failure 'Rename to patch name with slash' '
+   stg rename bar bar/fo &&
+   stg rename bar/fo bar
+'
+
 test_expect_failure 'Rename hidden' '
     stg pop &&
     stg hide bar &&
