@@ -75,7 +75,7 @@ test_expect_success 'Set patch message with --file -' '
 '
 
 ( printf 'From: A Ú Thor <author@example.com>\nDate: <omitted>'
-  printf '\n\nPride and Prejudice' ) > expected-tmpl
+  printf '\n\nPride and Prejudice\n' ) > expected-tmpl
 omit_date () { sed "s/^Date:.*$/Date: <omitted>/" ; }
 
 test_expect_success 'Save template to file' '
@@ -103,7 +103,7 @@ test_expect_success 'Save template to stdout' '
 mkeditor ()
 {
     write_script "$1" <<EOF
-printf "\n$1" >> "\$1"
+printf "$1" >> "\$1"
 EOF
 }
 
