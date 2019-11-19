@@ -275,27 +275,24 @@ class StackTransaction(object):
             else:
                 out.error(self._error)
 
-        # Write patches.
-        def write(msg):
-            for pn, commit in self.patches.items():
-                if self.stack.patches.exists(pn):
-                    p = self.stack.patches.get(pn)
-                    if commit is None:
-                        p.delete()
-                    else:
-                        p.set_commit(commit, msg)
-                else:
-                    self.stack.patches.new(pn, commit, msg)
-            self.stack.patchorder.applied = self._applied
-            self.stack.patchorder.unapplied = self._unapplied
-            self.stack.patchorder.hidden = self._hidden
-            log_entry(self.stack, msg)
-
         old_applied = self.stack.patchorder.applied
-        if not self._conflicts:
-            write(self._msg)
-        else:
-            write(self._msg + ' (CONFLICT)')
+        msg = self._msg + (' (CONFLICT)' if self._conflicts else '')
+
+        # Write patches.
+        for pn, commit in self.patches.items():
+            if self.stack.patches.exists(pn):
+                p = self.stack.patches.get(pn)
+                if commit is None:
+                    p.delete()
+                else:
+                    p.set_commit(commit, msg)
+            else:
+                self.stack.patches.new(pn, commit, msg)
+        self.stack.patchorder.applied = self._applied
+        self.stack.patchorder.unapplied = self._unapplied
+        self.stack.patchorder.hidden = self._hidden
+        log_entry(self.stack, msg)
+
         if print_current_patch:
             _print_current_patch(old_applied, self._applied)
 
