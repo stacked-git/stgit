@@ -204,19 +204,6 @@ class Patch(StgitObject):
         if not keep_log and git.ref_exists(self._log_ref):
             git.delete_ref(self._log_ref)
 
-    def rename(self, newname):
-        olddir = self._dir
-        old_top_ref = self._top_ref
-        old_log_ref = self._log_ref
-        self.name = newname
-        self._dir = os.path.join(self._series_dir, self.name)
-        self._init_refs()
-
-        git.rename_ref(old_top_ref, self._top_ref)
-        if git.ref_exists(old_log_ref):
-            git.rename_ref(old_log_ref, self._log_ref)
-        os.rename(olddir, self._dir)
-
     def _update_top_ref(self, ref):
         git.set_ref(self._top_ref, ref)
         self._set_field('top', ref)
@@ -1029,30 +1016,6 @@ class Series(PatchSet):
             top_tree = git.get_commit(top).get_tree()
             bottom_tree = git.get_commit(bottom).get_tree()
             return top_tree == bottom_tree
-
-    def rename_patch(self, oldname, newname):
-        self._patch_name_valid(newname)
-
-        applied = self.get_applied()
-        unapplied = self.get_unapplied()
-
-        if oldname == newname:
-            raise StackException('"To" name and "from" name are the same')
-
-        if newname in applied or newname in unapplied:
-            raise StackException('Patch "%s" already exists' % newname)
-
-        if oldname in unapplied:
-            self.get_patch(oldname).rename(newname)
-            unapplied[unapplied.index(oldname)] = newname
-            write_strings(self._unapplied_file, unapplied)
-        elif oldname in applied:
-            self.get_patch(oldname).rename(newname)
-
-            applied[applied.index(oldname)] = newname
-            write_strings(self._applied_file, applied)
-        else:
-            raise StackException('Unknown patch "%s"' % oldname)
 
     def log_patch(self, patch, message, notes=None):
         """Generate a log commit for a patch

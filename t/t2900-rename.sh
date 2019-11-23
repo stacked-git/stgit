@@ -40,12 +40,12 @@ test_expect_success 'Rename with too many arguments' '
 
 test_expect_success 'Rename to existing name' '
    command_error stg rename foo baz 2>&1 |
-   grep -e "Patch \"baz\" already exists"
+   grep -e "Patch already exists: \"baz\""
 '
 
 test_expect_success 'Rename to same name' '
    command_error stg rename foo foo 2>&1 |
-   grep -e "\"To\" name and \"from\" name are the same"
+   grep -e "New patch name same as old: \"foo\""
 '
 
 test_expect_success 'Rename top-most when others exist' '
@@ -67,7 +67,7 @@ test_expect_failure 'Rename to patch name with slash' '
    stg rename bar/fo bar
 '
 
-test_expect_failure 'Rename hidden' '
+test_expect_success 'Rename hidden' '
     stg pop &&
     stg hide bar &&
     stg rename bar pub &&

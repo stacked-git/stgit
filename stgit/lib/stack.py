@@ -108,6 +108,13 @@ class Patch(object):
         self._write_compat_files(commit, msg)
         self._stack.repository.refs.set(self._ref, commit, msg)
 
+    def set_name(self, name, msg):
+        commit = self.commit
+        self.delete()
+        self.name = name
+        self._write_compat_files(commit, msg)
+        self._stack.repository.refs.set(self._ref, commit, msg)
+
     def delete(self):
         self._delete_compat_files()
         self._stack.repository.refs.delete(self._ref)
@@ -189,6 +196,20 @@ class PatchOrder(object):
     def all_visible(self):
         return self.applied + self.unapplied
 
+    def rename_patch(self, old_name, new_name):
+        for list_name in ['applied', 'unapplied', 'hidden']:
+            patch_list = list(self._get_list(list_name))
+            try:
+                index = patch_list.index(old_name)
+            except ValueError:
+                continue
+            else:
+                patch_list[index] = new_name
+                self._set_list(list_name, patch_list)
+                break
+        else:
+            raise AssertionError('"%s" not found in patchorder' % old_name)
+
     @staticmethod
     def create(stackdir):
         """Create the PatchOrder specific files
@@ -222,8 +243,18 @@ class Patches(object):
     def get(self, name):
         return self._patches[name]
 
+    def is_name_valid(self, name):
+        if '/' in name:
+            # TODO slashes in patch names could be made to be okay
+            return False
+        ref_name = 'refs/patches/%s/%s' % (self._stack.name, name)
+        p = self._stack.repository.run(['git', 'check-ref-format', ref_name])
+        p.returns([0, 1]).discard_stderr().discard_output()
+        return p.exitcode == 0
+
     def new(self, name, commit, msg):
         assert name not in self._patches
+        assert self.is_name_valid(name)
         p = Patch(self._stack, name)
         p.set_commit(commit, msg)
         self._patches[name] = p
@@ -291,6 +322,18 @@ class Stack(Branch):
             config.set(protect_key, 'true')
         elif self.protected:
             config.unset(protect_key)
+
+    def rename_patch(self, old_name, new_name, msg='rename'):
+        if new_name == old_name:
+            raise StackException('New patch name same as old: "%s"' % new_name)
+        elif self.patches.exists(new_name):
+            raise StackException('Patch already exists: "%s"' % new_name)
+        elif not self.patches.is_name_valid(new_name):
+            raise StackException('Invalid patch name: "%s"' % new_name)
+        elif not self.patches.exists(old_name):
+            raise StackException('Unknown patch name: "%s"' % old_name)
+        self.patchorder.rename_patch(old_name, new_name)
+        self.patches.get(old_name).set_name(new_name, msg)
 
     @classmethod
     def initialise(cls, repository, name=None):

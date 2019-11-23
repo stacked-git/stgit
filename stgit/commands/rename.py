@@ -7,7 +7,8 @@ from __future__ import (
 )
 
 from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.commands.common import CmdException, DirectoryHasRepositoryLib
+from stgit.lib.log import log_entry
 from stgit.out import out
 
 __copyright__ = """
@@ -43,25 +44,24 @@ options = [
     )
 ]
 
-directory = DirectoryHasRepository(log=True)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def func(parser, options, args):
-    """Rename a patch in the series
-    """
-    crt = crt_series.get_current()
+    """Rename a patch in the series"""
+    stack = directory.repository.get_stack(options.branch)
 
     if len(args) == 2:
         old, new = args
     elif len(args) == 1:
-        if not crt:
+        if not stack.patchorder.applied:
             raise CmdException("No applied top patch to rename exists.")
-        old, [new] = crt, args
+        old = stack.patchorder.applied[-1]
+        new = args[0]
     else:
         parser.error('incorrect number of arguments')
 
     out.start('Renaming patch "%s" to "%s"' % (old, new))
-    crt_series.rename_patch(old, new)
-
+    stack.rename_patch(old, new)
+    log_entry(stack, 'rename %s to %s' % (old, new))
     out.done()
