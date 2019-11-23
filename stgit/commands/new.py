@@ -71,6 +71,8 @@ def func(parser, options, args):
         name = args[0]
         if stack.patches.exists(name):
             raise common.CmdException('%s: patch already exists' % name)
+        elif not stack.patches.is_name_valid(name):
+            raise common.CmdException('Invalid patch name: "%s"' % name)
     else:
         parser.error('incorrect number of arguments')
 
@@ -91,8 +93,8 @@ def func(parser, options, args):
         cd = common.run_commit_msg_hook(stack.repository, cd)
 
     if name is None:
-        name = utils.make_patch_name(cd.message,
-                                     lambda name: stack.patches.exists(name))
+        name = utils.make_patch_name(cd.message, stack.patches.exists)
+        assert stack.patches.is_name_valid(name)
 
     # Write the new patch.
     stack.repository.default_iw

@@ -25,6 +25,24 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Invalid patch name: space' '
+    command_error stg new "bad name" 2>&1 >/dev/null |
+    grep -e "Invalid patch name: \"bad name\""
+'
+
+test_expect_success \
+    'Invalid patch name: carat' '
+    command_error stg new "bad^name" 2>&1 >/dev/null |
+    grep -e "Invalid patch name: \"bad^name\""
+'
+
+test_expect_success \
+    'Invalid patch name: empty' '
+    command_error stg new "" 2>&1 >/dev/null |
+    grep -e "Invalid patch name: \"\""
+'
+
+test_expect_success \
     'Create a patch without giving a name' '
     stg new -m yo &&
     [ "$(echo $(stg top))" = "yo" ] &&
