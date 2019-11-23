@@ -98,7 +98,7 @@ def func(parser, options, args):
 
     # Write the new patch.
     stack.repository.default_iw
-    trans = StackTransaction(stack, 'new')
+    trans = StackTransaction(stack, 'new: %s' % name)
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)
     return trans.run()
