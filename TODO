@@ -3,7 +3,6 @@ The TODO list before 1.0:
 - Convert the remaining commands to the new infrastructure. Commands
   not converted yet:
     branch
-    import
     mail
 
 - More regression tests

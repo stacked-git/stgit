@@ -15,22 +15,21 @@ import re
 import sys
 import tarfile
 
-from stgit import argparse, git
+from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepository,
+    DirectoryHasRepositoryLib,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
-    git_id,
     parse_mail,
     parse_patch,
-    print_crt_patch,
+    update_commit_data,
 )
-from stgit.compat import message_from_binary_file, text
-from stgit.config import config
-from stgit.lib.git import Person
+from stgit.compat import message_from_binary_file
+from stgit.lib.git import CommitData, Date, Person
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.utils import make_patch_name
 
@@ -152,8 +151,7 @@ options = [
     ),
 ] + argparse.author_options() + argparse.sign_options()
 
-directory = DirectoryHasRepository(log=True)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def __strip_patch_name(name):
@@ -171,80 +169,79 @@ def __create_patch(filename, message, author_name, author_email,
                    author_date, diff, options):
     """Create a new patch on the stack
     """
-    if options.name:
-        patch = options.name
-    elif filename:
-        patch = os.path.basename(filename)
-    else:
-        patch = ''
-    if options.stripname:
-        patch = __strip_patch_name(patch)
+    stack = directory.repository.current_stack
 
-    if not patch:
+    if options.name:
+        name = options.name
+        if not stack.patches.is_name_valid(name):
+            raise CmdException('Invalid patch name: %s' % name)
+    elif filename:
+        name = os.path.basename(filename)
+    else:
+        name = ''
+    if options.stripname:
+        name = __strip_patch_name(name)
+
+    if not name:
         if options.ignore or options.replace:
             def unacceptable_name(name):
                 return False
         else:
-            unacceptable_name = crt_series.patch_exists
-        patch = make_patch_name(message, unacceptable_name)
+            unacceptable_name = stack.patches.exists
+        name = make_patch_name(message, unacceptable_name)
     else:
         # fix possible invalid characters in the patch name
-        patch = re.sub(r'[^\w.]+', '-', patch).strip('-')
+        name = re.sub(r'[^\w.]+', '-', name).strip('-')
 
-    if options.ignore and patch in crt_series.get_applied():
-        out.info('Ignoring already applied patch "%s"' % patch)
+    assert stack.patches.is_name_valid(name)
+
+    if options.ignore and name in stack.patchorder.applied:
+        out.info('Ignoring already applied patch "%s"' % name)
         return
-    if options.replace and patch in crt_series.get_unapplied():
-        crt_series.delete_patch(patch, keep_log=True)
 
-    # override the automatically parsed settings
-    author = options.author(Person())
-    if author.name:
-        author_name = author.name
-    if author.email:
-        author_email = author.email
-    if author.date:
-        author_date = text(author.date)
+    out.start('Importing patch "%s"' % name)
 
-    sign_str = options.sign_str
-    if not options.sign_str:
-        sign_str = config.get('stgit.autosign')
+    author = Person()
+    if author_name:
+        author = author.set_name(author_name)
+    if author_email:
+        author = author.set_email(author_email)
+    if author_date:
+        author = author.set_date(Date(author_date))
+    author = options.author(author)
 
-    crt_series.new_patch(
-        patch,
-        message=message,
-        can_edit=False,
-        author_name=author_name,
-        author_email=author_email,
-        author_date=author_date,
-        sign_str=sign_str,
-    )
-
-    if not diff:
-        out.warn('No diff found, creating empty patch')
-    else:
-        out.start('Importing patch "%s"' % patch)
-        if options.base:
-            base = git_id(crt_series, options.base)
+    try:
+        if not diff:
+            out.warn('No diff found, creating empty patch')
+            tree = stack.head.data.tree
         else:
-            base = None
-        try:
-            git.apply_patch(
-                diff=diff,
-                base=base,
-                reject=options.reject,
-                strip=options.strip,
+            iw = stack.repository.default_iw
+            iw.apply(
+                diff, quiet=False, reject=options.reject, strip=options.strip
             )
-        except git.GitException:
-            if not options.reject:
-                crt_series.delete_patch(patch)
-            raise
-        crt_series.refresh_patch(
-            edit=options.edit,
-            show_patch=options.showdiff,
-            author_date=author_date,
-            backup=False,
+            tree = iw.index.write_tree()
+
+        cd = CommitData(
+            tree=tree,
+            parents=[stack.head],
+            author=author,
+            message=message,
         )
+        cd = update_commit_data(cd, options)
+        commit = stack.repository.commit(cd)
+
+        trans = StackTransaction(stack, 'import: %s' % name)
+
+        try:
+            if options.replace and name in stack.patchorder.unapplied:
+                trans.delete_patches(lambda pn: pn == name, quiet=True)
+
+            trans.patches[name] = commit
+            trans.applied.append(name)
+        except TransactionHalted:
+            pass
+        trans.run()
+    finally:
         out.done()
 
 
@@ -445,10 +442,6 @@ def func(parser, options, args):
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
-
     if len(args) == 1:
         filename = args[0]
     else:
@@ -458,6 +451,11 @@ def func(parser, options, args):
         filename = os.path.abspath(filename)
     directory.cd_to_topdir()
 
+    stack = directory.repository.current_stack
+    check_local_changes(stack)
+    check_conflicts(stack.repository.default_iw)
+    check_head_top_equal(stack)
+
     if options.series:
         __import_series(filename, options)
     elif options.mbox:
@@ -466,5 +464,3 @@ def func(parser, options, args):
         __import_url(filename, options)
     else:
         __import_file(filename, options)
-
-    print_crt_patch(crt_series)

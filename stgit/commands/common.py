@@ -576,7 +576,7 @@ def update_commit_data(cd, options):
     """Return a new CommitData object updated according to the command line
     options."""
     # Set the commit message from commandline.
-    if options.message is not None:
+    if getattr(options, 'message', None) is not None:
         cd = cd.set_message(options.message)
 
     # Modify author data.
@@ -594,7 +594,10 @@ def update_commit_data(cd, options):
 
     # Let user edit the commit message manually, unless
     # --save-template or --message was specified.
-    if not getattr(options, 'save_template', None) and options.message is None:
+    if (
+        not getattr(options, 'save_template', None)
+        and getattr(options, 'message', None) is None
+    ):
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
             cd = cd.set_message(cd.message + tmpl)

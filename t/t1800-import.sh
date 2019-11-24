@@ -51,7 +51,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with "git diff" using -p2' \
     '
-    ! stg import -p2 $TEST_DIRECTORY/t1800-import/git-diff &&
+    command_error stg import -p2 $TEST_DIRECTORY/t1800-import/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree a5850c97490398571d41d6304dd940800550f507") = 1 ] &&
     stg delete ..
