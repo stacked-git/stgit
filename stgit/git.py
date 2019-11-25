@@ -8,16 +8,13 @@ from __future__ import (
     unicode_literals,
 )
 
-import io
 import os
 import re
-import sys
 
 from stgit import basedir
 from stgit.compat import environ_get
 from stgit.config import config
 from stgit.exception import StgException
-from stgit.out import out
 from stgit.run import Run
 from stgit.utils import rename, strip_prefix
 
@@ -319,10 +316,6 @@ def set_ref(ref, val):
         raise GitException('Could not update %s to "%s".' % (ref, val))
 
 
-def set_branch(branch, val):
-    set_ref('refs/heads/%s' % branch, val)
-
-
 def __set_head(val):
     """Sets the HEAD value
     """
@@ -597,44 +590,6 @@ def commit(
     return commit_id
 
 
-stages_re = re.compile('^([0-7]+) ([0-9a-f]{40}) ([1-3])\t(.*)$', re.S)
-
-
-def merge_recursive(base, head1, head2):
-    """Perform a 3-way merge between base, head1 and head2 into the
-    local tree
-    """
-    refresh_index()
-    p = GRun('merge-recursive', base, '--', head1, head2).env(
-        {
-            'GITHEAD_%s' % base: 'ancestor',
-            'GITHEAD_%s' % head1: 'current',
-            'GITHEAD_%s' % head2: 'patched',
-        }
-    ).returns([0, 1])
-    output = p.output_lines()
-    if p.exitcode:
-        # There were conflicts
-        if config.getbool('stgit.autoimerge'):
-            mergetool()
-        else:
-            conflicts = [l for l in output if l.startswith('CONFLICT')]
-            out.info(*conflicts)
-            raise GitException("%d conflict(s)" % len(conflicts))
-
-
-def mergetool(files=()):
-    """Invoke 'git mergetool' to resolve any outstanding conflicts. If 'not
-    files', all the files in an unmerged state will be processed."""
-    GRun('mergetool', *list(files)).returns([0, 1]).run()
-    # check for unmerged entries (prepend 'CONFLICT ' for consistency with
-    # merge_recursive())
-    conflicts = ['CONFLICT ' + f for f in get_conflicts()]
-    if conflicts:
-        out.info(*conflicts)
-        raise GitException("%d conflict(s)" % len(conflicts))
-
-
 def diff(files=None, rev1='HEAD', rev2=None, diff_flags=[], binary=True):
     """Show the diff between rev1 and rev2
     """
@@ -670,47 +625,6 @@ def switch(tree_id):
         raise GitException('read-tree failed (local changes maybe?)')
 
     __set_head(tree_id)
-
-
-def apply_patch(filename=None, diff=None, base=None, reject=False, strip=None):
-    """Apply a patch onto the current or given index. There must not
-    be any local changes in the tree, otherwise the command fails
-    """
-    if diff is None:
-        if filename:
-            with io.open(filename, 'rb') as f:
-                diff = f.read()
-        else:
-            if hasattr(sys.stdin, 'buffer'):
-                diff = sys.stdin.buffer.read()
-            else:
-                diff = sys.stdin.read()
-
-    if base:
-        orig_head = get_head()
-        switch(base)
-    else:
-        refresh_index()
-
-    cmd = ['apply', '--index']
-    if reject:
-        cmd += ['--reject']
-    if strip is not None:
-        cmd += ['-p%s' % (strip,)]
-    try:
-        GRun(*cmd).encoding(None).raw_input(diff).no_output()
-    except GitRunException:
-        if base:
-            switch(orig_head)
-        raise GitException('Diff does not apply cleanly')
-
-    if base:
-        top = commit(
-            message='temporary commit used for applying a patch',
-            parents=[base],
-        )
-        switch(orig_head)
-        merge_recursive(base, orig_head, top)
 
 
 def refspec_localpart(refspec):

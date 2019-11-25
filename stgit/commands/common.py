@@ -12,7 +12,7 @@ import os
 import re
 import sys
 
-from stgit import git, stack, templates
+from stgit import git, templates
 from stgit.compat import decode_utf8_with_latin1, text
 from stgit.config import config
 from stgit.exception import StgException
@@ -178,18 +178,6 @@ def check_conflicts(iw=None):
 def print_current_patch(stack):
     if stack.patchorder.applied:
         out.info('Now at patch "%s"' % stack.patchorder.applied[-1])
-    else:
-        out.info('No patches applied')
-
-
-def print_crt_patch(crt_series, branch=None):
-    if not branch:
-        patch = crt_series.get_current()
-    else:
-        patch = stack.Series(branch).get_current()
-
-    if patch:
-        out.info('Now at patch "%s"' % patch)
     else:
         out.info('No patches applied')
 

@@ -19,7 +19,6 @@ from stgit.exception import StackException
 from stgit.lib import stackupgrade
 from stgit.lib.git import Repository
 from stgit.out import out
-from stgit.run import Run
 from stgit.utils import (
     add_sign_line,
     append_string,
@@ -294,15 +293,6 @@ class PatchSet(StgitObject):
 
         self._dir = os.path.join(self._base_dir, 'patches', self.name)
 
-    def get_head(self):
-        """Return the head of the branch
-        """
-        crt = self.get_current_patch()
-        if crt:
-            return crt.get_top()
-        else:
-            return self.get_base()
-
     def _branch_protect(self):
         return 'branch.%s.stgit.protect' % self.name
 
@@ -343,13 +333,6 @@ class PatchSet(StgitObject):
         return config.get(
             stackupgrade.format_version_key(self.name)
         ) is not None
-
-
-def shortlog(patches):
-    log = ''.join(Run('git', 'log', '--pretty=short',
-                      p.get_top(), '^%s' % p.get_bottom()).raw_output()
-                  for p in patches)
-    return Run('git', 'shortlog').raw_input(log).raw_output()
 
 
 class Series(PatchSet):
@@ -417,24 +400,15 @@ class Series(PatchSet):
             raise StackException('Branch "%s" not initialised' % self.name)
         return read_strings(self._applied_file)
 
-    def set_applied(self, applied):
-        write_strings(self._applied_file, applied)
-
     def get_unapplied(self):
         if not os.path.isfile(self._unapplied_file):
             raise StackException('Branch "%s" not initialised' % self.name)
         return read_strings(self._unapplied_file)
 
-    def set_unapplied(self, unapplied):
-        write_strings(self._unapplied_file, unapplied)
-
     def get_hidden(self):
         if not os.path.isfile(self._hidden_file):
             return []
         return read_strings(self._hidden_file)
-
-    def set_hidden(self, hidden):
-        write_strings(self._hidden_file, hidden)
 
     def get_base(self):
         # Return the parent of the bottommost patch, if there is one.
@@ -446,37 +420,8 @@ class Series(PatchSet):
         # No bottommost patch, so just return HEAD
         return git.get_head()
 
-    def get_parent_remote(self):
-        value = config.get('branch.%s.remote' % self.name)
-        if value:
-            return value
-        elif 'origin' in git.remotes_list():
-            out.note(('No parent remote declared for stack "%s",'
-                      ' defaulting to "origin".' % self.name),
-                     ('Consider setting "branch.%s.remote" and'
-                      ' "branch.%s.merge" with "git config".'
-                      % (self.name, self.name)))
-            return 'origin'
-        else:
-            raise StackException('Cannot find a parent remote for "%s"' %
-                                 self.name)
-
     def _set_parent_remote(self, remote):
         config.set('branch.%s.remote' % self.name, remote)
-
-    def get_parent_branch(self):
-        value = config.get('branch.%s.stgit.parentbranch' % self.name)
-        if value:
-            return value
-        elif git.rev_parse('heads/origin'):
-            out.note(('No parent branch declared for stack "%s",'
-                      ' defaulting to "heads/origin".' % self.name),
-                     ('Consider setting "branch.%s.stgit.parentbranch"'
-                      ' with "git config".' % self.name))
-            return 'heads/origin'
-        else:
-            raise StackException('Cannot find a parent branch for "%s"' %
-                                 self.name)
 
     def _set_parent_branch(self, name):
         if config.get('branch.%s.remote' % self.name):
@@ -497,9 +442,6 @@ class Series(PatchSet):
         #             localbranch, self.name
         #         )
         #     )
-
-    def _patch_is_current(self, patch):
-        return patch.name == self.get_current()
 
     def patch_applied(self, name):
         """Return true if the patch exists in the applied list
@@ -685,97 +627,6 @@ class Series(PatchSet):
 
         config.remove_section('branch.%s.stgit' % self.name)
 
-    def refresh_patch(
-        self,
-        files=None,
-        message=None,
-        edit=False,
-        empty=False,
-        show_patch=False,
-        cache_update=True,
-        author_name=None,
-        author_email=None,
-        author_date=None,
-        committer_name=None,
-        committer_email=None,
-        backup=True,
-        sign_str=None,
-        log='refresh',
-        notes=None,
-        bottom=None
-    ):
-        """Generates a new commit for the topmost patch
-        """
-        patch = self.get_current_patch()
-        if not patch:
-            raise StackException('No patches applied')
-
-        descr = patch.get_description()
-        if not (message or descr):
-            edit = True
-            descr = ''
-        elif message:
-            descr = message
-
-        # TODO: move this out of the stgit.stack module, it is really
-        # for higher level commands to handle the user interaction
-        if not message and edit:
-            descr = edit_file(
-                self,
-                descr.rstrip(),
-                'Please edit the description for patch "%s" above.' % (
-                    patch.name,
-                    show_patch,
-                )
-            )
-
-        if not author_name:
-            author_name = patch.get_authname()
-        if not author_email:
-            author_email = patch.get_authemail()
-        if not committer_name:
-            committer_name = patch.get_commname()
-        if not committer_email:
-            committer_email = patch.get_commemail()
-
-        descr = add_sign_line(descr, sign_str, committer_name, committer_email)
-
-        if not bottom:
-            bottom = patch.get_bottom()
-
-        if empty:
-            tree_id = git.get_commit(bottom).get_tree()
-        else:
-            tree_id = None
-
-        commit_id = git.commit(
-            files=files,
-            message=descr,
-            parents=[bottom],
-            cache_update=cache_update,
-            tree_id=tree_id,
-            set_head=True,
-            allowempty=True,
-            author_name=author_name,
-            author_email=author_email,
-            author_date=author_date,
-            committer_name=committer_name,
-            committer_email=committer_email
-        )
-
-        patch.set_top(commit_id, backup=backup)
-        patch.set_description(descr)
-        patch.set_authname(author_name)
-        patch.set_authemail(author_email)
-        patch.set_authdate(author_date)
-        patch.set_commname(committer_name)
-        patch.set_commemail(committer_email)
-
-        if log:
-            self.log_patch(patch, log, notes)
-
-        return commit_id
-
     def new_patch(
         self,
         name,
@@ -878,29 +729,6 @@ class Series(PatchSet):
 
         return patch
 
-    def delete_patch(self, name, keep_log=False):
-        """Deletes a patch
-        """
-        self._patch_name_valid(name)
-        patch = self.get_patch(name)
-
-        if self._patch_is_current(patch):
-            self.pop_patch(name)
-        elif self.patch_applied(name):
-            raise StackException('Cannot remove an applied patch, "%s", '
-                                 'which is not current' % name)
-        elif name not in self.get_unapplied():
-            raise StackException('Unknown patch "%s"' % name)
-
-        # save the commit id to a trash file
-        write_string(os.path.join(self._trash_dir, name), patch.get_top())
-
-        patch.delete(keep_log=keep_log)
-
-        unapplied = self.get_unapplied()
-        unapplied.remove(name)
-        write_strings(self._unapplied_file, unapplied)
-
     def forward_patches(self, names):
         """Try to fast-forward an array of patches.
 
@@ -976,76 +804,18 @@ class Series(PatchSet):
 
         return forwarded
 
-    def pop_patch(self, name):
-        """Pops the top patch from the stack
-        """
-        applied = self.get_applied()
-        applied.reverse()
-        assert(name in applied)
-
-        patch = self.get_patch(name)
-
-        if git.get_head_file() == self.name:
-            git.switch(patch.get_bottom())
-        else:
-            git.set_branch(self.name, patch.get_bottom())
-
-        # save the new applied list
-        idx = applied.index(name) + 1
-
-        popped = applied[:idx]
-        popped.reverse()
-        unapplied = popped + self.get_unapplied()
-        write_strings(self._unapplied_file, unapplied)
-
-        del applied[:idx]
-        applied.reverse()
-        write_strings(self._applied_file, applied)
-
-    def empty_patch(self, name):
-        """Returns True if the patch is empty
-        """
-        self._patch_name_valid(name)
-        patch = self.get_patch(name)
-        bottom = patch.get_bottom()
-        top = patch.get_top()
-
-        if bottom == top:
-            return True
-        else:
-            top_tree = git.get_commit(top).get_tree()
-            bottom_tree = git.get_commit(bottom).get_tree()
-            return top_tree == bottom_tree
-
-    def log_patch(self, patch, message, notes=None):
+    def log_patch(self, patch, message):
         """Generate a log commit for a patch
         """
         top = git.get_commit(patch.get_top())
         old_log = patch.get_log()
 
-        if message is None:
-            # replace the current log entry
-            if not old_log:
-                raise StackException(
-                    'No log entry to annotate for patch "%s"' % patch.name
-                )
-            log_commit = git.get_commit(old_log)
-            msg = log_commit.get_log().split('\n')[0]
-            log_parent = log_commit.get_parent()
-            if log_parent:
-                parents = [log_parent]
-            else:
-                parents = []
+        # generate a new log entry
+        msg = '%s\t%s' % (message, top.get_id_hash())
+        if old_log:
+            parents = [old_log]
         else:
-            # generate a new log entry
-            msg = '%s\t%s' % (message, top.get_id_hash())
-            if old_log:
-                parents = [old_log]
-            else:
-                parents = []
-
-        if notes:
-            msg += '\n\n' + notes
+            parents = []
 
         log = git.commit(
             message=msg,
