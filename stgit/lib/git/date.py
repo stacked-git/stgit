@@ -7,6 +7,7 @@ from __future__ import (
 )
 
 from datetime import datetime, timedelta, tzinfo
+import email.utils
 import re
 
 from stgit.exception import StgException
@@ -158,6 +159,10 @@ class Date(Immutable):
             self._time.replace(tzinfo=None).isoformat(str(' ')),
             self._time.tzinfo,
         )
+
+    def rfc2822_format(self):
+        """Format date in RFC-2822 format, as used in email."""
+        return email.utils.format_datetime(self._time)
 
     @classmethod
     def maybe(cls, datestring):

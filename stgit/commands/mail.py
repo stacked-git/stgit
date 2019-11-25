@@ -19,13 +19,12 @@ import socket
 import sys
 import time
 
-from stgit import git, stack, templates, version
+from stgit import templates, version
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepository,
+    DirectoryHasRepositoryLib,
     address_or_alias,
-    git_id,
     parse_patches,
 )
 from stgit.compat import message_from_bytes, text
@@ -268,8 +267,7 @@ options = [
     ),
 ] + diff_opts_option()
 
-directory = DirectoryHasRepository(log=False)
-crt_series = None
+directory = DirectoryHasRepositoryLib()
 
 
 def __get_sender():
@@ -598,6 +596,18 @@ def __encode_message(msg):
         msg.set_charset(charset)
 
 
+def __shortlog(stack, patches):
+    cmd = ['git', 'log', '--pretty=short']
+    for pn in patches:
+        p = stack.patches.get(pn)
+        cmd.append(p.commit.sha1)
+        cmd.append('^%s' % p.commit.data.parent.sha1)
+    log = stack.repository.run(cmd).raw_output()
+    return stack.repository.run(
+        ['git', 'shortlog']
+    ).raw_input(log).raw_output()
+
+
 def __build_cover(tmpl, msg_id, options, patches):
     """Build the cover message (series description) to be sent via SMTP
     """
@@ -629,6 +639,9 @@ def __build_cover(tmpl, msg_id, options, patches):
         number_str = ''
         number_space = ''
 
+    repository = directory.repository
+    stack = repository.current_stack
+
     tmpl_dict = {
         'sender': sender,      # for backward template compatibility
         'maintainer': sender,  # for backward template compatibility
@@ -643,16 +656,12 @@ def __build_cover(tmpl, msg_id, options, patches):
         'number': number_str,
         'nspace': number_space,
         'snumber': number_str.strip(),
-        'shortlog': stack.shortlog(
-            crt_series.get_patch(p)
-            for p in reversed(patches)
-        ),
-        'diffstat': diffstat(
-            git.diff(
-                rev1=git_id(crt_series, '%s^' % patches[0]),
-                rev2=git_id(crt_series, '%s' % patches[-1]),
-                diff_flags=options.diff_flags,
-            )
+        'shortlog': __shortlog(stack, patches),
+        'diffstat': repository.diff_tree(
+            stack.base.data.tree,
+            stack.top.data.tree,
+            diff_opts=options.diff_flags,
+            stat=True,
         ),
     }
 
@@ -675,10 +684,10 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     extra_cc = []
     if options.auto:
-        for patch in patches:
-            p = crt_series.get_patch(patch)
-            if p.get_description():
-                descr = p.get_description().strip()
+        for pn in patches:
+            p = stack.patches.get(pn)
+            if p.commit.data.message:
+                descr = p.commit.data.message.strip()
                 extra_cc.extend(__get_signers_list(descr))
         extra_cc = list(set(extra_cc))
 
@@ -693,10 +702,13 @@ def __build_cover(tmpl, msg_id, options, patches):
 def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     """Build the message to be sent via SMTP
     """
-    p = crt_series.get_patch(patch)
+    repository = directory.repository
+    stack = repository.current_stack
 
-    if p.get_description():
-        descr = p.get_description().strip()
+    p = stack.patches.get(patch)
+
+    if p.commit.data.message:
+        descr = p.commit.data.message.strip()
     else:
         # provide a place holder and force the edit message option on
         descr = '<empty message>'
@@ -706,16 +718,13 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     short_descr = descr_lines[0].strip()
     long_descr = '\n'.join(l.rstrip() for l in descr_lines[1:]).lstrip('\n')
 
-    authname = p.get_authname()
-    authemail = p.get_authemail()
-    commname = p.get_commname()
-    commemail = p.get_commemail()
+    author = p.commit.data.author
+    committer = p.commit.data.committer
 
     sender = __get_sender()
 
-    fromauth = '%s <%s>' % (authname, authemail)
-    if fromauth != sender:
-        fromauth = 'From: %s\n\n' % fromauth
+    if author.name_email != sender:
+        fromauth = 'From: %s\n\n' % author.name_email
     else:
         fromauth = ''
 
@@ -745,10 +754,10 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         number_str = ''
         number_space = ''
 
-    diff = git.diff(
-        rev1=git_id(crt_series, '%s^' % patch),
-        rev2=git_id(crt_series, '%s' % patch),
-        diff_flags=options.diff_flags,
+    diff = repository.diff_tree(
+        p.commit.data.parent.data.tree,
+        p.commit.data.tree,
+        diff_opts=options.diff_flags,
     )
     tmpl_dict = {
         'patch': patch,
@@ -770,11 +779,11 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         'nspace': number_space,
         'snumber': number_str.strip(),
         'fromauth': fromauth,
-        'authname': authname,
-        'authemail': authemail,
-        'authdate': p.get_authdate(),
-        'commname': commname,
-        'commemail': commemail,
+        'authname': author.name,
+        'authemail': author.email,
+        'authdate': author.date.rfc2822_format(),
+        'commname': committer.name,
+        'commemail': committer.email,
     }
 
     try:
@@ -811,12 +820,13 @@ def func(parser, options, args):
     """Send the patches by e-mail using the patchmail.tmpl file as
     a template
     """
-    applied = crt_series.get_applied()
+    stack = directory.repository.current_stack
+    applied = stack.patchorder.applied
 
     if options.all:
         patches = applied
     elif len(args) >= 1:
-        unapplied = crt_series.get_unapplied()
+        unapplied = stack.patchorder.unapplied
         patches = parse_patches(args, applied + unapplied, len(applied))
     else:
         raise CmdException('Incorrect options. Unknown patches to send')
@@ -826,7 +836,7 @@ def func(parser, options, args):
 
     out.start('Checking the validity of the patches')
     for p in patches:
-        if crt_series.empty_patch(p):
+        if stack.patches.get(p).is_empty():
             raise CmdException('Cannot send empty patch "%s"' % p)
     out.done()
 
