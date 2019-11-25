@@ -30,7 +30,7 @@ from stgit.commands.common import (
 )
 from stgit.compat import message_from_bytes, text
 from stgit.config import config
-from stgit.lib.git import diffstat
+from stgit.lib.git import Person, diffstat
 from stgit.out import out
 from stgit.run import Run
 from stgit.utils import edit_bytes
@@ -278,16 +278,19 @@ def __get_sender():
     """
     sender = config.get('stgit.sender')
     if not sender:
-        try:
-            sender = text(git.user())
-        except git.GitException:
-            try:
-                sender = text(git.author())
-            except git.GitException:
-                pass
-    if not sender:
-        raise CmdException('Unknown sender name and e-mail; you should for '
-                           'example set git config user.name and user.email')
+        user = Person.user()
+        if user.email:
+            sender = user.name_email
+        else:
+            author = Person.author()
+            if author.email:
+                sender = author.name_email
+            else:
+                raise CmdException(
+                    'Unknown sender name and e-mail; you should for '
+                    'example set git config user.name and user.email'
+                )
+
     sender = email.utils.parseaddr(sender)
 
     return email.utils.formataddr(address_or_alias(sender))
