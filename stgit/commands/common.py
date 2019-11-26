@@ -135,12 +135,13 @@ def color_diff_flags():
         return []
 
 
-def check_local_changes(stack=None):
+def check_local_changes(repository=None):
     out.start('Checking for changes in the working directory')
-    if stack:
-        iw = stack.repository.default_iw
+    if repository:
+        iw = repository.default_iw
         iw.refresh_index()
-        local_changes = iw.changed_files(stack.head.data.tree)
+        tree = repository.refs.get(repository.head_ref).data.tree
+        local_changes = iw.changed_files(tree)
     else:
         local_changes = git.local_changes()
     out.done()

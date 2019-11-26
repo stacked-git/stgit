@@ -272,7 +272,7 @@ def func(parser, options, args):
     iw = repository.default_iw
 
     if not options.unapplied:
-        check_local_changes(stack)
+        check_local_changes(repository)
         check_conflicts(iw)
         check_head_top_equal(stack)
 

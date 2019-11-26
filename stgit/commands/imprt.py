@@ -451,9 +451,10 @@ def func(parser, options, args):
         filename = os.path.abspath(filename)
     directory.cd_to_topdir()
 
-    stack = directory.repository.current_stack
-    check_local_changes(stack)
-    check_conflicts(stack.repository.default_iw)
+    repository = directory.repository
+    stack = repository.current_stack
+    check_local_changes(repository)
+    check_conflicts(repository.default_iw)
     check_head_top_equal(stack)
 
     if options.series:

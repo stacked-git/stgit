@@ -86,11 +86,11 @@ def func(parser, options, args):
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
-    stack = directory.repository.get_stack()
-    iw = directory.repository.default_iw
+    repository = directory.repository
+    stack = repository.get_stack()
 
-    check_local_changes(stack)
-    check_conflicts(iw)
+    check_local_changes(repository)
+    check_conflicts(repository.default_iw)
     check_head_top_equal(stack)
 
     if len(args) == 1:
@@ -131,7 +131,7 @@ def func(parser, options, args):
         apply_patch(
             stack,
             diff,
-            base=git_commit(options.base, stack.repository),
+            base=git_commit(options.base, repository),
             reject=options.reject,
             strip=options.strip,
         )
