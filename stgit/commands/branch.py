@@ -226,71 +226,78 @@ def __cleanup_branch(name, force=False):
     out.done()
 
 
+def __create_branch(branch_name, committish):
+    check_local_changes()
+    check_conflicts()
+    check_head_top_equal(crt_series)
+
+    tree_id = None
+    if committish is not None:
+        parentbranch = None
+        try:
+            branchpoint = git.rev_parse(committish)
+
+            # parent branch?
+            head_re = re.compile('refs/(heads|remotes)/')
+            ref_re = re.compile(committish + '$')
+            for ref in git.all_refs():
+                if head_re.match(ref) and ref_re.search(ref):
+                    # committish is a valid ref from the branchpoint setting
+                    # above
+                    parentbranch = committish
+                    break
+        except git.GitException:
+            # should use a more specific exception to catch only non-git refs?
+            out.info(
+                'Do not know how to determine parent branch from "%s"'
+                % committish
+            )
+            # exception in branch = rev_parse() leaves branchpoint unbound
+            branchpoint = None
+
+        tree_id = git_id(crt_series, branchpoint or committish)
+
+        if parentbranch:
+            out.info('Recording "%s" as parent branch' % parentbranch)
+        else:
+            out.info(
+                'Do not know how to determine parent branch from "%s"'
+                % committish
+            )
+    else:
+        # branch stack off current branch
+        parentbranch = git.get_head_file()
+
+    if parentbranch:
+        parentremote = git.identify_remote(parentbranch)
+        if parentremote:
+            out.info('Using remote "%s" to pull parent from' % parentremote)
+        else:
+            out.info('Recording as a local branch')
+    else:
+        # no known parent branch, can't guess the remote
+        parentremote = None
+
+    stack.Series(branch_name).init(
+        create_at=tree_id,
+        parent_remote=parentremote,
+        parent_branch=parentbranch,
+    )
+
+    out.info('Branch "%s" created' % branch_name)
+    log.compat_log_entry('branch --create')
+
+
 def func(parser, options, args):
 
     if options.create:
-
         if len(args) == 0 or len(args) > 2:
             parser.error('incorrect number of arguments')
 
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal(crt_series)
-
-        tree_id = None
-        if len(args) >= 2:
-            parentbranch = None
-            try:
-                branchpoint = git.rev_parse(args[1])
-
-                # parent branch?
-                head_re = re.compile('refs/(heads|remotes)/')
-                ref_re = re.compile(args[1] + '$')
-                for ref in git.all_refs():
-                    if head_re.match(ref) and ref_re.search(ref):
-                        # args[1] is a valid ref from the branchpoint
-                        # setting above
-                        parentbranch = args[1]
-                        break
-            except git.GitException:
-                # should use a more specific exception to catch only
-                # non-git refs ?
-                out.info('Don\'t know how to determine parent branch'
-                         ' from "%s"' % args[1])
-                # exception in branch = rev_parse() leaves branchpoint unbound
-                branchpoint = None
-
-            tree_id = git_id(crt_series, branchpoint or args[1])
-
-            if parentbranch:
-                out.info('Recording "%s" as parent branch' % parentbranch)
-            else:
-                out.info('Don\'t know how to determine parent branch'
-                         ' from "%s"' % args[1])
-        else:
-            # branch stack off current branch
-            parentbranch = git.get_head_file()
-
-        if parentbranch:
-            parentremote = git.identify_remote(parentbranch)
-            if parentremote:
-                out.info('Using remote "%s" to pull parent from'
-                         % parentremote)
-            else:
-                out.info('Recording as a local branch')
-        else:
-            # no known parent branch, can't guess the remote
-            parentremote = None
-
-        stack.Series(args[0]).init(
-            create_at=tree_id,
-            parent_remote=parentremote,
-            parent_branch=parentbranch,
+        return __create_branch(
+            branch_name=args[0],
+            committish=None if len(args) < 2 else args[1],
         )
-
-        out.info('Branch "%s" created' % args[0])
-        log.compat_log_entry('branch --create')
-        return
 
     elif options.clone:
 
