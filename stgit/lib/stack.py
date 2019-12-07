@@ -168,25 +168,13 @@ class PatchOrder(object):
     def applied(self):
         return self._get_list('applied')
 
-    @applied.setter
-    def applied(self, value):
-        self._set_list('applied', value)
-
     @property
     def unapplied(self):
         return self._get_list('unapplied')
 
-    @unapplied.setter
-    def unapplied(self, value):
-        self._set_list('unapplied', value)
-
     @property
     def hidden(self):
         return self._get_list('hidden')
-
-    @hidden.setter
-    def hidden(self, value):
-        self._set_list('hidden', value)
 
     @property
     def all(self):
@@ -195,6 +183,11 @@ class PatchOrder(object):
     @property
     def all_visible(self):
         return self.applied + self.unapplied
+
+    def set_order(self, applied, unapplied, hidden):
+        self._set_list('applied', applied)
+        self._set_list('unapplied', unapplied)
+        self._set_list('hidden', hidden)
 
     def rename_patch(self, old_name, new_name):
         for list_name in ['applied', 'unapplied', 'hidden']:

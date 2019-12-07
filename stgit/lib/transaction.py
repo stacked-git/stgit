@@ -288,9 +288,9 @@ class StackTransaction(object):
                     p.set_commit(commit, msg)
             else:
                 self.stack.patches.new(pn, commit, msg)
-        self.stack.patchorder.applied = self._applied
-        self.stack.patchorder.unapplied = self._unapplied
-        self.stack.patchorder.hidden = self._hidden
+        self.stack.patchorder.set_order(
+            self._applied, self._unapplied, self._hidden
+        )
         log_entry(self.stack, msg)
 
         if print_current_patch:
