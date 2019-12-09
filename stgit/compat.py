@@ -6,9 +6,10 @@ from __future__ import (
     unicode_literals,
 )
 
-import email
+import email.utils
 import os
 import sys
+import time
 
 # With unicode_literals enabled, the type of a string literal will be `unicode`
 # for Python 2 and `str` for Python 3.
@@ -56,6 +57,9 @@ if sys.version_info[0] <= 2:
         return dict((fsdecode_utf8(k), fsdecode_utf8(v))
                     for k, v in os.environ.iteritems())
 
+    def rfc2822_format(dt):
+        return text(email.utils.formatdate(time.mktime(dt.timetuple())))
+
 else:  # Python 3
     def fsdecode_utf8(b):
         if isinstance(b, bytes):
@@ -81,6 +85,8 @@ else:  # Python 3
 
     def environ_copy():
         return os.environ.copy()
+
+    rfc2822_format = email.utils.format_datetime
 
 
 class file_wrapper(object):
