@@ -12,7 +12,7 @@ import io
 import os
 import sys
 
-from stgit import git, templates
+from stgit import templates
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands import common
 from stgit.lib.git import diffstat
@@ -104,7 +104,8 @@ directory = common.DirectoryHasRepositoryLib()
 def func(parser, options, args):
     """Export a range of patches.
     """
-    stack = directory.repository.get_stack(options.branch)
+    repository = directory.repository
+    stack = repository.get_stack(options.branch)
 
     if options.dir:
         dirname = options.dir
@@ -112,9 +113,10 @@ def func(parser, options, args):
         dirname = 'patches-%s' % stack.name
         directory.cd_to_topdir()
 
-    if not options.branch and git.local_changes():
-        out.warn('Local changes in the tree;'
-                 ' you might want to commit them first')
+    head = repository.rev_parse('HEAD')
+    if not options.branch and repository.default_iw.changed_files(head.data.tree):
+        out.warn(
+            'Local changes in the tree; you might want to commit them first')
 
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
