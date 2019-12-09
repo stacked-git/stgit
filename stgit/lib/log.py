@@ -110,8 +110,8 @@ from __future__ import (
 import re
 
 from stgit import utils
-from stgit.exception import StackException, StgException
-from stgit.lib.git import BlobData, CommitData, RepositoryException, TreeData
+from stgit.exception import StgException
+from stgit.lib.git import BlobData, CommitData, TreeData
 from stgit.lib.stack import StackRepository
 from stgit.out import out
 
@@ -396,57 +396,6 @@ def log_entry(stack, msg):
     stack.repository.refs.set(ref, new_log.commit, msg)
 
 
-class Fakestack(object):
-    """Imitates a real L{Stack<stgit.lib.stack.Stack>}, but with the
-    topmost patch popped."""
-
-    def __init__(self, stack):
-        appl = list(stack.patchorder.applied)
-        unappl = list(stack.patchorder.unapplied)
-        hidd = list(stack.patchorder.hidden)
-
-        class patchorder(object):
-            applied = appl[:-1]
-            unapplied = [appl[-1]] + unappl
-            hidden = hidd
-            all = appl + unappl + hidd
-
-        self.patchorder = patchorder
-
-        class patches(object):
-            @staticmethod
-            def get(pn):
-                if pn == appl[-1]:
-                    class patch(object):
-                        commit = stack.patches.get(pn).old_commit
-                    return patch
-                else:
-                    return stack.patches.get(pn)
-
-        self.patches = patches
-        self.head = stack.head.data.parent
-        self.top = stack.top.data.parent
-        self.base = stack.base
-        self.name = stack.name
-        self.repository = stack.repository
-
-
-def compat_log_entry(msg):
-    """Write a new log entry. (Convenience function intended for use by
-    code not yet converted to the new infrastructure.)"""
-    try:
-        repo = default_repo()
-        stack = repo.get_stack(repo.current_branch_name)
-    except (StackException, RepositoryException) as e:
-        out.warn(str(e), 'Could not write to stack log')
-    else:
-        if repo.default_index.conflicts() and stack.patchorder.applied:
-            log_entry(Fakestack(stack), msg)
-            log_entry(stack, msg + ' (CONFLICT)')
-        else:
-            log_entry(stack, msg)
-
-
 def delete_log(repo, branch):
     ref = log_ref(branch)
     if repo.refs.exists(ref):
@@ -600,17 +549,3 @@ def log_external_mods(stack):
             ]
         )
     )
-
-
-def compat_log_external_mods():
-    try:
-        repo = default_repo()
-    except RepositoryException:
-        # No repository, so we couldn't log even if we wanted to.
-        return
-    try:
-        stack = repo.get_stack(repo.current_branch_name)
-    except StgException:
-        # Stack doesn't exist, so we can't log.
-        return
-    log_external_mods(stack)
