@@ -12,7 +12,7 @@ import io
 import os
 import sys
 
-from stgit import basedir
+from stgit.run import Run
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -36,7 +36,7 @@ def get_template(tfile):
     None if the file wasn't found.
     """
     tmpl_dirs = [
-        basedir.get(),
+        Run('git', 'rev-parse', '--git-dir').output_one_line(),
         os.path.join(os.path.expanduser('~'), '.stgit', 'templates'),
         os.path.join(sys.prefix, 'share', 'stgit', 'templates'),
         os.path.join(os.path.dirname(__file__), 'templates'),
