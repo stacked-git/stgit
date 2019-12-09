@@ -113,10 +113,15 @@ def func(parser, options, args):
         dirname = 'patches-%s' % stack.name
         directory.cd_to_topdir()
 
-    head = repository.rev_parse('HEAD')
-    if not options.branch and repository.default_iw.changed_files(head.data.tree):
+    if (
+        not options.branch
+        and repository.default_iw.changed_files(
+            repository.rev_parse('HEAD').data.tree
+        )
+    ):
         out.warn(
-            'Local changes in the tree; you might want to commit them first')
+            'Local changes in the tree; you might want to commit them first'
+        )
 
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
