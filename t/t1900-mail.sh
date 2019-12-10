@@ -6,6 +6,7 @@ test_description='Test the mail command'
 test_expect_success \
     'Initialize the StGIT repository' \
     '
+    git config stgit.sender "A U Thor <author@example.com>" &&
     for i in 1 2 3 4 5; do
       touch foo.txt &&
       echo "line $i" >> foo.txt &&
@@ -18,42 +19,8 @@ test_expect_success \
 
 test_expect_success \
     'Put all the patches in an mbox' \
-    '
-    stg mail --to="Inge Ström <inge@example.com>" -a -m \
-       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0 &&
-    grep -e "From: .*author@example.com" mbox0 &&
-    grep -e "To: .*inge@example.com" mbox0
-    '
-
-test_expect_success \
-    'Use stgit.sender for sender' \
-    '
-    test_config stgit.sender "StGit Sender <stgit.sender@example.com" &&
-    stg mail --to="Someone <someone@example.com>" -a -m \
-       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0-sender &&
-    grep -e "From: StGit Sender <stgit.sender@example.com>" mbox0-sender &&
-    grep -e "To: Someone <someone@example.com>" mbox0-sender
-    '
-
-test_expect_success \
-    'Use git user for sender' \
-    '
-    test_config user.name "Git User Name" &&
-    test_config user.email "Git.User.Name@example.com" &&
-    stg mail --to="Inge Ström <inge@example.com>" -a -m \
-       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0-user &&
-    grep -e "From: Git User Name <Git.User.Name@example.com>" mbox0-user &&
-    grep -e "To: .*inge@example.com" mbox0-user
-    '
-
-test_expect_success \
-    'No sender information' \
-    '
-    command_error test_env GIT_AUTHOR_NAME="" GIT_AUTHOR_EMAIL="" \
-        stg mail --to="Inge Ström <inge@example.com>" -a -m \
-        -t $STG_ROOT/stgit/templates/patchmail.tmpl 2>&1 >/dev/null |
-    grep -e "Unknown sender name and e-mail"
-    '
+    'stg mail --to="Inge Ström <inge@example.com>" -a -m \
+       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0'
 
 test_expect_success \
     'Import the mbox and compare' \
