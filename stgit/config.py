@@ -153,7 +153,7 @@ class GitConfig(object):
         group contents, for all variable names matching the regexp.
         """
         result = []
-        for line in Run('git', 'config', '--get-regexp', '"^%s$"' % regexp
+        for line in Run('git', 'config', '--get-regexp', '^%s$' % regexp
                         ).returns([0, 1]).output_lines():
             m = re.match('^%s ' % regexp, line)
             if m:

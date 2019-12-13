@@ -19,6 +19,7 @@ from stgit.commands.common import (
     check_local_changes,
     git_id,
 )
+from stgit.config import config
 from stgit.lib import log
 from stgit.out import out
 
@@ -269,7 +270,7 @@ def __create_branch(branch_name, committish):
         parentbranch = git.get_head_file()
 
     if parentbranch:
-        parentremote = git.identify_remote(parentbranch)
+        parentremote = config.get('branch.%s.remote' % parentbranch)
         if parentremote:
             out.info('Using remote "%s" to pull parent from' % parentremote)
         else:

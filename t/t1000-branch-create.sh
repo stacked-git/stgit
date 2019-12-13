@@ -11,10 +11,36 @@ Exercises the "stg branch" commands.
 . ./test-lib.sh
 
 test_expect_success \
+    'Create upstream repo' '
+    test_create_repo upstream &&
+    (
+        cd upstream &&
+        test_commit one
+    ) &&
+    git remote add origin upstream &&
+    git fetch origin master &&
+    git branch --set-upstream-to=origin/master &&
+    test "$(git config --get branch.master.remote)" = "origin"
+'
+
+test_expect_success \
     'Create a branch when the current one is not an StGIT stack' '
-    git branch origin &&
-    stg branch --create new origin &&
+    git branch regular-branch &&
+    git branch --set-upstream-to=origin/master regular-branch &&
+    stg branch --create new regular-branch &&
     test "$(stg branch)" = "new"
+'
+
+test_expect_success \
+    'Check for various bits of new branch' '
+    test_path_is_file .git/refs/heads/new &&
+    test_path_is_file .git/refs/heads/new.stgit &&
+    test_path_is_dir .git/patches/new &&
+    test_path_is_missing .git/refs/patches &&
+    test "$(git config --get branch.new.remote)" = "origin" &&
+    test "$(git config --get branch.new.stgit.parentbranch)" = "regular-branch" &&
+    test "$(git config --get branch.new.stgit.stackformatversion)" = "3" &&
+    test "$(git rev-parse HEAD)" = "$(git rev-parse new)"
 '
 
 test_expect_success \
@@ -36,19 +62,11 @@ test_expect_success \
 
 test_expect_success \
     'Check that no part of the branch was created' '
+    test_when_finished rm .git/patches/foo1 &&
     test "$(find .git -name foo1 | tee /dev/stderr)" = ".git/patches/foo1" &&
     test $(git show-ref | grep foo1 | wc -l) -eq 0 &&
-    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
-'
-
-test_expect_success \
-    'Create a git branch' '
-    git update-ref refs/heads/foo2 refs/heads/master
-'
-
-test_expect_success \
-    'Try to create an stgit branch with an existing git branch by that name' '
-    command_error stg branch -c foo2
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master" &&
+    test_must_fail git config --get-regexp branch\.foo1
 '
 
 test_expect_success \
@@ -70,36 +88,51 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Create a git branch' '
+    git update-ref refs/heads/foo2 refs/heads/master
+'
+
+test_expect_success \
+    'Try to create an stgit branch with an existing git branch by that name' '
+    command_error stg branch -c foo2
+'
+
+test_expect_success \
     'Check that no part of the branch was created' '
-    test $(find .git -name foo2 | tee /dev/stderr \
+    test $(find .git -name foo2 \
+        | tee /dev/stderr \
         | grep -v ^\\.git/refs/heads/foo2$ \
-        | grep -v ^\\.git/logs/refs/heads/foo2$ | wc -l) -eq 0 &&
+        | grep -v ^\\.git/logs/refs/heads/foo2$ \
+        | wc -l) -eq 0 &&
     test $(git show-ref | grep foo2 | wc -l) -eq 1 &&
+    test_must_fail git config --get-regexp branch\.foo3 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
 test_expect_success \
     'Create an invalid refs/heads/ entry' '
     touch .git/refs/heads/foo3 &&
+    test_when_finished rm .git/refs/heads/foo3 &&
     command_error stg branch -c foo3
 '
 
 test_expect_failure \
     'Check that no part of the branch was created' '
-    test $(find .git -name foo3 | tee /dev/stderr \
-        | grep -v ^\\.git/refs/heads/foo3$ | wc -l) -eq 0 &&
+    # Workaround for the test failure to make the rest of the subtests
+    # succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
+    # we need to reset it.)
+    test_when_finished git symbolic-ref HEAD refs/heads/master
+    test $(find .git -name foo3 \
+        | tee /dev/stderr \
+        | grep -v ^\\.git/refs/heads/foo3$ \
+        | wc -l) -eq 0 &&
     test $(git show-ref | grep foo3 | wc -l) -eq 0 &&
+    test_must_fail git config --get-regexp branch\.foo3 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
-# Workaround for the test failure to make the rest of the subtests
-# succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
-# we need to reset it.)
-git symbolic-ref HEAD refs/heads/master
-
 test_expect_success \
     'Setup two commits including removal of generated files' '
-    git init &&
     touch file1 file2 &&
     stg add file1 file2 &&
     git commit -m 1 &&
@@ -118,6 +151,7 @@ test_expect_success \
     test_path_is_missing file1 &&
     test $(find .git -name foo4 | tee /dev/stderr | wc -l) -eq 0 &&
     test $(git show-ref | grep foo4 | wc -l) -eq 0 &&
+    test_must_fail git config --get-regexp branch\.foo4 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
