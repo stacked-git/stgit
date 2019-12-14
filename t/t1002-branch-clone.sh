@@ -37,6 +37,7 @@ test_expect_success \
     '
     stg branch --clone bar &&
     test "$(stg series --applied -c)" -eq 1 &&
+    test "$(git config --get branch.bar.description)" = "clone of \"foo\"" &&
     stg new p2 -m "p2" &&
     test "$(stg series --applied -c)" -eq 2
     '
