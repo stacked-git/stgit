@@ -8,6 +8,7 @@ from __future__ import (
 
 from stgit.config import config
 from stgit.exception import StgException
+from stgit.run import RunException
 
 
 class BranchException(StgException):
@@ -42,24 +43,25 @@ class Branch(object):
 
     @property
     def parent_remote(self):
-        remote = config.get(self._remote_key)
-        if remote is None:
-            raise BranchException(
-                '%s: no parent remote; consider configuring "%s"' % (
-                    self.name, self._remote_key
-                )
-            )
-        else:
-            return remote
+        return config.get(self._remote_key)
 
     def set_parent_remote(self, name):
-        config.set('branch.%s.remote' % self.name, name)
+        config.set(self._remote_key, name)
 
     def set_parent_branch(self, name):
         if config.get(self._remote_key):
             # Never set merge if remote is not set to avoid
             # possibly-erroneous lookups into 'origin'
             config.set('branch.%s.merge' % self.name, name)
+
+    def get_description(self):
+        return config.get('branch.%s.description' % self.name)
+
+    def set_description(self, description):
+        if description:
+            config.set('branch.%s.description' % self.name, description)
+        else:
+            config.unset('branch.%s.description' % self.name)
 
     @classmethod
     def create(cls, repository, name, create_at=None):
@@ -72,9 +74,37 @@ class Branch(object):
         if branch:
             raise BranchException('%s: branch already exists' % name)
 
-        cmd = ['git', 'branch']
+        cmd = ['git', 'branch', name]
         if create_at:
             cmd.append(create_at.sha1)
-        repository.run(['git', 'branch', create_at.sha1]).discard_output()
+        repository.run(cmd).discard_output()
+        repository.refs.reset_cache()
 
         return cls(repository, name)
+
+    def switch_to(self):
+        try:
+            self.repository.run(
+                ['git', 'checkout', self.name]
+            ).discard_output()
+        except RunException:
+            raise BranchException('%s: failed to switch to branch' % self.name)
+        self.repository.refs.reset_cache()
+
+    def delete(self):
+        self.repository.run(
+            ['git', 'branch', '--delete', '--force', self.name]
+        ).discard_output()
+
+    def rename(self, name):
+        new_ref = 'refs/heads/%s' % name
+        if self.repository.refs.exists(new_ref):
+            raise BranchException('branch "%s" already exists' % name)
+
+        # Moves the branch ref, moves the reflog, updates HEAD, and renames
+        # 'branch.<name>' config section.
+        self.repository.run(
+            ['git', 'branch', '--move', self.name, name]
+        ).discard_output()
+        self.repository.refs.reset_cache()
+        self.name = name

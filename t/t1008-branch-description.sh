@@ -4,7 +4,7 @@ test_description='Test branch descriptions'
 
 . ./test-lib.sh
 
-test_expect_failure \
+test_expect_success \
     'Description of non-stgit branch' '
     test "$(stg branch)" = "master" &&
     test_must_fail git config --get branch.master.description &&
@@ -12,7 +12,7 @@ test_expect_failure \
     test "$(git config --get branch.master.description)" = "master branch description"
 '
 
-test_expect_failure \
+test_expect_success \
     'Remove description of non-stgit branch' '
     stg branch --description="" &&
     test_must_fail git config --get branch.master.description

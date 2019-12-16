@@ -6,22 +6,26 @@ from __future__ import (
     unicode_literals,
 )
 
-import re
 import time
 
-from stgit import git, stack
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoToplevel,
+    DirectoryGotoTopLevelLib,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
-    git_id,
+    git_commit,
 )
 from stgit.config import config
+from stgit.exception import StackException
 from stgit.lib import log
+from stgit.lib.git.branch import Branch
+from stgit.lib.git.repository import DetachedHeadException
+from stgit.lib.stack import Stack
+from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
+from stgit.run import RunException
 
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
@@ -46,7 +50,7 @@ usage = ['',
          '--list',
          '--create [--] <new-branch> [<committish>]',
          '--clone [--] [<new-branch>]',
-         '--rename [--] <old-name> <new-name>',
+         '--rename [--] [<old-name>] <new-name>',
          '--protect [--] [<branch>]',
          '--unprotect [--] [<branch>]',
          '--delete [--force] [--] <branch>',
@@ -177,78 +181,101 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoToplevel(log=False)
-crt_series = None
+directory = DirectoryGotoTopLevelLib()
 
 
 def __is_current_branch(branch_name):
-    return crt_series.name == branch_name
+    try:
+        return directory.repository.current_branch_name == branch_name
+    except DetachedHeadException:
+        return False
 
 
 def __print_branch(branch_name, length):
-    initialized = ' '
-    current = ' '
-    protected = ' '
+    branch = Branch(directory.repository, branch_name)
+    current = '>' if __is_current_branch(branch_name) else ' '
+    try:
+        stack = directory.repository.get_stack(branch_name)
+    except StackException:
+        initialised = protected = ' '
+    else:
+        initialised = 's'
+        protected = 'p' if stack.protected else ' '
 
-    branch = stack.Series(branch_name)
-
-    if branch.is_initialised():
-        initialized = 's'
-    if __is_current_branch(branch_name):
-        current = '>'
-    if branch.get_protected():
-        protected = 'p'
-    out.stdout(current + ' ' + initialized + protected + '\t'
-               + branch_name.ljust(length) + '  | ' + branch.get_description())
+    out.stdout(
+        current
+        + ' '
+        + initialised
+        + protected
+        + '\t'
+        + branch_name.ljust(length)
+        + '  | '
+        + (branch.get_description() or '')
+    )
 
 
 def __delete_branch(doomed_name, force=False):
-    doomed = stack.Series(doomed_name)
-
     if __is_current_branch(doomed_name):
         raise CmdException('Cannot delete the current branch')
-    if doomed.get_protected():
-        raise CmdException('This branch is protected. Delete is not permitted')
+
+    branch = Branch(directory.repository, doomed_name)
+    try:
+        stack = directory.repository.get_stack(doomed_name)
+    except StackException:
+        stack = None
+
+    if stack:
+        if stack.protected:
+            raise CmdException(
+                'This branch is protected. Delete is not permitted'
+            )
+        if not force and stack.patchorder.all:
+            raise CmdException(
+                'Cannot delete: the series still contains patches'
+            )
 
     out.start('Deleting branch "%s"' % doomed_name)
-    doomed.delete(force)
+    if stack:
+        stack.cleanup()
+    branch.delete()
     out.done()
 
 
 def __cleanup_branch(name, force=False):
-    branch = stack.Series(name)
-    if branch.get_protected():
+    stack = directory.repository.get_stack(name)
+    if stack.protected:
         raise CmdException(
             'This branch is protected. Clean up is not permitted'
         )
+    if not force and stack.patchorder.all:
+        raise CmdException(
+            'Cannot clean up: the series still contains patches'
+        )
 
     out.start('Cleaning up branch "%s"' % name)
-    branch.delete(force=force, cleanup=True)
+    stack.cleanup()
     out.done()
 
 
 def __create_branch(branch_name, committish):
-    check_local_changes()
-    check_conflicts()
-    check_head_top_equal(crt_series)
+    repository = directory.repository
 
-    tree_id = None
+    branch_commit = None
     if committish is not None:
         parentbranch = None
         try:
-            branchpoint = git.rev_parse(committish)
+            branchpoint = repository.run(
+                ['git', 'rev-parse', '--symbolic-full-name', committish]
+            ).output_one_line()
 
-            # parent branch?
-            head_re = re.compile('refs/(heads|remotes)/')
-            ref_re = re.compile(committish + '$')
-            for ref in git.all_refs():
-                if head_re.match(ref) and ref_re.search(ref):
-                    # committish is a valid ref from the branchpoint setting
-                    # above
-                    parentbranch = committish
-                    break
-        except git.GitException:
-            # should use a more specific exception to catch only non-git refs?
+            if (
+                branchpoint.startswith('refs/heads/')
+                or branchpoint.startswith('refs/remotes/')
+            ):
+                # committish is a valid ref from the branchpoint setting above
+                parentbranch = committish
+
+        except RunException:
             out.info(
                 'Do not know how to determine parent branch from "%s"'
                 % committish
@@ -256,7 +283,7 @@ def __create_branch(branch_name, committish):
             # exception in branch = rev_parse() leaves branchpoint unbound
             branchpoint = None
 
-        tree_id = git_id(crt_series, branchpoint or committish)
+        branch_commit = git_commit(branchpoint or committish, repository)
 
         if parentbranch:
             out.info('Recording "%s" as parent branch' % parentbranch)
@@ -266,8 +293,11 @@ def __create_branch(branch_name, committish):
                 % committish
             )
     else:
-        # branch stack off current branch
-        parentbranch = git.get_head_file()
+        try:
+            # branch stack off current branch
+            parentbranch = repository.head_ref
+        except DetachedHeadException:
+            parentbranch = None
 
     if parentbranch:
         parentremote = config.get('branch.%s.remote' % parentbranch)
@@ -279,46 +309,98 @@ def __create_branch(branch_name, committish):
         # no known parent branch, can't guess the remote
         parentremote = None
 
-    stack.Series(branch_name).init(
-        create_at=tree_id,
+    stack = Stack.create(
+        repository,
+        name=branch_name,
+        create_at=branch_commit,
         parent_remote=parentremote,
         parent_branch=parentbranch,
+        switch_to=True,
     )
 
-    out.info('Branch "%s" created' % branch_name)
-    log.compat_log_entry('branch --create')
+    return stack
 
 
 def func(parser, options, args):
+    repository = directory.repository
 
     if options.create:
         if len(args) == 0 or len(args) > 2:
             parser.error('incorrect number of arguments')
 
-        return __create_branch(
-            branch_name=args[0],
-            committish=None if len(args) < 2 else args[1],
-        )
+        branch_name = args[0]
+        committish = None if len(args) < 2 else args[1]
+
+        if committish:
+            check_local_changes(repository)
+        check_conflicts(repository.default_iw)
+        try:
+            stack = repository.get_stack()
+        except (DetachedHeadException, StackException):
+            pass
+        else:
+            check_head_top_equal(stack)
+
+        stack = __create_branch(branch_name, committish)
+
+        out.info('Branch "%s" created' % branch_name)
+        log.log_entry(stack, 'branch --create %s' % stack.name)
+        return
 
     elif options.clone:
 
+        cur_branch = Branch(repository, repository.current_branch_name)
         if len(args) == 0:
-            clone = crt_series.name + time.strftime('-%C%y%m%d-%H%M%S')
+            clone_name = cur_branch.name + time.strftime('-%C%y%m%d-%H%M%S')
         elif len(args) == 1:
-            clone = args[0]
+            clone_name = args[0]
         else:
             parser.error('incorrect number of arguments')
 
-        check_local_changes()
-        check_conflicts()
-        check_head_top_equal(crt_series)
+        check_local_changes(repository)
+        check_conflicts(repository.default_iw)
+        try:
+            stack = repository.current_stack
+        except StackException:
+            stack = None
+            base = repository.refs.get(repository.head_ref)
+        else:
+            check_head_top_equal(stack)
+            base = stack.base
 
-        out.start('Cloning current branch to "%s"' % clone)
-        crt_series.clone(clone)
+        out.start('Cloning current branch to "%s"' % clone_name)
+        clone = Stack.create(
+            repository,
+            name=clone_name,
+            create_at=base,
+            parent_remote=cur_branch.parent_remote,
+            parent_branch=cur_branch.name,
+        )
+        if stack:
+            for pn in stack.patchorder.all_visible:
+                patch = stack.patches.get(pn)
+                clone.patches.new(pn, patch.commit, 'clone %s' % stack.name)
+            clone.patchorder.set_order(
+                applied=[], unapplied=stack.patchorder.all_visible, hidden=[]
+            )
+            trans = StackTransaction(clone, 'clone')
+            try:
+                for pn in stack.patchorder.applied:
+                    trans.push_patch(pn)
+            except TransactionHalted:
+                pass
+            trans.run()
+        prefix = 'branch.%s.' % cur_branch.name
+        new_prefix = 'branch.%s.' % clone.name
+        for n, v in list(config.getstartswith(prefix)):
+            config.set(n.replace(prefix, new_prefix, 1), v)
+        clone.set_description('clone of "%s"' % cur_branch.name)
+        clone.switch_to()
         out.done()
 
-        log.copy_log(log.default_repo(), crt_series.name, clone,
-                     'branch --clone')
+        log.copy_log(
+            log.default_repo(), cur_branch.name, clone.name, 'branch --clone'
+        )
         return
 
     elif options.delete:
@@ -332,7 +414,7 @@ def func(parser, options, args):
     elif options.cleanup:
 
         if not args:
-            name = crt_series.name
+            name = repository.current_branch_name
         elif len(args) == 1:
             name = args[0]
         else:
@@ -346,17 +428,17 @@ def func(parser, options, args):
         if len(args) != 0:
             parser.error('incorrect number of arguments')
 
-        branches = set(git.get_heads())
-        for br in set(branches):
-            m = re.match(r'^(.*)\.stgit$', br)
-            if m and m.group(1) in branches:
-                branches.remove(br)
+        branch_names = sorted(
+            ref.replace('refs/heads/', '', 1)
+            for ref in repository.refs
+            if ref.startswith('refs/heads/') and not ref.endswith('.stgit')
+        )
 
-        if branches:
+        if branch_names:
             out.info('Available branches:')
-            max_len = max([len(i) for i in branches])
-            for i in sorted(branches):
-                __print_branch(i, max_len)
+            max_len = max(len(name) for name in branch_names)
+            for branch_name in branch_names:
+                __print_branch(branch_name, max_len)
         else:
             out.info('No branches')
         return
@@ -364,53 +446,61 @@ def func(parser, options, args):
     elif options.protect:
 
         if len(args) == 0:
-            branch_name = crt_series.name
+            branch_name = repository.current_branch_name
         elif len(args) == 1:
             branch_name = args[0]
         else:
             parser.error('incorrect number of arguments')
-        branch = stack.Series(branch_name)
 
-        if not branch.is_initialised():
-            raise CmdException('Branch "%s" is not controlled by StGIT' %
-                               branch_name)
+        try:
+            stack = repository.get_stack(branch_name)
+        except StackException:
+            raise CmdException(
+                'Branch "%s" is not controlled by StGIT' % branch_name
+            )
 
         out.start('Protecting branch "%s"' % branch_name)
-        branch.protect()
+        stack.protected = True
         out.done()
 
         return
 
     elif options.rename:
 
-        if len(args) != 2:
+        if len(args) == 1:
+            stack = repository.current_stack
+            new_name = args[0]
+        elif len(args) == 2:
+            stack = repository.get_stack(args[0])
+            new_name = args[1]
+        else:
             parser.error('incorrect number of arguments')
 
-        if __is_current_branch(args[0]):
-            raise CmdException('Renaming the current branch is not supported')
+        old_name = stack.name
+        stack.rename(new_name)
 
-        stack.Series(args[0]).rename(args[1])
-
-        out.info('Renamed branch "%s" to "%s"' % (args[0], args[1]))
-        log.rename_log(log.default_repo(), args[0], args[1], 'branch --rename')
+        out.info('Renamed branch "%s" to "%s"' % (old_name, new_name))
+        log.rename_log(repository, old_name, new_name, 'branch --rename')
         return
 
     elif options.unprotect:
 
         if len(args) == 0:
-            branch_name = crt_series.name
+            branch_name = repository.current_branch_name
         elif len(args) == 1:
             branch_name = args[0]
         else:
             parser.error('incorrect number of arguments')
-        branch = stack.Series(branch_name)
 
-        if not branch.is_initialised():
-            raise CmdException('Branch "%s" is not controlled by StGIT' %
-                               branch_name)
+        try:
+            stack = repository.get_stack(branch_name)
+        except StackException:
+            raise CmdException(
+                'Branch "%s" is not controlled by StGIT' % branch_name
+            )
 
         out.info('Unprotecting branch "%s"' % branch_name)
-        branch.unprotect()
+        stack.protected = False
         out.done()
 
         return
@@ -418,34 +508,34 @@ def func(parser, options, args):
     elif options.description is not None:
 
         if len(args) == 0:
-            branch_name = crt_series.name
+            branch_name = repository.current_branch_name
         elif len(args) == 1:
             branch_name = args[0]
         else:
             parser.error('incorrect number of arguments')
-        branch = stack.Series(branch_name)
 
-        if not branch.is_initialised():
-            raise CmdException('Branch "%s" is not controlled by StGIT' %
-                               branch_name)
-
-        branch.set_description(options.description)
-
+        Branch(repository, branch_name).set_description(options.description)
         return
 
     elif len(args) == 1:
-
-        if __is_current_branch(args[0]):
-            raise CmdException('Branch "%s" is already the current branch' %
-                               args[0])
+        branch_name = args[0]
+        if branch_name == repository.current_branch_name:
+            raise CmdException(
+                'Branch "%s" is already the current branch' % branch_name
+            )
 
         if not options.merge:
-            check_local_changes()
-        check_conflicts()
-        check_head_top_equal(crt_series)
+            check_local_changes(repository)
+        check_conflicts(repository.default_iw)
+        try:
+            stack = repository.get_stack()
+        except StackException:
+            pass
+        else:
+            check_head_top_equal(stack)
 
-        out.start('Switching to branch "%s"' % args[0])
-        git.switch_branch(args[0])
+        out.start('Switching to branch "%s"' % branch_name)
+        Branch(repository, branch_name).switch_to()
         out.done()
         return
 
@@ -453,4 +543,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    out.stdout(crt_series.name)
+    out.stdout(directory.repository.current_branch_name)

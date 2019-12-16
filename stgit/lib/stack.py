@@ -9,13 +9,15 @@ from __future__ import (
 )
 
 import os
+import shutil
 
 from stgit import utils
 from stgit.compat import text
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import stackupgrade
-from stgit.lib.git import Branch, CommitData, Repository
+from stgit.lib.git import CommitData, Repository
+from stgit.lib.git.branch import Branch, BranchException
 from stgit.lib.objcache import ObjectCache
 
 
@@ -303,6 +305,7 @@ class Stack(Branch):
             self.set_parent_remote(remote)
         if branch:
             self.set_parent_branch(branch)
+            config.set('branch.%s.stgit.parentbranch' % self.name, branch)
 
     @property
     def protected(self):
@@ -315,6 +318,52 @@ class Stack(Branch):
             config.set(protect_key, 'true')
         elif self.protected:
             config.unset(protect_key)
+
+    def cleanup(self):
+        assert not self.protected, 'attempt to delete protected stack'
+        for pn in self.patchorder.all:
+            patch = self.patches.get(pn)
+            patch.delete()
+        shutil.rmtree(self.directory)
+        config.remove_section('branch.%s.stgit' % self.name)
+
+    def rename(self, name):
+        old_name = self.name
+        patch_names = self.patchorder.all
+        super(Stack, self).rename(name)
+        old_ref_root = 'refs/patches/%s' % old_name
+        new_ref_root = 'refs/patches/%s' % name
+        empty_id = '0' * 40
+        ref_updates = ''
+        for pn in patch_names:
+            old_ref = '%s/%s' % (old_ref_root, pn)
+            new_ref = '%s/%s' % (new_ref_root, pn)
+            old_log_ref = old_ref + '.log'
+            new_log_ref = new_ref + '.log'
+            patch_commit_id = self.repository.refs.get(old_ref).sha1
+            log_commit_id = self.repository.refs.get(old_log_ref).sha1
+
+            ref_updates += 'update %s %s %s\n' % (
+                new_ref, patch_commit_id, empty_id
+            )
+            ref_updates += 'update %s %s %s\n' % (
+                new_log_ref, log_commit_id, empty_id
+            )
+            ref_updates += 'delete %s %s\n' % (old_ref, patch_commit_id)
+            ref_updates += 'delete %s %s\n' % (old_log_ref, log_commit_id)
+        self.repository.run(
+            ['git', 'update-ref', '--stdin']
+        ).raw_input(ref_updates).discard_output()
+
+        config.rename_section(
+            'branch.%s.stgit' % old_name, 'branch.%s.stgit' % name
+        )
+
+        utils.rename(
+            os.path.join(self.repository.directory, self._repo_subdir),
+            old_name,
+            name,
+        )
 
     def rename_patch(self, old_name, new_name, msg='rename'):
         if new_name == old_name:
@@ -329,7 +378,7 @@ class Stack(Branch):
         self.patches.get(old_name).set_name(new_name, msg)
 
     @classmethod
-    def initialise(cls, repository, name=None):
+    def initialise(cls, repository, name=None, switch_to=False):
         """Initialise a Git branch to handle patch series.
 
         @param repository: The L{Repository} where the L{Stack} will be created
@@ -338,15 +387,18 @@ class Stack(Branch):
         if not name:
             name = repository.current_branch_name
         # make sure that the corresponding Git branch exists
-        Branch(repository, name)
+        branch = Branch(repository, name)
 
         dir = os.path.join(repository.directory, cls._repo_subdir, name)
-        compat_dir = os.path.join(dir, 'patches')
         if os.path.exists(dir):
             raise StackException('%s: branch already initialized' % name)
 
+        if switch_to:
+            branch.switch_to()
+
         # create the stack directory and files
         utils.create_dirs(dir)
+        compat_dir = os.path.join(dir, 'patches')
         utils.create_dirs(compat_dir)
         PatchOrder.create(dir)
         config.set(stackupgrade.format_version_key(name),
@@ -355,8 +407,15 @@ class Stack(Branch):
         return repository.get_stack(name)
 
     @classmethod
-    def create(cls, repository, name,
-               create_at=None, parent_remote=None, parent_branch=None):
+    def create(
+        cls,
+        repository,
+        name,
+        create_at=None,
+        parent_remote=None,
+        parent_branch=None,
+        switch_to=False,
+    ):
         """Create and initialise a Git branch returning the L{Stack} object.
 
         @param repository: The L{Repository} where the L{Stack} will be created
@@ -366,8 +425,12 @@ class Stack(Branch):
         @param parent_remote: The name of the remote Git branch
         @param parent_branch: The name of the parent Git branch
         """
-        Branch.create(repository, name, create_at=create_at)
-        stack = cls.initialise(repository, name)
+        branch = Branch.create(repository, name, create_at=create_at)
+        try:
+            stack = cls.initialise(repository, name, switch_to=switch_to)
+        except (BranchException, StackException):
+            branch.delete()
+            raise
         stack.set_parents(parent_remote, parent_branch)
         return stack
 

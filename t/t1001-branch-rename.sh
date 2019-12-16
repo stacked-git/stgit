@@ -28,7 +28,7 @@ test_expect_success \
     test_path_is_file .git/refs/heads/bar.stgit
 '
 
-test_expect_failure \
+test_expect_success \
     'Rename the current stgit branch' '
     stg branch bar &&
     git config --get-regexp branch\\.bar\\. &&
@@ -44,7 +44,7 @@ test_expect_failure \
     test "$(git symbolic-ref --short HEAD)" = "foo"
 '
 
-test_expect_failure \
+test_expect_success \
     'Rename the current stgit branch single arg' '
     stg branch -r xxx &&
     test "$(stg branch)" = "xxx"

@@ -1,9 +1,5 @@
 The TODO list before 1.0:
 
-- Convert the remaining commands to the new infrastructure. Commands
-  not converted yet:
-    branch
-
 - More regression tests
 
 - Go through the design of the UI and make sure there's nothing hard

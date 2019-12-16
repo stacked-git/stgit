@@ -57,6 +57,11 @@ class Refs(object):
             sha1, ref = m.groups()
             self._refs[ref] = sha1
 
+    def __iter__(self):
+        if self._refs is None:
+            self._cache_refs()
+        return iter(self._refs)
+
     def reset_cache(self):
         """Reset cached refs such that cache is rebuilt on next access.
 

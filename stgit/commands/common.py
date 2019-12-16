@@ -12,12 +12,11 @@ import os
 import re
 import sys
 
-from stgit import git, templates
+from stgit import templates
 from stgit.compat import decode_utf8_with_latin1, text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.lib.git import CommitData, MergeException, RepositoryException
-from stgit.lib.log import compat_log_entry, compat_log_external_mods
 from stgit.lib.stack import StackRepository
 from stgit.lib.transaction import (
     StackTransaction,
@@ -68,15 +67,6 @@ def parse_rev(rev):
         patch = rev
 
     return (branch, patch)
-
-
-def git_id(crt_series, rev):
-    """Return the GIT id
-    """
-    # TODO: remove this function once all the occurrences were converted
-    # to git_commit()
-    repository = StackRepository.default()
-    return git_commit(rev, repository, crt_series.name).sha1
 
 
 def get_public_ref(branch_name):
@@ -135,15 +125,12 @@ def color_diff_flags():
         return []
 
 
-def check_local_changes(repository=None):
+def check_local_changes(repository):
     out.start('Checking for changes in the working directory')
-    if repository:
-        iw = repository.default_iw
-        iw.refresh_index()
-        tree = repository.refs.get(repository.head_ref).data.tree
-        local_changes = iw.changed_files(tree)
-    else:
-        local_changes = git.local_changes()
+    iw = repository.default_iw
+    iw.refresh_index()
+    tree = repository.refs.get(repository.head_ref).data.tree
+    local_changes = iw.changed_files(tree)
     out.done()
     if local_changes:
         raise CmdException(
@@ -151,11 +138,8 @@ def check_local_changes(repository=None):
         )
 
 
-def check_head_top_equal(stack_or_series):
-    # N.B. stack_or_series may be either an old-style PatchSet instance (e.g.
-    # crt_series) or a new-style Stack instance since both have a
-    # head_top_equal() method. TODO: eliminate instances of the former.
-    if not stack_or_series.head_top_equal():
+def check_head_top_equal(stack):
+    if not stack.head_top_equal():
         raise CmdException(
             'HEAD and top are not the same. This can happen if you modify a '
             'branch with git. "stg repair --help" explains more about what to '
@@ -163,12 +147,8 @@ def check_head_top_equal(stack_or_series):
         )
 
 
-def check_conflicts(iw=None):
-    if iw:
-        conflicts = iw.index.conflicts()
-    else:
-        conflicts = git.get_conflicts()
-    if conflicts:
+def check_conflicts(iw):
+    if iw.index.conflicts():
         raise CmdException(
             'Unsolved conflicts. Please fix the conflicts then use "git add '
             '--update <files>" or revert the changes with "reset --hard".'
@@ -599,23 +579,17 @@ class DirectoryException(StgException):
     pass
 
 
-class _Directory(object):
-    def __init__(self, needs_current_series=True, log=True):
-        self.needs_current_series = needs_current_series
-        self.log = log
+class DirectoryAnywhere(object):
+    def setup(self):
+        pass
 
-    def _get_git_dir(self):
-        try:
-            return Run(
-                'git', 'rev-parse', '--git-dir'
-            ).discard_stderr().output_one_line()
-        except RunException:
-            return None
 
-    def _is_inside_worktree(self):
-        return Run(
-            'git', 'rev-parse', '--is-inside-work-tree'
-        ).output_one_line() == 'true'
+class DirectoryHasRepositoryLib(object):
+    """For commands that use the new infrastructure in stgit.lib.*."""
+
+    def setup(self):
+        # This will throw an exception if we don't have a repository.
+        self.repository = StackRepository.default()
 
     def cd_to_topdir(self):
         worktree_top = Run(
@@ -624,59 +598,17 @@ class _Directory(object):
         if worktree_top:
             os.chdir(worktree_top)
 
-    def write_log(self, msg):
-        if self.log:
-            compat_log_entry(msg)
-
-
-class DirectoryAnywhere(_Directory):
-    def __init__(self):
-        super(DirectoryAnywhere, self).__init__(
-            needs_current_series=False, log=False
-        )
-
-    def setup(self):
-        pass
-
-
-class DirectoryHasRepository(_Directory):
-    def setup(self):
-        if not self._get_git_dir():
-            raise DirectoryException('No git repository found')
-        compat_log_external_mods()
-
-
-class DirectoryInWorktree(DirectoryHasRepository):
-    def setup(self):
-        DirectoryHasRepository.setup(self)
-        if not self._is_inside_worktree():
-            raise DirectoryException('Not inside a git worktree')
-
-
-class DirectoryGotoToplevel(DirectoryInWorktree):
-    def setup(self):
-        DirectoryInWorktree.setup(self)
-        self.cd_to_topdir()
-
-
-class DirectoryHasRepositoryLib(_Directory):
-    """For commands that use the new infrastructure in stgit.lib.*."""
-
-    def __init__(self):
-        super(DirectoryHasRepositoryLib, self).__init__(
-            needs_current_series=False, log=False
-        )
-
-    def setup(self):
-        # This will throw an exception if we don't have a repository.
-        self.repository = StackRepository.default()
-
 
 class DirectoryInWorktreeLib(DirectoryHasRepositoryLib):
     def setup(self):
         DirectoryHasRepositoryLib.setup(self)
         if not self._is_inside_worktree():
             raise DirectoryException('Not inside a git worktree')
+
+    def _is_inside_worktree(self):
+        return Run(
+            'git', 'rev-parse', '--is-inside-work-tree'
+        ).output_one_line() == 'true'
 
 
 class DirectoryGotoTopLevelLib(DirectoryInWorktreeLib):

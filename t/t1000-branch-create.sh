@@ -49,6 +49,21 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Create branch with worktree changes' '
+    stg new -m p0 &&
+    echo hello > file.txt &&
+    stg add file.txt &&
+    stg refresh &&
+    echo bye > file.txt &&
+    stg branch --create branch-with-change &&
+    test "$(stg branch)" = "branch-with-change" &&
+    test "$(stg status file.txt)" = " M file.txt" &&
+    test "$(stg series --noprefix --all)" = "" &&
+    grep -e bye file.txt &&
+    git checkout file.txt
+'
+
+test_expect_success \
     'Create a spurious patches/ entry' '
     stg branch master &&
     stg init &&
@@ -116,7 +131,7 @@ test_expect_success \
     command_error stg branch -c foo3
 '
 
-test_expect_failure \
+test_expect_success \
     'Check that no part of the branch was created' '
     # Workaround for the test failure to make the rest of the subtests
     # succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
@@ -156,7 +171,7 @@ test_expect_success \
     rm file2
 '
 
-test_expect_failure \
+test_expect_success \
     'Branch list from detached head' '
     git checkout HEAD~ &&
     stg branch --list > list.txt &&
@@ -164,12 +179,12 @@ test_expect_failure \
     test "$(cat list.txt | grep -c -e ">")" = "0"
 '
 
-test_expect_failure \
+test_expect_success \
     'Branch create from detached head' '
     stg branch --create from-detached
 '
 
-test_expect_failure \
+test_expect_success \
     'Switch branch from detached head' '
     stg branch new
 '

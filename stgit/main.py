@@ -171,7 +171,6 @@ def _main():
         sys.exit(command.func(sys.argv[1:]))
 
     parser = argparse.make_option_parser(command)
-    directory = command.directory
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
@@ -190,18 +189,10 @@ def _main():
 
     try:
         (options, args) = parser.parse_args()
-        directory.setup()
+        command.directory.setup()
         config_setup()
-
-        # Some commands don't (always) need an initialized series.
-        if directory.needs_current_series:
-            from stgit.stack import Series
-            branch = getattr(options, 'branch', None)
-            command.crt_series = Series(branch)
-
         ret = command.func(parser, options, args)
     except (StgException, IOError, ParsingError, NoSectionError) as err:
-        directory.write_log(cmd)
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)
         out.error(str(err), title='%s %s' % (prog, cmd))
@@ -217,7 +208,6 @@ def _main():
         traceback.print_exc(file=sys.stderr)
         sys.exit(utils.STGIT_BUG_ERROR)
 
-    directory.write_log(cmd)
     sys.exit(ret or utils.STGIT_SUCCESS)
 
 
