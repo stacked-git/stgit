@@ -152,7 +152,26 @@ test_expect_success \
     test $(find .git -name foo4 | tee /dev/stderr | wc -l) -eq 0 &&
     test $(git show-ref | grep foo4 | wc -l) -eq 0 &&
     test_must_fail git config --get-regexp branch\.foo4 &&
-    test "$(git symbolic-ref HEAD)" = "refs/heads/master"
+    test "$(git symbolic-ref HEAD)" = "refs/heads/master" &&
+    rm file2
+'
+
+test_expect_failure \
+    'Branch list from detached head' '
+    git checkout HEAD~ &&
+    stg branch --list > list.txt &&
+    test_when_finished rm list.txt &&
+    test "$(cat list.txt | grep -c -e ">")" = "0"
+'
+
+test_expect_failure \
+    'Branch create from detached head' '
+    stg branch --create from-detached
+'
+
+test_expect_failure \
+    'Switch branch from detached head' '
+    stg branch new
 '
 
 test_done
