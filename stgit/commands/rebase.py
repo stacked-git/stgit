@@ -9,7 +9,7 @@ from __future__ import (
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoTopLevelLib,
+    DirectoryGotoTopLevel,
     git_commit,
     post_rebase,
     prepare_rebase,
@@ -67,7 +67,7 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoTopLevelLib()
+directory = DirectoryGotoTopLevel()
 
 
 def func(parser, options, args):

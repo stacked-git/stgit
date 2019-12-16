@@ -10,7 +10,7 @@ from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     color_diff_flags,
 )
 from stgit.out import out
@@ -57,7 +57,7 @@ options = [
     ),
 ] + argparse.diff_opts_option()
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):

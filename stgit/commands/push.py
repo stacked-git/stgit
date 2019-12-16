@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import keep_option, merged_option, opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -81,7 +85,7 @@ options = [
     )
 ] + keep_option() + merged_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -97,7 +101,7 @@ def func(parser, options, args):
         return
 
     if not trans.unapplied:
-        raise common.CmdException('No patches to push')
+        raise CmdException('No patches to push')
 
     if options.all:
         patches = list(trans.unapplied)
@@ -107,16 +111,19 @@ def func(parser, options, args):
         patches = [trans.unapplied[0]]
     else:
         try:
-            patches = common.parse_patches(args, trans.unapplied)
-        except common.CmdException as e:
+            patches = parse_patches(args, trans.unapplied)
+        except CmdException as e:
             try:
-                patches = common.parse_patches(args, trans.applied)
-            except common.CmdException:
+                patches = parse_patches(args, trans.applied)
+            except CmdException:
                 raise e
             else:
-                raise common.CmdException('Patch%s already applied: %s' % (
-                    'es' if len(patches) > 1 else '',
-                    ', '.join(patches)))
+                raise CmdException(
+                    'Patch%s already applied: %s' % (
+                        'es' if len(patches) > 1 else '',
+                        ', '.join(patches)
+                    )
+                )
 
     assert patches
 

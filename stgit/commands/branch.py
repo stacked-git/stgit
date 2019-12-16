@@ -11,7 +11,7 @@ import time
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoTopLevelLib,
+    DirectoryGotoTopLevel,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
@@ -181,7 +181,7 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoTopLevelLib()
+directory = DirectoryGotoTopLevel()
 
 
 def __is_current_branch(branch_name):

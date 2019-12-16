@@ -8,7 +8,7 @@ from __future__ import (
 
 from stgit import utils
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib import log, transaction
 
 __copyright__ = """
@@ -48,7 +48,7 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -62,7 +62,7 @@ def func(parser, options, args):
         iw.checkout_hard(stack.head.data.tree)
         return utils.STGIT_SUCCESS
     else:
-        raise common.CmdException('Wrong options or number of arguments')
+        raise CmdException('Wrong options or number of arguments')
 
     trans = transaction.StackTransaction(
         stack,

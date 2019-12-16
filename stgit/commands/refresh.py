@@ -10,7 +10,7 @@ from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     run_commit_msg_hook,
 )
 from stgit.config import config
@@ -129,7 +129,7 @@ options = [
     + argparse.author_options()
 )
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def get_patch(stack, given_patch):

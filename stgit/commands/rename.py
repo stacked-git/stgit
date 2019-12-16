@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit.argparse import opt
-from stgit.commands.common import CmdException, DirectoryHasRepositoryLib
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib.log import log_entry
 from stgit.out import out
 
@@ -44,7 +44,7 @@ options = [
     )
 ]
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):

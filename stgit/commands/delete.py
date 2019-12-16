@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -54,7 +58,7 @@ options = [
     opt('-t', '--top', action='store_true', short='Delete top patch'),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -67,14 +71,17 @@ def func(parser, options, args):
     if args and options.top:
         parser.error('Either --top or patches must be specified')
     elif args:
-        patches = set(common.parse_patches(args, list(stack.patchorder.all),
-                                           len(stack.patchorder.applied)))
+        patches = set(
+            parse_patches(
+                args, list(stack.patchorder.all), len(stack.patchorder.applied)
+            )
+        )
     elif options.top:
         applied = stack.patchorder.applied
         if applied:
             patches = set([applied[-1]])
         else:
-            raise common.CmdException('No patches applied')
+            raise CmdException('No patches applied')
     else:
         parser.error('No patches specified')
 

@@ -9,7 +9,7 @@ from __future__ import (
 import os
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import DirectoryHasRepository, parse_patches
 from stgit.lib import log
 from stgit.out import out
 from stgit.run import Run
@@ -85,7 +85,7 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def show_log(stacklog, pathlim, num, full, show_diff):
@@ -119,7 +119,7 @@ def func(parser, options, args):
                 parser.error('cannot combine --graphical and --%s' % o)
 
     stack = directory.repository.get_stack(options.branch)
-    patches = common.parse_patches(args, list(stack.patchorder.all))
+    patches = parse_patches(args, list(stack.patchorder.all))
     logref = log.log_ref(stack.name)
     try:
         logcommit = stack.repository.refs.get(logref)

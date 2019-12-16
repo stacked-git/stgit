@@ -11,7 +11,11 @@ import io
 
 from stgit import argparse, utils
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    run_commit_msg_hook,
+)
 from stgit.lib import edit, transaction
 from stgit.out import out
 
@@ -95,7 +99,7 @@ options = (
     ]
 )
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -105,13 +109,14 @@ def func(parser, options, args):
 
     if len(args) == 0:
         if not stack.patchorder.applied:
-            raise common.CmdException(
-                'Cannot edit top patch, because no patches are applied')
+            raise CmdException(
+                'Cannot edit top patch, because no patches are applied'
+            )
         patchname = stack.patchorder.applied[-1]
     elif len(args) == 1:
         [patchname] = args
         if not stack.patches.exists(patchname):
-            raise common.CmdException('%s: no such patch' % patchname)
+            raise CmdException('%s: no such patch' % patchname)
     else:
         parser.error('Cannot edit more than one patch')
 
@@ -166,7 +171,7 @@ def func(parser, options, args):
 
     if not options.no_verify and (use_editor or cd.message != orig_cd.message):
         try:
-            cd = common.run_commit_msg_hook(stack.repository, cd, use_editor)
+            cd = run_commit_msg_hook(stack.repository, cd, use_editor)
         except Exception:
             if options.diff:
                 failed('The commit-msg hook failed.')

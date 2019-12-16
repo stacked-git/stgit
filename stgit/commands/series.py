@@ -7,8 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
-from stgit.commands.common import parse_patches
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.config import config
 from stgit.out import out
 
@@ -125,7 +128,7 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def __get_description(stack, patch):
@@ -204,7 +207,7 @@ def func(parser, options, args):
     """Show the patch series
     """
     if options.all and options.short:
-        raise common.CmdException('combining --all and --short is meaningless')
+        raise CmdException('combining --all and --short is meaningless')
 
     stack = directory.repository.get_stack(options.branch)
     if options.missing:
@@ -215,8 +218,9 @@ def func(parser, options, args):
     applied = unapplied = hidden = ()
     if options.applied or options.unapplied or options.hidden:
         if options.all:
-            raise common.CmdException('--all cannot be used with'
-                                      ' --applied/unapplied/hidden')
+            raise CmdException(
+                '--all cannot be used with --applied/unapplied/hidden'
+            )
         if options.applied:
             applied = stack.patchorder.applied
         if options.unapplied:

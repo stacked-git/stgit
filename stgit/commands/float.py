@@ -11,7 +11,11 @@ import re
 import sys
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -51,7 +55,7 @@ options = [
     )
 ] + keep_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -76,10 +80,10 @@ def func(parser, options, args):
             if patch:
                 patches.append(patch)
     else:
-        patches = common.parse_patches(args, stack.patchorder.all)
+        patches = parse_patches(args, stack.patchorder.all)
 
     if not patches:
-        raise common.CmdException('No patches to float')
+        raise CmdException('No patches to float')
 
     applied = [
         p for p in stack.patchorder.applied if p not in patches

@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -68,7 +72,7 @@ options = [
     )
 ] + keep_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -77,20 +81,20 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
 
     if options.to and options.to not in stack.patchorder.applied:
-        raise common.CmdException(
+        raise CmdException(
             'Cannot sink below %s since it is not applied' % options.to
         )
 
     if len(args) > 0:
-        patches = common.parse_patches(args, stack.patchorder.all)
+        patches = parse_patches(args, stack.patchorder.all)
     else:
         # current patch
         patches = list(stack.patchorder.applied[-1:])
 
     if not patches:
-        raise common.CmdException('No patches to sink')
+        raise CmdException('No patches to sink')
     if options.to and options.to in patches:
-        raise common.CmdException('Cannot have a sinked patch as target')
+        raise CmdException('Cannot have a sinked patch as target')
 
     applied = [p for p in stack.patchorder.applied if p not in patches]
     if options.to:

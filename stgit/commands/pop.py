@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -65,7 +69,7 @@ options = [
     ),
 ] + keep_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -80,7 +84,7 @@ def func(parser, options, args):
         return
 
     if not trans.applied:
-        raise common.CmdException('No patches applied')
+        raise CmdException('No patches applied')
 
     if options.all:
         patches = trans.applied
@@ -91,11 +95,11 @@ def func(parser, options, args):
     elif not args:
         patches = [trans.applied[-1]]
     else:
-        patches = common.parse_patches(args, trans.applied, ordered=True)
+        patches = parse_patches(args, trans.applied, ordered=True)
 
     if not patches:
         # FIXME: Why is this an error, and not just a noop ?
-        raise common.CmdException('No patches to pop')
+        raise CmdException('No patches to pop')
 
     if options.spill:
         if set(stack.patchorder.applied[-len(patches):]) != set(patches):

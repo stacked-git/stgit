@@ -6,7 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit.commands.common import CmdException, DirectoryGotoTopLevelLib
+from stgit.commands.common import CmdException, DirectoryGotoTopLevel
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.utils import make_patch_name
@@ -74,7 +74,7 @@ repair" is _not_ what you want. In that case, what you want is option
 args = []
 options = []
 
-directory = DirectoryGotoTopLevelLib()
+directory = DirectoryGotoTopLevel()
 
 
 def func(parser, options, args):

@@ -8,7 +8,12 @@ from __future__ import (
 
 from stgit import argparse, utils
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    get_public_ref,
+    update_commit_data,
+)
 from stgit.lib.git import CommitData, Person
 from stgit.lib.transaction import StackTransaction
 from stgit.out import out
@@ -102,7 +107,7 @@ options = [
     + argparse.sign_options()
 )
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def __create_commit(repository, tree, parents, options, message=''):
@@ -114,7 +119,7 @@ def __create_commit(repository, tree, parents, options, message=''):
         author=Person.author(),
         committer=Person.committer(),
     )
-    cd = common.update_commit_data(cd, options)
+    cd = update_commit_data(cd, options)
     return repository.commit(cd)
 
 
@@ -141,7 +146,7 @@ def func(parser, options, args):
     stack = repository.get_stack(options.branch)
 
     if not args:
-        public_ref = common.get_public_ref(stack.name)
+        public_ref = get_public_ref(stack.name)
     elif len(args) == 1:
         public_ref = args[0]
     else:
@@ -153,7 +158,7 @@ def func(parser, options, args):
     # just clone the stack if the public ref does not exist
     if not repository.refs.exists(public_ref):
         if options.unpublished or options.last:
-            raise common.CmdException('"%s" does not exist' % public_ref)
+            raise CmdException('"%s" does not exist' % public_ref)
         repository.refs.set(public_ref, stack.head, 'publish')
         out.info('Created "%s"' % public_ref)
         return
@@ -165,7 +170,7 @@ def func(parser, options, args):
     if options.last:
         last = __get_last(stack, public_tree)
         if not last:
-            raise common.CmdException(
+            raise CmdException(
                 'Unable to find the last published patch '
                 '(possibly rebased stack)'
             )

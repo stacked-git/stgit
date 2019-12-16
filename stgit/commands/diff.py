@@ -8,7 +8,7 @@ from __future__ import (
 
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     color_diff_flags,
     git_commit,
 )
@@ -63,7 +63,7 @@ options = [
     ),
 ] + diff_opts_option()
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):

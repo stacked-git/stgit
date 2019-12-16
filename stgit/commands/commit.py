@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -60,13 +64,13 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
     """Commit a number of patches."""
     stack = directory.repository.current_stack
-    args = common.parse_patches(args, list(stack.patchorder.all_visible))
+    args = parse_patches(args, list(stack.patchorder.all_visible))
     exclusive = [args, options.number is not None, options.all]
     if sum(map(bool, exclusive)) > 1:
         parser.error('too many options')
@@ -74,7 +78,7 @@ def func(parser, options, args):
         patches = [pn for pn in stack.patchorder.all_visible if pn in args]
         bad = set(args) - set(patches)
         if bad:
-            raise common.CmdException(
+            raise CmdException(
                 'Nonexistent or hidden patch names: %s' % (
                     ', '.join(sorted(bad)),
                 )
@@ -83,15 +87,13 @@ def func(parser, options, args):
         if options.number <= len(stack.patchorder.applied):
             patches = stack.patchorder.applied[:options.number]
         else:
-            raise common.CmdException(
-                'There are not that many applied patches'
-            )
+            raise CmdException('There are not that many applied patches')
     elif options.all:
         patches = stack.patchorder.applied
     else:
         patches = stack.patchorder.applied[:1]
     if not patches:
-        raise common.CmdException('No patches to commit')
+        raise CmdException('No patches to commit')
 
     iw = stack.repository.default_iw
 

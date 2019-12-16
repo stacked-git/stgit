@@ -584,7 +584,7 @@ class DirectoryAnywhere(object):
         pass
 
 
-class DirectoryHasRepositoryLib(object):
+class DirectoryHasRepository(object):
     """For commands that use the new infrastructure in stgit.lib.*."""
 
     def setup(self):
@@ -599,9 +599,9 @@ class DirectoryHasRepositoryLib(object):
             os.chdir(worktree_top)
 
 
-class DirectoryInWorktreeLib(DirectoryHasRepositoryLib):
+class DirectoryInWorktree(DirectoryHasRepository):
     def setup(self):
-        DirectoryHasRepositoryLib.setup(self)
+        DirectoryHasRepository.setup(self)
         if not self._is_inside_worktree():
             raise DirectoryException('Not inside a git worktree')
 
@@ -611,7 +611,7 @@ class DirectoryInWorktreeLib(DirectoryHasRepositoryLib):
         ).output_one_line() == 'true'
 
 
-class DirectoryGotoTopLevelLib(DirectoryInWorktreeLib):
+class DirectoryGotoTopLevel(DirectoryInWorktree):
     def setup(self):
-        DirectoryInWorktreeLib.setup(self)
+        DirectoryInWorktree.setup(self)
         self.cd_to_topdir()

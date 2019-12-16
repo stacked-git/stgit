@@ -14,7 +14,11 @@ import sys
 
 from stgit import templates
 from stgit.argparse import diff_opts_option, opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib.git import diffstat
 from stgit.out import out
 
@@ -98,7 +102,7 @@ options = [
     ),
 ] + diff_opts_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -126,13 +130,13 @@ def func(parser, options, args):
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
     if len(args) != 0:
-        patches = common.parse_patches(args, applied + unapplied, len(applied))
+        patches = parse_patches(args, applied + unapplied, len(applied))
     else:
         patches = applied
 
     num = len(patches)
     if num == 0:
-        raise common.CmdException('No patches applied')
+        raise CmdException('No patches applied')
 
     zpadding = len(str(num))
     if zpadding < 2:
@@ -201,11 +205,11 @@ def func(parser, options, args):
         try:
             descr = templates.specialize_template(tmpl, tmpl_dict)
         except KeyError as err:
-            raise common.CmdException('Unknown patch template variable: %s' %
-                                      err)
+            raise CmdException('Unknown patch template variable: %s' % err)
         except TypeError:
-            raise common.CmdException('Only "%(name)s" variables are '
-                                      'supported in the patch template')
+            raise CmdException(
+                'Only "%(name)s" variables are supported in the patch template'
+            )
 
         if options.stdout:
             if hasattr(sys.stdout, 'buffer'):

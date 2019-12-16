@@ -6,8 +6,8 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit.commands import common
-from stgit.lib import stack
+from stgit.commands.common import DirectoryHasRepository
+from stgit.lib.stack import Stack
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -36,7 +36,7 @@ contain at least one commit."""
 args = []
 options = []
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -45,4 +45,4 @@ def func(parser, options, args):
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 
-    stack.Stack.initialise(directory.repository)
+    Stack.initialise(directory.repository)

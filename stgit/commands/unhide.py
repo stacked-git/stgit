@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -43,7 +47,7 @@ options = [
     )
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -54,10 +58,10 @@ def func(parser, options, args):
     if not args:
         parser.error('No patches specified')
 
-    patches = common.parse_patches(args, trans.all_patches)
+    patches = parse_patches(args, trans.all_patches)
     for p in patches:
         if p not in trans.hidden:
-            raise common.CmdException('Patch "%s" not hidden' % p)
+            raise CmdException('Patch "%s" not hidden' % p)
 
     applied = list(trans.applied)
     unapplied = trans.unapplied + patches

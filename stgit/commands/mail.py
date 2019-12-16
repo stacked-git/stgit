@@ -23,7 +23,7 @@ from stgit import templates, version
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     address_or_alias,
     parse_patches,
 )
@@ -267,7 +267,7 @@ options = [
     ),
 ] + diff_opts_option()
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def __get_sender():

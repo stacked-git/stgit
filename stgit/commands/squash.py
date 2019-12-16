@@ -8,7 +8,12 @@ from __future__ import (
 
 from stgit import argparse, utils
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    parse_patches,
+    run_commit_msg_hook,
+)
 from stgit.lib.git import CommitData
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 
@@ -58,7 +63,7 @@ options = (
     + argparse.hook_options()
 )
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 class SaveTemplateDone(Exception):
@@ -93,7 +98,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = cd.set_message(msg)
 
     if not no_verify:
-        cd = common.run_commit_msg_hook(trans.stack.repository, cd)
+        cd = run_commit_msg_hook(trans.stack.repository, cd)
 
     return cd
 
@@ -107,7 +112,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
         return name or utils.make_patch_name(cd.message, bad_name)
 
     if name and bad_name(name):
-        raise common.CmdException('Patch name "%s" already taken' % name)
+        raise CmdException('Patch name "%s" already taken' % name)
 
     def make_squashed_patch(trans, new_commit_data):
         name = get_name(new_commit_data)
@@ -153,9 +158,9 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
-    patches = common.parse_patches(args, list(stack.patchorder.all))
+    patches = parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
-        raise common.CmdException('Need at least two patches')
+        raise CmdException('Need at least two patches')
     return _squash(stack, stack.repository.default_iw, options.name,
                    options.message, options.save_template, patches,
                    options.no_verify)

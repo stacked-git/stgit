@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import DirectoryHasRepository
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -50,7 +50,7 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def _clean(stack, clean_applied, clean_unapplied):

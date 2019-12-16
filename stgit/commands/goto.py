@@ -7,7 +7,11 @@ from __future__ import (
 )
 
 from stgit import argparse
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    get_patch_from_list,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -36,7 +40,7 @@ line becomes current."""
 args = ['other_applied_patches', 'unapplied_patches']
 options = argparse.keep_option() + argparse.merged_option()
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -52,9 +56,9 @@ def func(parser, options, args):
     )
 
     if patch not in trans.all_patches:
-        candidate = common.get_patch_from_list(patch, trans.all_patches)
+        candidate = get_patch_from_list(patch, trans.all_patches)
         if candidate is None:
-            raise common.CmdException('Patch "%s" does not exist' % patch)
+            raise CmdException('Patch "%s" does not exist' % patch)
         patch = candidate
 
     if patch in trans.applied:
@@ -75,5 +79,5 @@ def func(parser, options, args):
         except transaction.TransactionHalted:
             pass
     else:
-        raise common.CmdException('Cannot goto a hidden patch')
+        raise CmdException('Cannot goto a hidden patch')
     return trans.run(iw)

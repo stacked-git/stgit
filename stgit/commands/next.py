@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.out import out
 
 __copyright__ = """
@@ -42,7 +42,7 @@ options = [
     )
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -57,4 +57,4 @@ def func(parser, options, args):
     if unapplied:
         out.stdout(unapplied[0])
     else:
-        raise common.CmdException('No unapplied patches')
+        raise CmdException('No unapplied patches')

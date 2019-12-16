@@ -8,7 +8,11 @@ from __future__ import (
 
 import os
 
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryAnywhere,
+    DirectoryHasRepository,
+)
 from stgit.lib.git import clone
 from stgit.lib.stack import Stack
 
@@ -46,7 +50,7 @@ not already exist."""
 args = ['repo', 'dir']
 options = []
 
-directory = common.DirectoryAnywhere()
+directory = DirectoryAnywhere()
 
 
 def func(parser, options, args):
@@ -60,10 +64,10 @@ def func(parser, options, args):
     local_dir = args[1]
 
     if os.path.exists(local_dir):
-        raise common.CmdException('"%s" exists. Remove it first' % local_dir)
+        raise CmdException('"%s" exists. Remove it first' % local_dir)
 
     clone(repository, local_dir)
     os.chdir(local_dir)
-    directory = common.DirectoryHasRepositoryLib()
+    directory = DirectoryHasRepository()
     directory.setup()
     Stack.initialise(directory.repository)

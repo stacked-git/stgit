@@ -13,7 +13,7 @@ import sys
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     apply_patch,
     check_conflicts,
     check_head_top_equal,
@@ -77,7 +77,7 @@ options = [
     ),
 ]
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):

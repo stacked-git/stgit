@@ -8,7 +8,7 @@ from __future__ import (
 
 from stgit import utils
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -76,7 +76,7 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -122,7 +122,7 @@ def func(parser, options, args):
             [next] = next
         except ValueError:
             out.done()
-            raise common.CmdException(
+            raise CmdException(
                 'Trying to uncommit %s, which does not have exactly one parent'
                 % n.sha1)
         return c.append(n)
@@ -152,7 +152,7 @@ def func(parser, options, args):
     if patchnames:
         for pn in patchnames:
             if pn in taken_names:
-                raise common.CmdException('Patch name "%s" already taken' % pn)
+                raise CmdException('Patch name "%s" already taken' % pn)
             taken_names.add(pn)
     else:
         patchnames = []

@@ -6,7 +6,7 @@ from __future__ import (
     unicode_literals,
 )
 
-from stgit.commands import common
+from stgit.commands.common import DirectoryHasRepository, git_commit
 from stgit.out import out
 
 __copyright__ = """
@@ -40,7 +40,7 @@ with the '[<branch>:]<patch>^' format."""
 args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = []
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -53,4 +53,4 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
-    out.stdout(common.git_commit(id_str, directory.repository).sha1)
+    out.stdout(git_commit(id_str, directory.repository).sha1)

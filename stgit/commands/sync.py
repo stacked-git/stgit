@@ -13,7 +13,7 @@ import re
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
     CmdException,
-    DirectoryGotoTopLevelLib,
+    DirectoryGotoTopLevel,
     parse_patches,
 )
 from stgit.lib.git import CommitData
@@ -68,7 +68,7 @@ options = [
     ),
 ]
 
-directory = DirectoryGotoTopLevelLib()
+directory = DirectoryGotoTopLevel()
 
 
 def __branch_merge_patch(remote_stack, stack, commit, pname):

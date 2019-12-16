@@ -19,7 +19,7 @@ from stgit import argparse
 from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
-    DirectoryHasRepositoryLib,
+    DirectoryHasRepository,
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
@@ -151,7 +151,7 @@ options = [
     ),
 ] + argparse.author_options() + argparse.sign_options()
 
-directory = DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def __strip_patch_name(name):

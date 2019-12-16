@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit.argparse import opt, patch_range
-from stgit.commands import common
+from stgit.commands.common import DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -44,7 +44,7 @@ options = [
     )
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
@@ -55,7 +55,7 @@ def func(parser, options, args):
     if not args:
         parser.error('No patches specified')
 
-    patches = common.parse_patches(args, trans.all_patches)
+    patches = parse_patches(args, trans.all_patches)
     for p in patches:
         if p in trans.hidden:
             out.warn('Patch "%s" already hidden' % p)

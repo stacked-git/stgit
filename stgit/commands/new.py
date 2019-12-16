@@ -7,7 +7,12 @@ from __future__ import (
 )
 
 from stgit import argparse, utils
-from stgit.commands import common
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    run_commit_msg_hook,
+    update_commit_data,
+)
 from stgit.lib.git import CommitData, Person
 from stgit.lib.transaction import StackTransaction
 
@@ -53,15 +58,16 @@ options = (
     + argparse.hook_options()
 )
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
     """Create a new patch."""
     stack = directory.repository.current_stack
     if stack.repository.default_index.conflicts():
-        raise common.CmdException(
-            'Cannot create a new patch -- resolve conflicts first')
+        raise CmdException(
+            'Cannot create a new patch -- resolve conflicts first'
+        )
 
     # Choose a name for the new patch -- or None, which means make one
     # up later when we've gotten hold of the commit message.
@@ -70,9 +76,9 @@ def func(parser, options, args):
     elif len(args) == 1:
         name = args[0]
         if stack.patches.exists(name):
-            raise common.CmdException('%s: patch already exists' % name)
+            raise CmdException('%s: patch already exists' % name)
         elif not stack.patches.is_name_valid(name):
-            raise common.CmdException('Invalid patch name: "%s"' % name)
+            raise CmdException('Invalid patch name: "%s"' % name)
     else:
         parser.error('incorrect number of arguments')
 
@@ -83,14 +89,14 @@ def func(parser, options, args):
         author=Person.author(),
         committer=Person.committer(),
     )
-    cd = common.update_commit_data(cd, options)
+    cd = update_commit_data(cd, options)
 
     if options.save_template:
         options.save_template(cd.message.encode('utf-8'))
         return utils.STGIT_SUCCESS
 
     if not options.no_verify:
-        cd = common.run_commit_msg_hook(stack.repository, cd)
+        cd = run_commit_msg_hook(stack.repository, cd)
 
     if name is None:
         name = utils.make_patch_name(cd.message, stack.patches.exists)

@@ -7,7 +7,7 @@ from __future__ import (
 )
 
 from stgit.argparse import opt
-from stgit.commands import common
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib import log, transaction
 
 __copyright__ = """
@@ -50,13 +50,13 @@ options = [
     ),
 ]
 
-directory = common.DirectoryHasRepositoryLib()
+directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
     stack = directory.repository.current_stack
     if options.number < 1:
-        raise common.CmdException('Bad number of commands to undo')
+        raise CmdException('Bad number of commands to undo')
     state = log.undo_state(stack, options.number)
     trans = transaction.StackTransaction(
         stack,
