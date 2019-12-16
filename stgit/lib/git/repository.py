@@ -42,8 +42,10 @@ class Refs(object):
         self._repository = repository
         self._refs = None
 
-    def _cache_refs(self):
+    def _ensure_refs_cache(self):
         """(Re-)Build the cache of all refs in the repository."""
+        if self._refs is not None:
+            return
         self._refs = {}
         runner = self._repository.run(['git', 'show-ref'])
         try:
@@ -58,8 +60,7 @@ class Refs(object):
             self._refs[ref] = sha1
 
     def __iter__(self):
-        if self._refs is None:
-            self._cache_refs()
+        self._ensure_refs_cache()
         return iter(self._refs)
 
     def reset_cache(self):
@@ -74,8 +75,7 @@ class Refs(object):
     def get(self, ref):
         """Get the Commit the given ref points to. Throws KeyError if ref
         doesn't exist."""
-        if self._refs is None:
-            self._cache_refs()
+        self._ensure_refs_cache()
         return self._repository.get_commit(self._refs[ref])
 
     def exists(self, ref):
@@ -90,8 +90,7 @@ class Refs(object):
     def set(self, ref, commit, msg):
         """Write the sha1 of the given Commit to the ref. The ref may or may
         not already exist."""
-        if self._refs is None:
-            self._cache_refs()
+        self._ensure_refs_cache()
         old_sha1 = self._refs.get(ref, '0' * 40)
         new_sha1 = commit.sha1
         if old_sha1 != new_sha1:
@@ -102,8 +101,7 @@ class Refs(object):
 
     def delete(self, ref):
         """Delete the given ref. Throws KeyError if ref doesn't exist."""
-        if self._refs is None:
-            self._cache_refs()
+        self._ensure_refs_cache()
         self._repository.run(
             ['git', 'update-ref', '-d', ref, self._refs[ref]]
         ).no_output()
