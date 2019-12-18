@@ -428,7 +428,7 @@ def __parse_description(descr):
     return (subject + body, authname, authemail, authdate)
 
 
-def parse_mail(msg):
+def parse_mail(msg, options):
     """Parse the message object and return (description, authname,
     authemail, authdate, diff)
     """
@@ -482,6 +482,14 @@ def parse_mail(msg):
                                        'application/octet-stream']:
             payload = part.get_payload(decode=True)
             msg_data += payload
+
+    # RFC-compliant mail uses CRLF.  Replace this with LF unless
+    # otherwise instructed.
+    if not getattr(options, 'keepcr', False):
+        msg_data_lf = b''
+        for line in msg_data.splitlines():
+            msg_data_lf += line + b'\n'
+        msg_data = msg_data_lf
 
     rem_descr, diff = __split_descr_diff(msg_data)
     if rem_descr:

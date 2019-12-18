@@ -149,6 +149,11 @@ options = [
         action='store_true',
         short='Show the patch content in the editor buffer',
     ),
+    opt(
+        '--keepcr',
+        action='store_true',
+        short='Do not strip carriage returns when importing mail messages',
+    ),
 ] + argparse.author_options() + argparse.sign_options()
 
 directory = DirectoryHasRepository()
@@ -289,7 +294,7 @@ def __import_file(filename, options, patch=None):
             raise CmdException('error parsing the e-mail file: %s' % str(ex))
         (
             message, author_name, author_email, author_date, diff
-        ) = parse_mail(msg)
+        ) = parse_mail(msg, options)
     else:
         patch_str = f.read()
         (
@@ -370,7 +375,7 @@ def __import_mbox(filename, options):
                  author_name,
                  author_email,
                  author_date,
-                 diff) = parse_mail(msg)
+                 diff) = parse_mail(msg, options)
                 __create_patch(None, message, author_name, author_email,
                                author_date, diff, options)
     finally:
