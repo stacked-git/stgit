@@ -561,11 +561,14 @@ def update_commit_data(cd, options):
             add_sign_line(cd.message, sign_str,
                           cd.committer.name, cd.committer.email))
 
-    # Let user edit the commit message manually, unless
-    # --save-template or --message was specified.
+    # Edit the commit message manually if:
+    # - A message was specified, but --edit was also specified.
+    # - No message was specified, and --save_template was also not specified
     if (
-        not getattr(options, 'save_template', None)
-        and getattr(options, 'message', None) is None
+        (getattr(cd, 'message', None)
+         and getattr(options, 'edit', None))
+        or (not getattr(cd, 'message', None)
+            and not getattr(options, 'save_template', None))
     ):
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
