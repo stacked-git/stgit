@@ -42,14 +42,6 @@ class Patch(object):
         return self._stack.repository.refs.get(self._ref)
 
     @property
-    def old_commit(self):
-        """Return the previous commit for this patch."""
-        fn = os.path.join(self._compat_dir, 'top.old')
-        if not os.path.isfile(fn):
-            return None
-        return self._stack.repository.get_commit(utils.read_string(fn))
-
-    @property
     def _compat_dir(self):
         return os.path.join(self._stack.directory, 'patches', self.name)
 
@@ -126,9 +118,6 @@ class Patch(object):
     def delete(self):
         self._delete_compat_files()
         self._stack.repository.refs.delete(self._ref)
-
-    def is_applied(self):
-        return self.name in self._stack.patchorder.applied
 
     def is_empty(self):
         return self.commit.data.is_nochange()
