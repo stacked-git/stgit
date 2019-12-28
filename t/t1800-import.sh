@@ -12,12 +12,34 @@ test_expect_success \
     stg init
     '
 
+test_expect_success 'setup fake editor' '
+	write_script fake-editor <<-\EOF
+	echo "fake edit" >>"$1"
+	EOF
+'
+
+# Ensure editor is not run. Editor should only run if explicit --edit option is
+# passed to `stg import`.
+test_set_editor false
+
 test_expect_success \
     'Apply a patch created with "git diff"' \
     '
     stg import $TEST_DIRECTORY/t1800-import/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply a patch and edit message' \
+    '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg import --edit $TEST_DIRECTORY/t1800-import/git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    [ $(git cat-file -p $(stg id) | grep -c "fake edit") = 1 ] &&
     stg delete ..
     '
 
