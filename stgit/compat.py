@@ -111,10 +111,8 @@ class file_wrapper(object):
         return self.__seekable
 
 
-# Python 2 only has email.message_from_file(), but it behaves like Python 3's
-# email.message_from_binary_file().
-message_from_binary_file = getattr(email, 'message_from_binary_file',
-                                   email.message_from_file)
+# Python 2 only has email.message_from_string(), but it behaves like Python 3's
+# email.message_from_bytes().
 message_from_bytes = getattr(email, 'message_from_bytes',
                              email.message_from_string)
 

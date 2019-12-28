@@ -6,8 +6,6 @@ from __future__ import (
     unicode_literals,
 )
 
-from contextlib import closing
-import mailbox
 import os
 import re
 import sys
@@ -20,14 +18,14 @@ from stgit.commands.common import (
     check_conflicts,
     check_head_top_equal,
     check_local_changes,
-    parse_mail,
     parse_patch,
     update_commit_data,
 )
-from stgit.compat import message_from_binary_file
+from stgit.compat import decode_utf8_with_latin1
 from stgit.lib.git import CommitData, Date, Person
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
+from stgit.run import Run
 from stgit.utils import make_patch_name
 
 __copyright__ = """
@@ -288,19 +286,9 @@ def __import_file(filename, options, patch=None):
     elif not pname:
         pname = filename
 
-    if options.mail:
-        try:
-            msg = message_from_binary_file(f)
-        except Exception as ex:
-            raise CmdException('error parsing the e-mail file: %s' % str(ex))
-        (
-            message, author_name, author_email, author_date, diff
-        ) = parse_mail(msg)
-    else:
-        patch_str = f.read()
-        (
-            message, author_name, author_email, author_date, diff
-        ) = parse_patch(patch_str, contains_diff=True)
+    (
+        message, author_name, author_email, author_date, diff
+    ) = parse_patch(f.read(), contains_diff=True)
 
     if filename:
         f.close()
@@ -352,38 +340,71 @@ def __import_series(filename, options):
         f.close()
 
 
-def __import_mbox(filename, options):
-    """Import a series from an mbox file
-    """
-    if filename:
-        namedtemp = None
-    else:
-        from tempfile import NamedTemporaryFile
-        stdin = os.fdopen(sys.__stdin__.fileno(), 'rb')
-        namedtemp = NamedTemporaryFile('wb', suffix='.mbox', delete=False)
-        namedtemp.write(stdin.read())
-        namedtemp.close()
-        filename = namedtemp.name
+def __import_mail(filename, options):
+    """Import a patch from an email file or mbox"""
+    import tempfile
+    import shutil
 
+    tmpdir = tempfile.mkdtemp('.stg')
     try:
-        try:
-            mbox = mailbox.mbox(filename, message_from_binary_file,
-                                create=False)
-        except Exception as ex:
-            raise CmdException('error parsing the mbox file: %s' % str(ex))
-
-        with closing(mbox):
-            for msg in mbox:
-                (message,
-                 author_name,
-                 author_email,
-                 author_date,
-                 diff) = parse_mail(msg)
-                __create_patch(None, message, author_name, author_email,
-                               author_date, diff, options)
+        mail_paths = __mailsplit(tmpdir, filename, options)
+        for mail_path in mail_paths:
+            __import_mail_path(mail_path, filename, options)
     finally:
-        if namedtemp is not None:
-            os.unlink(namedtemp.name)
+        shutil.rmtree(tmpdir)
+
+
+def __mailsplit(tmpdir, filename, options):
+    mailsplit_cmd = ['git', 'mailsplit', '-d4', '-o' + tmpdir]
+    if options.mail:
+        mailsplit_cmd.append('-b')
+
+    if filename:
+        mailsplit_cmd.extend(['--', filename])
+        r = Run(*mailsplit_cmd)
+    else:
+        stdin = os.fdopen(sys.__stdin__.fileno(), 'rb')
+        r = Run(*mailsplit_cmd).encoding(None).raw_input(stdin.read())
+
+    num_patches = int(r.output_one_line())
+
+    mail_paths = [
+        os.path.join(tmpdir, '%04d' % n) for n in range(1, num_patches + 1)
+    ]
+
+    return mail_paths
+
+
+def __import_mail_path(mail_path, filename, options):
+    with open(mail_path, 'rb') as f:
+        mail = f.read()
+
+    msg_path = mail_path + '-msg'
+    patch_path = mail_path + '-patch'
+
+    mailinfo_lines = Run(
+        'git', 'mailinfo', msg_path, patch_path
+    ).encoding(None).decoding(None).raw_input(mail).output_lines(b'\n')
+
+    mailinfo = dict(line.split(b': ') for line in mailinfo_lines if line)
+
+    with open(msg_path, 'rb') as f:
+        msg_body = f.read()
+
+    msg_bytes = mailinfo[b'Subject'] + b'\n\n' + msg_body
+
+    with open(patch_path, 'rb') as f:
+        diff = f.read()
+
+    __create_patch(
+        None if options.mbox else filename,
+        decode_utf8_with_latin1(msg_bytes),
+        mailinfo[b'Author'].decode('utf-8'),
+        mailinfo[b'Email'].decode('utf-8'),
+        mailinfo[b'Date'].decode('utf-8'),
+        diff,
+        options,
+    )
 
 
 def __import_url(url, options):
@@ -468,8 +489,8 @@ def func(parser, options, args):
 
     if options.series:
         __import_series(filename, options)
-    elif options.mbox:
-        __import_mbox(filename, options)
+    elif options.mail or options.mbox:
+        __import_mail(filename, options)
     elif options.url:
         __import_url(filename, options)
     else:

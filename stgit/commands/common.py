@@ -13,7 +13,7 @@ import re
 import sys
 
 from stgit import templates
-from stgit.compat import decode_utf8_with_latin1, text
+from stgit.compat import decode_utf8_with_latin1
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.lib.git import CommitData, MergeException, RepositoryException
@@ -426,79 +426,6 @@ def __parse_description(descr):
         body = '\n' + '\n'.join(l[descr_strip:] for l in descr_lines[lasthdr:])
 
     return (subject + body, authname, authemail, authdate)
-
-
-def parse_mail(msg):
-    """Parse the message object and return (description, authname,
-    authemail, authdate, diff)
-    """
-    import email.header
-    if sys.version_info[0] <= 2:
-        # Python 2's decode_header() fails to decode encoded words if they are
-        # quoted. This does not match the behavior of Python3 or `git
-        # mailinfo`. For example, Python2 does not handle this header
-        # correctly:
-        #
-        #    From: "=?UTF-8?q?Christian=20K=C3=B6nig?=" <name@example.com>
-        #
-        # By replacing the encoded words regex in the email.header module, we
-        # can bless Python2 with the same behavior as Python3.
-        email.header.ecre = re.compile(
-            (r'=\? (?P<charset>[^?]*?)'
-             r' \? (?P<encoding>[QqBb])'
-             r' \? (?P<encoded>.*?)'
-             r' \?='), re.VERBOSE | re.MULTILINE)
-
-    def __decode_header(header):
-        """Decode a qp-encoded e-mail header as per rfc2047"""
-        try:
-            decoded_words = email.header.decode_header(header)
-            return text(email.header.make_header(decoded_words))
-        except Exception as ex:
-            raise CmdException('header decoding error: %s' % str(ex))
-
-    # parse the headers
-    if 'from' in msg:
-        authname, authemail = name_email(__decode_header(msg['from']))
-    else:
-        authname = authemail = None
-
-    # '\n\t' can be found on multi-line headers
-    descr = __decode_header(msg['subject'])
-    descr = re.sub('\n[ \t]*', ' ', descr)
-    authdate = msg['date']
-
-    # remove the '[*PATCH*]' expression in the subject
-    if descr:
-        descr = re.findall(r'^(\[.*?[Pp][Aa][Tt][Cc][Hh].*?\])?\s*(.*)$',
-                           descr)[0][1]
-    else:
-        raise CmdException('Subject: line not found')
-
-    # the rest of the message
-    msg_data = b''
-    for part in msg.walk():
-        if part.get_content_type() in ['text/plain',
-                                       'application/octet-stream']:
-            payload = part.get_payload(decode=True)
-            msg_data += payload
-
-    rem_descr, diff = __split_descr_diff(msg_data)
-    if rem_descr:
-        descr += '\n\n' + decode_utf8_with_latin1(rem_descr)
-
-    # parse the description for author information
-    (
-        descr, descr_authname, descr_authemail, descr_authdate
-    ) = __parse_description(descr)
-    if descr_authname:
-        authname = descr_authname
-    if descr_authemail:
-        authemail = descr_authemail
-    if descr_authdate:
-        authdate = descr_authdate
-
-    return (descr, authname, authemail, authdate, diff)
 
 
 def parse_patch(patch_data, contains_diff):
