@@ -120,6 +120,18 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply a patch from an 8bit-encoded e-mail with CRLF endings' \
+    '
+    cat $TEST_DIRECTORY/t1800-import/email-8bit | append_cr |
+    stg import -m &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a patch from latin1-encoded email specifying utf-8 charset' \
     '
     iconv -f UTF8 -t LATIN1 $TEST_DIRECTORY/t1800-import/email-8bit > email-latin1 &&
@@ -176,6 +188,26 @@ test_expect_success \
     'Apply several patches from an mbox file from stdin' \
     '
     cat $TEST_DIRECTORY/t1800-import/email-mbox | stg import -M &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3) \
+        | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply several patches from an mbox file with CRLF line endings' \
+    '
+    cat $TEST_DIRECTORY/t1800-import/email-mbox | append_cr |
+    stg import -M &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
