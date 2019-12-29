@@ -227,7 +227,13 @@ def __create_patch(filename, message, author_name, author_email,
             author=author,
             message=message,
         )
-        cd = update_commit_data(cd, options)
+        cd = update_commit_data(
+            cd,
+            message=None,
+            author=None,
+            sign_str=options.sign_str,
+            edit=options.edit,
+        )
         commit = stack.repository.commit(cd)
 
         trans = StackTransaction(stack, 'import: %s' % name)

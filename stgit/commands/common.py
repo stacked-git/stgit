@@ -541,35 +541,30 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
     return cd.set_message(new_msg)
 
 
-def update_commit_data(cd, options):
+def update_commit_data(
+    cd, message=None, author=None, sign_str=None, edit=False
+):
     """Return a new CommitData object updated according to the command line
     options."""
     # Set the commit message from commandline.
-    if getattr(options, 'message', None) is not None:
-        cd = cd.set_message(options.message)
+    if message is not None:
+        cd = cd.set_message(message)
 
     # Modify author data.
-    cd = cd.set_author(options.author(cd.author))
+    if author is not None:
+        cd = cd.set_author(author)
 
     # Add Signed-off-by: or similar.
-    if options.sign_str is not None:
-        sign_str = options.sign_str
-    else:
+    if sign_str is None:
         sign_str = config.get("stgit.autosign")
-    if sign_str is not None:
+    if sign_str:
         cd = cd.set_message(
-            add_sign_line(cd.message, sign_str,
-                          cd.committer.name, cd.committer.email))
+            add_sign_line(
+                cd.message, sign_str, cd.committer.name, cd.committer.email
+            )
+        )
 
-    # Edit the commit message manually if:
-    # - A message was specified, but --edit was also specified.
-    # - No message was specified, and --save_template was also not specified
-    if (
-        (getattr(cd, 'message', None)
-         and getattr(options, 'edit', None))
-        or (not getattr(cd, 'message', None)
-            and not getattr(options, 'save_template', None))
-    ):
+    if edit:
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
             cd = cd.set_message(cd.message + tmpl)

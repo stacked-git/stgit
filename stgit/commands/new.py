@@ -89,7 +89,13 @@ def func(parser, options, args):
         author=Person.author(),
         committer=Person.committer(),
     )
-    cd = update_commit_data(cd, options)
+    cd = update_commit_data(
+        cd,
+        message=options.message,
+        author=options.author(cd.author),
+        sign_str=options.sign_str,
+        edit=(not options.save_template and options.message is None),
+    )
 
     if options.save_template:
         options.save_template(cd.message.encode('utf-8'))

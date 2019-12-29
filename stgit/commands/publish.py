@@ -119,7 +119,13 @@ def __create_commit(repository, tree, parents, options, message=''):
         author=Person.author(),
         committer=Person.committer(),
     )
-    cd = update_commit_data(cd, options)
+    cd = update_commit_data(
+        cd,
+        message=options.message,
+        author=options.author(cd.author),
+        sign_str=options.sign_str,
+        edit=options.message is None,
+    )
     return repository.commit(cd)
 
 
