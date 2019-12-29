@@ -33,7 +33,7 @@ test_expect_success \
 test_expect_success \
     'Invalid patch name: carat' '
     command_error stg new "bad^name" 2>&1 >/dev/null |
-    grep -e "Invalid patch name: \"bad^name\""
+    grep -e "Invalid patch name: \"bad\^name\""
 '
 
 test_expect_success \
