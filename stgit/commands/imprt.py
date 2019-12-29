@@ -7,13 +7,10 @@ from __future__ import (
 )
 
 from contextlib import closing
-import bz2
-import gzip
 import mailbox
 import os
 import re
 import sys
-import tarfile
 
 from stgit import argparse
 from stgit.argparse import opt
@@ -260,6 +257,9 @@ def __mkpatchname(name, suffix):
 def __get_handle_and_name(filename):
     """Return a file object and a patch name derived from filename
     """
+    import bz2
+    import gzip
+
     # see if it's a gzip'ed or bzip2'ed patch
     for copen, ext in [(gzip.open, '.gz'), (bz2.BZ2File, '.bz2')]:
         try:
@@ -312,6 +312,8 @@ def __import_file(filename, options, patch=None):
 def __import_series(filename, options):
     """Import a series of patches
     """
+    import tarfile
+
     if filename:
         if tarfile.is_tarfile(filename):
             __import_tarfile(filename, options)
@@ -406,8 +408,9 @@ def __import_url(url, options):
 def __import_tarfile(tar, options):
     """Import patch series from a tar archive
     """
-    import tempfile
     import shutil
+    import tarfile
+    import tempfile
 
     if not tarfile.is_tarfile(tar):
         raise CmdException("%s is not a tarfile!" % tar)
