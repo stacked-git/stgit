@@ -132,6 +132,22 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Apply e-mail with CRLF endings and --keep-cr' \
+    '
+    stg new -m foo-with-crlf &&
+    cat foo.txt | append_cr > foo-crlf.txt &&
+    mv foo-crlf.txt foo.txt &&
+    stg refresh &&
+    cat $TEST_DIRECTORY/t1800-import/email-8bit | append_cr |
+    stg import -m --keep-cr &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree ecb72e62394189fd2a095047076dab1ae473ed4d") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a patch from latin1-encoded email specifying utf-8 charset' \
     '
     iconv -f UTF8 -t LATIN1 $TEST_DIRECTORY/t1800-import/email-8bit > email-latin1 &&

@@ -133,6 +133,11 @@ options = [
         short='Leave the rejected hunks in corresponding *.rej files',
     ),
     opt(
+        '--keep-cr',
+        action='store_true',
+        short='Do not remove "\\r" from email lines ending with "\\r\\n"',
+    ),
+    opt(
         '-e',
         '--edit',
         action='store_true',
@@ -358,6 +363,8 @@ def __mailsplit(tmpdir, filename, options):
     mailsplit_cmd = ['git', 'mailsplit', '-d4', '-o' + tmpdir]
     if options.mail:
         mailsplit_cmd.append('-b')
+    if options.keep_cr:
+        mailsplit_cmd.append('--keep-cr')
 
     if filename:
         mailsplit_cmd.extend(['--', filename])
