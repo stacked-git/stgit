@@ -18,7 +18,7 @@ class VersionUnavailable(Exception):
 
 
 def git_describe_version():
-    root = sys.path[0]
+    root = sys.path[0] if sys.path[0] else None
     try:
         v = Run(
             'git', 'describe', '--tags', '--abbrev=4'
