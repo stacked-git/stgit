@@ -144,7 +144,7 @@ def func(parser, options, args):
                             options.diff, options.diff_flags, failed_diff))
         return utils.STGIT_SUCCESS
 
-    use_editor = cd == orig_cd or options.edit
+    use_editor = cd == orig_cd or options.edit or options.diff
     if use_editor:
         cd, failed_diff = edit.interactive_edit_patch(
             stack.repository,
