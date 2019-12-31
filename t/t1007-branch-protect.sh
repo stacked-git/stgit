@@ -24,7 +24,7 @@ test_expect_success 'Protect branch' '
 
 test_expect_success 'List protected' '
     stg branch --list |
-    grep -E "> sp.*\bfoo"
+    grep -E "> sp[[:space:]]+foo"
 '
 
 test_expect_success 'Protect idempotency' '
@@ -53,14 +53,14 @@ test_expect_success 'Unprotect branch' '
 
 test_expect_success 'List unprotected' '
     stg branch --list |
-    grep -E "  s .*\bfoo"
+    grep -E "  s[[:space:]]+foo"
 '
 
 test_expect_success 'Unprotect idempotency' '
     stg branch foo &&
     stg branch --unprotect &&
     stg branch --list |
-    grep -E "> s .*\bfoo"
+    grep -E "> s[[:space:]]+foo"
 '
 
 test_expect_success 'Cleanup unprotected' '

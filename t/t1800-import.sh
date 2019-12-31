@@ -150,7 +150,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from latin1-encoded email specifying utf-8 charset' \
     '
-    iconv -f UTF8 -t LATIN1 $TEST_DIRECTORY/t1800-import/email-8bit > email-latin1 &&
+    iconv -f UTF-8 -t LATIN1 $TEST_DIRECTORY/t1800-import/email-8bit > email-latin1 &&
     stg import -m email-latin1 &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree cf0f9884fdb30bca14d2411e1711f6ae413c9213") = 1 ] &&
