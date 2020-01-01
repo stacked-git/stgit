@@ -25,21 +25,6 @@ class Immutable(object):
     as documentation."""
 
 
-class ImmutableDict(dict):
-    """A dictionary that cannot be modified once it has been created."""
-
-    def error(*args, **kwargs):
-        raise TypeError('Cannot modify immutable dict')
-
-    __delitem__ = error
-    __setitem__ = error
-    clear = error
-    pop = error
-    popitem = error
-    setdefault = error
-    update = error
-
-
 class NoValue(object):
     """Value guaranteed to be distinct from any real argument value."""
 

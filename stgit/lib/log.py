@@ -255,7 +255,7 @@ class LogEntry(object):
         """Parse a (full or simplified) stack log commit."""
         message = commit.data.message
         try:
-            perm, meta = commit.data.tree.data.entries['meta']
+            perm, meta = commit.data.tree.data['meta']
         except KeyError:
             raise LogParseException('Not a stack log')
         (
@@ -303,11 +303,12 @@ class LogEntry(object):
                 return patch_file(self._repo, c.data)
         else:
             prev_top_tree = self.prev.commit.data.tree
-            perm, prev_patch_tree = prev_top_tree.data.entries['patches']
+            perm, prev_patch_tree = prev_top_tree.data['patches']
             # Map from Commit object to patch_file() results taken
             # from the previous log entry.
-            c2b = dict((self.prev.patches[pn], pf) for pn, pf
-                       in prev_patch_tree.data.entries.items())
+            c2b = dict(
+                (self.prev.patches[pn], pf) for pn, pf in prev_patch_tree.data
+            )
 
             def pf(c):
                 r = c2b.get(c, None)

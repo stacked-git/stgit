@@ -10,7 +10,7 @@ import re
 
 from stgit.compat import text
 
-from .base import Immutable, ImmutableDict, NoValue, make_defaults
+from .base import Immutable, NoValue, make_defaults
 from .person import Person
 
 
@@ -68,10 +68,7 @@ class TreeData(Immutable):
         """Create a new L{TreeData} object from the given mapping from names
         (strings) to either (I{permission}, I{object}) tuples or just
         objects."""
-        self.entries = ImmutableDict(self._iter_entries(entries))
-
-    @staticmethod
-    def _iter_entries(entries):
+        self._entries = {}
         for name, po in entries.items():
             assert '/' not in name, (
                 'tree entry name contains slash: %s' % name
@@ -80,6 +77,13 @@ class TreeData(Immutable):
                 perm, obj = po.default_perm, po
             else:
                 perm, obj = po
+            self._entries[name] = (perm, obj)
+
+    def __getitem__(self, key):
+        return self._entries[key]
+
+    def __iter__(self):
+        for name, (perm, obj) in self._entries.items():
             yield name, (perm, obj)
 
     def commit(self, repository):
@@ -87,8 +91,8 @@ class TreeData(Immutable):
         @return: The committed tree
         @rtype: L{Tree}"""
         listing = [
-            '%s %s %s\t%s' % (mode, obj.typename, obj.sha1, name)
-            for (name, (mode, obj)) in self.entries.items()
+            '%s %s %s\t%s' % (perm, obj.typename, obj.sha1, name)
+            for name, (perm, obj) in self
         ]
         sha1 = (
             repository.run(['git', 'mktree', '-z'])
