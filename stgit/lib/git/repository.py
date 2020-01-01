@@ -127,7 +127,7 @@ class CatFileProcess(object):
             os.kill(self._proc.pid(), signal.SIGTERM)
             self._proc.wait()
 
-    def cat_file(self, sha1, encoding):
+    def cat_file(self, sha1):
         p = self._get_process()
         p.stdin.write('%s\n' % sha1)
         p.stdin.flush()
@@ -149,10 +149,7 @@ class CatFileProcess(object):
         while len(b) < size + 1:
             b += os.read(p.stdout.fileno(), 4096)
         content = b[:size]
-        if encoding:
-            return type_, content.decode(encoding)
-        else:
-            return type_, content
+        return type_, content
 
 
 class DiffTreeProcesses(object):
@@ -269,8 +266,8 @@ class Repository(object):
     def run(self, args, env=()):
         return Run(*args).env(add_dict(self.env, env))
 
-    def cat_object(self, sha1, encoding='utf-8'):
-        return self._catfile.cat_file(sha1, encoding)[1]
+    def cat_object(self, sha1):
+        return self._catfile.cat_file(sha1)
 
     def rev_parse(self, rev, discard_stderr=False, object_type='commit'):
         assert object_type in ('commit', 'tree', 'blob')

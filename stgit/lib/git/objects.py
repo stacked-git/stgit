@@ -58,7 +58,11 @@ class Blob(GitObject):
 
     @property
     def data(self):
-        return BlobData(self._repository.cat_object(self.sha1, encoding=None))
+        type_, content = self._repository.cat_object(self.sha1)
+        assert type_ == 'blob', (
+            'expected "blob", got "%s" for %s' % (type_, self.sha1)
+        )
+        return BlobData(content)
 
 
 class TreeData(Immutable):
@@ -237,12 +241,13 @@ class CommitData(Immutable):
         return repository.get_commit(sha1)
 
     @classmethod
-    def parse(cls, repository, s):
+    def parse(cls, repository, content):
         """Parse a raw git commit description.
         @return: A new L{CommitData} object
         @rtype: L{CommitData}"""
         cd = cls(parents=[])
         lines = []
+        s = content.decode('utf-8')
         raw_lines = s.split('\n')
         # Collapse multi-line header lines
         for i, line in enumerate(raw_lines):
@@ -283,9 +288,11 @@ class Commit(GitObject):
     @property
     def data(self):
         if self._data is None:
-            self._data = CommitData.parse(
-                self._repository, self._repository.cat_object(self.sha1)
+            type_, content = self._repository.cat_object(self.sha1)
+            assert type_ == 'commit', (
+                'expected "commit", got "%s" for %s' % (type_, self.sha1)
             )
+            self._data = CommitData.parse(self._repository, content)
         return self._data
 
     def __repr__(self):  # pragma: no cover
