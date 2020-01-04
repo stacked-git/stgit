@@ -129,39 +129,50 @@ def func(parser, options, args):
             )
         )
 
-    cd, failed_diff = edit.auto_edit_patch(
-        stack.repository, cd,
-        msg=(None if options.message is None else
-             options.message.encode('utf-8')),
-        contains_diff=True,
+    cd = edit.auto_edit_patch(
+        stack.repository,
+        cd,
+        msg=(
+            None if options.message is None
+            else options.message.encode('utf-8')
+        ),
         author=options.author,
-        committer=lambda p: p,
-        sign_str=options.sign_str)
+        sign_str=options.sign_str,
+    )
 
     if options.save_template:
         options.save_template(
-            edit.patch_desc(stack.repository, cd,
-                            options.diff, options.diff_flags, failed_diff))
+            edit.patch_desc(
+                stack.repository,
+                cd,
+                options.diff,
+                options.diff_flags,
+                replacement_diff=None,
+            )
+        )
         return utils.STGIT_SUCCESS
 
     use_editor = cd == orig_cd or options.edit or options.diff
     if use_editor:
         cd, failed_diff = edit.interactive_edit_patch(
-            stack.repository,
-            cd,
-            options.diff,
-            options.diff_flags,
-            failed_diff,
+            stack.repository, cd, options.diff, options.diff_flags
         )
+    else:
+        failed_diff = None
 
     def failed(reason='Edited patch did not apply.'):
         fn = '.stgit-failed.patch'
         with io.open(fn, 'wb') as f:
-            f.write(edit.patch_desc(stack.repository, cd,
-                                    options.diff, options.diff_flags,
-                                    failed_diff))
-        out.error(reason,
-                  'The patch has been saved to "%s".' % fn)
+            f.write(
+                edit.patch_desc(
+                    stack.repository,
+                    cd,
+                    options.diff,
+                    options.diff_flags,
+                    replacement_diff=failed_diff,
+                )
+            )
+        out.error(reason, 'The patch has been saved to "%s".' % fn)
         return utils.STGIT_COMMAND_ERROR
 
     # If we couldn't apply the patch, fail without even trying to

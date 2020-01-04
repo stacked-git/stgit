@@ -376,22 +376,18 @@ def func(parser, options, args):
 
     def edit_fun(cd):
         orig_msg = cd.message
-        cd, failed_diff = auto_edit_patch(
+        cd = auto_edit_patch(
             stack.repository, cd,
-            msg=(None if options.message is None else
-                 options.message.encode('utf-8')),
-            contains_diff=False,
+            msg=(
+                None if options.message is None
+                else options.message.encode('utf-8')
+            ),
             author=options.author,
-            committer=lambda p: p,
-            sign_str=options.sign_str)
-        assert not failed_diff
+            sign_str=options.sign_str,
+        )
         if options.edit:
             cd, failed_diff = interactive_edit_patch(
-                stack.repository,
-                cd,
-                edit_diff=False,
-                diff_flags=[],
-                replacement_diff=None,
+                stack.repository, cd, edit_diff=False, diff_flags=[]
             )
             assert not failed_diff
         if not options.no_verify and (options.edit or cd.message != orig_msg):
