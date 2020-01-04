@@ -245,32 +245,38 @@ class CommitData(Immutable):
         """Parse a raw git commit description.
         @return: A new L{CommitData} object
         @rtype: L{CommitData}"""
-        cd = cls(parents=[])
-        lines = []
-        s = content.decode('utf-8')
-        raw_lines = s.split('\n')
-        # Collapse multi-line header lines
-        for i, line in enumerate(raw_lines):
-            if not line:
-                cd = cd.set_message('\n'.join(raw_lines[i + 1:]))
-                break
-            if line.startswith(' '):
-                # continuation line
-                lines[-1] += '\n' + line[1:]
-            else:
-                lines.append(line)
-        for line in lines:
-            if ' ' in line:
-                key, value = line.split(' ', 1)
+        required_keys = set(['tree', 'author', 'committer'])
+        parents = []
+
+        while True:
+            line, content = content.split(b'\n', 1)
+            if line:
+                while content.startswith(b' '):
+                    extended, content = content.split(b'\n', 1)
+                    line += extended[1:]
+
+                key_b, value_b = line.split(b' ', 1)
+                key = key_b.decode('utf-8')
+                value = value_b.decode('utf-8')
                 if key == 'tree':
-                    cd = cd.set_tree(repository.get_tree(value))
+                    tree = repository.get_tree(value)
+                    required_keys.remove(key)
                 elif key == 'parent':
-                    cd = cd.add_parent(repository.get_commit(value))
+                    parents.append(repository.get_commit(value))
                 elif key == 'author':
-                    cd = cd.set_author(Person.parse(value))
+                    author = Person.parse(value)
+                    required_keys.remove(key)
                 elif key == 'committer':
-                    cd = cd.set_committer(Person.parse(value))
-        return cd
+                    committer = Person.parse(value)
+                    required_keys.remove(key)
+                else:
+                    # Any other keys are meant to be explicitly ignored
+                    pass
+            else:
+                break
+        assert not required_keys, 'commit data missing keys %s' % required_keys
+        message = content.decode('utf-8')
+        return cls(tree, parents, author, committer, message)
 
 
 class Commit(GitObject):
