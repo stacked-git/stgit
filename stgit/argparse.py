@@ -308,16 +308,15 @@ def diff_opts_option():
     ]
 
 
-def _person_opts(person, short):
-    """Sets options.<person> to a function that modifies a Person
+def author_options():
+    """Sets options.author to a function that modifies a Person
     according to the commandline options."""
 
     def short_callback(option, opt_str, value, parser, field):
-        f = getattr(parser.values, person)
+        f = parser.values.author
         if field == "date":
             value = Date(value)
-        setattr(parser.values, person,
-                lambda p: getattr(f(p), 'set_' + field)(value))
+        parser.values.author = lambda p: getattr(f(p), 'set_' + field)(value)
 
     def full_callback(option, opt_str, value, parser):
         ne = utils.parse_name_email(value)
@@ -330,32 +329,28 @@ def _person_opts(person, short):
 
     return [
         opt(
-            '--%s' % person,
+            '--author',
             metavar='"NAME <EMAIL>"',
             type='string',
             action='callback',
             callback=full_callback,
-            dest=person,
+            dest='author',
             default=lambda p: p,
-            short='Set the %s details' % person,
+            short='Set the author details',
         )
     ] + [
         opt(
-            '--%s%s' % (short, f),
-            metavar=f.upper(),
+            '--auth%s' % field,
+            metavar=field.upper(),
             type='string',
             action='callback',
             callback=short_callback,
-            dest=person,
-            callback_args=(f,),
-            short='Set the %s %s' % (person, f),
+            dest='author',
+            callback_args=(field, ),
+            short='Set the author %s' % field,
         )
-        for f in ['name', 'email', 'date']
+        for field in ['name', 'email', 'date']
     ]
-
-
-def author_options():
-    return _person_opts('author', 'auth')
 
 
 def keep_option():
