@@ -23,8 +23,10 @@ test_expect_success \
     stg clone foo bar &&
     (
         cd bar && stg new p1 -m p1 &&
+        git notes add -m note1 &&
         printf "a\nc\n" > file && stg add file && stg refresh &&
         stg new p2 -m p2 &&
+        git notes add -m note2 &&
         printf "a\nb\nc\n" > file && stg refresh &&
         [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
@@ -67,7 +69,9 @@ test_expect_success \
     (
         cd bar && stg push --merged --all
         [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
-        [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+        [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
+        [ "$(git notes show $(stg id p1))" = "note1" ] &&
+        [ "$(git notes show)" = "note2" ]
     )
 '
 

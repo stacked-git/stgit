@@ -431,3 +431,8 @@ class Repository(object):
     def repack(self):
         """Repack all objects into a single pack."""
         self.run(['git', 'repack', '-a', '-d', '-f']).run()
+
+    def copy_notes(self, old_sha1, new_sha1):
+        """Copy git notes from the old object to the new one."""
+        p = self.run(['git', 'notes', 'copy', old_sha1, new_sha1])
+        p.discard_exitcode().discard_stderr().discard_output()

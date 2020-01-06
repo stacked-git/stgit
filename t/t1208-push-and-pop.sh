@@ -28,6 +28,7 @@ test_expect_success \
     'Create ten patches' '
     for i in 0 1 2 3 4 5 6 7 8 9; do
         stg new p$i -m p$i;
+        git notes add -m note$i;
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p7 p8 p9" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
@@ -87,7 +88,8 @@ test_expect_success \
     'Pop all but seven patches' '
     stg pop -n -7 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "p7 p8 p9" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p7 p8 p9" ] &&
+    [ "$(git notes show)" = "note6" ]
 '
 
 test_expect_success \
@@ -108,7 +110,8 @@ test_expect_success \
     'Push two patches' '
     stg push -n 2 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "p2 p3 p4 p5 p6 p7 p8 p9" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p2 p3 p4 p5 p6 p7 p8 p9" ] &&
+    [ "$(git notes show)" = "note1" ]
 '
 
 test_expect_success \
@@ -122,14 +125,16 @@ test_expect_success \
     'Push all but three patches' '
     stg push -n -3 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "p7 p8 p9" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p7 p8 p9" ] &&
+    [ "$(git notes show)" = "note6" ]
 '
 
 test_expect_success \
     'Push two patches in reverse' '
     stg push -n 2 --reverse
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p8 p7" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "p9" ] &&
+    [ "$(git notes show)" = "note7" ]
 '
 
 test_expect_success \

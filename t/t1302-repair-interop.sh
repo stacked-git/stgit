@@ -29,7 +29,6 @@ test_expect_success 'Pop two patches with git reset' '
     git reset --hard HEAD~2 &&
     command_error stg refresh &&
     stg repair &&
-    stg refresh &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p3 p4" ]
 '
@@ -44,7 +43,6 @@ test_expect_success 'Go to an unapplied patch with with git reset' '
     git reset --hard $(stg id p3) &&
     command_error stg refresh &&
     stg repair &&
-    stg refresh &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "q0 p4" ]
 '

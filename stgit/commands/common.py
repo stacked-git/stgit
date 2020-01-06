@@ -425,7 +425,7 @@ def __parse_description(descr):
     if lasthdr < end:
         body = '\n' + '\n'.join(l[descr_strip:] for l in descr_lines[lasthdr:])
 
-    return (subject + body, authname, authemail, authdate)
+    return (subject + body + '\n', authname, authemail, authdate)
 
 
 def parse_patch(patch_data, contains_diff):

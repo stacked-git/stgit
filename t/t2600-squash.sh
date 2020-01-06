@@ -8,6 +8,7 @@ test_expect_success 'Initialize StGit stack' '
     stg init &&
     for i in 0 1 2 3; do
         stg new p$i -m "foo $i" &&
+        git notes add -m note$i &&
         echo "foo $i" >> foo.txt &&
         stg add foo.txt &&
         stg refresh

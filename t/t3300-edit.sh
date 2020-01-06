@@ -9,12 +9,16 @@ test_expect_success 'Setup' '
     git commit -m "Initial commit" &&
     sed "s/000/000xx/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "First change" &&
+    git notes add -m note1 &&
     sed "s/111/111yy/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Second change" &&
+    git notes add -m note2 &&
     sed "s/222/222zz/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Third change" &&
+    git notes add -m note3 &&
     sed "s/333/333zz/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Fourth change" &&
+    git notes add -m note4 &&
     stg init &&
     stg uncommit -n 4 p &&
     stg pop -n 2 &&
@@ -41,25 +45,30 @@ rm -f diffedit
 test_expect_success 'Edit message of top patch' '
     test "$(msg HEAD)" = "Second change" &&
     stg edit p2 -m "Second change 2" &&
-    test "$(msg HEAD)" = "Second change 2"
+    test "$(msg HEAD)" = "Second change 2" &&
+    test "$(git notes show $(stg id p2))" = "note2"
 '
 
 test_expect_success 'Edit message of non-top patch' '
     test "$(msg HEAD^)" = "First change" &&
     stg edit p1 -m "First change 2" &&
-    test "$(msg HEAD^)" = "First change 2"
+    test "$(msg HEAD^)" = "First change 2" &&
+    test "$(git notes show $(stg id p1))" = "note1"
+
 '
 
 test_expect_success 'Edit message of unapplied patch' '
     test "$(msg $(stg id p3))" = "Third change" &&
     stg edit p3 -m "Third change 2" &&
-    test "$(msg $(stg id p3))" = "Third change 2"
+    test "$(msg $(stg id p3))" = "Third change 2" &&
+    test "$(git notes show $(stg id p3))" = "note3"
 '
 
 test_expect_success 'Edit message of hidden patch' '
     test "$(msg $(stg id p4))" = "Fourth change" &&
     stg edit p4 -m "Fourth change 2" &&
-    test "$(msg $(stg id p4))" = "Fourth change 2"
+    test "$(msg $(stg id p4))" = "Fourth change 2" &&
+    test "$(git notes show $(stg id p4))" = "note4"
 '
 
 test_expect_success 'Set patch message with --file <file>' '
@@ -75,7 +84,7 @@ test_expect_success 'Set patch message with --file -' '
 '
 
 ( printf 'From: A Ú Thor <author@example.com>\nDate: <omitted>'
-  printf '\n\nPride and Prejudice' ) > expected-tmpl
+  printf '\n\nPride and Prejudice\n' ) > expected-tmpl
 omit_date () { sed "s/^Date:.*$/Date: <omitted>/" ; }
 
 test_expect_success 'Save template to file' '
@@ -103,7 +112,7 @@ test_expect_success 'Save template to stdout' '
 mkeditor ()
 {
     write_script "$1" <<EOF
-printf "\n$1" >> "\$1"
+printf "$1" >> "\$1"
 EOF
 }
 
@@ -245,7 +254,11 @@ test_expect_success 'Set patch tree' '
     test "$(git write-tree)" = "$p2tree" &&
     grep "^333$" foo &&
     stg edit --set-tree $p2tree p1 &&
-    test "$(echo $(stg series --empty --all))" = "+ p1 0> p2 - p3 ! p4"
+    test "$(echo $(stg series --empty --all))" = "+ p1 0> p2 - p3 ! p4" &&
+    test "$(git notes show $(stg id p1))" = "note1" &&
+    test "$(git notes show $(stg id p2))" = "note2" &&
+    test "$(git notes show $(stg id p3))" = "note3" &&
+    test "$(git notes show $(stg id p4))" = "note4"
 '
 
 test_done
