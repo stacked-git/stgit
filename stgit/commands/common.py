@@ -385,47 +385,43 @@ def __parse_description(descr):
     """Parse the patch description and return the new description and
     author information (if any).
     """
-    subject = body = ''
+    subject = ''
     authname = authemail = authdate = None
 
-    descr_lines = [line.rstrip() for line in descr.split('\n')]
-    if not descr_lines:
-        raise CmdException("Empty patch description")
+    descr_lines = [line.rstrip() for line in descr.splitlines()]
 
     lasthdr = 0
-    end = len(descr_lines)
     descr_strip = 0
 
     # Parse the patch header
-    for pos in range(0, end):
-        if not descr_lines[pos]:
+    for pos, line in enumerate(descr_lines):
+        if not line:
             continue
         # check for a "From|Author:" line
-        if re.match(r'\s*(?:from|author):\s+', descr_lines[pos], re.I):
-            auth = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*(?:from|author):\s+', line, re.I):
+            auth = re.findall(r'^.*?:\s+(.*)$', line)[0]
             authname, authemail = name_email(auth)
             lasthdr = pos + 1
             continue
         # check for a "Date:" line
-        if re.match(r'\s*date:\s+', descr_lines[pos], re.I):
-            authdate = re.findall(r'^.*?:\s+(.*)$', descr_lines[pos])[0]
+        if re.match(r'\s*date:\s+', line, re.I):
+            authdate = re.findall(r'^.*?:\s+(.*)$', line)[0]
             lasthdr = pos + 1
             continue
         if subject:
             break
         # get the subject
-        subject = descr_lines[pos][descr_strip:]
+        subject = line[descr_strip:]
         if re.match(r'commit [\da-f]{40}$', subject):
             # 'git show' output, look for the real subject
             subject = ''
             descr_strip = 4
         lasthdr = pos + 1
 
-    # get the body
-    if lasthdr < end:
-        body = '\n' + '\n'.join(l[descr_strip:] for l in descr_lines[lasthdr:])
+    body = ''.join(line[descr_strip:] + '\n' for line in descr_lines[lasthdr:])
+    message = subject + '\n' + body
 
-    return (subject + body + '\n', authname, authemail, authdate)
+    return (message, authname, authemail, authdate)
 
 
 def parse_patch(patch_data, contains_diff):
