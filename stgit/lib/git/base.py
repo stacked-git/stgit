@@ -23,19 +23,3 @@ class Immutable(object):
     The L{Immutable} class doesn't actually enforce immutability --
     that is up to the individual immutable subclasses. It just serves
     as documentation."""
-
-
-class NoValue(object):
-    """Value guaranteed to be distinct from any real argument value."""
-
-
-def make_defaults(defaults):
-    def d(val, attr, default_fun=lambda: None):
-        if val != NoValue:
-            return val
-        elif defaults != NoValue:
-            return getattr(defaults, attr)
-        else:
-            return default_fun()
-
-    return d

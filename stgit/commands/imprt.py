@@ -201,13 +201,11 @@ def __create_patch(filename, message, author_name, author_email,
 
     out.start('Importing patch "%s"' % name)
 
-    author = Person()
-    if author_name:
-        author = author.set_name(author_name)
-    if author_email:
-        author = author.set_email(author_email)
-    if author_date:
-        author = author.set_date(Date(author_date))
+    author = Person(
+        author_name,
+        author_email,
+        Date.maybe(author_date),
+    )
     author = options.author(author)
 
     try:

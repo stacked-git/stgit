@@ -14,7 +14,6 @@ from stgit.commands.common import (
     parse_patches,
     run_commit_msg_hook,
 )
-from stgit.lib.git import CommitData
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 
 __copyright__ = """
@@ -72,7 +71,6 @@ class SaveTemplateDone(Exception):
 
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
-    cd = CommitData(tree=cd.tree, parents=cd.parents)
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
@@ -85,10 +83,15 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
         cd = cd.set_tree(tree)
     if msg is None:
         msg = utils.append_comment(
-            trans.patches[patches[0]].data.message,
-            '\n\n'.join('%s\n\n%s' % (pn.ljust(70, '-'),
-                                      trans.patches[pn].data.message)
-                        for pn in patches[1:]))
+            cd.message,
+            '\n\n'.join(
+                '%s\n\n%s' % (
+                    pn.ljust(70, '-'),
+                    trans.patches[pn].data.message
+                )
+                for pn in patches[1:]
+            )
+        )
         if save_template:
             save_template(msg.encode('utf-8'))
             raise SaveTemplateDone()

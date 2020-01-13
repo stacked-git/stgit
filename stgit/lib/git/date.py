@@ -11,7 +11,7 @@ import re
 
 from stgit.compat import rfc2822_format
 from stgit.exception import StgException
-from stgit.lib.git.base import Immutable, NoValue
+from stgit.lib.git.base import Immutable
 from stgit.run import Run, RunException
 
 
@@ -168,6 +168,4 @@ class Date(Immutable):
     def maybe(cls, datestring):
         """Return a new object initialized with the argument if it contains a
         value (otherwise, just return the argument)."""
-        if datestring in [None, NoValue]:
-            return datestring
-        return cls(datestring)
+        return cls(datestring) if datestring is not None else None

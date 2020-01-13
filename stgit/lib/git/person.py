@@ -11,7 +11,7 @@ import re
 from stgit.compat import environ_get
 from stgit.config import config
 
-from .base import Immutable, NoValue, make_defaults
+from .base import Immutable
 from .date import Date
 
 
@@ -19,27 +19,30 @@ class Person(Immutable):
     """Represents an author or committer in a git commit object. Contains
     name, email and timestamp."""
 
-    def __init__(
-        self, name=NoValue, email=NoValue, date=NoValue, defaults=NoValue
-    ):
-        d = make_defaults(defaults)
-        self.name = d(name, 'name')
-        self.email = d(email, 'email')
-        self.date = d(date, 'date')
-        assert isinstance(self.date, Date) or self.date in [None, NoValue]
+    def __init__(self, name, email, date):
+        self.name = name
+        self.email = email
+        self.date = date
 
     @property
     def name_email(self):
         return '%s <%s>' % (self.name, self.email)
 
     def set_name(self, name):
-        return type(self)(name=name, defaults=self)
+        return self._replace(name=name)
 
     def set_email(self, email):
-        return type(self)(email=email, defaults=self)
+        return self._replace(email=email)
 
     def set_date(self, date):
-        return type(self)(date=date, defaults=self)
+        return self._replace(date=date)
+
+    def _replace(self, **kws):
+        return type(self)(
+            kws.get('name', self.name),
+            kws.get('email', self.email),
+            kws.get('date', self.date),
+        )
 
     def __repr__(self):
         return '%s %s' % (self.name_email, self.date)
@@ -56,28 +59,28 @@ class Person(Immutable):
     def user(cls):
         if not hasattr(cls, '_user'):
             cls._user = cls(
-                name=config.get('user.name'), email=config.get('user.email')
+                config.get('user.name'), config.get('user.email'), date=None
             )
         return cls._user
 
     @classmethod
     def author(cls):
         if not hasattr(cls, '_author'):
+            user = cls.user()
             cls._author = cls(
-                name=environ_get('GIT_AUTHOR_NAME', NoValue),
-                email=environ_get('GIT_AUTHOR_EMAIL', NoValue),
-                date=Date.maybe(environ_get('GIT_AUTHOR_DATE', NoValue)),
-                defaults=cls.user(),
+                environ_get('GIT_AUTHOR_NAME', user.name),
+                environ_get('GIT_AUTHOR_EMAIL', user.email),
+                Date.maybe(environ_get('GIT_AUTHOR_DATE')),
             )
         return cls._author
 
     @classmethod
     def committer(cls):
         if not hasattr(cls, '_committer'):
+            user = cls.user()
             cls._committer = cls(
-                name=environ_get('GIT_COMMITTER_NAME', NoValue),
-                email=environ_get('GIT_COMMITTER_EMAIL', NoValue),
-                date=Date.maybe(environ_get('GIT_COMMITTER_DATE', NoValue)),
-                defaults=cls.user(),
+                environ_get('GIT_COMMITTER_NAME', user.name),
+                environ_get('GIT_COMMITTER_EMAIL', user.email),
+                Date.maybe(environ_get('GIT_COMMITTER_DATE')),
             )
         return cls._committer
