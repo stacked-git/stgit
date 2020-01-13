@@ -6,7 +6,7 @@ test_description='Test the import command'
 test_expect_success \
     'Initialize the StGIT repository' \
     '
-    cp $TEST_DIRECTORY/t1800-import/foo.txt . &&
+    cp "$TEST_DIRECTORY"/t1800/foo.txt . &&
     stg add foo.txt &&
     git commit -a -m "initial version" &&
     stg init
@@ -25,7 +25,7 @@ test_set_editor false
 test_expect_success \
     'Apply a patch created with "git diff"' \
     '
-    stg import $TEST_DIRECTORY/t1800-import/git-diff &&
+    stg import "$TEST_DIRECTORY"/t1800/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -36,7 +36,7 @@ test_expect_success \
     '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    stg import --edit $TEST_DIRECTORY/t1800-import/git-diff &&
+    stg import --edit "$TEST_DIRECTORY"/t1800/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     [ $(git cat-file -p $(stg id) | grep -c "fake edit") = 1 ] &&
@@ -46,7 +46,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from a URL' \
     '
-    stg import -u file://$TEST_DIRECTORY/t1800-import/git-diff &&
+    stg import -u "file://$TEST_DIRECTORY/t1800/git-diff" &&
     [ $(git cat-file -p $(stg id) \
       | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -55,7 +55,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with "git diff" using -p1' \
     '
-    stg import -p1 $TEST_DIRECTORY/t1800-import/git-diff &&
+    stg import -p1 "$TEST_DIRECTORY"/t1800/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -64,7 +64,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with "git diff" using -p0' \
     '
-    stg import -p0 $TEST_DIRECTORY/t1800-import/git-diff-p0 &&
+    stg import -p0 "$TEST_DIRECTORY"/t1800/git-diff-p0 &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -73,7 +73,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with "git diff" using -p2' \
     '
-    command_error stg import -p2 $TEST_DIRECTORY/t1800-import/git-diff &&
+    command_error stg import -p2 "$TEST_DIRECTORY"/t1800/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree a5850c97490398571d41d6304dd940800550f507") = 1 ] &&
     stg delete ..
@@ -83,7 +83,7 @@ test_expect_success \
     'Apply a patch created with "git diff" from a subdirectory' \
     '
     mkdir subdir && cd subdir &&
-    stg import $TEST_DIRECTORY/t1800-import/git-diff &&
+    stg import "$TEST_DIRECTORY"/t1800/git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete .. &&
@@ -93,7 +93,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with GNU diff' \
     '
-    stg import $TEST_DIRECTORY/t1800-import/gnu-diff &&
+    stg import "$TEST_DIRECTORY"/t1800/gnu-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -102,7 +102,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch created with "stg export"' \
     '
-    stg import $TEST_DIRECTORY/t1800-import/stg-export &&
+    stg import "$TEST_DIRECTORY"/t1800/stg-export &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
@@ -111,7 +111,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from an 8bit-encoded e-mail' \
     '
-    stg import -m $TEST_DIRECTORY/t1800-import/email-8bit &&
+    stg import -m "$TEST_DIRECTORY"/t1800/email-8bit &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
@@ -122,7 +122,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from an 8bit-encoded e-mail with CRLF endings' \
     '
-    cat $TEST_DIRECTORY/t1800-import/email-8bit | append_cr |
+    cat "$TEST_DIRECTORY"/t1800/email-8bit | append_cr |
     stg import -m &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
@@ -138,7 +138,7 @@ test_expect_success \
     cat foo.txt | append_cr > foo-crlf.txt &&
     mv foo-crlf.txt foo.txt &&
     stg refresh &&
-    cat $TEST_DIRECTORY/t1800-import/email-8bit | append_cr |
+    cat "$TEST_DIRECTORY"/t1800/email-8bit | append_cr |
     stg import -m --keep-cr &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree ecb72e62394189fd2a095047076dab1ae473ed4d") = 1 ] &&
@@ -150,7 +150,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from latin1-encoded email specifying utf-8 charset' \
     '
-    iconv -f UTF-8 -t LATIN1 $TEST_DIRECTORY/t1800-import/email-8bit > email-latin1 &&
+    iconv -f UTF-8 -t LATIN1 "$TEST_DIRECTORY"/t1800/email-8bit > email-latin1 &&
     stg import -m email-latin1 &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree cf0f9884fdb30bca14d2411e1711f6ae413c9213") = 1 ] &&
@@ -162,7 +162,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from email with quoted "From" header' \
     '
-    stg import -m $TEST_DIRECTORY/t1800-import/email-quoted-from &&
+    stg import -m "$TEST_DIRECTORY"/t1800/email-quoted-from &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
@@ -173,7 +173,7 @@ test_expect_success \
 test_expect_success \
     'Apply a patch from a QP-encoded e-mail' \
     '
-    stg import -m $TEST_DIRECTORY/t1800-import/email-qp &&
+    stg import -m "$TEST_DIRECTORY"/t1800/email-qp &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
@@ -184,7 +184,7 @@ test_expect_success \
 test_expect_success \
     'Apply several patches from an mbox file' \
     '
-    stg import -M $TEST_DIRECTORY/t1800-import/email-mbox &&
+    stg import -M "$TEST_DIRECTORY"/t1800/email-mbox &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
@@ -203,7 +203,7 @@ test_expect_success \
 test_expect_success \
     'Apply several patches from an mbox file from stdin' \
     '
-    cat $TEST_DIRECTORY/t1800-import/email-mbox | stg import -M &&
+    cat "$TEST_DIRECTORY"/t1800/email-mbox | stg import -M &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
@@ -222,7 +222,7 @@ test_expect_success \
 test_expect_success \
     'Apply several patches from an mbox file with CRLF line endings' \
     '
-    cat $TEST_DIRECTORY/t1800-import/email-mbox | append_cr |
+    cat "$TEST_DIRECTORY"/t1800/email-mbox | append_cr |
     stg import -M &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
@@ -242,59 +242,55 @@ test_expect_success \
 test_expect_success \
     'Apply a bzip2 patch created with "git diff"' \
     '
-    bzip2 -c $TEST_DIRECTORY/t1800-import/git-diff > \
-        $TEST_DIRECTORY/t1800-import/bzip2-git-diff &&
-    stg import $TEST_DIRECTORY/t1800-import/bzip2-git-diff &&
+    bzip2 -c "$TEST_DIRECTORY"/t1800/git-diff > bzip2-git-diff &&
+    stg import bzip2-git-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    rm $TEST_DIRECTORY/t1800-import/bzip2-git-diff &&
     stg delete ..
     '
 test_expect_success \
     'Apply a bzip2 patch with a .bz2 suffix' \
     '
-    bzip2 -c $TEST_DIRECTORY/t1800-import/git-diff > \
-        $TEST_DIRECTORY/t1800-import/git-diff.bz2 &&
-    stg import $TEST_DIRECTORY/t1800-import/git-diff.bz2 &&
+    bzip2 -c "$TEST_DIRECTORY"/t1800/git-diff > git-diff.bz2 &&
+    stg import git-diff.bz2 &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    rm $TEST_DIRECTORY/t1800-import/git-diff.bz2 &&
     stg delete ..
     '
 
 test_expect_success \
     'Apply a gzip patch created with GNU diff' \
     '
-    gzip -c $TEST_DIRECTORY/t1800-import/gnu-diff > \
-        $TEST_DIRECTORY/t1800-import/gzip-gnu-diff &&
-    stg import $TEST_DIRECTORY/t1800-import/gzip-gnu-diff &&
+    gzip -c "$TEST_DIRECTORY"/t1800/gnu-diff > gzip-gnu-diff &&
+    stg import gzip-gnu-diff &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    rm $TEST_DIRECTORY/t1800-import/gzip-gnu-diff &&
     stg delete ..
     '
 test_expect_success \
     'Apply a gzip patch with a .gz suffix' \
     '
-    gzip -c $TEST_DIRECTORY/t1800-import/gnu-diff > \
-        $TEST_DIRECTORY/t1800-import/gnu-diff.gz &&
-    stg import $TEST_DIRECTORY/t1800-import/gnu-diff.gz &&
+    gzip -c "$TEST_DIRECTORY"/t1800/gnu-diff > gnu-diff.gz &&
+    stg import gnu-diff.gz &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    rm $TEST_DIRECTORY/t1800-import/gnu-diff.gz &&
     stg delete ..
     '
 
 test_expect_success \
     'apply a series from a tarball' \
     '
-    rm -f jabberwocky.txt && touch jabberwocky.txt &&
-    stg add jabberwocky.txt && git commit -m "empty file" jabberwocky.txt &&
-    (cd $TEST_DIRECTORY/t1800-import; tar -cjf jabberwocky.tar.bz2 patches) &&
-    stg import --series $TEST_DIRECTORY/t1800-import/jabberwocky.tar.bz2
+    rm -f jabberwocky.txt &&
+    touch jabberwocky.txt &&
+    stg add jabberwocky.txt &&
+    git commit -m "empty file" jabberwocky.txt &&
+    (
+        cd "$TEST_DIRECTORY"/t1800 &&
+        tar -cjf "$HOME"/jabberwocky.tar.bz2 patches
+    ) &&
+    stg import --series jabberwocky.tar.bz2 &&
     [ $(git cat-file -p $(stg id) \
-        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ] &&
-    rm $TEST_DIRECTORY/t1800-import/jabberwocky.tar.bz2
+        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ]
     '
 
 test_expect_success \
