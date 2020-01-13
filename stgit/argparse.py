@@ -224,17 +224,14 @@ def message_options(save_template):
 
     def templ_callback(option, opt_str, value, parser):
         if value == '-':
-
-            def w(s):
-                out.stdout_bytes(s)
-
+            parser.values.save_template = out.stdout_bytes
         else:
 
-            def w(s):
+            def write_file(s):
                 with io.open(value, 'wb') as f:
                     f.write(s)
 
-        parser.values.save_template = w
+            parser.values.save_template = write_file
         no_combine(parser)
 
     opts = [
