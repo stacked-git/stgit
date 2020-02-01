@@ -419,6 +419,13 @@ command line), leaving the rest alone. This can be used to retire
 patches as they mature, while keeping the newer and more volatile
 patches as patches.
 
+When we are completely done using stgit with the branch and it is
+fully committed, we can use cleanup to remove all stgit metadata
+from the branch or delete it completely with either:
+
+  $ stg branch --cleanup branchname
+  $ stg branch --delete branchname
+
 
 Workflow: Tracking branch
 =========================
