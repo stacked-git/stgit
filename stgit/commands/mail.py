@@ -686,8 +686,8 @@ def __build_cover(tmpl, msg_id, options, patches):
     if options.auto:
         for pn in patches:
             p = stack.patches.get(pn)
-            if p.commit.data.message:
-                descr = p.commit.data.message.strip()
+            if p.commit.data.message_str:
+                descr = p.commit.data.message_str.strip()
                 extra_cc.extend(__get_signers_list(descr))
         extra_cc = list(set(extra_cc))
 
@@ -707,8 +707,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     p = stack.patches.get(patch)
 
-    if p.commit.data.message:
-        descr = p.commit.data.message.strip()
+    if p.commit.data.message_str:
+        descr = p.commit.data.message_str.strip()
     else:
         # provide a place holder and force the edit message option on
         descr = '<empty message>'

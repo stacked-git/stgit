@@ -380,7 +380,7 @@ def func(parser, options, args):
             stack.repository, cd,
             msg=(
                 None if options.message is None
-                else options.message.encode('utf-8')
+                else options.message.encode(config.get('i18n.commitencoding'))
             ),
             author=options.author,
             sign_str=options.sign_str,

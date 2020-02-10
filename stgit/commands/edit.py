@@ -16,6 +16,7 @@ from stgit.commands.common import (
     DirectoryHasRepository,
     run_commit_msg_hook,
 )
+from stgit.config import config
 from stgit.lib import edit, transaction
 from stgit.out import out
 
@@ -134,7 +135,7 @@ def func(parser, options, args):
         cd,
         msg=(
             None if options.message is None
-            else options.message.encode('utf-8')
+            else options.message.encode(config.get('i18n.commitencoding'))
         ),
         author=options.author,
         sign_str=options.sign_str,

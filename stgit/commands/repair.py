@@ -142,7 +142,7 @@ def func(parser, options, args):
 
         for c in patchify:
             pn = make_patch_name(
-                c.data.message,
+                c.data.message_str,
                 unacceptable=lambda name: any(p.name == name for p in patches),
             )
             out.info('Creating patch %s from commit %s' % (pn, c.sha1))

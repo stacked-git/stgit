@@ -9,6 +9,7 @@ from __future__ import (
 import re
 
 from stgit.compat import text
+from stgit.config import config
 
 from .base import Immutable
 from .person import Person
@@ -150,20 +151,37 @@ class Tree(GitObject):
 class CommitData(Immutable):
     """Represents the data contents of a git commit object."""
 
-    def __init__(self, tree, parents, message, author=None, committer=None):
+    def __init__(
+        self,
+        tree,
+        parents,
+        message,
+        encoding=None,
+        author=None,
+        committer=None
+    ):
         self.tree = tree
         self.parents = parents
-        self.message = message
+        self.encoding = (
+            encoding if encoding is not None
+            else config.get('i18n.commitencoding')
+        )
+        if isinstance(message, bytes):
+            self.message = message
+        else:
+            self.message = message.encode(self.encoding)
 
         if author is None:
-            self.author = Person.author()
+            self._author = Person.author()
         else:
-            self.author = author
+            assert isinstance(author, (Person, bytes))
+            self._author = author
 
         if committer is None:
-            self.committer = Person.committer()
+            self._committer = Person.committer()
         else:
-            self.committer = committer
+            assert isinstance(committer, (Person, bytes))
+            self._committer = committer
 
     @property
     def env(self):
@@ -180,9 +198,27 @@ class CommitData(Immutable):
         return env
 
     @property
+    def message_str(self):
+        return self.message.decode(self.encoding)
+
+    @property
     def parent(self):
         assert len(self.parents) == 1
         return self.parents[0]
+
+    @property
+    def author(self):
+        if isinstance(self._author, bytes):
+            self._author = Person.parse(self._author.decode(self.encoding))
+        return self._author
+
+    @property
+    def committer(self):
+        if isinstance(self._committer, bytes):
+            self._committer = Person.parse(
+                self._committer.decode(self.encoding)
+            )
+        return self._committer
 
     def set_tree(self, tree):
         return self._replace(tree=tree)
@@ -197,19 +233,27 @@ class CommitData(Immutable):
         return self._replace(parents=[parent])
 
     def set_author(self, author):
+        assert isinstance(author, Person) or author is None
         return self._replace(author=author)
 
     def set_committer(self, committer):
+        assert isinstance(committer, Person) or committer is None
         return self._replace(committer=committer)
 
     def set_message(self, message):
-        return self._replace(message=message)
+        commit_encoding = config.get('i18n.commitencoding')
+        if isinstance(message, bytes):
+            message.decode(commit_encoding)
+        else:
+            message = message.encode(commit_encoding)
+        return self._replace(message=message, encoding=commit_encoding)
 
     def _replace(self, **kws):
         return type(self)(
             tree=kws.get('tree', self.tree),
             parents=kws.get('parents', self.parents),
             message=kws.get('message', self.message),
+            encoding=kws.get('encoding', self.encoding),
             author=kws.get('author', self.author),
             committer=kws.get('committer', self.committer),
         )
@@ -224,9 +268,9 @@ class CommitData(Immutable):
         ) % (
             self.tree.sha1,
             [p.sha1 for p in self.parents],
-            self.author,
-            self.committer,
-            self.message,
+            self._author,
+            self._committer,
+            self.message.split(b'\n', 1)[0],
         )
 
     def commit(self, repository):
@@ -239,6 +283,7 @@ class CommitData(Immutable):
             c.append(p.sha1)
         sha1 = (
             repository.run(c, env=self.env)
+            .encoding(None)
             .raw_input(self.message)
             .output_one_line()
         )
@@ -251,6 +296,7 @@ class CommitData(Immutable):
         @rtype: L{CommitData}"""
         required_keys = set(['tree', 'author', 'committer'])
         parents = []
+        encoding = None
 
         while True:
             line, content = content.split(b'\n', 1)
@@ -261,26 +307,28 @@ class CommitData(Immutable):
 
                 key_b, value_b = line.split(b' ', 1)
                 key = key_b.decode('utf-8')
-                value = value_b.decode('utf-8')
                 if key == 'tree':
-                    tree = repository.get_tree(value)
+                    tree = repository.get_tree(value_b.decode('utf-8'))
                     required_keys.remove(key)
                 elif key == 'parent':
-                    parents.append(repository.get_commit(value))
+                    parents.append(
+                        repository.get_commit(value_b.decode('utf-8'))
+                    )
                 elif key == 'author':
-                    author = Person.parse(value)
+                    author = value_b
                     required_keys.remove(key)
                 elif key == 'committer':
-                    committer = Person.parse(value)
+                    committer = value_b
                     required_keys.remove(key)
+                elif key == 'encoding':
+                    encoding = value_b.decode('utf-8')
                 else:
                     # Any other keys are meant to be explicitly ignored
                     pass
             else:
                 break
         assert not required_keys, 'commit data missing keys %s' % required_keys
-        message = content.decode('utf-8')
-        return cls(tree, parents, message, author, committer)
+        return cls(tree, parents, content, encoding, author, committer)
 
 
 class Commit(GitObject):

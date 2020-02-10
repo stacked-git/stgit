@@ -12,7 +12,7 @@ import os
 import shutil
 
 from stgit import utils
-from stgit.compat import text
+from stgit.compat import fsencode_utf8, text
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import stackupgrade
@@ -49,6 +49,7 @@ class Patch(object):
         """Write files used by the old infrastructure."""
         def write(name, val, multiline=False):
             fn = os.path.join(self._compat_dir, name)
+            fn = fsencode_utf8(fn)
             if val:
                 utils.write_string(fn, val, multiline)
             elif os.path.isfile(fn):
@@ -74,7 +75,7 @@ class Patch(object):
         write('authdate', d.author.date)
         write('commname', d.committer.name)
         write('commemail', d.committer.email)
-        write('description', d.message, multiline=True)
+        write('description', d.message_str, multiline=True)
         write('log', write_patchlog().sha1)
         write('top', new_commit.sha1)
         write('bottom', d.parent.sha1)

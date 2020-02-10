@@ -105,7 +105,7 @@ def func(parser, options, args):
                     b'-' * 79,
                     patch.name.encode('utf-8'),
                     b'-' * 79,
-                    patch.commit.data.message.encode('utf-8'),
+                    patch.commit.data.message,
                     b'---',
                     b'',
                     repository.diff_tree(

@@ -131,7 +131,7 @@ def patch_file(repo, cd):
         'Author: %s' % cd.author.name_email,
         'Date:   %s' % cd.author.date,
         '',
-        cd.message,
+        cd.message_str,
         '',
         '---',
         '',
@@ -253,7 +253,7 @@ class LogEntry(object):
     @classmethod
     def from_commit(cls, repo, commit):
         """Parse a (full or simplified) stack log commit."""
-        message = commit.data.message
+        message = commit.data.message_str
         try:
             perm, meta = commit.data.tree.data['meta']
         except KeyError:

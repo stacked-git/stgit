@@ -12,6 +12,7 @@ import re
 
 from stgit import utils
 from stgit.commands import common
+from stgit.config import config
 from stgit.lib.git import Date, Person, diffstat
 
 
@@ -57,14 +58,15 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     @param replacement_diff: Diff text to use; or C{None} if it should
                              be computed from C{cd}
     @type replacement_diff: C{str} or C{None}"""
+    commit_encoding = config.get('i18n.commitencoding')
     desc = '\n'.join(
         [
             'From: %s' % cd.author.name_email,
             'Date: %s' % cd.author.date.isoformat(),
             '',
-            cd.message,
+            cd.message_str,
         ]
-    ).encode('utf-8')
+    ).encode(commit_encoding)
     if append_diff:
         desc += b'\n---\n'
         if replacement_diff:
@@ -72,7 +74,9 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
         else:
             diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
             if diff:
-                desc += b'\n'.join([b'', diffstat(diff).encode('utf-8'), diff])
+                desc += b'\n'.join(
+                    [b'', diffstat(diff).encode(commit_encoding), diff]
+                )
     return desc
 
 
@@ -120,7 +124,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
     if sign_str is not None:
         cd = cd.set_message(
             utils.add_sign_line(
-                cd.message,
+                cd.message_str,
                 sign_str,
                 Person.committer().name,
                 Person.committer().email,

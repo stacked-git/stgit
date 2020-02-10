@@ -31,6 +31,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 DEFAULTS = [
+    ('i18n.commitencoding', ['UTF-8']),
     ('stgit.alias.add', ['git add']),
     ('stgit.alias.mv', ['git mv']),
     ('stgit.alias.resolved', ['git add']),

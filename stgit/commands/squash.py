@@ -69,6 +69,26 @@ class SaveTemplateDone(Exception):
     pass
 
 
+def _append_comment(message, comment):
+    return '\n'.join(
+        [
+            message,
+            '',
+            '---',
+            'Everything following the line with "---" will be ignored',
+            '',
+            comment,
+        ]
+    )
+
+
+def _strip_comment(message):
+    try:
+        return message[:message.index('\n---\n')]
+    except ValueError:
+        return message
+
+
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
     for pn in patches[1:]:
@@ -82,22 +102,22 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
             return None
         cd = cd.set_tree(tree)
     if msg is None:
-        msg = utils.append_comment(
-            cd.message,
+        msg = _append_comment(
+            cd.message_str,
             '\n\n'.join(
                 '%s\n\n%s' % (
                     pn.ljust(70, '-'),
-                    trans.patches[pn].data.message
+                    trans.patches[pn].data.message_str
                 )
                 for pn in patches[1:]
             )
         )
         if save_template:
-            save_template(msg.encode('utf-8'))
+            save_template(msg.encode(cd.encoding))
             raise SaveTemplateDone()
         else:
             msg = utils.edit_string(msg, '.stgit-squash.txt')
-    msg = utils.strip_comment(msg).strip()
+    msg = _strip_comment(msg).strip()
     cd = cd.set_message(msg)
 
     if not no_verify:
@@ -112,7 +132,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
         return pn not in patches and stack.patches.exists(pn)
 
     def get_name(cd):
-        return name or utils.make_patch_name(cd.message, bad_name)
+        return name or utils.make_patch_name(cd.message_str, bad_name)
 
     if name and bad_name(name):
         raise CmdException('Patch name "%s" already taken' % name)

@@ -98,14 +98,14 @@ def func(parser, options, args):
     )
 
     if options.save_template:
-        options.save_template(cd.message.encode('utf-8'))
+        options.save_template(cd.message)
         return utils.STGIT_SUCCESS
 
     if not options.no_verify:
         cd = run_commit_msg_hook(stack.repository, cd)
 
     if name is None:
-        name = utils.make_patch_name(cd.message, stack.patches.exists)
+        name = utils.make_patch_name(cd.message_str, stack.patches.exists)
         assert stack.patches.is_name_valid(name)
 
     # Write the new patch.

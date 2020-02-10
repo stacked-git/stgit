@@ -28,9 +28,9 @@ from stgit.run import Run, RunException
 from stgit.utils import (
     EditorException,
     add_sign_line,
-    edit_string,
+    edit_bytes,
     get_hook,
-    run_hook_on_string,
+    run_hook_on_bytes,
     strip_prefix,
 )
 
@@ -457,7 +457,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
     commit_msg_hook = get_hook(repo, 'commit-msg', env)
 
     try:
-        new_msg = run_hook_on_string(commit_msg_hook, cd.message)
+        new_msg = run_hook_on_bytes(commit_msg_hook, cd.message)
     except RunException as exc:
         raise EditorException(str(exc))
 
@@ -483,7 +483,7 @@ def update_commit_data(
     if sign_str:
         cd = cd.set_message(
             add_sign_line(
-                cd.message, sign_str, cd.committer.name, cd.committer.email
+                cd.message_str, sign_str, cd.committer.name, cd.committer.email
             )
         )
 
@@ -491,7 +491,7 @@ def update_commit_data(
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
             cd = cd.set_message(cd.message + tmpl)
-        cd = cd.set_message(edit_string(cd.message, '.stgit-new.txt'))
+        cd = cd.set_message(edit_bytes(cd.message, '.stgit-new.txt'))
 
     return cd
 

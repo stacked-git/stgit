@@ -178,7 +178,7 @@ def func(parser, options, args):
         patch = stack.patches.get(p)
         cd = patch.commit.data
 
-        descr = cd.message.strip()
+        descr = cd.message_str.strip()
         descr_lines = descr.split('\n')
 
         short_descr = descr_lines[0].rstrip()

@@ -184,30 +184,27 @@ def get_hook(repository, hook_name, extra_env={}):
     return hook
 
 
-def run_hook_on_string(hook, s, *args):
+def run_hook_on_bytes(hook, byte_data, *args):
     if hook is not None:
-        temp = tempfile.NamedTemporaryFile('w', delete=False)
+        temp = tempfile.NamedTemporaryFile('wb', delete=False)
         try:
             try:
-                temp.write(s)
+                temp.write(byte_data)
             finally:
                 temp.close()
 
             if sys.version_info[0] >= 3:
-                hook_path = temp.name
+                data_path = temp.name
             else:
-                hook_path = temp.name.decode(sys.getfilesystemencoding())
-            hook(hook_path, *args)
+                data_path = temp.name.decode(sys.getfilesystemencoding())
+            hook(data_path, *args)
 
-            output = open(hook_path, 'r')
-            try:
-                s = output.read()
-            finally:
-                output.close()
+            with open(data_path, 'rb') as data_file:
+                byte_data = data_file.read()
         finally:
             os.unlink(temp.name)
 
-    return s
+    return byte_data
 
 
 def edit_string(s, filename, encoding='utf-8'):
@@ -228,18 +225,6 @@ def edit_bytes(s, filename):
         s = f.read()
     os.remove(filename)
     return s
-
-
-def append_comment(s, comment, separator='---'):
-    return ('%s\n\n%s\nEverything following the line with "%s" will be'
-            ' ignored\n\n%s' % (s, separator, separator, comment))
-
-
-def strip_comment(s, separator='---'):
-    try:
-        return s[:s.index('\n%s\n' % separator)]
-    except ValueError:
-        return s
 
 
 def find_patch_name(patchname, unacceptable):
@@ -263,7 +248,7 @@ def patch_name_from_msg(msg):
         name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    words = re.sub(r'[\W]+', ' ', subject_line).split()
+    words = re.sub(r'(?u)[\W]+', ' ', subject_line).split()
 
     # use loop to avoid truncating the last name
     name = words and words[0] or 'unknown'

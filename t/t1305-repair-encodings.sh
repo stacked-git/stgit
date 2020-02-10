@@ -21,15 +21,15 @@ test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
-test_expect_failure 'No-op repair with non-utf-8 encoded message in history' '
+test_expect_success 'No-op repair with non-utf-8 encoded message in history' '
     stg repair
 '
 
-test_expect_failure 'Uncommit patch' '
+test_expect_success 'Uncommit patch' '
     stg uncommit -n 1
 '
 
-test_expect_failure 'Check patch name is utf-8' '
+test_expect_success 'Check patch name is utf-8' '
     test "$(stg series --applied --noprefix)" = "äëñïö"
 '
 
@@ -49,7 +49,7 @@ test_expect_success 'Check underlying commit is ISO8859-1' '
     test "Áéí óú <author@example.com>" = "$(cat "$HOME"/auth-utf8.txt)"
 '
 
-test_expect_failure 'Encoding after edit' '
+test_expect_success 'Encoding after edit' '
     stg edit --sign 2> "$HOME"/warnings.txt &&
     test_must_be_empty "$HOME"/warnings.txt &&
     git cat-file -p HEAD | grep -e "ÄËÑÏÖ" &&

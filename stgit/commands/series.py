@@ -135,9 +135,7 @@ def __get_description(stack, patch):
     """Extract and return a patch's short description
     """
     cd = stack.patches.get(patch).commit.data
-    descr = cd.message.strip()
-    descr_lines = descr.split('\n')
-    return descr_lines[0].rstrip()
+    return cd.message_str.strip().split('\n', 1)[0].rstrip()
 
 
 def __get_author(stack, patch):

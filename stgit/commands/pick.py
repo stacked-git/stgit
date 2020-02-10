@@ -132,7 +132,9 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
     if patchname:
         patchname = find_patch_name(patchname, stack.patches.exists)
     else:
-        patchname = make_patch_name(commit.data.message, stack.patches.exists)
+        patchname = make_patch_name(
+            commit.data.message_str, stack.patches.exists
+        )
 
     if options.parent:
         parent = git_commit(options.parent, repository, ref_stack.name)
@@ -204,7 +206,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             return STGIT_SUCCESS
     else:
         author = commit.data.author
-        message = commit.data.message
+        message = commit.data.message_str
 
         if options.revert:
             author = Person.author()

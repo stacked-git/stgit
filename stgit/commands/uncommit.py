@@ -157,8 +157,9 @@ def func(parser, options, args):
     else:
         patchnames = []
         for c in reversed(commits):
-            pn = utils.make_patch_name(c.data.message,
-                                       lambda pn: pn in taken_names)
+            pn = utils.make_patch_name(
+                c.data.message_str, lambda pn: pn in taken_names
+            )
             patchnames.append(pn)
             taken_names.add(pn)
         patchnames.reverse()
