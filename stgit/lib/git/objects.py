@@ -223,12 +223,6 @@ class CommitData(Immutable):
     def set_tree(self, tree):
         return self._replace(tree=tree)
 
-    def set_parents(self, parents):
-        return self._replace(parents=parents)
-
-    def add_parent(self, parent):
-        return self._replace(parents=list(self.parents) + [parent])
-
     def set_parent(self, parent):
         return self._replace(parents=[parent])
 
