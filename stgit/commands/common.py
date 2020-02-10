@@ -27,7 +27,7 @@ from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (
     EditorException,
-    add_sign_line,
+    add_trailer,
     edit_bytes,
     get_hook,
     run_hook_on_bytes,
@@ -482,7 +482,7 @@ def update_commit_data(
         sign_str = config.get("stgit.autosign")
     if sign_str:
         cd = cd.set_message(
-            add_sign_line(
+            add_trailer(
                 cd.message_str, sign_str, cd.committer.name, cd.committer.email
             )
         )

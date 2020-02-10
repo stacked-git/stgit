@@ -123,7 +123,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
         cd = cd.set_author(a)
     if sign_str is not None:
         cd = cd.set_message(
-            utils.add_sign_line(
+            utils.add_trailer(
                 cd.message_str,
                 sign_str,
                 Person.committer().name,

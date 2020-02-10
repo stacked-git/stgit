@@ -19,6 +19,7 @@ from stgit.compat import environ_get, text
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out
+from stgit.run import Run
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -271,18 +272,11 @@ def make_patch_name(msg, unacceptable, default_name='patch'):
     return find_patch_name(patchname, unacceptable)
 
 
-def add_sign_line(desc, sign_str, name, email):
-    if not sign_str:
-        return desc
-    sign_str = '%s: %s <%s>' % (sign_str, name, email)
-    if sign_str in desc:
-        return desc
-    desc = desc.rstrip()
-    preamble, lastblank, lastpara = desc.rpartition('\n\n')
-    is_signoff = re.compile(r'[A-Z][a-z]*(-[A-Za-z][a-z]*)*: ').match
-    if not (lastblank and all(is_signoff(l) for l in lastpara.split('\n'))):
-        desc = desc + '\n'
-    return '%s\n%s\n' % (desc, sign_str)
+def add_trailer(message, trailer, name, email):
+    trailer_line = '%s: %s <%s>' % (trailer, name, email)
+    return Run(
+        'git', 'interpret-trailers', '--trailer', trailer_line
+    ).raw_input(message).raw_output()
 
 
 def parse_name_email(address):
