@@ -34,10 +34,13 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-help = 'Push the stack changes to a merge-friendly branch'
+help = '(DEPRECATED) Push the stack changes to a merge-friendly branch'
 kind = 'stack'
 usage = ['[options] [--] [branch]']
 description = """
+DEPRECATED: The 'stg publish' command will be removed in a future version of
+StGit.
+
 This command commits a set of changes on a separate (called public) branch
 based on the modifications of the given or current stack. The history of the
 public branch is not re-written, making it merge-friendly and feasible for
@@ -148,6 +151,9 @@ def __get_last(stack, tree):
 
 def func(parser, options, args):
     """Publish the stack changes."""
+    out.warn(
+        'DEPRECATED: stg publish will be removed in a future version of StGit.'
+    )
     repository = directory.repository
     stack = repository.get_stack(options.branch)
 
