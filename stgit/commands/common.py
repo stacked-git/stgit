@@ -378,7 +378,7 @@ def __split_descr_diff(string):
                 top = False
         diff += line + b'\n'
 
-    return (descr.rstrip(), diff)
+    return (descr.rstrip() + b'\n', diff)
 
 
 def __parse_description(descr):
