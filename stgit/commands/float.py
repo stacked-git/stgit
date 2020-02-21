@@ -40,10 +40,11 @@ kind = 'stack'
 usage = ['[--] <patches>',
          '-s <series>']
 description = """
-Push a patch or a range of patches to the top even if applied. The
-necessary pop and push operations will be performed to accomplish
-this. The '--series' option can be used to rearrange the (top) patches
-as specified by the given series file (or the standard input)."""
+Float a patch or range of patches to be the top-most applied patches.
+The patches to be floated may currently be either applied or unapplied.
+The necessary pop and push operations will be performed to float the
+named patches.  Patches not specified will remain applied or unapplied
+as they were prior to the float operation."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
