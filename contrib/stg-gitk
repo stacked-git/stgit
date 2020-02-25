@@ -12,7 +12,7 @@ set -e
 # Copyright (c) 2007 Yann Dirson <ydirson@altern.org>
 # Subject to the GNU GPL, version 2.
 
-helptext="Usage: $(basename $0) [--refs] [<branches>|--all] [-- <gitk args>]"
+helptext="Usage: $(basename "$0") [--refs] [<branches>|--all] [-- <gitk args>]"
 
 usage()
 {
@@ -25,12 +25,12 @@ refsonly=0
 branches=''
 while [ "$#" -gt 0 ]; do
     case "$1" in
-	--refs) refsonly=1 ;;
-	--all) allbranches=1 ;;
-	--help) echo "$helptext"; exit 0 ;;
-	--) shift; break ;;
-	--*) usage ;;
-	*) branches="$branches $1" ;;
+        --refs) refsonly=1 ;;
+        --all) allbranches=1 ;;
+        --help) echo "$helptext"; exit 0 ;;
+        --) shift; break ;;
+        --*) usage ;;
+        *) branches="$branches $1" ;;
     esac
     shift
 done
@@ -41,55 +41,57 @@ if [ $allbranches = 1 ] && [ "$branches" != "" ]; then
 fi
 
 GIT_DIR=$(git rev-parse --git-dir)
-GIT_DIR_SPKIPLEN=$(printf "$GIT_DIR/X" | wc -c)
+GIT_DIR_SKIPLEN=$(printf "%s/X" "$GIT_DIR" | wc -c)
 
 refdirs=''
 if [ $allbranches = 1 ]; then
     refdirs="$GIT_DIR/refs"
 else
     # default to current branch
-    if [ "$branches" == "" ]; then
-	branches="$(stg branch)"
+    if [ "$branches" = "" ]; then
+        branches="$(stg branch)"
     fi
-    if [ "$branches" == "" ]; then
-	echo >&2 "ERROR: cannot find current branch."
-	exit 1
+    if [ "$branches" = "" ]; then
+        echo >&2 "ERROR: cannot find current branch."
+        exit 1
     fi
 
     # expand patches for each named branch
     for b in $branches; do
-	if [ -e "$GIT_DIR/refs/patches/$b" ]; then
-	    # StGIT branch: show all patches
-	    refdirs="$refdirs $GIT_DIR/refs/heads/$b $GIT_DIR/refs/patches/$b"
-	elif [ -e "$GIT_DIR/refs/heads/$b" ]; then
-	    # other GIT branch
-	    refdirs="$refdirs $GIT_DIR/refs/heads/$b"
-	elif [ $(git for-each-ref "refs/$b" | wc -l) != 0 ]; then
-	    # other ref
-	    refdirs="$refdirs $(git for-each-ref --format="$GIT_DIR/%(refname)" "refs/$b")"
-	else
-	    echo >&2 "ERROR: no such ref '$b'"
-	    usage
-	fi
+        if [ -e "$GIT_DIR/refs/patches/$b" ]; then
+            # StGIT branch: show all patches
+            refdirs="$refdirs $GIT_DIR/refs/heads/$b $GIT_DIR/refs/patches/$b"
+        elif [ -e "$GIT_DIR/refs/heads/$b" ]; then
+            # other GIT branch
+            refdirs="$refdirs $GIT_DIR/refs/heads/$b"
+        elif [ "$(git for-each-ref "refs/$b" | wc -l)" != 0 ]; then
+            # other ref
+            refdirs="$refdirs $(git for-each-ref --format="$GIT_DIR/%(refname)" "refs/$b")"
+        else
+            echo >&2 "ERROR: no such ref '$b'"
+            usage
+        fi
     done
 fi
 
 printrefs()
 {
-    find $refdirs -type f -not -name '*.log' | cut -c${GIT_DIR_SPKIPLEN}-
+    # shellcheck disable=SC2086
+    find $refdirs -type f -not -name '*.log' | cut -c"${GIT_DIR_SKIPLEN}"-
 }
 
 if [ $refsonly = 1 ]; then
     printrefs
-elif grep -q -- --argscmd $(which gitk); then
+elif grep -q -- --argscmd "$(command -v gitk)"; then
     # This gitk supports --argscmd.
     # Let's use a hack to pass --all, which was consumed during command-line parsing
     if [ $allbranches = 1 ]; then
-	gitk --argscmd="$0 --refs --all" "$@"
+        gitk --argscmd="$0 --refs --all" "$@"
     else
-	gitk --argscmd="$0 --refs $branches" "$@"
+        gitk --argscmd="$0 --refs $branches" "$@"
     fi
 else
     # This gitk does not support --argscmd, just compute refs onces
+    # shellcheck disable=SC2046
     gitk $(printrefs) "$@"
 fi
