@@ -9,7 +9,8 @@ from __future__ import (
 )
 
 import os
-import sys
+
+from stgit.main import main
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -32,22 +33,5 @@ if __name__ == '__main__':
         import coverage
 
         coverage.process_startup()
-
-    # Try to detect where it is run from and set prefix and the search path.
-    # It is assumed that the user installed StGIT using the --prefix= option
-    prefix, bin = os.path.split(sys.path[0])
-    if bin == 'bin' and prefix != sys.prefix:
-        sys.prefix = prefix
-        sys.exec_prefix = prefix
-
-        major, minor = sys.version_info[0:2]
-        local_path = [
-            os.path.join(prefix, 'lib', 'python'),
-            os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor)),
-            os.path.join(prefix, 'lib', 'python%s.%s' % (major, minor),
-                         'site-packages')]
-        sys.path = local_path + sys.path
-
-    from stgit.main import main
 
     main()
