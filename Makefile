@@ -1,4 +1,4 @@
-prefix	?= $(HOME)
+prefix	?= $(HOME)/.local
 DESTDIR	?= /
 PYTHON	?= python
 DEFAULT_TEST_TARGET ?= test

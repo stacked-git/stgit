@@ -3,7 +3,7 @@ EMACS = emacs
 ELC = stgit.elc
 INSTALL ?= install
 INSTALL_ELC = $(INSTALL) -m 644
-prefix ?= $(HOME)
+prefix ?= $(HOME)/.local
 emacsdir = $(prefix)/share/emacs/site-lisp
 RM ?= rm -f
 

@@ -1,20 +1,19 @@
 For basic installation:
 
-	$ make all doc ;# as yourself
-	$ make install install-doc ;# as yourself
+	$ make all doc
+	$ make install install-doc
 
-By default, the above command installs StGIT in the
-$HOME/{bin,lib,share} directories. For a different location, use the
-prefix option.
+By default, StGit is installed to the $(HOME)/.local/{bin,lib,share}
+directories, as specified by the systemd file-hierarchy and XDG Base
+Directory specs. To install elsewhere, the prefix variable can be set:
 
-	$ make prefix=/usr all doc #; as yourself
-	# make prefix=/usr install install-doc #; as root
+	# make prefix=/usr/local install install-doc
+
+It is also possible to install StGit within a Python virtual environment:
+
+    (my-venv) $ python setup.py install
 
 Issues of note:
-
-- StGit requires git version 1.6.1 or later. (Specifically, it needs a
-  git that includes commit 140b378d: "Teach git diff-tree --stdin to
-  diff trees".)
 
 - To build and install the documentation, you need to have the
   asciidoc/xmlto toolchain.  The default build target ("make all")
