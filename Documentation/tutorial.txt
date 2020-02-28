@@ -272,7 +272,7 @@ At this point, we have two options:
      worktree is not clean.)
 
   2. Manually resolve the conflict (editing the file directly followed
-     by +git add+ or using +git mergetool+.)
+     by +stg add+ or using +git mergetool+.)
 
 To resolve the conflict, open +TODO+ in your favorite editor. It ends
 like this:
@@ -305,7 +305,7 @@ markers.
 Now that we've resolved the conflict, we just need to tell StGit about
 it:
 
-  $ git add TODO
+  $ stg add TODO
   $ stg status
   M TODO
 
@@ -343,9 +343,8 @@ One common use of StGit is to ``polish'' a Git branch before you
 publish it for others to see. Such history falsification can often be
 a 'good' thing -- when you (or someone else) needs to look at what you
 did six months later, you are not really interested in all the false
-starts and the steps needed to corect them. What you want is the final
-solution, presented in a way that makes it easy to read and
-understand.
+starts and the steps needed to correct them. What you want is the final
+solution, presented in a way that makes it easy to read and understand.
 
 Of course, there are limits. Editing the last few days' worth of
 history is probably a good idea; editing the last few months' probably
@@ -361,8 +360,8 @@ printout'', ``New snarfle cache test'', ``Oops, spell function name
 correctly'', ``Fix documentation error'', and ``More snarfle cache''.
 
 Now, this is the actual history, but for obvious reasons, this isn't
-the kind of history you'd ideally want to find when you six months
-from now try to figure out exactly where that elusive snarfle cache
+the kind of history you'd ideally want to find when six months from
+now, you try to figure out exactly where that elusive snarfle cache
 bug was introduced. So let's turn this into the history we can be
 proud of. The first step is to make StGit patches out of all those Git
 commits:
@@ -419,8 +418,8 @@ command line), leaving the rest alone. This can be used to retire
 patches as they mature, while keeping the newer and more volatile
 patches as patches.
 
-When we are completely done using stgit with the branch and it is
-fully committed, we can use cleanup to remove all stgit metadata
+When we are completely done using StGit with the branch and it is
+fully committed, we can use cleanup to remove all StGit metadata
 from the branch or delete it completely with either:
 
   $ stg branch --cleanup branchname
@@ -431,7 +430,7 @@ Workflow: Tracking branch
 =========================
 
 In the 'Development branch' workflow described above, we didn't have
-to worry about other people; we're working on our branch, they are
+to worry about other people; we're working on our own branch, they are
 presumably working on theirs, and when the time comes and we're ready
 to publish our branch, we'll probably end up merging our branch with
 those other peoples'. That's how Git is designed to work.
@@ -650,7 +649,7 @@ Importing a plain patch
 
 Importing a plain patch, such as produced by e.g. GNU +diff+, +git
 diff+, +git show+, linkstg:diff[], or linkstg:show[], is very easy.
-Just say
+Just say:
 
   $ stg import my-patch
 
