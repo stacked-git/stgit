@@ -111,7 +111,7 @@ setup(
     author='Catalin Marinas',
     author_email='catalin.marinas@gmail.com',
     url='http://www.procode.org/stgit/',
-    download_url='https://repo.or.cz/stgit.git',
+    download_url='https://github.com/ctmarinas/stgit.git',
     description='Stacked GIT',
     long_description='Push/pop utility on top of GIT',
     scripts=['stg'],

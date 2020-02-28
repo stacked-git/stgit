@@ -233,7 +233,7 @@ One test you could do yourself if your MUA is set up correctly is:
 * Try to apply to the tip of the "master" branch from the
   public repository:
 
-    $ git fetch http://repo.or.cz/stgit.git master:test-apply
+    $ git fetch https://github.com/ctmarinas/stgit.git master:test-apply
     $ git checkout test-apply
     $ git reset --hard
     $ stg init

@@ -40,7 +40,7 @@ StGit is not a stand-alone program -- it operates on a Git repository
 that you have already created, using +git init+ or +git clone+. So get
 one of those; if you don't have one at hand, try for example
 
-  $ git clone git://repo.or.cz/stgit.git
+  $ git clone https://github.com/ctmarinas/stgit.git
   $ cd stgit
 
 Before you can create StGit patches, you have to run linkstg:init[]:
@@ -211,7 +211,7 @@ Normally, when you pop a patch, change something, and then later push
 it again, StGit sorts out everything for you automatically. For
 example, let's create two patches that modify different files:
 
-  $ stg clone http://repo.or.cz/stgit.git stgit
+  $ stg clone https://github.com/ctmarinas/stgit.git stgit
   $ cd stgit
   $ stg new first --message 'First patch'
   $ echo '- Do something' >> TODO
@@ -539,7 +539,7 @@ history at the time, your stack base will grow ever more out of date.
 
 When you clone a repository,
 
-  $ stg clone http://repo.or.cz/stgit.git stgit
+  $ stg clone https://github.com/ctmarinas/stgit.git stgit
 
 you initially get one local branch, +master+. You also get a number of
 'remote' branches, one for each branch in the repository you cloned.
