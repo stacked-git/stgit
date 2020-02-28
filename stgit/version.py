@@ -22,7 +22,7 @@ def git_describe_version():
     try:
         v = Run(
             'git', 'describe', '--tags', '--abbrev=4'
-        ).cwd(root).output_one_line()
+        ).cwd(root).discard_stderr().output_one_line()
     except RunException as e:
         raise VersionUnavailable(str(e))
     m = re.match(r'^v([0-9].*)', v)
@@ -33,7 +33,7 @@ def git_describe_version():
     try:
         dirty = Run(
             'git', 'diff-index', '--name-only', 'HEAD'
-        ).cwd(root).raw_output()
+        ).cwd(root).discard_stderr().raw_output()
     except RunException as e:
         raise VersionUnavailable(str(e))
     if dirty:
