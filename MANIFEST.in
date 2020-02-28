@@ -1,7 +1,6 @@
 include README Makefile MANIFEST.in AUTHORS COPYING INSTALL TODO
 include RELEASENOTES
 include stg-build
-include stg-prof
 include examples/*.tmpl
 include examples/gitconfig
 include contrib/*.sh
