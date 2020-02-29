@@ -140,6 +140,14 @@ appropriately before running "make".
 	Using this option with a RAM-based filesystem (such as tmpfs)
 	can massively speed up the test suite.
 
+--stress-jobs=<N>::
+	Override the number of parallel jobs. Implies `--stress`.
+
+--stress-limit=<N>::
+	When combined with --stress run the test script repeatedly
+	this many times in each of the parallel jobs or until one of
+	them fails, whichever comes first. Implies `--stress`.
+
 You can also set the STG_TEST_INSTALLED environment variable to
 the bindir of an existing git installation to test that installation.
 You still need to have built this git sandbox, from which various
@@ -337,7 +345,8 @@ This test harness library does the following things:
  - Creates an empty test directory with an empty .git/objects database
    and chdir(2) into it.  This directory is 't/trash
    directory.$test_name_without_dotsh', with t/ subject to change by
-   the --root option documented above.
+   the --root option documented above, and a '.stress-<N>' suffix
+   appended by the --stress option.
 
  - Defines standard test helper functions for your scripts to
    use.  These functions are designed to make all scripts behave
@@ -734,6 +743,26 @@ library for your script to use.
 		...
 	'
 
+ - test_atexit <script>
+
+   Prepend <script> to a list of commands to run unconditionally to
+   clean up before the test script exits, e.g. to stop a daemon:
+
+	test_expect_success 'test git daemon' '
+		git daemon &
+		daemon_pid=$! &&
+		test_atexit 'kill $daemon_pid' &&
+		hello world
+	'
+
+   The commands will be executed before the trash directory is removed,
+   i.e. the atexit commands will still be able to access any pidfiles or
+   socket files.
+
+   Note that these commands will be run even when a test script run
+   with '--immediate' fails.  Be careful with your atexit commands to
+   minimize any changes to the failed state.
+
  - test_write_lines <lines>
 
    Write <lines> on standard output, one line per argument.
@@ -803,6 +832,24 @@ library for your script to use.
    on the key given.  The value must have been loaded using
    test_oid_init or test_oid_cache.  Providing an unknown key is an
    error.
+
+ - yes [<string>]
+
+   This is often seen in modern UNIX but some platforms lack it, so
+   the test harness overrides the platform implementation with a
+   more limited one.  Use this only when feeding a handful lines of
+   output to the downstream---unlike the real version, it generates
+   only up to 99 lines.
+
+ - test_bool_env <env-variable-name> <default-value>
+
+   Given the name of an environment variable with a bool value,
+   normalize its value to a 0 (true) or 1 (false or empty string)
+   return code.  Return with code corresponding to the given default
+   value if the variable is unset.
+   Abort the test script if either the value of the variable or the
+   default are not valid bool values.
+
 
 Prerequisites
 -------------
