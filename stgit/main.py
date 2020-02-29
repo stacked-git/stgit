@@ -180,6 +180,7 @@ def _main():
         from ConfigParser import ParsingError, NoSectionError
     from stgit.exception import StgException
     from stgit.config import config_setup
+    from stgit.lib.git import MergeConflictException
 
     try:
         debug_level = int(environ_get('STGIT_DEBUG_LEVEL', 0))
@@ -192,6 +193,12 @@ def _main():
         command.directory.setup()
         config_setup()
         ret = command.func(parser, options, args)
+    except MergeConflictException as err:
+        if debug_level > 1:
+            traceback.print_exc(file=sys.stderr)
+        for conflict in err.conflicts:
+            out.err(conflict)
+        sys.exit(utils.STGIT_CONFLICT)
     except (StgException, IOError, ParsingError, NoSectionError) as err:
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)

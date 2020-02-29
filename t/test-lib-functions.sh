@@ -1505,8 +1505,3 @@ test_set_port () {
 general_error () { test_expect_code 1 "$@" ; }
 command_error () { test_expect_code 2 "$@" ; }
 conflict () { test_expect_code 3 "$@" ; }
-
-# Old-infrastructure commands don't exit with the proper value on
-# conflicts. But we don't want half the tests to fail because of that,
-# so use this instead of "conflict" for them.
-conflict_old () { command_error "$@" ; }

@@ -112,6 +112,10 @@ class MessagePrinter(object):
         self._stdout.write_bytes(byte_data)
         self._stdout.flush()
 
+    def err(self, line):
+        """Write a line to stderr."""
+        self._stderr.write_line(line)
+
     def err_raw(self, string):
         """Write a string possibly containing newlines to the error output."""
         self._stderr.write_raw(string)

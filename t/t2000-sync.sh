@@ -142,7 +142,7 @@ test_expect_success \
 test_expect_success \
     'Synchronise the first two patches with the master branch (to fail)' \
     '
-    conflict_old stg sync -B master -a
+    conflict stg sync -B master -a
     '
 
 test_expect_success \
@@ -160,7 +160,7 @@ test_expect_success \
 test_expect_success \
     'Synchronise the third patch with the exported series (to fail)' \
     '
-    conflict_old stg sync -s patches-master/series p3
+    conflict stg sync -s patches-master/series p3
     '
 
 test_expect_success \

@@ -16,7 +16,7 @@ from stgit.commands.common import (
     rebase,
 )
 from stgit.config import GitConfigException, config
-from stgit.lib.git import RepositoryException
+from stgit.lib.git import MergeConflictException, RepositoryException
 from stgit.out import out
 
 __copyright__ = """
@@ -75,7 +75,18 @@ def pull(repository, remote_repository):
         or config.get('stgit.pullcmd')
     ).split()
     command.append(remote_repository)
-    repository.run(command).run()
+    runner = repository.run(command)
+
+    # Assumption: pullcmd will return 1 for a conflict and some non-1 code for
+    # other errors. This is probably an incorrect assumption because pullcmd
+    # may not be `git pull` and even `git pull` does not make any clear
+    # guarantees about its return code. However, the consequence of any of this
+    # going wrong will be that `stg pull` will return 3 (conflict) when 2
+    # (generic error) might be more correct.
+    runner.returns([0, 1]).run()
+    if runner.exitcode:
+        raise MergeConflictException([])
+
     repository.refs.reset_cache()
 
 
