@@ -45,7 +45,7 @@ test_expect_success 'Check underlying commit is ISO8859-1' '
     grep -e "^author" |
     cut -d" " -f 2-4 > "$HOME"/auth-8859-1.txt &&
     cat "$HOME"/auth-8859-1.txt |
-    iconv --from-code=ISO8859-1 --to-code=UTF-8 > "$HOME"/auth-utf8.txt &&
+    iconv -f ISO8859-1 -t UTF-8 > "$HOME"/auth-utf8.txt &&
     test "Áéí óú <author@example.com>" = "$(cat "$HOME"/auth-utf8.txt)"
 '
 
