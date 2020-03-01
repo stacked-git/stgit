@@ -1,0 +1,17 @@
+[tool.black]
+line-length = 88
+skip-string-normalization = true
+target-version = ['py34']
+include = '''
+(
+    \.pyi?$
+)
+'''
+exclude = '''
+(
+    \/\..*$
+  | \/cmdlist\.py
+  | \/build$
+  | \/dist
+)
+'''
