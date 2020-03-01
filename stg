@@ -10,8 +10,6 @@ from __future__ import (
 
 import os
 
-from stgit.main import main
-
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 
@@ -33,5 +31,7 @@ if __name__ == '__main__':
         import coverage
 
         coverage.process_startup()
+
+    from stgit.main import main
 
     main()
