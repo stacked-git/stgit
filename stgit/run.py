@@ -287,14 +287,3 @@ class Run(object):
     def run(self):
         """Just run, with no IO redirection."""
         self._run_noio()
-
-    def xargs(self, xargs):
-        """Just run, with no IO redirection. The extra arguments are
-        appended to the command line a few at a time; the command is
-        run as many times as needed to consume them all."""
-        step = 100
-        basecmd = self._cmd
-        for i in range(0, len(xargs), step):
-            self._cmd = basecmd + xargs[i:i + step]
-            self._run_noio()
-        self._cmd = basecmd
