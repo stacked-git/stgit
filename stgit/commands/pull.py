@@ -174,7 +174,7 @@ def func(parser, options, args):
                     'Cannot find a parent branch for "%s"' % stack.name
                 )
             else:
-                out.note(
+                out.warn(
                     'No parent branch declared for stack "%s", defaulting to'
                     '"heads/origin".' % stack.name,
                     'Consider setting "branch.%s.stgit.parentbranch" with '

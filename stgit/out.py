@@ -76,13 +76,6 @@ class Output(object):
         self.write('%s\n' % line)
         self.at_start_of_line = True
 
-    def write_raw(self, string):
-        """Write an arbitrary string, possibly containing
-        newlines."""
-        self.new_line()
-        self.write(string)
-        self.at_start_of_line = string.endswith('\n')
-
 
 class MessagePrinter(object):
     def __init__(self, file=None):
@@ -104,10 +97,6 @@ class MessagePrinter(object):
         """Write a line to stdout."""
         self._stdout.write_line(line)
 
-    def stdout_raw(self, string):
-        """Write a string possibly containing newlines to stdout."""
-        self._stdout.write_raw(string)
-
     def stdout_bytes(self, byte_data):
         self._stdout.write_bytes(byte_data)
         self._stdout.flush()
@@ -115,10 +104,6 @@ class MessagePrinter(object):
     def err(self, line):
         """Write a line to stderr."""
         self._stderr.write_line(line)
-
-    def err_raw(self, string):
-        """Write a string possibly containing newlines to the error output."""
-        self._stderr.write_raw(string)
 
     def err_bytes(self, byte_data):
         """Write encoded byte data to the error output."""
@@ -128,9 +113,6 @@ class MessagePrinter(object):
     def info(self, *msgs):
         for msg in msgs:
             self._stderr.single_line(msg)
-
-    def note(self, *msgs, **kw):
-        self._stderr.tagged_lines(kw.get('title', 'Notice'), msgs)
 
     def warn(self, *msgs, **kw):
         self._stderr.tagged_lines(kw.get('title', 'Warning'), msgs)
