@@ -90,7 +90,7 @@ def update_to_current_format_version(repository, branch):
                       os.path.join(patch_dir, patch))
             topfield = os.path.join(patch_dir, patch, 'top')
             if os.path.isfile(topfield):
-                top = utils.read_string(topfield, False)
+                top = utils.read_string(topfield)
             else:
                 top = None
             if top:

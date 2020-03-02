@@ -52,14 +52,11 @@ def read_strings(filename, encoding='utf-8'):
         return [line.strip() for line in f.readlines()]
 
 
-def read_string(filename, multiline=False, encoding='utf-8'):
+def read_string(filename, encoding='utf-8'):
     """Reads the first line from a file
     """
     with open(filename, encoding=encoding) as f:
-        if multiline:
-            return f.read()
-        else:
-            return f.readline().strip()
+        return f.readline().strip()
 
 
 def write_strings(filename, lines, encoding='utf-8'):
@@ -76,21 +73,6 @@ def write_string(filename, line, multiline=False, encoding='utf-8'):
     with mkdir_file(filename, 'w+', encoding) as f:
         line = text(line)
         print(line, end='' if multiline else '\n', file=f)
-
-
-def append_strings(filename, lines, encoding='utf-8'):
-    """Appends 'lines' sequence to file
-    """
-    with mkdir_file(filename, 'a+', encoding) as f:
-        for line in lines:
-            print(line, file=f)
-
-
-def append_string(filename, line, encoding='utf-8'):
-    """Appends 'line' to file
-    """
-    with mkdir_file(filename, 'a+', encoding) as f:
-        print(line, file=f)
 
 
 def create_empty_file(name):
