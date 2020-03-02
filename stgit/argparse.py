@@ -210,6 +210,8 @@ def message_options(save_template):
 
     def msg_callback(option, opt_str, value, parser):
         no_dup(parser)
+        if value and not value.endswith('\n'):
+            value += '\n'
         parser.values.message = value
         no_combine(parser)
 
