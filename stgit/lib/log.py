@@ -124,23 +124,6 @@ class LogParseException(LogException):
     pass
 
 
-def patch_file(repo, cd):
-    metadata = '\n'.join([
-        'Bottom: %s' % cd.parent.data.tree.sha1,
-        'Top:    %s' % cd.tree.sha1,
-        'Author: %s' % cd.author.name_email,
-        'Date:   %s' % cd.author.date,
-        '',
-        cd.message_str,
-        '',
-        '---',
-        '',
-        '',
-    ]).encode('utf-8')
-    diff = repo.diff_tree(cd.parent.data.tree, cd.tree, stat=True).strip()
-    return repo.commit(BlobData(metadata + diff + b'\n'))
-
-
 def log_ref(branch):
     return 'refs/heads/%s.stgit' % branch
 
@@ -297,10 +280,21 @@ class LogEntry(object):
             xp -= set(self.prev.patches.values())
         return xp
 
+    def patch_file(self, cd):
+        metadata = '\n'.join([
+            'Bottom: %s' % cd.parent.data.tree.sha1,
+            'Top:    %s' % cd.tree.sha1,
+            'Author: %s' % cd.author.name_email,
+            'Date:   %s' % cd.author.date,
+            '',
+            cd.message_str,
+        ]).encode('utf-8')
+        return self._repo.commit(BlobData(metadata))
+
     def _tree(self, metadata):
         if self.prev is None:
             def pf(c):
-                return patch_file(self._repo, c.data)
+                return self.patch_file(c.data)
         else:
             prev_top_tree = self.prev.commit.data.tree
             perm, prev_patch_tree = prev_top_tree.data['patches']
@@ -313,7 +307,7 @@ class LogEntry(object):
             def pf(c):
                 r = c2b.get(c, None)
                 if not r:
-                    r = patch_file(self._repo, c.data)
+                    r = self.patch_file(c.data)
                 return r
 
         patches = dict((pn, pf(c)) for pn, c in self.patches.items())
