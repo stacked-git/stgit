@@ -80,22 +80,16 @@ class GitConfig(object):
         except KeyError:
             return None
 
-    def getall(self, name):
-        self.load()
-        try:
-            return self._cache[name]
-        except KeyError:
-            return []
-
     def getint(self, name):
         value = self.get(name)
         if value is None:
             return None
-        elif value.isdigit():
+        try:
             return int(value)
-        else:
-            raise GitConfigException('Value for "%s" is not an integer: "%s"' %
-                                     (name, value))
+        except ValueError:
+            raise GitConfigException(
+                'Value for "%s" is not an integer: "%s"' % (name, value)
+            )
 
     def getbool(self, name):
         """Report the canonicalized boolean value for a given key."""
@@ -108,6 +102,7 @@ class GitConfig(object):
             value = self._cache[name][-1]
         except KeyError:
             return None
+
         if value is None:
             # The key is defined, but the value is not, so treat it as true.
             return True
@@ -118,8 +113,9 @@ class GitConfig(object):
         elif value.isdigit():
             return bool(value)
         else:
-            raise GitConfigException('Value for "%s" is not a booleain: "%s"' %
-                                     (name, value))
+            raise GitConfigException(
+                'Value for "%s" is not a boolean: "%s"' % (name, value)
+            )
 
     def getstartswith(self, name):
         self.load()
@@ -147,19 +143,6 @@ class GitConfig(object):
     def unset(self, name):
         Run('git', 'config', '--unset', name).run()
         self._cache[name] = [None]
-
-    def sections_matching(self, regexp):
-        """Takes a regexp with a single group, matches it against all
-        config variables, and returns a list whose members are the
-        group contents, for all variable names matching the regexp.
-        """
-        result = []
-        for line in Run('git', 'config', '--get-regexp', '^%s$' % regexp
-                        ).returns([0, 1]).output_lines():
-            m = re.match('^%s ' % regexp, line)
-            if m:
-                result.append(m.group(1))
-        return result
 
     def get_colorbool(self, name, stdout_is_tty):
         """Invoke 'git config --get-colorbool' and return the result."""
