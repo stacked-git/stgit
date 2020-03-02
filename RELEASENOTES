@@ -1,4 +1,4 @@
-Stacked Git 0.21 released
+Stacked Git 0.22 released
 =========================
 
 StGit is a Python application providing functionality similar to Quilt
@@ -7,16 +7,29 @@ operations are performed using Git commands, and the patches are
 stored as Git commit objects, allowing easy merging of the StGit
 patches into other repositories using standard Git functionality.
 
-  Download:         https://github.com/ctmarinas/stgit/releases/download/v0.21/stgit-0.21.tar.gz
+  Download:         https://github.com/ctmarinas/stgit/releases/download/v0.22/stgit-0.22.tar.gz
   Main repository:  https://github.com/ctmarinas/stgit
   Project homepage: http://www.procode.org/stgit/
   Issue tracker:    https://github.com/ctmarinas/stgit/issues
 
-Changes since 0.20:
+Changes since 0.21:
 -------------------
 
-- Build reproducibility repairs (Thanks reproducible-builds.org team!)
-- Faster handling of large patches (#44)
-- Python can now be run with optimizations (`python -O`)
-- `stg log` now prints trailing newline
-- Improved command line option parsing for `stg log`
+- Python 2.x support is deprecated and will be removed in the next StGit release
+- `stg publish` is deprecated and will be removed in the next StGit release
+- `stg new` now includes patch name in log message
+- `stg branch --create` inherits remote correctly from parent commitish
+- `stg branch --rename` can now rename the current branch
+- `stg branch --create` now works even if the workspace is dirty, consistent with `git checkout`
+- `stg branch --description` now works on both regular and stgit branches
+- `stg import` has new --keep-cr option, like `git mailsplit`
+- `stg refresh` and `stg edit` now reset the commiter information, consistent with `stg push`
+- `stg edit --diff` now implies `--edit`
+- git notes are now preserved when patches are modified
+- Patch names are checked earlier to avoid inconsistent stack states
+- Improved commit data parsing and handling of non-UTF8 encodings
+- Repair git error messages when checking stgit version from outside a git repo
+- Tutorial improvements
+- Many additional tests and test improvements
+- Remove debian packaging; downstream Debian uses its own anyway
+- All stgit commands now use "new" git library infrastructure
