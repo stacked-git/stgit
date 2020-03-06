@@ -174,9 +174,7 @@ class LogEntry(object):
             applied=list(stack.patchorder.applied),
             unapplied=list(stack.patchorder.unapplied),
             hidden=list(stack.patchorder.hidden),
-            patches=dict(
-                (pn, stack.patches.get(pn).commit) for pn in stack.patchorder.all
-            ),
+            patches={pn: stack.patches.get(pn).commit for pn in stack.patchorder.all},
             message=message,
         )
 
@@ -297,7 +295,7 @@ class LogEntry(object):
             perm, prev_patch_tree = prev_top_tree.data['patches']
             # Map from Commit object to patch_file() results taken
             # from the previous log entry.
-            c2b = dict((self.prev.patches[pn], pf) for pn, pf in prev_patch_tree.data)
+            c2b = {self.prev.patches[pn]: pf for pn, pf in prev_patch_tree.data}
 
             def pf(c):
                 r = c2b.get(c, None)
@@ -305,7 +303,7 @@ class LogEntry(object):
                     r = self.patch_file(c.data)
                 return r
 
-        patches = dict((pn, pf(c)) for pn, c in self.patches.items())
+        patches = {pn: pf(c) for pn, c in self.patches.items()}
         return self._repo.commit(
             TreeData(
                 {

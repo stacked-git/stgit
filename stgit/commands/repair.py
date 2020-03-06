@@ -157,7 +157,7 @@ def func(parser, options, args):
             out.info('%s is now hidden' % p.name)
     out.done()
 
-    orig_order = dict((pn, i) for i, pn in enumerate(patchorder.all))
+    orig_order = {pn: i for i, pn in enumerate(patchorder.all)}
 
     def patchname_key(p):
         i = orig_order.get(p, len(orig_order))
