@@ -1,7 +1,4 @@
-# -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping a git repository and its contents."""
-
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.run import Run
 

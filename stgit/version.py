@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import os
 import re
 import sys
@@ -78,4 +75,4 @@ def get_version():
 
 # minimum version requirements
 git_min_ver = '2.2.0'
-python_min_ver = '2.6'
+python_min_ver = '3.5'

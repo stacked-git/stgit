@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
-
 class Immutable(object):
     """I{Immutable} objects cannot be modified once created. Any
     modification methods will return a new object, leaving the

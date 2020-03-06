@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+- Drop support for Python < 3.5
+
 ## [0.23] 2020-06-12
 
 ### Removed

@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
 """This module provides a layer on top of the standard library's
 C{optparse} module, so that we can easily generate both interactive
 help and asciidoc documentation (such as man pages)."""
 
-from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import optparse

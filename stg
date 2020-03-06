@@ -1,9 +1,6 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# -*- python-mode -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import os
+import sys
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -22,6 +19,10 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 if __name__ == '__main__':
+    if sys.version_info[:2] < (3, 5):
+        sys.stderr.write('StGit requires Python >= 3.5\n')
+        sys.exit(1)
+
     if os.environ.get('COVERAGE_PROCESS_START'):
         import coverage
         import sys

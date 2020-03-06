@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from stgit.commands.common import CmdException, DirectoryGotoTopLevel
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out

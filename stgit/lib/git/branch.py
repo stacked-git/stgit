@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.run import RunException

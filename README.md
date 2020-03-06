@@ -33,9 +33,7 @@ StGit release.
 ### Dependencies
 
 StGit is written in pure Python with no third-party Python dependencies.
-StGit currently supports Python version 2.6, 2.7, 3.4, 3.5, 3.6, 3.7,
-and 3.8, although support for Python 2 will be dropped in a future
-release.
+StGit supports Python versions >= 3.5.
 
 StGit works within the context of a Git repository by running `git`
 commands. [Git](https://git-scm.com) 2.2.0 or newer is required.

@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.out import out
