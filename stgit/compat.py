@@ -1,5 +1,4 @@
 import os
-import sys
 
 # PEP-540 (Add a new UTF-8 mode) makes a compelling argument for Python
 # programs making special effort to work around misconfigured locale
@@ -12,57 +11,31 @@ import sys
 #
 # The following functions help achieve this goal by using UTF-8 as a fallback
 # encoding when the nominal encoding (sys.getfilesystemencoding()) fails.
-if sys.version_info[0] <= 2:
-    _fs_enc = sys.getfilesystemencoding()
 
-    def fsdecode_utf8(b):
-        """Decode to filesystem encoding, with UTF-8 fallback."""
-        if isinstance(b, bytes):
-            try:
-                return b.decode(_fs_enc)
-            except UnicodeDecodeError:
-                return b.decode('utf-8')
-        else:
-            return fsdecode_utf8(fsencode_utf8(b))
 
-    def fsencode_utf8(s):
-        """Encode to filesystem encoding, with UTF-8 fallback."""
+def fsdecode_utf8(b):
+    if isinstance(b, bytes):
         try:
-            return s.encode(_fs_enc)
-        except UnicodeEncodeError:
-            return s.encode('utf-8')
-
-    def environ_get(key, default=None):
-        b = os.environ.get(key, default)
-        if b is default:
-            return default
-        else:
-            return fsdecode_utf8(b)
+            return os.fsdecode(b)
+        except UnicodeDecodeError:
+            return b.decode('utf-8')
+    else:
+        return os.fsencode(b).decode('utf-8')
 
 
-else:  # Python 3
+def fsencode_utf8(s):
+    try:
+        return os.fsencode(s)
+    except UnicodeEncodeError:
+        return s.encode('utf-8')
 
-    def fsdecode_utf8(b):
-        if isinstance(b, bytes):
-            try:
-                return os.fsdecode(b)
-            except UnicodeDecodeError:
-                return b.decode('utf-8')
-        else:
-            return os.fsencode(b).decode('utf-8')
 
-    def fsencode_utf8(s):
-        try:
-            return os.fsencode(s)
-        except UnicodeEncodeError:
-            return s.encode('utf-8')
-
-    def environ_get(key, default=None):
-        s = os.environ.get(key, default)
-        if s is default:
-            return default
-        else:
-            return s.encode('utf-8', 'surrogateescape').decode('utf-8')
+def environ_get(key, default=None):
+    s = os.environ.get(key, default)
+    if s is default:
+        return default
+    else:
+        return s.encode('utf-8', 'surrogateescape').decode('utf-8')
 
 
 def decode_utf8_with_latin1(input, errors='strict'):
