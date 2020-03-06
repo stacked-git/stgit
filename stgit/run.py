@@ -1,8 +1,9 @@
 import datetime
 import io
+import os
 import subprocess
 
-from stgit.compat import environ_copy, environ_get, file_wrapper, fsencode_utf8
+from stgit.compat import environ_get, file_wrapper, fsencode_utf8
 from stgit.exception import StgException
 from stgit.out import MessagePrinter, out
 
@@ -206,7 +207,7 @@ class Run(object):
         return self
 
     def env(self, env):
-        self._env = environ_copy()
+        self._env = os.environ.copy()
         self._env.update(env)
         return self
 

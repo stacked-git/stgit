@@ -40,11 +40,6 @@ if sys.version_info[0] <= 2:
         else:
             return fsdecode_utf8(b)
 
-    def environ_copy():
-        return dict(
-            (fsdecode_utf8(k), fsdecode_utf8(v)) for k, v in os.environ.iteritems()
-        )
-
 
 else:  # Python 3
 
@@ -69,9 +64,6 @@ else:  # Python 3
             return default
         else:
             return s.encode('utf-8', 'surrogateescape').decode('utf-8')
-
-    def environ_copy():
-        return os.environ.copy()
 
 
 class file_wrapper(object):
