@@ -7,7 +7,6 @@ import io
 import os
 import re
 import smtplib
-import sys
 import time
 
 from stgit import templates, version
@@ -361,14 +360,9 @@ def __send_message_git(msg_bytes, from_, options):
 def __send_message(msg_type, tmpl, options, *args):
     """Message sending dispatcher.
     """
-    domain = options.domain or config.get('stgit.domain')
-
-    if domain:
-        if sys.version_info < (3, 2):
-            raise CmdException("Setting domain requires Python version 3.2+")
-        msg_id = email.utils.make_msgid('stgit', domain=domain)
-    else:
-        msg_id = email.utils.make_msgid('stgit')
+    msg_id = email.utils.make_msgid(
+        'stgit', domain=options.domain or config.get('stgit.domain')
+    )
 
     if msg_type == 'cover':
         assert len(args) == 1, 'too many args for msg_type == "cover"'
