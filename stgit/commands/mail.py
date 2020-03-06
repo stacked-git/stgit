@@ -376,14 +376,8 @@ def __send_message(msg_type, tmpl, options, *args):
     else:
         raise AssertionError('invalid msg_type: %s' % msg_type)  # pragma: no cover
 
-    if hasattr(msg, 'as_bytes'):
-        msg_bytes = msg.as_bytes(options.mbox)
-    else:
-        msg_bytes = msg.as_string(options.mbox)
-        # Python 3.3 only has Message.as_string(). We encode it back to bytes
-        # and hope for the best.
-        if isinstance(msg_bytes, str):
-            msg_bytes = msg_bytes.encode('utf-8')
+    msg_bytes = msg.as_bytes(options.mbox)
+
     if options.mbox:
         out.stdout_bytes(msg_bytes + b'\n')
         return msg_id
