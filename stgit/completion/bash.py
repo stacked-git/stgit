@@ -1,7 +1,6 @@
 import itertools
 
 from stgit import argparse
-from stgit.compat import text
 import stgit.commands
 
 
@@ -127,7 +126,7 @@ def flatten(stuff, sep):
 
 def write(f, stuff, indent=0):
     for s in stuff:
-        if isinstance(s, text):
+        if isinstance(s, str):
             f.write((' ' * 4 * indent + s).rstrip() + '\n')
         else:
             write(f, s, indent + 1)

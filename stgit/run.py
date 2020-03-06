@@ -2,7 +2,7 @@ import datetime
 import io
 import subprocess
 
-from stgit.compat import environ_copy, environ_get, file_wrapper, fsencode_utf8, text
+from stgit.compat import environ_copy, environ_get, file_wrapper, fsencode_utf8
 from stgit.exception import StgException
 from stgit.out import MessagePrinter, out
 
@@ -76,9 +76,6 @@ class Run(object):
 
     def __init__(self, *cmd):
         self._cmd = list(cmd)
-        for c in cmd:
-            if not isinstance(c, text):
-                raise Exception('Bad command: %r' % (cmd,))
         self._good_retvals = [0]
         self._env = self._cwd = None
         self._indata = None

@@ -1,7 +1,5 @@
 import os
 
-from stgit.compat import text
-
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
 Copyright (C) 2008, Karl Hasselström <kha@treskal.com>
@@ -60,12 +58,7 @@ def get_commands(allow_cached=True):
             # cmdlist.py doesn't exist, so do it the expensive way.
             pass
     return sorted(
-        (
-            text(getattr(mod, 'name', mod_name)),
-            text(mod_name),
-            _kinds[mod.kind],
-            mod.help,
-        )
+        (getattr(mod, 'name', mod_name), mod_name, _kinds[mod.kind], mod.help)
         for mod_name, mod in _find_commands()
     )
 

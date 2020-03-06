@@ -7,7 +7,7 @@ import re
 import sys
 import tempfile
 
-from stgit.compat import environ_get, text
+from stgit.compat import environ_get
 from stgit.config import config
 from stgit.exception import StgException
 from stgit.out import out
@@ -63,7 +63,6 @@ def write_string(filename, line, multiline=False, encoding='utf-8'):
     """Writes 'line' to file and truncates it
     """
     with mkdir_file(filename, 'w+', encoding) as f:
-        line = text(line)
         print(line, end='' if multiline else '\n', file=f)
 
 

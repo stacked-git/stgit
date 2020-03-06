@@ -2,10 +2,6 @@ import email.utils
 import os
 import sys
 
-# With unicode_literals enabled, the type of a string literal will be `unicode`
-# for Python 2 and `str` for Python 3.
-text = type('')
-
 # PEP-540 (Add a new UTF-8 mode) makes a compelling argument for Python
 # programs making special effort to work around misconfigured locale
 # settings. This largely boils down to treating incoming byte sequences,

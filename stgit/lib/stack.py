@@ -4,7 +4,7 @@ import os
 import shutil
 
 from stgit import utils
-from stgit.compat import fsencode_utf8, text
+from stgit.compat import fsencode_utf8
 from stgit.config import config
 from stgit.exception import StackException
 from stgit.lib import stackupgrade
@@ -65,7 +65,7 @@ class Patch(object):
         d = new_commit.data
         write('authname', d.author.name)
         write('authemail', d.author.email)
-        write('authdate', d.author.date)
+        write('authdate', str(d.author.date))
         write('commname', d.committer.name)
         write('commemail', d.committer.email)
         write('description', d.message_str, multiline=True)
@@ -377,7 +377,7 @@ class Stack(Branch):
         utils.create_dirs(compat_dir)
         PatchOrder.create(dir)
         config.set(
-            stackupgrade.format_version_key(name), text(stackupgrade.FORMAT_VERSION)
+            stackupgrade.format_version_key(name), str(stackupgrade.FORMAT_VERSION)
         )
 
         return repository.get_stack(name)

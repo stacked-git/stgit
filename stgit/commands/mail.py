@@ -18,7 +18,7 @@ from stgit.commands.common import (
     address_or_alias,
     parse_patches,
 )
-from stgit.compat import message_from_bytes, text
+from stgit.compat import message_from_bytes
 from stgit.config import config
 from stgit.lib.git import Person, diffstat
 from stgit.out import out
@@ -389,7 +389,7 @@ def __send_message(msg_type, tmpl, options, *args):
         msg_bytes = msg.as_string(options.mbox)
         # Python 3.3 only has Message.as_string(). We encode it back to bytes
         # and hope for the best.
-        if isinstance(msg_bytes, text):
+        if isinstance(msg_bytes, str):
             msg_bytes = msg_bytes.encode('utf-8')
     if options.mbox:
         out.stdout_bytes(msg_bytes + b'\n')
@@ -579,7 +579,7 @@ def __build_cover(tmpl, msg_id, options, patches):
         prefix_str = ''
         prefix_space = ''
 
-    total_nr_str = text(len(patches))
+    total_nr_str = str(len(patches))
     patch_nr_str = '0'.zfill(len(total_nr_str))
     if len(patches) > 1:
         number_str = '%s/%s' % (patch_nr_str, total_nr_str)
@@ -690,8 +690,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         prefix_str = ''
         prefix_space = ''
 
-    total_nr_str = text(total_nr)
-    patch_nr_str = text(patch_nr).zfill(len(total_nr_str))
+    total_nr_str = str(total_nr)
+    patch_nr_str = str(patch_nr).zfill(len(total_nr_str))
     if not options.unrelated and total_nr > 1:
         number_str = '%s/%s' % (patch_nr_str, total_nr_str)
         number_space = ' '

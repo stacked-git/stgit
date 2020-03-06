@@ -1,6 +1,5 @@
 import re
 
-from stgit.compat import text
 from stgit.config import config
 
 from .base import Immutable
@@ -175,7 +174,7 @@ class CommitData(Immutable):
                     ('date', 'DATE'),
                 ]:
                     if getattr(p, attr) is not None:
-                        env['GIT_%s_%s' % (v1, v2)] = text(getattr(p, attr))
+                        env['GIT_%s_%s' % (v1, v2)] = str(getattr(p, attr))
         return env
 
     @property
