@@ -9,7 +9,6 @@ from __future__ import (
 )
 
 import os
-import re
 
 from stgit.exception import StgException
 from stgit.run import Run
