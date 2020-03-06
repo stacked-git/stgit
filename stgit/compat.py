@@ -1,4 +1,3 @@
-import email.utils
 import os
 import sys
 
@@ -64,11 +63,6 @@ else:  # Python 3
             return default
         else:
             return s.encode('utf-8', 'surrogateescape').decode('utf-8')
-
-
-# Python 2 only has email.message_from_string(), but it behaves like Python 3's
-# email.message_from_bytes().
-message_from_bytes = getattr(email, 'message_from_bytes', email.message_from_string)
 
 
 def decode_utf8_with_latin1(input, errors='strict'):

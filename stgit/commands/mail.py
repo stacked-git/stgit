@@ -18,7 +18,6 @@ from stgit.commands.common import (
     address_or_alias,
     parse_patches,
 )
-from stgit.compat import message_from_bytes
 from stgit.config import config
 from stgit.lib.git import Person, diffstat
 from stgit.out import out
@@ -623,7 +622,7 @@ def __build_cover(tmpl, msg_id, options, patches):
 
     # The Python email message
     try:
-        msg = message_from_bytes(msg_bytes)
+        msg = email.message_from_bytes(msg_bytes)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
@@ -745,7 +744,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     # The Python email message
     try:
-        msg = message_from_bytes(msg_bytes)
+        msg = email.message_from_bytes(msg_bytes)
     except Exception as ex:
         raise CmdException('template parsing error: %s' % str(ex))
 
