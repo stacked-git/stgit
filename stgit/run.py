@@ -3,7 +3,7 @@ import io
 import os
 import subprocess
 
-from stgit.compat import environ_get, file_wrapper, fsencode_utf8
+from stgit.compat import environ_get, fsencode_utf8
 from stgit.exception import StgException
 from stgit.out import MessagePrinter, out
 
@@ -180,12 +180,7 @@ class Run(object):
         except OSError as e:
             raise self.exc('%s failed: %s' % (self._cmd[0], e))
         if self._in_encoding:
-            if hasattr(p.stdin, 'readable'):
-                self.stdin = io.TextIOWrapper(p.stdin, encoding=self._in_encoding)
-            else:
-                self.stdin = io.TextIOWrapper(
-                    file_wrapper(p.stdin, writable=True), encoding=self._in_encoding
-                )
+            self.stdin = io.TextIOWrapper(p.stdin, encoding=self._in_encoding)
         else:
             self.stdin = p.stdin
         self.stdout = p.stdout

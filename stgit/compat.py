@@ -66,28 +66,6 @@ else:  # Python 3
             return s.encode('utf-8', 'surrogateescape').decode('utf-8')
 
 
-class file_wrapper(object):
-    """Wrap file object with missing methods needed by TextIOWrapper."""
-
-    def __init__(self, f, readable=False, writable=False, seekable=False):
-        self.__f = f
-        self.__readable = readable
-        self.__writable = writable
-        self.__seekable = seekable
-
-    def __getattr__(self, name):
-        return getattr(self.__f, name)
-
-    def readable(self):
-        return self.__readable
-
-    def writable(self):
-        return self.__writable
-
-    def seekable(self):
-        return self.__seekable
-
-
 # Python 2 only has email.message_from_string(), but it behaves like Python 3's
 # email.message_from_bytes().
 message_from_bytes = getattr(email, 'message_from_bytes', email.message_from_string)
