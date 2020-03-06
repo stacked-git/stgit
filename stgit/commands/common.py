@@ -450,12 +450,15 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
         env['GIT_EDITOR'] = ':'
     commit_msg_hook = get_hook(repo, 'commit-msg', env)
 
-    try:
-        new_msg = run_hook_on_bytes(commit_msg_hook, cd.message)
-    except RunException as exc:
-        raise EditorException(str(exc))
+    if commit_msg_hook:
+        try:
+            new_msg = run_hook_on_bytes(commit_msg_hook, cd.message)
+        except RunException as exc:
+            raise EditorException(str(exc))
 
-    return cd.set_message(new_msg)
+        return cd.set_message(new_msg)
+    else:
+        return cd
 
 
 def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):

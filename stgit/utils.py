@@ -4,7 +4,6 @@ from io import open
 import errno
 import os
 import re
-import sys
 import tempfile
 
 from stgit.compat import environ_get
@@ -159,26 +158,15 @@ def get_hook(repository, hook_name, extra_env={}):
 
 
 def run_hook_on_bytes(hook, byte_data, *args):
-    if hook is not None:
-        temp = tempfile.NamedTemporaryFile('wb', delete=False)
-        try:
-            try:
-                temp.write(byte_data)
-            finally:
-                temp.close()
-
-            if sys.version_info[0] >= 3:
-                data_path = temp.name
-            else:
-                data_path = temp.name.decode(sys.getfilesystemencoding())
-            hook(data_path, *args)
-
-            with open(data_path, 'rb') as data_file:
-                byte_data = data_file.read()
-        finally:
-            os.unlink(temp.name)
-
-    return byte_data
+    temp = tempfile.NamedTemporaryFile('wb', prefix='stgit-hook', delete=False)
+    try:
+        with temp:
+            temp.write(byte_data)
+        hook(temp.name)
+        with open(temp.name, 'rb') as data_file:
+            return data_file.read()
+    finally:
+        os.unlink(temp.name)
 
 
 def edit_string(s, filename, encoding='utf-8'):
