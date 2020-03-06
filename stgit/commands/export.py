@@ -189,10 +189,7 @@ def func(parser, options, args):
             )
 
         if options.stdout:
-            if hasattr(sys.stdout, 'buffer'):
-                f = sys.stdout.buffer
-            else:
-                f = sys.stdout
+            f = sys.stdout.buffer
         else:
             f = io.open(pfile, 'wb')
 

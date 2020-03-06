@@ -105,10 +105,7 @@ def func(parser, options, args):
             raise CmdException('No such file: %s' % filename)
     else:
         out.start('Folding patch from stdin')
-        if hasattr(sys.stdin, 'buffer'):
-            diff = sys.stdin.buffer.read()
-        else:
-            diff = sys.stdin.read()
+        diff = sys.stdin.buffer.read()
 
     if options.threeway:
         top_patch = stack.patches.get(current)
