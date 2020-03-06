@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 
@@ -6,20 +7,11 @@ from stgit.out import out
 
 
 def pager(msg):
-    if any(
-        [
-            not hasattr(sys.stdin, 'isatty'),
-            not hasattr(sys.stdout, 'isatty'),
-            not sys.stdin.isatty(),
-            not sys.stdout.isatty(),
-        ]
-    ):
-        return out.stdout_bytes(msg)
     pager = _choose_pager()
-    if pager:
-        return _run_pager(pager, msg)
-    else:
+    if not sys.stdin.isatty() or not sys.stdout.isatty() or not pager:
         return out.stdout_bytes(msg)
+    else:
+        return _run_pager(pager, msg)
 
 
 def _run_pager(pager, msg):
@@ -43,13 +35,7 @@ def _choose_pager():
         pager = os.environ.get(k)
         if pager:
             return pager
-    if hasattr(os, 'system'):
-        for pager in ['less', 'more']:
-            if (
-                os.system(
-                    '{pager} -V >{null} 2>{null}'.format(pager=pager, null=os.devnull)
-                )
-                == 0
-            ):
-                return pager
+    for pager in ['less', 'more']:
+        if shutil.which(pager):
+            return pager
     return None
