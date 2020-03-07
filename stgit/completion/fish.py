@@ -83,8 +83,9 @@ function __fish_stg_all_branches
 end
 
 function __fish_stg_stg_branches
-    command git for-each-ref --format='%(refname)' refs/heads/ 2>/dev/null \\
-        | string replace -rf '^refs/heads/(.*).stgit$' '$1\\tStGit Branch'
+    command stg branch --list 2>/dev/null \\
+        | string match -r ". s.\t\S+" \\
+        | string replace -r ". s.\t" ""
 end
 
 function __fish_stg_applied_patches

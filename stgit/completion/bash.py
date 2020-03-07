@@ -142,19 +142,22 @@ def write(f, stuff, indent=0):
 
 
 def patch_list_fun(type):
-    return fun('_%s_patches' % type, 'local g=$(_gitdir)',
-               'test "$g" && cat "$g/patches/$(_current_branch)/%s"' % type)
+    return fun('_%s_patches' % type, 'stg series --noprefix --%s' % type)
 
 
 def file_list_fun(name, cmd):
-    return fun('_%s_files' % name, 'local g=$(_gitdir)',
-               'test "$g" && %s' % cmd)
+    return fun(
+        '_%s_files' % name, 'local g', 'g=$(_gitdir)', 'test "$g" && %s' % cmd,
+    )
 
 
 def ref_list_fun(name, prefix):
-    return fun(name, 'local g=$(_gitdir)',
-               ("test \"$g\" && git show-ref | grep ' %s/' | sed 's,.* %s/,,'"
-                % (prefix, prefix)))
+    return fun(
+        name,
+        'local g',
+        'g=$(_gitdir)',
+        ("test \"$g\" && git show-ref | grep ' %s/' | sed 's,.* %s/,,'" % (prefix, prefix))
+    )
 
 
 def util():
@@ -162,22 +165,18 @@ def util():
         fun_desc(
             '_gitdir',
             "The path to .git, or empty if we're not in a repository.",
-            'echo "$(git rev-parse --git-dir 2>/dev/null)"',
+            'git rev-parse --git-dir 2>/dev/null',
         ),
         fun_desc(
             '_current_branch',
             "Name of the current branch, or empty if there isn't one.",
-            'local b=$(git symbolic-ref HEAD 2>/dev/null)',
-            'echo ${b#refs/heads/}'),
+            'local b',
+            'b=$(git symbolic-ref HEAD 2>/dev/null)',
+            'echo "${b#refs/heads/}"'),
         fun_desc(
             '_other_applied_patches',
             'List of all applied patches except the current patch.',
-            'local b=$(_current_branch)',
-            'local g=$(_gitdir)',
-            (
-                'test "$g" && cat "$g/patches/$b/applied" | grep -v'
-                ' "^$(tail -n 1 $g/patches/$b/applied 2> /dev/null)$"'
-            )
+            'stg series --noprefix --applied | grep -v "^$(stg top)$"'
         ),
         fun(
             '_patch_range',
@@ -198,8 +197,14 @@ def util():
         ),
         fun(
             '_stg_branches',
-            'local g=$(_gitdir)',
-            'test "$g" && (cd $g/patches/ && echo *)',
+            (
+                'stg branch --list 2>/dev/null'
+                ' | grep ". s" | cut -f2 | cut -d" " -f1'
+            )
+        ),
+        fun(
+            '_all_branches',
+            'stg branch --list 2>/dev/null | cut -f2 | cut -d" " -f1'
         ),
         fun(
             '_mail_aliases',
@@ -208,7 +213,6 @@ def util():
                 '| cut -d. -f 3'
             )
         ),
-        ref_list_fun('_all_branches', 'refs/heads'),
         ref_list_fun('_tags', 'refs/tags'),
         ref_list_fun('_remotes', 'refs/remotes'),
     ]
@@ -266,7 +270,6 @@ def command_fun(cmd, modname):
 def main_switch(commands):
     return fun(
         '_stg',
-        'local i',
         'local c=1',
         'local command',
         '',
