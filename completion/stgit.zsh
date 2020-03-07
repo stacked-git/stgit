@@ -217,6 +217,7 @@ _stg-import() {
         '(-i --ignore)'{-i,--ignore}'[ingore applied patches in series]'
         '--replace[replace unapplied patches in series]'
         '--reject[leave rejected hunks in .rej files]'
+        '--keep-cr[do not remove CR from email lines ending with CRLF]'
         '(-d --showdiff)'{-d,--showdiff}'[show patch content in editor buffer]'
         ':file:_files'
         + '(source)'
