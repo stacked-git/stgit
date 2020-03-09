@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import datetime
 import os
@@ -71,9 +66,11 @@ def perftest(desc, name=None):
             r = Run()
             f(r)
             r.summary()
+
         perftests[name or f.__name__] = g
         perftestdesc[name or f.__name__] = desc
         return g
+
     return decorator
 
 
@@ -96,8 +93,10 @@ def old_rebase(r, ref):
 
 
 def def_rebasetest(rebase, dir, tag):
-    @perftest('%s rebase onto %s in %s' % (rebase, tag, dir),
-              'rebase-%srebase-%s-%s' % (rebase, tag, dir))
+    @perftest(
+        '%s rebase onto %s in %s' % (rebase, tag, dir),
+        'rebase-%srebase-%s-%s' % (rebase, tag, dir),
+    )
     def rebasetest(r):
         r.cd(copy_testdir(dir))
         r('stg', 'init')
@@ -112,9 +111,11 @@ def def_rebasetest(rebase, dir, tag):
 
 
 for rebase in ['old', 'new']:
-    for (dir, tag) in [('synt', 'add-file'),
-                       ('synt', 'modify-all'),
-                       ('linux', 'add-file')]:
+    for (dir, tag) in [
+        ('synt', 'add-file'),
+        ('synt', 'modify-all'),
+        ('linux', 'add-file'),
+    ]:
         def_rebasetest(rebase, dir, tag)
 
 args = sys.argv[1:]

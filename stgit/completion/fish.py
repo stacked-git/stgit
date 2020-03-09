@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse
 import stgit.commands
@@ -150,7 +145,8 @@ function __fish_stg_is_alias
                 return 1
         end
     end
-end''' % ' '.join(alias for alias, _ in aliases)
+end'''
+        % ' '.join(alias for alias, _ in aliases)
     )
 
     put(
@@ -175,7 +171,7 @@ end
     put('### Aliases: %s' % ' '.join(alias for alias, _ in aliases))
     put(
         "complete    -c stg -n '__fish_stg_is_alias' -x",
-        "-a '(__fish_stg_complete_alias)'"
+        "-a '(__fish_stg_complete_alias)'",
     )
     for alias, command in aliases:
         put(
@@ -256,4 +252,5 @@ end
 
 if __name__ == '__main__':
     import sys
+
     write_fish_completion(sys.stdout)

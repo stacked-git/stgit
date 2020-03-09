@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 next_mark = 1
 
@@ -12,7 +7,7 @@ next_mark = 1
 def get_mark():
     global next_mark
     next_mark += 1
-    return (next_mark - 1)
+    return next_mark - 1
 
 
 def write_data(s):
@@ -62,6 +57,7 @@ def iter_paths():
 def setup():
     def t(name):
         return 'refs/tags/%s' % name
+
     files = dict((fn, write_blob(stdblob(fn))) for fn in iter_paths())
     initial = write_commit(t('bomb-base'), files, 'Initial commit')
     set_ref(t('bomb-top'), initial)
@@ -77,13 +73,9 @@ def setup():
         'Add a new file',
         parent=initial,
     )
-    files = dict((fn, write_blob('First line\n' + stdblob(fn)))
-                 for fn in iter_paths())
+    files = dict((fn, write_blob('First line\n' + stdblob(fn))) for fn in iter_paths())
     write_commit(
-        t('modify-all'),
-        files,
-        'Add first line to all files',
-        parent=initial,
+        t('modify-all'), files, 'Add first line to all files', parent=initial,
     )
 
 

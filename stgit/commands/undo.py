@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
@@ -43,11 +38,7 @@ options = [
         default=1,
         short='Undo the last N commands',
     ),
-    opt(
-        '--hard',
-        action='store_true',
-        short='Discard changes in your index/worktree',
-    ),
+    opt('--hard', action='store_true', short='Discard changes in your index/worktree',),
 ]
 
 directory = DirectoryHasRepository()

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import re
@@ -20,9 +15,12 @@ class VersionUnavailable(Exception):
 def git_describe_version():
     root = sys.path[0] if sys.path[0] else None
     try:
-        v = Run(
-            'git', 'describe', '--tags', '--abbrev=4'
-        ).cwd(root).discard_stderr().output_one_line()
+        v = (
+            Run('git', 'describe', '--tags', '--abbrev=4')
+            .cwd(root)
+            .discard_stderr()
+            .output_one_line()
+        )
     except RunException as e:
         raise VersionUnavailable(str(e))
     m = re.match(r'^v([0-9].*)', v)
@@ -31,9 +29,12 @@ def git_describe_version():
     else:
         raise VersionUnavailable('bad version: %s' % v)
     try:
-        dirty = Run(
-            'git', 'diff-index', '--name-only', 'HEAD'
-        ).cwd(root).discard_stderr().raw_output()
+        dirty = (
+            Run('git', 'diff-index', '--name-only', 'HEAD')
+            .cwd(root)
+            .discard_stderr()
+            .raw_output()
+        )
     except RunException as e:
         raise VersionUnavailable(str(e))
     if dirty:

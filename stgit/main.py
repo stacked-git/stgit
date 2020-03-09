@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Basic quilt-like functionality"""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import sys
@@ -58,9 +53,7 @@ def is_cmd_alias(cmd):
 def append_alias_commands(cmd_list):
     for (name, command) in config.getstartswith('stgit.alias.'):
         name = utils.strip_prefix('stgit.alias.', name)
-        cmd_list.append(
-            (name, CommandAlias(name, command), 'Alias commands', command)
-        )
+        cmd_list.append((name, CommandAlias(name, command), 'Alias commands', command))
 
 
 #
@@ -77,12 +70,16 @@ class Commands(dict):
         candidates = [cmd for cmd in self if cmd.startswith(key)]
 
         if not candidates:
-            out.error('Unknown command: %s' % key,
-                      'Try "%s help" for a list of supported commands' % prog)
+            out.error(
+                'Unknown command: %s' % key,
+                'Try "%s help" for a list of supported commands' % prog,
+            )
             sys.exit(utils.STGIT_GENERAL_ERROR)
         elif len(candidates) > 1:
-            out.error('Ambiguous command: %s' % key,
-                      'Candidates are: %s' % ', '.join(candidates))
+            out.error(
+                'Ambiguous command: %s' % key,
+                'Candidates are: %s' % ', '.join(candidates),
+            )
             sys.exit(utils.STGIT_GENERAL_ERROR)
 
         return candidates[0]
@@ -125,8 +122,9 @@ def _main():
 
     if len(sys.argv) < 2:
         print('usage: %s <command>' % prog, file=sys.stderr)
-        print('  Try "%s --help" for a list of supported commands' % prog,
-              file=sys.stderr)
+        print(
+            '  Try "%s --help" for a list of supported commands' % prog, file=sys.stderr
+        )
         sys.exit(utils.STGIT_GENERAL_ERROR)
 
     cmd = sys.argv[1]

@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 # Feed this with git rev-list HEAD --parents
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import sys
 
@@ -33,6 +28,5 @@ for commit in parents:
         else:
             sequence_num[c] = 0
 
-(num, commit) = max((num, commit) for (commit, num)
-                    in sequence_num.items())
+(num, commit) = max((num, commit) for (commit, num) in sequence_num.items())
 print('%s is a sequence of %d patches' % (commit, num))

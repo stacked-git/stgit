@@ -1,18 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse
 from stgit.argparse import opt
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    color_diff_flags,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, color_diff_flags
 from stgit.out import out
 from stgit.pager import pager
 
@@ -44,10 +35,7 @@ files."""
 args = ['known_files']
 options = [
     opt(
-        '-d',
-        '--diff',
-        action='store_true',
-        short='Show the diff for the given files',
+        '-d', '--diff', action='store_true', short='Show the diff for the given files',
     ),
     opt(
         '-b',
@@ -83,12 +71,7 @@ def func(parser, options, args):
     # Find set of revisions that modify the selected files.
     revs = set(
         repository.run(
-            [
-                'git',
-                'rev-list',
-                '--stdin',
-                stack.base.sha1 + '..' + stack.top.sha1,
-            ]
+            ['git', 'rev-list', '--stdin', stack.base.sha1 + '..' + stack.top.sha1]
         )
         .raw_input('--\n' + '\n'.join(files))
         .output_lines()
@@ -113,7 +96,7 @@ def func(parser, options, args):
                         patch.commit.data.tree,
                         pathlimits=files,
                         diff_opts=options.diff_flags + color_diff_flags(),
-                    )
+                    ),
                 ]
             )
         else:

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import re
@@ -65,91 +60,86 @@ The patch description has to be separated from the data with a '---'
 line."""
 
 args = ['files']
-options = [
-    opt(
-        '-m',
-        '--mail',
-        action='store_true',
-        short='Import the patch from a standard e-mail file',
-    ),
-    opt(
-        '-M',
-        '--mbox',
-        action='store_true',
-        short='Import a series of patches from an mbox file',
-    ),
-    opt(
-        '-s',
-        '--series',
-        action='store_true',
-        short='Import a series of patches',
-        long="""
+options = (
+    [
+        opt(
+            '-m',
+            '--mail',
+            action='store_true',
+            short='Import the patch from a standard e-mail file',
+        ),
+        opt(
+            '-M',
+            '--mbox',
+            action='store_true',
+            short='Import a series of patches from an mbox file',
+        ),
+        opt(
+            '-s',
+            '--series',
+            action='store_true',
+            short='Import a series of patches',
+            long="""
         Import a series of patches from a series file or a tar archive.""",
-    ),
-    opt(
-        '-u',
-        '--url',
-        action='store_true',
-        short='Import a patch from a URL',
-    ),
-    opt(
-        '-n',
-        '--name',
-        short='Use NAME as the patch name',
-    ),
-    opt(
-        '-p',
-        '--strip',
-        type='int',
-        metavar='N',
-        short='Remove N leading slashes from diff paths (default 1)',
-    ),
-    opt(
-        '-t',
-        '--stripname',
-        action='store_true',
-        short='Strip numbering and extension from patch name',
-    ),
-    opt(
-        '-i',
-        '--ignore',
-        action='store_true',
-        short='Ignore the applied patches in the series',
-    ),
-    opt(
-        '--replace',
-        action='store_true',
-        short='Replace the unapplied patches in the series',
-    ),
-    opt(
-        '-b',
-        '--base',
-        args=['commit'],
-        short='Use BASE instead of HEAD for file importing',
-    ),
-    opt(
-        '--reject',
-        action='store_true',
-        short='Leave the rejected hunks in corresponding *.rej files',
-    ),
-    opt(
-        '--keep-cr',
-        action='store_true',
-        short='Do not remove "\\r" from email lines ending with "\\r\\n"',
-    ),
-    opt(
-        '-e',
-        '--edit',
-        action='store_true',
-        short='Invoke an editor for the patch description',
-    ),
-    opt(
-        '-d',
-        '--showdiff',
-        action='store_true',
-        short='Show the patch content in the editor buffer',
-    ),
-] + argparse.author_options() + argparse.sign_options()
+        ),
+        opt('-u', '--url', action='store_true', short='Import a patch from a URL',),
+        opt('-n', '--name', short='Use NAME as the patch name',),
+        opt(
+            '-p',
+            '--strip',
+            type='int',
+            metavar='N',
+            short='Remove N leading slashes from diff paths (default 1)',
+        ),
+        opt(
+            '-t',
+            '--stripname',
+            action='store_true',
+            short='Strip numbering and extension from patch name',
+        ),
+        opt(
+            '-i',
+            '--ignore',
+            action='store_true',
+            short='Ignore the applied patches in the series',
+        ),
+        opt(
+            '--replace',
+            action='store_true',
+            short='Replace the unapplied patches in the series',
+        ),
+        opt(
+            '-b',
+            '--base',
+            args=['commit'],
+            short='Use BASE instead of HEAD for file importing',
+        ),
+        opt(
+            '--reject',
+            action='store_true',
+            short='Leave the rejected hunks in corresponding *.rej files',
+        ),
+        opt(
+            '--keep-cr',
+            action='store_true',
+            short='Do not remove "\\r" from email lines ending with "\\r\\n"',
+        ),
+        opt(
+            '-e',
+            '--edit',
+            action='store_true',
+            short='Invoke an editor for the patch description',
+        ),
+        opt(
+            '-d',
+            '--showdiff',
+            action='store_true',
+            short='Show the patch content in the editor buffer',
+        ),
+    ]
+    + argparse.author_options()
+    + argparse.sign_options()
+)
 
 directory = DirectoryHasRepository()
 
@@ -165,8 +155,9 @@ def __replace_slashes_with_dashes(name):
     return stripped
 
 
-def __create_patch(filename, message, author_name, author_email,
-                   author_date, diff, options):
+def __create_patch(
+    filename, message, author_name, author_email, author_date, diff, options
+):
     """Create a new patch on the stack
     """
     stack = directory.repository.current_stack
@@ -184,8 +175,10 @@ def __create_patch(filename, message, author_name, author_email,
 
     if not name:
         if options.ignore or options.replace:
+
             def unacceptable_name(name):
                 return False
+
         else:
             unacceptable_name = stack.patches.exists
         name = make_patch_name(message, unacceptable_name)
@@ -201,11 +194,7 @@ def __create_patch(filename, message, author_name, author_email,
 
     out.start('Importing patch "%s"' % name)
 
-    author = Person(
-        author_name,
-        author_email,
-        Date.maybe(author_date),
-    )
+    author = Person(author_name, author_email, Date.maybe(author_date),)
     author = options.author(author)
 
     try:
@@ -214,23 +203,14 @@ def __create_patch(filename, message, author_name, author_email,
             tree = stack.head.data.tree
         else:
             iw = stack.repository.default_iw
-            iw.apply(
-                diff, quiet=False, reject=options.reject, strip=options.strip
-            )
+            iw.apply(diff, quiet=False, reject=options.reject, strip=options.strip)
             tree = iw.index.write_tree()
 
         cd = CommitData(
-            tree=tree,
-            parents=[stack.head],
-            author=author,
-            message=message,
+            tree=tree, parents=[stack.head], author=author, message=message,
         )
         cd = update_commit_data(
-            cd,
-            message=None,
-            author=None,
-            sign_str=options.sign_str,
-            edit=options.edit,
+            cd, message=None, author=None, sign_str=options.sign_str, edit=options.edit,
         )
         commit = stack.repository.commit(cd)
 
@@ -251,7 +231,7 @@ def __create_patch(filename, message, author_name, author_email,
 
 def __mkpatchname(name, suffix):
     if name.lower().endswith(suffix.lower()):
-        return name[:-len(suffix)]
+        return name[: -len(suffix)]
     return name
 
 
@@ -289,15 +269,16 @@ def __import_file(filename, options, patch=None):
     elif not pname:
         pname = filename
 
-    (
-        message, author_name, author_email, author_date, diff
-    ) = parse_patch(f.read(), contains_diff=True)
+    (message, author_name, author_email, author_date, diff) = parse_patch(
+        f.read(), contains_diff=True
+    )
 
     if filename:
         f.close()
 
-    __create_patch(pname, message, author_name, author_email,
-                   author_date, diff, options)
+    __create_patch(
+        pname, message, author_name, author_email, author_date, diff, options
+    )
 
 
 def __import_series(filename, options):
@@ -323,16 +304,17 @@ def __import_series(filename, options):
         # series but as strip level default to 1, only "-p0" can actually
         # be found in the series file, the other ones are implicit
         m = re.match(
-            r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$',
-            patch,
+            r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch,
         )
         options.strip = 1
         if m:
             patch = m.group('patchfilename')
             if m.group('striplevel') != '0':
-                raise CmdException("error importing quilt series, patch '%s'"
-                                   " has unsupported strip level: '-p%s'" %
-                                   (patch, m.group('striplevel')))
+                raise CmdException(
+                    "error importing quilt series, patch '%s'"
+                    " has unsupported strip level: '-p%s'"
+                    % (patch, m.group('striplevel'))
+                )
             options.strip = 0
         patchfile = os.path.join(patchdir, patch)
         patch = __replace_slashes_with_dashes(patch)
@@ -373,9 +355,7 @@ def __mailsplit(tmpdir, filename, options):
 
     num_patches = int(r.output_one_line())
 
-    mail_paths = [
-        os.path.join(tmpdir, '%04d' % n) for n in range(1, num_patches + 1)
-    ]
+    mail_paths = [os.path.join(tmpdir, '%04d' % n) for n in range(1, num_patches + 1)]
 
     return mail_paths
 
@@ -387,9 +367,13 @@ def __import_mail_path(mail_path, filename, options):
     msg_path = mail_path + '-msg'
     patch_path = mail_path + '-patch'
 
-    mailinfo_lines = Run(
-        'git', 'mailinfo', msg_path, patch_path
-    ).encoding(None).decoding(None).raw_input(mail).output_lines(b'\n')
+    mailinfo_lines = (
+        Run('git', 'mailinfo', msg_path, patch_path)
+        .encoding(None)
+        .decoding(None)
+        .raw_input(mail)
+        .output_lines(b'\n')
+    )
 
     mailinfo = dict(line.split(b': ', 1) for line in mailinfo_lines if line)
 

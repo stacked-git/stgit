@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt
 from stgit.commands.common import (
@@ -106,18 +101,15 @@ def func(parser, options, args):
     repository = directory.repository
     iw = repository.default_iw
     stack = repository.get_stack()
-    policy = (
-        config.get('branch.%s.stgit.pull-policy' % stack.name)
-        or config.get('stgit.pull-policy')
+    policy = config.get('branch.%s.stgit.pull-policy' % stack.name) or config.get(
+        'stgit.pull-policy'
     )
 
     if policy == 'rebase':
         # parent is local
         if len(args) == 1:
             parser.error(
-                'specifying a repository is meaningless for policy="%s"' % (
-                    policy,
-                )
+                'specifying a repository is meaningless for policy="%s"' % (policy,)
             )
         elif len(args) > 0:
             parser.error('incorrect number of arguments')
@@ -170,9 +162,7 @@ def func(parser, options, args):
             try:
                 parent_commit = repository.rev_parse('heads/origin')
             except RepositoryException:
-                raise CmdException(
-                    'Cannot find a parent branch for "%s"' % stack.name
-                )
+                raise CmdException('Cannot find a parent branch for "%s"' % stack.name)
             else:
                 out.warn(
                     'No parent branch declared for stack "%s", defaulting to'

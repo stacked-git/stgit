@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Export command"""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import os
@@ -14,11 +9,7 @@ import sys
 
 from stgit import templates
 from stgit.argparse import diff_opts_option, opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib.git import diffstat
 from stgit.out import out
 
@@ -69,10 +60,7 @@ options = [
         short='Export patches to DIR instead of the default',
     ),
     opt(
-        '-p',
-        '--patch',
-        action='store_true',
-        short='Append .patch to the patch names',
+        '-p', '--patch', action='store_true', short='Append .patch to the patch names',
     ),
     opt('-e', '--extension', short='Append .EXTENSION to the patch names'),
     opt(
@@ -117,15 +105,10 @@ def func(parser, options, args):
         dirname = 'patches-%s' % stack.name
         directory.cd_to_topdir()
 
-    if (
-        not options.branch
-        and repository.default_iw.changed_files(
-            repository.rev_parse('HEAD').data.tree
-        )
+    if not options.branch and repository.default_iw.changed_files(
+        repository.rev_parse('HEAD').data.tree
     ):
-        out.warn(
-            'Local changes in the tree; you might want to commit them first'
-        )
+        out.warn('Local changes in the tree; you might want to commit them first')
 
     applied = stack.patchorder.applied
     unapplied = stack.patchorder.unapplied
@@ -158,8 +141,7 @@ def func(parser, options, args):
         # note the base commit for this series
         base_commit = stack.base.sha1
         print(
-            '# This series applies on GIT commit %s' % base_commit,
-            file=series,
+            '# This series applies on GIT commit %s' % base_commit, file=series,
         )
 
     for patch_no, p in enumerate(patches, 1):
@@ -185,9 +167,7 @@ def func(parser, options, args):
         long_descr = '\n'.join(descr_lines[1:]).strip()
 
         diff = stack.repository.diff_tree(
-            cd.parent.data.tree,
-            cd.tree,
-            options.diff_flags,
+            cd.parent.data.tree, cd.tree, options.diff_flags,
         )
 
         tmpl_dict = {
@@ -220,10 +200,7 @@ def func(parser, options, args):
             f = io.open(pfile, 'wb')
 
         if options.stdout and num > 1:
-            f.write('\n'.join(['-' * 79,
-                               patch.name,
-                               '-' * 79,
-                               '']).encode('utf-8'))
+            f.write('\n'.join(['-' * 79, patch.name, '-' * 79, '']).encode('utf-8'))
 
         f.write(descr)
         f.write(diff)

@@ -2,23 +2,14 @@
 """The L{StackTransaction} class makes it possible to make complex
 updates to an StGit stack in a safe and convenient way."""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from itertools import takewhile
 import atexit
 
 from stgit import exception, utils
 from stgit.config import config
-from stgit.lib.git import (
-    CheckoutException,
-    MergeConflictException,
-    MergeException,
-)
+from stgit.lib.git import CheckoutException, MergeConflictException, MergeException
 from stgit.lib.log import log_entry, log_external_mods
 from stgit.out import out
 
@@ -167,8 +158,7 @@ class StackTransaction(object):
 
     @base.setter
     def base(self, value):
-        assert (not self._applied
-                or self.patches[self.applied[0]].data.parent == value)
+        assert not self._applied or self.patches[self.applied[0]].data.parent == value
         self._base = value
 
     @property
@@ -201,7 +191,8 @@ class StackTransaction(object):
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
-                '"stg repair --help" explains more about what to do next.')
+                '"stg repair --help" explains more about what to do next.',
+            )
             self._abort()
 
     def _assert_index_worktree_clean(self, iw):
@@ -218,11 +209,7 @@ class StackTransaction(object):
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
             # carrying them along to another patch is confusing.
-            if (
-                self._allow_conflicts(self)
-                or iw is None
-                or not iw.index.conflicts()
-            ):
+            if self._allow_conflicts(self) or iw is None or not iw.index.conflicts():
                 return
             out.error('Need to resolve conflicts first')
             self._abort()
@@ -250,8 +237,9 @@ class StackTransaction(object):
         if iw:
             self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
 
-    def run(self, iw=None, set_head=True, allow_bad_head=False,
-            print_current_patch=True):
+    def run(
+        self, iw=None, set_head=True, allow_bad_head=False, print_current_patch=True
+    ):
         """Execute the transaction. Will either succeed, or fail (with an
         exception) and do nothing."""
         self._check_consistency()
@@ -288,9 +276,7 @@ class StackTransaction(object):
                     p.set_commit(commit, msg)
             else:
                 self.stack.patches.new(pn, commit, msg)
-        self.stack.patchorder.set_order(
-            self._applied, self._unapplied, self._hidden
-        )
+        self.stack.patchorder.set_order(self._applied, self._unapplied, self._hidden)
         log_entry(self.stack, msg)
 
         if print_current_patch:
@@ -353,8 +339,7 @@ class StackTransaction(object):
                     out.info('Deleted %s%s' % (pn, s))
         return popped
 
-    def push_patch(self, pn, iw=None, allow_interactive=False,
-                   already_merged=False):
+    def push_patch(self, pn, iw=None, allow_interactive=False, already_merged=False):
         """Attempt to push the named patch. If this results in conflicts,
         halts the transaction. If index+worktree are given, spill any
         conflicts to them."""
@@ -371,7 +356,8 @@ class StackTransaction(object):
             ours = cd.parent.data.tree
             theirs = cd.tree
             tree, self.temp_index_tree = self.temp_index.merge(
-                base, ours, theirs, self.temp_index_tree)
+                base, ours, theirs, self.temp_index_tree
+            )
         s = ''
         merge_conflict = False
         if not tree:
@@ -382,8 +368,7 @@ class StackTransaction(object):
             except CheckoutException:
                 self._halt('Index/worktree dirty')
             try:
-                interactive = (allow_interactive and
-                               config.getbool('stgit.autoimerge'))
+                interactive = allow_interactive and config.getbool('stgit.autoimerge')
                 iw.merge(base, ours, theirs, interactive=interactive)
                 tree = iw.index.write_tree()
                 self._current_tree = tree
@@ -396,8 +381,10 @@ class StackTransaction(object):
             except MergeException as e:
                 self._halt(str(e))
         cd = cd.set_tree(tree)
-        if any(getattr(cd, a) != getattr(orig_cd, a) for a in
-               ['parent', 'tree', 'author', 'message']):
+        if any(
+            getattr(cd, a) != getattr(orig_cd, a)
+            for a in ['parent', 'tree', 'author', 'message']
+        ):
             comm = self.stack.repository.commit(cd)
             if merge_conflict:
                 # When we produce a conflict, we'll run the update()
@@ -439,8 +426,10 @@ class StackTransaction(object):
         cd = orig_cd.set_committer(None).set_parent(self.top)
 
         s = ''
-        if any(getattr(cd, a) != getattr(orig_cd, a) for a in
-               ['parent', 'tree', 'author', 'message']):
+        if any(
+            getattr(cd, a) != getattr(orig_cd, a)
+            for a in ['parent', 'tree', 'author', 'message']
+        ):
             self.patches[pn] = self.stack.repository.commit(cd)
         else:
             s = ' (unmodified)'
@@ -455,13 +444,15 @@ class StackTransaction(object):
         del x[x.index(pn)]
         self.applied.append(pn)
 
-    def reorder_patches(self, applied, unapplied, hidden=None, iw=None,
-                        allow_interactive=False):
+    def reorder_patches(
+        self, applied, unapplied, hidden=None, iw=None, allow_interactive=False
+    ):
         """Push and pop patches to attain the given ordering."""
         if hidden is None:
             hidden = self.hidden
-        common = len(list(takewhile(lambda a: a[0] == a[1],
-                                    zip(self.applied, applied))))
+        common = len(
+            list(takewhile(lambda a: a[0] == a[1], zip(self.applied, applied)))
+        )
         to_pop = set(self.applied[common:])
         self.pop_patches(lambda pn: pn in to_pop)
         for pn in applied[common:]:
@@ -491,9 +482,7 @@ class StackTransaction(object):
                 continue
             try:
                 self.temp_index.apply_treediff(
-                    cd.tree,
-                    cd.parent.data.tree,
-                    quiet=True,
+                    cd.tree, cd.parent.data.tree, quiet=True,
                 )
                 merged.append(pn)
                 # The self.temp_index was modified by apply_treediff() so

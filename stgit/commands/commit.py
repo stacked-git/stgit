@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -33,10 +24,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Permanently store the applied patches into the stack base'
 kind = 'stack'
-usage = ['',
-         '[--] <patchnames>',
-         '-n NUM',
-         '--all']
+usage = ['', '[--] <patchnames>', '-n NUM', '--all']
 description = """
 Merge one or more patches into the base of the current stack and
 remove them from the series while advancing the base. This is the
@@ -53,15 +41,8 @@ all applied patches are committed."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
-    opt(
-        '-n',
-        '--number',
-        type='int',
-        short='Commit the specified number of patches',
-    ),
-    opt(
-        '-a', '--all', action='store_true', short='Commit all applied patches'
-    ),
+    opt('-n', '--number', type='int', short='Commit the specified number of patches',),
+    opt('-a', '--all', action='store_true', short='Commit all applied patches'),
 ]
 
 directory = DirectoryHasRepository()
@@ -79,13 +60,11 @@ def func(parser, options, args):
         bad = set(args) - set(patches)
         if bad:
             raise CmdException(
-                'Nonexistent or hidden patch names: %s' % (
-                    ', '.join(sorted(bad)),
-                )
+                'Nonexistent or hidden patch names: %s' % (', '.join(sorted(bad)),)
             )
     elif options.number is not None:
         if options.number <= len(stack.patchorder.applied):
-            patches = stack.patchorder.applied[:options.number]
+            patches = stack.patchorder.applied[: options.number]
         else:
             raise CmdException('There are not that many applied patches')
     elif options.all:
@@ -102,8 +81,9 @@ def func(parser, options, args):
         # run "stg commit" with conflicts in the index.
         return len(trans.applied) >= 1
 
-    trans = transaction.StackTransaction(stack, 'commit',
-                                         allow_conflicts=allow_conflicts)
+    trans = transaction.StackTransaction(
+        stack, 'commit', allow_conflicts=allow_conflicts
+    )
     try:
         common_prefix = 0
         for i in range(min(len(stack.patchorder.applied), len(patches))):
@@ -112,8 +92,11 @@ def func(parser, options, args):
             else:
                 break
         if common_prefix < len(patches):
-            to_push = [pn for pn in stack.patchorder.applied[common_prefix:]
-                       if pn not in patches[common_prefix:]]
+            to_push = [
+                pn
+                for pn in stack.patchorder.applied[common_prefix:]
+                if pn not in patches[common_prefix:]
+            ]
             # this pops all the applied patches from common_prefix
             trans.pop_patches(lambda pn: pn in to_push)
             for pn in patches[common_prefix:]:
@@ -125,8 +108,7 @@ def func(parser, options, args):
             trans.patches[pn] = None
         trans.applied = [pn for pn in trans.applied if pn not in patches]
         trans.base = new_base
-        out.info('Committed %d patch%s' % (len(patches),
-                                           ['es', ''][len(patches) == 1]))
+        out.info('Committed %d patch%s' % (len(patches), ['es', ''][len(patches) == 1]))
         for pn in to_push:
             trans.push_patch(pn, iw)
     except transaction.TransactionHalted:

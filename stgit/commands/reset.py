@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import utils
 from stgit.argparse import opt, patch_range
@@ -41,11 +36,7 @@ patches, and leave the rest alone."""
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
-    opt(
-        '--hard',
-        action='store_true',
-        short='Discard changes in your index/worktree',
-    ),
+    opt('--hard', action='store_true', short='Discard changes in your index/worktree',),
 ]
 
 directory = DirectoryHasRepository()
@@ -56,8 +47,9 @@ def func(parser, options, args):
     iw = stack.repository.default_iw
     if len(args) >= 1:
         ref, patches = args[0], args[1:]
-        state = log.get_log_entry(stack.repository, ref,
-                                  stack.repository.rev_parse(ref))
+        state = log.get_log_entry(
+            stack.repository, ref, stack.repository.rev_parse(ref)
+        )
     elif options.hard:
         iw.checkout_hard(stack.head.data.tree)
         return utils.STGIT_SUCCESS
@@ -65,10 +57,7 @@ def func(parser, options, args):
         raise CmdException('Wrong options or number of arguments')
 
     trans = transaction.StackTransaction(
-        stack,
-        'reset',
-        discard_changes=options.hard,
-        allow_bad_head=True,
+        stack, 'reset', discard_changes=options.hard, allow_bad_head=True,
     )
     try:
         if patches:

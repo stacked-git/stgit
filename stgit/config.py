@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Handles the Stacked GIT configuration files"""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 
@@ -62,8 +57,11 @@ class GitConfig(object):
         if self._cache is not None:
             return
         self._cache = dict(DEFAULTS)
-        lines = Run('git', 'config', '--null', '--list'
-                    ).discard_exitcode().output_lines('\0')
+        lines = (
+            Run('git', 'config', '--null', '--list')
+            .discard_exitcode()
+            .output_lines('\0')
+        )
         for line in lines:
             try:
                 key, value = line.split('\n', 1)
@@ -118,21 +116,22 @@ class GitConfig(object):
 
     def getstartswith(self, name):
         self.load()
-        return ((n, v[-1]) for (n, v) in self._cache.items()
-                if n.startswith(name))
+        return ((n, v[-1]) for (n, v) in self._cache.items() if n.startswith(name))
 
     def rename_section(self, from_name, to_name):
         """Rename a section in the config file. Silently do nothing if
         the section doesn't exist."""
-        Run('git', 'config', '--rename-section', from_name, to_name
-            ).returns([0, 1, 128]).run()
+        Run('git', 'config', '--rename-section', from_name, to_name).returns(
+            [0, 1, 128]
+        ).run()
         self._cache.clear()
 
     def remove_section(self, name):
         """Remove a section in the config file. Silently do nothing if
         the section doesn't exist."""
-        Run('git', 'config', '--remove-section', name
-            ).returns([0, 1, 128]).discard_stderr().discard_output()
+        Run('git', 'config', '--remove-section', name).returns(
+            [0, 1, 128]
+        ).discard_stderr().discard_output()
         self._cache.clear()
 
     def set(self, name, value):
@@ -145,8 +144,9 @@ class GitConfig(object):
 
     def get_colorbool(self, name, stdout_is_tty):
         """Invoke 'git config --get-colorbool' and return the result."""
-        return Run('git', 'config', '--get-colorbool', name,
-                   stdout_is_tty).output_one_line()
+        return Run(
+            'git', 'config', '--get-colorbool', name, stdout_is_tty
+        ).output_one_line()
 
 
 config = GitConfig()

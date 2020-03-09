@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import itertools
 
@@ -146,9 +141,7 @@ def patch_list_fun(type):
 
 
 def file_list_fun(name, cmd):
-    return fun(
-        '_%s_files' % name, 'local g', 'g=$(_gitdir)', 'test "$g" && %s' % cmd,
-    )
+    return fun('_%s_files' % name, 'local g', 'g=$(_gitdir)', 'test "$g" && %s' % cmd)
 
 
 def ref_list_fun(name, prefix):
@@ -160,7 +153,7 @@ def ref_list_fun(name, prefix):
             "test \"$g\""
             " && git show-ref "
             " | grep ' %s/' | sed 's,.* %s/,,'" % (prefix, prefix)
-        )
+        ),
     )
 
 
@@ -176,23 +169,25 @@ def util():
             "Name of the current branch, or empty if there isn't one.",
             'local b',
             'b=$(git symbolic-ref HEAD 2>/dev/null)',
-            'echo "${b#refs/heads/}"'),
+            'echo "${b#refs/heads/}"',
+        ),
         fun_desc(
             '_other_applied_patches',
             'List of all applied patches except the current patch.',
-            'stg series --noprefix --applied | grep -v "^$(stg top)$"'
+            'stg series --noprefix --applied | grep -v "^$(stg top)$"',
         ),
         fun(
             '_patch_range',
             'local patches="$1"',
             'local cur="$2"',
-            'case "$cur" in', [
+            'case "$cur" in',
+            [
                 '*..*)',
                 [
                     'local pfx="${cur%..*}.."',
                     'cur="${cur#*..}"',
                     'compgen -P "$pfx" -W "$patches" -- "$cur"',
-                    ';;'
+                    ';;',
                 ],
                 '*)',
                 ['compgen -W "$patches" -- "$cur"', ';;'],
@@ -201,40 +196,33 @@ def util():
         ),
         fun(
             '_stg_branches',
-            (
-                'stg branch --list 2>/dev/null'
-                ' | grep ". s" | cut -f2 | cut -d" " -f1'
-            )
+            ('stg branch --list 2>/dev/null' ' | grep ". s" | cut -f2 | cut -d" " -f1'),
         ),
-        fun(
-            '_all_branches',
-            'stg branch --list 2>/dev/null | cut -f2 | cut -d" " -f1'
-        ),
+        fun('_all_branches', 'stg branch --list 2>/dev/null | cut -f2 | cut -d" " -f1'),
         fun(
             '_mail_aliases',
             (
                 'git config --name-only --get-regexp "^mail\\.alias\\." '
                 '| cut -d. -f 3'
-            )
+            ),
         ),
         ref_list_fun('_tags', 'refs/tags'),
         ref_list_fun('_remotes', 'refs/remotes'),
     ]
     for type in ['applied', 'unapplied', 'hidden']:
         r.append(patch_list_fun(type))
-    for name, cmd in [('conflicting',
-                       r"git ls-files --unmerged | sed 's/.*\t//g' | sort -u"),
-                      ('dirty', 'git diff-index --name-only HEAD'),
-                      ('unknown', 'git ls-files --others --exclude-standard'),
-                      ('known', 'git ls-files')]:
+    for name, cmd in [
+        ('conflicting', r"git ls-files --unmerged | sed 's/.*\t//g' | sort -u"),
+        ('dirty', 'git diff-index --name-only HEAD'),
+        ('unknown', 'git ls-files --others --exclude-standard'),
+        ('known', 'git ls-files'),
+    ]:
         r.append(file_list_fun(name, cmd))
     return flatten(r, '')
 
 
 def command_list(commands):
-    return [
-        '_stg_commands="%s"\n' % ' '.join(cmd for cmd, _, _, _ in commands)
-    ]
+    return ['_stg_commands="%s"\n' % ' '.join(cmd for cmd, _, _, _ in commands)]
 
 
 def command_fun(cmd, modname):
@@ -247,26 +235,29 @@ def command_fun(cmd, modname):
 
     return fun(
         '_stg_%s' % cmd,
-        'local flags="%s"' % ' '.join(
+        'local flags="%s"'
+        % ' '.join(
             sorted(
                 itertools.chain(
                     ('--help',),
-                    (flag for opt in mod.options
-                     for flag in opt.flags if flag.startswith('--'))
+                    (
+                        flag
+                        for opt in mod.options
+                        for flag in opt.flags
+                        if flag.startswith('--')
+                    ),
                 )
             )
         ),
         'local prev="${COMP_WORDS[COMP_CWORD-1]}"',
         'local cur="${COMP_WORDS[COMP_CWORD]}"',
-        'case "$prev" in', [
-            '%s) COMPREPLY=($(%s)) ;;' % (
-                '|'.join(opt.flags),
-                cg(opt.args, [])
-            )
-            for opt in mod.options if opt.args
-        ] + [
-            '*) COMPREPLY=($(%s)) ;;' % cg(mod.args, ['$flags'])
-        ],
+        'case "$prev" in',
+        [
+            '%s) COMPREPLY=($(%s)) ;;' % ('|'.join(opt.flags), cg(opt.args, []))
+            for opt in mod.options
+            if opt.args
+        ]
+        + ['*) COMPREPLY=($(%s)) ;;' % cg(mod.args, ['$flags'])],
         'esac',
     )
 
@@ -277,34 +268,40 @@ def main_switch(commands):
         'local c=1',
         'local command',
         '',
-        'while test $c -lt $COMP_CWORD; do', [
-            'if test $c == 1; then', [
-                'command="${COMP_WORDS[c]}"'],
-            'fi',
-            'c=$((++c))'],
+        'while test $c -lt $COMP_CWORD; do',
+        ['if test $c == 1; then', ['command="${COMP_WORDS[c]}"'], 'fi', 'c=$((++c))'],
         'done',
         '',
-        ('# Complete name of subcommand if the user has not finished'
-         ' typing it yet.'),
-        'if test $c -eq $COMP_CWORD -a -z "$command"; then', [
-            ('COMPREPLY=($(compgen -W "help version copyright $_stg_commands" '
-             '-- "${COMP_WORDS[COMP_CWORD]}"))'),
-            'return'],
+        (
+            '# Complete name of subcommand if the user has not finished'
+            ' typing it yet.'
+        ),
+        'if test $c -eq $COMP_CWORD -a -z "$command"; then',
+        [
+            (
+                'COMPREPLY=($(compgen -W "help version copyright $_stg_commands" '
+                '-- "${COMP_WORDS[COMP_CWORD]}"))'
+            ),
+            'return',
+        ],
         'fi',
         '',
         '# Complete arguments to subcommands.',
-        'case "$command" in', [
-            'help) ', [
-                ('COMPREPLY=($(compgen -W "$_stg_commands" --'
-                 ' "${COMP_WORDS[COMP_CWORD]}"))'),
-                'return ;;'],
+        'case "$command" in',
+        [
+            'help) ',
+            [
+                (
+                    'COMPREPLY=($(compgen -W "$_stg_commands" --'
+                    ' "${COMP_WORDS[COMP_CWORD]}"))'
+                ),
+                'return ;;',
+            ],
             'version) return ;;',
-            'copyright) return ;;'
-        ], [
-            '%s) _stg_%s ;;' % (cmd, cmd)
-            for cmd, _, _, _ in commands
+            'copyright) return ;;',
         ],
-        'esac'
+        ['%s) _stg_%s ;;' % (cmd, cmd) for cmd, _, _, _ in commands],
+        'esac',
     )
 
 
@@ -317,7 +314,9 @@ def install():
 
 def write_bash_completion(f):
     commands = stgit.commands.get_commands(allow_cached=False)
-    r = [["""# -*- shell-script -*-
+    r = [
+        [
+            """# -*- shell-script -*-
 # bash completion script for StGit (automatically generated)
 #
 # To use these routines:
@@ -325,7 +324,9 @@ def write_bash_completion(f):
 #    1. Copy this file to somewhere (e.g. ~/.stgit-completion.bash).
 #
 #    2. Add the following line to your .bashrc:
-#         . ~/.stgit-completion.bash"""]]
+#         . ~/.stgit-completion.bash"""
+        ]
+    ]
     r += [util(), command_list(commands)]
     for cmd, modname, _, _ in commands:
         r.append(command_fun(cmd, modname))
@@ -335,4 +336,5 @@ def write_bash_completion(f):
 
 if __name__ == '__main__':
     import sys
+
     write_bash_completion(sys.stdout)

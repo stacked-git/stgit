@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """

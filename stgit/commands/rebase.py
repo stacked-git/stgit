@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt
 from stgit.commands.common import (
@@ -93,6 +88,4 @@ def func(parser, options, args):
 
     rebase(stack, iw, target)
     if not options.nopush:
-        return post_rebase(
-            stack, applied, 'rebase', check_merged=options.merged
-        )
+        return post_rebase(stack, applied, 'rebase', check_merged=options.merged)

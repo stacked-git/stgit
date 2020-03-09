@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import utils
 from stgit.argparse import opt
@@ -30,9 +25,11 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Turn regular git commits into StGit patches'
 kind = 'stack'
-usage = ['[--] <patch-name-1> [<patch-name-2> ...]',
-         '-n NUM [--] [<prefix>]',
-         '-t <committish> [-x]']
+usage = [
+    '[--] <patch-name-1> [<patch-name-2> ...]',
+    '-n NUM [--] [<prefix>]',
+    '-t <committish> [-x]',
+]
 description = """
 Take one or more git commits at the base of the current stack and turn
 them into StGIT patches. The new patches are created as applied patches
@@ -57,17 +54,9 @@ words, you can't uncommit a merge."""
 args = []
 options = [
     opt(
-        '-n',
-        '--number',
-        type='int',
-        short='Uncommit the specified number of commits',
+        '-n', '--number', type='int', short='Uncommit the specified number of commits',
     ),
-    opt(
-        '-t',
-        '--to',
-        args=['commit'],
-        short='Uncommit to the specified commit',
-    ),
+    opt('-t', '--to', args=['commit'], short='Uncommit to the specified commit',),
     opt(
         '-x',
         '--exclusive',
@@ -91,9 +80,7 @@ def func(parser, options, args):
         patch_nr = patchnames = None
         to_commit = stack.repository.rev_parse(options.to)
         # check whether the --to commit is on a different branch
-        merge_bases = directory.repository.get_merge_bases(
-            to_commit, stack.base
-        )
+        merge_bases = directory.repository.get_merge_bases(to_commit, stack.base)
         if to_commit not in merge_bases:
             to_commit = merge_bases[0]
             options.exclusive = True
@@ -105,8 +92,7 @@ def func(parser, options, args):
             patchnames = None
         elif len(args) == 1:
             # prefix specified
-            patchnames = ['%s%d' % (args[0], i)
-                          for i in range(patch_nr, 0, -1)]
+            patchnames = ['%s%d' % (args[0], i) for i in range(patch_nr, 0, -1)]
         else:
             parser.error('when using --number, specify at most one patch name')
     elif len(args) == 0:
@@ -123,8 +109,8 @@ def func(parser, options, args):
         except ValueError:
             out.done()
             raise CmdException(
-                'Trying to uncommit %s, which does not have exactly one parent'
-                % n.sha1)
+                'Trying to uncommit %s, which does not have exactly one parent' % n.sha1
+            )
         return c.append(n)
 
     commits = []
@@ -157,16 +143,14 @@ def func(parser, options, args):
     else:
         patchnames = []
         for c in reversed(commits):
-            pn = utils.make_patch_name(
-                c.data.message_str, lambda pn: pn in taken_names
-            )
+            pn = utils.make_patch_name(c.data.message_str, lambda pn: pn in taken_names)
             patchnames.append(pn)
             taken_names.add(pn)
         patchnames.reverse()
 
-    trans = transaction.StackTransaction(stack, 'uncommit',
-                                         allow_conflicts=True,
-                                         allow_bad_head=True)
+    trans = transaction.StackTransaction(
+        stack, 'uncommit', allow_conflicts=True, allow_bad_head=True
+    )
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied

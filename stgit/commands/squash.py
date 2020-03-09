@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse, utils
 from stgit.argparse import opt, patch_range
@@ -84,7 +79,7 @@ def _append_comment(message, comment):
 
 def _strip_comment(message):
     try:
-        return message[:message.index('\n---\n')]
+        return message[: message.index('\n---\n')]
     except ValueError:
         return message
 
@@ -94,9 +89,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
-            base=c.data.parent.data.tree,
-            ours=cd.tree,
-            theirs=c.data.tree,
+            base=c.data.parent.data.tree, ours=cd.tree, theirs=c.data.tree,
         )
         if not tree:
             return None
@@ -105,12 +98,9 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
         msg = _append_comment(
             cd.message_str,
             '\n\n'.join(
-                '%s\n\n%s' % (
-                    pn.ljust(70, '-'),
-                    trans.patches[pn].data.message_str
-                )
+                '%s\n\n%s' % (pn.ljust(70, '-'), trans.patches[pn].data.message_str)
                 for pn in patches[1:]
-            )
+            ),
         )
         if save_template:
             save_template(msg.encode(cd.encoding))
@@ -145,8 +135,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        new_commit_data = _squash_patches(trans, patches, msg, save_template,
-                                          no_verify)
+        new_commit_data = _squash_patches(trans, patches, msg, save_template, no_verify)
         if new_commit_data:
             # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
@@ -184,6 +173,12 @@ def func(parser, options, args):
     patches = parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
         raise CmdException('Need at least two patches')
-    return _squash(stack, stack.repository.default_iw, options.name,
-                   options.message, options.save_template, patches,
-                   options.no_verify)
+    return _squash(
+        stack,
+        stack.repository.default_iw,
+        options.name,
+        options.message,
+        options.save_template,
+        patches,
+        options.no_verify,
+    )

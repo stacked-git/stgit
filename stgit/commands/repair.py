@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.commands.common import CmdException, DirectoryGotoTopLevel
 from stgit.lib.transaction import StackTransaction, TransactionHalted
@@ -86,15 +81,13 @@ def func(parser, options, args):
     stack = repository.get_stack()
 
     if stack.protected:
-        raise CmdException(
-            'This branch is protected. Modification is not permitted.'
-        )
+        raise CmdException('This branch is protected. Modification is not permitted.')
 
     patchorder = stack.patchorder
     patches = [stack.patches.get(pn) for pn in patchorder.all]
 
     # Find commits that aren't patches, and applied patches.
-    patchify = []        # commits to definitely patchify
+    patchify = []  # commits to definitely patchify
     maybe_patchify = []  # commits to patchify if we find a patch below them
     applied = []
     c = stack.head
@@ -129,15 +122,13 @@ def func(parser, options, args):
                 % (len(unreachable), ['es', ''][len(unreachable) == 1])
             ),
             '%s,' % merge.sha1,
-            'and will be considered unapplied.'
+            'and will be considered unapplied.',
         )
 
     # Make patches of any linear sequence of commits on top of a patch.
     if applied and patchify:
         out.start(
-            'Creating %d new patch%s' % (
-                len(patchify), ['es', ''][len(patchify) == 1]
-            )
+            'Creating %d new patch%s' % (len(patchify), ['es', ''][len(patchify) == 1])
         )
 
         for c in patchify:
@@ -175,14 +166,10 @@ def func(parser, options, args):
         i = orig_order.get(p, len(orig_order))
         return i, p
 
-    trans = StackTransaction(
-        stack, 'repair', check_clean_iw=False, allow_bad_head=True
-    )
+    trans = StackTransaction(stack, 'repair', check_clean_iw=False, allow_bad_head=True)
     try:
         trans.applied = [p.name for p in applied]
-        trans.unapplied = sorted(
-            (p.name for p in unapplied), key=patchname_key
-        )
+        trans.unapplied = sorted((p.name for p in unapplied), key=patchname_key)
         trans.hidden = sorted((p.name for p in hidden), key=patchname_key)
     except TransactionHalted:
         pass

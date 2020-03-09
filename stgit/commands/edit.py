@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 """Patch editing command"""
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 
@@ -77,12 +72,7 @@ args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = (
     [
         opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
-        opt(
-            '-e',
-            '--edit',
-            action='store_true',
-            short='Invoke interactive editor',
-        ),
+        opt('-e', '--edit', action='store_true', short='Invoke interactive editor',),
     ]
     + argparse.sign_options()
     + argparse.message_options(save_template=True)
@@ -110,9 +100,7 @@ def func(parser, options, args):
 
     if len(args) == 0:
         if not stack.patchorder.applied:
-            raise CmdException(
-                'Cannot edit top patch, because no patches are applied'
-            )
+            raise CmdException('Cannot edit top patch, because no patches are applied')
         patchname = stack.patchorder.applied[-1]
     elif len(args) == 1:
         [patchname] = args
@@ -134,7 +122,8 @@ def func(parser, options, args):
         stack.repository,
         cd,
         msg=(
-            None if options.message is None
+            None
+            if options.message is None
             else options.message.encode(config.get('i18n.commitencoding'))
         ),
         author=options.author,
@@ -197,7 +186,7 @@ def func(parser, options, args):
     iw = stack.repository.default_iw
     trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
     if patchname in trans.applied:
-        popped = trans.applied[trans.applied.index(patchname) + 1:]
+        popped = trans.applied[trans.applied.index(patchname) + 1 :]
         popped_extra = trans.pop_patches(lambda pn: pn in popped)
         assert not popped_extra
     else:

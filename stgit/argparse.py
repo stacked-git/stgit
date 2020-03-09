@@ -3,12 +3,7 @@
 C{optparse} module, so that we can easily generate both interactive
 help and asciidoc documentation (such as man pages)."""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import optparse
@@ -73,9 +68,7 @@ class opt(object):
             if m:
                 f.write(' ' + m)
             f.write('::\n')
-        paras = _paragraphs(
-            self.kwargs.get('long', self.kwargs['short'] + '.')
-        )
+        paras = _paragraphs(self.kwargs.get('long', self.kwargs['short'] + '.'))
         for line in paras[0]:
             f.write(' ' * 8 + line + '\n')
         for para in paras[1:]:
@@ -105,9 +98,7 @@ def make_option_parser(cmd):
     return optparse.OptionParser(
         prog='stg %s' % _cmd_name(cmd),
         usage=(
-            ('\n' + pad).join('%%prog %s' % u for u in cmd.usage)
-            + '\n\n'
-            + cmd.help
+            ('\n' + pad).join('%%prog %s' % u for u in cmd.usage) + '\n\n' + cmd.help
         ),
         option_list=[o.get_option() for o in cmd.options],
     )
@@ -143,7 +134,8 @@ def sign_options():
     def callback(option, opt_str, value, parser, sign_str):
         if parser.values.sign_str not in [None, sign_str]:
             raise optparse.OptionValueError(
-                'Cannot give more than one of --ack, --sign, --review')
+                'Cannot give more than one of --ack, --sign, --review'
+            )
         parser.values.sign_str = sign_str
 
     return [
@@ -197,7 +189,8 @@ def message_options(save_template):
     def no_dup(parser):
         if parser.values.message is not None:
             raise optparse.OptionValueError(
-                'Cannot give more than one --message or --file')
+                'Cannot give more than one --message or --file'
+            )
 
     def no_combine(parser):
         if (
@@ -206,7 +199,8 @@ def message_options(save_template):
             and parser.values.save_template is not None
         ):
             raise optparse.OptionValueError(
-                'Cannot give both --message/--file and --save-template')
+                'Cannot give both --message/--file and --save-template'
+            )
 
     def msg_callback(option, opt_str, value, parser):
         no_dup(parser)
@@ -291,6 +285,7 @@ def diff_opts_option():
             parser.values.diff_flags.extend(value.split())
         else:
             parser.values.diff_flags = []
+
     return [
         opt(
             '-O',
@@ -321,7 +316,8 @@ def author_options():
         ne = utils.parse_name_email(value)
         if not ne:
             raise optparse.OptionValueError(
-                'Bad %s specification: %r' % (opt_str, value))
+                'Bad %s specification: %r' % (opt_str, value)
+            )
         name, email = ne
         short_callback(option, opt_str, name, parser, 'name')
         short_callback(option, opt_str, email, parser, 'email')
@@ -345,7 +341,7 @@ def author_options():
             action='callback',
             callback=short_callback,
             dest='author',
-            callback_args=(field, ),
+            callback_args=(field,),
             short='Set the author %s' % field,
         )
         for field in ['name', 'email', 'date']

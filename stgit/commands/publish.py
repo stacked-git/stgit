@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse, utils
 from stgit.argparse import opt
@@ -87,12 +82,7 @@ options = [
         args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
-    opt(
-        '-l',
-        '--last',
-        action='store_true',
-        short='Show the last published patch',
-    ),
+    opt('-l', '--last', action='store_true', short='Show the last published patch',),
     opt(
         '-u',
         '--unpublished',
@@ -151,9 +141,7 @@ def __get_last(stack, tree):
 
 def func(parser, options, args):
     """Publish the stack changes."""
-    out.warn(
-        'DEPRECATED: stg publish will be removed in a future version of StGit.'
-    )
+    out.warn('DEPRECATED: stg publish will be removed in a future version of StGit.')
     repository = directory.repository
     stack = repository.get_stack(options.branch)
 
@@ -183,8 +171,7 @@ def func(parser, options, args):
         last = __get_last(stack, public_tree)
         if not last:
             raise CmdException(
-                'Unable to find the last published patch '
-                '(possibly rebased stack)'
+                'Unable to find the last published patch ' '(possibly rebased stack)'
             )
         out.info('%s' % last)
         return
@@ -248,8 +235,9 @@ def func(parser, options, args):
 
     # create a new commit (only happens if no new patches are detected)
     if public_tree.sha1 != stack.head.data.tree.sha1:
-        public_head = __create_commit(repository, stack.head.data.tree,
-                                      [public_head], options)
+        public_head = __create_commit(
+            repository, stack.head.data.tree, [public_head], options
+        )
 
     # update the public head
     repository.refs.set(public_ref, public_head, 'publish')

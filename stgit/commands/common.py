@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 """Function/variables common to all the commands"""
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import email.utils
 import os
@@ -93,18 +88,18 @@ def git_commit(name, repository, branch_name=None):
     # The stack base
     if patch.startswith('{base}'):
         base_id = repository.get_stack(branch).base.sha1
-        return repository.rev_parse(base_id +
-                                    strip_prefix('{base}', patch))
+        return repository.rev_parse(base_id + strip_prefix('{base}', patch))
     elif patch.startswith('{public}'):
         public_ref = get_public_ref(branch)
-        return repository.rev_parse(public_ref +
-                                    strip_prefix('{public}', patch),
-                                    discard_stderr=True)
+        return repository.rev_parse(
+            public_ref + strip_prefix('{public}', patch), discard_stderr=True
+        )
 
     # Other combination of branch and patch
     try:
-        return repository.rev_parse('patches/%s/%s' % (branch, patch),
-                                    discard_stderr=True)
+        return repository.rev_parse(
+            'patches/%s/%s' % (branch, patch), discard_stderr=True
+        )
     except RepositoryException:
         pass
 
@@ -133,9 +128,7 @@ def check_local_changes(repository):
     local_changes = iw.changed_files(tree)
     out.done()
     if local_changes:
-        raise CmdException(
-            'local changes in the tree. Use "refresh" or "reset --hard"'
-        )
+        raise CmdException('local changes in the tree. Use "refresh" or "reset --hard"')
 
 
 def check_head_top_equal(stack):
@@ -221,7 +214,7 @@ def parse_patches(patch_args, patch_list, boundary=0, ordered=False):
             if last > first:
                 pl = patch_list[first:last]
             else:
-                pl = patch_list[(last - 1):(first + 1)]
+                pl = patch_list[(last - 1) : (first + 1)]
                 pl.reverse()
         else:
             raise CmdException('Malformed patch name: %s' % name)
@@ -243,8 +236,9 @@ def name_email(address):
     if p[1]:
         return p
     else:
-        raise CmdException('Incorrect "name <email>"/"email (name)" string: %s'
-                           % address)
+        raise CmdException(
+            'Incorrect "name <email>"/"email (name)" string: %s' % address
+        )
 
 
 def address_or_alias(addr_pair):
@@ -314,9 +308,8 @@ def prepare_rebase(stack, cmd_name):
 
 
 def rebase(stack, iw, target_commit=None):
-    command = (
-        config.get('branch.%s.stgit.rebasecmd' % stack.name)
-        or config.get('stgit.rebasecmd')
+    command = config.get('branch.%s.stgit.rebasecmd' % stack.name) or config.get(
+        'stgit.rebasecmd'
     )
     if not command and not target_commit:
         raise CmdException('Default rebasing requires a commit')
@@ -357,10 +350,12 @@ def post_rebase(stack, applied, cmd_name, check_merged):
 # Patch description/e-mail/diff parsing
 #
 def __end_descr(line):
-    return (re.match(br'---\s*$', line) or
-            re.match(b'diff -', line) or
-            re.match(b'Index: ', line) or
-            re.match(br'--- \w', line))
+    return (
+        re.match(br'---\s*$', line)
+        or re.match(b'diff -', line)
+        or re.match(b'Index: ', line)
+        or re.match(br'--- \w', line)
+    )
 
 
 def __split_descr_diff(string):
@@ -437,7 +432,8 @@ def parse_patch(patch_data, contains_diff):
         descr = patch_data
         diff = None
     (descr, authname, authemail, authdate) = __parse_description(
-        decode_utf8_with_latin1(descr))
+        decode_utf8_with_latin1(descr)
+    )
 
     # we don't yet have an agreed place for the creation date.
     # Just return None
@@ -464,9 +460,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
     return cd.set_message(new_msg)
 
 
-def update_commit_data(
-    cd, message=None, author=None, sign_str=None, edit=False
-):
+def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):
     """Return a new CommitData object updated according to the command line
     options."""
     # Set the commit message from commandline.
@@ -482,9 +476,7 @@ def update_commit_data(
         sign_str = config.get("stgit.autosign")
     if sign_str:
         cd = cd.set_message(
-            add_trailer(
-                cd.message_str, sign_str, cd.committer.name, cd.committer.email
-            )
+            add_trailer(cd.message_str, sign_str, cd.committer.name, cd.committer.email)
         )
 
     if edit:
@@ -513,9 +505,12 @@ class DirectoryHasRepository(object):
         self.repository = StackRepository.default()
 
     def cd_to_topdir(self):
-        worktree_top = Run(
-            'git', 'rev-parse', '--show-cdup'
-        ).discard_stderr().raw_output().rstrip()
+        worktree_top = (
+            Run('git', 'rev-parse', '--show-cdup')
+            .discard_stderr()
+            .raw_output()
+            .rstrip()
+        )
         if worktree_top:
             os.chdir(worktree_top)
 
@@ -527,9 +522,9 @@ class DirectoryInWorktree(DirectoryHasRepository):
             raise DirectoryException('Not inside a git worktree')
 
     def _is_inside_worktree(self):
-        return Run(
-            'git', 'rev-parse', '--is-inside-work-tree'
-        ).output_one_line() == 'true'
+        return (
+            Run('git', 'rev-parse', '--is-inside-work-tree').output_one_line() == 'true'
+        )
 
 
 class DirectoryGotoTopLevel(DirectoryInWorktree):

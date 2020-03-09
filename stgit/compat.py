@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import email.utils
 import os
@@ -54,13 +49,16 @@ if sys.version_info[0] <= 2:
             return fsdecode_utf8(b)
 
     def environ_copy():
-        return dict((fsdecode_utf8(k), fsdecode_utf8(v))
-                    for k, v in os.environ.iteritems())
+        return dict(
+            (fsdecode_utf8(k), fsdecode_utf8(v)) for k, v in os.environ.iteritems()
+        )
 
     def rfc2822_format(dt):
         return text(email.utils.formatdate(time.mktime(dt.timetuple())))
 
+
 else:  # Python 3
+
     def fsdecode_utf8(b):
         if isinstance(b, bytes):
             try:
@@ -113,8 +111,7 @@ class file_wrapper(object):
 
 # Python 2 only has email.message_from_string(), but it behaves like Python 3's
 # email.message_from_bytes().
-message_from_bytes = getattr(email, 'message_from_bytes',
-                             email.message_from_string)
+message_from_bytes = getattr(email, 'message_from_bytes', email.message_from_string)
 
 
 def decode_utf8_with_latin1(input, errors='strict'):

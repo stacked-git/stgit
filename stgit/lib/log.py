@@ -100,12 +100,7 @@ The simplified log is exactly like the full log, except that its only
 parent is the (simplified) previous log entry, if any. It's purpose is
 mainly ease of visualization."""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
 
@@ -131,8 +126,7 @@ def log_ref(branch):
 class LogEntry(object):
     _max_parents = 16
 
-    def __init__(self, repo, prev, head, applied, unapplied, hidden,
-                 patches, message):
+    def __init__(self, repo, prev, head, applied, unapplied, hidden, patches, message):
         self._repo = repo
         self._prev = prev
         self._simplified = None
@@ -183,8 +177,7 @@ class LogEntry(object):
             unapplied=list(stack.patchorder.unapplied),
             hidden=list(stack.patchorder.hidden),
             patches=dict(
-                (pn, stack.patches.get(pn).commit)
-                for pn in stack.patchorder.all
+                (pn, stack.patches.get(pn).commit) for pn in stack.patchorder.all
             ),
             message=message,
         )
@@ -199,8 +192,7 @@ class LogEntry(object):
         try:
             version = int(version_str)
         except ValueError:
-            raise LogParseException(
-                'Malformed version number: %r' % version_str)
+            raise LogParseException('Malformed version number: %r' % version_str)
         if version < 1:
             raise LogException('Log is version %d, which is too old' % version)
         if version > 1:
@@ -230,8 +222,14 @@ class LogEntry(object):
                 pn, sha1 = [x.strip() for x in entry.split(':')]
                 lists[lst].append(pn)
                 patches[pn] = repo.get_commit(sha1)
-        return (prev, head, lists['Applied'], lists['Unapplied'],
-                lists['Hidden'], patches)
+        return (
+            prev,
+            head,
+            lists['Applied'],
+            lists['Unapplied'],
+            lists['Hidden'],
+            patches,
+        )
 
     @classmethod
     def from_commit(cls, repo, commit):
@@ -241,21 +239,17 @@ class LogEntry(object):
             perm, meta = commit.data.tree.data['meta']
         except KeyError:
             raise LogParseException('Not a stack log')
-        (
-            prev, head, applied, unapplied, hidden, patches
-        ) = cls._parse_metadata(repo, meta.data.bytes.decode('utf-8'))
-        lg = cls(
-            repo, prev, head, applied, unapplied, hidden, patches, message
+        (prev, head, applied, unapplied, hidden, patches) = cls._parse_metadata(
+            repo, meta.data.bytes.decode('utf-8')
         )
+        lg = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
         lg.commit = commit
         return lg
 
     def _metadata_string(self):
         lines = ['Version: 1']
         lines.append(
-            'Previous: %s' % (
-                'None' if self.prev is None else self.prev.commit.sha1
-            )
+            'Previous: %s' % ('None' if self.prev is None else self.prev.commit.sha1)
         )
         lines.append('Head: %s' % self.head.sha1)
         for lst, title in [
@@ -271,8 +265,9 @@ class LogEntry(object):
     def _parents(self):
         """Return the set of parents this log entry needs in order to be a
         descendant of all the commits it refers to."""
-        xp = set([self.head]) | set(self.patches[pn]
-                                    for pn in self.unapplied + self.hidden)
+        xp = set([self.head]) | set(
+            self.patches[pn] for pn in self.unapplied + self.hidden
+        )
         if self.applied:
             xp.add(self.patches[self.applied[-1]])
         if self.prev is not None:
@@ -281,28 +276,30 @@ class LogEntry(object):
         return xp
 
     def patch_file(self, cd):
-        metadata = '\n'.join([
-            'Bottom: %s' % cd.parent.data.tree.sha1,
-            'Top:    %s' % cd.tree.sha1,
-            'Author: %s' % cd.author.name_email,
-            'Date:   %s' % cd.author.date,
-            '',
-            cd.message_str,
-        ]).encode('utf-8')
+        metadata = '\n'.join(
+            [
+                'Bottom: %s' % cd.parent.data.tree.sha1,
+                'Top:    %s' % cd.tree.sha1,
+                'Author: %s' % cd.author.name_email,
+                'Date:   %s' % cd.author.date,
+                '',
+                cd.message_str,
+            ]
+        ).encode('utf-8')
         return self._repo.commit(BlobData(metadata))
 
     def _tree(self, metadata):
         if self.prev is None:
+
             def pf(c):
                 return self.patch_file(c.data)
+
         else:
             prev_top_tree = self.prev.commit.data.tree
             perm, prev_patch_tree = prev_top_tree.data['patches']
             # Map from Commit object to patch_file() results taken
             # from the previous log entry.
-            c2b = dict(
-                (self.prev.patches[pn], pf) for pn, pf in prev_patch_tree.data
-            )
+            c2b = dict((self.prev.patches[pn], pf) for pn, pf in prev_patch_tree.data)
 
             def pf(c):
                 r = c2b.get(c, None)
@@ -314,9 +311,7 @@ class LogEntry(object):
         return self._repo.commit(
             TreeData(
                 {
-                    'meta': self._repo.commit(
-                        BlobData(metadata.encode('utf-8'))
-                    ),
+                    'meta': self._repo.commit(BlobData(metadata.encode('utf-8'))),
                     'patches': self._repo.commit(TreeData(patches)),
                 }
             )
@@ -329,11 +324,7 @@ class LogEntry(object):
             CommitData(
                 tree=tree,
                 message=self.message,
-                parents=[
-                    prev.simplified
-                    for prev in [self.prev]
-                    if prev is not None
-                ]
+                parents=[prev.simplified for prev in [self.prev] if prev is not None],
             )
         )
         parents = list(self._parents())
@@ -341,16 +332,14 @@ class LogEntry(object):
             g = self._repo.commit(
                 CommitData(
                     tree=tree,
-                    parents=parents[-self._max_parents:],
+                    parents=parents[-self._max_parents :],
                     message='Stack log parent grouping',
                 )
             )
-            parents[-self._max_parents:] = [g]
+            parents[-self._max_parents :] = [g]
         self.commit = self._repo.commit(
             CommitData(
-                tree=tree,
-                message=self.message,
-                parents=[self.simplified] + parents,
+                tree=tree, message=self.message, parents=[self.simplified] + parents,
             )
         )
 
@@ -364,8 +353,10 @@ def get_log_entry(repo, ref, commit):
 
 def same_state(log1, log2):
     """Check whether two log entries describe the same current state."""
-    s = [[lg.head, lg.applied, lg.unapplied, lg.hidden, lg.patches]
-         for lg in [log1, log2]]
+    s = [
+        [lg.head, lg.applied, lg.unapplied, lg.hidden, lg.patches]
+        for lg in [log1, log2]
+    ]
     return s[0] == s[1]
 
 
@@ -542,5 +533,5 @@ def log_external_mods(stack):
                 '',
                 'Modifications by tools other than StGit (e.g. git).',
             ]
-        )
+        ),
     )

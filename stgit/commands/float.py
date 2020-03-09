@@ -1,21 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import re
 import sys
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -37,8 +28,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Push patches to the top, even if applied'
 kind = 'stack'
-usage = ['[--] <patches>',
-         '-s <series>']
+usage = ['[--] <patches>', '-s <series>']
 description = """
 Float a patch or range of patches to be the top-most applied patches.
 The patches to be floated may currently be either applied or unapplied.
@@ -86,16 +76,12 @@ def func(parser, options, args):
     if not patches:
         raise CmdException('No patches to float')
 
-    applied = [
-        p for p in stack.patchorder.applied if p not in patches
-    ] + patches
+    applied = [p for p in stack.patchorder.applied if p not in patches] + patches
     unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(
-        stack, 'float', check_clean_iw=clean_iw
-    )
+    trans = transaction.StackTransaction(stack, 'float', check_clean_iw=clean_iw)
 
     try:
         trans.reorder_patches(applied, unapplied, iw=iw)

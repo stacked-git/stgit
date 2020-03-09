@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
 
@@ -60,9 +55,7 @@ class Blob(GitObject):
     @property
     def data(self):
         type_, content = self._repository.cat_object(self.sha1)
-        assert type_ == 'blob', (
-            'expected "blob", got "%s" for %s' % (type_, self.sha1)
-        )
+        assert type_ == 'blob', 'expected "blob", got "%s" for %s' % (type_, self.sha1)
         return BlobData(content)
 
 
@@ -75,9 +68,7 @@ class TreeData(Immutable):
         objects."""
         self._entries = {}
         for name, po in entries.items():
-            assert '/' not in name, (
-                'tree entry name contains slash: %s' % name
-            )
+            assert '/' not in name, 'tree entry name contains slash: %s' % name
             if isinstance(po, GitObject):
                 perm, obj = po.default_perm, po
             else:
@@ -138,9 +129,9 @@ class Tree(GitObject):
         if self._data is None:
             self._data = TreeData.parse(
                 self._repository,
-                self._repository.run(
-                    ['git', 'ls-tree', '-z', self.sha1]
-                ).output_lines('\0'),
+                self._repository.run(['git', 'ls-tree', '-z', self.sha1]).output_lines(
+                    '\0'
+                ),
             )
         return self._data
 
@@ -152,19 +143,12 @@ class CommitData(Immutable):
     """Represents the data contents of a git commit object."""
 
     def __init__(
-        self,
-        tree,
-        parents,
-        message,
-        encoding=None,
-        author=None,
-        committer=None
+        self, tree, parents, message, encoding=None, author=None, committer=None
     ):
         self.tree = tree
         self.parents = parents
         self.encoding = (
-            encoding if encoding is not None
-            else config.get('i18n.commitencoding')
+            encoding if encoding is not None else config.get('i18n.commitencoding')
         )
         if isinstance(message, bytes):
             self.message = message
@@ -215,9 +199,7 @@ class CommitData(Immutable):
     @property
     def committer(self):
         if isinstance(self._committer, bytes):
-            self._committer = Person.parse(
-                self._committer.decode(self.encoding)
-            )
+            self._committer = Person.parse(self._committer.decode(self.encoding))
         return self._committer
 
     def set_tree(self, tree):
@@ -305,9 +287,7 @@ class CommitData(Immutable):
                     tree = repository.get_tree(value_b.decode('utf-8'))
                     required_keys.remove(key)
                 elif key == 'parent':
-                    parents.append(
-                        repository.get_commit(value_b.decode('utf-8'))
-                    )
+                    parents.append(repository.get_commit(value_b.decode('utf-8')))
                 elif key == 'author':
                     author = value_b
                     required_keys.remove(key)
@@ -341,8 +321,9 @@ class Commit(GitObject):
     def data(self):
         if self._data is None:
             type_, content = self._repository.cat_object(self.sha1)
-            assert type_ == 'commit', (
-                'expected "commit", got "%s" for %s' % (type_, self.sha1)
+            assert type_ == 'commit', 'expected "commit", got "%s" for %s' % (
+                type_,
+                self.sha1,
             )
             self._data = CommitData.parse(self._repository, content)
         return self._data

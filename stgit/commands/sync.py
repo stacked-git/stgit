@@ -1,21 +1,12 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import os
 import re
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryGotoTopLevel,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryGotoTopLevel, parse_patches
 from stgit.lib.git import CommitData
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
@@ -49,10 +40,7 @@ in the series must apply cleanly."""
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
-        '-a',
-        '--all',
-        action='store_true',
-        short='Synchronise all the applied patches',
+        '-a', '--all', action='store_true', short='Synchronise all the applied patches',
     ),
     opt(
         '-B',
@@ -60,12 +48,7 @@ options = [
         args=['stg_branches'],
         short='Syncronise patches with BRANCH',
     ),
-    opt(
-        '-s',
-        '--series',
-        args=['files'],
-        short='Syncronise patches with SERIES',
-    ),
+    opt('-s', '--series', args=['files'], short='Syncronise patches with SERIES',),
 ]
 
 directory = DirectoryGotoTopLevel()
@@ -105,9 +88,7 @@ def __series_merge_patch(patchdir, stack, commit, pname):
     new_tree = iw.index.write_tree()
     stack.repository.commit(
         CommitData(
-            tree=new_tree,
-            message='temp commit for applying patch',
-            parents=[base],
+            tree=new_tree, message='temp commit for applying patch', parents=[base],
         )
     )
     iw.checkout(new_tree=orig_head.data.tree, old_tree=new_tree)
@@ -133,6 +114,7 @@ def func(parser, options, args):
 
         def merge_patch(commit, pname):
             return __branch_merge_patch(remote_stack, stack, commit, pname)
+
     elif options.series:
         patchdir = os.path.dirname(options.series)
 
@@ -146,6 +128,7 @@ def func(parser, options, args):
 
         def merge_patch(commit, pname):
             return __series_merge_patch(patchdir, stack, commit, pname)
+
     else:
         raise CmdException('No remote branch or series specified')
 
@@ -155,9 +138,7 @@ def func(parser, options, args):
     if options.all:
         patches = applied
     elif len(args) != 0:
-        patches = parse_patches(
-            args, applied + unapplied, len(applied), ordered=True
-        )
+        patches = parse_patches(args, applied + unapplied, len(applied), ordered=True)
     elif applied:
         patches = [applied[-1]]
     else:
@@ -175,7 +156,7 @@ def func(parser, options, args):
     # pop to the one before the first patch to be synchronised
     first_patch = sync_patches[0]
     if first_patch in applied:
-        to_pop = applied[applied.index(first_patch) + 1:]
+        to_pop = applied[applied.index(first_patch) + 1 :]
         if to_pop:
             trans = StackTransaction(stack, 'sync (pop)', check_clean_iw=iw)
             popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
@@ -206,9 +187,7 @@ def func(parser, options, args):
             # the actual merging (either from a branch or an external file)
             tree = merge_patch(commit, p)
             if tree:
-                trans.patches[p] = commit.data.set_tree(tree).commit(
-                    repository
-                )
+                trans.patches[p] = commit.data.set_tree(tree).commit(repository)
                 out.done('updated')
             else:
                 out.done()

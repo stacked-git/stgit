@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 
@@ -47,9 +42,7 @@ class Index(object):
 
     @property
     def env(self):
-        return add_dict(
-            self._repository.env, {'GIT_INDEX_FILE': self._filename}
-        )
+        return add_dict(self._repository.env, {'GIT_INDEX_FILE': self._filename})
 
     def run(self, args, env=()):
         return Run(*args).env(add_dict(self.env, env))
@@ -63,9 +56,7 @@ class Index(object):
         @rtype: L{Tree}"""
         try:
             return self._repository.get_tree(
-                self.run(['git', 'write-tree'])
-                .discard_stderr()
-                .output_one_line()
+                self.run(['git', 'write-tree']).discard_stderr().output_one_line()
             )
         except RunException:
             raise MergeException('Conflicting merge')
@@ -98,9 +89,7 @@ class Index(object):
         # files. It is also sufficient, since the repository already
         # contains all involved objects; in other words, we don't have
         # to use --binary.
-        self.apply(
-            self._repository.diff_tree(tree1, tree2, ['--full-index']), quiet
-        )
+        self.apply(self._repository.diff_tree(tree1, tree2, ['--full-index']), quiet)
 
     def merge(self, base, ours, theirs, current=None):
         """Use the index (and only the index) to do a 3-way merge of the
@@ -150,9 +139,9 @@ class Index(object):
     def conflicts(self):
         """The set of conflicting paths."""
         paths = set()
-        for line in self.run(
-            ['git', 'ls-files', '-z', '--unmerged']
-        ).output_lines('\0'):
+        for line in self.run(['git', 'ls-files', '-z', '--unmerged']).output_lines(
+            '\0'
+        ):
             stat, path = line.split('\t', 1)
             paths.add(path)
         return paths
@@ -203,9 +192,7 @@ class IndexAndWorktree(object):
 
     def checkout_hard(self, tree):
         assert isinstance(tree, (Commit, Tree))
-        self.run(
-            ['git', 'read-tree', '--reset', '-u', tree.sha1]
-        ).discard_output()
+        self.run(['git', 'read-tree', '--reset', '-u', tree.sha1]).discard_output()
 
     def checkout(self, old_tree, new_tree):
         # TODO: Optionally do a 3-way instead of doing nothing when we
@@ -233,14 +220,7 @@ class IndexAndWorktree(object):
         assert isinstance(theirs, Tree)
         try:
             r = self.run(
-                [
-                    'git',
-                    'merge-recursive',
-                    base.sha1,
-                    '--',
-                    ours.sha1,
-                    theirs.sha1,
-                ],
+                ['git', 'merge-recursive', base.sha1, '--', ours.sha1, theirs.sha1],
                 env={
                     'GITHEAD_%s' % base.sha1: 'ancestor',
                     'GITHEAD_%s' % ours.sha1: 'current',
@@ -312,7 +292,7 @@ class IndexAndWorktree(object):
         if reject:
             cmd.append('--reject')
         if strip is not None:
-            cmd.append('-p%s' % (strip, ))
+            cmd.append('-p%s' % (strip,))
         try:
             r = self.run(cmd).encoding(None).raw_input(patch_bytes)
             if quiet:
@@ -346,9 +326,9 @@ class IndexAndWorktree(object):
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""
-        self.run(
-            ['git', 'update-index', '--remove', '-z', '--stdin']
-        ).input_nulterm(paths).discard_output()
+        self.run(['git', 'update-index', '--remove', '-z', '--stdin']).input_nulterm(
+            paths
+        ).discard_output()
 
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""

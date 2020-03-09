@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse, utils
 from stgit.argparse import opt
@@ -66,67 +61,65 @@ between the other patch and the temp patch, and two undo steps will
 additionally get rid of the temp patch."""
 
 args = ['dirty_files']
-options = [
-    opt(
-        '-u',
-        '--update',
-        action='store_true',
-        short='Only update the current patch files',
-    ),
-    opt(
-        '-i',
-        '--index',
-        action='store_true',
-        short='Refresh from index instead of worktree',
-        long="""
+options = (
+    [
+        opt(
+            '-u',
+            '--update',
+            action='store_true',
+            short='Only update the current patch files',
+        ),
+        opt(
+            '-i',
+            '--index',
+            action='store_true',
+            short='Refresh from index instead of worktree',
+            long="""
         Instead of setting the patch top to the current contents of
         the worktree, set it to the current contents of the index.""",
-    ),
-    opt(
-        '-F',
-        '--force',
-        action='store_true',
-        short='Force refresh even if index is dirty',
-        long="""
+        ),
+        opt(
+            '-F',
+            '--force',
+            action='store_true',
+            short='Force refresh even if index is dirty',
+            long="""
         Instead of warning the user when some work has already been staged
         (such as with git add interactive mode) force a full refresh.""",
-    ),
-    opt(
-        '-p',
-        '--patch',
-        args=['other_applied_patches', 'unapplied_patches'],
-        short='Refresh (applied) PATCH instead of the top patch',
-    ),
-    opt(
-        '-e',
-        '--edit',
-        action='store_true',
-        short='Invoke an editor for the patch description',
-    ),
-    opt(
-        '-a',
-        '--annotate',
-        metavar='NOTE',
-        short='Annotate the patch log entry',
-    ),
-    opt(
-        '-s',
-        '--submodules',
-        action='store_true',
-        short='Include submodules when refreshing patch contents',
-    ),
-    opt(
-        '',
-        '--no-submodules',
-        action='store_false',
-        dest='submodules',
-        short='Exclude submodules when refreshing patch contents',
+        ),
+        opt(
+            '-p',
+            '--patch',
+            args=['other_applied_patches', 'unapplied_patches'],
+            short='Refresh (applied) PATCH instead of the top patch',
+        ),
+        opt(
+            '-e',
+            '--edit',
+            action='store_true',
+            short='Invoke an editor for the patch description',
+        ),
+        opt('-a', '--annotate', metavar='NOTE', short='Annotate the patch log entry',),
+        opt(
+            '-s',
+            '--submodules',
+            action='store_true',
+            short='Include submodules when refreshing patch contents',
+        ),
+        opt(
+            '',
+            '--no-submodules',
+            action='store_false',
+            dest='submodules',
+            short='Exclude submodules when refreshing patch contents',
+        ),
+    ]
+    + (
+        argparse.message_options(save_template=False)
+        + argparse.hook_options()
+        + argparse.sign_options()
+        + argparse.author_options()
     )
-] + (
-    argparse.message_options(save_template=False)
-    + argparse.hook_options()
-    + argparse.sign_options()
-    + argparse.author_options()
 )
 
 directory = DirectoryHasRepository()
@@ -142,7 +135,8 @@ def get_patch(stack, given_patch):
     else:
         if not stack.patchorder.applied:
             raise CmdException(
-                'Cannot refresh top patch because no patches are applied')
+                'Cannot refresh top patch because no patches are applied'
+            )
         return stack.patchorder.applied[-1]
 
 
@@ -151,8 +145,7 @@ def list_files(stack, patch_name, args, index, update, submodules):
     if index:
         # --index: Don't update the index.
         return set()
-    paths = stack.repository.default_iw.changed_files(
-        stack.head.data.tree, args or [])
+    paths = stack.repository.default_iw.changed_files(stack.head.data.tree, args or [])
     if update:
         # --update: Restrict update to the paths that were already
         # part of the patch.
@@ -173,11 +166,13 @@ def write_tree(stack, paths, temp_index):
     """Possibly update the index, and then write its tree.
     @return: The written tree.
     @rtype: L{Tree<stgit.git.Tree>}"""
+
     def go(index):
         if paths:
             iw = IndexAndWorktree(index, stack.repository.default_worktree)
             iw.update_index(paths)
         return index.write_tree()
+
     if temp_index:
         index = stack.repository.temp_index()
         try:
@@ -196,9 +191,7 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
     tree = write_tree(stack, paths, temp_index)
     commit = stack.repository.commit(
         CommitData(
-            tree=tree,
-            parents=[stack.head],
-            message='Refresh of %s' % patch_name,
+            tree=tree, parents=[stack.head], message='Refresh of %s' % patch_name,
         )
     )
     temp_name = utils.make_patch_name('refresh-temp', stack.patches.exists)
@@ -207,7 +200,7 @@ def make_temp_patch(stack, patch_name, paths, temp_index):
     trans.applied.append(temp_name)
     return (
         trans.run(stack.repository.default_iw, print_current_patch=False),
-        temp_name
+        temp_name,
     )
 
 
@@ -223,7 +216,7 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
     temp_absorbed = False
     try:
         # Pop any patch on top of the patch we're refreshing.
-        to_pop = trans.applied[trans.applied.index(patch_name) + 1:]
+        to_pop = trans.applied[trans.applied.index(patch_name) + 1 :]
         if len(to_pop) > 1:
             popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
             assert not popped_extra  # no other patches were popped
@@ -235,10 +228,9 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
         temp_cd = trans.patches[temp_name].data
         assert trans.patches[patch_name] == temp_cd.parent
         trans.patches[patch_name] = trans.stack.repository.commit(
-            edit_fun(trans.patches[patch_name].data.set_tree(temp_cd.tree)))
-        popped_extra = trans.delete_patches(
-            lambda pn: pn == temp_name, quiet=True
+            edit_fun(trans.patches[patch_name].data.set_tree(temp_cd.tree))
         )
+        popped_extra = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
         assert not popped_extra  # the temp patch was topmost
         temp_absorbed = True
 
@@ -273,18 +265,15 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
     patch_cd = trans.patches[patch_name].data
     temp_cd = trans.patches[temp_name].data
     new_tree = trans.stack.repository.simple_merge(
-        base=temp_cd.parent.data.tree,
-        ours=patch_cd.tree,
-        theirs=temp_cd.tree,
+        base=temp_cd.parent.data.tree, ours=patch_cd.tree, theirs=temp_cd.tree,
     )
     if new_tree:
         # It worked. Refresh the patch with the new tree, and delete
         # the temp patch.
         trans.patches[patch_name] = trans.stack.repository.commit(
-            edit_fun(patch_cd.set_tree(new_tree)))
-        popped_extra = trans.delete_patches(
-            lambda pn: pn == temp_name, quiet=True
+            edit_fun(patch_cd.set_tree(new_tree))
         )
+        popped_extra = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
         assert not popped_extra  # the temp patch was not applied
         return True
     else:
@@ -306,12 +295,18 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     else:
         absorb_func = absorb_unapplied
     if absorb_func(trans, iw, patch_name, temp_name, edit_fun):
+
         def info_msg():
             pass
+
     else:
+
         def info_msg():
-            out.warn('The new changes did not apply cleanly to %s.'
-                     % patch_name, 'They were saved in %s.' % temp_name)
+            out.warn(
+                'The new changes did not apply cleanly to %s.' % patch_name,
+                'They were saved in %s.' % temp_name,
+            )
+
     r = trans.run(iw)
     info_msg()
     return r
@@ -323,35 +318,28 @@ def func(parser, options, args):
     # Catch illegal argument combinations.
     path_limiting = bool(args or options.update)
     if options.index and path_limiting:
-        raise CmdException(
-            'Only full refresh is available with the --index option')
+        raise CmdException('Only full refresh is available with the --index option')
 
     if options.index and options.force:
-        raise CmdException(
-            'You cannot --force a full refresh when using --index mode')
+        raise CmdException('You cannot --force a full refresh when using --index mode')
 
     if options.update and options.submodules:
         raise CmdException(
-            '--submodules is meaningless when only updating modified files')
+            '--submodules is meaningless when only updating modified files'
+        )
 
     if options.index and options.submodules:
-        raise CmdException(
-            '--submodules is meaningless when keeping the current index')
+        raise CmdException('--submodules is meaningless when keeping the current index')
 
     # If submodules was not specified on the command line, infer a default
     # from configuration.
     if options.submodules is None:
-        options.submodules = (config.getbool('stgit.refreshsubmodules'))
+        options.submodules = config.getbool('stgit.refreshsubmodules')
 
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
     paths = list_files(
-        stack,
-        patch_name,
-        args,
-        options.index,
-        options.update,
-        options.submodules,
+        stack, patch_name, args, options.index, options.update, options.submodules,
     )
 
     # Make sure there are no conflicts in the files we want to
@@ -361,8 +349,10 @@ def func(parser, options, args):
 
     # Make sure the index is clean before performing a full refresh
     if not options.index and not options.force:
-        if not (stack.repository.default_index.is_clean(stack.head) or
-                stack.repository.default_iw.worktree_clean()):
+        if not (
+            stack.repository.default_index.is_clean(stack.head)
+            or stack.repository.default_iw.worktree_clean()
+        ):
             raise CmdException(
                 'The index is dirty. Did you mean --index? '
                 'To force a full refresh use --force.'
@@ -370,16 +360,19 @@ def func(parser, options, args):
 
     # Commit index to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(
-        stack, patch_name, paths, temp_index=path_limiting)
+        stack, patch_name, paths, temp_index=path_limiting
+    )
     if retval != utils.STGIT_SUCCESS:
         return retval
 
     def edit_fun(cd):
         orig_msg = cd.message
         cd = auto_edit_patch(
-            stack.repository, cd,
+            stack.repository,
+            cd,
             msg=(
-                None if options.message is None
+                None
+                if options.message is None
                 else options.message.encode(config.get('i18n.commitencoding'))
             ),
             author=options.author,
@@ -395,5 +388,4 @@ def func(parser, options, args):
         # Refresh the committer information
         return cd.set_committer(None)
 
-    return absorb(stack, patch_name, temp_name, edit_fun,
-                  annotate=options.annotate)
+    return absorb(stack, patch_name, temp_name, edit_fun, annotate=options.annotate)

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.config import config
 from stgit.exception import StgException
@@ -84,9 +79,7 @@ class Branch(object):
 
     def switch_to(self):
         try:
-            self.repository.run(
-                ['git', 'checkout', self.name]
-            ).discard_output()
+            self.repository.run(['git', 'checkout', self.name]).discard_output()
         except RunException:
             raise BranchException('%s: failed to switch to branch' % self.name)
         self.repository.refs.reset_cache()

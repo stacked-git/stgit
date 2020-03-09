@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse
 from stgit.argparse import opt
@@ -45,11 +40,7 @@ command. Use the 'diff' or 'status' commands for these files."""
 args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = [
     opt('-s', '--stat', action='store_true', short='Show the diffstat'),
-    opt(
-        '--bare',
-        action='store_true',
-        short='Bare file names (useful for scripting)',
-    ),
+    opt('--bare', action='store_true', short='Bare file names (useful for scripting)',),
 ] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository()

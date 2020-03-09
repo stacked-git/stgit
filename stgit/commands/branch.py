@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import time
 
@@ -45,17 +40,19 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Branch operations: switch, list, create, rename, delete, ...'
 kind = 'stack'
-usage = ['',
-         '[--merge] [--] <branch>',
-         '--list',
-         '--create [--] <new-branch> [<committish>]',
-         '--clone [--] [<new-branch>]',
-         '--rename [--] [<old-name>] <new-name>',
-         '--protect [--] [<branch>]',
-         '--unprotect [--] [<branch>]',
-         '--delete [--force] [--] <branch>',
-         '--cleanup [--force] [--] [<branch>]',
-         '--description=<description> [--] [<branch>]']
+usage = [
+    '',
+    '[--merge] [--] <branch>',
+    '--list',
+    '--create [--] <new-branch> [<committish>]',
+    '--clone [--] [<new-branch>]',
+    '--rename [--] [<old-name>] <new-name>',
+    '--protect [--] [<branch>]',
+    '--unprotect [--] [<branch>]',
+    '--delete [--force] [--] <branch>',
+    '--cleanup [--force] [--] [<branch>]',
+    '--description=<description> [--] [<branch>]',
+]
 description = """
 Create, clone, switch between, rename, or delete development branches
 within a git repository.
@@ -113,12 +110,7 @@ options = [
         of the current branch. The parent information of the new
         branch is copied from the current branch.""",
     ),
-    opt(
-        '-r',
-        '--rename',
-        action='store_true',
-        short='Rename an existing branch',
-    ),
+    opt('-r', '--rename', action='store_true', short='Rename an existing branch',),
     opt(
         '-p',
         '--protect',
@@ -226,13 +218,9 @@ def __delete_branch(doomed_name, force=False):
 
     if stack:
         if stack.protected:
-            raise CmdException(
-                'This branch is protected. Delete is not permitted'
-            )
+            raise CmdException('This branch is protected. Delete is not permitted')
         if not force and stack.patchorder.all:
-            raise CmdException(
-                'Cannot delete: the series still contains patches'
-            )
+            raise CmdException('Cannot delete: the series still contains patches')
 
     out.start('Deleting branch "%s"' % doomed_name)
     if stack:
@@ -244,13 +232,9 @@ def __delete_branch(doomed_name, force=False):
 def __cleanup_branch(name, force=False):
     stack = directory.repository.get_stack(name)
     if stack.protected:
-        raise CmdException(
-            'This branch is protected. Clean up is not permitted'
-        )
+        raise CmdException('This branch is protected. Clean up is not permitted')
     if not force and stack.patchorder.all:
-        raise CmdException(
-            'Cannot clean up: the series still contains patches'
-        )
+        raise CmdException('Cannot clean up: the series still contains patches')
 
     out.start('Cleaning up branch "%s"' % name)
     stack.cleanup()
@@ -268,17 +252,15 @@ def __create_branch(branch_name, committish):
                 ['git', 'rev-parse', '--symbolic-full-name', committish]
             ).output_one_line()
 
-            if (
-                branchpoint.startswith('refs/heads/')
-                or branchpoint.startswith('refs/remotes/')
+            if branchpoint.startswith('refs/heads/') or branchpoint.startswith(
+                'refs/remotes/'
             ):
                 # committish is a valid ref from the branchpoint setting above
                 parentbranch = committish
 
         except RunException:
             out.info(
-                'Do not know how to determine parent branch from "%s"'
-                % committish
+                'Do not know how to determine parent branch from "%s"' % committish
             )
             # exception in branch = rev_parse() leaves branchpoint unbound
             branchpoint = None
@@ -289,8 +271,7 @@ def __create_branch(branch_name, committish):
             out.info('Recording "%s" as parent branch' % parentbranch)
         else:
             out.info(
-                'Do not know how to determine parent branch from "%s"'
-                % committish
+                'Do not know how to determine parent branch from "%s"' % committish
             )
     else:
         try:
@@ -398,9 +379,7 @@ def func(parser, options, args):
         clone.switch_to()
         out.done()
 
-        log.copy_log(
-            log.default_repo(), cur_branch.name, clone.name, 'branch --clone'
-        )
+        log.copy_log(log.default_repo(), cur_branch.name, clone.name, 'branch --clone')
         return
 
     elif options.delete:
@@ -455,9 +434,7 @@ def func(parser, options, args):
         try:
             stack = repository.get_stack(branch_name)
         except StackException:
-            raise CmdException(
-                'Branch "%s" is not controlled by StGIT' % branch_name
-            )
+            raise CmdException('Branch "%s" is not controlled by StGIT' % branch_name)
 
         out.start('Protecting branch "%s"' % branch_name)
         stack.protected = True
@@ -495,9 +472,7 @@ def func(parser, options, args):
         try:
             stack = repository.get_stack(branch_name)
         except StackException:
-            raise CmdException(
-                'Branch "%s" is not controlled by StGIT' % branch_name
-            )
+            raise CmdException('Branch "%s" is not controlled by StGIT' % branch_name)
 
         out.info('Unprotecting branch "%s"' % branch_name)
         stack.protected = False

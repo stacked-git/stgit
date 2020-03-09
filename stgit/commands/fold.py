@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import os
@@ -137,10 +132,7 @@ def func(parser, options, args):
         )
     else:
         apply_patch(
-            stack,
-            diff,
-            strip=options.strip,
-            reject=options.reject,
+            stack, diff, strip=options.strip, reject=options.reject,
         )
 
     out.done()

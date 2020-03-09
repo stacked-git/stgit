@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 
@@ -86,8 +81,7 @@ def update_to_current_format_version(repository, branch):
             patches.extend(f.readlines())
         for patch in patches:
             patch = patch.strip()
-            os.rename(os.path.join(branch_dir, patch),
-                      os.path.join(patch_dir, patch))
+            os.rename(os.path.join(branch_dir, patch), os.path.join(patch_dir, patch))
             topfield = os.path.join(patch_dir, patch, 'top')
             if os.path.isfile(topfield):
                 top = utils.read_string(topfield)
@@ -131,6 +125,8 @@ def update_to_current_format_version(repository, branch):
     # Make sure we're at the latest version.
     fv = get_format_version()
     if fv not in [None, FORMAT_VERSION]:
-        raise StackException('Branch %s is at format version %d, expected %d'
-                             % (branch, fv, FORMAT_VERSION))
+        raise StackException(
+            'Branch %s is at format version %d, expected %d'
+            % (branch, fv, FORMAT_VERSION)
+        )
     return fv is not None  # true if branch is initialized

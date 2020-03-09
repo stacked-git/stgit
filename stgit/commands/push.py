@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import keep_option, merged_option, opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -46,33 +37,29 @@ The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
 args = [patch_range('unapplied_patches')]
-options = [
-    opt(
-        '-a',
-        '--all',
-        action='store_true',
-        short='Push all the unapplied patches',
-    ),
-    opt(
-        '-n',
-        '--number',
-        type='int',
-        short='Push the specified number of patches',
-        long='''
+options = (
+    [
+        opt(
+            '-a', '--all', action='store_true', short='Push all the unapplied patches',
+        ),
+        opt(
+            '-n',
+            '--number',
+            type='int',
+            short='Push the specified number of patches',
+            long='''
         Push the specified number of patches.
 
         With a negative number, push all but that many patches.''',
-    ),
-    opt(
-        '--reverse',
-        action='store_true',
-        short='Push the patches in reverse order',
-    ),
-    opt(
-        '--set-tree',
-        action='store_true',
-        short='Push the patch with the original tree',
-        long="""
+        ),
+        opt(
+            '--reverse', action='store_true', short='Push the patches in reverse order',
+        ),
+        opt(
+            '--set-tree',
+            action='store_true',
+            short='Push the patch with the original tree',
+            long="""
         Push the patches, but don't perform a merge. Instead, the
         resulting tree will be identical to the tree that the patch
         previously created.
@@ -82,8 +69,11 @@ options = [
         changes. Pushing the original patch with '--set-tree' will
         avoid conflicts and only the remaining changes will be in the
         patch.""",
-    )
-] + keep_option() + merged_option()
+        ),
+    ]
+    + keep_option()
+    + merged_option()
+)
 
 directory = DirectoryHasRepository()
 
@@ -93,8 +83,7 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'push',
-                                         check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(stack, 'push', check_clean_iw=clean_iw)
 
     if options.number == 0:
         # explicitly allow this without any warning/error message
@@ -106,7 +95,7 @@ def func(parser, options, args):
     if options.all:
         patches = list(trans.unapplied)
     elif options.number is not None:
-        patches = trans.unapplied[:options.number]
+        patches = trans.unapplied[: options.number]
     elif not args:
         patches = [trans.unapplied[0]]
     else:
@@ -119,10 +108,8 @@ def func(parser, options, args):
                 raise e
             else:
                 raise CmdException(
-                    'Patch%s already applied: %s' % (
-                        'es' if len(patches) > 1 else '',
-                        ', '.join(patches)
-                    )
+                    'Patch%s already applied: %s'
+                    % ('es' if len(patches) > 1 else '', ', '.join(patches))
                 )
 
     assert patches
@@ -140,8 +127,9 @@ def func(parser, options, args):
             else:
                 merged = set()
             for pn in patches:
-                trans.push_patch(pn, iw, allow_interactive=True,
-                                 already_merged=pn in merged)
+                trans.push_patch(
+                    pn, iw, allow_interactive=True, already_merged=pn in merged
+                )
         except transaction.TransactionHalted:
             pass
     return trans.run(iw)

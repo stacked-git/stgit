@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse
 from stgit.commands.common import (
@@ -51,9 +46,7 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(
-        stack, 'goto', check_clean_iw=clean_iw
-    )
+    trans = transaction.StackTransaction(stack, 'goto', check_clean_iw=clean_iw)
 
     if patch not in trans.all_patches:
         candidate = get_patch_from_list(patch, trans.all_patches)
@@ -62,12 +55,12 @@ def func(parser, options, args):
         patch = candidate
 
     if patch in trans.applied:
-        to_pop = set(trans.applied[trans.applied.index(patch) + 1:])
+        to_pop = set(trans.applied[trans.applied.index(patch) + 1 :])
         popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
         assert not popped_extra
     elif patch in trans.unapplied:
         try:
-            to_push = trans.unapplied[:trans.unapplied.index(patch) + 1]
+            to_push = trans.unapplied[: trans.unapplied.index(patch) + 1]
             if options.merged:
                 merged = set(trans.check_merged(to_push))
             else:

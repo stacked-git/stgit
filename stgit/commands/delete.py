@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -86,20 +77,20 @@ def func(parser, options, args):
         parser.error('No patches specified')
 
     if options.spill:
-        if set(stack.patchorder.applied[-len(patches):]) != patches:
+        if set(stack.patchorder.applied[-len(patches) :]) != patches:
             parser.error('Can only spill topmost applied patches')
         iw = None  # don't touch index+worktree
 
     def allow_conflicts(trans):
         # Allow conflicts if the topmost patch stays the same.
         if stack.patchorder.applied:
-            return (trans.applied
-                    and trans.applied[-1] == stack.patchorder.applied[-1])
+            return trans.applied and trans.applied[-1] == stack.patchorder.applied[-1]
         else:
             return not trans.applied
 
-    trans = transaction.StackTransaction(stack, 'delete',
-                                         allow_conflicts=allow_conflicts)
+    trans = transaction.StackTransaction(
+        stack, 'delete', allow_conflicts=allow_conflicts
+    )
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:

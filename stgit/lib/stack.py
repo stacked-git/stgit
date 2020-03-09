@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 import shutil
@@ -47,6 +42,7 @@ class Patch(object):
 
     def _write_compat_files(self, new_commit, msg):
         """Write files used by the old infrastructure."""
+
         def write(name, val, multiline=False):
             fn = os.path.join(self._compat_dir, name)
             fn = fsencode_utf8(fn)
@@ -144,9 +140,7 @@ class PatchOrder(object):
         self._lists = {}
 
     def _read_file(self, fn):
-        return tuple(utils.read_strings(
-            os.path.join(self._stack.directory, fn))
-        )
+        return tuple(utils.read_strings(os.path.join(self._stack.directory, fn)))
 
     def _write_file(self, fn, val):
         utils.write_strings(os.path.join(self._stack.directory, fn), val)
@@ -267,16 +261,12 @@ class Stack(Branch):
 
     @property
     def directory(self):
-        return os.path.join(
-            self.repository.directory, self._repo_subdir, self.name
-        )
+        return os.path.join(self.repository.directory, self._repo_subdir, self.name)
 
     @property
     def base(self):
         if self.patchorder.applied:
-            return self.patches.get(
-                self.patchorder.applied[0]
-            ).commit.data.parent
+            return self.patches.get(self.patchorder.applied[0]).commit.data.parent
         else:
             return self.head
 
@@ -339,26 +329,18 @@ class Stack(Branch):
             patch_commit_id = self.repository.refs.get(old_ref).sha1
             log_commit_id = self.repository.refs.get(old_log_ref).sha1
 
-            ref_updates += 'update %s %s %s\n' % (
-                new_ref, patch_commit_id, empty_id
-            )
-            ref_updates += 'update %s %s %s\n' % (
-                new_log_ref, log_commit_id, empty_id
-            )
+            ref_updates += 'update %s %s %s\n' % (new_ref, patch_commit_id, empty_id)
+            ref_updates += 'update %s %s %s\n' % (new_log_ref, log_commit_id, empty_id)
             ref_updates += 'delete %s %s\n' % (old_ref, patch_commit_id)
             ref_updates += 'delete %s %s\n' % (old_log_ref, log_commit_id)
-        self.repository.run(
-            ['git', 'update-ref', '--stdin']
-        ).raw_input(ref_updates).discard_output()
+        self.repository.run(['git', 'update-ref', '--stdin']).raw_input(
+            ref_updates
+        ).discard_output()
 
-        config.rename_section(
-            'branch.%s.stgit' % old_name, 'branch.%s.stgit' % name
-        )
+        config.rename_section('branch.%s.stgit' % old_name, 'branch.%s.stgit' % name)
 
         utils.rename(
-            os.path.join(self.repository.directory, self._repo_subdir),
-            old_name,
-            name,
+            os.path.join(self.repository.directory, self._repo_subdir), old_name, name,
         )
 
     def rename_patch(self, old_name, new_name, msg='rename'):
@@ -397,8 +379,9 @@ class Stack(Branch):
         compat_dir = os.path.join(dir, 'patches')
         utils.create_dirs(compat_dir)
         PatchOrder.create(dir)
-        config.set(stackupgrade.format_version_key(name),
-                   text(stackupgrade.FORMAT_VERSION))
+        config.set(
+            stackupgrade.format_version_key(name), text(stackupgrade.FORMAT_VERSION)
+        )
 
         return repository.get_stack(name)
 

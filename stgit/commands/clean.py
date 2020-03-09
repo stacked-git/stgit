@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt
 from stgit.commands.common import DirectoryHasRepository
@@ -83,5 +78,4 @@ def func(parser, options, args):
     if not (options.applied or options.unapplied):
         options.applied = options.unapplied = True
 
-    _clean(directory.repository.current_stack,
-           options.applied, options.unapplied)
+    _clean(directory.repository.current_stack, options.applied, options.unapplied)

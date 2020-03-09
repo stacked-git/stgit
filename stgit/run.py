@@ -1,22 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import datetime
 import io
 import subprocess
 
-from stgit.compat import (
-    environ_copy,
-    environ_get,
-    file_wrapper,
-    fsencode_utf8,
-    text,
-)
+from stgit.compat import environ_copy, environ_get, file_wrapper, fsencode_utf8, text
 from stgit.exception import StgException
 from stgit.out import MessagePrinter, out
 
@@ -50,9 +39,10 @@ def get_log_mode(spec):
     (log_mode, outfile) = spec.split(':', 1)
     all_log_modes = ['debug', 'profile']
     if log_mode and log_mode not in all_log_modes:
-        out.warn(('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.'
-                  % log_mode),
-                 'Valid values are: %s' % ', '.join(all_log_modes))
+        out.warn(
+            ('Unknown log mode "%s" specified in $STGIT_SUBPROCESS_LOG.' % log_mode),
+            'Valid values are: %s' % ', '.join(all_log_modes),
+        )
     if outfile:
         f = MessagePrinter(io.open(outfile, 'a', encoding='utf-8'))
     else:
@@ -68,11 +58,7 @@ if _log_mode == 'profile':
 
 def duration(t1, t2):
     d = t2 - t1
-    return (
-        86400 * d.days
-        + d.seconds
-        + 1e-6 * d.microseconds
-    )
+    return 86400 * d.days + d.seconds + 1e-6 * d.microseconds
 
 
 def finish_logging():
@@ -82,10 +68,10 @@ def finish_logging():
     rtime = ttime - _log_subproctime
     _logfile.info(
         'Total time: %1.3f s' % ttime,
-        'Time spent in subprocess calls: %1.3f s (%1.1f%%)' % (
-            _log_subproctime, 100 * _log_subproctime / ttime),
-        'Remaining time: %1.3f s (%1.1f%%)' % (
-            rtime, 100 * rtime / ttime))
+        'Time spent in subprocess calls: %1.3f s (%1.1f%%)'
+        % (_log_subproctime, 100 * _log_subproctime / ttime),
+        'Remaining time: %1.3f s (%1.1f%%)' % (rtime, 100 * rtime / ttime),
+    )
 
 
 class Run(object):
@@ -95,7 +81,7 @@ class Run(object):
         self._cmd = list(cmd)
         for c in cmd:
             if not isinstance(c, text):
-                raise Exception('Bad command: %r' % (cmd, ))
+                raise Exception('Bad command: %r' % (cmd,))
         self._good_retvals = [0]
         self._env = self._cwd = None
         self._indata = None
@@ -108,8 +94,9 @@ class Run(object):
 
     def _prep_env(self):
         if self._env:
-            return dict((fsencode_utf8(k), fsencode_utf8(v))
-                        for k, v in self._env.items())
+            return dict(
+                (fsencode_utf8(k), fsencode_utf8(v)) for k, v in self._env.items()
+            )
         else:
             return self._env
 
@@ -136,15 +123,15 @@ class Run(object):
             d = duration(self._starttime, n)
             _logfile.done('%1.3f s' % d)
             _log_subproctime += d
-            _logfile.info('Time since program start: %1.3f s'
-                          % duration(_log_starttime, n))
+            _logfile.info(
+                'Time since program start: %1.3f s' % duration(_log_starttime, n)
+            )
 
     def _check_exitcode(self):
         if self._good_retvals is None:
             return
         if self.exitcode not in self._good_retvals:
-            raise self.exc('%s failed with code %d'
-                           % (self._cmd[0], self.exitcode))
+            raise self.exc('%s failed with code %d' % (self._cmd[0], self.exitcode))
 
     def _run_io(self):
         """Run with captured IO."""
@@ -176,11 +163,7 @@ class Run(object):
         assert self._indata is None
         self._log_start()
         try:
-            p = subprocess.Popen(
-                self._prep_cmd(),
-                env=self._prep_env(),
-                cwd=self._cwd,
-            )
+            p = subprocess.Popen(self._prep_cmd(), env=self._prep_env(), cwd=self._cwd,)
             self.exitcode = p.wait()
         except OSError as e:
             raise self.exc('%s failed: %s' % (self._cmd[0], e))
@@ -203,12 +186,11 @@ class Run(object):
             raise self.exc('%s failed: %s' % (self._cmd[0], e))
         if self._in_encoding:
             if hasattr(p.stdin, 'readable'):
-                self.stdin = io.TextIOWrapper(
-                    p.stdin, encoding=self._in_encoding)
+                self.stdin = io.TextIOWrapper(p.stdin, encoding=self._in_encoding)
             else:
                 self.stdin = io.TextIOWrapper(
-                    file_wrapper(p.stdin, writable=True),
-                    encoding=self._in_encoding)
+                    file_wrapper(p.stdin, writable=True), encoding=self._in_encoding
+                )
         else:
             self.stdin = p.stdin
         self.stdout = p.stdout
@@ -281,8 +263,9 @@ class Run(object):
         if len(outlines) == 1:
             return outlines[0]
         else:
-            raise self.exc('%s produced %d lines, expected 1'
-                           % (self._cmd[0], len(outlines)))
+            raise self.exc(
+                '%s produced %d lines, expected 1' % (self._cmd[0], len(outlines))
+            )
 
     def run(self):
         """Just run, with no IO redirection."""

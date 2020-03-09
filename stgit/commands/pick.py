@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
@@ -18,20 +13,10 @@ from stgit.commands.common import (
     parse_rev,
     print_current_patch,
 )
-from stgit.lib.git import (
-    CommitData,
-    MergeConflictException,
-    MergeException,
-    Person,
-)
+from stgit.lib.git import CommitData, MergeConflictException, MergeException, Person
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
-from stgit.utils import (
-    STGIT_CONFLICT,
-    STGIT_SUCCESS,
-    find_patch_name,
-    make_patch_name,
-)
+from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS, find_patch_name, make_patch_name
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -51,9 +36,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Import a patch from a different branch or a commit object'
 kind = 'patch'
-usage = [
-    '[options] [--] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>'
-]
+usage = ['[options] [--] ([<patch1>] [<patch2>] [<patch3>..<patch4>])|<commit>']
 description = """
 Import one or more patches from a different branch or a commit object
 into the current series. By default, the name of the imported patch is
@@ -64,23 +47,9 @@ object."""
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
-    opt(
-        '-n',
-        '--name',
-        short='Use NAME as the patch name',
-    ),
-    opt(
-        '-B',
-        '--ref-branch',
-        args=['stg_branches'],
-        short='Pick patches from BRANCH',
-    ),
-    opt(
-        '-r',
-        '--revert',
-        action='store_true',
-        short='Revert the given commit object',
-    ),
+    opt('-n', '--name', short='Use NAME as the patch name',),
+    opt('-B', '--ref-branch', args=['stg_branches'], short='Pick patches from BRANCH',),
+    opt('-r', '--revert', action='store_true', short='Revert the given commit object',),
     opt(
         '-p',
         '--parent',
@@ -110,11 +79,7 @@ options = [
         action='append',
         short='Only fold the given file (can be used multiple times)',
     ),
-    opt(
-        '--unapplied',
-        action='store_true',
-        short='Keep the patch unapplied',
-    ),
+    opt('--unapplied', action='store_true', short='Keep the patch unapplied',),
 ]
 
 directory = DirectoryGotoTopLevel()
@@ -132,9 +97,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
     if patchname:
         patchname = find_patch_name(patchname, stack.patches.exists)
     else:
-        patchname = make_patch_name(
-            commit.data.message_str, stack.patches.exists
-        )
+        patchname = make_patch_name(commit.data.message_str, stack.patches.exists)
 
     if options.parent:
         parent = git_commit(options.parent, repository, ref_stack.name)
@@ -167,16 +130,11 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
                 else:
                     try:
                         iw.merge(
-                            bottom.data.tree,
-                            stack.head.data.tree,
-                            top.data.tree,
+                            bottom.data.tree, stack.head.data.tree, top.data.tree,
                         )
                     except MergeConflictException as e:
                         out.done('%s conflicts' % len(e.conflicts))
-                        out.error(
-                            '%s does not apply cleanly' % patchname,
-                            *e.conflicts
-                        )
+                        out.error('%s does not apply cleanly' % patchname, *e.conflicts)
                         return STGIT_CONFLICT
             out.done()
         else:
@@ -184,14 +142,13 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
         return STGIT_SUCCESS
     elif options.update:
         files = [
-            fn1 for _, _, _, _, _, fn1, fn2 in repository.diff_tree_files(
+            fn1
+            for _, _, _, _, _, fn1, fn2 in repository.diff_tree_files(
                 stack.top.data.parent.data.tree, stack.top.data.tree
             )
         ]
 
-        diff = repository.diff_tree(
-            bottom.data.tree, top.data.tree, pathlimits=files
-        )
+        diff = repository.diff_tree(bottom.data.tree, top.data.tree, pathlimits=files)
 
         out.start('Updating with commit %s' % commit.sha1)
 
@@ -218,27 +175,25 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
                 subject = commit.sha1
                 body = ''
             message = 'Revert "%s"\n\nThis reverts commit %s.\n\n%s\n' % (
-                subject, commit.sha1, body
+                subject,
+                commit.sha1,
+                body,
             )
         elif options.expose:
             message = '%s\n\n(imported from commit %s)\n' % (
-                message.rstrip(), commit.sha1
+                message.rstrip(),
+                commit.sha1,
             )
 
         out.start('Importing commit %s' % commit.sha1)
 
         new_commit = repository.commit(
             CommitData(
-                tree=top.data.tree,
-                parents=[bottom],
-                message=message,
-                author=author,
+                tree=top.data.tree, parents=[bottom], message=message, author=author,
             )
         )
 
-        trans = StackTransaction(
-            stack, 'pick %s from %s' % (patchname, ref_stack.name)
-        )
+        trans = StackTransaction(stack, 'pick %s from %s' % (patchname, ref_stack.name))
         trans.patches[patchname] = new_commit
 
         trans.unapplied.append(patchname)
@@ -285,9 +240,7 @@ def func(parser, options, args):
 
     try:
         patches = parse_patches(
-            args,
-            ref_stack.patchorder.all_visible,
-            len(ref_stack.patchorder.applied),
+            args, ref_stack.patchorder.all_visible, len(ref_stack.patchorder.applied),
         )
         commit = None
     except CmdException:
@@ -319,17 +272,13 @@ def func(parser, options, args):
 
     if commit:
         patchname = None
-        retval = __pick_commit(
-            stack, ref_stack, iw, commit, patchname, options
-        )
+        retval = __pick_commit(stack, ref_stack, iw, commit, patchname, options)
     else:
         if options.unapplied:
             patches.reverse()
         for patchname in patches:
             commit = git_commit(patchname, repository, ref_stack.name)
-            retval = __pick_commit(
-                stack, ref_stack, iw, commit, patchname, options
-            )
+            retval = __pick_commit(stack, ref_stack, iw, commit, patchname, options)
             if retval != STGIT_SUCCESS:
                 break
 

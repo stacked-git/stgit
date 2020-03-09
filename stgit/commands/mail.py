@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import email
 import email.charset
@@ -123,23 +118,12 @@ the following:
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
+    opt('-a', '--all', action='store_true', short='E-mail all the applied patches',),
     opt(
-        '-a',
-        '--all',
-        action='store_true',
-        short='E-mail all the applied patches',
+        '--to', action='append', args=['mail_aliases'], short='Add TO to the To: list',
     ),
     opt(
-        '--to',
-        action='append',
-        args=['mail_aliases'],
-        short='Add TO to the To: list',
-    ),
-    opt(
-        '--cc',
-        action='append',
-        args=['mail_aliases'],
-        short='Add CC to the Cc: list',
+        '--cc', action='append', args=['mail_aliases'], short='Add CC to the Cc: list',
     ),
     opt(
         '--bcc',
@@ -147,11 +131,7 @@ options = [
         args=['mail_aliases'],
         short='Add BCC to the Bcc: list',
     ),
-    opt(
-        '--auto',
-        action='store_true',
-        short='Automatically cc the patch signers',
-    ),
+    opt('--auto', action='store_true', short='Automatically cc the patch signers',),
     opt(
         '--no-thread',
         action='store_true',
@@ -162,11 +142,7 @@ options = [
         action='store_true',
         short='Send patches without sequence numbering',
     ),
-    opt(
-        '--attach',
-        action='store_true',
-        short='Send a patch as attachment',
-    ),
+    opt('--attach', action='store_true', short='Send a patch as attachment',),
     opt(
         '--attach-inline',
         action='store_true',
@@ -179,22 +155,10 @@ options = [
         short='Add VERSION to the [PATCH ...] prefix',
     ),
     opt(
-        '--prefix',
-        metavar='PREFIX',
-        short='Add PREFIX to the [... PATCH ...] prefix',
+        '--prefix', metavar='PREFIX', short='Add PREFIX to the [... PATCH ...] prefix',
     ),
-    opt(
-        '-t',
-        '--template',
-        metavar='FILE',
-        short='Use FILE as the message template',
-    ),
-    opt(
-        '-c',
-        '--cover',
-        metavar='FILE',
-        short='Send FILE as the cover message',
-    ),
+    opt('-t', '--template', metavar='FILE', short='Use FILE as the message template',),
+    opt('-c', '--cover', metavar='FILE', short='Send FILE as the cover message',),
     opt(
         '-e',
         '--edit-cover',
@@ -214,34 +178,20 @@ options = [
         metavar='SECONDS',
         short='Sleep for SECONDS between e-mails sending',
     ),
-    opt(
-        '--in-reply-to',
-        metavar='REFID',
-        short='Use REFID as the reference id',
-    ),
+    opt('--in-reply-to', metavar='REFID', short='Use REFID as the reference id',),
     opt(
         '--smtp-server',
         metavar='HOST[:PORT] or "/path/to/sendmail -t -i"',
         short='SMTP server or command to use for sending mail',
     ),
-    opt(
-        '-u',
-        '--smtp-user',
-        metavar='USER',
-        short='Username for SMTP authentication',
-    ),
+    opt('-u', '--smtp-user', metavar='USER', short='Username for SMTP authentication',),
     opt(
         '-p',
         '--smtp-password',
         metavar='PASSWORD',
         short='Password for SMTP authentication',
     ),
-    opt(
-        '-T',
-        '--smtp-tls',
-        action='store_true',
-        short='Use SMTP with TLS encryption',
-    ),
+    opt('-T', '--smtp-tls', action='store_true', short='Use SMTP with TLS encryption',),
     opt(
         '-b',
         '--branch',
@@ -260,11 +210,7 @@ options = [
         short='Use DOMAIN when generating message IDs '
         '(instead of the system hostname)',
     ),
-    opt(
-        '--git',
-        action='store_true',
-        short='Use git send-email (EXPERIMENTAL)',
-    ),
+    opt('--git', action='store_true', short='Use git send-email (EXPERIMENTAL)',),
 ] + diff_opts_option()
 
 directory = DirectoryHasRepository()
@@ -295,8 +241,7 @@ def __get_sender():
 
 
 def __addr_list(msg, header):
-    return [addr for name, addr in
-            email.utils.getaddresses(msg.get_all(header, []))]
+    return [addr for name, addr in email.utils.getaddresses(msg.get_all(header, []))]
 
 
 def __parse_addresses(msg):
@@ -307,9 +252,7 @@ def __parse_addresses(msg):
         raise CmdException('No "From" address')
 
     to_addr_list = (
-        __addr_list(msg, 'To')
-        + __addr_list(msg, 'Cc')
-        + __addr_list(msg, 'Bcc')
+        __addr_list(msg, 'To') + __addr_list(msg, 'Cc') + __addr_list(msg, 'Bcc')
     )
     if len(to_addr_list) == 0:
         raise CmdException('No "To/Cc/Bcc" addresses')
@@ -341,11 +284,11 @@ def __set_smtp_credentials(options):
     smtpuser = options.smtp_user or config.get('stgit.smtpuser')
     smtpusetls = options.smtp_tls or config.get('stgit.smtptls') == 'yes'
 
-    if (smtppassword and not smtpuser):
+    if smtppassword and not smtpuser:
         raise CmdException('SMTP password supplied, username needed')
-    if (smtpusetls and not smtpuser):
+    if smtpusetls and not smtpuser:
         raise CmdException('SMTP over TLS requested, username needed')
-    if (smtpuser and not smtppassword):
+    if smtpuser and not smtppassword:
         smtppassword = getpass.getpass("Please enter SMTP password: ")
 
     __smtp_credentials = (smtpuser, smtppassword, smtpusetls)
@@ -367,8 +310,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
             s.ehlo()
             if smtpusetls:
                 if not hasattr(socket, 'ssl'):
-                    raise CmdException(
-                        "cannot use TLS - no SSL support in Python")
+                    raise CmdException("cannot use TLS - no SSL support in Python")
                 s.starttls()
                 s.ehlo()
             s.login(smtpuser, smtppassword)
@@ -376,8 +318,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
             print(
-                "mail server refused delivery for the following recipients:",
-                result,
+                "mail server refused delivery for the following recipients:", result,
             )
     except Exception as err:
         raise CmdException(str(err))
@@ -463,9 +404,7 @@ def __send_message(type, tmpl, options, *args):
         __send_message_sendmail(smtpserver, msg_bytes)
     else:
         # Use the SMTP server (we have host and port information)
-        __send_message_smtp(
-            smtpserver, from_addr, to_addrs, msg_bytes, options
-        )
+        __send_message_smtp(smtpserver, from_addr, to_addrs, msg_bytes, options)
 
     # give recipients a chance of receiving related patches in correct order
     if type == 'cover' or (type == 'patch' and patch_nr < total_nr):
@@ -480,11 +419,11 @@ def __update_header(msg, header, addr='', ignore=()):
     addr_pairs = email.utils.getaddresses(msg.get_all(header, []) + [addr])
     del msg[header]
     # remove pairs without an address and resolve the aliases
-    addr_pairs = [address_or_alias(name_addr) for name_addr in addr_pairs
-                  if name_addr[1]]
+    addr_pairs = [
+        address_or_alias(name_addr) for name_addr in addr_pairs if name_addr[1]
+    ]
     # remove the duplicates and filter the addresses
-    addr_pairs = [name_addr for name_addr in addr_pairs
-                  if name_addr[1] not in ignore]
+    addr_pairs = [name_addr for name_addr in addr_pairs if name_addr[1] not in ignore]
     if addr_pairs:
         msg[header] = ', '.join(map(email.utils.formataddr, addr_pairs))
     return set(addr for _, addr in addr_pairs)
@@ -583,8 +522,7 @@ def __encode_message(msg):
     # line folding is done using "\n\t" rather than "\n ", causing issues with
     # some e-mail clients
     subject = msg.get('subject', '')
-    msg.replace_header('subject',
-                       email.header.Header(subject, header_name='subject'))
+    msg.replace_header('subject', email.header.Header(subject, header_name='subject'))
 
     # encode the body and set the MIME and encoding headers
     if msg.is_multipart():
@@ -602,9 +540,7 @@ def __shortlog(stack, patches):
         p = stack.patches.get(pn)
         cmd.append(p.commit.sha1)
     log = stack.repository.run(cmd).raw_output()
-    return stack.repository.run(
-        ['git', 'shortlog']
-    ).raw_input(log).raw_output()
+    return stack.repository.run(['git', 'shortlog']).raw_input(log).raw_output()
 
 
 def __diffstat(stack, patches):
@@ -653,9 +589,9 @@ def __build_cover(tmpl, msg_id, options, patches):
     stack = repository.current_stack
 
     tmpl_dict = {
-        'sender': sender,      # for backward template compatibility
+        'sender': sender,  # for backward template compatibility
         'maintainer': sender,  # for backward template compatibility
-        'endofheaders': '',    # for backward template compatibility
+        'endofheaders': '',  # for backward template compatibility
         'date': '',
         'version': version_str,
         'vspace': version_space,
@@ -675,8 +611,9 @@ def __build_cover(tmpl, msg_id, options, patches):
     except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
-        raise CmdException('Only "%(name)s" variables are '
-                           'supported in the patch template')
+        raise CmdException(
+            'Only "%(name)s" variables are ' 'supported in the patch template'
+        )
 
     if options.edit_cover:
         msg_bytes = edit_bytes(msg_bytes, '.stgitmail.txt')
@@ -796,8 +733,9 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     except KeyError as err:
         raise CmdException('Unknown patch template variable: %s' % err)
     except TypeError:
-        raise CmdException('Only "%(name)s" variables are '
-                           'supported in the patch template')
+        raise CmdException(
+            'Only "%(name)s" variables are ' 'supported in the patch template'
+        )
 
     if options.edit_patches:
         msg_bytes = edit_bytes(msg_bytes, '.stgitmail.txt')
@@ -851,8 +789,9 @@ def func(parser, options, args):
 
     if options.in_reply_to:
         if options.no_thread or options.unrelated:
-            raise CmdException('--in-reply-to option not allowed with '
-                               '--no-thread or --unrelated')
+            raise CmdException(
+                '--in-reply-to option not allowed with ' '--no-thread or --unrelated'
+            )
         ref_id = options.in_reply_to
     else:
         ref_id = None

@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import diff_opts_option, opt, patch_range
-from stgit.commands.common import (
-    DirectoryHasRepository,
-    color_diff_flags,
-    git_commit,
-)
+from stgit.commands.common import DirectoryHasRepository, color_diff_flags, git_commit
 from stgit.pager import pager
 
 __copyright__ = """
@@ -46,20 +37,11 @@ options = [
         '--range',
         metavar='rev1[..[rev2]]',
         dest='revs',
-        args=[
-            patch_range(
-                'applied_patches',
-                'unapplied_patches',
-                'hidden_patches',
-            )
-        ],
+        args=[patch_range('applied_patches', 'unapplied_patches', 'hidden_patches',)],
         short='Show the diff between revisions',
     ),
     opt(
-        '-s',
-        '--stat',
-        action='store_true',
-        short='Show the stat instead of the diff',
+        '-s', '--stat', action='store_true', short='Show the stat instead of the diff',
     ),
 ] + diff_opts_option()
 

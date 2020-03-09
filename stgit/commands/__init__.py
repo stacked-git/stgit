@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import os
 
@@ -33,11 +28,13 @@ def get_command(mod_name):
     return __import__(__name__ + '.' + mod_name, globals(), locals(), ['*'])
 
 
-_kinds = [('repo', 'Repository commands'),
-          ('stack', 'Stack (branch) commands'),
-          ('patch', 'Patch commands'),
-          ('wc', 'Index/worktree commands'),
-          ('alias', 'Alias commands')]
+_kinds = [
+    ('repo', 'Repository commands'),
+    ('stack', 'Stack (branch) commands'),
+    ('patch', 'Patch commands'),
+    ('wc', 'Index/worktree commands'),
+    ('alias', 'Alias commands'),
+]
 _kind_order = [kind for kind, desc in _kinds]
 _kinds = dict(_kinds)
 

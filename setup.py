@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from distutils.core import setup
 from glob import glob
@@ -43,8 +38,11 @@ def __check_python_version():
     """
     pyver = '.'.join(map(str, sys.version_info))
     if not __check_min_version(version.python_min_ver, pyver):
-        print('Python version %s or newer required. Found %s'
-              % (version.python_min_ver, pyver), file=sys.stderr)
+        print(
+            'Python version %s or newer required. Found %s'
+            % (version.python_min_ver, pyver),
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 
@@ -52,10 +50,14 @@ def __check_git_version():
     """Check the minimum GIT version
     """
     from stgit.run import Run
+
     gitver = Run('git', '--version').output_one_line().split()[2]
     if not __check_min_version(version.git_min_ver, gitver):
-        print('GIT version %s or newer required. Found %s'
-              % (version.git_min_ver, gitver), file=sys.stderr)
+        print(
+            'GIT version %s or newer required. Found %s'
+            % (version.git_min_ver, gitver),
+            file=sys.stderr,
+        )
         sys.exit(1)
 
 

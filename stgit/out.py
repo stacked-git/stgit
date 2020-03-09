@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import sys
@@ -63,8 +58,11 @@ class Output(object):
     def tagged_lines(self, tag, lines):
         tag += ': '
         width = 79 - (2 * self.level) - len(tag)
-        lines = [wl for line in lines
-                 for wl in textwrap.wrap(line, width, break_long_words=False)]
+        lines = [
+            wl
+            for line in lines
+            for wl in textwrap.wrap(line, width, break_long_words=False)
+        ]
         for line in lines:
             self.single_line(tag + line)
             tag = ' ' * len(tag)
@@ -83,14 +81,10 @@ class MessagePrinter(object):
             self._stdout = self._stderr = Output(file)
         else:
             self._stdout = Output(
-                io.open(
-                    sys.stdout.fileno(), 'w', buffering=1, encoding='utf-8'
-                )
+                io.open(sys.stdout.fileno(), 'w', buffering=1, encoding='utf-8')
             )
             self._stderr = Output(
-                io.open(
-                    sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8'
-                )
+                io.open(sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8')
             )
 
     def stdout(self, line):

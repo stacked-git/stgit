@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from datetime import datetime, timedelta, tzinfo
 import re
@@ -66,17 +61,13 @@ def system_date(datestring):
     else:
         # Time zone not included; we ask "date" to provide it for us.
         try:
-            d = Run(
-                "date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring
-            ).output_one_line()
+            d = Run("date", "+%Y-%m-%d-%H-%M-%S_%z", "-d", datestring).output_one_line()
         except RunException:
             return None
         (t, z) = d.split("_")
     year, month, day, hour, minute, second = [int(x) for x in t.split("-")]
     try:
-        return datetime(
-            year, month, day, hour, minute, second, tzinfo=TimeZone(z)
-        )
+        return datetime(year, month, day, hour, minute, second, tzinfo=TimeZone(z))
     except ValueError:
         raise DateException(datestring, "date")
 

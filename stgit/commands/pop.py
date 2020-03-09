@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -44,30 +35,28 @@ the push operations may fail because of conflicts ("stg undo" would
 revert the last push operation)."""
 
 args = [patch_range('applied_patches')]
-options = [
-    opt(
-        '-a',
-        '--all',
-        action='store_true',
-        short='Pop all the applied patches',
-    ),
-    opt(
-        '-s',
-        '--spill',
-        action='store_true',
-        short='Pop a patch, keeping its modifications in the tree',
-    ),
-    opt(
-        '-n',
-        '--number',
-        type='int',
-        short='Pop the specified number of patches',
-        long='''
+options = (
+    [
+        opt('-a', '--all', action='store_true', short='Pop all the applied patches',),
+        opt(
+            '-s',
+            '--spill',
+            action='store_true',
+            short='Pop a patch, keeping its modifications in the tree',
+        ),
+        opt(
+            '-n',
+            '--number',
+            type='int',
+            short='Pop the specified number of patches',
+            long='''
         Pop the specified number of patches.
 
-        With a negative number, pop all but that many patches.'''
-    ),
-] + keep_option()
+        With a negative number, pop all but that many patches.''',
+        ),
+    ]
+    + keep_option()
+)
 
 directory = DirectoryHasRepository()
 
@@ -91,7 +80,7 @@ def func(parser, options, args):
     elif options.number is not None:
         # reverse it twice to also work with negative or bigger than
         # the length numbers
-        patches = trans.applied[::-1][:options.number][::-1]
+        patches = trans.applied[::-1][: options.number][::-1]
     elif not args:
         patches = [trans.applied[-1]]
     else:
@@ -102,7 +91,7 @@ def func(parser, options, args):
         raise CmdException('No patches to pop')
 
     if options.spill:
-        if set(stack.patchorder.applied[-len(patches):]) != set(patches):
+        if set(stack.patchorder.applied[-len(patches) :]) != set(patches):
             parser.error('Can only spill topmost applied patches')
         iw = None  # don't touch index+worktree
 

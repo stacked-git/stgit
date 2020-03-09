@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Template files look-up"""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import io
 import os
@@ -68,7 +63,9 @@ def specialize_template(tmpl, tmpl_dict):
             tmpl_dict[k] = ''
         elif isinstance(v, bytes):
             tmpl_dict.pop(k)
-            return v.join(specialize_template(part, tmpl_dict)
-                          for part in tmpl.split('%%(%s)s' % k))
+            return v.join(
+                specialize_template(part, tmpl_dict)
+                for part in tmpl.split('%%(%s)s' % k)
+            )
     else:
         return (tmpl % tmpl_dict).encode('utf-8')

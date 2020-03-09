@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.config import config
 from stgit.out import out
 
@@ -58,24 +49,14 @@ options = [
         action='store_true',
         short='Show all patches, including the hidden ones',
     ),
-    opt(
-        '-A',
-        '--applied',
-        action='store_true',
-        short='Show the applied patches only',
-    ),
+    opt('-A', '--applied', action='store_true', short='Show the applied patches only',),
     opt(
         '-U',
         '--unapplied',
         action='store_true',
         short='Show the unapplied patches only',
     ),
-    opt(
-        '-H',
-        '--hidden',
-        action='store_true',
-        short='Show the hidden patches only',
-    ),
+    opt('-H', '--hidden', action='store_true', short='Show the hidden patches only',),
     opt(
         '-m',
         '--missing',
@@ -95,11 +76,7 @@ options = [
         action='store_true',
         short='Show a short description for each patch',
     ),
-    opt(
-        '--author',
-        action='store_true',
-        short='Show the author name for each patch',
-    ),
+    opt('--author', action='store_true', short='Show the author name for each patch',),
     opt(
         '-e',
         '--empty',
@@ -116,9 +93,7 @@ options = [
         short='Append the branch name to the listed patches',
     ),
     opt(
-        '--noprefix',
-        action='store_true',
-        short='Do not show the patch status prefix',
+        '--noprefix', action='store_true', short='Do not show the patch status prefix',
     ),
     opt(
         '-s',
@@ -216,9 +191,7 @@ def func(parser, options, args):
     applied = unapplied = hidden = ()
     if options.applied or options.unapplied or options.hidden:
         if options.all:
-            raise CmdException(
-                '--all cannot be used with --applied/unapplied/hidden'
-            )
+            raise CmdException('--all cannot be used with --applied/unapplied/hidden')
         if options.applied:
             applied = stack.patchorder.applied
         if options.unapplied:
@@ -240,8 +213,7 @@ def func(parser, options, args):
 
     # the filtering range covers the whole series
     if args:
-        show_patches = parse_patches(args, applied + unapplied + hidden,
-                                     len(applied))
+        show_patches = parse_patches(args, applied + unapplied + hidden, len(applied))
     else:
         show_patches = applied + unapplied + hidden
 
@@ -256,12 +228,12 @@ def func(parser, options, args):
     if options.short:
         nr = int(config.get('stgit.shortnr'))
         if len(applied) > nr:
-            applied = applied[-(nr + 1):]
+            applied = applied[-(nr + 1) :]
         n = len(unapplied)
         if n > nr:
             unapplied = unapplied[:nr]
         elif n < nr:
-            hidden = hidden[:nr - n]
+            hidden = hidden[: nr - n]
 
     patches = applied + unapplied + hidden
 

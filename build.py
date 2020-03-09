@@ -1,12 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # -*- python -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import optparse
 import os
@@ -21,37 +16,26 @@ import stgit.main
 def main():
     op = optparse.OptionParser()
     op.add_option(
-        '--asciidoc',
-        metavar='CMD',
-        help='Print asciidoc documentation for a command',
+        '--asciidoc', metavar='CMD', help='Print asciidoc documentation for a command',
     )
     op.add_option(
-        '--commands',
-        action='store_true',
-        help='Print list of all stg subcommands',
+        '--commands', action='store_true', help='Print list of all stg subcommands',
     )
-    op.add_option(
-        '--cmd-list', action='store_true', help='Print asciidoc command list'
-    )
+    op.add_option('--cmd-list', action='store_true', help='Print asciidoc command list')
     op.add_option(
         '--py-cmd-list', action='store_true', help='Write Python command list'
     )
     op.add_option(
-        '--bash-completion',
-        action='store_true',
-        help='Write bash completion code',
+        '--bash-completion', action='store_true', help='Write bash completion code',
     )
     op.add_option(
-        '--fish-completion',
-        action='store_true',
-        help='Write fish completion code',
+        '--fish-completion', action='store_true', help='Write fish completion code',
     )
     options, args = op.parse_args()
     if args:
         op.error('Wrong number of arguments')
     if options.asciidoc:
-        argparse.write_asciidoc(stgit.main.commands[options.asciidoc],
-                                sys.stdout)
+        argparse.write_asciidoc(stgit.main.commands[options.asciidoc], sys.stdout)
     elif options.commands:
         for cmd, _, _, _ in commands.get_commands(allow_cached=False):
             print(cmd)
@@ -60,9 +44,7 @@ def main():
             commands.get_commands(allow_cached=False), sys.stdout
         )
     elif options.py_cmd_list:
-        commands.py_commands(
-            commands.get_commands(allow_cached=False), sys.stdout
-        )
+        commands.py_commands(commands.get_commands(allow_cached=False), sys.stdout)
     elif options.bash_completion:
         write_bash_completion(sys.stdout)
     elif options.fish_completion:

@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """This module contains utility functions for patch editing."""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import re
 
@@ -24,9 +19,9 @@ def update_patch_description(repo, cd, text, contains_diff):
 
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
-    (
-        message, authname, authemail, authdate, diff
-    ) = common.parse_patch(text, contains_diff)
+    (message, authname, authemail, authdate, diff) = common.parse_patch(
+        text, contains_diff
+    )
     author = cd.author
     if authname is not None:
         author = author.set_name(authname)
@@ -74,9 +69,7 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
         else:
             diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
             if diff:
-                desc += b'\n'.join(
-                    [b'', diffstat(diff).encode(commit_encoding), diff]
-                )
+                desc += b'\n'.join([b'', diffstat(diff).encode(commit_encoding), diff])
     return desc
 
 
@@ -92,7 +85,7 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
         cd,
         utils.edit_bytes(
             patch_desc(repo, cd, edit_diff, diff_flags, replacement_diff=None),
-            '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]
+            '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)],
         ),
         edit_diff,
     )
@@ -114,9 +107,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
     Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
     and the diff text if it didn't apply, or C{None} otherwise."""
     if msg is not None:
-        cd, failed_diff = update_patch_description(
-            repo, cd, msg, contains_diff=False
-        )
+        cd, failed_diff = update_patch_description(repo, cd, msg, contains_diff=False)
         assert not failed_diff
     a = author(cd.author)
     if a != cd.author:

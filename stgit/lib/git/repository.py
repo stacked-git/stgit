@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import atexit
 import os
@@ -182,7 +177,7 @@ class DiffTreeProcesses(object):
             data += os.read(p.stdout.fileno(), 4096)
         assert data.startswith(query)
         assert data.endswith(end)
-        return data[len(query):-len(end)]
+        return data[len(query) : -len(end)]
 
 
 class Repository(object):
@@ -303,9 +298,7 @@ class Repository(object):
     @property
     def head_ref(self):
         try:
-            return self.run(
-                ['git', 'symbolic-ref', '-q', 'HEAD']
-            ).output_one_line()
+            return self.run(['git', 'symbolic-ref', '-q', 'HEAD']).output_one_line()
         except RunException:
             raise DetachedHeadException()
 
@@ -360,15 +353,13 @@ class Repository(object):
         # A simple regex to match submodule entries
         regex = re.compile(r'160000 commit [0-9a-f]{40}\t(.*)$')
         # First, use ls-tree to get all the trees and links
-        files = self.run(
-            ['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]
-        ).output_lines('\0')
+        files = self.run(['git', 'ls-tree', '-d', '-r', '-z', tree.sha1]).output_lines(
+            '\0'
+        )
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
 
-    def diff_tree(
-        self, t1, t2, diff_opts=(), pathlimits=(), binary=True, stat=False
-    ):
+    def diff_tree(self, t1, t2, diff_opts=(), pathlimits=(), binary=True, stat=False):
         """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
         C{t1} to C{t2}.
 

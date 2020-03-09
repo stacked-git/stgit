@@ -1,17 +1,8 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    parse_patches,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -50,27 +41,30 @@ including <target patch>), then pushing the patches to sink, and then
 formerly-applied patches."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
-options = [
-    opt(
-        '-n',
-        '--nopush',
-        action='store_true',
-        short='Do not push the patches back after sinking',
-        long="""
+options = (
+    [
+        opt(
+            '-n',
+            '--nopush',
+            action='store_true',
+            short='Do not push the patches back after sinking',
+            long="""
         Do not push back on the stack the formerly-applied patches.
         Only the patches to sink are pushed.""",
-    ),
-    opt(
-        '-t',
-        '--to',
-        metavar='TARGET',
-        args=['applied_patches'],
-        short='Sink patches below the TARGET patch',
-        long="""
+        ),
+        opt(
+            '-t',
+            '--to',
+            metavar='TARGET',
+            args=['applied_patches'],
+            short='Sink patches below the TARGET patch',
+            long="""
         Specify a target patch to place the patches below, instead of
         sinking them to the bottom of the stack.""",
-    )
-] + keep_option()
+        ),
+    ]
+    + keep_option()
+)
 
 directory = DirectoryHasRepository()
 
@@ -81,9 +75,7 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
 
     if options.to and options.to not in stack.patchorder.applied:
-        raise CmdException(
-            'Cannot sink below %s since it is not applied' % options.to
-        )
+        raise CmdException('Cannot sink below %s since it is not applied' % options.to)
 
     if len(args) > 0:
         patches = parse_patches(args, stack.patchorder.all)
@@ -106,14 +98,10 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(
-        stack, 'sink', check_clean_iw=clean_iw
-    )
+    trans = transaction.StackTransaction(stack, 'sink', check_clean_iw=clean_iw)
 
     try:
-        trans.reorder_patches(
-            applied, unapplied, iw=iw, allow_interactive=True
-        )
+        trans.reorder_patches(applied, unapplied, iw=iw, allow_interactive=True)
     except transaction.TransactionHalted:
         pass
     return trans.run(iw)

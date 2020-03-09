@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from stgit import argparse, utils
 from stgit.commands.common import (
@@ -65,9 +60,7 @@ def func(parser, options, args):
     """Create a new patch."""
     stack = directory.repository.current_stack
     if stack.repository.default_index.conflicts():
-        raise CmdException(
-            'Cannot create a new patch -- resolve conflicts first'
-        )
+        raise CmdException('Cannot create a new patch -- resolve conflicts first')
 
     # Choose a name for the new patch -- or None, which means make one
     # up later when we've gotten hold of the commit message.

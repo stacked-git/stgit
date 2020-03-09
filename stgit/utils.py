@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Common utility functions"""
 
-from __future__ import (
-    absolute_import,
-    division,
-    print_function,
-    unicode_literals,
-)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 from io import open
 import errno
@@ -85,7 +80,7 @@ def strip_prefix(prefix, string):
     """Return string, without the prefix. Blow up if string doesn't
     start with prefix."""
     assert string.startswith(prefix)
-    return string[len(prefix):]
+    return string[len(prefix) :]
 
 
 def create_dirs(directory):
@@ -124,7 +119,7 @@ def get_editor():
         config.get('core.editor'),
         environ_get('VISUAL'),
         environ_get('EDITOR'),
-        'vi'
+        'vi',
     ]:
         if editor:
             return editor
@@ -256,9 +251,11 @@ def make_patch_name(msg, unacceptable, default_name='patch'):
 
 def add_trailer(message, trailer, name, email):
     trailer_line = '%s: %s <%s>' % (trailer, name, email)
-    return Run(
-        'git', 'interpret-trailers', '--trailer', trailer_line
-    ).raw_input(message).raw_output()
+    return (
+        Run('git', 'interpret-trailers', '--trailer', trailer_line)
+        .raw_input(message)
+        .raw_output()
+    )
 
 
 def parse_name_email(address):
@@ -275,11 +272,11 @@ def parse_name_email(address):
 
 
 # Exit codes.
-STGIT_SUCCESS = 0        # everything's OK
+STGIT_SUCCESS = 0  # everything's OK
 STGIT_GENERAL_ERROR = 1  # seems to be non-command-specific error
 STGIT_COMMAND_ERROR = 2  # seems to be a command that failed
-STGIT_CONFLICT = 3       # merge conflict, otherwise OK
-STGIT_BUG_ERROR = 4      # a bug in StGit
+STGIT_CONFLICT = 3  # merge conflict, otherwise OK
+STGIT_BUG_ERROR = 4  # a bug in StGit
 
 
 def add_dict(d1, d2):
