@@ -75,6 +75,7 @@ if __name__ == '__main__':
     if os.environ.get('COVERAGE_PROCESS_START'):
         import coverage
 
-        coverage.process_startup()
+        cov = coverage.process_startup()
+        cov.switch_context('build')
 
     main()

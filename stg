@@ -29,8 +29,15 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 if __name__ == '__main__':
     if os.environ.get('COVERAGE_PROCESS_START'):
         import coverage
+        import sys
 
-        coverage.process_startup()
+        if len(sys.argv) < 2 or sys.argv[1].startswith('-'):
+            context = 'stg'
+        else:
+            context = 'stg-' + sys.argv[1]
+
+        cov = coverage.process_startup()
+        cov.switch_context(context)
 
     from stgit.main import main
 

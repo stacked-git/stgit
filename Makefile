@@ -59,7 +59,7 @@ coverage-test:
 	rm -rf build
 	-mkdir .cov-files
 	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
-	$(PYTHON) -m coverage run setup.py build
+	$(PYTHON) -m coverage run --context=setup setup.py build
 	COVERAGE_PROCESS_START=$(PWD)/.coveragerc \
 	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
 	$(MAKE) -C t all
@@ -70,7 +70,7 @@ coverage-test:
 	rm -r .cov-files
 
 coverage-report: .coverage
-	$(PYTHON) -m coverage html --title="stgit coverage"
+	$(PYTHON) -m coverage html
 	$(PYTHON) -m coverage report
 	@echo "HTML coverage report: file://$(PWD)/htmlcov/index.html"
 
