@@ -84,8 +84,8 @@ end
 
 function __fish_stg_stg_branches
     command stg branch --list 2>/dev/null \\
-        | string match -r ". s.\t\S+" \\
-        | string replace -r ". s.\t" ""
+        | string match -r ". s.\\t\\S+" \\
+        | string replace -r ". s.\\t" ""
 end
 
 function __fish_stg_applied_patches

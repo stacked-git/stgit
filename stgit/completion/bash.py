@@ -156,7 +156,11 @@ def ref_list_fun(name, prefix):
         name,
         'local g',
         'g=$(_gitdir)',
-        ("test \"$g\" && git show-ref | grep ' %s/' | sed 's,.* %s/,,'" % (prefix, prefix))
+        (
+            "test \"$g\""
+            " && git show-ref "
+            " | grep ' %s/' | sed 's,.* %s/,,'" % (prefix, prefix)
+        )
     )
 
 
