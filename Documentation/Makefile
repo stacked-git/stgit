@@ -1,4 +1,4 @@
-COMMANDS = $(shell $(PYTHON) ../stg-build --commands)
+COMMANDS = $(shell $(PYTHON) ../build.py --commands)
 COMMANDS_TXT = $(patsubst %,stg-%.txt,$(COMMANDS))
 
 MAN1_TXT= stg.txt $(COMMANDS_TXT)
@@ -65,10 +65,10 @@ build-txt: $(COMMANDS_TXT) command-list.txt
 ALL_PY = $(shell find ../stgit -name '*.py')
 
 $(COMMANDS_TXT): $(ALL_PY)
-	$(PYTHON) ../stg-build --asciidoc $(basename $(subst stg-,,$@)) > $@
+	$(PYTHON) ../build.py --asciidoc $(basename $(subst stg-,,$@)) > $@
 
 command-list.txt: $(ALL_PY)
-	$(PYTHON) ../stg-build --cmd-list > $@
+	$(PYTHON) ../build.py --cmd-list > $@
 
 %.html : %.txt
 	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<

@@ -1,6 +1,6 @@
 include README Makefile MANIFEST.in AUTHORS COPYING INSTALL TODO
 include RELEASENOTES
-include stg-build
+include build.py
 include examples/*.tmpl
 include examples/gitconfig
 include contrib/*.sh

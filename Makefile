@@ -30,8 +30,8 @@ install-html:
 .PHONY: doc install-doc install-html
 
 lint:
-	$(PYTHON) -m flake8 . stg stg-build
-	$(PYTHON) -m isort --check-only --quiet --recursive . stg stg-build
+	$(PYTHON) -m flake8 . stg
+	$(PYTHON) -m isort --check-only --quiet --recursive . stg
 
 test: build
 	$(MAKE) -C t all
