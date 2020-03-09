@@ -15,3 +15,12 @@ exclude = '''
   | \/dist
 )
 '''
+
+[tool.coverage.run]
+source = ['stgit']
+branch = true
+parallel = true
+
+[tool.coverage.html]
+title = 'StGit Coverage Report'
+show_contexts = true

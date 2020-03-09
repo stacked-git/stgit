@@ -1,8 +1,0 @@
-[run]
-source = stgit
-branch = True
-parallel = True
-
-[html]
-title = StGit Coverage Report
-show_contexts = True
