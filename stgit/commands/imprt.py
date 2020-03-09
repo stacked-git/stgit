@@ -391,7 +391,7 @@ def __import_mail_path(mail_path, filename, options):
         'git', 'mailinfo', msg_path, patch_path
     ).encoding(None).decoding(None).raw_input(mail).output_lines(b'\n')
 
-    mailinfo = dict(line.split(b': ') for line in mailinfo_lines if line)
+    mailinfo = dict(line.split(b': ', 1) for line in mailinfo_lines if line)
 
     with open(msg_path, 'rb') as f:
         msg_body = f.read()
