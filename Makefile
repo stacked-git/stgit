@@ -13,10 +13,13 @@ all: build
 build:
 	$(PYTHON) setup.py build
 
+dist:
+	$(PYTHON) setup.py sdist
+
 install:
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
 
-.PHONY: all build install
+.PHONY: all build dist install
 
 doc:
 	$(MAKE) -C Documentation all
