@@ -1,13 +1,33 @@
-include README Makefile MANIFEST.in AUTHORS COPYING INSTALL TODO
+include .coveragerc
+include AUTHORS
+include COPYING
+include Documentation/*.conf
+include Documentation/Makefile
+include Documentation/SubmittingPatches
+include Documentation/build-docdep.perl
+include Documentation/callouts.xsl
+include Documentation/stg.txt
+include Documentation/tutorial.txt
+include INSTALL
+include MANIFEST.in
+include Makefile
+include README
 include RELEASENOTES
+include TODO
 include build.py
+include contrib/*.sh
+include contrib/Makefile
+include contrib/stg-*
+include contrib/stgit.el
+include contrib/vim/README
 include examples/*.tmpl
 include examples/gitconfig
-include contrib/*.sh
-include contrib/stg-*
-include contrib/Makefile
-include contrib/stgit.el
+include perf/*.py
+include perf/*.sh
+include t/*.pl
+include t/*.sh
+include t/Makefile
+include t/README
+include t/t[0-9]*/*
+include t/t[0-9]*/*/*
 recursive-include contrib/vim *.vim
-include t/t*.sh t/t[0-9]*/* t/Makefile t/README
-include Documentation/*.txt Documentation/Makefile Documentation/*.conf
-include Documentation/build-docdep.perl Documentation/callouts.xsl
