@@ -35,6 +35,7 @@ install-html:
 lint:
 	$(PYTHON) -m flake8 . stg
 	$(PYTHON) -m isort --check-only --quiet --recursive . stg
+	$(MAKE) -C t test-lint
 
 test: build
 	$(MAKE) -C t all
