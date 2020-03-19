@@ -607,6 +607,17 @@ def __shortlog(stack, patches):
     ).raw_input(log).raw_output()
 
 
+def __diffstat(stack, patches, diff_opts):
+    rev1 = stack.patches.get(patches[0])
+    rev2 = stack.patches.get(patches[-1])
+    return stack.repository.diff_tree(
+            rev1.commit.data.tree,
+            rev2.commit.data.tree,
+            diff_opts,
+            stat=True,
+    )
+
+
 def __build_cover(tmpl, msg_id, options, patches):
     """Build the cover message (series description) to be sent via SMTP
     """
@@ -656,12 +667,7 @@ def __build_cover(tmpl, msg_id, options, patches):
         'nspace': number_space,
         'snumber': number_str.strip(),
         'shortlog': __shortlog(stack, patches),
-        'diffstat': repository.diff_tree(
-            stack.base.data.tree,
-            stack.top.data.tree,
-            diff_opts=options.diff_flags,
-            stat=True,
-        ),
+        'diffstat': __diffstat(stack, patches, options.diff_flags),
     }
 
     try:
