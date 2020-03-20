@@ -597,11 +597,10 @@ def __encode_message(msg):
 
 
 def __shortlog(stack, patches):
-    cmd = ['git', 'log', '--pretty=short']
-    for pn in patches:
+    cmd = ['git', 'show', '--pretty=short']
+    for pn in reversed(patches):
         p = stack.patches.get(pn)
         cmd.append(p.commit.sha1)
-        cmd.append('^%s' % p.commit.data.parent.sha1)
     log = stack.repository.run(cmd).raw_output()
     return stack.repository.run(
         ['git', 'shortlog']
