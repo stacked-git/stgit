@@ -607,14 +607,14 @@ def __shortlog(stack, patches):
     ).raw_input(log).raw_output()
 
 
-def __diffstat(stack, patches, diff_opts):
+def __diffstat(stack, patches):
     rev1 = stack.patches.get(patches[0])
     rev2 = stack.patches.get(patches[-1])
     return stack.repository.diff_tree(
-            rev1.commit.data.tree,
-            rev2.commit.data.tree,
-            diff_opts,
-            stat=True,
+        rev1.commit.data.tree,
+        rev2.commit.data.tree,
+        diff_opts=['--stat-width=72'],
+        stat=True,
     )
 
 
@@ -667,7 +667,7 @@ def __build_cover(tmpl, msg_id, options, patches):
         'nspace': number_space,
         'snumber': number_str.strip(),
         'shortlog': __shortlog(stack, patches),
-        'diffstat': __diffstat(stack, patches, options.diff_flags),
+        'diffstat': __diffstat(stack, patches),
     }
 
     try:
