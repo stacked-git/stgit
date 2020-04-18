@@ -113,9 +113,14 @@ test_expect_success 'User-specified cover file' '
     grep -e "From: A U Thor" mbox-cover
 '
 
-test_expect_success 'Edit cover' '
-    stg mail -m --edit-cover $(stg top) | \
-    grep -e "Subject: \[PATCH\] Series short description"
+test_expect_failure 'Edit cover' '
+    stg mail -m --edit-cover foo1 foo2 foo3 foo4 > cover.mbox &&
+    cat cover.mbox | grep -e "Subject: \[PATCH 0/4\] Series short description" &&
+    cat cover.mbox | \
+    grep -A3 -e "Patch 1" | \
+    grep -A2 -e "Patch 2" | \
+    grep -A1 -e "Patch 3" | \
+    grep     -e "Patch 4"
 '
 
 test_done
