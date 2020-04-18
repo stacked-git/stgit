@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ '*' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    - name: Build
+      run: |
+        python setup.py sdist
+    - name: Upload dist
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: dist
+        path: "dist/*"
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - '2.7'
+          - 'pypy2'
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+          - 'pypy3'
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get install quilt
+    - name: Test
+      env:
+        DEFAULT_TEST_TARGET: "prove"
+        STG_PROVE_OPTS: "--jobs=2"
+        STG_TEST_OPTS: "--verbose-log"
+      run: |
+        timeout 1000s make test
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install flake8 isort
+    - name: Lint
+      run: |
+        make lint
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        python -m pip install -U pip
+        python -m pip install coveralls
+        sudo apt-get install quilt
+    - name: Coverage Test
+      run: |
+        timeout 1000s make -j2 coverage-test
+
+    - name: Coverage Report
+      run: |
+        make coverage-report
+
+    - name: Upload HTML Report
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: htmlcov
+        path: "htmlcov/"
+
+    - name: Coveralls
+      env:
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+      run: |
+        if [ -n "$COVERALLS_REPO_TOKEN" ]
+        then
+            python -m coveralls
+        else
+            echo "Missing COVERALLS_REPO_TOKEN secret. Not uploading to coveralls.io."
+        fi
