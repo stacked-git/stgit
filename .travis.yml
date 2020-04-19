@@ -1,51 +1,21 @@
-group: travis_latest
+dist: bionic
 language: python
 cache: pip
 
-env:
-  global:
-    - DEFAULT_TEST_TARGET=prove
-    - STG_PROVE_OPTS=--jobs=4
-    - STG_TEST_OPTS=--verbose-log
+python:
+  - "3.8"
 
-matrix:
-  include:
-    - python: '2.7'
-      env: MAKE_TARGET=lint
-    - python: '3.8'
-      env: MAKE_TARGET=lint
-      dist: xenial
-    - python: '2.7'
-      env: MAKE_TARGET=coverage-test
-    - python: '3.8'
-      env: MAKE_TARGET=coverage-test
-      dist: xenial
-    - python: 'pypy3'
-      env: MAKE_TARGET=test
-    - python: 'pypy'
-      env: MAKE_TARGET=test
-    - python: '3.7'
-      env: MAKE_TARGET=test
-      dist: xenial
-    - python: '3.6'
-      env: MAKE_TARGET=test
-    - python: '3.5'
-      env: MAKE_TARGET=test
-    - python: '3.4'
-      env: MAKE_TARGET=test
-    - python: '2.6'
-      dist: trusty
-      env: MAKE_TARGET=test
-  allow_failures:
-    - python: '2.6'
+before_install:
+  - sudo apt-get -y install quilt
 
 install:
-  - if [ $MAKE_TARGET = lint ]; then pip install flake8 isort; fi
-  - if [ $MAKE_TARGET = coverage-test ]; then pip install coveralls; fi
+  - python -m pip install coveralls
+
+before_script:
   - git describe --tags --abbrev=4 || git pull --unshallow --tags
 
 script:
-  - make $MAKE_TARGET
+  - make -j2 coverage-test
 
 after_success:
-  - if [ $MAKE_TARGET = coverage-test ]; then coveralls; fi
+  - python -m coveralls
