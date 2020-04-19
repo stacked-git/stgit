@@ -32,11 +32,21 @@ install-html:
 
 .PHONY: doc install-doc install-html
 
-lint:
+lint: lint-black lint-isort lint-flake8 lint-t
+
+lint-black:
 	$(PYTHON) -m black --check --quiet --diff . stg
+
+lint-isort:
 	$(PYTHON) -m isort --check-only --quiet --recursive . stg
+
+lint-flake8:
 	$(PYTHON) -m flake8 . stg
+
+lint-t:
 	$(MAKE) -C t test-lint
+
+.PHONY: lint lint-black lint-isort lint-flake8 lint-t
 
 format:
 	$(PYTHON) -m black . stg
@@ -50,7 +60,7 @@ test-patches:
 		stg goto $$patch && $(MAKE) test || break; \
 	done
 
-.PHONY: lint format test test-patches
+.PHONY: format test test-patches
 
 coverage:
 	$(MAKE) coverage-test
