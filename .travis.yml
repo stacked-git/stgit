@@ -9,7 +9,7 @@ before_install:
   - sudo apt-get -y install quilt
 
 install:
-  - python -m pip install coveralls
+  - python -m pip install coverage[toml] coveralls
 
 before_script:
   - git describe --tags --abbrev=4 || git pull --unshallow --tags
