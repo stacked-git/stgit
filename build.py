@@ -54,9 +54,6 @@ def main():
     else:
         op.error('No command')
 
-    # Python 2 seems to have trouble with sys.stdout not flushing it is not a tty.
-    sys.stdout.flush()
-
 
 if __name__ == '__main__':
     if os.environ.get('COVERAGE_PROCESS_START'):
