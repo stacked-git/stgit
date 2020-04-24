@@ -144,7 +144,7 @@ include::command-list.txt[]
 CONFIGURATION MECHANISM
 -----------------------
 
-StGit uses the same configuration mechanism as Git. See linkman:git[7]
+StGit uses the same configuration mechanism as Git. See linkgit:git[7]
 for more details.
 
 TEMPLATES

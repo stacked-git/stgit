@@ -1,7 +1,10 @@
-*.html
-*.pdf
-*.[1-9]
 *.xml
+*.html
+*.[1-9]
+*.texi
+*.pdf
 stg-*.txt
 doc.dep
 command-list.txt
+manpage-base-url.xsl
+STGIT-ASCIIDOCFLAGS

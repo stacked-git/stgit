@@ -1,90 +1,296 @@
-COMMANDS = $(shell $(PYTHON) ../build.py --commands)
-COMMANDS_TXT = $(patsubst %,stg-%.txt,$(COMMANDS))
+# Guard against environment variables
+MAN1_TXT =
+MAN5_TXT =
+MAN7_TXT =
+TECH_DOCS =
+ARTICLES =
+SP_ARTICLES =
+OBSOLETE_HTML =
 
-MAN1_TXT= stg.txt $(COMMANDS_TXT)
+STGIT_ALL_PY = $(shell find ../stgit -name '*.py')
+STG_COMMANDS = $(shell $(PYTHON) ../build.py --commands)
+STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))
+STGIT_VERSION = $(shell $(PYTHON) ../build.py --stgit-version)
+
+MAN1_TXT += stg.txt
+MAN1_TXT += $(STG_COMMANDS_TXT)
+
+ifdef MAN_FILTER
+MAN_TXT = $(filter $(MAN_FILTER),$(MAN1_TXT) $(MAN5_TXT) $(MAN7_TXT))
+else
+MAN_TXT = $(MAN1_TXT) $(MAN5_TXT) $(MAN7_TXT)
+MAN_FILTER = $(MAN_TXT)
+endif
+
+MAN_XML = $(patsubst %.txt,%.xml,$(MAN_TXT))
+MAN_HTML = $(patsubst %.txt,%.html,$(MAN_TXT))
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
-ARTICLES = tutorial
+ARTICLES += tutorial
 
-DOC_HTML += $(patsubst %,%.html,$(ARTICLES))
-DOC_PDF += $(patsubst %,%.pdf,$(ARTICLES))
+ARTICLES_HTML += $(patsubst %,%.html,$(ARTICLES) $(SP_ARTICLES))
+HTML_FILTER ?= $(ARTICLES_HTML) $(OBSOLETE_HTML)
+DOC_HTML = $(MAN_HTML) $(filter $(HTML_FILTER),$(ARTICLES_HTML) $(OBSOLETE_HTML))
 
-DOC_MAN1=$(patsubst %.txt,%.1,$(MAN1_TXT))
+DOC_MAN1 = $(patsubst %.txt,%.1,$(filter $(MAN_FILTER),$(MAN1_TXT)))
+DOC_MAN5 = $(patsubst %.txt,%.5,$(filter $(MAN_FILTER),$(MAN5_TXT)))
+DOC_MAN7 = $(patsubst %.txt,%.7,$(filter $(MAN_FILTER),$(MAN7_TXT)))
 
-prefix?=$(HOME)/.local
-htmldir?=$(prefix)/share/doc/stgit
-mandir?=$(prefix)/share/man
-man1dir=$(mandir)/man1
-# DESTDIR=
+prefix ?= $(HOME)/.local
+bindir ?= $(prefix)/bin
+htmldir ?= $(prefix)/share/doc/stgit
+infodir ?= $(prefix)/share/info
+pdfdir ?= $(prefix)/share/doc/stgit
+mandir ?= $(prefix)/share/man
+man1dir = $(mandir)/man1
+man5dir = $(mandir)/man5
+man7dir = $(mandir)/man7
+# DESTDIR =
 
-ASCIIDOC=asciidoc --unsafe
+ASCIIDOC = asciidoc
 ASCIIDOC_EXTRA =
-INSTALL?=install
+ASCIIDOC_HTML = xhtml11
+ASCIIDOC_DOCBOOK = docbook
+ASCIIDOC_CONF = -f asciidoc.conf
+ASCIIDOC_COMMON = $(ASCIIDOC) $(ASCIIDOC_EXTRA) $(ASCIIDOC_CONF) \
+		-amanversion=$(STGIT_VERSION) \
+		-amanmanual='StGit Manual' -amansource='StGit'
+TXT_TO_HTML = $(ASCIIDOC_COMMON) -b $(ASCIIDOC_HTML)
+TXT_TO_XML = $(ASCIIDOC_COMMON) -b $(ASCIIDOC_DOCBOOK)
+MANPAGE_XSL = manpage-normal.xsl
+XMLTO = xmlto
+XMLTO_EXTRA =
+INSTALL ?= install
+RM ?= rm -f
+
+MAKEINFO = makeinfo
+INSTALL_INFO = install-info
+DOCBOOK2X_TEXI = docbook2x-texi
+DBLATEX = dblatex
+ASCIIDOC_DBLATEX_DIR = /etc/asciidoc/dblatex
+DBLATEX_COMMON = -p $(ASCIIDOC_DBLATEX_DIR)/asciidoc-dblatex.xsl -s $(ASCIIDOC_DBLATEX_DIR)/asciidoc-dblatex.sty
+ifndef PERL_PATH
+	PERL_PATH = /usr/bin/perl
+endif
 
 #
-# Please note that there is a minor bug in asciidoc.
-# The version after 6.0.3 _will_ include the patch found here:
-#   http://marc.theaimsgroup.com/?l=git&m=111558757202243&w=2
+# For docbook-xsl ...
+#	-1.68.1,	no extra settings are needed?
+#	1.69.0,		set ASCIIDOC_ROFF?
+#	1.69.1-1.71.0,	set DOCBOOK_SUPPRESS_SP?
+#	1.71.1,		set ASCIIDOC_ROFF?
+#	1.72.0,		set DOCBOOK_XSL_172.
+#	1.73.0-,	no extra settings are needed
 #
-# Until that version is released you may have to apply the patch
-# yourself - yes, all 6 characters of it!
+
+ifdef DOCBOOK_XSL_172
+ASCIIDOC_EXTRA += -a git-asciidoc-no-roff
+MANPAGE_XSL = manpage-1.72.xsl
+else
+	ifndef ASCIIDOC_ROFF
+	# docbook-xsl after 1.72 needs the regular XSL, but will not
+	# pass-thru raw roff codes from asciidoc.conf, so turn them off.
+	ASCIIDOC_EXTRA += -a git-asciidoc-no-roff
+	endif
+endif
+ifndef NO_MAN_BOLD_LITERAL
+XMLTO_EXTRA += -m manpage-bold-literal.xsl
+endif
+ifdef DOCBOOK_SUPPRESS_SP
+XMLTO_EXTRA += -m manpage-suppress-sp.xsl
+endif
+
+# Newer DocBook stylesheet emits warning cruft in the output when
+# this is not set, and if set it shows an absolute link.  Older
+# stylesheets simply ignore this parameter.
 #
+# Distros may want to use MAN_BASE_URL=file:///path/to/git/docs/
+# or similar.
+ifndef MAN_BASE_URL
+MAN_BASE_URL = file://$(htmldir)/
+endif
+XMLTO_EXTRA += -m manpage-base-url.xsl
+
+# If your target system uses GNU groff, it may try to render
+# apostrophes as a "pretty" apostrophe using unicode.  This breaks
+# cut&paste, so you should set GNU_ROFF to force them to be ASCII
+# apostrophes.  Unfortunately does not work with non-GNU roff.
+ifdef GNU_ROFF
+XMLTO_EXTRA += -m manpage-quote-apos.xsl
+endif
+
+ifdef USE_ASCIIDOCTOR
+ASCIIDOC = asciidoctor
+ASCIIDOC_CONF =
+ASCIIDOC_HTML = xhtml5
+ASCIIDOC_DOCBOOK = docbook5
+ASCIIDOC_EXTRA += -acompat-mode -atabsize=8
+ASCIIDOC_EXTRA += -I. -rasciidoctor-extensions
+ASCIIDOC_EXTRA += -alitdd='&\#x2d;&\#x2d;'
+DBLATEX_COMMON =
+XMLTO_EXTRA += --skip-validation
+XMLTO_EXTRA += -x manpage.xsl
+endif
+
+SHELL_PATH ?= $(SHELL)
+# Shell quote;
+SHELL_PATH_SQ = $(subst ','\'',$(SHELL_PATH))
+
+QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
+QUIET_SUBDIR1  =
+
+ifneq ($(findstring $(MAKEFLAGS),w),w)
+PRINT_DIR = --no-print-directory
+else # "make -w"
+NO_SUBDIR = :
+endif
+
+ifneq ($(findstring $(MAKEFLAGS),s),s)
+ifndef V
+	QUIET_ASCIIDOC  = @echo '   ' ASCIIDOC $@;
+	QUIET_XMLTO     = @echo '   ' XMLTO $@;
+	QUIET_DB2TEXI   = @echo '   ' DB2TEXI $@;
+	QUIET_MAKEINFO  = @echo '   ' MAKEINFO $@;
+	QUIET_DBLATEX   = @echo '   ' DBLATEX $@;
+	QUIET_XSLTPROC  = @echo '   ' XSLTPROC $@;
+	QUIET_GEN       = @echo '   ' GEN $@;
+	QUIET_LINT      = @echo '   ' LINT $@;
+	QUIET_STDERR    = 2> /dev/null
+	QUIET_SUBDIR0   = +@subdir=
+	QUIET_SUBDIR1   = ;$(NO_SUBDIR) echo '   ' SUBDIR $$subdir; \
+			  $(MAKE) $(PRINT_DIR) -C $$subdir
+	export V
+endif
+endif
 
 all: html man
 
 html: $(DOC_HTML)
-pdf: $(DOC_PDF)
+
+man: man1 man5 man7
+man1: $(DOC_MAN1)
+man5: $(DOC_MAN5)
+man7: $(DOC_MAN7)
+
+info: stgitman.info
+
+pdf: tutorial.pdf
+
+install: install-man
+
+install-man: man
+	$(INSTALL) -d -m 755 $(DESTDIR)$(man1dir)
+	$(INSTALL) -m 644 $(DOC_MAN1) $(DESTDIR)$(man1dir)
+
+install-info: info
+	$(INSTALL) -d -m 755 $(DESTDIR)$(infodir)
+	$(INSTALL) -m 644 stgitman.info $(DESTDIR)$(infodir)
+	if test -r $(DESTDIR)$(infodir)/dir; then \
+	  $(INSTALL_INFO) --info-dir=$(DESTDIR)$(infodir) stgitman.info ;\
+	else \
+	  echo "No directory found in $(DESTDIR)$(infodir)" >&2 ; \
+	fi
+
+install-pdf: pdf
+	$(INSTALL) -d -m 755 $(DESTDIR)$(pdfdir)
+	$(INSTALL) -m 644 tutorial.pdf $(DESTDIR)$(pdfdir)
+
+install-html: html
+	$(INSTALL) -d -m 755 $(DESTDIR)$(htmldir)
+	$(INSTALL) -m 644 $(DOC_HTML) $(DESTDIR)$(htmldir)
 
 $(DOC_HTML) $(DOC_MAN1): asciidoc.conf
 
-man: man1
-man1: $(DOC_MAN1)
-install: man
-	$(INSTALL) -d -m755 $(DESTDIR)$(man1dir)
-	$(INSTALL) -m644 $(DOC_MAN1) $(DESTDIR)$(man1dir)
-
-install-html: html
-	$(INSTALL) -d -m755 $(DESTDIR)$(htmldir)
-	$(INSTALL) -m644 $(DOC_HTML) $(DESTDIR)$(htmldir)
 #
 # Determine "include::" file references in asciidoc files.
 #
 doc.dep : $(wildcard *.txt) build-docdep.perl
-	rm -f $@+ $@
-	perl ./build-docdep.perl >$@+
+	$(QUIET_GEN)$(RM) $@+ $@ && \
+	$(PERL_PATH) ./build-docdep.perl >$@+ $(QUIET_STDERR) && \
 	mv $@+ $@
 
 -include doc.dep
 
+TRACK_ASCIIDOCFLAGS = $(subst ','\'',$(ASCIIDOC_COMMON):$(ASCIIDOC_HTML):$(ASCIIDOC_DOCBOOK))
+
+STGIT-ASCIIDOCFLAGS: FORCE
+	@FLAGS='$(TRACK_ASCIIDOCFLAGS)'; \
+	    if test x"$$FLAGS" != x"`cat STGIT-ASCIIDOCFLAGS 2>/dev/null`" ; then \
+	        echo >&2 "    * new asciidoc flags"; \
+	        echo "$$FLAGS" >STGIT-ASCIIDOCFLAGS; \
+	    fi
+
 clean:
-	rm -f *.xml *.html *.pdf *.1 doc.dep $(COMMANDS_TXT) command-list.txt
+	$(RM) *.xml *.xml+ *.html *.html+ *.1 *.5 *.7
+	$(RM) *.texi *.texi+ *.texi++ stgitman.info
+	$(RM) *.pdf
+	$(RM) doc.dep
+	$(RM) manpage-base-url.xsl
+	$(RM) STGIT-ASCIIDOCFLAGS
+	$(RM) $(STG_COMMANDS_TXT) command-list.txt
 
-build-txt: $(COMMANDS_TXT) command-list.txt
+$(MAN_HTML): %.html : %.txt asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
+	$(TXT_TO_HTML) -d manpage -o $@+ $< && \
+	mv $@+ $@
 
-ALL_PY = $(shell find ../stgit -name '*.py')
+$(OBSOLETE_HTML): %.html : %.txto asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
+	$(TXT_TO_HTML) -o $@+ $< && \
+	mv $@+ $@
 
-$(COMMANDS_TXT): $(ALL_PY)
-	$(PYTHON) ../build.py --asciidoc $(basename $(subst stg-,,$@)) > $@
+manpage-base-url.xsl: manpage-base-url.xsl.in
+	$(QUIET_GEN)sed "s|@@MAN_BASE_URL@@|$(MAN_BASE_URL)|" $< > $@
 
-command-list.txt: $(ALL_PY)
-	$(PYTHON) ../build.py --cmd-list > $@
+%.1 %.5 %.7 : %.xml manpage-base-url.xsl $(wildcard manpage*.xsl)
+	$(QUIET_XMLTO)$(RM) $@ && \
+	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
 
-%.html : %.txt
-	$(ASCIIDOC) -b xhtml11 -d manpage -f asciidoc.conf $(ASCIIDOC_EXTRA) $<
+%.xml : %.txt asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
+	$(TXT_TO_XML) -d manpage -o $@+ $< && \
+	mv $@+ $@
 
-%.1 : %.xml
-	xmlto -m callouts.xsl man $<
+tutorial.xml: tutorial.txt tutorial.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
+	$(TXT_TO_XML) -d article -o $@+ $< && \
+	mv $@+ $@
 
-%.xml : %.txt
-	$(ASCIIDOC) -b docbook -d manpage -f asciidoc.conf $<
+tutorial.pdf: tutorial.xml
+	$(QUIET_DBLATEX)$(RM) $@+ $@ && \
+	$(DBLATEX) -o $@+ $(DBLATEX_COMMON) $< && \
+	mv $@+ $@
 
-%.pdf: %.xml
-	xmlto pdf $<
+stgitman.texi: $(MAN_XML) cat-texi.perl texi.xsl
+	$(QUIET_DB2TEXI)$(RM) $@+ $@ && \
+	($(foreach xml,$(sort $(MAN_XML)),xsltproc -o $(xml)+ texi.xsl $(xml) && \
+		$(DOCBOOK2X_TEXI) --encoding=UTF-8 --to-stdout $(xml)+ && \
+		rm $(xml)+ &&) true) > $@++ && \
+	$(PERL_PATH) cat-texi.perl $@ <$@++ >$@+ && \
+	rm $@++ && \
+	mv $@+ $@
 
-# special formatting rules
-tutorial.html : %.html : %.txt
-	$(ASCIIDOC) -b xhtml11 -d article -a toc -f tutorial.conf \
-                $(ASCIIDOC_EXTRA) $<
-tutorial.xml : %.xml : %.txt
-	$(ASCIIDOC) -b docbook -d article -f tutorial.conf $<
+stgitman.info: stgitman.texi
+	$(QUIET_MAKEINFO)$(MAKEINFO) --no-split --no-validate $*.texi
+
+$(patsubst %.txt,%.texi,$(MAN_TXT)): %.texi : %.xml
+	$(QUIET_DB2TEXI)$(RM) $@+ $@ && \
+	$(DOCBOOK2X_TEXI) --to-stdout $*.xml >$@+ && \
+	mv $@+ $@
+
+$(patsubst %,%.html,$(ARTICLES)) : %.html : %.txt
+	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) -a toc $*.txt
+
+print-man1:
+	@for i in $(MAN1_TXT); do echo $$i; done
+
+.PHONY: FORCE
+
+$(STG_COMMANDS_TXT): $(STGIT_ALL_PY)
+	$(QUIET_GEN)$(PYTHON) ../build.py --asciidoc $(basename $(subst stg-,,$@)) > $@
+
+command-list.txt: $(STGIT_ALL_PY)
+	$(QUIET_GEN)$(PYTHON) ../build.py --cmd-list > $@
+
+build-txt: command-list.txt FORCE

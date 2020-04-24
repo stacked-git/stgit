@@ -11,10 +11,14 @@ from stgit import argparse, commands
 from stgit.completion.bash import write_bash_completion
 from stgit.completion.fish import write_fish_completion
 import stgit.main
+import stgit.version
 
 
 def main():
     op = optparse.OptionParser()
+    op.add_option(
+        '--stgit-version', action='store_true', help='Print StGit version',
+    )
     op.add_option(
         '--asciidoc', metavar='CMD', help='Print asciidoc documentation for a command',
     )
@@ -34,7 +38,9 @@ def main():
     options, args = op.parse_args()
     if args:
         op.error('Wrong number of arguments')
-    if options.asciidoc:
+    if options.stgit_version:
+        print(stgit.version.get_version())
+    elif options.asciidoc:
         argparse.write_asciidoc(stgit.main.commands[options.asciidoc], sys.stdout)
     elif options.commands:
         for cmd, _, _, _ in commands.get_commands(allow_cached=False):

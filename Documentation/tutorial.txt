@@ -10,7 +10,7 @@ them in various ways.
 
 This tutorial assumes you are already familiar with the basics of Git
 (for example, branches, commits, and conflicts). For more information
-on Git, see linkman:git[1] or link:https://git-scm.com/[the Git home
+on Git, see linkgit:git[1] or link:https://git-scm.com/[the Git home
 page].
 
 
@@ -110,7 +110,7 @@ this example, I've added the +$$print 'My first patch!'$$+ line to the
 file +stgit/main.py+, at around line 171.)
 
 Since the patch is also a regular Git commit, you can also look at it
-with regular Git tools such as linkman:gitk[].
+with regular Git tools such as linkgit:gitk[].
 
 Creating another patch
 ----------------------
@@ -156,7 +156,7 @@ make.
 The minus sign says that +credit+ is 'unapplied' -- this means that
 it's been temporarily put aside. If you look at the +AUTHORS+ file,
 you'll see that our change to it is gone; and tools such as
-linkman:gitk[] will not show it, because it's been edited out of the
+linkgit:gitk[] will not show it, because it's been edited out of the
 Git history. But it's just one linkstg:push[] command away from being
 restored:
 
@@ -1035,7 +1035,7 @@ that had the conflict.
 To investigate the reason of conflicts, you can use the +d b+, +d o+,
 and +d t+ commands to, respectively, show the diffs against the merge
 base, our branch, or their branch. +d c+ shows a combined diff. See
-linkman:git-diff[1] for more information about these commands.
+linkgit:git-diff[1] for more information about these commands.
 
 A more powerful tool to resolve conflicts is the Emacs +smerge-mode+.
 To start using it to resolve a conflict, press +d m+. It is outside
