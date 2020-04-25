@@ -1,4 +1,3 @@
-include .coveragerc
 include AUTHORS
 include COPYING
 include Documentation/*.conf
@@ -24,6 +23,7 @@ include examples/*.tmpl
 include examples/gitconfig
 include perf/*.py
 include perf/*.sh
+include pyproject.toml
 include t/*.pl
 include t/*.sh
 include t/Makefile
