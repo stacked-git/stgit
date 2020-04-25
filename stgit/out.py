@@ -79,6 +79,7 @@ class MessagePrinter(object):
     def __init__(self, file=None):
         if file:
             self._stdout = self._stderr = Output(file)
+            self.isatty = False
         else:
             self._stdout = Output(
                 io.open(sys.stdout.fileno(), 'w', buffering=1, encoding='utf-8')
@@ -86,6 +87,7 @@ class MessagePrinter(object):
             self._stderr = Output(
                 io.open(sys.stderr.fileno(), 'w', buffering=1, encoding='utf-8')
             )
+            self.isatty = sys.stdout.isatty()
 
     def stdout(self, line):
         """Write a line to stdout."""

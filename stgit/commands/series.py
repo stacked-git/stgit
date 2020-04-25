@@ -170,7 +170,7 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
         output = prefix + patch_str + ' # ' + __get_author(stack, patch)
     else:
         output = prefix + patch_str
-    if not effects:
+    if not effects or not out.isatty:
         out.stdout(output)
     else:
         out.stdout(__render_text(output, effects))
