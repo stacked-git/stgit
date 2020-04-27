@@ -26,6 +26,30 @@ jobs:
         name: dist
         path: "dist/*"
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: '3.8'
+    - name: Install dependencies
+      run: |
+        sudo apt-get install asciidoc xmlto
+    - name: Build Docs
+      run: |
+        make -j2 -C Documentation
+    - name: Install HTML Docs
+      run: |
+        make -j2 -C Documentation htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+    - name: Upload HTML Docs
+      uses: actions/upload-artifact@v2-preview
+      with:
+        name: html-doc
+        path: ${{ github.workspace }}/stgit-html
+
   test:
     runs-on: ubuntu-latest
     strategy:
