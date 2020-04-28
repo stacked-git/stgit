@@ -37,13 +37,16 @@ jobs:
         python-version: '3.8'
     - name: Install dependencies
       run: |
-        sudo apt-get install asciidoc xmlto
-    - name: Build Docs
+        sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
+    - name: Build Docs Asciidoc
       run: |
         make -j2 -C Documentation
+    - name: Build Docs Asciidoctor
+      run: |
+        make -j2 -C Documentation USE_ASCIIDOCTOR=1
     - name: Install HTML Docs
       run: |
-        make -j2 -C Documentation htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+        make -j2 -C Documentation USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
     - name: Upload HTML Docs
       uses: actions/upload-artifact@v2-preview
       with:
