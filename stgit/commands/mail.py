@@ -362,16 +362,9 @@ def __send_message_git(msg_bytes, from_, options):
         os.unlink(path)
 
 
-def __send_message(type, tmpl, options, *args):
+def __send_message(msg_type, tmpl, options, *args):
     """Message sending dispatcher.
     """
-    (build, outstr) = {
-        'cover': (__build_cover, 'the cover message'),
-        'patch': (__build_message, 'patch "%s"' % args[0]),
-    }[type]
-    if type == 'patch':
-        (patch_nr, total_nr) = (args[1], args[2])
-
     domain = options.domain or config.get('stgit.domain')
 
     if domain:
@@ -380,7 +373,18 @@ def __send_message(type, tmpl, options, *args):
         msg_id = email.utils.make_msgid('stgit', domain=domain)
     else:
         msg_id = email.utils.make_msgid('stgit')
-    msg = build(tmpl, msg_id, options, *args)
+
+    if msg_type == 'cover':
+        assert len(args) == 1, 'too many args for msg_type == "cover"'
+        patches = args[0]
+        msg = __build_cover(tmpl, msg_id, options, patches)
+        outstr = 'the cover message'
+    elif msg_type == 'patch':
+        patch, patch_nr, total_nr, ref_id = args
+        msg = __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id)
+        outstr = 'patch "%s"' % patch
+    else:
+        raise AssertionError('invalid msg_type: %s' % msg_type)  # pragma: no cover
 
     if hasattr(msg, 'as_bytes'):
         msg_bytes = msg.as_bytes(options.mbox)
@@ -409,7 +413,7 @@ def __send_message(type, tmpl, options, *args):
         __send_message_smtp(smtpserver, from_addr, to_addrs, msg_bytes, options)
 
     # give recipients a chance of receiving related patches in correct order
-    if type == 'cover' or (type == 'patch' and patch_nr < total_nr):
+    if msg_type == 'cover' or (msg_type == 'patch' and patch_nr < total_nr):
         sleep = options.sleep or config.getint('stgit.smtpdelay')
         time.sleep(sleep)
     if not options.git:

@@ -123,4 +123,9 @@ test_expect_success 'Edit cover' '
     grep     -e "Patch 4"
 '
 
+test_expect_success 'Ensure --all and --edit-cover play nice together' '
+    stg mail --to="Inge Ström <inge@example.com>" --all --edit-cover -m \
+       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0
+'
+
 test_done
