@@ -10,6 +10,11 @@ test_expect_success 'Initialize the StGIT repository' '
     stg uncommit -n 5 foo
 '
 
+test_expect_success 'Ensure --all and --edit-cover play nice together' '
+    stg mail --to="Inge Ström <inge@example.com>" --all --edit-cover -m \
+       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0
+'
+
 test_expect_success 'Put all the patches in an mbox' '
     stg mail --to="Inge Ström <inge@example.com>" -a -m \
        -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0
@@ -121,11 +126,6 @@ test_expect_success 'Edit cover' '
     grep -A2 -e "Patch 2" | \
     grep -A1 -e "Patch 3" | \
     grep     -e "Patch 4"
-'
-
-test_expect_success 'Ensure --all and --edit-cover play nice together' '
-    stg mail --to="Inge Ström <inge@example.com>" --all --edit-cover -m \
-       -t $STG_ROOT/stgit/templates/patchmail.tmpl > mbox0
 '
 
 test_done
