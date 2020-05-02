@@ -10,7 +10,6 @@ import io
 import os
 import re
 import smtplib
-import socket
 import sys
 import time
 
