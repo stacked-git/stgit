@@ -107,7 +107,6 @@ options = (
             short='Include submodules when refreshing patch contents',
         ),
         opt(
-            '',
             '--no-submodules',
             action='store_false',
             dest='submodules',
