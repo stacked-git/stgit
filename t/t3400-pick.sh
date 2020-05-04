@@ -152,17 +152,23 @@ test_expect_success \
 	'
 
 test_expect_success \
-	'Pick commit' \
+	'Pick commit with expose' \
 	'
 	stg branch foo &&
 	stg goto C &&
 	stg id > C-id &&
 	stg commit -a &&
 	stg branch master &&
+	test_write_lines \
+		"c" \
+		"" \
+		"(imported from commit $(cat C-id))" \
+		> C2-expected.txt &&
+	test_when_finished rm -f C2-expected.txt C2-message.txt &&
 	stg pick --expose --name C2 $(cat C-id) &&
 	test "$(stg top)" = "C2" &&
-	stg show |
-	grep "(imported from commit $(cat C-id))"
+	git show --no-patch --pretty=format:%B > C2-message.txt &&
+	test_cmp C2-expected.txt C2-message.txt
 	'
 
 test_expect_success \
