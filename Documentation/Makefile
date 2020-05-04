@@ -113,6 +113,7 @@ endif
 SHELL_PATH ?= $(SHELL)
 # Shell quote;
 SHELL_PATH_SQ = $(subst ','\'',$(SHELL_PATH))
+# ' <-- help syntax highlighters back into good state
 
 QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
 QUIET_SUBDIR1  =
@@ -189,14 +190,19 @@ doc.dep : $(wildcard *.txt) build-docdep.perl
 
 -include doc.dep
 
-TRACK_ASCIIDOCFLAGS = $(subst ','\'',$(ASCIIDOC_COMMON):$(ASCIIDOC_HTML):$(ASCIIDOC_DOCBOOK))
+HTML-ASCIIDOCFLAGS: FORCE
+	@FLAGS='$(subst ','\'',$(TXT_TO_HTML))'; \
+		if test x"$$FLAGS" != x"`cat HTML-ASCIIDOCFLAGS 2>/dev/null`"; then \
+			echo >&2 "    * new HTML-ASCIIDOCFLAGS"; \
+			echo "$$FLAGS" >HTML-ASCIIDOCFLAGS; \
+		fi
 
-STGIT-ASCIIDOCFLAGS: FORCE
-	@FLAGS='$(TRACK_ASCIIDOCFLAGS)'; \
-	    if test x"$$FLAGS" != x"`cat STGIT-ASCIIDOCFLAGS 2>/dev/null`" ; then \
-	        echo >&2 "    * new asciidoc flags"; \
-	        echo "$$FLAGS" >STGIT-ASCIIDOCFLAGS; \
-	    fi
+XML-ASCIIDOCFLAGS: FORCE
+	@FLAGS='$(subst ','\'',$(TXT_TO_XML))'; \
+		if test x"$$FLAGS" != x"`cat XML-ASCIIDOCFLAGS 2>/dev/null`"; then \
+			echo >&2 "    * new XML-ASCIIDOCFLAGS"; \
+			echo "$$FLAGS" >XML-ASCIIDOCFLAGS; \
+		fi
 
 clean:
 	$(RM) *.xml *.xml+ *.html *.html+ *.1 *.5 *.7
@@ -204,15 +210,15 @@ clean:
 	$(RM) *.pdf
 	$(RM) doc.dep
 	$(RM) manpage-base-url.xsl
-	$(RM) STGIT-ASCIIDOCFLAGS
+	$(RM) *-ASCIIDOCFLAGS
 	$(RM) $(STG_COMMANDS_TXT) command-list.txt
 
-$(MAN_HTML): %.html : %.txt asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+$(MAN_HTML): %.html : %.txt asciidoc.conf asciidoctor-extensions.rb HTML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
 	$(TXT_TO_HTML) -d manpage -o $@+ $< && \
 	mv $@+ $@
 
-$(OBSOLETE_HTML): %.html : %.txto asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+$(OBSOLETE_HTML): %.html : %.txto asciidoc.conf asciidoctor-extensions.rb HTML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
 	$(TXT_TO_HTML) -o $@+ $< && \
 	mv $@+ $@
@@ -224,12 +230,12 @@ manpage-base-url.xsl: manpage-base-url.xsl.in
 	$(QUIET_XMLTO)$(RM) $@ && \
 	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
 
-%.xml : %.txt asciidoc.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+%.xml : %.txt asciidoc.conf asciidoctor-extensions.rb XML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
 	$(TXT_TO_XML) -d manpage -o $@+ $< && \
 	mv $@+ $@
 
-tutorial.xml: tutorial.txt tutorial.conf asciidoctor-extensions.rb STGIT-ASCIIDOCFLAGS
+tutorial.xml: tutorial.txt tutorial.conf asciidoctor-extensions.rb XML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
 	$(TXT_TO_XML) -d article -o $@+ $< && \
 	mv $@+ $@
@@ -256,7 +262,7 @@ $(patsubst %.txt,%.texi,$(MAN_TXT)): %.texi : %.xml
 	$(DOCBOOK2X_TEXI) --to-stdout $*.xml >$@+ && \
 	mv $@+ $@
 
-$(patsubst %,%.html,$(ARTICLES)) : %.html : %.txt
+$(patsubst %,%.html,$(ARTICLES)) : %.html : %.txt HTML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) -a toc $*.txt
 
 print-man1:

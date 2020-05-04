@@ -7,4 +7,4 @@ stg-*.txt
 doc.dep
 command-list.txt
 manpage-base-url.xsl
-STGIT-ASCIIDOCFLAGS
+*-ASCIIDOCFLAGS
