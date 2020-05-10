@@ -117,7 +117,7 @@ def write_asciidoc(cmd, f):
     _write_underlined('SYNOPSIS', '-', f)
     f.write('[verse]\n')
     for u in cmd.usage:
-        f.write("'stg' %s %s\n" % (_cmd_name(cmd), u))
+        f.write("'stg %s' %s\n" % (_cmd_name(cmd), u))
     f.write('\n')
     _write_underlined('DESCRIPTION', '-', f)
     f.write('\n%s\n\n' % cmd.description.strip('\n'))
