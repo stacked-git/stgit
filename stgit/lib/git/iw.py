@@ -234,7 +234,7 @@ class IndexAndWorktree(object):
                 if interactive:
                     self.mergetool()
                 else:
-                    conflicts = [l for l in output if l.startswith('CONFLICT')]
+                    conflicts = [line for line in output if line.startswith('CONFLICT')]
                     raise MergeConflictException(conflicts)
         except RunException:
             raise MergeException('Index/worktree dirty')

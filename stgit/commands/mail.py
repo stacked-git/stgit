@@ -664,7 +664,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
 
     descr_lines = descr.split('\n')
     short_descr = descr_lines[0].strip()
-    long_descr = '\n'.join(l.rstrip() for l in descr_lines[1:]).lstrip('\n')
+    long_descr = '\n'.join(line.rstrip() for line in descr_lines[1:]).lstrip('\n')
 
     author = p.commit.data.author
     committer = p.commit.data.committer
