@@ -37,6 +37,7 @@ jobs:
         python-version: '3.8'
     - name: Install dependencies
       run: |
+        sudo apt-get update
         sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
     - name: Build Docs Asciidoc
       run: |
