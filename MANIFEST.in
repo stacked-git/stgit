@@ -1,4 +1,5 @@
 include AUTHORS
+include CHANGELOG.md
 include COPYING
 include Documentation/*.conf
 include Documentation/*.css
@@ -14,7 +15,6 @@ include INSTALL
 include MANIFEST.in
 include Makefile
 include README
-include RELEASENOTES
 include TODO
 include build.py
 include contrib/*.sh
