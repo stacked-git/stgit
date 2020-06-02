@@ -1,5 +1,45 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+- Drop support for Python 3.3; Python 2 (2.6 and 2.7) remain
+  supported, but deprecated for the time being
+
+### Deprecated
+- Python 2.x support is deprecated and will be removed in a future
+  release
+
+### Added
+- Support html5 output of docs from asciidoc
+- Add `--expose` option for `stg pick` to allow picked commit message to
+  be customized
+
+### Changed
+- Limit mail diffstat to 72 columns
+- Added pyproject.toml file for black configuration
+- Minimum Git version is 2.2.0
+- Quote stg and subcommand in man page synopsis
+- Replaced RELEASENOTES with this CHANGELOG.md
+
+### Fixed
+- Repair MANIFEST.in and generated source dist
+- Repair importing mail with ": " (colon space) in subject
+- Fix mail cover letter shortlog
+- Fix mail cover letter diffstat
+- `stg series` now only outputs colors when `isatty()`
+- Repair mail SSL check (#57)
+- Repair `stg mail` with both `-a` and `-e` options (#58)
+- Remove empty short-opt for `--no-submodules` of `stg refresh`
+- Repair build.py for Python 2 with explicit `flush()`
+
+### Internal
+- Update docs build system from upstream Git docs
+- Use coverage contexts to map commands to covered lines
+- Improve mail tests
+- Use GitHub Actions instead of TravisCI
+- Format StGit source using black formatter
+
 ## [0.22] - 2020-03-02
 
 ### Removed
