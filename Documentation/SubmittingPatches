@@ -38,7 +38,7 @@ Checklist (and a short version for the impatient):
         - If your name is not writable in ASCII, make sure that
           you send off a message in the correct encoding.
         - Make a pull request at the GitHub repo
-          (https://github.com/ctmarinas/stgit) or send the patch to
+          (https://github.com/stacked-git/stgit) or send the patch to
           the list (stgit@googlegroups.com) and the maintainer
           (catalin.marinas@gmail.com) if (and only if) the patch is
           ready for inclusion.
@@ -85,7 +85,7 @@ Long version:
 3. Sending your patches.
 
    Changes to StGit may be either submitted by creating a pull request
-   for the project on GitHub (https://github.com/ctmarinas/stgit) or
+   for the project on GitHub (https://github.com/stacked-git/stgit) or
    by sending patches via email. The email process is detailed below.
 
    StGit patches should be sent to the StGit mailing list
@@ -233,7 +233,7 @@ One test you could do yourself if your MUA is set up correctly is:
 * Try to apply to the tip of the "master" branch from the
   public repository:
 
-    $ git fetch https://github.com/ctmarinas/stgit.git master:test-apply
+    $ git fetch https://github.com/stacked-git/stgit.git master:test-apply
     $ git checkout test-apply
     $ git reset --hard
     $ stg init
