@@ -10,7 +10,6 @@ include Documentation/*.xsl.in
 include Documentation/Makefile
 include Documentation/SubmittingPatches
 include Documentation/stg.txt
-include Documentation/tutorial.txt
 include INSTALL
 include MANIFEST.in
 include Makefile

@@ -5,6 +5,7 @@
 ### Removed
 - Drop support for Python 3.3; Python 2 (2.6 and 2.7) remain
   supported, but deprecated for the time being
+- Tutorial is removed; it now exists as part of the website
 
 ### Deprecated
 - Python 2.x support is deprecated and will be removed in a future

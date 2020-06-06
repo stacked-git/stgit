@@ -82,7 +82,8 @@ which can be used to move the patch stack base downwards -- i.e., turn
 Git commits into StGit patches after the fact -- and
 linkstgsub:commit[], its inverse.
 
-For more information, see link:tutorial.html[the tutorial].
+For more information, see the
+https://stacked-git.github.io/guides/tutorial[tutorial].
 
 Specifying patches
 ~~~~~~~~~~~~~~~~~~

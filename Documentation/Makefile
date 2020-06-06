@@ -27,8 +27,6 @@ MAN_HTML = $(patsubst %.txt,%.html,$(MAN_TXT))
 
 DOC_HTML=$(patsubst %.txt,%.html,$(MAN1_TXT))
 
-ARTICLES += tutorial
-
 ARTICLES_HTML += $(patsubst %,%.html,$(ARTICLES) $(SP_ARTICLES))
 HTML_FILTER ?= $(ARTICLES_HTML) $(OBSOLETE_HTML)
 DOC_HTML = $(MAN_HTML) $(filter $(HTML_FILTER),$(ARTICLES_HTML) $(OBSOLETE_HTML))
@@ -153,8 +151,6 @@ man7: $(DOC_MAN7)
 
 info: stgitman.info
 
-pdf: tutorial.pdf
-
 install: install-man
 
 install-man: man
@@ -169,10 +165,6 @@ install-info: info
 	else \
 	  echo "No directory found in $(DESTDIR)$(infodir)" >&2 ; \
 	fi
-
-install-pdf: pdf
-	$(INSTALL) -d -m 755 $(DESTDIR)$(pdfdir)
-	$(INSTALL) -m 644 tutorial.pdf $(DESTDIR)$(pdfdir)
 
 install-html: html
 	$(INSTALL) -d -m 755 $(DESTDIR)$(htmldir)
@@ -233,16 +225,6 @@ manpage-base-url.xsl: manpage-base-url.xsl.in
 %.xml : %.txt asciidoc.conf asciidoctor-extensions.rb XML-ASCIIDOCFLAGS
 	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
 	$(TXT_TO_XML) -d manpage -o $@+ $< && \
-	mv $@+ $@
-
-tutorial.xml: tutorial.txt tutorial.conf asciidoctor-extensions.rb XML-ASCIIDOCFLAGS
-	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
-	$(TXT_TO_XML) -d article -o $@+ $< && \
-	mv $@+ $@
-
-tutorial.pdf: tutorial.xml
-	$(QUIET_DBLATEX)$(RM) $@+ $@ && \
-	$(DBLATEX) -o $@+ $(DBLATEX_COMMON) $< && \
 	mv $@+ $@
 
 stgitman.texi: $(MAN_XML) cat-texi.perl texi.xsl
