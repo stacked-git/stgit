@@ -41,6 +41,7 @@ DEFAULTS = [
     ('stgit.shortnr', ['5']),
     ('stgit.smtpdelay', ['5']),
     ('stgit.smtpserver', ['localhost:25']),
+    ('stgit.pick.expose-format', ['format:%B%n(imported from commit %H)']),
 ]
 
 

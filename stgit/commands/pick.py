@@ -13,9 +13,11 @@ from stgit.commands.common import (
     parse_rev,
     print_current_patch,
 )
+from stgit.config import config
 from stgit.lib.git import CommitData, MergeConflictException, MergeException, Person
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
+from stgit.run import Run
 from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS, find_patch_name, make_patch_name
 
 __copyright__ = """
@@ -43,7 +45,12 @@ into the current series. By default, the name of the imported patch is
 used as the name of the current patch. It can be overridden with the
 '--name' option. A commit object can be reverted with the '--revert'
 option. The log and author information are those of the commit
-object."""
+object.
+
+Commit message for option '--expose' is defined by configuraion option
+'stgit.pick.expose-format' as format string for 'git show --pretty=...'.
+Default is "format:%B%n(imported from commit %H)".
+"""
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
@@ -180,10 +187,11 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
                 body,
             )
         elif options.expose:
-            message = '%s\n\n(imported from commit %s)\n' % (
-                message.rstrip(),
-                commit.sha1,
-            )
+            fmt = config.get('stgit.pick.expose-format')
+            message = Run(
+                'git', 'show', '--no-patch', '--pretty=' + fmt, commit.sha1
+            ).raw_output()
+            message = message.rstrip() + '\n'
 
         out.start('Importing commit %s' % commit.sha1)
 
