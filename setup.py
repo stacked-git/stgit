@@ -112,10 +112,10 @@ setup(
     license='GPLv2',
     author='Catalin Marinas',
     author_email='catalin.marinas@gmail.com',
-    url='http://www.procode.org/stgit/',
-    download_url='https://github.com/ctmarinas/stgit.git',
-    description='Stacked GIT',
-    long_description='Push/pop utility on top of GIT',
+    url='http://stacked-git.github.io',
+    download_url='https://github.com/stacked-git/stgit.git',
+    description='Stacked Git',
+    long_description='Application for managing Git commits as a stack of patches.',
     scripts=['stg'],
     packages=list(
         map(
