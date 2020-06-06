@@ -47,9 +47,12 @@ used as the name of the current patch. It can be overridden with the
 option. The log and author information are those of the commit
 object.
 
-Commit message for option '--expose' is defined by configuraion option
-'stgit.pick.expose-format' as format string for 'git show --pretty=...'.
-Default is "format:%B%n(imported from commit %H)".
+When using the '--expose' option, the format of the commit message is
+determined by the 'stgit.pick.expose-format' configuration option. This option
+is a format string as may supplied as the '--pretty' option to
+linkgit:git-show[1]. The default is "format:%B%n(imported from commit %H)",
+which appends the commit hash of the picked commit to the patch's commit
+message.
 """
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
