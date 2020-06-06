@@ -3,7 +3,7 @@
 ;; Copyright (C) 2007-2013 David Kågedal
 ;;
 ;; Author: David Kågedal <davidk@lysator.liu.se>
-;; Homepage: http://www.procode.org/stgit
+;; Homepage: http://stacked-git.github.io
 ;; Version: 0.17.1
 ;;
 ;; This file is free software; you can redistribute it and/or modify
@@ -72,7 +72,7 @@ reload all StGit buffers."
   "A user interface for the StGit patch maintenance tool."
   :group 'tools
   :link '(function-link stgit)
-  :link '(url-link "http://www.procode.org/stgit/"))
+  :link '(url-link "http://stacked-git.github.io"))
 
 (defcustom stgit-default-show-worktree t
   "Set to non-nil to by default show the working tree in a new stgit buffer.
