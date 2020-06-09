@@ -22,6 +22,7 @@
 - Minimum Git version is 2.2.0
 - Quote stg and subcommand in man page synopsis
 - Replaced RELEASENOTES with this CHANGELOG.md
+- Replaces Documentation/SubmittingPatches with CONTRIBUTING.md
 
 ### Fixed
 - Repair MANIFEST.in and generated source dist

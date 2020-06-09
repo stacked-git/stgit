@@ -70,12 +70,10 @@ For more information about installation, see [INSTALL](INSTALL).
 
 ## Contributing
 
-### Issues
+See [CONTRIBUTING.md](CONTRIBUTING.md) for a full guide to contributing
+to StGit.
 
-Bugs or feature requests should be raised on the [StGit issues
-page](https://github.com/stacked-git/stgit/issues).
-
-### Maintainers
+## Maintainers
 
 StGit is maintained by Catalin Marinas and Peter Grayson.
 

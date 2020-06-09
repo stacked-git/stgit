@@ -1,5 +1,6 @@
 include AUTHORS
 include CHANGELOG.md
+include CONTRIBUTING.md
 include COPYING
 include Documentation/*.conf
 include Documentation/*.css
@@ -8,7 +9,6 @@ include Documentation/*.rb
 include Documentation/*.xsl
 include Documentation/*.xsl.in
 include Documentation/Makefile
-include Documentation/SubmittingPatches
 include Documentation/stg.txt
 include INSTALL
 include MANIFEST.in
