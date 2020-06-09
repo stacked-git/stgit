@@ -14,14 +14,16 @@ homepage](https://stacked-git.github.io).
 ## Getting started
 
 To get a feel for how StGit works, see this brief [example of StGit in
-action](https://stacked-git.github.io/guides/usage-example). Or check
-out the [in-depth
-tutorial](https://stacked-git.github.io/guides/tutorial).
+action][example]. Or check out the [in-depth tutorial][tutorial].
 
-StGit also has a complete set of [man
-pages](https://stacked-git.github.io/man) describing the
-[`stg`](https://stacked-git.github.io/man/stg) command line tool and
-each of its subcommands.
+[example]: https://stacked-git.github.io/guides/usage-example
+[tutorial]: https://stacked-git.github.io/guides/tutorial
+
+StGit also has a complete set of [man pages][man] describing the
+[`stg`][stg] command line tool and each of its subcommands.
+
+[man]: https://stacked-git.github.io/man
+[stg]: https://stacked-git.github.io/man/stg
 
 ## Installation
 
@@ -50,15 +52,17 @@ Linux distributions including:
 [Ubuntu](https://packages.ubuntu.com/source/focal/stgit).
 
 More details about StGit packages availability for various operating
-systems can be [found on
-repology](https://repology.org/project/stgit/versions).
+systems can be [found on repology][repology].
+
+[repology]: https://repology.org/project/stgit/versions
 
 ### Source Installation
 
 StGit may also be installed from source. Download the [latest
-release](https://github.com/stacked-git/stgit/releases/latest) or clone
-from the [StGit repository on
-GitHub](https://github.com/stacked-git/stgit).
+release][latest] or clone from the [StGit repository on GitHub][repo].
+
+[latest]: https://github.com/stacked-git/stgit/releases/latest
+[repo]: https://github.com/stacked-git/stgit
 
 To install from source, choose a `prefix` and run:
 
