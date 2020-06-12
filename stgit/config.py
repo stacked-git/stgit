@@ -35,13 +35,13 @@ DEFAULTS = [
     ('stgit.fetchcmd', ['git fetch']),
     ('stgit.keepoptimized', ['no']),
     ('stgit.pager', ['less']),
+    ('stgit.pick.expose-format', ['format:%B%n(imported from commit %H)']),
     ('stgit.pull-policy', ['pull']),
     ('stgit.pullcmd', ['git pull']),
     ('stgit.refreshsubmodules', ['no']),
     ('stgit.shortnr', ['5']),
     ('stgit.smtpdelay', ['5']),
     ('stgit.smtpserver', ['localhost:25']),
-    ('stgit.pick.expose-format', ['format:%B%n(imported from commit %H)']),
 ]
 
 

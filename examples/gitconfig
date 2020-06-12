@@ -85,6 +85,15 @@
 	# Behave as if the --keep option is always passed
 	#autokeep = no
 
+	# Include submodules by default when refreshing patch contents.
+	#refreshsubmodules = no
+
+[stgit "pick"]
+	# The the format applied to the commit message when using
+	# "stg pick --expose". See the "PRETTY FORMATS" section of
+	# git-show(1) for format syntax details.
+	#expose-format = format:%B%n(imported from commit %H)
+
 [stgit "alias"]
 	# Command aliases.
 	#add = git add

@@ -34,6 +34,7 @@
 - Repair `stg mail` with both `-a` and `-e` options (#58)
 - Remove empty short-opt for `--no-submodules` of `stg refresh`
 - Repair build.py for Python 2 with explicit `flush()`
+- `stgit.refreshsubmodules` added to sample gitconfig
 
 ### Internal
 - Update docs build system from upstream Git docs
