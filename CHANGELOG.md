@@ -1,10 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [0.23] 2020-06-12
 
 ### Removed
 - Drop support for Python 3.3; Python 2 (2.6 and 2.7) remain
-  supported, but deprecated for the time being
+  deprecated, but supported for one last release
 - Tutorial is removed; it now exists as part of the website
 
 ### Deprecated
