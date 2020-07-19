@@ -24,8 +24,9 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if os.environ.get('COVERAGE_PROCESS_START'):
-        import coverage
         import sys
+
+        import coverage
 
         if len(sys.argv) < 2 or sys.argv[1].startswith('-'):
             context = 'stg'

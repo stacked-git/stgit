@@ -2,8 +2,8 @@
 updates to an StGit stack in a safe and convenient way."""
 
 
-from itertools import takewhile
 import atexit
+from itertools import takewhile
 
 from stgit import exception, utils
 from stgit.config import config

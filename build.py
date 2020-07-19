@@ -3,11 +3,11 @@ import optparse
 import os
 import sys
 
+import stgit.main
+import stgit.version
 from stgit import argparse, commands
 from stgit.completion.bash import write_bash_completion
 from stgit.completion.fish import write_fish_completion
-import stgit.main
-import stgit.version
 
 
 def main():

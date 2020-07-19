@@ -324,8 +324,8 @@ def __import_series(filename, options):
 
 def __import_mail(filename, options):
     """Import a patch from an email file or mbox"""
-    import tempfile
     import shutil
+    import tempfile
 
     tmpdir = tempfile.mkdtemp('.stg')
     try:
@@ -397,10 +397,10 @@ def __import_url(url, options):
     """Import a patch from a URL
     """
     try:
-        from urllib.request import urlretrieve
         from urllib.parse import unquote
+        from urllib.request import urlretrieve
     except ImportError:
-        from urllib import urlretrieve, unquote
+        from urllib import unquote, urlretrieve
     import tempfile
 
     if not url:

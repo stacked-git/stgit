@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta, tzinfo
 import email.utils
 import re
+from datetime import datetime, timedelta, tzinfo
 
 from stgit.exception import StgException
 from stgit.lib.git.base import Immutable

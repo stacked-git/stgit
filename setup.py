@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-from distutils.core import setup
-from glob import glob
 import os
 import sys
+from distutils.core import setup
+from glob import glob
 
 from stgit import commands, version
 from stgit.completion.bash import write_bash_completion

@@ -1,10 +1,10 @@
 """Common utility functions"""
 
-from io import open
 import errno
 import os
 import re
 import tempfile
+from io import open
 
 from stgit.compat import environ_get
 from stgit.config import config

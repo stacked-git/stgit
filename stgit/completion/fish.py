@@ -1,6 +1,6 @@
-from stgit import argparse
 import stgit.commands
 import stgit.config
+from stgit import argparse
 
 _file_args = ['files', 'dir', 'repo']
 _has_fish_func_args = [

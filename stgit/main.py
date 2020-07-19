@@ -4,12 +4,12 @@ import os
 import sys
 import traceback
 
+import stgit.commands
 from stgit import argparse, run, utils
 from stgit.compat import environ_get, fsdecode_utf8
 from stgit.config import config
 from stgit.out import out
 from stgit.pager import pager
-import stgit.commands
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -170,11 +170,11 @@ def _main():
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
     try:
-        from configparser import ParsingError, NoSectionError
+        from configparser import NoSectionError, ParsingError
     except ImportError:
-        from ConfigParser import ParsingError, NoSectionError
-    from stgit.exception import StgException
+        from ConfigParser import NoSectionError, ParsingError
     from stgit.config import config_setup
+    from stgit.exception import StgException
     from stgit.lib.git import MergeConflictException
 
     try:

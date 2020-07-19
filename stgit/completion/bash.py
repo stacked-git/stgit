@@ -1,7 +1,7 @@
 import itertools
 
-from stgit import argparse
 import stgit.commands
+from stgit import argparse
 
 
 class CompgenBase(object):
