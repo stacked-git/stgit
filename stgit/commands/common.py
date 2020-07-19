@@ -19,6 +19,8 @@ from stgit.lib.transaction import (
 from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (
+    STGIT_GENERAL_ERROR,
+    STGIT_SUCCESS,
     EditorException,
     add_trailer,
     edit_bytes,
@@ -459,6 +461,19 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
         return cd.set_message(new_msg)
     else:
         return cd
+
+
+def run_pre_commit_hook(repo):
+    pre_commit_hook = get_hook(repo, 'pre-commit')
+
+    if pre_commit_hook:
+        try:
+            pre_commit_hook()
+            return STGIT_SUCCESS
+        except RunException:
+            return STGIT_GENERAL_ERROR
+    else:
+        return STGIT_SUCCESS
 
 
 def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):
