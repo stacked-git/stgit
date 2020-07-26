@@ -85,7 +85,8 @@ test_expect_success 'refresh with non-executable hook' '
 # If finds files, then fixes them and returns non-zero exit status
 write_script "$HOOK" <<'EOF'
 git diff-index --check HEAD -- && exit
-sed -i 's/[[:space:]]*$//' file
+sed -e 's/[[:space:]]*$//' file > file.new
+mv -- file.new file
 exit 1
 EOF
 
@@ -132,7 +133,8 @@ test_expect_success 'refresh again after adding modified files to index' '
 # If finds files, then fixes them and returns non-zero exit status
 write_script "$HOOK" <<'EOF'
 git diff-index --check HEAD -- && exit
-sed -i 's/[[:space:]]*$//' file
+sed -e 's/[[:space:]]*$//' file > file.new
+mv -- file.new file
 git add file
 EOF
 
