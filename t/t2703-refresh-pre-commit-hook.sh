@@ -59,14 +59,14 @@ test_expect_success 'refresh with failing hook' '
     echo "pre-commit-hook-fail" >> file &&
     command_error stg refresh 2>&1 |
     grep -e "pre-commit hook failed" &&
-    git restore --staged file
+    git reset HEAD
 '
 
 test_expect_success 'refresh with path limiting, failing hook' '
     echo "pre-commit-hook-path-limiting-fail" >> file &&
     command_error stg refresh file 2>&1 |
     grep -e "pre-commit hook failed" &&
-    git restore --staged file
+    git reset HEAD
 '
 
 chmod -x "$HOOK"
@@ -83,10 +83,11 @@ test_expect_success 'refresh with non-executable hook' '
 # now a hook that edits the files added in index
 # The hook tests for trailing white spaces
 # If finds files, then fixes them and returns non-zero exit status
-test_expect_success 'install pre-commit hook' '
-    cp "$TEST_DIRECTORY"/t2703/pre-commit $HOOK &&
-    chmod +x "$HOOK"
-'
+write_script "$HOOK" <<'EOF'
+git diff-index --check HEAD -- && exit
+sed -i 's/[[:space:]]*$//' file
+exit 1
+EOF
 
 test_expect_success 'refresh --no-verify with failing hook that modifies file' '
     echo "no-verify pre-commit-hook-no-remove-whitespace  " >> file &&
@@ -124,6 +125,29 @@ test_expect_success 'refresh with failing hook that modifies file' '
 test_expect_success 'refresh again after adding modified files to index' '
     stg add file
     stg refresh
+'
+
+# now a hook that edits the files added in index and adds them to index
+# The hook tests for trailing white spaces
+# If finds files, then fixes them and returns non-zero exit status
+write_script "$HOOK" <<'EOF'
+git diff-index --check HEAD -- && exit
+sed -i 's/[[:space:]]*$//' file
+git add file
+EOF
+
+test_expect_success 'refresh with failing hook that modifies file, adds to index' '
+    echo "pre-commit-hook-remove-whitespace-add-index  " >> file &&
+    stg refresh &&
+    [ "$(tail -1 file)" = "pre-commit-hook-remove-whitespace-add-index" ] &&
+    git diff-index --quiet HEAD
+'
+
+test_expect_success 'refresh with path limiting, failing hook that modifies file, adds to index' '
+    echo "pre-commit-hook-remove-whitespace-add-index  " >> file &&
+    stg refresh file &&
+    [ "$(tail -1 file)" = "pre-commit-hook-remove-whitespace-add-index" ] &&
+    git diff-index --quiet HEAD
 '
 
 test_done
