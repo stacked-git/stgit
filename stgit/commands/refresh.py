@@ -10,6 +10,8 @@ from stgit.lib.edit import auto_edit_patch, interactive_edit_patch
 from stgit.lib.git import CommitData, IndexAndWorktree
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
+from stgit.run import RunException
+from stgit.utils import get_hook
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -159,7 +161,8 @@ def list_files(stack, patch_name, args, index, update, submodules):
 
 
 def write_tree(stack, paths, temp_index):
-    """Possibly update the index, and then write its tree.
+    """Possibly update the index, and then write its tree. If any path
+    limiting is in effect, use a temp index.
     @return: The written tree.
     @rtype: L{Tree<stgit.git.Tree>}"""
 
@@ -181,10 +184,8 @@ def write_tree(stack, paths, temp_index):
         return go(stack.repository.default_index)
 
 
-def make_temp_patch(stack, patch_name, paths, temp_index):
-    """Commit index to temp patch, in a complete transaction. If any path
-    limiting is in effect, use a temp index."""
-    tree = write_tree(stack, paths, temp_index)
+def make_temp_patch(stack, patch_name, tree):
+    """Commit tree to temp patch, in a complete transaction."""
     commit = stack.repository.commit(
         CommitData(
             tree=tree, parents=[stack.head], message='Refresh of %s' % patch_name,
@@ -354,10 +355,32 @@ def func(parser, options, args):
                 'To force a full refresh use --force.'
             )
 
-    # Commit index to temp patch, and absorb it into the target patch.
-    retval, temp_name = make_temp_patch(
-        stack, patch_name, paths, temp_index=path_limiting
-    )
+    # Update index and write tree
+    tree = write_tree(stack, paths, temp_index=path_limiting)
+
+    # Run pre-commit hook, if fails, abort refresh
+    if not options.no_verify:
+        pre_commit_hook = get_hook(
+            stack.repository,
+            'pre-commit',
+            extra_env={} if options.edit else {'GIT_EDITOR': ':'},
+        )
+        if pre_commit_hook:
+            try:
+                pre_commit_hook()
+            except RunException:
+                raise CmdException(
+                    'pre-commit hook failed, review the changes using `stg diff`, '
+                    'run `stg add` to add them to index and run `stg refresh` again'
+                )
+            else:
+                # Update index and rewrite tree if hook updated files in index
+                if not stack.repository.default_index.is_clean(tree):
+                    tree = write_tree(stack, paths, temp_index=path_limiting)
+
+    # Commit tree to temp patch, and absorb it into the target patch.
+    retval, temp_name = make_temp_patch(stack, patch_name, tree)
+
     if retval != utils.STGIT_SUCCESS:
         return retval
 
