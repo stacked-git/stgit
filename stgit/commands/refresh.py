@@ -4,13 +4,14 @@ from stgit.commands.common import (
     CmdException,
     DirectoryHasRepository,
     run_commit_msg_hook,
-    run_pre_commit_hook,
 )
 from stgit.config import config
 from stgit.lib.edit import auto_edit_patch, interactive_edit_patch
 from stgit.lib.git import CommitData, IndexAndWorktree
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
+from stgit.run import RunException
+from stgit.utils import get_hook
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -359,16 +360,23 @@ def func(parser, options, args):
 
     # Run pre-commit hook, if fails, abort refresh
     if not options.no_verify:
-        pre_commit_success = run_pre_commit_hook(stack.repository)
-        if not pre_commit_success:
-            raise CmdException(
-                'pre-commit hook failed, review the changes using `stg diff`'
-                ', run `stg add` to add them to index and run `stg refresh` again'
-            )
-
-    # Update index and rewrite tree if pre-commit hook updated files in index
-    if not stack.repository.default_index.is_clean(tree):
-        tree = write_tree(stack, paths, temp_index=path_limiting)
+        pre_commit_hook = get_hook(
+            stack.repository,
+            'pre-commit',
+            extra_env={} if options.edit else {'GIT_EDITOR': ':'},
+        )
+        if pre_commit_hook:
+            try:
+                pre_commit_hook()
+            except RunException:
+                raise CmdException(
+                    'pre-commit hook failed, review the changes using `stg diff`, '
+                    'run `stg add` to add them to index and run `stg refresh` again'
+                )
+            else:
+                # Update index and rewrite tree if hook updated files in index
+                if not stack.repository.default_index.is_clean(tree):
+                    tree = write_tree(stack, paths, temp_index=path_limiting)
 
     # Commit tree to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(stack, patch_name, tree)

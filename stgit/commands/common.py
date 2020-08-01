@@ -461,19 +461,6 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
         return cd
 
 
-def run_pre_commit_hook(repo):
-    pre_commit_hook = get_hook(repo, 'pre-commit')
-
-    if pre_commit_hook:
-        try:
-            pre_commit_hook()
-            return True
-        except RunException:
-            return False
-    else:
-        return True
-
-
 def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):
     """Return a new CommitData object updated according to the command line
     options."""
