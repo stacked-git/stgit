@@ -359,19 +359,20 @@ def __end_descr(line):
 def __split_descr_diff(string):
     """Return the description and the diff from the given string
     """
-    descr = diff = b''
+    descr_list = [b'']
+    diff_list = [b'']
     top = True
 
     for line in string.split(b'\n'):
         if top:
             if not __end_descr(line):
-                descr += line + b'\n'
+                descr_list.append(line + b'\n')
                 continue
             else:
                 top = False
-        diff += line + b'\n'
+        diff_list.append(line + b'\n')
 
-    return (descr.rstrip() + b'\n', diff)
+    return (b''.join(descr_list).rstrip() + b'\n', b''.join(diff_list))
 
 
 def __parse_description(descr):
