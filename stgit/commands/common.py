@@ -346,31 +346,30 @@ def post_rebase(stack, applied, cmd_name, check_merged):
 #
 # Patch description/e-mail/diff parsing
 #
-def __end_descr(line):
-    return (
-        re.match(br'---\s*$', line)
-        or re.match(b'diff -', line)
-        or re.match(b'Index: ', line)
-        or re.match(br'--- \w', line)
+def __split_descr_diff(string):
+    """Return the description and the diff from the given string."""
+    m = re.search(
+        br'''
+        ^
+        (?:
+               --- \s*
+             | --- \s \w
+             | diff \s -
+             | Index: \s
+        )
+        ''',
+        string,
+        re.MULTILINE | re.VERBOSE,
     )
 
+    if m:
+        desc = string[: m.start()]
+        diff = string[m.start() :]
+    else:
+        desc = string
+        diff = b''
 
-def __split_descr_diff(string):
-    """Return the description and the diff from the given string"""
-    descr_list = [b'']
-    diff_list = [b'']
-    top = True
-
-    for line in string.split(b'\n'):
-        if top:
-            if not __end_descr(line):
-                descr_list.append(line + b'\n')
-                continue
-            else:
-                top = False
-        diff_list.append(line + b'\n')
-
-    return (b''.join(descr_list).rstrip() + b'\n', b''.join(diff_list))
+    return desc, diff
 
 
 def __parse_description(descr):
