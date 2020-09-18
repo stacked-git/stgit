@@ -32,8 +32,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Performs the repository initialisation
-    """
+    """Performs the repository initialisation"""
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 

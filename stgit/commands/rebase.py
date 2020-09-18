@@ -63,8 +63,7 @@ directory = DirectoryGotoTopLevel()
 
 
 def func(parser, options, args):
-    """Rebase the current stack
-    """
+    """Rebase the current stack"""
     if len(args) != 1:
         parser.error('incorrect number of arguments')
 

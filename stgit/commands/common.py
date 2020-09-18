@@ -51,8 +51,7 @@ class CmdException(StgException):
 
 # Utility functions
 def parse_rev(rev):
-    """Parse a revision specification into its branch:patch parts.
-    """
+    """Parse a revision specification into its branch:patch parts."""
     try:
         branch, patch = rev.split(':', 1)
     except ValueError:
@@ -357,8 +356,7 @@ def __end_descr(line):
 
 
 def __split_descr_diff(string):
-    """Return the description and the diff from the given string
-    """
+    """Return the description and the diff from the given string"""
     descr = diff = b''
     top = True
 

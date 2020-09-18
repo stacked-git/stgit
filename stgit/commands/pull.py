@@ -93,8 +93,7 @@ def fetch(repository, remote_repository):
 
 
 def func(parser, options, args):
-    """Pull the changes from a remote repository
-    """
+    """Pull the changes from a remote repository"""
     repository = directory.repository
     iw = repository.default_iw
     stack = repository.get_stack()

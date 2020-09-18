@@ -335,7 +335,9 @@ class LogEntry(object):
             parents[-self._max_parents :] = [g]
         self.commit = self._repo.commit(
             CommitData(
-                tree=tree, message=self.message, parents=[self.simplified] + parents,
+                tree=tree,
+                message=self.message,
+                parents=[self.simplified] + parents,
             )
         )
 

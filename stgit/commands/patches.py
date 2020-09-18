@@ -32,7 +32,10 @@ files."""
 args = ['known_files']
 options = [
     opt(
-        '-d', '--diff', action='store_true', short='Show the diff for the given files',
+        '-d',
+        '--diff',
+        action='store_true',
+        short='Show the diff for the given files',
     ),
     opt(
         '-b',

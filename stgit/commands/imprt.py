@@ -76,11 +76,19 @@ options = (
             '--series',
             action='store_true',
             short='Import a series of patches',
-            long="""
-        Import a series of patches from a series file or a tar archive.""",
+            long="Import a series of patches from a series file or a tar archive.",
         ),
-        opt('-u', '--url', action='store_true', short='Import a patch from a URL',),
-        opt('-n', '--name', short='Use NAME as the patch name',),
+        opt(
+            '-u',
+            '--url',
+            action='store_true',
+            short='Import a patch from a URL',
+        ),
+        opt(
+            '-n',
+            '--name',
+            short='Use NAME as the patch name',
+        ),
         opt(
             '-p',
             '--strip',
@@ -155,8 +163,7 @@ def __replace_slashes_with_dashes(name):
 def __create_patch(
     filename, message, author_name, author_email, author_date, diff, options
 ):
-    """Create a new patch on the stack
-    """
+    """Create a new patch on the stack"""
     stack = directory.repository.current_stack
 
     if options.name:
@@ -191,7 +198,11 @@ def __create_patch(
 
     out.start('Importing patch "%s"' % name)
 
-    author = Person(author_name, author_email, Date.maybe(author_date),)
+    author = Person(
+        author_name,
+        author_email,
+        Date.maybe(author_date),
+    )
     author = options.author(author)
 
     try:
@@ -204,10 +215,17 @@ def __create_patch(
             tree = iw.index.write_tree()
 
         cd = CommitData(
-            tree=tree, parents=[stack.head], author=author, message=message,
+            tree=tree,
+            parents=[stack.head],
+            author=author,
+            message=message,
         )
         cd = update_commit_data(
-            cd, message=None, author=None, sign_str=options.sign_str, edit=options.edit,
+            cd,
+            message=None,
+            author=None,
+            sign_str=options.sign_str,
+            edit=options.edit,
         )
         commit = stack.repository.commit(cd)
 
@@ -233,8 +251,7 @@ def __mkpatchname(name, suffix):
 
 
 def __get_handle_and_name(filename):
-    """Return a file object and a patch name derived from filename
-    """
+    """Return a file object and a patch name derived from filename"""
     import bz2
     import gzip
 
@@ -253,8 +270,7 @@ def __get_handle_and_name(filename):
 
 
 def __import_file(filename, options, patch=None):
-    """Import a patch from a file or standard input
-    """
+    """Import a patch from a file or standard input"""
     pname = None
     if filename:
         (f, pname) = __get_handle_and_name(filename)
@@ -279,8 +295,7 @@ def __import_file(filename, options, patch=None):
 
 
 def __import_series(filename, options):
-    """Import a series of patches
-    """
+    """Import a series of patches"""
     import tarfile
 
     if filename:
@@ -301,7 +316,7 @@ def __import_series(filename, options):
         # series but as strip level default to 1, only "-p0" can actually
         # be found in the series file, the other ones are implicit
         m = re.match(
-            r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch,
+            r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch
         )
         options.strip = 1
         if m:
@@ -394,8 +409,7 @@ def __import_mail_path(mail_path, filename, options):
 
 
 def __import_url(url, options):
-    """Import a patch from a URL
-    """
+    """Import a patch from a URL"""
     try:
         from urllib.parse import unquote
         from urllib.request import urlretrieve
@@ -413,8 +427,7 @@ def __import_url(url, options):
 
 
 def __import_tarfile(tar, options):
-    """Import patch series from a tar archive
-    """
+    """Import patch series from a tar archive"""
     import shutil
     import tarfile
     import tempfile
@@ -453,8 +466,7 @@ def __import_tarfile(tar, options):
 
 
 def func(parser, options, args):
-    """Import a GNU diff file as a new patch
-    """
+    """Import a GNU diff file as a new patch"""
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 

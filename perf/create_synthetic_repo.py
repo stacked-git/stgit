@@ -71,9 +71,7 @@ def setup():
         parent=initial,
     )
     files = dict((fn, write_blob('First line\n' + stdblob(fn))) for fn in iter_paths())
-    write_commit(
-        t('modify-all'), files, 'Add first line to all files', parent=initial,
-    )
+    write_commit(t('modify-all'), files, 'Add first line to all files', parent=initial)
 
 
 setup()

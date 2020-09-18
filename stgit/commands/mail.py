@@ -112,12 +112,23 @@ the following:
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
-    opt('-a', '--all', action='store_true', short='E-mail all the applied patches',),
     opt(
-        '--to', action='append', args=['mail_aliases'], short='Add TO to the To: list',
+        '-a',
+        '--all',
+        action='store_true',
+        short='E-mail all the applied patches',
     ),
     opt(
-        '--cc', action='append', args=['mail_aliases'], short='Add CC to the Cc: list',
+        '--to',
+        action='append',
+        args=['mail_aliases'],
+        short='Add TO to the To: list',
+    ),
+    opt(
+        '--cc',
+        action='append',
+        args=['mail_aliases'],
+        short='Add CC to the Cc: list',
     ),
     opt(
         '--bcc',
@@ -125,7 +136,11 @@ options = [
         args=['mail_aliases'],
         short='Add BCC to the Bcc: list',
     ),
-    opt('--auto', action='store_true', short='Automatically cc the patch signers',),
+    opt(
+        '--auto',
+        action='store_true',
+        short='Automatically cc the patch signers',
+    ),
     opt(
         '--no-thread',
         action='store_true',
@@ -136,7 +151,11 @@ options = [
         action='store_true',
         short='Send patches without sequence numbering',
     ),
-    opt('--attach', action='store_true', short='Send a patch as attachment',),
+    opt(
+        '--attach',
+        action='store_true',
+        short='Send a patch as attachment',
+    ),
     opt(
         '--attach-inline',
         action='store_true',
@@ -149,10 +168,22 @@ options = [
         short='Add VERSION to the [PATCH ...] prefix',
     ),
     opt(
-        '--prefix', metavar='PREFIX', short='Add PREFIX to the [... PATCH ...] prefix',
+        '--prefix',
+        metavar='PREFIX',
+        short='Add PREFIX to the [... PATCH ...] prefix',
     ),
-    opt('-t', '--template', metavar='FILE', short='Use FILE as the message template',),
-    opt('-c', '--cover', metavar='FILE', short='Send FILE as the cover message',),
+    opt(
+        '-t',
+        '--template',
+        metavar='FILE',
+        short='Use FILE as the message template',
+    ),
+    opt(
+        '-c',
+        '--cover',
+        metavar='FILE',
+        short='Send FILE as the cover message',
+    ),
     opt(
         '-e',
         '--edit-cover',
@@ -172,20 +203,34 @@ options = [
         metavar='SECONDS',
         short='Sleep for SECONDS between e-mails sending',
     ),
-    opt('--in-reply-to', metavar='REFID', short='Use REFID as the reference id',),
+    opt(
+        '--in-reply-to',
+        metavar='REFID',
+        short='Use REFID as the reference id',
+    ),
     opt(
         '--smtp-server',
         metavar='HOST[:PORT] or "/path/to/sendmail -t -i"',
         short='SMTP server or command to use for sending mail',
     ),
-    opt('-u', '--smtp-user', metavar='USER', short='Username for SMTP authentication',),
+    opt(
+        '-u',
+        '--smtp-user',
+        metavar='USER',
+        short='Username for SMTP authentication',
+    ),
     opt(
         '-p',
         '--smtp-password',
         metavar='PASSWORD',
         short='Password for SMTP authentication',
     ),
-    opt('-T', '--smtp-tls', action='store_true', short='Use SMTP with TLS encryption',),
+    opt(
+        '-T',
+        '--smtp-tls',
+        action='store_true',
+        short='Use SMTP with TLS encryption',
+    ),
     opt(
         '-b',
         '--branch',
@@ -204,7 +249,11 @@ options = [
         short='Use DOMAIN when generating message IDs '
         '(instead of the system hostname)',
     ),
-    opt('--git', action='store_true', short='Use git send-email (EXPERIMENTAL)',),
+    opt(
+        '--git',
+        action='store_true',
+        short='Use git send-email (EXPERIMENTAL)',
+    ),
 ] + diff_opts_option()
 
 directory = DirectoryHasRepository()
@@ -239,8 +288,7 @@ def __addr_list(msg, header):
 
 
 def __parse_addresses(msg):
-    """Return a two elements tuple: (from, [to])
-    """
+    """Return a two elements tuple: (from, [to])"""
     from_addr_list = __addr_list(msg, 'From')
     if len(from_addr_list) == 0:
         raise CmdException('No "From" address')
@@ -255,8 +303,7 @@ def __parse_addresses(msg):
 
 
 def __send_message_sendmail(sendmail, msg_bytes):
-    """Send the message using the sendmail command.
-    """
+    """Send the message using the sendmail command."""
     cmd = sendmail.split()
     Run(*cmd).encoding(None).raw_input(msg_bytes).discard_output()
 
@@ -289,8 +336,7 @@ def __set_smtp_credentials(options):
 
 
 def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
-    """Send the message using the given SMTP server
-    """
+    """Send the message using the given SMTP server"""
     smtpuser, smtppassword, smtpusetls = __smtp_credentials
 
     try:
@@ -315,7 +361,8 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
         result = s.sendmail(from_addr, to_addr_list, msg)
         if len(result):
             print(
-                "mail server refused delivery for the following recipients:", result,
+                "mail server refused delivery for the following recipients:",
+                result,
             )
     except Exception as err:
         raise CmdException(str(err))
@@ -324,8 +371,7 @@ def __send_message_smtp(smtpserver, from_addr, to_addr_list, msg, options):
 
 
 def __send_message_git(msg_bytes, from_, options):
-    """Send the message using git send-email
-    """
+    """Send the message using git send-email"""
     from subprocess import call
     from tempfile import mkstemp
 
@@ -358,8 +404,7 @@ def __send_message_git(msg_bytes, from_, options):
 
 
 def __send_message(msg_type, tmpl, options, *args):
-    """Message sending dispatcher.
-    """
+    """Message sending dispatcher."""
     msg_id = email.utils.make_msgid(
         'stgit', domain=options.domain or config.get('stgit.domain')
     )
@@ -477,8 +522,7 @@ def __get_signers_list(msg):
 
 
 def __build_extra_headers(msg, msg_id, ref_id=None):
-    """Build extra email headers and encoding
-    """
+    """Build extra email headers and encoding"""
     del msg['Date']
     msg['Date'] = email.utils.formatdate(localtime=True)
     msg['Message-ID'] = msg_id
@@ -545,8 +589,7 @@ def __diffstat(stack, patches):
 
 
 def __build_cover(tmpl, msg_id, options, patches):
-    """Build the cover message (series description) to be sent via SMTP
-    """
+    """Build the cover message (series description) to be sent via SMTP"""
     sender = __get_sender()
 
     if options.version:
@@ -632,8 +675,7 @@ def __build_cover(tmpl, msg_id, options, patches):
 
 
 def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
-    """Build the message to be sent via SMTP
-    """
+    """Build the message to be sent via SMTP"""
     repository = directory.repository
     stack = repository.current_stack
 

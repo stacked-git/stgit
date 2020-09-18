@@ -480,7 +480,9 @@ class StackTransaction(object):
                 continue
             try:
                 self.temp_index.apply_treediff(
-                    cd.tree, cd.parent.data.tree, quiet=True,
+                    cd.tree,
+                    cd.parent.data.tree,
+                    quiet=True,
                 )
                 merged.append(pn)
                 # The self.temp_index was modified by apply_treediff() so

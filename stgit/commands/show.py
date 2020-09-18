@@ -43,8 +43,18 @@ options = [
         args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
-    opt('-a', '--applied', action='store_true', short='Show the applied patches',),
-    opt('-u', '--unapplied', action='store_true', short='Show the unapplied patches',),
+    opt(
+        '-a',
+        '--applied',
+        action='store_true',
+        short='Show the applied patches',
+    ),
+    opt(
+        '-u',
+        '--unapplied',
+        action='store_true',
+        short='Show the unapplied patches',
+    ),
     opt(
         '-s',
         '--stat',
@@ -75,7 +85,11 @@ def func(parser, options, args):
         commits = [stack.top]
     elif '..' in ' '.join(args):
         # patch ranges
-        patch_names = parse_patches(args, patchorder.all, len(patchorder.applied),)
+        patch_names = parse_patches(
+            args,
+            patchorder.all,
+            len(patchorder.applied),
+        )
         commits = [stack.patches.get(pn).commit for pn in patch_names]
     else:
         commits = []

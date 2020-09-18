@@ -37,7 +37,10 @@ args = [patch_range('unapplied_patches')]
 options = (
     [
         opt(
-            '-a', '--all', action='store_true', short='Push all the unapplied patches',
+            '-a',
+            '--all',
+            action='store_true',
+            short='Push all the unapplied patches',
         ),
         opt(
             '-n',
@@ -50,7 +53,9 @@ options = (
         With a negative number, push all but that many patches.''',
         ),
         opt(
-            '--reverse', action='store_true', short='Push the patches in reverse order',
+            '--reverse',
+            action='store_true',
+            short='Push the patches in reverse order',
         ),
         opt(
             '--set-tree',

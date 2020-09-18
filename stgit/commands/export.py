@@ -57,9 +57,16 @@ options = [
         short='Export patches to DIR instead of the default',
     ),
     opt(
-        '-p', '--patch', action='store_true', short='Append .patch to the patch names',
+        '-p',
+        '--patch',
+        action='store_true',
+        short='Append .patch to the patch names',
     ),
-    opt('-e', '--extension', short='Append .EXTENSION to the patch names'),
+    opt(
+        '-e',
+        '--extension',
+        short='Append .EXTENSION to the patch names',
+    ),
     opt(
         '-n',
         '--numbered',
@@ -91,8 +98,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Export a range of patches.
-    """
+    """Export a range of patches."""
     repository = directory.repository
     stack = repository.get_stack(options.branch)
 
@@ -137,9 +143,7 @@ def func(parser, options, args):
         series = io.open(os.path.join(dirname, 'series'), 'w')
         # note the base commit for this series
         base_commit = stack.base.sha1
-        print(
-            '# This series applies on GIT commit %s' % base_commit, file=series,
-        )
+        print('# This series applies on GIT commit %s' % base_commit, file=series)
 
     for patch_no, p in enumerate(patches, 1):
         pname = p
@@ -164,7 +168,7 @@ def func(parser, options, args):
         long_descr = '\n'.join(descr_lines[1:]).strip()
 
         diff = stack.repository.diff_tree(
-            cd.parent.data.tree, cd.tree, options.diff_flags,
+            cd.parent.data.tree, cd.tree, options.diff_flags
         )
 
         tmpl_dict = {

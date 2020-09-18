@@ -156,7 +156,11 @@ class Run(object):
         assert self._indata is None
         self._log_start()
         try:
-            p = subprocess.Popen(self._prep_cmd(), env=self._prep_env(), cwd=self._cwd,)
+            p = subprocess.Popen(
+                self._prep_cmd(),
+                env=self._prep_env(),
+                cwd=self._cwd,
+            )
             self.exitcode = p.wait()
         except OSError as e:
             raise self.exc('%s failed: %s' % (self._cmd[0], e))

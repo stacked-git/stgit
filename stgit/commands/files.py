@@ -37,15 +37,14 @@ command. Use the 'diff' or 'status' commands for these files."""
 args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = [
     opt('-s', '--stat', action='store_true', short='Show the diffstat'),
-    opt('--bare', action='store_true', short='Bare file names (useful for scripting)',),
+    opt('--bare', action='store_true', short='Bare file names (useful for scripting)'),
 ] + argparse.diff_opts_option()
 
 directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Show the files modified by a patch (or the current patch)
-    """
+    """Show the files modified by a patch (or the current patch)"""
     if options.bare and options.stat:
         raise CmdException('Cannot specify both --bare and --stat')
     repository = directory.repository

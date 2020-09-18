@@ -47,8 +47,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Reorder patches to make the named patch the topmost one.
-    """
+    """Reorder patches to make the named patch the topmost one."""
     if options.series and args:
         parser.error('<patches> cannot be used with --series')
     elif not options.series and not args:

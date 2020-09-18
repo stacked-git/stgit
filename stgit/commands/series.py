@@ -46,14 +46,24 @@ options = [
         action='store_true',
         short='Show all patches, including the hidden ones',
     ),
-    opt('-A', '--applied', action='store_true', short='Show the applied patches only',),
+    opt(
+        '-A',
+        '--applied',
+        action='store_true',
+        short='Show the applied patches only',
+    ),
     opt(
         '-U',
         '--unapplied',
         action='store_true',
         short='Show the unapplied patches only',
     ),
-    opt('-H', '--hidden', action='store_true', short='Show the hidden patches only',),
+    opt(
+        '-H',
+        '--hidden',
+        action='store_true',
+        short='Show the hidden patches only',
+    ),
     opt(
         '-m',
         '--missing',
@@ -73,7 +83,11 @@ options = [
         action='store_true',
         short='Show a short description for each patch',
     ),
-    opt('--author', action='store_true', short='Show the author name for each patch',),
+    opt(
+        '--author',
+        action='store_true',
+        short='Show the author name for each patch',
+    ),
     opt(
         '-e',
         '--empty',
@@ -90,7 +104,9 @@ options = [
         short='Append the branch name to the listed patches',
     ),
     opt(
-        '--noprefix', action='store_true', short='Do not show the patch status prefix',
+        '--noprefix',
+        action='store_true',
+        short='Do not show the patch status prefix',
     ),
     opt(
         '-s',
@@ -104,15 +120,13 @@ directory = DirectoryHasRepository()
 
 
 def __get_description(stack, patch):
-    """Extract and return a patch's short description
-    """
+    """Extract and return a patch's short description"""
     cd = stack.patches.get(patch).commit.data
     return cd.message_str.strip().split('\n', 1)[0].rstrip()
 
 
 def __get_author(stack, patch):
-    """Extract and return a patch's short description
-    """
+    """Extract and return a patch's short description"""
     cd = stack.patches.get(patch).commit.data
     return cd.author.name
 
@@ -146,8 +160,7 @@ def __render_text(text, effects):
 
 
 def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
-    """Print a patch name, description and various markers.
-    """
+    """Print a patch name, description and various markers."""
     if options.noprefix:
         prefix = ''
     elif options.empty:
@@ -174,8 +187,7 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
 
 
 def func(parser, options, args):
-    """Show the patch series
-    """
+    """Show the patch series"""
     if options.all and options.short:
         raise CmdException('combining --all and --short is meaningless')
 

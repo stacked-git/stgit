@@ -13,23 +13,39 @@ from stgit.completion.fish import write_fish_completion
 def main():
     op = optparse.OptionParser()
     op.add_option(
-        '--stgit-version', action='store_true', help='Print StGit version',
+        '--stgit-version',
+        action='store_true',
+        help='Print StGit version',
     )
     op.add_option(
-        '--asciidoc', metavar='CMD', help='Print asciidoc documentation for a command',
+        '--asciidoc',
+        metavar='CMD',
+        help='Print asciidoc documentation for a command',
     )
     op.add_option(
-        '--commands', action='store_true', help='Print list of all stg subcommands',
-    )
-    op.add_option('--cmd-list', action='store_true', help='Print asciidoc command list')
-    op.add_option(
-        '--py-cmd-list', action='store_true', help='Write Python command list'
+        '--commands',
+        action='store_true',
+        help='Print list of all stg subcommands',
     )
     op.add_option(
-        '--bash-completion', action='store_true', help='Write bash completion code',
+        '--cmd-list',
+        action='store_true',
+        help='Print asciidoc command list',
     )
     op.add_option(
-        '--fish-completion', action='store_true', help='Write fish completion code',
+        '--py-cmd-list',
+        action='store_true',
+        help='Write Python command list',
+    )
+    op.add_option(
+        '--bash-completion',
+        action='store_true',
+        help='Write bash completion code',
+    )
+    op.add_option(
+        '--fish-completion',
+        action='store_true',
+        help='Write fish completion code',
     )
     options, args = op.parse_args()
     if args:

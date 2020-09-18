@@ -33,7 +33,11 @@ patches, and leave the rest alone."""
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
-    opt('--hard', action='store_true', short='Discard changes in your index/worktree',),
+    opt(
+        '--hard',
+        action='store_true',
+        short='Discard changes in your index/worktree',
+    ),
 ]
 
 directory = DirectoryHasRepository()
@@ -54,7 +58,10 @@ def func(parser, options, args):
         raise CmdException('Wrong options or number of arguments')
 
     trans = transaction.StackTransaction(
-        stack, 'reset', discard_changes=options.hard, allow_bad_head=True,
+        stack,
+        'reset',
+        discard_changes=options.hard,
+        allow_bad_head=True,
     )
     try:
         if patches:

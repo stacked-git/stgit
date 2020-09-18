@@ -86,7 +86,9 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     for pn in patches[1:]:
         c = trans.patches[pn]
         tree = trans.stack.repository.simple_merge(
-            base=c.data.parent.data.tree, ours=cd.tree, theirs=c.data.tree,
+            base=c.data.parent.data.tree,
+            ours=cd.tree,
+            theirs=c.data.tree,
         )
         if not tree:
             return None

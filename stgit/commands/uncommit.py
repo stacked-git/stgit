@@ -51,9 +51,17 @@ words, you can't uncommit a merge."""
 args = []
 options = [
     opt(
-        '-n', '--number', type='int', short='Uncommit the specified number of commits',
+        '-n',
+        '--number',
+        type='int',
+        short='Uncommit the specified number of commits',
     ),
-    opt('-t', '--to', args=['commit'], short='Uncommit to the specified commit',),
+    opt(
+        '-t',
+        '--to',
+        args=['commit'],
+        short='Uncommit to the specified commit',
+    ),
     opt(
         '-x',
         '--exclusive',
@@ -66,8 +74,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Uncommit a number of patches.
-    """
+    """Uncommit a number of patches."""
     stack = directory.repository.current_stack
     if options.to:
         if options.number:

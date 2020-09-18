@@ -34,11 +34,20 @@ options = [
         '--range',
         metavar='rev1[..[rev2]]',
         dest='revs',
-        args=[patch_range('applied_patches', 'unapplied_patches', 'hidden_patches',)],
+        args=[
+            patch_range(
+                'applied_patches',
+                'unapplied_patches',
+                'hidden_patches',
+            )
+        ],
         short='Show the diff between revisions',
     ),
     opt(
-        '-s', '--stat', action='store_true', short='Show the stat instead of the diff',
+        '-s',
+        '--stat',
+        action='store_true',
+        short='Show the stat instead of the diff',
     ),
 ] + diff_opts_option()
 

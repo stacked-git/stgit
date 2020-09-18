@@ -37,37 +37,32 @@ def mkdir_file(filename, mode, encoding='utf-8'):
 
 
 def read_strings(filename, encoding='utf-8'):
-    """Reads the lines from a file
-    """
+    """Reads the lines from a file"""
     with open(filename, encoding=encoding) as f:
         return [line.strip() for line in f.readlines()]
 
 
 def read_string(filename, encoding='utf-8'):
-    """Reads the first line from a file
-    """
+    """Reads the first line from a file"""
     with open(filename, encoding=encoding) as f:
         return f.readline().strip()
 
 
 def write_strings(filename, lines, encoding='utf-8'):
-    """Write 'lines' sequence to file
-    """
+    """Write 'lines' sequence to file"""
     with open(filename, 'w+', encoding=encoding) as f:
         for line in lines:
             print(line, file=f)
 
 
 def write_string(filename, line, multiline=False, encoding='utf-8'):
-    """Writes 'line' to file and truncates it
-    """
+    """Writes 'line' to file and truncates it"""
     with mkdir_file(filename, 'w+', encoding) as f:
         print(line, end='' if multiline else '\n', file=f)
 
 
 def create_empty_file(name):
-    """Creates an empty file
-    """
+    """Creates an empty file"""
     mkdir_file(name, 'w+').close()
 
 

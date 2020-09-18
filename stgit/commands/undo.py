@@ -35,7 +35,11 @@ options = [
         default=1,
         short='Undo the last N commands',
     ),
-    opt('--hard', action='store_true', short='Discard changes in your index/worktree',),
+    opt(
+        '--hard',
+        action='store_true',
+        short='Discard changes in your index/worktree',
+    ),
 ]
 
 directory = DirectoryHasRepository()

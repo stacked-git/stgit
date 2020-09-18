@@ -57,8 +57,7 @@ def append_alias_commands(cmd_list):
 # The commands map
 #
 class Commands(dict):
-    """Commands class. It performs on-demand module loading
-    """
+    """Commands class. It performs on-demand module loading"""
 
     def canonical_cmd(self, key):
         """Return the canonical name for a possibly-shortenned
@@ -109,8 +108,7 @@ def print_help():
 # The main function (command dispatcher)
 #
 def _main():
-    """The main function
-    """
+    """The main function"""
     global prog
 
     sys.argv = list(map(fsdecode_utf8, sys.argv))

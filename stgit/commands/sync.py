@@ -37,7 +37,10 @@ in the series must apply cleanly."""
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
-        '-a', '--all', action='store_true', short='Synchronise all the applied patches',
+        '-a',
+        '--all',
+        action='store_true',
+        short='Synchronise all the applied patches',
     ),
     opt(
         '-B',
@@ -45,15 +48,19 @@ options = [
         args=['stg_branches'],
         short='Syncronise patches with BRANCH',
     ),
-    opt('-s', '--series', args=['files'], short='Syncronise patches with SERIES',),
+    opt(
+        '-s',
+        '--series',
+        args=['files'],
+        short='Syncronise patches with SERIES',
+    ),
 ]
 
 directory = DirectoryGotoTopLevel()
 
 
 def __branch_merge_patch(remote_stack, stack, commit, pname):
-    """Merge a patch from a remote branch into the current tree.
-    """
+    """Merge a patch from a remote branch into the current tree."""
     remote = remote_stack.patches.get(pname).commit
     iw = stack.repository.default_iw
     iw.checkout(new_tree=commit.data.tree, old_tree=stack.head.data.tree)
@@ -70,8 +77,7 @@ def __branch_merge_patch(remote_stack, stack, commit, pname):
 
 
 def __series_merge_patch(patchdir, stack, commit, pname):
-    """Merge a patch file with the given StGIT patch.
-    """
+    """Merge a patch file with the given StGIT patch."""
     with io.open(os.path.join(patchdir, pname), 'rb') as f:
         diff = f.read()
     base = commit.data.parent
@@ -85,7 +91,9 @@ def __series_merge_patch(patchdir, stack, commit, pname):
     new_tree = iw.index.write_tree()
     stack.repository.commit(
         CommitData(
-            tree=new_tree, message='temp commit for applying patch', parents=[base],
+            tree=new_tree,
+            message='temp commit for applying patch',
+            parents=[base],
         )
     )
     iw.checkout(new_tree=orig_head.data.tree, old_tree=new_tree)
@@ -98,8 +106,7 @@ def __series_merge_patch(patchdir, stack, commit, pname):
 
 
 def func(parser, options, args):
-    """Synchronise a range of patches
-    """
+    """Synchronise a range of patches"""
     repository = directory.repository
     stack = repository.get_stack()
 

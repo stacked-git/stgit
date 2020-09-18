@@ -38,8 +38,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Show the name of the topmost patch
-    """
+    """Show the name of the topmost patch"""
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 

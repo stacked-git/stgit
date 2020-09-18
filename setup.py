@@ -10,8 +10,7 @@ from stgit.completion.fish import write_fish_completion
 
 
 def __version_to_list(version):
-    """Convert a version string to a list of numbers or strings
-    """
+    """Convert a version string to a list of numbers or strings"""
     ver_list = []
     for p in version.split('.'):
         try:
@@ -23,16 +22,14 @@ def __version_to_list(version):
 
 
 def __check_min_version(min_ver, ver):
-    """Check whether ver is greater or equal to min_ver
-    """
+    """Check whether ver is greater or equal to min_ver"""
     min_ver_list = __version_to_list(min_ver)
     ver_list = __version_to_list(ver)
     return min_ver_list <= ver_list
 
 
 def __check_python_version():
-    """Check the minimum Python version
-    """
+    """Check the minimum Python version"""
     pyver = '.'.join(map(str, sys.version_info))
     if not __check_min_version(version.python_min_ver, pyver):
         print(
@@ -44,8 +41,7 @@ def __check_python_version():
 
 
 def __check_git_version():
-    """Check the minimum GIT version
-    """
+    """Check the minimum GIT version"""
     from stgit.run import Run
 
     gitver = Run('git', '--version').output_one_line().split()[2]

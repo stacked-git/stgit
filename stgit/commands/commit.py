@@ -38,7 +38,12 @@ all applied patches are committed."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
-    opt('-n', '--number', type='int', short='Commit the specified number of patches',),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Commit the specified number of patches',
+    ),
     opt('-a', '--all', action='store_true', short='Commit all applied patches'),
 ]
 

@@ -54,9 +54,23 @@ message.
 
 args = [patch_range('applied_patches', 'unapplied_patches', 'hidden_patches')]
 options = [
-    opt('-n', '--name', short='Use NAME as the patch name',),
-    opt('-B', '--ref-branch', args=['stg_branches'], short='Pick patches from BRANCH',),
-    opt('-r', '--revert', action='store_true', short='Revert the given commit object',),
+    opt(
+        '-n',
+        '--name',
+        short='Use NAME as the patch name',
+    ),
+    opt(
+        '-B',
+        '--ref-branch',
+        args=['stg_branches'],
+        short='Pick patches from BRANCH',
+    ),
+    opt(
+        '-r',
+        '--revert',
+        action='store_true',
+        short='Revert the given commit object',
+    ),
     opt(
         '-p',
         '--parent',
@@ -86,7 +100,11 @@ options = [
         action='append',
         short='Only fold the given file (can be used multiple times)',
     ),
-    opt('--unapplied', action='store_true', short='Keep the patch unapplied',),
+    opt(
+        '--unapplied',
+        action='store_true',
+        short='Keep the patch unapplied',
+    ),
 ]
 
 directory = DirectoryGotoTopLevel()
@@ -137,7 +155,9 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
                 else:
                     try:
                         iw.merge(
-                            bottom.data.tree, stack.head.data.tree, top.data.tree,
+                            bottom.data.tree,
+                            stack.head.data.tree,
+                            top.data.tree,
                         )
                     except MergeConflictException as e:
                         out.done('%s conflicts' % len(e.conflicts))
@@ -197,7 +217,10 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
 
         new_commit = repository.commit(
             CommitData(
-                tree=top.data.tree, parents=[bottom], message=message, author=author,
+                tree=top.data.tree,
+                parents=[bottom],
+                message=message,
+                author=author,
             )
         )
 
@@ -224,8 +247,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
 
 
 def func(parser, options, args):
-    """Import a commit object as a new patch
-    """
+    """Import a commit object as a new patch"""
     if not args:
         parser.error('incorrect number of arguments')
 
@@ -248,7 +270,9 @@ def func(parser, options, args):
 
     try:
         patches = parse_patches(
-            args, ref_stack.patchorder.all_visible, len(ref_stack.patchorder.applied),
+            args,
+            ref_stack.patchorder.all_visible,
+            len(ref_stack.patchorder.applied),
         )
         commit = None
     except CmdException:

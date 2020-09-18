@@ -98,7 +98,12 @@ options = (
             action='store_true',
             short='Invoke an editor for the patch description',
         ),
-        opt('-a', '--annotate', metavar='NOTE', short='Annotate the patch log entry',),
+        opt(
+            '-a',
+            '--annotate',
+            metavar='NOTE',
+            short='Annotate the patch log entry',
+        ),
         opt(
             '-s',
             '--submodules',
@@ -188,7 +193,9 @@ def make_temp_patch(stack, patch_name, tree):
     """Commit tree to temp patch, in a complete transaction."""
     commit = stack.repository.commit(
         CommitData(
-            tree=tree, parents=[stack.head], message='Refresh of %s' % patch_name,
+            tree=tree,
+            parents=[stack.head],
+            message='Refresh of %s' % patch_name,
         )
     )
     temp_name = utils.make_patch_name('refresh-temp', stack.patches.exists)
@@ -262,7 +269,9 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
     patch_cd = trans.patches[patch_name].data
     temp_cd = trans.patches[temp_name].data
     new_tree = trans.stack.repository.simple_merge(
-        base=temp_cd.parent.data.tree, ours=patch_cd.tree, theirs=temp_cd.tree,
+        base=temp_cd.parent.data.tree,
+        ours=patch_cd.tree,
+        theirs=temp_cd.tree,
     )
     if new_tree:
         # It worked. Refresh the patch with the new tree, and delete
@@ -336,7 +345,12 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     patch_name = get_patch(stack, options.patch)
     paths = list_files(
-        stack, patch_name, args, options.index, options.update, options.submodules,
+        stack,
+        patch_name,
+        args,
+        options.index,
+        options.update,
+        options.submodules,
     )
 
     # Make sure there are no conflicts in the files we want to

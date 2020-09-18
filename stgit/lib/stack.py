@@ -120,7 +120,8 @@ class Patch(object):
         """Return the set of files this patch touches."""
         fs = set()
         for dt in self._stack.repository.diff_tree_files(
-            self.commit.data.parent.data.tree, self.commit.data.tree,
+            self.commit.data.parent.data.tree,
+            self.commit.data.tree,
         ):
             _, _, _, _, _, oldname, newname = dt
             fs.add(oldname)
@@ -194,8 +195,7 @@ class PatchOrder(object):
 
     @staticmethod
     def create(stackdir):
-        """Create the PatchOrder specific files
-        """
+        """Create the PatchOrder specific files"""
         utils.create_empty_file(os.path.join(stackdir, 'applied'))
         utils.create_empty_file(os.path.join(stackdir, 'unapplied'))
         utils.create_empty_file(os.path.join(stackdir, 'hidden'))
@@ -337,7 +337,7 @@ class Stack(Branch):
         config.rename_section('branch.%s.stgit' % old_name, 'branch.%s.stgit' % name)
 
         utils.rename(
-            os.path.join(self.repository.directory, self._repo_subdir), old_name, name,
+            os.path.join(self.repository.directory, self._repo_subdir), old_name, name
         )
 
     def rename_patch(self, old_name, new_name, msg='rename'):

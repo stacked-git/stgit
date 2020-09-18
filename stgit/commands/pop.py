@@ -34,7 +34,12 @@ revert the last push operation)."""
 args = [patch_range('applied_patches')]
 options = (
     [
-        opt('-a', '--all', action='store_true', short='Pop all the applied patches',),
+        opt(
+            '-a',
+            '--all',
+            action='store_true',
+            short='Pop all the applied patches',
+        ),
         opt(
             '-s',
             '--spill',

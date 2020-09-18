@@ -67,8 +67,7 @@ def _clean(stack, clean_applied, clean_unapplied):
 
 
 def func(parser, options, args):
-    """Delete the empty patches in the series
-    """
+    """Delete the empty patches in the series"""
     if len(args) != 0:
         parser.error('incorrect number of arguments')
 

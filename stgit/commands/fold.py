@@ -73,8 +73,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Integrate a GNU diff patch into the current patch
-    """
+    """Integrate a GNU diff patch into the current patch"""
     if len(args) > 1:
         parser.error('incorrect number of arguments')
 
@@ -126,7 +125,10 @@ def func(parser, options, args):
         )
     else:
         apply_patch(
-            stack, diff, strip=options.strip, reject=options.reject,
+            stack,
+            diff,
+            strip=options.strip,
+            reject=options.reject,
         )
 
     out.done()

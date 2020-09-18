@@ -107,7 +107,12 @@ options = [
         of the current branch. The parent information of the new
         branch is copied from the current branch.""",
     ),
-    opt('-r', '--rename', action='store_true', short='Rename an existing branch',),
+    opt(
+        '-r',
+        '--rename',
+        action='store_true',
+        short='Rename an existing branch',
+    ),
     opt(
         '-p',
         '--protect',
@@ -157,7 +162,11 @@ options = [
         A cleaned up branch can be re-initialised using the 'stg init'
         command.""",
     ),
-    opt('-d', '--description', short='Set the branch description'),
+    opt(
+        '-d',
+        '--description',
+        short='Set the branch description',
+    ),
     opt(
         '--merge',
         action='store_true',

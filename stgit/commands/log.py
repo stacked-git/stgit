@@ -46,13 +46,35 @@ options = [
         args=['stg_branches'],
         short='Use BRANCH instead of the default one',
     ),
-    opt('-d', '--diff', action='store_true', short='Show the refresh diffs',),
-    opt('-n', '--number', type='int', short='Limit the output to NUMBER commits',),
-    opt('-f', '--full', action='store_true', short='Show the full commit ids',),
     opt(
-        '-g', '--graphical', action='store_true', short='Run gitk instead of printing',
+        '-d',
+        '--diff',
+        action='store_true',
+        short='Show the refresh diffs',
     ),
-    opt('--clear', action='store_true', short='Clear the log history',),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Limit the output to NUMBER commits',
+    ),
+    opt(
+        '-f',
+        '--full',
+        action='store_true',
+        short='Show the full commit ids',
+    ),
+    opt(
+        '-g',
+        '--graphical',
+        action='store_true',
+        short='Run gitk instead of printing',
+    ),
+    opt(
+        '--clear',
+        action='store_true',
+        short='Clear the log history',
+    ),
 ]
 
 directory = DirectoryHasRepository()

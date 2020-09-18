@@ -36,8 +36,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Show the applied patches
-    """
+    """Show the applied patches"""
     if len(args) == 0:
         id_str = 'HEAD'
     elif len(args) == 1:

@@ -79,7 +79,12 @@ options = [
         args=['stg_branches'],
         short='Use BRANCH instead of the default branch',
     ),
-    opt('-l', '--last', action='store_true', short='Show the last published patch',),
+    opt(
+        '-l',
+        '--last',
+        action='store_true',
+        short='Show the last published patch',
+    ),
     opt(
         '-u',
         '--unpublished',

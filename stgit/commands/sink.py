@@ -67,8 +67,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Sink patches down the stack.
-    """
+    """Sink patches down the stack."""
     stack = directory.repository.current_stack
 
     if options.to and options.to not in stack.patchorder.applied:

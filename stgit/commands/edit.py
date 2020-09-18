@@ -70,7 +70,7 @@ args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = (
     [
         opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
-        opt('-e', '--edit', action='store_true', short='Invoke interactive editor',),
+        opt('-e', '--edit', action='store_true', short='Invoke interactive editor'),
     ]
     + argparse.sign_options()
     + argparse.message_options(save_template=True)
@@ -92,8 +92,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Edit the given patch or the current one.
-    """
+    """Edit the given patch or the current one."""
     stack = directory.repository.current_stack
 
     if len(args) == 0:
