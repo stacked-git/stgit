@@ -1,4 +1,5 @@
 import atexit
+import io
 import os
 import re
 import signal
@@ -124,24 +125,32 @@ class CatFileProcess(object):
         p.stdin.write('%s\n' % sha1)
         p.stdin.flush()
 
-        # Read until we have the entire status line.
-        s = b''
-        while b'\n' not in s:
-            s += os.read(p.stdout.fileno(), 4096)
-        h, b = s.split(b'\n', 1)
-        header = h.decode('utf-8')
+        fd = p.stdout.fileno()
+
+        # Read until we have the entire header line.
+        parts = [os.read(fd, io.DEFAULT_BUFFER_SIZE)]
+        while b'\n' not in parts[-1]:
+            parts.append(os.read(fd, io.DEFAULT_BUFFER_SIZE))
+        out_bytes = b''.join(parts)
+
+        header_bytes, content_part = out_bytes.split(b'\n', 1)
+        header = header_bytes.decode('utf-8')
         if header == '%s missing' % sha1:
             raise RepositoryException('Cannot cat %s' % sha1)
-        name, type_, size = header.split()
+        name, content_type, size = header.split()
         assert name == sha1
         size = int(size)
 
-        # Read until we have the entire object plus the trailing
-        # newline.
-        while len(b) < size + 1:
-            b += os.read(p.stdout.fileno(), 4096)
-        content = b[:size]
-        return type_, content
+        # Read until we have the entire object plus the trailing newline.
+        content_len = len(content_part)
+        content_parts = [content_part]
+        while content_len < size + 1:
+            content_part = os.read(fd, io.DEFAULT_BUFFER_SIZE)
+            content_parts.append(content_part)
+            content_len += len(content_part)
+        content = b''.join(content_parts)[:size]
+
+        return content_type, content
 
 
 class DiffTreeProcesses(object):
@@ -169,9 +178,15 @@ class DiffTreeProcesses(object):
         end = b'EOF\n'  # arbitrary string that's not a 40-digit hex number
         os.write(p.stdin.fileno(), query + end)
         p.stdin.flush()
-        data = bytes()
-        while not (data.endswith(b'\n' + end) or data.endswith(b'\0' + end)):
-            data += os.read(p.stdout.fileno(), 4096)
+
+        parts = [os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE)]
+        while not (
+            parts[-1].endswith(b'\n' + end) or parts[-1].endswith(b'\0' + end)
+        ):
+            parts.append(os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE))
+
+        data = b''.join(parts)
+
         assert data.startswith(query)
         assert data.endswith(end)
         return data[len(query) : -len(end)]
