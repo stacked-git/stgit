@@ -7,7 +7,6 @@ import sys
 from stgit import templates
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
-from stgit.lib.git import diffstat
 from stgit.out import out
 
 __copyright__ = """
@@ -175,7 +174,7 @@ def func(parser, options, args):
             'description': descr,
             'shortdescr': short_descr,
             'longdescr': long_descr,
-            'diffstat': diffstat(diff).rstrip(),
+            'diffstat': repository.default_iw.diffstat(diff).rstrip(),
             'authname': cd.author.name,
             'authemail': cd.author.email,
             'authdate': cd.author.date.isoformat(),

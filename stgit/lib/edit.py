@@ -5,7 +5,7 @@ import re
 from stgit import utils
 from stgit.commands import common
 from stgit.config import config
-from stgit.lib.git import Date, Person, diffstat
+from stgit.lib.git import Date, Person
 
 
 def update_patch_description(repo, cd, text, contains_diff):
@@ -60,13 +60,15 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
         ]
     ).encode(commit_encoding)
     if append_diff:
-        desc += b'\n---\n'
+        parts = [desc.rstrip(), b'', b'---', b'']
         if replacement_diff:
-            desc += b'\n' + replacement_diff
+            parts.append(replacement_diff)
         else:
             diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
             if diff:
-                desc += b'\n'.join([b'', diffstat(diff).encode(commit_encoding), diff])
+                diffstat = repo.default_iw.diffstat(diff).encode(commit_encoding)
+                parts.extend([diffstat, diff])
+        desc = b'\n'.join(parts)
     return desc
 
 

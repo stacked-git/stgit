@@ -33,17 +33,6 @@ __all__ = [
 ]
 
 
-def diffstat(diff):
-    """Return the diffstat of the supplied diff."""
-    return (
-        Run('git', 'apply', '--stat', '--summary')
-        .encoding(None)
-        .raw_input(diff)
-        .decoding('utf-8')
-        .raw_output()
-    )
-
-
 def clone(remote, local):
     """Clone a remote repository using 'git clone'."""
     Run('git', 'clone', remote, local).run()

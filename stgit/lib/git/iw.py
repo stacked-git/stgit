@@ -298,6 +298,15 @@ class IndexAndWorktree(object):
         except RunException:
             raise MergeException('Patch does not apply cleanly')
 
+    def diffstat(self, diff):
+        return (
+            self.run(['git', 'apply', '--stat', '--summary'])
+            .encoding(None)
+            .raw_input(diff)
+            .decoding('utf-8')
+            .raw_output()
+        )
+
     def changed_files(self, tree, pathlimits=[]):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to

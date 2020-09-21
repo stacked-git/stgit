@@ -18,7 +18,7 @@ from stgit.commands.common import (
     parse_patches,
 )
 from stgit.config import config
-from stgit.lib.git import Person, diffstat
+from stgit.lib.git import Person
 from stgit.out import out
 from stgit.run import Run
 from stgit.utils import edit_bytes
@@ -741,7 +741,7 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         'longdescr': long_descr,
         'endofheaders': '',  # for backward template compatibility
         'diff': diff,
-        'diffstat': diffstat(diff),
+        'diffstat': repository.default_iw.diffstat(diff),
         'date': '',  # for backward template compatibility
         'version': version_str,
         'vspace': version_space,
