@@ -73,13 +73,13 @@ coverage-test:
 .coverage:
 	rm -rf build
 	-mkdir .cov-files
-	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
+	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(PYTHON) -m coverage run --context=setup setup.py build
-	COVERAGE_PROCESS_START=$(PWD)/pyproject.toml \
-	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
+	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml \
+	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(MAKE) -C t all
-	COVERAGE_PROCESS_START=$(PWD)/pyproject.toml \
-	COVERAGE_FILE=$(PWD)/.cov-files/.coverage \
+	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml \
+	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(MAKE) -C Documentation build-txt
 	$(PYTHON) -m coverage combine .cov-files/.coverage.*
 	rm -r .cov-files
@@ -87,7 +87,7 @@ coverage-test:
 coverage-report: .coverage
 	$(PYTHON) -m coverage html
 	$(PYTHON) -m coverage report
-	@echo "HTML coverage report: file://$(PWD)/htmlcov/index.html"
+	@echo "HTML coverage report: file://$(CURDIR)/htmlcov/index.html"
 
 .PHONY: coverage coverage-test coverage-report
 
