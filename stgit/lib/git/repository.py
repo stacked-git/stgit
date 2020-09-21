@@ -180,9 +180,7 @@ class DiffTreeProcesses(object):
         p.stdin.flush()
 
         parts = [os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE)]
-        while not (
-            parts[-1].endswith(b'\n' + end) or parts[-1].endswith(b'\0' + end)
-        ):
+        while not (parts[-1].endswith(b'\n' + end) or parts[-1].endswith(b'\0' + end)):
             parts.append(os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE))
 
         data = b''.join(parts)
