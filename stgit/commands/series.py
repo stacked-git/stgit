@@ -1,4 +1,5 @@
 from collections import namedtuple
+import re
 
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
@@ -122,6 +123,12 @@ options = [
         action='store_true',
         short='Display the sequence number for each patch',
     ),
+    opt(
+        '-t',
+        '--tags',
+        action='store_true',
+        short='Display some common LKML-style tag indicators',
+    ),
 ]
 
 
@@ -147,6 +154,25 @@ def __get_description(stack, patch):
     cd = stack.patches.get(patch).commit.data
     return cd.message_str.strip().split('\n', 1)[0].rstrip()
 
+_TAG_TABLE = {
+    'RB': 'Reviewed-by',
+    'AB': 'Acked-by',
+    'TB': 'Tested-by',
+    'SOB': 'Signed-off-by',
+    'Rep': 'Reported-by',
+}
+
+def __get_tags(stack, patch):
+    """Extract and return a patch's review-process tags."""
+    tags = {}
+    cd = stack.patches.get(patch).commit.data
+    for line in cd.message_str.split('\n'):
+        for short_tag, tag in _TAG_TABLE.items():
+            match = re.match(tag + ': (.+?) <(.+?)>', line, flags=re.IGNORECASE)
+            if match:
+                initialism = ''.join(word[0] for word in match[1].split(' '))
+                tags.setdefault(short_tag, set()).add(initialism)
+    return tags
 
 def __get_author(stack, patch):
     """Extract and return a patch's short description"""
@@ -202,7 +228,7 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects,
         num_str = "[{:0{}}]".format(patch_num, num_len)
         tokens.append(num_str)
 
-    justify = options.description or options.author
+    justify = options.description or options.author or options.tags
 
     name = patch
     if justify:
@@ -217,6 +243,13 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects,
         tokens.append(__get_description(stack, patch))
     elif options.author:
         tokens.append(__get_author(stack, patch))
+    if options.tags:
+        tags = __get_tags(stack, patch)
+        for tag in _TAG_TABLE.keys():
+            initials = tags.get(tag)
+            if initials:
+                tokens.append("[" + tag + "]")
+                tokens.append(",".join(sorted(initials)))
 
     output = ' '.join(tokens)
     if not effects or not out.isatty:
