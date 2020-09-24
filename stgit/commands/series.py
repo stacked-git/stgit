@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
 from stgit.config import config
@@ -116,6 +118,21 @@ options = [
     ),
 ]
 
+
+ShowConfig = namedtuple('ShowConfig', ('applied', 'unapplied', 'hidden'))
+
+
+class DisplayPatch:
+    def __init__(self, name, status, show=True):
+        self.name = name
+        self.status = status
+        self.show = show
+
+    @classmethod
+    def mklist(cls, patches, status):
+        return [cls(name, status) for name in patches]
+
+
 directory = DirectoryHasRepository()
 
 
@@ -197,117 +214,82 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
 
 def func(parser, options, args):
     """Show the patch series"""
+
+    # Sanitize options
     if options.all and options.short:
         raise CmdException('combining --all and --short is meaningless')
 
+    if options.applied or options.unapplied or options.hidden:
+        if options.all:
+            raise CmdException('--all cannot be used with --applied/unapplied/hidden')
+        # (Some) visibility options specified: defaults to all off.
+        show = ShowConfig(options.applied, options.unapplied, options.hidden)
+    else:
+        # No visibility options specified: Hidden defaults to off.
+        show = ShowConfig(True, True, bool(options.all))
+
+    # Stack, and comparison stack (if any)
     stack = directory.repository.get_stack(options.branch)
+    cmp_stack = None
     if options.missing:
         cmp_stack = stack
         stack = directory.repository.get_stack(options.missing)
 
-    # current series patches
-    applied = unapplied = hidden = ()
-    if options.applied or options.unapplied or options.hidden:
-        if options.all:
-            raise CmdException('--all cannot be used with --applied/unapplied/hidden')
-        if options.applied:
-            applied = stack.patchorder.applied
-        if options.unapplied:
-            unapplied = stack.patchorder.unapplied
-        if options.hidden:
-            hidden = stack.patchorder.hidden
-    elif options.all:
-        applied = stack.patchorder.applied
-        unapplied = stack.patchorder.unapplied
-        hidden = stack.patchorder.hidden
-    else:
-        applied = stack.patchorder.applied
-        unapplied = stack.patchorder.unapplied
+    # Build an ordered list of patches for this branch
+    mpatches = DisplayPatch.mklist(stack.patchorder.applied, 'applied')
+    if mpatches:
+        mpatches[-1].status = 'current'
+    mpatches += DisplayPatch.mklist(stack.patchorder.unapplied, 'unapplied')
+    mpatches += DisplayPatch.mklist(stack.patchorder.hidden, 'hidden')
 
-    if options.missing:
-        cmp_patches = cmp_stack.patchorder.all
-    else:
-        cmp_patches = ()
-
-    # the filtering range covers the whole series
+    # For explicit ranges, actually modify the display list:
     if args:
-        show_patches = parse_patches(args, applied + unapplied + hidden, len(applied))
-    else:
-        show_patches = applied + unapplied + hidden
+        patches = parse_patches(args, stack.patchorder.all)
+        mpatches = [p for p in mpatches if p.name in patches]
 
-    # missing filtering
-    show_patches = [p for p in show_patches if p not in cmp_patches]
-
-    # filter the patches
-    applied = [p for p in applied if p in show_patches]
-    unapplied = [p for p in unapplied if p in show_patches]
-    hidden = [p for p in hidden if p in show_patches]
+    # For --missing, disable visibility on patches in the comparison branch:
+    if cmp_stack:
+        cmp_patches = cmp_stack.patchorder.all
+        for patch in mpatches:
+            patch.show = patch.name not in cmp_patches
 
     if options.short:
         nr = int(config.get('stgit.shortnr'))
-        if len(applied) > nr:
-            applied = applied[-(nr + 1) :]
-        n = len(unapplied)
-        if n > nr:
-            unapplied = unapplied[:nr]
-        elif n < nr:
-            hidden = hidden[: nr - n]
+        # FIXME: show NR patches before and after top patch.
 
-    patches = applied + unapplied + hidden
+    branch_str = stack.name if options.showbranch else ''
+
+    # Configure branch-printing categories:
+    cat = {
+        'current': {'show': show.applied, 'cursor': '>'},
+        'applied': {'show': show.applied, 'cursor': '+'},
+        'unapplied': {'show': show.unapplied, 'cursor': '-'},
+        'hidden': {'show': show.hidden, 'cursor': '!'},
+    }
+
+    # Make a first-pass to determine column width, final visibility, etc:
+    patch_column_width = 0
+    for patch in mpatches:
+        cfg = cat[patch.status]
+        patch.show = cfg['show'] and patch.show
+        if not patch.show:
+            continue
+        patch_column_width = max(patch_column_width, len(patch.name))
 
     if options.count:
-        out.stdout(len(patches))
+        out.stdout(sum((1 for x in mpatches if x.show)))
         return
 
-    if not patches:
-        return
-
-    if options.showbranch:
-        branch_str = stack.name
-    else:
-        branch_str = ''
-
-    max_len = max(len(p) for p in patches)
-
-    if applied:
-        for p in applied[:-1]:
-            __print_patch(
-                stack,
-                p,
-                branch_str,
-                '+',
-                max_len,
-                options,
-                config.get("stgit.color.applied"),
-            )
+    # Actually print:
+    for patch_num, patch in enumerate(mpatches, start=1):
+        if not patch.show:
+            continue
         __print_patch(
             stack,
-            applied[-1],
+            patch.name,
             branch_str,
-            '>',
-            max_len,
+            cat[patch.status]['cursor'],
+            patch_column_width,
             options,
-            config.get("stgit.color.current"),
-        )
-
-    for p in unapplied:
-        __print_patch(
-            stack,
-            p,
-            branch_str,
-            '-',
-            max_len,
-            options,
-            config.get("stgit.color.unapplied"),
-        )
-
-    for p in hidden:
-        __print_patch(
-            stack,
-            p,
-            branch_str,
-            '!',
-            max_len,
-            options,
-            config.get("stgit.color.hidden"),
+            config.get("stgit.color.{}".format(patch.status))
         )
