@@ -90,23 +90,32 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
     )
 
 
-def auto_edit_patch(repo, cd, msg, author, sign_str):
-    """Edit the patch noninteractively in a couple of ways:
+def auto_edit_patch(repo, cd, msg, author, sign_str, contains_diff=False):
+    """Edit the patch non-interactively:
 
-         - If C{msg} is not C{None}, parse it to find a replacement
-           message, and possibly also replacement author and timestamp.
+    @param repo:
+        Repo object.
+    @param cd:
+        L{CommitData<stgit.lib.git.CommitData>}
+    @param msg:
+         If C{msg} is not C{None}, parse it to find a replacement
+         message, and possibly also replacement author and timestamp.
+    @param author:
+        is a function that takes the original L{Person<stgit.lib.git.Person>}
+        value as argument, and return the new one.
+    @param sign_str:
+        if not C{None}, is a sign string to append to the message.
+    @param contains_diff:
+        if set to C{True} signals that C{msg} contains a diff.
 
-         - C{author} is a function that takes the original
-           L{Person<stgit.lib.git.Person>} value as argument, and
-           return the new one.
-
-         - C{sign_str}, if not C{None}, is a sign string to append to
-           the message.
-
-    Return a pair: the new L{CommitData<stgit.lib.git.CommitData>};
-    and the diff text if it didn't apply, or C{None} otherwise."""
+    @return:
+        a pair: the new L{CommitData<stgit.lib.git.CommitData>};
+        and the diff text if it didn't apply, or C{None} otherwise.
+    """
     if msg is not None:
-        cd, failed_diff = update_patch_description(repo, cd, msg, contains_diff=False)
+        cd, failed_diff = update_patch_description(
+            repo, cd, msg, contains_diff=contains_diff
+        )
         assert not failed_diff
     a = author(cd.author)
     if a != cd.author:

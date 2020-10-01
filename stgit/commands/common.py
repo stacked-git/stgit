@@ -343,10 +343,42 @@ def post_rebase(stack, applied, cmd_name, check_merged):
     return trans.run(iw)
 
 
+def apply_transaction_edits(
+    stack, iw, cd, log_msg, patchname, on_fail_cb, push_tree=False, allow_conflicts=True
+):
+    # The patch applied, so now we have to rewrite the StGit patch
+    # (and any patches on top of it).
+    trans = StackTransaction(stack, log_msg, allow_conflicts=allow_conflicts)
+    if patchname in trans.applied:
+        popped = trans.applied[trans.applied.index(patchname) + 1 :]
+        popped_extra = trans.pop_patches(lambda pn: pn in popped)
+        assert not popped_extra
+    else:
+        popped = []
+    trans.patches[patchname] = stack.repository.commit(cd)
+    try:
+        for pn in popped:
+            if push_tree:
+                trans.push_tree(pn)
+            else:
+                trans.push_patch(pn, iw, allow_interactive=True)
+    except TransactionHalted:
+        pass
+    try:
+        # Either a complete success, or a conflict during push. But in
+        # either case, we've successfully effected the edits the user
+        # asked us for.
+        return trans.run(iw)
+    except TransactionException:
+        # Transaction aborted -- we couldn't check out files due to
+        # dirty index/worktree. The edits were not carried out.
+        return on_fail_cb()
+
+
 #
 # Patch description/e-mail/diff parsing
 #
-def __split_descr_diff(string):
+def split_descr_diff(string):
     """Return the description and the diff from the given string."""
     m = re.search(
         br'''
@@ -423,7 +455,7 @@ def parse_patch(patch_data, contains_diff):
     """
     assert isinstance(patch_data, bytes)
     if contains_diff:
-        (descr, diff) = __split_descr_diff(patch_data)
+        (descr, diff) = split_descr_diff(patch_data)
     else:
         descr = patch_data
         diff = None
