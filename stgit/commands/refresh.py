@@ -8,7 +8,11 @@ from stgit.commands.common import (
 from stgit.config import config
 from stgit.lib.edit import auto_edit_patch, interactive_edit_patch
 from stgit.lib.git import CommitData, IndexAndWorktree
-from stgit.lib.transaction import StackTransaction, TransactionHalted
+from stgit.lib.transaction import (
+    StackTransaction,
+    TransactionException,
+    TransactionHalted,
+)
 from stgit.out import out
 from stgit.run import RunException
 from stgit.utils import get_hook
@@ -57,7 +61,11 @@ squash.
 The creation of the temporary patch is recorded in a separate entry in
 the patch stack log; this means that one undo step will undo the merge
 between the other patch and the temp patch, and two undo steps will
-additionally get rid of the temp patch."""
+additionally get rid of the temp patch.
+
+Additionally '--spill' option allows resetting the tompost patch, by
+emptying it out without modifying the worktree, which in turn allows to
+rebuild the patch from scratch."""
 
 args = ['dirty_files']
 options = (
@@ -115,6 +123,12 @@ options = (
             action='store_false',
             dest='submodules',
             short='Exclude submodules when refreshing patch contents',
+        ),
+        opt(
+            '--spill',
+            action='store_true',
+            dest='spill',
+            short='Spill patch contents to worktree and index, and erase patch content.',
         ),
     ]
     + (
@@ -290,16 +304,17 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
 
 def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     """Absorb the temp patch into the target patch."""
+    log_msg = 'refresh'
     if annotate:
-        log_msg = 'refresh\n\n' + annotate
-    else:
-        log_msg = 'refresh'
+        log_msg += '\n\n' + annotate
+
     trans = StackTransaction(stack, log_msg)
     iw = stack.repository.default_iw
     if patch_name in trans.applied:
         absorb_func = absorb_applied
     else:
         absorb_func = absorb_unapplied
+
     if absorb_func(trans, iw, patch_name, temp_name, edit_fun):
 
         def info_msg():
@@ -318,39 +333,60 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     return r
 
 
-def func(parser, options, args):
-    """Generate a new commit for the current or given patch."""
-
-    # Catch illegal argument combinations.
-    path_limiting = bool(args or options.update)
-    if options.index and path_limiting:
-        raise CmdException('Only full refresh is available with the --index option')
-
-    if options.index and options.force:
-        raise CmdException('You cannot --force a full refresh when using --index mode')
-
-    if options.update and options.submodules:
-        raise CmdException(
-            '--submodules is meaningless when only updating modified files'
-        )
-
-    if options.index and options.submodules:
-        raise CmdException('--submodules is meaningless when keeping the current index')
-
-    # If submodules was not specified on the command line, infer a default
-    # from configuration.
-    if options.submodules is None:
-        options.submodules = config.getbool('stgit.refreshsubmodules')
-
+def __refresh_spill(annotate):
     stack = directory.repository.current_stack
-    patch_name = get_patch(stack, options.patch)
+
+    # Fetch the topmost patch.
+    patchname = get_patch(stack, None)
+
+    cd = stack.patches.get(patchname).commit.data
+
+    # Set the tree of the patch to the parent.
+    cd = cd.set_tree(cd.parent.data.tree)
+
+    log_msg = 'refresh (spill)'
+    if annotate:
+        log_msg += '\n\n' + annotate
+
+    trans = StackTransaction(stack, log_msg, allow_conflicts=True)
+    trans.patches[patchname] = stack.repository.commit(cd)
+    try:
+        # Either a complete success, or a conflict during push. But in
+        # either case, we've successfully effected the edits the user
+        # asked us for.
+        return trans.run()
+    except TransactionException:
+        # Transaction aborted -- we couldn't check out files due to
+        # dirty index/worktree. The edits were not carried out.
+        out.error('Unable to spill the topmost patch')
+        return utils.STGIT_COMMAND_ERROR
+
+
+def __refresh(
+    args,
+    force=False,
+    target_patch=None,
+    message=None,
+    author=None,
+    sign_str=None,
+    annotate=None,
+    with_temp_index=False,
+    refresh_from_index=False,
+    only_update_patchfiles=False,
+    include_submodules=False,
+    no_verify=False,
+    invoke_editor=False,
+):
+    stack = directory.repository.current_stack
+
+    patch_name = get_patch(stack, target_patch)
     paths = list_files(
         stack,
         patch_name,
         args,
-        options.index,
-        options.update,
-        options.submodules,
+        refresh_from_index,
+        only_update_patchfiles,
+        include_submodules,
     )
 
     # Make sure there are no conflicts in the files we want to
@@ -359,7 +395,7 @@ def func(parser, options, args):
         raise CmdException('Cannot refresh -- resolve conflicts first')
 
     # Make sure the index is clean before performing a full refresh
-    if not options.index and not options.force:
+    if not refresh_from_index and not force:
         if not (
             stack.repository.default_index.is_clean(stack.head)
             or stack.repository.default_iw.worktree_clean()
@@ -370,14 +406,14 @@ def func(parser, options, args):
             )
 
     # Update index and write tree
-    tree = write_tree(stack, paths, temp_index=path_limiting)
+    tree = write_tree(stack, paths, temp_index=with_temp_index)
 
     # Run pre-commit hook, if fails, abort refresh
-    if not options.no_verify:
+    if not no_verify:
         pre_commit_hook = get_hook(
             stack.repository,
             'pre-commit',
-            extra_env={} if options.edit else {'GIT_EDITOR': ':'},
+            extra_env={} if invoke_editor else {'GIT_EDITOR': ':'},
         )
         if pre_commit_hook:
             try:
@@ -390,7 +426,7 @@ def func(parser, options, args):
             else:
                 # Update index and rewrite tree if hook updated files in index
                 if not stack.repository.default_index.is_clean(tree):
-                    tree = write_tree(stack, paths, temp_index=path_limiting)
+                    tree = write_tree(stack, paths, temp_index=with_temp_index)
 
     # Commit tree to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(stack, patch_name, tree)
@@ -400,25 +436,84 @@ def func(parser, options, args):
 
     def edit_fun(cd):
         orig_msg = cd.message
+        new_msg = None
+        if message is not None:
+            new_msg = message.encode(config.get('i18n.commitencoding'))
         cd = auto_edit_patch(
             stack.repository,
             cd,
-            msg=(
-                None
-                if options.message is None
-                else options.message.encode(config.get('i18n.commitencoding'))
-            ),
-            author=options.author,
-            sign_str=options.sign_str,
+            msg=new_msg,
+            author=author,
+            sign_str=sign_str,
         )
-        if options.edit:
+        if invoke_editor:
             cd, failed_diff = interactive_edit_patch(
                 stack.repository, cd, edit_diff=False, diff_flags=[]
             )
             assert not failed_diff
-        if not options.no_verify and (options.edit or cd.message != orig_msg):
-            cd = run_commit_msg_hook(stack.repository, cd, options.edit)
+        if not no_verify and (invoke_editor or cd.message != orig_msg):
+            cd = run_commit_msg_hook(stack.repository, cd, invoke_editor)
         # Refresh the committer information
         return cd.set_committer(None)
 
-    return absorb(stack, patch_name, temp_name, edit_fun, annotate=options.annotate)
+    return absorb(stack, patch_name, temp_name, edit_fun, annotate=annotate)
+
+
+def func(parser, options, args):
+    """Generate a new commit for the current or given patch."""
+
+    if options.spill:
+        # Catch illegal argument combinations.
+        spill_incompatible_options = (
+            bool(args)
+            or options.index
+            or options.update
+            or options.edit
+            or options.update
+            or options.patch
+        )
+        if spill_incompatible_options:
+            raise CmdException('--spill option does not take any arguments or options')
+
+        return __refresh_spill(annotate=options.annotate)
+    else:
+        # Catch illegal argument combinations.
+        path_limiting = bool(args or options.update)
+        if options.index and path_limiting:
+            raise CmdException('Only full refresh is available with the --index option')
+
+        if options.index and options.force:
+            raise CmdException(
+                'You cannot --force a full refresh when using --index mode'
+            )
+
+        if options.update and options.submodules:
+            raise CmdException(
+                '--submodules is meaningless when only updating modified files'
+            )
+
+        if options.index and options.submodules:
+            raise CmdException(
+                '--submodules is meaningless when keeping the current index'
+            )
+
+        # If submodules was not specified on the command line, infer a default
+        # from configuration.
+        if options.submodules is None:
+            options.submodules = config.getbool('stgit.refreshsubmodules')
+
+        return __refresh(
+            args,
+            force=options.force,
+            target_patch=options.patch,
+            message=options.message,
+            author=options.author,
+            sign_str=options.sign_str,
+            annotate=options.annotate,
+            with_temp_index=path_limiting,
+            refresh_from_index=options.index,
+            only_update_patchfiles=options.update,
+            include_submodules=options.submodules,
+            no_verify=options.no_verify,
+            invoke_editor=options.edit,
+        )
