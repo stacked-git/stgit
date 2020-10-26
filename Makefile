@@ -1,6 +1,6 @@
 prefix	?= $(HOME)/.local
 DESTDIR	?= /
-PYTHON	?= python
+PYTHON	?= python3
 DEFAULT_TEST_TARGET ?= test
 STG_PROVE_OPTS ?=
 

@@ -3,7 +3,7 @@
 # Copyright (c) 2005 Junio C Hamano
 #
 
-PYTHON ?= python
+PYTHON ?= python3
 # STG_TEST_OPTS = --verbose-log
 # STG_PROVE_OPTS = --jobs=9
 STG_PROVE_OPTS ?=

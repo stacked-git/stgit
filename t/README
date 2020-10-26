@@ -260,16 +260,15 @@ could be enabled by running the test suite with correct STG_TEST_
 environment set.
 
 PYTHON=<python executable> use alternative python executable to
-run stg in tests. By default `python` is used. Alternatives such
-as `python2.7` or `python3.4` may be specified. The build must
-have been previously performed using this PYTHON variable. Some
-example uses:
+run stg in tests. By default `python3` is used. Alternatives such
+as `python3.7`may be specified. The build must have been previously
+performed using this PYTHON variable. Some example uses:
 
-    $ make PYTHON=python3.4 test
-    $ make PYTHON=python2.6
+    $ make PYTHON=python3.7 test
+    $ make PYTHON=python3.6
     $ cd t/
-    $ make PYTHON=python2.6 prove
-    $ PYTHON=python3.4 ./t3300-edit.sh
+    $ make PYTHON=python3.6 prove
+    $ PYTHON=python3.7 ./t3300-edit.sh
 
 STG_TEST_LANG=<encoding> use an encoding other than the default C
 encoding. Affects LANG and LC_ALL environment variables.
