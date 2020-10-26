@@ -63,9 +63,8 @@ the patch stack log; this means that one undo step will undo the merge
 between the other patch and the temp patch, and two undo steps will
 additionally get rid of the temp patch.
 
-Additionally '--spill' option allows resetting the tompost patch, by
-emptying it out without modifying the worktree, which in turn allows to
-rebuild the patch from scratch."""
+Additionally, the '--spill' option resets the topmost patch, emptying
+the patch while leaving the patch's changes intact in the worktree."""
 
 args = ['dirty_files']
 options = (
@@ -128,7 +127,7 @@ options = (
             '--spill',
             action='store_true',
             dest='spill',
-            short='Spill patch contents to worktree and index, and erase patch content.',
+            short='Spill patch content to worktree and index, erasing patch content.',
         ),
     ]
     + (
@@ -463,18 +462,17 @@ def func(parser, options, args):
     """Generate a new commit for the current or given patch."""
 
     if options.spill:
-        # Catch illegal argument combinations.
-        spill_incompatible_options = (
-            bool(args)
+        if (
+            len(args) > 0
             or options.index
-            or options.update
             or options.edit
             or options.update
             or options.patch
-        )
-        if spill_incompatible_options:
+            or options.force
+            or options.no_verify
+            or options.sign_str
+        ):
             raise CmdException('--spill option does not take any arguments or options')
-
         return __refresh_spill(annotate=options.annotate)
     else:
         # Catch illegal argument combinations.
