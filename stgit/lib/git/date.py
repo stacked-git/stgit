@@ -113,7 +113,7 @@ class Date(Immutable):
             try:
                 self._time = datetime(
                     *[int(m.group(i + 1)) for i in range(6)],
-                    **{'tzinfo': TimeZone(m.group(7))}
+                    **{'tzinfo': TimeZone(m.group(7))},
                 )
             except ValueError:
                 raise DateException(datestring, 'date')
