@@ -23,7 +23,7 @@ class CheckoutException(StgException):
     """Exception raised when a checkout fails."""
 
 
-class Index(object):
+class Index:
     """Represents a git index file."""
 
     def __init__(self, repository, filename):
@@ -144,7 +144,7 @@ class Index(object):
         return paths
 
 
-class Worktree(object):
+class Worktree:
     """Represents a git worktree (that is, a checked-out file tree)."""
 
     def __init__(self, directory):
@@ -159,7 +159,7 @@ class Worktree(object):
         return {'GIT_WORK_TREE': self.directory}
 
 
-class IndexAndWorktree(object):
+class IndexAndWorktree:
     """Represents a git index and a worktree. Anything that an index or
     worktree can do on their own are handled by the L{Index} and
     L{Worktree} classes; this class concerns itself with the

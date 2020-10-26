@@ -4,7 +4,7 @@ import stgit.commands
 from stgit import argparse
 
 
-class CompgenBase(object):
+class CompgenBase:
     def actions(self, var):
         return []
 

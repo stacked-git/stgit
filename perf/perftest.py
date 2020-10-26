@@ -9,7 +9,7 @@ def duration(t1, t2):
     return 86400 * d.days + d.seconds + 1e-6 * d.microseconds
 
 
-class Run(object):
+class Run:
     def __init__(self):
         self.__cwd = None
         self.__log = []

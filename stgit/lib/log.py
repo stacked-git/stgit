@@ -121,7 +121,7 @@ def log_ref(branch):
     return 'refs/heads/%s.stgit' % branch
 
 
-class LogEntry(object):
+class LogEntry:
     _max_parents = 16
 
     def __init__(self, repo, prev, head, applied, unapplied, hidden, patches, message):

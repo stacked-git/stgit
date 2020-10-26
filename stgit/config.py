@@ -46,7 +46,7 @@ class GitConfigException(StgException):
     pass
 
 
-class GitConfig(object):
+class GitConfig:
 
     _cache = None
 

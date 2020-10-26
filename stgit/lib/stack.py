@@ -13,7 +13,7 @@ from stgit.lib.git.branch import Branch, BranchException
 from stgit.lib.objcache import ObjectCache
 
 
-class Patch(object):
+class Patch:
     """Represents an StGit patch. This class is mainly concerned with
     reading and writing the on-disk representation of a patch."""
 
@@ -129,7 +129,7 @@ class Patch(object):
         return fs
 
 
-class PatchOrder(object):
+class PatchOrder:
     """Keeps track of patch order, and which patches are applied.
     Works with patch names, not actual patches."""
 
@@ -201,7 +201,7 @@ class PatchOrder(object):
         utils.create_empty_file(os.path.join(stackdir, 'hidden'))
 
 
-class Patches(object):
+class Patches:
     """Creates L{Patch} objects. Makes sure there is only one such object
     per patch."""
 

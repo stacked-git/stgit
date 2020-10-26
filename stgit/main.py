@@ -28,7 +28,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 
-class CommandAlias(object):
+class CommandAlias:
     def __init__(self, name, command):
         self._command = command
         self.__name__ = name

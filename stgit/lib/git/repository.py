@@ -27,7 +27,7 @@ class DetachedHeadException(RepositoryException):
         RepositoryException.__init__(self, 'Not on any branch')
 
 
-class Refs(object):
+class Refs:
     """Accessor for the refs stored in a git repository. Will
     transparently cache the values of all refs."""
 
@@ -101,7 +101,7 @@ class Refs(object):
         del self._refs[ref]
 
 
-class CatFileProcess(object):
+class CatFileProcess:
     def __init__(self, repo):
         self._repository = repo
         self._proc = None
@@ -153,7 +153,7 @@ class CatFileProcess(object):
         return content_type, content
 
 
-class DiffTreeProcesses(object):
+class DiffTreeProcesses:
     def __init__(self, repo):
         self._repository = repo
         self._procs = {}
@@ -190,7 +190,7 @@ class DiffTreeProcesses(object):
         return data[len(query) : -len(end)]
 
 
-class Repository(object):
+class Repository:
     """Represents a git repository."""
 
     def __init__(self, directory):

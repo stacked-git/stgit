@@ -1,4 +1,4 @@
-class ObjectCache(object):
+class ObjectCache:
     """Cache for Python objects, for making sure that we create only one
     Python object per git object. This reduces memory consumption and
     makes object comparison very cheap."""

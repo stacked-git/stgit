@@ -53,7 +53,7 @@ class _TransPatchMap(dict):
             return self._stack.patches.get(pn).commit
 
 
-class StackTransaction(object):
+class StackTransaction:
     """A stack transaction, used for making complex updates to an StGit
     stack in one single operation that will either succeed or fail
     cleanly.

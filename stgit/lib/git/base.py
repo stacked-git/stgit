@@ -1,4 +1,4 @@
-class Immutable(object):
+class Immutable:
     """I{Immutable} objects cannot be modified once created. Any
     modification methods will return a new object, leaving the
     original object as it was.

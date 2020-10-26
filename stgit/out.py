@@ -19,7 +19,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 
-class Output(object):
+class Output:
     def __init__(self, file):
         if file is not None:
             self.write = file.write
@@ -72,7 +72,7 @@ class Output(object):
         self.at_start_of_line = True
 
 
-class MessagePrinter(object):
+class MessagePrinter:
     def __init__(self, file=None):
         if file:
             self._stdout = self._stderr = Output(file)

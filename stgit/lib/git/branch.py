@@ -7,7 +7,7 @@ class BranchException(StgException):
     """Exception raised by failed L{Branch} operations."""
 
 
-class Branch(object):
+class Branch:
     """Represents a Git branch."""
 
     def __init__(self, repository, name):

@@ -491,12 +491,12 @@ class DirectoryException(StgException):
     pass
 
 
-class DirectoryAnywhere(object):
+class DirectoryAnywhere:
     def setup(self):
         pass
 
 
-class DirectoryHasRepository(object):
+class DirectoryHasRepository:
     """For commands that use the new infrastructure in stgit.lib.*."""
 
     def setup(self):

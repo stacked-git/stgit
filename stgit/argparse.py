@@ -34,7 +34,7 @@ def _paragraphs(s):
     return [p for p in _splitlist(lines, lambda line: not line.strip()) if p]
 
 
-class opt(object):
+class opt:
     """Represents a command-line flag."""
 
     def __init__(self, *pargs, **kwargs):

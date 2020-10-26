@@ -72,7 +72,7 @@ def finish_logging():
     )
 
 
-class Run(object):
+class Run:
     exc = RunException
 
     def __init__(self, *cmd):
