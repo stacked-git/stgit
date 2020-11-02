@@ -88,7 +88,8 @@ class Run:
         return [fsencode_utf8(c) for c in self._cmd]
 
     def _prep_env(self):
-        if self._env:
+        # Windows requires a dict of strings as env parameter, so don't encode for Windows
+        if self._env and os.name != 'nt':
             return {fsencode_utf8(k): fsencode_utf8(v) for k, v in self._env.items()}
         else:
             return self._env
