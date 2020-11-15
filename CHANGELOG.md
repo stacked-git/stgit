@@ -4,6 +4,23 @@
 
 ### Removed
 - Drop support for Python < 3.5
+- Remove previously deprecated `stg publish` command
+- Removed contrib scripts: `stg-swallow`, `stg-fold-files-from`,
+  `stg-dispatch`, `stg-whatchanged`, and `stg-show-old`
+
+### Added
+- The pre-commit hook is now run for `stg refresh`
+- New `--spill` option for `stg refresh`
+
+### Changed
+- Use `python3` in shebangs instead of `python`
+- `contrib/stgbashprompt.sh` is no longer executable
+
+### Fixed
+- Importing large patches is much, much faster (#66)
+- Other performance improvements when dealing with large patches
+- Repair diffstat when outside work tree root (#62)
+- Use encoded (string) environment variables on Windows (#79)
 
 ## [0.23] 2020-06-12
 
