@@ -11,20 +11,20 @@ Exercises branch renaming commands.
 . ./test-lib.sh
 
 _assert_branch_exists() {
-  git config --get-regexp branch\\.$1\\. &&
-  test_path_is_file .git/refs/heads/$1 &&
-  test_path_is_file .git/refs/heads/$1.stgit
+  git config --get-regexp "branch\\.$1\\." &&
+  test_path_is_file ".git/refs/heads/$1" &&
+  test_path_is_file ".git/refs/heads/$1.stgit"
 }
 
 _assert_branch_missing() {
-  test_expect_code 1 git config --get-regexp branch\\.$1\\. &&
-  test_path_is_missing .git/refs/heads/$1 &&
-  test_path_is_missing .git/refs/heads/$1.stgit
+  test_expect_code 1 git config --get-regexp "branch\\.$1\\." &&
+  test_path_is_missing ".git/refs/heads/$1" &&
+  test_path_is_missing ".git/refs/heads/$1.stgit"
 }
 
 _assert_current_branch_name() {
-  test "$(stg branch)" = $1
-  test "$(git symbolic-ref --short HEAD)" = $1
+  test "$(stg branch)" = "$1"
+  test "$(git symbolic-ref --short HEAD)" = "$1"
 }
 
 test_expect_success \
