@@ -12,7 +12,7 @@ set -e
 
 usage()
 {
-    echo "Usage: [-o <diff-flags>] [-O <gitdiff-flags>] $(basename $0) <from1>..[<to1>]|<patch1> <from2>..[<to2>]|<patch2>"
+    echo "Usage: [-o <diff-flags>] [-O <gitdiff-flags>] $(basename "$0") <from1>..[<to1>]|<patch1> <from2>..[<to2>]|<patch2>"
     exit 1
 }
 

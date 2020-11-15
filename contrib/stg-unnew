@@ -13,6 +13,5 @@ set -e
 # Subject to the GNU GPL, version 2.
 
 patch=$(stg top)
-stg pop
-stg pick --fold $patch
-stg delete $patch
+stg pop --spill
+stg delete "$patch"

@@ -12,10 +12,9 @@ set -e
 command=(git show)
 
 # subsitute git id's for stg ones until --
-endofpatches=0
 while [ "$#" -gt 0 ]; do
     case "$1" in
-	--) endofpatches=1; break ;;
+	--) break ;;
 	-*) command+=("$1"); shift ;;
 	*) command+=( $(stg id "$1" 2>/dev/null || echo "$1") ); shift ;;
     esac
