@@ -61,21 +61,11 @@ def parse_rev(rev):
     return (branch, patch)
 
 
-def get_public_ref(branch_name):
-    """Return the public ref of the branch."""
-    public_ref = config.get('branch.%s.public' % branch_name)
-    if not public_ref:
-        public_ref = 'refs/heads/%s.public' % branch_name
-    return public_ref
-
-
 def git_commit(name, repository, branch_name=None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
     The patch names allowed are in the form '<branch>:<patch>' and can
     be followed by standard symbols used by git rev-parse. If <patch>
-    is '{base}', it represents the bottom of the stack. If <patch> is
-    {public}, it represents the public branch corresponding to the stack as
-    described in the 'publish' command.
+    is '{base}', it represents the bottom of the stack.
     """
     # Try a [branch:]patch name first
     branch, patch = parse_rev(name)
@@ -86,11 +76,6 @@ def git_commit(name, repository, branch_name=None):
     if patch.startswith('{base}'):
         base_id = repository.get_stack(branch).base.sha1
         return repository.rev_parse(base_id + strip_prefix('{base}', patch))
-    elif patch.startswith('{public}'):
-        public_ref = get_public_ref(branch)
-        return repository.rev_parse(
-            public_ref + strip_prefix('{public}', patch), discard_stderr=True
-        )
 
     # Other combination of branch and patch
     try:

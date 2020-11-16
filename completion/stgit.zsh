@@ -356,22 +356,6 @@ _stg-prev() {
     _arguments -s -S $subcmd_args
 }
 
-_stg-publish() {
-    __stg_add_args_help
-    __stg_add_args_author
-    __stg_add_args_branch
-    __stg_add_args_sign
-    subcmd_args+=(
-        '--overwrite[overwrite published branch]'
-        ':branch:__stg_branch_all'
-        + '(show)'
-        '(-l --last)'{-l,--last}'[show last published patch]'
-        '(-u --unpublished)'{-u,--unpublished}'[show unpublished applied patches]'
-    )
-    __stg_add_args_message
-    _arguments -s -S $subcmd_args
-}
-
 _stg-pull() {
     __stg_add_args_help
     __stg_add_args_merged

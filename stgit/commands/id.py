@@ -23,11 +23,9 @@ usage = ['[options] [--] [<id>]']
 description = r"""
 Print the SHA1 value of a Git id (defaulting to HEAD). In addition to the
 standard Git id's like heads and tags, this command also accepts
-'[<branch>:]<patch>' for the id of a patch, '[<branch>:]\{base\}' for the base
-of the stack and '[<branch>:]\{public\}' for the public branch corresponding
-to the stack (see the 'publish' command for details). If no branch is
-specified, it defaults to the current one. The bottom of a patch is accessible
-with the '[<branch>:]<patch>^' format."""
+'[<branch>:]<patch>' for the id of a patch and '[<branch>:]\{base\}' for the
+base of the stack. If no branch is specified, it defaults to the current one.
+The bottom of a patch is accessible with the '[<branch>:]<patch>^' format."""
 
 args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
 options = []
