@@ -101,6 +101,7 @@ def func(parser, options, args):
         'stgit.pull-policy'
     )
 
+    remote_name = None
     if policy == 'rebase':
         # parent is local
         if len(args) == 1:
@@ -118,6 +119,12 @@ def func(parser, options, args):
             remote_name = args[0]
         else:
             remote_name = stack.parent_remote
+
+    if policy in ['pull', 'fetch-rebase'] and remote_name is None:
+        parser.error(
+            'There is no tracking information for the current branch.\n'
+            'Please specify which branch you want to merge with.'
+        )
 
     if stack.protected:
         raise CmdException('This branch is protected. Pulls are not permitted')
