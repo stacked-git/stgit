@@ -332,9 +332,9 @@ class IndexAndWorktree:
     def update_index(self, paths):
         """Update the index with files from the worktree. C{paths} is an
         iterable of paths relative to the root of the repository."""
-        self.run(['git', 'update-index', '--remove', '-z', '--stdin']).input_nulterm(
-            paths
-        ).discard_output()
+        self.run(
+            ['git', 'update-index', '--remove', '--add', '-z', '--stdin']
+        ).input_nulterm(paths).discard_output()
 
     def worktree_clean(self):
         """Check whether the worktree is clean relative to index."""
