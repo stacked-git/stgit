@@ -84,6 +84,12 @@ options = [
         short='Show a short description for each patch',
     ),
     opt(
+        '--no-description',
+        action='store_false',
+        short='Inverse of --description',
+        dest='description',
+    ),
+    opt(
         '--author',
         action='store_true',
         short='Show the author name for each patch',

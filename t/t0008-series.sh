@@ -103,6 +103,19 @@ test_expect_success 'Test description by default' '
     test_cmp expected.txt series.txt
 '
 
+test_expect_success 'Test --no-description' '
+    git config stg.series.description yes &&
+    test_atexit "git config --unset stg.series.description" &&
+    stg series --no-description > series.txt 2> error.txt &&
+    test_line_count = 4 series.txt &&
+    test_line_count = 0 error.txt &&
+    echo "+ p0" > expected.txt &&
+    echo "+ p1" >> expected.txt &&
+    echo "> p2" >> expected.txt &&
+    echo "- p3" >> expected.txt &&
+    test_cmp expected.txt series.txt
+'
+
 test_expect_success 'Test empty' '
     stg series --empty > series.txt &&
     echo " + p0" > expected.txt &&
