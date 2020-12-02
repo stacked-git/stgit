@@ -196,6 +196,9 @@ def func(parser, options, args):
         cmp_stack = stack
         stack = directory.repository.get_stack(options.missing)
 
+    if options.description is None:
+        options.description = config.getbool('stgit.series.description')
+
     # current series patches
     applied = unapplied = hidden = ()
     if options.applied or options.unapplied or options.hidden:
