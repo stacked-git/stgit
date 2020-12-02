@@ -37,6 +37,7 @@ DEFAULTS = [
     ('stgit.pullcmd', ['git pull']),
     ('stgit.refreshsubmodules', ['no']),
     ('stgit.shortnr', ['5']),
+    ('stgit.series.description', ['no']),
     ('stgit.smtpdelay', ['5']),
     ('stgit.smtpserver', ['localhost:25']),
 ]
