@@ -11,6 +11,7 @@
 ### Added
 - The pre-commit hook is now run for `stg refresh`
 - New `--spill` option for `stg refresh`
+- Add stgit.series.description config option (#88)
 
 ### Changed
 - Use `python3` in shebangs instead of `python`
@@ -21,6 +22,8 @@
 - Other performance improvements when dealing with large patches
 - Repair diffstat when outside work tree root (#62)
 - Use encoded (string) environment variables on Windows (#79)
+- Fix `stg pull` when no upstream is configured (#83)
+- Fix `refresh` crash with path limiting and files added to index (#85)
 
 ## [0.23] 2020-06-12
 
