@@ -456,6 +456,7 @@ _stg-series() {
         '--author[show the author name for each patch]'
         '(-c --count)'{-c,--count}'[print number of patches]'
         '(-d --description)'{-d,--description}'[show short descriptions]'
+        '--no-description[do not show patch descriptions]'
         '(-e --empty)'{-e,--empty}'[identify empty patches]'
         '(-m --missing)'{-m,--missing=}'[show patches from branch missing in current]: :__stg_branch_stgit'
         '--noprefix[do not show the patch status prefix]'
