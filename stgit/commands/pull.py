@@ -123,7 +123,7 @@ def func(parser, options, args):
     if policy in ['pull', 'fetch-rebase'] and remote_name is None:
         parser.error(
             'There is no tracking information for the current branch.\n'
-            'Please specify which branch you want to merge with.'
+            'Please specify the remote repository to pull from.'
         )
 
     if stack.protected:

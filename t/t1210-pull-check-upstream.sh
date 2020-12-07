@@ -11,7 +11,7 @@ test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
     (cd upstream && stg init) &&
-    stg clone upstream clone
+    stg clone upstream clone &&
     (cd clone && git config pull.rebase false)
     '
 
@@ -29,7 +29,8 @@ test_expect_success \
     '
     (cd clone &&
       stg branch --create without-upstream &&
-      ( stg pull 2>&1 | grep "There is no tracking information for the current branch." ) || ( stg pull 2>&1 && false )
+      command_error stg pull 2>out.txt &&
+      grep "There is no tracking information for the current branch" out.txt
     )
     '
 
