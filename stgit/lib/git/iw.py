@@ -307,7 +307,7 @@ class IndexAndWorktree:
             .raw_output()
         )
 
-    def changed_files(self, tree, pathlimits=[]):
+    def changed_files(self, tree, pathlimits=()):
         """Return the set of files in the worktree that have changed with
         respect to C{tree}. The listing is optionally restricted to
         those files that match any of the path limiters given.

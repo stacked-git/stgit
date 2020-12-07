@@ -156,12 +156,10 @@ def get_patch(stack, given_patch):
         return stack.patchorder.applied[-1]
 
 
-def list_files(stack, patch_name, args, index, update, submodules):
+def list_files(stack, patch_name, path_limits, update, submodules):
     """Figure out which files to update."""
-    if index:
-        # --index: Don't update the index.
-        return set()
-    paths = stack.repository.default_iw.changed_files(stack.head.data.tree, args or [])
+    iw = stack.repository.default_iw
+    paths = iw.changed_files(stack.head.data.tree, path_limits or [])
     if update:
         # --update: Restrict update to the paths that were already
         # part of the patch.
@@ -173,12 +171,12 @@ def list_files(stack, patch_name, args, index, update, submodules):
         # run "git submodule update" prior to running stg refresh. We won't
         # exclude them if we're explicitly told to include them, or if we're
         # given explicit paths.
-        if not args and not submodules:
+        if not path_limits and not submodules:
             paths -= stack.repository.submodules(stack.head.data.tree)
     return paths
 
 
-def write_tree(stack, paths, temp_index):
+def write_tree(stack, paths, use_temp_index):
     """Possibly update the index, and then write its tree. If any path
     limiting is in effect, use a temp index.
     @return: The written tree.
@@ -190,7 +188,7 @@ def write_tree(stack, paths, temp_index):
             iw.update_index(paths)
         return index.write_tree()
 
-    if temp_index:
+    if use_temp_index:
         index = stack.repository.temp_index()
         try:
             index.read_tree(stack.head)
@@ -369,7 +367,7 @@ def __refresh(
     author=None,
     sign_str=None,
     annotate=None,
-    with_temp_index=False,
+    use_temp_index=False,
     refresh_from_index=False,
     only_update_patchfiles=False,
     include_submodules=False,
@@ -379,14 +377,17 @@ def __refresh(
     stack = directory.repository.current_stack
 
     patch_name = get_patch(stack, target_patch)
-    paths = list_files(
-        stack,
-        patch_name,
-        args,
-        refresh_from_index,
-        only_update_patchfiles,
-        include_submodules,
-    )
+
+    if refresh_from_index:
+        paths = set()
+    else:
+        paths = list_files(
+            stack,
+            patch_name,
+            args,
+            only_update_patchfiles,
+            include_submodules,
+        )
 
     # Make sure there are no conflicts in the files we want to
     # refresh.
@@ -405,7 +406,7 @@ def __refresh(
             )
 
     # Update index and write tree
-    tree = write_tree(stack, paths, temp_index=with_temp_index)
+    tree = write_tree(stack, paths, use_temp_index=use_temp_index)
 
     # Run pre-commit hook, if fails, abort refresh
     if not no_verify:
@@ -425,7 +426,7 @@ def __refresh(
             else:
                 # Update index and rewrite tree if hook updated files in index
                 if not stack.repository.default_index.is_clean(tree):
-                    tree = write_tree(stack, paths, temp_index=with_temp_index)
+                    tree = write_tree(stack, paths, use_temp_index=use_temp_index)
 
     # Commit tree to temp patch, and absorb it into the target patch.
     retval, temp_name = make_temp_patch(stack, patch_name, tree)
@@ -476,8 +477,8 @@ def func(parser, options, args):
         return __refresh_spill(annotate=options.annotate)
     else:
         # Catch illegal argument combinations.
-        path_limiting = bool(args or options.update)
-        if options.index and path_limiting:
+        is_path_limiting = bool(args or options.update)
+        if options.index and is_path_limiting:
             raise CmdException('Only full refresh is available with the --index option')
 
         if options.index and options.force:
@@ -508,7 +509,7 @@ def func(parser, options, args):
             author=options.author,
             sign_str=options.sign_str,
             annotate=options.annotate,
-            with_temp_index=path_limiting,
+            use_temp_index=is_path_limiting,
             refresh_from_index=options.index,
             only_update_patchfiles=options.update,
             include_submodules=options.submodules,
