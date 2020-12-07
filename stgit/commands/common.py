@@ -466,7 +466,7 @@ def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False)
     if edit:
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
-            cd = cd.set_message(cd.message + tmpl)
+            cd = cd.set_message(cd.message_str + tmpl)
         cd = cd.set_message(edit_bytes(cd.message, '.stgit-new.txt'))
 
     return cd

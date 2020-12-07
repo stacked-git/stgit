@@ -80,6 +80,13 @@ test_expect_success \
     test_path_is_file new-tmpl.txt
 '
 
+test_expect_success \
+    'New with patchdescr.tmpl' '
+    echo "Patch Description Template" > .git/patchdescr.tmpl &&
+    stg new templated-patch &&
+    stg show | grep "Patch Description Template"
+'
+
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"
