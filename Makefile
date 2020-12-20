@@ -38,7 +38,7 @@ lint-black:
 	$(PYTHON) -m black --check --quiet --diff . stg
 
 lint-isort:
-	$(PYTHON) -m isort --check-only --quiet . stg
+	$(PYTHON) -m isort --check-only --quiet --diff . stg
 
 lint-flake8:
 	$(PYTHON) -m flake8 . stg
