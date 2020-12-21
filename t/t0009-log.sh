@@ -105,6 +105,18 @@ test_expect_success 'Verify log for p3' '
     head -n 3 log.txt | tail -n 1 | grep -e "uncommit"
 '
 
+test_expect_success 'Verify log with patch limit from subdir' '
+    mkdir subdir &&
+    (cd subdir &&
+     stg log p3 > ../log.txt
+    ) &&
+    rmdir subdir &&
+    test_line_count = 3 log.txt &&
+    head -n 1 log.txt | tail -n 1 | grep -e "edit" &&
+    head -n 2 log.txt | tail -n 1 | grep -e "goto" &&
+    head -n 3 log.txt | tail -n 1 | grep -e "uncommit"
+'
+
 test_expect_success 'Verify log for p2 and p3' '
     stg log p2 p3 > log.txt &&
     test_line_count = 5 log.txt &&
