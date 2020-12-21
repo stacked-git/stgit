@@ -31,6 +31,8 @@ class Refs:
     """Accessor for the refs stored in a git repository. Will
     transparently cache the values of all refs."""
 
+    empty_id = '0' * 40
+
     def __init__(self, repository):
         self._repository = repository
         self._refs = None
@@ -84,7 +86,7 @@ class Refs:
         """Write the sha1 of the given Commit to the ref. The ref may or may
         not already exist."""
         self._ensure_refs_cache()
-        old_sha1 = self._refs.get(ref, '0' * 40)
+        old_sha1 = self._refs.get(ref, self.empty_id)
         new_sha1 = commit.sha1
         if old_sha1 != new_sha1:
             self._repository.run(
@@ -99,6 +101,20 @@ class Refs:
             ['git', 'update-ref', '-d', ref, self._refs[ref]]
         ).no_output()
         del self._refs[ref]
+
+    def rename(self, msg, *renames):
+        """Rename old, new ref pairs."""
+        ref_ops = []
+        for old_ref, new_ref in renames:
+            sha1 = self.get(old_ref).sha1
+            ref_ops.append('create %s %s\n' % (new_ref, sha1))
+            ref_ops.append('delete %s %s\n' % (old_ref, sha1))
+        (
+            self._repository.run(['git', 'update-ref', '-m', msg, '--stdin'])
+            .raw_input(''.join(ref_ops))
+            .discard_output()
+        )
+        self.reset_cache()
 
 
 class CatFileProcess:

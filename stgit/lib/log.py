@@ -105,7 +105,6 @@ import re
 from stgit import utils
 from stgit.exception import StgException
 from stgit.lib.git import BlobData, CommitData, TreeData
-from stgit.lib.stack import StackRepository
 from stgit.out import out
 
 
@@ -386,23 +385,11 @@ def delete_log(repo, branch):
         repo.refs.delete(ref)
 
 
-def rename_log(repo, old_branch, new_branch, msg):
-    old_ref = log_ref(old_branch)
-    new_ref = log_ref(new_branch)
-    if repo.refs.exists(old_ref):
-        repo.refs.set(new_ref, repo.refs.get(old_ref), msg)
-        repo.refs.delete(old_ref)
-
-
 def copy_log(repo, src_branch, dst_branch, msg):
     src_ref = log_ref(src_branch)
     dst_ref = log_ref(dst_branch)
     if repo.refs.exists(src_ref):
         repo.refs.set(dst_ref, repo.refs.get(src_ref), msg)
-
-
-def default_repo():
-    return StackRepository.default()
 
 
 def reset_stack(trans, iw, state):

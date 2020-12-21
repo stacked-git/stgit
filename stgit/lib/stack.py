@@ -7,7 +7,7 @@ from stgit import utils
 from stgit.compat import fsencode_utf8
 from stgit.config import config
 from stgit.exception import StackException
-from stgit.lib import stackupgrade
+from stgit.lib import log, stackupgrade
 from stgit.lib.git import CommitData, Repository
 from stgit.lib.git.branch import Branch, BranchException
 from stgit.lib.objcache import ObjectCache
@@ -310,34 +310,38 @@ class Stack(Branch):
         shutil.rmtree(self.directory)
         config.remove_section('branch.%s.stgit' % self.name)
 
-    def rename(self, name):
+    def rename(self, new_name):
         old_name = self.name
         patch_names = self.patchorder.all
-        super(Stack, self).rename(name)
-        old_ref_root = 'refs/patches/%s' % old_name
-        new_ref_root = 'refs/patches/%s' % name
-        empty_id = '0' * 40
-        ref_updates = ''
+        super(Stack, self).rename(new_name)
+        renames = []
         for pn in patch_names:
-            old_ref = '%s/%s' % (old_ref_root, pn)
-            new_ref = '%s/%s' % (new_ref_root, pn)
-            old_log_ref = old_ref + '.log'
-            new_log_ref = new_ref + '.log'
-            patch_commit_id = self.repository.refs.get(old_ref).sha1
-            log_commit_id = self.repository.refs.get(old_log_ref).sha1
+            renames.append(
+                (
+                    'refs/patches/%s/%s' % (old_name, pn),
+                    'refs/patches/%s/%s' % (new_name, pn),
+                )
+            )
+            renames.append(
+                (
+                    'refs/patches/%s/%s.log' % (old_name, pn),
+                    'refs/patches/%s/%s.log' % (new_name, pn),
+                )
+            )
 
-            ref_updates += 'update %s %s %s\n' % (new_ref, patch_commit_id, empty_id)
-            ref_updates += 'update %s %s %s\n' % (new_log_ref, log_commit_id, empty_id)
-            ref_updates += 'delete %s %s\n' % (old_ref, patch_commit_id)
-            ref_updates += 'delete %s %s\n' % (old_log_ref, log_commit_id)
-        self.repository.run(['git', 'update-ref', '--stdin']).raw_input(
-            ref_updates
-        ).discard_output()
+        renames.append((log.log_ref(old_name), log.log_ref(new_name)))
 
-        config.rename_section('branch.%s.stgit' % old_name, 'branch.%s.stgit' % name)
+        self.repository.refs.rename('rename %s to %s' % (old_name, new_name), *renames)
+
+        config.rename_section(
+            'branch.%s.stgit' % old_name,
+            'branch.%s.stgit' % new_name,
+        )
 
         utils.rename(
-            os.path.join(self.repository.directory, self._repo_subdir), old_name, name
+            os.path.join(self.repository.directory, self._repo_subdir),
+            old_name,
+            new_name,
         )
 
     def rename_patch(self, old_name, new_name, msg='rename'):

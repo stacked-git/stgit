@@ -14,7 +14,7 @@ from stgit.exception import StackException
 from stgit.lib import log
 from stgit.lib.git.branch import Branch
 from stgit.lib.git.repository import DetachedHeadException
-from stgit.lib.stack import Stack
+from stgit.lib.stack import Stack, StackRepository
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.run import RunException
@@ -385,7 +385,9 @@ def func(parser, options, args):
         clone.switch_to()
         out.done()
 
-        log.copy_log(log.default_repo(), cur_branch.name, clone.name, 'branch --clone')
+        log.copy_log(
+            StackRepository.default(), cur_branch.name, clone.name, 'branch --clone'
+        )
         return
 
     elif options.delete:
@@ -393,7 +395,7 @@ def func(parser, options, args):
         if len(args) != 1:
             parser.error('incorrect number of arguments')
         __delete_branch(args[0], options.force)
-        log.delete_log(log.default_repo(), args[0])
+        log.delete_log(StackRepository.default(), args[0])
         return
 
     elif options.cleanup:
@@ -405,7 +407,7 @@ def func(parser, options, args):
         else:
             parser.error('incorrect number of arguments')
         __cleanup_branch(name, options.force)
-        log.delete_log(log.default_repo(), name)
+        log.delete_log(StackRepository.default(), name)
         return
 
     elif options.list:
@@ -463,7 +465,6 @@ def func(parser, options, args):
         stack.rename(new_name)
 
         out.info('Renamed branch "%s" to "%s"' % (old_name, new_name))
-        log.rename_log(repository, old_name, new_name, 'branch --rename')
         return
 
     elif options.unprotect:
