@@ -119,7 +119,18 @@ class LogParseException(LogException):
 class StackState:
     _max_parents = 16
 
-    def __init__(self, repo, prev, head, applied, unapplied, hidden, patches, message):
+    def __init__(
+        self,
+        repo,
+        prev,
+        head,
+        applied,
+        unapplied,
+        hidden,
+        patches,
+        message,
+        commit=None,
+    ):
         self._repo = repo
         self._prev = prev
         self._simplified = None
@@ -129,6 +140,7 @@ class StackState:
         self.hidden = hidden
         self.patches = patches
         self.message = message
+        self.commit = commit
 
     @property
     def simplified(self):
@@ -226,16 +238,19 @@ class StackState:
     def from_commit(cls, repo, commit):
         """Parse a (full or simplified) stack log commit."""
         message = commit.data.message_str
+
         try:
-            perm, meta = commit.data.tree.data['meta']
+            perm, meta_blob = commit.data.tree.data['meta']
         except KeyError:
             raise LogParseException('Not a stack log')
-        (prev, head, applied, unapplied, hidden, patches) = cls._parse_metadata(
-            repo, meta.data.bytes.decode('utf-8')
+
+        prev, head, applied, unapplied, hidden, patches = cls._parse_metadata(
+            repo, meta_blob.data.bytes.decode('utf-8')
         )
-        state = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
-        state.commit = commit
-        return state
+
+        return cls(
+            repo, prev, head, applied, unapplied, hidden, patches, message, commit
+        )
 
     def _parents(self):
         """Parents this entry needs to be a descendant of all commits it refers to."""
@@ -247,67 +262,64 @@ class StackState:
             xp -= set(self.prev.patches.values())
         return xp
 
-    def _metadata_string(self):
+    def _metadata_blob(self):
         lines = ['Version: 1']
         lines.append(
             'Previous: %s' % ('None' if self.prev is None else self.prev.commit.sha1)
         )
         lines.append('Head: %s' % self.head.sha1)
-        for lst, title in [
+        for patch_list, title in [
             (self.applied, 'Applied'),
             (self.unapplied, 'Unapplied'),
             (self.hidden, 'Hidden'),
         ]:
             lines.append('%s:' % title)
-            for pn in lst:
+            for pn in patch_list:
                 lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
-        return '\n'.join(lines)
+        metadata_str = '\n'.join(lines)
+        return self._repo.commit(BlobData(metadata_str.encode('utf-8')))
 
-    def patch_file(self, cd):
-        metadata = '\n'.join(
+    def _patch_blob(self, pn, commit):
+        if self.prev is not None:
+            perm, prev_patch_tree = self.prev.commit.data.tree.data['patches']
+            if pn in prev_patch_tree.data and commit == self.prev.patches[pn]:
+                return prev_patch_tree.data[pn]
+
+        patch_meta = '\n'.join(
             [
-                'Bottom: %s' % cd.parent.data.tree.sha1,
-                'Top:    %s' % cd.tree.sha1,
-                'Author: %s' % cd.author.name_email,
-                'Date:   %s' % cd.author.date,
+                'Bottom: %s' % commit.data.parent.data.tree.sha1,
+                'Top:    %s' % commit.data.tree.sha1,
+                'Author: %s' % commit.data.author.name_email,
+                'Date:   %s' % commit.data.author.date,
                 '',
-                cd.message_str,
+                commit.data.message_str,
             ]
-        ).encode('utf-8')
-        return self._repo.commit(BlobData(metadata))
+        )
+        return self._repo.commit(BlobData(patch_meta.encode('utf-8')))
 
-    def _tree(self, metadata):
-        if self.prev is None:
-
-            def pf(c):
-                return self.patch_file(c.data)
-
-        else:
-            prev_top_tree = self.prev.commit.data.tree
-            perm, prev_patch_tree = prev_top_tree.data['patches']
-            # Map from Commit object to patch_file() results taken
-            # from the previous log entry.
-            c2b = {self.prev.patches[pn]: pf for pn, pf in prev_patch_tree.data}
-
-            def pf(c):
-                r = c2b.get(c, None)
-                if not r:
-                    r = self.patch_file(c.data)
-                return r
-
-        patches = {pn: pf(c) for pn, c in self.patches.items()}
+    def _patches_tree(self):
         return self._repo.commit(
             TreeData(
                 {
-                    'meta': self._repo.commit(BlobData(metadata.encode('utf-8'))),
-                    'patches': self._repo.commit(TreeData(patches)),
+                    pn: self._patch_blob(pn, commit)
+                    for pn, commit in self.patches.items()
                 }
             )
         )
 
-    def write_commit(self):
-        metadata = self._metadata_string()
-        tree = self._tree(metadata)
+    def _tree(self):
+        return self._repo.commit(
+            TreeData(
+                {
+                    'meta': self._metadata_blob(),
+                    'patches': self._patches_tree(),
+                }
+            )
+        )
+
+    def commit_state(self):
+        """Commit stack state to stack metadata branch."""
+        tree = self._tree()
         self._simplified = self._repo.commit(
             CommitData(
                 tree=tree,
@@ -332,6 +344,7 @@ class StackState:
                 parents=[self.simplified] + parents,
             )
         )
+        return self.commit
 
     def same_state(self, other):
         """Check whether two stack state entries describe the same stack state."""
@@ -366,8 +379,8 @@ def log_stack_state(stack, msg):
         out.warn(str(e), 'No log entry written.')
     else:
         if not last_state or not new_state.same_state(last_state):
-            new_state.write_commit()
-            stack.repository.refs.set(stack.state_ref, new_state.commit, msg)
+            state_commit = new_state.commit_state()
+            stack.repository.refs.set(stack.state_ref, state_commit, msg)
 
 
 def reset_stack(trans, iw, state):
