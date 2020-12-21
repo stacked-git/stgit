@@ -13,6 +13,21 @@ from stgit.lib.git.branch import Branch, BranchException
 from stgit.lib.objcache import ObjectCache
 
 
+def _stack_state_ref(stack_name):
+    """Reference to stack state metadata. A.k.a. the stack's "log"."""
+    return 'refs/heads/%s.stgit' % (stack_name,)
+
+
+def _patch_ref(stack_name, patch_name):
+    """Reference to a named patch's commit."""
+    return 'refs/patches/%s/%s' % (stack_name, patch_name)
+
+
+def _patch_log_ref(stack_name, patch_name):
+    """Reference to a named patch's log."""
+    return 'refs/patches/%s/%s.log' % (stack_name, patch_name)
+
+
 class Patch:
     """Represents an StGit patch. This class is mainly concerned with
     reading and writing the on-disk representation of a patch."""
@@ -23,11 +38,11 @@ class Patch:
 
     @property
     def _ref(self):
-        return 'refs/patches/%s/%s' % (self._stack.name, self.name)
+        return _patch_ref(self._stack.name, self.name)
 
     @property
     def _log_ref(self):
-        return self._ref + '.log'
+        return _patch_log_ref(self._stack.name, self.name)
 
     @property
     def commit(self):
@@ -229,8 +244,8 @@ class Patches:
         if '/' in name:
             # TODO slashes in patch names could be made to be okay
             return False
-        ref_name = 'refs/patches/%s/%s' % (self._stack.name, name)
-        p = self._stack.repository.run(['git', 'check-ref-format', ref_name])
+        ref = _patch_ref(self._stack.name, name)
+        p = self._stack.repository.run(['git', 'check-ref-format', ref])
         p.returns([0, 1]).discard_stderr().discard_output()
         return p.exitcode == 0
 
@@ -302,19 +317,23 @@ class Stack(Branch):
         elif self.protected:
             config.unset(protect_key)
 
+    @property
+    def state_ref(self):
+        return _stack_state_ref(self.name)
+
     def cleanup(self):
         assert not self.protected, 'attempt to delete protected stack'
         for pn in self.patchorder.all:
             patch = self.patches.get(pn)
             patch.delete()
-        self.repository.refs.delete(log.log_ref(self.name))
+        self.repository.refs.delete(self.state_ref)
         shutil.rmtree(self.directory)
         config.remove_section('branch.%s.stgit' % self.name)
 
     def clear_log(self, msg='clear log'):
-        new_log = log.LogEntry.from_stack(prev=None, stack=self, message=msg)
-        new_log.write_commit()
-        self.repository.refs.set(log.log_ref(self.name), new_log.commit, msg=msg)
+        new_stack_state = log.StackState.from_stack(prev=None, stack=self, message=msg)
+        new_stack_state.write_commit()
+        self.repository.refs.set(self.state_ref, new_stack_state.commit, msg=msg)
 
     def rename(self, new_name):
         old_name = self.name
@@ -322,20 +341,9 @@ class Stack(Branch):
         super(Stack, self).rename(new_name)
         renames = []
         for pn in patch_names:
-            renames.append(
-                (
-                    'refs/patches/%s/%s' % (old_name, pn),
-                    'refs/patches/%s/%s' % (new_name, pn),
-                )
-            )
-            renames.append(
-                (
-                    'refs/patches/%s/%s.log' % (old_name, pn),
-                    'refs/patches/%s/%s.log' % (new_name, pn),
-                )
-            )
-
-        renames.append((log.log_ref(old_name), log.log_ref(new_name)))
+            renames.append((_patch_ref(old_name, pn), _patch_ref(new_name, pn)))
+            renames.append((_patch_log_ref(old_name, pn), _patch_log_ref(new_name, pn)))
+        renames.append((_stack_state_ref(old_name), _stack_state_ref(new_name)))
 
         self.repository.refs.rename('rename %s to %s' % (old_name, new_name), *renames)
 
@@ -389,8 +397,8 @@ class Stack(Branch):
             config.set(clone_key, v)
 
         self.repository.refs.set(
-            log.log_ref(clone_name),
-            self.repository.refs.get(log.log_ref(self.name)),
+            clone.state_ref,
+            self.repository.refs.get(self.state_ref),
             msg=msg,
         )
 
@@ -408,8 +416,8 @@ class Stack(Branch):
         # make sure that the corresponding Git branch exists
         branch = Branch(repository, name)
 
-        log_ref = log.log_ref(name)
-        if repository.refs.exists(log_ref):
+        stack_state_ref = _stack_state_ref(name)
+        if repository.refs.exists(stack_state_ref):
             raise StackException('%s: stack already initialized' % name)
 
         dir = os.path.join(repository.directory, cls._repo_subdir, name)
@@ -428,7 +436,7 @@ class Stack(Branch):
             stackupgrade.format_version_key(name), str(stackupgrade.FORMAT_VERSION)
         )
 
-        new_log = log.LogEntry(
+        new_stack_state = log.StackState(
             repository,
             prev=None,
             head=branch.head,
@@ -438,8 +446,8 @@ class Stack(Branch):
             patches={},
             message=msg,
         )
-        new_log.write_commit()
-        repository.refs.set(log_ref, new_log.commit, msg)
+        new_stack_state.write_commit()
+        repository.refs.set(stack_state_ref, new_stack_state.commit, msg)
 
         return repository.get_stack(name)
 

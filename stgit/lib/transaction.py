@@ -8,7 +8,7 @@ from itertools import takewhile
 from stgit import exception, utils
 from stgit.config import config
 from stgit.lib.git import CheckoutException, MergeConflictException, MergeException
-from stgit.lib.log import log_entry, log_external_mods
+from stgit.lib.log import log_external_mods, log_stack_state
 from stgit.out import out
 
 
@@ -275,7 +275,7 @@ class StackTransaction:
             else:
                 self.stack.patches.new(pn, commit, msg)
         self.stack.patchorder.set_order(self._applied, self._unapplied, self._hidden)
-        log_entry(self.stack, msg)
+        log_stack_state(self.stack, msg)
 
         if print_current_patch:
             _print_current_patch(old_applied, self._applied)

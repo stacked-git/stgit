@@ -48,7 +48,7 @@ def func(parser, options, args):
     iw = stack.repository.default_iw
     if len(args) >= 1:
         ref, patches = args[0], args[1:]
-        state = log.get_log_entry(
+        state = log.get_stack_state(
             stack.repository, ref, stack.repository.rev_parse(ref)
         )
     elif options.hard:

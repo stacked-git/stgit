@@ -116,11 +116,7 @@ class LogParseException(LogException):
     pass
 
 
-def log_ref(branch):
-    return 'refs/heads/%s.stgit' % branch
-
-
-class LogEntry:
+class StackState:
     _max_parents = 16
 
     def __init__(self, repo, prev, head, applied, unapplied, hidden, patches, message):
@@ -142,7 +138,7 @@ class LogEntry:
 
     @property
     def prev(self):
-        if self._prev is not None and not isinstance(self._prev, LogEntry):
+        if self._prev is not None and not isinstance(self._prev, StackState):
             self._prev = self.from_commit(self._repo, self._prev)
         return self._prev
 
@@ -237,9 +233,9 @@ class LogEntry:
         (prev, head, applied, unapplied, hidden, patches) = cls._parse_metadata(
             repo, meta.data.bytes.decode('utf-8')
         )
-        lg = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
-        lg.commit = commit
-        return lg
+        state = cls(repo, prev, head, applied, unapplied, hidden, patches, message)
+        state.commit = commit
+        return state
 
     def _metadata_string(self):
         lines = ['Version: 1']
@@ -340,43 +336,41 @@ class LogEntry:
             )
         )
 
+    def same_state(self, other):
+        """Check whether two stack state entries describe the same stack state."""
+        return (
+            self.head == other.head
+            and self.applied == other.applied
+            and self.unapplied == other.unapplied
+            and self.hidden == other.hidden
+            and self.patches == other.patches
+        )
 
-def get_log_entry(repo, ref, commit):
+
+def get_stack_state(repo, ref, commit=None):
+    if commit is None:
+        commit = repo.refs.get(ref)  # May raise KeyError
     try:
-        return LogEntry.from_commit(repo, commit)
+        return StackState.from_commit(repo, commit)
     except LogException as e:
         raise LogException('While reading log from %s: %s' % (ref, e))
 
 
-def same_state(log1, log2):
-    """Check whether two log entries describe the same current state."""
-    s = [
-        [lg.head, lg.applied, lg.unapplied, lg.hidden, lg.patches]
-        for lg in [log1, log2]
-    ]
-    return s[0] == s[1]
-
-
-def log_entry(stack, msg):
-    """Write a new log entry for the stack."""
-    ref = log_ref(stack.name)
+def log_stack_state(stack, msg):
+    """Write a new metadata entry for the stack."""
     try:
-        last_log_commit = stack.repository.refs.get(ref)
+        last_state = get_stack_state(stack.repository, stack.state_ref)
     except KeyError:
-        last_log_commit = None
+        last_state = None
+
     try:
-        if last_log_commit:
-            last_log = get_log_entry(stack.repository, ref, last_log_commit)
-        else:
-            last_log = None
-        new_log = LogEntry.from_stack(last_log, stack, msg)
+        new_state = StackState.from_stack(last_state, stack, msg)
     except LogException as e:
         out.warn(str(e), 'No log entry written.')
-        return
-    if last_log and same_state(last_log, new_log):
-        return
-    new_log.write_commit()
-    stack.repository.refs.set(ref, new_log.commit, msg)
+    else:
+        if not last_state or not new_state.same_state(last_state):
+            new_state.write_commit()
+            stack.repository.refs.set(stack.state_ref, new_state.commit, msg)
 
 
 def reset_stack(trans, iw, state):
@@ -443,24 +437,21 @@ def reset_stack_partially(trans, iw, state, only_patches):
 
 
 def undo_state(stack, undo_steps):
-    """Find the log entry C{undo_steps} steps in the past. (Successive
-    undo operations are supposed to "add up", so if we find other undo
-    operations along the way we have to add those undo steps to
-    C{undo_steps}.)
+    """Find the stack state C{undo_steps} steps in the past.
+
+    Successive undo operations are supposed to "add up", so if we find other undo
+    operations along the way we have to add those undo steps to C{undo_steps}.
 
     If C{undo_steps} is negative, redo instead of undo.
 
-    @return: The log entry that is the destination of the undo
-             operation
-    @rtype: L{LogEntry}"""
-    ref = log_ref(stack.name)
+    @return: The stack state that is the destination of the undo operation
+    @rtype: L{StackState}"""
     try:
-        commit = stack.repository.refs.get(ref)
+        state = get_stack_state(stack.repository, stack.state_ref)
     except KeyError:
         raise LogException('Log is empty')
-    log = get_log_entry(stack.repository, ref, commit)
     while undo_steps != 0:
-        msg = log.message.strip()
+        msg = state.message.strip()
         um = re.match(r'^undo\s+(\d+)$', msg)
         if undo_steps > 0:
             if um:
@@ -475,35 +466,27 @@ def undo_state(stack, undo_steps):
                 undo_steps -= int(rm.group(1))
             else:
                 raise LogException('No more redo information available')
-        if not log.prev:
+        if not state.prev:
             raise LogException('Not enough undo information available')
-        log = log.prev
-    return log
+        state = state.prev
+    return state
 
 
 def log_external_mods(stack):
-    ref = log_ref(stack.name)
     try:
-        log_commit = stack.repository.refs.get(ref)
+        state = get_stack_state(stack.repository, stack.state_ref)
     except KeyError:
         # No log exists yet.
-        log_entry(stack, 'start of log')
+        log_stack_state(stack, 'start of log')
         return
-    try:
-        log = get_log_entry(stack.repository, ref, log_commit)
     except LogException:
         # Something's wrong with the log, so don't bother.
         return
-    if log.head == stack.head:
+    if state.head == stack.head:
         # No external modifications.
         return
-    log_entry(
+    log_stack_state(
         stack,
-        '\n'.join(
-            [
-                'external modifications',
-                '',
-                'Modifications by tools other than StGit (e.g. git).',
-            ]
-        ),
+        'external modifications\n\n'
+        'Modifications by tools other than StGit (e.g. git).\n',
     )

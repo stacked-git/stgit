@@ -1,6 +1,6 @@
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
-from stgit.lib.log import log_entry
+from stgit.lib.log import log_stack_state
 from stgit.out import out
 
 __copyright__ = """
@@ -55,5 +55,5 @@ def func(parser, options, args):
 
     out.start('Renaming patch "%s" to "%s"' % (old, new))
     stack.rename_patch(old, new)
-    log_entry(stack, 'rename %s to %s' % (old, new))
+    log_stack_state(stack, 'rename %s to %s' % (old, new))
     out.done()
