@@ -276,6 +276,7 @@ class StackState:
             lines.append('%s:' % title)
             for pn in patch_list:
                 lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
+        lines.append('')
         metadata_str = '\n'.join(lines)
         return self._repo.commit(BlobData(metadata_str.encode('utf-8')))
 
