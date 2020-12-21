@@ -362,6 +362,39 @@ class Stack(Branch):
         self.patchorder.rename_patch(old_name, new_name)
         self.patches.get(old_name).set_name(new_name, msg)
 
+    def clone(self, clone_name, msg):
+        clone = self.create(
+            self.repository,
+            name=clone_name,
+            create_at=self.base,
+            parent_remote=self.parent_remote,
+            parent_branch=self.name,
+        )
+
+        for pn in self.patchorder.all_visible:
+            patch = self.patches.get(pn)
+            clone.patches.new(pn, patch.commit, 'clone from %s' % self.name)
+
+        clone.patchorder.set_order(
+            applied=[],
+            unapplied=self.patchorder.all_visible,
+            hidden=[],
+        )
+
+        prefix = 'branch.%s.' % self.name
+        clone_prefix = 'branch.%s.' % clone_name
+        for k, v in list(config.getstartswith(prefix)):
+            clone_key = k.replace(prefix, clone_prefix, 1)
+            config.set(clone_key, v)
+
+        self.repository.refs.set(
+            log.log_ref(clone_name),
+            self.repository.refs.get(log.log_ref(self.name)),
+            msg=msg,
+        )
+
+        return clone
+
     @classmethod
     def initialise(cls, repository, name=None, switch_to=False):
         """Initialise a Git branch to handle patch series.

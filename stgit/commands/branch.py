@@ -14,7 +14,7 @@ from stgit.exception import StackException
 from stgit.lib import log
 from stgit.lib.git.branch import Branch
 from stgit.lib.git.repository import DetachedHeadException
-from stgit.lib.stack import Stack, StackRepository
+from stgit.lib.stack import Stack
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.run import RunException
@@ -350,26 +350,13 @@ def func(parser, options, args):
             stack = repository.current_stack
         except StackException:
             stack = None
-            base = repository.refs.get(repository.head_ref)
         else:
             check_head_top_equal(stack)
-            base = stack.base
 
         out.start('Cloning current branch to "%s"' % clone_name)
-        clone = Stack.create(
-            repository,
-            name=clone_name,
-            create_at=base,
-            parent_remote=cur_branch.parent_remote,
-            parent_branch=cur_branch.name,
-        )
+
         if stack:
-            for pn in stack.patchorder.all_visible:
-                patch = stack.patches.get(pn)
-                clone.patches.new(pn, patch.commit, 'clone %s' % stack.name)
-            clone.patchorder.set_order(
-                applied=[], unapplied=stack.patchorder.all_visible, hidden=[]
-            )
+            clone = stack.clone(clone_name, 'branch --clone')
             trans = StackTransaction(clone, 'clone')
             try:
                 for pn in stack.patchorder.applied:
@@ -377,17 +364,18 @@ def func(parser, options, args):
             except TransactionHalted:
                 pass
             trans.run()
-        prefix = 'branch.%s.' % cur_branch.name
-        new_prefix = 'branch.%s.' % clone.name
-        for n, v in list(config.getstartswith(prefix)):
-            config.set(n.replace(prefix, new_prefix, 1), v)
+        else:
+            clone = Stack.create(
+                repository,
+                name=clone_name,
+                create_at=repository.refs.get(repository.head_ref),
+                parent_remote=cur_branch.parent_remote,
+                parent_branch=cur_branch.name,
+            )
+
         clone.set_description('clone of "%s"' % cur_branch.name)
         clone.switch_to()
         out.done()
-
-        log.copy_log(
-            StackRepository.default(), cur_branch.name, clone.name, 'branch --clone'
-        )
         return
 
     elif options.delete:

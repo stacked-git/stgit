@@ -379,13 +379,6 @@ def log_entry(stack, msg):
     stack.repository.refs.set(ref, new_log.commit, msg)
 
 
-def copy_log(repo, src_branch, dst_branch, msg):
-    src_ref = log_ref(src_branch)
-    dst_ref = log_ref(dst_branch)
-    if repo.refs.exists(src_ref):
-        repo.refs.set(dst_ref, repo.refs.get(src_ref), msg)
-
-
 def reset_stack(trans, iw, state):
     """Reset the stack to a given previous state."""
     for pn in trans.all_patches:
