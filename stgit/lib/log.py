@@ -237,6 +237,16 @@ class StackState:
         state.commit = commit
         return state
 
+    def _parents(self):
+        """Parents this entry needs to be a descendant of all commits it refers to."""
+        xp = {self.head, self.top}
+        xp |= {self.patches[pn] for pn in self.unapplied}
+        xp |= {self.patches[pn] for pn in self.hidden}
+        if self.prev is not None:
+            xp.add(self.prev.commit)
+            xp -= set(self.prev.patches.values())
+        return xp
+
     def _metadata_string(self):
         lines = ['Version: 1']
         lines.append(
@@ -252,19 +262,6 @@ class StackState:
             for pn in lst:
                 lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
         return '\n'.join(lines)
-
-    def _parents(self):
-        """Return the set of parents this log entry needs in order to be a
-        descendant of all the commits it refers to."""
-        xp = set([self.head]) | set(
-            self.patches[pn] for pn in self.unapplied + self.hidden
-        )
-        if self.applied:
-            xp.add(self.patches[self.applied[-1]])
-        if self.prev is not None:
-            xp.add(self.prev.commit)
-            xp -= set(self.prev.patches.values())
-        return xp
 
     def patch_file(self, cd):
         metadata = '\n'.join(
