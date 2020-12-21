@@ -379,12 +379,6 @@ def log_entry(stack, msg):
     stack.repository.refs.set(ref, new_log.commit, msg)
 
 
-def delete_log(repo, branch):
-    ref = log_ref(branch)
-    if repo.refs.exists(ref):
-        repo.refs.delete(ref)
-
-
 def copy_log(repo, src_branch, dst_branch, msg):
     src_ref = log_ref(src_branch)
     dst_ref = log_ref(dst_branch)

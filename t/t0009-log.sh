@@ -13,7 +13,9 @@ test_expect_success 'Initialize the StGIT repository' '
 '
 
 test_expect_success 'Empty log' '
-    stg log 2>&1 >/dev/null | grep -e "Log is empty"
+    stg log > log.txt &&
+    test_line_count = 1 log.txt &&
+    head -n 1 log.txt | grep -e "start of log"
 '
 
 test_expect_success 'Add some patches' '
@@ -124,7 +126,9 @@ test_expect_success 'Log with number' '
 test_expect_success 'Clear the log' '
     stg log --clear &&
     test "$(echo $(stg series --noprefix))" = "p0 p1 p2 p3" &&
-    stg log 2>&1 >/dev/null | grep -e "Log is empty"
+    stg log > log.txt &&
+    test_line_count = 1 log.txt &&
+    head -n 1 log.txt | grep -e "clear log"
 '
 
 test_done

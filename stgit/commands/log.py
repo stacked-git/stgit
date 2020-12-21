@@ -115,7 +115,7 @@ def func(parser, options, args):
         return
 
     if options.clear:
-        log.delete_log(stack.repository, stack.name)
+        stack.clear_log()
         return
 
     stacklog = log.get_log_entry(stack.repository, logref, logcommit)

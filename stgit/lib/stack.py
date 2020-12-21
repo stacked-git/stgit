@@ -307,8 +307,14 @@ class Stack(Branch):
         for pn in self.patchorder.all:
             patch = self.patches.get(pn)
             patch.delete()
+        self.repository.refs.delete(log.log_ref(self.name))
         shutil.rmtree(self.directory)
         config.remove_section('branch.%s.stgit' % self.name)
+
+    def clear_log(self, msg='clear log'):
+        new_log = log.LogEntry.from_stack(prev=None, stack=self, message=msg)
+        new_log.write_commit()
+        self.repository.refs.set(log.log_ref(self.name), new_log.commit, msg=msg)
 
     def rename(self, new_name):
         old_name = self.name
@@ -368,6 +374,10 @@ class Stack(Branch):
         # make sure that the corresponding Git branch exists
         branch = Branch(repository, name)
 
+        log_ref = log.log_ref(name)
+        if repository.refs.exists(log_ref):
+            raise StackException('%s: stack already initialized' % name)
+
         dir = os.path.join(repository.directory, cls._repo_subdir, name)
         if os.path.exists(dir):
             raise StackException('%s: branch already initialized' % name)
@@ -383,6 +393,20 @@ class Stack(Branch):
         config.set(
             stackupgrade.format_version_key(name), str(stackupgrade.FORMAT_VERSION)
         )
+
+        msg = 'start of log'
+        new_log = log.LogEntry(
+            repository,
+            prev=None,
+            head=branch.head,
+            applied=[],
+            unapplied=[],
+            hidden=[],
+            patches={},
+            message=msg,
+        )
+        new_log.write_commit()
+        repository.refs.set(log_ref, new_log.commit, msg)
 
         return repository.get_stack(name)
 

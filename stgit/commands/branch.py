@@ -395,7 +395,6 @@ def func(parser, options, args):
         if len(args) != 1:
             parser.error('incorrect number of arguments')
         __delete_branch(args[0], options.force)
-        log.delete_log(StackRepository.default(), args[0])
         return
 
     elif options.cleanup:
@@ -407,7 +406,6 @@ def func(parser, options, args):
         else:
             parser.error('incorrect number of arguments')
         __cleanup_branch(name, options.force)
-        log.delete_log(StackRepository.default(), name)
         return
 
     elif options.list:
