@@ -275,16 +275,16 @@ class Repository:
         return self._catfile.cat_file(sha1)
 
     def rev_parse(self, rev, discard_stderr=False, object_type='commit'):
-        assert object_type in ('commit', 'tree', 'blob')
-        getter = getattr(self, 'get_' + object_type)
         try:
-            return getter(
+            sha1 = (
                 self.run(['git', 'rev-parse', '%s^{%s}' % (rev, object_type)])
                 .discard_stderr(discard_stderr)
                 .output_one_line()
             )
         except RunException:
             raise RepositoryException('%s: No such %s' % (rev, object_type))
+        else:
+            return self.get_object(object_type, sha1)
 
     def get_blob(self, sha1):
         return self._blobs[sha1]
@@ -295,12 +295,12 @@ class Repository:
     def get_commit(self, sha1):
         return self._commits[sha1]
 
-    def get_object(self, type, sha1):
+    def get_object(self, object_type, sha1):
         return {
             Blob.typename: self.get_blob,
             Tree.typename: self.get_tree,
             Commit.typename: self.get_commit,
-        }[type](sha1)
+        }[object_type](sha1)
 
     def commit(self, objectdata):
         return objectdata.commit(self)
