@@ -11,7 +11,6 @@ from stgit.commands.common import (
 )
 from stgit.config import config
 from stgit.exception import StackException
-from stgit.lib import log
 from stgit.lib.git.branch import Branch
 from stgit.lib.git.repository import DetachedHeadException
 from stgit.lib.stack import Stack
@@ -299,6 +298,7 @@ def __create_branch(branch_name, committish):
     stack = Stack.create(
         repository,
         name=branch_name,
+        msg='create %s' % branch_name,
         create_at=branch_commit,
         parent_remote=parentremote,
         parent_branch=parentbranch,
@@ -331,7 +331,6 @@ def func(parser, options, args):
         stack = __create_branch(branch_name, committish)
 
         out.info('Branch "%s" created' % branch_name)
-        log.log_entry(stack, 'branch --create %s' % stack.name)
         return
 
     elif options.clone:
@@ -356,7 +355,7 @@ def func(parser, options, args):
         out.start('Cloning current branch to "%s"' % clone_name)
 
         if stack:
-            clone = stack.clone(clone_name, 'branch --clone')
+            clone = stack.clone(clone_name, 'branch clone of %s' % cur_branch.name)
             trans = StackTransaction(clone, 'clone')
             try:
                 for pn in stack.patchorder.applied:
@@ -368,6 +367,7 @@ def func(parser, options, args):
             clone = Stack.create(
                 repository,
                 name=clone_name,
+                msg='branch clone of %s' % cur_branch.name,
                 create_at=repository.refs.get(repository.head_ref),
                 parent_remote=cur_branch.parent_remote,
                 parent_branch=cur_branch.name,

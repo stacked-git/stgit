@@ -366,6 +366,7 @@ class Stack(Branch):
         clone = self.create(
             self.repository,
             name=clone_name,
+            msg=msg,
             create_at=self.base,
             parent_remote=self.parent_remote,
             parent_branch=self.name,
@@ -396,7 +397,7 @@ class Stack(Branch):
         return clone
 
     @classmethod
-    def initialise(cls, repository, name=None, switch_to=False):
+    def initialise(cls, repository, name=None, msg='initialise', switch_to=False):
         """Initialise a Git branch to handle patch series.
 
         @param repository: The L{Repository} where the L{Stack} will be created
@@ -427,7 +428,6 @@ class Stack(Branch):
             stackupgrade.format_version_key(name), str(stackupgrade.FORMAT_VERSION)
         )
 
-        msg = 'start of log'
         new_log = log.LogEntry(
             repository,
             prev=None,
@@ -448,6 +448,7 @@ class Stack(Branch):
         cls,
         repository,
         name,
+        msg,
         create_at=None,
         parent_remote=None,
         parent_branch=None,
@@ -457,14 +458,14 @@ class Stack(Branch):
 
         @param repository: The L{Repository} where the L{Stack} will be created
         @param name: The name of the L{Stack}
-        @param create_at: The Git id used as the base for the newly created
-            Git branch
+        @param msg: Message to use in newly created log
+        @param create_at: The Git id used as the base for the newly created Git branch
         @param parent_remote: The name of the remote Git branch
         @param parent_branch: The name of the parent Git branch
         """
         branch = Branch.create(repository, name, create_at=create_at)
         try:
-            stack = cls.initialise(repository, name, switch_to=switch_to)
+            stack = cls.initialise(repository, name, msg, switch_to=switch_to)
         except (BranchException, StackException):
             branch.delete()
             raise

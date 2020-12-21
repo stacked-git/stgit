@@ -15,7 +15,7 @@ test_expect_success 'Initialize the StGIT repository' '
 test_expect_success 'Empty log' '
     stg log > log.txt &&
     test_line_count = 1 log.txt &&
-    head -n 1 log.txt | grep -e "start of log"
+    head -n 1 log.txt | grep -e "initialise"
 '
 
 test_expect_success 'Add some patches' '
