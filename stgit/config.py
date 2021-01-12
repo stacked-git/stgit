@@ -34,7 +34,7 @@ DEFAULTS = [
     ('stgit.pager', ['less']),
     ('stgit.pick.expose-format', ['format:%B%n(imported from commit %H)']),
     ('stgit.pull-policy', ['pull']),
-    ('stgit.pullcmd', ['git pull']),
+    ('stgit.pullcmd', ['git pull --ff']),
     ('stgit.refreshsubmodules', ['no']),
     ('stgit.shortnr', ['5']),
     ('stgit.series.description', ['no']),
