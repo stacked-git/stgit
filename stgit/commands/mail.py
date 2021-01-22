@@ -510,13 +510,19 @@ def __get_signers_list(msg):
         'suggested-by',
         'reported-and-tested-by',
     )
-    regex = r'^(%s):\s+(.+)$' % tags
+
+    # N.B. This regex treats '#' as the start of a comment and thus discards everything
+    # after the '#'. This does not allow for valid email addresses that contain '#' in
+    # the local-part (i.e. the part before the '@') as is allowed by RFC2822. Such email
+    # addresses containing '#' in their local-part are thus not supported by this
+    # function.
+    regex = r'^(%s):\s+([^#]+).*$' % tags
 
     r = re.compile(regex, re.I)
     for line in msg.split('\n'):
         m = r.match(line)
         if m:
-            addr_list.append(m.expand(r'\g<2>'))
+            addr_list.append(m.group(2))
 
     return addr_list
 

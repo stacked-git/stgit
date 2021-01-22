@@ -75,6 +75,42 @@ test_expect_success 'Check the e-mail address duplicates' '
     test "$(cat mbox | grep -e "^Bcc:")" = "Bcc: d@d"
 '
 
+test_expect_success 'Check --auto with commented Cc: realname and addr' '
+    stg edit -m "Patch 5
+
+Cc: Some Body <someone@example.com> # v3.2.1
+" &&
+    stg mail --auto $(stg top) -m > mbox &&
+    test "$(cat mbox | grep -e "^Cc:" | head -n 1)" = "Cc: Some Body <someone@example.com>"
+'
+
+test_expect_success 'Check --auto with commented Cc: addr only' '
+    stg edit -m "Patch 5
+
+Cc: someone@example.com # v3.2.1
+" &&
+    stg mail --auto $(stg top) -m > mbox &&
+    test "$(cat mbox | grep -e "^Cc:" | head -n 1)" = "Cc: someone@example.com"
+'
+
+test_expect_success 'Check --auto with no-space commented Cc: realname and addr' '
+    stg edit -m "Patch 5
+
+Cc: Some Body <someone.2@example.com>#v3.2.1
+" &&
+    stg mail --auto $(stg top) -m > mbox &&
+    test "$(cat mbox | grep -e "^Cc:" | head -n 1)" = "Cc: Some Body <someone.2@example.com>"
+'
+
+test_expect_success 'Check --auto with no-space commented Cc: addr only' '
+    stg edit -m "Patch 5
+
+Cc: someone.3@example.com#v3.2.1
+" &&
+    stg mail --auto $(stg top) -m > mbox &&
+    test "$(cat mbox | grep -e "^Cc:" | head -n 1)" = "Cc: someone.3@example.com"
+'
+
 test_expect_success 'Test no patches' '
     command_error stg mail
 '
