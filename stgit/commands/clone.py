@@ -46,9 +46,7 @@ directory = DirectoryAnywhere()
 
 
 def func(parser, options, args):
-    """Clone the <repository> into the local <dir> and initialises the
-    stack
-    """
+    """Clone the repository into the local dir and initialise the stack."""
     if len(args) != 2:
         parser.error('incorrect number of arguments')
 

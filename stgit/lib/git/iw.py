@@ -24,7 +24,7 @@ class CheckoutException(StgException):
 
 
 class Index:
-    """Represents a git index file."""
+    """Represents a Git index file."""
 
     def __init__(self, repository, filename):
         self._repository = repository
@@ -49,8 +49,10 @@ class Index:
 
     def write_tree(self):
         """Write the index contents to the repository.
-        @return: The resulting L{Tree}
-        @rtype: L{Tree}"""
+
+        :return: The resulting :class:`Tree`.
+
+        """
         try:
             return self._repository.get_tree(
                 self.run(['git', 'write-tree']).discard_stderr().output_one_line()
@@ -59,7 +61,7 @@ class Index:
             raise MergeException('Conflicting merge')
 
     def is_clean(self, tree):
-        """Check whether the index is clean relative to the given treeish."""
+        """Check whether the index is clean relative to the given tree-ish."""
         try:
             self.run(
                 ['git', 'diff-index', '--quiet', '--cached', tree.sha1]
@@ -70,7 +72,7 @@ class Index:
             return True
 
     def apply(self, patch_bytes, quiet):
-        """In-index patch application, no worktree involved."""
+        """Apply patch to index, no worktree involved."""
         try:
             r = self.run(['git', 'apply', '--cached'])
             r.encoding(None).raw_input(patch_bytes)
@@ -81,7 +83,7 @@ class Index:
             raise MergeException('Patch does not apply cleanly')
 
     def apply_treediff(self, tree1, tree2, quiet):
-        """Apply the diff from C{tree1} to C{tree2} to the index."""
+        """Apply the diff from two :class:`Tree`s to the index."""
         # Passing --full-index here is necessary to support binary
         # files. It is also sufficient, since the repository already
         # contains all involved objects; in other words, we don't have
@@ -89,23 +91,25 @@ class Index:
         self.apply(self._repository.diff_tree(tree1, tree2, ['--full-index']), quiet)
 
     def merge(self, base, ours, theirs, current=None):
-        """Use the index (and only the index) to do a 3-way merge of the
-        L{Tree}s C{base}, C{ours} and C{theirs}. The merge will either
-        succeed (in which case the first half of the return value is
-        the resulting tree) or fail cleanly (in which case the first
-        half of the return value is C{None}).
+        """Perform three-way merge.
 
-        If C{current} is given (and not C{None}), it is assumed to be
-        the L{Tree} currently stored in the index; this information is
-        used to avoid having to read the right tree (either of C{ours}
-        and C{theirs}) into the index if it's already there. The
-        second half of the return value is the tree now stored in the
-        index, or C{None} if unknown. If the merge succeeded, this is
-        often the merge result."""
+        The index (and only the index) is used to do a 3-way merge of the :class:`Tree`s
+        ``base``, ``ours``, and ``theirs``. The merge will either succeed (in which case
+        the first half of the return value is the resulting tree) or fail cleanly (in
+        which case the first half of the return value is None).
+
+        If ``current`` is given (not None), it is assumed to be the :class:`Tree`
+        currently stored in the index; this information is used to avoid having to read
+        the right tree (either of ``ours`` and ``theirs``) into the index if it is
+        already there. The second half of the return value is the tree now stored in the
+        index, or None if unknown. If the merge succeeded, this is often the merge
+        result.
+
+        """
         assert isinstance(base, Tree)
         assert isinstance(ours, Tree)
         assert isinstance(theirs, Tree)
-        assert current is None or isinstance(current, Tree)
+        assert isinstance(current, Tree) or current is None
 
         # Take care of the really trivial cases.
         if base == ours:
@@ -160,10 +164,13 @@ class Worktree:
 
 
 class IndexAndWorktree:
-    """Represents a git index and a worktree. Anything that an index or
-    worktree can do on their own are handled by the L{Index} and
-    L{Worktree} classes; this class concerns itself with the
-    operations that require both."""
+    """Represents a git index and a worktree.
+
+    Anything that an index or worktree can do on their own are handled by :class:`Index`
+    and :class:`Worktree`. This class concerns itself with the operations involving
+    both.
+
+    """
 
     def __init__(self, index, worktree):
         self.index = index
@@ -237,22 +244,24 @@ class IndexAndWorktree:
             raise MergeException('Index/worktree dirty')
 
     def mergetool(self, files=()):
-        """Invoke 'git mergetool' on the current IndexAndWorktree to resolve
-        any outstanding conflicts. If 'not files', all the files in an
-        unmerged state will be processed."""
+        """Resolve outstanding conflicts with `git mergetool`.
+
+        The ``files`` argument may be used to limit the merge to a subset of files.
+
+        """
         self.run(['git', 'mergetool'] + list(files)).returns([0, 1]).run()
-        # check for unmerged entries (prepend 'CONFLICT ' for consistency with
-        # merge())
+        # check for unmerged entries (prepend 'CONFLICT ' for consistency with merge())
         conflicts = ['CONFLICT ' + f for f in self.index.conflicts()]
         if conflicts:
             raise MergeConflictException(conflicts)
 
     def ls_files(self, tree, pathlimits):
-        """Given a sequence of file paths, return files known to git.
+        """Given a sequence of file paths, return files known to Git.
 
         The input path limits are specified relative to the current directory.
         The output files are relative to the repository root. A RunException
         will be raised if any of the path limits are unknown to git.
+
         """
         if not pathlimits:
             return set()
@@ -308,13 +317,15 @@ class IndexAndWorktree:
         )
 
     def changed_files(self, tree, pathlimits=()):
-        """Return the set of files in the worktree that have changed with
-        respect to C{tree}. The listing is optionally restricted to
-        those files that match any of the path limiters given.
+        """Find files changed in worktree with respect to a tree.
 
-        The path limiters are relative to the current working
-        directory; the returned file names are relative to the
-        repository root."""
+        The listing is optionally restricted to those files that match any of the given
+        path limits.
+
+        The path limits are relative to the current working directory; the returned file
+        names are relative to the repository root.
+
+        """
         assert isinstance(tree, Tree), tree
         return set(
             self.run_in_cwd(
@@ -330,8 +341,11 @@ class IndexAndWorktree:
         ).discard_output()
 
     def update_index(self, paths):
-        """Update the index with files from the worktree. C{paths} is an
-        iterable of paths relative to the root of the repository."""
+        """Update the index with files from the worktree.
+
+        :param paths: iterable of paths relative to the root of the repository
+
+        """
         self.run(
             ['git', 'update-index', '--remove', '--add', '-z', '--stdin']
         ).input_nulterm(paths).discard_output()

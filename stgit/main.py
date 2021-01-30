@@ -60,9 +60,7 @@ class Commands(dict):
     """Commands class. It performs on-demand module loading"""
 
     def canonical_cmd(self, key):
-        """Return the canonical name for a possibly-shortenned
-        command name.
-        """
+        """Return the canonical name for a possibly-shortened command name."""
         candidates = [cmd for cmd in self if cmd.startswith(key)]
 
         if not candidates:
@@ -104,11 +102,7 @@ def print_help():
     stgit.commands.pretty_command_list(cmd_list, sys.stdout)
 
 
-#
-# The main function (command dispatcher)
-#
 def _main():
-    """The main function"""
     global prog
 
     sys.argv = list(map(fsdecode_utf8, sys.argv))

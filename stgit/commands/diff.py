@@ -55,7 +55,7 @@ directory = DirectoryHasRepository()
 
 
 def func(parser, options, args):
-    """Show the tree diff"""
+    """Show the tree diff."""
     repository = directory.repository
 
     if options.revs:

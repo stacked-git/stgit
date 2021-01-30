@@ -15,9 +15,12 @@ class DateException(StgException):
 
 
 class TimeZone(tzinfo):
-    """A simple time zone class for static offsets from UTC. (We have to
-    define our own since Python's standard library doesn't define any
-    time zone classes.)"""
+    """A simple time zone class for static offsets from UTC.
+
+    We have to define our own since Python's standard library doesn't define any time
+    zone classes.
+
+    """
 
     def __init__(self, tzstring):
         m = re.match(r'^([+-])(\d{2}):?(\d{2})$', tzstring)
@@ -89,7 +92,7 @@ def git_date(datestring=''):
 
 
 class Date(Immutable):
-    """Represents a timestamp used in git commits."""
+    """Represents a timestamp used in Git commits."""
 
     def __init__(self, datestring):
         # Try git-formatted date.
@@ -154,6 +157,9 @@ class Date(Immutable):
 
     @classmethod
     def maybe(cls, datestring):
-        """Return a new object initialized with the argument if it contains a
-        value (otherwise, just return the argument)."""
+        """Create new :class:`Date` from non-None argument.
+
+        Returns None if the argument is None.
+
+        """
         return cls(datestring) if datestring is not None else None

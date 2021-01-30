@@ -16,20 +16,22 @@ from .objects import Blob, Commit, Tree
 
 
 class RepositoryException(StgException):
-    """Base class for all exceptions due to failed L{Repository} operations."""
+    """Base class for all exceptions due to failed :class:`Repository` operations."""
 
 
 class DetachedHeadException(RepositoryException):
-    """Exception raised when HEAD is detached (that is, there is no
-    current branch)."""
+    """Exception raised when HEAD is detached (that is, there is no current branch)."""
 
     def __init__(self):
         super().__init__('Not on any branch')
 
 
 class Refs:
-    """Accessor for the refs stored in a git repository. Will
-    transparently cache the values of all refs."""
+    """Accessor for the refs stored in a Git repository.
+
+    Will transparently cache the values of all refs.
+
+    """
 
     empty_id = '0' * 40
 
@@ -68,8 +70,11 @@ class Refs:
         self._refs = None
 
     def get(self, ref):
-        """Get the Commit the given ref points to. Throws KeyError if ref
-        doesn't exist."""
+        """Get the :class:`Commit` the given ref points to.
+
+        Throws :exc:`KeyError` if ref does not exist.
+
+        """
         self._ensure_refs_cache()
         return self._repository.get_commit(self._refs[ref])
 
@@ -83,8 +88,11 @@ class Refs:
             return True
 
     def set(self, ref, commit, msg):
-        """Write the sha1 of the given Commit to the ref. The ref may or may
-        not already exist."""
+        """Write the sha1 of the given :class:`Commit` to the ref.
+
+        The ref may or may not already exist.
+
+        """
         self._ensure_refs_cache()
         old_sha1 = self._refs.get(ref, self.empty_id)
         new_sha1 = commit.sha1
@@ -95,7 +103,11 @@ class Refs:
             self._refs[ref] = new_sha1
 
     def delete(self, ref):
-        """Delete the given ref. Throws KeyError if ref doesn't exist."""
+        """Delete the given ref.
+
+        Throws :exc:`KeyError` if ref does not exist.
+
+        """
         self._ensure_refs_cache()
         self._repository.run(
             ['git', 'update-ref', '-d', ref, self._refs[ref]]
@@ -227,7 +239,7 @@ class DiffTreeProcesses:
 
 
 class Repository:
-    """Represents a git repository."""
+    """Represents a Git repository."""
 
     def __init__(self, directory):
         self._git_dir = directory
@@ -260,8 +272,7 @@ class Repository:
 
     @property
     def default_index(self):
-        """An L{Index} object representing the default index file for the
-        repository."""
+        """An :class:`Index` representing the default index file for the repository."""
         if self._default_index is None:
             self._default_index = Index(
                 self,
@@ -273,13 +284,12 @@ class Repository:
         return self._default_index
 
     def temp_index(self):
-        """Return an L{Index} object representing a new temporary index file
-        for the repository."""
+        """Return an :class:`Index` representing a new temporary index file."""
         return Index(self, self._git_dir)
 
     @property
     def default_worktree(self):
-        """A L{Worktree} object representing the default work tree."""
+        """A :class:`Worktree` representing the default work tree."""
         if self._default_worktree is None:
             path = environ_get('GIT_WORK_TREE', None)
             if not path:
@@ -292,8 +302,7 @@ class Repository:
 
     @property
     def default_iw(self):
-        """An L{IndexAndWorktree} object representing the default index and
-        work tree for this repository."""
+        """:class:`IndexAndWorktree` for repository's default index and work tree."""
         if self._default_iw is None:
             self._default_iw = IndexAndWorktree(
                 self.default_index, self.default_worktree
@@ -352,7 +361,7 @@ class Repository:
         self.run(['git', 'symbolic-ref', '-m', msg, 'HEAD', ref]).no_output()
 
     def get_merge_bases(self, commit1, commit2):
-        """Return a set of merge bases of two commits."""
+        """Return a list of merge bases of two commits."""
         sha1_list = self.run(
             ['git', 'merge-base', '--all', commit1.sha1, commit2.sha1]
         ).output_lines()
@@ -376,9 +385,13 @@ class Repository:
         return result
 
     def apply(self, tree, patch_bytes, quiet):
-        """Given a L{Tree} and a patch, will either return the new L{Tree}
-        that results when the patch is applied, or None if the patch
-        couldn't be applied."""
+        """Apply patch to given tree.
+
+        Given a :class:`Tree` and a patch, either returns the new :class:`Tree`
+        resulting from successful application of the patch, or None if the patch
+        could not be applied.
+
+        """
         assert isinstance(tree, Tree)
         if not patch_bytes:
             return tree
@@ -394,7 +407,7 @@ class Repository:
             index.delete()
 
     def submodules(self, tree):
-        """Given a L{Tree}, return list of paths which are submodules."""
+        """Return list of submodule paths for the given :class:`Tree`."""
         assert isinstance(tree, Tree)
         # A simple regex to match submodule entries
         regex = re.compile(r'160000 commit [0-9a-f]{40}\t(.*)$')
@@ -406,13 +419,12 @@ class Repository:
         return set(m.group(1) for m in map(regex.match, files) if m)
 
     def diff_tree(self, t1, t2, diff_opts=(), pathlimits=(), binary=True, stat=False):
-        """Given two L{Tree}s C{t1} and C{t2}, return the patch that takes
-        C{t1} to C{t2}.
+        """Produce patch (diff) between two trees.
 
-        @type diff_opts: list of strings
-        @param diff_opts: Extra diff options
-        @rtype: String
-        @return: Patch text"""
+        Given two :class:`Tree`s ``t1`` and ``t2``, return the patch that takes
+        ``t1`` to ``t2``.
+
+        """
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
         if stat:
@@ -429,12 +441,18 @@ class Repository:
         return self._difftree.diff_trees(args, t1.sha1, t2.sha1)
 
     def diff_tree_files(self, t1, t2):
-        """Given two L{Tree}s C{t1} and C{t2}, iterate over all files for
-        which they differ. For each file, yield a tuple with the old
-        file mode, the new file mode, the old blob, the new blob, the
-        status, the old filename, and the new filename. Except in case
-        of a copy or a rename, the old and new filenames are
-        identical."""
+        """Iterate files that differ between two trees.
+
+        Given two :class:`Tree`s ``t1`` and ``t2``, iterate over all files that differ
+        between the two trees.
+
+        For each differing file, yield a tuple with the old file mode, the new file
+        mode, the old blob, the new blob, the status, the old filename, and the new
+        filename.
+
+        Except in case of a copy or a rename, the old and new filenames are identical.
+
+        """
         assert isinstance(t1, Tree)
         assert isinstance(t2, Tree)
         dt = self._difftree.diff_trees(['-r', '-z'], t1.sha1, t2.sha1)
@@ -467,6 +485,6 @@ class Repository:
         self.run(['git', 'repack', '-a', '-d', '-f']).run()
 
     def copy_notes(self, old_sha1, new_sha1):
-        """Copy git notes from the old object to the new one."""
+        """Copy Git notes from the old object to the new one."""
         p = self.run(['git', 'notes', 'copy', old_sha1, new_sha1])
         p.discard_exitcode().discard_stderr().discard_output()

@@ -44,12 +44,10 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 
-# Command exception class
 class CmdException(StgException):
     pass
 
 
-# Utility functions
 def parse_rev(rev):
     """Parse a revision specification into its branch:patch parts."""
     try:
@@ -63,9 +61,11 @@ def parse_rev(rev):
 
 def git_commit(name, repository, branch_name=None):
     """Return the a Commit object if 'name' is a patch name or Git commit.
-    The patch names allowed are in the form '<branch>:<patch>' and can
-    be followed by standard symbols used by git rev-parse. If <patch>
-    is '{base}', it represents the bottom of the stack.
+
+    The patch names allowed are in the form '<branch>:<patch>' and can be followed by
+    standard symbols used by ``git rev-parse``. If <patch> is '{base}', it represents
+    the bottom of the stack.
+
     """
     # Try a [branch:]patch name first
     branch, patch = parse_rev(name)
@@ -93,8 +93,7 @@ def git_commit(name, repository, branch_name=None):
 
 
 def color_diff_flags():
-    """Return the git flags for coloured diff output if the configuration and
-    stdout allows."""
+    """Return the Git flags for coloured diff output if allowed."""
     stdout_is_tty = (sys.stdout.isatty() and 'true') or 'false'
     if config.get_colorbool('color.diff', stdout_is_tty) == 'true':
         return ['--color']
@@ -149,9 +148,10 @@ def get_patch_from_list(part_name, patch_list):
 
 
 def parse_patches(patch_args, patch_list, boundary=0, ordered=False):
-    """Parse patch_args list for patch names in patch_list and return
-    a list. The names can be individual patches and/or in the
-    patch1..patch2 format.
+    """Parse patch_args list for patch names in patch_list.
+
+    The names can be individual patches and/or in the 'patch1..patch2' format.
+
     """
     # in case it receives a tuple
     patch_list = list(patch_list)
@@ -224,8 +224,11 @@ def name_email(address):
 
 
 def address_or_alias(addr_pair):
-    """Return a name-email tuple the e-mail address is valid or look up
-    the aliases in the config files.
+    """Pass-through name/email address or lookup alias from config.
+
+    Returns a name-email tuple if the e-mail address is valid, otherwise looks up the
+    alias in the config files.
+
     """
     addr = addr_pair[1]
     if '@' in addr:
@@ -358,9 +361,7 @@ def __split_descr_diff(string):
 
 
 def __parse_description(descr):
-    """Parse the patch description and return the new description and
-    author information (if any).
-    """
+    """Parse the patch description for author information."""
     subject = ''
     authname = authemail = authdate = None
 
@@ -424,10 +425,11 @@ def parse_patch(patch_data, contains_diff):
 def run_commit_msg_hook(repo, cd, editor_is_used=True):
     """Run the commit-msg hook (if any) on a commit.
 
-    @param cd: The L{CommitData<stgit.lib.git.CommitData>} to run the
-               hook on.
+    :param cd: The :class:`stgit.lib.git.CommitData` to run the hook on.
 
-    Return the new L{CommitData<stgit.lib.git.CommitData>}."""
+    :returns: the new :class:`stgit.lib.git.CommitData`
+
+    """
     env = dict(cd.env)
     if not editor_is_used:
         env['GIT_EDITOR'] = ':'
@@ -445,8 +447,7 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
 
 
 def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):
-    """Return a new CommitData object updated according to the command line
-    options."""
+    """Create updated CommitData according to the command line options."""
     # Set the commit message from commandline.
     if message is not None:
         cd = cd.set_message(message)
@@ -482,8 +483,6 @@ class DirectoryAnywhere:
 
 
 class DirectoryHasRepository:
-    """For commands that use the new infrastructure in stgit.lib.*."""
-
     def setup(self):
         # This will throw an exception if we don't have a repository.
         self.repository = StackRepository.default()

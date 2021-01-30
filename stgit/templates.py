@@ -24,8 +24,12 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 
 def get_template(tfile):
-    """Return the string in the template file passed as argument or
-    None if the file wasn't found.
+    """Get template string from named template file.
+
+    Several template locations are searched for the named template. If found, the
+    content of the template is returned, otherwise None is returned if the template is
+    not found.
+
     """
     tmpl_dirs = [
         Run('git', 'rev-parse', '--git-dir').output_one_line(),

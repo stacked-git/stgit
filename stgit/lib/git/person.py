@@ -8,8 +8,11 @@ from .date import Date
 
 
 class Person(Immutable):
-    """Represents an author or committer in a git commit object. Contains
-    name, email and timestamp."""
+    """Represents an author or committer in a Git commit object.
+
+    Contains :attr:`name`, :attr:`email` and :attr:`timestamp`.
+
+    """
 
     def __init__(self, name, email, date):
         self.name = name

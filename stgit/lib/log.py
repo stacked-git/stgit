@@ -1,104 +1,101 @@
-"""This module contains functions and classes for manipulating
-I{patch stack logs} (or just I{stack logs}).
+"""Functions for managing stack state log.
 
-A stack log is a git branch. Each commit contains the complete state
-of the stack at the moment it was written; the most recent commit has
-the most recent state.
+A stack log is a Git branch. Each commit contains the complete state (metadata) of the
+stack at the moment it was written; the most recent commit has the most recent state.
 
-For a branch C{I{foo}}, the stack log is stored in C{I{foo}.stgit}.
-Each log entry makes sure to have proper references to everything it
-needs, which means that it is safe against garbage collection -- you
-can even pull it from one repository to another.
+For a branch `foo`, the stack state log is stored in the branch `foo.stgit`.
 
-Stack log format (version 0)
-============================
+Each log entry makes sure to have proper references to everything it needs to make it
+safe against garbage collection. The stack state log can even be pulled from one
+repository to another.
 
-Version 0 was an experimental version of the stack log format; it is
-no longer supported.
+Format version 0
+================
 
-Stack log format (version 1)
-============================
+Version 0 was an experimental version of the stack log format; it is no longer
+supported.
+
+Format version 1
+================
 
 Commit message
 --------------
 
-The commit message is mostly for human consumption; in most cases it
-is just a subject line: the stg subcommand name and possibly some
-important command-line flag.
+The commit message is mostly for human consumption; in most cases it is just a subject
+line: the StGit subcommand name and possibly some important command-line flag.
 
-An exception to this is log commits for undo and redo. Their subject
-line is "C{undo I{n}}" and "C{redo I{n}}"; the positive integer I{n}
-says how many steps were undone or redone.
+An exception to this is commits for ``undo`` and ``redo``. Their subject line is "undo
+`n`" and "redo `n`"; the positive integer `n` indicates how many steps were undone or
+redone.
 
 Tree
 ----
 
-  - One blob, C{meta}, that contains the log data:
+* One blob, ``meta``, that contains the stack state:
 
-      - C{Version:} I{n}
+   * ``Version: 1``
 
-        where I{n} must be 1. (Future versions of StGit might change
-        the log format; when this is done, this version number will be
-        incremented.)
+     Future versions of StGit might change the log format; when this is done, this
+     version number will be incremented.
 
-      - C{Previous:} I{sha1 or C{None}}
+   * ``Previous: <sha1 or None>``
 
-        The commit of the previous log entry, or C{None} if this is
-        the first entry.
+     The commit of the previous log entry, or None if this is the first entry.
 
-      - C{Head:} I{sha1}
+   * ``Head: <sha1>``
 
-        The current branch head.
+     The current branch head.
 
-      - C{Applied:}
+   * ``Applied:``
 
-        Marks the start of the list of applied patches. They are
-        listed in order, each on its own line: first one or more
-        spaces, then the patch name, then a colon, space, then the
-        patch's sha1.
+     Marks the start of the list of applied patches. Each patch is listed in order, one
+     per line. First one or more spaces, then the patch name, then a colon, space, then
+     the patch's sha1.
 
-      - C{Unapplied:}
+   * ``Unapplied:``
 
-        Same as C{Applied:}, but for the unapplied patches.
+     Same as ``Applied:``, but for the unapplied patches.
 
-      - C{Hidden:}
+   * ``Hidden:``
 
-        Same as C{Applied:}, but for the hidden patches.
+     Same as ``Applied:``, but for the hidden patches.
 
-  - One subtree, C{patches}, that contains one blob per patch::
+* One subtree, ``patches``, that contains one blob per patch::
 
-      Bottom: <sha1 of patch's bottom tree>
-      Top:    <sha1 of patch's top tree>
-      Author: <author name and e-mail>
-      Date:   <patch timestamp>
+   Bottom: <sha1 of patch's bottom tree>
+   Top:    <sha1 of patch's top tree>
+   Author: <author name and e-mail>
+   Date:   <patch timestamp>
 
-      <commit message>
-
-      ---
-
-      <patch diff>
-
-Following the message is a newline, three dashes, and another newline.
-Then come, each on its own line,
+   <commit message>
 
 Parents
 -------
 
-  - The first parent is the I{simplified log}, described below.
+* The first parent is the *simplified log*, described below.
 
-  - The rest of the parents are just there to make sure that all the
-    commits referred to in the log entry -- patches, branch head,
-    previous log entry -- are ancestors of the log commit. (This is
-    necessary to make the log safe with regard to garbage collection
-    and pulling.)
+* The rest of the parents are just there to make sure that all the commits referred to
+  in the log entry--patches, branch head, previous log entry--are ancestors of the log
+  commit. This is necessary to make the log safe with regard to garbage collection and
+  pulling.
 
 Simplified log
 --------------
 
-The simplified log is exactly like the full log, except that its only
-parent is the (simplified) previous log entry, if any. It's purpose is
-mainly ease of visualization."""
+The simplified log is exactly like the full log, except that its only parent is the
+(simplified) previous log entry, if any. It's purpose is mainly ease of visualization
+in, for example, ``git log --graph`` or ``gitk``.
 
+Format version 4
+================
+
+The metadata in the `<branch>.stgit` branch is the same as format version 1.
+
+Format version 4 indicates that, unlike previous format versions used by older versions
+of StGit, the stack log state is *only* contained in the stack log branch and *not* as
+files in the .git/patches directory.
+
+"""
 
 import re
 
@@ -399,11 +396,12 @@ def reset_stack(trans, iw, state):
 
 
 def reset_stack_partially(trans, iw, state, only_patches):
-    """Reset the stack to a given previous state -- but only the given
-    patches, not anything else.
+    """Reset the stack to a previous state, but only for the given patches.
 
-    @param only_patches: Touch only these patches
-    @type only_patches: iterable"""
+    :param only_patches: Touch only these patches
+    :type only_patches: iterable
+
+    """
     only_patches = set(only_patches)
     patches_to_reset = set(state.all_patches) & only_patches
     existing_patches = set(trans.all_patches)
@@ -449,15 +447,17 @@ def reset_stack_partially(trans, iw, state, only_patches):
 
 
 def undo_state(stack, undo_steps):
-    """Find the stack state C{undo_steps} steps in the past.
+    """Find the stack state ``undo_steps`` steps in the past.
 
     Successive undo operations are supposed to "add up", so if we find other undo
-    operations along the way we have to add those undo steps to C{undo_steps}.
+    operations along the way we have to add those undo steps to ``undo_steps``.
 
-    If C{undo_steps} is negative, redo instead of undo.
+    If ``undo_steps`` is negative, redo instead of undo.
 
-    @return: The stack state that is the destination of the undo operation
-    @rtype: L{StackState}"""
+    :returns: stack state that is the destination of the undo operation
+    :rtype: :class:`StackState`
+
+    """
     try:
         state = get_stack_state(stack.repository, stack.state_ref)
     except KeyError:

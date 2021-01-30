@@ -177,10 +177,14 @@ def list_files(stack, patch_name, path_limits, update, submodules):
 
 
 def write_tree(stack, paths, use_temp_index):
-    """Possibly update the index, and then write its tree. If any path
-    limiting is in effect, use a temp index.
-    @return: The written tree.
-    @rtype: L{Tree<stgit.git.Tree>}"""
+    """Possibly update the index, and then write its tree.
+
+    If any path limiting is in effect, use a temp index.
+
+    :return: The written tree.
+    :rtype: :class:`Tree<stgit.git.Tree>`
+
+    """
 
     def go(index):
         if paths:
@@ -220,14 +224,16 @@ def make_temp_patch(stack, patch_name, tree):
 
 
 def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
-    """Absorb the temp patch (C{temp_name}) into the given patch
-    (C{patch_name}), which must be applied. If the absorption
-    succeeds, call C{edit_fun} on the resulting
-    L{CommitData<stgit.lib.git.CommitData>} before committing it and
-    commit the return value.
+    """Absorb temp patch into the given patch, which must be applied.
 
-    @return: C{True} if we managed to absorb the temp patch, C{False}
-             if we had to leave it for the user to deal with."""
+    If the absorption succeeds, call ``edit_fun`` on the resulting
+    :class:`stgit.lib.git.CommitData` before committing it, then commit the return
+    value.
+
+    :returns: True if the temp patch is successfully absorbed or False if there remain
+              conflicts for the user to resolve
+
+    """
     temp_absorbed = False
     try:
         # Pop any patch on top of the patch we're refreshing.
@@ -258,16 +264,17 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
 
 
 def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
-    """Absorb the temp patch (C{temp_name}) into the given patch
-    (C{patch_name}), which must be unapplied. If the absorption
-    succeeds, call C{edit_fun} on the resulting
-    L{CommitData<stgit.lib.git.CommitData>} before committing it and
-    commit the return value.
+    """Absorb the temp patch into the given patch, which must be unapplied.
 
-    @param iw: Not used.
-    @return: C{True} if we managed to absorb the temp patch, C{False}
-             if we had to leave it for the user to deal with."""
+    If the absorption succeeds, call ``edit_fun`` on the resulting
+    :class:`stgit.lib.git.CommitData` before committing it, then commit the return
+    value.
 
+    :param iw: Not used.
+    :returns: True if the temp patch is absorbed successfully or False
+              if user resolvable conflicts remain
+
+    """
     # Pop the temp patch.
     popped_extra = trans.pop_patches(lambda pn: pn == temp_name)
     assert not popped_extra  # the temp patch was topmost

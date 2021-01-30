@@ -13,14 +13,16 @@ from stgit.out import out
 
 
 class TransactionException(exception.StgException):
-    """Exception raised when something goes wrong with a
-    L{StackTransaction}."""
+    """Exception raised when something goes wrong with a :class:`StackTransaction`."""
 
 
 class TransactionHalted(TransactionException):
-    """Exception raised when a L{StackTransaction} stops part-way through.
-    Used to make a non-local jump from the transaction setup to the
-    part of the transaction code where the transaction is run."""
+    """Exception raised when a :class:`StackTransaction` stops part-way through.
+
+    Used to make a non-local jump from the transaction setup to the part of the
+    transaction code where the transaction is run.
+
+    """
 
 
 def _print_current_patch(old_applied, new_applied):
@@ -40,7 +42,7 @@ def _print_current_patch(old_applied, new_applied):
 
 
 class _TransPatchMap(dict):
-    """Maps patch names to Commit objects."""
+    """Maps patch names to :class:`Commit` objects."""
 
     def __init__(self, stack):
         super().__init__()
@@ -54,36 +56,34 @@ class _TransPatchMap(dict):
 
 
 class StackTransaction:
-    """A stack transaction, used for making complex updates to an StGit
-    stack in one single operation that will either succeed or fail
-    cleanly.
+    """Atomically perform complex updates to StGit stack state.
+
+    A stack transaction will either succeed or fail cleanly.
 
     The basic theory of operation is the following:
 
-      1. Create a transaction object.
+    1. Create a transaction object.
+    2. Inside a::
 
-      2. Inside a::
+       try:
+         ...
+       except TransactionHalted:
+         pass
 
-         try
-           ...
-         except TransactionHalted:
-           pass
+       block, update the transaction with e.g. methods like :meth:`pop_patches` and
+       :meth:`push_patch`. This may create new Git objects such as commits, but will not
+       write any refs. This means that in case of a fatal error we can just walk away,
+       no clean-up required.
 
-      block, update the transaction with e.g. methods like
-      L{pop_patches} and L{push_patch}. This may create new git
-      objects such as commits, but will not write any refs; this means
-      that in case of a fatal error we can just walk away, no clean-up
-      required.
+       Some operations may need to touch the index and/or working tree, though. But they
+       are cleaned up when needed.
 
-      (Some operations may need to touch your index and working tree,
-      though. But they are cleaned up when needed.)
+    3. After the ``try`` block--wheher or not the setup ran to completion or halted
+       part-way through by raising a :exc:`TransactionHalted` exception--call the
+       transaction's :meth:`run` method. This will either succeed in writing the updated
+       state to refs and index+worktree, or fail without having done anything.
 
-      3. After the C{try} block -- wheher or not the setup ran to
-      completion or halted part-way through by raising a
-      L{TransactionHalted} exception -- call the transaction's L{run}
-      method. This will either succeed in writing the updated state to
-      your refs and index+worktree, or fail without having done
-      anything."""
+    """
 
     def __init__(
         self,
@@ -94,12 +94,15 @@ class StackTransaction:
         allow_bad_head=False,
         check_clean_iw=None,
     ):
-        """Create a new L{StackTransaction}.
+        """Initialize a new :class:`StackTransaction`.
 
-        @param discard_changes: Discard any changes in index+worktree
-        @type discard_changes: bool
-        @param allow_conflicts: Whether to allow pre-existing conflicts
-        @type allow_conflicts: bool or function of L{StackTransaction}"""
+        :param discard_changes: Discard any changes in index+worktree
+        :type discard_changes: bool
+        :param allow_conflicts: Whether to allow pre-existing conflicts
+        :type allow_conflicts: bool or function taking a :class:`StackTransaction`
+                               instance as its argument
+
+        """
         self.stack = stack
         self._msg = msg
         self.patches = _TransPatchMap(stack)
@@ -238,8 +241,11 @@ class StackTransaction:
     def run(
         self, iw=None, set_head=True, allow_bad_head=False, print_current_patch=True
     ):
-        """Execute the transaction. Will either succeed, or fail (with an
-        exception) and do nothing."""
+        """Execute the transaction.
+
+        Will either succeed, or fail (with an exception) and do nothing.
+
+        """
         self._check_consistency()
         log_external_mods(self.stack)
         new_head = self.head
@@ -299,9 +305,13 @@ class StackTransaction:
             out.info('Popped %s -- %s' % (popped[-1], popped[0]))
 
     def pop_patches(self, p):
-        """Pop all patches pn for which p(pn) is true. Return the list of
-        other patches that had to be popped to accomplish this. Always
-        succeeds."""
+        """Pop all patches pn for which p(pn) is true.
+
+        Always succeeds.
+
+        :returns: list of other patches that had to be popped to accomplish this.
+
+        """
         popped = []
         for i in range(len(self.applied)):
             if p(self.applied[i]):
@@ -315,9 +325,13 @@ class StackTransaction:
         return popped1
 
     def delete_patches(self, p, quiet=False):
-        """Delete all patches pn for which p(pn) is true. Return the list of
-        other patches that had to be popped to accomplish this. Always
-        succeeds."""
+        """Delete all patches pn for which p(pn) is true.
+
+        Always succeeds.
+
+        :returns: list of other patches that had to be popped to accomplish this.
+
+        """
         popped = []
         all_patches = self.applied + self.unapplied + self.hidden
         for i in range(len(self.applied)):
@@ -338,9 +352,12 @@ class StackTransaction:
         return popped
 
     def push_patch(self, pn, iw=None, allow_interactive=False, already_merged=False):
-        """Attempt to push the named patch. If this results in conflicts,
-        halts the transaction. If index+worktree are given, spill any
-        conflicts to them."""
+        """Attempt to push the named patch.
+
+        If this results in conflicts, the transaction is halted. If index+worktree are
+        given, spill any conflicts to them.
+
+        """
         out.start('Pushing patch "%s"' % pn)
         orig_cd = self.patches[pn].data
         cd = orig_cd.set_committer(None)

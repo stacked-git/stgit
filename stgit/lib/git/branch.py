@@ -4,7 +4,7 @@ from stgit.run import RunException
 
 
 class BranchException(StgException):
-    """Exception raised by failed L{Branch} operations."""
+    """Exception raised by failed :class:`Branch` operations."""
 
 
 class Branch:
@@ -57,8 +57,7 @@ class Branch:
 
     @classmethod
     def create(cls, repository, name, create_at=None):
-        """Create a new Git branch and return the corresponding
-        L{Branch} object."""
+        """Create a new Git branch, returning a corresponding :class:`Branch` object."""
         try:
             branch = cls(repository, name)
         except BranchException:

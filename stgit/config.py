@@ -1,4 +1,4 @@
-"""Handles the Stacked GIT configuration files"""
+"""Handles the StGit configuration files."""
 
 import os
 

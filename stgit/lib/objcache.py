@@ -1,7 +1,9 @@
 class ObjectCache:
-    """Cache for Python objects, for making sure that we create only one
-    Python object per git object. This reduces memory consumption and
-    makes object comparison very cheap."""
+    """Cache to ensure only one Python object is created per Git object.
+
+    This reduces memory consumption and makes object comparison very cheap.
+
+    """
 
     def __init__(self, create):
         self.__objects = {}

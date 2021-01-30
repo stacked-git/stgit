@@ -40,10 +40,13 @@ def create_empty_file(name):
 
 
 def update_to_current_format_version(repository, branch):
-    """Update a potentially older StGit directory structure to the latest
-    version. Note: This function should depend as little as possible
-    on external functions that may change during a format version
-    bump, since it must remain able to process older formats."""
+    """Update a potentially older StGit directory structure to the latest version.
+
+    Note: This function should depend as little as possible on external functions that
+    may change during a format version bump, since it must remain able to process older
+    formats.
+
+    """
 
     patches_dir = os.path.join(repository.directory, 'patches')
     branch_dir = os.path.join(patches_dir, branch)
@@ -51,6 +54,7 @@ def update_to_current_format_version(repository, branch):
     older_format_key = 'branch.%s.stgitformatversion' % branch
 
     def get_meta_file_version():
+        """Get format version from the ``meta`` file in the stack log branch."""
         stack_ref = 'refs/heads/%s.stgit:meta' % branch
         try:
             lines = (
@@ -68,8 +72,12 @@ def update_to_current_format_version(repository, branch):
             return None
 
     def get_format_version():
-        """Return the integer format version number, or None if the
-        branch doesn't have any StGit metadata at all, of any version."""
+        """Return the integer format version number.
+
+        :returns: the format version number or None if the branch does not have any
+                  StGit metadata at all, of any version
+
+        """
         mfv = get_meta_file_version()
         if mfv is not None and mfv >= 4:
             # Modern-era format version found in branch meta blob.

@@ -23,8 +23,7 @@ def _patches_ref_prefix(stack_name):
 
 
 class Patch:
-    """Represents an StGit patch. This class is mainly concerned with
-    reading and writing the on-disk representation of a patch."""
+    """Represents an StGit patch."""
 
     def __init__(self, stack, name):
         self._stack = stack
@@ -74,7 +73,10 @@ class Patch:
 
 class PatchOrder:
     """Keeps track of patch order, and which patches are applied.
-    Works with patch names, not actual patches."""
+
+    Works with patch names, not actual patches.
+
+    """
 
     def __init__(self, state):
         self._applied = tuple(state.applied)
@@ -122,7 +124,11 @@ class PatchOrder:
 
 
 class Patches:
-    """Creates L{Patch} objects. Makes sure there is only one such object per patch."""
+    """Manage the set of :class:`Patch` objects.
+
+    Ensures a single :class:`Patch` instance per patch.
+
+    """
 
     def __init__(self, stack, state):
         self._stack = stack
@@ -163,8 +169,11 @@ class Patches:
 
 
 class Stack(Branch):
-    """Represents an StGit stack (that is, a git branch with some extra
-    metadata)."""
+    """Represents a StGit stack.
+
+    A StGit stack is a Git branch with extra metadata for patch stack state.
+
+    """
 
     def __init__(self, repository, name):
         super().__init__(repository, name)
@@ -184,8 +193,7 @@ class Stack(Branch):
 
     @property
     def top(self):
-        """Commit of the topmost patch, or the stack base if no patches are
-        applied."""
+        """Commit of the topmost patch, or the stack base if no patches are applied."""
         if self.patchorder.applied:
             return self.patches.get(self.patchorder.applied[-1]).commit
         else:
@@ -299,10 +307,11 @@ class Stack(Branch):
 
     @classmethod
     def initialise(cls, repository, name=None, msg='initialise', switch_to=False):
-        """Initialise a Git branch to handle patch series.
+        """Initialise a Git branch to handle patch stack.
 
-        @param repository: The L{Repository} where the L{Stack} will be created
-        @param name: The name of the L{Stack}
+        :param repository: :class:`Repository` where the :class:`Stack` will be created
+        :param name: the name of the :class:`Stack`
+
         """
         if not name:
             name = repository.current_branch_name
@@ -341,14 +350,15 @@ class Stack(Branch):
         parent_branch=None,
         switch_to=False,
     ):
-        """Create and initialise a Git branch returning the L{Stack} object.
+        """Create and initialise a Git branch returning the :class:`Stack` object.
 
-        @param repository: The L{Repository} where the L{Stack} will be created
-        @param name: The name of the L{Stack}
-        @param msg: Message to use in newly created log
-        @param create_at: The Git id used as the base for the newly created Git branch
-        @param parent_remote: The name of the remote Git branch
-        @param parent_branch: The name of the parent Git branch
+        :param repository: :class:`Repository` where the :class:`Stack` will be created
+        :param name: name of the :class:`Stack`
+        :param msg: message to use in newly created log
+        :param create_at: Git id used as the base for the newly created Git branch
+        :param parent_remote: name of the parent remote Git branch
+        :param parent_branch: name of the parent Git branch
+
         """
         branch = Branch.create(repository, name, create_at=create_at)
         try:
@@ -391,8 +401,7 @@ class Stack(Branch):
 
 
 class StackRepository(Repository):
-    """A git L{Repository<Repository>} with some added StGit-specific
-    operations."""
+    """A Git :class:`Repository` with some added StGit-specific operations."""
 
     def __init__(self, directory):
         super().__init__(directory)

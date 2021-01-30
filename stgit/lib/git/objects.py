@@ -7,23 +7,28 @@ from .person import Person
 
 
 class GitObject(Immutable):
-    """Base class for all git objects. One git object is represented by at
-    most one C{GitObject}, which makes it possible to compare them
-    using normal Python object comparison; it also ensures we don't
-    waste more memory than necessary."""
+    """Base class for all Git objects.
+
+    One Git object is represented by at most one :class:`GitObject`, which makes it
+    possible to compare them using normal Python object comparison; it also ensures
+    memory is not wasted on redundant instances representing the same Git object.
+
+    """
 
 
 class BlobData(Immutable):
-    """Represents the data contents of a git blob object."""
+    """Represents the data content of a Git blob object."""
 
     def __init__(self, data):
         assert isinstance(data, bytes)
         self.bytes = data
 
     def commit(self, repository):
-        """Commit the blob.
-        @return: The committed blob
-        @rtype: L{Blob}"""
+        """Commit the blob to the repository.
+
+        :returns: the committed :class:`Blob`
+
+        """
         sha1 = (
             repository.run(['git', 'hash-object', '-w', '--stdin'])
             .encoding(None)
@@ -34,9 +39,12 @@ class BlobData(Immutable):
 
 
 class Blob(GitObject):
-    """Represents a git blob object. All the actual data contents of the
-    blob object is stored in the L{data} member, which is a
-    L{BlobData} object."""
+    """Represents a Git blob object.
+
+    The actual data content of the blob object is stored in :attr:`data`, which is a
+    :class:`BlobData` instance.
+
+    """
 
     typename = 'blob'
     default_perm = '100644'
@@ -56,12 +64,15 @@ class Blob(GitObject):
 
 
 class TreeData(Immutable):
-    """Represents the data contents of a git tree object."""
+    """Represents the data content of a Git tree object."""
 
     def __init__(self, entries):
-        """Create a new L{TreeData} object from the given mapping from names
-        (strings) to either (I{permission}, I{object}) tuples or just
-        objects."""
+        """Initialize a new :class:`TreeData` instance.
+
+        :param entries: mapping of name string to either ``(permission, git_object)``
+        tuple or just ``git_object``.
+
+        """
         self._entries = {}
         for name, po in entries.items():
             assert '/' not in name, 'tree entry name contains slash: %s' % name
@@ -80,8 +91,11 @@ class TreeData(Immutable):
 
     def commit(self, repository):
         """Commit the tree.
-        @return: The committed tree
-        @rtype: L{Tree}"""
+
+        :returns: The committed tree
+        :rtype: :class:`Tree`
+
+        """
         listing = [
             '%s %s %s\t%s' % (perm, obj.typename, obj.sha1, name)
             for name, (perm, obj) in self
@@ -95,10 +109,11 @@ class TreeData(Immutable):
 
     @classmethod
     def parse(cls, repository, lines):
-        """Parse a raw git tree description.
+        """Parse a raw Git tree description.
 
-        @return: A new L{TreeData} object
-        @rtype: L{TreeData}"""
+        :returns: new :class:`TreeData` instance
+
+        """
         entries = {}
         for line in lines:
             m = re.match(r'^([0-7]{6}) ([a-z]+) ([0-9a-f]{40})\t(.*)$', line)
@@ -108,9 +123,12 @@ class TreeData(Immutable):
 
 
 class Tree(GitObject):
-    """Represents a git tree object. All the actual data contents of the
-    tree object is stored in the L{data} member, which is a
-    L{TreeData} object."""
+    """Represents a Git tree object.
+
+    The actual data content of the tree object is stored in :attr:`data` member, which
+    is a :class:`TreeData` instance.
+
+    """
 
     typename = 'tree'
     default_perm = '040000'
@@ -136,7 +154,7 @@ class Tree(GitObject):
 
 
 class CommitData(Immutable):
-    """Represents the data contents of a git commit object."""
+    """Represents the data content of a Git commit object."""
 
     def __init__(
         self, tree, parents, message, encoding=None, author=None, committer=None
@@ -247,8 +265,11 @@ class CommitData(Immutable):
 
     def commit(self, repository):
         """Commit the commit.
-        @return: The committed commit
-        @rtype: L{Commit}"""
+
+        :returns: the committed commit
+        :rtype: :class:`Commit`
+
+        """
         c = ['git', 'commit-tree', self.tree.sha1]
         for p in self.parents:
             c.append('-p')
@@ -263,9 +284,11 @@ class CommitData(Immutable):
 
     @classmethod
     def parse(cls, repository, content):
-        """Parse a raw git commit description.
-        @return: A new L{CommitData} object
-        @rtype: L{CommitData}"""
+        """Parse a raw Git commit description.
+
+        :returns: new :class:`CommitData` instance
+
+        """
         required_keys = set(['tree', 'author', 'committer'])
         parents = []
         encoding = None
@@ -302,9 +325,12 @@ class CommitData(Immutable):
 
 
 class Commit(GitObject):
-    """Represents a git commit object. All the actual data contents of the
-    commit object is stored in the L{data} member, which is a
-    L{CommitData} object."""
+    """Represents a Git commit object.
+
+    The data content of the commit object is stored in :attr:`data`, which is a
+    :class:`CommitData` instance.
+
+    """
 
     typename = 'commit'
 

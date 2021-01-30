@@ -29,8 +29,11 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 
 def strip_prefix(prefix, string):
-    """Return string, without the prefix. Blow up if string doesn't
-    start with prefix."""
+    """Return string, without the specified prefix.
+
+    The string must start with the prefix.
+
+    """
     assert string.startswith(prefix)
     return string[len(prefix) :]
 
@@ -132,8 +135,11 @@ def find_patch_name(patchname, unacceptable):
 
 
 def patch_name_from_msg(msg):
-    """Return a string to be used as a patch name. This is generated
-    from the top line of the string passed as argument."""
+    """Return a string to be used as a patch name.
+
+    This is generated from the first line of the specified message string.
+
+    """
     if not msg:
         return None
 
@@ -156,9 +162,12 @@ def patch_name_from_msg(msg):
 
 
 def make_patch_name(msg, unacceptable, default_name='patch'):
-    """Return a patch name generated from the given commit message,
-    guaranteed to make unacceptable(name) be false. If the commit
-    message is empty, base the name on default_name instead."""
+    """Generate a patch name from the given commit message.
+
+    The generated name is guaranteed to make unacceptable(name) be false. If the commit
+    message is empty, base the name on default_name instead.
+
+    """
     patchname = patch_name_from_msg(msg)
     if not patchname:
         patchname = default_name
@@ -175,8 +184,12 @@ def add_trailer(message, trailer, name, email):
 
 
 def parse_name_email(address):
-    """Return a tuple consisting of the name and email parsed from a
-    standard 'name <email>' or 'email (name)' string."""
+    """Parse an email address string.
+
+    Returns a tuple consisting of the name and email parsed from a
+    standard 'name <email>' or 'email (name)' string.
+
+    """
     address = re.sub(r'[\\"]', r'\\\g<0>', address)
     str_list = re.findall(r'^(.*)\s*<(.*)>\s*$', address)
     if not str_list:
@@ -196,8 +209,11 @@ STGIT_BUG_ERROR = 4  # a bug in StGit
 
 
 def add_dict(d1, d2):
-    """Return a new dict with the contents of both d1 and d2. In case of
-    conflicting mappings, d2 takes precedence."""
+    """Return a new dict with the contents of both d1 and d2.
+
+    In case of conflicting mappings, d2 takes precedence.
+
+    """
     d = dict(d1)
     d.update(d2)
     return d

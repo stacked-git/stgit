@@ -3,4 +3,4 @@ class StgException(Exception):
 
 
 class StackException(StgException):
-    """Exception raised by L{stack} objects."""
+    """Exception raised by :class:`Stack` objects."""

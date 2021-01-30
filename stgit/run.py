@@ -25,10 +25,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 
 class RunException(StgException):
-    """Thrown when something bad happened when we tried to run the
-    subprocess."""
-
-    pass
+    """Exception raised for subprocess failures."""
 
 
 def get_log_mode(spec):

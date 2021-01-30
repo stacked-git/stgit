@@ -1,7 +1,10 @@
-"""This module provides a layer on top of the standard library's
-C{optparse} module, so that we can easily generate both interactive
-help and asciidoc documentation (such as man pages)."""
+"""Command line argument parsing for StGit subcommands.
 
+This module provides a layer on top of the standard library's :mod:`optparse` to
+facilitate generation of both interactive help and asciidoc documentation (such as man
+pages).
+
+"""
 
 import io
 import optparse
@@ -15,8 +18,7 @@ from stgit.out import out
 
 
 def _splitlist(lst, split_on):
-    """Iterate over the sublists of lst that are separated by an element e
-    such that split_on(e) is true."""
+    """Split list using provided predicate."""
     current = []
     for e in lst:
         if split_on(e):
@@ -28,8 +30,7 @@ def _splitlist(lst, split_on):
 
 
 def _paragraphs(s):
-    """Split a string s into a list of paragraphs, each of which is a list
-    of lines."""
+    """Split a string s into a list of paragraphs, each of which is a list of lines."""
     lines = [line.rstrip() for line in textwrap.dedent(s).strip().splitlines()]
     return [p for p in _splitlist(lines, lambda line: not line.strip()) if p]
 
@@ -301,8 +302,12 @@ def diff_opts_option():
 
 
 def author_options():
-    """Sets options.author to a function that modifies a Person
-    according to the commandline options."""
+    """Create command line options for setting author information.
+
+    The ``opts.author`` destination variable is a callback function that modifies a
+    :class:`Person` according to the these command line options.
+
+    """
 
     def short_callback(option, opt_str, value, parser, field):
         f = parser.values.author
