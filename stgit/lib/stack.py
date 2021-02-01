@@ -1,4 +1,5 @@
 """A Python class hierarchy wrapping the StGit on-disk metadata."""
+import re
 
 from stgit.config import config
 from stgit.exception import StackException
@@ -166,6 +167,81 @@ class Patches:
         p.set_commit(commit, msg)
         self._patches[name] = p
         return p
+
+    def make_name(self, raw, unique=True, lower=True):
+        """Make a unique and valid patch name from provided raw name.
+
+        The raw name may come from a filename, commit message, or email subject line.
+
+        The generated patch name will meet the rules of `git check-ref-format` along
+        with some additional StGit patch name rules.
+
+        """
+        default_name = 'patch'
+
+        for line in raw.split('\n'):
+            if line:
+                break
+
+        if not line:
+            line = default_name
+
+        if lower:
+            line = line.lower()
+
+        parts = []
+        for part in line.split('/'):
+            # fmt: off
+            part = re.sub(r'\.lock$', '', part)    # Disallowed in Git refs
+            part = re.sub(r'^\.+|\.+$', '', part)  # Cannot start or end with '.'
+            part = re.sub(r'\.+', '.', part)       # No consecutive '.'
+            part = re.sub(r'[^\w.]+', '-', part)   # Non-word and whitespace to dashes
+            part = re.sub(r'-+', '-', part)        # Squash consecutive dashes
+            part = re.sub(r'^-+|-+$', '', part)    # Remove leading and trailing dashes
+            # fmt: on
+            if part:
+                parts.append(part)
+
+        long_name = '/'.join(parts)
+
+        # TODO: slashes could be allowed in the future.
+        long_name = long_name.replace('/', '-')
+
+        if not long_name:
+            long_name = default_name
+
+        assert self.is_name_valid(long_name)
+
+        name_len = config.getint('stgit.namelength')
+
+        words = long_name.split('-')
+        short_name = words[0]
+        for word in words[1:]:
+            new_name = '%s-%s' % (short_name, word)
+            if name_len <= 0 or len(new_name) <= name_len:
+                short_name = new_name
+            else:
+                break
+        assert self.is_name_valid(short_name)
+
+        if not unique:
+            return short_name
+
+        unique_name = short_name
+        while self.exists(unique_name):
+            m = re.match(r'(.*?)(-)?(\d+)$', unique_name)
+            if m:
+                base, sep, n_str = m.groups()
+                n = int(n_str) + 1
+                if sep:
+                    unique_name = '%s%s%d' % (base, sep, n)
+                else:
+                    unique_name = '%s%d' % (base, n)
+            else:
+                unique_name = '%s-1' % unique_name
+
+        assert self.is_name_valid(unique_name)
+        return unique_name
 
 
 class Stack(Branch):

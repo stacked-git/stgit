@@ -18,7 +18,6 @@ from stgit.lib.git import CommitData, Date, Person
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.run import Run
-from stgit.utils import make_patch_name
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -149,17 +148,6 @@ options = (
 directory = DirectoryHasRepository()
 
 
-def __strip_patch_name(name):
-    stripped = re.sub('^[0-9]+-(.*)$', r'\g<1>', name)
-    stripped = re.sub(r'^(.*)\.(diff|patch)$', r'\g<1>', stripped)
-    return stripped
-
-
-def __replace_slashes_with_dashes(name):
-    stripped = name.replace('/', '-')
-    return stripped
-
-
 def __create_patch(
     filename, message, author_name, author_email, author_date, diff, options
 ):
@@ -168,29 +156,31 @@ def __create_patch(
 
     if options.name:
         name = options.name
-        if not stack.patches.is_name_valid(name):
-            raise CmdException('Invalid patch name: %s' % name)
     elif filename:
         name = os.path.basename(filename)
     else:
         name = ''
+
     if options.stripname:
-        name = __strip_patch_name(name)
+        # Removing leading numbers and trailing extension
+        name = re.sub(
+            r'''^
+                (?:[0-9]+-)?           # Optional leading patch number
+                (.*?)                  # Patch name group (non-greedy)
+                (?:\.(?:diff|patch))?  # Optional .diff or .patch extension
+                $
+            ''',
+            r'\g<1>',
+            name,
+            flags=re.VERBOSE,
+        )
 
-    if not name:
-        if options.ignore or options.replace:
+    need_unique = not (options.ignore or options.replace)
 
-            def unacceptable_name(name):
-                return False
-
-        else:
-            unacceptable_name = stack.patches.exists
-        name = make_patch_name(message, unacceptable_name)
+    if name:
+        name = stack.patches.make_name(name, unique=need_unique, lower=False)
     else:
-        # fix possible invalid characters in the patch name
-        name = re.sub(r'[^\w.]+', '-', name).strip('-')
-
-    assert stack.patches.is_name_valid(name)
+        name = stack.patches.make_name(message, unique=need_unique, lower=True)
 
     if options.ignore and name in stack.patchorder.applied:
         out.info('Ignoring already applied patch "%s"' % name)
@@ -266,28 +256,30 @@ def __get_handle_and_name(filename):
     return (open(filename, 'rb'), filename)
 
 
-def __import_file(filename, options, patch=None):
+def __import_file(filename, options):
     """Import a patch from a file or standard input"""
-    pname = None
     if filename:
-        (f, pname) = __get_handle_and_name(filename)
+        f, filename = __get_handle_and_name(filename)
     else:
         f = os.fdopen(sys.__stdin__.fileno(), 'rb')
 
-    if patch:
-        pname = patch
-    elif not pname:
-        pname = filename
-
-    (message, author_name, author_email, author_date, diff) = parse_patch(
-        f.read(), contains_diff=True
-    )
+    patch_data = f.read()
 
     if filename:
         f.close()
 
+    message, author_name, author_email, author_date, diff = parse_patch(
+        patch_data, contains_diff=True
+    )
+
     __create_patch(
-        pname, message, author_name, author_email, author_date, diff, options
+        filename,
+        message,
+        author_name,
+        author_email,
+        author_date,
+        diff,
+        options,
     )
 
 
@@ -327,9 +319,8 @@ def __import_series(filename, options):
         else:
             options.strip = 1
         patchfile = os.path.join(patchdir, patch)
-        patch = __replace_slashes_with_dashes(patch)
 
-        __import_file(patchfile, options, patch)
+        __import_file(patchfile, options)
 
     if filename:
         f.close()

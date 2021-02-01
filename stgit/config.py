@@ -31,6 +31,7 @@ DEFAULTS = [
     ('stgit.autoimerge', ['no']),
     ('stgit.fetchcmd', ['git fetch']),
     ('stgit.keepoptimized', ['no']),
+    ('stgit.namelength', ['30']),
     ('stgit.pager', ['less']),
     ('stgit.pick.expose-format', ['format:%B%n(imported from commit %H)']),
     ('stgit.pull-policy', ['pull']),

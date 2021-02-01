@@ -106,6 +106,14 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Import patches from mbox with duplicate subjects' \
+    '
+    stg import -M "$TEST_DIRECTORY"/t1801/email-mbox-same-subject &&
+    test "$(echo $(stg series --noprefix --applied))" = "my-patch my-patch-1 my-patch-2" &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply several patches from an mbox file from stdin' \
     '
     cat "$TEST_DIRECTORY"/t1801/email-mbox | stg import -M &&

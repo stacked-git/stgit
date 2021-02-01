@@ -144,8 +144,6 @@ def patch_name_from_msg(msg):
         return None
 
     name_len = config.getint('stgit.namelength')
-    if not name_len:
-        name_len = 30
 
     subject_line = msg.split('\n', 1)[0].lstrip().lower()
     words = re.sub(r'(?u)[\W]+', ' ', subject_line).split()

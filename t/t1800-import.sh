@@ -32,6 +32,16 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Attempt import same patch twice' \
+    '
+    stg import "$TEST_DIRECTORY"/t1800/git-diff &&
+    stg pop &&
+    stg import "$TEST_DIRECTORY"/t1800/git-diff &&
+    test "$(echo $(stg series --noprefix))" = "git-diff-1 git-diff" &&
+    stg delete ..
+    '
+
+test_expect_success \
     'Apply a patch and edit message' \
     '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -227,7 +237,7 @@ test_expect_success \
     '
     cat some.patch |
     stg import --ignore --author "Some Author <some@example.com>" &&
-    stg top | grep -e "unknown" &&
+    stg top | grep -e "patch" &&
     stg show | grep -e "Author: Some Author <some@example.com>" &&
     stg delete --top
     '
