@@ -371,9 +371,9 @@ def merged_option():
 
 class strings(list):
     def __init__(self, *args):
-        super(strings, self).__init__(args)
+        super().__init__(args)
 
 
 class patch_range(list):
     def __init__(self, *args):
-        super(patch_range, self).__init__(args)
+        super().__init__(args)

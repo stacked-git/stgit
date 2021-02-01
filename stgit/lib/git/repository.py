@@ -24,7 +24,7 @@ class DetachedHeadException(RepositoryException):
     current branch)."""
 
     def __init__(self):
-        RepositoryException.__init__(self, 'Not on any branch')
+        super().__init__('Not on any branch')
 
 
 class Refs:

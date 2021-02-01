@@ -11,7 +11,7 @@ class DateException(StgException):
     """Exception raised when a date+time string could not be parsed."""
 
     def __init__(self, string, type):
-        StgException.__init__(self, '"%s" is not a valid %s' % (string, type))
+        super().__init__('"%s" is not a valid %s' % (string, type))
 
 
 class TimeZone(tzinfo):

@@ -15,7 +15,7 @@ class MergeConflictException(MergeException):
     """Exception raised when a merge fails due to conflicts."""
 
     def __init__(self, conflicts):
-        MergeException.__init__(self)
+        super().__init__()
         self.conflicts = conflicts
 
 

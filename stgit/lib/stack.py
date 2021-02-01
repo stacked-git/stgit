@@ -265,7 +265,7 @@ class Stack(Branch):
     _repo_subdir = 'patches'
 
     def __init__(self, repository, name):
-        Branch.__init__(self, repository, name)
+        super().__init__(repository, name)
         self.patchorder = PatchOrder(self)
         self.patches = Patches(self)
         if not stackupgrade.update_to_current_format_version(repository, name):
@@ -339,7 +339,7 @@ class Stack(Branch):
     def rename(self, new_name):
         old_name = self.name
         patch_names = self.patchorder.all
-        super(Stack, self).rename(new_name)
+        super().rename(new_name)
         renames = []
         for pn in patch_names:
             renames.append((_patch_ref(old_name, pn), _patch_ref(new_name, pn)))
@@ -485,8 +485,8 @@ class StackRepository(Repository):
     """A git L{Repository<Repository>} with some added StGit-specific
     operations."""
 
-    def __init__(self, *args, **kwargs):
-        Repository.__init__(self, *args, **kwargs)
+    def __init__(self, directory):
+        super().__init__(directory)
         self._stacks = {}  # name -> Stack
 
     @property

@@ -43,12 +43,12 @@ class _TransPatchMap(dict):
     """Maps patch names to Commit objects."""
 
     def __init__(self, stack):
-        dict.__init__(self)
+        super().__init__()
         self._stack = stack
 
     def __getitem__(self, pn):
         try:
-            return dict.__getitem__(self, pn)
+            return super().__getitem__(pn)
         except KeyError:
             return self._stack.patches.get(pn).commit
 
