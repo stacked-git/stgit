@@ -95,8 +95,7 @@ def func(parser, options, args):
         cd = run_commit_msg_hook(stack.repository, cd)
 
     if name is None:
-        name = utils.make_patch_name(cd.message_str, stack.patches.exists)
-        assert stack.patches.is_name_valid(name)
+        name = stack.patches.make_name(cd.message_str)
 
     # Write the new patch.
     stack.repository.default_iw

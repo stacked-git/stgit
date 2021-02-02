@@ -117,14 +117,11 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
 
 def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     # If a name was supplied on the command line, make sure it's OK.
-    def bad_name(pn):
-        return pn not in patches and stack.patches.exists(pn)
+    if name and name not in patches and stack.patches.exists(name):
+        raise CmdException('Patch name "%s" already taken' % name)
 
     def get_name(cd):
-        return name or utils.make_patch_name(cd.message_str, bad_name)
-
-    if name and bad_name(name):
-        raise CmdException('Patch name "%s" already taken' % name)
+        return name or stack.patches.make_name(cd.message_str, allow=patches)
 
     def make_squashed_patch(trans, new_commit_data):
         name = get_name(new_commit_data)
@@ -172,6 +169,8 @@ def func(parser, options, args):
     patches = parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
         raise CmdException('Need at least two patches')
+    if options.name and not stack.patches.is_name_valid(options.name):
+        raise CmdException('Patch name "%s" is invalid' % options.name)
     return _squash(
         stack,
         stack.repository.default_iw,

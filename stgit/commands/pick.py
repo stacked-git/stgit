@@ -15,7 +15,7 @@ from stgit.lib.git import CommitData, MergeConflictException, MergeException, Pe
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
 from stgit.run import Run
-from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS, find_patch_name, make_patch_name
+from stgit.utils import STGIT_CONFLICT, STGIT_SUCCESS
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -120,9 +120,9 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
         patchname = 'revert-' + patchname
 
     if patchname:
-        patchname = find_patch_name(patchname, stack.patches.exists)
+        patchname = stack.patches.make_name(patchname, lower=False)
     else:
-        patchname = make_patch_name(commit.data.message_str, stack.patches.exists)
+        patchname = stack.patches.make_name(commit.data.message_str)
 
     if options.parent:
         parent = git_commit(options.parent, repository, ref_stack.name)

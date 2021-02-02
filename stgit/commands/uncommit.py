@@ -1,4 +1,3 @@
-from stgit import utils
 from stgit.argparse import opt
 from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib import transaction
@@ -143,11 +142,13 @@ def func(parser, options, args):
         for pn in patchnames:
             if pn in taken_names:
                 raise CmdException('Patch name "%s" already taken' % pn)
+            elif not stack.patches.is_name_valid(pn):
+                raise CmdException('Patch name "%s" is invalid' % pn)
             taken_names.add(pn)
     else:
         patchnames = []
         for c in reversed(commits):
-            pn = utils.make_patch_name(c.data.message_str, lambda pn: pn in taken_names)
+            pn = stack.patches.make_name(c.data.message_str, disallow=taken_names)
             patchnames.append(pn)
             taken_names.add(pn)
         patchnames.reverse()

@@ -168,7 +168,7 @@ class Patches:
         self._patches[name] = p
         return p
 
-    def make_name(self, raw, unique=True, lower=True):
+    def make_name(self, raw, unique=True, lower=True, allow=(), disallow=()):
         """Make a unique and valid patch name from provided raw name.
 
         The raw name may come from a filename, commit message, or email subject line.
@@ -228,7 +228,9 @@ class Patches:
             return short_name
 
         unique_name = short_name
-        while self.exists(unique_name):
+        while unique_name not in allow and (
+            self.exists(unique_name) or unique_name in disallow
+        ):
             m = re.match(r'(.*?)(-)?(\d+)$', unique_name)
             if m:
                 base, sep, n_str = m.groups()

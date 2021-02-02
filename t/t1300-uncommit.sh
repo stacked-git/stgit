@@ -122,6 +122,10 @@ test_expect_success 'Attempt to reuse patch name' '
   stg commit --all
 '
 
+test_expect_success 'Attempt to use invalid patch name' '
+  command_error stg uncommit bad..patchname
+'
+
 test_expect_success 'Uncommit a commit with not precisely one parent' '
     command_error stg uncommit -n 5  &&
     [ "$(echo $(stg series))" = "" ]

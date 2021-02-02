@@ -1,7 +1,6 @@
 from stgit.commands.common import CmdException, DirectoryGotoTopLevel
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
-from stgit.utils import make_patch_name
 
 __copyright__ = """
 Copyright (C) 2006, Karl Hasselström <kha@treskal.com>
@@ -129,10 +128,7 @@ def func(parser, options, args):
         )
 
         for c in patchify:
-            pn = make_patch_name(
-                c.data.message_str,
-                unacceptable=lambda name: any(p.name == name for p in patches),
-            )
+            pn = stack.patches.make_name(c.data.message_str)
             out.info('Creating patch %s from commit %s' % (pn, c.sha1))
             applied.append(stack.patches.new(pn, c, 'repair'))
         out.done()

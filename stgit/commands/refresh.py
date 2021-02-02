@@ -213,7 +213,7 @@ def make_temp_patch(stack, patch_name, tree):
             message='Refresh of %s' % patch_name,
         )
     )
-    temp_name = utils.make_patch_name('refresh-temp', stack.patches.exists)
+    temp_name = stack.patches.make_name('refresh-temp')
     trans = StackTransaction(stack, 'refresh (create temporary patch)')
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)

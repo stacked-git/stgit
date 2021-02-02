@@ -25,6 +25,11 @@ test_expect_success 'Attempt duplicate patch name' '
     grep -e "Patch name \"p3\" already taken"
 '
 
+test_expect_success 'Attempt invalid patch name' '
+    command_error stg squash -n invalid..name -- p0 p1 2>&1 |
+    grep -e "Patch name \"invalid..name\" is invalid"
+'
+
 test_expect_success 'Save template' '
     stg squash --save-template mytemplate p0 p1 &&
     test_path_is_file mytemplate &&

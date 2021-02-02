@@ -68,7 +68,7 @@ test_expect_success \
 	'Pick local unapplied patch' \
 	'
 	stg pick D &&
-	test "$(echo $(stg series --applied --noprefix))" = "A B C D-0" &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B C D-1" &&
 	test "$(echo $(stg series --unapplied --noprefix))" = "D"
 	'
 
@@ -115,8 +115,8 @@ test_expect_success \
 	'Pick with empty result' \
 	'
 	stg pick -B foo A &&
-	stg series -e | grep -E "0> A-0" &&
-	stg delete A-0
+	stg series -e | grep -E "0> A-1" &&
+	stg delete A-1
 	'
 
 test_expect_success \

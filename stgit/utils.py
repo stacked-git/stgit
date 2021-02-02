@@ -124,54 +124,6 @@ def edit_bytes(s, filename):
     return s
 
 
-def find_patch_name(patchname, unacceptable):
-    """Find a patch name which is acceptable."""
-    if unacceptable(patchname):
-        suffix = 0
-        while unacceptable('%s-%d' % (patchname, suffix)):
-            suffix += 1
-        patchname = '%s-%d' % (patchname, suffix)
-    return patchname
-
-
-def patch_name_from_msg(msg):
-    """Return a string to be used as a patch name.
-
-    This is generated from the first line of the specified message string.
-
-    """
-    if not msg:
-        return None
-
-    name_len = config.getint('stgit.namelength')
-
-    subject_line = msg.split('\n', 1)[0].lstrip().lower()
-    words = re.sub(r'(?u)[\W]+', ' ', subject_line).split()
-
-    # use loop to avoid truncating the last name
-    name = words and words[0] or 'unknown'
-    for word in words[1:]:
-        new = name + '-' + word
-        if len(new) > name_len:
-            break
-        name = new
-
-    return name
-
-
-def make_patch_name(msg, unacceptable, default_name='patch'):
-    """Generate a patch name from the given commit message.
-
-    The generated name is guaranteed to make unacceptable(name) be false. If the commit
-    message is empty, base the name on default_name instead.
-
-    """
-    patchname = patch_name_from_msg(msg)
-    if not patchname:
-        patchname = default_name
-    return find_patch_name(patchname, unacceptable)
-
-
 def add_trailer(message, trailer, name, email):
     trailer_line = '%s: %s <%s>' % (trailer, name, email)
     return (
