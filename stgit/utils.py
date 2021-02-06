@@ -1,6 +1,5 @@
 """Common utility functions"""
 
-import errno
 import os
 import re
 import tempfile
@@ -29,73 +28,11 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
 
-def mkdir_file(filename, mode, encoding='utf-8'):
-    """Opens filename with the given mode, creating the directory it's
-    in if it doesn't already exist."""
-    create_dirs(os.path.dirname(filename))
-    return open(filename, mode, encoding=encoding)
-
-
-def read_strings(filename, encoding='utf-8'):
-    """Reads the lines from a file"""
-    with open(filename, encoding=encoding) as f:
-        return [line.strip() for line in f.readlines()]
-
-
-def read_string(filename, encoding='utf-8'):
-    """Reads the first line from a file"""
-    with open(filename, encoding=encoding) as f:
-        return f.readline().strip()
-
-
-def write_strings(filename, lines, encoding='utf-8'):
-    """Write 'lines' sequence to file"""
-    with open(filename, 'w+', encoding=encoding) as f:
-        for line in lines:
-            print(line, file=f)
-
-
-def write_string(filename, line, multiline=False, encoding='utf-8'):
-    """Writes 'line' to file and truncates it"""
-    with mkdir_file(filename, 'w+', encoding) as f:
-        print(line, end='' if multiline else '\n', file=f)
-
-
-def create_empty_file(name):
-    """Creates an empty file"""
-    mkdir_file(name, 'w+').close()
-
-
 def strip_prefix(prefix, string):
     """Return string, without the prefix. Blow up if string doesn't
     start with prefix."""
     assert string.startswith(prefix)
     return string[len(prefix) :]
-
-
-def create_dirs(directory):
-    """Create the given directory, if the path doesn't already exist."""
-    if directory and not os.path.isdir(directory):
-        create_dirs(os.path.dirname(directory))
-        try:
-            os.mkdir(directory)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise e
-
-
-def rename(basedir, file1, file2):
-    """Rename join(basedir, file1) to join(basedir, file2), not
-    leaving any empty directories behind and creating any directories
-    necessary."""
-    full_file2 = os.path.join(basedir, file2)
-    create_dirs(os.path.dirname(full_file2))
-    os.rename(os.path.join(basedir, file1), full_file2)
-    try:
-        os.removedirs(os.path.join(basedir, os.path.dirname(file1)))
-    except OSError:
-        # file1's parent dir may not be empty after move
-        pass
 
 
 class EditorException(StgException):

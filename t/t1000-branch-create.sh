@@ -35,11 +35,11 @@ test_expect_success \
     'Check for various bits of new branch' '
     test_path_is_file .git/refs/heads/new &&
     test_path_is_file .git/refs/heads/new.stgit &&
-    test_path_is_dir .git/patches/new &&
+    test_path_is_missing .git/patches/new &&
     test_path_is_missing .git/refs/patches &&
     test "$(git config --get branch.new.remote)" = "origin" &&
     test "$(git config --get branch.new.stgit.parentbranch)" = "regular-branch" &&
-    test "$(git config --get branch.new.stgit.stackformatversion)" = "3" &&
+    test_must_fail git config branch.new.stgit.stackformatversion &&
     test "$(git rev-parse HEAD)" = "$(git rev-parse new)"
 '
 
@@ -64,24 +64,9 @@ test_expect_success \
 '
 
 test_expect_success \
-    'Create a spurious patches/ entry' '
+    'Initialize master branch' '
     stg branch master &&
-    stg init &&
-    mkdir -p .git/patches && touch .git/patches/foo1
-'
-
-test_expect_success \
-    'Try to create an stgit branch with a spurious patches/ entry' '
-    command_error stg branch -c foo1
-'
-
-test_expect_success \
-    'Check that no part of the branch was created' '
-    test_when_finished rm .git/patches/foo1 &&
-    test "$(find .git -name foo1 | tee /dev/stderr)" = ".git/patches/foo1" &&
-    test $(git show-ref | grep foo1 | wc -l) -eq 0 &&
-    test "$(git symbolic-ref HEAD)" = "refs/heads/master" &&
-    test_must_fail git config --get-regexp branch\.foo1
+    stg init
 '
 
 test_expect_success \

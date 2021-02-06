@@ -105,6 +105,7 @@ import re
 from stgit import utils
 from stgit.exception import StgException
 from stgit.lib.git import BlobData, CommitData, TreeData
+from stgit.lib.stackupgrade import FORMAT_VERSION
 from stgit.out import out
 
 
@@ -196,9 +197,9 @@ class StackState:
             version = int(version_str)
         except ValueError:
             raise LogParseException('Malformed version number: %r' % version_str)
-        if version < 1:
+        if version < FORMAT_VERSION:
             raise LogException('Log is version %d, which is too old' % version)
-        if version > 1:
+        if version > FORMAT_VERSION:
             raise LogException('Log is version %d, which is too new' % version)
         parsed = {}
         key = None
@@ -263,7 +264,7 @@ class StackState:
         return xp
 
     def _metadata_blob(self):
-        lines = ['Version: 1']
+        lines = ['Version: %d' % FORMAT_VERSION]
         lines.append(
             'Previous: %s' % ('None' if self.prev is None else self.prev.commit.sha1)
         )

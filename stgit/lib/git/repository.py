@@ -116,6 +116,26 @@ class Refs:
         )
         self.reset_cache()
 
+    def batch_update(self, msg, create=(), update=(), delete=()):
+        """Batch update/create/delete refs."""
+        self._ensure_refs_cache()
+        ref_ops = []
+        for ref, commit in create:
+            ref_ops.append('create %s %s\n' % (ref, commit.sha1))
+        for ref, commit in update:
+            old_sha1 = self._refs[ref]
+            ref_ops.append('update %s %s %s\n' % (ref, commit.sha1, old_sha1))
+        for ref in delete:
+            old_sha1 = self._refs[ref]
+            ref_ops.append('delete %s %s\n' % (ref, old_sha1))
+        if ref_ops:
+            (
+                self._repository.run(['git', 'update-ref', '-m', msg, '--stdin'])
+                .raw_input(''.join(ref_ops))
+                .discard_output()
+            )
+            self.reset_cache()
+
 
 class CatFileProcess:
     def __init__(self, repo):
