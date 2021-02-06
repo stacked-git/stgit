@@ -198,12 +198,13 @@ def __create_patch(
 
     out.start('Importing patch "%s"' % name)
 
-    author = Person(
-        author_name,
-        author_email,
-        Date.maybe(author_date),
+    author = options.author(
+        Person(
+            author_name,
+            author_email,
+            Date.maybe(author_date),
+        )
     )
-    author = options.author(author)
 
     try:
         if not diff:
@@ -244,12 +245,6 @@ def __create_patch(
         out.done()
 
 
-def __mkpatchname(name, suffix):
-    if name.lower().endswith(suffix.lower()):
-        return name[: -len(suffix)]
-    return name
-
-
 def __get_handle_and_name(filename):
     """Return a file object and a patch name derived from filename"""
     import bz2
@@ -261,7 +256,9 @@ def __get_handle_and_name(filename):
             f = copen(filename)
             f.read(1)
             f.seek(0)
-            return (f, __mkpatchname(filename, ext))
+            if filename.lower().endswith(ext):
+                filename = filename[: -len(ext)]
+            return (f, filename)
         except IOError:
             pass
 
@@ -298,10 +295,10 @@ def __import_series(filename, options):
     """Import a series of patches"""
     import tarfile
 
-    if filename:
-        if tarfile.is_tarfile(filename):
-            __import_tarfile(filename, options)
-            return
+    if filename and tarfile.is_tarfile(filename):
+        __import_tarfile(filename, options)
+        return
+    elif filename:
         f = open(filename)
         patchdir = os.path.dirname(filename)
     else:
@@ -318,7 +315,6 @@ def __import_series(filename, options):
         m = re.match(
             r'(?P<patchfilename>.*)\s+-p\s*(?P<striplevel>(\d+|ab)?)\s*$', patch
         )
-        options.strip = 1
         if m:
             patch = m.group('patchfilename')
             if m.group('striplevel') != '0':
@@ -328,6 +324,8 @@ def __import_series(filename, options):
                     % (patch, m.group('striplevel'))
                 )
             options.strip = 0
+        else:
+            options.strip = 1
         patchfile = os.path.join(patchdir, patch)
         patch = __replace_slashes_with_dashes(patch)
 
@@ -426,61 +424,56 @@ def __import_url(url, options):
     __import_file(filename, options)
 
 
-def __import_tarfile(tar, options):
+def __import_tarfile(tarpath, options):
     """Import patch series from a tar archive"""
     import shutil
     import tarfile
     import tempfile
 
-    if not tarfile.is_tarfile(tar):
-        raise CmdException("%s is not a tarfile!" % tar)
+    assert tarfile.is_tarfile(tarpath)
 
-    t = tarfile.open(tar, 'r')
-    names = t.getnames()
+    tar = tarfile.open(tarpath, 'r')
+    names = tar.getnames()
 
     # verify paths in the tarfile are safe
     for n in names:
         if n.startswith('/'):
-            raise CmdException("Absolute path found in %s" % tar)
+            raise CmdException("Absolute path found in %s" % tarpath)
         if n.find("..") > -1:
-            raise CmdException("Relative path found in %s" % tar)
+            raise CmdException("Relative path found in %s" % tarpath)
 
     # find the series file
-    seriesfile = ''
-    for m in names:
-        if m.endswith('/series') or m == 'series':
-            seriesfile = m
+    for seriesfile in names:
+        if seriesfile.endswith('/series') or seriesfile == 'series':
             break
-    if seriesfile == '':
-        raise CmdException("no 'series' file found in %s" % tar)
+    else:
+        raise CmdException("no 'series' file found in %s" % tarpath)
 
     # unpack into a tmp dir
     tmpdir = tempfile.mkdtemp('.stg')
-    t.extractall(tmpdir)
-
-    # apply the series
-    __import_series(os.path.join(tmpdir, seriesfile), options)
-
-    # cleanup the tmpdir
-    shutil.rmtree(tmpdir)
+    try:
+        tar.extractall(tmpdir)
+        __import_series(os.path.join(tmpdir, seriesfile), options)
+    finally:
+        shutil.rmtree(tmpdir)
 
 
 def func(parser, options, args):
-    """Import a GNU diff file as a new patch"""
     if len(args) > 1:
         parser.error('incorrect number of arguments')
-
-    if len(args) == 1:
+    elif len(args) == 1:
         filename = args[0]
     else:
         filename = None
 
     if not options.url and filename:
         filename = os.path.abspath(filename)
+
     directory.cd_to_topdir()
 
     repository = directory.repository
     stack = repository.current_stack
+
     check_local_changes(repository)
     check_conflicts(repository.default_iw)
     check_head_top_equal(stack)
