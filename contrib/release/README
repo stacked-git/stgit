@@ -1,2 +1,53 @@
-This directory contains some of the scripts used for updating the
-public StGIT repository and releasing snapshots and main versions.
+StGit Release Checklist
+=======================
+
+0. Test
+
+   - All functional tests should be passing (`make test`)
+   - All lints should be passing (`make lint`)
+
+1. Update CHANGELOG.md
+
+   - Look at git log from last release to HEAD. Identify user-facing
+     changes, but ignore internal-only changes such as refactorings.
+   - Add changes to *Removed*, *Added*, *Changed*, and *Fixed* lists in
+     CHANGELOG.md.
+   - Change "[Unreleased]" to reflect new release version and date.
+   - Commit updated CHANGELOG.md
+
+2. Create new tag
+
+   - `git tag -a -m 'Relase vX.Y'`
+
+3. Check source distribution
+
+   - Create source distribution with `make dist`.
+   - Find source dist file in `dist/`.
+   - Make sure correct version is in dist filename.
+   - Spot-check dist contents for any extra or missing files.
+
+4. Update stacked-git.github.io
+
+   - In stacked-git.github.io repo, `make sync` to sync updated
+     changelog and man pages into website.
+   - Review home page for anything that should be updated in conjunction
+     with the StGit release.
+
+5. Push changes upstream
+
+   - Push new tag and master branch upstream
+   - Push stacked-git.github.io changes
+
+6. Create GitHub release
+
+   - Use "Stacked Git X.Y" for relase title.
+   - Write a sentence or two description of release.
+   - Paste this versions changes from CHANGELOG.md.
+   - Upload source dist file (`stgit-X.Y.tar.gz`).
+
+7. Send notifications
+
+   - Post a new discussion on GitHub repo
+   - ...
+
+8. Review and update these release instructions
