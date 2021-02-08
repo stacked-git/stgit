@@ -38,7 +38,7 @@ test_expect_success \
     stg pop &&
     stg import "$TEST_DIRECTORY"/t1800/git-diff &&
     test "$(echo $(stg series --noprefix))" = "git-diff-1 git-diff" &&
-    stg delete ..
+    stg delete git-diff git-diff-1
     '
 
 test_expect_success \
@@ -66,6 +66,18 @@ test_expect_success \
     'Apply a patch created with "git diff" using -p1' \
     '
     stg import -p1 "$TEST_DIRECTORY"/t1800/git-diff &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply a patch with ".." in filename' \
+    '
+    cp "$TEST_DIRECTORY"/t1800/git-diff git..diff &&
+    test_when_finished rm git..diff &&
+    stg import -p1 git..diff &&
+    test "$(echo $(stg series --noprefix))" = "git.diff" &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
     stg delete ..
