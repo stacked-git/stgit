@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.0] 2021-02-07
 
 ### Removed
 - Drop support for Python < 3.5
@@ -12,10 +12,16 @@
 - The pre-commit hook is now run for `stg refresh`
 - New `--spill` option for `stg refresh`
 - Add stgit.series.description config option (#88)
+- Official support for Python versions up to 3.9
 
 ### Changed
+- Stack metadata format 4. All metadata now kept in Git objects; no more
+  stack state files in .git/patches. **A one-way auto-upgrade to format
+  version 4 will occur when StGit commands are run on an existing StGit
+  branch.**
 - Use `python3` in shebangs instead of `python`
 - `contrib/stgbashprompt.sh` is no longer executable
+- Internal docstrings now use reStructuredText instead of Epytext
 
 ### Fixed
 - Importing large patches is much, much faster (#66)
@@ -24,6 +30,11 @@
 - Use encoded (string) environment variables on Windows (#79)
 - Fix `stg pull` when no upstream is configured (#83)
 - Fix `refresh` crash with path limiting and files added to index (#85)
+- Repair `new` with patchdescr.template crash (#87)
+- Repair `log` from worktree subdir with patches specified
+- Repair `import` allowing/generating duplicate patch names (#64)
+- Repair `mail --auto` to strip comments after addrs (#91)
+
 
 ## [0.23] 2020-06-12
 
