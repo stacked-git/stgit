@@ -2,7 +2,7 @@
 
 # Copyright (c) 2015 Vincent Legoll
 
-test_description='Test the import -s command'
+test_description='Test import from quilt series'
 
 . ./test-lib.sh
 
