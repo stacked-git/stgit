@@ -38,6 +38,14 @@ test_expect_success 'Goto a patch' '
     test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
 '
 
+test_expect_success 'Goto by partial sha1' '
+    stg goto "$(echo $(stg id p5) | test_copy_bytes 10)" &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4 p5" &&
+    stg goto "$(echo $(stg id p3))" &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
+    test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
+'
+
 test_expect_success 'Refuse to go to a hidden patch' '
     stg new h0 -m "hidden patch" &&
     stg hide h0 &&

@@ -151,6 +151,17 @@ class Patches:
     def get(self, name):
         return self._patches[name]
 
+    def name_from_sha1(self, partial_sha1):
+        patch_ref_prefix = _patches_ref_prefix(self._stack.name)
+        for ref in self._stack.repository.refs:
+            if ref.startswith(patch_ref_prefix):
+                patch_name = ref[len(patch_ref_prefix) :]
+                patch = self.get(patch_name)
+                if patch.commit.sha1.startswith(partial_sha1.lower()):
+                    return patch_name
+        else:
+            return None
+
     def is_name_valid(self, name):
         if '/' in name:
             # TODO slashes in patch names could be made to be okay

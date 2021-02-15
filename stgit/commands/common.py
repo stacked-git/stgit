@@ -136,17 +136,6 @@ def print_current_patch(stack):
         out.info('No patches applied')
 
 
-def get_patch_from_list(part_name, patch_list):
-    candidates = [full for full in patch_list if part_name in full]
-    if len(candidates) >= 2:
-        out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
-        raise CmdException('Ambiguous patch name "%s"' % part_name)
-    elif len(candidates) == 1:
-        return candidates[0]
-    else:
-        return None
-
-
 def parse_patches(patch_args, patch_list, boundary=0, ordered=False):
     """Parse patch_args list for patch names in patch_list.
 

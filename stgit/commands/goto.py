@@ -1,10 +1,9 @@
+import re
+
 from stgit import argparse
-from stgit.commands.common import (
-    CmdException,
-    DirectoryHasRepository,
-    get_patch_from_list,
-)
+from stgit.commands.common import CmdException, DirectoryHasRepository
 from stgit.lib import transaction
+from stgit.out import out
 
 __copyright__ = """
 Copyright (C) 2006, Catalin Marinas <catalin.marinas@gmail.com>
@@ -38,26 +37,35 @@ directory = DirectoryHasRepository()
 def func(parser, options, args):
     if len(args) != 1:
         parser.error('incorrect number of arguments')
-    patch = args[0]
+    name = args[0]
 
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
     trans = transaction.StackTransaction(stack, 'goto', check_clean_iw=clean_iw)
 
-    if patch not in trans.all_patches:
-        candidate = get_patch_from_list(patch, trans.all_patches)
-        if candidate is None:
-            raise CmdException('Patch "%s" does not exist' % patch)
-        patch = candidate
+    if name not in trans.all_patches:
+        candidates = [pn for pn in trans.all_patches if name in pn]
+        if len(candidates) == 1:
+            name = candidates[0]
+        elif len(candidates) > 1:
+            out.info('Possible patches:\n  %s' % '\n  '.join(candidates))
+            raise CmdException('Ambiguous patch name "%s"' % name)
+        elif re.match('[0-9A-Fa-f]{4,40}$', name):
+            sha1 = name
+            name = stack.patches.name_from_sha1(sha1)
+            if not name:
+                raise CmdException('No patch associated with %s' % sha1)
+        else:
+            raise CmdException('Patch "%s" does not exist' % name)
 
-    if patch in trans.applied:
-        to_pop = set(trans.applied[trans.applied.index(patch) + 1 :])
+    if name in trans.applied:
+        to_pop = set(trans.applied[trans.applied.index(name) + 1 :])
         popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
         assert not popped_extra
-    elif patch in trans.unapplied:
+    elif name in trans.unapplied:
         try:
-            to_push = trans.unapplied[: trans.unapplied.index(patch) + 1]
+            to_push = trans.unapplied[: trans.unapplied.index(name) + 1]
             if options.merged:
                 merged = set(trans.check_merged(to_push))
             else:
