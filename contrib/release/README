@@ -17,7 +17,7 @@ StGit Release Checklist
 
 2. Create new tag
 
-   - `git tag -a -m 'Relase vX.Y'`
+   - `git tag -a -m 'Relase vX.Y' vX.Y`
 
 3. Check source distribution
 
@@ -40,7 +40,7 @@ StGit Release Checklist
 
 6. Create GitHub release
 
-   - Use "Stacked Git X.Y" for relase title.
+   - Use "Stacked Git X.Y" for release title.
    - Write a sentence or two description of release.
    - Paste this versions changes from CHANGELOG.md.
    - Upload source dist file (`stgit-X.Y.tar.gz`).
