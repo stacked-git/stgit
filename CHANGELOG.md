@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+### Added
+
+### Changed
+- Allow importing mail and series from urls (#94)
+
+### Fixed
+
+
 ## [1.0] 2021-02-07
 
 ### Removed
