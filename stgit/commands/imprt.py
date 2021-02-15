@@ -398,10 +398,15 @@ def __import_url(url, options):
     from urllib.request import urlretrieve
 
     with tempfile.TemporaryDirectory('.stg') as tmpdir:
-        patch = os.path.basename(unquote(url))
-        filename = os.path.join(tmpdir, patch)
+        base = os.path.basename(unquote(url))
+        filename = os.path.join(tmpdir, base)
         urlretrieve(url, filename)
-        __import_file(filename, options)
+        if options.series:
+            __import_series(filename, options)
+        elif options.mail or options.mbox:
+            __import_mail(filename, options)
+        else:
+            __import_file(filename, options)
 
 
 def __import_tarfile(tarpath, options):
@@ -455,11 +460,11 @@ def func(parser, options, args):
     check_conflicts(repository.default_iw)
     check_head_top_equal(stack)
 
-    if options.series:
+    if options.url:
+        __import_url(filename, options)
+    elif options.series:
         __import_series(filename, options)
     elif options.mail or options.mbox:
         __import_mail(filename, options)
-    elif options.url:
-        __import_url(filename, options)
     else:
         __import_file(filename, options)

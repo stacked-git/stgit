@@ -170,7 +170,7 @@ test_expect_success \
     '
 
 test_expect_success \
-    'apply a series from a tarball' \
+    'Apply a series from a tarball' \
     '
     rm -f jabberwocky.txt &&
     touch jabberwocky.txt &&
@@ -181,6 +181,15 @@ test_expect_success \
         tar -cjf "$HOME"/jabberwocky.tar.bz2 patches
     ) &&
     stg import --series jabberwocky.tar.bz2 &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ] &&
+    stg delete ..
+    '
+
+test_expect_success \
+    'Apply a series from a tarball url' \
+    '
+    stg import --url --series "file://$(pwd)/jabberwocky.tar.bz2" &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "tree 2c33937252a21f1550c0bf21f1de534b68f69635") = 1 ]
     '
