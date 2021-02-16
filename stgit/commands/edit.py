@@ -101,12 +101,12 @@ def func(parser, options, args):
         patchname = stack.patchorder.applied[-1]
     elif len(args) == 1:
         [patchname] = args
-        if not stack.patches.exists(patchname):
+        if patchname not in stack.patches:
             raise CmdException('%s: no such patch' % patchname)
     else:
         parser.error('Cannot edit more than one patch')
 
-    cd = orig_cd = stack.patches.get(patchname).commit.data
+    cd = orig_cd = stack.patches[patchname].data
 
     if options.set_tree:
         cd = cd.set_tree(

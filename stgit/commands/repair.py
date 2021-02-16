@@ -80,7 +80,7 @@ def func(parser, options, args):
         raise CmdException('This branch is protected. Modification is not permitted.')
 
     patchorder = stack.patchorder
-    patches = [stack.patches.get(pn) for pn in patchorder.all]
+    patches = list(patchorder.all)
 
     # Find commits that aren't patches, and applied patches.
     patchify = []  # commits to definitely patchify
@@ -88,9 +88,9 @@ def func(parser, options, args):
     applied = []
     c = stack.head
     while len(c.data.parents) == 1:
-        for p in patches:
-            if p.commit == c:
-                applied.append(p)
+        for pn in patchorder.all:
+            if stack.patches[pn] == c:
+                applied.append(pn)
                 patchify.extend(maybe_patchify)
                 maybe_patchify = []
                 break
@@ -109,7 +109,7 @@ def func(parser, options, args):
         c = todo.pop()
         seen.add(c)
         todo |= set(c.data.parents) - seen
-        if any(p.commit == c for p in patches):
+        if any(stack.patches[pn] == c for pn in patches):
             unreachable.add(c)
     if unreachable:
         out.warn(
@@ -130,27 +130,28 @@ def func(parser, options, args):
         for c in patchify:
             pn = stack.patches.make_name(c.data.message_str)
             out.info('Creating patch %s from commit %s' % (pn, c.sha1))
-            applied.append(stack.patches.new(pn, c, 'repair'))
+            stack.patches.new(pn, c, 'repair')
+            applied.append(pn)
         out.done()
 
     # Figure out hidden
-    hidden = [p for p in patches if p.name in patchorder.hidden]
+    hidden = [pn for pn in patches if pn in patchorder.hidden]
 
     # Write the applied/unapplied files.
     out.start('Checking patch appliedness')
-    unapplied = [p for p in patches if p not in applied and p not in hidden]
+    unapplied = [pn for pn in patches if pn not in applied and pn not in hidden]
     for pn in patchorder.all:
-        if all(pn != p.name for p in patches):
+        if pn not in patches:
             out.info('%s is gone' % pn)
-    for p in applied:
-        if p.name not in patchorder.applied:
-            out.info('%s is now applied' % p.name)
-    for p in unapplied:
-        if p.name not in patchorder.unapplied:
-            out.info('%s is now unapplied' % p.name)
-    for p in hidden:
-        if p.name not in patchorder.hidden:
-            out.info('%s is now hidden' % p.name)
+    for pn in applied:
+        if pn not in patchorder.applied:
+            out.info('%s is now applied' % pn)
+    for pn in unapplied:
+        if pn not in patchorder.unapplied:
+            out.info('%s is now unapplied' % pn)
+    for pn in hidden:
+        if pn not in patchorder.hidden:
+            out.info('%s is now hidden' % pn)
     out.done()
 
     orig_order = {pn: i for i, pn in enumerate(patchorder.all)}
@@ -161,9 +162,9 @@ def func(parser, options, args):
 
     trans = StackTransaction(stack, 'repair', check_clean_iw=False, allow_bad_head=True)
     try:
-        trans.applied = [p.name for p in applied]
-        trans.unapplied = sorted((p.name for p in unapplied), key=patchname_key)
-        trans.hidden = sorted((p.name for p in hidden), key=patchname_key)
+        trans.applied = applied
+        trans.unapplied = sorted(unapplied, key=patchname_key)
+        trans.hidden = sorted(hidden, key=patchname_key)
     except TransactionHalted:
         pass
     return trans.run()

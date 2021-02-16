@@ -182,7 +182,7 @@ class StackState:
             applied=list(stack.patchorder.applied),
             unapplied=list(stack.patchorder.unapplied),
             hidden=list(stack.patchorder.hidden),
-            patches={pn: stack.patches.get(pn).commit for pn in stack.patchorder.all},
+            patches={pn: stack.patches[pn] for pn in stack.patchorder.all},
         )
 
     @staticmethod

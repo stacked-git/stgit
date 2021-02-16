@@ -127,14 +127,13 @@ directory = DirectoryHasRepository()
 
 def __get_description(stack, patch):
     """Extract and return a patch's short description"""
-    cd = stack.patches.get(patch).commit.data
+    cd = stack.patches[patch].data
     return cd.message_str.strip().split('\n', 1)[0].rstrip()
 
 
 def __get_author(stack, patch):
     """Extract and return a patch's short description"""
-    cd = stack.patches.get(patch).commit.data
-    return cd.author.name
+    return stack.patches[patch].data.author.name
 
 
 def __render_text(text, effects):
@@ -170,7 +169,7 @@ def __print_patch(stack, patch, branch_str, prefix, length, options, effects):
     if options.noprefix:
         prefix = ''
     elif options.empty:
-        if stack.patches.get(patch).is_empty():
+        if stack.patches[patch].data.is_nochange():
             prefix = '0' + prefix
         else:
             prefix = ' ' + prefix

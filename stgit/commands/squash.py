@@ -117,7 +117,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
 
 def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     # If a name was supplied on the command line, make sure it's OK.
-    if name and name not in patches and stack.patches.exists(name):
+    if name and name not in patches and name in stack.patches:
         raise CmdException('Patch name "%s" already taken' % name)
 
     def get_name(cd):

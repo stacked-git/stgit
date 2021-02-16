@@ -54,9 +54,9 @@ def func(parser, options, args):
     elif len(args) == 1:
         branch, name = parse_rev(args[0])
         stack = repository.get_stack(branch)
-        if not stack.patches.exists(name):
+        if name not in stack.patches:
             raise CmdException('%s: Unknown patch name' % name)
-        commit = stack.patches.get(name).commit
+        commit = stack.patches[name]
     else:
         parser.error('incorrect number of arguments')
 

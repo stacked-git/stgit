@@ -238,7 +238,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
 
         if retval == STGIT_CONFLICT:
             out.done('conflict(s)')
-        elif stack.patches.get(patchname).is_empty():
+        elif stack.patches[patchname].data.is_nochange():
             out.done('empty patch')
         else:
             out.done()

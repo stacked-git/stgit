@@ -78,9 +78,9 @@ def func(parser, options, args):
     patchorder = stack.patchorder
 
     if options.applied:
-        commits = [stack.patches.get(pn).commit for pn in patchorder.applied]
+        commits = [stack.patches[pn] for pn in patchorder.applied]
     elif options.unapplied:
-        commits = [stack.patches.get(pn).commit for pn in patchorder.unapplied]
+        commits = [stack.patches[pn] for pn in patchorder.unapplied]
     elif not args:
         commits = [stack.top]
     elif '..' in ' '.join(args):
@@ -90,12 +90,12 @@ def func(parser, options, args):
             patchorder.all,
             len(patchorder.applied),
         )
-        commits = [stack.patches.get(pn).commit for pn in patch_names]
+        commits = [stack.patches[pn] for pn in patch_names]
     else:
         commits = []
         for name in args:
-            if stack.patches.exists(name):
-                commits.append(stack.patches.get(name).commit)
+            if name in stack.patches:
+                commits.append(stack.patches[name])
             else:
                 try:
                     commits.append(

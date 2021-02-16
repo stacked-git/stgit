@@ -152,7 +152,7 @@ def get_patch(stack, given_patch):
     """Get the name of the patch we are to refresh."""
     if given_patch:
         patch_name = given_patch
-        if not stack.patches.exists(patch_name):
+        if patch_name not in stack.patches:
             raise CmdException('%s: no such patch' % patch_name)
         return patch_name
     else:
@@ -168,9 +168,16 @@ def list_files(stack, patch_name, path_limits, update, submodules):
     iw = stack.repository.default_iw
     paths = iw.changed_files(stack.head.data.tree, path_limits or [])
     if update:
-        # --update: Restrict update to the paths that were already
-        # part of the patch.
-        paths &= stack.patches.get(patch_name).files()
+        # --update: Restrict update to the paths that were already part of the patch.
+        patch_paths = set()
+        commit = stack.patches[patch_name]
+        for dt in stack.repository.diff_tree_files(
+            commit.data.parent.data.tree, commit.data.tree
+        ):
+            _, _, _, _, _, oldname, newname = dt
+            patch_paths.add(oldname)
+            patch_paths.add(newname)
+        paths &= patch_paths
     else:
         # Avoid including submodule files by default. This is to ensure that
         # users in repositories with submodueles do not accidentally include
@@ -349,7 +356,7 @@ def __refresh_spill(annotate):
     # Fetch the topmost patch.
     patchname = get_patch(stack, None)
 
-    cd = stack.patches.get(patchname).commit.data
+    cd = stack.patches[patchname].data
 
     # Set the tree of the patch to the parent.
     cd = cd.set_tree(cd.parent.data.tree)

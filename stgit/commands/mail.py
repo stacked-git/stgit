@@ -577,18 +577,17 @@ def __encode_message(msg):
 def __shortlog(stack, patches):
     cmd = ['git', 'show', '--pretty=short']
     for pn in reversed(patches):
-        p = stack.patches.get(pn)
-        cmd.append(p.commit.sha1)
+        cmd.append(stack.patches[pn].sha1)
     log = stack.repository.run(cmd).raw_output()
     return stack.repository.run(['git', 'shortlog']).raw_input(log).raw_output()
 
 
 def __diffstat(stack, patches):
-    rev1 = stack.patches.get(patches[0])
-    rev2 = stack.patches.get(patches[-1])
+    tree1 = stack.patches[patches[0]].data.tree
+    tree2 = stack.patches[patches[-1]].data.tree
     return stack.repository.diff_tree(
-        rev1.commit.data.tree,
-        rev2.commit.data.tree,
+        tree1,
+        tree2,
         diff_opts=['--stat-width=72'],
         stat=True,
     )
@@ -666,9 +665,9 @@ def __build_cover(tmpl, msg_id, options, patches):
     extra_cc = []
     if options.auto:
         for pn in patches:
-            p = stack.patches.get(pn)
-            if p.commit.data.message_str:
-                descr = p.commit.data.message_str.strip()
+            message_str = stack.patchs[pn].data.message_str
+            if message_str:
+                descr = message_str.strip()
                 extra_cc.extend(__get_signers_list(descr))
         extra_cc = list(set(extra_cc))
 
@@ -685,10 +684,10 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     repository = directory.repository
     stack = repository.current_stack
 
-    p = stack.patches.get(patch)
+    cd = stack.patches[patch].data
 
-    if p.commit.data.message_str:
-        descr = p.commit.data.message_str.strip()
+    if cd.message_str:
+        descr = cd.message_str.strip()
     else:
         # provide a place holder and force the edit message option on
         descr = '<empty message>'
@@ -698,8 +697,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
     short_descr = descr_lines[0].strip()
     long_descr = '\n'.join(line.rstrip() for line in descr_lines[1:]).lstrip('\n')
 
-    author = p.commit.data.author
-    committer = p.commit.data.committer
+    author = cd.author
+    committer = cd.committer
 
     sender = __get_sender()
 
@@ -735,8 +734,8 @@ def __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id):
         number_space = ''
 
     diff = repository.diff_tree(
-        p.commit.data.parent.data.tree,
-        p.commit.data.tree,
+        cd.parent.data.tree,
+        cd.tree,
         diff_opts=options.diff_flags,
     )
     tmpl_dict = {
@@ -816,9 +815,9 @@ def func(parser, options, args):
     __get_sender()
 
     out.start('Checking the validity of the patches')
-    for p in patches:
-        if stack.patches.get(p).is_empty():
-            raise CmdException('Cannot send empty patch "%s"' % p)
+    for pn in patches:
+        if stack.patches[pn].data.is_nochange():
+            raise CmdException('Cannot send empty patch "%s"' % pn)
     out.done()
 
     total_nr = len(patches)

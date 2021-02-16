@@ -78,29 +78,29 @@ def func(parser, options, args):
     )
 
     diff_lines = []
-    for name in stack.patchorder.applied:
-        patch = stack.patches.get(name)
-        if patch.commit.sha1 not in revs:
+    for pn in stack.patchorder.applied:
+        commit = stack.patches[pn]
+        if commit.sha1 not in revs:
             continue
         if options.diff:
             diff_lines.extend(
                 [
                     b'-' * 79,
-                    patch.name.encode('utf-8'),
+                    pn.encode('utf-8'),
                     b'-' * 79,
-                    patch.commit.data.message,
+                    commit.data.message,
                     b'---',
                     b'',
                     repository.diff_tree(
-                        patch.commit.data.parent.data.tree,
-                        patch.commit.data.tree,
+                        commit.data.parent.data.tree,
+                        commit.data.tree,
                         pathlimits=files,
                         diff_opts=options.diff_flags + color_diff_flags(),
                     ),
                 ]
             )
         else:
-            out.stdout(patch.name)
+            out.stdout(pn)
 
     if options.diff:
         pager(b'\n'.join(diff_lines))

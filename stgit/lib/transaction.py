@@ -52,7 +52,7 @@ class _TransPatchMap(dict):
         try:
             return super().__getitem__(pn)
         except KeyError:
-            return self._stack.patches.get(pn).commit
+            return self._stack.patches[pn]
 
 
 class StackTransaction:
@@ -229,7 +229,7 @@ class StackTransaction:
         remaining = set(self.all_patches)
         for pn, commit in self.patches.items():
             if commit is None:
-                assert self.stack.patches.exists(pn)
+                assert pn in self.stack.patches
             else:
                 assert pn in remaining
 
@@ -272,7 +272,7 @@ class StackTransaction:
 
         # Write patches.
         for pn, commit in self.patches.items():
-            if self.stack.patches.exists(pn):
+            if pn in self.stack.patches:
                 if commit is None:
                     self.stack.patches.delete(pn)
                 else:

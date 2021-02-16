@@ -37,7 +37,7 @@ class Patch:
     def commit(self):
         return self._stack.repository.refs.get(self._ref)
 
-    def set_commit(self, commit, msg):
+    def _set_commit(self, commit, msg):
         try:
             old_sha1 = self.commit.sha1
         except KeyError:
@@ -46,26 +46,11 @@ class Patch:
         if old_sha1 and old_sha1 != commit.sha1:
             self._stack.repository.copy_notes(old_sha1, commit.sha1)
 
-    def set_name(self, name, msg):
+    def _set_name(self, name, msg):
         commit = self.commit
         self._stack.repository.refs.delete(self._ref)
         self.name = name
         self._stack.repository.refs.set(self._ref, commit, msg)
-
-    def is_empty(self):
-        return self.commit.data.is_nochange()
-
-    def files(self):
-        """Return the set of files this patch touches."""
-        fs = set()
-        for dt in self._stack.repository.diff_tree_files(
-            self.commit.data.parent.data.tree,
-            self.commit.data.tree,
-        ):
-            _, _, _, _, _, oldname, newname = dt
-            fs.add(oldname)
-            fs.add(newname)
-        return fs
 
 
 class PatchOrder:
@@ -160,15 +145,11 @@ class Patches:
                 delete=delete_patch_refs,
             )
 
-    def exists(self, name):
-        try:
-            self.get(name)
-            return True
-        except KeyError:
-            return False
+    def __contains__(self, name):
+        return name in self._patches
 
-    def get(self, name):
-        return self._patches[name]
+    def __getitem__(self, name):
+        return self._patches[name].commit
 
     def name_from_sha1(self, partial_sha1):
         for pn, patch in self._patches.items():
@@ -190,16 +171,16 @@ class Patches:
         assert name not in self._patches
         assert self.is_name_valid(name)
         p = Patch(self._stack, name)
-        p.set_commit(commit, msg)
+        p._set_commit(commit, msg)
         self._patches[name] = p
         return p
 
     def update(self, name, commit, msg):
-        self._patches[name].set_commit(commit, msg)
+        self._patches[name]._set_commit(commit, msg)
 
     def rename(self, old_name, new_name, msg):
         patch = self._patches[old_name]
-        patch.set_name(new_name, msg)
+        patch._set_name(new_name, msg)
         self._patches[new_name] = patch
         del self._patches[old_name]
 
@@ -268,7 +249,7 @@ class Patches:
 
         unique_name = short_name
         while unique_name not in allow and (
-            self.exists(unique_name) or unique_name in disallow
+            unique_name in self or unique_name in disallow
         ):
             m = re.match(r'(.*?)(-)?(\d+)$', unique_name)
             if m:
@@ -303,7 +284,7 @@ class Stack(Branch):
     @property
     def base(self):
         if self.patchorder.applied:
-            return self.patches.get(self.patchorder.applied[0]).commit.data.parent
+            return self.patches[self.patchorder.applied[0]].data.parent
         else:
             return self.head
 
@@ -311,7 +292,7 @@ class Stack(Branch):
     def top(self):
         """Commit of the topmost patch, or the stack base if no patches are applied."""
         if self.patchorder.applied:
-            return self.patches.get(self.patchorder.applied[-1]).commit
+            return self.patches[self.patchorder.applied[-1]]
         else:
             # When no patches are applied, base == head.
             return self.head
@@ -319,8 +300,7 @@ class Stack(Branch):
     def head_top_equal(self):
         if not self.patchorder.applied:
             return True
-        top = self.patches.get(self.patchorder.applied[-1]).commit
-        return self.head == top
+        return self.head == self.patches[self.patchorder.applied[-1]]
 
     def set_parents(self, remote, branch):
         if remote:
@@ -376,11 +356,11 @@ class Stack(Branch):
     def rename_patch(self, old_name, new_name, msg='rename'):
         if new_name == old_name:
             raise StackException('New patch name same as old: "%s"' % new_name)
-        elif self.patches.exists(new_name):
+        elif new_name in self.patches:
             raise StackException('Patch already exists: "%s"' % new_name)
         elif not self.patches.is_name_valid(new_name):
             raise StackException('Invalid patch name: "%s"' % new_name)
-        elif not self.patches.exists(old_name):
+        elif old_name not in self.patches:
             raise StackException('Unknown patch name: "%s"' % old_name)
         self.patchorder.rename_patch(old_name, new_name)
         self.patches.rename(old_name, new_name, msg)
@@ -396,8 +376,7 @@ class Stack(Branch):
         )
 
         for pn in self.patchorder.all_visible:
-            patch = self.patches.get(pn)
-            clone.patches.new(pn, patch.commit, 'clone from %s' % self.name)
+            clone.patches.new(pn, self.patches[pn], 'clone from %s' % self.name)
 
         clone.patchorder.set_order(
             applied=[],

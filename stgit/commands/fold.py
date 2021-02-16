@@ -107,11 +107,10 @@ def func(parser, options, args):
         diff = sys.stdin.buffer.read()
 
     if options.threeway:
-        top_patch = stack.patches.get(current)
         apply_patch(
             stack,
             diff,
-            base=top_patch.commit.data.parent,
+            base=stack.patches[current].data.parent,
             strip=options.strip,
             reject=options.reject,
         )

@@ -144,21 +144,23 @@ def func(parser, options, args):
         base_commit = stack.base.sha1
         print('# This series applies on GIT commit %s' % base_commit, file=series)
 
-    for patch_no, p in enumerate(patches, 1):
-        pname = p
+    for patch_no, pn in enumerate(patches, 1):
         if options.patch:
-            pname = '%s.patch' % pname
+            pname = '%s.patch' % pn
         elif options.extension:
-            pname = '%s.%s' % (pname, options.extension)
+            pname = '%s.%s' % (pn, options.extension)
+        else:
+            pname = pn
+
         if options.numbered:
             pname = '%s-%s' % (str(patch_no).zfill(zpadding), pname)
+
         pfile = os.path.join(dirname, pname)
         if not options.stdout:
             print(pname, file=series)
 
         # get the patch description
-        patch = stack.patches.get(p)
-        cd = patch.commit.data
+        cd = stack.patches[pn].data
 
         descr = cd.message_str.strip()
         descr_lines = descr.split('\n')
@@ -197,7 +199,7 @@ def func(parser, options, args):
             f = io.open(pfile, 'wb')
 
         if options.stdout and num > 1:
-            f.write('\n'.join(['-' * 79, patch.name, '-' * 79, '']).encode('utf-8'))
+            f.write('\n'.join(['-' * 79, pn, '-' * 79, '']).encode('utf-8'))
 
         f.write(descr)
         f.write(diff)

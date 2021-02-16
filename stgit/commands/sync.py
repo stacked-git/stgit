@@ -61,7 +61,7 @@ directory = DirectoryGotoTopLevel()
 
 def __branch_merge_patch(remote_stack, stack, commit, pname):
     """Merge a patch from a remote branch into the current tree."""
-    remote = remote_stack.patches.get(pname).commit
+    remote = remote_stack.patches[pname]
     iw = stack.repository.default_iw
     iw.checkout(new_tree=commit.data.tree, old_tree=stack.head.data.tree)
     iw.refresh_index()

@@ -65,10 +65,10 @@ def func(parser, options, args):
         name = None
     elif len(args) == 1:
         name = args[0]
-        if stack.patches.exists(name):
-            raise CmdException('%s: patch already exists' % name)
-        elif not stack.patches.is_name_valid(name):
+        if not stack.patches.is_name_valid(name):
             raise CmdException('Invalid patch name: "%s"' % name)
+        elif name in stack.patches:
+            raise CmdException('%s: patch already exists' % name)
     else:
         parser.error('incorrect number of arguments')
 
