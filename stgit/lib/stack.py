@@ -22,37 +22,6 @@ def _patches_ref_prefix(stack_name):
     return _patch_ref(stack_name, '')
 
 
-class Patch:
-    """Represents an StGit patch."""
-
-    def __init__(self, stack, name):
-        self._stack = stack
-        self.name = name
-
-    @property
-    def _ref(self):
-        return _patch_ref(self._stack.name, self.name)
-
-    @property
-    def commit(self):
-        return self._stack.repository.refs.get(self._ref)
-
-    def _set_commit(self, commit, msg):
-        try:
-            old_sha1 = self.commit.sha1
-        except KeyError:
-            old_sha1 = None
-        self._stack.repository.refs.set(self._ref, commit, msg)
-        if old_sha1 and old_sha1 != commit.sha1:
-            self._stack.repository.copy_notes(old_sha1, commit.sha1)
-
-    def _set_name(self, name, msg):
-        commit = self.commit
-        self._stack.repository.refs.delete(self._ref)
-        self.name = name
-        self._stack.repository.refs.set(self._ref, commit, msg)
-
-
 class PatchOrder:
     """Keeps track of patch order, and which patches are applied.
 
@@ -106,15 +75,10 @@ class PatchOrder:
 
 
 class Patches:
-    """Manage the set of :class:`Patch` objects.
-
-    Ensures a single :class:`Patch` instance per patch.
-
-    """
+    """Interface for managing patch references."""
 
     def __init__(self, stack, state):
         self._stack = stack
-        self._patches = {pn: Patch(stack, pn) for pn in state.patches}
 
         # Ensure patch refs in repository match those from stack state.
         repository = stack.repository
@@ -145,15 +109,24 @@ class Patches:
                 delete=delete_patch_refs,
             )
 
+    def _ref(self, name):
+        return _patch_ref(self._stack.name, name)
+
     def __contains__(self, name):
-        return name in self._patches
+        return self._stack.repository.refs.exists(self._ref(name))
 
     def __getitem__(self, name):
-        return self._patches[name].commit
+        return self._stack.repository.refs.get(self._ref(name))
+
+    def __iter__(self):
+        patch_ref_prefix = _patches_ref_prefix(self._stack.name)
+        for ref in self._stack.repository.refs:
+            if ref.startswith(patch_ref_prefix):
+                yield ref[len(patch_ref_prefix) :]
 
     def name_from_sha1(self, partial_sha1):
-        for pn, patch in self._patches.items():
-            if patch.commit.sha1.startswith(partial_sha1.lower()):
+        for pn in self:
+            if self[pn].sha1.startswith(partial_sha1.lower()):
                 return pn
         else:
             return None
@@ -168,25 +141,23 @@ class Patches:
         return p.exitcode == 0
 
     def new(self, name, commit, msg):
-        assert name not in self._patches
+        assert name not in self
         assert self.is_name_valid(name)
-        p = Patch(self._stack, name)
-        p._set_commit(commit, msg)
-        self._patches[name] = p
-        return p
+        self._stack.repository.refs.set(self._ref(name), commit, msg)
 
     def update(self, name, commit, msg):
-        self._patches[name]._set_commit(commit, msg)
+        old_sha1 = self[name].sha1
+        if old_sha1 != commit.sha1:
+            self._stack.repository.refs.set(self._ref(name), commit, msg)
+            self._stack.repository.copy_notes(old_sha1, commit.sha1)
 
     def rename(self, old_name, new_name, msg):
-        patch = self._patches[old_name]
-        patch._set_name(new_name, msg)
-        self._patches[new_name] = patch
-        del self._patches[old_name]
+        commit = self[old_name]
+        self._stack.repository.refs.delete(self._ref(old_name))
+        self._stack.repository.refs.set(self._ref(new_name), commit, msg)
 
     def delete(self, name):
-        patch = self._patches.pop(name)
-        self._stack.repository.refs.delete(patch._ref)
+        self._stack.repository.refs.delete(self._ref(name))
 
     def make_name(self, raw, unique=True, lower=True, allow=(), disallow=()):
         """Make a unique and valid patch name from provided raw name.
