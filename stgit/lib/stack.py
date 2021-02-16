@@ -6,7 +6,6 @@ from stgit.exception import StackException
 from stgit.lib import log, stackupgrade
 from stgit.lib.git import Repository
 from stgit.lib.git.branch import Branch, BranchException
-from stgit.lib.objcache import ObjectCache
 
 
 def _stack_state_ref(stack_name):
@@ -49,12 +48,9 @@ class Patch:
 
     def set_name(self, name, msg):
         commit = self.commit
-        self.delete()
+        self._stack.repository.refs.delete(self._ref)
         self.name = name
         self._stack.repository.refs.set(self._ref, commit, msg)
-
-    def delete(self):
-        self._stack.repository.refs.delete(self._ref)
 
     def is_empty(self):
         return self.commit.data.is_nochange()
@@ -133,13 +129,36 @@ class Patches:
 
     def __init__(self, stack, state):
         self._stack = stack
+        self._patches = {pn: Patch(stack, pn) for pn in state.patches}
 
-        def create_patch(name):
-            p = Patch(self._stack, name)
-            p.commit  # raise exception if the patch doesn't exist
-            return p
+        # Ensure patch refs in repository match those from stack state.
+        repository = stack.repository
+        patch_ref_prefix = _patches_ref_prefix(stack.name)
 
-        self._patches = ObjectCache(create_patch)  # name -> Patch
+        state_patch_ref_map = {
+            _patch_ref(stack.name, pn): commit for pn, commit in state.patches.items()
+        }
+
+        state_patch_refs = set(state_patch_ref_map)
+        repo_patch_refs = {
+            ref for ref in repository.refs if ref.startswith(patch_ref_prefix)
+        }
+
+        delete_patch_refs = repo_patch_refs - state_patch_refs
+        create_patch_refs = state_patch_refs - repo_patch_refs
+        update_patch_refs = {
+            ref
+            for ref in state_patch_refs - create_patch_refs
+            if state_patch_ref_map[ref].sha1 != repository.refs.get(ref).sha1
+        }
+
+        if create_patch_refs or update_patch_refs or delete_patch_refs:
+            repository.refs.batch_update(
+                msg='restore from stack state',
+                create=[(ref, state_patch_ref_map[ref]) for ref in create_patch_refs],
+                update=[(ref, state_patch_ref_map[ref]) for ref in update_patch_refs],
+                delete=delete_patch_refs,
+            )
 
     def exists(self, name):
         try:
@@ -152,13 +171,9 @@ class Patches:
         return self._patches[name]
 
     def name_from_sha1(self, partial_sha1):
-        patch_ref_prefix = _patches_ref_prefix(self._stack.name)
-        for ref in self._stack.repository.refs:
-            if ref.startswith(patch_ref_prefix):
-                patch_name = ref[len(patch_ref_prefix) :]
-                patch = self.get(patch_name)
-                if patch.commit.sha1.startswith(partial_sha1.lower()):
-                    return patch_name
+        for pn, patch in self._patches.items():
+            if patch.commit.sha1.startswith(partial_sha1.lower()):
+                return pn
         else:
             return None
 
@@ -178,6 +193,19 @@ class Patches:
         p.set_commit(commit, msg)
         self._patches[name] = p
         return p
+
+    def update(self, name, commit, msg):
+        self._patches[name].set_commit(commit, msg)
+
+    def rename(self, old_name, new_name, msg):
+        patch = self._patches[old_name]
+        patch.set_name(new_name, msg)
+        self._patches[new_name] = patch
+        del self._patches[old_name]
+
+    def delete(self, name):
+        patch = self._patches.pop(name)
+        self._stack.repository.refs.delete(patch._ref)
 
     def make_name(self, raw, unique=True, lower=True, allow=(), disallow=()):
         """Make a unique and valid patch name from provided raw name.
@@ -269,7 +297,6 @@ class Stack(Branch):
         if not stackupgrade.update_to_current_format_version(repository, name):
             raise StackException('%s: branch not initialized' % name)
         state = log.get_stack_state(self.repository, self.state_ref)
-        self._ensure_patch_refs(repository, name, state)
         self.patchorder = PatchOrder(state)
         self.patches = Patches(self, state)
 
@@ -321,8 +348,7 @@ class Stack(Branch):
     def cleanup(self):
         assert not self.protected, 'attempt to delete protected stack'
         for pn in self.patchorder.all:
-            patch = self.patches.get(pn)
-            patch.delete()
+            self.patches.delete(pn)
         self.repository.refs.delete(self.state_ref)
         config.remove_section('branch.%s.stgit' % self.name)
 
@@ -357,7 +383,7 @@ class Stack(Branch):
         elif not self.patches.exists(old_name):
             raise StackException('Unknown patch name: "%s"' % old_name)
         self.patchorder.rename_patch(old_name, new_name)
-        self.patches.get(old_name).set_name(new_name, msg)
+        self.patches.rename(old_name, new_name, msg)
 
     def clone(self, clone_name, msg):
         clone = self.create(
@@ -448,36 +474,6 @@ class Stack(Branch):
             raise
         stack.set_parents(parent_remote, parent_branch)
         return stack
-
-    @staticmethod
-    def _ensure_patch_refs(repository, stack_name, state):
-        """Ensure patch refs in repository match those from stack state."""
-        patch_ref_prefix = _patches_ref_prefix(stack_name)
-
-        state_patch_ref_map = {
-            _patch_ref(stack_name, pn): commit for pn, commit in state.patches.items()
-        }
-
-        state_patch_refs = set(state_patch_ref_map)
-        repo_patch_refs = {
-            ref for ref in repository.refs if ref.startswith(patch_ref_prefix)
-        }
-
-        delete_patch_refs = repo_patch_refs - state_patch_refs
-        create_patch_refs = state_patch_refs - repo_patch_refs
-        update_patch_refs = {
-            ref
-            for ref in state_patch_refs - create_patch_refs
-            if state_patch_ref_map[ref].sha1 != repository.refs.get(ref).sha1
-        }
-
-        if create_patch_refs or update_patch_refs or delete_patch_refs:
-            repository.refs.batch_update(
-                msg='restore from stack state',
-                create=[(ref, state_patch_ref_map[ref]) for ref in create_patch_refs],
-                update=[(ref, state_patch_ref_map[ref]) for ref in update_patch_refs],
-                delete=delete_patch_refs,
-            )
 
 
 class StackRepository(Repository):

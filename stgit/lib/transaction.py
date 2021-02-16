@@ -273,11 +273,10 @@ class StackTransaction:
         # Write patches.
         for pn, commit in self.patches.items():
             if self.stack.patches.exists(pn):
-                p = self.stack.patches.get(pn)
                 if commit is None:
-                    p.delete()
+                    self.stack.patches.delete(pn)
                 else:
-                    p.set_commit(commit, msg)
+                    self.stack.patches.update(pn, commit, msg)
             else:
                 self.stack.patches.new(pn, commit, msg)
         self.stack.patchorder.set_order(self._applied, self._unapplied, self._hidden)
