@@ -106,6 +106,12 @@ options = (
             short='Invoke an editor for the patch description',
         ),
         opt(
+            '-d',
+            '--diff',
+            action='store_true',
+            short='Edit the patch diff if -e was set',
+        ),
+        opt(
             '-a',
             '--annotate',
             metavar='NOTE',
@@ -380,6 +386,7 @@ def __refresh(
     include_submodules=False,
     no_verify=False,
     invoke_editor=False,
+    edit_diff=False,
 ):
     stack = directory.repository.current_stack
 
@@ -455,7 +462,7 @@ def __refresh(
         )
         if invoke_editor:
             cd, failed_diff = interactive_edit_patch(
-                stack.repository, cd, edit_diff=False, diff_flags=[]
+                stack.repository, cd, edit_diff=edit_diff, diff_flags=[]
             )
             assert not failed_diff
         if not no_verify and (invoke_editor or cd.message != orig_msg):
@@ -522,4 +529,5 @@ def func(parser, options, args):
             include_submodules=options.submodules,
             no_verify=options.no_verify,
             invoke_editor=options.edit,
+            edit_diff=options.diff,
         )
