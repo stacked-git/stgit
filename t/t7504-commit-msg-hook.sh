@@ -317,4 +317,22 @@ test_expect_success "squash hook doesn't edit commit message (editor)" '
     commit_msg_is "more plus"
 '
 
+write_script diffedit <<EOF
+sed \
+    -e 's/old content/new content/' \
+    -e 's/old message/new message/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
+exit 0
+EOF
+test_expect_success "refresh hook edits message and diff (editor)" '
+    stg new -m "old message" p1 &&
+    echo "old content" > file &&
+    stg add file &&
+    stg refresh -i &&
+    GIT_EDITOR=./diffedit stg refresh -d -e &&
+    git log --pretty=format:%s%b -1 &&
+    commit_msg_is "new message" &&
+    test "$(grep "new content" file)" = "new content"
+'
+rm -f diffedit
+
 test_done
