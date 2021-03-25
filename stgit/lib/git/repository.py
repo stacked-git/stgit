@@ -227,8 +227,12 @@ class DiffTreeProcesses:
         os.write(p.stdin.fileno(), query + end)
         p.stdin.flush()
 
+        def is_end(parts):
+            tail = parts[-1] if len(parts[-1]) > len(end) else b''.join(parts[-2:])
+            return tail.endswith(b'\n' + end) or tail.endswith(b'\0' + end)
+
         parts = [os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE)]
-        while not (parts[-1].endswith(b'\n' + end) or parts[-1].endswith(b'\0' + end)):
+        while not is_end(parts):
             parts.append(os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE))
 
         data = b''.join(parts)
