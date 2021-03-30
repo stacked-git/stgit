@@ -109,7 +109,7 @@ options = (
             '-d',
             '--diff',
             action='store_true',
-            short='Edit the patch diff if -e was set',
+            short='Show diff when editing patch description',
         ),
         opt(
             '-a',
@@ -141,6 +141,7 @@ options = (
         + argparse.hook_options()
         + argparse.sign_options()
         + argparse.author_options()
+        + argparse.diff_opts_option()
     )
 )
 
@@ -387,6 +388,7 @@ def __refresh(
     no_verify=False,
     invoke_editor=False,
     edit_diff=False,
+    diff_flags=(),
 ):
     stack = directory.repository.current_stack
 
@@ -462,7 +464,7 @@ def __refresh(
         )
         if invoke_editor:
             cd, failed_diff = interactive_edit_patch(
-                stack.repository, cd, edit_diff=edit_diff, diff_flags=[]
+                stack.repository, cd, edit_diff, diff_flags
             )
             assert not failed_diff
         if not no_verify and (invoke_editor or cd.message != orig_msg):
@@ -530,4 +532,5 @@ def func(parser, options, args):
             no_verify=options.no_verify,
             invoke_editor=options.edit,
             edit_diff=options.diff,
+            diff_flags=options.diff_flags,
         )

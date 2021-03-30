@@ -408,8 +408,10 @@ _stg-refresh() {
     __stg_add_args_edit
     __stg_add_args_hook
     __stg_add_args_sign
+    __stg_add_args_diffopts
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate=}'[annotate patch log entry]:note'
+        '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
         '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
         '(-i --index)'{-i,--index}'[refresh from index instead of worktree]'
         '(-p --patch)'{-p,--patch=}'[refresh patch other than top patch]: :__stg_patches_applied'
