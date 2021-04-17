@@ -318,7 +318,7 @@ class Stack(Branch):
     def clear_log(self, msg='clear log'):
         state_commit = log.StackState.from_stack(
             prev=None, stack=self, message=msg
-        ).commit_state()
+        ).commit_state(self.repository)
         self.repository.refs.set(self.state_ref, state_commit, msg=msg)
 
     def rename(self, new_name):
@@ -403,16 +403,10 @@ class Stack(Branch):
         if switch_to:
             branch.switch_to()
 
-        state_commit = log.StackState(
-            repository,
-            prev=None,
-            head=branch.head,
-            applied=[],
-            unapplied=[],
-            hidden=[],
-            patches={},
+        state_commit = log.StackState.new_empty(
+            branch.head,
             message=msg,
-        ).commit_state()
+        ).commit_state(repository)
         repository.refs.set(stack_state_ref, state_commit, msg)
 
         return repository.get_stack(name)

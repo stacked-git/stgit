@@ -119,7 +119,6 @@ class StackState:
 
     def __init__(
         self,
-        repo,
         prev,
         head,
         applied,
@@ -129,9 +128,7 @@ class StackState:
         message,
         commit=None,
     ):
-        self._repo = repo
-        self._prev = prev
-        self._simplified = None
+        self.prev = prev
         self.head = head
         self.applied = applied
         self.unapplied = unapplied
@@ -141,16 +138,14 @@ class StackState:
         self.commit = commit
 
     @property
-    def simplified(self):
-        if not self._simplified:
-            self._simplified = self.commit.data.parents[0]
-        return self._simplified
+    def simplified_parent(self):
+        return self.commit.data.parents[0]
 
-    @property
-    def prev(self):
-        if self._prev is not None and not isinstance(self._prev, StackState):
-            self._prev = self.from_commit(self._repo, self._prev)
-        return self._prev
+    def get_prev_state(self, repo):
+        if self.prev is None:
+            return None
+        else:
+            return self.from_commit(repo, self.prev)
 
     @property
     def base(self):
@@ -171,9 +166,20 @@ class StackState:
         return self.applied + self.unapplied + self.hidden
 
     @classmethod
+    def new_empty(cls, head, message):
+        return cls(
+            prev=None,
+            head=head,
+            applied=[],
+            unapplied=[],
+            hidden=[],
+            patches={},
+            message=message,
+        )
+
+    @classmethod
     def from_stack(cls, prev, stack, message):
         return cls(
-            repo=stack.repository,
             prev=prev,
             head=stack.head,
             applied=list(stack.patchorder.applied),
@@ -246,24 +252,22 @@ class StackState:
             repo, meta_blob.data.bytes.decode('utf-8')
         )
 
-        return cls(
-            repo, prev, head, applied, unapplied, hidden, patches, message, commit
-        )
+        return cls(prev, head, applied, unapplied, hidden, patches, message, commit)
 
-    def _parents(self):
+    def _parents(self, prev_state):
         """Parents this entry needs to be a descendant of all commits it refers to."""
         xp = {self.head, self.top}
         xp |= {self.patches[pn] for pn in self.unapplied}
         xp |= {self.patches[pn] for pn in self.hidden}
-        if self.prev is not None:
-            xp.add(self.prev.commit)
-            xp -= set(self.prev.patches.values())
+        if prev_state is not None:
+            xp.add(prev_state.commit)
+            xp -= set(prev_state.patches.values())
         return xp
 
-    def _metadata_blob(self):
+    def _metadata_blob(self, repo, prev_state):
         lines = ['Version: %d' % FORMAT_VERSION]
         lines.append(
-            'Previous: %s' % ('None' if self.prev is None else self.prev.commit.sha1)
+            'Previous: %s' % ('None' if prev_state is None else prev_state.commit.sha1)
         )
         lines.append('Head: %s' % self.head.sha1)
         for patch_list, title in [
@@ -276,12 +280,12 @@ class StackState:
                 lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
         lines.append('')
         metadata_str = '\n'.join(lines)
-        return self._repo.commit(BlobData(metadata_str.encode('utf-8')))
+        return repo.commit(BlobData(metadata_str.encode('utf-8')))
 
-    def _patch_blob(self, pn, commit):
-        if self.prev is not None:
-            perm, prev_patch_tree = self.prev.commit.data.tree.data['patches']
-            if pn in prev_patch_tree.data and commit == self.prev.patches[pn]:
+    def _patch_blob(self, repo, pn, commit, prev_state):
+        if prev_state is not None:
+            perm, prev_patch_tree = prev_state.commit.data.tree.data['patches']
+            if pn in prev_patch_tree.data and commit == prev_state.patches[pn]:
                 return prev_patch_tree.data[pn]
 
         patch_meta = '\n'.join(
@@ -294,41 +298,42 @@ class StackState:
                 commit.data.message_str,
             ]
         )
-        return self._repo.commit(BlobData(patch_meta.encode('utf-8')))
+        return repo.commit(BlobData(patch_meta.encode('utf-8')))
 
-    def _patches_tree(self):
-        return self._repo.commit(
+    def _patches_tree(self, repo, prev_state):
+        return repo.commit(
             TreeData(
                 {
-                    pn: self._patch_blob(pn, commit)
+                    pn: self._patch_blob(repo, pn, commit, prev_state)
                     for pn, commit in self.patches.items()
                 }
             )
         )
 
-    def _tree(self):
-        return self._repo.commit(
+    def _tree(self, repo, prev_state):
+        return repo.commit(
             TreeData(
                 {
-                    'meta': self._metadata_blob(),
-                    'patches': self._patches_tree(),
+                    'meta': self._metadata_blob(repo, prev_state),
+                    'patches': self._patches_tree(repo, prev_state),
                 }
             )
         )
 
-    def commit_state(self):
+    def commit_state(self, repo):
         """Commit stack state to stack metadata branch."""
-        tree = self._tree()
-        self._simplified = self._repo.commit(
+        prev_state = self.get_prev_state(repo)
+        tree = self._tree(repo, prev_state)
+        simplified_parent = repo.commit(
             CommitData(
                 tree=tree,
                 message=self.message,
-                parents=[prev.simplified for prev in [self.prev] if prev is not None],
+                parents=[] if prev_state is None else [prev_state.simplified_parent],
             )
         )
-        parents = list(self._parents())
+        parents = list(self._parents(prev_state))
         while len(parents) >= self._max_parents:
-            g = self._repo.commit(
+            g = repo.commit(
                 CommitData(
                     tree=tree,
                     parents=parents[-self._max_parents :],
@@ -336,11 +341,11 @@ class StackState:
                 )
             )
             parents[-self._max_parents :] = [g]
-        self.commit = self._repo.commit(
+        self.commit = repo.commit(
             CommitData(
                 tree=tree,
                 message=self.message,
-                parents=[self.simplified] + parents,
+                parents=[simplified_parent] + parents,
             )
         )
         return self.commit
@@ -368,17 +373,17 @@ def get_stack_state(repo, ref, commit=None):
 def log_stack_state(stack, msg):
     """Write a new metadata entry for the stack."""
     try:
-        last_state = get_stack_state(stack.repository, stack.state_ref)
+        prev_state = get_stack_state(stack.repository, stack.state_ref)
     except KeyError:
-        last_state = None
+        prev_state = None
 
     try:
-        new_state = StackState.from_stack(last_state, stack, msg)
+        new_state = StackState.from_stack(prev_state.commit, stack, msg)
     except LogException as e:
         out.warn(str(e), 'No log entry written.')
     else:
-        if not last_state or not new_state.same_state(last_state):
-            state_commit = new_state.commit_state()
+        if not prev_state or not new_state.same_state(prev_state):
+            state_commit = new_state.commit_state(stack.repository)
             stack.repository.refs.set(stack.state_ref, state_commit, msg)
 
 
@@ -478,9 +483,10 @@ def undo_state(stack, undo_steps):
                 undo_steps -= int(rm.group(1))
             else:
                 raise LogException('No more redo information available')
-        if not state.prev:
+        prev_state = state.get_prev_state(stack.repository)
+        if prev_state is None:
             raise LogException('Not enough undo information available')
-        state = state.prev
+        state = prev_state
     return state
 
 
