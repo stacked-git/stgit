@@ -125,7 +125,6 @@ class StackState:
         unapplied,
         hidden,
         patches,
-        message,
         commit=None,
     ):
         self.prev = prev
@@ -134,7 +133,6 @@ class StackState:
         self.unapplied = unapplied
         self.hidden = hidden
         self.patches = patches
-        self.message = message
         self.commit = commit
 
     @property
@@ -166,7 +164,7 @@ class StackState:
         return self.applied + self.unapplied + self.hidden
 
     @classmethod
-    def new_empty(cls, head, message):
+    def new_empty(cls, head):
         return cls(
             prev=None,
             head=head,
@@ -174,11 +172,10 @@ class StackState:
             unapplied=[],
             hidden=[],
             patches={},
-            message=message,
         )
 
     @classmethod
-    def from_stack(cls, prev, stack, message):
+    def from_stack(cls, prev, stack):
         return cls(
             prev=prev,
             head=stack.head,
@@ -186,7 +183,6 @@ class StackState:
             unapplied=list(stack.patchorder.unapplied),
             hidden=list(stack.patchorder.hidden),
             patches={pn: stack.patches.get(pn).commit for pn in stack.patchorder.all},
-            message=message,
         )
 
     @staticmethod
@@ -241,8 +237,6 @@ class StackState:
     @classmethod
     def from_commit(cls, repo, commit):
         """Parse a (full or simplified) stack log commit."""
-        message = commit.data.message_str
-
         try:
             perm, meta_blob = commit.data.tree.data['meta']
         except KeyError:
@@ -252,7 +246,7 @@ class StackState:
             repo, meta_blob.data.bytes.decode('utf-8')
         )
 
-        return cls(prev, head, applied, unapplied, hidden, patches, message, commit)
+        return cls(prev, head, applied, unapplied, hidden, patches, commit)
 
     def _parents(self, prev_state):
         """Parents this entry needs to be a descendant of all commits it refers to."""
@@ -320,14 +314,14 @@ class StackState:
             )
         )
 
-    def commit_state(self, repo):
+    def commit_state(self, repo, message):
         """Commit stack state to stack metadata branch."""
         prev_state = self.get_prev_state(repo)
         tree = self._tree(repo, prev_state)
         simplified_parent = repo.commit(
             CommitData(
                 tree=tree,
-                message=self.message,
+                message=message,
                 parents=[] if prev_state is None else [prev_state.simplified_parent],
             )
         )
@@ -344,7 +338,7 @@ class StackState:
         self.commit = repo.commit(
             CommitData(
                 tree=tree,
-                message=self.message,
+                message=message,
                 parents=[simplified_parent] + parents,
             )
         )
@@ -378,12 +372,12 @@ def log_stack_state(stack, msg):
         prev_state = None
 
     try:
-        new_state = StackState.from_stack(prev_state.commit, stack, msg)
+        new_state = StackState.from_stack(prev_state.commit, stack)
     except LogException as e:
         out.warn(str(e), 'No log entry written.')
     else:
         if not prev_state or not new_state.same_state(prev_state):
-            state_commit = new_state.commit_state(stack.repository)
+            state_commit = new_state.commit_state(stack.repository, msg)
             stack.repository.refs.set(stack.state_ref, state_commit, msg)
 
 
@@ -468,7 +462,7 @@ def undo_state(stack, undo_steps):
     except KeyError:
         raise LogException('Log is empty')
     while undo_steps != 0:
-        msg = state.message.strip()
+        msg = state.commit.data.message_str.strip()
         um = re.match(r'^undo\s+(\d+)$', msg)
         if undo_steps > 0:
             if um:

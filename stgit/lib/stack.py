@@ -316,9 +316,8 @@ class Stack(Branch):
         config.remove_section('branch.%s.stgit' % self.name)
 
     def clear_log(self, msg='clear log'):
-        state_commit = log.StackState.from_stack(
-            prev=None, stack=self, message=msg
-        ).commit_state(self.repository)
+        stack_state = log.StackState.from_stack(prev=None, stack=self)
+        state_commit = stack_state.commit_state(self.repository, msg)
         self.repository.refs.set(self.state_ref, state_commit, msg=msg)
 
     def rename(self, new_name):
@@ -403,10 +402,8 @@ class Stack(Branch):
         if switch_to:
             branch.switch_to()
 
-        state_commit = log.StackState.new_empty(
-            branch.head,
-            message=msg,
-        ).commit_state(repository)
+        stack_state = log.StackState.new_empty(branch.head)
+        state_commit = stack_state.commit_state(repository, msg)
         repository.refs.set(stack_state_ref, state_commit, msg)
 
         return repository.get_stack(name)
