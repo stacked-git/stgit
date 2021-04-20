@@ -274,6 +274,10 @@ class CommitData(Immutable):
         for p in self.parents:
             c.append('-p')
             c.append(p.sha1)
+
+        if config.getbool("commit.gpgsign"):
+            c.append('-S')
+
         sha1 = (
             repository.run(c, env=self.env)
             .encoding(None)
