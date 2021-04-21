@@ -206,7 +206,24 @@ def _main():
 
 
 def main():
+    import sys
+
     try:
+        if sys.version_info[:2] < (3, 5):
+            sys.stderr.write('StGit requires Python >= 3.5\n')
+            sys.exit(1)
+
+        if os.environ.get('COVERAGE_PROCESS_START'):
+            import coverage
+
+            if len(sys.argv) < 2 or sys.argv[1].startswith('-'):
+                context = 'stg'
+            else:
+                context = 'stg-' + sys.argv[1]
+
+            cov = coverage.process_startup()
+            cov.switch_context(context)
+
         _main()
     finally:
         run.finish_logging()

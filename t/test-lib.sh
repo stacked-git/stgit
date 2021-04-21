@@ -37,22 +37,23 @@ then
 fi
 STG_ROOT=$(cd "$TEST_DIRECTORY"/.. && pwd) || exit 1
 export STG_ROOT
-stg_build_dir="$STG_ROOT"/build
 PYTHON="${PYTHON:-python}"
 python_major_minor="$($PYTHON -c '
 import sys
 print(".".join(map(str, sys.version_info[:2])))')"
-stg_bin_dir="$stg_build_dir"/scripts-"$python_major_minor"
+stg_inst_dir="$STG_ROOT/inst/python$python_major_minor"
+stg_bin_dir="$stg_inst_dir"/bin # TODO on Windows this is .../Scripts
 
 if test ! -f "$stg_bin_dir"/stg
 then
 	echo >&2 "error: $stg_bin_dir missing (has stg been built?)."
 	exit 1
 fi
+PYTHONPATH="$stg_inst_dir/lib/python$python_major_minor/site-packages"
 PERL_PATH=${PERL:-perl}
 SHELL_PATH=${SHELL_PATH:-/bin/sh}
 TEST_SHELL_PATH=${TEST_SHELL_PATH:-$SHELL_PATH}
-export PERL_PATH SHELL_PATH
+export PYTHONPATH PERL_PATH SHELL_PATH
 
 ################################################################
 # It appears that people try to run tests without building...

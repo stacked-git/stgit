@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import sys
-from distutils.core import setup
 from glob import glob
+
+from setuptools import setup
 
 from stgit import commands, version
 from stgit.completion.bash import write_bash_completion
@@ -110,7 +111,9 @@ setup(
     download_url='https://github.com/stacked-git/stgit.git',
     description='Stacked Git',
     long_description='Application for managing Git commits as a stack of patches.',
-    scripts=['stg'],
+    entry_points={
+        'console_scripts': ['stg=stgit.main:main'],
+    },
     packages=[
         'stgit',
         'stgit.commands',
