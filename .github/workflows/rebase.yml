@@ -1,0 +1,17 @@
+name: Rebase
+
+on:
+  schedule:
+    - cron: '0 */12 * * *'
+
+jobs:
+  rebase:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: git config user.name "$(git log -1 --pretty=format:'%aN')"
+    - run: git config user.email "$(git log -1 --pretty=format:'%aE')"
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - run: git fetch https://github.com/stacked-git/stgit.git master
+    - run: git rebase FETCH_HEAD
+    - run: git push origin master:master
