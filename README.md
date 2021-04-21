@@ -1,5 +1,13 @@
 # Stacked Git
 
+[![Build](https://github.com/wildmichael/stgit/actions/workflows/ci.yml/badge.svg)](https://github.com/wildmichael/stgit/actions/workflows/ci.yml)
+[![Rebase](https://github.com/wildmichael/stgit/actions/workflows/rebase.yml/badge.svg)](https://github.com/wildmichael/stgit/actions/workflows/rebase.yml)
+
+> ## Note
+> This is a fork where I maintain a few modifications to the upstream source.
+> Once I consider them to be ready, I'll submit them as pull requests
+> for inclusion in the upstream sources.
+
 Stacked Git, **StGit** for short, is an application for managing Git
 commits as a stack of patches.
 
