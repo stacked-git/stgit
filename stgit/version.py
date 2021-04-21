@@ -23,6 +23,7 @@ def git_describe_version():
     m = re.match(r'^v([0-9].*)', v)
     if m:
         v = m.group(1)
+        v = v.replace('-', '+', 1).replace('-g', '.g')
     else:
         raise VersionUnavailable('bad version: %s' % v)
     try:
@@ -35,7 +36,7 @@ def git_describe_version():
     except RunException as e:
         raise VersionUnavailable(str(e))
     if dirty:
-        v += '-dirty'
+        v += '.dirty'
     return v
 
 
