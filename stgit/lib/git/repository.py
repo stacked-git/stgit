@@ -5,7 +5,6 @@ import re
 import signal
 
 from stgit import utils
-from stgit.compat import environ_get
 from stgit.exception import StgException
 from stgit.lib.objcache import ObjectCache
 from stgit.run import Run, RunException
@@ -289,13 +288,7 @@ class Repository:
     def default_worktree(self):
         """A :class:`Worktree` representing the default work tree."""
         if self._default_worktree is None:
-            path = environ_get('GIT_WORK_TREE', None)
-            if not path:
-                o = Run('git', 'rev-parse', '--show-cdup').output_lines()
-                o = o or ['.']
-                assert len(o) == 1
-                path = o[0]
-            self._default_worktree = Worktree(path)
+            self._default_worktree = Worktree.default()
         return self._default_worktree
 
     @property

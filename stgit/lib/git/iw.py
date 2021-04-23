@@ -173,6 +173,18 @@ class Worktree:
     def __init__(self, directory):
         self.directory = directory
 
+    @classmethod
+    def default(cls):
+        path = environ_get('GIT_WORK_TREE', None)
+        if not path:
+            lines = Run('git', 'rev-parse', '--show-cdup').output_lines()
+            if lines:
+                assert len(lines) == 1
+                path = lines[0]
+            else:
+                path = '.'
+        return cls(path)
+
     @property
     def env(self):
         return {'GIT_WORK_TREE': '.'}
