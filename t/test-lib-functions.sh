@@ -1131,7 +1131,7 @@ test_create_repo () {
 	mkdir -p "$repo"
 	(
 		cd "$repo" || error "Cannot setup test environment"
-		git init >&3 2>&4 ||
+		git -c init.defaultBranch=master init >&3 2>&4 ||
 		error "cannot run git init"
 		echo "empty start" |
 		    git commit-tree $(git write-tree) >.git/refs/heads/master 2>&4 ||
