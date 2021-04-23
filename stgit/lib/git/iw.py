@@ -177,20 +177,11 @@ class Worktree:
     def default(cls):
         path = environ_get('GIT_WORK_TREE', None)
         if not path:
-            lines = Run('git', 'rev-parse', '--show-cdup').output_lines()
-            if lines:
-                assert len(lines) == 1
-                path = lines[0]
-            else:
-                path = '.'
+            path = Run('git', 'rev-parse', '--show-toplevel').output_one_line()
         return cls(path)
 
     @property
     def env(self):
-        return {'GIT_WORK_TREE': '.'}
-
-    @property
-    def env_in_cwd(self):
         return {'GIT_WORK_TREE': self.directory}
 
 
@@ -211,19 +202,11 @@ class IndexAndWorktree:
     def env(self):
         return add_dict(self.index.env, self._worktree.env)
 
-    @property
-    def env_in_cwd(self):
-        return self._worktree.env_in_cwd
-
-    @property
-    def cwd(self):
-        return self._worktree.directory
-
     def run(self, args, env=()):
-        return Run(*args).env(add_dict(self.env, env)).cwd(self.cwd)
+        return Run(*args).env(add_dict(self.env, env)).cwd(self._worktree.directory)
 
     def run_in_cwd(self, args):
-        return Run(*args).env(add_dict(self.env, self.env_in_cwd))
+        return Run(*args).env(self.env)
 
     def checkout_hard(self, tree):
         assert isinstance(tree, (Commit, Tree))

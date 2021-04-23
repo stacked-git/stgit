@@ -69,11 +69,10 @@ def get_hooks_path(repository):
     hooks_path = config.get('core.hookspath')
     if hooks_path is None:
         return os.path.join(repository.directory, 'hooks')
-    elif os.path.isabs(hooks_path) or repository.default_iw.cwd == os.curdir:
+    elif os.path.isabs(hooks_path):
         return hooks_path
     else:
-        hooks_path = os.path.join(os.getcwd(), repository.default_iw.cwd, hooks_path)
-        return os.path.abspath(hooks_path)
+        return os.path.join(repository.default_worktree.directory, hooks_path)
 
 
 def get_hook(repository, hook_name, extra_env={}):
@@ -81,8 +80,7 @@ def get_hook(repository, hook_name, extra_env={}):
     if not (os.path.isfile(hook_path) and os.access(hook_path, os.X_OK)):
         return None
 
-    default_iw = repository.default_iw
-    prefix_dir = os.path.relpath(os.getcwd(), default_iw.cwd)
+    prefix_dir = os.path.relpath(os.getcwd(), repository.default_worktree.directory)
     if prefix_dir == os.curdir:
         prefix = ''
     else:
@@ -97,7 +95,7 @@ def get_hook(repository, hook_name, extra_env={}):
         if os.name != 'posix':
             argv.insert(0, 'bash')
 
-        default_iw.run(argv, extra_env).run()
+        repository.default_iw.run(argv, extra_env).run()
 
     hook.__name__ = str(hook_name)
     return hook
