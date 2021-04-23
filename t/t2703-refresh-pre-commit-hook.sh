@@ -41,12 +41,12 @@ test_expect_success 'refresh with path limiting, succeeding hook' '
 '
 
 git config core.hooksPath .my-hooks
-mv $HOOKDIR .my-hooks
+mv "$HOOKDIR" .my-hooks
 test_expect_success 'refresh with core.hooksPath' '
     echo "pre-commit-hook-path-limiting-success" >> file &&
     stg refresh file
 '
-mv .my-hooks $HOOKDIR
+mv .my-hooks "$HOOKDIR"
 git config --unset core.hooksPath
 
 # now a hook that fails
