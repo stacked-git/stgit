@@ -243,13 +243,9 @@ class IndexAndWorktree:
         except RunException:
             raise MergeException('Index/worktree dirty')
 
-    def mergetool(self, files=()):
-        """Resolve outstanding conflicts with `git mergetool`.
-
-        The ``files`` argument may be used to limit the merge to a subset of files.
-
-        """
-        self.run(['git', 'mergetool'] + list(files)).returns([0, 1]).run()
+    def mergetool(self):
+        """Resolve outstanding conflicts with `git mergetool`."""
+        self.run(['git', 'mergetool']).returns([0, 1]).run()
         # check for unmerged entries (prepend 'CONFLICT ' for consistency with merge())
         conflicts = ['CONFLICT ' + f for f in self.index.conflicts()]
         if conflicts:
