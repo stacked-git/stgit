@@ -7,39 +7,51 @@ test_description='Refresh with submodules'
 
 . ./test-lib.sh
 
-test_expect_success 'refresh with a submodule does not include by default' '
-  test_create_repo foo &&
-  git submodule add ./foo foo &&
+test_expect_success 'setup submodule'  '
+  test_create_repo submodules/foo &&
+  git submodule add ./submodules/foo submodules/foo &&
   git commit -m "submodule" &&
   stg init &&
   (
-    cd foo &&
+    cd submodules/foo &&
     touch file1 &&
     git add file1 &&
     git commit -m "change in submodule"
-  ) &&
-  stg new p1 -m p1 &&
+  )
+'
+
+test_expect_success 'refresh with a submodule does not include by default' '
+  stg new -m p1 &&
   stg refresh &&
-  [ "$(stg status)" = " M foo" ]
+  [ "$(stg status)" = " M submodules/foo" ]
 '
 
 test_expect_success 'refresh includes non-submodule changes' '
-  touch file2 &&
-  git add file2 &&
-  stg refresh &&
-  [ "$(stg status)" = " M foo" ]
+  mkdir dir2 &&
+  touch dir2/file2 &&
+  git add dir2/file2 &&
+  (
+    cd dir2 &&
+    stg refresh &&
+    [ "$(stg status)" = " M ../submodules/foo" ]
+  ) &&
+  [ "$(stg status)" = " M submodules/foo" ]
 '
 
 test_expect_success 'refresh with --submodules' '
-  stg refresh --submodules &&
+  (
+    cd dir2 &&
+    stg refresh --submodules
+  ) &&
   [ "$(stg status)" = "" ]
 '
 
 test_expect_success 'refresh --no-submodules overrides config' '
-  stg undo && stg undo &&
+  stg undo &&
+  stg undo &&
   git config stgit.refreshsubmodules yes &&
   stg refresh --no-submodules &&
-  [ "$(stg status)" = " M foo" ]
+  [ "$(stg status)" = " M submodules/foo" ]
 '
 
 test_expect_success 'refresh with config' '
