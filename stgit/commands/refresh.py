@@ -200,13 +200,12 @@ def write_tree(stack, paths, use_temp_index):
         return index.write_tree()
 
     if use_temp_index:
-        index = stack.repository.temp_index()
-        try:
-            index.read_tree(stack.head)
-            return go(index)
-        finally:
-            index.delete()
-            stack.repository.default_iw.update_index(paths)
+        with stack.repository.temp_index() as index:
+            try:
+                index.read_tree(stack.head)
+                return go(index)
+            finally:
+                stack.repository.default_iw.update_index(paths)
     else:
         return go(stack.repository.default_index)
 

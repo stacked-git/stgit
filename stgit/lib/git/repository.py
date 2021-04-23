@@ -11,7 +11,7 @@ from stgit.lib.objcache import ObjectCache
 from stgit.run import Run, RunException
 from stgit.utils import add_dict
 
-from .iw import Index, IndexAndWorktree, MergeException, Worktree
+from .iw import Index, IndexAndWorktree, MergeException, TemporaryIndex, Worktree
 from .objects import Blob, Commit, Tree
 
 
@@ -278,18 +278,12 @@ class Repository:
     def default_index(self):
         """An :class:`Index` representing the default index file for the repository."""
         if self._default_index is None:
-            self._default_index = Index(
-                self,
-                (
-                    environ_get('GIT_INDEX_FILE', None)
-                    or os.path.join(self._git_dir, 'index')
-                ),
-            )
+            self._default_index = Index.default(self)
         return self._default_index
 
     def temp_index(self):
         """Return an :class:`Index` representing a new temporary index file."""
-        return Index(self, self._git_dir)
+        return TemporaryIndex(self)
 
     @property
     def default_worktree(self):
@@ -381,11 +375,8 @@ class Repository:
         )
 
     def simple_merge(self, base, ours, theirs):
-        index = self.temp_index()
-        try:
+        with self.temp_index() as index:
             result, index_tree = index.merge(base, ours, theirs)
-        finally:
-            index.delete()
         return result
 
     def apply(self, tree, patch_bytes, quiet):
@@ -399,16 +390,13 @@ class Repository:
         assert isinstance(tree, Tree)
         if not patch_bytes:
             return tree
-        index = self.temp_index()
-        try:
+        with self.temp_index() as index:
             index.read_tree(tree)
             try:
                 index.apply(patch_bytes, quiet)
                 return index.write_tree()
             except MergeException:
                 return None
-        finally:
-            index.delete()
 
     def submodules(self, tree):
         """Return list of submodule paths for the given :class:`Tree`."""

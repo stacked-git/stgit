@@ -1,5 +1,7 @@
 import os
+import time
 
+from stgit.compat import environ_get
 from stgit.exception import StgException
 from stgit.run import Run, RunException
 from stgit.utils import add_dict
@@ -26,20 +28,21 @@ class CheckoutException(StgException):
 class Index:
     """Represents a Git index file."""
 
-    def __init__(self, repository, filename):
+    def __init__(self, repository, index_path):
         self._repository = repository
-        if os.path.isdir(filename):
-            # Create a temp index in the given directory.
-            self._filename = os.path.join(
-                filename, 'index.temp-%d-%x' % (os.getpid(), id(self))
-            )
-            self.delete()
-        else:
-            self._filename = filename
+        self._path = index_path
+
+    @classmethod
+    def default(cls, repository):
+        index_path = environ_get(
+            'GIT_INDEX_FILE',
+            os.path.join(repository.directory, 'index'),
+        )
+        return cls(repository, index_path)
 
     @property
     def env(self):
-        return add_dict(self._repository.env, {'GIT_INDEX_FILE': self._filename})
+        return add_dict(self._repository.env, {'GIT_INDEX_FILE': self._path})
 
     def run(self, args, env=()):
         return Run(*args).env(add_dict(self.env, env))
@@ -134,8 +137,8 @@ class Index:
             return (None, ours)
 
     def delete(self):
-        if os.path.isfile(self._filename):
-            os.remove(self._filename)
+        if os.path.isfile(self._path):
+            os.remove(self._path)
 
     def conflicts(self):
         """The set of conflicting paths."""
@@ -146,6 +149,22 @@ class Index:
             stat, path = line.split('\t', 1)
             paths.add(path)
         return paths
+
+
+class TemporaryIndex(Index):
+    def __init__(self, repository):
+        index_filename = 'index.temp-%d-%x' % (os.getpid(), int(time.monotonic() * 1e9))
+        index_path = os.path.join(repository.directory, index_filename)
+        if os.path.isfile(index_path):
+            os.remove(index_path)
+        super().__init__(repository, index_path)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.delete()
+        return None
 
 
 class Worktree:
