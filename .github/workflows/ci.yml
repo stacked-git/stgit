@@ -74,7 +74,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        sudo apt-get install quilt
+        sudo apt-get install quilt gnupg2
     - name: Test
       env:
         DEFAULT_TEST_TARGET: "prove"
@@ -118,7 +118,7 @@ jobs:
       run: |
         python -m pip install -U pip
         python -m pip install coverage[toml] coveralls
-        sudo apt-get install quilt
+        sudo apt-get install quilt gnupg2
     - name: Coverage Test
       run: |
         timeout 1000s make -j2 coverage-test
