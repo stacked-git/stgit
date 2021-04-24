@@ -113,7 +113,7 @@ def check_local_changes(repository):
 
 
 def check_head_top_equal(stack):
-    if not stack.head_top_equal():
+    if stack.head != stack.top:
         raise CmdException(
             'HEAD and top are not the same. This can happen if you modify a '
             'branch with git. "stg repair --help" explains more about what to '

@@ -268,11 +268,6 @@ class Stack(Branch):
             # When no patches are applied, base == head.
             return self.head
 
-    def head_top_equal(self):
-        if not self.patchorder.applied:
-            return True
-        return self.head == self.patches[self.patchorder.applied[-1]]
-
     def set_parents(self, remote, branch):
         if remote:
             self.set_parent_remote(remote)

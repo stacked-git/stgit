@@ -188,7 +188,7 @@ class StackTransaction:
         self._bad_head = value
 
     def _assert_head_top_equal(self):
-        if not self.stack.head_top_equal():
+        if self.stack.head != self.stack.top:
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
