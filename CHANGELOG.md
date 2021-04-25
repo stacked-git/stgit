@@ -1,15 +1,23 @@
 # Changelog
 
-## [Unreleased]
+## [1.1] 2021-04-30
 
 ### Removed
 
 ### Added
+- StGit GPG-signs patches when `commit.gpgsign` is set (#12)
+- Support `core.hooksPath` in git config
+- Add `-C` option for `stg import` and `stg fold` (#18)
 
 ### Changed
 - Allow importing mail and series from urls (#94)
+- `stg refresh --edit` may also use `--diff` and `--diff-opts` (#98)
+- `stg goto` allows sha1 of a patch instead of patch name (#93)
 
 ### Fixed
+- Repair hang in `stg pull -m`, `stg goto -m`, and `stg push -m`
+- Repair `stg mail` to show diffstat of whole series (#104)
+- Repair MANIFEST.in to include AUTHORS.md and README.md files
 
 
 ## [1.0] 2021-02-07
