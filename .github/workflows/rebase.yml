@@ -14,4 +14,9 @@ jobs:
     - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
     - run: git fetch https://github.com/stacked-git/stgit.git master
     - run: git rebase FETCH_HEAD
-    - run: git push origin master:master
+    - name: Push changes
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ github.ref }}
+        force: true
