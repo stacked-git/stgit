@@ -103,6 +103,13 @@ options = (
             short='Strip numbering and extension from patch name',
         ),
         opt(
+            '-C',
+            dest='context_lines',
+            type='int',
+            metavar='N',
+            short='Ensure N lines of surrounding context for each change',
+        ),
+        opt(
             '-i',
             '--ignore',
             action='store_true',
@@ -203,7 +210,13 @@ def __create_patch(
             tree = stack.head.data.tree
         else:
             iw = stack.repository.default_iw
-            iw.apply(diff, quiet=False, reject=options.reject, strip=options.strip)
+            iw.apply(
+                diff,
+                quiet=False,
+                reject=options.reject,
+                strip=options.strip,
+                context_lines=options.context_lines,
+            )
             tree = iw.index.write_tree()
 
         cd = CommitData(

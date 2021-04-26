@@ -206,6 +206,7 @@ test_expect_success \
                --authemail "some@example.com" \
                --authdate 2005-04-07T22:13:13 \
                --stripname \
+               -C5 \
                some.patch &&
     stg show | grep -e "Author: Some Author <some@example.com>" &&
     stg show | grep -E "Date: +Thu Apr 7 22:13:13 2005 \+0000" &&

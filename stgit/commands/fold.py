@@ -63,6 +63,13 @@ options = [
         short='Remove N leading slashes from diff paths (default 1)',
     ),
     opt(
+        '-C',
+        dest='context_lines',
+        type='int',
+        metavar='N',
+        short='Ensure N lines of surrounding context for each change',
+    ),
+    opt(
         '--reject',
         action='store_true',
         short='Leave the rejected hunks in corresponding *.rej files',
@@ -113,6 +120,7 @@ def func(parser, options, args):
             base=stack.patches[current].data.parent,
             strip=options.strip,
             reject=options.reject,
+            context_lines=options.context_lines,
         )
     elif options.base:
         apply_patch(
@@ -121,6 +129,7 @@ def func(parser, options, args):
             base=git_commit(options.base, repository),
             reject=options.reject,
             strip=options.strip,
+            context_lines=options.context_lines,
         )
     else:
         apply_patch(
@@ -128,6 +137,7 @@ def func(parser, options, args):
             diff,
             strip=options.strip,
             reject=options.reject,
+            context_lines=options.context_lines,
         )
 
     out.done()

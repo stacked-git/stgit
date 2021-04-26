@@ -93,6 +93,14 @@ test_expect_success 'Attempt to fold conflicting patch with rejects' '
     rm foo.txt.rej
 '
 
+test_expect_success 'Attempt to fold conflicting patch with -C0' '
+    stg fold -C0 --reject fold1.diff &&
+    stg status --porcelain foo.txt | grep -e "M  foo.txt" &&
+    test "$(tail -n 1 foo.txt)" = "and fold1" &&
+    git reset -- foo.txt &&
+    git checkout foo.txt
+'
+
 test_expect_success 'Fold with base' '
     stg fold --base p1 threeway.diff &&
     test "preface hello from p2" = "$(echo $(cat foo.txt))" &&

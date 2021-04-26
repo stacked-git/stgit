@@ -230,7 +230,7 @@ def address_or_alias(addr_pair):
     raise CmdException('unknown e-mail alias: %s' % addr)
 
 
-def apply_patch(stack, diff, base=None, reject=False, strip=None):
+def apply_patch(stack, diff, base=None, reject=False, strip=None, context_lines=None):
     iw = stack.repository.default_iw
     iw.refresh_index()
     if base:
@@ -239,7 +239,9 @@ def apply_patch(stack, diff, base=None, reject=False, strip=None):
         stack.set_head(base, msg='apply patch')
 
     try:
-        iw.apply(diff, quiet=False, reject=reject, strip=strip)
+        iw.apply(
+            diff, quiet=False, reject=reject, strip=strip, context_lines=context_lines
+        )
     except MergeException:
         if base:
             iw.checkout_hard(orig_head.data.tree)
