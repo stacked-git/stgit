@@ -583,7 +583,7 @@ def __shortlog(stack, patches):
 
 
 def __diffstat(stack, patches):
-    tree1 = stack.patches[patches[0]].data.tree
+    tree1 = stack.patches[patches[0]].data.parent.data.tree
     tree2 = stack.patches[patches[-1]].data.tree
     return stack.repository.diff_tree(
         tree1,
