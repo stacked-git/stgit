@@ -164,4 +164,19 @@ test_expect_success 'Edit cover' '
     grep     -e "Patch 4"
 '
 
+cat > cover.txt <<EOF
+From: A U Thor <author@example.com>
+Subject: Diffstat Cover Test
+
+A diffstat cover test.
+
+%(diffstat)s
+EOF
+test_expect_success 'Check cover letter diff stats' '
+    stg mail -m --cover=cover.txt $(stg top) > cover.mbox &&
+    t1=$(grep -m1 -A3 -F "foo.txt" cover.mbox) &&
+    t2=$(git diff --stat-width=72 --stat --summary HEAD~ HEAD) &&
+    test "$t1" = "$t2"
+'
+
 test_done
