@@ -1,4 +1,4 @@
-include AUTHORS
+include AUTHORS.md
 include CHANGELOG.md
 include CONTRIBUTING.md
 include COPYING
@@ -13,7 +13,7 @@ include Documentation/stg.txt
 include INSTALL
 include MANIFEST.in
 include Makefile
-include README
+include README.md
 include TODO
 include build.py
 include contrib/*.sh
