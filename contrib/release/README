@@ -17,7 +17,7 @@ StGit Release Checklist
 
 2. Create new tag
 
-   - `git tag -a -m 'Relase vX.Y' vX.Y`
+   - `git tag --sign -m 'Release vX.Y' vX.Y`
 
 3. Check source distribution
 
