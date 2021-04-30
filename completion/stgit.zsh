@@ -168,6 +168,7 @@ _stg-fold() {
     subcmd_args+=(
         '(-b --base)'{-b,--base=}'[apply on base commit instead of HEAD]:commit'
         '(-p --strip)'{-p+,--strip=}'[remove N leading directories from diff paths]:num'
+        '-C=[ensure N lines of surrounding context for each change]:num'
         '--reject[leave rejected hunks in .rej files]'
         ':file:_files'
     )
@@ -214,6 +215,7 @@ _stg-import() {
         '(-n --name)'{-n,--name}'[name for imported patch]'
         '(-p --strip)'{-p+,--strip=}'[remove N leading directories from diff paths]:num'
         '(-t --stripname)'{-t,--stripname}'[strip number and extension from patch name]'
+        '-C=[ensure N lines of surrounding context for each change]:num'
         '(-i --ignore)'{-i,--ignore}'[ingore applied patches in series]'
         '--replace[replace unapplied patches in series]'
         '--reject[leave rejected hunks in .rej files]'
