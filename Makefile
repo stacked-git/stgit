@@ -35,13 +35,13 @@ install-html:
 lint: lint-black lint-isort lint-flake8 lint-t
 
 lint-black:
-	$(PYTHON) -m black --check --quiet --diff . stgit/main.py
+	$(PYTHON) -m black --check --quiet --diff .
 
 lint-isort:
-	$(PYTHON) -m isort --check-only --quiet --diff . stgit/main.py
+	$(PYTHON) -m isort --check-only --quiet --diff .
 
 lint-flake8:
-	$(PYTHON) -m flake8 . stgit/main.py
+	$(PYTHON) -m flake8 .
 
 lint-t:
 	$(MAKE) -C t test-lint
@@ -52,19 +52,12 @@ format:
 	$(PYTHON) -m black . stgit/main.py
 	$(PYTHON) -m isort --quiet . stgit/main.py
 
-test: .install
+test: build
 	$(MAKE) -C t all
 
-.install: build
-	pyver=`$(PYTHON) -c 'import sys; print(".".join(map(str, sys.version_info[:2])))'` && \
-	prefix="$(PWD)/inst/python$$pyver" && \
-	sitepackages="$$prefix/lib/python$$pyver/site-packages" && \
-	mkdir -p "$$sitepackages" && \
-	PYTHONPATH="$$sitepackages" $(PYTHON) setup.py develop --prefix="$$prefix"
-
 test-patches:
-	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
-		stg goto $$patch && $(MAKE) test || break; \
+	for patch in $$(t/stg series --noprefix $(TEST_PATCHES)); do \
+		t/stg goto $$patch && $(MAKE) test || break; \
 	done
 
 .PHONY: format test test-patches .install
@@ -79,7 +72,7 @@ coverage-test:
 
 .coverage:
 	rm -rf install
-	$(MAKE) .install
+	$(MAKE) build
 	-mkdir .cov-files
 	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(PYTHON) -m coverage run --context=setup setup.py install
