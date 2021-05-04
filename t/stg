@@ -19,4 +19,4 @@ fi
 PYTHON="${PYTHON:-python}"
 export PYTHONPATH="$STGIT_ROOT/build/lib"
 
-"$PYTHON" -m stgit "$@"
+"$PYTHON" -m stgit.main "$@"
