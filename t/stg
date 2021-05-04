@@ -3,11 +3,12 @@
 # This script is only used by the tests so they can work without stgit being
 # installed. It assumes PYTHONPATH to be set up correctly.
 
-SCRIPT_DIR=$(dirname "$0")
-cd $SCRIPT_DIR
-SCRIPT_DIR=$(pwd)
-cd -
-STGIT_ROOT="$(realpath $SCRIPT_DIR/..)"
+CUR_DIR="$(pwd)"
+SCRIPT_DIR="$(dirname "$0")"
+cd "$SCRIPT_DIR"
+SCRIPT_DIR="$(pwd)"
+cd "$CUR_DIR"
+STGIT_ROOT="$(realpath "$SCRIPT_DIR/..")"
 
 # sanity check
 if test ! -f "$STGIT_ROOT/build/lib/stgit/main.py"; then
