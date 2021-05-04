@@ -49,8 +49,8 @@ lint-t:
 .PHONY: lint lint-black lint-isort lint-flake8 lint-t
 
 format:
-	$(PYTHON) -m black . stgit/main.py
-	$(PYTHON) -m isort --quiet . stgit/main.py
+	$(PYTHON) -m black .
+	$(PYTHON) -m isort --quiet .
 
 test: build
 	$(MAKE) -C t all
