@@ -76,4 +76,4 @@ def get_version():
 
 # minimum version requirements
 git_min_ver = '2.2.0'
-python_min_ver = '3.5'
+python_min_ver = (3, 5)

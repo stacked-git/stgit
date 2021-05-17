@@ -35,13 +35,13 @@ install-html:
 lint: lint-black lint-isort lint-flake8 lint-t
 
 lint-black:
-	$(PYTHON) -m black --check --quiet --diff . stg
+	$(PYTHON) -m black --check --quiet --diff .
 
 lint-isort:
-	$(PYTHON) -m isort --check-only --quiet --diff . stg
+	$(PYTHON) -m isort --check-only --quiet --diff .
 
 lint-flake8:
-	$(PYTHON) -m flake8 . stg
+	$(PYTHON) -m flake8 .
 
 lint-t:
 	$(MAKE) -C t test-lint
@@ -49,15 +49,15 @@ lint-t:
 .PHONY: lint lint-black lint-isort lint-flake8 lint-t
 
 format:
-	$(PYTHON) -m black . stg
-	$(PYTHON) -m isort --quiet . stg
+	$(PYTHON) -m black .
+	$(PYTHON) -m isort --quiet .
 
 test: build
 	$(MAKE) -C t all
 
 test-patches:
-	for patch in $$(stg series --noprefix $(TEST_PATCHES)); do \
-		stg goto $$patch && $(MAKE) test || break; \
+	for patch in $$($(PYTHON) -m stgit.main series --noprefix $(TEST_PATCHES)); do \
+		$(PYTHON) -m stgit.main goto $$patch && $(MAKE) test || break; \
 	done
 
 .PHONY: format test test-patches

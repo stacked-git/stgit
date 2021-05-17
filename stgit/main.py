@@ -5,6 +5,7 @@ import sys
 import traceback
 
 import stgit.commands
+import stgit.version
 from stgit import argparse, run, utils
 from stgit.compat import environ_get, fsdecode_utf8
 from stgit.config import config
@@ -53,9 +54,6 @@ def append_alias_commands(cmd_list):
         cmd_list.append((name, CommandAlias(name, command), 'Alias commands', command))
 
 
-#
-# The commands map
-#
 class Commands(dict):
     """Commands class. It performs on-demand module loading"""
 
@@ -66,7 +64,7 @@ class Commands(dict):
         if not candidates:
             out.error(
                 'Unknown command: %s' % key,
-                'Try "%s help" for a list of supported commands' % prog,
+                'Try "%s help" for a list of supported commands' % sys.argv[0],
             )
             sys.exit(utils.STGIT_GENERAL_ERROR)
         elif len(candidates) == 1:
@@ -105,11 +103,8 @@ def print_help():
 
 
 def _main():
-    global prog
-
-    sys.argv = list(map(fsdecode_utf8, sys.argv))
-
-    prog = os.path.basename(sys.argv[0])
+    sys.argv[:] = list(map(fsdecode_utf8, sys.argv))
+    prog = sys.argv[0] = 'stg'
 
     if len(sys.argv) < 2:
         print('usage: %s <command>' % prog, file=sys.stderr)
@@ -206,6 +201,12 @@ def _main():
 
 
 def main():
+    python_version = sys.version_info[: len(stgit.version.python_min_ver)]
+    if python_version < stgit.version.python_min_ver:
+        ver_str = '.'.join(map(str, stgit.version.python_min_ver))
+        sys.stderr.write('StGit requires Python >= %s\n' % ver_str)
+        sys.exit(utils.STGIT_GENERAL_ERROR)
+
     try:
         _main()
     finally:
