@@ -106,7 +106,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     return cd
 
 
-def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
+def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     # If a name was supplied on the command line, make sure it's OK.
     if name and name not in patches and name in stack.patches:
         raise CmdException('Patch name "%s" already taken' % name)
@@ -162,7 +162,7 @@ def func(parser, options, args):
         raise CmdException('Need at least two patches')
     if options.name and not stack.patches.is_name_valid(options.name):
         raise CmdException('Patch name "%s" is invalid' % options.name)
-    return _squash(
+    return squash(
         stack,
         stack.repository.default_iw,
         options.name,

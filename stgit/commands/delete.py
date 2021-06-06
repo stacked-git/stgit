@@ -1,6 +1,10 @@
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
-from stgit.lib import transaction
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    delete_patches,
+    parse_patches,
+)
 
 __copyright__ = """
 Copyright (C) 2005, Catalin Marinas <catalin.marinas@gmail.com>
@@ -78,20 +82,4 @@ def func(parser, options, args):
             parser.error('Can only spill topmost applied patches')
         iw = None  # don't touch index+worktree
 
-    def allow_conflicts(trans):
-        # Allow conflicts if the topmost patch stays the same.
-        if stack.patchorder.applied:
-            return trans.applied and trans.applied[-1] == stack.patchorder.applied[-1]
-        else:
-            return not trans.applied
-
-    trans = transaction.StackTransaction(
-        stack, 'delete', allow_conflicts=allow_conflicts
-    )
-    try:
-        to_push = trans.delete_patches(lambda pn: pn in patches)
-        for pn in to_push:
-            trans.push_patch(pn, iw)
-    except transaction.TransactionHalted:
-        pass
-    return trans.run(iw)
+    return delete_patches(stack, iw, patches)
