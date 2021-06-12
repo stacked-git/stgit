@@ -320,13 +320,16 @@ class IndexAndWorktree:
             raise MergeException('Patch does not apply cleanly')
 
     def diffstat(self, diff):
-        return (
-            self.run(['git', 'apply', '--stat', '--summary'])
-            .encoding(None)
-            .raw_input(diff)
-            .decoding('utf-8')
-            .raw_output()
-        )
+        if diff:
+            return (
+                self.run(['git', 'apply', '--stat', '--summary'])
+                .encoding(None)
+                .raw_input(diff)
+                .decoding('utf-8')
+                .raw_output()
+            )
+        else:
+            return ''
 
     def changed_files(self, tree, pathlimits=()):
         """Find files changed in worktree with respect to a tree.

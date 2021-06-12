@@ -66,4 +66,12 @@ test_expect_success 'Export numbered patches with custom extension' '
     grep -e "02-patch-2\.mydiff" export5/series
     '
 
+test_expect_success 'Export series with empty patch' '
+    stg new -m patch-6 &&
+    stg export -d export6 &&
+    test_path_is_file export6/patch-6 &&
+    stg delete $(stg series --noprefix) &&
+    stg import -s export6/series
+    '
+
 test_done

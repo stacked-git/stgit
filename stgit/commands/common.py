@@ -343,7 +343,7 @@ def __split_descr_diff(string):
 
     if m:
         desc = string[: m.start()]
-        diff = string[m.start() :]
+        diff = string.split(m.group(), 1)[1]
     else:
         desc = string
         diff = b''
