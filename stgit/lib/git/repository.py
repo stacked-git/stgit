@@ -51,7 +51,7 @@ class Refs:
             # trees, we silently ignore this error
             return
         for line in lines:
-            m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line)
+            m = re.match(r'^([0-9a-f]{40})\s+(\S+)$', line, re.ASCII)
             sha1, ref = m.groups()
             self._refs[ref] = sha1
 
