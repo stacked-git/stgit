@@ -69,14 +69,16 @@ class Commands(dict):
                 'Try "%s help" for a list of supported commands' % prog,
             )
             sys.exit(utils.STGIT_GENERAL_ERROR)
-        elif len(candidates) > 1:
+        elif len(candidates) == 1:
+            return candidates[0]
+        elif key in candidates:
+            return key
+        else:
             out.error(
                 'Ambiguous command: %s' % key,
                 'Candidates are: %s' % ', '.join(candidates),
             )
             sys.exit(utils.STGIT_GENERAL_ERROR)
-
-        return candidates[0]
 
     def __getitem__(self, key):
         cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))

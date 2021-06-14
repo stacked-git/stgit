@@ -37,6 +37,14 @@ test_expect_success 'Test help on ambiguous command' '
     grep -e "Ambiguous command: pu"
 '
 
+test_expect_success 'Test ambiguous alias' '
+    test_config stgit.alias.show-stat "git show --stat" &&
+    stg show-stat &&
+    stg init &&
+    stg show &&
+    general_error stg sho 2>&1 | grep -e "Ambiguous command: sho"
+'
+
 test_expect_success 'Test version/--version equivalence' '
     stg version > v0.txt &&
     stg --version > v1.txt &&
