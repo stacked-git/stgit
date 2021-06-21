@@ -10,7 +10,7 @@ test_description='Test the uncommit command.
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGIT repository' \
+	'Initialize the StGit repository' \
 	'stg init
 '
 

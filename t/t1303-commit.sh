@@ -2,7 +2,7 @@
 test_description='Test stg commit'
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGIT repository' '
+test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 

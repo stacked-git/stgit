@@ -17,11 +17,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, see http://www.gnu.org/licenses/.
 """
 
-help = 'Initialise the current branch for use with StGIT'
+help = 'Initialise the current branch for use with StGit'
 kind = 'stack'
 usage = ['']
 description = """
-Initialise the current git branch to be used as an StGIT stack. The
+Initialise the current git branch to be used as an StGit stack. The
 branch (and the git repository it is in) must already exist and
 contain at least one commit."""
 

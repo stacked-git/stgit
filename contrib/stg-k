@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# stg-k - execute given StGIT command while preserving local changes
+# stg-k - execute given StGit command while preserving local changes
 
 # Uses a temporary patch to save local changes, then execute the given
 # command, and restore local changes from the saved patch.  In

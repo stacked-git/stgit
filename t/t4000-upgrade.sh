@@ -3,7 +3,7 @@
 # Copyright (c) 2007 Karl Hasselström
 #
 
-test_description='Make sure that we can use old StGIT repositories'
+test_description='Make sure that we can use old StGit repositories'
 
 . ./test-lib.sh
 

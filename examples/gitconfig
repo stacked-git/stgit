@@ -1,9 +1,9 @@
-# StGIT configuration file. Copy it to any of ~/.gitconfig or
+# StGit configuration file. Copy it to any of ~/.gitconfig or
 # .git/config and modify as needed. Note that the latter overrides
 # the former. The "git config" command can be used as well
 
 [user]
-	# Default author/committer details (standard GIT variables)
+	# Default author/committer details (standard Git variables)
 	name = Your Name
 	email = your.name@yourcompany.com
 
@@ -41,7 +41,7 @@
 	#pager = less -FRSX
 	#pager = filterdiff --annotate | colordiff | less -FRSX
 
-	# GIT pull and fetch commands (should take the same arguments as
+	# Git pull and fetch commands (should take the same arguments as
 	# git fetch or git pull).  By default:
 	#pullcmd = git pull
 	#fetchcmd = git fetch

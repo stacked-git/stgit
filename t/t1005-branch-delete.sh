@@ -48,7 +48,7 @@ test_expect_success 'Invalid num args to delete' '
     grep -e "incorrect number of arguments"
 '
 
-test_expect_success 'Create a non-StGIT branch and delete it' '
+test_expect_success 'Create a non-StGit branch and delete it' '
     git branch bar &&
     stg branch --delete bar
 '

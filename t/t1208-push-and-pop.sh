@@ -12,7 +12,7 @@ test_expect_success \
     command_error stg push 2>&1 | grep -e "branch not initialized"
 '
 test_expect_success \
-    'Initialize the StGIT repository' \
+    'Initialize the StGit repository' \
     'stg init'
 
 test_expect_success \

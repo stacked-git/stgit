@@ -4,7 +4,7 @@
 test_description='Test repair with hidden patches'
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGIT repository' '
+test_expect_success 'Initialize the StGit repository' '
     stg init &&
     stg new A -m "a" && echo A >a.txt && stg add a.txt && stg refresh &&
     stg new B -m "b" && echo B >b.txt && stg add b.txt && stg refresh &&

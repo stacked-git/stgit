@@ -7,7 +7,7 @@ test_expect_success 'Repair in a non-initialized repository' '
     command_error stg repair
 '
 
-test_expect_success 'Initialize the StGIT repository' '
+test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
@@ -38,20 +38,20 @@ test_expect_success 'Repair when there is nothing to do' '
     stg repair
 '
 
-test_expect_success 'Create a GIT commit' '
+test_expect_success 'Create a Git commit' '
     echo bar > bar.txt &&
     git add bar.txt &&
     git commit -a -m bar
 '
 
-test_expect_success 'Turn one GIT commit into a patch' '
+test_expect_success 'Turn one Git commit into a patch' '
     [ "$(echo $(stg series --applied --noprefix))" = "foo" ]
     stg repair &&
     [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
     [ $(stg series --unapplied -c) -eq 0 ]
 '
 
-test_expect_success 'Create three more GIT commits' '
+test_expect_success 'Create three more Git commits' '
     echo one > numbers.txt &&
     git add numbers.txt &&
     git commit -a -m one &&
@@ -61,7 +61,7 @@ test_expect_success 'Create three more GIT commits' '
     git commit -a -m three
 '
 
-test_expect_success 'Turn three GIT commits into patches' '
+test_expect_success 'Turn three Git commits into patches' '
     [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
     stg repair &&
     [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ]

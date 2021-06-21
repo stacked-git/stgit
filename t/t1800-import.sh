@@ -4,7 +4,7 @@ test_description='Test the import command'
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGIT repository' \
+    'Initialize the StGit repository' \
     '
     cp "$TEST_DIRECTORY"/t1800/foo.txt . &&
     stg add foo.txt &&

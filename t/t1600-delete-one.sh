@@ -4,7 +4,7 @@ test_description='Test the delete command (deleting one patch at a time).'
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGIT repository' \
+    'Initialize the StGit repository' \
     'stg init'
 
 test_expect_success \

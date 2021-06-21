@@ -50,7 +50,7 @@ generating the patch information. The command can also read series and
 mbox files.
 
 If a patch does not apply cleanly, the failed diff is written to the
-.stgit-failed.patch file and an empty StGIT patch is added to the
+.stgit-failed.patch file and an empty StGit patch is added to the
 stack.
 
 The patch description has to be separated from the data with a '---'

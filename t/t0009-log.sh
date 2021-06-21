@@ -8,7 +8,7 @@ test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>&1 >/dev/null | grep -e "branch not initialized"
 '
 
-test_expect_success 'Initialize the StGIT repository' '
+test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 

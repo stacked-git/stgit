@@ -11,7 +11,7 @@ test_expect_success \
 	'
 
 test_expect_success \
-	'Initialize the StGIT repository' \
+	'Initialize the StGit repository' \
 	'
 	stg init &&
 	stg new A -m "a" && echo A > a && stg add a && stg refresh &&

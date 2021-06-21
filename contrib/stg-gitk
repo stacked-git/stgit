@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# stg-gitk - helper script to graphically display an StGIT stack
+# stg-gitk - helper script to graphically display an StGit stack
 
 # Displays given branches and stacks, without getting disturbed by
 # patch logs.
@@ -59,10 +59,10 @@ else
     # expand patches for each named branch
     for b in $branches; do
         if [ -e "$GIT_DIR/refs/patches/$b" ]; then
-            # StGIT branch: show all patches
+            # StGit branch: show all patches
             refdirs="$refdirs $GIT_DIR/refs/heads/$b $GIT_DIR/refs/patches/$b"
         elif [ -e "$GIT_DIR/refs/heads/$b" ]; then
-            # other GIT branch
+            # other Git branch
             refdirs="$refdirs $GIT_DIR/refs/heads/$b"
         elif [ "$(git for-each-ref "refs/$b" | wc -l)" != 0 ]; then
             # other ref

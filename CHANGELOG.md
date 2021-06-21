@@ -232,7 +232,7 @@
 - `stg mail` improvements for 'Suggested-by:' tag and auto generation of
   Cc for the cover letter based on all tags in the series
 - `stg mail` bash completion for the --to, --cc and --bcc options based
-  on the content of the [mail "alias"] section of GIT configuration
+  on the content of the [mail "alias"] section of Git configuration
 - `stg edit --review` option to add a 'Reviewed-by:' tag
 - `stg pop --spill` functionality to allow popping a patch from the
   stack while keeping its modification in the tree

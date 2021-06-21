@@ -58,7 +58,7 @@ attachment using the --attach option in which case the
 The To/Cc/Bcc addresses can either be added to the template file or
 passed via the corresponding command line options. They can be e-mail
 addresses or aliases which are automatically expanded to the values
-stored in the [mail "alias"] section of GIT configuration files.
+stored in the [mail "alias"] section of Git configuration files.
 
 A preamble e-mail can be sent using the '--cover' and/or
 '--edit-cover' options. The first allows the user to specify a file to

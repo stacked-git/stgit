@@ -70,12 +70,12 @@ test_expect_success 'Cleanup unprotected' '
 
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --protect 2>&1 |
-    grep -E "is not controlled by StGIT"
+    grep -E "is not controlled by StGit"
 '
 
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --unprotect 2>&1 |
-    grep -E "is not controlled by StGIT"
+    grep -E "is not controlled by StGit"
 '
 
 test_expect_success 'Delete unprotected' '

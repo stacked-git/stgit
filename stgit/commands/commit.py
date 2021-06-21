@@ -26,7 +26,7 @@ description = """
 Merge one or more patches into the base of the current stack and
 remove them from the series while advancing the base. This is the
 opposite of 'stg uncommit'. Use this command if you no longer want to
-manage a patch with StGIT.
+manage a patch with StGit.
 
 By default, the bottommost patch is committed. If patch names are
 given, the stack is rearranged so that those patches are at the

@@ -142,7 +142,7 @@ def func(parser, options, args):
         series = io.open(os.path.join(dirname, 'series'), 'w')
         # note the base commit for this series
         base_commit = stack.base.sha1
-        print('# This series applies on GIT commit %s' % base_commit, file=series)
+        print('# This series applies on Git commit %s' % base_commit, file=series)
 
     for patch_no, pn in enumerate(patches, 1):
         if options.patch:

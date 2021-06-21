@@ -5,7 +5,7 @@ test_description='Test "stg pop --spill"'
 
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGIT repository and create a patch and add some files' '
+test_expect_success 'Initialize the StGit repository and create a patch and add some files' '
     stg init &&
     echo expected*.txt >> .git/info/exclude &&
     echo patches.txt >> .git/info/exclude &&

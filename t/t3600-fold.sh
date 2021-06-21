@@ -4,7 +4,7 @@ test_description='Test the fold command.'
 
 . ./test-lib.sh
 
-test_expect_success 'Initialize StGIT repository' '
+test_expect_success 'Initialize StGit repository' '
     stg init &&
     echo hello > foo.txt &&
     git add foo.txt &&

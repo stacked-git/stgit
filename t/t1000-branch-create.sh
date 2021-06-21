@@ -24,7 +24,7 @@ test_expect_success \
 '
 
 test_expect_success \
-    'Create a branch when the current one is not an StGIT stack' '
+    'Create a branch when the current one is not an StGit stack' '
     git branch regular-branch &&
     git branch --set-upstream-to=origin/master regular-branch &&
     stg branch --create new regular-branch &&

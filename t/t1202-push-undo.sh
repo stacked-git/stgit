@@ -12,7 +12,7 @@ missing file. The "stg undo" command has to be able to revert it.
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGIT repository' \
+	'Initialize the StGit repository' \
 	'stg init
 '
 

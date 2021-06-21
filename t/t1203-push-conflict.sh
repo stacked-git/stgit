@@ -11,7 +11,7 @@ Test that the index has no modifications after a push with conflicts.
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGIT repository' \
+	'Initialize the StGit repository' \
 	'stg init
 '
 

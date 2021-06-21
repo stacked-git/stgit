@@ -3,7 +3,7 @@
 test_description='Test the mail command'
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGIT repository' '
+test_expect_success 'Initialize the StGit repository' '
     git config stgit.sender "A U Thor <author@example.com>" &&
     test_commit_bulk --message="Patch %s" --filename=foo.txt --contents="line %s" 5 &&
     stg init &&

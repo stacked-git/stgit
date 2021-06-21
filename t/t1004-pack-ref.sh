@@ -3,7 +3,7 @@
 # Copyright (c) 2007 Karl Hasselström
 #
 
-test_description='Test that StGIT can handle packed refs'
+test_description='Test that StGit can handle packed refs'
 
 . ./test-lib.sh
 stg init

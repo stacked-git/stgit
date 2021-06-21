@@ -10,7 +10,7 @@ test_description='Test floating a number of patches to the top of the stack
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGIT repository' \
+	'Initialize the StGit repository' \
 	'stg init &&
 	 stg new A -m "a" && echo A >a.txt && stg add a.txt && stg refresh &&
 	 stg new B -m "b" && echo B >b.txt && stg add b.txt && stg refresh &&

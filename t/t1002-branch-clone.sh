@@ -11,7 +11,7 @@ Exercises branch cloning options.
 . ./test-lib.sh
 
 test_expect_success \
-    'Create a GIT commit' \
+    'Create a Git commit' \
     '
     echo bar > bar.txt &&
     stg add bar.txt &&
@@ -19,13 +19,13 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Try to create a patch in a GIT branch' \
+    'Try to create a patch in a Git branch' \
     '
     command_error stg new p0 -m "p0"
     '
 
 test_expect_success \
-    'Clone the current GIT branch' \
+    'Clone the current Git branch' \
     '
     stg branch --clone foo &&
     stg new p1 -m "p1" &&
@@ -33,7 +33,7 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Clone the current StGIT branch' \
+    'Clone the current StGit branch' \
     '
     stg branch --clone bar &&
     test "$(stg series --applied -c)" -eq 1 &&

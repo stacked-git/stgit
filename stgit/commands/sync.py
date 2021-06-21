@@ -77,7 +77,7 @@ def __branch_merge_patch(remote_stack, stack, commit, pname):
 
 
 def __series_merge_patch(patchdir, stack, commit, pname):
-    """Merge a patch file with the given StGIT patch."""
+    """Merge a patch file with the given StGit patch."""
     with io.open(os.path.join(patchdir, pname), 'rb') as f:
         diff = f.read()
     base = commit.data.parent

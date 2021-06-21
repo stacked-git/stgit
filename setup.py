@@ -41,13 +41,13 @@ def __check_python_version():
 
 
 def __check_git_version():
-    """Check the minimum GIT version"""
+    """Check the minimum Git version"""
     from stgit.run import Run
 
     gitver = Run('git', '--version').output_one_line().split()[2]
     if not __check_min_version(version.git_min_ver, gitver):
         print(
-            'GIT version %s or newer required. Found %s'
+            'Git version %s or newer required. Found %s'
             % (version.git_min_ver, gitver),
             file=sys.stderr,
         )

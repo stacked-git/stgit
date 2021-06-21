@@ -28,7 +28,7 @@ usage = [
 ]
 description = """
 Take one or more git commits at the base of the current stack and turn
-them into StGIT patches. The new patches are created as applied patches
+them into StGit patches. The new patches are created as applied patches
 at the bottom of the stack. This is the opposite of 'stg commit'.
 
 By default, the number of patches to uncommit is determined by the
@@ -38,7 +38,7 @@ for the first patch to uncommit, i.e. for the newest patch.
 The -n/--number option specifies the number of patches to uncommit. In
 this case, at most one patch name may be specified. It is used as
 prefix to which the patch number is appended. If no patch names are
-provided on the command line, StGIT automatically generates them based
+provided on the command line, StGit automatically generates them based
 on the first line of the patch description.
 
 The -t/--to option specifies that all commits up to and including the

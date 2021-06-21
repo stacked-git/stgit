@@ -428,7 +428,7 @@ def func(parser, options, args):
         try:
             stack = repository.get_stack(branch_name)
         except StackException:
-            raise CmdException('Branch "%s" is not controlled by StGIT' % branch_name)
+            raise CmdException('Branch "%s" is not controlled by StGit' % branch_name)
 
         out.start('Protecting branch "%s"' % branch_name)
         stack.protected = True
@@ -465,7 +465,7 @@ def func(parser, options, args):
         try:
             stack = repository.get_stack(branch_name)
         except StackException:
-            raise CmdException('Branch "%s" is not controlled by StGIT' % branch_name)
+            raise CmdException('Branch "%s" is not controlled by StGit' % branch_name)
 
         out.info('Unprotecting branch "%s"' % branch_name)
         stack.protected = False
