@@ -82,9 +82,9 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
     if msg is None:
         msg = "# This is a combination of %s patches.\n" % len(patches)
         for num, pn in enumerate(patches, 1):
-            msg += "# This is the commit message for %s (patch #%s):" % (
-                pn,
+            msg += "# This is the commit message for patch #%s (%s):" % (
                 num,
+                pn,
             )
             msg += "\n%s\n" % trans.patches[pn].data.message_str
         msg += (
