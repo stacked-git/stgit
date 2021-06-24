@@ -61,24 +61,10 @@ class SaveTemplateDone(Exception):
     pass
 
 
-def _append_comment(message, comment):
-    return '\n'.join(
-        [
-            message,
-            '',
-            '---',
-            'Everything following the line with "---" will be ignored',
-            '',
-            comment,
-        ]
-    )
-
-
-def _strip_comment(message):
-    try:
-        return message[: message.index('\n---\n')]
-    except ValueError:
-        return message
+def _strip_comments(message):
+    for line in message.splitlines():
+        if not line.startswith('#'):
+            yield line
 
 
 def _squash_patches(trans, patches, msg, save_template, no_verify=False):
@@ -94,19 +80,24 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
             return None
         cd = cd.set_tree(tree)
     if msg is None:
-        msg = _append_comment(
-            cd.message_str,
-            '\n\n'.join(
-                '%s\n\n%s' % (pn.ljust(70, '-'), trans.patches[pn].data.message_str)
-                for pn in patches[1:]
-            ),
+        msg = "# This is a combination of %s patches.\n" % len(patches)
+        for num, pn in enumerate(patches, 1):
+            msg += "# This is the commit message for %s (patch #%s):" % (
+                pn,
+                num,
+            )
+            msg += "\n%s\n" % trans.patches[pn].data.message_str
+        msg += (
+            "# Please enter the commit message for your patch. Lines starting\n"
+            "# with '#' will be ignored."
         )
+
         if save_template:
             save_template(msg.encode(cd.encoding))
             raise SaveTemplateDone()
         else:
             msg = utils.edit_string(msg, '.stgit-squash.txt')
-    msg = _strip_comment(msg).strip()
+    msg = '\n'.join(_strip_comments(msg)).strip()
     cd = cd.set_message(msg)
 
     if not no_verify:
