@@ -1,3 +1,4 @@
+# TODO (not this file): add 'verbose=1' support to 'stg new', similar to 'git commit'
 from stgit import argparse, utils
 from stgit.argparse import opt, patch_range
 from stgit.commands.common import (
@@ -86,7 +87,7 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
                 pn,
                 num,
             )
-            msg += "\n%s\n" % trans.patches[pn].data.message_str
+            msg += "\n%s\n\n" % trans.patches[pn].data.message_str.strip()
         msg += (
             "# Please enter the commit message for your patch. Lines starting\n"
             "# with '#' will be ignored."
