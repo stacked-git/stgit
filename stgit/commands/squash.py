@@ -67,7 +67,7 @@ def _strip_comments(message):
             yield line
 
 
-def _squash_patches(trans, patches, msg, save_template, no_verify=False):
+def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
     for pn in patches[1:]:
         c = trans.patches[pn]
@@ -80,7 +80,10 @@ def _squash_patches(trans, patches, msg, save_template, no_verify=False):
             return None
         cd = cd.set_tree(tree)
     if msg is None:
-        msg = "# This is a combination of %s patches.\n" % len(patches)
+        if name:
+            msg = "# Squashing %s patches as '%s'.\n" % (len(patches), name)
+        else:
+            msg = "# Squashing %s patches.\n" % len(patches)
         for num, pn in enumerate(patches, 1):
             msg += "# This is the commit message for %s (patch #%s):" % (
                 pn,
@@ -122,7 +125,9 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        new_commit_data = _squash_patches(trans, patches, msg, save_template, no_verify)
+        new_commit_data = _squash_patches(
+            trans, patches, name, msg, save_template, no_verify
+        )
         if new_commit_data:
             # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
@@ -135,7 +140,7 @@ def _squash(stack, iw, name, msg, save_template, patches, no_verify=False):
             for pn in patches:
                 trans.push_patch(pn, iw)
             new_commit_data = _squash_patches(
-                trans, patches, msg, save_template, no_verify
+                trans, patches, name, msg, save_template, no_verify
             )
             popped_extra = trans.delete_patches(lambda pn: pn in patches)
             assert not popped_extra
