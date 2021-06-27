@@ -15,6 +15,8 @@ from stgit.commands.common import (
     rebase,
 )
 from stgit.commands.squash import squash
+from stgit.config import config
+from stgit.run import RunException
 from stgit.utils import edit_string
 
 __copyright__ = """
@@ -72,6 +74,18 @@ options = [
         action='store_true',
         short='Check for patches merged upstream',
     ),
+    opt(
+        '--autostash',
+        action='store_true',
+        short='Stash changes before the rebase and apply them after',
+        default=config.getbool('stgit.autostash'),
+        long='''
+    Automatically create a temporary stash before the operation begins, and
+    apply it after the operation ends. This means that you can run rebase on a
+    dirty work-tree. However, use with care: the final stash application after a
+    successful rebase might result in non-trivial conflicts.
+    ''',
+    ),
 ]
 
 directory = DirectoryGotoTopLevel()
@@ -88,6 +102,16 @@ INTERACTIVE_HELP_INSTRUCTIONS = """
 #
 # Patches above the APPLY_LINE are applied; other patches are kept unapplied.
 """
+
+
+class StashPopConflictException(RunException):
+    """Exception raised there's a conflict when popping the stash after --autostash"""
+
+    def __init__(self):
+        super().__init__(
+            'Merge conflict raised when popping stash after rebase. Resolve the '
+            'conflict, then delete the stash with `git stash drop`.'
+        )
 
 
 def __get_description(stack, patch):
@@ -248,6 +272,12 @@ def func(parser, options, args):
     else:
         target = stack.base
 
+    if options.autostash and not iw.worktree_clean():
+        repository.run(['git', 'stash', 'push']).run()
+        stashed_worktree = True
+    else:
+        stashed_worktree = False
+
     applied = stack.patchorder.applied
     retval = prepare_rebase(stack, 'rebase')
     if retval:
@@ -255,6 +285,18 @@ def func(parser, options, args):
     rebase(stack, iw, target)
 
     if options.interactive:
-        return __do_rebase_interactive(repository, applied, check_merged=options.merged)
+        retval = __do_rebase_interactive(
+            repository, applied, check_merged=options.merged
+        )
     elif not options.nopush:
-        return post_rebase(stack, applied, 'rebase', check_merged=options.merged)
+        retval = post_rebase(stack, applied, 'rebase', check_merged=options.merged)
+    else:
+        retval = None
+
+    if stashed_worktree:
+        try:
+            repository.run(['git', 'stash', 'pop']).run()
+        except RunException:
+            raise StashPopConflictException()
+
+    return retval
