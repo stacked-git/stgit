@@ -14,7 +14,7 @@ test_expect_success \
 
 test_expect_success 'setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "fake edit" >>"$1"
+	echo "fake edit" >"$1"
 	EOF
 '
 

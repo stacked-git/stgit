@@ -21,7 +21,7 @@ from stgit.run import Run, RunException
 from stgit.utils import (
     EditorException,
     add_trailer,
-    edit_bytes,
+    edit_string,
     get_hook,
     run_hook_on_bytes,
     strip_prefix,
@@ -437,7 +437,34 @@ def run_commit_msg_hook(repo, cd, editor_is_used=True):
         return cd
 
 
-def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False):
+COMMIT_MESSAGE_INSTRUCTIONS = """
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored.
+#
+# """
+
+COMMIT_MESSAGE_DEMARCATION_LINE = """
+# ------------------------ >8 ------------------------"""
+
+COMMIT_MESSAGE_INSTRUCTIONS_2 = """
+# Do not modify or remove the line above.
+# Everything below it will be ignored.
+"""
+
+
+def _git_status():
+    out = Run('git', 'status').output_lines()
+    # strip out git's "instruction" lines, such as '(use "git add <file>..." to update'
+    return [line for line in out if '(use' not in line]
+
+
+def _git_diff():
+    return Run('git', 'diff').output_lines()
+
+
+def update_commit_data(
+    cd, message=None, author=None, sign_str=None, edit=False, verbose=False
+):
     """Create updated CommitData according to the command line options."""
     # Set the commit message from commandline.
     if message is not None:
@@ -456,10 +483,25 @@ def update_commit_data(cd, message=None, author=None, sign_str=None, edit=False)
         )
 
     if edit:
+        message_str = cd.message_str
         tmpl = templates.get_template('patchdescr.tmpl')
         if tmpl:
-            cd = cd.set_message(cd.message_str + tmpl)
-        cd = cd.set_message(edit_bytes(cd.message, '.stgit-new.txt'))
+            message_str += tmpl
+
+        status = '\n# '.join(_git_status())
+        message_str += COMMIT_MESSAGE_INSTRUCTIONS + status
+        if verbose:
+            # include a diff
+            message_str += (
+                COMMIT_MESSAGE_DEMARCATION_LINE + COMMIT_MESSAGE_INSTRUCTIONS_2
+            )
+            message_str += '\n'.join(_git_diff())
+        new_message = edit_string(message_str, '.stgit-new.txt')
+        new_message = new_message.split(COMMIT_MESSAGE_DEMARCATION_LINE)[0]
+        new_message = '\n'.join(
+            line for line in new_message.splitlines() if not line.startswith('#')
+        )
+        cd = cd.set_message(new_message)
 
     return cd
 
