@@ -1,10 +1,12 @@
 from stgit import argparse, utils
+from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
     DirectoryHasRepository,
     run_commit_msg_hook,
     update_commit_data,
 )
+from stgit.config import config
 from stgit.lib.git import CommitData, Person
 from stgit.lib.transaction import StackTransaction
 
@@ -44,7 +46,19 @@ editor."""
 
 args = []
 options = (
-    argparse.author_options()
+    [
+        opt(
+            '-v',
+            '--verbose',
+            action='store_true',
+            short='show diff in patch commit message template',
+            long='''
+        In addition to the names of files that have been changed, also show the textual changes that
+        are staged to be committed and the changes in the working tree that have
+        not yet been staged (i.e., like the output of git diff).''',
+        ),
+    ]
+    + argparse.author_options()
     + argparse.message_options(save_template=True)
     + argparse.sign_options()
     + argparse.hook_options()
@@ -72,6 +86,12 @@ def func(parser, options, args):
     else:
         parser.error('incorrect number of arguments')
 
+    if options.verbose:
+        verbose = options.verbose
+    else:
+        verbose_int = config.getint('commit.verbose')
+        verbose = verbose_int > 0 if verbose_int else False
+
     cd = CommitData(
         tree=stack.head.data.tree,
         parents=[stack.head],
@@ -85,6 +105,7 @@ def func(parser, options, args):
         author=options.author(cd.author),
         sign_str=options.sign_str,
         edit=(not options.save_template and options.message is None),
+        verbose=verbose,
     )
 
     if options.save_template:

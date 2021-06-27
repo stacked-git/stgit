@@ -87,6 +87,21 @@ test_expect_success \
     stg show | grep "Patch Description Template"
 '
 
+test_expect_success \
+    'New with verbose flag' '
+    echo "Patch Description Template" > .git/patchdescr.tmpl &&
+    stg new --verbose verbose-flag-patch &&
+    stg show | grep "Patch Description Template"
+'
+
+test_expect_success \
+    'New with verbose config option' '
+    test_config commit.verbose "1" &&
+    echo "Patch Description Template" > .git/patchdescr.tmpl &&
+    stg new --verbose verbose-config-patch &&
+    stg show | grep "Patch Description Template"
+'
+
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"
