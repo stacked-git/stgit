@@ -85,6 +85,9 @@
 	# Behave as if the --keep option is always passed
 	#autokeep = no
 
+	# Behave as if the --autostash option is always passed to rebase
+	#autostash = no
+
 	# Include submodules by default when refreshing patch contents.
 	#refreshsubmodules = no
 
