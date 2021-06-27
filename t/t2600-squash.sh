@@ -50,6 +50,19 @@ test_expect_success 'Squash at stack top' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+	echo "" >"$1"
+	eof
+'
+test_expect_success 'Empty commit message aborts the squash' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    command_error stg squash --name=p0 p0 q1 2>&1 |
+    grep -e "Aborting squash due to empty commit message" &&
+    test "$(echo $(stg series))" = "+ p0 > q1"
+'
+
 cat > editor <<EOF
 #!/bin/sh
 echo "Editor was invoked" | tee editor-invoked

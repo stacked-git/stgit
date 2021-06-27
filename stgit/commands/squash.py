@@ -100,7 +100,11 @@ def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
             raise SaveTemplateDone()
         else:
             msg = utils.edit_string(msg, '.stgit-squash.txt')
+
     msg = '\n'.join(_strip_comments(msg)).strip()
+    if not msg:
+        raise CmdException('Aborting squash due to empty commit message')
+
     cd = cd.set_message(msg)
 
     if not no_verify:
