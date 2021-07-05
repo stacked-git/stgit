@@ -92,7 +92,7 @@ def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
             msg += "\n%s\n\n" % trans.patches[pn].data.message_str.rstrip()
         msg += (
             "# Please enter the commit message for your patch. Lines starting\n"
-            "# with '#' will be ignored."
+            "# with '#' will be ignored, and an empty message aborts the commit."
         )
 
         if save_template:
