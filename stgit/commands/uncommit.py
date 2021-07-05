@@ -120,7 +120,7 @@ def func(parser, options, args):
     next_commit = stack.base
     if patch_nr:
         out.start('Uncommitting %d patches' % patch_nr)
-        for i in range(patch_nr):
+        for _ in range(patch_nr):
             check_and_append(commits, next_commit)
             next_commit = next_commit.data.parent
     else:

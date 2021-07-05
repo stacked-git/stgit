@@ -75,7 +75,9 @@ def get_hooks_path(repository):
         return os.path.join(repository.default_worktree.directory, hooks_path)
 
 
-def get_hook(repository, hook_name, extra_env={}):
+def get_hook(repository, hook_name, extra_env=None):
+    if not extra_env:
+        extra_env = {}
     hook_path = os.path.join(get_hooks_path(repository), hook_name)
     if not (os.path.isfile(hook_path) and os.access(hook_path, os.X_OK)):
         return None

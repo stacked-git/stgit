@@ -87,7 +87,7 @@ def py_commands(commands, f):
 
 def _command_list(commands):
     kinds = {}
-    for cmd, mod, kind, help in commands:
+    for cmd, _, kind, help in commands:
         kinds.setdefault(kind, {})[cmd] = help
     for kind in _kind_order:
         kind = _kinds[kind]
