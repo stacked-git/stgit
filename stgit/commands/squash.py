@@ -129,9 +129,14 @@ def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        new_commit_data = _squash_patches(
-            trans, patches, name, msg, save_template, no_verify
-        )
+        try:
+            new_commit_data = _squash_patches(
+                trans, patches, name, msg, save_template, no_verify
+            )
+        except SaveTemplateDone:
+            trans.abort(iw)
+            return None, None
+        new_patch_name = get_name(new_commit_data)
         if new_commit_data:
             # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
@@ -153,15 +158,12 @@ def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
         # Push the new patch if necessary, and any unrelated patches we've
         # had to pop out of the way.
         if push_new_patch:
-            trans.push_patch(get_name(new_commit_data), iw)
+            trans.push_patch(new_patch_name, iw)
         for pn in to_push:
             trans.push_patch(pn, iw)
-    except SaveTemplateDone:
-        trans.abort(iw)
-        return
     except TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run(iw), new_patch_name
 
 
 def func(parser, options, args):
@@ -171,7 +173,7 @@ def func(parser, options, args):
         raise CmdException('Need at least two patches')
     if options.name and not stack.patches.is_name_valid(options.name):
         raise CmdException('Patch name "%s" is invalid' % options.name)
-    return squash(
+    retval, _ = squash(
         stack,
         stack.repository.default_iw,
         options.name,
@@ -180,3 +182,4 @@ def func(parser, options, args):
         patches,
         options.no_verify,
     )
+    return retval
