@@ -104,6 +104,22 @@ test_expect_success 'Delete a patch' '
 '
 
 test_expect_success 'Setup stgit stack' '
+    stg new p4 -m p4
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+	echo "edit p4" >"$1"
+	eof
+'
+test_expect_success 'Edit a patch' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    git diff-index --quiet HEAD &&
+    stg show | grep -e "edit p4"
+'
+
+test_expect_success 'Setup stgit stack' '
     stg delete $(stg series --all --noprefix --no-description) &&
     stg new -m p0 &&
     stg new -m p1 &&
