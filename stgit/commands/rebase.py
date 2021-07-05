@@ -1,4 +1,3 @@
-import copy
 import itertools
 import re
 import typing
@@ -111,6 +110,37 @@ Instruction = typing.NamedTuple(
 )
 
 
+def __perform_squashes(instructions, index, stack):
+    """Perform any consecutive squashes from 'index' onwards."""
+    squashes_found = False
+    # loop to determine how many of the next N instructions are squashes
+    for num_squashes in itertools.count(1):
+        if len(instructions) <= index + num_squashes:
+            break  # reached the end of the instruction list
+        if instructions[index + num_squashes].action == Action.SQUASH:
+            squashes_found = True
+        else:
+            break  # not a squash; chain is over
+    if squashes_found:
+        _, new_patch_name = squash(
+            stack,
+            stack.repository.default_iw,
+            None,
+            None,
+            None,
+            [p.patch_name for p in instructions[index : index + num_squashes]],
+        )
+        # update instruction set in case the current patch was renamed
+        instructions[index] = Instruction(
+            new_patch_name,
+            instructions[index].action,
+            instructions[index].apply,
+        )
+        # remove the squashed patches from the instruction set
+        instructions = instructions[: index + 1] + instructions[index + num_squashes :]
+    return instructions
+
+
 def __do_rebase_interactive(repository, previously_applied_patches, check_merged):
     """Opens an interactive editor, generates instruction list, and executes instructions."""
     stack = repository.get_stack()
@@ -122,21 +152,21 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
     line = 'keep {{:<{name_len}}} # {{}}'.format(name_len=name_len)
 
     # create a list of all patches to send to the editor
-    instructions = []
+    raw_editor_instructions = []
     for pn in previously_applied_patches:
         patch = (pn, __get_description(stack, pn))
-        instructions.append(line.format(*patch))
-    instructions.append(INTERACTIVE_APPLY_LINE)
+        raw_editor_instructions.append(line.format(*patch))
+    raw_editor_instructions.append(INTERACTIVE_APPLY_LINE)
     for pn in stack.patchorder.all:
         if pn in previously_applied_patches:
             continue
         patch = (pn, __get_description(stack, pn))
-        instructions.append(line.format(*patch))
-    instructions.append(INTERACTIVE_HELP_INSTRUCTIONS)
+        raw_editor_instructions.append(line.format(*patch))
+    raw_editor_instructions.append(INTERACTIVE_HELP_INSTRUCTIONS)
 
     # open an editor to let the user generate the 'todo' instructions
     todo = edit_string(
-        '\n'.join(instructions),
+        '\n'.join(raw_editor_instructions),
         '.stgit-rebase-interactive.txt',
     )
 
@@ -178,44 +208,20 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             Instruction(patch_name, instruction_type, not seen_apply_line)
         )
 
-    # execute all the non-squash instructions first. we use a copy to make sure
-    # we don't skip any instructions as we delete from the list
-    for instruction in copy.copy(instructions):
-        if instruction.apply:
-            post_rebase(stack, {instruction.patch_name}, 'rebase', check_merged)
-        if instruction.action == Action.DELETE:
-            delete_patches(stack, stack.repository.default_iw, {instruction.patch_name})
-            instructions.remove(instruction)
-
-    # execute squashes last because patch names may change during squashes. this
-    # is a double loop so we can handle multiple chains of multiple squashes
     for index in itertools.count():
         if index >= len(instructions):
             break  # reached the end of the instruction list
-        # determine how many of the next N instructions are squashes
-        squashes_found = False
-        for num_squashes in itertools.count(1):
-            if len(instructions) <= index + num_squashes:
-                break  # reached the end of the instruction list
-            if instructions[index + num_squashes].action == Action.SQUASH:
-                squashes_found = True
-            else:
-                break  # not a squash; chain is over
-        # execute squash
-        if squashes_found:
-            squashes = instructions[index : index + num_squashes]
-            squash(
-                stack,
-                stack.repository.default_iw,
-                None,
-                None,
-                None,
-                [p.patch_name for p in squashes],
+        if instructions[index].action == Action.DELETE:
+            delete_patches(
+                stack, stack.repository.default_iw, {instructions[index].patch_name}
             )
-            # remove the squashed patches from the instruction set
-            instructions = (
-                instructions[: index + 1] + instructions[index + num_squashes :]
-            )
+            index -= 1  # re-run this index another time
+            continue
+        if instructions[index].apply:
+            post_rebase(stack, {instructions[index].patch_name}, 'rebase', check_merged)
+
+        instructions = __perform_squashes(instructions, index, stack)
+
     return utils.STGIT_SUCCESS
 
 
