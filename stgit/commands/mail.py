@@ -464,7 +464,7 @@ def __update_header(msg, header, addr='', ignore=()):
     return set(addr for _, addr in addr_pairs)
 
 
-def __build_address_headers(msg, options, extra_cc=[]):
+def __build_address_headers(msg, options, extra_cc):
     """Build the address headers and check existing headers in the
     template.
     """
