@@ -1,11 +1,14 @@
 """This module contains utility functions for patch editing."""
 
+import io
 import re
 
 from stgit import utils
 from stgit.commands import common
 from stgit.config import config
+from stgit.lib import transaction
 from stgit.lib.git import Date, Person
+from stgit.out import out
 
 
 def update_patch_description(repo, cd, text, contains_diff):
@@ -87,7 +90,7 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
               it did not apply, or None otherwise
 
     """
-    return update_patch_description(
+    cd, failed_diff = update_patch_description(
         repo,
         cd,
         utils.edit_bytes(
@@ -96,6 +99,13 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
         ),
         edit_diff,
     )
+
+    # If we couldn't apply the patch, fail without even trying to
+    # effect any of the changes.
+    if failed_diff:
+        return failed(repo, cd, edit_diff, diff_flags, failed_diff)
+
+    return cd, failed_diff
 
 
 def auto_edit_patch(repo, cd, msg, author, sign_str):
@@ -129,3 +139,63 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
             )
         )
     return cd
+
+
+def failed(
+    repository,
+    cd,
+    edit_diff,
+    diff_flags,
+    replacement_diff,
+    reason='Edited patch did not apply.',
+):
+    """Call when edit fails. Logs to stderr and saves a patch to filesystem."""
+    fn = '.stgit-failed.patch'
+    with io.open(fn, 'wb') as f:
+        f.write(
+            patch_desc(
+                repository,
+                cd,
+                edit_diff,
+                diff_flags,
+                replacement_diff=replacement_diff,
+            )
+        )
+    out.error(reason, 'The patch has been saved to "%s".' % fn)
+    return utils.STGIT_COMMAND_ERROR
+
+
+def perform_edit(
+    stack, cd, patchname, edit_diff, diff_flags, replacement_diff, set_tree=None
+):
+    # Refresh the committer information
+    cd = cd.set_committer(None)
+
+    # Rewrite the StGit patch with the given diff (and any patches on top of
+    # it).
+    iw = stack.repository.default_iw
+    trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
+    if patchname in trans.applied:
+        popped = trans.applied[trans.applied.index(patchname) + 1 :]
+        popped_extra = trans.pop_patches(lambda pn: pn in popped)
+        assert not popped_extra
+    else:
+        popped = []
+    trans.patches[patchname] = stack.repository.commit(cd)
+    try:
+        for pn in popped:
+            if set_tree:
+                trans.push_tree(pn)
+            else:
+                trans.push_patch(pn, iw, allow_interactive=True)
+    except transaction.TransactionHalted:
+        pass
+    try:
+        # Either a complete success, or a conflict during push. But in
+        # either case, we've successfully effected the edits the user
+        # asked us for.
+        return trans.run(iw)
+    except transaction.TransactionException:
+        # Transaction aborted -- we couldn't check out files due to
+        # dirty index/worktree. The edits were not carried out.
+        return failed(stack, cd, edit_diff, diff_flags, replacement_diff)

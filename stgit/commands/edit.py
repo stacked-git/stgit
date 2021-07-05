@@ -1,7 +1,5 @@
 """Patch editing command"""
 
-import io
-
 from stgit import argparse, utils
 from stgit.argparse import opt
 from stgit.commands.common import (
@@ -10,8 +8,7 @@ from stgit.commands.common import (
     run_commit_msg_hook,
 )
 from stgit.config import config
-from stgit.lib import edit, transaction
-from stgit.out import out
+from stgit.lib import edit
 
 __copyright__ = """
 Copyright (C) 2007, Catalin Marinas <catalin.marinas@gmail.com>
@@ -141,68 +138,33 @@ def func(parser, options, args):
 
     use_editor = cd == orig_cd or options.edit or options.diff
     if use_editor:
-        cd, failed_diff = edit.interactive_edit_patch(
+        cd, replacement_diff = edit.interactive_edit_patch(
             stack.repository, cd, options.diff, options.diff_flags
         )
     else:
-        failed_diff = None
-
-    def failed(reason='Edited patch did not apply.'):
-        fn = '.stgit-failed.patch'
-        with io.open(fn, 'wb') as f:
-            f.write(
-                edit.patch_desc(
-                    stack.repository,
-                    cd,
-                    options.diff,
-                    options.diff_flags,
-                    replacement_diff=failed_diff,
-                )
-            )
-        out.error(reason, 'The patch has been saved to "%s".' % fn)
-        return utils.STGIT_COMMAND_ERROR
-
-    # If we couldn't apply the patch, fail without even trying to
-    # effect any of the changes.
-    if failed_diff:
-        return failed()
+        replacement_diff = None
 
     if not options.no_verify and (use_editor or cd.message != orig_cd.message):
         try:
             cd = run_commit_msg_hook(stack.repository, cd, use_editor)
         except Exception:
             if options.diff:
-                failed('The commit-msg hook failed.')
+                edit.failed(
+                    stack.repository,
+                    cd,
+                    options.diff,
+                    options.diff_flags,
+                    replacement_diff,
+                    'The commit-msg hook failed.',
+                )
             raise
 
-    # Refresh the committer information
-    cd = cd.set_committer(None)
-
-    # The patch applied, so now we have to rewrite the StGit patch
-    # (and any patches on top of it).
-    iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
-    if patchname in trans.applied:
-        popped = trans.applied[trans.applied.index(patchname) + 1 :]
-        popped_extra = trans.pop_patches(lambda pn: pn in popped)
-        assert not popped_extra
-    else:
-        popped = []
-    trans.patches[patchname] = stack.repository.commit(cd)
-    try:
-        for pn in popped:
-            if options.set_tree:
-                trans.push_tree(pn)
-            else:
-                trans.push_patch(pn, iw, allow_interactive=True)
-    except transaction.TransactionHalted:
-        pass
-    try:
-        # Either a complete success, or a conflict during push. But in
-        # either case, we've successfully effected the edits the user
-        # asked us for.
-        return trans.run(iw)
-    except transaction.TransactionException:
-        # Transaction aborted -- we couldn't check out files due to
-        # dirty index/worktree. The edits were not carried out.
-        return failed()
+    return edit.perform_edit(
+        stack,
+        cd,
+        patchname,
+        options.diff,
+        options.diff_flags,
+        replacement_diff,
+        options.set_tree,
+    )

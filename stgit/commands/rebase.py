@@ -16,6 +16,7 @@ from stgit.commands.common import (
 )
 from stgit.commands.squash import squash
 from stgit.config import config
+from stgit.lib import edit
 from stgit.run import RunException
 from stgit.utils import edit_string
 
@@ -95,6 +96,7 @@ INTERACTIVE_APPLY_LINE = '# --- APPLY_LINE ---'
 INTERACTIVE_HELP_INSTRUCTIONS = """
 # Commands:
 # k, keep <patch> = do not modify this patch
+# e, edit <patch> = interactively edit this patch
 # s, squash <patch> = squash patch into the previous patch
 # d, delete <patch> = delete patch
 #
@@ -122,11 +124,13 @@ def __get_description(stack, patch):
 
 class Action(Enum):
     # do nothing; a 'no-op'
-    KEEP = 0
-    # delete the patch
-    DELETE = 1
+    KEEP = 1
+    # edit the patch
+    EDIT = 2
     # squash the patch into the previous patch
-    SQUASH = 2
+    SQUASH = 3
+    # delete the patch
+    DELETE = 4
 
 
 Instruction = typing.NamedTuple(
@@ -220,10 +224,12 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             raise CmdException("Bad patch name '%s'" % patch_name)
         if instruction_str in ('k', 'keep'):
             instruction_type = Action.KEEP
-        elif instruction_str in ('d', 'delete'):
-            instruction_type = Action.DELETE
+        elif instruction_str in ('e', 'edit'):
+            instruction_type = Action.EDIT
         elif instruction_str in ('s', 'squash'):
             instruction_type = Action.SQUASH
+        elif instruction_str in ('d', 'delete'):
+            instruction_type = Action.DELETE
         else:
             raise CmdException("Unknown instruction '%s'" % instruction_str)
 
@@ -235,14 +241,26 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
     for index in itertools.count():
         if index >= len(instructions):
             break  # reached the end of the instruction list
+        patch_name = instructions[index].patch_name
         if instructions[index].action == Action.DELETE:
-            delete_patches(
-                stack, stack.repository.default_iw, {instructions[index].patch_name}
-            )
+            delete_patches(stack, stack.repository.default_iw, {patch_name})
             index -= 1  # re-run this index another time
             continue
+        if instructions[index].action == Action.EDIT:
+            cd = stack.patches[patch_name].data
+            cd, replacement_diff = edit.interactive_edit_patch(
+                stack.repository, cd, edit_diff=True, diff_flags=""
+            )
+            edit.perform_edit(
+                stack,
+                cd,
+                patch_name,
+                edit_diff=True,
+                diff_flags="",
+                replacement_diff=replacement_diff,
+            )
         if instructions[index].apply:
-            post_rebase(stack, {instructions[index].patch_name}, 'rebase', check_merged)
+            post_rebase(stack, {patch_name}, 'rebase', check_merged)
 
         instructions = __perform_squashes(instructions, index, stack)
 
