@@ -94,8 +94,7 @@ jobs:
         python-version: '3.9'
     - name: Install dependencies
       run: |
-        python -m pip install -U pip
-        python -m pip install black flake8 isort
+        make dev-env
     - name: lint-black
       run: make lint-black
     - name: lint-isort
@@ -116,8 +115,8 @@ jobs:
         python-version: '3.9'
     - name: Install dependencies
       run: |
-        python -m pip install -U pip
-        python -m pip install coverage[toml] coveralls
+        make dev-env
+        python -m pip install coveralls
         sudo apt-get install quilt gnupg2
     - name: Coverage Test
       run: |

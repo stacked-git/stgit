@@ -91,6 +91,11 @@ coverage-report: .coverage
 
 .PHONY: coverage coverage-test coverage-report
 
+dev-env:
+	$(PYTHON) -m pip install -U pip
+	$(PYTHON) -m pip install coverage[toml] black flake8 flake8-bugbear isort
+.PHONY: dev-env
+
 clean:
 	for dir in Documentation t; do \
 		$(MAKE) -C $$dir clean; \
