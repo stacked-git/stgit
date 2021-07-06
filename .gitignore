@@ -11,4 +11,5 @@ ChangeLog
 .tox
 htmlcov/
 .coverage
+.cov-files/
 .DS_Store
