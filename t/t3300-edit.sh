@@ -182,6 +182,18 @@ test_expect_success 'Edit patch diff' '
 '
 rm -f diffedit
 
+write_script diffedit <<EOF
+sed 's/+1,4/+1,5/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
+EOF
+test_expect_success 'Edit patch diff which fails to apply' '
+    EDITOR=./diffedit stg edit -d p2 2>&1 |
+    grep -e "Edited patch did not apply." &&
+    test "$(grep 111 foo)" = "111YY" &&
+    test_file_not_empty .stgit-failed.patch
+'
+rm -f diffedit
+rm -f .stgit-failed.patch
+
 test_expect_success 'Sign a patch' '
     m=$(msg HEAD) &&
     stg edit --sign p2 &&
