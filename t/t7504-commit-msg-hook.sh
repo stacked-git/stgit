@@ -123,6 +123,11 @@ test_expect_success 'edit with failing hook' '
     command_error stg edit -m "another"
 '
 
+test_expect_success 'edit --diff with failing hook' '
+    command_error stg edit --diff -m "another" 2>&1 |
+    grep -e "The commit-msg hook failed"
+'
+
 test_expect_success 'refresh with failing hook' '
     command_error stg refresh -m "another" &&
     stg delete refresh-temp
