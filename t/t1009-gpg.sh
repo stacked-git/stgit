@@ -1,3 +1,5 @@
+#!/bin/sh
+
 test_description='Test gpg signatures'
 
 . ./test-lib.sh
