@@ -56,9 +56,9 @@ prove and other harnesses come with a lot of useful options. The
 
 You can give DEFAULT_TEST_TARGET=prove on the make command (or define it
 in config.mak) to cause "make test" to run tests under prove.
-GIT_PROVE_OPTS can be used to pass additional options, e.g.
+STG_PROVE_OPTS can be used to pass additional options, e.g.
 
-    $ make DEFAULT_TEST_TARGET=prove GIT_PROVE_OPTS='--timer --jobs 16' test
+    $ make DEFAULT_TEST_TARGET=prove STG_PROVE_OPTS='--timer --jobs 16' test
 
 You can also run each test individually from command line, like this:
 
@@ -72,7 +72,7 @@ You can also run each test individually from command line, like this:
     1..5
 
 You can pass --verbose (or -v), --debug (or -d), and --immediate
-(or -i) command line argument to the test, or by setting GIT_TEST_OPTS
+(or -i) command line argument to the test, or by setting STG_TEST_OPTS
 appropriately before running "make".
 
 -v::
