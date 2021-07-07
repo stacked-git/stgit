@@ -1,5 +1,7 @@
 # Stacked Git
 
+[![Coverage Status](https://coveralls.io/repos/github/stacked-git/stgit/badge.svg?branch=master)](https://coveralls.io/github/stacked-git/stgit?branch=master)
+
 Stacked Git, **StGit** for short, is an application for managing Git
 commits as a stack of patches.
 
