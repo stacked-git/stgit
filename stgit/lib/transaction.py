@@ -478,6 +478,28 @@ class StackTransaction:
         self.unapplied = unapplied
         self.hidden = hidden
 
+    def rename_patch(self, old_name, new_name):
+        self.stack.rename_patch(old_name, new_name)
+        self.patches[new_name] = self.patches.pop(old_name)
+        try:
+            index = self._applied.index(old_name)
+        except ValueError:
+            pass
+        else:
+            self._applied[index] = new_name
+        try:
+            index = self._unapplied.index(old_name)
+        except ValueError:
+            pass
+        else:
+            self._unapplied[index] = new_name
+        try:
+            index = self._hidden.index(old_name)
+        except ValueError:
+            pass
+        else:
+            self._hidden[index] = new_name
+
     def check_merged(self, patches, tree=None, quiet=False):
         """Return a subset of patches already merged."""
         if not quiet:
