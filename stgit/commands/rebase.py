@@ -248,17 +248,25 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             continue
         if instructions[index].action == Action.EDIT:
             cd = stack.patches[patch_name].data
-            cd, replacement_diff = edit.interactive_edit_patch(
-                stack.repository, cd, edit_diff=True, diff_flags=""
+            cd, new_patch_name, replacement_diff = edit.interactive_edit_patch(
+                stack.repository, cd, patch_name, edit_diff=True, diff_flags=""
             )
-            edit.perform_edit(
+            _, new_patch_name = edit.perform_edit(
                 stack,
                 cd,
                 patch_name,
+                new_patch_name,
                 edit_diff=True,
                 diff_flags="",
                 replacement_diff=replacement_diff,
             )
+            if new_patch_name:
+                instructions[index] = Instruction(
+                    new_patch_name,
+                    instructions[index].action,
+                    instructions[index].apply,
+                )
+                patch_name = new_patch_name
         if instructions[index].apply:
             post_rebase(stack, {patch_name}, 'rebase', check_merged)
 

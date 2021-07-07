@@ -261,9 +261,13 @@ def absorb_applied(trans, iw, patch_name, temp_name, edit_fun):
         # Absorb the temp patch.
         temp_cd = trans.patches[temp_name].data
         assert trans.patches[patch_name] == temp_cd.parent
-        trans.patches[patch_name] = trans.stack.repository.commit(
-            edit_fun(trans.patches[patch_name].data.set_tree(temp_cd.tree))
+        cd, new_patch_name = edit_fun(
+            trans.patches[patch_name].data.set_tree(temp_cd.tree)
         )
+        trans.patches[patch_name] = trans.stack.repository.commit(cd)
+        if new_patch_name and patch_name != new_patch_name:
+            trans.rename_patch(patch_name, new_patch_name)
+
         popped_extra = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
         assert not popped_extra  # the temp patch was topmost
         temp_absorbed = True
@@ -307,9 +311,10 @@ def absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun):
     if new_tree:
         # It worked. Refresh the patch with the new tree, and delete
         # the temp patch.
-        trans.patches[patch_name] = trans.stack.repository.commit(
-            edit_fun(patch_cd.set_tree(new_tree))
-        )
+        cd, new_patch_name = edit_fun(patch_cd.set_tree(new_tree))
+        trans.patches[patch_name] = trans.stack.repository.commit(cd)
+        if new_patch_name and patch_name != new_patch_name:
+            trans.rename_patch(patch_name, new_patch_name)
         popped_extra = trans.delete_patches(lambda pn: pn == temp_name, quiet=True)
         assert not popped_extra  # the temp patch was not applied
         return True
@@ -468,15 +473,16 @@ def __refresh(
             author=author,
             sign_str=sign_str,
         )
+        new_patch_name = None
         if invoke_editor:
-            cd, failed_diff = interactive_edit_patch(
-                stack.repository, cd, edit_diff, diff_flags
+            cd, new_patch_name, failed_diff = interactive_edit_patch(
+                stack.repository, cd, patch_name, edit_diff, diff_flags
             )
             assert not failed_diff
         if not no_verify and (invoke_editor or cd.message != orig_msg):
             cd = run_commit_msg_hook(stack.repository, cd, invoke_editor)
         # Refresh the committer information
-        return cd.set_committer(None)
+        return cd.set_committer(None), new_patch_name
 
     return absorb(stack, patch_name, temp_name, edit_fun, annotate=annotate)
 

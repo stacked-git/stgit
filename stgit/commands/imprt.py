@@ -157,12 +157,14 @@ directory = DirectoryHasRepository()
 
 
 def __create_patch(
-    filename, message, author_name, author_email, author_date, diff, options
+    filename, message, patch_name, author_name, author_email, author_date, diff, options
 ):
     """Create a new patch on the stack"""
     stack = directory.repository.current_stack
 
-    if options.name:
+    if patch_name:
+        name = patch_name
+    elif options.name:
         name = options.name
     elif filename:
         name = os.path.basename(filename)
@@ -283,13 +285,14 @@ def __import_file(filename, options):
     if filename:
         f.close()
 
-    message, author_name, author_email, author_date, diff = parse_patch(
+    message, patch_name, author_name, author_email, author_date, diff = parse_patch(
         patch_data, contains_diff=True
     )
 
     __create_patch(
         filename,
         message,
+        patch_name,
         author_name,
         author_email,
         author_date,
@@ -398,6 +401,7 @@ def __import_mail_path(mail_path, filename, options):
     __create_patch(
         None if options.mbox else filename,
         decode_utf8_with_latin1(msg_bytes),
+        None,
         mailinfo[b'Author'].decode('utf-8'),
         mailinfo[b'Email'].decode('utf-8'),
         mailinfo[b'Date'].decode('utf-8'),

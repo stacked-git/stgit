@@ -120,6 +120,51 @@ test_expect_success 'Edit a patch' '
 '
 
 test_expect_success 'Setup stgit stack' '
+    stg delete --top &&
+    stg new p4 -m p4
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+    if [ ! -f .fake-editor-has-run-once ]
+    then
+        echo "edit p4" >"$1" &&
+        touch .fake-editor-has-run-once
+    else
+        sed "s/Patch: p4/Patch: p4-new/" "$1" > "$1".tmp && mv "$1".tmp "$1"
+    fi
+	eof
+'
+test_expect_success 'Edit and rename a patch' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    git diff-index --quiet HEAD &&
+    stg top | grep -e "p4-new"
+'
+rm .fake-editor-has-run-once
+
+
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+    if [ ! -f .fake-editor-has-run-once ]
+    then
+        echo "edit p4-new" >"$1" &&
+        touch .fake-editor-has-run-once
+    else
+        sed "s/Patch: p4-new/Patch:/" "$1" > "$1".tmp && mv "$1".tmp "$1"
+    fi
+	eof
+'
+test_expect_success 'Edit a patch and clear its patchname' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    git diff-index --quiet HEAD &&
+    stg top | grep -e "p4"
+'
+rm .fake-editor-has-run-once
+
+test_expect_success 'Setup stgit stack' '
     stg delete $(stg series --all --noprefix --no-description) &&
     stg new -m p0 &&
     stg new -m p1 &&

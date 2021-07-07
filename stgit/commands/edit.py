@@ -129,6 +129,7 @@ def func(parser, options, args):
             edit.patch_desc(
                 stack.repository,
                 cd,
+                patchname,
                 options.diff,
                 options.diff_flags,
                 replacement_diff=None,
@@ -138,11 +139,11 @@ def func(parser, options, args):
 
     use_editor = cd == orig_cd or options.edit or options.diff
     if use_editor:
-        cd, replacement_diff = edit.interactive_edit_patch(
-            stack.repository, cd, options.diff, options.diff_flags
+        cd, new_patchname, replacement_diff = edit.interactive_edit_patch(
+            stack.repository, cd, patchname, options.diff, options.diff_flags
         )
     else:
-        replacement_diff = None
+        new_patchname = replacement_diff = None
 
     if not options.no_verify and (use_editor or cd.message != orig_cd.message):
         try:
@@ -152,6 +153,7 @@ def func(parser, options, args):
                 edit.failed(
                     stack.repository,
                     cd,
+                    new_patchname,
                     options.diff,
                     options.diff_flags,
                     replacement_diff,
@@ -159,12 +161,14 @@ def func(parser, options, args):
                 )
             raise
 
-    return edit.perform_edit(
+    retval, _ = edit.perform_edit(
         stack,
         cd,
         patchname,
+        new_patchname,
         options.diff,
         options.diff_flags,
         replacement_diff,
         options.set_tree,
     )
+    return retval

@@ -370,9 +370,9 @@ def __split_descr_diff(string):
 
 
 def __parse_description(descr):
-    """Parse the patch description for author information."""
+    """Parse the patch description for patch and author information."""
     subject = ''
-    authname = authemail = authdate = None
+    patch_name = authname = authemail = authdate = None
 
     descr_lines = [line.rstrip() for line in descr.splitlines()]
 
@@ -382,6 +382,11 @@ def __parse_description(descr):
     # Parse the patch header
     for pos, line in enumerate(descr_lines):
         if not line:
+            continue
+        # check for a "Patch" line
+        if re.match(r'\s*patch:', line, re.I):
+            patch_name = re.findall(r'^.*?:(.*)$', line)[0].strip()
+            lasthdr = pos + 1
             continue
         # check for a "From|Author:" line
         if re.match(r'\s*(?:from|author):\s+', line, re.I):
@@ -407,13 +412,13 @@ def __parse_description(descr):
     body = ''.join(line[descr_strip:] + '\n' for line in descr_lines[lasthdr:])
     message = subject + '\n' + body
 
-    return (message, authname, authemail, authdate)
+    return (message, patch_name, authname, authemail, authdate)
 
 
 def parse_patch(patch_data, contains_diff):
     """Parse patch data.
 
-    Returns (description, authname, authemail, authdate, diff)
+    Returns (description, patch_name, authname, authemail, authdate, diff)
 
     """
     assert isinstance(patch_data, bytes)
@@ -422,13 +427,11 @@ def parse_patch(patch_data, contains_diff):
     else:
         descr = patch_data
         diff = None
-    (descr, authname, authemail, authdate) = __parse_description(
+    (descr, patch_name, authname, authemail, authdate) = __parse_description(
         decode_utf8_with_latin1(descr)
     )
 
-    # we don't yet have an agreed place for the creation date.
-    # Just return None
-    return (descr, authname, authemail, authdate, diff)
+    return (descr, patch_name, authname, authemail, authdate, diff)
 
 
 def run_commit_msg_hook(repo, cd, editor_is_used=True):

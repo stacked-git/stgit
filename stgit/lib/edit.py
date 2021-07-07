@@ -8,6 +8,7 @@ from stgit.commands import common
 from stgit.config import config
 from stgit.lib import transaction
 from stgit.lib.git import Date, Person
+from stgit.lib.log import log_stack_state
 from stgit.out import out
 
 
@@ -19,11 +20,12 @@ def update_patch_description(repo, cd, text, contains_diff):
     stamp in addition to a new commit message. If ``contains_diff`` is
     true, it may also contain a replacement diff.
 
-    :returns: tuple of the new :class:`CommitData<stgit.lib.git.CommitData>` and the
-              diff test if it did not apply or None otherwise
-
+    :returns: 3-tuple:
+        - the new :class:`CommitData<stgit.lib.git.CommitData>`
+        - the patch name if given or None otherwise
+        - the diff text if it did not apply or None otherwise
     """
-    (message, authname, authemail, authdate, diff) = common.parse_patch(
+    (message, patch_name, authname, authemail, authdate, diff) = common.parse_patch(
         text, contains_diff
     )
     author = cd.author
@@ -41,10 +43,10 @@ def update_patch_description(repo, cd, text, contains_diff):
             failed_diff = diff
         else:
             cd = cd.set_tree(tree)
-    return cd, failed_diff
+    return cd, patch_name, failed_diff
 
 
-def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
+def patch_desc(repo, cd, patch_name, append_diff, diff_flags, replacement_diff):
     """Return a description text for the patch.
 
     The returned description is suitable for editing and/or reimporting with
@@ -61,6 +63,7 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     commit_encoding = config.get('i18n.commitencoding')
     desc = '\n'.join(
         [
+            'Patch: %s' % patch_name,
             'From: %s' % cd.author.name_email,
             'Date: %s' % cd.author.date.isoformat(),
             '',
@@ -80,21 +83,24 @@ def patch_desc(repo, cd, append_diff, diff_flags, replacement_diff):
     return desc
 
 
-def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
+def interactive_edit_patch(repo, cd, patch_name, edit_diff, diff_flags):
     """Edit the patch interactively.
 
     If ``edit_diff`` is true, edit the diff as well. If ``replacement_diff`` is not
     None, it contains a diff to edit instead of the patch's real diff.
 
-    :returns: tuple with the new :class:`stgit.lib.git.CommitData` and the diff text if
-              it did not apply, or None otherwise
-
+    :returns: 3-tuple:
+        - the new :class:`commitdata<stgit.lib.git.commitdata>`
+        - the patch name if given or none otherwise
+        - the diff text if it did not apply or none otherwise
     """
-    cd, failed_diff = update_patch_description(
+    cd, patch_name, failed_diff = update_patch_description(
         repo,
         cd,
         utils.edit_bytes(
-            patch_desc(repo, cd, edit_diff, diff_flags, replacement_diff=None),
+            patch_desc(
+                repo, cd, patch_name, edit_diff, diff_flags, replacement_diff=None
+            ),
             '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)],
         ),
         edit_diff,
@@ -103,9 +109,9 @@ def interactive_edit_patch(repo, cd, edit_diff, diff_flags):
     # If we couldn't apply the patch, fail without even trying to
     # effect any of the changes.
     if failed_diff:
-        return failed(repo, cd, edit_diff, diff_flags, failed_diff)
+        return failed(repo, cd, patch_name, edit_diff, diff_flags, failed_diff)
 
-    return cd, failed_diff
+    return cd, patch_name, failed_diff
 
 
 def auto_edit_patch(repo, cd, msg, author, sign_str):
@@ -119,12 +125,16 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
 
     * ``sign_str, if not None, is a trailer string to append to the message.
 
-    :returns: tuple with the new :class:`stgit.lib.git.CommitData` and the diff text if
-              it did not apply, or None otherwise.
+    :returns: 3-tuple:
+        - the new :class:`commitdata<stgit.lib.git.commitdata>`
+        - the patch name if given or none otherwise
+        - the diff text if it did not apply or none otherwise
 
     """
     if msg is not None:
-        cd, failed_diff = update_patch_description(repo, cd, msg, contains_diff=False)
+        cd, _, failed_diff = update_patch_description(
+            repo, cd, msg, contains_diff=False
+        )
         assert not failed_diff
     a = author(cd.author)
     if a != cd.author:
@@ -144,6 +154,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
 def failed(
     repository,
     cd,
+    patch_name,
     edit_diff,
     diff_flags,
     replacement_diff,
@@ -156,6 +167,7 @@ def failed(
             patch_desc(
                 repository,
                 cd,
+                patch_name,
                 edit_diff,
                 diff_flags,
                 replacement_diff=replacement_diff,
@@ -166,8 +178,21 @@ def failed(
 
 
 def perform_edit(
-    stack, cd, patchname, edit_diff, diff_flags, replacement_diff, set_tree=None
+    stack,
+    cd,
+    orig_patchname,
+    new_patchname,
+    edit_diff,
+    diff_flags,
+    replacement_diff,
+    set_tree=None,
 ):
+    """Given instructions, performs required the edit.
+
+    :returns: 2-tuple:
+        - the result of the transaction
+        - the new patch name, whether changed or not.
+    """
     # Refresh the committer information
     cd = cd.set_committer(None)
 
@@ -175,13 +200,22 @@ def perform_edit(
     # it).
     iw = stack.repository.default_iw
     trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
-    if patchname in trans.applied:
-        popped = trans.applied[trans.applied.index(patchname) + 1 :]
+    if orig_patchname in trans.applied:
+        popped = trans.applied[trans.applied.index(orig_patchname) + 1 :]
         popped_extra = trans.pop_patches(lambda pn: pn in popped)
         assert not popped_extra
     else:
         popped = []
-    trans.patches[patchname] = stack.repository.commit(cd)
+    trans.patches[orig_patchname] = stack.repository.commit(cd)
+    if new_patchname == "":
+        new_patchname = stack.patches.make_name(cd.message_str, allow=orig_patchname)
+    if new_patchname is not None and orig_patchname != new_patchname:
+        out.start('Renaming patch "%s" to "%s"' % (orig_patchname, new_patchname))
+        trans.rename_patch(orig_patchname, new_patchname)
+        out.done()
+        log_stack_state(stack, 'rename %s to %s' % (orig_patchname, new_patchname))
+    else:
+        new_patchname = orig_patchname
     try:
         for pn in popped:
             if set_tree:
@@ -194,8 +228,11 @@ def perform_edit(
         # Either a complete success, or a conflict during push. But in
         # either case, we've successfully effected the edits the user
         # asked us for.
-        return trans.run(iw)
+        return trans.run(iw), new_patchname
     except transaction.TransactionException:
         # Transaction aborted -- we couldn't check out files due to
         # dirty index/worktree. The edits were not carried out.
-        return failed(stack, cd, edit_diff, diff_flags, replacement_diff)
+        return (
+            failed(stack, cd, new_patchname, edit_diff, diff_flags, replacement_diff),
+            new_patchname,
+        )
