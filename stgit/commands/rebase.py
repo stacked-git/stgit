@@ -138,7 +138,7 @@ def __perform_squashes(instructions, index, stack):
     """Perform any consecutive squashes from 'index' onwards."""
     squashes_found = False
     # loop to determine how many of the next N instructions are squashes
-    for num_squashes in itertools.count(1):
+    for num_squashes in itertools.count(1):  # pragma: no branch
         if len(instructions) <= index + num_squashes:
             break  # reached the end of the instruction list
         if instructions[index + num_squashes].action == Action.SQUASH:
@@ -232,7 +232,7 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             Instruction(patch_name, instruction_type, not seen_apply_line)
         )
 
-    for index in itertools.count():
+    for index in itertools.count():  # pragma: no branch
         if index >= len(instructions):
             break  # reached the end of the instruction list
         if instructions[index].action == Action.DELETE:
