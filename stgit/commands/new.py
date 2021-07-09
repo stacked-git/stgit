@@ -53,9 +53,8 @@ options = (
             action='store_true',
             short='show diff in patch commit message template',
             long='''
-        In addition to the names of files that have been changed, also show the textual changes that
-        are staged to be committed and the changes in the working tree that have
-        not yet been staged (i.e., like the output of git diff).''',
+        In addition to the names of files that have been changed, also show a
+        diff of staged and unstaged changes.''',
         ),
     ]
     + argparse.author_options()
@@ -100,6 +99,7 @@ def func(parser, options, args):
         committer=Person.committer(),
     )
     cd = update_commit_data(
+        stack.repository,
         cd,
         message=options.message,
         author=options.author(cd.author),

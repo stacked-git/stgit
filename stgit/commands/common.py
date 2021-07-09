@@ -476,14 +476,12 @@ def _git_status():
     return [line for line in out if '(use' not in line]
 
 
-def _git_diff():
-    return Run('git', 'diff').output_lines()
-
-
 def update_commit_data(
-    cd, message=None, author=None, sign_str=None, edit=False, verbose=False
+    repo, cd, message=None, author=None, sign_str=None, edit=False, verbose=False
 ):
     """Create updated CommitData according to the command line options."""
+    iw = repo.default_iw
+
     # Set the commit message from commandline.
     if message is not None:
         cd = cd.set_message(message)
@@ -513,7 +511,7 @@ def update_commit_data(
             message_str += (
                 COMMIT_MESSAGE_DEMARCATION_LINE + COMMIT_MESSAGE_INSTRUCTIONS_2
             )
-            message_str += '\n'.join(_git_diff())
+            message_str += iw.diff(repo.rev_parse('HEAD').data.tree).decode('utf-8')
         new_message = edit_string(message_str, '.stgit-new.txt')
         new_message = new_message.split(COMMIT_MESSAGE_DEMARCATION_LINE)[0]
         new_message = '\n'.join(

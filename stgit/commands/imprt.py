@@ -226,6 +226,7 @@ def __create_patch(
             message=message,
         )
         cd = update_commit_data(
+            stack.repository,
             cd,
             message=None,
             author=None,
