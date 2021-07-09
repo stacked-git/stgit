@@ -6,10 +6,6 @@ if exists("b:current_syntax")
   finish
 endif
 
-
-runtime! syntax/mail.vim
-unlet b:current_syntax
-
 syn include @stgDiff syntax/diff.vim
 
 
@@ -22,7 +18,9 @@ if has("spell")
 endif
 
 
-syn match    stgeditFrom        "\%^From:.*" contains=mailHeader nextgroup=stgeditFirstLine skipempty
+syn region   stgeditHeaders     start="\%^\S\+:" end="^$" nextgroup=stgeditFirstLine skipempty contains=stgeditHeaderKey,stgeditEmailAddr
+syn match    stgeditHeaderKey   "^\S\+:" contained
+syn match    stgeditEmailAddr   "<.\{-}>" contained contains=@NoSpell
 syn match    stgeditFirstLine   "^.\+" contained nextgroup=stgeditDiffs,stgeditComment,stgeditBlank skipnl
 syn match    stgeditSummary     "^.\{0,50\}" contained containedin=stgeditFirstLine nextgroup=stgeditOverflow contains=@Spell
 syn match    stgeditOverflow    ".*" contained contains=@Spell
@@ -31,6 +29,8 @@ syn match    stgeditComment     "^#.*"
 syn region   stgeditDiffs       start="^---" end="%$" contains=@stgDiff fold
 syn region   stgeditDiff        start="^\%(diff --git \)\@=" end="^\%(diff --git \|$\)\@=" contained containedin=stgeditDiffs contains=@stgDiff fold
 
+hi def link  stgeditHeaderKey   Type
+hi def link  stgeditEmailAddr   Special
 hi def link  stgeditSummary     Keyword
 hi def link  stgeditComment     Comment
 hi def link  stgeditBlank       Error
