@@ -15,7 +15,7 @@ test_expect_success 'Initialize StGit stack' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep p0\nkeep p1\n# --- APPLY_LINE ---\nkeep p2\nkeep p3" >"$1"
+	printf "keep p0\nkeep p1\n# --- APPLY_LINE ---\nkeep p2\nkeep p3\n" >"$1"
 	EOF
 '
 test_expect_success 'Apply patches with APPLY_LINE' '
@@ -28,7 +28,7 @@ test_expect_success 'Apply patches with APPLY_LINE' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "# --- APPLY_LINE ---this_text_does_not_belong" >"$1"
+	printf "# --- APPLY_LINE ---this_text_does_not_belong\n" >"$1"
 	EOF
 '
 test_expect_success 'Bad APPLY_LINE throws an error' '
@@ -40,7 +40,7 @@ test_expect_success 'Bad APPLY_LINE throws an error' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep p0\nkeep p1" >"$1"
+	printf "keep p0\nkeep p1\n" >"$1"
 	EOF
 '
 test_expect_success 'Apply patches without APPLY_LINE' '
@@ -53,7 +53,7 @@ test_expect_success 'Apply patches without APPLY_LINE' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep" >"$1"
+	printf "keep\n" >"$1"
 	EOF
 '
 test_expect_success 'Bad todo line throws error' '
@@ -65,7 +65,7 @@ test_expect_success 'Bad todo line throws error' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep invalid_patch_name" >"$1"
+	printf "keep invalid_patch_name\n" >"$1"
 	EOF
 '
 test_expect_success 'Bad patch name throws error' '
@@ -77,7 +77,7 @@ test_expect_success 'Bad patch name throws error' '
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "invalid_instruction p1" >"$1"
+	printf "invalid_instruction p1\n" >"$1"
 	EOF
 '
 test_expect_success 'Bad instruction throws error' '
@@ -92,7 +92,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\eof
-	echo "delete p4" >"$1"
+	printf "delete p4\n" >"$1"
 	eof
 '
 test_expect_success 'Delete a patch' '
@@ -108,7 +108,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\eof
-	echo "edit p4" >"$1"
+	printf "edit p4\n" >"$1"
 	eof
 '
 test_expect_success 'Edit a patch' '
@@ -127,7 +127,7 @@ test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\eof
     if [ ! -f .fake-editor-has-run-once ]
     then
-        echo "edit p4" >"$1" &&
+        printf "edit p4\n" >"$1" &&
         touch .fake-editor-has-run-once
     else
         sed "s/Patch: p4/Patch: p4-new/" "$1" > "$1".tmp && mv "$1".tmp "$1"
@@ -148,7 +148,7 @@ test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\eof
     if [ ! -f .fake-editor-has-run-once ]
     then
-        echo "edit p4-new" >"$1" &&
+        printf "edit p4-new\n" >"$1" &&
         touch .fake-editor-has-run-once
     else
         sed "s/Patch: p4-new/Patch:/" "$1" > "$1".tmp && mv "$1".tmp "$1"
@@ -173,7 +173,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\eof
-	echo "delete p0\ndelete p2" >"$1"
+	printf "delete p0\ndelete p2\n" >"$1"
 	eof
 '
 test_expect_success 'Delete two patches and the correct two are deleted' '
@@ -191,7 +191,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep p0\nsquash p1" >"$1"
+	printf "keep p0\nsquash p1\n" >"$1"
 	EOF
 '
 test_expect_success 'Squash succeeds' '
@@ -210,7 +210,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep p0\nsquash p1\nsquash p2" >"$1"
+	printf "keep p0\nsquash p1\nsquash p2\n" >"$1"
 	EOF
 '
 test_expect_success 'Squash on a Squash succeeds' '
@@ -232,7 +232,7 @@ test_expect_success 'Setup stgit stack' '
 '
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
-	echo "keep p0\nsquash p1\nsquash p2\nkeep p3\nsquash p4\nkeep p5" >"$1"
+	printf "keep p0\nsquash p1\nsquash p2\nkeep p3\nsquash p4\nkeep p5\n" >"$1"
 	EOF
 '
 test_expect_success 'Two independent squash chains succeed' '
