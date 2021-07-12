@@ -123,9 +123,7 @@ def func(parser, options, args):
     if num == 0:
         raise CmdException('No patches applied')
 
-    zpadding = len(str(num))
-    if zpadding < 2:
-        zpadding = 2
+    zpadding = max(len(str(num)), 2)
 
     # get the template
     if options.template:
