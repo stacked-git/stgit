@@ -164,6 +164,7 @@ def _main():
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
     from configparser import NoSectionError, ParsingError
+
     from stgit.config import config_setup
     from stgit.exception import StgException
     from stgit.lib.git import MergeConflictException
