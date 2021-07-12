@@ -163,10 +163,7 @@ def _main():
 
     # These modules are only used from this point onwards and do not
     # need to be imported earlier
-    try:
-        from configparser import NoSectionError, ParsingError
-    except ImportError:
-        from ConfigParser import NoSectionError, ParsingError
+    from configparser import NoSectionError, ParsingError
     from stgit.config import config_setup
     from stgit.exception import StgException
     from stgit.lib.git import MergeConflictException
