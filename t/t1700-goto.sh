@@ -32,6 +32,11 @@ test_expect_success 'Attempt goto invalid patch' '
     grep -e "Patch \"p999\" does not exist"
 '
 
+test_expect_success 'Attempt goto invalid hash' '
+    command_error stg goto beeff00d 2>&1 |
+    grep -e "No patch associated with beeff00d"
+'
+
 test_expect_success 'Goto a patch' '
     stg goto p3 &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
