@@ -867,7 +867,7 @@ def func(parser, options, args):
             tmpl = templates.get_template('patchandattch.tmpl')
         else:
             tmpl = templates.get_template('patchmail.tmpl')
-        if not tmpl:
+        if tmpl is None:
             raise CmdException('No e-mail template file found')
 
     for (p, n) in zip(patches, range(1, total_nr + 1)):
