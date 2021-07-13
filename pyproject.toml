@@ -21,6 +21,17 @@ source = ['stgit']
 branch = true
 parallel = true
 
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "def __repr__",
+  "if self.debug",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if 0:",
+  "if __name__ == .__main__.:",
+]
+
 [tool.coverage.html]
 title = 'StGit Coverage Report'
 show_contexts = true
