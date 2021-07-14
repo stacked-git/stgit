@@ -88,8 +88,7 @@ def func(parser, options, args):
     if options.verbose:
         verbose = options.verbose
     else:
-        verbose_int = config.getint('commit.verbose')
-        verbose = verbose_int > 0 if verbose_int else False
+        verbose = config.getbool('commit.verbose') or False
 
     cd = CommitData(
         tree=stack.head.data.tree,

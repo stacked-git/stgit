@@ -102,6 +102,14 @@ test_expect_success \
     stg show | grep "Patch Description Template"
 '
 
+test_expect_success \
+    'New with verbose config boolean option' '
+    test_config commit.verbose "true" &&
+    echo "Patch Description Template" > .git/patchdescr.tmpl &&
+    stg new --verbose verbose-config-bool-patch &&
+    stg show | grep "Patch Description Template"
+'
+
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"
