@@ -419,7 +419,7 @@ def __send_message(msg_type, tmpl, options, *args):
         msg = __build_message(tmpl, msg_id, options, patch, patch_nr, total_nr, ref_id)
         outstr = 'patch "%s"' % patch
     else:
-        raise AssertionError('invalid msg_type: %s' % msg_type)  # pragma: no cover
+        raise AssertionError('invalid msg_type: %s' % msg_type)
 
     msg_bytes = msg.as_bytes(options.mbox)
 

@@ -53,7 +53,7 @@ class Blob(GitObject):
         self._repository = repository
         self.sha1 = sha1
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return 'Blob<%s>' % self.sha1
 
     @property
@@ -149,7 +149,7 @@ class Tree(GitObject):
             )
         return self._data
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return 'Tree<sha1: %s>' % self.sha1
 
 
@@ -251,7 +251,7 @@ class CommitData(Immutable):
     def is_nochange(self):
         return len(self.parents) == 1 and self.tree == self.parent.data.tree
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return (
             'CommitData<tree: %s, parents: %s, author: %s, committer: %s, '
             'message: %s>'
@@ -354,5 +354,5 @@ class Commit(GitObject):
             self._data = CommitData.parse(self._repository, content)
         return self._data
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return 'Commit<sha1: %s, data: %s>' % (self.sha1, self._data)
