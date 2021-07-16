@@ -39,7 +39,7 @@ class Person(Immutable):
             kws.get('date', self.date),
         )
 
-    def __repr__(self):  # pragma: no cover
+    def __repr__(self):
         return '%s %s' % (self.name_email, self.date)
 
     @classmethod
