@@ -286,7 +286,7 @@ def __import_file(filename, options):
         f.close()
 
     message, patch_name, author_name, author_email, author_date, diff = parse_patch(
-        patch_data, contains_diff=True
+        patch_data, contains_diff=True, fail_on_empty_description=False
     )
 
     __create_patch(

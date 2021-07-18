@@ -5,6 +5,7 @@ from stgit.commands.common import (
     DirectoryHasRepository,
     parse_patches,
     run_commit_msg_hook,
+    strip_comments,
 )
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 
@@ -61,12 +62,6 @@ class SaveTemplateDone(Exception):
     pass
 
 
-def _strip_comments(message):
-    for line in message.splitlines():
-        if not line.startswith('#'):
-            yield line
-
-
 def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
     cd = trans.patches[patches[0]].data
     for pn in patches[1:]:
@@ -101,7 +96,7 @@ def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
         else:
             msg = utils.edit_string(msg, '.stgit-squash.txt')
 
-    msg = '\n'.join(_strip_comments(msg)).strip()
+    msg = '\n'.join(strip_comments(msg)).strip()
     if not msg:
         raise CmdException('Aborting squash due to empty commit message')
 

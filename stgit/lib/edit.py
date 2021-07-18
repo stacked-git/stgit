@@ -11,6 +11,12 @@ from stgit.lib.git import Date, Person
 from stgit.lib.log import log_stack_state
 from stgit.out import out
 
+EDIT_MESSAGE_INSTRUCTIONS = """# Everything here is editable! You can modify the patch name, author,
+# date, commit message, and the diff (if --diff was given).
+# Lines starting with '#' will be ignored, and an empty message
+# aborts the edit.
+"""
+
 
 def update_patch_description(repo, cd, text, contains_diff):
     """Create commit with updated description.
@@ -68,10 +74,11 @@ def patch_desc(repo, cd, patch_name, append_diff, diff_flags, replacement_diff):
             'Date: %s' % cd.author.date.isoformat(),
             '',
             cd.message_str,
+            EDIT_MESSAGE_INSTRUCTIONS,
         ]
     ).encode(commit_encoding)
     if append_diff:
-        parts = [desc.rstrip(), b'', b'---', b'']
+        parts = [desc.rstrip(), b'---', b'']
         if replacement_diff:
             parts.append(replacement_diff)
         else:

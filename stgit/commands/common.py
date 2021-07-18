@@ -369,10 +369,14 @@ def __split_descr_diff(string):
     return desc, diff
 
 
-def __parse_description(descr):
+def __parse_description(descr, fail_on_empty_description):
     """Parse the patch description for patch and author information."""
     subject = ''
     patch_name = authname = authemail = authdate = None
+
+    descr = '\n'.join(strip_comments(descr)).strip()
+    if fail_on_empty_description and not descr:
+        raise CmdException('Aborting edit due to empty patch description')
 
     descr_lines = [line.rstrip() for line in descr.splitlines()]
 
@@ -415,7 +419,7 @@ def __parse_description(descr):
     return (message, patch_name, authname, authemail, authdate)
 
 
-def parse_patch(patch_data, contains_diff):
+def parse_patch(patch_data, contains_diff, fail_on_empty_description=True):
     """Parse patch data.
 
     Returns (description, patch_name, authname, authemail, authdate, diff)
@@ -428,10 +432,16 @@ def parse_patch(patch_data, contains_diff):
         descr = patch_data
         diff = None
     (descr, patch_name, authname, authemail, authdate) = __parse_description(
-        decode_utf8_with_latin1(descr)
+        decode_utf8_with_latin1(descr), fail_on_empty_description
     )
 
     return (descr, patch_name, authname, authemail, authdate, diff)
+
+
+def strip_comments(message):
+    for line in message.splitlines():
+        if not line.startswith('#'):
+            yield line
 
 
 def run_commit_msg_hook(repo, cd, editor_is_used=True):
