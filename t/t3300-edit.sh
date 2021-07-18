@@ -32,6 +32,15 @@ auth () { git log -n 1 --pretty=format:"%an, %ae" $1 ; }
 adate () { git log -n 1 --pretty=format:%ai $1 ; }
 
 write_script diffedit <<EOF
+echo "" > "\$1"
+EOF
+test_expect_success 'Empty editor aborts edit' '
+    EDITOR=./diffedit command_error stg edit 2>&1 |
+    grep -e "Aborting edit due to empty patch description"
+'
+rm -f diffedit
+
+write_script diffedit <<EOF
 sed 's/Empty patch/Empty Patch/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
 EOF
 test_expect_success 'Edit new patch with no diff' '
@@ -84,7 +93,12 @@ test_expect_success 'Set patch message with --file -' '
 '
 
 ( printf 'Patch: p2\nFrom: A Ú Thor <author@example.com>\nDate: <omitted>'
-  printf '\n\nPride and Prejudice\n' ) > expected-tmpl
+  printf '\n\nPride and Prejudice\n'
+  printf '\n# Everything here is editable! You can modify the patch name, author,'
+  printf '\n# date, commit message, and the diff (if --diff was given).'
+  printf "\n# Lines starting with '#' will be ignored, and an empty message"
+  printf '\n# aborts the edit.\n'
+) > expected-tmpl
 omit_date () { sed "s/^Date:.*$/Date: <omitted>/" ; }
 
 test_expect_success 'Save template to file' '
@@ -121,7 +135,7 @@ test_expect_success 'Edit commit message interactively (vi)' '
     unset EDITOR
     m=$(msg HEAD) &&
     PATH=.:$PATH stg edit p2 &&
-    test "$(msg HEAD)" = "$m/vi"
+    test "$(msg HEAD)" = "$m//vi"
 '
 
 mkeditor e1
@@ -129,14 +143,14 @@ test_expect_success 'Edit commit message interactively (EDITOR)' '
     m=$(msg HEAD) &&
     EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
     echo $m && echo $(msg HEAD) &&
-    test "$(msg HEAD)" = "$m/e1"
+    test "$(msg HEAD)" = "$m//e1"
 '
 
 mkeditor e2
 test_expect_success 'Edit commit message interactively (VISUAL)' '
     m=$(msg HEAD) &&
     VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
-    test "$(msg HEAD)" = "$m/e2"
+    test "$(msg HEAD)" = "$m//e2"
 '
 
 mkeditor e3
@@ -144,7 +158,7 @@ test_expect_success 'Edit commit message interactively (core.editor)' '
     m=$(msg HEAD) &&
     git config core.editor e3 &&
     VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
-    test "$(msg HEAD)" = "$m/e3"
+    test "$(msg HEAD)" = "$m//e3"
 '
 
 mkeditor e4
@@ -152,14 +166,14 @@ test_expect_success 'Edit commit message interactively (stgit.editor)' '
     m=$(msg HEAD) &&
     git config stgit.editor e4 &&
     VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
-    test "$(msg HEAD)" = "$m/e4"
+    test "$(msg HEAD)" = "$m//e4"
 '
 
 mkeditor e5
 test_expect_success 'Edit commit message interactively (GIT_EDITOR)' '
     m=$(msg HEAD) &&
     GIT_EDITOR=./e5 VISUAL=./e2 EDITOR=./e1 PATH=.:$PATH stg edit p2 &&
-    test "$(msg HEAD)" = "$m/e5"
+    test "$(msg HEAD)" = "$m//e5"
 '
 
 rm -f vi e1 e2 e3 e4 e5
@@ -169,7 +183,7 @@ git config --unset stgit.editor
 mkeditor twoliner
 test_expect_success 'Both noninterative and interactive editing' '
     EDITOR=./twoliner stg edit -e -m "oneliner" p2 &&
-    test "$(msg HEAD)" = "oneliner/twoliner"
+    test "$(msg HEAD)" = "oneliner//twoliner"
 '
 rm -f twoliner
 
