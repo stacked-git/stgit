@@ -238,13 +238,15 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             Instruction(patch_name, instruction_type, not seen_apply_line)
         )
 
-    for index in itertools.count():  # pragma: no branch
+    index = 0
+    while True:  # pragma: no branch
         if index >= len(instructions):
             break  # reached the end of the instruction list
         patch_name = instructions[index].patch_name
         if instructions[index].action == Action.DELETE:
             delete_patches(stack, stack.repository.default_iw, {patch_name})
-            index -= 1  # re-run this index another time
+            instructions.pop(index)
+            index = max(0, index - 1)  # re-run this index another time
             continue
         if instructions[index].action == Action.EDIT:
             cd = stack.patches[patch_name].data
@@ -267,10 +269,16 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
                     instructions[index].apply,
                 )
                 patch_name = new_patch_name
-        if instructions[index].apply:
-            post_rebase(stack, {patch_name}, 'rebase', check_merged)
 
         instructions = __perform_squashes(instructions, index, stack)
+        index += 1
+
+    post_rebase(
+        stack,
+        [instruction.patch_name for instruction in instructions if instruction.apply],
+        'rebase',
+        check_merged,
+    )
 
     return utils.STGIT_SUCCESS
 
