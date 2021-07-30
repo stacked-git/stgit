@@ -224,6 +224,42 @@ test_expect_success 'Squash on a Squash succeeds' '
 test_expect_success 'Setup stgit stack' '
     stg delete $(stg series --all --noprefix --no-description) &&
     stg new -m p0 &&
+    stg new -m p1
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\EOF
+	printf "fix p0\nfix p1\n" >"$1"
+	EOF
+'
+test_expect_success 'Fix on first patch does not crash' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    git diff-index --quiet HEAD &&
+    test "$(stg series -c)" = "1"
+'
+
+test_expect_success 'Setup stgit stack' '
+    stg delete $(stg series --all --noprefix --no-description) &&
+    stg new -m p0 &&
+    stg new -m p1
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\EOF
+	printf "keep p0\nfix p1\n" >"$1"
+	EOF
+'
+test_expect_success 'Fix succeeds' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    git diff-index --quiet HEAD &&
+    test "$(stg series -c)" = "1"
+'
+
+test_expect_success 'Setup stgit stack' '
+    stg delete $(stg series --all --noprefix --no-description) &&
+    stg new -m p0 &&
     stg new -m p1 &&
     stg new -m p2 &&
     stg new -m p3 &&
