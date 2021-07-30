@@ -243,6 +243,27 @@ test_expect_success 'Two independent squash chains succeed' '
     test "$(stg series -c)" = "3"
 '
 
+test_expect_success 'Setup stgit stack' '
+    stg delete $(stg series --all --noprefix --no-description) &&
+    stg new -m p0 &&
+    stg new -m p1 &&
+    stg new -m p2 &&
+    stg new -m p3 &&
+    stg new -m p4
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+	printf "keep p0\ndelete p1\nsquash p2\ndelete p3" >"$1"
+	eof
+'
+test_expect_success 'Delete after squash after delete works correctly' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    test "$(echo $(stg series --noprefix))" = "keep-p0 p4" &&
+    git diff-index --quiet HEAD
+'
+
 test_expect_success 'No patches exits early' '
     stg delete $(stg series --all --noprefix --no-description) &&
     stg rebase --interactive
