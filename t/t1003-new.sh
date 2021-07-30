@@ -87,27 +87,45 @@ test_expect_success \
     stg show | grep "Patch Description Template"
 '
 
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\EOF
+    cat "$1" > raw_commit_message.txt
+	EOF
+'
+test_expect_success \
+    'New without verbose flag' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    echo "something else" > file.txt &&
+    stg new no-verbose-patch &&
+    test_must_fail grep "something else" raw_commit_message.txt
+'
+
 test_expect_success \
     'New with verbose flag' '
-    echo "Patch Description Template" > .git/patchdescr.tmpl &&
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
     stg new --verbose verbose-flag-patch &&
-    stg show | grep "Patch Description Template"
+    stg show | grep "Patch Description Template" &&
+    grep "something else" raw_commit_message.txt
 '
 
 test_expect_success \
     'New with verbose config option' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
     test_config commit.verbose "1" &&
-    echo "Patch Description Template" > .git/patchdescr.tmpl &&
-    stg new --verbose verbose-config-patch &&
-    stg show | grep "Patch Description Template"
+    stg new verbose-config-patch &&
+    grep "something else" raw_commit_message.txt
 '
 
 test_expect_success \
     'New with verbose config boolean option' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
     test_config commit.verbose "true" &&
-    echo "Patch Description Template" > .git/patchdescr.tmpl &&
-    stg new --verbose verbose-config-bool-patch &&
-    stg show | grep "Patch Description Template"
+    stg new verbose-config-bool-patch &&
+    grep "something else" raw_commit_message.txt
 '
 
 test_expect_failure \
