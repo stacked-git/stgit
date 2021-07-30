@@ -98,6 +98,7 @@ INTERACTIVE_HELP_INSTRUCTIONS = """
 # k, keep <patch> = do not modify this patch
 # e, edit <patch> = interactively edit this patch
 # s, squash <patch> = squash patch into the previous patch
+# f, fixup <patch> = like "squash", but discard this patch's commit message
 # d, delete <patch> = delete patch
 #
 # These lines can be re-ordered; they are executed from top to bottom.
@@ -129,8 +130,10 @@ class Action(Enum):
     EDIT = 2
     # squash the patch into the previous patch
     SQUASH = 3
+    # fix the patch into the previous patch
+    FIXUP = 4
     # delete the patch
-    DELETE = 4
+    DELETE = 5
 
 
 Instruction = typing.NamedTuple(
@@ -167,6 +170,15 @@ def __perform_squashes(instructions, index, stack):
         # remove the squashed patches from the instruction set
         instructions = instructions[: index + 1] + instructions[index + num_squashes :]
     return instructions
+
+
+def __fixup_patches(stack, iw, patches):
+    assert len(patches) > 0
+    base_patch = patches[0]
+    cd = stack.patches[base_patch]
+    squash(
+        stack, iw, base_patch, cd.data.message_str, save_template=False, patches=patches
+    )
 
 
 def __do_rebase_interactive(repository, previously_applied_patches, check_merged):
@@ -228,6 +240,8 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             instruction_type = Action.EDIT
         elif instruction_str in ('s', 'squash'):
             instruction_type = Action.SQUASH
+        elif instruction_str in ('f', 'fix', 'fixup'):
+            instruction_type = Action.FIXUP
         elif instruction_str in ('d', 'delete'):
             instruction_type = Action.DELETE
         else:
@@ -244,6 +258,14 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
         patch_name = instructions[index].patch_name
         if instructions[index].action == Action.DELETE:
             delete_patches(stack, stack.repository.default_iw, {patch_name})
+            index -= 1  # re-run this index another time
+            continue
+        if instructions[index].action == Action.FIXUP and index > 0:
+            base_patch = instructions[index - 1].patch_name
+            __fixup_patches(
+                stack, stack.repository.default_iw, [base_patch, patch_name]
+            )
+            instructions.pop(index)  # remove 'fixed' (ie deleted) patch
             index -= 1  # re-run this index another time
             continue
         if instructions[index].action == Action.EDIT:
