@@ -133,7 +133,9 @@ def write(f, stuff, indent=0):
 
 
 def patch_list_fun(type):
-    return fun('_%s_patches' % type, 'stg series --noprefix --%s' % type)
+    return fun(
+        '_%s_patches' % type, 'stg series --no-description --noprefix --%s' % type
+    )
 
 
 def file_list_fun(name, cmd):
@@ -170,7 +172,7 @@ def util():
         fun_desc(
             '_other_applied_patches',
             'List of all applied patches except the current patch.',
-            'stg series --noprefix --applied | grep -v "^$(stg top)$"',
+            'stg series --no-description --noprefix --applied | grep -v "^$(stg top)$"',
         ),
         fun(
             '_patch_range',

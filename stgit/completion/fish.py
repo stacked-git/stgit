@@ -81,21 +81,21 @@ function __fish_stg_stg_branches
 end
 
 function __fish_stg_applied_patches
-    command stg series --noprefix --applied 2>/dev/null
+    command stg series --no-description --noprefix --applied 2>/dev/null
 end
 
 function __fish_stg_other_applied_patches
     set -l top (command stg top 2>/dev/null)
-    command stg series --noprefix --applied 2>/dev/null \\
+    command stg series --no-description --noprefix --applied 2>/dev/null \\
         | string match --invert "$top"
 end
 
 function __fish_stg_unapplied_patches
-    command stg series --noprefix --unapplied 2>/dev/null
+    command stg series --no-description --noprefix --unapplied 2>/dev/null
 end
 
 function __fish_stg_hidden_patches
-    command stg series --noprefix --hidden 2>/dev/null
+    command stg series --no-description --noprefix --hidden 2>/dev/null
 end
 
 function __fish_stg_tags
