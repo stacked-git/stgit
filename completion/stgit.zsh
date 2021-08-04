@@ -714,7 +714,7 @@ __stg_patches_all() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program all-patches stg series --noprefix --all 2>/dev/null)"}
+        ${(f)"$(_call_program all-patches stg series --no-description --noprefix --all 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches:|words}
 }
@@ -723,7 +723,7 @@ __stg_patches_all_allow_dups() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program all-patches stg series --noprefix --all 2>/dev/null)"}
+        ${(f)"$(_call_program all-patches stg series --no-description --noprefix --all 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches}
 }
@@ -732,7 +732,7 @@ __stg_patches_applied() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program applied-patches stg series --noprefix --applied 2>/dev/null)"}
+        ${(f)"$(_call_program applied-patches stg series --no-description --noprefix --applied 2>/dev/null)"}
     )
     _wanted -V applied expl "patch" compadd ${patches:|words}
 }
@@ -741,7 +741,7 @@ __stg_patches_hidden() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program unhidden-patches stg series --noprefix --hidden 2>/dev/null)"}
+        ${(f)"$(_call_program unhidden-patches stg series --no-description --noprefix --hidden 2>/dev/null)"}
     )
     _wanted -V unapplied expl "patch" compadd ${patches:|words}
 }
@@ -750,7 +750,7 @@ __stg_patches_unapplied() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program unapplied-patches stg series --noprefix --unapplied 2>/dev/null)"}
+        ${(f)"$(_call_program unapplied-patches stg series --no-description --noprefix --unapplied 2>/dev/null)"}
     )
     _wanted -V unapplied expl "patch" compadd ${patches:|words}
 }
@@ -759,7 +759,7 @@ __stg_patches_unhidden() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program unhidden-patches stg series --noprefix --applied --unapplied 2>/dev/null)"}
+        ${(f)"$(_call_program unhidden-patches stg series --no-description --noprefix --applied --unapplied 2>/dev/null)"}
     )
     _wanted -V unapplied expl "patch" compadd ${patches:|words}
 }
