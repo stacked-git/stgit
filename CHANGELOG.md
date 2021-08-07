@@ -1,5 +1,35 @@
 # Changelog
 
+## [X.Y] 2021-MM-DD
+
+### Removed
+
+### Added
+- `stg rebase ` learns `--interactive`; easily re-order, edit, squash, fixup, or
+  delete patches via your editor
+- `stg rebase` learns `--autostash`; stash changes before the rebase and apply
+  them after. Also configurable with the `stgit.autostash` configuration option
+- `stg edit` can now rename patches (#119)
+- `stg edit` gains helpful instructions (#138)
+- `stg new` learns `--verbose`, which includes a diff in the editor window
+  (similar to `git commit --verbose`). This behavior is also configurable with
+  the `commit.verbose` configuration option
+
+### Changed
+- The editor window text for `stg squash` has been modified to mirror git's
+  behavior -- the squash edit message now includes all commits (#71)
+
+### Fixed
+- Repair crash when attempting to export empty patch (#112)
+- Exact command name matches are unambiguous (#110)
+- Exiting with an empty `stg edit` editor will now abort the edit; previously it
+  would delete your commit message. (#138)
+
+### Internal
+- Add link to coverage.io project to CONTRIBUTING.md
+- Set smart `exclude_lines` default for 'coverage'
+- Expanded test suite for `stg edit`
+
 ## [1.1] 2021-04-30
 
 ### Removed
