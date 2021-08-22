@@ -239,9 +239,7 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
         )
 
     index = 0
-    while True:  # pragma: no branch
-        if index >= len(instructions):
-            break  # reached the end of the instruction list
+    while index < len(instructions):
         patch_name = instructions[index].patch_name
         if instructions[index].action == Action.DELETE:
             delete_patches(stack, stack.repository.default_iw, {patch_name})
