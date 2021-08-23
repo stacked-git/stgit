@@ -163,15 +163,7 @@ class CatFileProcess:
 
     def _shutdown(self):
         if self._proc:
-            self._proc.stdin.close()
-            try:
-                os.kill(self._proc.pid(), signal.SIGTERM)
-            except OSError:
-                # There seems to be a race between the child process terminating due to
-                # its stdin being closed and the kill we attempt immediately thereafter.
-                # This is observed on Windows.
-                # Assume OSError indicates that the child process is already killed.
-                raise
+            os.kill(self._proc.pid(), signal.SIGTERM)
             self._proc.wait()
 
     def cat_file(self, sha1):
