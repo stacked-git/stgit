@@ -168,26 +168,20 @@ class Run:
     def run_background(self):
         """Run as a background process."""
         assert self._indata is None
+        assert self._in_encoding is None
+        assert self._out_encoding is None
         try:
-            p = subprocess.Popen(
+            return subprocess.Popen(
                 self._prep_cmd(),
                 env=self._prep_env(),
                 cwd=self._cwd,
+                encoding=None,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
         except OSError as e:
             raise self.exc('%s failed: %s' % (self._cmd[0], e))
-        if self._in_encoding:
-            self.stdin = io.TextIOWrapper(p.stdin, encoding=self._in_encoding)
-        else:
-            self.stdin = p.stdin
-        self.stdout = p.stdout
-        self.stderr = p.stderr
-        self.wait = p.wait
-        self.pid = lambda: p.pid
-        return self
 
     def returns(self, retvals):
         self._good_retvals = retvals

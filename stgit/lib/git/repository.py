@@ -1,8 +1,6 @@
 import atexit
 import io
-import os
 import re
-import signal
 
 from stgit import utils
 from stgit.exception import StgException
@@ -155,28 +153,29 @@ class CatFileProcess:
         atexit.register(self._shutdown)
 
     def _get_process(self):
-        if not self._proc:
-            self._proc = self._repository.run(
-                ['git', 'cat-file', '--batch']
-            ).run_background()
+        if self._proc is None:
+            self._proc = (
+                self._repository.run(['git', 'cat-file', '--batch'])
+                .encoding(None)
+                .decoding(None)
+                .run_background()
+            )
         return self._proc
 
     def _shutdown(self):
-        if self._proc:
-            os.kill(self._proc.pid(), signal.SIGTERM)
-            self._proc.wait()
+        if self._proc is not None:
+            with self._proc:
+                self._proc.terminate()
 
     def cat_file(self, sha1):
         p = self._get_process()
-        p.stdin.write('%s\n' % sha1)
+        p.stdin.write(b'%s\n' % sha1.encode('ascii'))
         p.stdin.flush()
 
-        fd = p.stdout.fileno()
-
         # Read until we have the entire header line.
-        parts = [os.read(fd, io.DEFAULT_BUFFER_SIZE)]
+        parts = [p.stdout.read1(io.DEFAULT_BUFFER_SIZE)]
         while b'\n' not in parts[-1]:
-            parts.append(os.read(fd, io.DEFAULT_BUFFER_SIZE))
+            parts.append(p.stdout.read1(io.DEFAULT_BUFFER_SIZE))
         out_bytes = b''.join(parts)
 
         header_bytes, content_part = out_bytes.split(b'\n', 1)
@@ -191,7 +190,7 @@ class CatFileProcess:
         content_len = len(content_part)
         content_parts = [content_part]
         while content_len < size + 1:
-            content_part = os.read(fd, io.DEFAULT_BUFFER_SIZE)
+            content_part = p.stdout.read1(io.DEFAULT_BUFFER_SIZE)
             content_parts.append(content_part)
             content_len += len(content_part)
         content = b''.join(content_parts)[:size]
@@ -208,30 +207,33 @@ class DiffTreeProcesses:
     def _get_process(self, args):
         args = tuple(args)
         if args not in self._procs:
-            self._procs[args] = self._repository.run(
-                ['git', 'diff-tree', '--stdin'] + list(args)
-            ).run_background()
+            self._procs[args] = (
+                self._repository.run(['git', 'diff-tree', '--stdin'] + list(args))
+                .encoding(None)
+                .decoding(None)
+                .run_background()
+            )
         return self._procs[args]
 
     def _shutdown(self):
         for p in self._procs.values():
-            os.kill(p.pid(), signal.SIGTERM)
-            p.wait()
+            with p:
+                p.terminate()
 
     def diff_trees(self, args, sha1a, sha1b):
         p = self._get_process(args)
-        query = ('%s %s\n' % (sha1a, sha1b)).encode('utf-8')
+        query = ('%s %s\n' % (sha1a, sha1b)).encode('ascii')
         end = b'EOF\n'  # arbitrary string that's not a 40-digit hex number
-        os.write(p.stdin.fileno(), query + end)
+        p.stdin.write(query + end)
         p.stdin.flush()
 
         def is_end(parts):
             tail = parts[-1] if len(parts[-1]) > len(end) else b''.join(parts[-2:])
             return tail.endswith(b'\n' + end) or tail.endswith(b'\0' + end)
 
-        parts = [os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE)]
+        parts = [p.stdout.read1(io.DEFAULT_BUFFER_SIZE)]
         while not is_end(parts):
-            parts.append(os.read(p.stdout.fileno(), io.DEFAULT_BUFFER_SIZE))
+            parts.append(p.stdout.read1(io.DEFAULT_BUFFER_SIZE))
 
         data = b''.join(parts)
 
