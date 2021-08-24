@@ -175,7 +175,6 @@ class Run:
                 self._prep_cmd(),
                 env=self._prep_env(),
                 cwd=self._cwd,
-                encoding=None,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
