@@ -10,6 +10,7 @@ from stgit.commands.common import (
     DirectoryGotoTopLevel,
     delete_patches,
     git_commit,
+    hide_patches,
     post_rebase,
     prepare_rebase,
     rebase,
@@ -99,6 +100,7 @@ INTERACTIVE_HELP_INSTRUCTIONS = """
 # e, edit <patch> = interactively edit this patch
 # s, squash <patch> = squash patch into the previous patch
 # f, fixup <patch> = like "squash", but discard this patch's commit message
+# h, hide <patch> = hide patch
 # d, delete <patch> = delete patch
 #
 # These lines can be re-ordered; they are executed from top to bottom.
@@ -132,8 +134,10 @@ class Action(Enum):
     SQUASH = 3
     # fix the patch into the previous patch
     FIXUP = 4
+    # hide the patch
+    HIDE = 5
     # delete the patch
-    DELETE = 5
+    DELETE = 6
 
 
 Instruction = typing.NamedTuple(
@@ -236,6 +240,8 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             instruction_type = Action.SQUASH
         elif instruction_str in ('f', 'fix', 'fixup'):
             instruction_type = Action.FIXUP
+        elif instruction_str in ('h', 'hide'):
+            instruction_type = Action.HIDE
         elif instruction_str in ('d', 'delete'):
             instruction_type = Action.DELETE
         else:
@@ -249,6 +255,11 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
     index = 0
     while index < len(instructions):
         patch_name = instructions[index].patch_name
+        if instructions[index].action == Action.HIDE:
+            hide_patches(stack, stack.repository.default_iw, {patch_name})
+            instructions.pop(index)
+            index = max(0, index - 1)  # re-run this index another time
+            continue
         if instructions[index].action == Action.DELETE:
             delete_patches(stack, stack.repository.default_iw, {patch_name})
             instructions.pop(index)

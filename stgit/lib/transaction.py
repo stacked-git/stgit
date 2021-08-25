@@ -314,6 +314,34 @@ class StackTransaction:
         self._print_popped(popped)
         return popped1
 
+    def hide_patches(self, p, quiet=False):
+        """Hide all patches pn for which p(pn) is true.
+
+        Always succeeds.
+
+        :returns: list of other patches that had to be popped to accomplish this.
+
+        """
+        popped = []
+        all_patches = self.applied + self.unapplied + self.hidden
+        for i in range(len(self.applied)):
+            if p(self.applied[i]):
+                popped = self.applied[i:]
+                del self.applied[i:]
+                break
+        popped = [pn for pn in popped if not p(pn)]
+        self._print_popped(popped)
+        self.unapplied = popped + [pn for pn in self.unapplied if not p(pn)]
+        new_hidden = []
+        for pn in all_patches:
+            if pn not in self.hidden and p(pn):
+                new_hidden.append(pn)
+                if not quiet:
+                    s = ['', ' (empty)'][self.patches[pn].data.is_nochange()]
+                    out.info('Hid %s%s' % (pn, s))
+        self.hidden = new_hidden + self.hidden
+        return popped
+
     def delete_patches(self, p, quiet=False):
         """Delete all patches pn for which p(pn) is true.
 
