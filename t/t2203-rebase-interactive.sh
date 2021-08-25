@@ -88,6 +88,23 @@ test_expect_success 'Bad instruction throws error' '
 '
 
 test_expect_success 'Setup stgit stack' '
+    stg new pHidden -m pHidden
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+	printf "hide pHidden\n" >"$1"
+	eof
+'
+test_expect_success 'Hide a patch' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    test "$(stg series -c)" = "4" &&
+    test "$(stg series -c --hidden)" = "1" &&
+    git diff-index --quiet HEAD
+'
+
+test_expect_success 'Setup stgit stack' '
     stg new p4 -m p4
 '
 test_expect_success 'Setup fake editor' '
@@ -297,6 +314,26 @@ test_expect_success 'Delete after squash after delete works correctly' '
     test_when_finished test_set_editor false &&
     stg rebase --interactive &&
     test "$(echo $(stg series --noprefix))" = "keep-p0 p4" &&
+    git diff-index --quiet HEAD
+'
+
+test_expect_success 'Setup stgit stack' '
+    stg delete $(stg series --all --noprefix --no-description) &&
+    stg new -m p0 &&
+    stg new -m p1 &&
+    stg new -m p2
+'
+test_expect_success 'Setup fake editor' '
+	write_script fake-editor <<-\eof
+	printf "keep p0\nhide p1\nfixup p2" >"$1"
+	eof
+'
+test_expect_success 'Fixup after hide works correctly' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg rebase --interactive &&
+    test "$(echo $(stg series --noprefix))" = "p0" &&
+    test "$(echo $(stg series --noprefix --hidden))" = "p1" &&
     git diff-index --quiet HEAD
 '
 

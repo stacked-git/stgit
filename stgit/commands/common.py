@@ -333,6 +333,24 @@ def post_rebase(stack, applied, cmd_name, check_merged):
     return trans.execute('%s (reapply)' % cmd_name, iw)
 
 
+def hide_patches(stack, iw, patches):
+    def allow_conflicts(trans):
+        # Allow conflicts if the topmost patch stays the same.
+        if stack.patchorder.applied:
+            return trans.applied and trans.applied[-1] == stack.patchorder.applied[-1]
+        else:
+            return not trans.applied
+
+    trans = StackTransaction(stack, 'hide', allow_conflicts=allow_conflicts)
+    try:
+        to_push = trans.hide_patches(lambda pn: pn in patches)
+        for pn in to_push:
+            trans.push_patch(pn, iw)
+    except TransactionHalted:
+        pass
+    return trans.execute('hide', iw)
+
+
 def delete_patches(stack, iw, patches):
     def allow_conflicts(trans):
         # Allow conflicts if the topmost patch stays the same.
