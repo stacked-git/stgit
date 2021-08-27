@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 
@@ -8,7 +9,7 @@ from stgit.out import out
 from stgit.run import RunException
 
 # The current StGit metadata format version.
-FORMAT_VERSION = 4
+FORMAT_VERSION = 5
 
 
 def _format_version_key(branch):
@@ -48,6 +49,16 @@ def update_to_current_format_version(repository, branch):
 
     def get_meta_file_version():
         """Get format version from the ``meta`` file in the stack log branch."""
+        new_version = get_stack_json_file_version()
+        if new_version is not None:
+            return new_version
+
+        old_version = get_old_meta_file_version()
+        if old_version is not None:
+            return old_version
+
+    def get_old_meta_file_version():
+        """Get format version from the ``meta`` file in the stack log branch."""
         stack_ref = 'refs/heads/%s.stgit:meta' % branch
         try:
             lines = (
@@ -63,6 +74,25 @@ def update_to_current_format_version(repository, branch):
                 return int(line.split('Version: ', 1)[1])
         else:
             return None
+
+    def get_stack_json_file_version():
+        stack_ref = 'refs/stacks/%s:stack.json' % branch
+        try:
+            data = (
+                repository.run(['git', 'show', stack_ref])
+                .decoding(None)
+                .discard_stderr()
+                .raw_output()
+            )
+        except RunException:
+            return None
+
+        try:
+            stack_json = json.loads(data)
+        except json.JSONDecodeError:
+            return None
+        else:
+            return stack_json.get('version')
 
     def get_format_version():
         """Return the integer format version number.
@@ -242,6 +272,77 @@ def update_to_current_format_version(repository, branch):
         except OSError:
             pass
         out.info('Upgraded branch %s to format version %d' % (branch, 4))
+
+    # Metadata moves from refs/heads/<branch>.stgit to refs/stacks/<branch>.
+    # Also, metadata file format is JSON instead of custom format.
+    if get_format_version() == 4:
+        old_state_ref = 'refs/heads/%s.stgit' % branch
+        old_state = repository.refs.get(old_state_ref)
+        old_meta = old_state.data.tree.data['meta'][1].data.bytes
+        lines = old_meta.decode('utf-8').splitlines()
+        if not lines[0].startswith('Version: 4'):
+            raise StackException('Malformed metadata (expected version 4)')
+
+        parsed = {}
+        key = None
+        for line in lines:
+            if line.startswith(' '):
+                assert key is not None
+                parsed[key].append(line.strip())
+            else:
+                key, val = [x.strip() for x in line.split(':', 1)]
+                if val:
+                    parsed[key] = val
+                else:
+                    parsed[key] = []
+
+        head = repository.refs.get('refs/heads/%s' % branch)
+
+        new_meta = dict(
+            version=5,
+            prev=parsed['Previous'],
+            head=head.sha1,
+            applied=[],
+            unapplied=[],
+            hidden=[],
+            patches=dict(),
+        )
+
+        if parsed['Head'] != new_meta['head']:
+            raise StackException('Unexpected head mismatch')
+
+        for patch_list_name in ['Applied', 'Unapplied', 'Hidden']:
+            for entry in parsed[patch_list_name]:
+                pn, sha1 = [x.strip() for x in entry.split(':')]
+                new_patch_list_name = patch_list_name.lower()
+                new_meta[new_patch_list_name].append(pn)
+                new_meta['patches'][pn] = dict(oid=sha1)
+
+        meta_bytes = json.dumps(new_meta, indent=2).encode('utf-8')
+
+        tree = repository.commit(
+            TreeData(
+                {
+                    'stack.json': repository.commit(BlobData(meta_bytes)),
+                    'patches': old_state.data.tree.data['patches'],
+                }
+            )
+        )
+
+        repository.refs.set(
+            'refs/stacks/%s' % branch,
+            repository.commit(
+                CommitData(
+                    tree=tree,
+                    message='stack upgrade to version 5',
+                    parents=[head],
+                )
+            ),
+            'stack upgrade to v5',
+        )
+
+        repository.refs.delete(old_state_ref)
+        out.info('Upgraded branch %s to format version %d' % (branch, 5))
 
     # Make sure we're at the latest version.
     fv = get_format_version()

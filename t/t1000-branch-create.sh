@@ -33,8 +33,8 @@ test_expect_success \
 
 test_expect_success \
     'Check for various bits of new branch' '
-    test_path_is_file .git/refs/heads/new &&
-    test_path_is_file .git/refs/heads/new.stgit &&
+    git show-ref --verify --quiet refs/heads/new &&
+    git show-ref --verify --quiet refs/stacks/new &&
     test_path_is_missing .git/patches/new &&
     test_path_is_missing .git/refs/patches &&
     test "$(git config --get branch.new.remote)" = "origin" &&

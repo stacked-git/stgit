@@ -12,14 +12,14 @@ Exercises branch renaming commands.
 
 _assert_branch_exists() {
   git config --get-regexp "branch\\.$1\\." &&
-  test_path_is_file ".git/refs/heads/$1" &&
-  test_path_is_file ".git/refs/heads/$1.stgit"
+  git show-ref --verify --quiet "refs/heads/$1" &&
+  git show-ref --verify --quiet "refs/stacks/$1"
 }
 
 _assert_branch_missing() {
   test_expect_code 1 git config --get-regexp "branch\\.$1\\." &&
-  test_path_is_missing ".git/refs/heads/$1" &&
-  test_path_is_missing ".git/refs/heads/$1.stgit"
+  ! git show-ref --verify --quiet "refs/heads/$1" &&
+  ! git show-ref --verify --quiet "refs/stacks/$1"
 }
 
 _assert_current_branch_name() {

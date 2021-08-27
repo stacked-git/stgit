@@ -10,7 +10,7 @@ test_expect_success GPG \
     git config commit.gpgsign true
     git config user.signingkey ${GIT_COMMITTER_EMAIL}
     stg init &&
-    git verify-commit master.stgit
+    git verify-commit refs/stacks/master
 '
 
 test_expect_success GPG \

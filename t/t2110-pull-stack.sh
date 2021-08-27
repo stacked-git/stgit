@@ -18,7 +18,7 @@ test_expect_success 'Pull master and stack with all applied' '
     test_create_repo cloned &&
     (cd cloned &&
      git config pull.ff only &&
-     git pull -f ../upstream master:master master.stgit:master.stgit &&
+     git pull -f ../upstream master:master refs/stacks/master:refs/stacks/master &&
      [ "$(echo $(stg series --applied --noprefix))" = "patch-1 patch-2 patch-3" ]
     )
 '
@@ -28,7 +28,7 @@ test_expect_success 'Pull master and stack with unapplied patches' '
      stg pop
     ) &&
     (cd cloned &&
-     git pull -f ../upstream master:master master.stgit:master.stgit &&
+     git pull -f ../upstream master:master refs/stacks/master:refs/stacks/master &&
      [ "$(echo $(stg series --applied --noprefix))" = "patch-1 patch-2" ] &&
      [ "$(echo $(stg series --unapplied --noprefix))" = "patch-3" ]
     )

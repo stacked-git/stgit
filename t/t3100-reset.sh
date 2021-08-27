@@ -40,7 +40,7 @@ cat > expected.txt <<EOF
 222
 EOF
 test_expect_success '... and undo it' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2 - p3" &&
     test_cmp expected.txt a
 '
@@ -63,7 +63,7 @@ cat > expected.txt <<EOF
 222
 EOF
 test_expect_success '... and undo it' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2 - p3" &&
     test_cmp expected.txt a
 '
@@ -74,7 +74,7 @@ test_expect_success 'Commit one patch ...' '
 '
 
 test_expect_success '... and undo it' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2 - p3"
 '
 
@@ -84,7 +84,7 @@ test_expect_success 'Hide a patch ...' '
 '
 
 test_expect_success '... undo the hiding ...' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2 - p3"
 '
 
@@ -94,7 +94,7 @@ test_expect_success '... unhide the patch ...' '
 '
 
 test_expect_success '... and undo the unhiding' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2 ! p3" &&
     stg unhide p3
 '
@@ -110,13 +110,13 @@ test_expect_success 'Delete two patches ...' '
 '
 
 test_expect_success '... and undo one of the deletions ...' '
-    stg reset master.stgit^~1 p3 &&
+    stg reset refs/stacks/master^~1 p3 &&
     test "$(echo $(stg series --all))" = "> p1 - p3" &&
     test_cmp expected.txt a
 '
 
 test_expect_success '... then undo the first undo ...' '
-    stg reset master.stgit^~1 &&
+    stg reset refs/stacks/master^~1 &&
     test "$(echo $(stg series --all))" = "> p1" &&
     test_cmp expected.txt a
 '
@@ -127,7 +127,7 @@ cat > expected.txt <<EOF
 222
 EOF
 test_expect_success '... and undo the other deletion' '
-    stg reset master.stgit^~3 p2 &&
+    stg reset refs/stacks/master^~3 p2 &&
     stg push p2 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2" &&
     test_cmp expected.txt a
@@ -152,7 +152,7 @@ cat > expected.txt <<EOF
 222
 EOF
 test_expect_success '... and undo the refresh' '
-    stg reset master.stgit^~2 &&
+    stg reset refs/stacks/master^~2 &&
     test "$(echo $(stg series --all))" = "+ p1 > p2" &&
     test_cmp expected.txt a
 '

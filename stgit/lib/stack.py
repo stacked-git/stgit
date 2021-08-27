@@ -10,7 +10,7 @@ from stgit.lib.git.branch import Branch, BranchException
 
 def _stack_state_ref(stack_name):
     """Reference to stack state metadata. A.k.a. the stack's "log"."""
-    return 'refs/heads/%s.stgit' % (stack_name,)
+    return 'refs/stacks/%s' % (stack_name,)
 
 
 def _patch_ref(stack_name, patch_name):

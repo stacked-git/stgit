@@ -3,7 +3,7 @@
 A stack log is a Git branch. Each commit contains the complete state (metadata) of the
 stack at the moment it was written; the most recent commit has the most recent state.
 
-For a branch `foo`, the stack state log is stored in the branch `foo.stgit`.
+For a branch `foo`, the stack state log is stored in the ref `refs/stacks/foo`.
 
 Each log entry makes sure to have proper references to everything it needs to make it
 safe against garbage collection. The stack state log can even be pulled from one
@@ -89,17 +89,23 @@ in, for example, ``git log --graph`` or ``gitk``.
 Format version 4
 ================
 
-The metadata in the `<branch>.stgit` branch is the same as format version 1.
+The metadata in `refs/heads/<branch>.stgit` branch is the same as format version 1.
 
 Format version 4 indicates that, unlike previous format versions used by older versions
 of StGit, the stack log state is *only* contained in the stack log branch and *not* as
 files in the .git/patches directory.
 
+Format version 5
+================
+
+Stack metadata resides in `refs/stacks/<branch>` where the `stack.json` metadata file
+is JSON format instead of the previous custom format.
+
 """
 
+import json
 import re
 
-from stgit import utils
 from stgit.exception import StgException
 from stgit.lib.git import BlobData, CommitData, TreeData
 from stgit.lib.stackupgrade import FORMAT_VERSION
@@ -185,68 +191,47 @@ class StackState:
             patches={pn: stack.patches[pn] for pn in stack.patchorder.all},
         )
 
-    @staticmethod
-    def _parse_metadata(repo, metadata):
-        """Parse a stack log metadata string."""
-        if not metadata.startswith('Version:'):
-            raise LogParseException('Malformed log metadata')
-        metadata = metadata.splitlines()
-        version_str = utils.strip_prefix('Version:', metadata.pop(0)).strip()
-        try:
-            version = int(version_str)
-        except ValueError:
-            raise LogParseException('Malformed version number: %r' % version_str)
-        if version < FORMAT_VERSION:
-            raise LogException('Log is version %d, which is too old' % version)
-        if version > FORMAT_VERSION:
-            raise LogException('Log is version %d, which is too new' % version)
-        parsed = {}
-        key = None
-        for line in metadata:
-            if line.startswith(' '):
-                assert key is not None
-                parsed[key].append(line.strip())
-            else:
-                key, val = [x.strip() for x in line.split(':', 1)]
-                if val:
-                    parsed[key] = val
-                else:
-                    parsed[key] = []
-        prev = parsed['Previous']
-        if prev == 'None':
-            prev = None
-        else:
-            prev = repo.get_commit(prev)
-        head = repo.get_commit(parsed['Head'])
-        lists = {'Applied': [], 'Unapplied': [], 'Hidden': []}
-        patches = {}
-        for lst in lists:
-            for entry in parsed[lst]:
-                pn, sha1 = [x.strip() for x in entry.split(':')]
-                lists[lst].append(pn)
-                patches[pn] = repo.get_commit(sha1)
-        return (
-            prev,
-            head,
-            lists['Applied'],
-            lists['Unapplied'],
-            lists['Hidden'],
-            patches,
-        )
-
     @classmethod
     def from_commit(cls, repo, commit):
         """Parse a (full or simplified) stack log commit."""
         try:
-            perm, meta_blob = commit.data.tree.data['meta']
+            perm, stack_json_blob = commit.data.tree.data['stack.json']
         except KeyError:
             raise LogParseException('Not a stack log')
 
-        prev, head, applied, unapplied, hidden, patches = cls._parse_metadata(
-            repo, meta_blob.data.bytes.decode('utf-8')
-        )
+        try:
+            stack_json = json.loads(stack_json_blob.data.bytes)
+        except json.JSONDecodeError as e:
+            raise LogParseException(str(e))
 
-        return cls(prev, head, applied, unapplied, hidden, patches, commit)
+        version = stack_json.get('version')
+
+        if version is None:
+            raise LogException('Missing stack metadata version')
+        elif version < FORMAT_VERSION:
+            raise LogException('Log is version %d, which is too old' % version)
+        elif version > FORMAT_VERSION:
+            raise LogException('Log is version %d, which is too new' % version)
+
+        patches = {
+            pn: repo.get_commit(patch_info['oid'])
+            for pn, patch_info in stack_json['patches'].items()
+        }
+
+        if stack_json['prev'] is None:
+            prev = None
+        else:
+            prev = repo.get_commit(stack_json['prev'])
+
+        return cls(
+            prev,
+            repo.get_commit(stack_json['head']),
+            stack_json['applied'],
+            stack_json['unapplied'],
+            stack_json['hidden'],
+            patches,
+            commit,
+        )
 
     def _parents(self, prev_state):
         """Parents this entry needs to be a descendant of all commits it refers to."""
@@ -258,23 +243,18 @@ class StackState:
             xp -= set(prev_state.patches.values())
         return xp
 
-    def _metadata_blob(self, repo, prev_state):
-        lines = ['Version: %d' % FORMAT_VERSION]
-        lines.append(
-            'Previous: %s' % ('None' if prev_state is None else prev_state.commit.sha1)
+    def _stack_json_blob(self, repo, prev_state):
+        stack_json = dict(
+            version=FORMAT_VERSION,
+            prev=None if prev_state is None else prev_state.commit.sha1,
+            head=self.head.sha1,
+            applied=self.applied,
+            unapplied=self.unapplied,
+            hidden=self.hidden,
+            patches={pn: dict(oid=patch.sha1) for pn, patch in self.patches.items()},
         )
-        lines.append('Head: %s' % self.head.sha1)
-        for patch_list, title in [
-            (self.applied, 'Applied'),
-            (self.unapplied, 'Unapplied'),
-            (self.hidden, 'Hidden'),
-        ]:
-            lines.append('%s:' % title)
-            for pn in patch_list:
-                lines.append('  %s: %s' % (pn, self.patches[pn].sha1))
-        lines.append('')
-        metadata_str = '\n'.join(lines)
-        return repo.commit(BlobData(metadata_str.encode('utf-8')))
+        blob = json.dumps(stack_json, indent=2).encode('utf-8')
+        return repo.commit(BlobData(blob))
 
     def _patch_blob(self, repo, pn, commit, prev_state):
         if prev_state is not None:
@@ -308,7 +288,7 @@ class StackState:
         return repo.commit(
             TreeData(
                 {
-                    'meta': self._metadata_blob(repo, prev_state),
+                    'stack.json': self._stack_json_blob(repo, prev_state),
                     'patches': self._patches_tree(repo, prev_state),
                 }
             )

@@ -709,7 +709,7 @@ __stg_git_describe_branch () {
 __stg_branch_stgit() {
     declare -a stg_branches
     stg_branches=(
-        ${(u)${${${(f)"$(_call_program branchrefs git for-each-ref --format='"%(refname)"' refs/heads 2>/dev/null)"}#refs/heads/}:/*.stgit/}}
+        ${${(f)"$(_call_program branchrefs git for-each-ref --format='"%(refname)"' refs/stacks 2>/dev/null)"}#refs/stacks/}
     )
     local expl
     _wanted -V branches expl "branch" compadd $stg_branches
