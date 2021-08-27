@@ -57,6 +57,11 @@ options = [
         short='Push the patches in reverse order',
     ),
     opt(
+        '--noapply',
+        action='store_true',
+        short='Reorder patches by pushing without applying.',
+    ),
+    opt(
         '--set-tree',
         action='store_true',
         short='Push the patch with the original tree',
@@ -82,28 +87,32 @@ def func(parser, options, args):
     """Pushes the given patches or the first unapplied onto the stack."""
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'push', check_clean_iw=clean_iw)
 
     if options.number == 0:
         # explicitly allow this without any warning/error message
         return
 
-    if not trans.unapplied:
+    if not stack.patchorder.unapplied:
         raise CmdException('No patches to push')
 
     if options.all:
-        patches = list(trans.unapplied)
+        if options.noapply:
+            raise CmdException('Cannot use --noapply with --all')
+        patches = list(stack.patchorder.unapplied)
     elif options.number is not None:
-        patches = trans.unapplied[: options.number]
+        if options.noapply:
+            raise CmdException('Cannot use --noapply with --number')
+        patches = list(stack.patchorder.unapplied[: options.number])
     elif not args:
-        patches = [trans.unapplied[0]]
+        if options.noapply:
+            raise CmdException('Must supply patch names with --noapply')
+        patches = [stack.patchorder.unapplied[0]]
     else:
         try:
-            patches = parse_patches(args, trans.unapplied)
+            patches = parse_patches(args, stack.patchorder.unapplied)
         except CmdException as e:
             try:
-                patches = parse_patches(args, trans.applied)
+                patches = parse_patches(args, stack.patchorder.applied)
             except CmdException:
                 raise e
             else:
@@ -114,12 +123,25 @@ def func(parser, options, args):
 
     assert patches
 
+    if options.keep or options.noapply:
+        clean_iw = None
+    else:
+        clean_iw = iw
+    trans = transaction.StackTransaction(stack, 'push', check_clean_iw=clean_iw)
+
     if options.reverse:
         patches.reverse()
 
     if options.set_tree:
+        if options.noapply:
+            raise CmdException('Cannot use --noapply with --set-tree')
         for pn in patches:
             trans.push_tree(pn)
+    elif options.noapply:
+        if options.merged:
+            raise CmdException('Cannot use --noapply with --merged')
+        unapplied = patches + [pn for pn in trans.unapplied if pn not in patches]
+        trans.reorder_patches(trans.applied, unapplied)
     else:
         try:
             if options.merged:
