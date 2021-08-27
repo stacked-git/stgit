@@ -15,6 +15,9 @@
 - `stg new` learns `--verbose`, which includes a diff in the editor
   window (similar to `git commit --verbose`). This behavior is also
   configurable with the `commit.verbose` configuration option
+- `stg push` and `stg float` learn `--noapply` option; allows patches
+  to be reordered without updating worktree and deferring merge conflict
+  resolution (#144)
 
 ### Changed
 - The editor window text for `stg squash` has been modified to mirror
@@ -27,6 +30,8 @@
 - Exiting with an empty `stg edit` editor will now abort the edit;
   previously it would delete your commit message. (#138)
 - Repair completions when stg.series.description is enabled in config
+- Workaround child process reaping race on Windows (#78)
+- Repair crash with `stg float --series` when bad patch name in series
 
 ### Internal
 - Add link to coverage.io project to CONTRIBUTING.md
