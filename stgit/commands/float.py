@@ -36,11 +36,16 @@ as they were prior to the float operation."""
 args = [patch_range('applied_patches', 'unapplied_patches')]
 options = [
     opt(
+        '--noapply',
+        action='store_true',
+        short='Reorder patches by pushing without applying.',
+    ),
+    opt(
         '-s',
         '--series',
         metavar='FILE',
         short='Rearrange according to the series FILE',
-    )
+    ),
 ]
 options.extend(keep_option())
 
@@ -74,12 +79,21 @@ def func(parser, options, args):
     if not patches:
         raise CmdException('No patches to float')
 
-    applied = [p for p in stack.patchorder.applied if p not in patches] + patches
-    unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
-
     iw = stack.repository.default_iw
-    clean_iw = (not options.keep and iw) or None
+    if options.keep or (
+        options.noapply and not any(pn in stack.patchorder.applied for pn in patches)
+    ):
+        clean_iw = None
+    else:
+        clean_iw = iw
     trans = transaction.StackTransaction(stack, 'float', check_clean_iw=clean_iw)
+
+    if options.noapply:
+        applied = [p for p in trans.applied if p not in patches]
+        unapplied = patches + [p for p in trans.unapplied if p not in patches]
+    else:
+        applied = [p for p in trans.applied if p not in patches] + patches
+        unapplied = [p for p in trans.unapplied if p not in patches]
 
     try:
         trans.reorder_patches(applied, unapplied, iw=iw)
