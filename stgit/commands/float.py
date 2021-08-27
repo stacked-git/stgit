@@ -67,6 +67,7 @@ def func(parser, options, args):
             patch = re.sub('#.*$', '', line).strip()
             if patch:
                 patches.append(patch)
+        patches = parse_patches(patches, stack.patchorder.all)
     else:
         patches = parse_patches(args, stack.patchorder.all)
 

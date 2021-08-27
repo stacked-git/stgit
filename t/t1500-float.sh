@@ -92,4 +92,10 @@ test_expect_success 'Attempt float with no series file and no arguments' '
     grep -e "incorrect number of arguments"
 '
 
+test_expect_success 'Series with bogus patch name' '
+    printf "p1\np2\np3\nBOGUS\np4\np5\np6\np7\n" |
+    command_error stg float --series=- 2>& 1 |
+    grep -e "Unknown patch name: BOGUS"
+'
+
 test_done
