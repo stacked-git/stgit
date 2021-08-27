@@ -32,33 +32,32 @@ the push operations may fail because of conflicts ("stg undo" would
 revert the last push operation)."""
 
 args = [patch_range('applied_patches')]
-options = (
-    [
-        opt(
-            '-a',
-            '--all',
-            action='store_true',
-            short='Pop all the applied patches',
-        ),
-        opt(
-            '-s',
-            '--spill',
-            action='store_true',
-            short='Pop a patch, keeping its modifications in the tree',
-        ),
-        opt(
-            '-n',
-            '--number',
-            type='int',
-            short='Pop the specified number of patches',
-            long='''
+options = [
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='Pop all the applied patches',
+    ),
+    opt(
+        '-s',
+        '--spill',
+        action='store_true',
+        short='Pop a patch, keeping its modifications in the tree',
+    ),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Pop the specified number of patches',
+        long='''
         Pop the specified number of patches.
 
         With a negative number, pop all but that many patches.''',
-        ),
-    ]
-    + keep_option()
-)
+    ),
+]
+options.extend(keep_option())
+
 
 directory = DirectoryHasRepository()
 

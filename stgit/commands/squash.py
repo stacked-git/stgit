@@ -49,11 +49,16 @@ Conflicts can occur whenever we push a patch; that is, in step (2) and
 resolve them."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
-options = (
-    [opt('-n', '--name', short='Name of squashed patch')]
-    + argparse.message_options(save_template=True)
-    + argparse.hook_options()
-)
+options = [
+    opt(
+        '-n',
+        '--name',
+        short='Name of squashed patch',
+    )
+]
+options.extend(argparse.message_options(save_template=True))
+options.extend(argparse.hook_options())
+
 
 directory = DirectoryHasRepository()
 

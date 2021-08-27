@@ -45,23 +45,22 @@ the patch, unless the '--message' flag already specified one. The
 editor."""
 
 args = []
-options = (
-    [
-        opt(
-            '-v',
-            '--verbose',
-            action='store_true',
-            short='show diff in patch commit message template',
-            long='''
+options = [
+    opt(
+        '-v',
+        '--verbose',
+        action='store_true',
+        short='show diff in patch commit message template',
+        long='''
         In addition to the names of files that have been changed, also show a
         diff of staged and unstaged changes.''',
-        ),
-    ]
-    + argparse.author_options()
-    + argparse.message_options(save_template=True)
-    + argparse.sign_options()
-    + argparse.hook_options()
-)
+    ),
+]
+options.extend(argparse.author_options())
+options.extend(argparse.message_options(save_template=True))
+options.extend(argparse.sign_options())
+options.extend(argparse.hook_options())
+
 
 directory = DirectoryHasRepository()
 

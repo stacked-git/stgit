@@ -67,83 +67,79 @@ Additionally, the '--spill' option resets the topmost patch, emptying
 the patch while leaving the patch's changes intact in the worktree."""
 
 args = ['dirty_files']
-options = (
-    [
-        opt(
-            '-u',
-            '--update',
-            action='store_true',
-            short='Only update the current patch files',
-        ),
-        opt(
-            '-i',
-            '--index',
-            action='store_true',
-            short='Refresh from index instead of worktree',
-            long="""
+options = [
+    opt(
+        '-u',
+        '--update',
+        action='store_true',
+        short='Only update the current patch files',
+    ),
+    opt(
+        '-i',
+        '--index',
+        action='store_true',
+        short='Refresh from index instead of worktree',
+        long="""
         Instead of setting the patch top to the current contents of
         the worktree, set it to the current contents of the index.""",
-        ),
-        opt(
-            '-F',
-            '--force',
-            action='store_true',
-            short='Force refresh even if index is dirty',
-            long="""
+    ),
+    opt(
+        '-F',
+        '--force',
+        action='store_true',
+        short='Force refresh even if index is dirty',
+        long="""
         Instead of warning the user when some work has already been staged
         (such as with git add interactive mode) force a full refresh.""",
-        ),
-        opt(
-            '-p',
-            '--patch',
-            args=['other_applied_patches', 'unapplied_patches'],
-            short='Refresh (applied) PATCH instead of the top patch',
-        ),
-        opt(
-            '-e',
-            '--edit',
-            action='store_true',
-            short='Invoke an editor for the patch description',
-        ),
-        opt(
-            '-d',
-            '--diff',
-            action='store_true',
-            short='Show diff when editing patch description',
-        ),
-        opt(
-            '-a',
-            '--annotate',
-            metavar='NOTE',
-            short='Annotate the patch log entry',
-        ),
-        opt(
-            '-s',
-            '--submodules',
-            action='store_true',
-            short='Include submodules when refreshing patch contents',
-        ),
-        opt(
-            '--no-submodules',
-            action='store_false',
-            dest='submodules',
-            short='Exclude submodules when refreshing patch contents',
-        ),
-        opt(
-            '--spill',
-            action='store_true',
-            dest='spill',
-            short='Spill patch content to worktree and index, erasing patch content.',
-        ),
-    ]
-    + (
-        argparse.message_options(save_template=False)
-        + argparse.hook_options()
-        + argparse.sign_options()
-        + argparse.author_options()
-        + argparse.diff_opts_option()
-    )
-)
+    ),
+    opt(
+        '-p',
+        '--patch',
+        args=['other_applied_patches', 'unapplied_patches'],
+        short='Refresh (applied) PATCH instead of the top patch',
+    ),
+    opt(
+        '-e',
+        '--edit',
+        action='store_true',
+        short='Invoke an editor for the patch description',
+    ),
+    opt(
+        '-d',
+        '--diff',
+        action='store_true',
+        short='Show diff when editing patch description',
+    ),
+    opt(
+        '-a',
+        '--annotate',
+        metavar='NOTE',
+        short='Annotate the patch log entry',
+    ),
+    opt(
+        '-s',
+        '--submodules',
+        action='store_true',
+        short='Include submodules when refreshing patch contents',
+    ),
+    opt(
+        '--no-submodules',
+        action='store_false',
+        dest='submodules',
+        short='Exclude submodules when refreshing patch contents',
+    ),
+    opt(
+        '--spill',
+        action='store_true',
+        dest='spill',
+        short='Spill patch content to worktree and index, erasing patch content.',
+    ),
+]
+options.extend(argparse.message_options(save_template=False))
+options.extend(argparse.hook_options())
+options.extend(argparse.sign_options())
+options.extend(argparse.author_options())
+options.extend(argparse.diff_opts_option())
 
 directory = DirectoryHasRepository()
 

@@ -41,7 +41,8 @@ options = [
         metavar='FILE',
         short='Rearrange according to the series FILE',
     )
-] + keep_option()
+]
+options.extend(keep_option())
 
 directory = DirectoryHasRepository()
 

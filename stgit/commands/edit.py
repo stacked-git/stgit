@@ -64,26 +64,25 @@ built on top of StGit, such as the Emacs mode. See also the --set-tree
 flag of stg push."""
 
 args = ['applied_patches', 'unapplied_patches', 'hidden_patches']
-options = (
-    [
-        opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
-        opt('-e', '--edit', action='store_true', short='Invoke interactive editor'),
-    ]
-    + argparse.sign_options()
-    + argparse.message_options(save_template=True)
-    + argparse.hook_options()
-    + argparse.author_options()
-    + argparse.diff_opts_option()
-    + [
-        opt(
-            '-t',
-            '--set-tree',
-            action='store',
-            metavar='TREE-ISH',
-            short='Set the git tree of the patch to TREE-ISH',
-        )
-    ]
+options = [
+    opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
+    opt('-e', '--edit', action='store_true', short='Invoke interactive editor'),
+]
+options.extend(argparse.sign_options())
+options.extend(argparse.message_options(save_template=True))
+options.extend(argparse.hook_options())
+options.extend(argparse.author_options())
+options.extend(argparse.diff_opts_option())
+options.append(
+    opt(
+        '-t',
+        '--set-tree',
+        action='store',
+        metavar='TREE-ISH',
+        short='Set the git tree of the patch to TREE-ISH',
+    )
 )
+
 
 directory = DirectoryHasRepository()
 

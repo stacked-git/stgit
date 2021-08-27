@@ -38,30 +38,29 @@ including <target patch>), then pushing the patches to sink, and then
 formerly-applied patches."""
 
 args = [patch_range('applied_patches', 'unapplied_patches')]
-options = (
-    [
-        opt(
-            '-n',
-            '--nopush',
-            action='store_true',
-            short='Do not push the patches back after sinking',
-            long="""
+options = [
+    opt(
+        '-n',
+        '--nopush',
+        action='store_true',
+        short='Do not push the patches back after sinking',
+        long="""
         Do not push back on the stack the formerly-applied patches.
         Only the patches to sink are pushed.""",
-        ),
-        opt(
-            '-t',
-            '--to',
-            metavar='TARGET',
-            args=['applied_patches'],
-            short='Sink patches below the TARGET patch',
-            long="""
+    ),
+    opt(
+        '-t',
+        '--to',
+        metavar='TARGET',
+        args=['applied_patches'],
+        short='Sink patches below the TARGET patch',
+        long="""
         Specify a target patch to place the patches below, instead of
         sinking them to the bottom of the stack.""",
-        ),
-    ]
-    + keep_option()
-)
+    ),
+]
+options.extend(keep_option())
+
 
 directory = DirectoryHasRepository()
 

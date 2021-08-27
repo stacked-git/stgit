@@ -34,34 +34,33 @@ The command also notifies when the patch becomes empty (fully merged
 upstream) or is modified (three-way merged) by the 'push' operation."""
 
 args = [patch_range('unapplied_patches')]
-options = (
-    [
-        opt(
-            '-a',
-            '--all',
-            action='store_true',
-            short='Push all the unapplied patches',
-        ),
-        opt(
-            '-n',
-            '--number',
-            type='int',
-            short='Push the specified number of patches',
-            long='''
+options = [
+    opt(
+        '-a',
+        '--all',
+        action='store_true',
+        short='Push all the unapplied patches',
+    ),
+    opt(
+        '-n',
+        '--number',
+        type='int',
+        short='Push the specified number of patches',
+        long='''
         Push the specified number of patches.
 
         With a negative number, push all but that many patches.''',
-        ),
-        opt(
-            '--reverse',
-            action='store_true',
-            short='Push the patches in reverse order',
-        ),
-        opt(
-            '--set-tree',
-            action='store_true',
-            short='Push the patch with the original tree',
-            long="""
+    ),
+    opt(
+        '--reverse',
+        action='store_true',
+        short='Push the patches in reverse order',
+    ),
+    opt(
+        '--set-tree',
+        action='store_true',
+        short='Push the patch with the original tree',
+        long="""
         Push the patches, but don't perform a merge. Instead, the
         resulting tree will be identical to the tree that the patch
         previously created.
@@ -71,11 +70,10 @@ options = (
         changes. Pushing the original patch with '--set-tree' will
         avoid conflicts and only the remaining changes will be in the
         patch.""",
-        ),
-    ]
-    + keep_option()
-    + merged_option()
-)
+    ),
+]
+options.extend(keep_option())
+options.extend(merged_option())
 
 directory = DirectoryHasRepository()
 

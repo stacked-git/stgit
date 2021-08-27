@@ -57,101 +57,100 @@ The patch description has to be separated from the data with a '---'
 line."""
 
 args = ['files']
-options = (
-    [
-        opt(
-            '-m',
-            '--mail',
-            action='store_true',
-            short='Import the patch from a standard e-mail file',
-        ),
-        opt(
-            '-M',
-            '--mbox',
-            action='store_true',
-            short='Import a series of patches from an mbox file',
-        ),
-        opt(
-            '-s',
-            '--series',
-            action='store_true',
-            short='Import a series of patches',
-            long="Import a series of patches from a series file or a tar archive.",
-        ),
-        opt(
-            '-u',
-            '--url',
-            action='store_true',
-            short='Import a patch from a URL',
-        ),
-        opt(
-            '-n',
-            '--name',
-            short='Use NAME as the patch name',
-        ),
-        opt(
-            '-p',
-            '--strip',
-            type='int',
-            metavar='N',
-            short='Remove N leading slashes from diff paths (default 1)',
-        ),
-        opt(
-            '-t',
-            '--stripname',
-            action='store_true',
-            short='Strip numbering and extension from patch name',
-        ),
-        opt(
-            '-C',
-            dest='context_lines',
-            type='int',
-            metavar='N',
-            short='Ensure N lines of surrounding context for each change',
-        ),
-        opt(
-            '-i',
-            '--ignore',
-            action='store_true',
-            short='Ignore the applied patches in the series',
-        ),
-        opt(
-            '--replace',
-            action='store_true',
-            short='Replace the unapplied patches in the series',
-        ),
-        opt(
-            '-b',
-            '--base',
-            args=['commit'],
-            short='Use BASE instead of HEAD for file importing',
-        ),
-        opt(
-            '--reject',
-            action='store_true',
-            short='Leave the rejected hunks in corresponding *.rej files',
-        ),
-        opt(
-            '--keep-cr',
-            action='store_true',
-            short='Do not remove "\\r" from email lines ending with "\\r\\n"',
-        ),
-        opt(
-            '-e',
-            '--edit',
-            action='store_true',
-            short='Invoke an editor for the patch description',
-        ),
-        opt(
-            '-d',
-            '--showdiff',
-            action='store_true',
-            short='Show the patch content in the editor buffer',
-        ),
-    ]
-    + argparse.author_options()
-    + argparse.sign_options()
-)
+options = [
+    opt(
+        '-m',
+        '--mail',
+        action='store_true',
+        short='Import the patch from a standard e-mail file',
+    ),
+    opt(
+        '-M',
+        '--mbox',
+        action='store_true',
+        short='Import a series of patches from an mbox file',
+    ),
+    opt(
+        '-s',
+        '--series',
+        action='store_true',
+        short='Import a series of patches',
+        long="Import a series of patches from a series file or a tar archive.",
+    ),
+    opt(
+        '-u',
+        '--url',
+        action='store_true',
+        short='Import a patch from a URL',
+    ),
+    opt(
+        '-n',
+        '--name',
+        short='Use NAME as the patch name',
+    ),
+    opt(
+        '-p',
+        '--strip',
+        type='int',
+        metavar='N',
+        short='Remove N leading slashes from diff paths (default 1)',
+    ),
+    opt(
+        '-t',
+        '--stripname',
+        action='store_true',
+        short='Strip numbering and extension from patch name',
+    ),
+    opt(
+        '-C',
+        dest='context_lines',
+        type='int',
+        metavar='N',
+        short='Ensure N lines of surrounding context for each change',
+    ),
+    opt(
+        '-i',
+        '--ignore',
+        action='store_true',
+        short='Ignore the applied patches in the series',
+    ),
+    opt(
+        '--replace',
+        action='store_true',
+        short='Replace the unapplied patches in the series',
+    ),
+    opt(
+        '-b',
+        '--base',
+        args=['commit'],
+        short='Use BASE instead of HEAD for file importing',
+    ),
+    opt(
+        '--reject',
+        action='store_true',
+        short='Leave the rejected hunks in corresponding *.rej files',
+    ),
+    opt(
+        '--keep-cr',
+        action='store_true',
+        short='Do not remove "\\r" from email lines ending with "\\r\\n"',
+    ),
+    opt(
+        '-e',
+        '--edit',
+        action='store_true',
+        short='Invoke an editor for the patch description',
+    ),
+    opt(
+        '-d',
+        '--showdiff',
+        action='store_true',
+        short='Show the patch content in the editor buffer',
+    ),
+]
+options.extend(argparse.author_options())
+options.extend(argparse.sign_options())
+
 
 directory = DirectoryHasRepository()
 
