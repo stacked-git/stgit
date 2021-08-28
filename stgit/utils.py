@@ -2,6 +2,8 @@
 
 import os
 import re
+import shutil
+import sys
 import tempfile
 from io import open
 
@@ -90,16 +92,43 @@ def get_hook(repository, hook_name, extra_env=None):
     extra_env = add_dict(extra_env, {'GIT_PREFIX': prefix})
 
     def hook(*parameters):
-        argv = [hook_path]
-        argv.extend(parameters)
+        if sys.platform == 'win32':
+            # On Windows, run the hook using "bash" explicitly.
+            # Try to locate bash.exe in user's PATH, but avoid the WSL
+            # shim/bootstrapper %SYSTEMROOT%/System32/bash.exe
+            systemroot = os.environ.get('SYSTEMROOT')
+            if systemroot:
+                system32 = os.path.normcase(os.path.join(systemroot, 'system32'))
+                path = os.pathsep.join(
+                    p
+                    for p in os.environ.get('PATH', '').split(os.pathsep)
+                    if os.path.normcase(p) != system32
+                )
+            else:
+                path = None
 
-        # On Windows, run the hook using "bash" explicitly
-        if os.name != 'posix':
-            argv.insert(0, 'bash')
+            # Find bash with user's path (sans System32).
+            bash_exe = shutil.which('bash.exe', path=path)
+            if not bash_exe:
+                # Next try finding the bash.exe that came with Git for Windows.
+                git_exe = shutil.which('git.exe', path=path)
+                if not git_exe:
+                    raise StgException('Failed to locate either bash.exe or git.exe')
+                bash_exe = os.path.join(
+                    os.path.dirname(os.path.dirname(git_exe)),
+                    'bin',
+                    'bash.exe',
+                )
+
+            argv = [bash_exe, hook_path]
+        else:
+            argv = [hook_path]
+
+        argv.extend(parameters)
 
         repository.default_iw.run(argv, extra_env).run()
 
-    hook.__name__ = str(hook_name)
+    hook.__name__ = hook_name
     return hook
 
 
