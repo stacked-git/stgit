@@ -5,8 +5,7 @@ import sys
 import traceback
 
 import stgit.commands
-import stgit.version
-from stgit import argparse, run, utils
+from stgit import argparse, get_version, run, utils
 from stgit.compat import environ_get, fsdecode_utf8
 from stgit.config import config
 from stgit.out import out
@@ -135,8 +134,6 @@ def _main():
             print_help()
         sys.exit(utils.STGIT_SUCCESS)
     if cmd in ['-v', '--version', 'version']:
-        from stgit.version import get_version
-
         print('Stacked Git %s' % get_version())
         os.system('git --version')
         print('Python version %s' % sys.version)
@@ -201,12 +198,6 @@ def _main():
 
 
 def main():
-    python_version = sys.version_info[: len(stgit.version.python_min_ver)]
-    if python_version < stgit.version.python_min_ver:
-        ver_str = '.'.join(map(str, stgit.version.python_min_ver))
-        sys.stderr.write('StGit requires Python >= %s\n' % ver_str)
-        sys.exit(utils.STGIT_GENERAL_ERROR)
-
     try:
         _main()
     finally:

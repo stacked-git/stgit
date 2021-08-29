@@ -9,7 +9,7 @@ import re
 import smtplib
 import time
 
-from stgit import templates, version
+from stgit import get_version, templates
 from stgit.argparse import diff_opts_option, opt, patch_range
 from stgit.commands.common import (
     CmdException,
@@ -537,7 +537,7 @@ def __build_extra_headers(msg, msg_id, ref_id=None):
         ref_id = '<%s>' % ref_id.strip(' \t\n<>')
         msg['In-Reply-To'] = ref_id
         msg['References'] = ref_id
-    msg['User-Agent'] = 'StGit/%s' % version.get_version()
+    msg['User-Agent'] = 'StGit/%s' % get_version()
 
     # update other address headers
     __update_header(msg, 'Reply-To')
