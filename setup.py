@@ -88,8 +88,7 @@ with open('stgit/builtin_version.py', 'w') as f:
 with open('stgit/commands/cmdlist.py', 'w') as f:
     commands.py_commands(commands.get_commands(allow_cached=False), f)
 
-if not os.path.exists('completion'):
-    os.mkdir('completion')
+os.makedirs('completion', exist_ok=True)
 
 # generate the bash completion script
 with open(os.path.join('completion', 'stgit.bash'), 'w') as f:
@@ -105,31 +104,32 @@ setup(
     license='GPLv2',
     author='Catalin Marinas',
     author_email='catalin.marinas@gmail.com',
+    maintainer='Peter Grayson',
+    maintainer_email='pete@jpgrayson.net',
     url='http://stacked-git.github.io',
     download_url='https://github.com/stacked-git/stgit.git',
     description='Stacked Git',
     long_description='Application for managing Git commits as a stack of patches.',
     scripts=['stg'],
-    packages=list(
-        map(
-            str,
-            [
-                'stgit',
-                'stgit.commands',
-                'stgit.completion',
-                'stgit.lib',
-                'stgit.lib.git',
-            ],
-        )
-    ),
+    packages=[
+        'stgit',
+        'stgit.commands',
+        'stgit.completion',
+        'stgit.lib',
+        'stgit.lib.git',
+    ],
     data_files=[
         ('share/stgit/templates', glob('stgit/templates/*.tmpl')),
-        ('share/stgit/examples', glob('examples/*.tmpl')),
-        ('share/stgit/examples', ['examples/gitconfig']),
+        ('share/stgit/examples', glob('examples/*.tmpl') + ['examples/gitconfig']),
         ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
-        ('share/stgit/completion', ['completion/stg.fish']),
-        ('share/stgit/completion', ['completion/stgit.bash']),
-        ('share/stgit/completion', ['completion/stgit.zsh']),
+        (
+            'share/stgit/completion',
+            [
+                'completion/stg.fish',
+                'completion/stgit.bash',
+                'completion/stgit.zsh',
+            ],
+        ),
     ],
     package_data={
         'stgit': [
@@ -144,7 +144,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)'
+        'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
