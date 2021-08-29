@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 import os
 import sys
-from distutils.core import setup
 from glob import glob
+
+from setuptools import setup
 
 from stgit import commands, version
 from stgit.completion.bash import write_bash_completion
@@ -58,9 +59,6 @@ def __check_git_version():
 __check_python_version()
 __check_git_version()
 
-# ensure readable template files
-old_mask = os.umask(0o022)
-
 for get_ver in [
     version.git_describe_version,
     version.git_archival_version,
@@ -110,6 +108,8 @@ setup(
     download_url='https://github.com/stacked-git/stgit.git',
     description='Stacked Git',
     long_description='Application for managing Git commits as a stack of patches.',
+    python_requires='>=3.5',
+    zip_safe=False,
     scripts=['stg'],
     packages=[
         'stgit',
@@ -159,6 +159,3 @@ setup(
         'Topic :: Software Development :: Version Control',
     ],
 )
-
-# restore the old mask
-os.umask(old_mask)

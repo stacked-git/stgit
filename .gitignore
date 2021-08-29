@@ -13,3 +13,4 @@ htmlcov/
 .coverage
 .cov-files/
 .DS_Store
+stgit.egg-info/
