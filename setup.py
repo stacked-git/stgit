@@ -10,55 +10,6 @@ from stgit.completion.bash import write_bash_completion
 from stgit.completion.fish import write_fish_completion
 
 
-def __version_to_list(version):
-    """Convert a version string to a list of numbers or strings"""
-    ver_list = []
-    for p in version.split('.'):
-        try:
-            n = int(p)
-        except ValueError:
-            n = p
-        ver_list.append(n)
-    return ver_list
-
-
-def __check_min_version(min_ver, ver):
-    """Check whether ver is greater or equal to min_ver"""
-    min_ver_list = __version_to_list(min_ver)
-    ver_list = __version_to_list(ver)
-    return min_ver_list <= ver_list
-
-
-def __check_python_version():
-    """Check the minimum Python version"""
-    pyver = sys.version_info[: len(version.python_min_ver)]
-    if pyver < version.python_min_ver:
-        print(
-            'Python version %s or newer required. Found %s'
-            % (version.python_min_ver, pyver),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-
-def __check_git_version():
-    """Check the minimum Git version"""
-    from stgit.run import Run
-
-    gitver = Run('git', '--version').output_one_line().split()[2]
-    if not __check_min_version(version.git_min_ver, gitver):
-        print(
-            'Git version %s or newer required. Found %s'
-            % (version.git_min_ver, gitver),
-            file=sys.stderr,
-        )
-        sys.exit(1)
-
-
-# Check the minimum versions required
-__check_python_version()
-__check_git_version()
-
 for get_ver in [
     version.git_describe_version,
     version.git_archival_version,
