@@ -37,36 +37,11 @@ then
 fi
 STG_ROOT=$(cd "$TEST_DIRECTORY"/.. && pwd) || exit 1
 export STG_ROOT
-stg_build_dir="$STG_ROOT"/build
-PYTHON="${PYTHON:-python}"
-python_major_minor="$($PYTHON -c '
-import sys
-print(".".join(map(str, sys.version_info[:2])))')"
-stg_bin_dir="$stg_build_dir"/scripts-"$python_major_minor"
 
-if test ! -f "$stg_bin_dir"/stg
-then
-	echo >&2 "error: $stg_bin_dir missing (has stg been built?)."
-	exit 1
-fi
 PERL_PATH=${PERL:-perl}
 SHELL_PATH=${SHELL_PATH:-/bin/sh}
 TEST_SHELL_PATH=${TEST_SHELL_PATH:-$SHELL_PATH}
 export PERL_PATH SHELL_PATH
-
-################################################################
-# It appears that people try to run tests without building...
-"${STG_TEST_INSTALLED:-$stg_bin_dir}/stg" 2> /dev/null
-if test $? != 1
-then
-	if test -n "$STG_TEST_INSTALLED"
-	then
-		echo >&2 "error: there is no working stg at '$STG_TEST_INSTALLED'"
-	else
-		echo >&2 'error: you do not seem to have built stg yet.'
-	fi
-	exit 1
-fi
 
 STGIT_DEBUG_LEVEL=0
 
@@ -1069,7 +1044,7 @@ if test -n "$STG_TEST_INSTALLED"
 then
 	PATH=$STG_TEST_INSTALLED:$PATH
 else
-	PATH="$stg_bin_dir:$PATH"
+	PATH="$TEST_DIRECTORY/test-bin:$PATH"
 	PYTHONPATH="$STG_ROOT":"$PYTHONPATH"
 fi
 GIT_EXEC_PATH=$(git --exec-path) || error "Cannot run git"

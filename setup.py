@@ -97,7 +97,7 @@ setup(
     long_description='Application for managing Git commits as a stack of patches.',
     python_requires='>=3.5',
     zip_safe=False,
-    scripts=['stg'],
+    entry_points=dict(console_scripts=['stg = stgit.main:main']),
     cmdclass=cmdclass,
     packages=[
         'stgit',

@@ -26,10 +26,12 @@ include examples/gitconfig
 include perf/*.py
 include perf/*.sh
 include pyproject.toml
+include stg
 include t/*.pl
 include t/*.sh
 include t/Makefile
 include t/README
 include t/t[0-9]*/*
 include t/t[0-9]*/*/*
+include t/test-bin/stg
 recursive-include contrib/vim *.vim

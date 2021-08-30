@@ -73,14 +73,16 @@ coverage-test:
 .coverage:
 	rm -rf build
 	-mkdir .cov-files
+	COVERAGE_RCFILE=$(CURDIR)/pyproject.toml \
 	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(PYTHON) -m coverage run --context=setup setup.py build
-	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml \
+	COVERAGE_RCFILE=$(CURDIR)/pyproject.toml \
 	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
 	$(MAKE) -C t all
 	COVERAGE_PROCESS_START=$(CURDIR)/pyproject.toml \
+	COVERAGE_RCFILE=$(CURDIR)/pyproject.toml \
 	COVERAGE_FILE=$(CURDIR)/.cov-files/.coverage \
-	$(MAKE) -C Documentation build-txt
+	$(MAKE) -C Documentation build-txt man
 	$(PYTHON) -m coverage combine .cov-files/.coverage.*
 	rm -r .cov-files
 

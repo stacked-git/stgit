@@ -1,0 +1,19 @@
+#!/bin/sh
+
+if test -n "$COVERAGE_RCFILE"
+then
+    if test -z "$COVERAGE_FILE"
+    then
+        echo "COVERAGE_FILE and COVERAGE_RCFILE must both be defined"
+        exit 1
+    fi
+    if [ "$#" -lt 2 ] || echo "$1" | grep -q -e '^-'
+    then
+        context="stg"
+    else
+        context="stg-$1"
+    fi
+    exec "${PYTHON:-python3}" -m coverage run --context "$context" -m stgit "$@"
+else
+    exec "${PYTHON:-python3}" -m stgit "$@"
+fi
