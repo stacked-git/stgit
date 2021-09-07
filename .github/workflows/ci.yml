@@ -117,7 +117,7 @@ jobs:
       run: |
         make dev-env
         python -m pip install coveralls
-        sudo apt-get install quilt gnupg2
+        sudo apt-get install quilt gnupg2 asciidoc asciidoctor docbook-xsl-ns xmlto
     - name: Coverage Test
       run: |
         timeout 1000s make -j2 coverage-test
