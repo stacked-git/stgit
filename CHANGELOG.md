@@ -20,6 +20,11 @@
   resolution (#144)
 
 ### Changed
+- Use setuptools instead of distutils for packaging
+- No git or python version checks in setup.py
+- Use different dynamic versioning system
+- Install `stg` executable as console_script entry point
+- More sophisticated search for bash.exe on Windows when running hooks
 - The editor window text for `stg squash` has been modified to mirror
   git's behavior -- the squash edit message now includes all commits
   (#71)
@@ -32,11 +37,13 @@
 - Repair completions when stg.series.description is enabled in config
 - Workaround child process reaping race on Windows (#78)
 - Repair crash with `stg float --series` when bad patch name in series
+- Repair zsh completion for `stg float` to accept multiple patch names
 
 ### Internal
 - Add link to coverage.io project to CONTRIBUTING.md
 - Set smart `exclude_lines` default for 'coverage'
 - Expanded test suite for `stg edit`
+- Add pkgtest.py script to help test StGit packaging
 
 
 ## [1.1] 2021-04-30
