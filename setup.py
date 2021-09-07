@@ -94,6 +94,7 @@ setup(
     long_description='Application for managing Git commits as a stack of patches.',
     python_requires='>=3.5',
     zip_safe=False,
+    include_package_data=True,
     entry_points=dict(console_scripts=['stg = stgit.main:main']),
     cmdclass=cmdclass,
     packages=[
@@ -116,15 +117,6 @@ setup(
             ],
         ),
     ],
-    package_data={
-        'stgit': [
-            'templates/covermail.tmpl',
-            'templates/mailattch.tmpl',
-            'templates/patchandattch.tmpl',
-            'templates/patchexport.tmpl',
-            'templates/patchmail.tmpl',
-        ],
-    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
