@@ -158,7 +158,7 @@ _stg-float() {
     __stg_add_args_keep
     subcmd_args+=(
         '(-s --series)'{-s,--series=}'[arrange according to series file]: :_files'
-        ':patches:__stg_patches_all'
+        '*:patches:__stg_patches_all'
     )
     _arguments -s -S $subcmd_args
 }
