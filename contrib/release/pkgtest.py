@@ -54,15 +54,14 @@ Test running test suite
 
 """
 
-from pathlib import Path
-import os
 import argparse
+import os
 import shutil
 import subprocess
 import sys
 import tarfile
 import zipfile
-
+from pathlib import Path
 
 PYTHON_VERSIONS = [
     'python3.9',
