@@ -103,6 +103,15 @@ def _maybe_generate_code():
 _maybe_generate_code()
 
 
+def _long_description():
+    base = os.path.abspath(os.path.dirname(__file__))
+    parts = []
+    for fn in ['README.md', 'CHANGELOG.md']:
+        with open(os.path.join(base, fn)) as f:
+            parts.append(f.read())
+    return '\n\n'.join(parts)
+
+
 setup(
     name='stgit',
     version=version,
@@ -114,7 +123,8 @@ setup(
     url='http://stacked-git.github.io',
     download_url='https://github.com/stacked-git/stgit.git',
     description='Stacked Git',
-    long_description='Application for managing Git commits as a stack of patches.',
+    long_description=_long_description(),
+    long_description_content_type='text/markdown',
     python_requires='>=3.5',
     zip_safe=False,
     include_package_data=True,
