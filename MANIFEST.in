@@ -16,6 +16,7 @@ include Makefile
 include README.md
 include TODO
 include build.py
+include completion/*
 include contrib/*.sh
 include contrib/Makefile
 include contrib/stg-*
@@ -27,6 +28,7 @@ include perf/*.py
 include perf/*.sh
 include pyproject.toml
 include stg
+include stgit/templates/*.tmpl
 include t/*.pl
 include t/*.sh
 include t/Makefile

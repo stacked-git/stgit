@@ -346,14 +346,6 @@ def test_install_from_git_url(base, repo, cache):
     )
     log(f'{version=}')
 
-    share_dir = base / 'venv' / 'share' / 'stgit'
-    assert (share_dir / 'completion' / 'stg.fish').is_file()
-    assert (share_dir / 'completion' / 'stgit.bash').is_file()
-    assert (share_dir / 'completion' / 'stgit.zsh').is_file()
-    assert (share_dir / 'templates' / 'patchmail.tmpl').is_file()
-    assert (share_dir / 'contrib').is_dir()
-    assert (share_dir / 'examples').is_dir()
-
     # Ensure cmdlist.py was generated
     check_call([venv_py_exe(base), '-c', 'import stgit.commands.cmdlist'], cwd=base)
 
@@ -502,10 +494,7 @@ def test_bdist_wheel(base, repo):
     with zipfile.ZipFile(stgit_whl, 'r') as zf:
         zf.getinfo('stgit/commands/cmdlist.py')
         assert 'def _get_version' not in zf.read('stgit/_version.py').decode()
-        share_prefix = Path(f'stgit-{version}.data/data/share/stgit')
-        zf.getinfo(str(share_prefix / 'completion' / 'stg.fish'))
-        zf.getinfo(str(share_prefix / 'completion' / 'stgit.bash'))
-        zf.getinfo(str(share_prefix / 'completion' / 'stgit.zsh'))
+        zf.getinfo('stgit/templates/patchmail.tmpl')
 
 
 def test_develop_mode(base, repo, cache):
@@ -635,14 +624,6 @@ def test_install_from_unpacked_sdist(base, cache):
     )
     assert work_sdist.name.endswith(version)
 
-    share_dir = base / 'venv' / 'share' / 'stgit'
-    assert (share_dir / 'completion' / 'stg.fish').is_file()
-    assert (share_dir / 'completion' / 'stgit.bash').is_file()
-    assert (share_dir / 'completion' / 'stgit.zsh').is_file()
-    assert (share_dir / 'templates' / 'patchmail.tmpl').is_file()
-    assert (share_dir / 'contrib').is_dir()
-    assert (share_dir / 'examples').is_dir()
-
 
 def test_install_sdist(base, cache):
     log_test('test_install_sdist')
@@ -665,14 +646,6 @@ def test_install_sdist(base, cache):
     )
     assert sdist_path.name.split('stgit-', 1)[1].startswith(version)
 
-    share_dir = base / 'venv' / 'share' / 'stgit'
-    assert (share_dir / 'completion' / 'stg.fish').is_file()
-    assert (share_dir / 'completion' / 'stgit.bash').is_file()
-    assert (share_dir / 'completion' / 'stgit.zsh').is_file()
-    assert (share_dir / 'templates' / 'patchmail.tmpl').is_file()
-    assert (share_dir / 'contrib').is_dir()
-    assert (share_dir / 'examples').is_dir()
-
 
 def test_install_wheel(base):
     log_test('test_install_wheel')
@@ -686,14 +659,6 @@ def test_install_wheel(base):
         check_output([venv_py_exe(base), '-m', 'stgit', '--version'], cwd=base).decode()
     )
     assert whl_path.name.split('stgit-', 1)[1].startswith(version)
-
-    share_dir = base / 'venv' / 'share' / 'stgit'
-    assert (share_dir / 'completion' / 'stg.fish').is_file()
-    assert (share_dir / 'completion' / 'stgit.bash').is_file()
-    assert (share_dir / 'completion' / 'stgit.zsh').is_file()
-    assert (share_dir / 'templates' / 'patchmail.tmpl').is_file()
-    assert (share_dir / 'contrib').is_dir()
-    assert (share_dir / 'examples').is_dir()
 
 
 if __name__ == '__main__':

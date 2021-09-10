@@ -128,19 +128,6 @@ setup(
         'stgit.lib',
         'stgit.lib.git',
     ],
-    data_files=[
-        ('share/stgit/templates', glob('stgit/templates/*.tmpl')),
-        ('share/stgit/examples', glob('examples/*.tmpl') + ['examples/gitconfig']),
-        ('share/stgit/contrib', ['contrib/stgbashprompt.sh']),
-        (
-            'share/stgit/completion',
-            [
-                'completion/stg.fish',
-                'completion/stgit.bash',
-                'completion/stgit.zsh',
-            ],
-        ),
-    ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Console',
