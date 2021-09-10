@@ -11,32 +11,25 @@ from stgit.run import RunException
 FORMAT_VERSION = 4
 
 
-def format_version_key(branch):
+def _format_version_key(branch):
     return 'branch.%s.stgit.stackformatversion' % branch
 
 
-def mkdir_file(filename, mode, encoding='utf-8'):
-    """Opens filename with the given mode, creating the directory it's
-    in if it doesn't already exist."""
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    return open(filename, mode, encoding=encoding)
-
-
-def read_strings(filename, encoding='utf-8'):
+def _read_strings(filename):
     """Reads the lines from a file"""
-    with open(filename, encoding=encoding) as f:
+    with open(filename, encoding='utf-8') as f:
         return [line.strip() for line in f.readlines()]
 
 
-def read_string(filename, encoding='utf-8'):
+def _read_string(filename):
     """Reads the first line from a file"""
-    with open(filename, encoding=encoding) as f:
+    with open(filename, encoding='utf-8') as f:
         return f.readline().strip()
 
 
-def create_empty_file(name):
-    """Creates an empty file"""
-    mkdir_file(name, 'w+').close()
+def _try_rm(f):
+    if os.path.exists(f):
+        os.remove(f)
 
 
 def update_to_current_format_version(repository, branch):
@@ -50,7 +43,7 @@ def update_to_current_format_version(repository, branch):
 
     patches_dir = os.path.join(repository.directory, 'patches')
     branch_dir = os.path.join(patches_dir, branch)
-    old_format_key = format_version_key(branch)
+    old_format_key = _format_version_key(branch)
     older_format_key = 'branch.%s.stgitformatversion' % branch
 
     def get_meta_file_version():
@@ -112,23 +105,15 @@ def update_to_current_format_version(repository, branch):
         out.info('Upgraded branch %s to format version %d' % (branch, v))
         config.set(old_format_key, '%d' % v)
 
-    def mkdir(d):
-        if not os.path.isdir(d):
-            os.makedirs(d)
-
-    def rm(f):
-        if os.path.exists(f):
-            os.remove(f)
-
     def rm_ref(ref):
         if repository.refs.exists(ref):
             repository.refs.delete(ref)
 
     # Update 0 -> 1.
     if get_format_version() == 0:
-        mkdir(os.path.join(branch_dir, 'trash'))
+        os.makedirs(os.path.join(branch_dir, 'trash'), exist_ok=True)
         patch_dir = os.path.join(branch_dir, 'patches')
-        mkdir(patch_dir)
+        os.makedirs(patch_dir, exist_ok=True)
         refs_base = 'refs/patches/%s' % branch
         with open(os.path.join(branch_dir, 'unapplied')) as f:
             patches = f.readlines()
@@ -139,7 +124,7 @@ def update_to_current_format_version(repository, branch):
             os.rename(os.path.join(branch_dir, patch), os.path.join(patch_dir, patch))
             topfield = os.path.join(patch_dir, patch, 'top')
             if os.path.isfile(topfield):
-                top = read_string(topfield)
+                top = _read_string(topfield)
             else:
                 top = None
             if top:
@@ -154,11 +139,11 @@ def update_to_current_format_version(repository, branch):
     if get_format_version() == 1:
         desc_file = os.path.join(branch_dir, 'description')
         if os.path.isfile(desc_file):
-            desc = read_string(desc_file)
+            desc = _read_string(desc_file)
             if desc:
                 config.set('branch.%s.description' % branch, desc)
-            rm(desc_file)
-        rm(os.path.join(branch_dir, 'current'))
+            _try_rm(desc_file)
+        _try_rm(os.path.join(branch_dir, 'current'))
         rm_ref('refs/bases/%s' % branch)
         set_format_version_in_config(2)
 
@@ -173,16 +158,17 @@ def update_to_current_format_version(repository, branch):
     # compatibility with the new infrastructure. The changes here do not
     # affect the compatibility with the old infrastructure (format version 2)
     if get_format_version() == 3:
+        os.makedirs(branch_dir, exist_ok=True)
         hidden_file = os.path.join(branch_dir, 'hidden')
         if not os.path.isfile(hidden_file):
-            create_empty_file(hidden_file)
+            open(hidden_file, 'w+', encoding='utf-8').close()
 
         applied_file = os.path.join(branch_dir, 'applied')
         unapplied_file = os.path.join(branch_dir, 'unapplied')
 
-        applied = read_strings(applied_file)
-        unapplied = read_strings(unapplied_file)
-        hidden = read_strings(hidden_file)
+        applied = _read_strings(applied_file)
+        unapplied = _read_strings(unapplied_file)
+        hidden = _read_strings(hidden_file)
 
         state_ref = 'refs/heads/%s.stgit' % branch
 
