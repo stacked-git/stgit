@@ -2,7 +2,6 @@
 import io
 import os
 import sys
-from glob import glob
 from importlib import import_module
 from importlib.util import module_from_spec, spec_from_file_location
 
