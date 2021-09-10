@@ -61,7 +61,7 @@ def main():
             commands.get_commands(allow_cached=False), sys.stdout
         )
     elif options.py_cmd_list:
-        commands.py_commands(commands.get_commands(allow_cached=False), sys.stdout)
+        commands.write_cmdlist_py(sys.stdout)
     elif options.bash_completion:
         write_bash_completion(sys.stdout)
     elif options.fish_completion:

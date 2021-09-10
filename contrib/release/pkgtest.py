@@ -27,6 +27,8 @@ Test install from unpacked sdist tarball
 [x] Test installing to virtualenv
 [ ] Test installing to system (i.e. w/chroot)
 
+[x] Test install from git URL
+
 Test install sdist tarball with pip
 [x] Ensure generated python is in right place
 [x] Ensure generated completions in right place
@@ -207,6 +209,8 @@ def main():
         repo = prepare_test_repo(base, this_repo)
         prepare_virtual_env(base, python, cache_root)
         test_dirty_version(base, repo)
+        test_install_from_git_url(base, repo, cache_root)
+        test_uninstall_from_venv(base)
         test_sdist_creation(base, repo)
         test_create_git_archive(base, repo)
         test_build(base, repo)
@@ -319,6 +323,39 @@ def test_dirty_version(base, repo):
     check_call(['git', 'checkout', '--', dirty_file], cwd=repo)
     check_call(['git', 'diff', '--quiet'], cwd=repo)
     check_call(['git', 'clean', '-qfx'], cwd=repo)
+
+
+def test_install_from_git_url(base, repo, cache):
+    log_test('test_install_from_git_url')
+    check_call(
+        [
+            venv_py_exe(base),
+            '-m',
+            'pip',
+            'install',
+            # '--no-clean',
+            '--no-index',
+            '--find-links',
+            cache,
+            f'git+file://{str(repo)}',
+        ],
+        cwd=base,
+    )
+    version = version_from_stg_version(
+        check_output([venv_py_exe(base), '-m', 'stgit', '--version'], cwd=base).decode()
+    )
+    log(f'{version=}')
+
+    share_dir = base / 'venv' / 'share' / 'stgit'
+    assert (share_dir / 'completion' / 'stg.fish').is_file()
+    assert (share_dir / 'completion' / 'stgit.bash').is_file()
+    assert (share_dir / 'completion' / 'stgit.zsh').is_file()
+    assert (share_dir / 'templates' / 'patchmail.tmpl').is_file()
+    assert (share_dir / 'contrib').is_dir()
+    assert (share_dir / 'examples').is_dir()
+
+    # Ensure cmdlist.py was generated
+    check_call([venv_py_exe(base), '-c', 'import stgit.commands.cmdlist'], cwd=base)
 
 
 def test_sdist_creation(base, repo):
@@ -556,6 +593,7 @@ def test_develop_mode(base, repo, cache):
 
 
 def test_uninstall_from_venv(base):
+    log_test('test_uninstall_from_venv')
     check_call(
         [venv_py_exe(base), '-m', 'pip', 'uninstall', '--yes', 'stgit'], cwd=base
     )

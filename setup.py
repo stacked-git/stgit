@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
+import io
 import os
+import sys
 from glob import glob
+from importlib import import_module
 from importlib.util import module_from_spec, spec_from_file_location
 
 from setuptools import setup
@@ -50,34 +53,55 @@ class _stgit_sdist(sdist):
 cmdclass = dict(sdist=_stgit_sdist, build_py=_stgit_build_py)
 
 
-def _generate_code():
-    import stgit.commands
-    from stgit.completion.bash import write_bash_completion
-    from stgit.completion.fish import write_fish_completion
-
+# Carefully perform code generation. First check if generated code
+# exists. Only write-out generated code if the content is different.
+# This accommodates several setup.py contexts, including:
+#  - When running from an sdist where code is already generated
+#  - During pip installation where the stgit package is not in sys.path
+#  - In a git worktree where the generated code may change frequently
+#  - When running from a read-only directory/filesystem
+def _maybe_generate_code():
     base = os.path.abspath(os.path.dirname(__file__))
+    paths = dict(
+        cmds=os.path.join(base, 'stgit', 'commands', 'cmdlist.py'),
+        bash=os.path.join(base, 'completion', 'stgit.bash'),
+        fish=os.path.join(base, 'completion', 'stg.fish'),
+    )
 
-    commands = stgit.commands.get_commands(allow_cached=False)
-    with open(os.path.join(base, 'stgit', 'commands', 'cmdlist.py'), 'w') as f:
-        stgit.commands.py_commands(commands, f)
+    existing_content = dict()
+    for k, path in paths.items():
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                existing_content[k] = f.read()
+        else:
+            existing_content[k] = None
 
-    completion_dir = os.path.join(base, 'completion')
-    os.makedirs(completion_dir, exist_ok=True)
-    with open(os.path.join(completion_dir, 'stgit.bash'), 'w') as f:
-        write_bash_completion(f)
-    with open(os.path.join(completion_dir, 'stg.fish'), 'w') as f:
-        write_fish_completion(f)
+    sys.path.insert(0, base)
+    try:
+        try:
+            gen_funcs = dict(
+                cmds=import_module('stgit.commands').write_cmdlist_py,
+                bash=import_module('stgit.completion.bash').write_bash_completion,
+                fish=import_module('stgit.completion.fish').write_fish_completion,
+            )
+        except ImportError:
+            if all(existing_content.values()):
+                return  # Okay, all generated content exists
+            else:
+                raise RuntimeError('Cannot perform code generation')
+    finally:
+        sys.path.pop(0)
+
+    for k, gen_func in gen_funcs.items():
+        with io.StringIO() as f:
+            gen_func(f)
+            new_content = f.getvalue()
+        if existing_content[k] != new_content:
+            with open(paths[k], 'w') as f:
+                f.write(new_content)
 
 
-# Attempt to generate completion scripts and cmdlist.py. When setup.py
-# is executed in the context of a pip installation, the stgit package
-# will not be available and thus this will fail with an Import error.
-# However, in that case the generated files will already be a part of
-# either the sdist or wheel package that pip is installing.
-try:
-    _generate_code()
-except ImportError:
-    print("Skipping stgit code generation")
+_maybe_generate_code()
 
 
 setup(
