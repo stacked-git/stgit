@@ -7,7 +7,7 @@ test_description='Make sure that we can use old StGit repositories'
 
 . ./test-lib.sh
 
-for ver in 0.19 0.12 0.8; do
+for ver in 1.1 1.0 0.19 0.12 0.8; do
 
     tar zxf "$TEST_DIRECTORY"/t4000/$ver.tar.gz
     cd $ver || exit 1

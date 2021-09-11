@@ -28,7 +28,9 @@ unset SHA1_FILE_DIRECTORY
 export GIT_AUTHOR_EMAIL GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL GIT_COMMITTER_NAME
 
-for ver in 0.19 0.12 0.8; do
+set -e
+
+for ver in 1.1 1.0 0.19 0.12 0.8; do
     if [ -e $ver.tar.gz ]; then continue; fi
 
     # Get the required stgit version.
@@ -39,7 +41,7 @@ for ver in 0.19 0.12 0.8; do
 
     # Set up a repository.
     mkdir $ver
-    cd $ver
+    cd $ver || exit 1
     git init
     touch foo
     git add foo
