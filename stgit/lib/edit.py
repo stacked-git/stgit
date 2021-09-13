@@ -76,7 +76,9 @@ def get_patch_description(repo, cd, patch_name, append_diff, diff_flags):
     ).encode(commit_encoding)
     if append_diff:
         parts = [desc.rstrip(), b'---', b'']
-        diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
+        diff = repo.diff_tree(
+            cd.parent.data.tree, cd.tree, diff_flags, binary=False, full_index=True
+        )
         if diff:
             diffstat = repo.default_iw.diffstat(diff).encode(commit_encoding)
             parts.extend([diffstat, diff])

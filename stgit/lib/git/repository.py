@@ -404,7 +404,16 @@ class Repository:
         # Then extract the paths of any submodules
         return set(m.group(1) for m in map(regex.match, files) if m)
 
-    def diff_tree(self, t1, t2, diff_opts=(), pathlimits=(), binary=True, stat=False):
+    def diff_tree(
+        self,
+        t1,
+        t2,
+        diff_opts=(),
+        pathlimits=(),
+        binary=True,
+        stat=False,
+        full_index=False,
+    ):
         """Produce patch (diff) between two trees.
 
         Given two :class:`Tree`s ``t1`` and ``t2``, return the patch that takes
@@ -420,6 +429,8 @@ class Repository:
             args = ['--patch']
             if binary and '--binary' not in diff_opts:
                 args.append('--binary')
+            if full_index:
+                args.append('--full-index')
             args.extend(diff_opts)
         if pathlimits:
             args.append('--')
