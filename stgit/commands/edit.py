@@ -125,38 +125,34 @@ def func(parser, options, args):
 
     if options.save_template:
         options.save_template(
-            edit.patch_desc(
-                stack.repository,
-                cd,
-                patchname,
-                options.diff,
-                options.diff_flags,
-                replacement_diff=None,
+            edit.get_patch_description(
+                stack.repository, cd, patchname, options.diff, options.diff_flags
             )
         )
         return utils.STGIT_SUCCESS
 
     use_editor = cd == orig_cd or options.edit or options.diff
     if use_editor:
-        cd, new_patchname, replacement_diff = edit.interactive_edit_patch(
+        cd, new_patchname, failed_diff = edit.interactive_edit_patch(
             stack.repository, cd, patchname, options.diff, options.diff_flags
         )
+        # If we couldn't apply the patch, fail without even trying to
+        # affect any of the changes.
+        if failed_diff is not None:
+            return utils.STGIT_COMMAND_ERROR
     else:
-        new_patchname = replacement_diff = None
+        new_patchname = None
 
     if not options.no_verify and (use_editor or cd.message != orig_cd.message):
         try:
             cd = run_commit_msg_hook(stack.repository, cd, use_editor)
         except Exception:
             if options.diff:
-                edit.failed(
-                    stack.repository,
-                    cd,
-                    new_patchname,
-                    options.diff,
-                    options.diff_flags,
-                    replacement_diff,
-                    'The commit-msg hook failed.',
+                patch_desc = edit.get_patch_description(
+                    stack.repository, cd, patchname, options.diff, options.diff_flags
+                )
+                edit.note_patch_application_failure(
+                    patch_desc, 'The commit-msg hook failed.'
                 )
             raise
 
@@ -167,7 +163,6 @@ def func(parser, options, args):
         new_patchname,
         options.diff,
         options.diff_flags,
-        replacement_diff,
         options.set_tree,
     )
     return retval

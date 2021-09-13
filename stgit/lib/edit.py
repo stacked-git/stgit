@@ -1,6 +1,5 @@
 """This module contains utility functions for patch editing."""
 
-import io
 import re
 
 from stgit import utils
@@ -18,7 +17,7 @@ EDIT_MESSAGE_INSTRUCTIONS = """# Everything here is editable! You can modify the
 """
 
 
-def update_patch_description(repo, cd, text, contains_diff):
+def _update_patch_description(repo, cd, text, contains_diff):
     """Create commit with updated description.
 
     The given :class:`stgit.lib.git.CommitData` is updated with the
@@ -52,18 +51,16 @@ def update_patch_description(repo, cd, text, contains_diff):
     return cd, patch_name, failed_diff
 
 
-def patch_desc(repo, cd, patch_name, append_diff, diff_flags, replacement_diff):
+def get_patch_description(repo, cd, patch_name, append_diff, diff_flags):
     """Return a description text for the patch.
 
     The returned description is suitable for editing and/or reimporting with
-    :func:`update_patch_description()`.
+    :func:`_update_patch_description()`.
 
     :param cd: the :class:`stgit.lib.git.CommitData` to generate a description of
     :param append_diff: whether to append the patch diff to the description
     :type append_diff: bool
     :param diff_flags: extra parameters to pass to `git diff`
-    :param replacement_diff: diff text to use; or None if it should be computed from cd
-    :type replacement_diff: str or None
 
     """
     commit_encoding = config.get('i18n.commitencoding')
@@ -79,13 +76,10 @@ def patch_desc(repo, cd, patch_name, append_diff, diff_flags, replacement_diff):
     ).encode(commit_encoding)
     if append_diff:
         parts = [desc.rstrip(), b'---', b'']
-        if replacement_diff:
-            parts.append(replacement_diff)
-        else:
-            diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
-            if diff:
-                diffstat = repo.default_iw.diffstat(diff).encode(commit_encoding)
-                parts.extend([diffstat, diff])
+        diff = repo.diff_tree(cd.parent.data.tree, cd.tree, diff_flags)
+        if diff:
+            diffstat = repo.default_iw.diffstat(diff).encode(commit_encoding)
+            parts.extend([diffstat, diff])
         desc = b'\n'.join(parts)
     return desc
 
@@ -93,30 +87,25 @@ def patch_desc(repo, cd, patch_name, append_diff, diff_flags, replacement_diff):
 def interactive_edit_patch(repo, cd, patch_name, edit_diff, diff_flags):
     """Edit the patch interactively.
 
-    If ``edit_diff`` is true, edit the diff as well. If ``replacement_diff`` is not
-    None, it contains a diff to edit instead of the patch's real diff.
+    If ``edit_diff`` is true, edit the diff as well.
 
     :returns: 3-tuple:
         - the new :class:`commitdata<stgit.lib.git.commitdata>`
         - the patch name if given or none otherwise
         - the diff text if it did not apply or none otherwise
     """
-    cd, patch_name, failed_diff = update_patch_description(
+    patch_desc = get_patch_description(repo, cd, patch_name, edit_diff, diff_flags)
+    cd, patch_name, failed_diff = _update_patch_description(
         repo,
         cd,
         utils.edit_bytes(
-            patch_desc(
-                repo, cd, patch_name, edit_diff, diff_flags, replacement_diff=None
-            ),
-            '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)],
+            patch_desc, '.stgit-edit.' + ['txt', 'patch'][bool(edit_diff)]
         ),
         edit_diff,
     )
 
-    # If we couldn't apply the patch, fail without even trying to
-    # effect any of the changes.
     if failed_diff:
-        return failed(repo, cd, patch_name, edit_diff, diff_flags, failed_diff)
+        note_patch_application_failure(patch_desc)
 
     return cd, patch_name, failed_diff
 
@@ -139,7 +128,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
 
     """
     if msg is not None:
-        cd, _, failed_diff = update_patch_description(
+        cd, _, failed_diff = _update_patch_description(
             repo, cd, msg, contains_diff=False
         )
         assert not failed_diff
@@ -158,30 +147,12 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
     return cd
 
 
-def failed(
-    repository,
-    cd,
-    patch_name,
-    edit_diff,
-    diff_flags,
-    replacement_diff,
-    reason='Edited patch did not apply.',
-):
+def note_patch_application_failure(patch_desc, reason='Edited patch did not apply.'):
     """Call when edit fails. Logs to stderr and saves a patch to filesystem."""
     fn = '.stgit-failed.patch'
-    with io.open(fn, 'wb') as f:
-        f.write(
-            patch_desc(
-                repository,
-                cd,
-                patch_name,
-                edit_diff,
-                diff_flags,
-                replacement_diff=replacement_diff,
-            )
-        )
+    with open(fn, 'wb') as f:
+        f.write(patch_desc)
     out.error(reason, 'The patch has been saved to "%s".' % fn)
-    return utils.STGIT_COMMAND_ERROR
 
 
 def perform_edit(
@@ -191,7 +162,6 @@ def perform_edit(
     new_patchname,
     edit_diff,
     diff_flags,
-    replacement_diff,
     set_tree=None,
 ):
     """Given instructions, performs required the edit.
@@ -239,7 +209,9 @@ def perform_edit(
     except transaction.TransactionException:
         # Transaction aborted -- we couldn't check out files due to
         # dirty index/worktree. The edits were not carried out.
-        return (
-            failed(stack, cd, new_patchname, edit_diff, diff_flags, replacement_diff),
-            new_patchname,
+        note_patch_application_failure(
+            get_patch_description(
+                stack.repository, cd, orig_patchname, edit_diff, diff_flags
+            )
         )
+        return utils.STGIT_COMMAND_ERROR, new_patchname

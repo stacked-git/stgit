@@ -270,9 +270,11 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             continue
         if instructions[index].action == Action.EDIT:
             cd = stack.patches[patch_name].data
-            cd, new_patch_name, replacement_diff = edit.interactive_edit_patch(
+            cd, new_patch_name, failed_diff = edit.interactive_edit_patch(
                 stack.repository, cd, patch_name, edit_diff=True, diff_flags=""
             )
+            if failed_diff is not None:
+                return utils.STGIT_COMMAND_ERROR
             _, new_patch_name = edit.perform_edit(
                 stack,
                 cd,
@@ -280,9 +282,8 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
                 new_patch_name,
                 edit_diff=True,
                 diff_flags="",
-                replacement_diff=replacement_diff,
             )
-            if new_patch_name:
+            if new_patch_name and patch_name != new_patch_name:
                 instructions[index] = Instruction(
                     new_patch_name,
                     instructions[index].action,
