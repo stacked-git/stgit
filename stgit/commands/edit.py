@@ -93,7 +93,7 @@ def func(parser, options, args):
 
     if len(args) == 0:
         if not stack.patchorder.applied:
-            raise CmdException('Cannot edit top patch, because no patches are applied')
+            raise CmdException('Cannot edit top patch because no patches are applied')
         patchname = stack.patchorder.applied[-1]
     elif len(args) == 1:
         [patchname] = args
