@@ -487,17 +487,20 @@ def func(parser, options, args):
     """Generate a new commit for the current or given patch."""
 
     if options.spill:
-        if (
-            len(args) > 0
-            or options.index
-            or options.edit
-            or options.update
-            or options.patch
-            or options.force
-            or options.no_verify
-            or options.sign_str
-        ):
-            raise CmdException('--spill option does not take any arguments or options')
+        if len(args) > 0:
+            # TODO: would be nice if path limiting could be used with spill.
+            raise CmdException('Cannot use path limiting with --spill')
+        for opt_name, opt_value in [
+            ('--index', options.index),
+            ('--edit', options.edit),
+            ('--update', options.update),
+            ('--patch', options.patch),
+            ('--force', options.force),
+            ('--no-verify', options.no_verify),
+            ('--sign', options.sign_str),
+        ]:
+            if opt_value:
+                raise CmdException('Cannot combine --spill with %s' % opt_name)
         return __refresh_spill(annotate=options.annotate)
     else:
         # Catch illegal argument combinations.

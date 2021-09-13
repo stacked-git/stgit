@@ -16,6 +16,21 @@ test_expect_success 'Initialize the StGit repository and create a patch and add 
     git add -A
 '
 
+test_expect_success 'Attempt refresh --spill -e' '
+    command_error stg refresh --spill -e 2>&1 |
+    grep "Cannot combine --spill with --edit"
+'
+
+test_expect_success 'Attempt refresh --spill --patch' '
+    command_error stg refresh --spill --patch test-patch 2>&1 |
+    grep "Cannot combine --spill with --patch"
+'
+
+test_expect_success 'Attempt refresh --spill patch0.txt' '
+    command_error stg refresh --spill patch0.txt 2>&1 |
+    grep "Cannot use path limiting with --spill"
+'
+
 test_expect_success 'Save current patch message to a file' '
     stg edit --save-template=- >> expected-message.txt
 '
@@ -65,6 +80,15 @@ test_expect_success 'Check that added file is no longer present in patches and c
     test_cmp expected-status.txt status.txt
     stg patches patch0.txt > patches.txt &&
     test_cmp expected-patches.txt patches.txt
+'
+
+test_expect_success 'Refresh after spill' '
+    stg refresh
+'
+
+test_expect_success 'Spill with annotation' '
+    stg refresh --spill --annotate banana &&
+    stg log -f -n1 | grep -e "banana"
 '
 
 test_done
