@@ -380,7 +380,7 @@ def __import_mail_path(mail_path, filename, options):
     patch_path = mail_path + '-patch'
 
     mailinfo_lines = (
-        Run('git', 'mailinfo', msg_path, patch_path)
+        Run('git', 'mailinfo', '--message-id', msg_path, patch_path)
         .encoding(None)
         .decoding(None)
         .raw_input(mail)

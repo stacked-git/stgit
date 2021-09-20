@@ -21,6 +21,8 @@ test_expect_success \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -32,6 +34,8 @@ test_expect_success \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -44,6 +48,8 @@ test_expect_success \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -60,6 +66,8 @@ test_expect_success \
         | grep -c "tree ecb72e62394189fd2a095047076dab1ae473ed4d") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -72,6 +80,8 @@ test_expect_success \
         | grep -c "tree cf0f9884fdb30bca14d2411e1711f6ae413c9213") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -83,6 +93,8 @@ test_expect_success \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -94,6 +106,8 @@ test_expect_success \
         | grep -c "tree 030be42660323ff2a1958f9ee79589a4f3fbee2f") = 1 ] &&
     [ $(git cat-file -p $(stg id) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id) \
+        | grep -c "Message-Id: <20061111105814.23209.46952.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -105,14 +119,20 @@ test_expect_success \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3-colon) \
+        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -124,14 +144,20 @@ test_expect_success \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3-colon) \
+        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
@@ -151,14 +177,20 @@ test_expect_success \
         | grep -c "tree 401bef82cd9fb403aba18f480a63844416a2e023") = 1 ] &&
     [ $(git cat-file -p $(stg id change-1) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-1) \
+        | grep -c "Message-Id: <20061111114527.31778.12942.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "tree e49dbce010ec7f441015a8c64bce0b99108af4cc") = 1 ] &&
     [ $(git cat-file -p $(stg id change-2) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-2) \
+        | grep -c "Message-Id: <20061111114527.31778.92851.stgit@localhost>") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "tree 166bbaf27a44aee21ba78c98822a741e6f7d78f5") = 1 ] &&
     [ $(git cat-file -p $(stg id change-3-colon) \
         | grep -c "author Inge Ström <inge@power.com>") = 1 ] &&
+    [ $(git cat-file -p $(stg id change-3-colon) \
+        | grep -c "Message-Id: <20061111114527.31778.45876.stgit@localhost>") = 1 ] &&
     stg delete ..
     '
 
