@@ -390,7 +390,7 @@ _stg-rebase() {
     __stg_add_args_merged
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after rebasing]'
-        ':new-base-id:'
+        ':new-base-id:__stg_heads'
     )
     _arguments -s -S $subcmd_args
 }
@@ -645,13 +645,66 @@ __stg_add_args_sign() {
     )
 }
 
-__stg_branch_all() {
-    declare -a all_branches
-    all_branches=(
-        ${${(f)"$(_call_program remote-branch-refs git for-each-ref --format='"%(refname)"' refs/heads 2>/dev/null)"}#refs/heads/}
-    )
+__stg_heads () {
+    _alternative 'heads-local::__stg_heads_local' 'heads-remote::__stg_heads_remote'
+}
+
+__stg_heads_local () {
+    local f gitdir
+    declare -a heads
+
+    heads=(${(f)"$(_call_program headrefs git for-each-ref --format='"%(refname:short)"' refs/heads 2>/dev/null)"})
+    gitdir=$(_call_program gitdir git rev-parse --git-dir 2>/dev/null)
+    if __stg_git_command_successful $pipestatus; then
+        for f in HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD; do
+            [[ -f $gitdir/$f ]] && heads+=$f
+        done
+        [[ -f $gitdir/refs/stash ]] && heads+=stash
+        [[ -f $gitdir/refs/bisect/bad ]] && heads+=bisect/bad
+    fi
+
+    __stg_git_describe_commit heads heads-local "local head" "$@"
+}
+
+__stg_heads_remote () {
+  declare -a heads
+
+  heads=(${(f)"$(_call_program headrefs git for-each-ref --format='"%(refname:short)"' refs/remotes 2>/dev/null)"})
+
+  __stg_git_describe_commit heads heads-remote "remote head" "$@"
+}
+
+__stg_git_command_successful () {
+  if (( ${#*:#0} > 0 )); then
+    _message 'not a git repository'
+    return 1
+  fi
+  return 0
+}
+
+__stg_git_describe_commit () {
+  __stg_git_describe_branch $1 $2 $3 -M 'r:|/=* r:|=*' "${(@)argv[4,-1]}"
+}
+
+__stg_git_describe_branch () {
+  local __commits_in=$1
+  local __tag=$2
+  local __desc=$3
+  shift 3
+
+  integer maxverbose
+  if zstyle -s :completion:$curcontext: max-verbose maxverbose &&
+    (( ${compstate[nmatches]} <= maxverbose )); then
+    local __c
+    local -a __commits
+    for __c in ${(P)__commits_in}; do
+      __commits+=("${__c}:${$(_call_program describe git rev-list -1 --oneline $__c)//:/\\:}")
+    done
+    _describe -t $__tag $__desc __commits "$@"
+  else
     local expl
-    _wanted -V branches expl "branch" compadd $all_branches
+    _wanted $__tag expl $__desc compadd "$@" -a - $__commits_in
+  fi
 }
 
 __stg_branch_stgit() {
