@@ -103,7 +103,7 @@ _stg-diff() {
     subcmd_args+=(
         '(-r --range)'{-r,--range=}'[show diff between revisions]: :__stg_patches_all'
         '(-s --stat)'{-s,--stat}'[show stat instead of diff]'
-        '*:files:__stg_files_dirty'
+        '*:files:__stg_changed_files'
     )
     _arguments -s -S $subcmd_args
 }
@@ -419,7 +419,7 @@ _stg-refresh() {
         '--spill[Spill patch contents to worktree and index, and erase patch content]'
         + '(update-files)'
         '(-u --update)'{-u,--update}'[only update current patch files]'
-        '*:files:__stg_files_dirty'
+        '*:files:__stg_changed_files'
         + '(submodules)'
         '(-s --submodules)'{-s,--submodules}'[include submodules in refresh]'
         '--no-submodules[exclude submodules from refresh]'
@@ -745,14 +745,38 @@ __stg_files_relative() {
     print ${(pj:\0:)files}
 }
 
-__stg_files_dirty() {
-    declare -a dirty_files
-    dirty_files=(
-        ${(f)"$(_call_program dirty-files git diff-index --name-only HEAD 2>/dev/null)"}
-    )
-    dirty_files=(${(0)"$(__stg_files_relative $dirty_files)"})
-    local expl
-    _wanted -V dirty-files expl "dirty files" _multi_parts - / dirty_files
+__stg_diff-index_files () {
+  local tree=$1 description=$2 tag=$3; shift 3
+  local files expl
+
+  # $tree needs to be escaped for _call_program; matters for $tree = "HEAD^"
+  files=$(_call_program files git diff-index -z --name-only --no-color --cached ${(q)tree} 2>/dev/null)
+  __stg_git_command_successful $pipestatus || return 1
+  files=(${(0)"$(__stg_files_relative $files)"})
+  __stg_git_command_successful $pipestatus || return 1
+
+  _wanted $tag expl $description _multi_parts $@ - / files
+}
+
+__stg_changed-in-index_files () {
+  __stg_diff-index_files HEAD 'changed in index file' changed-in-index-files "$@"
+}
+
+__stg_changed-in-working-tree_files () {
+  local files expl
+
+  files=$(_call_program changed-in-working-tree-files git diff -z --name-only --no-color 2>/dev/null)
+  __stg_git_command_successful $pipestatus || return 1
+  files=(${(0)"$(__stg_files_relative $files)"})
+  __stg_git_command_successful $pipestatus || return 1
+
+  _wanted changed-in-working-tree-files expl 'changed in working tree file' _multi_parts $@ -f - / files
+}
+
+__stg_changed_files () {
+  _alternative \
+    'changed-in-index-files::__stg_changed-in-index_files' \
+    'changed-in-working-tree-files::__stg_changed-in-working-tree_files'
 }
 
 __stg_files_known() {
