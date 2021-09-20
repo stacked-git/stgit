@@ -318,7 +318,6 @@ _stg-patches() {
 }
 
 _stg-pick() {
-    # TODO: consider --ref-branch for patches completion
     # TODO: complete --parent commit id
     __stg_add_args_help
     subcmd_args+=(
@@ -329,7 +328,7 @@ _stg-pick() {
         '(-x --expose)'{-x,--expose}'[append imported commit id to patch log]'
         '--unapplied[keep patch unapplied]'
         '*'{-f,--file=}'[only fold given file]: :_files'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_patches_refbranch'
         + '(mode)'
         '--fold[fold the commit into current patch]'
         '--update[fold limited to current patch files]'
@@ -516,12 +515,11 @@ _stg-squash() {
 }
 
 _stg-sync() {
-    # TODO: complete patches based on --ref-branch
     __stg_add_args_help
     subcmd_args+=(
         + '(patches)'
         '(-a --all)'{-a,--all}'[synchronize all applied patches]'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_patches_refbranch'
         + '(source)'
         '(-B --ref-branch)'{-B,--ref-branch}'[synchronize patches with branch]: :__stg_branch_stgit'
         '(-s --series)'{-s,--series=}'[synchronize patches with series]: :_files'
@@ -766,58 +764,65 @@ __stg_files_known() {
     _wanted -V known-files expl "known files" _multi_parts - / known_files
 }
 
-__stg_patches_all() {
+__stg_get_branch_opt() {
+    local short long i
+    short=${1:-'-b'}
+    long=${2:-'--branch'}
+    i=${words[(I)$short|$long(=*|)]}
+    case ${words[i]} in
+    $short|$long)
+        if (( i < $#words )); then
+            echo "--branch=${words[i + 1]}"
+        fi
+        ;;
+    *)
+        echo "--branch=${words[i]#*=}"
+        ;;
+    esac
+}
+
+__stg_want_patches() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program all-patches stg series --no-description --noprefix --all 2>/dev/null)"}
+        ${(f)"$(_call_program want-patches stg series --no-description --noprefix $@ 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches:|words}
+
+}
+
+__stg_patches_all() {
+    __stg_want_patches $(__stg_get_branch_opt) --all
 }
 
 __stg_patches_all_allow_dups() {
     declare -a patches
-    local expl
+    local expl branch_opt
+    branch_opt=$(__stg_get_branch_opt)
     patches=(
-        ${(f)"$(_call_program all-patches stg series --no-description --noprefix --all 2>/dev/null)"}
+        ${(f)"$(_call_program all-patches stg series $branch_opt --no-description --noprefix --all 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches}
 }
 
 __stg_patches_applied() {
-    declare -a patches
-    local expl
-    patches=(
-        ${(f)"$(_call_program applied-patches stg series --no-description --noprefix --applied 2>/dev/null)"}
-    )
-    _wanted -V applied expl "patch" compadd ${patches:|words}
+    __stg_want_patches $(__stg_get_branch_opt) --applied
 }
 
 __stg_patches_hidden() {
-    declare -a patches
-    local expl
-    patches=(
-        ${(f)"$(_call_program unhidden-patches stg series --no-description --noprefix --hidden 2>/dev/null)"}
-    )
-    _wanted -V unapplied expl "patch" compadd ${patches:|words}
+    __stg_want_patches $(__stg_get_branch_opt) --hidden
 }
 
 __stg_patches_unapplied() {
-    declare -a patches
-    local expl
-    patches=(
-        ${(f)"$(_call_program unapplied-patches stg series --no-description --noprefix --unapplied 2>/dev/null)"}
-    )
-    _wanted -V unapplied expl "patch" compadd ${patches:|words}
+    __stg_want_patches $(__stg_get_branch_opt) --unapplied
 }
 
 __stg_patches_unhidden() {
-    declare -a patches
-    local expl
-    patches=(
-        ${(f)"$(_call_program unhidden-patches stg series --no-description --noprefix --applied --unapplied 2>/dev/null)"}
-    )
-    _wanted -V unapplied expl "patch" compadd ${patches:|words}
+    __stg_want_patches $(__stg_get_branch_opt) --applied --unapplied
+}
+
+__stg_patches_refbranch() {
+    __stg_want_patches $(__stg_get_branch_opt -B --ref-branch) --all
 }
 
 __stg_remotes() {
