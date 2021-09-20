@@ -272,23 +272,6 @@ test_expect_success 'Rename patch and edit its diff' '
     stg rename p2-new p2
 '
 rm -f diffedit
-test_expect_success 'Sign a patch' '
-    m=$(msg HEAD) &&
-    stg edit --sign p2 &&
-    test "$(msg HEAD)" = "$m//Signed-off-by: C Ó Mitter <committer@example.com>"
-'
-
-test_expect_success 'Acknowledge a patch' '
-    m=$(msg HEAD^) &&
-    stg edit --ack p1 &&
-    test "$(msg HEAD^)" = "$m//Acked-by: C Ó Mitter <committer@example.com>"
-'
-
-test_expect_success 'Review a patch' '
-    m=$(msg HEAD^) &&
-    stg edit --review p1 &&
-    test "$(msg HEAD^)" = "$m/Reviewed-by: C Ó Mitter <committer@example.com>"
-'
 
 test_expect_success 'Set author' '
     stg edit p2 --author "Jane Austin <jaustin@example.com>" &&
