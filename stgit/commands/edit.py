@@ -68,7 +68,7 @@ options = [
     opt('-d', '--diff', action='store_true', short='Edit the patch diff'),
     opt('-e', '--edit', action='store_true', short='Invoke interactive editor'),
 ]
-options.extend(argparse.sign_options())
+options.extend(argparse.trailer_options())
 options.extend(argparse.message_options(save_template=True))
 options.extend(argparse.hook_options())
 options.extend(argparse.author_options())
@@ -120,7 +120,7 @@ def func(parser, options, args):
             else options.message.encode(config.get('i18n.commitencoding'))
         ),
         author=options.author,
-        sign_str=options.sign_str,
+        trailers=options.trailers,
     )
 
     if options.save_template:

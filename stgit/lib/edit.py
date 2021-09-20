@@ -112,7 +112,7 @@ def interactive_edit_patch(repo, cd, patch_name, edit_diff, diff_flags):
     return cd, patch_name, failed_diff
 
 
-def auto_edit_patch(repo, cd, msg, author, sign_str):
+def auto_edit_patch(repo, cd, msg, author, trailers):
     """Edit the patch noninteractively in a couple of ways:
 
     * If ``msg`` is not None, parse it to find a replacement message, and possibly also
@@ -121,7 +121,7 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
     * ``author`` is a function that takes the original :class:`stgit.lib.git.Person`
       value as argument, and returns the new one.
 
-    * ``sign_str, if not None, is a trailer string to append to the message.
+    * ``trailers`` is a list of trailer strings to append to the message.
 
     :returns: 3-tuple:
         - the new :class:`commitdata<stgit.lib.git.commitdata>`
@@ -137,11 +137,11 @@ def auto_edit_patch(repo, cd, msg, author, sign_str):
     a = author(cd.author)
     if a != cd.author:
         cd = cd.set_author(a)
-    if sign_str is not None:
+    if trailers:
         cd = cd.set_message(
-            utils.add_trailer(
+            utils.add_trailers(
                 cd.message_str,
-                sign_str,
+                trailers,
                 Person.committer().name,
                 Person.committer().email,
             )

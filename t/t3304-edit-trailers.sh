@@ -29,4 +29,10 @@ test_expect_success 'Review a patch' '
     test "$(msg refs/patches/master/p2)" = "$m//Reviewed-by: C Ó Mitter <committer@example.com>"
 '
 
+test_expect_success 'Review, ack, and sign a patch' '
+    m=$(msg refs/patches/master/p3) &&
+    stg edit --review --ack --sign p3 &&
+    test "$(msg refs/patches/master/p3)" = "$m//Reviewed-by: C Ó Mitter <committer@example.com>/Acked-by: C Ó Mitter <committer@example.com>/Signed-off-by: C Ó Mitter <committer@example.com>"
+'
+
 test_done

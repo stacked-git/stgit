@@ -149,7 +149,7 @@ options = [
     ),
 ]
 options.extend(argparse.author_options())
-options.extend(argparse.sign_options())
+options.extend(argparse.trailer_options())
 
 
 directory = DirectoryHasRepository()
@@ -231,7 +231,7 @@ def __create_patch(
             cd,
             message=None,
             author=None,
-            sign_str=options.sign_str,
+            trailers=options.trailers,
             edit=options.edit,
         )
         commit = stack.repository.commit(cd)

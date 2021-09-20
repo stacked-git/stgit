@@ -20,7 +20,7 @@ from stgit.out import out
 from stgit.run import Run, RunException
 from stgit.utils import (
     EditorException,
-    add_trailer,
+    add_trailers,
     edit_string,
     get_hook,
     run_hook_on_bytes,
@@ -490,7 +490,7 @@ def _git_status():
 
 
 def update_commit_data(
-    repo, cd, message=None, author=None, sign_str=None, edit=False, verbose=False
+    repo, cd, message=None, author=None, trailers=None, edit=False, verbose=False
 ):
     """Create updated CommitData according to the command line options."""
     iw = repo.default_iw
@@ -504,11 +504,15 @@ def update_commit_data(
         cd = cd.set_author(author)
 
     # Add Signed-off-by: or similar.
-    if sign_str is None:
-        sign_str = config.get("stgit.autosign")
-    if sign_str:
+    if not trailers:
+        autosign = config.get("stgit.autosign")
+        if autosign:
+            trailers = [autosign]
+    if trailers:
         cd = cd.set_message(
-            add_trailer(cd.message_str, sign_str, cd.committer.name, cd.committer.email)
+            add_trailers(
+                cd.message_str, trailers, cd.committer.name, cd.committer.email
+            )
         )
 
     if edit:

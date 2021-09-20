@@ -164,12 +164,12 @@ def edit_bytes(s, filename):
     return s
 
 
-def add_trailer(message, trailer, name, email):
-    trailer_line = '%s: %s <%s>' % (trailer, name, email)
+def add_trailers(message, trailers, name, email):
+    trailer_args = []
+    for trailer in trailers:
+        trailer_args.extend(['--trailer', '%s: %s <%s>' % (trailer, name, email)])
     return (
-        Run('git', 'interpret-trailers', '--trailer', trailer_line)
-        .raw_input(message)
-        .raw_output()
+        Run('git', 'interpret-trailers', *trailer_args).raw_input(message).raw_output()
     )
 
 

@@ -137,7 +137,7 @@ options = [
 ]
 options.extend(argparse.message_options(save_template=False))
 options.extend(argparse.hook_options())
-options.extend(argparse.sign_options())
+options.extend(argparse.trailer_options())
 options.extend(argparse.author_options())
 options.extend(argparse.diff_opts_option())
 
@@ -386,7 +386,7 @@ def __refresh(
     target_patch=None,
     message=None,
     author=None,
-    sign_str=None,
+    trailers=None,
     annotate=None,
     use_temp_index=False,
     refresh_from_index=False,
@@ -467,7 +467,7 @@ def __refresh(
             cd,
             msg=new_msg,
             author=author,
-            sign_str=sign_str,
+            trailers=trailers,
         )
         new_patch_name = None
         if invoke_editor:
@@ -497,7 +497,9 @@ def func(parser, options, args):
             ('--patch', options.patch),
             ('--force', options.force),
             ('--no-verify', options.no_verify),
-            ('--sign', options.sign_str),
+            ('--sign', options.trailers),
+            ('--ack', options.trailers),
+            ('--review', options.trailers),
         ]:
             if opt_value:
                 raise CmdException('Cannot combine --spill with %s' % opt_name)
@@ -534,7 +536,7 @@ def func(parser, options, args):
             target_patch=options.patch,
             message=options.message,
             author=options.author,
-            sign_str=options.sign_str,
+            trailers=options.trailers,
             annotate=options.annotate,
             use_temp_index=is_path_limiting,
             refresh_from_index=options.index,

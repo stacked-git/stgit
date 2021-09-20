@@ -129,43 +129,39 @@ def write_asciidoc(cmd, f):
     f.write('Part of the StGit suite - see linkman:stg[1]\n')
 
 
-def sign_options():
-    def callback(option, opt_str, value, parser, sign_str):
-        if parser.values.sign_str not in [None, sign_str]:
-            raise optparse.OptionValueError(
-                'Cannot give more than one of --ack, --sign, --review'
-            )
-        parser.values.sign_str = sign_str
+def trailer_options():
+    def callback(option, opt_str, value, parser, trailer):
+        parser.values.trailers.append(trailer)
 
     return [
         opt(
             '--sign',
             action='callback',
-            dest='sign_str',
-            args=[],
+            dest='trailers',
+            default=[],
             callback=callback,
             callback_args=('Signed-off-by',),
-            short='Add "Signed-off-by:" line',
+            short='Add "Signed-off-by:" trailer',
             long='Add a "Signed-off-by:" to the end of the patch.',
         ),
         opt(
             '--ack',
             action='callback',
-            dest='sign_str',
-            args=[],
+            dest='trailers',
+            default=[],
             callback=callback,
             callback_args=('Acked-by',),
-            short='Add "Acked-by:" line',
+            short='Add "Acked-by:" trailer',
             long='Add an "Acked-by:" line to the end of the patch.',
         ),
         opt(
             '--review',
             action='callback',
-            dest='sign_str',
-            args=[],
+            dest='trailers',
+            default=[],
             callback=callback,
             callback_args=('Reviewed-by',),
-            short='Add "Reviewed-by:" line',
+            short='Add "Reviewed-by:" trailer',
             long='Add a "Reviewed-by:" line to the end of the patch.',
         ),
     ]

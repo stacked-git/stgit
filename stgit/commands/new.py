@@ -58,7 +58,7 @@ options = [
 ]
 options.extend(argparse.author_options())
 options.extend(argparse.message_options(save_template=True))
-options.extend(argparse.sign_options())
+options.extend(argparse.trailer_options())
 options.extend(argparse.hook_options())
 
 
@@ -101,7 +101,7 @@ def func(parser, options, args):
         cd,
         message=options.message,
         author=options.author(cd.author),
-        sign_str=options.sign_str,
+        trailers=options.trailers,
         edit=(not options.save_template and options.message is None),
         verbose=verbose,
     )
