@@ -636,9 +636,12 @@ __stg_add_args_savetemplate() {
 
 __stg_add_args_sign() {
     subcmd_args+=(
-        '--ack[add Acked-by line]'
-        '--review[add Reviewed-by line]'
-        '--sign[add Signed-off-by line]'
+        '--ack[add Acked-by trailer]'
+        '--ack-by[add Acked-by trailer]:value'
+        '--review[add Reviewed-by trailer]'
+        '--review-by[add Reviewed-by trailer]:value'
+        '--sign[add Signed-off-by trailer]'
+        '--sign-by[add Signed-off-by trailer]:value'
     )
 }
 

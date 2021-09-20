@@ -131,7 +131,10 @@ def write_asciidoc(cmd, f):
 
 def trailer_options():
     def callback(option, opt_str, value, parser, trailer):
-        parser.values.trailers.append(trailer)
+        parser.values.trailers.append((trailer, None))
+
+    def by_callback(option, opt_str, value, parser, trailer):
+        parser.values.trailers.append((trailer, value))
 
     return [
         opt(
@@ -142,7 +145,25 @@ def trailer_options():
             callback=callback,
             callback_args=('Signed-off-by',),
             short='Add "Signed-off-by:" trailer',
-            long='Add a "Signed-off-by:" to the end of the patch.',
+            long=(
+                'Add a "Signed-off-by:" trailer to the end of the message using the '
+                'committer name and email for the trailer value.'
+            ),
+        ),
+        opt(
+            '--sign-by',
+            action='callback',
+            dest='trailers',
+            default=[],
+            callback=by_callback,
+            callback_args=('Signed-off-by',),
+            type='string',
+            metavar='VALUE',
+            short='Add "Signed-off-by:" trailer with custom VALUE',
+            long=(
+                'Add a "Signed-off-by:" trailer with a custom VALUE to the end of the '
+                'message.'
+            ),
         ),
         opt(
             '--ack',
@@ -152,7 +173,25 @@ def trailer_options():
             callback=callback,
             callback_args=('Acked-by',),
             short='Add "Acked-by:" trailer',
-            long='Add an "Acked-by:" line to the end of the patch.',
+            long=(
+                'Add an "Acked-by:" trailer to the end of the message using the '
+                'commiter name and email for the trailer value.'
+            ),
+        ),
+        opt(
+            '--ack-by',
+            action='callback',
+            dest='trailers',
+            default=[],
+            callback=by_callback,
+            callback_args=('Acked-by',),
+            type='string',
+            metavar='VALUE',
+            short='Add "Acked-by:" trailer with custom VALUE',
+            long=(
+                'Add an "Acked-by:" trailer with a custom VALUE to the end of the '
+                'message.'
+            ),
         ),
         opt(
             '--review',
@@ -162,7 +201,25 @@ def trailer_options():
             callback=callback,
             callback_args=('Reviewed-by',),
             short='Add "Reviewed-by:" trailer',
-            long='Add a "Reviewed-by:" line to the end of the patch.',
+            long=(
+                'Add a "Reviewed-by:" trailer to the end of the message using the '
+                'commiter name and email for the trailer value.'
+            ),
+        ),
+        opt(
+            '--review-by',
+            action='callback',
+            dest='trailers',
+            default=[],
+            callback=by_callback,
+            callback_args=('Reviewed-by',),
+            type='string',
+            metavar='VALUE',
+            short='Add "Reviewed-by:" trailer with custom VALUE',
+            long=(
+                'Add a "Reviewed-by:" trailer with custom VALUE to the end of the '
+                'message.'
+            ),
         ),
     ]
 

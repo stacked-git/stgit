@@ -166,8 +166,11 @@ def edit_bytes(s, filename):
 
 def add_trailers(message, trailers, name, email):
     trailer_args = []
-    for trailer in trailers:
-        trailer_args.extend(['--trailer', '%s: %s <%s>' % (trailer, name, email)])
+    for trailer, user_value in trailers:
+        if user_value is None:
+            trailer_args.extend(['--trailer', '%s: %s <%s>' % (trailer, name, email)])
+        else:
+            trailer_args.extend(['--trailer', '%s: %s' % (trailer, user_value)])
     return (
         Run('git', 'interpret-trailers', *trailer_args).raw_input(message).raw_output()
     )
