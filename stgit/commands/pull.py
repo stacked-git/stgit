@@ -101,6 +101,9 @@ def func(parser, options, args):
         'stgit.pull-policy'
     )
 
+    if policy not in ['pull', 'fetch-rebase', 'rebase']:
+        raise GitConfigException('Unsupported pull-policy "%s"' % policy)
+
     remote_name = None
     if policy == 'rebase':
         # parent is local
@@ -128,9 +131,6 @@ def func(parser, options, args):
 
     if stack.protected:
         raise CmdException('This branch is protected. Pulls are not permitted')
-
-    if policy not in ['pull', 'fetch-rebase', 'rebase']:
-        raise GitConfigException('Unsupported pull-policy "%s"' % policy)
 
     applied = stack.patchorder.applied
 

@@ -20,6 +20,20 @@ test_expect_success \
     '
 
 test_expect_success \
+    'Test invalid remote argument' \
+    '
+    command_error stg pull origin 2>&1 | \
+        grep "specifying a repository is meaningless for policy=\"rebase\""
+    '
+
+test_expect_success \
+    'Test invalid arguments' \
+    '
+    command_error stg pull origin master 2>&1 | \
+        grep "incorrect number of arguments"
+    '
+
+test_expect_success \
     'Add non-rewinding commit in parent and pull the stack' \
     '
     stg branch parent && stg new u1 -m u1 &&

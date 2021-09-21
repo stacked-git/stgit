@@ -10,12 +10,10 @@ test_description='Excercise pull-policy "fetch-rebase".'
 # don't need this repo, but better not drop it, see t1100
 #rm -rf .git
 
-# Need a repo to clone
-test_create_repo upstream
-
 test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
+    test_create_repo upstream &&
     (cd upstream && stg init) &&
     stg clone upstream clone &&
     (cd clone &&
@@ -46,6 +44,26 @@ test_expect_success \
      test_path_is_file clone/file
     '
 
+test_expect_success \
+    'Test too many arguments' \
+    '
+    (
+        cd clone &&
+        command_error stg pull origin master 2>&1 | \
+            grep "incorrect number of arguments"
+    )
+    '
+
+test_expect_success \
+    'Test invalid pull policy' \
+    '
+    test_config -C clone branch.master.stgit.pull-policy bogus &&
+    (
+        cd clone &&
+        command_error stg pull 2>&1 | grep "Unsupported pull-policy"
+    )
+    '
+
 # note: with pre-1.5 Git the clone is not automatically recorded
 # as rewinding, and thus heads/origin is not moved, but the stack
 # is still correctly rebased
@@ -54,7 +72,7 @@ test_expect_success \
     'Rewind/rewrite upstream commit and pull it from clone, without --merged' \
     '
     (cd upstream && echo b >> file2 && stg refresh) &&
-    (cd clone && conflict stg pull)
+    (cd clone && conflict stg pull origin)
     '
 
 test_expect_success \
@@ -65,5 +83,15 @@ test_expect_success \
 test_expect_success \
     'Push the stack back' \
     '(cd clone && stg push -a)'
+
+test_expect_success \
+    'Exercise stgit.keepoptimized' \
+    '
+    test_config -C clone stgit.keepoptimized true &&
+    (
+        cd clone &&
+        stg pull
+    )
+    '
 
 test_done
