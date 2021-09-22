@@ -528,7 +528,10 @@ def update_commit_data(
             message_str += (
                 COMMIT_MESSAGE_DEMARCATION_LINE + COMMIT_MESSAGE_INSTRUCTIONS_2
             )
-            message_str += iw.diff(repo.rev_parse('HEAD').data.tree).decode('utf-8')
+            message_str += iw.diff(
+                repo.rev_parse('HEAD').data.tree,
+                binary=False,
+            ).decode('utf-8')
         new_message = edit_string(message_str, '.stgit-new.txt')
         new_message = new_message.split(COMMIT_MESSAGE_DEMARCATION_LINE)[0]
         new_message = '\n'.join(
