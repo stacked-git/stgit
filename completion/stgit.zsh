@@ -294,6 +294,7 @@ _stg-new() {
     __stg_add_args_hook
     __stg_add_args_savetemplate
     subcmd_args+=(
+        '(-v --verbose)'{-v,--verbose}'[show diff of file changes]'
         ':name:'
     )
     __stg_add_args_message
