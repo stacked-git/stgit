@@ -200,7 +200,7 @@ class StackState:
             raise LogParseException('Not a stack log')
 
         try:
-            stack_json = json.loads(stack_json_blob.data.bytes)
+            stack_json = json.loads(stack_json_blob.data.bytes.decode('utf-8'))
         except json.JSONDecodeError as e:
             raise LogParseException(str(e))
 

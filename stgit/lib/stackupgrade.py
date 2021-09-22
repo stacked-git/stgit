@@ -80,7 +80,7 @@ def update_to_current_format_version(repository, branch):
         try:
             data = (
                 repository.run(['git', 'show', stack_ref])
-                .decoding(None)
+                .decoding('utf-8')
                 .discard_stderr()
                 .raw_output()
             )
