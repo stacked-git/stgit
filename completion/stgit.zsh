@@ -295,7 +295,7 @@ _stg-new() {
     __stg_add_args_savetemplate
     subcmd_args+=(
         '(-v --verbose)'{-v,--verbose}'[show diff of file changes]'
-        ':name:'
+        ':: :_guard "([^-]?#|)" name'
     )
     __stg_add_args_message
     _arguments -s -S $subcmd_args
@@ -544,7 +544,7 @@ _stg-uncommit() {
         '(-t --to)'{-t,--to=}'[uncommit to the specified commit]:commit'
         '(-x --exclusive)'{-x,--exclusive}'[exclude the commit specified by --to]'
         - group-names
-        '*:names:'
+        '*: :_guard "([^-]?#|)" names'
     )
     _arguments -s -S $subcmd_args
 }
