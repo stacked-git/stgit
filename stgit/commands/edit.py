@@ -36,17 +36,21 @@ diff.
 
 The editor is invoked with the following contents:
 
-  From: A U Thor <author@example.com>
-  Date: creation date
+....
+From: A U Thor <author@example.com>
+Date: creation date
 
-  Patch description
+Patch description
+....
 
 If --diff was specified, the diff appears at the bottom, after a
 separator:
 
-  ---
+....
+---
 
-  Diff text
+Diff text
+....
 
 Command-line options can be used to modify specific information
 without invoking the editor. (With the --edit option, the editor is
