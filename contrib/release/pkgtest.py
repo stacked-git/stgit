@@ -432,6 +432,7 @@ def test_create_git_archive(base, repo):
     prefix = Path(stgit_tgz.with_suffix('').with_suffix('').name)
     version = version_from_sdist(stgit_tgz)
     log(f'{version=}')
+    assert 'unknown' not in version
 
     # Ensure generated files are in sdist tarball
     with tarfile.open(stgit_tgz) as tf:
@@ -573,7 +574,10 @@ def test_develop_mode(base, repo, cache):
 
     log(f'{py_c_dirty_version=}')
     assert 'dirty' in py_m_dirty_version
-    assert f'{py_m_stgit_version}.dirty' == py_m_dirty_version
+    assert (
+        f'{py_m_stgit_version}.dirty' == py_m_dirty_version  # Untagged
+        or f'{py_m_stgit_version}+dirty' == py_m_dirty_version  # Tagged
+    )
 
     # Restore worktree to pristine state
     check_call(['git', 'checkout', '--', dirty_file], cwd=repo)

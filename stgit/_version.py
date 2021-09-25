@@ -99,7 +99,11 @@ def _parse_git_describe(description, worktree_path=None):
 
     parts = description.split('-', 2)
 
-    if len(parts) == 3:
+    if len(parts) == 1:
+        # Looks like tagged version from archive
+        release = description
+        dev = "0"
+    elif len(parts) == 3:
         release, dev, git_hash = parts
     else:
         # No tags, only the git hash
