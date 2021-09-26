@@ -14,7 +14,7 @@
 - `stg edit` gains helpful instructions (#138)
 - `stg new` learns `--verbose`, which includes a diff in the editor
   window (similar to `git commit --verbose`). This behavior is also
-  configurable with the `commit.verbose` configuration option
+  configurable with the `stgit.new.verbose` configuration option
 - `stg push` and `stg float` learn `--noapply` option; allows patches
   to be reordered without updating worktree and deferring merge conflict
   resolution (#144)

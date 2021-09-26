@@ -87,7 +87,7 @@ def func(parser, options, args):
     if options.verbose:
         verbose = options.verbose
     else:
-        verbose = config.getbool('commit.verbose') or False
+        verbose = config.getbool('stgit.new.verbose') or False
 
     cd = CommitData(
         tree=stack.head.data.tree,

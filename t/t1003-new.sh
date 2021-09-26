@@ -114,7 +114,7 @@ test_expect_success \
     'New with verbose config option' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    test_config commit.verbose "1" &&
+    test_config stgit.new.verbose "1" &&
     stg new verbose-config-patch &&
     grep "something else" raw_commit_message.txt
 '
@@ -123,7 +123,7 @@ test_expect_success \
     'New with verbose config boolean option' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    test_config commit.verbose "true" &&
+    test_config stgit.new.verbose "true" &&
     stg new verbose-config-bool-patch &&
     grep "something else" raw_commit_message.txt
 '
