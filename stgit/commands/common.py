@@ -507,7 +507,7 @@ def update_commit_data(
     if not trailers:
         autosign = config.get("stgit.autosign")
         if autosign:
-            trailers = [autosign]
+            trailers = [(autosign, None)]
     if trailers:
         cd = cd.set_message(
             add_trailers(

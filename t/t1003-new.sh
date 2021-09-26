@@ -128,6 +128,13 @@ test_expect_success \
     grep "something else" raw_commit_message.txt
 '
 
+test_expect_success \
+    'Use stgit.autosign' '
+    test_config stgit.autosign "Signed-off-by" &&
+    stg new -m autosigned-patch &&
+    git cat-file -p HEAD | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>"
+'
+
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"
