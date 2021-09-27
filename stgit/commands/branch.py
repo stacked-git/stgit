@@ -404,7 +404,7 @@ def func(parser, options, args):
         branch_names = sorted(
             ref.replace('refs/heads/', '', 1)
             for ref in repository.refs
-            if ref.startswith('refs/heads/')
+            if ref.startswith('refs/heads/') and not ref.endswith('.stgit')
         )
 
         if branch_names:
