@@ -63,9 +63,9 @@ class Commands(dict):
         if not candidates:
             out.error(
                 'Unknown command: %s' % key,
-                'Try "%s help" for a list of supported commands' % sys.argv[0],
+                'Try "stg help" for a list of supported commands',
             )
-            sys.exit(utils.STGIT_GENERAL_ERROR)
+            raise KeyError(key)
         elif len(candidates) == 1:
             return candidates[0]
         elif key in candidates:
@@ -75,7 +75,7 @@ class Commands(dict):
                 'Ambiguous command: %s' % key,
                 'Candidates are: %s' % ', '.join(candidates),
             )
-            sys.exit(utils.STGIT_GENERAL_ERROR)
+            raise KeyError(key)
 
     def __getitem__(self, key):
         cmd_mod = self.get(key) or self.get(self.canonical_cmd(key))
@@ -90,8 +90,8 @@ append_alias_commands(cmd_list)
 commands = Commands((cmd, mod) for cmd, mod, _, _ in cmd_list)
 
 
-def print_help():
-    print('usage: %s <command> [options]' % os.path.basename(sys.argv[0]))
+def print_help(prog):
+    print('usage: %s <command> [options]' % prog)
     print()
     print('Generic commands:')
     print('  help        print the detailed command usage')
@@ -101,55 +101,64 @@ def print_help():
     stgit.commands.pretty_command_list(cmd_list, sys.stdout)
 
 
-def _main():
-    sys.argv[:] = list(map(fsdecode_utf8, sys.argv))
-    prog = sys.argv[0] = 'stg'
+def _main(argv):
+    prog = argv[0] = 'stg'
 
-    if len(sys.argv) < 2:
+    if len(argv) < 2:
         print('usage: %s <command>' % prog, file=sys.stderr)
         print(
             '  Try "%s --help" for a list of supported commands' % prog, file=sys.stderr
         )
-        sys.exit(utils.STGIT_GENERAL_ERROR)
+        return utils.STGIT_GENERAL_ERROR
 
-    cmd = sys.argv[1]
+    cmd = argv[1]
 
     if cmd in ['-h', '--help']:
-        if len(sys.argv) >= 3:
-            cmd = commands.canonical_cmd(sys.argv[2])
-            sys.argv[2] = '--help'
+        if len(argv) >= 3:
+            try:
+                cmd = commands.canonical_cmd(argv[2])
+            except KeyError:
+                return utils.STGIT_GENERAL_ERROR
+
+            argv[2] = '--help'
         else:
-            print_help()
-            sys.exit(utils.STGIT_SUCCESS)
+            print_help(prog)
+            return utils.STGIT_SUCCESS
     if cmd == 'help':
-        if len(sys.argv) == 3 and not sys.argv[2] in ['-h', '--help']:
-            cmd = commands.canonical_cmd(sys.argv[2])
-            sys.argv[0] += ' %s' % cmd
+        if len(argv) == 3 and not argv[2] in ['-h', '--help']:
+            try:
+                cmd = commands.canonical_cmd(argv[2])
+            except KeyError:
+                return utils.STGIT_GENERAL_ERROR
+            argv[0] += ' %s' % cmd
             command = commands[cmd]
             parser = argparse.make_option_parser(command)
             if is_cmd_alias(command):
                 parser.remove_option('-h')
             pager(parser.format_help().encode())
         else:
-            print_help()
-        sys.exit(utils.STGIT_SUCCESS)
+            print_help(prog)
+        return utils.STGIT_SUCCESS
     if cmd in ['-v', '--version', 'version']:
         print('Stacked Git %s' % get_version())
         os.system('git --version')
         os.system('python --version')
-        sys.exit(utils.STGIT_SUCCESS)
+        return utils.STGIT_SUCCESS
     if cmd in ['copyright']:
         print(__copyright__)
-        sys.exit(utils.STGIT_SUCCESS)
+        return utils.STGIT_SUCCESS
 
     # re-build the command line arguments
-    cmd = commands.canonical_cmd(cmd)
-    sys.argv[0] += ' %s' % cmd
-    del sys.argv[1]
+    try:
+        cmd = commands.canonical_cmd(cmd)
+    except KeyError:
+        return utils.STGIT_GENERAL_ERROR
+    argv[0] += ' %s' % cmd
+    del argv[1]
 
     command = commands[cmd]
     if is_cmd_alias(command):
-        sys.exit(command.func(sys.argv[1:]))
+        return command.func(argv[1:])
 
     parser = argparse.make_option_parser(command)
 
@@ -165,40 +174,40 @@ def _main():
         debug_level = int(environ_get('STGIT_DEBUG_LEVEL', 0))
     except ValueError:
         out.error('Invalid STGIT_DEBUG_LEVEL environment variable')
-        sys.exit(utils.STGIT_GENERAL_ERROR)
+        return utils.STGIT_GENERAL_ERROR
 
     try:
-        (options, args) = parser.parse_args()
+        (options, args) = parser.parse_args(argv[1:])
         command.directory.setup()
         config_setup()
-        ret = command.func(parser, options, args)
+        return command.func(parser, options, args)
     except MergeConflictException as err:
         if debug_level > 1:
             traceback.print_exc(file=sys.stderr)
         for conflict in err.conflicts:
             out.err(conflict)
-        sys.exit(utils.STGIT_CONFLICT)
+        return utils.STGIT_CONFLICT
     except (StgException, IOError, ParsingError, NoSectionError) as err:
         if debug_level > 0:
             traceback.print_exc(file=sys.stderr)
         out.error(str(err), title='%s %s' % (prog, cmd))
-        sys.exit(utils.STGIT_COMMAND_ERROR)
+        return utils.STGIT_COMMAND_ERROR
     except SystemExit:
         # Triggered by the option parser when it finds bad commandline
         # parameters.
-        sys.exit(utils.STGIT_COMMAND_ERROR)
+        return utils.STGIT_COMMAND_ERROR
     except KeyboardInterrupt:
-        sys.exit(utils.STGIT_GENERAL_ERROR)
+        return utils.STGIT_GENERAL_ERROR
     except BaseException:
         out.error('Unhandled exception:')
         traceback.print_exc(file=sys.stderr)
-        sys.exit(utils.STGIT_BUG_ERROR)
-
-    sys.exit(ret or utils.STGIT_SUCCESS)
+        return utils.STGIT_BUG_ERROR
 
 
-def main():
+def main(argv=None):
+    if argv is None:
+        argv = list(map(fsdecode_utf8, sys.argv))
     try:
-        _main()
+        return _main(argv)
     finally:
         run.finish_logging()

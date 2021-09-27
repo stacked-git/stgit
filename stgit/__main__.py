@@ -1,4 +1,6 @@
 if __name__ == '__main__':  # pragma: no cover
+    import sys
+
     from stgit.main import main
 
-    main()
+    sys.exit(main())
