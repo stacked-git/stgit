@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.3] 2021-09-26
+
+### Removed
+
+### Added
+
+### Changed
+
+### Fixed
+- Repair crash regression when using `stgit.autosign`
+
 ## [1.2] 2021-09-26
 
 ### Removed
