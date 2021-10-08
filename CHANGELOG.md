@@ -1,5 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+- Python 3.5, which became EOL 2020-09-13, support is deprecated and
+  will be removed in a future StGit release
+- Python 3.6, which will be EOL 2021-12-23, support is deprecated and
+  will be removed in a future StGit release
+
+### Added
+- The new `stg import --message-id` option causes the Message-ID from
+  imported emails to be included as the Message-Id trailer in the patch
+  description (#42)
+- The new 'stgit.import.message-id' config option also enables the
+  Message-Id trailer (#42)
+
+### Changed
+- `stg import` no longer creates "Message-Id" trailer by default when
+  importing patches from email (#42)
+- StGit works with Python 3.10
+- `stg version` prints a more abbreviated Python version
+
+### Fixed
+- Repair stack upgrade with `stg branch --list` (#155)
+- Repair crash in `stg squash` with out of order patches and no name
+  specified (#157)
+- Zsh completions learn `stg float --noapply` option
+
+
 ## [1.3] 2021-09-26
 
 ### Removed
