@@ -5,10 +5,10 @@ test_description='Run "stg squash"'
 . ./test-lib.sh
 
 test_expect_success 'Initialize StGit stack' '
-    test_commit_bulk --start=0 --filename=foo.txt --contents="foo %s" --message="p%s" 4 &&
+    test_commit_bulk --start=0 --filename=foo.txt --contents="foo %s" --message="p%s" 6 &&
     stg init &&
-    stg uncommit -n 4 &&
-    for i in 0 1 2 3; do
+    stg uncommit -n 6 &&
+    for i in 0 1 2 3 4 5; do
         git notes add -m "note$i" $(stg id p$i)
     done
 '
@@ -29,21 +29,22 @@ test_expect_success 'Attempt invalid patch name' '
 '
 
 test_expect_success 'Save template' '
-    stg squash --save-template mytemplate p0 p1 &&
+    stg squash --save-template mytemplate p1 p2 &&
     test_path_is_file mytemplate &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5" ] &&
+    echo "squashed patch" > mytemplate &&
+    stg squash --file=mytemplate p1 p2 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch p3 p4 p5" ]
 '
 
 test_expect_success 'Squash some patches' '
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    stg squash --name=q0 --message="wee woo" p1 p2 &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 q0 p3" ] &&
+    stg squash --message="wee woo" p3 p4 p5 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch wee-woo" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
 test_expect_success 'Squash at stack top' '
-    stg squash --name=q1 --message="wee woo wham" q0 p3 &&
+    stg squash --name=q1 --message="wee woo wham" squashed-patch wee-woo &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 q1" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
