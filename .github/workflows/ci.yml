@@ -54,37 +54,6 @@ jobs:
         name: html-doc
         path: ${{ github.workspace }}/stgit-html
 
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - '3.5'
-          - '3.6'
-          - '3.7'
-          - '3.8'
-          - '3.9'
-          - '3.10'
-          - 'pypy-3.7'
-    steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install quilt gnupg2
-    - name: Test
-      env:
-        DEFAULT_TEST_TARGET: "prove"
-        STG_PROVE_OPTS: "--jobs=2"
-        STG_TEST_OPTS: "--verbose-log"
-      run: |
-        timeout 1000s make test
-
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -145,3 +114,34 @@ jobs:
         else
             echo "Missing COVERALLS_REPO_TOKEN secret. Not uploading to coveralls.io."
         fi
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+          - 'pypy-3.7'
+          - '3.5'
+          - '3.6'
+          - '3.7'
+          - '3.8'
+          - '3.9'
+          - '3.10'
+    steps:
+    - uses: actions/checkout@v2
+    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install quilt gnupg2
+    - name: Test
+      env:
+        DEFAULT_TEST_TARGET: "prove"
+        STG_PROVE_OPTS: "--jobs=2"
+        STG_TEST_OPTS: "--verbose-log"
+      run: |
+        timeout 1000s make test
