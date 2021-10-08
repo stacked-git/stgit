@@ -88,7 +88,7 @@ def _squash_patches(stack, trans, patches, name, msg, no_verify=False):
             theirs=c.data.tree,
         )
         if not tree:
-            return None
+            return None, None
         cd = cd.set_tree(tree)
     if msg is None:
         msg = _prepare_message_template(stack, patches, name)
@@ -103,7 +103,9 @@ def _squash_patches(stack, trans, patches, name, msg, no_verify=False):
     if not no_verify:
         cd = run_commit_msg_hook(trans.stack.repository, cd)
 
-    return cd
+    new_name = name or stack.patches.make_name(msg, allow=patches)
+
+    return cd, new_name
 
 
 def squash(stack, patches, name=None, msg=None, no_verify=False):
@@ -111,19 +113,13 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
 
     iw = stack.repository.default_iw
 
-    def get_name(cd):
-        return name or stack.patches.make_name(cd.message_str, allow=patches)
-
-    def make_squashed_patch(trans, new_commit_data):
-        name = get_name(new_commit_data)
-        trans.patches[name] = stack.repository.commit(new_commit_data)
-        trans.unapplied.insert(0, name)
-
     trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
+    new_patch_name = None
     try:
-        new_commit_data = _squash_patches(stack, trans, patches, name, msg, no_verify)
-        new_patch_name = get_name(new_commit_data)
+        new_commit_data, new_patch_name = _squash_patches(
+            stack, trans, patches, name, msg, no_verify
+        )
         if new_commit_data:
             # We were able to construct the squashed commit
             # automatically. So just delete its constituent patches.
@@ -135,12 +131,14 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
             to_push = trans.pop_patches(lambda pn: pn in patches)
             for pn in patches:
                 trans.push_patch(pn, iw)
-            new_commit_data = _squash_patches(
+            new_commit_data, new_patch_name = _squash_patches(
                 stack, trans, patches, name, msg, no_verify
             )
             popped_extra = trans.delete_patches(lambda pn: pn in patches)
             assert not popped_extra
-        make_squashed_patch(trans, new_commit_data)
+
+        trans.patches[new_patch_name] = stack.repository.commit(new_commit_data)
+        trans.unapplied.insert(0, new_patch_name)
 
         # Push the new patch if necessary, and any unrelated patches we've
         # had to pop out of the way.
