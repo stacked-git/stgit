@@ -28,17 +28,40 @@ test_expect_success 'Attempt invalid patch name' '
     grep -e "Patch name \"invalid..name\" is invalid"
 '
 
+test_expect_success 'Attempt out of order' '
+    conflict stg squash --name=q4 p5 p4 &&
+    stg undo --hard
+'
+
+test_expect_success 'Squash out of order no conflict' '
+    echo hello > bar.txt &&
+    stg add bar.txt &&
+    stg new -m bar-patch &&
+    stg refresh &&
+    stg squash -n q5 bar-patch p5 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 q5" ]
+'
+
+test_expect_success 'Squash out of order no conflict no name' '
+    echo hello > baz.txt &&
+    stg add baz.txt &&
+    stg new -m baz-patch &&
+    stg refresh &&
+    stg squash -m q6 baz-patch q5 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 q6" ]
+'
+
 test_expect_success 'Save template' '
     stg squash --save-template mytemplate p1 p2 &&
     test_path_is_file mytemplate &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5" ] &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 q6" ] &&
     echo "squashed patch" > mytemplate &&
     stg squash --file=mytemplate p1 p2 &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch p3 p4 p5" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch p3 p4 q6" ]
 '
 
 test_expect_success 'Squash some patches' '
-    stg squash --message="wee woo" p3 p4 p5 &&
+    stg squash --message="wee woo" p3 p4 q6 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch wee-woo" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
