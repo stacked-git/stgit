@@ -157,6 +157,7 @@ _stg-float() {
     __stg_add_args_help
     __stg_add_args_keep
     subcmd_args+=(
+        '--noapply[Reorder patches by floating without applying]'
         '(-s --series)'{-s,--series=}'[arrange according to series file]: :_files'
         '*:patches:__stg_patches_all'
     )
