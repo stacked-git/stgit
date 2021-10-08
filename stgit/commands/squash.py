@@ -63,11 +63,22 @@ options.extend(argparse.hook_options())
 directory = DirectoryHasRepository()
 
 
-class SaveTemplateDone(Exception):
-    pass
+def _prepare_message_template(stack, patches, name=None):
+    if name:
+        msg = "# Squashing %s patches as '%s'.\n" % (len(patches), name)
+    else:
+        msg = "# Squashing %s patches.\n" % len(patches)
+    for num, pn in enumerate(patches, 1):
+        msg += "# This is the commit message for patch #%s (%s):" % (num, pn)
+        msg += "\n%s\n\n" % stack.patches[pn].data.message_str.rstrip()
+    msg += (
+        "# Please enter the commit message for your patch. Lines starting\n"
+        "# with '#' will be ignored. An empty message aborts the commit."
+    )
+    return msg
 
 
-def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
+def _squash_patches(stack, trans, patches, name, msg, no_verify=False):
     cd = trans.patches[patches[0]].data
     for pn in patches[1:]:
         c = trans.patches[pn]
@@ -80,26 +91,8 @@ def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
             return None
         cd = cd.set_tree(tree)
     if msg is None:
-        if name:
-            msg = "# Squashing %s patches as '%s'.\n" % (len(patches), name)
-        else:
-            msg = "# Squashing %s patches.\n" % len(patches)
-        for num, pn in enumerate(patches, 1):
-            msg += "# This is the commit message for patch #%s (%s):" % (
-                num,
-                pn,
-            )
-            msg += "\n%s\n\n" % trans.patches[pn].data.message_str.rstrip()
-        msg += (
-            "# Please enter the commit message for your patch. Lines starting\n"
-            "# with '#' will be ignored, and an empty message aborts the commit."
-        )
-
-        if save_template:
-            save_template(msg.encode(cd.encoding))
-            raise SaveTemplateDone()
-        else:
-            msg = utils.edit_string(msg, '.stgit-squash.txt')
+        msg = _prepare_message_template(stack, patches, name)
+        msg = utils.edit_string(msg, '.stgit-squash.txt')
 
     msg = '\n'.join(strip_comments(msg)).strip()
     if not msg:
@@ -113,10 +106,10 @@ def _squash_patches(trans, patches, name, msg, save_template, no_verify=False):
     return cd
 
 
-def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
-    # If a name was supplied on the command line, make sure it's OK.
-    if name and name not in patches and name in stack.patches:
-        raise CmdException('Patch name "%s" already taken' % name)
+def squash(stack, patches, name=None, msg=None, no_verify=False):
+    assert not name or name in patches or name not in stack.patches
+
+    iw = stack.repository.default_iw
 
     def get_name(cd):
         return name or stack.patches.make_name(cd.message_str, allow=patches)
@@ -129,13 +122,7 @@ def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
     trans = StackTransaction(stack, 'squash', allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     try:
-        try:
-            new_commit_data = _squash_patches(
-                trans, patches, name, msg, save_template, no_verify
-            )
-        except SaveTemplateDone:
-            trans.abort(iw)
-            return None, None
+        new_commit_data = _squash_patches(stack, trans, patches, name, msg, no_verify)
         new_patch_name = get_name(new_commit_data)
         if new_commit_data:
             # We were able to construct the squashed commit
@@ -149,7 +136,7 @@ def squash(stack, iw, name, msg, save_template, patches, no_verify=False):
             for pn in patches:
                 trans.push_patch(pn, iw)
             new_commit_data = _squash_patches(
-                trans, patches, name, msg, save_template, no_verify
+                stack, trans, patches, name, msg, no_verify
             )
             popped_extra = trans.delete_patches(lambda pn: pn in patches)
             assert not popped_extra
@@ -171,15 +158,16 @@ def func(parser, options, args):
     patches = parse_patches(args, list(stack.patchorder.all))
     if len(patches) < 2:
         raise CmdException('Need at least two patches')
-    if options.name and not stack.patches.is_name_valid(options.name):
-        raise CmdException('Patch name "%s" is invalid' % options.name)
-    retval, _ = squash(
-        stack,
-        stack.repository.default_iw,
-        options.name,
-        options.message,
-        options.save_template,
-        patches,
-        options.no_verify,
-    )
+    if options.name:
+        if not stack.patches.is_name_valid(options.name):
+            raise CmdException('Patch name "%s" is invalid' % options.name)
+        elif options.name not in patches and options.name in stack.patches:
+            raise CmdException('Patch name "%s" already taken' % options.name)
+
+    if options.save_template:
+        msg = _prepare_message_template(stack, patches, options.name)
+        options.save_template(msg.encode('utf-8'))
+        return utils.STGIT_SUCCESS
+
+    retval, _ = squash(stack, patches, options.name, options.message, options.no_verify)
     return retval

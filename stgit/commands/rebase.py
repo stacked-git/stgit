@@ -155,10 +155,6 @@ def __perform_squashes(instructions, index, stack):
     if squashes_found:
         _, new_patch_name = squash(
             stack,
-            stack.repository.default_iw,
-            None,
-            None,
-            None,
             [p.patch_name for p in instructions[index : index + num_squashes]],
         )
         # update instruction set in case the current patch was renamed
@@ -172,13 +168,11 @@ def __perform_squashes(instructions, index, stack):
     return instructions
 
 
-def __fixup_patches(stack, iw, patches):
+def __fixup_patches(stack, patches):
     assert len(patches) > 0
     base_patch = patches[0]
     cd = stack.patches[base_patch]
-    squash(
-        stack, iw, base_patch, cd.data.message_str, save_template=False, patches=patches
-    )
+    squash(stack, patches, name=base_patch, msg=cd.data.message_str)
 
 
 def __do_rebase_interactive(repository, previously_applied_patches, check_merged):
@@ -262,9 +256,7 @@ def __do_rebase_interactive(repository, previously_applied_patches, check_merged
             continue
         if instructions[index].action == Action.FIXUP and index > 0:
             base_patch = instructions[index - 1].patch_name
-            __fixup_patches(
-                stack, stack.repository.default_iw, [base_patch, patch_name]
-            )
+            __fixup_patches(stack, [base_patch, patch_name])
             instructions.pop(index)  # remove 'fixed' (ie deleted) patch
             index -= 1  # re-run this index another time
             continue
