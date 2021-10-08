@@ -5,13 +5,11 @@ test_description='Run "stg squash"'
 . ./test-lib.sh
 
 test_expect_success 'Initialize StGit stack' '
+    test_commit_bulk --start=0 --filename=foo.txt --contents="foo %s" --message="p%s" 4 &&
     stg init &&
+    stg uncommit -n 4 &&
     for i in 0 1 2 3; do
-        stg new p$i -m "foo $i" &&
-        git notes add -m note$i &&
-        echo "foo $i" >> foo.txt &&
-        stg add foo.txt &&
-        stg refresh
+        git notes add -m "note$i" $(stg id p$i)
     done
 '
 
