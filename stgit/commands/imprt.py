@@ -15,6 +15,7 @@ from stgit.commands.common import (
     update_commit_data,
 )
 from stgit.compat import decode_utf8_with_latin1
+from stgit.config import config
 from stgit.lib.git import CommitData, Date, Person
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
@@ -134,6 +135,17 @@ options = [
         '--keep-cr',
         action='store_true',
         short='Do not remove "\\r" from email lines ending with "\\r\\n"',
+    ),
+    opt(
+        '--message-id',
+        action='store_true',
+        short='Create Message-Id trailer from Message-ID header',
+        long=(
+            "Create Message-Id trailer in patch description based on the "
+            "Message-ID email header. This option is applicable when importing "
+            "with --mail or --mbox. This behavior may also be enabled via the "
+            "'stgit.import.message-id' configuration option."
+        ),
     ),
     opt(
         '-e',
@@ -379,8 +391,13 @@ def __import_mail_path(mail_path, filename, options):
     msg_path = mail_path + '-msg'
     patch_path = mail_path + '-patch'
 
+    mailinfo_cmd = ['git', 'mailinfo']
+    if options.message_id or config.getbool('stgit.import.message-id'):
+        mailinfo_cmd.append('--message-id')
+    mailinfo_cmd.extend([msg_path, patch_path])
+
     mailinfo_lines = (
-        Run('git', 'mailinfo', '--message-id', msg_path, patch_path)
+        Run(*mailinfo_cmd)
         .encoding(None)
         .decoding(None)
         .raw_input(mail)

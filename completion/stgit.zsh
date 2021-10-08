@@ -221,6 +221,7 @@ _stg-import() {
         '--replace[replace unapplied patches in series]'
         '--reject[leave rejected hunks in .rej files]'
         '--keep-cr[do not remove CR from email lines ending with CRLF]'
+        '--message-id[create Message-Id trailer from email header]'
         '(-d --showdiff)'{-d,--showdiff}'[show patch content in editor buffer]'
         ':file:_files'
         + '(source)'
