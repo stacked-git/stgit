@@ -51,7 +51,7 @@ test_expect_success 'Test version/--version equivalence' '
     diff v0.txt v1.txt &&
     grep -e "Stacked Git" v0.txt &&
     grep -F "$(git --version)" v0.txt &&
-    grep -e "Python version" v0.txt
+    grep -e "Python 3\." v0.txt
 '
 
 test_expect_success 'Test copyright' '
