@@ -500,7 +500,7 @@ _stg-sink() {
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after sinking]'
         '(-t --to)'{-t,--to=}'[sink patches below target patch]: :__stg_patches_applied'
-        ':patches:__stg_patches_all'
+        '*:patches:__stg_patches_all'
     )
     _arguments -s -S $subcmd_args
 }
