@@ -4,6 +4,7 @@ extern crate lazy_static;
 mod argset;
 mod cmd;
 mod error;
+mod stack;
 
 use clap::{crate_license, crate_version, App, AppSettings};
 use pyo3::prelude::*;
@@ -38,7 +39,7 @@ fn main() {
         Some(("init", _)) => cmd::init::run(),
         Some(("new", cmd_matches)) => cmd::new::run(cmd_matches),
         Some(("refresh", cmd_matches)) => cmd::refresh::run(cmd_matches),
-        Some(("series", _)) => cmd::series::run(),
+        Some(("series", cmd_matches)) => cmd::series::run(cmd_matches),
         Some(("version", _)) => cmd::version::run(),
         _ => punt_to_python(),
     };

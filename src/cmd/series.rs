@@ -1,4 +1,10 @@
-use clap::{App, Arg, ArgGroup, ArgSettings, ValueHint};
+use crate::stack::StackState;
+use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
+use git2::{Oid, Repository};
+use std::io::Write;
+use termcolor::WriteColor;
+
+const UNPRINTABLE: &str = "???";
 
 pub(crate) fn get_subcommand() -> App<'static> {
     App::new("series")
@@ -66,12 +72,14 @@ pub(crate) fn get_subcommand() -> App<'static> {
             Arg::new("description")
                 .long("description")
                 .short('d')
-                .about("Show short description for each patch"),
+                .about("Show short description for each patch")
+                .overrides_with("no-description"),
         )
         .arg(
             Arg::new("no-description")
                 .long("no-description")
-                .about("Disable description"),
+                .about("Disable description")
+                .overrides_with("description"),
         )
         .arg(
             Arg::new("author")
@@ -106,11 +114,156 @@ pub(crate) fn get_subcommand() -> App<'static> {
                 .short('s')
                 .about("Only show patches around the topmost patch"),
         )
+        .arg(&*crate::argset::COLOR_ARG)
         .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
 
-pub(crate) fn run() -> super::Result {
-    println!("series!");
+pub(crate) fn run(matches: &ArgMatches) -> super::Result {
+    let repo = Repository::open_from_env()?;
+    let opt_branch = matches.value_of("branch");
+    let stack_state = StackState::from_branch(&repo, opt_branch)?;
+
+    let opt_all = matches.is_present("all");
+    let opt_applied = matches.is_present("applied");
+    let opt_unapplied = matches.is_present("unapplied");
+    let opt_hidden = matches.is_present("hidden");
+
+    let show_applied = opt_applied || opt_all || !(opt_unapplied || opt_hidden);
+    let show_unapplied = opt_unapplied || opt_all || !(opt_applied || opt_hidden);
+    let show_hidden = opt_hidden || opt_all;
+
+    let mut patches: Vec<(String, Oid, char)> = vec![];
+
+    if show_applied {
+        if let Some((last_patch_name, rest)) = stack_state.applied.split_last() {
+            for patch_name in rest {
+                let oid = stack_state.patches[patch_name].oid;
+                patches.push((patch_name.into(), oid, '+'));
+            }
+            let last_oid = stack_state.patches[last_patch_name].oid;
+            patches.push((last_patch_name.into(), last_oid, '>'));
+        }
+    }
+
+    if show_unapplied {
+        for patch_name in stack_state.unapplied {
+            let oid = stack_state.patches[&patch_name].oid;
+            patches.push((patch_name, oid, '-'));
+        }
+    }
+
+    if show_hidden {
+        for patch_name in stack_state.hidden {
+            let oid = stack_state.patches[&patch_name].oid;
+            patches.push((patch_name, oid, '!'));
+        }
+    }
+
+    if matches.is_present("count") {
+        println!("{}", patches.len());
+        return Ok(());
+    }
+
+    let opt_description = matches.is_present("description");
+    let opt_author = matches.is_present("author");
+
+    let patch_name_width = if opt_description || opt_author {
+        patches.iter().map(|(patch_name, _, _)| {patch_name.len()}).max().unwrap_or(0)
+    } else {
+        0
+    };
+
+    let author_width: usize = if opt_author && opt_description {
+        patches.iter().map(|(_, oid, _)| -> usize {
+            if let Ok(commit) = repo.find_commit(*oid) {
+                let author = commit.author();
+                author.name().unwrap_or(UNPRINTABLE).len()
+            } else {
+                0
+            }
+        }).max().unwrap_or(0)
+    } else {
+        0
+    };
+
+    let opt_no_prefix = matches.is_present("no-prefix");
+    let opt_empty = matches.is_present("empty");
+
+    let color_choice = match matches.value_of("color").unwrap_or("auto") {
+        "always" => termcolor::ColorChoice::Always,
+        "ansi" => termcolor::ColorChoice::AlwaysAnsi,
+        "auto" => {
+            if atty::is(atty::Stream::Stdout) {
+                termcolor::ColorChoice::Auto
+            } else {
+                termcolor::ColorChoice::Never
+            }
+        }
+        _ => termcolor::ColorChoice::Never
+    };
+
+    let mut stdout = termcolor::StandardStream::stdout(color_choice);
+    let mut color_spec = termcolor::ColorSpec::new();
+
+    for (patch_name, oid, sigil) in patches {
+        let commit = repo.find_commit(oid)?;
+
+        if opt_empty {
+            if commit.parent_count() == 1 && commit.tree_id() == commit.parent(0)?.tree_id() {
+                stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
+                write!(stdout, "0")?;
+                stdout.set_color(color_spec.set_fg(None))?;
+            } else {
+                write!(stdout, " ")?;
+            }
+        }
+
+        if !opt_no_prefix {
+            let sigil_color = match sigil {
+                '+' => Some(termcolor::Color::Green),
+                '>' => Some(termcolor::Color::Blue),
+                '-' => Some(termcolor::Color::Magenta),
+                '!' => Some(termcolor::Color::Red),
+                _ => None
+            };
+            stdout.set_color(color_spec.set_fg(sigil_color))?;
+            write!(stdout, "{} ", sigil)?;
+            stdout.set_color(color_spec.set_fg(None))?;
+        }
+
+        match sigil {
+            '+' => color_spec.set_intense(true),
+            '>' => color_spec.set_bold(true),
+            '-' => color_spec.set_dimmed(true),
+            '!' => color_spec.set_dimmed(true).set_italic(true),
+            _ => panic!("unhandled sigil {:?}", sigil),
+        };
+        stdout.set_color(&color_spec)?;
+        write!(stdout, "{:width$}", patch_name, width = patch_name_width)?;
+
+        if opt_author {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+            let author: git2::Signature = commit.author();
+            let author_name: &str = if let Some(name) = author.name() {
+                name
+            } else {
+                UNPRINTABLE
+            };
+            write!(stdout, " # {:width$}", author_name, width = author_width)?;
+        }
+        if opt_description {
+            let suffix = match commit.summary() {
+                Some(summary) => format!(" # {}", summary),
+                None => " #".to_string(),
+            };
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+            write!(stdout, "{}", suffix)?;
+        }
+        color_spec.clear();
+        stdout.set_color(&color_spec)?;
+        write!(stdout, "\n")?;
+    }
+
     Ok(())
 }
