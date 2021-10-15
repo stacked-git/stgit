@@ -8,6 +8,7 @@ use chrono::{FixedOffset, NaiveDateTime};
 use git2::{Commit, FileMode, Oid, Reference, Repository, Tree};
 
 pub(crate) use crate::error::Error;
+pub(crate) use crate::patchname::PatchName;
 
 const MAX_PARENTS: usize = 16;
 
@@ -18,10 +19,10 @@ pub(crate) struct PatchDescriptor {
 pub(crate) struct Stack {
     pub prev: Option<Oid>,
     pub head: Oid,
-    pub applied: Vec<String>,
-    pub unapplied: Vec<String>,
-    pub hidden: Vec<String>,
-    pub patches: BTreeMap<String, PatchDescriptor>,
+    pub applied: Vec<PatchName>,
+    pub unapplied: Vec<PatchName>,
+    pub hidden: Vec<PatchName>,
+    pub patches: BTreeMap<PatchName, PatchDescriptor>,
 }
 
 impl Stack {
@@ -198,7 +199,7 @@ impl Stack {
         for patch_name in self.all_patches() {
             let oid = self.patches[patch_name].oid;
             builder.insert(
-                patch_name,
+                patch_name.to_string(),
                 self.make_patch_meta(repo, patch_name, &oid, prev_state_tree)?,
                 i32::from(FileMode::Blob),
             )?;
@@ -209,7 +210,7 @@ impl Stack {
     fn make_patch_meta(
         &self,
         repo: &Repository,
-        patch_name: &str,
+        patch_name: &PatchName,
         oid: &Oid,
         prev_state_tree: &Option<(Self, Tree)>,
     ) -> Result<Oid, Error> {
@@ -221,7 +222,7 @@ impl Stack {
                 let prev_patch_oid = &prev_state.patches[prev_patch_name].oid;
                 prev_patch_name == patch_name && prev_patch_oid == oid
             }) {
-                let patch_meta_path = String::from("patches/") + patch_name;
+                let patch_meta_path = format!("patches/{}", patch_name);
                 let patch_meta_path = std::path::Path::new(&patch_meta_path);
                 if let Ok(prev_patch_entry) = prev_tree.get_path(patch_meta_path) {
                     return Ok(prev_patch_entry.id());
@@ -253,10 +254,12 @@ impl Stack {
     }
 }
 
-pub struct AllPatchesIter<'a>(Chain<Chain<Iter<'a, String>, Iter<'a, String>>, Iter<'a, String>>);
+pub struct AllPatchesIter<'a>(
+    Chain<Chain<Iter<'a, PatchName>, Iter<'a, PatchName>>, Iter<'a, PatchName>>,
+);
 
 impl<'a> Iterator for AllPatchesIter<'a> {
-    type Item = &'a String;
+    type Item = &'a PatchName;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
@@ -280,10 +283,10 @@ impl<'de> serde::Deserialize<'de> for Stack {
             pub version: i64,
             pub prev: Option<String>,
             pub head: String,
-            pub applied: Vec<String>,
-            pub unapplied: Vec<String>,
-            pub hidden: Vec<String>,
-            pub patches: BTreeMap<String, RawPatchDescriptor>,
+            pub applied: Vec<PatchName>,
+            pub unapplied: Vec<PatchName>,
+            pub hidden: Vec<PatchName>,
+            pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
         }
 
         let raw = RawStackState::deserialize(deserializer)?;
@@ -336,10 +339,10 @@ impl serde::Serialize for Stack {
             pub version: String,
             pub prev: Option<String>,
             pub head: String,
-            pub applied: Vec<String>,
-            pub unapplied: Vec<String>,
-            pub hidden: Vec<String>,
-            pub patches: BTreeMap<String, RawPatchDescriptor>,
+            pub applied: Vec<PatchName>,
+            pub unapplied: Vec<PatchName>,
+            pub hidden: Vec<PatchName>,
+            pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
         }
 
         let prev: Option<String> = self.prev.map(|oid| oid.to_string());

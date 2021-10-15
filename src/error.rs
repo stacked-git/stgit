@@ -2,7 +2,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
-
     #[error("Git2: {0}")]
     GitError(#[from] git2::Error),
 
@@ -17,6 +16,9 @@ pub(crate) enum Error {
 
     #[error("{0}")]
     FormatError(#[from] std::fmt::Error),
+
+    #[error("{0}")]
+    PatchNameError(#[from] crate::patchname::Error),
 
     #[error("not on branch, HEAD is detached")]
     HeadDetached,

@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use git2::{Oid, Repository};
 use termcolor::WriteColor;
 
-use crate::stack::Stack;
+use crate::{patchname::PatchName, stack::Stack};
 
 const UNPRINTABLE: &str = "???";
 
@@ -135,16 +135,16 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let show_unapplied = opt_unapplied || opt_all || !(opt_applied || opt_hidden);
     let show_hidden = opt_hidden || opt_all;
 
-    let mut patches: Vec<(String, Oid, char)> = vec![];
+    let mut patches: Vec<(PatchName, Oid, char)> = vec![];
 
     if show_applied {
         if let Some((last_patch_name, rest)) = stack.applied.split_last() {
             for patch_name in rest {
                 let oid = stack.patches[patch_name].oid;
-                patches.push((patch_name.into(), oid, '+'));
+                patches.push((patch_name.clone(), oid, '+'));
             }
             let last_oid = stack.patches[last_patch_name].oid;
-            patches.push((last_patch_name.into(), last_oid, '>'));
+            patches.push((last_patch_name.clone(), last_oid, '>'));
         }
     }
 

@@ -4,6 +4,7 @@ extern crate lazy_static;
 mod argset;
 mod cmd;
 mod error;
+mod patchname;
 mod stack;
 
 use clap::{crate_license, crate_version, App, AppSettings};
