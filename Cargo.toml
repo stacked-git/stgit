@@ -1,0 +1,20 @@
+[package]
+name = "stgit"
+version = "2.0.0-alpha.0"
+edition = "2021"
+authors = [
+    "Catalin Marinas <catalin.marinas@gmail.com>",
+    "Peter Grayson <pete@jpgrayson.net>",
+]
+license = "GPL-2.0-only"
+homepage = "https://stacked-git.github.io/"
+repository = "https://github.com/stacked-git/stgit"
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "stg"
+
+[dependencies.pyo3]
+version = "0.14.5"
+features = ["auto-initialize"]

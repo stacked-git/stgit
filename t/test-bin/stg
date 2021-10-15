@@ -1,6 +1,9 @@
 #!/bin/sh
 
-if test -n "$COVERAGE_RCFILE"
+if test ${STG_RUST:-0} -gt "0"
+then
+    exec "$STG_ROOT/target/release/stg" "$@"
+elif test -n "$COVERAGE_RCFILE"
 then
     if test -z "$COVERAGE_FILE"
     then
