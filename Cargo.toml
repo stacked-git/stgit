@@ -16,6 +16,7 @@ path = "src/main.rs"
 name = "stg"
 
 [dependencies]
+git2 = "0.13"
 lazy_static = "~1.4"
 thiserror = "~1.0"
 
