@@ -55,7 +55,7 @@ impl Stack {
     fn from_stack_json(data: &[u8]) -> Result<Self, Error> {
         match serde_json::from_slice(data) {
             Ok(queue_state) => Ok(queue_state),
-            Err(e) => Err(Error::JsonError { source: e }),
+            Err(e) => Err(Error::JsonError(e)),
         }
     }
 

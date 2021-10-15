@@ -65,7 +65,7 @@ fn punt_to_python() -> cmd::Result {
 
     if let Err(e) = result {
         Python::with_gil(|py| e.print(py));
-        Err(crate::error::Error::PythonError { source: e })
+        Err(crate::error::Error::PythonError(e))
     } else {
         Ok(())
     }

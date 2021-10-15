@@ -2,25 +2,21 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub(crate) enum Error {
-    // #[error("invalid patch name: {0}")]
-    // InvalidPatchName(String),
-    #[error("Git2 error")]
-    GitError {
-        #[from]
-        source: git2::Error,
-    },
 
-    #[error("Python error")]
-    PythonError {
-        #[from]
-        source: pyo3::PyErr,
-    },
+    #[error("Git2: {0}")]
+    GitError(#[from] git2::Error),
 
-    #[error("JSON deserialize error")]
-    JsonError {
-        #[from]
-        source: serde_json::Error,
-    },
+    #[error("Python: {0}")]
+    PythonError(#[from] pyo3::PyErr),
+
+    #[error("JSON deserialize error: {0}")]
+    JsonError(#[from] serde_json::Error),
+
+    #[error("{0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("{0}")]
+    FormatError(#[from] std::fmt::Error),
 
     #[error("not on branch, HEAD is detached")]
     HeadDetached,
@@ -36,10 +32,4 @@ pub(crate) enum Error {
 
     #[error("non-UTF-8 name encountered")]
     StGitNonUtf8Name,
-
-    #[error("")]
-    IoError(#[from] std::io::Error),
-
-    #[error("")]
-    FormatError(#[from] std::fmt::Error),
 }
