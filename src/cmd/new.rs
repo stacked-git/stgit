@@ -1,5 +1,10 @@
-use crate::argset;
 use clap::{App, Arg, ArgMatches, ValueHint};
+use git2::{DiffOptions, Repository};
+
+use crate::commitdata::CommitData;
+use crate::error::Error;
+use crate::patchdescription::PatchDescription;
+use crate::{argset, patchname::PatchName, stack::Stack};
 
 pub(crate) fn get_subcommand() -> App<'static> {
     App::new("new")
@@ -27,10 +32,10 @@ pub(crate) fn get_subcommand() -> App<'static> {
                 .short('v')
                 .about("Show diff in message template"),
         )
-        .args(&*argset::AUTHOR_ARGS)
-        .args(&*argset::MESSAGE_ARGS)
-        .arg(&*argset::MESSAGE_TEMPLATE_ARG)
-        .args(&*argset::TRAILER_ARGS)
+        .args(&*crate::signature::AUTHOR_SIGNATURE_ARGS)
+        .args(&*crate::message::MESSAGE_ARGS)
+        .arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
+        .args(&*crate::trailers::TRAILER_ARGS)
         .arg(&*argset::HOOK_ARG)
         .arg(
             Arg::new("patchname")
@@ -39,7 +44,122 @@ pub(crate) fn get_subcommand() -> App<'static> {
         )
 }
 
-pub(crate) fn run(_matches: &ArgMatches) -> super::Result {
-    println!("new!");
+pub(crate) fn run(matches: &ArgMatches) -> super::Result {
+    let repo = Repository::open_from_env()?;
+    if repo.index()?.has_conflicts() {
+        return Err(Error::OutstandingConflicts);
+    }
+    let branch_name: Option<&str> = None;
+    let stack = Stack::from_branch(&repo, branch_name)?;
+    let patchname = if let Some(name) = matches.value_of("patchname") {
+        Some(name.parse::<PatchName>()?)
+    } else {
+        None
+    };
+
+    if let Some(ref patchname) = patchname {
+        if stack.patches.contains_key(patchname) {
+            return Err(Error::PatchNameExists(patchname.to_string()));
+        }
+    }
+
+    let config = repo.config()?;
+
+    let verbose =
+        matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
+
+    let default_sig = crate::signature::CheckedSignature::default(&repo)?;
+    let head_ref = repo.head()?;
+    let tree = head_ref.peel_to_tree()?;
+    let committer = crate::signature::CheckedSignature::make_committer(&repo)?;
+    let parents = vec![head_ref.peel_to_commit()?];
+
+    let (message, must_edit) = match crate::message::get_message_from_args(matches)? {
+        Some(message) => (message, false),
+        None => ("".to_string(), true),
+    };
+    let message = crate::trailers::add_trailers(message, &matches, &default_sig)?;
+
+    let diff = if must_edit && verbose {
+        Some(repo.diff_tree_to_workdir(
+            Some(&tree),
+            Some(DiffOptions::new().enable_fast_untracked_dirs(true)),
+        )?)
+    } else {
+        None
+    };
+
+    let patch_desc = PatchDescription {
+        patchname,
+        author: crate::signature::CheckedSignature::make_author(&repo, &matches)?,
+        message: Some(message),
+        diff,
+    };
+
+    let patch_desc = if must_edit {
+        crate::edit::edit_interactive(patch_desc, &config)?
+    } else {
+        patch_desc
+    };
+
+    // TODO: change PatchDescription.message from Option<String> to String
+    let message = patch_desc.message.unwrap_or_else(String::new);
+
+    let mut cd = CommitData::new(
+        patch_desc.author,
+        committer,
+        message,
+        tree,
+        parents,
+    );
+
+    if let Some(template_path) = matches.value_of_os("save-template") {
+        std::fs::write(template_path, &cd.message)?;
+        return Ok(());
+    }
+
+    if !matches.is_present("no-verify") {
+        cd = crate::hook::run_commit_msg_hook(&repo, cd, false)?;
+    }
+
+    let _patchname = if let Some(patchname) = patch_desc.patchname {
+        // TODO: this patchname needs to be checked for uniqueness
+        // TODO: what to do if not unique? Warn and make unique? Or fail and lose commit message?
+        patchname
+    } else {
+        let len_limit = config.get_i32("stgit.namelength").ok();
+        let len_limit: Option<usize> = if let Some(limit) = len_limit {
+            usize::try_from(limit).ok()
+        } else {
+            None
+        };
+        let disallow: Vec<&PatchName> = stack.all_patches().collect();
+        let allow = vec![];
+        PatchName::make_unique(&cd.message, len_limit, true, &allow, &disallow)
+    };
+
+    // println!("MESSAGE:\n{}END", &cd.message);
+
+    // let _commit_oid = repo.commit(
+    //     None,
+    //     &cd.author.get_signature()?,
+    //     &cd.committer.get_signature()?,
+    //     &cd.message,
+    //     &cd.tree,
+    //     &cd.parents(),
+    // )?;
+
+    // let message = if must_edit {
+    //     crate::edit::edit(&commit_oid, &message)
+    // } else {
+    //     message
+    // }
+
+    // let commit_buf = repo.commit_create_buffer(&author, &committer, &message, &tree, &parents)?;
+
+    // println!("new! {:?} {:?}", patchname, verbose);
+    // if let Some(patchname) = patchname {
+    //     println!("{}", patchname);
+    // }
     Ok(())
 }

@@ -7,8 +7,8 @@ use std::str;
 use chrono::{FixedOffset, NaiveDateTime};
 use git2::{Commit, FileMode, Oid, Reference, Repository, Tree};
 
-pub(crate) use crate::error::Error;
-pub(crate) use crate::patchname::PatchName;
+use crate::error::Error;
+use crate::patchname::PatchName;
 
 const MAX_PARENTS: usize = 16;
 
@@ -254,7 +254,7 @@ impl Stack {
     }
 }
 
-pub struct AllPatchesIter<'a>(
+pub(crate) struct AllPatchesIter<'a>(
     Chain<Chain<Iter<'a, PatchName>, Iter<'a, PatchName>>, Iter<'a, PatchName>>,
 );
 

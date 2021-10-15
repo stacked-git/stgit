@@ -20,6 +20,9 @@ pub(crate) enum Error {
     #[error("{0}")]
     PatchNameError(#[from] crate::patchname::Error),
 
+    #[error("patch `{0}` already exists")]
+    PatchNameExists(String),
+
     #[error("not on branch, HEAD is detached")]
     HeadDetached,
 
@@ -34,4 +37,28 @@ pub(crate) enum Error {
 
     #[error("non-UTF-8 branch name `{0}`")]
     NonUtf8BranchName(String),
+
+    #[error("non-UTF-8 {0} `{1}`")]
+    NonUtf8Argument(String, String),
+
+    #[error("file `{0}` contains non-UTF-8 data")]
+    NonUtf8File(String),
+
+    #[error("patch description contains non-UTF-8 data")]
+    NonUtf8PatchDescription,
+
+    #[error("failed to parse patch description: {0}")]
+    PatchDescriptionParseError(String),
+
+    #[error("resolve outstanding conflicts first")]
+    OutstandingConflicts,
+
+    #[error("invalid name and email `{0}`")]
+    InvalidNameEmail(String),
+
+    #[error("invalid date `{0}`")]
+    InvalidDate(String),
+
+    #[error("problem with the editor `{0}`")]
+    EditorFail(String),
 }

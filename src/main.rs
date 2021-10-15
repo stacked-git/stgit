@@ -3,9 +3,16 @@ extern crate lazy_static;
 
 mod argset;
 mod cmd;
+mod commitdata;
+mod edit;
 mod error;
+mod hook;
+mod message;
+mod patchdescription;
 mod patchname;
+mod signature;
 mod stack;
+mod trailers;
 
 use std::io::Write;
 
@@ -81,9 +88,13 @@ fn print_error_message(err: crate::error::Error) {
     };
     let mut stderr = termcolor::StandardStream::stderr(color_choice);
     let mut color = termcolor::ColorSpec::new();
-    stderr.set_color(color.set_fg(Some(termcolor::Color::Red)).set_bold(true)).unwrap();
+    stderr
+        .set_color(color.set_fg(Some(termcolor::Color::Red)).set_bold(true))
+        .unwrap();
     write!(stderr, "error: ").unwrap();
-    stderr.set_color(color.set_fg(None).set_bold(false)).unwrap();
+    stderr
+        .set_color(color.set_fg(None).set_bold(false))
+        .unwrap();
     let err_string: String = err.to_string();
     let mut remainder: &str = &err_string;
     loop {
@@ -103,7 +114,9 @@ fn print_error_message(err: crate::error::Error) {
             }
             3 => {
                 write!(stderr, "{}`", parts[0]).unwrap();
-                stderr.set_color(color.set_fg(Some(termcolor::Color::Yellow))).unwrap();
+                stderr
+                    .set_color(color.set_fg(Some(termcolor::Color::Yellow)))
+                    .unwrap();
                 write!(stderr, "{}", parts[1]).unwrap();
                 stderr.set_color(color.set_fg(None)).unwrap();
                 write!(stderr, "`").unwrap();

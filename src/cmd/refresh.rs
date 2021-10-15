@@ -74,7 +74,6 @@ pub(crate) fn get_subcommand() -> App<'static> {
                 .value_name("PATCH")
                 .value_hint(ValueHint::Other),
         )
-        .args(&*argset::EDIT_DIFF_ARGS)
         .arg(
             Arg::new("annotate")
                 .long("annotate")
@@ -105,10 +104,10 @@ pub(crate) fn get_subcommand() -> App<'static> {
                 emptying patch content",
                 ),
         )
-        .args(&*argset::MESSAGE_ARGS)
+        .args(&*crate::message::MESSAGE_ARGS)
         .arg(&*argset::HOOK_ARG)
-        .args(&*argset::TRAILER_ARGS)
-        .args(&*argset::AUTHOR_ARGS)
+        .args(&*crate::trailers::TRAILER_ARGS)
+        .args(&*crate::signature::AUTHOR_SIGNATURE_ARGS)
         .arg(&*argset::DIFF_OPTS_ARG)
 }
 
