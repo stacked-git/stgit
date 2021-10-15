@@ -32,6 +32,6 @@ pub(crate) enum Error {
     #[error("stack metadata not found")]
     StGitStackMetadataNotFound,
 
-    #[error("non-UTF-8 name encountered")]
-    StGitNonUtf8Name,
+    #[error("non-UTF-8 branch name `{0}`")]
+    NonUtf8BranchName(String),
 }

@@ -376,7 +376,9 @@ pub(crate) fn initialize<'repo>(
     branch_name: Option<&str>,
 ) -> Result<(), Error> {
     let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or(Error::StGitNonUtf8Name)?;
+    let branch_shorthand = branch_ref.shorthand().ok_or(Error::NonUtf8BranchName(
+        String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string(),
+    ))?;
     let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
     if repo.find_reference(&stack_refname).is_ok() {
         return Err(Error::StGitStackAlreadyInitialized(branch_shorthand.into()));
@@ -411,7 +413,9 @@ fn get_stack_ref<'repo>(
     branch_name: Option<&str>,
 ) -> Result<Reference<'repo>, Error> {
     let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or(Error::StGitNonUtf8Name)?;
+    let branch_shorthand = branch_ref.shorthand().ok_or(Error::NonUtf8BranchName(
+        String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string(),
+    ))?;
     let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
     repo.find_reference(&stack_refname)
         .map_err(|_| Error::StGitStackNotInitialized(branch_shorthand.into()))
