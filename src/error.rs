@@ -28,8 +28,14 @@ pub(crate) enum Error {
     #[error("branch `{0}` not initialized")]
     StGitStackNotInitialized(String),
 
+    #[error("branch `{0}` already initialized")]
+    StGitStackAlreadyInitialized(String),
+
     #[error("stack metadata not found")]
     StGitStackMetadataNotFound,
+
+    #[error("non-UTF-8 name encountered")]
+    StGitNonUtf8Name,
 
     #[error("")]
     IoError(#[from] std::io::Error),

@@ -1,8 +1,10 @@
-use crate::stack::StackState;
+use std::io::Write;
+
 use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use git2::{Oid, Repository};
-use std::io::Write;
 use termcolor::WriteColor;
+
+use crate::stack::Stack;
 
 const UNPRINTABLE: &str = "???";
 
@@ -122,7 +124,7 @@ pub(crate) fn get_subcommand() -> App<'static> {
 pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
-    let stack_state = StackState::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(&repo, opt_branch)?;
 
     let opt_all = matches.is_present("all");
     let opt_applied = matches.is_present("applied");
@@ -136,26 +138,26 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let mut patches: Vec<(String, Oid, char)> = vec![];
 
     if show_applied {
-        if let Some((last_patch_name, rest)) = stack_state.applied.split_last() {
+        if let Some((last_patch_name, rest)) = stack.applied.split_last() {
             for patch_name in rest {
-                let oid = stack_state.patches[patch_name].oid;
+                let oid = stack.patches[patch_name].oid;
                 patches.push((patch_name.into(), oid, '+'));
             }
-            let last_oid = stack_state.patches[last_patch_name].oid;
+            let last_oid = stack.patches[last_patch_name].oid;
             patches.push((last_patch_name.into(), last_oid, '>'));
         }
     }
 
     if show_unapplied {
-        for patch_name in stack_state.unapplied {
-            let oid = stack_state.patches[&patch_name].oid;
+        for patch_name in stack.unapplied {
+            let oid = stack.patches[&patch_name].oid;
             patches.push((patch_name, oid, '-'));
         }
     }
 
     if show_hidden {
-        for patch_name in stack_state.hidden {
-            let oid = stack_state.patches[&patch_name].oid;
+        for patch_name in stack.hidden {
+            let oid = stack.patches[&patch_name].oid;
             patches.push((patch_name, oid, '!'));
         }
     }
@@ -169,20 +171,28 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let opt_author = matches.is_present("author");
 
     let patch_name_width = if opt_description || opt_author {
-        patches.iter().map(|(patch_name, _, _)| {patch_name.len()}).max().unwrap_or(0)
+        patches
+            .iter()
+            .map(|(patch_name, _, _)| patch_name.len())
+            .max()
+            .unwrap_or(0)
     } else {
         0
     };
 
     let author_width: usize = if opt_author && opt_description {
-        patches.iter().map(|(_, oid, _)| -> usize {
-            if let Ok(commit) = repo.find_commit(*oid) {
-                let author = commit.author();
-                author.name().unwrap_or(UNPRINTABLE).len()
-            } else {
-                0
-            }
-        }).max().unwrap_or(0)
+        patches
+            .iter()
+            .map(|(_, oid, _)| -> usize {
+                if let Ok(commit) = repo.find_commit(*oid) {
+                    let author = commit.author();
+                    author.name().unwrap_or(UNPRINTABLE).len()
+                } else {
+                    0
+                }
+            })
+            .max()
+            .unwrap_or(0)
     } else {
         0
     };
@@ -200,7 +210,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
                 termcolor::ColorChoice::Never
             }
         }
-        _ => termcolor::ColorChoice::Never
+        _ => termcolor::ColorChoice::Never,
     };
 
     let mut stdout = termcolor::StandardStream::stdout(color_choice);
@@ -225,7 +235,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
                 '>' => Some(termcolor::Color::Blue),
                 '-' => Some(termcolor::Color::Magenta),
                 '!' => Some(termcolor::Color::Red),
-                _ => None
+                _ => None,
             };
             stdout.set_color(color_spec.set_fg(sigil_color))?;
             write!(stdout, "{} ", sigil)?;

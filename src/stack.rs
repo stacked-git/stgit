@@ -1,24 +1,21 @@
-use crate::error::Error;
-use chrono::{FixedOffset, NaiveDateTime};
-use git2::{Commit, FileMode, Oid, Repository, Tree};
 use std::collections::BTreeMap;
 use std::fmt::Write;
 use std::iter::Chain;
-use std::path::Path;
 use std::slice::Iter;
 use std::str;
 
-const MAX_PARENTS: usize = 16;
+use chrono::{FixedOffset, NaiveDateTime};
+use git2::{Commit, FileMode, Oid, Reference, Repository, Tree};
 
-pub fn stack_ref_from_branch(branch: &str) -> String {
-    format!("refs/stacks/{}", branch)
-}
+pub(crate) use crate::error::Error;
+
+const MAX_PARENTS: usize = 16;
 
 pub(crate) struct PatchDescriptor {
     pub oid: Oid,
 }
 
-pub(crate) struct StackState {
+pub(crate) struct Stack {
     pub prev: Option<Oid>,
     pub head: Oid,
     pub applied: Vec<String>,
@@ -27,49 +24,35 @@ pub(crate) struct StackState {
     pub patches: BTreeMap<String, PatchDescriptor>,
 }
 
-impl StackState {
-    pub fn new(repo: &Repository) -> Result<StackState, Error> {
-        Ok(StackState {
+impl Stack {
+    pub fn new(head: Oid) -> Self {
+        Self {
             prev: None,
-            head: repo.head()?.peel_to_commit()?.id(),
+            head,
             applied: vec![],
             unapplied: vec![],
             hidden: vec![],
             patches: BTreeMap::new(),
-        })
-    }
-
-    pub fn from_branch(repo: &Repository, branch: Option<&str>) -> Result<StackState, Error> {
-        let branch_ref = if let Some(branch_shortname) = branch {
-            repo.resolve_reference_from_short_name(branch_shortname)?
-        } else {
-            let head = repo.head()?;
-            if head.is_branch() {
-                head
-            } else {
-                return Err(Error::HeadDetached);
-            }
-        };
-        let branch_shortname = branch_ref.shorthand().unwrap();
-        let stack_refname = stack_ref_from_branch(branch_shortname);
-        if let Ok(obj) = repo.revparse_single(&stack_refname) {
-            Self::from_tree(repo, &obj.peel_to_tree()?)
-        } else {
-            Err(Error::StGitStackNotInitialized(branch_shortname.into()))
         }
     }
 
-    fn from_tree(repo: &Repository, tree: &Tree) -> Result<StackState, Error> {
+    pub fn from_branch(repo: &Repository, branch_name: Option<&str>) -> Result<Self, Error> {
+        let stack_ref = get_stack_ref(repo, branch_name)?;
+        let stack_tree = stack_ref.peel_to_tree()?;
+        Ok(Stack::from_tree(repo, &stack_tree)?)
+    }
+
+    fn from_tree(repo: &Repository, tree: &Tree) -> Result<Self, Error> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
             let stack_json_blob = stack_json.to_object(&repo)?.peel_to_blob()?;
-            StackState::from_stack_json(stack_json_blob.content())
+            Self::from_stack_json(stack_json_blob.content())
         } else {
             Err(Error::StGitStackMetadataNotFound)
         }
     }
 
-    fn from_stack_json(data: &[u8]) -> Result<StackState, Error> {
+    fn from_stack_json(data: &[u8]) -> Result<Self, Error> {
         match serde_json::from_slice(data) {
             Ok(queue_state) => Ok(queue_state),
             Err(e) => Err(Error::JsonError { source: e }),
@@ -107,7 +90,7 @@ impl StackState {
             }
             None => None,
         };
-        let meta_tree = self.make_tree(repo, &prev_state_tree)?;
+        let state_tree = self.make_tree(repo, &prev_state_tree)?;
         let sig = repo.signature()?;
 
         let simplified_parents: Vec<Commit> = match self.prev {
@@ -121,7 +104,7 @@ impl StackState {
             &sig,
             &sig,
             message,
-            &meta_tree,
+            &state_tree,
             simplified_parents.as_slice(),
         )?;
 
@@ -160,7 +143,7 @@ impl StackState {
                 &sig,
                 &sig,
                 "parent grouping",
-                &meta_tree,
+                &state_tree,
                 &parent_group,
             )?;
             parent_oids.push(group_oid);
@@ -173,8 +156,14 @@ impl StackState {
         }
         let parent_commits: Vec<&Commit> = parent_commits.iter().collect();
 
-        let commit_oid =
-            repo.commit(update_ref, &sig, &sig, message, &meta_tree, &parent_commits)?;
+        let commit_oid = repo.commit(
+            update_ref,
+            &sig,
+            &sig,
+            message,
+            &state_tree,
+            &parent_commits,
+        )?;
 
         Ok(commit_oid)
     }
@@ -233,7 +222,7 @@ impl StackState {
                 prev_patch_name == patch_name && prev_patch_oid == oid
             }) {
                 let patch_meta_path = String::from("patches/") + patch_name;
-                let patch_meta_path = Path::new(&patch_meta_path);
+                let patch_meta_path = std::path::Path::new(&patch_meta_path);
                 if let Ok(prev_patch_entry) = prev_tree.get_path(patch_meta_path) {
                     return Ok(prev_patch_entry.id());
                 }
@@ -274,7 +263,7 @@ impl<'a> Iterator for AllPatchesIter<'a> {
     }
 }
 
-impl<'de> serde::Deserialize<'de> for StackState {
+impl<'de> serde::Deserialize<'de> for Stack {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -321,7 +310,7 @@ impl<'de> serde::Deserialize<'de> for StackState {
             let oid = Oid::from_str(&raw_patch_desc.oid).unwrap();
             patches.insert(patch_name, PatchDescriptor { oid });
         }
-        Ok(StackState {
+        Ok(Stack {
             prev,
             head,
             applied: raw.applied,
@@ -332,7 +321,7 @@ impl<'de> serde::Deserialize<'de> for StackState {
     }
 }
 
-impl serde::Serialize for StackState {
+impl serde::Serialize for Stack {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -353,15 +342,16 @@ impl serde::Serialize for StackState {
             pub patches: BTreeMap<String, RawPatchDescriptor>,
         }
 
-        let prev: Option<String> = match self.prev {
-            Some(oid) => Some(format!("{}", oid)),
-            None => None,
-        };
-        let head: String = format!("{}", self.head);
+        let prev: Option<String> = self.prev.map(|oid| oid.to_string());
+        let head: String = self.head.to_string();
         let mut patches = BTreeMap::new();
         for (patch_name, patch_desc) in &self.patches {
-            let oid_str = format!("{}", patch_desc.oid);
-            patches.insert(patch_name.clone(), RawPatchDescriptor { oid: oid_str });
+            patches.insert(
+                patch_name.clone(),
+                RawPatchDescriptor {
+                    oid: patch_desc.oid.to_string(),
+                },
+            );
         }
 
         let raw = RawStackState {
@@ -376,4 +366,50 @@ impl serde::Serialize for StackState {
 
         raw.serialize(serializer)
     }
+}
+
+pub(crate) fn initialize<'repo>(
+    repo: &'repo Repository,
+    branch_name: Option<&str>,
+) -> Result<(), Error> {
+    let branch_ref = get_branch_ref(repo, branch_name)?;
+    let branch_shorthand = branch_ref.shorthand().ok_or(Error::StGitNonUtf8Name)?;
+    let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
+    if repo.find_reference(&stack_refname).is_ok() {
+        return Err(Error::StGitStackAlreadyInitialized(branch_shorthand.into()));
+    }
+    let stack = Stack::new(repo.head()?.peel_to_commit()?.id());
+    stack.commit(repo, Some(&stack_refname), "initialize")?;
+    Ok(())
+}
+
+fn stack_refname_from_branch_shorthand(branch_shorthand: &str) -> String {
+    format!("refs/stacks/{}", branch_shorthand)
+}
+
+fn get_branch_ref<'repo>(
+    repo: &'repo Repository,
+    branch_name: Option<&str>,
+) -> Result<Reference<'repo>, Error> {
+    if let Some(name) = branch_name {
+        Ok(repo.resolve_reference_from_short_name(name)?)
+    } else {
+        let head = repo.head()?;
+        if head.is_branch() {
+            Ok(head)
+        } else {
+            Err(Error::HeadDetached)
+        }
+    }
+}
+
+fn get_stack_ref<'repo>(
+    repo: &'repo Repository,
+    branch_name: Option<&str>,
+) -> Result<Reference<'repo>, Error> {
+    let branch_ref = get_branch_ref(repo, branch_name)?;
+    let branch_shorthand = branch_ref.shorthand().ok_or(Error::StGitNonUtf8Name)?;
+    let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
+    repo.find_reference(&stack_refname)
+        .map_err(|_| Error::StGitStackNotInitialized(branch_shorthand.into()))
 }

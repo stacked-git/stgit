@@ -44,9 +44,12 @@ fn main() {
         _ => punt_to_python(),
     };
 
-    match result {
-        Ok(()) => std::process::exit(0),
-        _ => std::process::exit(1),
+    if let Err(e) = result {
+        // TODO: colorized error output?
+        eprintln!("error: {}", e);
+        std::process::exit(1)
+    } else {
+        std::process::exit(0)
     }
 }
 
