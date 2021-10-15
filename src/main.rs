@@ -7,8 +7,11 @@ mod error;
 mod patchname;
 mod stack;
 
+use std::io::Write;
+
 use clap::{crate_license, crate_version, App, AppSettings};
 use pyo3::prelude::*;
+use termcolor::WriteColor;
 
 fn main() {
     let app = App::new("stg")
@@ -46,8 +49,7 @@ fn main() {
     };
 
     if let Err(e) = result {
-        // TODO: colorized error output?
-        eprintln!("error: {}", e);
+        print_error_message(e);
         std::process::exit(1)
     } else {
         std::process::exit(0)
@@ -69,5 +71,46 @@ fn punt_to_python() -> cmd::Result {
         Err(crate::error::Error::PythonError(e))
     } else {
         Ok(())
+    }
+}
+
+fn print_error_message(err: crate::error::Error) {
+    let color_choice = if atty::is(atty::Stream::Stderr) {
+        termcolor::ColorChoice::Auto
+    } else {
+        termcolor::ColorChoice::Never
+    };
+    let mut stderr = termcolor::StandardStream::stderr(color_choice);
+    let mut color = termcolor::ColorSpec::new();
+    stderr.set_color(color.set_fg(Some(termcolor::Color::Red)).set_bold(true)).unwrap();
+    write!(stderr, "error: ").unwrap();
+    stderr.set_color(color.set_fg(None).set_bold(false)).unwrap();
+    let err_string: String = err.to_string();
+    let mut remainder: &str = &err_string;
+    loop {
+        let parts: Vec<&str> = remainder.splitn(3, '`').collect();
+        match parts.len() {
+            0 => {
+                write!(stderr, "\n").unwrap();
+                break;
+            }
+            1 => {
+                write!(stderr, "{}\n", parts[0]).unwrap();
+                break;
+            }
+            2 => {
+                write!(stderr, "{}`{}\n", parts[0], parts[1]).unwrap();
+                break;
+            }
+            3 => {
+                write!(stderr, "{}`", parts[0]).unwrap();
+                stderr.set_color(color.set_fg(Some(termcolor::Color::Yellow))).unwrap();
+                write!(stderr, "{}", parts[1]).unwrap();
+                stderr.set_color(color.set_fg(None)).unwrap();
+                write!(stderr, "`").unwrap();
+                remainder = &parts[2];
+            }
+            _ => panic!("unhandled split len"),
+        }
     }
 }
