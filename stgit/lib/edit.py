@@ -10,7 +10,8 @@ from stgit.lib.git import Date, Person
 from stgit.lib.log import log_stack_state
 from stgit.out import out
 
-EDIT_MESSAGE_INSTRUCTIONS = """# Everything here is editable! You can modify the patch name, author,
+EDIT_MESSAGE_INSTRUCTIONS = """\
+# Everything here is editable! You can modify the patch name, author,
 # date, commit message, and the diff (if --diff was given).
 # Lines starting with '#' will be ignored, and an empty message
 # aborts the edit.
