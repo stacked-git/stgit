@@ -16,14 +16,13 @@ use termcolor::WriteColor;
 fn main() {
     let app = App::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
-        .global_setting(AppSettings::ColoredHelp)
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::HelpRequired)
-        .global_setting(AppSettings::DisableVersionForSubcommands)
         .setting(AppSettings::AllowExternalSubcommands) // TODO: remove
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .version(crate_version!())
         .license(crate_license!())
+        .max_term_width(88)
         .subcommand_placeholder("command", "COMMANDS")
         .subcommand(cmd::init::get_subcommand())
         .subcommand(cmd::new::get_subcommand())
