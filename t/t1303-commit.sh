@@ -12,18 +12,18 @@ test_expect_success 'Commit middle patch' '
     stg new -m p3 &&
     stg new -m p4 &&
     stg pop &&
-    stg commit p2 &&
+    stg commit --allow-empty p2 &&
     test "$(echo $(stg series))" = "+ p1 > p3 - p4"
 '
 
 test_expect_success 'Commit first patch' '
-    stg commit &&
+    stg commit --allow-empty &&
     test "$(echo $(stg series))" = "> p3 - p4"
 '
 
 test_expect_success 'Commit all patches' '
     stg push &&
-    stg commit -a &&
+    stg commit --allow-empty -a &&
     test "$(echo $(stg series))" = ""
 '
 
@@ -33,9 +33,15 @@ test_expect_success 'Commit when top != head (should fail)' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD)
-    command_error stg commit &&
+    command_error stg commit --allow-empty &&
     test "$(git rev-parse HEAD)" = "$h" &&
-    test "$(echo $(stg series))" = "> foo"
+    test "$(echo $(stg series))" = "> foo" &&
+    stg repair
+'
+
+test_expect_success 'Commit of empty patch (should fail)' '
+    stg new -m foo &&
+    command_error stg commit
 '
 
 test_done

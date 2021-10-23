@@ -1,5 +1,5 @@
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
+from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches, parse_patch
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -21,7 +21,7 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Permanently store the applied patches into the stack base'
 kind = 'stack'
-usage = ['', '[--] <patchnames>', '-n NUM', '--all']
+usage = ['', '[--] <patchnames>', '-n NUM', '--all', '--allow-empty']
 description = """
 Merge one or more patches into the base of the current stack and
 remove them from the series while advancing the base. This is the
@@ -45,6 +45,7 @@ options = [
         short='Commit the specified number of patches',
     ),
     opt('-a', '--all', action='store_true', short='Commit all applied patches'),
+    opt('--allow-empty', action='store_true', default=False, short='Allow committing empty patches')
 ]
 
 directory = DirectoryHasRepository()
@@ -89,6 +90,11 @@ def func(parser, options, args):
     try:
         common_prefix = 0
         for i in range(min(len(stack.patchorder.applied), len(patches))):
+            commit = stack.patches[stack.patchorder.applied[i]]
+
+            if len(iw.changed_files(commit.data.tree)) == 0 and not options.allow_empty:
+              raise CmdException('Empty patch, use --allow-empty')
+
             if stack.patchorder.applied[i] == patches[i]:
                 common_prefix += 1
             else:
