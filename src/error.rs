@@ -61,4 +61,7 @@ pub(crate) enum Error {
 
     #[error("problem with the editor `{0}`")]
     EditorFail(String),
+
+    #[error("`{0}` hook: {1}")]
+    HookError(String, String),
 }

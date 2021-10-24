@@ -122,20 +122,18 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
         cd = crate::hook::run_commit_msg_hook(&repo, cd, false)?;
     }
 
-    let _patchname = if let Some(patchname) = patch_desc.patchname {
-        // TODO: this patchname needs to be checked for uniqueness
-        // TODO: what to do if not unique? Warn and make unique? Or fail and lose commit message?
-        patchname
-    } else {
-        let len_limit = config.get_i32("stgit.namelength").ok();
-        let len_limit: Option<usize> = if let Some(limit) = len_limit {
-            usize::try_from(limit).ok()
-        } else {
-            None
-        };
+    let _patchname = {
+        let len_limit: Option<usize> = config.get_i32("stgit.namelength").ok().and_then(|n| {
+            usize::try_from(n).ok()
+        });
         let disallow: Vec<&PatchName> = stack.all_patches().collect();
         let allow = vec![];
-        PatchName::make_unique(&cd.message, len_limit, true, &allow, &disallow)
+
+        if let Some(patchname) = patch_desc.patchname {
+            PatchName::make_unique(patchname.as_ref(), len_limit, false, &allow, &disallow)
+        } else {
+            PatchName::make_unique(&cd.message, len_limit, true, &allow, &disallow)
+        }
     };
 
     // println!("MESSAGE:\n{}END", &cd.message);

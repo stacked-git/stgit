@@ -169,6 +169,13 @@ impl CheckedSignature {
     pub fn get_datetime(&self) -> DateTime<FixedOffset> {
         FixedOffset::east(self.when.offset_minutes() * 60).timestamp(self.when.seconds(), 0)
     }
+
+    pub fn get_epoch_time_string(&self) -> String {
+        // TODO: convert self.when.offset
+        let offset_hours = self.when.offset_minutes() / 60;
+        let offset_minutes = self.when.offset_minutes() % 60;
+        format!("{} {}{:02}{:02}", self.when.seconds(), self.when.sign(), offset_hours, offset_minutes)
+    }
 }
 
 fn get_from_env(key: &str) -> Result<Option<String>, Error> {
