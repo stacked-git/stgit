@@ -48,7 +48,7 @@ test_expect_success GPG \
 
 test_expect_success GPG \
     'Patch remains signed after stg commit' '
-    stg commit -n 1 &&
+    stg commit --allow-empty -n 1 &&
     stg pop -a &&
     git verify-commit HEAD
 '

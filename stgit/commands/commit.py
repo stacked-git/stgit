@@ -21,7 +21,12 @@ along with this program; if not, see http://www.gnu.org/licenses/.
 
 help = 'Permanently store the applied patches into the stack base'
 kind = 'stack'
-usage = ['', '[--] <patchnames>', '-n NUM', '--all']
+usage = [
+    '[options]',
+    '[options] [--] <patchnames>',
+    '[options] -n NUM',
+    '[options] --all',
+]
 description = """
 Merge one or more patches into the base of the current stack and
 remove them from the series while advancing the base. This is the
@@ -45,6 +50,11 @@ options = [
         short='Commit the specified number of patches',
     ),
     opt('-a', '--all', action='store_true', short='Commit all applied patches'),
+    opt(
+        '--allow-empty',
+        action='store_true',
+        short='Allow empty patches to be committed',
+    ),
 ]
 
 directory = DirectoryHasRepository()
@@ -75,6 +85,19 @@ def func(parser, options, args):
         patches = stack.patchorder.applied[:1]
     if not patches:
         raise CmdException('No patches to commit')
+
+    if not options.allow_empty:
+        empty_patches = [
+            pn for pn in patches
+            if stack.patches[pn].data.tree == stack.patches[pn].data.parent.data.tree
+        ]
+        if empty_patches:
+            raise CmdException(
+                'Empty patch%s (override with --allow-empty): %s' % (
+                    '' if len(empty_patches) == 1 else 'es',
+                    ', ' .join(empty_patches)
+                )
+            )
 
     iw = stack.repository.default_iw
 

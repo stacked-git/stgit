@@ -3,27 +3,31 @@ test_description='Test stg commit'
 . ./test-lib.sh
 
 test_expect_success 'Initialize the StGit repository' '
-    stg init
-'
-
-test_expect_success 'Commit middle patch' '
+    stg init &&
     stg new -m p1 &&
     stg new -m p2 &&
     stg new -m p3 &&
     stg new -m p4 &&
-    stg pop &&
-    stg commit p2 &&
+    stg pop
+'
+
+test_expect_success 'Attempt to commit an empty patch' '
+    command_error stg commit p2 2>&1 | grep "Empty patch"
+'
+
+test_expect_success 'Commit middle patch' '
+    stg commit --allow-empty p2 &&
     test "$(echo $(stg series))" = "+ p1 > p3 - p4"
 '
 
 test_expect_success 'Commit first patch' '
-    stg commit &&
+    stg commit --allow-empty &&
     test "$(echo $(stg series))" = "> p3 - p4"
 '
 
 test_expect_success 'Commit all patches' '
     stg push &&
-    stg commit -a &&
+    stg commit -a --allow-empty &&
     test "$(echo $(stg series))" = ""
 '
 
@@ -33,7 +37,7 @@ test_expect_success 'Commit when top != head (should fail)' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
     h=$(git rev-parse HEAD)
-    command_error stg commit &&
+    command_error stg commit --allow-empty &&
     test "$(git rev-parse HEAD)" = "$h" &&
     test "$(echo $(stg series))" = "> foo"
 '
