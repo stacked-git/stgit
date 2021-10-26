@@ -69,6 +69,7 @@ test_expect_success 'Turn three Git commits into patches' '
 '
 
 test_expect_success 'Create a merge commit' '
+    git config pull.rebase false &&
     git checkout -b br master^^ &&
     echo woof > woof.txt &&
     stg add woof.txt &&

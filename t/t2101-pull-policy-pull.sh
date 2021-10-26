@@ -17,6 +17,7 @@ test_expect_success \
     (cd upstream && stg init) &&
     stg clone upstream clone &&
     (cd clone &&
+     git config pull.rebase false &&
      git config branch.master.stgit.pull-policy pull &&
      git config --list &&
      stg new c1 -m c1 &&
@@ -71,14 +72,24 @@ test_expect_success \
 test_expect_success \
     'Rewind/rewrite upstream commit and pull it from clone, without --merged' \
     '
-    (cd upstream && echo b >> file2 && stg refresh) &&
-    (cd clone && conflict stg pull origin)
+    (
+        cd upstream &&
+        echo b >> file2 &&
+        stg refresh
+    ) &&
+    (
+        cd clone &&
+        conflict stg pull origin
+    )
     '
 
 test_expect_success \
     '"Solve" the conflict (pretend there is none)' \
     '(cd clone &&
-      stg add file2 && EDITOR=cat git commit)'
+      stg add file2 &&
+      EDITOR=cat git commit
+    )
+    '
 
 test_expect_success \
     'Push the stack back' \
