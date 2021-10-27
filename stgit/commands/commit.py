@@ -88,15 +88,14 @@ def func(parser, options, args):
 
     if not options.allow_empty:
         empty_patches = [
-            pn for pn in patches
+            pn
+            for pn in patches
             if stack.patches[pn].data.tree == stack.patches[pn].data.parent.data.tree
         ]
         if empty_patches:
             raise CmdException(
-                'Empty patch%s (override with --allow-empty): %s' % (
-                    '' if len(empty_patches) == 1 else 'es',
-                    ', ' .join(empty_patches)
-                )
+                'Empty patch%s (override with --allow-empty): %s'
+                % ('' if len(empty_patches) == 1 else 'es', ', '.join(empty_patches))
             )
 
     iw = stack.repository.default_iw
