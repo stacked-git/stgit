@@ -78,7 +78,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
         Some(message) => (message, false),
         None => ("".to_string(), true),
     };
-    let message = crate::trailers::add_trailers(message, &matches, &default_sig)?;
+    let message = crate::trailers::add_trailers(message, matches, &default_sig)?;
 
     let diff = if must_edit && verbose {
         Some(repo.diff_tree_to_workdir(
@@ -91,7 +91,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
 
     let patch_desc = PatchDescription {
         patchname,
-        author: crate::signature::CheckedSignature::make_author(&repo, &matches)?,
+        author: crate::signature::CheckedSignature::make_author(&repo, matches)?,
         message: Some(message),
         diff,
     };
@@ -105,13 +105,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     // TODO: change PatchDescription.message from Option<String> to String
     let message = patch_desc.message.unwrap_or_else(String::new);
 
-    let mut cd = CommitData::new(
-        patch_desc.author,
-        committer,
-        message,
-        tree,
-        parents,
-    );
+    let mut cd = CommitData::new(patch_desc.author, committer, message, tree, parents);
 
     if let Some(template_path) = matches.value_of_os("save-template") {
         std::fs::write(template_path, &cd.message)?;
@@ -123,9 +117,10 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     }
 
     let _patchname = {
-        let len_limit: Option<usize> = config.get_i32("stgit.namelength").ok().and_then(|n| {
-            usize::try_from(n).ok()
-        });
+        let len_limit: Option<usize> = config
+            .get_i32("stgit.namelength")
+            .ok()
+            .and_then(|n| usize::try_from(n).ok());
         let disallow: Vec<&PatchName> = stack.all_patches().collect();
         let allow = vec![];
 

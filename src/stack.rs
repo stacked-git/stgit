@@ -40,23 +40,23 @@ impl Stack {
     pub fn from_branch(repo: &Repository, branch_name: Option<&str>) -> Result<Self, Error> {
         let stack_ref = get_stack_ref(repo, branch_name)?;
         let stack_tree = stack_ref.peel_to_tree()?;
-        Ok(Stack::from_tree(repo, &stack_tree)?)
+        Stack::from_tree(repo, &stack_tree)
     }
 
     fn from_tree(repo: &Repository, tree: &Tree) -> Result<Self, Error> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
-            let stack_json_blob = stack_json.to_object(&repo)?.peel_to_blob()?;
+            let stack_json_blob = stack_json.to_object(repo)?.peel_to_blob()?;
             Self::from_stack_json(stack_json_blob.content())
         } else {
-            Err(Error::StGitStackMetadataNotFound)
+            Err(Error::StackMetadataNotFound)
         }
     }
 
     fn from_stack_json(data: &[u8]) -> Result<Self, Error> {
         match serde_json::from_slice(data) {
             Ok(queue_state) => Ok(queue_state),
-            Err(e) => Err(Error::JsonError(e)),
+            Err(e) => Err(Error::Json(e)),
         }
     }
 
@@ -299,8 +299,10 @@ impl<'de> serde::Deserialize<'de> for Stack {
         }
 
         let prev: Option<Oid> = match raw.prev {
-            // Some(oid_str) => Some(Oid::from_str(&oid_str).map_err(D::Error::custom("invalid oid"))),
-            Some(oid_str) => Some(Oid::from_str(&oid_str).unwrap()),
+            Some(ref oid_str) => {
+                let oid = Oid::from_str(oid_str).map_err(|_| D::Error::custom("invalid oid"))?;
+                Some(oid)
+            }
             None => None,
         };
 
@@ -371,17 +373,14 @@ impl serde::Serialize for Stack {
     }
 }
 
-pub(crate) fn initialize<'repo>(
-    repo: &'repo Repository,
-    branch_name: Option<&str>,
-) -> Result<(), Error> {
+pub(crate) fn initialize(repo: &Repository, branch_name: Option<&str>) -> Result<(), Error> {
     let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or(Error::NonUtf8BranchName(
-        String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string(),
-    ))?;
+    let branch_shorthand = branch_ref.shorthand().ok_or_else(|| {
+        Error::NonUtf8BranchName(String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string())
+    })?;
     let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
     if repo.find_reference(&stack_refname).is_ok() {
-        return Err(Error::StGitStackAlreadyInitialized(branch_shorthand.into()));
+        return Err(Error::StackAlreadyInitialized(branch_shorthand.into()));
     }
     let stack = Stack::new(repo.head()?.peel_to_commit()?.id());
     stack.commit(repo, Some(&stack_refname), "initialize")?;
@@ -397,7 +396,16 @@ fn get_branch_ref<'repo>(
     branch_name: Option<&str>,
 ) -> Result<Reference<'repo>, Error> {
     if let Some(name) = branch_name {
-        Ok(repo.resolve_reference_from_short_name(name)?)
+        match repo.resolve_reference_from_short_name(name) {
+            Err(e)
+                if e.class() == git2::ErrorClass::Reference
+                    && e.code() == git2::ErrorCode::NotFound =>
+            {
+                Err(Error::BranchNotFound(name.into()))
+            }
+            Err(e) => Err(e.into()),
+            Ok(branch_ref) => Ok(branch_ref),
+        }
     } else {
         let head = repo.head()?;
         if head.is_branch() {
@@ -413,10 +421,10 @@ fn get_stack_ref<'repo>(
     branch_name: Option<&str>,
 ) -> Result<Reference<'repo>, Error> {
     let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or(Error::NonUtf8BranchName(
-        String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string(),
-    ))?;
+    let branch_shorthand = branch_ref.shorthand().ok_or_else(|| {
+        Error::NonUtf8BranchName(String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string())
+    })?;
     let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
     repo.find_reference(&stack_refname)
-        .map_err(|_| Error::StGitStackNotInitialized(branch_shorthand.into()))
+        .map_err(|_| Error::StackNotInitialized(branch_shorthand.into()))
 }

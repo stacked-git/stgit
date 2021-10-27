@@ -12,12 +12,12 @@ use crate::patchdescription::PatchDescription;
 //     # Lines starting with '#' will be ignored, and an empty message\n\
 //     # aborts the edit.\n";
 
-static EDIT_INSTRUCTION_NEW: &'static str = "\
+static EDIT_INSTRUCTION_NEW: &str = "\
     # Please enter the message for your patch. Lines starting with\n\
     # '#' will be ignored. An empty message aborts the new patch.\n\
     # The patch name and author information may also be modified.\n";
 
-static EDIT_FILE_NAME: &'static str = ".stgit-edit";
+static EDIT_FILE_NAME: &str = ".stgit-edit";
 
 pub(crate) fn edit_interactive<'repo>(
     patch_desc: PatchDescription<'repo>,
@@ -46,7 +46,7 @@ pub(crate) fn edit_interactive<'repo>(
 
 fn is_terminal_dumb() -> bool {
     if let Some(value) = std::env::var_os("TERM") {
-        value == OsString::from("dumb")
+        value == *"dumb"
     } else {
         true
     }
@@ -55,7 +55,7 @@ fn is_terminal_dumb() -> bool {
 fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>, Error> {
     let editor = get_editor(config);
 
-    if editor != OsString::from(":") {
+    if editor != *":" {
         let use_advice = config.get_bool("advice.waitingForEditor").unwrap_or(true);
         let is_dumb = cfg!(target_os = "windows") || is_terminal_dumb();
 

@@ -74,7 +74,7 @@ fn punt_to_python() -> cmd::Result {
 
     if let Err(e) = result {
         Python::with_gil(|py| e.print(py));
-        Err(crate::error::Error::PythonError(e))
+        Err(crate::error::Error::Python(e))
     } else {
         Ok(())
     }
@@ -101,15 +101,15 @@ fn print_error_message(err: crate::error::Error) {
         let parts: Vec<&str> = remainder.splitn(3, '`').collect();
         match parts.len() {
             0 => {
-                write!(stderr, "\n").unwrap();
+                writeln!(stderr).unwrap();
                 break;
             }
             1 => {
-                write!(stderr, "{}\n", parts[0]).unwrap();
+                writeln!(stderr, "{}", parts[0]).unwrap();
                 break;
             }
             2 => {
-                write!(stderr, "{}`{}\n", parts[0], parts[1]).unwrap();
+                writeln!(stderr, "{}`{}", parts[0], parts[1]).unwrap();
                 break;
             }
             3 => {
@@ -120,7 +120,7 @@ fn print_error_message(err: crate::error::Error) {
                 write!(stderr, "{}", parts[1]).unwrap();
                 stderr.set_color(color.set_fg(None)).unwrap();
                 write!(stderr, "`").unwrap();
-                remainder = &parts[2];
+                remainder = parts[2];
             }
             _ => panic!("unhandled split len"),
         }

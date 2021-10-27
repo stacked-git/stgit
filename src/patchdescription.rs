@@ -21,9 +21,9 @@ impl<'repo> PatchDescription<'repo> {
     ) -> Result<(), Error> {
         self.write_header_and_message(stream)?;
         if let Some(instruction) = instruction {
-            write!(stream, "\n{}\n", instruction.trim_end())?;
+            writeln!(stream, "\n{}", instruction.trim_end())?;
         } else {
-            write!(stream, "\n")?;
+            writeln!(stream)?;
         }
         self.write_diff(stream)?;
         Ok(())
@@ -66,7 +66,7 @@ impl<'repo> PatchDescription<'repo> {
                 if let sigil @ ('+' | '-' | ' ') = line.origin() {
                     let mut buf = [0; 1];
                     sigil.encode_utf8(&mut buf);
-                    stream.write(&buf).expect(expectation);
+                    stream.write_all(&buf).expect(expectation);
                 }
                 stream.write_all(line.content()).expect(expectation);
                 true
@@ -109,7 +109,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
                 continue;
             } else if consuming_message {
                 let trimmed = line.trim_end();
-                if trimmed.len() == 0 {
+                if trimmed.is_empty() {
                     if consecutive_empty == 0 {
                         message.push('\n');
                     }
@@ -121,7 +121,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
                 }
             } else if raw_patchname.is_some() && raw_author.is_some() && raw_authdate.is_some() {
                 let trimmed = line.trim_end();
-                if trimmed.len() > 0 {
+                if !trimmed.is_empty() {
                     consuming_message = true;
                     message.push_str(trimmed);
                     message.push('\n')
@@ -132,7 +132,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
                         if raw_patchname.is_none() {
                             raw_patchname = Some(value.trim().to_string());
                         } else {
-                            return Err(Error::PatchDescriptionParseError(
+                            return Err(Error::ParsePatchDescription(
                                 "duplicate `Patch` header".to_string(),
                             ));
                         }
@@ -141,7 +141,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
                         if raw_author.is_none() {
                             raw_author = Some(value.trim().to_string())
                         } else {
-                            return Err(Error::PatchDescriptionParseError(
+                            return Err(Error::ParsePatchDescription(
                                 "duplicate `Author` header".to_string(),
                             ));
                         }
@@ -150,20 +150,20 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
                         if raw_authdate.is_none() {
                             raw_authdate = Some(value.trim().to_string())
                         } else {
-                            return Err(Error::PatchDescriptionParseError(
+                            return Err(Error::ParsePatchDescription(
                                 "duplicate `Date` header".to_string(),
                             ));
                         }
                     }
                     _ => {
-                        return Err(Error::PatchDescriptionParseError(format!(
+                        return Err(Error::ParsePatchDescription(format!(
                             "invalid header key `{}`",
                             key
                         )))
                     }
                 }
             } else {
-                return Err(Error::PatchDescriptionParseError(format!(
+                return Err(Error::ParsePatchDescription(format!(
                     "could not parse `{}`",
                     line.trim()
                 )));
@@ -171,13 +171,13 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
         }
 
         let patchname: Option<PatchName> = if let Some(patchname) = raw_patchname {
-            if patchname.len() > 0 {
+            if !patchname.is_empty() {
                 Some(patchname.parse::<PatchName>()?)
             } else {
                 None
             }
         } else {
-            return Err(Error::PatchDescriptionParseError(
+            return Err(Error::ParsePatchDescription(
                 "`Patch:` header is missing".to_string(),
             ));
         };
@@ -186,17 +186,17 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
             let (name, email) = crate::signature::parse_name_email(&author)?;
             (name.into(), email.into())
         } else {
-            return Err(Error::PatchDescriptionParseError(
+            return Err(Error::ParsePatchDescription(
                 "`Author:` header is missing".to_string(),
             ));
         };
 
         let authdate = if let Some(authdate) = raw_authdate {
             let dt = DateTime::parse_from_str(&authdate, "%Y-%m-%d %H:%M:%S %z")
-                .map_err(|_| Error::InvalidDate(authdate.into()))?;
+                .map_err(|_| Error::InvalidDate(authdate))?;
             git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60)
         } else {
-            return Err(Error::PatchDescriptionParseError(
+            return Err(Error::ParsePatchDescription(
                 "`Date:` header is missing".to_string(),
             ));
         };
@@ -211,7 +211,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
             message.pop();
         }
 
-        let message = if message.trim().len() == 0 {
+        let message = if message.trim().is_empty() {
             None
         } else {
             Some(message)

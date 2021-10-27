@@ -37,7 +37,7 @@ impl<'repo> CommitData<'repo> {
         )
     }
 
-    pub fn parents(&self) -> Vec<&Commit<'repo>> {
-        self.parents.iter().map(|c| c).collect()
+    pub fn _parents(&self) -> Vec<&Commit<'repo>> {
+        self.parents.iter().collect()
     }
 }

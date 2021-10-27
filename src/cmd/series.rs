@@ -272,7 +272,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
         }
         color_spec.clear();
         stdout.set_color(&color_spec)?;
-        write!(stdout, "\n")?;
+        writeln!(stdout)?;
     }
 
     Ok(())

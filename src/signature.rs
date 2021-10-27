@@ -162,7 +162,7 @@ impl CheckedSignature {
         Ok(Self { name, email, when })
     }
 
-    pub fn get_signature(&self) -> Result<Signature<'static>, Error> {
+    pub fn _get_signature(&self) -> Result<Signature<'static>, Error> {
         Ok(Signature::new(&self.name, &self.email, &self.when)?)
     }
 
@@ -174,7 +174,13 @@ impl CheckedSignature {
         // TODO: convert self.when.offset
         let offset_hours = self.when.offset_minutes() / 60;
         let offset_minutes = self.when.offset_minutes() % 60;
-        format!("{} {}{:02}{:02}", self.when.seconds(), self.when.sign(), offset_hours, offset_minutes)
+        format!(
+            "{} {}{:02}{:02}",
+            self.when.seconds(),
+            self.when.sign(),
+            offset_hours,
+            offset_minutes
+        )
     }
 }
 
@@ -202,16 +208,14 @@ fn get_from_arg(arg: &str, matches: &ArgMatches) -> Result<Option<String>, Error
     }
 }
 
-pub(crate) fn parse_name_email<'s>(name_email: &'s str) -> Result<(&'s str, &'s str), Error> {
+pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str), Error> {
     let name_email = name_email.trim();
     let delimiters = [('<', '>'), ('(', ')')];
     for (start_delim, end_delim) in &delimiters {
         if let Some((name, rem)) = name_email.split_once(*start_delim) {
             if let Some((email, rem)) = rem.split_once(*end_delim) {
-                if rem.len() == 0 {
-                    if !email.contains('<') && !email.contains('>') {
-                        return Ok((name.trim(), email.trim()));
-                    }
+                if rem.is_empty() && !email.contains('<') && !email.contains('>') {
+                    return Ok((name.trim(), email.trim()));
                 }
             }
         }
@@ -219,7 +223,7 @@ pub(crate) fn parse_name_email<'s>(name_email: &'s str) -> Result<(&'s str, &'s 
     Err(Error::InvalidNameEmail(name_email.into()))
 }
 
-pub(crate) fn parse_time<'s>(time_str: &'s str) -> Result<Time, Error> {
+pub(crate) fn parse_time(time_str: &str) -> Result<Time, Error> {
     let time_str = time_str.trim();
     if let Some((timestamp_str, remainder)) = time_str.split_once(' ') {
         let timestamp = timestamp_str
@@ -228,7 +232,7 @@ pub(crate) fn parse_time<'s>(time_str: &'s str) -> Result<Time, Error> {
         let rem_len = remainder.len();
         let (sign, hhmm) = if rem_len == 5 {
             // E.g. +HHMM or -HHMM
-            let sign = match remainder.chars().nth(0) {
+            let sign = match remainder.chars().next() {
                 Some('+') => '+',
                 Some('-') => '-',
                 _ => {
@@ -237,7 +241,7 @@ pub(crate) fn parse_time<'s>(time_str: &'s str) -> Result<Time, Error> {
             };
             let hhmm = remainder.get(1..5).unwrap();
             (sign, hhmm)
-        } else if rem_len == 4 && remainder.chars().nth(0).unwrap().is_ascii_digit() {
+        } else if rem_len == 4 && remainder.chars().next().unwrap().is_ascii_digit() {
             // E.g. HHMM or HHMM
             ('+', remainder)
         } else {

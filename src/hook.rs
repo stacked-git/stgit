@@ -10,7 +10,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     let config = repo.config()?;
     let hooks_path = config
         .get_path("core.hookspath")
-        .unwrap_or(PathBuf::from("hooks"));
+        .unwrap_or_else(|_| PathBuf::from("hooks"));
     let hooks_root = if hooks_path.is_absolute() {
         hooks_path
     } else {
@@ -35,10 +35,16 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     hook_command
         .env("GIT_AUTHOR_NAME", &commit_data.author.name)
         .env("GIT_AUTHOR_EMAIL", &commit_data.author.email)
-        .env("GIT_AUTHOR_DATE", commit_data.author.get_epoch_time_string())
+        .env(
+            "GIT_AUTHOR_DATE",
+            commit_data.author.get_epoch_time_string(),
+        )
         .env("GIT_COMMITTER_NAME", &commit_data.committer.name)
         .env("GIT_COMMITTER_EMAIL", &commit_data.committer.email)
-        .env("GIT_COMMITTER_DATE", commit_data.committer.get_epoch_time_string())
+        .env(
+            "GIT_COMMITTER_DATE",
+            commit_data.committer.get_epoch_time_string(),
+        )
         .env("GIT_INDEX_FILE", index_path);
     if !editor_is_used {
         hook_command.env("GIT_EDITOR", ":");
@@ -46,13 +52,16 @@ pub(crate) fn run_commit_msg_hook<'repo>(
 
     hook_command.arg(&msg_file_path);
 
-    hook_command.status().map_err(|e| {
-        Error::HookError(hook_name.to_string(), e.to_string())
-    })?;
+    hook_command
+        .status()
+        .map_err(|e| Error::Hook(hook_name.to_string(), e.to_string()))?;
 
     let message_bytes = std::fs::read(&msg_file_path)?;
     let message = String::from_utf8(message_bytes).map_err(|_| {
-        Error::HookError(hook_name.to_string(), "message is not valid UTF-8".to_string())
+        Error::Hook(
+            hook_name.to_string(),
+            "message is not valid UTF-8".to_string(),
+        )
     })?;
 
     Ok(commit_data.replace_message(message))

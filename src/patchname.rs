@@ -23,7 +23,7 @@ impl PatchName {
 
         for line in raw.lines() {
             let trimmed = line.trim();
-            if trimmed.len() > 0 {
+            if !trimmed.is_empty() {
                 candidate = trimmed;
                 break;
             }
@@ -144,7 +144,7 @@ impl FromStr for PatchName {
     type Err = Error;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
-        if name.len() == 0 {
+        if name.is_empty() {
             return Err(Error::InvalidPatchName(
                 name.into(),
                 "patch name may not be empty".into(),

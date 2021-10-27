@@ -94,10 +94,10 @@ pub(crate) fn add_trailers(
         let output = child.wait_with_output()?;
         unsafe {
             let message = String::from_utf8_unchecked(output.stdout);
-            Ok(message.into())
+            Ok(message)
         }
     } else {
-        Ok(message.into())
+        Ok(message)
     }
 }
 
