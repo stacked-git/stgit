@@ -89,4 +89,7 @@ pub(crate) enum Error {
 
     #[error("Complete the in-progress `{0}` before trying again.")]
     ActiveRepositoryState(String),
+
+    #[error("Command aborted (all changes rolled back)")]
+    Transaction,
 }

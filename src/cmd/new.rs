@@ -4,6 +4,7 @@ use git2::{DiffOptions, Repository};
 use crate::commitdata::CommitData;
 use crate::error::Error;
 use crate::patchdescription::PatchDescription;
+use crate::transaction::{ConflictMode, StackTransaction};
 use crate::{argset, patchname::PatchName, stack::Stack};
 
 pub(crate) fn get_subcommand() -> App<'static> {
@@ -118,7 +119,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
         cd = crate::hook::run_commit_msg_hook(&repo, cd, false)?;
     }
 
-    let _patchname = {
+    let patchname: PatchName = {
         let len_limit: Option<usize> = config
             .get_i32("stgit.namelength")
             .ok()
@@ -133,28 +134,13 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
         }
     };
 
-    // println!("MESSAGE:\n{}END", &cd.message);
-
-    // let _commit_oid = repo.commit(
-    //     None,
-    //     &cd.author.get_signature()?,
-    //     &cd.committer.get_signature()?,
-    //     &cd.message,
-    //     &cd.tree,
-    //     &cd.parents(),
-    // )?;
-
-    // let message = if must_edit {
-    //     crate::edit::edit(&commit_oid, &message)
-    // } else {
-    //     message
-    // }
-
-    // let commit_buf = repo.commit_create_buffer(&author, &committer, &message, &tree, &parents)?;
-
-    // println!("new! {:?} {:?}", patchname, verbose);
-    // if let Some(patchname) = patchname {
-    //     println!("{}", patchname);
-    // }
-    Ok(())
+    let discard_changes = false;
+    let trans_context =
+        StackTransaction::make_context(&stack, ConflictMode::Disallow, discard_changes);
+    let exec_context = trans_context.transact(|trans| {
+        let patch_commit_oid = cd.commit(&repo)?;
+        trans.push_applied(&patchname, &patch_commit_oid);
+        Ok(())
+    });
+    Ok(exec_context.execute(stack, &format!("new: {}", patchname))?)
 }

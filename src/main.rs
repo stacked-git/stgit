@@ -13,6 +13,7 @@ mod patchname;
 mod signature;
 mod stack;
 mod trailers;
+mod transaction;
 
 use std::io::Write;
 

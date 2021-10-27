@@ -66,6 +66,17 @@ impl StackState {
         }
     }
 
+    pub fn advance_head(self, new_head: Oid, prev_state: Oid) -> Self {
+        Self {
+            prev: Some(prev_state),
+            head: new_head,
+            applied: self.applied,
+            unapplied: self.unapplied,
+            hidden: self.hidden,
+            patches: self.patches,
+        }
+    }
+
     pub fn commit(
         &self,
         repo: &Repository,

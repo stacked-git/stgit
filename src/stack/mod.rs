@@ -3,7 +3,7 @@ mod state;
 
 use std::str;
 
-use git2::{Branch, Repository, RepositoryState};
+use git2::{Branch, Commit, Oid, Reference, Repository, RepositoryState};
 
 use crate::error::Error;
 use iter::AllPatches;
@@ -11,10 +11,11 @@ pub(crate) use state::PatchDescriptor;
 use state::StackState;
 
 pub(crate) struct Stack<'repo> {
-    branch_name: String,
-    branch: Branch<'repo>,
     repo: &'repo Repository,
-    pub state: StackState,
+    branch_name: String,
+    pub(crate) branch: Branch<'repo>,
+    pub(crate) state_ref: Reference<'repo>,
+    pub(crate) state: StackState,
 }
 
 impl<'repo> Stack<'repo> {
@@ -24,18 +25,21 @@ impl<'repo> Stack<'repo> {
     ) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
-        let stack_refname = stack_refname_from_branch_name(&branch_name);
+        let state_refname = state_refname_from_branch_name(&branch_name);
 
-        if repo.find_reference(&stack_refname).is_ok() {
+        if repo.find_reference(&state_refname).is_ok() {
             return Err(Error::StackAlreadyInitialized(branch_name));
         }
-        let state = StackState::new(repo.head()?.peel_to_commit()?.id());
-        state.commit(repo, Some(&stack_refname), "initialize")?;
+        let head_commit = repo.head()?.peel_to_commit()?;
+        let state = StackState::new(head_commit.id());
+        state.commit(repo, Some(&state_refname), "initialize")?;
+        let state_ref = repo.find_reference(&state_refname)?;
 
         Ok(Self {
+            repo,
             branch_name,
             branch,
-            repo,
+            state_ref,
             state,
         })
     }
@@ -43,22 +47,27 @@ impl<'repo> Stack<'repo> {
     pub fn from_branch(repo: &'repo Repository, branch_name: Option<&str>) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
-        let stack_refname = stack_refname_from_branch_name(&branch_name);
-        let stack_ref = repo
+        let stack_refname = state_refname_from_branch_name(&branch_name);
+        let state_ref = repo
             .find_reference(&stack_refname)
             .map_err(|_| Error::StackNotInitialized(branch_name.to_string()))?;
-        let stack_tree = stack_ref.peel_to_tree()?;
+        let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         Ok(Self {
+            repo,
             branch_name,
             branch,
-            repo,
+            state_ref,
             state,
         })
     }
 
     pub fn all_patches(&self) -> AllPatches<'_> {
         self.state.all_patches()
+    }
+
+    pub fn head_commit(&self) -> Result<Commit, Error> {
+        Ok(self.branch.get().peel_to_commit()?)
     }
 
     pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
@@ -77,11 +86,12 @@ impl<'repo> Stack<'repo> {
         }
     }
 
+    pub fn is_head_top(&self) -> Result<bool, Error> {
+        Ok(self.state.head == self.head_commit()?.id())
+    }
+
     pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
-        let head_oid = self.branch.get().peel_to_commit()?.id();
-        let head_oid2 = self.repo.head()?.peel_to_commit()?.id();
-        assert_eq!(head_oid, head_oid2);
-        if head_oid != self.state.top() {
+        if self.is_head_top()? {
             Err(Error::StackTopHeadMismatch)
         } else {
             Ok(())
@@ -107,9 +117,39 @@ impl<'repo> Stack<'repo> {
             Err(Error::DirtyWorktree)
         }
     }
+
+    pub fn advance_state(
+        self,
+        new_head: Oid,
+        prev_state: Oid,
+        message: &str,
+        reflog_msg: Option<&str>,
+    ) -> Result<Self, Error> {
+        let state = self.state.advance_head(new_head, prev_state);
+        let state_commit_oid = state.commit(self.repo, None, message)?;
+        let reflog_msg = if let Some(reflog_msg) = reflog_msg {
+            reflog_msg
+        } else {
+            message
+        };
+        let state_ref = self.repo.reference_matching(
+            self.state_ref.name().unwrap(),
+            state_commit_oid,
+            true,
+            prev_state,
+            reflog_msg,
+        )?;
+        Ok(Self {
+            repo: self.repo,
+            branch_name: self.branch_name,
+            branch: self.branch,
+            state_ref,
+            state,
+        })
+    }
 }
 
-fn stack_refname_from_branch_name(branch_shorthand: &str) -> String {
+fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
     format!("refs/stacks/{}", branch_shorthand)
 }
 

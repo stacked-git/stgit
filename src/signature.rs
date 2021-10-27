@@ -162,7 +162,7 @@ impl CheckedSignature {
         Ok(Self { name, email, when })
     }
 
-    pub fn _get_signature(&self) -> Result<Signature<'static>, Error> {
+    pub fn get_signature(&self) -> Result<Signature<'static>, Error> {
         Ok(Signature::new(&self.name, &self.email, &self.when)?)
     }
 
