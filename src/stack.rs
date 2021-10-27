@@ -300,21 +300,27 @@ impl<'de> serde::Deserialize<'de> for Stack {
 
         let prev: Option<Oid> = match raw.prev {
             Some(ref oid_str) => {
-                let oid = Oid::from_str(oid_str).map_err(|_| D::Error::custom("invalid oid"))?;
+                let oid = Oid::from_str(oid_str)
+                    .map_err(|_| D::Error::custom(format!("invalid `prev` oid '{}'", oid_str)))?;
                 Some(oid)
             }
             None => None,
         };
 
-        // let head: Oid = Oid::from_str(raw.head).map_err(D::Error::custom("invalid oid"))?;
-        let head: Oid = Oid::from_str(&raw.head).unwrap();
+        let head: Oid = Oid::from_str(&raw.head)
+            .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &raw.head)))?;
 
         let mut patches = BTreeMap::new();
         for (patch_name, raw_patch_desc) in raw.patches {
-            // let oid = Oid::from_str(raw_patch_desc.oid).map_err(D::Error::custom("invalid oid"))?;
-            let oid = Oid::from_str(&raw_patch_desc.oid).unwrap();
+            let oid = Oid::from_str(&raw_patch_desc.oid).map_err(|_| {
+                D::Error::custom(format!(
+                    "invalid oid for patch `{}`: '{}'",
+                    patch_name, &raw_patch_desc.oid
+                ))
+            })?;
             patches.insert(patch_name, PatchDescriptor { oid });
         }
+
         Ok(Stack {
             prev,
             head,
