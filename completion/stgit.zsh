@@ -74,6 +74,7 @@ _stg-clone() {
 _stg-commit() {
     __stg_add_args_help
     subcmd_args+=(
+        '--allow-empty[allow committing empty patches]'
         - group-all
         '(-a --all)'{-a,--all}'[commit all unapplied patches]'
         - group-number
