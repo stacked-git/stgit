@@ -138,26 +138,26 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let mut patches: Vec<(PatchName, Oid, char)> = vec![];
 
     if show_applied {
-        if let Some((last_patch_name, rest)) = stack.applied.split_last() {
+        if let Some((last_patch_name, rest)) = stack.state.applied.split_last() {
             for patch_name in rest {
-                let oid = stack.patches[patch_name].oid;
+                let oid = stack.state.patches[patch_name].oid;
                 patches.push((patch_name.clone(), oid, '+'));
             }
-            let last_oid = stack.patches[last_patch_name].oid;
+            let last_oid = stack.state.patches[last_patch_name].oid;
             patches.push((last_patch_name.clone(), last_oid, '>'));
         }
     }
 
     if show_unapplied {
-        for patch_name in stack.unapplied {
-            let oid = stack.patches[&patch_name].oid;
+        for patch_name in stack.state.unapplied {
+            let oid = stack.state.patches[&patch_name].oid;
             patches.push((patch_name, oid, '-'));
         }
     }
 
     if show_hidden {
-        for patch_name in stack.hidden {
-            let oid = stack.patches[&patch_name].oid;
+        for patch_name in stack.state.hidden {
+            let oid = stack.state.patches[&patch_name].oid;
             patches.push((patch_name, oid, '!'));
         }
     }

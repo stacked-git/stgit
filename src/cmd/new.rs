@@ -46,11 +46,13 @@ pub(crate) fn get_subcommand() -> App<'static> {
 
 pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
-    if repo.index()?.has_conflicts() {
-        return Err(Error::OutstandingConflicts);
-    }
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;
+
+    let conflicts_okay = false;
+    stack.check_repository_state(conflicts_okay)?;
+    stack.check_head_top_mismatch()?;
+
     let patchname = if let Some(name) = matches.value_of("patchname") {
         Some(name.parse::<PatchName>()?)
     } else {
@@ -58,7 +60,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     };
 
     if let Some(ref patchname) = patchname {
-        if stack.patches.contains_key(patchname) {
+        if stack.state.patches.contains_key(patchname) {
             return Err(Error::PatchNameExists(patchname.to_string()));
         }
     }

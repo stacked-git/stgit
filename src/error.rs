@@ -26,8 +26,14 @@ pub(crate) enum Error {
     #[error("not on branch, HEAD is detached")]
     HeadDetached,
 
+    #[error("not on branch, HEAD points at `{0}`")]
+    HeadNotBranch(String),
+
     #[error("branch `{0}` not found")]
     BranchNotFound(String),
+
+    #[error("invalid branch name `{0}`")]
+    InvalidBranchName(String),
 
     #[error("branch `{0}` not initialized")]
     StackNotInitialized(String),
@@ -67,4 +73,20 @@ pub(crate) enum Error {
 
     #[error("`{0}` hook: {1}")]
     Hook(String, String),
+
+    #[error(
+        "HEAD and stack top are not the same. \
+         This can happen if you modify the branch with git. \
+         See `stg repair --help` for next steps to take."
+    )]
+    StackTopHeadMismatch,
+
+    #[error("Index not clean. Use `refresh` or `reset --hard`")]
+    DirtyIndex,
+
+    #[error("Worktree not clean. Use `refresh` or `reset --hard`")]
+    DirtyWorktree,
+
+    #[error("Complete the in-progress `{0}` before trying again.")]
+    ActiveRepositoryState(String),
 }

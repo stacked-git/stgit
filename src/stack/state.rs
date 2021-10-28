@@ -1,22 +1,22 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt::Write;
-use std::iter::Chain;
-use std::slice::Iter;
 use std::str;
 
 use chrono::{FixedOffset, NaiveDateTime};
-use git2::{Commit, FileMode, Oid, Reference, Repository, Tree};
+use git2::{Commit, FileMode, Oid, Repository, Tree};
 
 use crate::error::Error;
 use crate::patchname::PatchName;
 
-const MAX_PARENTS: usize = 16;
+use super::iter::AllPatches;
 
 pub(crate) struct PatchDescriptor {
     pub oid: Oid,
 }
 
-pub(crate) struct Stack {
+const MAX_PARENTS: usize = 16;
+
+pub(crate) struct StackState {
     pub prev: Option<Oid>,
     pub head: Oid,
     pub applied: Vec<PatchName>,
@@ -25,8 +25,8 @@ pub(crate) struct Stack {
     pub patches: BTreeMap<PatchName, PatchDescriptor>,
 }
 
-impl Stack {
-    pub fn new(head: Oid) -> Self {
+impl StackState {
+    pub(super) fn new(head: Oid) -> Self {
         Self {
             prev: None,
             head,
@@ -37,13 +37,7 @@ impl Stack {
         }
     }
 
-    pub fn from_branch(repo: &Repository, branch_name: Option<&str>) -> Result<Self, Error> {
-        let stack_ref = get_stack_ref(repo, branch_name)?;
-        let stack_tree = stack_ref.peel_to_tree()?;
-        Stack::from_tree(repo, &stack_tree)
-    }
-
-    fn from_tree(repo: &Repository, tree: &Tree) -> Result<Self, Error> {
+    pub(super) fn from_tree(repo: &Repository, tree: &Tree) -> Result<Self, Error> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
             let stack_json_blob = stack_json.to_object(repo)?.peel_to_blob()?;
@@ -60,13 +54,8 @@ impl Stack {
         }
     }
 
-    pub fn all_patches(&self) -> AllPatchesIter {
-        AllPatchesIter(
-            self.applied
-                .iter()
-                .chain(self.unapplied.iter())
-                .chain(self.hidden.iter()),
-        )
+    pub fn all_patches(&self) -> AllPatches<'_> {
+        AllPatches::new(self)
     }
 
     pub fn top(&self) -> Oid {
@@ -109,7 +98,6 @@ impl Stack {
             simplified_parents.as_slice(),
         )?;
 
-        use std::collections::HashSet;
         let mut parent_set = HashSet::new();
         parent_set.insert(self.head);
         parent_set.insert(self.top());
@@ -254,19 +242,7 @@ impl Stack {
     }
 }
 
-pub(crate) struct AllPatchesIter<'a>(
-    Chain<Chain<Iter<'a, PatchName>, Iter<'a, PatchName>>, Iter<'a, PatchName>>,
-);
-
-impl<'a> Iterator for AllPatchesIter<'a> {
-    type Item = &'a PatchName;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
-    }
-}
-
-impl<'de> serde::Deserialize<'de> for Stack {
+impl<'de> serde::Deserialize<'de> for StackState {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
@@ -321,7 +297,7 @@ impl<'de> serde::Deserialize<'de> for Stack {
             patches.insert(patch_name, PatchDescriptor { oid });
         }
 
-        Ok(Stack {
+        Ok(StackState {
             prev,
             head,
             applied: raw.applied,
@@ -332,7 +308,7 @@ impl<'de> serde::Deserialize<'de> for Stack {
     }
 }
 
-impl serde::Serialize for Stack {
+impl serde::Serialize for StackState {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -377,60 +353,4 @@ impl serde::Serialize for Stack {
 
         raw.serialize(serializer)
     }
-}
-
-pub(crate) fn initialize(repo: &Repository, branch_name: Option<&str>) -> Result<(), Error> {
-    let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or_else(|| {
-        Error::NonUtf8BranchName(String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string())
-    })?;
-    let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
-    if repo.find_reference(&stack_refname).is_ok() {
-        return Err(Error::StackAlreadyInitialized(branch_shorthand.into()));
-    }
-    let stack = Stack::new(repo.head()?.peel_to_commit()?.id());
-    stack.commit(repo, Some(&stack_refname), "initialize")?;
-    Ok(())
-}
-
-fn stack_refname_from_branch_shorthand(branch_shorthand: &str) -> String {
-    format!("refs/stacks/{}", branch_shorthand)
-}
-
-fn get_branch_ref<'repo>(
-    repo: &'repo Repository,
-    branch_name: Option<&str>,
-) -> Result<Reference<'repo>, Error> {
-    if let Some(name) = branch_name {
-        match repo.resolve_reference_from_short_name(name) {
-            Err(e)
-                if e.class() == git2::ErrorClass::Reference
-                    && e.code() == git2::ErrorCode::NotFound =>
-            {
-                Err(Error::BranchNotFound(name.into()))
-            }
-            Err(e) => Err(e.into()),
-            Ok(branch_ref) => Ok(branch_ref),
-        }
-    } else {
-        let head = repo.head()?;
-        if head.is_branch() {
-            Ok(head)
-        } else {
-            Err(Error::HeadDetached)
-        }
-    }
-}
-
-fn get_stack_ref<'repo>(
-    repo: &'repo Repository,
-    branch_name: Option<&str>,
-) -> Result<Reference<'repo>, Error> {
-    let branch_ref = get_branch_ref(repo, branch_name)?;
-    let branch_shorthand = branch_ref.shorthand().ok_or_else(|| {
-        Error::NonUtf8BranchName(String::from_utf8_lossy(branch_ref.shorthand_bytes()).to_string())
-    })?;
-    let stack_refname = stack_refname_from_branch_shorthand(branch_shorthand);
-    repo.find_reference(&stack_refname)
-        .map_err(|_| Error::StackNotInitialized(branch_shorthand.into()))
 }
