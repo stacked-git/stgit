@@ -236,11 +236,6 @@ class StackTransaction:
             else:
                 assert pn in remaining
 
-    def abort(self, iw=None):
-        # The only state we need to restore is index+worktree.
-        if iw:
-            self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
-
     def run(
         self, iw=None, set_head=True, allow_bad_head=False, print_current_patch=True
     ):
@@ -260,7 +255,8 @@ class StackTransaction:
                     self._checkout(new_head.data.tree, iw, allow_bad_head)
                 except CheckoutException:
                     # We have to abort the transaction.
-                    self.abort(iw)
+                    # The only state we need to restore is index+worktree.
+                    self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
                     raise TransactionAborted()
             self.stack.set_head(new_head, self._msg)
 
