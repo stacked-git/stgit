@@ -93,10 +93,10 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, 'sink', check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
 
     try:
         trans.reorder_patches(applied, unapplied, iw=iw, allow_interactive=True)
     except transaction.TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('sink', iw)

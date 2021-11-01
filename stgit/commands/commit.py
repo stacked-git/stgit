@@ -105,9 +105,7 @@ def func(parser, options, args):
         # run "stg commit" with conflicts in the index.
         return len(trans.applied) >= 1
 
-    trans = transaction.StackTransaction(
-        stack, 'commit', allow_conflicts=allow_conflicts
-    )
+    trans = transaction.StackTransaction(stack, allow_conflicts=allow_conflicts)
     try:
         common_prefix = 0
         for i in range(min(len(stack.patchorder.applied), len(patches))):
@@ -137,4 +135,4 @@ def func(parser, options, args):
             trans.push_patch(pn, iw)
     except transaction.TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('commit', iw)

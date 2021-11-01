@@ -95,7 +95,6 @@ class StackTransaction:
     def __init__(
         self,
         stack,
-        msg,
         discard_changes=False,
         allow_conflicts=False,
         allow_bad_head=False,
@@ -111,7 +110,6 @@ class StackTransaction:
 
         """
         self.stack = stack
-        self._msg = msg
         self.patches = _TransPatchMap(stack)
         self._applied = list(self.stack.patchorder.applied)
         self._unapplied = list(self.stack.patchorder.unapplied)
@@ -237,7 +235,12 @@ class StackTransaction:
                 assert pn in remaining
 
     def run(
-        self, iw=None, set_head=True, allow_bad_head=False, print_current_patch=True
+        self,
+        msg,
+        iw=None,
+        set_head=True,
+        allow_bad_head=False,
+        print_current_patch=True,
     ):
         """Execute the transaction.
 
@@ -258,7 +261,7 @@ class StackTransaction:
                     # The only state we need to restore is index+worktree.
                     self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
                     raise TransactionAborted()
-            self.stack.set_head(new_head, self._msg)
+            self.stack.set_head(new_head, msg)
 
         if self._error:
             if self._conflicts:
@@ -267,7 +270,8 @@ class StackTransaction:
                 out.error(self._error)
 
         old_applied = self.stack.patchorder.applied
-        msg = self._msg + (' (CONFLICT)' if self._conflicts else '')
+        if self._conflicts:
+            msg = '%s (CONFLICT)' % (msg,)
 
         # Write patches.
         for pn, commit in self.patches.items():

@@ -41,7 +41,7 @@ directory = DirectoryHasRepository()
 def func(parser, options, args):
     """Unhide a range of patch in the series."""
     stack = directory.repository.current_stack
-    trans = transaction.StackTransaction(stack, 'unhide')
+    trans = transaction.StackTransaction(stack)
 
     if not args:
         parser.error('No patches specified')
@@ -56,4 +56,4 @@ def func(parser, options, args):
     hidden = [p for p in trans.hidden if p not in set(patches)]
 
     trans.reorder_patches(applied, unapplied, hidden)
-    return trans.run()
+    return trans.run('unhide')

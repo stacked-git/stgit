@@ -224,7 +224,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             )
         )
 
-        trans = StackTransaction(stack, 'pick %s from %s' % (patchname, ref_stack.name))
+        trans = StackTransaction(stack)
         trans.patches[patchname] = new_commit
 
         trans.unapplied.append(patchname)
@@ -234,7 +234,11 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             except TransactionHalted:
                 pass
 
-        retval = trans.run(iw, print_current_patch=False)
+        retval = trans.run(
+            'pick %s from %s' % (patchname, ref_stack.name),
+            iw,
+            print_current_patch=False,
+        )
 
         if retval == STGIT_CONFLICT:
             out.done('conflict(s)')

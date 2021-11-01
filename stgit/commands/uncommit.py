@@ -154,10 +154,10 @@ def func(parser, options, args):
         patchnames.reverse()
 
     trans = transaction.StackTransaction(
-        stack, 'uncommit', allow_conflicts=True, allow_bad_head=True
+        stack, allow_conflicts=True, allow_bad_head=True
     )
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied
-    trans.run(set_head=False)
+    trans.run('uncommit', set_head=False)
     out.done()

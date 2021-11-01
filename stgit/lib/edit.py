@@ -179,7 +179,7 @@ def perform_edit(
     # Rewrite the StGit patch with the given diff (and any patches on top of
     # it).
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(stack, 'edit', allow_conflicts=True)
+    trans = transaction.StackTransaction(stack, allow_conflicts=True)
     if orig_patchname in trans.applied:
         popped = trans.applied[trans.applied.index(orig_patchname) + 1 :]
         popped_extra = trans.pop_patches(lambda pn: pn in popped)
@@ -208,7 +208,7 @@ def perform_edit(
         # Either a complete success, or a conflict during push. But in
         # either case, we've successfully effected the edits the user
         # asked us for.
-        return trans.run(iw), new_patchname
+        return trans.run('edit', iw), new_patchname
     except transaction.TransactionException:
         # Transaction aborted -- we couldn't check out files due to
         # dirty index/worktree. The edits were not carried out.

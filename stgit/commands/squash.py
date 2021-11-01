@@ -113,7 +113,7 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
 
     iw = stack.repository.default_iw
 
-    trans = StackTransaction(stack, 'squash', allow_conflicts=True)
+    trans = StackTransaction(stack, allow_conflicts=True)
     push_new_patch = bool(set(patches) & set(trans.applied))
     new_patch_name = None
     try:
@@ -148,7 +148,7 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
             trans.push_patch(pn, iw)
     except TransactionHalted:
         pass
-    return trans.run(iw), new_patch_name
+    return trans.run('squash', iw), new_patch_name
 
 
 def func(parser, options, args):

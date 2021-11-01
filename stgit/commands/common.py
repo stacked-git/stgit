@@ -264,7 +264,7 @@ def apply_patch(stack, diff, base=None, reject=False, strip=None, context_lines=
 def prepare_rebase(stack, cmd_name):
     # pop all patches
     iw = stack.repository.default_iw
-    trans = StackTransaction(stack, '%s (pop)' % cmd_name, check_clean_iw=iw)
+    trans = StackTransaction(stack, check_clean_iw=iw)
     out.start('Popping all applied patches')
     try:
         trans.reorder_patches(
@@ -275,7 +275,7 @@ def prepare_rebase(stack, cmd_name):
         )
     except TransactionException:
         pass
-    retval = trans.run(iw, print_current_patch=False)
+    retval = trans.run('%s (pop)' % cmd_name, iw, print_current_patch=False)
     if retval:
         out.done('Failed to pop applied patches')
     else:
@@ -307,7 +307,7 @@ def rebase(stack, iw, target_commit=None):
 
 def post_rebase(stack, applied, cmd_name, check_merged):
     iw = stack.repository.default_iw
-    trans = StackTransaction(stack, '%s (reapply)' % cmd_name)
+    trans = StackTransaction(stack)
     try:
         if check_merged:
             merged = set(trans.check_merged(applied))
@@ -319,7 +319,7 @@ def post_rebase(stack, applied, cmd_name, check_merged):
             )
     except TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('%s (reapply)' % cmd_name, iw)
 
 
 def delete_patches(stack, iw, patches):
@@ -330,14 +330,14 @@ def delete_patches(stack, iw, patches):
         else:
             return not trans.applied
 
-    trans = StackTransaction(stack, 'delete', allow_conflicts=allow_conflicts)
+    trans = StackTransaction(stack, allow_conflicts=allow_conflicts)
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:
             trans.push_patch(pn, iw)
     except TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('delete', iw)
 
 
 #

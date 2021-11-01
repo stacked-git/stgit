@@ -86,7 +86,7 @@ def func(parser, options, args):
         clean_iw = None
     else:
         clean_iw = iw
-    trans = transaction.StackTransaction(stack, 'float', check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
 
     if options.noapply:
         applied = [p for p in trans.applied if p not in patches]
@@ -99,4 +99,4 @@ def func(parser, options, args):
         trans.reorder_patches(applied, unapplied, iw=iw)
     except transaction.TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('float', iw)

@@ -162,10 +162,10 @@ def func(parser, options, args):
     if first_patch in applied:
         to_pop = applied[applied.index(first_patch) + 1 :]
         if to_pop:
-            trans = StackTransaction(stack, 'sync (pop)', check_clean_iw=iw)
+            trans = StackTransaction(stack, check_clean_iw=iw)
             popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
             assert not popped_extra
-            retval = trans.run(iw)
+            retval = trans.run('sync (pop)', iw)
             assert not retval
         pushed = [first_patch]
     else:
@@ -173,7 +173,7 @@ def func(parser, options, args):
         pushed = []
     popped = to_pop + [p for p in patches if p in unapplied]
 
-    trans = StackTransaction(stack, 'sync', check_clean_iw=iw)
+    trans = StackTransaction(stack, check_clean_iw=iw)
     try:
         for p in pushed + popped:
             if p in popped:
@@ -197,4 +197,4 @@ def func(parser, options, args):
                 out.done()
     except TransactionHalted:
         pass
-    return trans.run(iw)
+    return trans.run('sync', iw)

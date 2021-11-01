@@ -248,7 +248,7 @@ def __create_patch(
         )
         commit = stack.repository.commit(cd)
 
-        trans = StackTransaction(stack, 'import: %s' % name)
+        trans = StackTransaction(stack)
 
         try:
             if options.replace and name in stack.patchorder.unapplied:
@@ -258,7 +258,7 @@ def __create_patch(
             trans.applied.append(name)
         except TransactionHalted:
             pass
-        trans.run()
+        trans.run('import: %s' % name)
     finally:
         out.done()
 

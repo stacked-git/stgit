@@ -160,11 +160,11 @@ def func(parser, options, args):
         i = orig_order.get(p, len(orig_order))
         return i, p
 
-    trans = StackTransaction(stack, 'repair', check_clean_iw=False, allow_bad_head=True)
+    trans = StackTransaction(stack, check_clean_iw=False, allow_bad_head=True)
     try:
         trans.applied = applied
         trans.unapplied = sorted(unapplied, key=patchname_key)
         trans.hidden = sorted(hidden, key=patchname_key)
     except TransactionHalted:
         pass
-    return trans.run()
+    return trans.run('repair')

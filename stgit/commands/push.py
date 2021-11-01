@@ -127,7 +127,7 @@ def func(parser, options, args):
         clean_iw = None
     else:
         clean_iw = iw
-    trans = transaction.StackTransaction(stack, 'push', check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
 
     if options.reverse:
         patches.reverse()
@@ -154,4 +154,4 @@ def func(parser, options, args):
                 )
         except transaction.TransactionHalted:
             pass
-    return trans.run(iw)
+    return trans.run('push', iw)

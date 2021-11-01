@@ -356,13 +356,13 @@ def func(parser, options, args):
 
         if stack:
             clone = stack.clone(clone_name, 'branch clone of %s' % cur_branch.name)
-            trans = StackTransaction(clone, 'clone')
+            trans = StackTransaction(clone)
             try:
                 for pn in stack.patchorder.applied:
                     trans.push_patch(pn)
             except TransactionHalted:
                 pass
-            trans.run()
+            trans.run('clone')
         else:
             clone = Stack.create(
                 repository,

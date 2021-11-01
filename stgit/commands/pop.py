@@ -67,7 +67,7 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and not options.spill and iw) or None
-    trans = transaction.StackTransaction(stack, 'pop', check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
 
     if options.number == 0:
         # explicitly allow this without any warning/error message
@@ -105,4 +105,4 @@ def func(parser, options, args):
         )
     except transaction.TransactionException:
         pass
-    return trans.run(iw)
+    return trans.run('pop', iw)

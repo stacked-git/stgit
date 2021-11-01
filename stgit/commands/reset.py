@@ -58,10 +58,7 @@ def func(parser, options, args):
         raise CmdException('Wrong options or number of arguments')
 
     trans = transaction.StackTransaction(
-        stack,
-        'reset',
-        discard_changes=options.hard,
-        allow_bad_head=True,
+        stack, discard_changes=options.hard, allow_bad_head=True
     )
     try:
         if patches:
@@ -70,4 +67,4 @@ def func(parser, options, args):
             log.reset_stack(trans, iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(iw, allow_bad_head=not patches)
+    return trans.run('reset', iw, allow_bad_head=not patches)
