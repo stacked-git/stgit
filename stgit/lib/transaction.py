@@ -16,6 +16,13 @@ class TransactionException(exception.StgException):
     """Exception raised when something goes wrong with a :class:`StackTransaction`."""
 
 
+class TransactionAborted(TransactionException):
+    """Raised when :class:`StackTransaction` aborts."""
+
+    def __init__(self):
+        super().__init__('Command aborted (all changes rolled back)')
+
+
 class TransactionHalted(TransactionException):
     """Exception raised when a :class:`StackTransaction` stops part-way through.
 
@@ -194,7 +201,7 @@ class StackTransaction:
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.',
             )
-            self._abort()
+            raise TransactionAborted()
 
     def _assert_index_worktree_clean(self, iw):
         if not iw.worktree_clean():
@@ -213,17 +220,13 @@ class StackTransaction:
             if self._allow_conflicts(self) or iw is None or not iw.index.conflicts():
                 return
             out.error('Need to resolve conflicts first')
-            self._abort()
+            raise TransactionAborted()
         assert iw is not None
         if self._discard_changes:
             iw.checkout_hard(tree)
         else:
             iw.checkout(self._current_tree, tree)
         self._current_tree = tree
-
-    @staticmethod
-    def _abort():
-        raise TransactionException('Command aborted (all changes rolled back)')
 
     def _check_consistency(self):
         remaining = set(self.all_patches)
@@ -258,7 +261,7 @@ class StackTransaction:
                 except CheckoutException:
                     # We have to abort the transaction.
                     self.abort(iw)
-                    self._abort()
+                    raise TransactionAborted()
             self.stack.set_head(new_head, self._msg)
 
         if self._error:
