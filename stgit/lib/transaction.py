@@ -208,6 +208,7 @@ class StackTransaction:
             self._halt('Index not clean. Use "refresh" or "reset --hard"')
 
     def _checkout(self, tree, iw, allow_bad_head):
+        assert iw is not None
         if not allow_bad_head:
             self._assert_head_top_equal()
         if self._current_tree == tree and not self._discard_changes:
@@ -215,11 +216,10 @@ class StackTransaction:
             # there are no unresolved conflicts. Conflicts
             # conceptually "belong" to the topmost patch, and just
             # carrying them along to another patch is confusing.
-            if self._allow_conflicts(self) or iw is None or not iw.index.conflicts():
+            if self._allow_conflicts(self) or not iw.index.conflicts():
                 return
             out.error('Need to resolve conflicts first')
             raise TransactionAborted()
-        assert iw is not None
         if self._discard_changes:
             iw.checkout_hard(tree)
         else:
