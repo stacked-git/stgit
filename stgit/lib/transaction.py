@@ -118,7 +118,7 @@ class StackTransaction:
         self._current_tree = self.stack.head.data.tree
         self._base = self.stack.base
         self._discard_changes = discard_changes
-        self._bad_head = None
+        self._updated_head = None
         self._conflicts = None
         if isinstance(allow_conflicts, bool):
             self._allow_conflicts = lambda trans: allow_conflicts
@@ -183,14 +183,14 @@ class StackTransaction:
 
     @property
     def head(self):
-        if self._bad_head:
-            return self._bad_head
+        if self._updated_head:
+            return self._updated_head
         else:
             return self.top
 
     @head.setter
     def head(self, value):
-        self._bad_head = value
+        self._updated_head = value
 
     def _assert_head_top_equal(self):
         if self.stack.head != self.stack.top:
@@ -249,19 +249,18 @@ class StackTransaction:
         """
         self._check_consistency()
         log_external_mods(self.stack)
-        new_head = self.head
 
         # Set branch head.
         if set_head:
             if iw:
                 try:
-                    self._checkout(new_head.data.tree, iw, allow_bad_head)
+                    self._checkout(self.head.data.tree, iw, allow_bad_head)
                 except CheckoutException:
                     # We have to abort the transaction.
                     # The only state we need to restore is index+worktree.
                     self._checkout(self.stack.head.data.tree, iw, allow_bad_head=True)
                     raise TransactionAborted()
-            self.stack.set_head(new_head, msg)
+            self.stack.set_head(self.head, msg)
 
         if self._error:
             if self._conflicts:
