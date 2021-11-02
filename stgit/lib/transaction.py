@@ -110,21 +110,25 @@ class StackTransaction:
 
         """
         self.stack = stack
+
         self.patches = _TransPatchMap(stack)
         self._applied = list(self.stack.patchorder.applied)
         self._unapplied = list(self.stack.patchorder.unapplied)
         self._hidden = list(self.stack.patchorder.hidden)
-        self._error = None
-        self._current_tree = self.stack.head.data.tree
-        self._base = self.stack.base
-        self._discard_changes = discard_changes
         self._updated_head = None
+        self._updated_base = None
+        self._current_tree = self.stack.head.data.tree
+        self._temp_index = None
+        self._temp_index_tree = None
+        self._error = None
         self._conflicts = None
+
+        self._discard_changes = discard_changes
         if isinstance(allow_conflicts, bool):
-            self._allow_conflicts = lambda trans: allow_conflicts
+            self._allow_conflicts = lambda _: allow_conflicts
         else:
             self._allow_conflicts = allow_conflicts
-        self._temp_index = self.temp_index_tree = None
+
         if not allow_bad_head:
             self._assert_head_top_equal()
         if check_clean_iw:
@@ -160,12 +164,15 @@ class StackTransaction:
 
     @property
     def base(self):
-        return self._base
+        if self._updated_base is None:
+            return self.stack.base
+        else:
+            return self._updated_base
 
     @base.setter
     def base(self, value):
         assert not self._applied or self.patches[self.applied[0]].data.parent == value
-        self._base = value
+        self._updated_base = value
 
     @property
     def temp_index(self):
@@ -179,7 +186,7 @@ class StackTransaction:
         if self._applied:
             return self.patches[self._applied[-1]]
         else:
-            return self._base
+            return self.base
 
     @property
     def head(self):
@@ -371,8 +378,8 @@ class StackTransaction:
             base = oldparent.data.tree
             ours = cd.parent.data.tree
             theirs = cd.tree
-            tree, self.temp_index_tree = self.temp_index.merge(
-                base, ours, theirs, self.temp_index_tree
+            tree, self._temp_index_tree = self.temp_index.merge(
+                base, ours, theirs, self._temp_index_tree
             )
         s = ''
         merge_conflict = False
@@ -509,10 +516,10 @@ class StackTransaction:
         merged = []
         if tree:
             self.temp_index.read_tree(tree)
-            self.temp_index_tree = tree
-        elif self.temp_index_tree != self.stack.head.data.tree:
+            self._temp_index_tree = tree
+        elif self._temp_index_tree != self.stack.head.data.tree:
             self.temp_index.read_tree(self.stack.head.data.tree)
-            self.temp_index_tree = self.stack.head.data.tree
+            self._temp_index_tree = self.stack.head.data.tree
         for pn in reversed(patches):
             # check whether patch changes can be reversed in the current index
             cd = self.patches[pn].data
@@ -527,7 +534,7 @@ class StackTransaction:
                 merged.append(pn)
                 # The self.temp_index was modified by apply_treediff() so
                 # force read_tree() the next time merge() is used.
-                self.temp_index_tree = None
+                self._temp_index_tree = None
             except MergeException:
                 pass
         if not quiet:
