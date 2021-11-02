@@ -1,5 +1,11 @@
 from stgit.argparse import keep_option, opt, patch_range
-from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    check_head_top_equal,
+    check_index_and_worktree_clean,
+    parse_patches,
+)
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -66,14 +72,10 @@ def func(parser, options, args):
     """Pop the given patches or the topmost one from the stack."""
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    clean_iw = (not options.keep and not options.spill and iw) or None
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=clean_iw,
-    )
+    check_head_top_equal(stack)
+    if not options.keep and not options.spill:
+        check_index_and_worktree_clean(stack)
+    trans = transaction.StackTransaction(stack)
 
     if options.number == 0:
         # explicitly allow this without any warning/error message

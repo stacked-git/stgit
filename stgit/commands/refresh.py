@@ -3,6 +3,7 @@ from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
     DirectoryHasRepository,
+    check_head_top_equal,
     run_commit_msg_hook,
 )
 from stgit.config import config
@@ -223,13 +224,7 @@ def make_temp_patch(stack, patch_name, tree):
         )
     )
     temp_name = stack.patches.make_name('refresh-temp')
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    trans = StackTransaction(stack)
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)
     return (
@@ -336,13 +331,8 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     if annotate:
         log_msg += '\n\n' + annotate
 
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = StackTransaction(stack)
     iw = stack.repository.default_iw
     if patch_name in trans.applied:
         absorb_func = absorb_applied
@@ -382,13 +372,8 @@ def __refresh_spill(annotate):
     if annotate:
         log_msg += '\n\n' + annotate
 
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=True,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = StackTransaction(stack, allow_conflicts=True)
     trans.patches[patchname] = stack.repository.commit(cd)
     try:
         # Either a complete success, or a conflict during push. But in
@@ -449,6 +434,8 @@ def __refresh(
                 'The index is dirty. Did you mean --index? '
                 'To force a full refresh use --force.'
             )
+
+    check_head_top_equal(stack)
 
     # Update index and write tree
     tree = write_tree(stack, paths, use_temp_index=use_temp_index)

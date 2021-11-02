@@ -1,5 +1,10 @@
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import CmdException, DirectoryHasRepository, parse_patches
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    check_head_top_equal,
+    parse_patches,
+)
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -105,13 +110,8 @@ def func(parser, options, args):
         # run "stg commit" with conflicts in the index.
         return len(trans.applied) >= 1
 
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=allow_conflicts,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = transaction.StackTransaction(stack, allow_conflicts=allow_conflicts)
     try:
         common_prefix = 0
         for i in range(min(len(stack.patchorder.applied), len(patches))):

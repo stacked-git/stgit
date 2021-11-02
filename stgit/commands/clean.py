@@ -1,5 +1,5 @@
 from stgit.argparse import opt
-from stgit.commands.common import DirectoryHasRepository
+from stgit.commands.common import DirectoryHasRepository, check_head_top_equal
 from stgit.lib import transaction
 
 __copyright__ = """
@@ -46,13 +46,8 @@ directory = DirectoryHasRepository()
 
 
 def _clean(stack, clean_applied, clean_unapplied):
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=True,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = transaction.StackTransaction(stack, allow_conflicts=True)
 
     def del_patch(pn):
         if pn in stack.patchorder.applied:

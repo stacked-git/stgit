@@ -355,14 +355,9 @@ def func(parser, options, args):
         out.start('Cloning current branch to "%s"' % clone_name)
 
         if stack:
+            check_head_top_equal(stack)
             clone = stack.clone(clone_name, 'branch clone of %s' % cur_branch.name)
-            trans = StackTransaction(
-                clone,
-                discard_changes=False,
-                allow_conflicts=False,
-                allow_bad_head=False,
-                check_clean_iw=None,
-            )
+            trans = StackTransaction(clone)
             try:
                 for pn in stack.patchorder.applied:
                     trans.push_patch(pn)

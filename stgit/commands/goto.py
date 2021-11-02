@@ -1,7 +1,12 @@
 import re
 
 from stgit import argparse
-from stgit.commands.common import CmdException, DirectoryHasRepository
+from stgit.commands.common import (
+    CmdException,
+    DirectoryHasRepository,
+    check_head_top_equal,
+    check_index_and_worktree_clean,
+)
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -41,14 +46,12 @@ def func(parser, options, args):
 
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
-    clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=clean_iw,
-    )
+
+    check_head_top_equal(stack)
+    if not options.keep:
+        check_index_and_worktree_clean(stack)
+
+    trans = transaction.StackTransaction(stack)
 
     if name not in trans.all_patches:
         candidates = [pn for pn in trans.all_patches if name in pn]

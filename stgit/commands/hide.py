@@ -1,5 +1,9 @@
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import DirectoryHasRepository, parse_patches
+from stgit.commands.common import (
+    DirectoryHasRepository,
+    check_head_top_equal,
+    parse_patches,
+)
 from stgit.lib import transaction
 from stgit.out import out
 
@@ -42,13 +46,8 @@ directory = DirectoryHasRepository()
 def func(parser, options, args):
     """Hide a range of patch in the series."""
     stack = directory.repository.current_stack
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = transaction.StackTransaction(stack)
 
     if not args:
         parser.error('No patches specified')

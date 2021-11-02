@@ -179,13 +179,8 @@ def perform_edit(
     # Rewrite the StGit patch with the given diff (and any patches on top of
     # it).
     iw = stack.repository.default_iw
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=True,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    common.check_head_top_equal(stack)
+    trans = transaction.StackTransaction(stack, allow_conflicts=True)
     if orig_patchname in trans.applied:
         popped = trans.applied[trans.applied.index(orig_patchname) + 1 :]
         popped_extra = trans.pop_patches(lambda pn: pn in popped)

@@ -54,13 +54,7 @@ def func(parser, options, args):
     if options.number < 1:
         raise CmdException('Bad number of undos to redo')
     state = log.undo_state(stack, -options.number)
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=options.hard,
-        allow_conflicts=False,
-        allow_bad_head=True,
-        check_clean_iw=None,
-    )
+    trans = transaction.StackTransaction(stack, discard_changes=options.hard)
     try:
         log.reset_stack(trans, stack.repository.default_iw, state)
     except transaction.TransactionHalted:

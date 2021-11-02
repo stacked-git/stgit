@@ -153,13 +153,7 @@ def func(parser, options, args):
             taken_names.add(pn)
         patchnames.reverse()
 
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=True,
-        allow_bad_head=True,
-        check_clean_iw=None,
-    )
+    trans = transaction.StackTransaction(stack, allow_conflicts=True)
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied

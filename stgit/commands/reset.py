@@ -57,13 +57,7 @@ def func(parser, options, args):
     else:
         raise CmdException('Wrong options or number of arguments')
 
-    trans = transaction.StackTransaction(
-        stack,
-        discard_changes=options.hard,
-        allow_conflicts=False,
-        allow_bad_head=True,
-        check_clean_iw=None,
-    )
+    trans = transaction.StackTransaction(stack, discard_changes=options.hard)
     try:
         if patches:
             log.reset_stack_partially(trans, iw, state, patches)

@@ -3,6 +3,7 @@ from stgit.argparse import opt
 from stgit.commands.common import (
     CmdException,
     DirectoryHasRepository,
+    check_head_top_equal,
     run_commit_msg_hook,
     update_commit_data,
 )
@@ -117,13 +118,8 @@ def func(parser, options, args):
         name = stack.patches.make_name(cd.message_str)
 
     # Write the new patch.
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = StackTransaction(stack)
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)
     return trans.run('new: %s' % name)

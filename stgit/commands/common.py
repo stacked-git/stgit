@@ -129,6 +129,14 @@ def check_conflicts(iw):
         )
 
 
+def check_index_and_worktree_clean(stack):
+    iw = stack.repository.default_iw
+    if not iw.worktree_clean():
+        raise CmdException('Worktree not clean. Use "refresh" or "reset --hard"')
+    if not iw.index.is_clean(stack.head):
+        raise CmdException('Index not clean. Use "refresh" or "reset --hard"')
+
+
 def print_current_patch(stack):
     if stack.patchorder.applied:
         out.info('Now at patch "%s"' % stack.patchorder.applied[-1])
@@ -263,14 +271,10 @@ def apply_patch(stack, diff, base=None, reject=False, strip=None, context_lines=
 
 def prepare_rebase(stack, cmd_name):
     # pop all patches
+    check_head_top_equal(stack)
+    check_index_and_worktree_clean(stack)
     iw = stack.repository.default_iw
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=iw,
-    )
+    trans = StackTransaction(stack)
     out.start('Popping all applied patches')
     try:
         trans.reorder_patches(
@@ -313,13 +317,8 @@ def rebase(stack, iw, target_commit=None):
 
 def post_rebase(stack, applied, cmd_name, check_merged):
     iw = stack.repository.default_iw
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = StackTransaction(stack)
     try:
         if check_merged:
             merged = set(trans.check_merged(applied))
@@ -342,13 +341,8 @@ def delete_patches(stack, iw, patches):
         else:
             return not trans.applied
 
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=allow_conflicts,
-        allow_bad_head=False,
-        check_clean_iw=None,
-    )
+    check_head_top_equal(stack)
+    trans = StackTransaction(stack, allow_conflicts=allow_conflicts)
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:

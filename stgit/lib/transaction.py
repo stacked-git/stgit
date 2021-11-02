@@ -92,14 +92,7 @@ class StackTransaction:
 
     """
 
-    def __init__(
-        self,
-        stack,
-        discard_changes,
-        allow_conflicts,
-        allow_bad_head,
-        check_clean_iw,
-    ):
+    def __init__(self, stack, discard_changes=False, allow_conflicts=False):
         """Initialize a new :class:`StackTransaction`.
 
         :param discard_changes: Discard any changes in index+worktree
@@ -128,11 +121,6 @@ class StackTransaction:
             self._allow_conflicts = lambda _: allow_conflicts
         else:
             self._allow_conflicts = allow_conflicts
-
-        if not allow_bad_head:
-            self._assert_head_top_equal()
-        if check_clean_iw:
-            self._assert_index_worktree_clean(check_clean_iw)
 
     @property
     def applied(self):
@@ -207,12 +195,6 @@ class StackTransaction:
                 '"stg repair --help" explains more about what to do next.',
             )
             raise TransactionAborted()
-
-    def _assert_index_worktree_clean(self, iw):
-        if not iw.worktree_clean():
-            self._halt('Worktree not clean. Use "refresh" or "reset --hard"')
-        if not iw.index.is_clean(self.stack.head):
-            self._halt('Index not clean. Use "refresh" or "reset --hard"')
 
     def _checkout(self, tree, iw, allow_bad_head):
         assert iw is not None

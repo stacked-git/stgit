@@ -3,7 +3,13 @@ import os
 import re
 
 from stgit.argparse import opt, patch_range
-from stgit.commands.common import CmdException, DirectoryGotoTopLevel, parse_patches
+from stgit.commands.common import (
+    CmdException,
+    DirectoryGotoTopLevel,
+    check_head_top_equal,
+    check_index_and_worktree_clean,
+    parse_patches,
+)
 from stgit.lib.git import CommitData
 from stgit.lib.transaction import StackTransaction, TransactionHalted
 from stgit.out import out
@@ -156,19 +162,15 @@ def func(parser, options, args):
         raise CmdException('No common patches to be synchronised')
 
     iw = repository.default_iw
+    check_head_top_equal(stack)
+    check_index_and_worktree_clean(stack)
 
     # pop to the one before the first patch to be synchronised
     first_patch = sync_patches[0]
     if first_patch in applied:
         to_pop = applied[applied.index(first_patch) + 1 :]
         if to_pop:
-            trans = StackTransaction(
-                stack,
-                discard_changes=False,
-                allow_conflicts=False,
-                allow_bad_head=False,
-                check_clean_iw=iw,
-            )
+            trans = StackTransaction(stack)
             popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
             assert not popped_extra
             retval = trans.run('sync (pop)', iw)
@@ -179,13 +181,7 @@ def func(parser, options, args):
         pushed = []
     popped = to_pop + [p for p in patches if p in unapplied]
 
-    trans = StackTransaction(
-        stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=iw,
-    )
+    trans = StackTransaction(stack)
     try:
         for p in pushed + popped:
             if p in popped:
