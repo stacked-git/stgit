@@ -248,7 +248,13 @@ def __create_patch(
         )
         commit = stack.repository.commit(cd)
 
-        trans = StackTransaction(stack)
+        trans = StackTransaction(
+            stack,
+            discard_changes=False,
+            allow_conflicts=False,
+            allow_bad_head=False,
+            check_clean_iw=None,
+        )
 
         try:
             if options.replace and name in stack.patchorder.unapplied:

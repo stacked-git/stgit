@@ -51,7 +51,11 @@ def func(parser, options, args):
         raise CmdException('Bad number of commands to undo')
     state = log.undo_state(stack, options.number)
     trans = transaction.StackTransaction(
-        stack, discard_changes=options.hard, allow_bad_head=True
+        stack,
+        discard_changes=options.hard,
+        allow_conflicts=False,
+        allow_bad_head=True,
+        check_clean_iw=None,
     )
     try:
         log.reset_stack(trans, stack.repository.default_iw, state)

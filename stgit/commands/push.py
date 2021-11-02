@@ -127,7 +127,13 @@ def func(parser, options, args):
         clean_iw = None
     else:
         clean_iw = iw
-    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=clean_iw,
+    )
 
     if options.reverse:
         patches.reverse()

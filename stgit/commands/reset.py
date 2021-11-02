@@ -58,7 +58,11 @@ def func(parser, options, args):
         raise CmdException('Wrong options or number of arguments')
 
     trans = transaction.StackTransaction(
-        stack, discard_changes=options.hard, allow_bad_head=True
+        stack,
+        discard_changes=options.hard,
+        allow_conflicts=False,
+        allow_bad_head=True,
+        check_clean_iw=None,
     )
     try:
         if patches:

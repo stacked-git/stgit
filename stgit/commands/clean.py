@@ -46,7 +46,13 @@ directory = DirectoryHasRepository()
 
 
 def _clean(stack, clean_applied, clean_unapplied):
-    trans = transaction.StackTransaction(stack, allow_conflicts=True)
+    trans = transaction.StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=True,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
 
     def del_patch(pn):
         if pn in stack.patchorder.applied:

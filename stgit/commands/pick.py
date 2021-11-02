@@ -224,7 +224,13 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             )
         )
 
-        trans = StackTransaction(stack)
+        trans = StackTransaction(
+            stack,
+            discard_changes=False,
+            allow_conflicts=False,
+            allow_bad_head=False,
+            check_clean_iw=None,
+        )
         trans.patches[patchname] = new_commit
 
         trans.unapplied.append(patchname)

@@ -264,7 +264,13 @@ def apply_patch(stack, diff, base=None, reject=False, strip=None, context_lines=
 def prepare_rebase(stack, cmd_name):
     # pop all patches
     iw = stack.repository.default_iw
-    trans = StackTransaction(stack, check_clean_iw=iw)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=iw,
+    )
     out.start('Popping all applied patches')
     try:
         trans.reorder_patches(
@@ -307,7 +313,13 @@ def rebase(stack, iw, target_commit=None):
 
 def post_rebase(stack, applied, cmd_name, check_merged):
     iw = stack.repository.default_iw
-    trans = StackTransaction(stack)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     try:
         if check_merged:
             merged = set(trans.check_merged(applied))
@@ -330,7 +342,13 @@ def delete_patches(stack, iw, patches):
         else:
             return not trans.applied
 
-    trans = StackTransaction(stack, allow_conflicts=allow_conflicts)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=allow_conflicts,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     try:
         to_push = trans.delete_patches(lambda pn: pn in patches)
         for pn in to_push:

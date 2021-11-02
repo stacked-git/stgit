@@ -42,7 +42,13 @@ directory = DirectoryHasRepository()
 def func(parser, options, args):
     """Hide a range of patch in the series."""
     stack = directory.repository.current_stack
-    trans = transaction.StackTransaction(stack)
+    trans = transaction.StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
 
     if not args:
         parser.error('No patches specified')

@@ -95,10 +95,10 @@ class StackTransaction:
     def __init__(
         self,
         stack,
-        discard_changes=False,
-        allow_conflicts=False,
-        allow_bad_head=False,
-        check_clean_iw=None,
+        discard_changes,
+        allow_conflicts,
+        allow_bad_head,
+        check_clean_iw,
     ):
         """Initialize a new :class:`StackTransaction`.
 

@@ -356,7 +356,13 @@ def func(parser, options, args):
 
         if stack:
             clone = stack.clone(clone_name, 'branch clone of %s' % cur_branch.name)
-            trans = StackTransaction(clone)
+            trans = StackTransaction(
+                clone,
+                discard_changes=False,
+                allow_conflicts=False,
+                allow_bad_head=False,
+                check_clean_iw=None,
+            )
             try:
                 for pn in stack.patchorder.applied:
                     trans.push_patch(pn)

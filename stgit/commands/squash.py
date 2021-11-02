@@ -113,7 +113,13 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
 
     iw = stack.repository.default_iw
 
-    trans = StackTransaction(stack, allow_conflicts=True)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=True,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     push_new_patch = bool(set(patches) & set(trans.applied))
     new_patch_name = None
     try:

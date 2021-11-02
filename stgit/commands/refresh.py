@@ -223,7 +223,13 @@ def make_temp_patch(stack, patch_name, tree):
         )
     )
     temp_name = stack.patches.make_name('refresh-temp')
-    trans = StackTransaction(stack)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)
     return (
@@ -330,7 +336,13 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     if annotate:
         log_msg += '\n\n' + annotate
 
-    trans = StackTransaction(stack)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     iw = stack.repository.default_iw
     if patch_name in trans.applied:
         absorb_func = absorb_applied
@@ -370,7 +382,13 @@ def __refresh_spill(annotate):
     if annotate:
         log_msg += '\n\n' + annotate
 
-    trans = StackTransaction(stack, allow_conflicts=True)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=True,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     trans.patches[patchname] = stack.repository.commit(cd)
     try:
         # Either a complete success, or a conflict during push. But in

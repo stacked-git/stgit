@@ -117,7 +117,13 @@ def func(parser, options, args):
         name = stack.patches.make_name(cd.message_str)
 
     # Write the new patch.
-    trans = StackTransaction(stack)
+    trans = StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=None,
+    )
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)
     return trans.run('new: %s' % name)

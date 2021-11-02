@@ -93,7 +93,13 @@ def func(parser, options, args):
 
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=clean_iw,
+    )
 
     try:
         trans.reorder_patches(applied, unapplied, iw=iw, allow_interactive=True)

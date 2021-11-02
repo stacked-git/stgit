@@ -42,7 +42,13 @@ def func(parser, options, args):
     stack = directory.repository.current_stack
     iw = stack.repository.default_iw
     clean_iw = (not options.keep and iw) or None
-    trans = transaction.StackTransaction(stack, check_clean_iw=clean_iw)
+    trans = transaction.StackTransaction(
+        stack,
+        discard_changes=False,
+        allow_conflicts=False,
+        allow_bad_head=False,
+        check_clean_iw=clean_iw,
+    )
 
     if name not in trans.all_patches:
         candidates = [pn for pn in trans.all_patches if name in pn]

@@ -154,7 +154,11 @@ def func(parser, options, args):
         patchnames.reverse()
 
     trans = transaction.StackTransaction(
-        stack, allow_conflicts=True, allow_bad_head=True
+        stack,
+        discard_changes=False,
+        allow_conflicts=True,
+        allow_bad_head=True,
+        check_clean_iw=None,
     )
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
