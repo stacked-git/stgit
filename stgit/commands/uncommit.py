@@ -157,5 +157,5 @@ def func(parser, options, args):
     for commit, pn in zip(commits, patchnames):
         trans.patches[pn] = commit
     trans.applied = list(reversed(patchnames)) + trans.applied
-    trans.run('uncommit', set_head=False)
+    trans.execute('uncommit', set_head=False)
     out.done()

@@ -106,4 +106,4 @@ def func(parser, options, args):
         trans.reorder_patches(applied, unapplied, iw=iw)
     except transaction.TransactionHalted:
         pass
-    return trans.run('float', iw)
+    return trans.execute('float', iw)

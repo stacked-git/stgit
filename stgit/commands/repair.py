@@ -167,4 +167,4 @@ def func(parser, options, args):
         trans.hidden = sorted(hidden, key=patchname_key)
     except TransactionHalted:
         pass
-    return trans.run('repair')
+    return trans.execute('repair')

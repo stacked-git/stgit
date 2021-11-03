@@ -223,7 +223,7 @@ class StackTransaction:
             else:
                 assert pn in remaining
 
-    def run(
+    def execute(
         self,
         msg,
         iw=None,

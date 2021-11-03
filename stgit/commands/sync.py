@@ -173,7 +173,7 @@ def func(parser, options, args):
             trans = StackTransaction(stack)
             popped_extra = trans.pop_patches(lambda pn: pn in to_pop)
             assert not popped_extra
-            retval = trans.run('sync (pop)', iw)
+            retval = trans.execute('sync (pop)', iw)
             assert not retval
         pushed = [first_patch]
     else:
@@ -205,4 +205,4 @@ def func(parser, options, args):
                 out.done()
     except TransactionHalted:
         pass
-    return trans.run('sync', iw)
+    return trans.execute('sync', iw)

@@ -63,4 +63,4 @@ def func(parser, options, args):
     hidden = patches + trans.hidden
 
     trans.reorder_patches(applied, unapplied, hidden)
-    return trans.run('hide')
+    return trans.execute('hide')

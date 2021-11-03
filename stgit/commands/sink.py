@@ -109,4 +109,4 @@ def func(parser, options, args):
         trans.reorder_patches(applied, unapplied, iw=iw, allow_interactive=True)
     except transaction.TransactionHalted:
         pass
-    return trans.run('sink', iw)
+    return trans.execute('sink', iw)

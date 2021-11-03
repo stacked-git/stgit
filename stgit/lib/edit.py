@@ -209,7 +209,7 @@ def perform_edit(
         # Either a complete success, or a conflict during push. But in
         # either case, we've successfully effected the edits the user
         # asked us for.
-        return trans.run('edit', iw), new_patchname
+        return trans.execute('edit', iw), new_patchname
     except transaction.TransactionException:
         # Transaction aborted -- we couldn't check out files due to
         # dirty index/worktree. The edits were not carried out.

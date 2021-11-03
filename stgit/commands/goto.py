@@ -87,4 +87,4 @@ def func(parser, options, args):
             pass
     else:
         raise CmdException('Cannot goto a hidden patch')
-    return trans.run('goto', iw)
+    return trans.execute('goto', iw)

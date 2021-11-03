@@ -258,7 +258,7 @@ def __create_patch(
             trans.applied.append(name)
         except TransactionHalted:
             pass
-        trans.run('import: %s' % name)
+        trans.execute('import: %s' % name)
     finally:
         out.done()
 

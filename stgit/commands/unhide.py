@@ -62,4 +62,4 @@ def func(parser, options, args):
     hidden = [p for p in trans.hidden if p not in set(patches)]
 
     trans.reorder_patches(applied, unapplied, hidden)
-    return trans.run('unhide')
+    return trans.execute('unhide')

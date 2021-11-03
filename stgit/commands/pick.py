@@ -237,7 +237,7 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             except TransactionHalted:
                 pass
 
-        retval = trans.run(
+        retval = trans.execute(
             'pick %s from %s' % (patchname, ref_stack.name),
             iw,
             print_current_patch=False,

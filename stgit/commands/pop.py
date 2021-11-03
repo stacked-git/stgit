@@ -113,4 +113,4 @@ def func(parser, options, args):
         )
     except transaction.TransactionException:
         pass
-    return trans.run('pop', iw)
+    return trans.execute('pop', iw)

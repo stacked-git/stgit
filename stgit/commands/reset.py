@@ -65,4 +65,4 @@ def func(parser, options, args):
             log.reset_stack(trans, iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run('reset', iw, allow_bad_head=not patches)
+    return trans.execute('reset', iw, allow_bad_head=not patches)

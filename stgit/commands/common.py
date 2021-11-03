@@ -285,7 +285,7 @@ def prepare_rebase(stack, cmd_name):
         )
     except TransactionException:
         pass
-    retval = trans.run('%s (pop)' % cmd_name, iw, print_current_patch=False)
+    retval = trans.execute('%s (pop)' % cmd_name, iw, print_current_patch=False)
     if retval:
         out.done('Failed to pop applied patches')
     else:
@@ -330,7 +330,7 @@ def post_rebase(stack, applied, cmd_name, check_merged):
             )
     except TransactionHalted:
         pass
-    return trans.run('%s (reapply)' % cmd_name, iw)
+    return trans.execute('%s (reapply)' % cmd_name, iw)
 
 
 def delete_patches(stack, iw, patches):
@@ -349,7 +349,7 @@ def delete_patches(stack, iw, patches):
             trans.push_patch(pn, iw)
     except TransactionHalted:
         pass
-    return trans.run('delete', iw)
+    return trans.execute('delete', iw)
 
 
 #

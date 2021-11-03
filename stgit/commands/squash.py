@@ -151,7 +151,7 @@ def squash(stack, patches, name=None, msg=None, no_verify=False):
             trans.push_patch(pn, iw)
     except TransactionHalted:
         pass
-    return trans.run('squash', iw), new_patch_name
+    return trans.execute('squash', iw), new_patch_name
 
 
 def func(parser, options, args):

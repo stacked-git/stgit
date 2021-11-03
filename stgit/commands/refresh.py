@@ -228,7 +228,7 @@ def make_temp_patch(stack, patch_name, tree):
     trans.patches[temp_name] = commit
     trans.applied.append(temp_name)
     return (
-        trans.run(
+        trans.execute(
             'refresh (create temporary patch)',
             stack.repository.default_iw,
             print_current_patch=False,
@@ -352,7 +352,7 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
                 'They were saved in %s.' % temp_name,
             )
 
-    r = trans.run(log_msg, iw)
+    r = trans.execute(log_msg, iw)
     info_msg()
     return r
 
@@ -379,7 +379,7 @@ def __refresh_spill(annotate):
         # Either a complete success, or a conflict during push. But in
         # either case, we've successfully effected the edits the user
         # asked us for.
-        return trans.run(log_msg)
+        return trans.execute(log_msg)
     except TransactionException:
         # Transaction aborted -- we couldn't check out files due to
         # dirty index/worktree. The edits were not carried out.

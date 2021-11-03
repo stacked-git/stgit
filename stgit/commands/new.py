@@ -122,4 +122,4 @@ def func(parser, options, args):
     trans = StackTransaction(stack)
     trans.patches[name] = stack.repository.commit(cd)
     trans.applied.append(name)
-    return trans.run('new: %s' % name)
+    return trans.execute('new: %s' % name)

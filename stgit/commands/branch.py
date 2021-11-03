@@ -363,7 +363,7 @@ def func(parser, options, args):
                     trans.push_patch(pn)
             except TransactionHalted:
                 pass
-            trans.run('clone')
+            trans.execute('clone')
         else:
             clone = Stack.create(
                 repository,

@@ -55,6 +55,6 @@ def func(parser, options, args):
         log.reset_stack(trans, stack.repository.default_iw, state)
     except transaction.TransactionHalted:
         pass
-    return trans.run(
+    return trans.execute(
         'undo %d' % options.number, stack.repository.default_iw, allow_bad_head=True
     )

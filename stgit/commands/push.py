@@ -160,4 +160,4 @@ def func(parser, options, args):
                 )
         except transaction.TransactionHalted:
             pass
-    return trans.run('push', iw)
+    return trans.execute('push', iw)

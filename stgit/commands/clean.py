@@ -64,7 +64,7 @@ def _clean(stack, clean_applied, clean_unapplied):
 
     for pn in trans.delete_patches(del_patch):
         trans.push_patch(pn)
-    trans.run('clean')
+    trans.execute('clean')
 
 
 def func(parser, options, args):

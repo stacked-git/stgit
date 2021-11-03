@@ -141,4 +141,4 @@ def func(parser, options, args):
             trans.push_patch(pn, iw)
     except transaction.TransactionHalted:
         pass
-    return trans.run('commit', iw)
+    return trans.execute('commit', iw)
