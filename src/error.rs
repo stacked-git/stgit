@@ -1,3 +1,4 @@
+use git2::RepositoryState;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -90,6 +91,21 @@ pub(crate) enum Error {
     #[error("Complete the in-progress `{0}` before trying again.")]
     ActiveRepositoryState(String),
 
-    #[error("Command aborted (all changes rolled back)")]
-    Transaction,
+    #[error("{0}\nCommand aborted (all changes rolled back)")]
+    TransactionAborted(String),
+}
+
+pub(crate) fn repo_state_to_str(state: RepositoryState) -> &'static str {
+    match state {
+        RepositoryState::Clean => "clean",
+        RepositoryState::Merge => "merge",
+        RepositoryState::Revert | RepositoryState::RevertSequence => "revert",
+        RepositoryState::CherryPick | RepositoryState::CherryPickSequence => "cherry-pick",
+        RepositoryState::Bisect => "bisect",
+        RepositoryState::Rebase => "rebase",
+        RepositoryState::RebaseInteractive => "interactive rebase",
+        RepositoryState::RebaseMerge => "rebase merge",
+        RepositoryState::ApplyMailbox => "apply mailbox",
+        RepositoryState::ApplyMailboxOrRebase => "rebase or apply mailbox",
+    }
 }

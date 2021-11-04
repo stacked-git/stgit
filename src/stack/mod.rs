@@ -3,17 +3,20 @@ mod state;
 
 use std::str;
 
-use git2::{Branch, Commit, Oid, Reference, Repository, RepositoryState};
+use git2::{Branch, Commit, Oid, Reference, Repository, RepositoryState, Tree};
 
-use crate::error::Error;
+use crate::error::{repo_state_to_str, Error};
+use crate::patchname::PatchName;
 use iter::AllPatches;
 pub(crate) use state::PatchDescriptor;
 use state::StackState;
 
 pub(crate) struct Stack<'repo> {
-    repo: &'repo Repository,
-    branch_name: String,
+    pub(crate) repo: &'repo Repository,
+    pub(crate) branch_name: String,
     pub(crate) branch: Branch<'repo>,
+    pub(crate) head_commit: Commit<'repo>,
+    pub(crate) head_tree: Tree<'repo>,
     pub(crate) state_ref: Reference<'repo>,
     pub(crate) state: StackState,
 }
@@ -25,12 +28,13 @@ impl<'repo> Stack<'repo> {
     ) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
+        let head_commit = branch.get().peel_to_commit()?;
+        let head_tree = branch.get().peel_to_tree()?;
         let state_refname = state_refname_from_branch_name(&branch_name);
 
         if repo.find_reference(&state_refname).is_ok() {
             return Err(Error::StackAlreadyInitialized(branch_name));
         }
-        let head_commit = repo.head()?.peel_to_commit()?;
         let state = StackState::new(head_commit.id());
         state.commit(repo, Some(&state_refname), "initialize")?;
         let state_ref = repo.find_reference(&state_refname)?;
@@ -39,6 +43,8 @@ impl<'repo> Stack<'repo> {
             repo,
             branch_name,
             branch,
+            head_commit,
+            head_tree,
             state_ref,
             state,
         })
@@ -47,6 +53,8 @@ impl<'repo> Stack<'repo> {
     pub fn from_branch(repo: &'repo Repository, branch_name: Option<&str>) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
+        let head_commit = branch.get().peel_to_commit()?;
+        let head_tree = branch.get().peel_to_tree()?;
         let stack_refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&stack_refname)
@@ -57,6 +65,8 @@ impl<'repo> Stack<'repo> {
             repo,
             branch_name,
             branch,
+            head_commit,
+            head_tree,
             state_ref,
             state,
         })
@@ -64,10 +74,6 @@ impl<'repo> Stack<'repo> {
 
     pub fn all_patches(&self) -> AllPatches<'_> {
         self.state.all_patches()
-    }
-
-    pub fn head_commit(&self) -> Result<Commit, Error> {
-        Ok(self.branch.get().peel_to_commit()?)
     }
 
     pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
@@ -86,15 +92,15 @@ impl<'repo> Stack<'repo> {
         }
     }
 
-    pub fn is_head_top(&self) -> Result<bool, Error> {
-        Ok(self.state.head == self.head_commit()?.id())
+    pub fn is_head_top(&self) -> bool {
+        self.state.head == self.head_commit.id()
     }
 
     pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
-        if self.is_head_top()? {
-            Err(Error::StackTopHeadMismatch)
-        } else {
+        if self.is_head_top() {
             Ok(())
+        } else {
+            Err(Error::StackTopHeadMismatch)
         }
     }
 
@@ -125,27 +131,42 @@ impl<'repo> Stack<'repo> {
         message: &str,
         reflog_msg: Option<&str>,
     ) -> Result<Self, Error> {
-        let state = self.state.advance_head(new_head, prev_state);
-        let state_commit_oid = state.commit(self.repo, None, message)?;
+        let Self {
+            repo,
+            branch_name,
+            branch,
+            head_commit,
+            head_tree,
+            state_ref,
+            state,
+        } = self;
+        let state = state.advance_head(new_head, prev_state);
+        let state_commit_oid = state.commit(repo, None, message)?;
         let reflog_msg = if let Some(reflog_msg) = reflog_msg {
             reflog_msg
         } else {
             message
         };
         let state_ref = self.repo.reference_matching(
-            self.state_ref.name().unwrap(),
+            state_ref.name().unwrap(),
             state_commit_oid,
             true,
             prev_state,
             reflog_msg,
         )?;
         Ok(Self {
-            repo: self.repo,
-            branch_name: self.branch_name,
-            branch: self.branch,
+            repo,
+            branch_name,
+            branch,
+            head_commit,
+            head_tree,
             state_ref,
             state,
         })
+    }
+
+    pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
+        format!("refs/patches/{}/{}", &self.branch_name, patchname)
     }
 }
 
@@ -193,19 +214,4 @@ fn get_branch_name<'repo>(branch: &'repo Branch<'_>) -> Result<String, Error> {
     Ok(str::from_utf8(name_bytes)
         .map_err(|_| Error::NonUtf8BranchName(String::from_utf8_lossy(name_bytes).to_string()))?
         .to_string())
-}
-
-fn repo_state_to_str(state: RepositoryState) -> &'static str {
-    match state {
-        RepositoryState::Clean => "clean",
-        RepositoryState::Merge => "merge",
-        RepositoryState::Revert | RepositoryState::RevertSequence => "revert",
-        RepositoryState::CherryPick | RepositoryState::CherryPickSequence => "cherry-pick",
-        RepositoryState::Bisect => "bisect",
-        RepositoryState::Rebase => "rebase",
-        RepositoryState::RebaseInteractive => "interactive rebase",
-        RepositoryState::RebaseMerge => "rebase merge",
-        RepositoryState::ApplyMailbox => "apply mailbox",
-        RepositoryState::ApplyMailboxOrRebase => "rebase or apply mailbox",
-    }
 }

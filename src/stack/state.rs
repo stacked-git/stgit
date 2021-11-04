@@ -10,6 +10,7 @@ use crate::patchname::PatchName;
 
 use super::iter::AllPatches;
 
+#[derive(Clone)]
 pub(crate) struct PatchDescriptor {
     pub oid: Oid,
 }
@@ -85,7 +86,8 @@ impl StackState {
     ) -> Result<Oid, Error> {
         let prev_state_tree = match self.prev {
             Some(previous) => {
-                let prev_tree = repo.find_tree(previous)?;
+                let prev_commit = repo.find_commit(previous)?;
+                let prev_tree = prev_commit.tree()?;
                 let prev_state = Self::from_tree(repo, &prev_tree)?;
                 Some((prev_state, prev_tree))
             }
@@ -253,28 +255,28 @@ impl StackState {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RawPatchDescriptor {
+    pub oid: String,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RawStackState {
+    pub version: i64,
+    pub prev: Option<String>,
+    pub head: String,
+    pub applied: Vec<PatchName>,
+    pub unapplied: Vec<PatchName>,
+    pub hidden: Vec<PatchName>,
+    pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
+}
+
 impl<'de> serde::Deserialize<'de> for StackState {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
         use serde::de::Error;
-
-        #[derive(serde::Deserialize)]
-        struct RawPatchDescriptor {
-            pub oid: String,
-        }
-
-        #[derive(serde::Deserialize)]
-        struct RawStackState {
-            pub version: i64,
-            pub prev: Option<String>,
-            pub head: String,
-            pub applied: Vec<PatchName>,
-            pub unapplied: Vec<PatchName>,
-            pub hidden: Vec<PatchName>,
-            pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
-        }
 
         let raw = RawStackState::deserialize(deserializer)?;
 
@@ -324,22 +326,6 @@ impl serde::Serialize for StackState {
     where
         S: serde::Serializer,
     {
-        #[derive(serde::Serialize)]
-        struct RawPatchDescriptor {
-            pub oid: String,
-        }
-
-        #[derive(serde::Serialize)]
-        struct RawStackState {
-            pub version: String,
-            pub prev: Option<String>,
-            pub head: String,
-            pub applied: Vec<PatchName>,
-            pub unapplied: Vec<PatchName>,
-            pub hidden: Vec<PatchName>,
-            pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
-        }
-
         let prev: Option<String> = self.prev.map(|oid| oid.to_string());
         let head: String = self.head.to_string();
         let mut patches = BTreeMap::new();
@@ -353,7 +339,7 @@ impl serde::Serialize for StackState {
         }
 
         let raw = RawStackState {
-            version: "5".into(),
+            version: 5,
             prev,
             head,
             applied: self.applied.clone(),
