@@ -187,19 +187,15 @@ class StackTransaction:
     def head(self, value):
         self._updated_head = value
 
-    def _assert_head_top_equal(self):
-        if self.stack.head != self.stack.top:
+    def _checkout(self, tree, iw, allow_bad_head):
+        assert iw is not None
+        if not allow_bad_head and self.stack.head != self.stack.top:
             out.error(
                 'HEAD and top are not the same.',
                 'This can happen if you modify a branch with git.',
                 '"stg repair --help" explains more about what to do next.',
             )
             raise TransactionAborted()
-
-    def _checkout(self, tree, iw, allow_bad_head):
-        assert iw is not None
-        if not allow_bad_head:
-            self._assert_head_top_equal()
         if self._current_tree == tree and not self._discard_changes:
             # No tree change, but we still want to make sure that
             # there are no unresolved conflicts. Conflicts
