@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if test ${STG_RUST:-0} -gt "0"
+if test -n "$STG_RUST"
 then
-    exec "$STG_ROOT/target/release/stg" "$@"
+    exec "$STG_ROOT/target/$STG_RUST/stg" "$@"
 elif test -n "$COVERAGE_RCFILE"
 then
     if test -z "$COVERAGE_FILE"
