@@ -36,6 +36,12 @@ pub(crate) enum Error {
     #[error("invalid branch name `{0}`")]
     InvalidBranchName(String),
 
+    #[error("invalid StGit revision `{0}`")]
+    InvalidRevision(String),
+
+    #[error("revision not found `{0}`")]
+    RevisionNotFound(String),
+
     #[error("branch `{0}` not initialized")]
     StackNotInitialized(String),
 

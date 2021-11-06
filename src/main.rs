@@ -10,6 +10,7 @@ mod hook;
 mod message;
 mod patchdescription;
 mod patchname;
+mod revspec;
 mod signature;
 mod stack;
 mod trailers;

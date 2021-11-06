@@ -170,6 +170,10 @@ impl<'repo> Stack<'repo> {
     pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
         format!("refs/patches/{}/{}", &self.branch_name, patchname)
     }
+
+    pub(crate) fn patch_revspec(&self, patch_spec: &str) -> String {
+        format!("refs/patches/{}/{}", &self.branch_name, patch_spec)
+    }
 }
 
 fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
