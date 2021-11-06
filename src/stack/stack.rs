@@ -95,7 +95,7 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn is_head_top(&self) -> bool {
-        self.state.head == self.head_commit.id()
+        self.state.applied.is_empty() || self.state.head == self.head_commit.id()
     }
 
     pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
