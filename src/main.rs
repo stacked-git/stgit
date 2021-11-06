@@ -49,7 +49,7 @@ fn main() {
         Some(("id", cmd_matches)) => cmd::id::run(cmd_matches),
         Some(("init", _)) => cmd::init::run(),
         Some(("new", cmd_matches)) => cmd::new::run(cmd_matches),
-        Some(("refresh", cmd_matches)) => cmd::refresh::run(cmd_matches),
+        // Some(("refresh", cmd_matches)) => cmd::refresh::run(cmd_matches),
         Some(("series", cmd_matches)) => cmd::series::run(cmd_matches),
         Some(("version", _)) => cmd::version::run(),
         _ => punt_to_python(),
@@ -68,9 +68,14 @@ fn punt_to_python() -> cmd::Result {
         let stgit_main = py.import("stgit.main")?;
         let main = stgit_main.getattr("main")?;
         let argv: Vec<String> = std::env::args().collect();
-        let ret_val = main.call1((argv,))?.extract()?;
+        let ret_val = main.call1((argv,))?;
+        let rc = if ret_val.is_none() {
+            0
+        } else {
+            ret_val.extract()?
+        };
         unsafe { pyo3::ffi::Py_Finalize() }
-        std::process::exit(ret_val);
+        std::process::exit(rc);
     });
 
     if let Err(e) = result {
