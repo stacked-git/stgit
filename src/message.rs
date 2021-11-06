@@ -1,4 +1,5 @@
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
+use git2::Repository;
 
 use crate::error::Error;
 
@@ -67,4 +68,8 @@ pub(crate) fn get_message_from_args(matches: &ArgMatches) -> Result<Option<Strin
     } else {
         Ok(None)
     }
+}
+
+pub(crate) fn get_message_template(repo: &Repository) -> Result<Option<String>, Error> {
+    crate::templates::get_template(repo, "patchdescr.tmpl")
 }

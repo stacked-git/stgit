@@ -13,6 +13,7 @@ mod patchname;
 mod revspec;
 mod signature;
 mod stack;
+mod templates;
 mod trailers;
 mod transaction;
 

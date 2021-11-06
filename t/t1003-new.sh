@@ -12,11 +12,19 @@ test_expect_success \
     stg init
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Too many arguments' '
     command_error stg new foo extra_arg 2>err &&
     grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success \
+    'Too many arguments' '
+    command_error stg new foo extra_arg 2>err &&
+    grep -e "error: Found argument .extra_arg. which wasn.t expected" err
+'
+fi
 
 test_expect_success \
     'Create a named patch' '
@@ -24,23 +32,47 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 1 ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid patch name: space' '
-    command_error stg new "bad name" 2>&1 >/dev/null |
-    grep -e "Invalid patch name: \"bad name\""
+    command_error stg new "bad name" 2>err &&
+    grep -e "Invalid patch name: \"bad name\"" err
 '
+else
+test_expect_success \
+    'Invalid patch name: space' '
+    command_error stg new "bad name" 2>err &&
+    grep -e "error: invalid patch name \`bad name\`" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid patch name: carat' '
-    command_error stg new "bad^name" 2>&1 >/dev/null |
-    grep -e "Invalid patch name: \"bad\^name\""
+    command_error stg new "bad^name" 2>err &&
+    grep -e "Invalid patch name: \"bad\^name\"" err
 '
+else
+test_expect_success \
+    'Invalid patch name: carat' '
+    command_error stg new "bad^name" 2>err &&
+    grep -e "error: invalid patch name \`bad\^name\`" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid patch name: empty' '
-    command_error stg new "" 2>&1 >/dev/null |
-    grep -e "Invalid patch name: \"\""
+    command_error stg new "" 2>err &&
+    grep -e "Invalid patch name: \"\"" err
 '
+else
+test_expect_success \
+    'Invalid patch name: empty' '
+    command_error stg new "" 2>err &&
+    grep -e "error: invalid patch name \`\`" err
+'
+fi
 
 test_expect_success \
     'Invalid patch name: trailing periods in shortened name' '
@@ -57,6 +89,7 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 2 ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Tricky generated patch name a:.b.:' '
     stg new -m "a:.b.:" &&
@@ -76,7 +109,15 @@ test_expect_success \
     command_error stg new foo -m "duplicate foo" 2>err &&
     grep -e "foo: patch already exists" err
 '
+else
+test_expect_success \
+    'Attempt to create patch with duplicate name' '
+    command_error stg new foo -m "duplicate foo" 2>err &&
+    grep -e "error: patch \`foo\` already exists" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Attempt new with conflicts' '
     stg new -m p0 &&
@@ -95,6 +136,26 @@ test_expect_success \
     grep -e "Cannot create a new patch -- resolve conflicts first" err &&
     stg reset --hard
 '
+else
+test_expect_success \
+    'Attempt new with conflicts' '
+    stg new -m p0 &&
+    echo "something" > file.txt &&
+    stg add file.txt &&
+    stg refresh &&
+    stg new -m p1 &&
+    echo "something else" > file.txt &&
+    stg refresh &&
+    stg pop &&
+    stg new -m p2 &&
+    echo "something different" > file.txt &&
+    stg refresh &&
+    conflict stg push p1 &&
+    command_error stg new -m p3 2>err &&
+    grep -e "error: resolve outstanding conflicts first" err &&
+    stg reset --hard
+'
+fi
 
 test_expect_success \
     'Save template' '

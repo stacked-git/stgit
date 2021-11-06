@@ -226,6 +226,10 @@ impl StackTransaction {
             stack.check_head_top_mismatch()?;
         }
 
+        if stack.repo.index()?.has_conflicts() {
+            return Err(Error::OutstandingConflicts);
+        }
+
         let tree = treeish.peel_to_tree()?;
         if self.current_tree_id != tree.id() && !self.discard_changes {
             return match stack.repo.state() {
