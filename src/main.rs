@@ -27,6 +27,7 @@ fn main() {
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::HelpRequired)
+        .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
         .setting(AppSettings::AllowExternalSubcommands) // TODO: remove
         .setting(AppSettings::SubcommandRequiredElseHelp)
         .version(crate_version!())

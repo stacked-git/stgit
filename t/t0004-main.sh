@@ -4,10 +4,17 @@ test_description='Test stg.main'
 
 . ./test-lib.sh
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test no command' '
     general_error stg 2>err &&
     grep -e "usage:" err
 '
+else
+test_expect_success 'Test no command' '
+    general_error stg 2>err &&
+    grep -e "USAGE:" err
+'
+fi
 
 test_expect_success 'Test help/--help equivalence' '
     stg help 2>&1 > h0.txt &&
@@ -15,18 +22,35 @@ test_expect_success 'Test help/--help equivalence' '
     diff h0.txt h1.txt
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test help on invalid command' '
     general_error stg help invalidcmd 2>err &&
     grep -e "Unknown command: invalidcmd" err
 '
+else
+test_expect_success 'Test help on invalid command' '
+    command_error stg help invalidcmd 2>err &&
+    grep -e "error:  The subcommand .invalidcmd. wasn.t recognized" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test help on regular command' '
     stg help init | grep -e "Usage: stg init"
 '
+else
+test_expect_success 'Test help on regular command' '
+    stg help init | grep -e "stg-init"
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test --help on regular command' '
     stg --help refresh | grep -e "Usage: stg refresh"
 '
+else
+    : # --help <cmd> is not valid in rust implementation
+fi
 
 test_expect_success 'Test help on alias command' '
     stg help add | grep -e "Alias for \"git add"
