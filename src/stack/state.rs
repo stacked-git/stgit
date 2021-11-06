@@ -7,6 +7,7 @@ use git2::{Commit, FileMode, Oid, Repository, Tree};
 
 use crate::error::Error;
 use crate::patchname::PatchName;
+use crate::signature::CheckedSignature;
 
 use super::iter::AllPatches;
 
@@ -94,7 +95,9 @@ impl StackState {
             None => None,
         };
         let state_tree = self.make_tree(repo, &prev_state_tree)?;
-        let sig = repo.signature()?;
+        let config = repo.config()?;
+        let sig = CheckedSignature::default_committer(Some(&config))?;
+        let sig = sig.get_signature()?;
 
         let simplified_parents: Vec<Commit> = match self.prev {
             Some(prev_oid) => vec![repo.find_commit(prev_oid)?.parent(0)?],

@@ -4,6 +4,7 @@ use git2::{DiffOptions, Repository};
 use crate::commitdata::CommitData;
 use crate::error::Error;
 use crate::patchdescription::PatchDescription;
+use crate::signature::CheckedSignature;
 use crate::transaction::{ConflictMode, StackTransaction};
 use crate::{argset, patchname::PatchName, stack::Stack};
 
@@ -71,17 +72,16 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let verbose =
         matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
 
-    let default_sig = crate::signature::CheckedSignature::default(&repo)?;
     let head_ref = repo.head()?;
     let tree = head_ref.peel_to_tree()?;
-    let committer = crate::signature::CheckedSignature::make_committer(&repo)?;
     let parents = vec![head_ref.peel_to_commit()?];
 
     let (message, must_edit) = match crate::message::get_message_from_args(matches)? {
         Some(message) => (message, false),
         None => ("".to_string(), true),
     };
-    let message = crate::trailers::add_trailers(message, matches, &default_sig)?;
+    let committer = CheckedSignature::default_committer(Some(&config))?;
+    let message = crate::trailers::add_trailers(message, matches, &committer)?;
 
     let diff = if must_edit && verbose {
         Some(repo.diff_tree_to_workdir(
@@ -94,7 +94,7 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
 
     let patch_desc = PatchDescription {
         patchname,
-        author: crate::signature::CheckedSignature::make_author(&repo, matches)?,
+        author: CheckedSignature::make_author(Some(&config), matches)?,
         message: Some(message),
         diff,
     };

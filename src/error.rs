@@ -57,6 +57,12 @@ pub(crate) enum Error {
     #[error("patch description contains non-UTF-8 data")]
     NonUtf8PatchDescription,
 
+    #[error("{0}")]
+    NonUtf8Signature(String),
+
+    #[error("{0}")]
+    MissingSignature(String),
+
     #[error("failed to parse patch description: {0}")]
     ParsePatchDescription(String),
 

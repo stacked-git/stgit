@@ -1,6 +1,6 @@
 use chrono::{DateTime, FixedOffset, TimeZone};
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
-use git2::{Repository, Signature, Time};
+use git2::{Config, Signature, Time};
 
 use crate::error::Error;
 
@@ -40,6 +40,19 @@ lazy_static! {
     ];
 }
 
+#[derive(Clone, Copy)]
+enum SignatureRole {
+    Author,
+    Committer,
+}
+
+#[derive(Clone, Copy)]
+enum SignatureComponent {
+    Name,
+    Email,
+    Date,
+}
+
 pub(crate) struct CheckedSignature {
     pub name: String,
     pub email: String,
@@ -47,39 +60,75 @@ pub(crate) struct CheckedSignature {
 }
 
 impl CheckedSignature {
-    pub fn default(repo: &Repository) -> Result<Self, Error> {
-        let default_sig = repo.signature()?;
-
-        let name: &str = default_sig.name().ok_or_else(|| {
-            Error::NonUtf8Argument(
-                "user.name".into(),
-                String::from_utf8_lossy(default_sig.name_bytes()).into_owned(),
-            )
-        })?;
-
-        let email: &str = default_sig.email().ok_or_else(|| {
-            Error::NonUtf8Argument(
-                "user.email".into(),
-                String::from_utf8_lossy(default_sig.email_bytes()).into_owned(),
-            )
-        })?;
-
-        let when = default_sig.when();
-
-        Ok(Self {
-            name: name.into(),
-            email: email.into(),
-            when,
-        })
+    pub fn default_author(config: Option<&Config>) -> Result<Self, Error> {
+        Self::make_default(config, SignatureRole::Author)
     }
 
-    pub fn make_author(repo: &Repository, matches: &ArgMatches) -> Result<Self, Error> {
-        Self::default(repo)?.override_author(repo, matches)
+    pub fn default_committer(config: Option<&Config>) -> Result<Self, Error> {
+        Self::make_default(config, SignatureRole::Committer)
     }
 
-    pub fn override_author(self, repo: &Repository, matches: &ArgMatches) -> Result<Self, Error> {
-        let default_sig = Self::default(repo)?;
+    fn make_default(config: Option<&Config>, role: SignatureRole) -> Result<Self, Error> {
+        let name = if let Some(name) = get_from_env(role, SignatureComponent::Name)? {
+            name
+        } else if let Some(config) = config {
+            if let Some(name) = get_from_config(&config, "user.name")? {
+                name
+            } else if get_from_config(&config, "user.email")?.is_none() {
+                return Err(Error::MissingSignature(
+                    "`user.name` and `user.email` not configured".to_string(),
+                ));
+            } else {
+                return Err(Error::MissingSignature(
+                    "`user.name` not configured".to_string(),
+                ));
+            }
+        } else {
+            return Err(Error::MissingSignature(format!(
+                "no config available and no `{}`",
+                get_env_key(role, SignatureComponent::Name),
+            )));
+        };
 
+        let email = if let Some(email) = get_from_env(role, SignatureComponent::Email)? {
+            email
+        } else if let Some(config) = config {
+            if let Some(email) = get_from_config(&config, "user.email")? {
+                email
+            } else {
+                return Err(Error::MissingSignature(
+                    "`user.email` not configured".to_string(),
+                ));
+            }
+        } else {
+            return Err(Error::MissingSignature(format!(
+                "no config available and no `{}`",
+                get_env_key(role, SignatureComponent::Email),
+            )));
+        };
+
+        let when = if let Some(date) = get_from_env(role, SignatureComponent::Date)? {
+            if date == "now" {
+                let sig = Signature::now(&name, &email)?;
+                sig.when()
+            } else {
+                // TODO: This InvalidDate should have the context of which env
+                // var it comes from...
+                parse_time(&date)?
+            }
+        } else {
+            let sig = Signature::now(&name, &email)?;
+            sig.when()
+        };
+
+        Ok(Self { name, email, when })
+    }
+
+    pub fn make_author(config: Option<&Config>, matches: &ArgMatches) -> Result<Self, Error> {
+        Self::default_author(config)?.override_author(matches)
+    }
+
+    pub fn override_author(self, matches: &ArgMatches) -> Result<Self, Error> {
         let (author_name, author_email): (Option<String>, Option<String>) =
             if let Some(name_email) = get_from_arg("author", matches)? {
                 let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
@@ -95,8 +144,6 @@ impl CheckedSignature {
             author_name
         } else if let Some(authname) = get_from_arg("authname", matches)? {
             authname
-        } else if let Some(name_env) = get_from_env("GIT_AUTHOR_NAME")? {
-            name_env
         } else {
             self.name
         };
@@ -105,55 +152,16 @@ impl CheckedSignature {
             author_email
         } else if let Some(authemail) = get_from_arg("authemail", matches)? {
             authemail
-        } else if let Some(email_env) = get_from_env("GIT_AUTHOR_EMAIL")? {
-            email_env
         } else {
             self.email
         };
 
         let when = if let Some(authdate) = get_from_arg("authdate", matches)? {
             if authdate == "now" {
-                default_sig.when
+                let sig = Signature::now(&name, &email)?;
+                sig.when()
             } else {
                 parse_time(&authdate)?
-            }
-        } else if let Some(date_env) = get_from_env("GIT_AUTHOR_DATE")? {
-            if date_env == "now" {
-                default_sig.when
-            } else {
-                parse_time(&date_env)?
-            }
-        } else {
-            self.when
-        };
-
-        Ok(Self { name, email, when })
-    }
-
-    pub fn make_committer(repo: &Repository) -> Result<Self, Error> {
-        Self::default(repo)?.override_committer(repo)
-    }
-
-    pub fn override_committer(self, repo: &Repository) -> Result<Self, Error> {
-        let default_sig = Self::default(repo)?;
-
-        let name: String = if let Some(name_env) = get_from_env("GIT_COMMITTER_NAME")? {
-            name_env
-        } else {
-            self.name
-        };
-
-        let email: String = if let Some(email_env) = get_from_env("GIT_COMMITTER_EMAIL")? {
-            email_env
-        } else {
-            self.email
-        };
-
-        let when = if let Some(date_env) = get_from_env("GIT_COMMITTER_DATE")? {
-            if date_env == "now" {
-                default_sig.when
-            } else {
-                parse_time(&date_env)?
             }
         } else {
             self.when
@@ -184,16 +192,45 @@ impl CheckedSignature {
     }
 }
 
-fn get_from_env(key: &str) -> Result<Option<String>, Error> {
+fn get_from_config(config: &Config, key: &str) -> Result<Option<String>, Error> {
+    match config.get_bytes(key) {
+        Err(_) => Ok(None),
+        Ok(value_bytes) => {
+            if let Ok(name) = std::str::from_utf8(value_bytes) {
+                Ok(Some(name.to_string()))
+            } else {
+                Err(Error::NonUtf8Signature(format!(
+                    "`{}` in config is not valid UTF-8",
+                    key
+                )))
+            }
+        }
+    }
+}
+
+fn get_env_key(role: SignatureRole, component: SignatureComponent) -> &'static str {
+    match (role, component) {
+        (SignatureRole::Author, SignatureComponent::Name) => "GIT_AUTHOR_NAME",
+        (SignatureRole::Author, SignatureComponent::Email) => "GIT_AUTHOR_EMAIL",
+        (SignatureRole::Author, SignatureComponent::Date) => "GIT_AUTHOR_DATE",
+        (SignatureRole::Committer, SignatureComponent::Name) => "GIT_COMMITTER_NAME",
+        (SignatureRole::Committer, SignatureComponent::Email) => "GIT_COMMITTER_EMAIL",
+        (SignatureRole::Committer, SignatureComponent::Date) => "GIT_COMMITTER_DATE",
+    }
+}
+
+fn get_from_env(
+    role: SignatureRole,
+    component: SignatureComponent,
+) -> Result<Option<String>, Error> {
+    let key = get_env_key(role, component);
     match std::env::var(key) {
         Ok(s) => Ok(Some(s)),
         Err(std::env::VarError::NotPresent) => Ok(None),
-        Err(std::env::VarError::NotUnicode(os_str)) => {
-            return Err(Error::NonUtf8Argument(
-                key.into(),
-                os_str.to_string_lossy().to_string(),
-            ));
-        }
+        Err(std::env::VarError::NotUnicode(_os_str)) => Err(Error::NonUtf8Signature(format!(
+            "`{}` from environment is not valid UTF-8",
+            key
+        ))),
     }
 }
 
