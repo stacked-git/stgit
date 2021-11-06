@@ -57,7 +57,7 @@ fn main() {
 
     if let Err(e) = result {
         print_error_message(e);
-        std::process::exit(1)
+        std::process::exit(2)
     } else {
         std::process::exit(0)
     }
