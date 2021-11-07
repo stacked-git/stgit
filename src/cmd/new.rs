@@ -11,7 +11,11 @@ use crate::{
     stack::{ConflictMode, Stack, StackTransaction},
 };
 
-pub(crate) fn get_subcommand() -> App<'static> {
+pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
+    ("new", super::StGitCommand { get_app, run })
+}
+
+fn get_app() -> App<'static> {
     App::new("new")
         .about("Create a new patch at top of the stack")
         .long_about(
@@ -49,7 +53,7 @@ pub(crate) fn get_subcommand() -> App<'static> {
         )
 }
 
-pub(crate) fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;

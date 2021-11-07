@@ -3,7 +3,11 @@ use git2::Repository;
 
 use crate::revspec::parse_stgit_revision;
 
-pub(crate) fn get_subcommand<'help>() -> App<'help> {
+pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
+    ("id", super::StGitCommand { get_app, run })
+}
+
+fn get_app() -> App<'static> {
     App::new("id")
         .about("Print git hash of StGit revision")
         .long_about("Long about for 'id'.") // TODO
@@ -19,7 +23,7 @@ pub(crate) fn get_subcommand<'help>() -> App<'help> {
         .arg(Arg::new("revision").about("StGit revision"))
 }
 
-pub(crate) fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> super::Result {
     let opt_branch = matches.value_of("branch");
     let opt_spec = matches.value_of("revision");
 

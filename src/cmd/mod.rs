@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 pub(crate) mod branch;
 pub(crate) mod clean;
 pub(crate) mod clone;
@@ -42,3 +44,19 @@ pub(crate) mod unhide;
 pub(crate) mod version;
 
 pub(crate) type Result = std::result::Result<(), crate::error::Error>;
+
+pub(crate) struct StGitCommand {
+    pub get_app: fn() -> clap::App<'static>,
+    pub run: fn(&clap::ArgMatches) -> Result,
+}
+
+pub(crate) fn get_commands() -> BTreeMap<&'static str, StGitCommand> {
+    BTreeMap::from([
+        id::get_command(),
+        init::get_command(),
+        new::get_command(),
+        refresh::get_command(),
+        series::get_command(),
+        version::get_command(),
+    ])
+}

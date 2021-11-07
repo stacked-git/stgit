@@ -1,13 +1,17 @@
-use clap::App;
+use clap::{App, ArgMatches};
 use git2::Repository;
 
 use crate::stack::Stack;
 
-pub(crate) fn get_subcommand() -> App<'static> {
+pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
+    ("init", super::StGitCommand { get_app, run })
+}
+
+fn get_app() -> App<'static> {
     App::new("init").about("Initialize StGit stack on current branch")
 }
 
-pub(crate) fn run() -> super::Result {
+fn run(_: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
     let branch_name = None;
     Stack::initialize(&repo, branch_name)?;

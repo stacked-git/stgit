@@ -23,6 +23,7 @@ use pyo3::prelude::*;
 use termcolor::WriteColor;
 
 fn main() {
+    let commands = crate::cmd::get_commands();
     let app = App::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::DeriveDisplayOrder)
@@ -34,27 +35,21 @@ fn main() {
         .license(crate_license!())
         .max_term_width(88)
         .subcommand_placeholder("command", "COMMANDS")
-        .subcommand(cmd::init::get_subcommand())
-        .subcommand(cmd::new::get_subcommand())
-        .subcommand(cmd::series::get_subcommand())
-        .subcommand(cmd::refresh::get_subcommand())
-        .subcommand(cmd::id::get_subcommand())
-        .subcommand(cmd::version::get_subcommand());
+        .subcommands(commands.values().map(|command| (command.get_app)()));
 
     // TODO: alias subcommands from config (stgit.alias.)
     // TODO: add top-level -C option
     // TODO: get repository and/or stack handle for subcommand
 
     let matches = app.get_matches();
-
-    let result: cmd::Result = match matches.subcommand() {
-        Some(("id", cmd_matches)) => cmd::id::run(cmd_matches),
-        Some(("init", _)) => cmd::init::run(),
-        Some(("new", cmd_matches)) => cmd::new::run(cmd_matches),
-        // Some(("refresh", cmd_matches)) => cmd::refresh::run(cmd_matches),
-        Some(("series", cmd_matches)) => cmd::series::run(cmd_matches),
-        Some(("version", _)) => cmd::version::run(),
-        _ => punt_to_python(),
+    let result: cmd::Result = if let Some((command_name, cmd_matches)) = matches.subcommand() {
+        if let Some(command) = commands.get(command_name) {
+            (command.run)(cmd_matches)
+        } else {
+            punt_to_python()
+        }
+    } else {
+        panic!("no subcommand?")
     };
 
     if let Err(e) = result {

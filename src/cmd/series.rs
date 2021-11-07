@@ -6,9 +6,15 @@ use termcolor::WriteColor;
 
 use crate::{patchname::PatchName, stack::Stack};
 
+use super::StGitCommand;
+
 const UNPRINTABLE: &str = "???";
 
-pub(crate) fn get_subcommand() -> App<'static> {
+pub(super) fn get_command() -> (&'static str, StGitCommand) {
+    ("series", StGitCommand { get_app, run })
+}
+
+fn get_app() -> App<'static> {
     App::new("series")
         .about("Print the patch series")
         .long_about(
@@ -121,7 +127,7 @@ pub(crate) fn get_subcommand() -> App<'static> {
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
 
-pub(crate) fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;

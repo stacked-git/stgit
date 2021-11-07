@@ -2,7 +2,11 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 
 use crate::argset;
 
-pub(crate) fn get_subcommand() -> App<'static> {
+pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
+    ("refresh", super::StGitCommand { get_app, run })
+}
+
+fn get_app() -> App<'static> {
     App::new("refresh")
         .about("Incorporate worktree changes into current patch")
         .long_about(
@@ -111,7 +115,7 @@ pub(crate) fn get_subcommand() -> App<'static> {
         .arg(&*argset::DIFF_OPTS_ARG)
 }
 
-pub(crate) fn run(_matches: &ArgMatches) -> super::Result {
+fn run(_matches: &ArgMatches) -> super::Result {
     println!("refresh!");
     Ok(())
 }
