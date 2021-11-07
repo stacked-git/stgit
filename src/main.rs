@@ -15,7 +15,6 @@ mod signature;
 mod stack;
 mod templates;
 mod trailers;
-mod transaction;
 
 use std::io::Write;
 

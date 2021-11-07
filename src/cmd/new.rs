@@ -1,12 +1,15 @@
 use clap::{App, Arg, ArgMatches, ValueHint};
 use git2::{DiffOptions, Repository};
 
-use crate::commitdata::CommitData;
-use crate::error::Error;
-use crate::patchdescription::PatchDescription;
-use crate::signature::CheckedSignature;
-use crate::transaction::{ConflictMode, StackTransaction};
-use crate::{argset, patchname::PatchName, stack::Stack};
+use crate::{
+    argset,
+    commitdata::CommitData,
+    error::Error,
+    patchdescription::PatchDescription,
+    patchname::PatchName,
+    signature::CheckedSignature,
+    stack::{ConflictMode, Stack, StackTransaction},
+};
 
 pub(crate) fn get_subcommand() -> App<'static> {
     App::new("new")
@@ -76,13 +79,14 @@ pub(crate) fn run(matches: &ArgMatches) -> super::Result {
     let tree = head_ref.peel_to_tree()?;
     let parents = vec![head_ref.peel_to_commit()?];
 
-    let (message, must_edit) = if let Some(message) = crate::message::get_message_from_args(matches)? {
-        (message, false)
-    } else if let Some(message_template) = crate::message::get_message_template(&repo)? {
-        (message_template, true)
-    } else {
-        (String::new(), true)
-    };
+    let (message, must_edit) =
+        if let Some(message) = crate::message::get_message_from_args(matches)? {
+            (message, false)
+        } else if let Some(message_template) = crate::message::get_message_template(&repo)? {
+            (message_template, true)
+        } else {
+            (String::new(), true)
+        };
 
     let committer = CheckedSignature::default_committer(Some(&config))?;
     let message = crate::trailers::add_trailers(message, matches, &committer)?;
