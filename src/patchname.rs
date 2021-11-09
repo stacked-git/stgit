@@ -136,7 +136,7 @@ impl AsRef<PatchName> for PatchName {
 
 impl std::fmt::Display for PatchName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        self.0.fmt(f)
     }
 }
 
