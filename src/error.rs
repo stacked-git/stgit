@@ -66,6 +66,21 @@ pub(crate) enum Error {
     #[error("{0}")]
     NonUtf8Signature(String),
 
+    #[error("non-UTF-8 alias name `{0}` in {1}")]
+    NonUtf8AliasName(String, String),
+
+    #[error("non-UTF-8 alias value for `{0}` in {1}")]
+    NonUtf8AliasValue(String, String),
+
+    #[error("bad alias for `{0}`: {1}")]
+    BadAlias(String, String),
+
+    #[error("recursive alias `{0}`")]
+    RecursiveAlias(String),
+
+    #[error("failed to execute shell alias `{0}`: {1}")]
+    ExecuteAlias(String, String),
+
     #[error("{0}")]
     MissingSignature(String),
 

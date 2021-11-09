@@ -1,6 +1,7 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod alias;
 mod argset;
 mod cmd;
 mod commitdata;
@@ -16,15 +17,32 @@ mod stack;
 mod templates;
 mod trailers;
 
-use std::io::Write;
+use std::{ffi::OsString, io::Write};
 
 use clap::{crate_license, crate_version, App, AppSettings};
 use pyo3::prelude::*;
 use termcolor::WriteColor;
 
 fn main() {
-    let commands = crate::cmd::get_commands();
-    let app = App::new("stg")
+    let maybe_repo = git2::Repository::open_from_env().ok();
+    let maybe_config = if let Some(ref repo) = maybe_repo {
+        repo.config()
+    } else {
+        git2::Config::open_default()
+    }
+    .ok();
+
+    let commands = cmd::get_commands();
+    let excluded = commands.keys().map(|k| *k).collect();
+    let aliases = match alias::get_aliases(maybe_config.as_ref(), excluded) {
+        Ok(aliases) => aliases,
+        Err(e) => {
+            print_error_message(e);
+            std::process::exit(2);
+        }
+    };
+
+    let mut app = App::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::HelpRequired)
@@ -35,16 +53,57 @@ fn main() {
         .license(crate_license!())
         .max_term_width(88)
         .subcommand_placeholder("command", "COMMANDS")
-        .subcommands(commands.values().map(|command| (command.get_app)()));
+        .subcommands(commands.values().map(|command| (command.get_app)()))
+        .subcommands(
+            aliases
+                .iter()
+                .map(|(name, alias)| alias::get_app(name, alias)),
+        );
 
-    // TODO: alias subcommands from config (stgit.alias.)
     // TODO: add top-level -C option
     // TODO: get repository and/or stack handle for subcommand
 
-    let matches = app.get_matches();
+    let matches = app.get_matches_mut();
     let result: cmd::Result = if let Some((command_name, cmd_matches)) = matches.subcommand() {
         if let Some(command) = commands.get(command_name) {
             (command.run)(cmd_matches)
+        } else if let Some(alias) = aliases.get(command_name) {
+            match alias {
+                alias::Alias::StGit(alias) => {
+                    match alias.split() {
+                        Ok(str_args) => {
+                            let mut argv: Vec<OsString> = vec!["stg".into()];
+                            argv.extend(str_args.iter().map(|s| s.into()));
+                            if let Some(cmd_args) = cmd_matches.values_of_os("args") {
+                                argv.extend(cmd_args.map(|v| v.into()));
+                            }
+
+                            let matches = app.get_matches_from(argv);
+                            if let Some((command_name2, cmd_matches)) = matches.subcommand() {
+                                if let Some(command) = commands.get(command_name2) {
+                                    (command.run)(cmd_matches)
+                                } else if aliases.get(command_name2).is_some() {
+                                    Err(crate::error::Error::RecursiveAlias(
+                                        command_name.to_string(),
+                                    ))
+                                } else {
+                                    punt_to_python()
+                                }
+                            } else {
+                                panic!("no subcommand for alias?")
+                            }
+                        }
+                        Err(reason) => Err(crate::error::Error::BadAlias(
+                            command_name.to_string(),
+                            reason,
+                        )),
+                    }
+                }
+                alias::Alias::Shell(alias) => {
+                    let args = cmd_matches.values_of_os("args").unwrap_or_default();
+                    alias.run(args, maybe_repo.as_ref())
+                }
+            }
         } else {
             punt_to_python()
         }
