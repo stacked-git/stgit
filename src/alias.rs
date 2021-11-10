@@ -1,43 +1,107 @@
 use std::collections::BTreeMap;
 
-use git2::{Config, ConfigEntry, ConfigLevel};
+use git2::{Config, ConfigLevel};
 
 use crate::error::Error;
 
-pub(crate) struct StGitAlias(pub String);
-pub(crate) struct ShellAlias(pub String);
+pub(crate) type Aliases = BTreeMap<String, Alias>;
 
-pub(crate) enum Alias {
-    StGit(StGitAlias),
-    Shell(ShellAlias),
+#[derive(Debug, Clone, Copy)]
+pub(crate) enum AliasKind {
+    Shell,
+    StGit,
+}
+
+#[derive(Debug)]
+pub(crate) struct Alias {
+    pub kind: AliasKind,
+    pub name: String,
+    pub command: String,
+}
+
+impl Alias {
+    pub(crate) fn new(name: &str, command: &str) -> Self {
+        let (kind, command) = if command.starts_with('!') {
+            (AliasKind::Shell, command[1..].to_string())
+        } else {
+            (AliasKind::StGit, command.to_string())
+        };
+        Self {
+            kind,
+            name: name.into(),
+            command,
+        }
+    }
+
+    pub(crate) fn get_app(&self) -> clap::App<'static> {
+        let about = match self.kind {
+            AliasKind::StGit => format!("Alias for `stg {0}`", &self.command),
+            AliasKind::Shell => format!("Alias for shell command `{}`", &self.command),
+        };
+        // TODO: future versions of clap may allow about() argument to
+        // be something other than &'help str, which could avoid having
+        // to do this leak trick.
+        let about: &'static str = Box::leak(about.into_boxed_str());
+        clap::App::new(&self.name)
+            .about(about)
+            .setting(clap::AppSettings::TrailingVarArg)
+            .arg(
+                clap::Arg::new("args")
+                    .about("Extra arguments to aliased command")
+                    .setting(clap::ArgSettings::MultipleValues)
+                    .setting(clap::ArgSettings::AllowHyphenValues),
+            )
+    }
+
+    pub(crate) fn split(&self) -> Result<Vec<String>, String> {
+        split_command_line(&self.command)
+    }
 }
 
 pub(crate) fn get_aliases(
     config: Option<&Config>,
     excluded: Vec<&'static str>,
-) -> Result<BTreeMap<String, Alias>, Error> {
-    let mut aliases: BTreeMap<String, Alias> = BTreeMap::from(
+) -> Result<Aliases, Error> {
+    let mut aliases: Aliases = BTreeMap::from(
         [
-            ("add", "git add"),
-            ("mv", "git mv"),
-            ("resolved", "git add"),
-            ("rm", "git rm"),
-            ("status", "git status -s"),
+            ("add", "!git add"),
+            ("mv", "!git mv"),
+            ("resolved", "!git add"),
+            ("rm", "!git rm"),
+            ("status", "!git status -s"),
         ]
-        .map(|(name, command)| (name.into(), Alias::Shell(ShellAlias(command.into())))),
+        .map(|(name, command)| (name.into(), Alias::new(name, command))),
     );
 
     if let Some(config) = config {
         if let Ok(entries) = config.entries(Some("stgit.alias.*")) {
             for entry in &entries {
                 if let Ok(entry) = entry {
-                    let (name, alias) = make_alias(entry)?;
-                    if !excluded.iter().any(|n| n == &name) {
-                        if let Some(alias) = alias {
-                            aliases.insert(name, alias);
+                    if let Some(config_key) = entry.name() {
+                        let name = config_key
+                            .strip_prefix("stgit.alias.")
+                            .expect("stgit.alias.* glob problem");
+                        if entry.has_value() {
+                            if let Some(command) = entry.value() {
+                                if !excluded.iter().any(|n| *n == name) {
+                                    let key = name.to_string();
+                                    let alias = Alias::new(name, command);
+                                    aliases.insert(key, alias);
+                                }
+                            } else {
+                                return Err(Error::NonUtf8AliasValue(
+                                    name.to_string(),
+                                    config_level_to_str(entry.level()).to_string(),
+                                ));
+                            }
                         } else {
-                            aliases.remove(&name);
+                            aliases.remove(name);
                         }
+                    } else {
+                        return Err(Error::NonUtf8AliasName(
+                            String::from_utf8_lossy(entry.name_bytes()).to_string(),
+                            config_level_to_str(entry.level()).to_string(),
+                        ));
                     }
                 }
             }
@@ -46,140 +110,6 @@ pub(crate) fn get_aliases(
 
     Ok(aliases)
 }
-
-fn make_alias(entry: ConfigEntry<'_>) -> Result<(String, Option<Alias>), Error> {
-    if let Some(config_key) = entry.name() {
-        let (_, name) = config_key
-            .split_once("stgit.alias.")
-            .expect("stgit.alias.* glob problem");
-        let name: String = name.into();
-        if entry.has_value() {
-            if let Some(value) = entry.value() {
-                if let Some((_, shell_command)) = value.split_once('!') {
-                    Ok((name, Some(Alias::Shell(ShellAlias(shell_command.into())))))
-                } else {
-                    Ok((name, Some(Alias::StGit(StGitAlias(value.into())))))
-                }
-            } else {
-                Err(Error::NonUtf8AliasValue(
-                    name,
-                    config_level_to_str(entry.level()).to_string(),
-                ))
-            }
-        } else {
-            Ok((name, None))
-        }
-    } else {
-        Err(Error::NonUtf8AliasName(
-            String::from_utf8_lossy(entry.name_bytes()).to_string(),
-            config_level_to_str(entry.level()).to_string(),
-        ))
-    }
-}
-
-pub(crate) fn get_app(name: &str, alias: &Alias) -> clap::App<'static> {
-    let about = match alias {
-        Alias::StGit(alias) => format!("Alias for `stg {0}`", alias.command()),
-        Alias::Shell(alias) => format!("Alias for shell command `{}`", alias.command()),
-    };
-    // TODO: future versions of clap may allow about() argument to
-    // be something other than &'help str, which could avoid having
-    // to do this leak trick.
-    let about: &'static str = Box::leak(about.into_boxed_str());
-    clap::App::new(name)
-        .about(about)
-        .setting(clap::AppSettings::TrailingVarArg)
-        .arg(
-            clap::Arg::new("args")
-                .about("Extra arguments to aliased command")
-                .setting(clap::ArgSettings::MultipleValues)
-                .setting(clap::ArgSettings::AllowHyphenValues),
-        )
-}
-
-impl StGitAlias {
-    pub(crate) fn command(&self) -> &str {
-        &self.0
-    }
-
-    pub(crate) fn split(&self) -> Result<Vec<String>, String> {
-        split_command_line(&self.0)
-    }
-}
-
-impl ShellAlias {
-    pub(crate) fn command(&self) -> &str {
-        &self.0
-    }
-
-    pub(crate) fn run(
-        &self,
-        args: clap::OsValues,
-        repo: Option<&git2::Repository>,
-    ) -> crate::cmd::Result {
-        let mut args = args;
-        let mut command = if self.command().find(SHELL_CHARS).is_some() {
-            // Need to wrap in shell command
-            let mut command = std::process::Command::new(SHELL_PATH);
-            command.arg("-c");
-            if let Some(first_arg) = args.next() {
-                command.arg(&format!("{} \"$@\"", self.command()));
-                command.arg(self.command());
-                command.arg(first_arg);
-            } else {
-                command.arg(self.command());
-            }
-            command
-        } else {
-            std::process::Command::new(self.command())
-        };
-        command.args(args);
-
-        if let Some(repo) = repo {
-            if let Some(workdir) = repo.workdir() {
-                command.current_dir(workdir);
-                if let Ok(cur_dir) = std::env::current_dir() {
-                    if let Ok(prefix) = cur_dir.strip_prefix(workdir) {
-                        if !cur_dir.starts_with(repo.path()) {
-                            let mut prefix = prefix.as_os_str().to_os_string();
-                            if !prefix.is_empty() {
-                                prefix.push("/");
-                            }
-                            command.env("GIT_PREFIX", &prefix);
-                        }
-                    }
-                }
-                if let Ok(rel_dir) = repo.path().strip_prefix(workdir) {
-                    if rel_dir == std::path::PathBuf::from(".git") {
-                        command.env_remove("GIT_DIR");
-                    } else {
-                        command.env("GIT_DIR", rel_dir);
-                    }
-                } else {
-                    command.env("GIT_DIR", repo.path());
-                }
-            } else {
-                command.env("GIT_DIR", repo.path());
-            }
-        }
-        // TODO: map to custom error
-        let status = command
-            .status()
-            .map_err(|e| Error::ExecuteAlias(self.command().to_string(), e.to_string()))?;
-        if status.success() {
-            Ok(())
-        } else {
-            std::process::exit(status.code().unwrap_or(-1));
-        }
-    }
-}
-
-// TODO: Git chooses its shell path at compile time based on OS or user override.
-const SHELL_PATH: &str = "sh";
-const SHELL_CHARS: &[char] = &[
-    '|', '&', ';', '<', '>', '(', ')', '$', '`', ' ', '*', '?', '[', '#', '~', '=', '%', '\\', '"',
-    '\'', '\t', '\n',
-];
 
 fn split_command_line(line: &str) -> Result<Vec<String>, String> {
     let mut argv = Vec::new();

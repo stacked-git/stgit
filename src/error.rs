@@ -78,8 +78,8 @@ pub(crate) enum Error {
     #[error("recursive alias `{0}`")]
     RecursiveAlias(String),
 
-    #[error("failed to execute shell alias `{0}`: {1}")]
-    ExecuteAlias(String, String),
+    #[error("while expanding shell alias `{0}`: `{1}`: {2}")]
+    ExecuteAlias(String, String, String),
 
     #[error("{0}")]
     MissingSignature(String),

@@ -52,24 +52,21 @@ else
     : # --help <cmd> is not valid in rust implementation
 fi
 
-test_expect_success 'Test help on alias command' '
-    stg help add | grep -e "Alias for \"git add"
-'
-
+if test -z "$STG_RUST"; then
 test_expect_success 'Test help on ambiguous command' '
     general_error stg help pu 2>err &&
     grep -e "Ambiguous command: pu" err
 '
-
-test_expect_success 'Test ambiguous alias' '
-    test_config stgit.alias.show-stat "git show --stat" &&
-    stg show-stat &&
-    stg init &&
-    stg show &&
-    general_error stg sho 2>err &&
-    grep -e "Ambiguous command: sho" err
+else
+test_expect_success 'Test help on ambiguous command' '
+    command_error stg pu 2>err &&
+    grep -e "Did you mean .pull. or .push." err &&
+    command_error stg help pu 2>err &&
+    grep -e "The subcommand .pu. wasn.t recognized" err
 '
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test version/--version equivalence' '
     stg version > v0.txt &&
     stg --version > v1.txt &&
@@ -78,9 +75,31 @@ test_expect_success 'Test version/--version equivalence' '
     grep -F "$(git --version)" v0.txt &&
     grep -e "Python 3\." v0.txt
 '
+else
+test_expect_success 'Test version/-V/--version differences' '
+    stg version > v0.txt &&
+    stg --version > v1.txt &&
+    stg -V > v2.txt &&
+    test_cmp v1.txt v2.txt &&
+    !(test_cmp v0.txt v1.txt) &&
+    grep -e "Stacked Git" v0.txt &&
+    grep -e "git version" v0.txt &&
+    grep -e "stg" v1.txt
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test copyright' '
     stg copyright | grep -e "This program is free software"
 '
+fi
+
+if test -n "$STG_RUST"; then
+test_expect_success 'Test exec-path and subcommand relationship' '
+    stg series -h > series-help.txt &&
+    head -n 1 series-help.txt | grep "stg-series" &&
+    cat series-help.txt | grep -A1 "USAGE:" | grep "stg series "
+'
+fi
 
 test_done
