@@ -9,7 +9,11 @@ use crate::stack::{PatchDescriptor, Stack};
 
 pub(crate) enum ConflictMode {
     Disallow,
+
+    #[allow(dead_code)]
     Allow,
+
+    #[allow(dead_code)]
     AllowIfSameTop,
 }
 

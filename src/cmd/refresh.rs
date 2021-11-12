@@ -2,6 +2,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 
 use crate::argset;
 
+#[allow(dead_code)]
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("refresh", super::StGitCommand { get_app, run })
 }

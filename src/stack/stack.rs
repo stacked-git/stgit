@@ -106,6 +106,7 @@ impl<'repo> Stack<'repo> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn check_index_clean(&self) -> Result<(), Error> {
         if self.repo.index()?.is_empty() {
             Ok(())
@@ -114,6 +115,7 @@ impl<'repo> Stack<'repo> {
         }
     }
 
+    #[allow(dead_code)]
     pub fn check_worktree_clean(&self) -> Result<(), Error> {
         let mut status_options = git2::StatusOptions::new();
         status_options
