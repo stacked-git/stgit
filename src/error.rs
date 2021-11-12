@@ -123,6 +123,9 @@ pub(crate) enum Error {
 
     #[error("No patches applied")]
     NoPatchesApplied,
+
+    #[error("Not enough patches applied")]
+    NotEnoughPatchesApplied,
 }
 
 pub(crate) fn repo_state_to_str(state: RepositoryState) -> &'static str {
