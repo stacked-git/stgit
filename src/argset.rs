@@ -1,6 +1,13 @@
 use clap::{Arg, ArgSettings, ValueHint};
 
 lazy_static! {
+    pub(crate) static ref BRANCH_ARG: Arg<'static> = Arg::new("branch")
+        .long("branch")
+        .short('b')
+        .about("Use BRANCH instead of current branch")
+        .setting(ArgSettings::TakesValue)
+        .value_name("BRANCH")
+        .value_hint(ValueHint::Other);
     pub(crate) static ref HOOK_ARG: Arg<'static> = Arg::new("no-verify")
         .long("no-verify")
         .about("Disable commit-msg hook");
@@ -18,14 +25,4 @@ lazy_static! {
         .setting(ArgSettings::TakesValue)
         .value_name("OPTIONS")
         .value_hint(ValueHint::Other);
-    pub(crate) static ref COLOR_ARG: Arg<'static> = Arg::new("color")
-        .long("color")
-        .about("Colorize the output")
-        .long_about("Specify WHEN to colorize the output.")
-        .value_name("WHEN")
-        .possible_values(&["auto", "always", "ansi", "never"])
-        .default_value("auto")
-        .default_missing_value("always")
-        .min_values(0)
-        .overrides_with("color");
 }

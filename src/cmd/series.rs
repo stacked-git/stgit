@@ -28,15 +28,7 @@ fn get_app() -> App<'static> {
              \n\
              Empty patches are prefixed with a '0'.",
         )
-        .arg(
-            Arg::new("branch")
-                .long("branch")
-                .short('b')
-                .about("Use BRANCH instead of current branch")
-                .setting(ArgSettings::TakesValue)
-                .value_name("BRANCH")
-                .value_hint(ValueHint::Other),
-        )
+        .arg(&*crate::argset::BRANCH_ARG)
         .arg(
             Arg::new("all")
                 .long("all")
@@ -122,7 +114,7 @@ fn get_app() -> App<'static> {
                 .short('s')
                 .about("Only show patches around the topmost patch"),
         )
-        .arg(&*crate::argset::COLOR_ARG)
+        .arg(&*crate::color::COLOR_ARG)
         .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
@@ -206,20 +198,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let opt_no_prefix = matches.is_present("no-prefix");
     let opt_empty = matches.is_present("empty");
 
-    let color_choice = match matches.value_of("color").unwrap_or("auto") {
-        "always" => termcolor::ColorChoice::Always,
-        "ansi" => termcolor::ColorChoice::AlwaysAnsi,
-        "auto" => {
-            if atty::is(atty::Stream::Stdout) {
-                termcolor::ColorChoice::Auto
-            } else {
-                termcolor::ColorChoice::Never
-            }
-        }
-        _ => termcolor::ColorChoice::Never,
-    };
-
-    let mut stdout = termcolor::StandardStream::stdout(color_choice);
+    let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
 
     for (patch_name, oid, sigil) in patches {

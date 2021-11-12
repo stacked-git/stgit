@@ -58,6 +58,7 @@ pub(crate) fn get_commands() -> Commands {
         new::get_command(),
         // refresh::get_command(),
         series::get_command(),
+        top::get_command(),
         version::get_command(),
     ])
 }
@@ -66,5 +67,5 @@ pub(crate) const PYTHON_COMMANDS: &'static [&'static str] = &[
     "branch", "clean", "clone", "commit", "delete", "diff", "edit", "export", "files", "float",
     "fold", "goto", "hide", "import", "log", "mail", "next", "patches", "pick", "pop", "prev",
     "pull", "push", "rebase", "redo", "refresh", "rename", "repair", "reset", "show", "sink",
-    "squash", "sync", "top", "uncommit", "undo", "unhide",
+    "squash", "sync", "uncommit", "undo", "unhide",
 ];

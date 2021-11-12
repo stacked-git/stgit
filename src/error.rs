@@ -120,6 +120,9 @@ pub(crate) enum Error {
 
     #[error("{0}\nCommand aborted (all changes rolled back)")]
     TransactionAborted(String),
+
+    #[error("No patches applied")]
+    NoPatchesApplied,
 }
 
 pub(crate) fn repo_state_to_str(state: RepositoryState) -> &'static str {

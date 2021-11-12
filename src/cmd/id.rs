@@ -1,4 +1,4 @@
-use clap::{App, Arg, ArgMatches, ArgSettings, ValueHint};
+use clap::{App, Arg, ArgMatches};
 use git2::Repository;
 
 use crate::revspec::parse_stgit_revision;
@@ -11,15 +11,7 @@ fn get_app() -> App<'static> {
     App::new("id")
         .about("Print git hash of StGit revision")
         .long_about("Long about for 'id'.") // TODO
-        .arg(
-            Arg::new("branch")
-                .long("branch")
-                .short('b')
-                .about("Use BRANCH instead of current branch")
-                .setting(ArgSettings::TakesValue)
-                .value_name("BRANCH")
-                .value_hint(ValueHint::Other),
-        )
+        .arg(&*crate::argset::BRANCH_ARG)
         .arg(Arg::new("revision").about("StGit revision"))
 }
 
