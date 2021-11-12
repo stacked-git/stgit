@@ -29,7 +29,7 @@ test_expect_success 'Test ambiguous alias' '
     stg show-stat &&
     stg init &&
     stg show &&
-    command_error stg sho 2>err &&
+    general_error stg sho 2>err &&
     grep -e "Did you mean .show-stat. or .show." err
 '
 fi

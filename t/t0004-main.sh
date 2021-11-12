@@ -29,7 +29,7 @@ test_expect_success 'Test help on invalid command' '
 '
 else
 test_expect_success 'Test help on invalid command' '
-    command_error stg help invalidcmd 2>err &&
+    general_error stg help invalidcmd 2>err &&
     grep -e "error:  The subcommand .invalidcmd. wasn.t recognized" err
 '
 fi
@@ -59,9 +59,9 @@ test_expect_success 'Test help on ambiguous command' '
 '
 else
 test_expect_success 'Test help on ambiguous command' '
-    command_error stg pu 2>err &&
+    general_error stg pu 2>err &&
     grep -e "Did you mean .pull. or .push." err &&
-    command_error stg help pu 2>err &&
+    general_error stg help pu 2>err &&
     grep -e "The subcommand .pu. wasn.t recognized" err
 '
 fi

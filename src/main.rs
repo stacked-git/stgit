@@ -26,6 +26,10 @@ use clap::{crate_license, crate_version, App, AppSettings, ArgMatches, ValueHint
 use pyo3::prelude::*;
 use termcolor::WriteColor;
 
+const GENERAL_ERROR: i32 = 1;
+const COMMAND_ERROR: i32 = 2;
+// const CONFLICT_ERROR: i32 = 3;
+
 /// Just enough of an App instance to find candidate subcommands
 fn get_minimal_app() -> App<'static> {
     App::new("stg")
@@ -72,8 +76,9 @@ fn main() {
     let app = get_minimal_app()
         .setting(AppSettings::AllowExternalSubcommands)
         .setting(AppSettings::DisableHelpFlag)
+        .setting(AppSettings::DisableHelpSubcommand)
         .arg(
-            clap::Arg::new("help")
+            clap::Arg::new("help-option")
                 .short('h')
                 .long("help")
                 .about("Print help information"),
@@ -86,7 +91,7 @@ fn main() {
         // ultimately be found.
         change_directories(&matches);
 
-        if matches.is_present("help") {
+        if matches.is_present("help-option") {
             full_app_help(argv, commands, None)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known commands, then only the App for that
@@ -144,7 +149,7 @@ fn main() {
 
     if let Err(e) = result {
         print_error_message(e);
-        std::process::exit(2)
+        std::process::exit(COMMAND_ERROR)
     } else {
         std::process::exit(0)
     }
@@ -161,7 +166,7 @@ fn change_directories(matches: &ArgMatches) {
                     path.to_string_lossy(),
                     e.to_string(),
                 ));
-                std::process::exit(1);
+                std::process::exit(GENERAL_ERROR);
             });
         }
     }
@@ -187,8 +192,11 @@ fn full_app_help(
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    get_full_app(commands, aliases).get_matches_from(&argv);
-    panic!("clap should have terminated");
+    let err = get_full_app(commands, aliases)
+        .try_get_matches_from(&argv)
+        .expect_err("command line should not have viable matches");
+    err.print().expect("failed to print clap error");
+    std::process::exit(if err.use_stderr() { GENERAL_ERROR } else { 0 })
 }
 
 /// Execute regular StGit subcommand. The particular command must have previously been
@@ -197,11 +205,19 @@ fn full_app_help(
 /// formatted using the correct executable path (argv[0]).
 fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Result {
     let top_app = get_minimal_app().subcommand((command.get_app)());
-    let top_matches = top_app.get_matches_from(argv);
-    let (_, cmd_matches) = top_matches
-        .subcommand()
-        .expect("this command is ensured to be the only subcommand");
-    (command.run)(&cmd_matches)
+    match top_app.try_get_matches_from(argv) {
+        Ok(top_matches) => {
+            let (_, cmd_matches) = top_matches
+                .subcommand()
+                .expect("this command is ensured to be the only subcommand");
+            (command.run)(&cmd_matches)
+        }
+
+        Err(err) => {
+            err.print().expect("failed to print clap error");
+            std::process::exit(if err.use_stderr() { GENERAL_ERROR } else { 0 })
+        }
+    }
 }
 
 /// Execute shell alias subprocess. If the child process fails, the parent process will

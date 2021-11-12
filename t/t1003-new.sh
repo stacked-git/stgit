@@ -21,7 +21,7 @@ test_expect_success \
 else
 test_expect_success \
     'Too many arguments' '
-    command_error stg new foo extra_arg 2>err &&
+    general_error stg new foo extra_arg 2>err &&
     grep -e "error: Found argument .extra_arg. which wasn.t expected" err
 '
 fi

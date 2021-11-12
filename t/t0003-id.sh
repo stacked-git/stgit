@@ -26,7 +26,7 @@ test_expect_success 'Too many arguments' '
     '
 else
 test_expect_success 'Too many arguments' '
-    command_error stg id patch-1 patch-2 2>err &&
+    general_error stg id patch-1 patch-2 2>err &&
     grep -e "Found argument .patch-2. which wasn.t expected" err
     '
 fi
