@@ -33,7 +33,8 @@ fn get_app() -> App<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .about("Show all patches, including hidden patches"),
+                .about("Show all patches, including hidden patches")
+                .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("applied")
@@ -100,7 +101,7 @@ fn get_app() -> App<'static> {
         .arg(
             Arg::new("show-branch")
                 .long("showbranch")
-                .about("Append the branch name to the listed patches"),
+                .about("Prepend the branch name to the listed patches"),
         )
         .arg(
             Arg::new("no-prefix")
@@ -122,7 +123,15 @@ fn get_app() -> App<'static> {
 fn run(matches: &ArgMatches) -> super::Result {
     let repo = Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let opt_missing = matches.value_of("missing");
+    let (stack, cmp_stack) = if let Some(ref_branch) = opt_missing {
+        (
+            Stack::from_branch(&repo, Some(ref_branch))?,
+            Some(Stack::from_branch(&repo, opt_branch)?),
+        )
+    } else {
+        (Stack::from_branch(&repo, opt_branch)?, None)
+    };
 
     let opt_all = matches.is_present("all");
     let opt_applied = matches.is_present("applied");
@@ -160,6 +169,34 @@ fn run(matches: &ArgMatches) -> super::Result {
         }
     }
 
+    if let Some(cmp_stack) = cmp_stack {
+        patches.retain(|(patch_name, _, _)| {
+            cmp_stack
+                .state
+                .all_patches()
+                .all(|cmp_patch_name| patch_name != cmp_patch_name)
+        });
+    }
+
+    if matches.is_present("short") {
+        let shortnr = repo
+            .config()
+            .and_then(|config| config.get_i32("stgit.shortnr"))
+            .unwrap_or(5);
+        let shortnr: usize = if shortnr < 0 { 0 } else { shortnr as usize };
+
+        if let Some(top_pos) = patches.iter().position(|(_, _, sigil)| *sigil == '>') {
+            if patches.len() - top_pos > shortnr {
+                patches.drain(top_pos + 1 + shortnr..);
+            }
+            if top_pos > shortnr {
+                patches.drain(0..top_pos - shortnr);
+            }
+        } else {
+            patches.drain(shortnr..);
+        }
+    }
+
     if matches.is_present("count") {
         println!("{}", patches.len());
         return Ok(());
@@ -167,6 +204,13 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let opt_description = matches.is_present("description");
     let opt_author = matches.is_present("author");
+
+    let branch_prefix = format!("{}:", &stack.branch_name);
+    let branch_prefix = if matches.is_present("show-branch") {
+        branch_prefix.as_str()
+    } else {
+        ""
+    };
 
     let patch_name_width = if opt_description || opt_author {
         patches
@@ -235,7 +279,13 @@ fn run(matches: &ArgMatches) -> super::Result {
             _ => panic!("unhandled sigil {:?}", sigil),
         };
         stdout.set_color(&color_spec)?;
-        write!(stdout, "{:width$}", patch_name, width = patch_name_width)?;
+        write!(
+            stdout,
+            "{0}{1:width$}",
+            branch_prefix,
+            patch_name,
+            width = patch_name_width
+        )?;
 
         if opt_author {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
