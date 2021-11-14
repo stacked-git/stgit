@@ -13,11 +13,20 @@ test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
+
+if test -z "$STG_RUST"; then
 test_expect_success 'Empty log' '
     stg log > log.txt &&
     test_line_count = 1 log.txt &&
     head -n 1 log.txt | grep -e "initialise"
 '
+else
+test_expect_success 'Empty log' '
+    stg log > log.txt &&
+    test_line_count = 1 log.txt &&
+    head -n 1 log.txt | grep -e "initialize"
+'
+fi
 
 test_expect_success 'Add some patches' '
     test_commit p0 file0.txt foo0 &&

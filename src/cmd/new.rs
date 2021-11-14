@@ -93,7 +93,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         };
 
     let committer = CheckedSignature::default_committer(Some(&config))?;
-    let message = crate::trailers::add_trailers(message, matches, &committer)?;
+    let autosign = config.get_string("stgit.autosign").ok();
+    let message = crate::trailers::add_trailers(message, matches, &committer, autosign.as_deref())?;
 
     let diff = if must_edit && verbose {
         Some(repo.diff_tree_to_workdir(

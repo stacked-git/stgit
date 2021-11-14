@@ -46,6 +46,7 @@ pub(crate) fn add_trailers(
     message: String,
     matches: &ArgMatches,
     signature: &CheckedSignature,
+    autosign: Option<&str>,
 ) -> Result<String, Error> {
     // TODO: return cow str?
     let mut trailers: Vec<(&str, &str)> = vec![];
@@ -67,6 +68,10 @@ pub(crate) fn add_trailers(
     }
     if matches.is_present("review") {
         trailers.push(("Reviewed-by", &default_by));
+    }
+
+    if let Some(autosign) = autosign {
+        trailers.push((autosign, &default_by));
     }
 
     if !trailers.is_empty() {

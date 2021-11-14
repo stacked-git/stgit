@@ -30,6 +30,7 @@ test_expect_success 'Clone branch with patches' '
     test "$(stg series --noprefix --unapplied)" = "p0"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Force cleanup branch with patches' '
     git config --get-regexp branch\\.foo2\\.stgit &&
     stg branch --cleanup --force &&
@@ -38,6 +39,16 @@ test_expect_success 'Force cleanup branch with patches' '
     grep "branch not initialized" err &&
     test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit
 '
+else
+test_expect_success 'Force cleanup branch with patches' '
+    git config --get-regexp branch\\.foo2\\.stgit &&
+    stg branch --cleanup --force &&
+    test "$(stg series --noprefix --all)" = "" &&
+    command_error stg new -m p1 2>err &&
+    grep "branch .foo2. not initialized" err &&
+    test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit
+'
+fi
 
 test_expect_success 'Commit patches' '
     stg branch foo &&
@@ -50,12 +61,21 @@ test_expect_success 'Invalid num args to cleanup' '
     grep "incorrect number of arguments" err
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Cleanup current branch' '
     stg branch --cleanup &&
     test "$(stg branch)" = "foo" &&
     command_error stg new -m p1 2>err &&
     grep "branch not initialized" err
 '
+else
+test_expect_success 'Cleanup current branch' '
+    stg branch --cleanup &&
+    test "$(stg branch)" = "foo" &&
+    command_error stg new -m p1 2>err &&
+    grep "branch .foo. not initialized" err
+'
+fi
 
 test_expect_success 'Re-initialize branch' '
     stg init
