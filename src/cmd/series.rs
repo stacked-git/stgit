@@ -58,7 +58,7 @@ fn get_app() -> App<'static> {
             Arg::new("missing")
                 .long("missing")
                 .short('m')
-                .about("Show patches in BRANCH missing in current")
+                .about("Show patches in BRANCH not present in current branch")
                 .setting(ArgSettings::TakesValue)
                 .value_name("BRANCH")
                 .value_hint(ValueHint::Other),
@@ -116,6 +116,12 @@ fn get_app() -> App<'static> {
                 .about("Only show patches around the topmost patch"),
         )
         .arg(&*crate::color::COLOR_ARG)
+        .arg(
+            Arg::new("patch-range")
+                .about("Range of patches to show.")
+                .multiple_values(true)
+                .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
+        )
         .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
@@ -138,34 +144,54 @@ fn run(matches: &ArgMatches) -> super::Result {
     let opt_unapplied = matches.is_present("unapplied");
     let opt_hidden = matches.is_present("hidden");
 
-    let show_applied = opt_applied || opt_all || !(opt_unapplied || opt_hidden);
-    let show_unapplied = opt_unapplied || opt_all || !(opt_applied || opt_hidden);
-    let show_hidden = opt_hidden || opt_all;
-
     let mut patches: Vec<(PatchName, Oid, char)> = vec![];
 
-    if show_applied {
-        if let Some((last_patch_name, rest)) = stack.state.applied.split_last() {
-            for patch_name in rest {
-                let oid = stack.state.patches[patch_name].oid;
-                patches.push((patch_name.clone(), oid, '+'));
+    if let Some(patch_ranges) = matches.values_of("patch-range") {
+        let top_patchname = stack.state.applied.last();
+        for patch_name in crate::patchrange::parse_contiguous_patch_range(
+            patch_ranges,
+            stack.state.all_patches(),
+        )? {
+            let oid = stack.state.patches[&patch_name].oid;
+            let sigil = if Some(&patch_name) == top_patchname {
+                '>'
+            } else if stack.state.applied.contains(&patch_name) {
+                '+'
+            } else if stack.state.unapplied.contains(&patch_name) {
+                '-'
+            } else {
+                '!'
+            };
+            patches.push((patch_name, oid, sigil));
+        }
+    } else {
+        let show_applied = opt_applied || opt_all || !(opt_unapplied || opt_hidden);
+        let show_unapplied = opt_unapplied || opt_all || !(opt_applied || opt_hidden);
+        let show_hidden = opt_hidden || opt_all;
+
+        if show_applied {
+            if let Some((last_patch_name, rest)) = stack.state.applied.split_last() {
+                for patch_name in rest {
+                    let oid = stack.state.patches[patch_name].oid;
+                    patches.push((patch_name.clone(), oid, '+'));
+                }
+                let last_oid = stack.state.patches[last_patch_name].oid;
+                patches.push((last_patch_name.clone(), last_oid, '>'));
             }
-            let last_oid = stack.state.patches[last_patch_name].oid;
-            patches.push((last_patch_name.clone(), last_oid, '>'));
         }
-    }
 
-    if show_unapplied {
-        for patch_name in stack.state.unapplied {
-            let oid = stack.state.patches[&patch_name].oid;
-            patches.push((patch_name, oid, '-'));
+        if show_unapplied {
+            for patch_name in stack.state.unapplied {
+                let oid = stack.state.patches[&patch_name].oid;
+                patches.push((patch_name, oid, '-'));
+            }
         }
-    }
 
-    if show_hidden {
-        for patch_name in stack.state.hidden {
-            let oid = stack.state.patches[&patch_name].oid;
-            patches.push((patch_name, oid, '!'));
+        if show_hidden {
+            for patch_name in stack.state.hidden {
+                let oid = stack.state.patches[&patch_name].oid;
+                patches.push((patch_name, oid, '!'));
+            }
         }
     }
 

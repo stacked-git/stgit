@@ -12,6 +12,7 @@ mod hook;
 mod message;
 mod patchdescription;
 mod patchname;
+mod patchrange;
 mod revspec;
 mod signature;
 mod stack;

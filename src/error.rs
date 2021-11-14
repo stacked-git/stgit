@@ -21,6 +21,9 @@ pub(crate) enum Error {
     #[error("{0}")]
     PatchName(#[from] crate::patchname::Error),
 
+    #[error("invalid patch range `{0}`: {1}")]
+    PatchRange(String, String),
+
     #[error("patch `{0}` already exists")]
     PatchNameExists(String),
 
