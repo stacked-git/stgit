@@ -1,6 +1,5 @@
-use git2::Repository;
-
 use crate::error::Error;
+use crate::wrap::Repository;
 
 pub(crate) fn get_template(repo: &Repository, name: &str) -> Result<Option<String>, Error> {
     let template_path = repo.path().join(name);

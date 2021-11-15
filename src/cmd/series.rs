@@ -1,10 +1,10 @@
 use std::io::Write;
 
 use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
-use git2::{Oid, Repository};
+use git2::Oid;
 use termcolor::WriteColor;
 
-use crate::{patchname::PatchName, stack::Stack};
+use crate::{patchname::PatchName, stack::Stack, wrap::Repository};
 
 use super::StGitCommand;
 
@@ -206,6 +206,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     if matches.is_present("short") {
         let shortnr = repo
+            .0
             .config()
             .and_then(|config| config.get_i32("stgit.shortnr"))
             .unwrap_or(5);

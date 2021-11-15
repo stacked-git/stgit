@@ -4,11 +4,11 @@ use chrono::DateTime;
 
 use crate::error::Error;
 use crate::patchname::PatchName;
-use crate::signature::CheckedSignature;
+use crate::wrap::Signature;
 
 pub(crate) struct PatchDescription<'repo> {
     pub patchname: Option<PatchName>,
-    pub author: CheckedSignature,
+    pub author: Signature,
     pub message: Option<String>,
     pub diff: Option<git2::Diff<'repo>>,
 }
@@ -40,8 +40,8 @@ impl<'repo> PatchDescription<'repo> {
             } else {
                 ""
             },
-            authname = self.author.name,
-            authemail = self.author.email,
+            authname = self.author.name(),
+            authemail = self.author.email(),
             authdate = self.author.get_datetime().format("%Y-%m-%d %H:%M:%S %z"),
         )?;
         Ok(())
@@ -183,8 +183,8 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
         };
 
         let (authname, authemail) = if let Some(author) = raw_author {
-            let (name, email) = crate::signature::parse_name_email(&author)?;
-            (name.into(), email.into())
+            let (name, email) = crate::wrap::signature::parse_name_email(&author)?;
+            (name.to_string(), email.to_string())
         } else {
             return Err(Error::ParsePatchDescription(
                 "`Author:` header is missing".to_string(),
@@ -193,7 +193,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
 
         let authdate = if let Some(authdate) = raw_authdate {
             let dt = DateTime::parse_from_str(&authdate, "%Y-%m-%d %H:%M:%S %z")
-                .map_err(|_| Error::InvalidDate(authdate))?;
+                .map_err(|_| Error::InvalidDate(authdate, "patch description".to_string()))?;
             git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60)
         } else {
             return Err(Error::ParsePatchDescription(
@@ -201,11 +201,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
             ));
         };
 
-        let author = CheckedSignature {
-            name: authname,
-            email: authemail,
-            when: authdate,
-        };
+        let author = Signature::new(&authname, &authemail, &authdate)?;
 
         if message.ends_with("\n\n") {
             message.pop();
@@ -241,12 +237,12 @@ mod tests {
 
     fn compare_patch_descs(pd0: &PatchDescription, pd1: &PatchDescription) {
         assert_eq!(pd0.patchname, pd1.patchname);
-        assert_eq!(pd0.author.name, pd1.author.name);
-        assert_eq!(pd0.author.email, pd1.author.email);
-        assert_eq!(pd0.author.when.seconds(), pd1.author.when.seconds());
+        assert_eq!(pd0.author.name(), pd1.author.name());
+        assert_eq!(pd0.author.email(), pd1.author.email());
+        assert_eq!(pd0.author.when().seconds(), pd1.author.when().seconds());
         assert_eq!(
-            pd0.author.when.offset_minutes(),
-            pd1.author.when.offset_minutes()
+            pd0.author.when().offset_minutes(),
+            pd1.author.when().offset_minutes()
         );
         assert_eq!(pd0.message, pd1.message);
 
@@ -261,11 +257,12 @@ mod tests {
     fn round_trip_no_message_no_diff() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: CheckedSignature {
-                name: "The Author".to_string(),
-                email: "author@example.com".to_string(),
-                when: git2::Time::new(987654321, -60),
-            },
+            author: Signature::new(
+                "The Author",
+                "author@example.com",
+                &git2::Time::new(987654321, -60),
+            )
+            .unwrap(),
             message: None,
             diff: None,
         };
@@ -293,11 +290,12 @@ mod tests {
     fn round_trip_one_line_message() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: CheckedSignature {
-                name: "The Author".to_string(),
-                email: "author@example.com".to_string(),
-                when: git2::Time::new(987654321, 360),
-            },
+            author: Signature::new(
+                "The Author",
+                "author@example.com",
+                &git2::Time::new(987654321, 360),
+            )
+            .unwrap(),
             message: Some("Subject\n".to_string()),
             diff: None,
         };
@@ -325,11 +323,12 @@ mod tests {
     fn round_trip_multi_line_message() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: CheckedSignature {
-                name: "The Author".to_string(),
-                email: "author@example.com".to_string(),
-                when: git2::Time::new(987654321, 360),
-            },
+            author: Signature::new(
+                "The Author",
+                "author@example.com",
+                &git2::Time::new(987654321, 360),
+            )
+            .unwrap(),
             message: Some(
                 "Subject\n\
                  \n\
@@ -371,11 +370,12 @@ mod tests {
     fn with_diff() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: CheckedSignature {
-                name: "The Author".to_string(),
-                email: "author@example.com".to_string(),
-                when: git2::Time::new(987654321, 360),
-            },
+            author: Signature::new(
+                "The Author",
+                "author@example.com",
+                &git2::Time::new(987654321, 360),
+            )
+            .unwrap(),
             message: Some("Subject\n".to_string()),
             diff: Some(
                 git2::Diff::from_buffer(
@@ -427,11 +427,12 @@ mod tests {
     fn with_extra_comments() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: CheckedSignature {
-                name: "The Author".to_string(),
-                email: "author@example.com".to_string(),
-                when: git2::Time::new(987654321, 360),
-            },
+            author: Signature::new(
+                "The Author",
+                "author@example.com",
+                &git2::Time::new(987654321, 360),
+            )
+            .unwrap(),
             message: Some(
                 "Subject\n\
                  \n\

@@ -1,7 +1,7 @@
 use clap::{App, Arg, ArgMatches};
-use git2::Repository;
 
 use crate::revspec::parse_stgit_revision;
+use crate::wrap::Repository;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("id", super::StGitCommand { get_app, run })

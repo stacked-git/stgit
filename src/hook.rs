@@ -1,13 +1,13 @@
 use std::{io::Write, path::PathBuf};
 
-use crate::{commitdata::CommitData, error::Error};
+use crate::{commitdata::CommitData, error::Error, wrap::Repository};
 
 pub(crate) fn run_commit_msg_hook<'repo>(
-    repo: &git2::Repository,
+    repo: &Repository,
     commit_data: CommitData<'repo>,
     editor_is_used: bool,
 ) -> Result<CommitData<'repo>, Error> {
-    let config = repo.config()?;
+    let config = repo.0.config()?;
     let hooks_path = config
         .get_path("core.hookspath")
         .unwrap_or_else(|_| PathBuf::from("hooks"));
@@ -33,14 +33,14 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     // GIT_EDITOR. So author and committer vars are not clearly required.
     let mut hook_command = std::process::Command::new(hook_path);
     hook_command
-        .env("GIT_AUTHOR_NAME", &commit_data.author.name)
-        .env("GIT_AUTHOR_EMAIL", &commit_data.author.email)
+        .env("GIT_AUTHOR_NAME", &commit_data.author.name())
+        .env("GIT_AUTHOR_EMAIL", &commit_data.author.email())
         .env(
             "GIT_AUTHOR_DATE",
             commit_data.author.get_epoch_time_string(),
         )
-        .env("GIT_COMMITTER_NAME", &commit_data.committer.name)
-        .env("GIT_COMMITTER_EMAIL", &commit_data.committer.email)
+        .env("GIT_COMMITTER_NAME", &commit_data.committer.name())
+        .env("GIT_COMMITTER_EMAIL", &commit_data.committer.email())
         .env(
             "GIT_COMMITTER_DATE",
             commit_data.committer.get_epoch_time_string(),

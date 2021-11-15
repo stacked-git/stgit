@@ -1,11 +1,11 @@
 use git2::{Commit, Oid, Tree};
 
 use crate::error::Error;
-use crate::signature::CheckedSignature;
+use crate::wrap::{Repository, Signature};
 
 pub(crate) struct CommitData<'repo> {
-    pub author: CheckedSignature,
-    pub committer: CheckedSignature,
+    pub author: Signature,
+    pub committer: Signature,
     pub message: String,
     pub tree: Tree<'repo>,
     pub parents: Vec<Commit<'repo>>,
@@ -13,8 +13,8 @@ pub(crate) struct CommitData<'repo> {
 
 impl<'repo> CommitData<'repo> {
     pub fn new(
-        author: CheckedSignature,
-        committer: CheckedSignature,
+        author: Signature,
+        committer: Signature,
         message: String,
         tree: Tree<'repo>,
         parents: Vec<Commit<'repo>>,
@@ -38,19 +38,14 @@ impl<'repo> CommitData<'repo> {
         )
     }
 
-    pub fn parents(&self) -> Vec<&Commit<'repo>> {
-        self.parents.iter().collect()
-    }
-
-    pub fn commit(self, repo: &git2::Repository) -> Result<Oid, Error> {
-        let update_ref = None;
-        Ok(repo.commit(
-            update_ref,
-            &self.author.get_signature()?,
-            &self.committer.get_signature()?,
+    pub fn commit(self, repo: &Repository) -> Result<Oid, Error> {
+        let parents: Vec<&Commit<'_>> = self.parents.iter().collect();
+        repo.commit(
+            &self.author,
+            &self.committer,
             &self.message,
             &self.tree,
-            &self.parents(),
-        )?)
+            &parents,
+        )
     }
 }

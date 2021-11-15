@@ -3,11 +3,11 @@ use std::fmt::Write;
 use std::str;
 
 use chrono::{FixedOffset, NaiveDateTime};
-use git2::{Commit, FileMode, Oid, Repository, Tree};
+use git2::{Commit, FileMode, Oid, Tree};
 
 use crate::error::Error;
 use crate::patchname::PatchName;
-use crate::signature::CheckedSignature;
+use crate::wrap::{Repository, Signature};
 
 use super::iter::AllPatches;
 
@@ -42,7 +42,7 @@ impl StackState {
     pub(super) fn from_tree(repo: &Repository, tree: &Tree) -> Result<Self, Error> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
-            let stack_json_blob = stack_json.to_object(repo)?.peel_to_blob()?;
+            let stack_json_blob = repo.find_object(stack_json.id(), None)?.peel_to_blob()?;
             Self::from_stack_json(stack_json_blob.content())
         } else {
             Err(Error::StackMetadataNotFound)
@@ -95,9 +95,8 @@ impl StackState {
             None => None,
         };
         let state_tree = self.make_tree(repo, &prev_state_tree)?;
-        let config = repo.config()?;
-        let sig = CheckedSignature::default_committer(Some(&config))?;
-        let sig = sig.get_signature()?;
+        let config = repo.0.config()?; // TODO: wrapped config
+        let sig = Signature::default_committer(Some(&config))?;
 
         let simplified_parents: Vec<Commit> = match self.prev {
             Some(prev_oid) => vec![repo.find_commit(prev_oid)?.parent(0)?],
@@ -106,7 +105,6 @@ impl StackState {
         let simplified_parents: Vec<&Commit> = simplified_parents.iter().collect();
 
         let simplified_parent = repo.commit(
-            None,
             &sig,
             &sig,
             message,
@@ -143,14 +141,8 @@ impl StackState {
                 parent_group.push(repo.find_commit(oid)?);
             }
             let parent_group: Vec<&Commit> = parent_group.iter().collect();
-            let group_oid = repo.commit(
-                None,
-                &sig,
-                &sig,
-                "parent grouping",
-                &state_tree,
-                &parent_group,
-            )?;
+            let group_oid =
+                repo.commit(&sig, &sig, "parent grouping", &state_tree, &parent_group)?;
             parent_oids.push(group_oid);
         }
 
@@ -161,14 +153,11 @@ impl StackState {
         }
         let parent_commits: Vec<&Commit> = parent_commits.iter().collect();
 
-        let commit_oid = repo.commit(
-            update_ref,
-            &sig,
-            &sig,
-            message,
-            &state_tree,
-            &parent_commits,
-        )?;
+        let commit_oid = repo.commit(&sig, &sig, message, &state_tree, &parent_commits)?;
+
+        if let Some(refname) = update_ref {
+            repo.reference(refname, commit_oid, true, message)?;
+        }
 
         Ok(commit_oid)
     }

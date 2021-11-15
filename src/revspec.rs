@@ -1,7 +1,8 @@
-use git2::{Oid, Repository};
+use git2::Oid;
 
 use crate::error::Error;
 use crate::stack::Stack;
+use crate::wrap::Repository;
 
 pub(crate) fn parse_stgit_revision<'repo>(
     repo: &'repo Repository,

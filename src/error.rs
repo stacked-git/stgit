@@ -96,8 +96,8 @@ pub(crate) enum Error {
     #[error("invalid name and email `{0}`")]
     InvalidNameEmail(String),
 
-    #[error("invalid date `{0}`")]
-    InvalidDate(String),
+    #[error("invalid date `{0}` from `{1}`")]
+    InvalidDate(String, String),
 
     #[error("problem with the editor `{0}`")]
     EditorFail(String),
@@ -132,6 +132,9 @@ pub(crate) enum Error {
 
     #[error("No unapplied patches")]
     NoUnappliedPatches,
+
+    #[error("{0}")]
+    Generic(String),
 }
 
 pub(crate) fn repo_state_to_str(state: RepositoryState) -> &'static str {

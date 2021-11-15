@@ -1,5 +1,5 @@
 use clap::{App, Arg, ArgMatches, ValueHint};
-use git2::{DiffOptions, Repository};
+use git2::DiffOptions;
 
 use crate::{
     argset,
@@ -7,8 +7,8 @@ use crate::{
     error::Error,
     patchdescription::PatchDescription,
     patchname::PatchName,
-    signature::CheckedSignature,
     stack::{ConflictMode, Stack, StackTransaction},
+    wrap::{Repository, Signature},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -41,7 +41,7 @@ fn get_app() -> App<'static> {
                 .short('v')
                 .about("Show diff in message template"),
         )
-        .args(&*crate::signature::AUTHOR_SIGNATURE_ARGS)
+        .args(&*crate::wrap::signature::AUTHOR_SIGNATURE_ARGS)
         .args(&*crate::message::MESSAGE_ARGS)
         .arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
         .args(&*crate::trailers::TRAILER_ARGS)
@@ -74,7 +74,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         }
     }
 
-    let config = repo.config()?;
+    let config = repo.0.config()?;
 
     let verbose =
         matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
@@ -108,7 +108,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             (String::new(), true)
         };
 
-    let committer = CheckedSignature::default_committer(Some(&config))?;
+    let committer = Signature::default_committer(Some(&config))?;
     let autosign = config.get_string("stgit.autosign").ok();
     let message = crate::trailers::add_trailers(message, matches, &committer, autosign.as_deref())?;
 
@@ -123,7 +123,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let patch_desc = PatchDescription {
         patchname,
-        author: CheckedSignature::make_author(Some(&config), matches)?,
+        author: Signature::make_author(Some(&config), matches)?,
         message: Some(message),
         diff,
     };

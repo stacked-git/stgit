@@ -1,7 +1,7 @@
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
-use git2::Repository;
 
 use crate::error::Error;
+use crate::wrap::Repository;
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ARGS: [Arg<'static>; 4] = [

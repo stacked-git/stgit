@@ -1,9 +1,10 @@
-use git2::{Branch, Commit, Oid, Reference, Repository, RepositoryState, Tree};
+use git2::{Branch, Commit, Oid, Reference, RepositoryState, Tree};
 
 use super::iter::AllPatches;
 use super::state::StackState;
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
+use crate::wrap::Repository;
 
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo Repository,
@@ -20,7 +21,7 @@ impl<'repo> Stack<'repo> {
         repo: &'repo Repository,
         branch_name: Option<&str>,
     ) -> Result<Self, Error> {
-        let branch = get_branch(repo, branch_name)?;
+        let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
         let head_tree = branch.get().peel_to_tree()?;
@@ -45,7 +46,7 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn from_branch(repo: &'repo Repository, branch_name: Option<&str>) -> Result<Self, Error> {
-        let branch = get_branch(repo, branch_name)?;
+        let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
         let head_tree = branch.get().peel_to_tree()?;
@@ -181,41 +182,6 @@ impl<'repo> Stack<'repo> {
 
 fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
     format!("refs/stacks/{}", branch_shorthand)
-}
-
-fn get_branch<'repo>(
-    repo: &'repo Repository,
-    branch_name: Option<&str>,
-) -> Result<Branch<'repo>, Error> {
-    if let Some(name) = branch_name {
-        let branch = repo
-            .find_branch(name, git2::BranchType::Local)
-            .map_err(|e| {
-                if e.class() == git2::ErrorClass::Reference {
-                    if e.code() == git2::ErrorCode::NotFound {
-                        Error::BranchNotFound(name.to_string())
-                    } else if e.code() == git2::ErrorCode::InvalidSpec {
-                        Error::InvalidBranchName(name.to_string())
-                    } else {
-                        e.into()
-                    }
-                } else {
-                    e.into()
-                }
-            })?;
-        Ok(branch)
-    } else if repo.head_detached()? {
-        Err(Error::HeadDetached)
-    } else {
-        let head = repo.head()?;
-        if head.is_branch() {
-            Ok(Branch::wrap(head))
-        } else {
-            Err(Error::HeadNotBranch(
-                String::from_utf8_lossy(head.name_bytes()).to_string(),
-            ))
-        }
-    }
 }
 
 fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {

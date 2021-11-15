@@ -1,7 +1,7 @@
 use clap::{App, ArgMatches};
-use git2::Repository;
 
 use crate::stack::Stack;
+use crate::wrap::Repository;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("init", super::StGitCommand { get_app, run })
