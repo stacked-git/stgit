@@ -52,17 +52,24 @@ pub(crate) fn run_commit_msg_hook<'repo>(
 
     hook_command.arg(&msg_file_path);
 
-    hook_command
+    let status = hook_command
         .status()
         .map_err(|e| Error::Hook(hook_name.to_string(), e.to_string()))?;
 
-    let message_bytes = std::fs::read(&msg_file_path)?;
-    let message = String::from_utf8(message_bytes).map_err(|_| {
-        Error::Hook(
-            hook_name.to_string(),
-            "message is not valid UTF-8".to_string(),
-        )
-    })?;
+    if status.success() {
+        let message_bytes = std::fs::read(&msg_file_path)?;
+        let message = String::from_utf8(message_bytes).map_err(|_| {
+            Error::Hook(
+                hook_name.to_string(),
+                "message is not valid UTF-8".to_string(),
+            )
+        })?;
 
-    Ok(commit_data.replace_message(message))
+        Ok(commit_data.replace_message(message))
+    } else {
+        Err(Error::Hook(
+            hook_name.to_string(),
+            format!("returned {}", status.code().unwrap_or(-1)),
+        ))
+    }
 }
