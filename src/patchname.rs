@@ -33,7 +33,11 @@ impl PatchName {
         let mut prev = '\0';
 
         for c in candidate.chars() {
-            if c.is_alphanumeric() || c == '_' || ((c == '.' || c == '-') && prev != c) {
+            if c.is_alphanumeric()
+                || (c.is_whitespace() && !c.is_ascii_whitespace())
+                || c == '_'
+                || ((c == '.' || c == '-') && prev != c)
+            {
                 name.push(c);
                 prev = c;
             } else if prev != '-' {
@@ -171,7 +175,7 @@ impl FromStr for PatchName {
                     name.into(),
                     "patch name may not contain '@{'".into(),
                 ));
-            } else if c.is_whitespace() {
+            } else if c.is_ascii_whitespace() {
                 return Err(Error::InvalidPatchName(
                     name.into(),
                     "patch name may not contain whitespace".into(),

@@ -62,7 +62,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     stack.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(name) = matches.value_of("patchname") {
+    let mut patchname = if let Some(name) = matches.value_of("patchname") {
         Some(name.parse::<PatchName>()?)
     } else {
         None
@@ -78,6 +78,12 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let verbose =
         matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
+    let len_limit: Option<usize> = config
+        .get_i32("stgit.namelength")
+        .ok()
+        .and_then(|n| usize::try_from(n).ok());
+    let disallow_patches: Vec<&PatchName> = stack.all_patches().collect();
+    let allowed_patches = vec![];
 
     let head_ref = repo.head()?;
     let tree = head_ref.peel_to_tree()?;
@@ -85,7 +91,17 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let (message, must_edit) =
         if let Some(message) = crate::message::get_message_from_args(matches)? {
-            (message, false)
+            let force_edit = matches.is_present("edit");
+            if force_edit && patchname.is_none() && !message.is_empty() {
+                patchname = Some(PatchName::make_unique(
+                    &message,
+                    len_limit,
+                    true,
+                    &allowed_patches,
+                    &disallow_patches,
+                ));
+            }
+            (message, force_edit)
         } else if let Some(message_template) = crate::message::get_message_template(&repo)? {
             (message_template, true)
         } else {
@@ -133,17 +149,26 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     let patchname: PatchName = {
-        let len_limit: Option<usize> = config
-            .get_i32("stgit.namelength")
-            .ok()
-            .and_then(|n| usize::try_from(n).ok());
-        let disallow: Vec<&PatchName> = stack.all_patches().collect();
-        let allow = vec![];
-
         if let Some(patchname) = patch_desc.patchname {
-            PatchName::make_unique(patchname.as_ref(), len_limit, false, &allow, &disallow)
+            if must_edit {
+                PatchName::make_unique(
+                    patchname.as_ref(),
+                    len_limit,
+                    false,
+                    &allowed_patches,
+                    &disallow_patches,
+                )
+            } else {
+                patchname
+            }
         } else {
-            PatchName::make_unique(&cd.message, len_limit, true, &allow, &disallow)
+            PatchName::make_unique(
+                &cd.message,
+                len_limit,
+                true, // lowercase
+                &allowed_patches,
+                &disallow_patches,
+            )
         }
     };
 

@@ -17,13 +17,21 @@ test_expect_success 'new patch with nbsp in name' '
     echo "hello" > foo.txt &&
     git add foo.txt &&
     stg new "a${nbsp}patch" &&
-    stg refresh
+    stg refresh &&
+    test "$(echo $(stg series --noprefix))" = "a${nbsp}patch"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'patch with nbsp in description' '
     stg new -m "b${nbsp}patch" &&
     test "$(echo $(stg series --noprefix))" = "a${nbsp}patch b-patch"
 '
+else
+test_expect_success 'patch with nbsp in description' '
+    stg new -m "b${nbsp}patch" &&
+    test "$(echo $(stg series --noprefix))" = "a${nbsp}patch b${nbsp}patch"
+'
+fi
 
 test_expect_success 'push pop patch with nbsp' '
     stg pop "a${nbsp}patch" &&
