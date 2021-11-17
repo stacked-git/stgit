@@ -3,6 +3,7 @@
 test_description='Test the push and pop commands'
 . ./test-lib.sh
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Test behavior on uninitialized repo' '
     command_error stg prev 2>err && grep -e "branch not initialized" err &&
@@ -11,10 +12,22 @@ test_expect_success \
     command_error stg pop 2>err && grep -e "branch not initialized" err &&
     command_error stg push 2>err && grep -e "branch not initialized" err
 '
+else
+test_expect_success \
+    'Test behavior on uninitialized repo' '
+    command_error stg prev 2>err && grep -e "error: branch .master. not initialized" err &&
+    command_error stg next 2>err && grep -e "error: branch .master. not initialized" err &&
+    command_error stg top  2>err && grep -e "error: branch .master. not initialized" err &&
+    command_error stg pop  2>err && grep -e "branch not initialized" err &&
+    command_error stg push 2>err && grep -e "branch not initialized" err
+'
+fi
+
 test_expect_success \
     'Initialize the StGit repository' \
     'stg init'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Test behavior on empty repo' '
     command_error stg prev 2>err && grep -e "Not enough applied patches" err &&
@@ -23,6 +36,16 @@ test_expect_success \
     command_error stg pop  2>err && grep -e "No patches applied" err &&
     command_error stg push 2>err && grep -e "No patches to push" err
 '
+else
+test_expect_success \
+    'Test behavior on empty repo' '
+    command_error stg prev 2>err && grep -e "Not enough patches applied" err &&
+    command_error stg next 2>err && grep -e "No unapplied patches" err &&
+    command_error stg top  2>err && grep -e "No patches applied" err &&
+    command_error stg pop  2>err && grep -e "No patches applied" err &&
+    command_error stg push 2>err && grep -e "No patches to push" err
+'
+fi
 
 test_expect_success \
     'Create ten patches' '
@@ -54,12 +77,21 @@ test_expect_success \
     [ "$(echo $(stg prev))" = "p5" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Check prev, next, and top with invalid arguments' '
     command_error stg prev bogus_arg 2>err && grep -e "incorrect number of arguments" err &&
     command_error stg next bogus_arg 2>err && grep -e "incorrect number of arguments" err &&
     command_error stg top  bogus_arg 2>err && grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success \
+    'Check prev, next, and top with invalid arguments' '
+    general_error stg prev bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
+    general_error stg next bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
+    general_error stg top  bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err
+'
+fi
 
 test_expect_success \
     'Pop the remaining patches' '

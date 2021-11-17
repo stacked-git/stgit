@@ -125,10 +125,13 @@ pub(crate) enum Error {
     TransactionAborted(String),
 
     #[error("No patches applied")]
-    NoPatchesApplied,
+    NoAppliedPatches,
 
     #[error("Not enough patches applied")]
     NotEnoughPatchesApplied,
+
+    #[error("No unapplied patches")]
+    NoUnappliedPatches,
 }
 
 pub(crate) fn repo_state_to_str(state: RepositoryState) -> &'static str {

@@ -40,6 +40,6 @@ fn run(matches: &clap::ArgMatches) -> super::Result {
         writeln!(stdout)?;
         Ok(())
     } else {
-        Err(Error::NoPatchesApplied)
+        Err(Error::NoAppliedPatches)
     }
 }
