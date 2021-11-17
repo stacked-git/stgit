@@ -66,11 +66,12 @@ impl<'repo> Stack<'repo> {
         })
     }
 
-    pub fn base_id(&self) -> Oid {
-        if let Some(base_patchname) = self.state.applied.first() {
-            self.state.patches[base_patchname].oid
+    pub fn base_commit(&self) -> Result<Commit<'repo>, Error> {
+        if let Some(first_patchname) = self.state.applied.first() {
+            let first_patch_id = &self.state.patches[first_patchname].oid;
+            Ok(self.repo.find_commit(*first_patch_id)?.parent(0)?)
         } else {
-            self.head_commit.id()
+            Ok(self.head_commit.clone())
         }
     }
 
