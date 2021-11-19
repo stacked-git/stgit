@@ -90,7 +90,11 @@ impl Signature {
         let name = if let Some(name) = get_from_env(get_env_key(role, SignatureComponent::Name))? {
             name
         } else if let Some(config) = config {
-            if let Some(name) = get_from_config(config, "user.name")? {
+            if let Some(name) =
+                get_from_config(config, get_config_key(role, SignatureComponent::Name))?
+            {
+                name
+            } else if let Some(name) = get_from_config(config, "user.name")? {
                 name
             } else if get_from_config(config, "user.email")?.is_none() {
                 return Err(Error::MissingSignature(
@@ -112,7 +116,11 @@ impl Signature {
         {
             email
         } else if let Some(config) = config {
-            if let Some(email) = get_from_config(config, "user.email")? {
+            if let Some(email) =
+                get_from_config(config, get_config_key(role, SignatureComponent::Email))?
+            {
+                email
+            } else if let Some(email) = get_from_config(config, "user.email")? {
                 email
             } else {
                 return Err(Error::MissingSignature(
@@ -208,18 +216,15 @@ impl Signature {
 }
 
 fn get_from_config(config: &Config, key: &str) -> Result<Option<String>, Error> {
-    match config.get_bytes(key) {
-        Err(_) => Ok(None),
-        Ok(value_bytes) => {
-            if let Ok(name) = std::str::from_utf8(value_bytes) {
-                Ok(Some(name.to_string()))
-            } else {
-                Err(Error::NonUtf8Signature(format!(
-                    "`{}` in config is not valid UTF-8",
-                    key
-                )))
-            }
-        }
+    match config.get_string(key) {
+        Ok(value) => Ok(Some(value)),
+        Err(e) => match (e.class(), e.code()) {
+            (git2::ErrorClass::Config, git2::ErrorCode::NotFound) => Ok(None),
+            (git2::ErrorClass::None, git2::ErrorCode::GenericError) => Err(
+                Error::NonUtf8Signature(format!("`{}` in config is not valid UTF-8", key)),
+            ),
+            _ => Err(e.into()),
+        },
     }
 }
 
@@ -231,6 +236,18 @@ fn get_env_key(role: SignatureRole, component: SignatureComponent) -> &'static s
         (SignatureRole::Committer, SignatureComponent::Name) => "GIT_COMMITTER_NAME",
         (SignatureRole::Committer, SignatureComponent::Email) => "GIT_COMMITTER_EMAIL",
         (SignatureRole::Committer, SignatureComponent::Date) => "GIT_COMMITTER_DATE",
+    }
+}
+
+fn get_config_key(role: SignatureRole, component: SignatureComponent) -> &'static str {
+    match (role, component) {
+        (SignatureRole::Author, SignatureComponent::Name) => "author.name",
+        (SignatureRole::Author, SignatureComponent::Email) => "author.email",
+        (SignatureRole::Committer, SignatureComponent::Name) => "committer.name",
+        (SignatureRole::Committer, SignatureComponent::Email) => "committer.email",
+        (_, SignatureComponent::Date) => {
+            panic!("SignatureComponent::Date is not valid with this function")
+        }
     }
 }
 
