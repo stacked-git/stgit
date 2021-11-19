@@ -1,7 +1,11 @@
+use std::collections::BTreeMap;
+use std::str::FromStr;
+
 use git2::{Branch, Commit, Oid, Reference, RepositoryState, Tree};
 
 use super::iter::AllPatches;
 use super::state::StackState;
+use super::PatchDescriptor;
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::wrap::Repository;
@@ -32,6 +36,7 @@ impl<'repo> Stack<'repo> {
         }
         let state = StackState::new(head_commit.id());
         state.commit(repo, Some(&state_refname), "initialize")?;
+        ensure_patch_refs(repo, &branch_name, &state)?;
         let state_ref = repo.find_reference(&state_refname)?;
 
         Ok(Self {
@@ -56,6 +61,7 @@ impl<'repo> Stack<'repo> {
             .map_err(|_| Error::StackNotInitialized(branch_name.to_string()))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
+        ensure_patch_refs(repo, &branch_name, &state)?;
         Ok(Self {
             repo,
             branch_name,
@@ -172,11 +178,11 @@ impl<'repo> Stack<'repo> {
     }
 
     pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
-        format!("refs/patches/{}/{}", &self.branch_name, patchname)
+        get_patch_refname(&self.branch_name, patchname.as_ref())
     }
 
     pub(crate) fn patch_revspec(&self, patch_spec: &str) -> String {
-        format!("refs/patches/{}/{}", &self.branch_name, patch_spec)
+        get_patch_refname(&self.branch_name, patch_spec)
     }
 }
 
@@ -184,9 +190,71 @@ fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
     format!("refs/stacks/{}", branch_shorthand)
 }
 
+fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
+    format!("refs/patches/{}/{}", &branch_name, patch_spec)
+}
+
 fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| Error::NonUtf8BranchName(String::from_utf8_lossy(name_bytes).to_string()))?
         .to_string())
+}
+
+fn ensure_patch_refs(
+    repo: &Repository,
+    branch_name: &str,
+    state: &StackState,
+) -> Result<(), Error> {
+    let patch_ref_prefix = get_patch_refname(branch_name, "");
+    let patch_ref_glob = get_patch_refname(branch_name, "*");
+    let mut state_patches: BTreeMap<&PatchName, &PatchDescriptor> = state.patches.iter().collect();
+
+    for existing_ref in repo.0.references_glob(&patch_ref_glob)? {
+        let mut existing_ref = existing_ref?;
+        if let Some(existing_refname) = existing_ref.name() {
+            let existing_patchname = existing_refname.strip_prefix(&patch_ref_prefix).unwrap();
+            if let Ok(existing_patchname) = PatchName::from_str(existing_patchname) {
+                if let Some(patchdesc) = state_patches.remove(&existing_patchname) {
+                    if let Some(existing_id) = existing_ref.target() {
+                        if existing_id == patchdesc.oid {
+                            // Patch ref is good. Do nothing.
+                        } else {
+                            existing_ref.set_target(patchdesc.oid, "fixup broken patch ref")?;
+                        }
+                    } else {
+                        // Existing ref seems to be symbolic, and not direct.
+                        repo.reference(
+                            existing_refname,
+                            patchdesc.oid,
+                            true,
+                            "fixup sybolic patch ref",
+                        )?;
+                    }
+                } else {
+                    // Existing ref does not map to known/current patch.
+                    existing_ref.delete()?;
+                }
+            } else {
+                // Existing ref does not have a valid patch name.
+                existing_ref.delete()?;
+            }
+        } else {
+            // The existing ref name is not valid UTF-8, so is not a valid patch ref.
+            existing_ref.delete()?;
+        }
+    }
+
+    // At this point state_patches only contains patches that did not overlap with the
+    // existing patch refs found in the repository.
+    for (patchname, patchdesc) in state_patches {
+        repo.reference(
+            &get_patch_refname(branch_name, patchname.as_ref()),
+            patchdesc.oid,
+            false,
+            "fixup missing patch ref",
+        )?;
+    }
+
+    Ok(())
 }

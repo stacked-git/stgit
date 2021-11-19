@@ -39,9 +39,16 @@ test_expect_success 'Extra refs are removed' '
     check_expected
 '
 
+if test -z "$STG_RUST"; then
 test_expect_failure 'Symbolic refs are made direct' '
     git symbolic-ref refs/patches/master/p1 refs/patches/master/p2 &&
     check_expected
 '
+else
+test_expect_success 'Symbolic refs are made direct' '
+    git symbolic-ref refs/patches/master/p1 refs/patches/master/p2 &&
+    check_expected
+'
+fi
 
 test_done
