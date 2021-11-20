@@ -60,7 +60,7 @@ test_expect_success 'Test help on ambiguous command' '
 else
 test_expect_success 'Test help on ambiguous command' '
     general_error stg pu 2>err &&
-    grep -e "Did you mean .pull. or .push." err &&
+    grep -e "Did you mean .pu... or .pu..." err &&
     general_error stg help pu 2>err &&
     grep -e "The subcommand .pu. wasn.t recognized" err
 '

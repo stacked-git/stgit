@@ -139,6 +139,12 @@ pub(crate) enum Error {
     #[error("No unapplied patches")]
     NoUnappliedPatches,
 
+    #[error("{0} merge conflicts")]
+    MergeConflicts(usize),
+
+    #[error("{0}")]
+    CheckoutConflicts(String),
+
     #[error("{0}")]
     Generic(String),
 }

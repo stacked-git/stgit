@@ -29,7 +29,7 @@ use termcolor::WriteColor;
 
 const GENERAL_ERROR: i32 = 1;
 const COMMAND_ERROR: i32 = 2;
-// const CONFLICT_ERROR: i32 = 3;
+const CONFLICT_ERROR: i32 = 3;
 
 fn get_base_app() -> App<'static> {
     App::new("stg")
@@ -154,11 +154,20 @@ fn main() {
         full_app_help(argv, commands, None)
     };
 
-    if let Err(e) = result {
-        print_error_message(e);
-        std::process::exit(COMMAND_ERROR)
-    } else {
-        std::process::exit(0)
+    match result {
+        Err(e @ error::Error::MergeConflicts(_)) => {
+            print_error_message(e);
+            std::process::exit(CONFLICT_ERROR)
+        }
+        Err(e @ error::Error::CheckoutConflicts(_)) => {
+            print_error_message(e);
+            std::process::exit(CONFLICT_ERROR)
+        }
+        Err(e) => {
+            print_error_message(e);
+            std::process::exit(COMMAND_ERROR)
+        }
+        _ => std::process::exit(0),
     }
 }
 

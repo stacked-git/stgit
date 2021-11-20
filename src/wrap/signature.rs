@@ -207,6 +207,14 @@ pub(crate) fn get_epoch_time_string(when: git2::Time) -> String {
     )
 }
 
+pub(crate) fn same_person(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
+    a.name_bytes() == b.name_bytes() && a.email_bytes() == b.email_bytes()
+}
+
+pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
+    same_person(a, b) && a.when() == b.when()
+}
+
 fn get_from_config(config: &Config, key: &str) -> Result<Option<String>, Error> {
     match config.get_string(key) {
         Ok(value) => Ok(Some(value)),

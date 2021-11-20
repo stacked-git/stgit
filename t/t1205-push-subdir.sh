@@ -66,6 +66,7 @@ test_expect_success 'Conflicting add/unknown file in subdir' '
     [ "$(stg top)" != "foo" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_failure 'Push removes current subdir' '
    mkdir remdir &&
    touch remdir/x.txt &&
@@ -81,6 +82,23 @@ test_expect_failure 'Push removes current subdir' '
        stg push rm-remdir
    )
 '
+else
+test_expect_success 'Push removes current subdir' '
+   mkdir remdir &&
+   touch remdir/x.txt &&
+   stg add remdir/x.txt &&
+   stg new -m add-remdir &&
+   stg refresh &&
+   stg rm remdir/x.txt &&
+   stg new -m rm-remdir &&
+   stg refresh &&
+   stg pop &&
+   (
+       cd remdir &&
+       stg push rm-remdir
+   )
+'
+fi
 
 test_expect_failure 'Pop removes current subdir' '
     stg goto add-remdir &&

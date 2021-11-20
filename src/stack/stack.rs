@@ -86,18 +86,22 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
-        match self.repo.state() {
-            RepositoryState::Clean => Ok(()),
-            RepositoryState::Merge => {
-                if conflicts_okay {
-                    Ok(())
-                } else {
-                    Err(Error::OutstandingConflicts)
+        if self.repo.index()?.has_conflicts() {
+            Err(Error::OutstandingConflicts)
+        } else {
+            match self.repo.state() {
+                RepositoryState::Clean => Ok(()),
+                RepositoryState::Merge => {
+                    if conflicts_okay {
+                        Ok(())
+                    } else {
+                        Err(Error::OutstandingConflicts)
+                    }
                 }
+                state => Err(Error::ActiveRepositoryState(
+                    repo_state_to_str(state).to_string(),
+                )),
             }
-            state => Err(Error::ActiveRepositoryState(
-                repo_state_to_str(state).to_string(),
-            )),
         }
     }
 
@@ -113,7 +117,6 @@ impl<'repo> Stack<'repo> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn check_index_clean(&self) -> Result<(), Error> {
         let mut status_options = git2::StatusOptions::new();
         status_options.show(git2::StatusShow::Index);
@@ -124,10 +127,10 @@ impl<'repo> Stack<'repo> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn check_worktree_clean(&self) -> Result<(), Error> {
         let mut status_options = git2::StatusOptions::new();
         status_options.show(git2::StatusShow::Workdir);
+        status_options.exclude_submodules(true);
         if self.repo.statuses(Some(&mut status_options))?.is_empty() {
             Ok(())
         } else {

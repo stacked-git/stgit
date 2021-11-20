@@ -19,7 +19,7 @@ test_expect_success \
     command_error stg next 2>err && grep -e "error: branch .master. not initialized" err &&
     command_error stg top  2>err && grep -e "error: branch .master. not initialized" err &&
     command_error stg pop  2>err && grep -e "branch not initialized" err &&
-    command_error stg push 2>err && grep -e "branch not initialized" err
+    command_error stg push 2>err && grep -e "error: branch .master. not initialized" err
 '
 fi
 
@@ -43,7 +43,7 @@ test_expect_success \
     command_error stg next 2>err && grep -e "No unapplied patches" err &&
     command_error stg top  2>err && grep -e "No patches applied" err &&
     command_error stg pop  2>err && grep -e "No patches applied" err &&
-    command_error stg push 2>err && grep -e "No patches to push" err
+    command_error stg push 2>err && grep -e "No unapplied patches" err
 '
 fi
 
@@ -109,6 +109,7 @@ test_expect_success \
     command_error stg top
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Push them back' '
     stg push -a &&
@@ -117,6 +118,16 @@ test_expect_success \
     command_error stg push 2>err &&
     grep -e "No patches to push" err
 '
+else
+test_expect_success \
+    'Push them back' '
+    stg push -a &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p7 p8 p9" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
+    command_error stg push 2>err &&
+    grep -e "No unapplied patches" err
+'
+fi
 
 test_expect_success \
     'Pop all but seven patches' '
@@ -171,10 +182,20 @@ test_expect_success \
     [ "$(git notes show)" = "note7" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err && grep -e "Patches already applied" err &&
     command_error stg push p99999 2>err && grep -e "Unknown patch name: p99999" err
 '
+else
+test_expect_success \
+    'Attempt to push already applied patches' '
+    command_error stg push p0..p2 2>err &&
+    grep -e "invalid patch range .p0\.\.p2.: patches already applied" err &&
+    command_error stg push p99999 2>err &&
+    grep -e "invalid patch range .p99999.: patch does not exist" err
+'
+fi
 
 test_done
