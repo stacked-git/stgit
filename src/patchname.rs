@@ -88,13 +88,16 @@ impl PatchName {
         Self::from_str(&short_name).unwrap()
     }
 
-    pub(crate) fn make_unique<P: AsRef<PatchName>>(
+    pub(crate) fn make_unique<P>(
         raw: &str,
         len_limit: Option<usize>,
         lower: bool,
         allow: &[P],
         disallow: &[P],
-    ) -> Self {
+    ) -> Self
+    where
+        P: AsRef<PatchName>,
+    {
         let mut name = Self::make(raw, len_limit, lower);
         loop {
             if allow.iter().any(|pn| *pn.as_ref() == name)

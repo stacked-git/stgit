@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use git2::Oid;
 use termcolor::WriteColor;
 
-use crate::{patchname::PatchName, stack::Stack, wrap::Repository};
+use crate::{patchname::PatchName, stack::Stack};
 
 use super::StGitCommand;
 
@@ -127,7 +127,7 @@ fn get_app() -> App<'static> {
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
-    let repo = Repository::open_from_env()?;
+    let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let opt_missing = matches.value_of("missing");
     let (stack, cmp_stack) = if let Some(ref_branch) = opt_missing {
@@ -206,7 +206,6 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     if matches.is_present("short") {
         let shortnr = repo
-            .0
             .config()
             .and_then(|config| config.get_i32("stgit.shortnr"))
             .unwrap_or(5);

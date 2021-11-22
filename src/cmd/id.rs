@@ -1,7 +1,6 @@
 use clap::{App, Arg, ArgMatches};
 
 use crate::revspec::parse_stgit_revision;
-use crate::wrap::Repository;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("id", super::StGitCommand { get_app, run })
@@ -19,7 +18,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let opt_branch = matches.value_of("branch");
     let opt_spec = matches.value_of("revision");
 
-    let repo = Repository::open_from_env()?;
+    let repo = git2::Repository::open_from_env()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?;
     println!("{}", oid);
     Ok(())

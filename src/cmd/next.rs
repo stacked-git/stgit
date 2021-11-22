@@ -3,7 +3,6 @@ use std::io::Write;
 use clap::App;
 use termcolor::WriteColor;
 
-use crate::wrap::Repository;
 use crate::{error::Error, stack::Stack};
 
 use super::StGitCommand;
@@ -27,7 +26,7 @@ fn get_app() -> App<'static> {
 }
 
 fn run(matches: &clap::ArgMatches) -> super::Result {
-    let repo = Repository::open_from_env()?;
+    let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 

@@ -53,166 +53,154 @@ enum SignatureComponent {
     Date,
 }
 
-pub(crate) struct Signature(git2::Signature<'static>);
+pub(crate) fn default_author(config: Option<&Config>) -> Result<git2::Signature<'static>, Error> {
+    make_default(config, SignatureRole::Author)
+}
 
-impl Signature {
-    pub fn new(name: &str, email: &str, time: &git2::Time) -> Result<Self, git2::Error> {
-        Ok(Self(git2::Signature::new(name, email, time)?))
-    }
+pub(crate) fn default_committer(
+    config: Option<&Config>,
+) -> Result<git2::Signature<'static>, Error> {
+    make_default(config, SignatureRole::Committer)
+}
 
-    pub fn name(&self) -> &str {
-        // Safety: the outer Signature instance can only be constructed with valid UTF-8
-        // names, so the inner git2::Signature will always be valid UTF-8.
-        unsafe { std::str::from_utf8_unchecked(self.0.name_bytes()) }
-    }
-
-    pub fn email(&self) -> &str {
-        unsafe { std::str::from_utf8_unchecked(self.0.email_bytes()) }
-    }
-
-    pub fn when(&self) -> git2::Time {
-        self.0.when()
-    }
-
-    pub fn get(&self) -> &git2::Signature<'static> {
-        &self.0
-    }
-
-    pub fn default_author(config: Option<&Config>) -> Result<Self, Error> {
-        Self::make_default(config, SignatureRole::Author)
-    }
-
-    pub fn default_committer(config: Option<&Config>) -> Result<Self, Error> {
-        Self::make_default(config, SignatureRole::Committer)
-    }
-
-    fn make_default(config: Option<&Config>, role: SignatureRole) -> Result<Self, Error> {
-        let name = if let Some(name) = get_from_env(get_env_key(role, SignatureComponent::Name))? {
+fn make_default(
+    config: Option<&Config>,
+    role: SignatureRole,
+) -> Result<git2::Signature<'static>, Error> {
+    let name = if let Some(name) = get_from_env(get_env_key(role, SignatureComponent::Name))? {
+        name
+    } else if let Some(config) = config {
+        if let Some(name) = get_from_config(config, get_config_key(role, SignatureComponent::Name))?
+        {
             name
-        } else if let Some(config) = config {
-            if let Some(name) =
-                get_from_config(config, get_config_key(role, SignatureComponent::Name))?
-            {
-                name
-            } else if let Some(name) = get_from_config(config, "user.name")? {
-                name
-            } else if get_from_config(config, "user.email")?.is_none() {
-                return Err(Error::MissingSignature(
-                    "`user.name` and `user.email` not configured".to_string(),
-                ));
-            } else {
-                return Err(Error::MissingSignature(
-                    "`user.name` not configured".to_string(),
-                ));
-            }
+        } else if let Some(name) = get_from_config(config, "user.name")? {
+            name
+        } else if get_from_config(config, "user.email")?.is_none() {
+            return Err(Error::MissingSignature(
+                "`user.name` and `user.email` not configured".to_string(),
+            ));
         } else {
-            return Err(Error::MissingSignature(format!(
-                "no config available and no `{}`",
-                get_env_key(role, SignatureComponent::Name),
-            )));
-        };
+            return Err(Error::MissingSignature(
+                "`user.name` not configured".to_string(),
+            ));
+        }
+    } else {
+        return Err(Error::MissingSignature(format!(
+            "no config available and no `{}`",
+            get_env_key(role, SignatureComponent::Name),
+        )));
+    };
 
-        let email = if let Some(email) = get_from_env(get_env_key(role, SignatureComponent::Email))?
+    let email = if let Some(email) = get_from_env(get_env_key(role, SignatureComponent::Email))? {
+        email
+    } else if let Some(config) = config {
+        if let Some(email) =
+            get_from_config(config, get_config_key(role, SignatureComponent::Email))?
         {
             email
-        } else if let Some(config) = config {
-            if let Some(email) =
-                get_from_config(config, get_config_key(role, SignatureComponent::Email))?
-            {
-                email
-            } else if let Some(email) = get_from_config(config, "user.email")? {
-                email
-            } else {
-                return Err(Error::MissingSignature(
-                    "`user.email` not configured".to_string(),
-                ));
-            }
+        } else if let Some(email) = get_from_config(config, "user.email")? {
+            email
         } else {
-            return Err(Error::MissingSignature(format!(
-                "no config available and no `{}`",
-                get_env_key(role, SignatureComponent::Email),
-            )));
-        };
-
-        let date_key = get_env_key(role, SignatureComponent::Date);
-        let inner_sig = if let Some(date) = get_from_env(date_key)? {
-            if date == "now" {
-                git2::Signature::now(&name, &email)?
-            } else {
-                let when = parse_time(&date, date_key)?;
-                git2::Signature::new(&name, &email, &when)?
-            }
-        } else {
-            git2::Signature::now(&name, &email)?
-        };
-
-        Ok(Self(inner_sig))
-    }
-
-    pub fn make_author(config: Option<&Config>, matches: &ArgMatches) -> Result<Self, Error> {
-        Self::default_author(config)?.override_author(matches)
-    }
-
-    pub fn override_author(self, matches: &ArgMatches) -> Result<Self, Error> {
-        let (author_name, author_email): (Option<String>, Option<String>) =
-            if let Some(name_email) = get_from_arg("author", matches)? {
-                let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
-                (
-                    Some(parsed_name.to_string()),
-                    Some(parsed_email.to_string()),
-                )
-            } else {
-                (None, None)
-            };
-
-        let name = if let Some(author_name) = author_name {
-            Some(author_name)
-        } else {
-            get_from_arg("authname", matches)?
-        };
-
-        let email = if let Some(author_email) = author_email {
-            Some(author_email)
-        } else {
-            get_from_arg("authemail", matches)?
-        };
-
-        if let Some(authdate) = get_from_arg("authdate", matches)? {
-            let name = name.as_deref().unwrap_or_else(|| self.name());
-            let email = email.as_deref().unwrap_or_else(|| self.email());
-            if authdate == "now" {
-                Ok(Self(git2::Signature::now(name, email)?))
-            } else {
-                let when = parse_time(&authdate, "authdate")?;
-                Ok(Self(git2::Signature::new(name, email, &when)?))
-            }
-        } else if name.is_some() || email.is_some() {
-            let name = name.as_deref().unwrap_or_else(|| self.name());
-            let email = email.as_deref().unwrap_or_else(|| self.email());
-            let when = self.when();
-            Ok(Self(git2::Signature::new(name, email, &when)?))
-        } else {
-            Ok(self)
+            return Err(Error::MissingSignature(
+                "`user.email` not configured".to_string(),
+            ));
         }
-    }
+    } else {
+        return Err(Error::MissingSignature(format!(
+            "no config available and no `{}`",
+            get_env_key(role, SignatureComponent::Email),
+        )));
+    };
 
-    pub fn get_datetime(&self) -> DateTime<FixedOffset> {
-        let when = self.when();
-        FixedOffset::east(when.offset_minutes() * 60).timestamp(when.seconds(), 0)
-    }
+    let date_key = get_env_key(role, SignatureComponent::Date);
+    let signature = if let Some(date) = get_from_env(date_key)? {
+        if date == "now" {
+            git2::Signature::now(&name, &email)?
+        } else {
+            let when = parse_time(&date, date_key)?;
+            git2::Signature::new(&name, &email, &when)?
+        }
+    } else {
+        git2::Signature::now(&name, &email)?
+    };
 
-    pub fn get_epoch_time_string(&self) -> String {
-        let when = self.when();
-        let offset_hours = when.offset_minutes() / 60;
-        let offset_minutes = when.offset_minutes() % 60;
-        format!(
-            "{} {}{:02}{:02}",
-            when.seconds(),
-            when.sign(),
-            offset_hours,
-            offset_minutes
-        )
+    Ok(signature)
+}
+
+pub(crate) fn make_author(
+    config: Option<&Config>,
+    matches: &ArgMatches,
+) -> Result<git2::Signature<'static>, Error> {
+    override_author(&default_author(config)?, matches)
+}
+
+pub(crate) fn override_author(
+    signature: &git2::Signature<'_>,
+    matches: &ArgMatches,
+) -> Result<git2::Signature<'static>, Error> {
+    let (author_name, author_email): (Option<String>, Option<String>) =
+        if let Some(name_email) = get_from_arg("author", matches)? {
+            let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
+            (
+                Some(parsed_name.to_string()),
+                Some(parsed_email.to_string()),
+            )
+        } else {
+            (None, None)
+        };
+
+    let name = if let Some(author_name) = author_name {
+        Some(author_name)
+    } else {
+        get_from_arg("authname", matches)?
+    };
+
+    let email = if let Some(author_email) = author_email {
+        Some(author_email)
+    } else {
+        get_from_arg("authemail", matches)?
+    };
+
+    if let Some(authdate) = get_from_arg("authdate", matches)? {
+        let name = name
+            .as_deref()
+            .unwrap_or_else(|| signature.name().expect("author signature must be utf-8"));
+        let email = email
+            .as_deref()
+            .unwrap_or_else(|| signature.email().expect("author signature must be utf-8"));
+        if authdate == "now" {
+            Ok(git2::Signature::now(name, email)?)
+        } else {
+            let when = parse_time(&authdate, "authdate")?;
+            Ok(git2::Signature::new(name, email, &when)?)
+        }
+    } else if name.is_some() || email.is_some() {
+        let name = name
+            .as_deref()
+            .unwrap_or_else(|| signature.name().expect("author signature must be utf-8"));
+        let email = email
+            .as_deref()
+            .unwrap_or_else(|| signature.email().expect("author signature must be utf-8"));
+        Ok(git2::Signature::new(name, email, &signature.when())?)
+    } else {
+        Ok(signature.to_owned())
     }
+}
+
+pub(crate) fn get_datetime(when: git2::Time) -> DateTime<FixedOffset> {
+    FixedOffset::east(when.offset_minutes() * 60).timestamp(when.seconds(), 0)
+}
+
+pub(crate) fn get_epoch_time_string(when: git2::Time) -> String {
+    let offset_hours = when.offset_minutes() / 60;
+    let offset_minutes = when.offset_minutes() % 60;
+    format!(
+        "{} {}{:02}{:02}",
+        when.seconds(),
+        when.sign(),
+        offset_hours,
+        offset_minutes
+    )
 }
 
 fn get_from_config(config: &Config, key: &str) -> Result<Option<String>, Error> {

@@ -2,10 +2,9 @@ use git2::Oid;
 
 use crate::error::Error;
 use crate::stack::Stack;
-use crate::wrap::Repository;
 
 pub(crate) fn parse_stgit_revision<'repo>(
-    repo: &'repo Repository,
+    repo: &'repo git2::Repository,
     spec: Option<&str>,
     branch: Option<&str>,
 ) -> Result<Oid, Error> {
@@ -41,7 +40,7 @@ pub(crate) fn parse_stgit_revision<'repo>(
     }
 }
 
-fn revparse_single(repo: &Repository, spec: &str) -> Result<Oid, Error> {
+fn revparse_single(repo: &git2::Repository, spec: &str) -> Result<Oid, Error> {
     let object = repo.revparse_single(spec).map_err(|e| match e.code() {
         git2::ErrorCode::InvalidSpec => Error::InvalidRevision(spec.to_string()),
         git2::ErrorCode::NotFound => Error::RevisionNotFound(spec.to_string()),

@@ -1,7 +1,6 @@
 use clap::{App, ArgMatches};
 
 use crate::stack::Stack;
-use crate::wrap::Repository;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("init", super::StGitCommand { get_app, run })
@@ -12,7 +11,7 @@ fn get_app() -> App<'static> {
 }
 
 fn run(_: &ArgMatches) -> super::Result {
-    let repo = Repository::open_from_env()?;
+    let repo = git2::Repository::open_from_env()?;
     let branch_name = None;
     Stack::initialize(&repo, branch_name)?;
     Ok(())

@@ -7,7 +7,7 @@ use crate::{
     patchdescription::PatchDescription,
     patchname::PatchName,
     stack::{ConflictMode, Stack, StackTransaction},
-    wrap::{CommitData, Repository, Signature},
+    wrap::{signature, CommitData},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -40,7 +40,7 @@ fn get_app() -> App<'static> {
                 .short('v')
                 .about("Show diff in message template"),
         )
-        .args(&*crate::wrap::signature::AUTHOR_SIGNATURE_ARGS)
+        .args(&*signature::AUTHOR_SIGNATURE_ARGS)
         .args(&*crate::message::MESSAGE_ARGS)
         .arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
         .args(&*crate::trailers::TRAILER_ARGS)
@@ -53,7 +53,7 @@ fn get_app() -> App<'static> {
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
-    let repo = Repository::open_from_env()?;
+    let repo = git2::Repository::open_from_env()?;
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;
 
@@ -73,7 +73,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         }
     }
 
-    let config = repo.0.config()?;
+    let config = repo.config()?;
 
     let verbose =
         matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
@@ -107,7 +107,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             (String::new(), true)
         };
 
-    let committer = Signature::default_committer(Some(&config))?;
+    let committer = signature::default_committer(Some(&config))?;
     let autosign = config.get_string("stgit.autosign").ok();
     let message = crate::trailers::add_trailers(message, matches, &committer, autosign.as_deref())?;
 
@@ -122,7 +122,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let patch_desc = PatchDescription {
         patchname,
-        author: Signature::make_author(Some(&config), matches)?,
+        author: signature::make_author(Some(&config), matches)?,
         message: Some(message),
         diff,
     };
@@ -175,8 +175,8 @@ fn run(matches: &ArgMatches) -> super::Result {
     let trans_context =
         StackTransaction::make_context(&stack, ConflictMode::Disallow, discard_changes);
     let exec_context = trans_context.transact(|trans| {
-        let patch_commit_oid = cd.commit(&repo)?;
-        trans.push_applied(&patchname, &patch_commit_oid);
+        let patch_commit_id = cd.commit(&repo)?;
+        trans.push_applied(&patchname, patch_commit_id);
         Ok(())
     });
     exec_context.execute(stack, &format!("new: {}", patchname))

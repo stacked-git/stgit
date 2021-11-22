@@ -1,16 +1,18 @@
-use std::{io::Write, path::PathBuf};
+#[cfg(unix)]
+use std::os::unix::ffi::OsStrExt;
+use std::{ffi::OsStr, io::Write, path::PathBuf};
 
 use crate::{
     error::Error,
-    wrap::{CommitData, Repository},
+    wrap::{signature::get_epoch_time_string, CommitData},
 };
 
 pub(crate) fn run_commit_msg_hook<'repo>(
-    repo: &Repository,
+    repo: &git2::Repository,
     commit_data: CommitData<'repo>,
     editor_is_used: bool,
 ) -> Result<CommitData<'repo>, Error> {
-    let config = repo.0.config()?;
+    let config = repo.config()?;
     let hooks_path = config
         .get_path("core.hookspath")
         .unwrap_or_else(|_| PathBuf::from("hooks"));
@@ -35,20 +37,59 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     // TODO: when git runs this hook, it only sets GIT_INDEX_FILE and sometimes
     // GIT_EDITOR. So author and committer vars are not clearly required.
     let mut hook_command = std::process::Command::new(hook_path);
-    hook_command
-        .env("GIT_AUTHOR_NAME", &commit_data.author.name())
-        .env("GIT_AUTHOR_EMAIL", &commit_data.author.email())
-        .env(
-            "GIT_AUTHOR_DATE",
-            commit_data.author.get_epoch_time_string(),
-        )
-        .env("GIT_COMMITTER_NAME", &commit_data.committer.name())
-        .env("GIT_COMMITTER_EMAIL", &commit_data.committer.email())
-        .env(
-            "GIT_COMMITTER_DATE",
-            commit_data.committer.get_epoch_time_string(),
-        )
-        .env("GIT_INDEX_FILE", index_path);
+    let author = &commit_data.author;
+    let committer = &commit_data.committer;
+    if cfg!(unix) {
+        hook_command
+            .env("GIT_AUTHOR_NAME", OsStr::from_bytes(author.name_bytes()))
+            .env("GIT_AUTHOR_EMAIL", OsStr::from_bytes(author.email_bytes()))
+            .env(
+                "GIT_COMMITTER_NAME",
+                OsStr::from_bytes(committer.name_bytes()),
+            )
+            .env(
+                "GIT_COMMITTER_EMAIL",
+                OsStr::from_bytes(committer.email_bytes()),
+            )
+            // TODO: reencode dates?
+            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
+            .env(
+                "GIT_COMMITTER_DATE",
+                get_epoch_time_string(committer.when()),
+            );
+    } else {
+        hook_command
+            .env(
+                "GIT_AUTHOR_NAME",
+                author
+                    .name()
+                    .expect("author name must be valid utf-8 on non-unix"),
+            )
+            .env(
+                "GIT_AUTHOR_EMAIL",
+                author
+                    .email()
+                    .expect("author email must be valid utf-8 on non-unix"),
+            )
+            .env(
+                "GIT_COMMITTER_NAME",
+                committer
+                    .name()
+                    .expect("committer name must be valid utf-8 on non-unix"),
+            )
+            .env(
+                "GIT_COMMITTER_EMAIL",
+                committer
+                    .email()
+                    .expect("committer email must be valid utf-8 on non-unix"),
+            )
+            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
+            .env(
+                "GIT_COMMITTER_DATE",
+                get_epoch_time_string(committer.when()),
+            );
+    }
+    hook_command.env("GIT_INDEX_FILE", index_path);
     if !editor_is_used {
         hook_command.env("GIT_EDITOR", ":");
     }

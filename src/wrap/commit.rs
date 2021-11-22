@@ -1,23 +1,22 @@
-use git2::{Commit, Oid, Tree};
-
 use crate::error::Error;
-use crate::wrap::{Repository, Signature};
+
+use super::repository::commit_ex;
 
 pub(crate) struct CommitData<'repo> {
-    pub author: Signature,
-    pub committer: Signature,
+    pub author: git2::Signature<'static>,
+    pub committer: git2::Signature<'static>,
     pub message: String,
-    pub tree: Tree<'repo>,
-    pub parents: Vec<Commit<'repo>>,
+    pub tree: git2::Tree<'repo>,
+    pub parents: Vec<git2::Commit<'repo>>,
 }
 
 impl<'repo> CommitData<'repo> {
     pub fn new(
-        author: Signature,
-        committer: Signature,
+        author: git2::Signature<'static>,
+        committer: git2::Signature<'static>,
         message: String,
-        tree: Tree<'repo>,
-        parents: Vec<Commit<'repo>>,
+        tree: git2::Tree<'repo>,
+        parents: Vec<git2::Commit<'repo>>,
     ) -> Self {
         Self {
             author,
@@ -38,9 +37,10 @@ impl<'repo> CommitData<'repo> {
         )
     }
 
-    pub fn commit(self, repo: &Repository) -> Result<Oid, Error> {
-        let parents: Vec<&Commit<'_>> = self.parents.iter().collect();
-        repo.commit(
+    pub fn commit(self, repo: &git2::Repository) -> Result<git2::Oid, Error> {
+        let parents: Vec<&git2::Commit<'_>> = self.parents.iter().collect();
+        commit_ex(
+            repo,
             &self.author,
             &self.committer,
             &self.message,
@@ -49,3 +49,15 @@ impl<'repo> CommitData<'repo> {
         )
     }
 }
+
+// impl<'repo> From<git2::Commit<'repo>> for CommitData<'repo> {
+//     fn from(commit: git2::Commit<'repo>) -> Self {
+//         Self {
+//             author: commit.author().to_owned(),
+//             committer: commit.committer().to_owned(),
+//             message: commit.message_raw_bytes().collect(),
+//             tree: commit.tree(),
+//             parents: commit.parents().collect(),
+//         }
+//     }
+// }

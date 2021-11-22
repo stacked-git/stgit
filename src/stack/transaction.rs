@@ -211,10 +211,10 @@ impl StackTransaction {
         AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
-    pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: &Oid) {
+    pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: Oid) {
         self.applied.push(patchname.clone());
         self.patch_updates
-            .insert(patchname.clone(), Some(PatchDescriptor { oid: *oid }));
+            .insert(patchname.clone(), Some(PatchDescriptor { oid }));
     }
 
     fn checkout(

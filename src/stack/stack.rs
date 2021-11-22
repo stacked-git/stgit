@@ -8,24 +8,27 @@ use super::state::StackState;
 use super::PatchDescriptor;
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
-use crate::wrap::Repository;
+use crate::wrap::repository::get_branch;
+
+type PatchMap<'repo> = BTreeMap<PatchName, Commit<'repo>>;
 
 pub(crate) struct Stack<'repo> {
-    pub(crate) repo: &'repo Repository,
+    pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
     pub(crate) branch: Branch<'repo>,
     pub(crate) head_commit: Commit<'repo>,
     pub(crate) head_tree: Tree<'repo>,
     pub(crate) state_ref: Reference<'repo>,
     pub(crate) state: StackState,
+    pub(crate) patchmap: PatchMap<'repo>,
 }
 
 impl<'repo> Stack<'repo> {
     pub(crate) fn initialize(
-        repo: &'repo Repository,
+        repo: &'repo git2::Repository,
         branch_name: Option<&str>,
     ) -> Result<Self, Error> {
-        let branch = repo.get_branch(branch_name)?;
+        let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
         let head_tree = branch.get().peel_to_tree()?;
@@ -37,6 +40,7 @@ impl<'repo> Stack<'repo> {
         let state = StackState::new(head_commit.id());
         state.commit(repo, Some(&state_refname), "initialize")?;
         ensure_patch_refs(repo, &branch_name, &state)?;
+        let patchmap = PatchMap::new();
         let state_ref = repo.find_reference(&state_refname)?;
 
         Ok(Self {
@@ -47,11 +51,15 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
+            patchmap,
         })
     }
 
-    pub fn from_branch(repo: &'repo Repository, branch_name: Option<&str>) -> Result<Self, Error> {
-        let branch = repo.get_branch(branch_name)?;
+    pub fn from_branch(
+        repo: &'repo git2::Repository,
+        branch_name: Option<&str>,
+    ) -> Result<Self, Error> {
+        let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
         let head_tree = branch.get().peel_to_tree()?;
@@ -62,6 +70,10 @@ impl<'repo> Stack<'repo> {
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         ensure_patch_refs(repo, &branch_name, &state)?;
+        let mut patchmap = PatchMap::new();
+        for (patchname, patchdesc) in &state.patches {
+            patchmap.insert(patchname.clone(), repo.find_commit(patchdesc.oid)?);
+        }
         Ok(Self {
             repo,
             branch_name,
@@ -70,6 +82,7 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
+            patchmap,
         })
     }
 
@@ -151,6 +164,7 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
+            patchmap,
         } = self;
         let state = state.advance_head(new_head, prev_state);
         let state_commit_oid = state.commit(repo, None, message)?;
@@ -174,6 +188,7 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
+            patchmap,
         })
     }
 
@@ -201,8 +216,8 @@ fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {
         .to_string())
 }
 
-fn ensure_patch_refs(
-    repo: &Repository,
+fn ensure_patch_refs<'repo>(
+    repo: &'repo git2::Repository,
     branch_name: &str,
     state: &StackState,
 ) -> Result<(), Error> {
@@ -210,7 +225,7 @@ fn ensure_patch_refs(
     let patch_ref_glob = get_patch_refname(branch_name, "*");
     let mut state_patches: BTreeMap<&PatchName, &PatchDescriptor> = state.patches.iter().collect();
 
-    for existing_ref in repo.0.references_glob(&patch_ref_glob)? {
+    for existing_ref in repo.references_glob(&patch_ref_glob)? {
         let mut existing_ref = existing_ref?;
         if let Some(existing_refname) = existing_ref.name() {
             let existing_patchname = existing_refname.strip_prefix(&patch_ref_prefix).unwrap();

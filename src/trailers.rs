@@ -3,7 +3,6 @@ use std::io::Write;
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
 
 use crate::error::Error;
-use crate::wrap::Signature;
 
 lazy_static! {
     pub(crate) static ref TRAILER_ARGS: [Arg<'static>; 6] = [
@@ -46,7 +45,7 @@ lazy_static! {
 pub(crate) fn add_trailers(
     message: String,
     matches: &ArgMatches,
-    signature: &Signature,
+    signature: &git2::Signature,
     autosign: Option<&str>,
 ) -> Result<String, Error> {
     // TODO: return cow str?
@@ -60,7 +59,13 @@ pub(crate) fn add_trailers(
     if let Some(by) = get_value_of("review-by", matches)? {
         trailers.push(("Reviewed-by", by));
     }
-    let default_by = format!("{} <{}>", signature.name(), signature.email());
+    let default_by = if let (Some(name), Some(email)) = (signature.name(), signature.email()) {
+        format!("{} <{}>", name, email)
+    } else {
+        return Err(Error::NonUtf8Signature(
+            "trailer requires utf-8 signature".to_string(),
+        ));
+    };
     if matches.is_present("sign") {
         trailers.push(("Signed-off-by", &default_by));
     }

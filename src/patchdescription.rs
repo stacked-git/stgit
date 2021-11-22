@@ -4,11 +4,11 @@ use chrono::DateTime;
 
 use crate::error::Error;
 use crate::patchname::PatchName;
-use crate::wrap::Signature;
+use crate::wrap::signature;
 
 pub(crate) struct PatchDescription<'repo> {
     pub patchname: Option<PatchName>,
-    pub author: Signature,
+    pub author: git2::Signature<'static>,
     pub message: Option<String>,
     pub diff: Option<git2::Diff<'repo>>,
 }
@@ -30,19 +30,27 @@ impl<'repo> PatchDescription<'repo> {
     }
 
     fn write_header<S: Write>(&self, stream: &mut S) -> Result<(), Error> {
+        let patchname = if let Some(patchname) = &self.patchname {
+            patchname.as_ref()
+        } else {
+            ""
+        };
+        let authdate = signature::get_datetime(self.author.when()).format("%Y-%m-%d %H:%M:%S %z");
+
         write!(
             stream,
-            "Patch:  {patchname}\n\
-             Author: {authname} <{authemail}>\n\
-             Date:   {authdate}\n",
-            patchname = if let Some(patchname) = &self.patchname {
-                patchname.as_ref()
-            } else {
-                ""
-            },
-            authname = self.author.name(),
-            authemail = self.author.email(),
-            authdate = self.author.get_datetime().format("%Y-%m-%d %H:%M:%S %z"),
+            "Patch:  {}\n\
+             Author: ",
+            patchname,
+        )?;
+        stream.write_all(self.author.name_bytes())?;
+        write!(stream, "<")?;
+        stream.write_all(self.author.email_bytes())?;
+        write!(
+            stream,
+            ">\n\
+             Date:   {}\n",
+            authdate,
         )?;
         Ok(())
     }
@@ -183,7 +191,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
         };
 
         let (authname, authemail) = if let Some(author) = raw_author {
-            let (name, email) = crate::wrap::signature::parse_name_email(&author)?;
+            let (name, email) = signature::parse_name_email(&author)?;
             (name.to_string(), email.to_string())
         } else {
             return Err(Error::ParsePatchDescription(
@@ -201,7 +209,7 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
             ));
         };
 
-        let author = Signature::new(&authname, &authemail, &authdate)?;
+        let author = git2::Signature::new(&authname, &authemail, &authdate)?;
 
         if message.ends_with("\n\n") {
             message.pop();

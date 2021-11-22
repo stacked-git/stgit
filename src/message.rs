@@ -1,7 +1,6 @@
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
 
 use crate::error::Error;
-use crate::wrap::Repository;
 
 lazy_static! {
     pub(crate) static ref MESSAGE_ARGS: [Arg<'static>; 4] = [
@@ -70,6 +69,6 @@ pub(crate) fn get_message_from_args(matches: &ArgMatches) -> Result<Option<Strin
     }
 }
 
-pub(crate) fn get_message_template(repo: &Repository) -> Result<Option<String>, Error> {
+pub(crate) fn get_message_template(repo: &git2::Repository) -> Result<Option<String>, Error> {
     crate::templates::get_template(repo, "patchdescr.tmpl")
 }

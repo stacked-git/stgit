@@ -78,6 +78,9 @@ pub(crate) enum Error {
     #[error("non-UTF-8 alias value for `{0}` in {1}")]
     NonUtf8AliasValue(String, String),
 
+    #[error("non-UTF-8 commit message from `{0}`")]
+    NonUtf8Message(String),
+
     #[error("bad alias for `{0}`: {1}")]
     BadAlias(String, String),
 

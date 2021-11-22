@@ -27,8 +27,6 @@ use clap::{crate_license, crate_version, App, AppSettings, ArgMatches, ValueHint
 use pyo3::prelude::*;
 use termcolor::WriteColor;
 
-use wrap::Repository;
-
 const GENERAL_ERROR: i32 = 1;
 const COMMAND_ERROR: i32 = 2;
 // const CONFLICT_ERROR: i32 = 3;
@@ -232,7 +230,7 @@ fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Res
 fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: &[&OsStr],
-    repo: Option<&Repository>,
+    repo: Option<&git2::Repository>,
 ) -> cmd::Result {
     if let Some(first_arg) = user_args.get(0) {
         if ["-h", "--help"].contains(&first_arg.to_str().unwrap_or("")) {
@@ -350,10 +348,10 @@ fn execute_stgit_alias(
 /// depends on -C options being processed.
 fn get_aliases(
     commands: &cmd::Commands,
-) -> Result<(alias::Aliases, Option<Repository>), error::Error> {
-    let maybe_repo = Repository::open_from_env().ok();
+) -> Result<(alias::Aliases, Option<git2::Repository>), error::Error> {
+    let maybe_repo = git2::Repository::open_from_env().ok();
     let maybe_config = if let Some(ref repo) = maybe_repo {
-        repo.0.config()
+        repo.config()
     } else {
         git2::Config::open_default()
     }
