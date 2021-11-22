@@ -5,7 +5,6 @@ mod alias;
 mod argset;
 mod cmd;
 mod color;
-mod commitdata;
 mod edit;
 mod error;
 mod hook;

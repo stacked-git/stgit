@@ -1,6 +1,9 @@
 use std::{io::Write, path::PathBuf};
 
-use crate::{commitdata::CommitData, error::Error, wrap::Repository};
+use crate::{
+    error::Error,
+    wrap::{CommitData, Repository},
+};
 
 pub(crate) fn run_commit_msg_hook<'repo>(
     repo: &Repository,
