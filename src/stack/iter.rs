@@ -1,7 +1,6 @@
 use std::iter::Chain;
 use std::slice::Iter;
 
-use super::state::StackState;
 use crate::patchname::PatchName;
 
 pub(crate) struct AllPatches<'s>(
@@ -9,14 +8,12 @@ pub(crate) struct AllPatches<'s>(
 );
 
 impl<'s> AllPatches<'s> {
-    pub(crate) fn new(state: &'s StackState) -> Self {
-        Self(
-            state
-                .applied
-                .iter()
-                .chain(state.unapplied.iter())
-                .chain(state.hidden.iter()),
-        )
+    pub(crate) fn new(
+        applied: &'s [PatchName],
+        unapplied: &'s [PatchName],
+        hidden: &'s [PatchName],
+    ) -> Self {
+        Self(applied.iter().chain(unapplied.iter()).chain(hidden.iter()))
     }
 }
 

@@ -57,7 +57,7 @@ impl StackState {
     }
 
     pub fn all_patches(&self) -> AllPatches<'_> {
-        AllPatches::new(self)
+        AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
     pub fn top(&self) -> Oid {

@@ -7,6 +7,8 @@ use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::stack::{PatchDescriptor, Stack};
 
+use super::iter::AllPatches;
+
 pub(crate) enum ConflictMode {
     Disallow,
 
@@ -40,7 +42,7 @@ impl ExecuteContext {
             if oid.is_none() {
                 assert!(stack.state.patches.contains_key(patchname));
             } else {
-                assert!(transaction.patch_updates.contains_key(patchname));
+                assert!(transaction.all_patches().any(|pn| pn == patchname));
             }
         }
 
@@ -203,6 +205,10 @@ impl StackTransaction {
         } else {
             self.old_head_commit_id
         }
+    }
+
+    pub(crate) fn all_patches(&self) -> AllPatches {
+        AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
     pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: &Oid) {
