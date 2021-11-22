@@ -33,6 +33,9 @@ pub(crate) enum Error {
     #[error("not on branch, HEAD points at `{0}`")]
     HeadNotBranch(String),
 
+    #[error("StGit cannot be initialized on unborn branch: {0}")]
+    UnbornBranch(String),
+
     #[error("branch `{0}` not found")]
     BranchNotFound(String),
 

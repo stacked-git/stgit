@@ -36,12 +36,15 @@ impl Repository {
                 .find_branch(name, git2::BranchType::Local)
                 .map_err(|e| {
                     if e.class() == git2::ErrorClass::Reference {
-                        if e.code() == git2::ErrorCode::NotFound {
-                            Error::BranchNotFound(name.to_string())
-                        } else if e.code() == git2::ErrorCode::InvalidSpec {
-                            Error::InvalidBranchName(name.to_string())
-                        } else {
-                            e.into()
+                        match e.code() {
+                            git2::ErrorCode::NotFound => Error::BranchNotFound(name.to_string()),
+                            git2::ErrorCode::InvalidSpec => {
+                                Error::InvalidBranchName(name.to_string())
+                            }
+                            git2::ErrorCode::UnbornBranch => {
+                                Error::UnbornBranch(format!("`{}`", name))
+                            }
+                            _ => e.into(),
                         }
                     } else {
                         e.into()
@@ -51,7 +54,13 @@ impl Repository {
         } else if self.0.head_detached()? {
             Err(Error::HeadDetached)
         } else {
-            let head = self.0.head()?;
+            let head = self.0.head().map_err(|e| {
+                if e.code() == git2::ErrorCode::UnbornBranch {
+                    Error::UnbornBranch(e.message().to_string())
+                } else {
+                    e.into()
+                }
+            })?;
             if head.is_branch() {
                 Ok(git2::Branch::wrap(head))
             } else {
