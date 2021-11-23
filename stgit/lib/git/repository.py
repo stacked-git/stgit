@@ -483,5 +483,9 @@ class Repository:
 
     def copy_notes(self, old_sha1, new_sha1):
         """Copy Git notes from the old object to the new one."""
-        p = self.run(['git', 'notes', 'copy', old_sha1, new_sha1])
+        p = self.run(['git', 'notes', 'copy', '--for-rewrite=stg'])
+        p.env({
+            "GIT_NOTES_REWRITE_REF": "refs/notes/*"
+        })
+        p.raw_input("{} {}".format(old_sha1, new_sha1))
         p.discard_exitcode().discard_stderr().discard_output()

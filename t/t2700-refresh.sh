@@ -4,6 +4,73 @@ test_description='Run "stg refresh"'
 
 . ./test-lib.sh
 
+_setup_git_excludes() {
+  # Ignore our own temp files.
+  cat >> .git/info/exclude <<EOF
+expected*.txt
+actual*.txt
+patches*.txt
+show*.txt
+diff*.txt
+files*.txt
+status*.txt
+EOF
+}
+
+test_expect_success '(note_rewrite_test) Initialize Sub-Repo' '
+  test_create_repo note_rewrite_test &&
+  ( set -ex; cd note_rewrite_test;
+     _setup_git_excludes
+     stg init
+
+     # [WARNING]:
+     # At the moment the tests fail without the following configuration options set.
+     # TODO: need backwards compatibility.
+     # git config notes.rewriteRef "refs/notes/*"
+     # [/WARNING]
+
+     # This setting can be enabled or disabled, but it defaults to true.
+     # git config notes.rewrite.stg true
+
+     # This setting appends note contents to `git show`. Can specify a glob to list all notes.
+     # git config notes.displayref "refs/notes/*"
+  )
+'
+
+cat > note_rewrite_test/expected_notes.txt <<EOF
+note0
+EOF
+cat > note_rewrite_test/expected_extra_notes.txt <<EOF
+extra_note0
+EOF
+test_expect_success '(note_rewrite_test) Test that Stg refresh preserves default and extra git notes' '
+  ( set -ex; cd note_rewrite_test;
+     # Create base patch with a few notes.
+     stg new p0 -m "base"
+     git notes add -m note0
+     git notes --ref refs/notes/extra add -m extra_note0 &&
+
+     # Verify notes are set
+     git notes show > actual_notes.txt
+     test_cmp actual_notes.txt expected_notes.txt
+     git notes --ref refs/notes/extra show > actual_extra_notes.txt
+     test_cmp actual_extra_notes.txt expected_extra_notes.txt
+
+     echo "base" >> file.txt
+     stg add file.txt
+     stg refresh --index
+
+     # Verify notes are still set
+     git notes show > actual_notes.txt
+     test_cmp actual_notes.txt expected_notes.txt
+     git notes --ref refs/notes/extra show > actual_extra_notes.txt
+     test_cmp actual_extra_notes.txt expected_extra_notes.txt
+  )
+'
+
+# Delete temporary sub repo.
+rm -rf note_rewrite_test
+
 test_expect_success 'Initialize StGit stack' '
     stg init &&
     echo expected*.txt >> .git/info/exclude &&
@@ -34,6 +101,7 @@ test_expect_success 'Refresh top patch' '
     stg refresh &&
     test "$(git notes show)" = "note3" &&
     stg status &&
+    pwd &&
     test -z "$(stg status)" &&
     stg patches foo3.txt > patches.txt &&
     test_cmp expected.txt patches.txt

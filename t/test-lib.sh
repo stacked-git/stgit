@@ -530,7 +530,7 @@ die () {
 	# This is responsible for running the atexit commands even when a
 	# test script run with '--immediate' fails, or when the user hits
 	# ctrl-C, i.e. when 'test_done' is not invoked at all.
-	test_atexit_handler || code=$?
+	test_atexit_handler || code$?
 	if test -n "$GIT_EXIT_OK"
 	then
 		exit $code
