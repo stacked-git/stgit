@@ -32,8 +32,7 @@ const GENERAL_ERROR: i32 = 1;
 const COMMAND_ERROR: i32 = 2;
 // const CONFLICT_ERROR: i32 = 3;
 
-/// Just enough of an App instance to find candidate subcommands
-fn get_minimal_app() -> App<'static> {
+fn get_base_app() -> App<'static> {
     App::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::HelpRequired)
@@ -50,9 +49,23 @@ fn get_minimal_app() -> App<'static> {
         )
 }
 
+/// Just enough of an App instance to find candidate subcommands
+fn get_bootstrap_app() -> App<'static> {
+    get_base_app()
+        .setting(AppSettings::AllowExternalSubcommands)
+        .setting(AppSettings::DisableHelpFlag)
+        .setting(AppSettings::DisableHelpSubcommand)
+        .arg(
+            clap::Arg::new("help-option")
+                .short('h')
+                .long("help")
+                .about("Print help information"),
+        )
+}
+
 /// Builds on the minimal App to compose a complete top-level App instance.
 fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> App<'static> {
-    get_minimal_app()
+    get_base_app()
         .version(crate_version!())
         .license(crate_license!())
         .global_setting(AppSettings::DeriveDisplayOrder)
@@ -75,16 +88,7 @@ fn main() {
     // Avoid the expense of constructing a full-blown clap::App with all the dozens of
     // subcommands except in the few cases where that is warranted. In most cases, only
     // the App instance of a single StGit subcommand is required.
-    let app = get_minimal_app()
-        .setting(AppSettings::AllowExternalSubcommands)
-        .setting(AppSettings::DisableHelpFlag)
-        .setting(AppSettings::DisableHelpSubcommand)
-        .arg(
-            clap::Arg::new("help-option")
-                .short('h')
-                .long("help")
-                .about("Print help information"),
-        );
+    let app = get_bootstrap_app();
 
     // First, using a minimal top-level App instance, let clap find anything that looks
     // like a subcommand name (i.e. by using AppSettings::AllowExternalSubcommands).
@@ -204,9 +208,9 @@ fn full_app_help(
 /// Execute regular StGit subcommand. The particular command must have previously been
 /// matched in argv such that it is guaranteed to be matched again here.
 /// N.B. a new top-level app instance is created to ensure that help messages are
-/// formatted using the correct executable path (argv[0]).
+/// formatted using the correct executable path (`argv[0]`).
 fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Result {
-    let top_app = get_minimal_app().subcommand((command.get_app)());
+    let top_app = get_base_app().subcommand((command.get_app)());
     match top_app.try_get_matches_from(argv) {
         Ok(top_matches) => {
             let (_, cmd_matches) = top_matches
