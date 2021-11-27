@@ -88,7 +88,7 @@ impl<'repo> Stack<'repo> {
                     Err(Error::OutstandingConflicts)
                 }
             }
-            state @ _ => Err(Error::ActiveRepositoryState(
+            state => Err(Error::ActiveRepositoryState(
                 repo_state_to_str(state).to_string(),
             )),
         }
@@ -217,7 +217,7 @@ fn get_branch<'repo>(
     }
 }
 
-fn get_branch_name<'repo>(branch: &'repo Branch<'_>) -> Result<String, Error> {
+fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| Error::NonUtf8BranchName(String::from_utf8_lossy(name_bytes).to_string()))?

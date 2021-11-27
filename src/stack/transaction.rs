@@ -115,15 +115,8 @@ impl ExecuteContext {
         }
 
         // For printing applied patch name...
-        let _old_applied_pn = stack
-            .state
-            .applied
-            .last()
-            .and_then(|pn| Some(pn.to_string()));
-        let _new_applied_pn = transaction
-            .applied
-            .last()
-            .and_then(|pn| Some(pn.to_string()));
+        let _old_applied_pn = stack.state.applied.last().map(|pn| pn.to_string());
+        let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
 
         let prev_state_commit = stack.state_ref.peel_to_commit()?;
         stack.state.prev = Some(prev_state_commit.id());
@@ -214,10 +207,8 @@ impl StackTransaction {
 
     pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: &Oid) {
         self.applied.push(patchname.clone());
-        self.patch_updates.insert(
-            patchname.clone(),
-            Some(PatchDescriptor { oid: oid.clone() }),
-        );
+        self.patch_updates
+            .insert(patchname.clone(), Some(PatchDescriptor { oid: *oid }));
     }
 
     fn checkout(
@@ -250,7 +241,7 @@ impl StackTransaction {
                         }
                     }
                 },
-                state @ _ => Err(Error::ActiveRepositoryState(
+                state => Err(Error::ActiveRepositoryState(
                     repo_state_to_str(state).to_string(),
                 )),
             };

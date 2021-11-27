@@ -72,9 +72,9 @@ impl CheckedSignature {
         let name = if let Some(name) = get_from_env(role, SignatureComponent::Name)? {
             name
         } else if let Some(config) = config {
-            if let Some(name) = get_from_config(&config, "user.name")? {
+            if let Some(name) = get_from_config(config, "user.name")? {
                 name
-            } else if get_from_config(&config, "user.email")?.is_none() {
+            } else if get_from_config(config, "user.email")?.is_none() {
                 return Err(Error::MissingSignature(
                     "`user.name` and `user.email` not configured".to_string(),
                 ));
@@ -93,7 +93,7 @@ impl CheckedSignature {
         let email = if let Some(email) = get_from_env(role, SignatureComponent::Email)? {
             email
         } else if let Some(config) = config {
-            if let Some(email) = get_from_config(&config, "user.email")? {
+            if let Some(email) = get_from_config(config, "user.email")? {
                 email
             } else {
                 return Err(Error::MissingSignature(

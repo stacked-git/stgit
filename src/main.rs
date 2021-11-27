@@ -165,7 +165,7 @@ fn change_directories(matches: &ArgMatches) {
                 print_error_message(format!(
                     "cannot change to `{0}`: {1}",
                     path.to_string_lossy(),
-                    e.to_string(),
+                    e,
                 ));
                 std::process::exit(GENERAL_ERROR);
             });
@@ -211,7 +211,7 @@ fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Res
             let (_, cmd_matches) = top_matches
                 .subcommand()
                 .expect("this command is ensured to be the only subcommand");
-            (command.run)(&cmd_matches)
+            (command.run)(cmd_matches)
         }
 
         Err(err) => {
@@ -225,10 +225,10 @@ fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Res
 /// be terminated, returning the child's return code.
 fn execute_shell_alias(
     alias: &alias::Alias,
-    user_args: &Vec<&OsStr>,
+    user_args: &[&OsStr],
     repo: Option<&git2::Repository>,
 ) -> cmd::Result {
-    if let Some(ref first_arg) = user_args.get(0) {
+    if let Some(first_arg) = user_args.get(0) {
         if ["-h", "--help"].contains(&first_arg.to_str().unwrap_or("")) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
         }
@@ -299,7 +299,7 @@ fn execute_shell_alias(
 fn execute_stgit_alias(
     alias: &alias::Alias,
     exec_path: &OsString,
-    user_args: &Vec<&OsStr>,
+    user_args: &[&OsStr],
     commands: &cmd::Commands,
     aliases: &alias::Aliases,
 ) -> cmd::Result {
@@ -308,8 +308,8 @@ fn execute_stgit_alias(
             let mut new_argv: Vec<OsString> =
                 Vec::with_capacity(1 + alias_args.len() + user_args.len());
             new_argv.push(exec_path.clone());
-            new_argv.extend(alias_args.iter().map(|s| OsString::from(s)));
-            new_argv.extend(user_args.iter().map(|s| OsString::from(s)));
+            new_argv.extend(alias_args.iter().map(OsString::from));
+            new_argv.extend(user_args.iter().map(OsString::from));
 
             let resolved_cmd_name = alias_args
                 .first()
@@ -352,9 +352,8 @@ fn get_aliases(
         git2::Config::open_default()
     }
     .ok();
-    let excluded = commands.keys().chain(&["help"]).map(|k| *k).collect();
-    alias::get_aliases(maybe_config.as_ref(), excluded)
-        .and_then(|aliases| Ok((aliases, maybe_repo)))
+    let excluded = commands.keys().chain(&["help"]).copied().collect();
+    alias::get_aliases(maybe_config.as_ref(), excluded).map(|aliases| (aliases, maybe_repo))
 }
 
 fn punt_to_python() -> cmd::Result {

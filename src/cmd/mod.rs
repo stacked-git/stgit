@@ -63,7 +63,7 @@ pub(crate) fn get_commands() -> Commands {
     ])
 }
 
-pub(crate) const PYTHON_COMMANDS: &'static [&'static str] = &[
+pub(crate) const PYTHON_COMMANDS: &[&str] = &[
     "branch", "clean", "clone", "commit", "delete", "diff", "edit", "export", "files", "float",
     "fold", "goto", "hide", "import", "log", "mail", "next", "patches", "pick", "pop", "prev",
     "pull", "push", "rebase", "redo", "refresh", "rename", "repair", "reset", "show", "sink",

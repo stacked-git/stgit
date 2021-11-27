@@ -154,5 +154,5 @@ fn run(matches: &ArgMatches) -> super::Result {
         trans.push_applied(&patchname, &patch_commit_oid);
         Ok(())
     });
-    Ok(exec_context.execute(stack, &format!("new: {}", patchname))?)
+    exec_context.execute(stack, &format!("new: {}", patchname))
 }

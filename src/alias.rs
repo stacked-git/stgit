@@ -21,8 +21,8 @@ pub(crate) struct Alias {
 
 impl Alias {
     pub(crate) fn new(name: &str, command: &str) -> Self {
-        let (kind, command) = if command.starts_with('!') {
-            (AliasKind::Shell, command[1..].to_string())
+        let (kind, command) = if let Some(command) = command.strip_prefix('!') {
+            (AliasKind::Shell, command.to_string())
         } else {
             (AliasKind::StGit, command.to_string())
         };
@@ -75,34 +75,32 @@ pub(crate) fn get_aliases(
 
     if let Some(config) = config {
         if let Ok(entries) = config.entries(Some("stgit.alias.*")) {
-            for entry in &entries {
-                if let Ok(entry) = entry {
-                    if let Some(config_key) = entry.name() {
-                        let name = config_key
-                            .strip_prefix("stgit.alias.")
-                            .expect("stgit.alias.* glob problem");
-                        if entry.has_value() {
-                            if let Some(command) = entry.value() {
-                                if !excluded.iter().any(|n| *n == name) {
-                                    let key = name.to_string();
-                                    let alias = Alias::new(name, command);
-                                    aliases.insert(key, alias);
-                                }
-                            } else {
-                                return Err(Error::NonUtf8AliasValue(
-                                    name.to_string(),
-                                    config_level_to_str(entry.level()).to_string(),
-                                ));
+            for entry in entries.flatten() {
+                if let Some(config_key) = entry.name() {
+                    let name = config_key
+                        .strip_prefix("stgit.alias.")
+                        .expect("stgit.alias.* glob problem");
+                    if entry.has_value() {
+                        if let Some(command) = entry.value() {
+                            if !excluded.iter().any(|n| *n == name) {
+                                let key = name.to_string();
+                                let alias = Alias::new(name, command);
+                                aliases.insert(key, alias);
                             }
                         } else {
-                            aliases.remove(name);
+                            return Err(Error::NonUtf8AliasValue(
+                                name.to_string(),
+                                config_level_to_str(entry.level()).to_string(),
+                            ));
                         }
                     } else {
-                        return Err(Error::NonUtf8AliasName(
-                            String::from_utf8_lossy(entry.name_bytes()).to_string(),
-                            config_level_to_str(entry.level()).to_string(),
-                        ));
+                        aliases.remove(name);
                     }
+                } else {
+                    return Err(Error::NonUtf8AliasName(
+                        String::from_utf8_lossy(entry.name_bytes()).to_string(),
+                        config_level_to_str(entry.level()).to_string(),
+                    ));
                 }
             }
         }

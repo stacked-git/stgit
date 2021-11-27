@@ -21,6 +21,6 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let repo = Repository::open_from_env()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?;
-    println!("{}", oid.to_string());
+    println!("{}", oid);
     Ok(())
 }
