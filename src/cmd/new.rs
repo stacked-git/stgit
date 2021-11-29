@@ -173,11 +173,12 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let discard_changes = false;
     let trans_context =
-        StackTransaction::make_context(&stack, ConflictMode::Disallow, discard_changes);
+        StackTransaction::make_context(stack, ConflictMode::Disallow, discard_changes);
     let exec_context = trans_context.transact(|trans| {
         let patch_commit_id = cd.commit(&repo)?;
         trans.push_applied(&patchname, patch_commit_id);
         Ok(())
     });
-    exec_context.execute(stack, &format!("new: {}", patchname))
+    exec_context.execute(&format!("new: {}", patchname))?;
+    Ok(())
 }
