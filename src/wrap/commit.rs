@@ -38,13 +38,13 @@ impl<'repo> CommitData<'repo> {
     }
 
     pub fn commit(self, repo: &git2::Repository) -> Result<git2::Oid, Error> {
-        let parents: Vec<&git2::Commit<'_>> = self.parents.iter().collect();
+        let parents: Vec<git2::Oid> = self.parents.iter().map(|commit| commit.id()).collect();
         commit_ex(
             repo,
             &self.author,
             &self.committer,
             &self.message,
-            &self.tree,
+            self.tree.id(),
             &parents,
         )
     }

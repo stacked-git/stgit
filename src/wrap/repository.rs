@@ -9,8 +9,8 @@ pub(crate) fn commit_ex(
     author: &git2::Signature,
     committer: &git2::Signature,
     message: &str,
-    tree: &git2::Tree<'_>,
-    parents: &[&git2::Commit<'_>],
+    tree_id: git2::Oid,
+    parent_ids: &[git2::Oid],
 ) -> Result<git2::Oid, Error> {
     let (gpgsign, commit_encoding) = if let Ok(config) = repo.config() {
         let gpgsign = config.get_bool("commit.gpgsign").unwrap_or(false);
@@ -27,13 +27,20 @@ pub(crate) fn commit_ex(
             author,
             committer,
             message.as_bytes(),
-            tree,
-            parents,
+            tree_id,
+            parent_ids,
             gpgsign,
         )
     } else {
         // Use git2 for all other occasions
-        Ok(repo.commit(None, author, committer, message, tree, parents)?)
+        let tree = repo.find_tree(tree_id)?;
+        let mut parents: Vec<git2::Commit<'_>> = Vec::new();
+        for parent_id in parent_ids {
+            parents.push(repo.find_commit(*parent_id)?);
+        }
+        let parents: Vec<&git2::Commit<'_>> = parents.iter().collect();
+
+        Ok(repo.commit(None, author, committer, message, &tree, &parents)?)
     }
 }
 
@@ -83,14 +90,14 @@ fn git_commit_tree(
     author: &git2::Signature,
     committer: &git2::Signature,
     message: &[u8],
-    tree: &git2::Tree<'_>,
-    parents: &[&git2::Commit<'_>],
+    tree_id: git2::Oid,
+    parent_ids: &[git2::Oid],
     gpgsign: bool,
 ) -> Result<git2::Oid, Error> {
     let mut command = std::process::Command::new("git");
-    command.arg("commit-tree").arg(format!("{}", tree.id()));
-    for parent in parents {
-        command.arg("-p").arg(format!("{}", parent.id()));
+    command.arg("commit-tree").arg(format!("{}", tree_id));
+    for parent_id in parent_ids {
+        command.arg("-p").arg(format!("{}", parent_id));
     }
     if gpgsign {
         command.arg("-S");

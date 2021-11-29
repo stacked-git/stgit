@@ -3,7 +3,7 @@ use std::fmt::Write;
 use std::str;
 
 use chrono::{FixedOffset, NaiveDateTime};
-use git2::{Commit, FileMode, Oid, Tree};
+use git2::{FileMode, Oid, Tree};
 
 use crate::error::Error;
 use crate::patchname::PatchName;
@@ -99,19 +99,18 @@ impl StackState {
         let config = repo.config()?; // TODO: wrapped config
         let sig = signature::default_committer(Some(&config))?;
 
-        let simplified_parents: Vec<Commit> = match self.prev {
-            Some(prev_oid) => vec![repo.find_commit(prev_oid)?.parent(0)?],
+        let simplified_parents: Vec<Oid> = match self.prev {
+            Some(prev_oid) => vec![repo.find_commit(prev_oid)?.parent_id(0)?],
             None => vec![],
         };
-        let simplified_parents: Vec<&Commit> = simplified_parents.iter().collect();
 
-        let simplified_parent = commit_ex(
+        let simplified_parent_id = commit_ex(
             repo,
             &sig,
             &sig,
             message,
-            &state_tree,
-            simplified_parents.as_slice(),
+            state_tree.id(),
+            &simplified_parents,
         )?;
 
         let mut parent_set = HashSet::new();
@@ -138,30 +137,20 @@ impl StackState {
             let parent_group_oids: Vec<Oid> = parent_oids
                 .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
                 .collect();
-            let mut parent_group: Vec<Commit> = Vec::with_capacity(MAX_PARENTS);
-            for oid in parent_group_oids {
-                parent_group.push(repo.find_commit(oid)?);
-            }
-            let parent_group: Vec<&Commit> = parent_group.iter().collect();
             let group_oid = commit_ex(
                 repo,
                 &sig,
                 &sig,
                 "parent grouping",
-                &state_tree,
-                &parent_group,
+                state_tree.id(),
+                &parent_group_oids,
             )?;
             parent_oids.push(group_oid);
         }
 
-        let mut parent_commits: Vec<Commit> = Vec::with_capacity(parent_oids.len() + 1);
-        parent_commits.push(repo.find_commit(simplified_parent)?);
-        for oid in parent_oids {
-            parent_commits.push(repo.find_commit(oid)?);
-        }
-        let parent_commits: Vec<&Commit> = parent_commits.iter().collect();
+        parent_oids.insert(0, simplified_parent_id);
 
-        let commit_oid = commit_ex(repo, &sig, &sig, message, &state_tree, &parent_commits)?;
+        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree.id(), &parent_oids)?;
 
         if let Some(refname) = update_ref {
             repo.reference(refname, commit_oid, true, message)?;
