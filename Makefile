@@ -19,7 +19,10 @@ dist:
 install:
 	$(PYTHON) setup.py install --prefix=$(prefix) --root=$(DESTDIR) --force
 
-.PHONY: all build dist install
+install-completion:
+	$(MAKE) -C completion install
+
+.PHONY: all build dist install install-completion
 
 doc:
 	$(MAKE) -C Documentation all
