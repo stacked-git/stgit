@@ -1,4 +1,5 @@
 mod iter;
+mod serde;
 #[allow(clippy::module_inception)]
 mod stack;
 mod state;
