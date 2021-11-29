@@ -86,7 +86,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let head_ref = repo.head()?;
     let tree = head_ref.peel_to_tree()?;
-    let parents = vec![head_ref.peel_to_commit()?];
+    let parents = vec![head_ref.peel_to_commit()?.id()];
 
     let (message, must_edit) =
         if let Some(message) = crate::message::get_message_from_args(matches)? {
@@ -136,7 +136,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     // TODO: change PatchDescription.message from Option<String> to String
     let message = patch_desc.message.unwrap_or_else(String::new);
 
-    let mut cd = CommitData::new(patch_desc.author, committer, message, tree, parents);
+    let mut cd = CommitData::new(patch_desc.author, committer, message, tree.id(), parents);
 
     if let Some(template_path) = matches.value_of_os("save-template") {
         std::fs::write(template_path, &cd.message)?;

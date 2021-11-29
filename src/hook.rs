@@ -7,11 +7,11 @@ use crate::{
     wrap::{signature::get_epoch_time_string, CommitData},
 };
 
-pub(crate) fn run_commit_msg_hook<'repo>(
+pub(crate) fn run_commit_msg_hook(
     repo: &git2::Repository,
-    commit_data: CommitData<'repo>,
+    commit_data: CommitData,
     editor_is_used: bool,
-) -> Result<CommitData<'repo>, Error> {
+) -> Result<CommitData, Error> {
     let config = repo.config()?;
     let hooks_path = config
         .get_path("core.hookspath")
