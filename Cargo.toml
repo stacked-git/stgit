@@ -19,6 +19,7 @@ name = "stg"
 atty = "0.2"
 chrono = "0.4"
 git2 = "0.13"
+indexmap = "1.7"
 lazy_static = "~1.4"
 thiserror = "~1.0"
 serde = { version = "1.0", features = ["derive"] }

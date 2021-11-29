@@ -573,6 +573,7 @@ dependencies = [
  "chrono",
  "clap",
  "git2",
+ "indexmap",
  "lazy_static",
  "pyo3",
  "serde",

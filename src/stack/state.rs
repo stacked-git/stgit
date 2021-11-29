@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::fmt::Write;
 use std::str;
 
@@ -87,8 +87,8 @@ impl StackState {
         message: &str,
     ) -> Result<Oid, Error> {
         let prev_state_tree = match self.prev {
-            Some(previous) => {
-                let prev_commit = repo.find_commit(previous)?;
+            Some(prev_id) => {
+                let prev_commit = repo.find_commit(prev_id)?;
                 let prev_tree = prev_commit.tree()?;
                 let prev_state = Self::from_tree(repo, &prev_tree)?;
                 Some((prev_state, prev_tree))
@@ -113,7 +113,7 @@ impl StackState {
             &simplified_parents,
         )?;
 
-        let mut parent_set = HashSet::new();
+        let mut parent_set = indexmap::IndexSet::new();
         parent_set.insert(self.head);
         parent_set.insert(self.top());
         for patch_name in &self.unapplied {
