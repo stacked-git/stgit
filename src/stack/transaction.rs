@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 
-use git2::{Object, Oid, RepositoryState};
+use git2::{Commit, Object, Oid, RepositoryState};
 
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
@@ -56,14 +56,13 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let head_commit_id = transaction.head_commit_id();
+        let head_commit = transaction.head().clone();
 
         let set_head = true; // TODO: argument
         let allow_bad_head = false; // TODO: argument
         let use_index_and_worktree = true; // TODO: argument
         if set_head {
             if use_index_and_worktree {
-                let head_commit = repo.find_commit(head_commit_id)?;
                 let result = transaction.checkout(head_commit.as_object(), allow_bad_head);
                 if let Err(err) = result {
                     let allow_bad_head = true;
@@ -77,7 +76,7 @@ impl<'repo> ExecuteContext<'repo> {
                 .stack
                 .branch
                 .get_mut()
-                .set_target(head_commit_id, reflog_msg)?;
+                .set_target(head_commit.id(), reflog_msg)?;
         }
 
         let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
@@ -94,8 +93,8 @@ impl<'repo> ExecuteContext<'repo> {
 
         git_trans.lock_ref(state_refname)?;
 
-        for (patchname, maybe_desc) in transaction.patch_updates {
-            let patch_refname = transaction.stack.patch_refname(&patchname);
+        for (patchname, maybe_desc) in &transaction.patch_updates {
+            let patch_refname = transaction.stack.patch_refname(patchname);
             git_trans.lock_ref(&patch_refname)?;
 
             if let Some(patch_desc) = maybe_desc {
@@ -109,10 +108,10 @@ impl<'repo> ExecuteContext<'repo> {
                     .stack
                     .state
                     .patches
-                    .insert(patchname, patch_desc);
+                    .insert(patchname.clone(), patch_desc.clone());
             } else {
                 git_trans.remove(&patch_refname)?;
-                transaction.stack.state.patches.remove(&patchname);
+                transaction.stack.state.patches.remove(patchname);
             }
         }
 
@@ -126,8 +125,9 @@ impl<'repo> ExecuteContext<'repo> {
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
 
         let prev_state_commit = transaction.stack.state_ref.peel_to_commit()?;
+        let head = transaction.head().clone();
         transaction.stack.state.prev = Some(prev_state_commit);
-        transaction.stack.state.head = repo.find_commit(head_commit_id)?;
+        transaction.stack.state.head = head;
         transaction.stack.state.applied = transaction.applied;
         transaction.stack.state.unapplied = transaction.unapplied;
         transaction.stack.state.hidden = transaction.hidden;
@@ -149,14 +149,12 @@ pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
-    old_patches: BTreeMap<PatchName, PatchDescriptor<'repo>>,
     patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
-    updated_head_commit_id: Option<Oid>,
-    old_head_commit_id: Oid,
-    updated_base_commit_id: Option<Oid>,
+    updated_head: Option<Commit<'repo>>,
+    updated_base: Option<Commit<'repo>>,
     current_tree_id: Oid,
     error: Option<Error>,
     conflicts: Vec<OsString>,
@@ -169,8 +167,6 @@ impl<'repo> StackTransaction<'repo> {
         discard_changes: bool,
     ) -> TransactionContext {
         let current_tree_id = stack.head_tree.id();
-        let old_head_commit_id = stack.head_commit.id();
-        let old_patches = stack.state.patches.clone();
         let applied = stack.state.applied.clone();
         let unapplied = stack.state.unapplied.clone();
         let hidden = stack.state.hidden.clone();
@@ -178,45 +174,46 @@ impl<'repo> StackTransaction<'repo> {
             stack,
             conflict_mode,
             discard_changes,
-            old_patches,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
             hidden,
             error: None,
-            updated_head_commit_id: None,
-            old_head_commit_id,
-            updated_base_commit_id: None,
+            updated_head: None,
+            updated_base: None,
             current_tree_id,
             conflicts: Vec::new(),
         })
     }
 
-    pub(crate) fn top_commit_id(&self) -> Oid {
+    pub(crate) fn top(&self) -> &Commit<'repo> {
         if let Some(patchname) = self.applied.last() {
-            if let Some(Some(patch_desc)) = self.patch_updates.get(patchname) {
-                patch_desc.commit.id()
+            if let Some(maybe_desc) = self.patch_updates.get(patchname) {
+                &maybe_desc
+                    .as_ref()
+                    .expect("top should not attempt to access deleted patch")
+                    .commit
             } else {
-                self.old_patches[patchname].commit.id()
+                &self.stack.state.patches[patchname].commit
             }
         } else {
-            self.base_commit_id()
+            self.base()
         }
     }
 
-    pub(crate) fn head_commit_id(&self) -> Oid {
-        if let Some(commit_id) = self.updated_head_commit_id {
-            commit_id
+    pub(crate) fn base(&self) -> &Commit<'repo> {
+        if let Some(commit) = self.updated_base.as_ref() {
+            commit
         } else {
-            self.top_commit_id()
+            &self.stack.head_commit
         }
     }
 
-    pub(crate) fn base_commit_id(&self) -> Oid {
-        if let Some(commit_id) = self.updated_base_commit_id {
-            commit_id
+    pub(crate) fn head(&self) -> &Commit<'repo> {
+        if let Some(commit) = self.updated_head.as_ref() {
+            commit
         } else {
-            self.old_head_commit_id
+            self.top()
         }
     }
 
