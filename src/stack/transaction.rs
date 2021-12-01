@@ -50,19 +50,16 @@ impl<'repo> ExecuteContext<'repo> {
         transaction.stack = if transaction.stack.is_head_top() {
             transaction.stack
         } else {
-            let prev_state_commit = transaction.stack.state_ref.peel_to_commit()?;
-            let head_commit_id = transaction.stack.head_commit.id();
+            let state_commit = transaction.stack.state_ref.peel_to_commit()?;
             let message = "external modifications\n\
                            \n\
                            Modifications by tools other than StGit (e.g. git).\n";
             let reflog_msg = Some("external modifications");
             // TODO: why update the stack state ref unconditional of transaction.error?
-            transaction.stack.advance_state(
-                head_commit_id,
-                prev_state_commit.id(),
-                message,
-                reflog_msg,
-            )?
+            let head_commit = transaction.stack.head_commit.clone();
+            transaction
+                .stack
+                .advance_state(head_commit, state_commit, message, reflog_msg)?
         };
 
         let repo = transaction.stack.repo;
@@ -112,7 +109,7 @@ impl<'repo> ExecuteContext<'repo> {
             if let Some(patch_desc) = maybe_desc {
                 git_trans.set_target(
                     &patch_refname,
-                    patch_desc.oid,
+                    patch_desc.commit.id(),
                     reflog_signature,
                     reflog_msg,
                 )?;
@@ -137,8 +134,8 @@ impl<'repo> ExecuteContext<'repo> {
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
 
         let prev_state_commit = transaction.stack.state_ref.peel_to_commit()?;
-        transaction.stack.state.prev = Some(prev_state_commit.id());
-        transaction.stack.state.head = head_commit_id;
+        transaction.stack.state.prev = Some(prev_state_commit);
+        transaction.stack.state.head = repo.find_commit(head_commit_id)?;
         transaction.stack.state.applied = transaction.applied;
         transaction.stack.state.unapplied = transaction.unapplied;
         transaction.stack.state.hidden = transaction.hidden;
@@ -160,8 +157,8 @@ pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
-    old_patches: BTreeMap<PatchName, PatchDescriptor>,
-    patch_updates: BTreeMap<PatchName, Option<PatchDescriptor>>,
+    old_patches: BTreeMap<PatchName, PatchDescriptor<'repo>>,
+    patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
@@ -206,9 +203,9 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn top_commit_id(&self) -> Oid {
         if let Some(patchname) = self.applied.last() {
             if let Some(Some(patch_desc)) = self.patch_updates.get(patchname) {
-                patch_desc.oid
+                patch_desc.commit.id()
             } else {
-                self.old_patches[patchname].oid
+                self.old_patches[patchname].commit.id()
             }
         } else {
             self.base_commit_id()
@@ -235,10 +232,12 @@ impl<'repo> StackTransaction<'repo> {
         AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
-    pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: Oid) {
+    pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<(), Error> {
+        let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
-            .insert(patchname.clone(), Some(PatchDescriptor { oid }));
+            .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+        Ok(())
     }
 
     fn checkout(&self, treeish: &Object<'_>, allow_bad_head: bool) -> Result<(), Error> {

@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use git2::{Branch, Commit, Oid, Reference, RepositoryState, Tree};
+use git2::{Branch, Commit, Reference, RepositoryState, Tree};
 
 use super::iter::AllPatches;
 use super::state::StackState;
@@ -10,8 +10,6 @@ use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::wrap::repository::get_branch;
 
-type PatchMap<'repo> = BTreeMap<PatchName, Commit<'repo>>;
-
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
@@ -19,8 +17,7 @@ pub(crate) struct Stack<'repo> {
     pub(crate) head_commit: Commit<'repo>,
     pub(crate) head_tree: Tree<'repo>,
     pub(crate) state_ref: Reference<'repo>,
-    pub(crate) state: StackState,
-    pub(crate) patchmap: PatchMap<'repo>,
+    pub(crate) state: StackState<'repo>,
 }
 
 impl<'repo> Stack<'repo> {
@@ -37,10 +34,9 @@ impl<'repo> Stack<'repo> {
         if repo.find_reference(&state_refname).is_ok() {
             return Err(Error::StackAlreadyInitialized(branch_name));
         }
-        let state = StackState::new(head_commit.id());
+        let state = StackState::new(head_commit.clone());
         state.commit(repo, Some(&state_refname), "initialize")?;
         ensure_patch_refs(repo, &branch_name, &state)?;
-        let patchmap = PatchMap::new();
         let state_ref = repo.find_reference(&state_refname)?;
 
         Ok(Self {
@@ -51,7 +47,6 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
-            patchmap,
         })
     }
 
@@ -70,10 +65,6 @@ impl<'repo> Stack<'repo> {
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         ensure_patch_refs(repo, &branch_name, &state)?;
-        let mut patchmap = PatchMap::new();
-        for (patchname, patchdesc) in &state.patches {
-            patchmap.insert(patchname.clone(), repo.find_commit(patchdesc.oid)?);
-        }
         Ok(Self {
             repo,
             branch_name,
@@ -82,14 +73,13 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
-            patchmap,
         })
     }
 
     pub fn base_commit(&self) -> Result<Commit<'repo>, Error> {
         if let Some(first_patchname) = self.state.applied.first() {
-            let first_patch_id = &self.state.patches[first_patchname].oid;
-            Ok(self.repo.find_commit(*first_patch_id)?.parent(0)?)
+            let first_patch_commit = &self.state.patches[first_patchname].commit;
+            Ok(first_patch_commit.parent(0)?)
         } else {
             Ok(self.head_commit.clone())
         }
@@ -116,7 +106,7 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn is_head_top(&self) -> bool {
-        self.state.applied.is_empty() || self.state.head == self.head_commit.id()
+        self.state.applied.is_empty() || self.state.head.id() == self.head_commit.id()
     }
 
     pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
@@ -151,8 +141,8 @@ impl<'repo> Stack<'repo> {
 
     pub fn advance_state(
         self,
-        new_head: Oid,
-        prev_state: Oid,
+        new_head: Commit<'repo>,
+        prev_state: Commit<'repo>,
         message: &str,
         reflog_msg: Option<&str>,
     ) -> Result<Self, Error> {
@@ -164,8 +154,8 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
-            patchmap,
         } = self;
+        let prev_state_id = prev_state.id();
         let state = state.advance_head(new_head, prev_state);
         let state_commit_oid = state.commit(repo, None, message)?;
         let reflog_msg = if let Some(reflog_msg) = reflog_msg {
@@ -177,7 +167,7 @@ impl<'repo> Stack<'repo> {
             state_ref.name().unwrap(),
             state_commit_oid,
             true,
-            prev_state,
+            prev_state_id,
             reflog_msg,
         )?;
         Ok(Self {
@@ -188,7 +178,6 @@ impl<'repo> Stack<'repo> {
             head_tree,
             state_ref,
             state,
-            patchmap,
         })
     }
 
@@ -232,16 +221,17 @@ fn ensure_patch_refs<'repo>(
             if let Ok(existing_patchname) = PatchName::from_str(existing_patchname) {
                 if let Some(patchdesc) = state_patches.remove(&existing_patchname) {
                     if let Some(existing_id) = existing_ref.target() {
-                        if existing_id == patchdesc.oid {
+                        if existing_id == patchdesc.commit.id() {
                             // Patch ref is good. Do nothing.
                         } else {
-                            existing_ref.set_target(patchdesc.oid, "fixup broken patch ref")?;
+                            existing_ref
+                                .set_target(patchdesc.commit.id(), "fixup broken patch ref")?;
                         }
                     } else {
                         // Existing ref seems to be symbolic, and not direct.
                         repo.reference(
                             existing_refname,
-                            patchdesc.oid,
+                            patchdesc.commit.id(),
                             true,
                             "fixup sybolic patch ref",
                         )?;
@@ -265,7 +255,7 @@ fn ensure_patch_refs<'repo>(
     for (patchname, patchdesc) in state_patches {
         repo.reference(
             &get_patch_refname(branch_name, patchname.as_ref()),
-            patchdesc.oid,
+            patchdesc.commit.id(),
             false,
             "fixup missing patch ref",
         )?;

@@ -152,7 +152,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             patch_ranges,
             stack.state.all_patches(),
         )? {
-            let oid = stack.state.patches[&patch_name].oid;
+            let oid = stack.state.patches[&patch_name].commit.id();
             let sigil = if Some(&patch_name) == top_patchname {
                 '>'
             } else if stack.state.applied.contains(&patch_name) {
@@ -172,24 +172,24 @@ fn run(matches: &ArgMatches) -> super::Result {
         if show_applied {
             if let Some((last_patch_name, rest)) = stack.state.applied.split_last() {
                 for patch_name in rest {
-                    let oid = stack.state.patches[patch_name].oid;
+                    let oid = stack.state.patches[patch_name].commit.id();
                     patches.push((patch_name.clone(), oid, '+'));
                 }
-                let last_oid = stack.state.patches[last_patch_name].oid;
+                let last_oid = stack.state.patches[last_patch_name].commit.id();
                 patches.push((last_patch_name.clone(), last_oid, '>'));
             }
         }
 
         if show_unapplied {
             for patch_name in stack.state.unapplied {
-                let oid = stack.state.patches[&patch_name].oid;
+                let oid = stack.state.patches[&patch_name].commit.id();
                 patches.push((patch_name, oid, '-'));
             }
         }
 
         if show_hidden {
             for patch_name in stack.state.hidden {
-                let oid = stack.state.patches[&patch_name].oid;
+                let oid = stack.state.patches[&patch_name].commit.id();
                 patches.push((patch_name, oid, '!'));
             }
         }
