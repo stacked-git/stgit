@@ -109,7 +109,7 @@ impl<'repo> StackState<'repo> {
             }
             None => None,
         };
-        let state_tree = self.make_tree(repo, &prev_state_tree)?;
+        let state_tree_id = self.make_tree(repo, &prev_state_tree)?;
         let config = repo.config()?; // TODO: wrapped config
         let sig = signature::default_committer(Some(&config))?;
 
@@ -123,7 +123,7 @@ impl<'repo> StackState<'repo> {
             &sig,
             &sig,
             message,
-            state_tree.id(),
+            state_tree_id,
             &simplified_parents,
         )?;
 
@@ -156,7 +156,7 @@ impl<'repo> StackState<'repo> {
                 &sig,
                 &sig,
                 "parent grouping",
-                state_tree.id(),
+                state_tree_id,
                 &parent_group_oids,
             )?;
             parent_oids.push(group_oid);
@@ -164,7 +164,7 @@ impl<'repo> StackState<'repo> {
 
         parent_oids.insert(0, simplified_parent_id);
 
-        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree.id(), &parent_oids)?;
+        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree_id, &parent_oids)?;
 
         if let Some(refname) = update_ref {
             repo.reference(refname, commit_oid, true, message)?;
@@ -177,12 +177,11 @@ impl<'repo> StackState<'repo> {
         &self,
         repo: &'repo git2::Repository,
         prev_state_tree: &Option<(Self, Tree)>,
-    ) -> Result<Tree<'repo>, Error> {
+    ) -> Result<Oid, Error> {
         let mut builder = repo.treebuilder(None)?;
-        let raw_state = RawStackState::from(self);
         builder.insert(
             "stack.json",
-            repo.blob(serde_json::to_string_pretty(&raw_state)?.as_bytes())?,
+            repo.blob(serde_json::to_string_pretty(self)?.as_bytes())?,
             i32::from(FileMode::Blob),
         )?;
         builder.insert(
@@ -190,9 +189,7 @@ impl<'repo> StackState<'repo> {
             self.make_patches_tree(repo, prev_state_tree)?,
             i32::from(FileMode::Tree),
         )?;
-        let tree_oid = builder.write()?;
-        let tree = repo.find_tree(tree_oid)?;
-        Ok(tree)
+        Ok(builder.write()?)
     }
 
     fn make_patches_tree(
