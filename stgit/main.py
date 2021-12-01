@@ -142,7 +142,7 @@ def _main(argv):
     if cmd in ['-v', '--version', 'version']:
         print('Stacked Git %s' % get_version())
         os.system('git --version')
-        os.system('python --version')
+        os.system('%s --version' % sys.executable)
         return utils.STGIT_SUCCESS
     if cmd in ['copyright']:
         print(__copyright__)
