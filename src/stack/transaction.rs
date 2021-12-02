@@ -50,16 +50,8 @@ impl<'repo> ExecuteContext<'repo> {
         transaction.stack = if transaction.stack.is_head_top() {
             transaction.stack
         } else {
-            let state_commit = transaction.stack.state_ref.peel_to_commit()?;
-            let message = "external modifications\n\
-                           \n\
-                           Modifications by tools other than StGit (e.g. git).\n";
-            let reflog_msg = Some("external modifications");
             // TODO: why update the stack state ref unconditional of transaction.error?
-            let head_commit = transaction.stack.head_commit.clone();
-            transaction
-                .stack
-                .advance_state(head_commit, state_commit, message, reflog_msg)?
+            transaction.stack.log_external_mods()?
         };
 
         let repo = transaction.stack.repo;

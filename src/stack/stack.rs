@@ -14,6 +14,7 @@ pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
     pub(crate) branch: Branch<'repo>,
+    pub(crate) base_commit: Commit<'repo>,
     pub(crate) head_commit: Commit<'repo>,
     pub(crate) head_tree: Tree<'repo>,
     pub(crate) state_ref: Reference<'repo>,
@@ -28,6 +29,7 @@ impl<'repo> Stack<'repo> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
+        let base_commit = head_commit.clone();
         let head_tree = branch.get().peel_to_tree()?;
         let state_refname = state_refname_from_branch_name(&branch_name);
 
@@ -43,6 +45,7 @@ impl<'repo> Stack<'repo> {
             repo,
             branch_name,
             branch,
+            base_commit,
             head_commit,
             head_tree,
             state_ref,
@@ -64,25 +67,22 @@ impl<'repo> Stack<'repo> {
             .map_err(|_| Error::StackNotInitialized(branch_name.to_string()))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
+        let base_commit = if let Some(first_patchname) = state.applied.first() {
+            state.patches[first_patchname].commit.parent(0)?
+        } else {
+            head_commit.clone()
+        };
         ensure_patch_refs(repo, &branch_name, &state)?;
         Ok(Self {
             repo,
             branch_name,
             branch,
+            base_commit,
             head_commit,
             head_tree,
             state_ref,
             state,
         })
-    }
-
-    pub fn base_commit(&self) -> Result<Commit<'repo>, Error> {
-        if let Some(first_patchname) = self.state.applied.first() {
-            let first_patch_commit = &self.state.patches[first_patchname].commit;
-            Ok(first_patch_commit.parent(0)?)
-        } else {
-            Ok(self.head_commit.clone())
-        }
     }
 
     pub fn all_patches(&self) -> AllPatches<'_> {
@@ -139,45 +139,31 @@ impl<'repo> Stack<'repo> {
         }
     }
 
-    pub fn advance_state(
-        self,
-        new_head: Commit<'repo>,
-        prev_state: Commit<'repo>,
-        message: &str,
-        reflog_msg: Option<&str>,
-    ) -> Result<Self, Error> {
-        let Self {
-            repo,
-            branch_name,
-            branch,
-            head_commit,
-            head_tree,
-            state_ref,
-            state,
-        } = self;
-        let prev_state_id = prev_state.id();
-        let state = state.advance_head(new_head, prev_state);
-        let state_commit_oid = state.commit(repo, None, message)?;
-        let reflog_msg = if let Some(reflog_msg) = reflog_msg {
-            reflog_msg
-        } else {
-            message
-        };
+    pub fn log_external_mods(self) -> Result<Self, Error> {
+        let prev_state_commit = self.state_ref.peel_to_commit()?;
+        let prev_state_commit_id = prev_state_commit.id();
+        let state = self
+            .state
+            .advance_head(self.head_commit.clone(), prev_state_commit);
+
+        let message = "external modifications\n\
+                       \n\
+                       Modifications by tools other than StGit (e.g. git).\n";
+        let reflog_msg = "external modifications";
+
+        let state_commit_id = state.commit(self.repo, None, message)?;
         let state_ref = self.repo.reference_matching(
-            state_ref.name().unwrap(),
-            state_commit_oid,
+            self.state_ref.name().unwrap(),
+            state_commit_id,
             true,
-            prev_state_id,
+            prev_state_commit_id,
             reflog_msg,
         )?;
+
         Ok(Self {
-            repo,
-            branch_name,
-            branch,
-            head_commit,
-            head_tree,
-            state_ref,
             state,
+            state_ref,
+            ..self
         })
     }
 
