@@ -71,7 +71,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let trans_head = transaction.head();
+        let trans_head = transaction.head().clone();
         let trans_head_id = trans_head.id();
 
         let set_head = true; // TODO: argument
@@ -79,10 +79,11 @@ impl<'repo> ExecuteContext<'repo> {
         let use_index_and_worktree = true; // TODO: argument
         if set_head {
             if use_index_and_worktree {
-                let result = transaction.checkout(trans_head, allow_bad_head);
+                let stack_head = transaction.stack.head.clone();
+                let result = transaction.checkout(&trans_head, allow_bad_head);
                 if let Err(err) = result {
                     let allow_bad_head = true;
-                    transaction.checkout(&transaction.stack.head, allow_bad_head)?;
+                    transaction.checkout(&stack_head, allow_bad_head)?;
                     return Err(Error::TransactionAborted(err.to_string()));
                 }
             }
@@ -229,7 +230,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn checkout(&self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
+    fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
         let repo = self.stack.repo;
         if !allow_bad_head {
             self.stack.check_head_top_mismatch()?;
@@ -264,7 +265,8 @@ impl<'repo> StackTransaction<'repo> {
         if self.discard_changes {
             checkout_builder.force();
         }
-
-        Ok(repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))?)
+        repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))?;
+        self.current_tree_id = commit.tree_id();
+        Ok(())
     }
 }
