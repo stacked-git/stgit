@@ -114,7 +114,9 @@ impl<'repo> Stack<'repo> {
 
     #[allow(dead_code)]
     pub fn check_index_clean(&self) -> Result<(), Error> {
-        if self.repo.index()?.is_empty() {
+        let mut status_options = git2::StatusOptions::new();
+        status_options.show(git2::StatusShow::Index);
+        if self.repo.statuses(Some(&mut status_options))?.is_empty() {
             Ok(())
         } else {
             Err(Error::DirtyIndex)
@@ -124,9 +126,7 @@ impl<'repo> Stack<'repo> {
     #[allow(dead_code)]
     pub fn check_worktree_clean(&self) -> Result<(), Error> {
         let mut status_options = git2::StatusOptions::new();
-        status_options
-            .show(git2::StatusShow::Workdir)
-            .update_index(true);
+        status_options.show(git2::StatusShow::Workdir);
         if self.repo.statuses(Some(&mut status_options))?.is_empty() {
             Ok(())
         } else {
