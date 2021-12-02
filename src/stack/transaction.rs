@@ -67,7 +67,7 @@ impl<'repo> ExecuteContext<'repo> {
                 let result = transaction.checkout(trans_head, allow_bad_head);
                 if let Err(err) = result {
                     let allow_bad_head = true;
-                    transaction.checkout(&transaction.stack.head_commit, allow_bad_head)?;
+                    transaction.checkout(&transaction.stack.head, allow_bad_head)?;
                     return Err(Error::TransactionAborted(err.to_string()));
                 }
             }
@@ -166,7 +166,7 @@ impl<'repo> StackTransaction<'repo> {
         conflict_mode: ConflictMode,
         discard_changes: bool,
     ) -> TransactionContext {
-        let current_tree_id = stack.head_commit.tree_id();
+        let current_tree_id = stack.head.tree_id();
         let applied = stack.state.applied.clone();
         let unapplied = stack.state.unapplied.clone();
         let hidden = stack.state.hidden.clone();
@@ -205,7 +205,7 @@ impl<'repo> StackTransaction<'repo> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
-            &self.stack.head_commit
+            &self.stack.head
         }
     }
 
