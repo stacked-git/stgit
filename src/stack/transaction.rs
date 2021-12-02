@@ -9,6 +9,24 @@ use crate::stack::{PatchDescriptor, Stack};
 
 use super::iter::AllPatches;
 
+pub(crate) struct StackTransaction<'repo> {
+    stack: Stack<'repo>,
+    conflict_mode: ConflictMode,
+    discard_changes: bool,
+    patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
+    applied: Vec<PatchName>,
+    unapplied: Vec<PatchName>,
+    hidden: Vec<PatchName>,
+    updated_head: Option<Commit<'repo>>,
+    updated_base: Option<Commit<'repo>>,
+    current_tree_id: Oid,
+    error: Option<Error>,
+    conflicts: Vec<OsString>,
+}
+
+pub(crate) struct TransactionContext<'repo>(StackTransaction<'repo>);
+pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
+
 pub(crate) enum ConflictMode {
     Disallow,
 
@@ -18,9 +36,6 @@ pub(crate) enum ConflictMode {
     #[allow(dead_code)]
     AllowIfSameTop,
 }
-
-pub(crate) struct TransactionContext<'repo>(StackTransaction<'repo>);
-pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
 
 impl<'repo> TransactionContext<'repo> {
     #[must_use]
@@ -143,21 +158,6 @@ impl<'repo> ExecuteContext<'repo> {
             Ok(transaction.stack)
         }
     }
-}
-
-pub(crate) struct StackTransaction<'repo> {
-    stack: Stack<'repo>,
-    conflict_mode: ConflictMode,
-    discard_changes: bool,
-    patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
-    applied: Vec<PatchName>,
-    unapplied: Vec<PatchName>,
-    hidden: Vec<PatchName>,
-    updated_head: Option<Commit<'repo>>,
-    updated_base: Option<Commit<'repo>>,
-    current_tree_id: Oid,
-    error: Option<Error>,
-    conflicts: Vec<OsString>,
 }
 
 impl<'repo> StackTransaction<'repo> {
