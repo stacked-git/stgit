@@ -5,7 +5,8 @@ use git2::{Branch, Commit, Reference, RepositoryState};
 
 use super::iter::AllPatches;
 use super::state::StackState;
-use super::PatchDescriptor;
+use super::transaction::ExecuteContext;
+use super::{ConflictMode, PatchDescriptor, StackTransaction};
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::wrap::repository::get_branch;
@@ -160,6 +161,18 @@ impl<'repo> Stack<'repo> {
             state_ref,
             ..self
         })
+    }
+
+    pub(crate) fn transaction<F>(
+        self,
+        conflict_mode: ConflictMode,
+        discard_changes: bool,
+        f: F,
+    ) -> ExecuteContext<'repo>
+    where
+        F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
+    {
+        StackTransaction::make_context(self, conflict_mode, discard_changes).transact(f)
     }
 
     pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
