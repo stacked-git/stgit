@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 
-use git2::{Commit, Object, Oid, RepositoryState};
+use git2::{Commit, Oid, RepositoryState};
 
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
@@ -56,18 +56,18 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let head_commit = transaction.head().clone();
+        let trans_head = transaction.head();
+        let trans_head_id = trans_head.id();
 
         let set_head = true; // TODO: argument
         let allow_bad_head = false; // TODO: argument
         let use_index_and_worktree = true; // TODO: argument
         if set_head {
             if use_index_and_worktree {
-                let result = transaction.checkout(head_commit.as_object(), allow_bad_head);
+                let result = transaction.checkout(trans_head, allow_bad_head);
                 if let Err(err) = result {
                     let allow_bad_head = true;
-                    transaction
-                        .checkout(transaction.stack.head_tree.as_object(), allow_bad_head)?;
+                    transaction.checkout(&transaction.stack.head_commit, allow_bad_head)?;
                     return Err(Error::TransactionAborted(err.to_string()));
                 }
             }
@@ -76,7 +76,7 @@ impl<'repo> ExecuteContext<'repo> {
                 .stack
                 .branch
                 .get_mut()
-                .set_target(head_commit.id(), reflog_msg)?;
+                .set_target(trans_head_id, reflog_msg)?;
         }
 
         let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
@@ -166,7 +166,7 @@ impl<'repo> StackTransaction<'repo> {
         conflict_mode: ConflictMode,
         discard_changes: bool,
     ) -> TransactionContext {
-        let current_tree_id = stack.head_tree.id();
+        let current_tree_id = stack.head_commit.tree_id();
         let applied = stack.state.applied.clone();
         let unapplied = stack.state.unapplied.clone();
         let hidden = stack.state.hidden.clone();
@@ -229,7 +229,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn checkout(&self, treeish: &Object<'_>, allow_bad_head: bool) -> Result<(), Error> {
+    fn checkout(&self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
         let repo = self.stack.repo;
         if !allow_bad_head {
             self.stack.check_head_top_mismatch()?;
@@ -239,8 +239,7 @@ impl<'repo> StackTransaction<'repo> {
             return Err(Error::OutstandingConflicts);
         }
 
-        let tree = treeish.peel_to_tree()?;
-        if self.current_tree_id != tree.id() && !self.discard_changes {
+        if self.current_tree_id != commit.tree_id() && !self.discard_changes {
             return match repo.state() {
                 RepositoryState::Clean => Ok(()),
                 RepositoryState::Merge | RepositoryState::RebaseMerge => match self.conflict_mode {
@@ -266,6 +265,6 @@ impl<'repo> StackTransaction<'repo> {
             checkout_builder.force();
         }
 
-        Ok(repo.checkout_tree(treeish, Some(&mut checkout_builder))?)
+        Ok(repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))?)
     }
 }

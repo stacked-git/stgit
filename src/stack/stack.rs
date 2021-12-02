@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use git2::{Branch, Commit, Reference, RepositoryState, Tree};
+use git2::{Branch, Commit, Reference, RepositoryState};
 
 use super::iter::AllPatches;
 use super::state::StackState;
@@ -16,7 +16,6 @@ pub(crate) struct Stack<'repo> {
     pub(crate) branch: Branch<'repo>,
     pub(crate) base_commit: Commit<'repo>,
     pub(crate) head_commit: Commit<'repo>,
-    pub(crate) head_tree: Tree<'repo>,
     pub(crate) state_ref: Reference<'repo>,
     pub(crate) state: StackState<'repo>,
 }
@@ -30,7 +29,6 @@ impl<'repo> Stack<'repo> {
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
         let base_commit = head_commit.clone();
-        let head_tree = branch.get().peel_to_tree()?;
         let state_refname = state_refname_from_branch_name(&branch_name);
 
         if repo.find_reference(&state_refname).is_ok() {
@@ -47,7 +45,6 @@ impl<'repo> Stack<'repo> {
             branch,
             base_commit,
             head_commit,
-            head_tree,
             state_ref,
             state,
         })
@@ -60,7 +57,6 @@ impl<'repo> Stack<'repo> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head_commit = branch.get().peel_to_commit()?;
-        let head_tree = branch.get().peel_to_tree()?;
         let stack_refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&stack_refname)
@@ -79,7 +75,6 @@ impl<'repo> Stack<'repo> {
             branch,
             base_commit,
             head_commit,
-            head_tree,
             state_ref,
             state,
         })
