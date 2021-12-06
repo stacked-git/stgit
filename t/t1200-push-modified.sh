@@ -22,12 +22,16 @@ test_expect_success \
     'Clone tree and setup changes' '
     stg clone foo bar &&
     (
-        cd bar && stg new p1 -m p1 &&
+        cd bar &&
+        stg new -m p1 &&
         git notes add -m note1 &&
-        printf "a\nc\n" > file && stg add file && stg refresh &&
-        stg new p2 -m p2 &&
+        printf "a\nc\n" > file &&
+        stg add file &&
+        stg refresh &&
+        stg new -m p2 &&
         git notes add -m note2 &&
-        printf "a\nb\nc\n" > file && stg refresh &&
+        printf "a\nb\nc\n" > file &&
+        stg refresh &&
         [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
     )
@@ -43,22 +47,27 @@ test_expect_success \
 '
 
 test_expect_success \
-    'Pull to sync with parent, preparing for the problem' \
-    "(cd bar && stg pop --all &&
-      stg pull
-     )
-"
+    'Pull to sync with parent, preparing for the problem' '
+    (
+        cd bar &&
+        stg pop --all &&
+        stg pull
+    )
+'
 
 test_expect_success \
-    'Attempt to push the first of those patches without --merged' \
-    "(cd bar && conflict stg push
-     )
-"
+    'Attempt to push the first of those patches without --merged' '
+    (
+        cd bar &&
+        conflict stg push
+    )
+'
 
 test_expect_success \
     'Rollback the push' '
     (
-        cd bar && stg undo --hard &&
+        cd bar &&
+        stg undo --hard &&
         [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "p1 p2" ]
     )
@@ -67,7 +76,8 @@ test_expect_success \
 test_expect_success \
     'Push those patches while checking they were merged upstream' '
     (
-        cd bar && stg push --merged --all
+        cd bar &&
+        stg push --merged --all &&
         [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
         [ "$(git notes show $(stg id p1))" = "note1" ] &&

@@ -23,7 +23,7 @@ test_expect_success \
 	echo fie > test2 &&
 	stg add test test2 &&
 	stg refresh &&
-        stg pop
+	stg pop
 	'
 
 test_expect_success \
