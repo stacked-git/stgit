@@ -203,8 +203,15 @@ fn run(matches: &ArgMatches) -> super::Result {
                 trans.push_tree(&pn)?;
             }
         } else if opt_noapply {
-            // TODO
-            // trans.reorder_patches(trans.applied, trans.unapplied)?;
+            let mut unapplied = patches.clone();
+            unapplied.extend(
+                trans
+                    .unapplied()
+                    .iter()
+                    .filter(|pn| !patches.contains(pn))
+                    .cloned(),
+            );
+            trans.reorder_patches(None, Some(&unapplied), None)?;
         } else {
             let mut stdout = crate::color::get_color_stdout(matches);
             let mut color_spec = termcolor::ColorSpec::new();

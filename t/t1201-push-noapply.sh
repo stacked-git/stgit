@@ -13,30 +13,65 @@ test_expect_success 'Setup patches' '
     test "$(echo $(stg series --unapplied --noprefix))" = "a1 a2 a3 b1 b2 b3"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Check --noapply with --all' '
     command_error stg push --noapply --all 2>err &&
     grep -e "Cannot use --noapply with --all" err
 '
+else
+test_expect_success 'Check --noapply with --all' '
+    general_error stg push --noapply --all 2>err &&
+    grep -e "error: The argument .--noapply. cannot be used with .--all." err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Check --noapply with --number' '
     command_error stg push --noapply -n 3 2>err &&
     grep -e "Cannot use --noapply with --number" err
 '
+else
+test_expect_success 'Check --noapply with --number' '
+    general_error stg push --noapply -n 3 2>err &&
+    grep -e "error: The argument .--noapply. cannot be used with .--number <NUMBER>." err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Check --noapply without patch names' '
     command_error stg push --noapply 2>err &&
     grep -e "Must supply patch names with --noapply" err
 '
+else
+test_expect_success 'Check --noapply without patch names' '
+    general_error stg push --noapply 2>err &&
+    grep -e "error: The following required arguments were not provided:" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Check --noapply with --set-tree' '
     command_error stg push --noapply --set-tree b1 b2 b3 2>err &&
     grep -e "Cannot use --noapply with --set-tree" err
 '
+else
+test_expect_success 'Check --noapply with --set-tree' '
+    general_error stg push --noapply --set-tree b1 b2 b3 2>err &&
+    grep -e "error: The argument .--noapply. cannot be used with .--set-tree." err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Check --noapply with --merged' '
     command_error stg push --noapply -m b1 b2 b3 2>err &&
     grep -e "Cannot use --noapply with --merged" err
 '
+else
+test_expect_success 'Check --noapply with --merged' '
+    general_error stg push --noapply -m b1 b2 b3 2>err &&
+    grep -e "error: The argument .--noapply. cannot be used with .--merged." err
+'
+fi
 
 test_expect_success 'Reorder patches b1 b2 b3' '
     stg push --noapply b1 b2 b3 &&
@@ -49,10 +84,17 @@ test_expect_success 'Push reorded patches b1 b2 b3' '
     test "$(echo $(stg series --unapplied --noprefix))" = "a1 a2 a3"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt push --noapply on applied patch' '
     command_error stg push --noapply b1 2>err &&
     grep -e "Patch already applied: b1" err
 '
+else
+test_expect_success 'Attempt push --noapply on applied patch' '
+    command_error stg push --noapply b1 2>err &&
+    grep -e "invalid patch range .b1.: patch already applied" err
+'
+fi
 
 test_expect_success 'Reorder patches to cause a latent conflict' '
     stg push --noapply a1 a3 &&

@@ -238,6 +238,20 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
+    #[allow(dead_code)]
+    pub(crate) fn applied(&self) -> &[PatchName] {
+        &self.applied
+    }
+
+    pub(crate) fn unapplied(&self) -> &[PatchName] {
+        &self.unapplied
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn hidden(&self) -> &[PatchName] {
+        &self.hidden
+    }
+
     pub(crate) fn all_patches(&self) -> AllPatches {
         AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
@@ -339,27 +353,31 @@ impl<'repo> StackTransaction<'repo> {
 
     pub(crate) fn reorder_patches(
         &mut self,
-        applied: &[PatchName],
-        unapplied: &[PatchName],
+        applied: Option<&[PatchName]>,
+        unapplied: Option<&[PatchName]>,
         hidden: Option<&[PatchName]>,
     ) -> Result<(), Error> {
-        let num_common = self
-            .applied
-            .iter()
-            .zip(applied)
-            .take_while(|(old, new)| old == new)
-            .count();
+        if let Some(applied) = applied {
+            let num_common = self
+                .applied
+                .iter()
+                .zip(applied)
+                .take_while(|(old, new)| old == new)
+                .count();
 
-        let to_pop: IndexSet<PatchName> = self.applied[num_common..].iter().cloned().collect();
-        self.pop_patches(|pn| to_pop.contains(pn));
+            let to_pop: IndexSet<PatchName> = self.applied[num_common..].iter().cloned().collect();
+            self.pop_patches(|pn| to_pop.contains(pn));
 
-        for pn in &applied[num_common..] {
-            self.push_patch(pn, false)?;
+            for pn in &applied[num_common..] {
+                self.push_patch(pn, false)?;
+            }
+
+            assert_eq!(self.applied, applied);
         }
 
-        assert_eq!(self.applied, applied);
-
-        self.unapplied = unapplied.to_vec();
+        if let Some(unapplied) = unapplied {
+            self.unapplied = unapplied.to_vec();
+        }
 
         if let Some(hidden) = hidden {
             self.hidden = hidden.to_vec();

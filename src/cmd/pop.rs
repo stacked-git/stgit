@@ -204,7 +204,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let trans_context =
         StackTransaction::make_context(stack, ConflictMode::Disallow, discard_changes);
     let exec_context = trans_context.transact(|trans| {
-        trans.reorder_patches(&new_applied, &new_unapplied, None)?;
+        trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None)?;
         Ok(())
     });
 
