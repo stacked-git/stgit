@@ -4,6 +4,7 @@ use std::ffi::OsString;
 use std::os::unix::ffi::OsStrExt;
 
 use git2::{Commit, Index, Oid, Repository, RepositoryState};
+use indexmap::IndexSet;
 
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
@@ -334,6 +335,80 @@ impl<'repo> StackTransaction<'repo> {
         self.applied.push(patchname.clone());
 
         Ok(patch_modified)
+    }
+
+    pub(crate) fn reorder_patches(
+        &mut self,
+        applied: &[PatchName],
+        unapplied: &[PatchName],
+        hidden: Option<&[PatchName]>,
+    ) -> Result<(), Error> {
+        let num_common = self
+            .applied
+            .iter()
+            .zip(applied)
+            .take_while(|(old, new)| old == new)
+            .count();
+
+        let to_pop: IndexSet<PatchName> = self.applied[num_common..].iter().cloned().collect();
+        self.pop_patches(|pn| to_pop.contains(pn));
+
+        for pn in &applied[num_common..] {
+            self.push_patch(pn, false)?;
+        }
+
+        assert_eq!(self.applied, applied);
+
+        self.unapplied = unapplied.to_vec();
+
+        if let Some(hidden) = hidden {
+            self.hidden = hidden.to_vec();
+        }
+
+        Ok(())
+    }
+
+    fn print_popped(&self, popped: &[PatchName]) {
+        match popped.len() {
+            0 => {}
+            1 => println!("- {}", popped[0]),
+            _ => println!("- {}..{}", popped.last().unwrap(), popped.first().unwrap()),
+        };
+    }
+
+    fn pop_patches<F>(&mut self, should_pop: F) -> Vec<PatchName>
+    where
+        F: Fn(&PatchName) -> bool,
+    {
+        let all_popped = if let Some(first_pop_pos) = self.applied.iter().position(&should_pop) {
+            self.applied.split_off(first_pop_pos)
+        } else {
+            vec![]
+        };
+
+        let incidental: Vec<PatchName> = all_popped
+            .iter()
+            .filter(|pn| !should_pop(pn))
+            .cloned()
+            .collect();
+
+        let mut requested: Vec<PatchName> = all_popped
+            .iter()
+            .filter(|pn| should_pop(pn))
+            .cloned()
+            .collect();
+
+        let unapplied_size = incidental.len() + requested.len() + self.unapplied.len();
+        let mut unapplied =
+            std::mem::replace(&mut self.unapplied, Vec::with_capacity(unapplied_size));
+
+        self.unapplied.append(&mut incidental.clone());
+        self.unapplied.append(&mut requested);
+        self.unapplied.append(&mut unapplied);
+
+        self.print_popped(&all_popped);
+
+        incidental
     }
 
     // TODO: separate push_patch_no_iw() function

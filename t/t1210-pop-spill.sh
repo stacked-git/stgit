@@ -22,10 +22,17 @@ test_expect_success 'Create a few patches' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt to spill non-topmost patch' '
     command_error stg pop --spill p0 2>err &&
     grep -e "Can only spill topmost applied patches" err
 '
+else
+test_expect_success 'Attempt to spill non-topmost patch' '
+    command_error stg pop --spill p0 2>err &&
+    grep -e "only topmost patches may be spilled" err
+'
+fi
 
 test_expect_success 'Pop a patch, keeping its modifications in the tree' '
     stg pop --spill &&
@@ -102,6 +109,7 @@ test_expect_success 'Pop more than stack length, keeping modifications in the tr
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Pop all but more than stack length, keeping modifications in the tree' '
     # test_when_finished reset_test &&
     test_expect_code 2 stg pop --spill -n -4 &&
@@ -109,6 +117,15 @@ test_expect_success 'Pop all but more than stack length, keeping modifications i
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
+else
+test_expect_success 'Pop all but more than stack length, keeping modifications in the tree' '
+    # test_when_finished reset_test &&
+    stg pop --spill -n -4 &&
+    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
+    [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
+'
+fi
 
 test_expect_success 'Create a few patches that touch separate files' '
     stg delete .. &&

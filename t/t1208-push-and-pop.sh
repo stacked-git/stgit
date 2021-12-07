@@ -18,7 +18,7 @@ test_expect_success \
     command_error stg prev 2>err && grep -e "error: branch .master. not initialized" err &&
     command_error stg next 2>err && grep -e "error: branch .master. not initialized" err &&
     command_error stg top  2>err && grep -e "error: branch .master. not initialized" err &&
-    command_error stg pop  2>err && grep -e "branch not initialized" err &&
+    command_error stg pop  2>err && grep -e "error: branch .master. not initialized" err &&
     command_error stg push 2>err && grep -e "error: branch .master. not initialized" err
 '
 fi

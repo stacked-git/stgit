@@ -100,6 +100,7 @@ test_expect_success 'Push removes current subdir' '
 '
 fi
 
+if test -z "$STG_RUST"; then
 test_expect_failure 'Pop removes current subdir' '
     stg goto add-remdir &&
     (
@@ -107,5 +108,14 @@ test_expect_failure 'Pop removes current subdir' '
         stg pop add-remdir
     )
 '
+else
+test_expect_success 'Pop removes current subdir' '
+    stg goto add-remdir &&
+    (
+        cd remdir &&
+        stg pop add-remdir
+    )
+'
+fi
 
 test_done
