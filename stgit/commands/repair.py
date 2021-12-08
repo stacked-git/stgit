@@ -96,33 +96,47 @@ def func(parser, options, args):
                 break
         else:
             maybe_patchify.append(c)
+
         c = c.data.parent
+
+        if stack.base == c:
+            # Reaching the original stack base can happen if, for example, the first
+            # applied patch is amended. In this case, any commits descending from the
+            # stack base should be patchified.
+            patchify.extend(maybe_patchify)
+            maybe_patchify = []
+
+            # Once the base commit has been found, we know that no existing patches
+            # can be found be searching further.
+            break
+
     applied.reverse()
     patchify.reverse()
 
     # Find patches unreachable behind a merge.
-    merge = c
-    todo = set([c])
-    seen = set()
-    unreachable = set()
-    while todo:
-        c = todo.pop()
-        seen.add(c)
-        todo |= set(c.data.parents) - seen
-        if any(stack.patches[pn] == c for pn in patches):
-            unreachable.add(c)
-    if unreachable:
-        out.warn(
-            (
-                '%d patch%s are hidden below the merge commit'
-                % (len(unreachable), ['es', ''][len(unreachable) == 1])
-            ),
-            '%s,' % merge.sha1,
-            'and will be considered unapplied.',
-        )
+    if c != stack.base:
+        merge = c
+        todo = set([c])
+        seen = set()
+        unreachable = set()
+        while todo:
+            c = todo.pop()
+            seen.add(c)
+            todo |= set(c.data.parents) - seen
+            if any(stack.patches[pn] == c for pn in patches):
+                unreachable.add(c)
+        if unreachable:
+            out.warn(
+                (
+                    '%d patch%s are hidden below the merge commit'
+                    % (len(unreachable), ['es', ''][len(unreachable) == 1])
+                ),
+                '%s,' % merge.sha1,
+                'and will be considered unapplied.',
+            )
 
     # Make patches of any linear sequence of commits on top of a patch.
-    if applied and patchify:
+    if patchify:
         out.start(
             'Creating %d new patch%s' % (len(patchify), ['es', ''][len(patchify) == 1])
         )
