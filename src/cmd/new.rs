@@ -38,7 +38,7 @@ fn get_app() -> App<'static> {
             Arg::new("verbose")
                 .long("verbose")
                 .short('v')
-                .about("Show diff in message template"),
+                .help("Show diff in message template"),
         )
         .args(&*signature::AUTHOR_SIGNATURE_ARGS)
         .args(&*crate::message::MESSAGE_ARGS)
@@ -47,7 +47,7 @@ fn get_app() -> App<'static> {
         .arg(&*argset::HOOK_ARG)
         .arg(
             Arg::new("patchname")
-                .about("Name for new patch")
+                .help("Name for new patch")
                 .value_hint(ValueHint::Other),
         )
 }

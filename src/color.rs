@@ -4,8 +4,8 @@ use termcolor::{ColorChoice, StandardStream};
 lazy_static! {
     pub(crate) static ref COLOR_ARG: Arg<'static> = Arg::new("color")
         .long("color")
-        .about("Colorize the output")
-        .long_about("Specify WHEN to colorize the output.")
+        .help("Colorize the output")
+        .long_help("Specify WHEN to colorize the output.")
         .value_name("WHEN")
         .possible_values(&["auto", "always", "ansi", "never"])
         .default_value("auto")

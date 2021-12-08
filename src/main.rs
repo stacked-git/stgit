@@ -23,7 +23,7 @@ use std::{
     io::Write,
 };
 
-use clap::{crate_license, crate_version, App, AppSettings, ArgMatches, ValueHint};
+use clap::{crate_version, App, AppSettings, ArgMatches, ValueHint};
 use pyo3::prelude::*;
 use termcolor::WriteColor;
 
@@ -34,12 +34,13 @@ const COMMAND_ERROR: i32 = 2;
 fn get_base_app() -> App<'static> {
     App::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
-        .global_setting(AppSettings::HelpRequired)
+        .global_setting(AppSettings::DeriveDisplayOrder)
+        .global_setting(AppSettings::HelpExpected)
         .max_term_width(88)
         .arg(
             clap::Arg::new("change_dir")
                 .short('C')
-                .about("Run as if started in PATH")
+                .help("Run as if started in PATH")
                 .setting(clap::ArgSettings::AllowInvalidUtf8)
                 .setting(clap::ArgSettings::MultipleOccurrences)
                 .setting(clap::ArgSettings::AllowHyphenValues)
@@ -54,11 +55,12 @@ fn get_bootstrap_app() -> App<'static> {
         .setting(AppSettings::AllowExternalSubcommands)
         .setting(AppSettings::DisableHelpFlag)
         .setting(AppSettings::DisableHelpSubcommand)
+        .setting(AppSettings::AllowInvalidUtf8ForExternalSubcommands)
         .arg(
             clap::Arg::new("help-option")
                 .short('h')
                 .long("help")
-                .about("Print help information"),
+                .help("Print help information"),
         )
 }
 
@@ -66,11 +68,11 @@ fn get_bootstrap_app() -> App<'static> {
 fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> App<'static> {
     get_base_app()
         .version(crate_version!())
-        .license(crate_license!())
         .global_setting(AppSettings::DeriveDisplayOrder)
         .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
-        .subcommand_placeholder("command", "COMMANDS")
+        .subcommand_help_heading("COMMANDS")
+        .subcommand_value_name("command")
         .subcommands(commands.values().map(|command| (command.get_app)()))
         .subcommands(aliases.values().map(|alias| alias.get_app()))
         .subcommands(

@@ -11,7 +11,7 @@ fn get_app() -> App<'static> {
         .about("Print git hash of StGit revision")
         .long_about("Long about for 'id'.") // TODO
         .arg(&*crate::argset::BRANCH_ARG)
-        .arg(Arg::new("revision").about("StGit revision"))
+        .arg(Arg::new("revision").help("StGit revision"))
 }
 
 fn run(matches: &ArgMatches) -> super::Result {

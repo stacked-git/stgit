@@ -7,33 +7,34 @@ lazy_static! {
         Arg::new("message")
             .long("message")
             .short('m')
-            .about("Use MESSAGE for patch")
-            .long_about("Use MESSAGE instead of invoking the editor")
+            .help("Use MESSAGE for patch")
+            .long_help("Use MESSAGE instead of invoking the editor")
             .setting(ArgSettings::TakesValue)
+            .setting(ArgSettings::AllowInvalidUtf8)
             .value_name("MESSAGE")
             .value_hint(ValueHint::Other)
             .conflicts_with("file"),
         Arg::new("file")
             .long("file")
             .short('f')
-            .about("Get message from FILE")
-            .long_about("Use the contents of FILE instead of invoking the editor")
+            .help("Get message from FILE")
+            .long_help("Use the contents of FILE instead of invoking the editor")
             .setting(ArgSettings::TakesValue)
             .value_name("FILE")
             .value_hint(ValueHint::FilePath),
         Arg::new("edit")
             .long("edit")
             .short('e')
-            .about("Invoke editor for patch description"),
+            .help("Invoke editor for patch description"),
         Arg::new("diff")
             .long("diff")
             .short('d')
-            .about("Show diff when editing patch description"),
+            .help("Show diff when editing patch description"),
     ];
     pub(crate) static ref MESSAGE_TEMPLATE_ARG: Arg<'static> = Arg::new("save-template")
         .long("save-template")
-        .about("Save the message template to FILE and exit")
-        .long_about(
+        .help("Save the message template to FILE and exit")
+        .long_help(
             "Instead of running the command, just write the message template \
              to FILE, and exit. (If FILE is \"-\", write to stdout.)\n\
              \n\
@@ -42,6 +43,7 @@ lazy_static! {
              edit the message, and then call the same command with '--file'."
         )
         .setting(ArgSettings::TakesValue)
+        .setting(ArgSettings::AllowInvalidUtf8)
         .value_name("FILE")
         .value_hint(ValueHint::FilePath)
         .conflicts_with_all(&["message", "file"]);

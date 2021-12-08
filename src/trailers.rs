@@ -8,33 +8,30 @@ lazy_static! {
     pub(crate) static ref TRAILER_ARGS: [Arg<'static>; 6] = [
         Arg::new("sign")
             .long("sign")
-            .about("Add \"Signed-off-by:\" trailer")
-            .long_about("Long about for --sign"),
+            .help("Add \"Signed-off-by:\" trailer"),
         Arg::new("sign-by")
             .long("sign-by")
-            .about("Add \"Signed-off-by:\" trailer with custom VALUE")
+            .help("Add \"Signed-off-by:\" trailer with custom VALUE")
             .setting(ArgSettings::MultipleOccurrences)
             .setting(ArgSettings::TakesValue)
             .value_name("VALUE")
             .value_hint(ValueHint::EmailAddress),
         Arg::new("ack")
             .long("ack")
-            .about("Add \"Acked-by:\" trailer")
-            .long_about("Long about for --ack"),
+            .help("Add \"Acked-by:\" trailer"),
         Arg::new("ack-by")
             .long("ack-by")
-            .about("Add \"Acked-by:\" trailer with custom VALUE")
+            .help("Add \"Acked-by:\" trailer with custom VALUE")
             .setting(ArgSettings::MultipleOccurrences)
             .setting(ArgSettings::TakesValue)
             .value_name("VALUE")
             .value_hint(ValueHint::EmailAddress),
         Arg::new("review")
             .long("review")
-            .about("Add \"Reviewed-by:\" trailer")
-            .long_about("Long about for --review"),
+            .help("Add \"Reviewed-by:\" trailer"),
         Arg::new("review-by")
             .long("review-by")
-            .about("Add \"Reviewed-by:\" trailer with custom VALUE")
+            .help("Add \"Reviewed-by:\" trailer with custom VALUE")
             .setting(ArgSettings::MultipleOccurrences)
             .setting(ArgSettings::TakesValue)
             .value_name("VALUE")

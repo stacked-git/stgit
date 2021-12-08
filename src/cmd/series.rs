@@ -33,32 +33,32 @@ fn get_app() -> App<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .about("Show all patches, including hidden patches")
+                .help("Show all patches, including hidden patches")
                 .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("applied")
                 .long("applied")
                 .short('A')
-                .about("Show the applied patches only"),
+                .help("Show the applied patches only"),
         )
         .arg(
             Arg::new("unapplied")
                 .long("unapplied")
                 .short('U')
-                .about("Show the unapplied patches only"),
+                .help("Show the unapplied patches only"),
         )
         .arg(
             Arg::new("hidden")
                 .long("hidden")
                 .short('H')
-                .about("Show the hidden patches only"),
+                .help("Show the hidden patches only"),
         )
         .arg(
             Arg::new("missing")
                 .long("missing")
                 .short('m')
-                .about("Show patches in BRANCH not present in current branch")
+                .help("Show patches in BRANCH not present in current branch")
                 .setting(ArgSettings::TakesValue)
                 .value_name("BRANCH")
                 .value_hint(ValueHint::Other),
@@ -67,32 +67,32 @@ fn get_app() -> App<'static> {
             Arg::new("count")
                 .long("count")
                 .short('c')
-                .about("Print the number of patches in the series"),
+                .help("Print the number of patches in the series"),
         )
         .arg(
             Arg::new("description")
                 .long("description")
                 .short('d')
-                .about("Show short description for each patch")
+                .help("Show short description for each patch")
                 .overrides_with("no-description"),
         )
         .arg(
             Arg::new("no-description")
                 .long("no-description")
-                .about("Disable description")
+                .help("Disable description")
                 .overrides_with("description"),
         )
         .arg(
             Arg::new("author")
                 .long("author")
-                .about("Show author name for each patch"),
+                .help("Show author name for each patch"),
         )
         .arg(
             Arg::new("empty")
                 .long("empty")
                 .short('e')
-                .about("Show whether patches are empty")
-                .long_about(
+                .help("Show whether patches are empty")
+                .long_help(
                     "Before the '+', '>', '-', and '!' prefixes, print \
                      a column that contains either '0' (for empty \
                      patches) or a space (for non-empty patches).",
@@ -101,24 +101,24 @@ fn get_app() -> App<'static> {
         .arg(
             Arg::new("show-branch")
                 .long("showbranch")
-                .about("Prepend the branch name to the listed patches"),
+                .help("Prepend the branch name to the listed patches"),
         )
         .arg(
             Arg::new("no-prefix")
                 .long("noprefix")
                 // TODO: add short option; maybe 'N'
-                .about("Do not show the patch status prefix"),
+                .help("Do not show the patch status prefix"),
         )
         .arg(
             Arg::new("short")
                 .long("short")
                 .short('s')
-                .about("Only show patches around the topmost patch"),
+                .help("Only show patches around the topmost patch"),
         )
         .arg(&*crate::color::COLOR_ARG)
         .arg(
             Arg::new("patch-range")
-                .about("Range of patches to show.")
+                .help("Range of patches to show")
                 .multiple_values(true)
                 .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
         )

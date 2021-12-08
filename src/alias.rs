@@ -38,16 +38,15 @@ impl Alias {
             AliasKind::StGit => format!("Alias for `stg {0}`", &self.command),
             AliasKind::Shell => format!("Alias for shell command `{}`", &self.command),
         };
-        // TODO: future versions of clap may allow about() argument to
-        // be something other than &'help str, which could avoid having
-        // to do this leak trick.
+        // TODO: future versions of clap may allow about argument to be something other
+        // than Into<&'help str>, which could avoid having to do this leak trick.
         let about: &'static str = Box::leak(about.into_boxed_str());
         clap::App::new(&self.name)
             .about(about)
             .setting(clap::AppSettings::TrailingVarArg)
             .arg(
                 clap::Arg::new("args")
-                    .about("Extra arguments to aliased command")
+                    .help("Extra arguments to aliased command")
                     .setting(clap::ArgSettings::MultipleValues)
                     .setting(clap::ArgSettings::AllowHyphenValues),
             )

@@ -46,35 +46,35 @@ fn get_app() -> App<'static> {
             Arg::new("update")
                 .long("update")
                 .short('u')
-                .about("Only update the current patch files"),
+                .help("Only update the current patch files"),
         )
         .arg(
             Arg::new("index")
                 .long("index")
                 .short('i')
-                .about("Refresh from index instead of worktree")
-                .long_about(
+                .help("Refresh from index instead of worktree")
+                .long_help(
                     "Instead of setting the patch top to the current \
-                contents of the worktree, set it to the current \
-                contents of the index.",
+                     contents of the worktree, set it to the current \
+                     contents of the index.",
                 ),
         )
         .arg(
             Arg::new("force")
                 .long("force")
                 .short('F')
-                .about("Force refresh even if index is dirty")
-                .long_about(
+                .help("Force refresh even if index is dirty")
+                .long_help(
                     "Instead of warning the user when some work has \
-                already been staged (such as with git add \
-                interactive mode) force a full refresh.",
+                     already been staged (such as with git add \
+                     interactive mode) force a full refresh.",
                 ),
         )
         .arg(
             Arg::new("patch")
                 .long("patch")
                 .short('p')
-                .about("Refresh (applied) PATCH instead of the top patch")
+                .help("Refresh (applied) PATCH instead of the top patch")
                 .setting(ArgSettings::TakesValue)
                 .value_name("PATCH")
                 .value_hint(ValueHint::Other),
@@ -83,7 +83,7 @@ fn get_app() -> App<'static> {
             Arg::new("annotate")
                 .long("annotate")
                 .short('a')
-                .about("Annotate the patch log entry with NOTE")
+                .help("Annotate the patch log entry with NOTE")
                 .setting(ArgSettings::TakesValue)
                 .value_name("NOTE")
                 .value_hint(ValueHint::Other),
@@ -92,19 +92,19 @@ fn get_app() -> App<'static> {
             Arg::new("submodules")
                 .long("submodules")
                 .short('s')
-                .about("Include submodules in patch content"),
+                .help("Include submodules in patch content"),
         )
         .arg(
             Arg::new("no-submodules")
                 .long("no-submodules")
-                .about("Exclude submodules in patch content"),
+                .help("Exclude submodules in patch content"),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]))
         .arg(
             Arg::new("spill")
                 .long("spill")
-                .about("Spill patch content")
-                .long_about(
+                .help("Spill patch content")
+                .long_help(
                     "Spill patch content to worktree and index, \
                 emptying patch content",
                 ),

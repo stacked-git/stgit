@@ -8,33 +8,37 @@ lazy_static! {
     pub(crate) static ref AUTHOR_SIGNATURE_ARGS: [Arg<'static>; 4] = [
         Arg::new("author")
             .long("author")
-            .about("Set the author \"NAME <EMAIL>\"")
+            .help("Set the author \"NAME <EMAIL>\"")
             .setting(ArgSettings::TakesValue)
+            .setting(ArgSettings::AllowInvalidUtf8)
             .value_name("NAME_AND_EMAIL")
             .value_hint(ValueHint::Other),
         Arg::new("authname")
             .long("authname")
-            .about("Set the author name")
+            .help("Set the author name")
             .setting(ArgSettings::TakesValue)
+            .setting(ArgSettings::AllowInvalidUtf8)
             .value_name("NAME")
             .value_hint(ValueHint::Other)
             .conflicts_with("author"),
         Arg::new("authemail")
             .long("authemail")
-            .about("Set the author email")
+            .help("Set the author email")
             .setting(ArgSettings::TakesValue)
+            .setting(ArgSettings::AllowInvalidUtf8)
             .value_name("EMAIL")
             .value_hint(ValueHint::EmailAddress)
             .conflicts_with("author"),
         Arg::new("authdate")
             .long("authdate")
-            .about("Set the author date")
-            .long_about(
+            .help("Set the author date")
+            .long_help(
                 "Set the DATE the patch was authored.\n\
                  \n\
                  Use \"now\" to use the current time and date."
             )
             .setting(ArgSettings::TakesValue)
+            .setting(ArgSettings::AllowInvalidUtf8)
             .value_name("DATE")
             .value_hint(ValueHint::Other),
     ];
