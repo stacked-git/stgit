@@ -206,7 +206,7 @@ impl<'repo> StackTransaction<'repo> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
-            &self.stack.head
+            &self.stack.base
         }
     }
 
