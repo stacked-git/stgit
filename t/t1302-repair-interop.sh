@@ -4,13 +4,10 @@ test_description='Test git/StGit interoperability with "stg repair"'
 
 test_expect_success 'Create some git-only history' '
     echo foo > foo.txt &&
-    stg add foo.txt &&
-    git commit -a -m foo &&
+    git add foo.txt &&
+    git commit -m foo &&
     git tag foo-tag &&
-    for i in 0 1 2 3 4; do
-        echo foo$i >> foo.txt &&
-        git commit -a -m foo$i;
-    done
+    test_commit_bulk --message="foo%s" --filename=foo.txt --contents="foo%s" 5
 '
 
 test_expect_success 'Initialize the StGit repository' '
