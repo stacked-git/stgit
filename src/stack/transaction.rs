@@ -396,7 +396,7 @@ impl<'repo> StackTransaction<'repo> {
         };
     }
 
-    fn pop_patches<F>(&mut self, should_pop: F) -> Vec<PatchName>
+    pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Vec<PatchName>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -553,7 +553,7 @@ impl<'repo> StackTransaction<'repo> {
     }
 
     pub(crate) fn check_merged<'a>(
-        &mut self,
+        &self,
         patches: &'a [PatchName],
     ) -> Result<Vec<&'a PatchName>, Error> {
         fn with_temp_index<F>(repo: &Repository, f: F) -> Result<(), Error>

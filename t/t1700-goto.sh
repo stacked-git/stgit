@@ -17,25 +17,46 @@ test_expect_success 'Initialize stgit repository' '
     done
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test invalid number of arguments' '
     command_error stg goto 2>err &&
     grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success 'Test invalid number of arguments' '
+    general_error stg goto 2>err &&
+    grep -e "error: The following required arguments were not provided:" err
+'
+fi
 
 test_expect_success 'Goto current patch' '
     stg goto $(stg top) &&
     test "$(echo $(stg top))" = "p5"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt goto invalid patch' '
     command_error stg goto p999 2>err &&
     grep -e "Patch \"p999\" does not exist" err
 '
+else
+test_expect_success 'Attempt goto invalid patch' '
+    command_error stg goto p999 2>err &&
+    grep -e "patch \`p999\` does not exist" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt goto invalid hash' '
     command_error stg goto beeff00d 2>err &&
     grep -e "No patch associated with beeff00d" err
 '
+else
+test_expect_success 'Attempt goto invalid hash' '
+    command_error stg goto beeff00d 2>err &&
+    grep -e "error: no patch associated with \`beeff00d\`" err
+'
+fi
 
 test_expect_success 'Goto a patch' '
     stg goto p3 &&
@@ -67,10 +88,19 @@ test_expect_success 'Goto with merge check' '
     test "$(echo $(stg series --unapplied --noprefix))" = ""
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Goto with ambiguous patch substring' '
     stg goto 1 &&
     command_error stg goto p 2>err &&
     grep "Ambiguous patch name \"p\"" err
 '
+else
+test_expect_success 'Goto with ambiguous patch substring' '
+    command_error stg goto 1 2>err &&
+    grep "error: patch \`1\` does not exist" err &&
+    command_error stg goto p 2>err &&
+    grep "error: ambiguous patch name \`p\`" err
+'
+fi
 
 test_done

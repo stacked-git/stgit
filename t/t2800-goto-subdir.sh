@@ -36,6 +36,7 @@ test_expect_success 'Prepare conflicting goto' '
     stg delete p2
 '
 
+if test -z "$STG_RUST"; then
 # git gives this result before commit 606475f3 ...
 cat > expected1a.txt <<EOF
 foo1
@@ -45,6 +46,16 @@ foo2
 foo3
 >>>>>>> patched:foo/bar
 EOF
+else
+cat > expected1a.txt <<EOF
+foo1
+<<<<<<< current
+=======
+foo2
+foo3
+>>>>>>> p3
+EOF
+fi
 
 # ... and this result after commit 606475f3.
 cat > expected1b.txt <<EOF
