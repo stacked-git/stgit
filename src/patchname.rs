@@ -9,8 +9,14 @@ pub(crate) enum Error {
     InvalidPatchName(String, String),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub(crate) struct PatchName(String);
+
+impl std::fmt::Debug for PatchName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("PatchName(\"{}\")", self.0))
+    }
+}
 
 impl PatchName {
     pub(crate) fn len(&self) -> usize {
