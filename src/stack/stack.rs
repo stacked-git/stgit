@@ -170,12 +170,14 @@ impl<'repo> Stack<'repo> {
         self,
         conflict_mode: ConflictMode,
         discard_changes: bool,
+        use_index_and_worktree: bool,
         f: F,
     ) -> ExecuteContext<'repo>
     where
         F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
     {
-        StackTransaction::make_context(self, conflict_mode, discard_changes).transact(f)
+        StackTransaction::make_context(self, conflict_mode, discard_changes, use_index_and_worktree)
+            .transact(f)
     }
 
     pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {

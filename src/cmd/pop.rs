@@ -201,8 +201,13 @@ fn run(matches: &ArgMatches) -> super::Result {
         .for_each(|pn| new_unapplied.push(pn.clone()));
 
     let discard_changes = false;
-    let trans_context =
-        StackTransaction::make_context(stack, ConflictMode::Disallow, discard_changes);
+    let use_index_and_worktree = !opt_spill;
+    let trans_context = StackTransaction::make_context(
+        stack,
+        ConflictMode::Disallow,
+        discard_changes,
+        use_index_and_worktree,
+    );
     let exec_context = trans_context.transact(|trans| {
         trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None)?;
         Ok(())

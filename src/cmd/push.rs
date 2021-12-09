@@ -194,8 +194,13 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     let discard_changes = false;
-    let trans_context =
-        StackTransaction::make_context(stack, ConflictMode::Disallow, discard_changes);
+    let use_index_and_worktree = true;
+    let trans_context = StackTransaction::make_context(
+        stack,
+        ConflictMode::Disallow,
+        discard_changes,
+        use_index_and_worktree,
+    );
 
     let exec_context = trans_context.transact(|trans| {
         if opt_settree {

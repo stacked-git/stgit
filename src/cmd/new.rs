@@ -172,12 +172,18 @@ fn run(matches: &ArgMatches) -> super::Result {
     };
 
     let discard_changes = false;
+    let use_index_and_worktree = false;
     stack
-        .transaction(ConflictMode::Disallow, discard_changes, |trans| {
-            let patch_commit_id = cd.commit(&repo)?;
-            trans.push_applied(&patchname, patch_commit_id)?;
-            Ok(())
-        })
+        .transaction(
+            ConflictMode::Disallow,
+            discard_changes,
+            use_index_and_worktree,
+            |trans| {
+                let patch_commit_id = cd.commit(&repo)?;
+                trans.push_applied(&patchname, patch_commit_id)?;
+                Ok(())
+            },
+        )
         .execute(&format!("new: {}", patchname))?;
     Ok(())
 }

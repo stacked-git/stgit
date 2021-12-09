@@ -142,6 +142,9 @@ pub(crate) enum Error {
     #[error("{0} merge conflicts")]
     MergeConflicts(usize),
 
+    #[error("{0} does not apply cleanly")]
+    PatchApplicationUnclean(String),
+
     #[error("{0}")]
     CheckoutConflicts(String),
 

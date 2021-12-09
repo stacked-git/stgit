@@ -19,6 +19,7 @@ pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
+    use_index_and_worktree: bool,
     patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
@@ -82,9 +83,8 @@ impl<'repo> ExecuteContext<'repo> {
 
         let set_head = true; // TODO: argument
         let allow_bad_head = false; // TODO: argument
-        let use_index_and_worktree = true; // TODO: argument
         if set_head {
-            if use_index_and_worktree {
+            if transaction.use_index_and_worktree {
                 let stack_head = transaction.stack.head.clone();
                 let result = transaction.checkout(&trans_head, allow_bad_head);
                 if let Err(err) = result {
@@ -186,6 +186,7 @@ impl<'repo> StackTransaction<'repo> {
         stack: Stack<'repo>,
         conflict_mode: ConflictMode,
         discard_changes: bool,
+        use_index_and_worktree: bool,
     ) -> TransactionContext {
         let current_tree_id = stack.head.tree_id();
         let applied = stack.state.applied.clone();
@@ -195,6 +196,7 @@ impl<'repo> StackTransaction<'repo> {
             stack,
             conflict_mode,
             discard_changes,
+            use_index_and_worktree,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
@@ -429,7 +431,6 @@ impl<'repo> StackTransaction<'repo> {
         incidental
     }
 
-    // TODO: separate push_patch_no_iw() function
     pub(crate) fn push_patch(
         &mut self,
         patchname: &PatchName,
@@ -470,6 +471,10 @@ impl<'repo> StackTransaction<'repo> {
             let merge_options = None;
             let mut temp_index = repo.merge_trees(&base, &ours, &theirs, merge_options)?;
             if temp_index.has_conflicts() {
+                if !self.use_index_and_worktree {
+                    return Err(Error::PatchApplicationUnclean(patchname.to_string()));
+                }
+
                 // TODO stgit.autoimerge
                 let mut opts = git2::build::CheckoutBuilder::new();
                 opts.allow_conflicts(false);
