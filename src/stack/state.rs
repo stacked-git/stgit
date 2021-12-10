@@ -176,7 +176,7 @@ impl<'repo> StackState<'repo> {
     fn make_tree(
         &self,
         repo: &'repo git2::Repository,
-        prev_state_tree: &Option<(Self, Tree)>,
+        prev_state_and_tree: &Option<(Self, Tree)>,
     ) -> Result<Oid, Error> {
         let mut builder = repo.treebuilder(None)?;
         builder.insert(
@@ -184,9 +184,25 @@ impl<'repo> StackState<'repo> {
             repo.blob(serde_json::to_string_pretty(self)?.as_bytes())?,
             i32::from(FileMode::Blob),
         )?;
+
+        let patches_tree_name = "patches";
+
+        let (prev_state, prev_patches_tree) =
+            if let Some((prev_state, prev_tree)) = prev_state_and_tree {
+                let prev_patches_tree = prev_tree.get_name(patches_tree_name).and_then(|entry| {
+                    entry
+                        .to_object(repo)
+                        .ok()
+                        .and_then(|object| object.as_tree().map(|tree| tree.to_owned()))
+                });
+                (Some(prev_state), prev_patches_tree)
+            } else {
+                (None, None)
+            };
+
         builder.insert(
-            "patches",
-            self.make_patches_tree(repo, prev_state_tree)?,
+            patches_tree_name,
+            self.make_patches_tree(repo, prev_state, prev_patches_tree)?,
             i32::from(FileMode::Tree),
         )?;
         Ok(builder.write()?)
@@ -195,13 +211,14 @@ impl<'repo> StackState<'repo> {
     fn make_patches_tree(
         &self,
         repo: &git2::Repository,
-        prev_state_tree: &Option<(Self, Tree)>,
+        prev_state: Option<&StackState>,
+        prev_patches_tree: Option<Tree>,
     ) -> Result<Oid, Error> {
         let mut builder = repo.treebuilder(None)?;
         for patch_name in self.all_patches() {
             builder.insert(
                 patch_name.to_string(),
-                self.make_patch_meta(repo, patch_name, prev_state_tree)?,
+                self.make_patch_meta(repo, patch_name, prev_state, prev_patches_tree.as_ref())?,
                 i32::from(FileMode::Blob),
             )?;
         }
@@ -212,24 +229,23 @@ impl<'repo> StackState<'repo> {
         &self,
         repo: &git2::Repository,
         patch_name: &PatchName,
-        prev_state_tree: &Option<(Self, Tree)>,
+        prev_state: Option<&StackState>,
+        prev_patches_tree: Option<&Tree>,
     ) -> Result<Oid, Error> {
         let commit = &self.patches[patch_name].commit;
-        if let Some((prev_state, prev_tree)) = prev_state_tree {
-            // And oid for this patch == oid for same patch in prev state
-            // And we find the patch meta blob for this patch in the previous meta tree
-            // Then return the previous patch meta blob.
-            if prev_state
-                .patches
-                .iter()
-                .any(|(prev_patch_name, prev_patch_desc)| {
-                    prev_patch_name == patch_name && prev_patch_desc.commit.id() == commit.id()
-                })
-            {
-                let patch_meta_path = format!("patches/{}", patch_name);
-                let patch_meta_path = std::path::Path::new(&patch_meta_path);
-                if let Ok(prev_patch_entry) = prev_tree.get_path(patch_meta_path) {
-                    return Ok(prev_patch_entry.id());
+
+        if let Some(prev_state) = prev_state {
+            if let Some(prev_desc) = prev_state.patches.get(patch_name) {
+                if prev_desc.commit.id() == commit.id() {
+                    if let Some(prev_patches_tree) = prev_patches_tree {
+                        if let Some(prev_patch_entry) =
+                            prev_patches_tree.get_name(patch_name.as_ref())
+                        {
+                            if let Some(git2::ObjectType::Blob) = prev_patch_entry.kind() {
+                                return Ok(prev_patch_entry.id());
+                            }
+                        }
+                    }
                 }
             }
         }
