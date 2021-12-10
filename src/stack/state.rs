@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
-use std::fmt::Write;
+use std::io::Write;
 use std::str;
 
-use chrono::{FixedOffset, NaiveDateTime};
+use chrono::{FixedOffset, TimeZone};
 use git2::{Commit, FileMode, Oid, Tree};
 
 use crate::error::Error;
@@ -236,23 +236,25 @@ impl<'repo> StackState<'repo> {
 
         let parent = commit.parent(0)?;
         let commit_time = commit.time();
-        let commit_datetime = NaiveDateTime::from_timestamp(commit_time.seconds(), 0);
-        let commit_tz = FixedOffset::west(commit_time.offset_minutes() * 60);
 
-        let mut patch_meta = String::with_capacity(1024);
+        let commit_datetime = FixedOffset::east(commit_time.offset_minutes() * 60)
+            .timestamp(commit_time.seconds(), 0);
+
+        let mut patch_meta: Vec<u8> = Vec::with_capacity(1024);
         write!(
             patch_meta,
             "Bottom: {}\n\
              Top:    {}\n\
              Author: {}\n\
-             Date:   {} {}\n",
+             Date:   {}\n\
+             \n",
             parent.tree_id(),
             commit.tree_id(),
             commit.author(),
-            commit_datetime,
-            commit_tz,
+            commit_datetime.format("%Y-%m-%d %H:%M:%S %z"),
         )?;
+        patch_meta.write_all(commit.message_raw_bytes())?;
 
-        Ok(repo.blob(patch_meta.as_bytes())?)
+        Ok(repo.blob(&patch_meta)?)
     }
 }
