@@ -85,6 +85,9 @@ class TreeData(Immutable):
     def __getitem__(self, key):
         return self._entries[key]
 
+    def __contains__(self, name):
+        return name in self._entries
+
     def __iter__(self):
         for name, (perm, obj) in self._entries.items():
             yield name, (perm, obj)
