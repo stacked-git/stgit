@@ -1,8 +1,6 @@
-use std::io::Write;
 use std::str::FromStr;
 
 use clap::{App, Arg, ArgMatches};
-use indexmap::IndexSet;
 
 use crate::{
     error::Error,
@@ -108,6 +106,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         }
     }?;
 
+    let mut stdout = crate::color::get_color_stdout(matches);
+
     let discard_changes = false;
     let use_index_and_worktree = true;
 
@@ -120,9 +120,10 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let exec_context = trans_context.transact(|trans| {
         if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
-            let to_pop: IndexSet<PatchName> = trans.applied()[pos + 1..].iter().cloned().collect();
-            trans.pop_patches(|pn| to_pop.contains(pn));
-            Ok(())
+            let applied = trans.applied()[0..=pos].to_vec();
+            let mut unapplied = trans.applied()[pos + 1..].to_vec();
+            unapplied.extend(trans.unapplied().iter().cloned());
+            trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
         } else {
             let pos = trans
                 .unapplied()
@@ -133,25 +134,15 @@ fn run(matches: &ArgMatches) -> super::Result {
             let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
 
             let merged = if opt_merged {
-                trans.check_merged(&to_apply)?
+                trans.check_merged(&to_apply, &mut stdout)?
             } else {
                 vec![]
             };
 
-            let mut stdout = crate::color::get_color_stdout(matches);
-            let mut _color_spec = termcolor::ColorSpec::new();
-
-            if opt_merged {
-                if merged.len() == 1 {
-                    writeln!(stdout, "Found 1 patch merged upstream")?;
-                } else {
-                    writeln!(stdout, "Found {} patches merged upstream", merged.len())?;
-                }
-            }
-
-            for patchname in &to_apply {
+            for (i, patchname) in (&to_apply).iter().enumerate() {
                 let already_merged = merged.contains(&patchname);
-                trans.push_patch(patchname, already_merged)?;
+                let is_last = i + 1 == to_apply.len();
+                trans.push_patch(patchname, already_merged, is_last, &mut stdout)?;
             }
 
             Ok(())

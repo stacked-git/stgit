@@ -1,7 +1,4 @@
-use std::io::Write;
-
 use clap::{App, Arg, ArgMatches, ArgSettings};
-use termcolor::WriteColor;
 
 use crate::{
     error::Error,
@@ -192,6 +189,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         patches.reverse();
     }
 
+    let mut stdout = crate::color::get_color_stdout(matches);
+
     let discard_changes = false;
     let use_index_and_worktree = true;
     let trans_context = StackTransaction::make_context(
@@ -203,8 +202,9 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let exec_context = trans_context.transact(|trans| {
         if opt_settree {
-            for pn in patches {
-                trans.push_tree(&pn)?;
+            for (i, patchname) in (&patches).iter().enumerate() {
+                let is_last = i + 1 == patches.len();
+                trans.push_tree(patchname, is_last, &mut stdout)?;
             }
         } else if opt_noapply {
             let mut unapplied = patches.clone();
@@ -215,58 +215,18 @@ fn run(matches: &ArgMatches) -> super::Result {
                     .filter(|pn| !patches.contains(pn))
                     .cloned(),
             );
-            trans.reorder_patches(None, Some(&unapplied), None)?;
+            trans.reorder_patches(None, Some(&unapplied), None, &mut stdout)?;
         } else {
-            let mut stdout = crate::color::get_color_stdout(matches);
-            let mut color_spec = termcolor::ColorSpec::new();
-
             let merged = if opt_merged {
-                trans.check_merged(&patches)?
+                trans.check_merged(&patches, &mut stdout)?
             } else {
                 vec![]
             };
 
-            if opt_merged {
-                if merged.len() == 1 {
-                    writeln!(stdout, "Found 1 patch merged upstream")?;
-                } else {
-                    writeln!(stdout, "Found {} patches merged upstream", merged.len())?;
-                }
-            }
-
             for (i, patchname) in (&patches).iter().enumerate() {
                 let is_last = i + 1 == patches.len();
                 let already_merged = merged.contains(&patchname);
-                match trans.push_patch(patchname, already_merged) {
-                    Ok(()) => {
-                        if !is_last {
-                            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Green)))?;
-                            write!(stdout, "+ ")?;
-                            color_spec.clear();
-                            stdout.set_color(color_spec.set_intense(true))?;
-                            writeln!(stdout, "{}", patchname)?;
-                        } else {
-                            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-                            write!(stdout, "> ")?;
-                            color_spec.clear();
-                            stdout.set_color(color_spec.set_bold(true))?;
-                            writeln!(stdout, "{}", patchname)?;
-                        }
-                        color_spec.clear();
-                        stdout.set_color(&color_spec)?;
-                    }
-                    Err(Error::MergeConflicts(n)) => {
-                        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
-                        write!(stdout, "> ")?;
-                        color_spec.clear();
-                        stdout.set_color(color_spec.set_bold(true))?;
-                        writeln!(stdout, "{} (merge conflicts)", patchname)?;
-                        color_spec.clear();
-                        stdout.set_color(&color_spec)?;
-                        return Err(Error::MergeConflicts(n));
-                    }
-                    Err(e) => return Err(e),
-                }
+                trans.push_patch(patchname, already_merged, is_last, &mut stdout)?;
             }
         }
         Ok(())

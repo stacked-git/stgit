@@ -207,10 +207,12 @@ pub(crate) fn get_epoch_time_string(when: git2::Time) -> String {
     )
 }
 
+#[allow(dead_code)]
 pub(crate) fn same_person(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
     a.name_bytes() == b.name_bytes() && a.email_bytes() == b.email_bytes()
 }
 
+#[allow(dead_code)]
 pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
     same_person(a, b) && a.when() == b.when()
 }

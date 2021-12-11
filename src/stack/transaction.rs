@@ -1,16 +1,18 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
+use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
 
 use git2::{Commit, Index, Oid, Repository, RepositoryState};
 use indexmap::IndexSet;
+use termcolor::WriteColor;
 
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::stack::{PatchDescriptor, Stack};
 use crate::wrap::repository::commit_ex;
-use crate::wrap::signature::{self, same_signature};
+use crate::wrap::signature;
 use crate::wrap::CommitData;
 
 use super::iter::AllPatches;
@@ -42,6 +44,14 @@ pub(crate) enum ConflictMode {
 
     #[allow(dead_code)]
     AllowIfSameTop,
+}
+
+enum PushStatus {
+    AlreadyMerged,
+    Conflict,
+    Empty,
+    Modified,
+    Unmodified,
 }
 
 impl<'repo> TransactionContext<'repo> {
@@ -302,26 +312,28 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn get_patch_descriptor(&self, patchname: &PatchName) -> &PatchDescriptor {
-        if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-            maybe_desc
-                .as_ref()
-                .expect("should not attempt to access deleted patch")
-        } else {
-            &self.stack.state.patches[patchname]
-        }
-    }
-
-    pub(crate) fn push_tree(&mut self, patchname: &PatchName) -> Result<bool, Error> {
-        let patch_desc = self.get_patch_descriptor(patchname);
+    pub(crate) fn push_tree(
+        &mut self,
+        patchname: &PatchName,
+        is_last: bool,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let patch_desc = {
+            if let Some(maybe_desc) = self.patch_updates.get(patchname) {
+                maybe_desc
+                    .as_ref()
+                    .expect("should not attempt to access deleted patch")
+            } else {
+                &self.stack.state.patches[patchname]
+            }
+        };
         let patch_commit = &patch_desc.commit;
         let config = self.stack.repo.config()?;
-        let default_committer = signature::default_committer(Some(&config))?;
+        let parent = patch_commit.parent(0)?;
+        let is_empty = parent.tree_id() == patch_commit.tree_id();
 
-        let patch_modified = !same_signature(&patch_commit.committer(), &default_committer)
-            || patch_commit.parent_id(0)? != self.top().id();
-
-        if patch_modified {
+        let push_status = if patch_commit.parent_id(0)? != self.top().id() {
+            let default_committer = signature::default_committer(Some(&config))?;
             let message = patch_commit
                 .message_raw()
                 .ok_or_else(|| Error::NonUtf8Message(patchname.to_string()))?;
@@ -335,10 +347,20 @@ impl<'repo> StackTransaction<'repo> {
                 &parent_ids,
             )?;
 
-            let new_commit = self.stack.repo.find_commit(new_commit_id)?;
-            let new_desc = PatchDescriptor { commit: new_commit };
-            self.patch_updates.insert(patchname.clone(), Some(new_desc));
-        }
+            let commit = self.stack.repo.find_commit(new_commit_id)?;
+            self.patch_updates
+                .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+
+            PushStatus::Modified
+        } else {
+            PushStatus::Unmodified
+        };
+
+        let push_status = if is_empty {
+            PushStatus::Empty
+        } else {
+            push_status
+        };
 
         if let Some(pos) = self.unapplied.iter().position(|pn| pn == patchname) {
             self.unapplied.remove(pos);
@@ -350,7 +372,7 @@ impl<'repo> StackTransaction<'repo> {
 
         self.applied.push(patchname.clone());
 
-        Ok(patch_modified)
+        self.print_pushed(patchname, push_status, is_last, stdout)
     }
 
     pub(crate) fn reorder_patches(
@@ -358,6 +380,7 @@ impl<'repo> StackTransaction<'repo> {
         applied: Option<&[PatchName]>,
         unapplied: Option<&[PatchName]>,
         hidden: Option<&[PatchName]>,
+        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         if let Some(applied) = applied {
             let num_common = self
@@ -368,13 +391,22 @@ impl<'repo> StackTransaction<'repo> {
                 .count();
 
             let to_pop: IndexSet<PatchName> = self.applied[num_common..].iter().cloned().collect();
-            self.pop_patches(|pn| to_pop.contains(pn));
+            self.pop_patches(|pn| to_pop.contains(pn), stdout)?;
 
-            for pn in &applied[num_common..] {
-                self.push_patch(pn, false)?;
+            let to_push = &applied[num_common..];
+            for (i, pn) in to_push.iter().enumerate() {
+                let already_merged = false;
+                let is_last = i + 1 == to_push.len();
+                self.push_patch(pn, already_merged, is_last, stdout)?;
             }
 
             assert_eq!(self.applied, applied);
+
+            if to_push.is_empty() {
+                if let Some(last) = applied.last() {
+                    self.print_pushed(last, PushStatus::Unmodified, true, stdout)?;
+                }
+            }
         }
 
         if let Some(unapplied) = unapplied {
@@ -388,15 +420,72 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_popped(&self, popped: &[PatchName]) {
-        match popped.len() {
-            0 => {}
-            1 => println!("- {}", popped[0]),
-            _ => println!("- {}..{}", popped.last().unwrap(), popped.first().unwrap()),
-        };
+    fn print_popped(
+        &self,
+        popped: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        if !popped.is_empty() {
+            let mut color_spec = termcolor::ColorSpec::new();
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(stdout, "- ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true))?;
+            write!(stdout, "{}", popped[0])?;
+            if popped.len() > 1 {
+                stdout.set_color(color_spec.set_dimmed(false))?;
+                write!(stdout, "..")?;
+                stdout.set_color(color_spec.set_dimmed(true))?;
+                let last = &popped[popped.len() - 1];
+                write!(stdout, "{}", last)?;
+            }
+            stdout.reset()?;
+            writeln!(stdout)?;
+        }
+        Ok(())
     }
 
-    pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Vec<PatchName>
+    fn print_pushed(
+        &self,
+        patchname: &PatchName,
+        status: PushStatus,
+        is_last: bool,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let sigil = if is_last { '>' } else { '+' };
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(
+            color_spec.set_fg(Some(if let PushStatus::Conflict = status {
+                termcolor::Color::Red
+            } else if is_last {
+                termcolor::Color::Blue
+            } else {
+                termcolor::Color::Green
+            })),
+        )?;
+        write!(stdout, "{} ", sigil)?;
+        color_spec.clear();
+        stdout.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
+        write!(stdout, "{}", patchname)?;
+        stdout.reset()?;
+
+        let status_str = match status {
+            PushStatus::AlreadyMerged => " (merged)",
+            PushStatus::Conflict => " (conflict)",
+            PushStatus::Empty => " (empty)",
+            PushStatus::Modified => " (modified)",
+            PushStatus::Unmodified => "",
+        };
+
+        writeln!(stdout, "{}", status_str)?;
+        Ok(())
+    }
+
+    pub(crate) fn pop_patches<F>(
+        &mut self,
+        should_pop: F,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<Vec<PatchName>, Error>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -426,15 +515,17 @@ impl<'repo> StackTransaction<'repo> {
         self.unapplied.append(&mut requested);
         self.unapplied.append(&mut unapplied);
 
-        self.print_popped(&all_popped);
+        self.print_popped(&all_popped, stdout)?;
 
-        incidental
+        Ok(incidental)
     }
 
     pub(crate) fn push_patch(
         &mut self,
         patchname: &PatchName,
         already_merged: bool,
+        is_last: bool,
+        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         let patch_commit = {
             if let Some(maybe_desc) = self.patch_updates.get(patchname) {
@@ -460,6 +551,11 @@ impl<'repo> StackTransaction<'repo> {
         let old_parent = patch_commit.parent(0)?;
         let old_base_tree = old_parent.tree()?;
 
+        let mut push_status = if already_merged {
+            PushStatus::AlreadyMerged
+        } else {
+            PushStatus::Unmodified
+        };
         let mut merge_conflict = false;
 
         cd.tree_id = if already_merged {
@@ -468,14 +564,21 @@ impl<'repo> StackTransaction<'repo> {
             let base = old_base_tree;
             let ours = new_parent.tree()?;
             let theirs = patch_commit.tree()?;
-            let merge_options = None;
-            let mut temp_index = repo.merge_trees(&base, &ours, &theirs, merge_options)?;
+            let mut merge_options = git2::MergeOptions::new();
+            merge_options.patience(true);
+            let mut temp_index = repo.merge_trees(&base, &ours, &theirs, Some(&merge_options))?;
             if temp_index.has_conflicts() {
                 if !self.use_index_and_worktree {
                     return Err(Error::PatchApplicationUnclean(patchname.to_string()));
                 }
 
                 // TODO stgit.autoimerge
+                // TODO compat: python version runs git merge-recursive in the worktree
+                // It seems like the old temp index merge did not use `git apply
+                // --3way`, which meant that it would fail in cases where the new
+                // temp-index merge succeeds.  Not sure if there are cases where old
+                // iw.merge() would succeed where new repo.merge_trees() (above) would
+                // fail?
                 let mut opts = git2::build::CheckoutBuilder::new();
                 opts.allow_conflicts(false);
                 opts.our_label("current");
@@ -493,6 +596,7 @@ impl<'repo> StackTransaction<'repo> {
                 self.current_tree_id = ours.id();
 
                 merge_conflict = true;
+                push_status = PushStatus::Conflict;
                 for conflict in temp_index.conflicts()? {
                     let conflict = conflict?;
                     if let Some(entry) = conflict.our {
@@ -506,36 +610,39 @@ impl<'repo> StackTransaction<'repo> {
             }
         };
 
-        let new_patch_commit = if *cd.parent_ids.first().unwrap()
-            != patch_commit.parent_id(0).unwrap()
-            || cd.tree_id != patch_commit.tree_id()
-            || cd.message.as_bytes() != patch_commit.message_raw_bytes()
-            || !same_signature(&cd.author, &patch_commit.author())
-        {
+        // TODO: want the "+ patch (modified)" status to indicate whether the patch's *diff*
+        // from its new parent is different than from its old parent.
+        let is_tree_modified = cd.tree_id != patch_commit.tree_id();
+
+        if is_tree_modified {
+            push_status = PushStatus::Modified;
+        }
+
+        if is_tree_modified || cd.parent_ids[0] != patch_commit.parent_id(0).unwrap() {
             let new_patch_commit_id = cd.commit(repo)?;
-            let new_patch_commit = repo.find_commit(new_patch_commit_id)?;
+            let commit = repo.find_commit(new_patch_commit_id)?;
             if merge_conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
                 // here ensures that the real stack top will be checked-out.
-                self.updated_head = Some(new_patch_commit.clone());
+                self.updated_head = Some(commit.clone());
             }
-            Some(new_patch_commit)
-        } else {
-            None
-        };
+
+            if commit
+                .parent(0)
+                .map(|parent| parent.tree_id() == commit.tree_id())
+                .unwrap_or(false)
+            {
+                push_status = PushStatus::Empty;
+            }
+
+            self.patch_updates
+                .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+        }
 
         if merge_conflict {
             // The final checkout at execute-time must allow these push conflicts.
             self.conflict_mode = ConflictMode::Allow;
-        }
-
-        if let Some(new_patch_commit) = new_patch_commit {
-            let patch_desc = PatchDescriptor {
-                commit: new_patch_commit,
-            };
-            self.patch_updates
-                .insert(patchname.clone(), Some(patch_desc));
         }
 
         if let Some(pos) = self.unapplied.iter().position(|pn| pn == patchname) {
@@ -544,6 +651,8 @@ impl<'repo> StackTransaction<'repo> {
             self.hidden.remove(pos);
         }
         self.applied.push(patchname.clone());
+
+        self.print_pushed(patchname, push_status, is_last, stdout)?;
 
         if merge_conflict {
             Err(Error::MergeConflicts(self.conflicts.len()))
@@ -555,6 +664,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn check_merged<'a>(
         &self,
         patches: &'a [PatchName],
+        stdout: &mut termcolor::StandardStream,
     ) -> Result<Vec<&'a PatchName>, Error> {
         fn with_temp_index<F>(repo: &Repository, f: F) -> Result<(), Error>
         where
@@ -596,21 +706,25 @@ impl<'repo> StackTransaction<'repo> {
                 }
 
                 let diff = repo.diff_tree_to_tree(Some(&patch_tree), Some(&parent_tree), None)?;
-                let result = repo.apply_to_tree(&head_tree, &diff, None);
-                match result {
-                    Ok(index) => {
-                        if !index.has_conflicts() {
-                            merged.push(patchname);
-                        }
-                    }
-                    Err(e) => {
-                        dbg!(e);
+                if let Ok(index) = repo.apply_to_tree(&head_tree, &diff, None) {
+                    if !index.has_conflicts() {
+                        merged.push(patchname);
                     }
                 }
             }
 
             Ok(())
         })?;
+
+        {
+            write!(stdout, "Found ")?;
+            let mut color_spec = termcolor::ColorSpec::new();
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+            write!(stdout, "{}", merged.len())?;
+            stdout.reset()?;
+            let plural = if merged.len() == 1 { "" } else { "es" };
+            writeln!(stdout, " patch{} merged upstream", plural)?;
+        }
 
         Ok(merged)
     }

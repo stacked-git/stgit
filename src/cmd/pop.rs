@@ -200,6 +200,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         .iter()
         .for_each(|pn| new_unapplied.push(pn.clone()));
 
+    let mut stdout = crate::color::get_color_stdout(matches);
+
     let discard_changes = false;
     let use_index_and_worktree = !opt_spill;
     let trans_context = StackTransaction::make_context(
@@ -209,7 +211,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         use_index_and_worktree,
     );
     let exec_context = trans_context.transact(|trans| {
-        trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None)?;
+        trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None, &mut stdout)?;
         Ok(())
     });
 
