@@ -22,7 +22,6 @@ fn get_app() -> App<'static> {
              unapplied patches.",
         )
         .arg(&*crate::argset::BRANCH_ARG)
-        .arg(&*crate::color::COLOR_ARG)
 }
 
 fn run(matches: &clap::ArgMatches) -> super::Result {

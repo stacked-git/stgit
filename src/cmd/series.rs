@@ -115,7 +115,6 @@ fn get_app() -> App<'static> {
                 .short('s')
                 .help("Only show patches around the topmost patch"),
         )
-        .arg(&*crate::color::COLOR_ARG)
         .arg(
             Arg::new("patch-range")
                 .help("Range of patches to show")

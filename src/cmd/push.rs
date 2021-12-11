@@ -90,7 +90,6 @@ fn get_app() -> App<'static> {
         )
         .arg(&*crate::argset::KEEP_ARG)
         .arg(&*crate::argset::MERGED_ARG)
-        .arg(&*crate::color::COLOR_ARG)
         .arg(
             Arg::new("patches")
                 .help("Patches to push")

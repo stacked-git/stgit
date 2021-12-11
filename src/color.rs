@@ -1,17 +1,30 @@
 use clap::{Arg, ArgMatches};
 use termcolor::{ColorChoice, StandardStream};
 
-lazy_static! {
-    pub(crate) static ref COLOR_ARG: Arg<'static> = Arg::new("color")
+pub(crate) fn get_color_arg() -> Arg<'static> {
+    Arg::new("color")
         .long("color")
-        .help("Colorize the output")
-        .long_help("Specify WHEN to colorize the output.")
+        .help("When to colorize output: auto, always, ansi, never")
+        .long_help(
+            "Specify WHEN to colorize the output.\n\
+             \n\
+             'auto' (the default) enables colored output only when \
+             outputting to a terminal or TTY. The NO_COLOR environment \
+             variable is respected.\n\
+             \n\
+             'always' and 'never' unconditionlly enable/disable \
+             colored output, respectively.\n\
+             \n\
+             'ansi' forces color to be output using ANSI escape sequences, \
+             even in a Windows console.",
+        )
+        .hide_default_value(true)
+        .hide_possible_values(true)
         .value_name("WHEN")
         .possible_values(&["auto", "always", "ansi", "never"])
+        .takes_value(true)
         .default_value("auto")
-        .default_missing_value("always")
-        .min_values(0)
-        .overrides_with("color");
+        .overrides_with("color")
 }
 
 pub(crate) fn get_color_stdout(matches: &ArgMatches) -> StandardStream {

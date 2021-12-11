@@ -47,6 +47,7 @@ fn get_base_app() -> App<'static> {
                 .value_name("PATH")
                 .value_hint(ValueHint::AnyPath),
         )
+        .arg(color::get_color_arg().global(true))
 }
 
 /// Just enough of an App instance to find candidate subcommands

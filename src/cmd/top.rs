@@ -21,7 +21,6 @@ fn get_app() -> App<'static> {
              message will be printed if no patches are applied.",
         )
         .arg(&*crate::argset::BRANCH_ARG)
-        .arg(&*crate::color::COLOR_ARG)
 }
 
 fn run(matches: &clap::ArgMatches) -> super::Result {
