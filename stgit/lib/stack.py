@@ -213,6 +213,9 @@ class Patches:
                 short_name = new_name
             else:
                 break
+        # Strip trailing dots again because the truncation may have
+        # left a trailing dot, which is not allowed
+        short_name = re.sub(r'\.+$', '', short_name)
         assert self.is_name_valid(short_name)
 
         if not unique:
