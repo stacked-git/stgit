@@ -17,6 +17,7 @@ test_expect_success 'Test setup' '
     stg uncommit -n 3
 '
 
+if test -z "$STG_RUST"; then
 cat > expected.txt <<EOF
 first line
 <<<<<<< current
@@ -25,6 +26,16 @@ foo
 foo2
 >>>>>>> patched
 EOF
+else
+cat > expected.txt <<EOF
+first line
+<<<<<<< current
+=======
+foo
+foo2
+>>>>>>> p2
+EOF
+fi
 
 test_expect_success 'Float a patch, causing a conflict with the next patch' '
     conflict stg float p1 &&
