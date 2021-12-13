@@ -205,7 +205,7 @@ class Patches:
 
         name_len = config.getint('stgit.namelength')
 
-        words = long_name.split('-')
+        words = [word.rstrip('.') for word in long_name.split('-')]
         short_name = words[0]
         for word in words[1:]:
             new_name = '%s-%s' % (short_name, word)
@@ -213,9 +213,6 @@ class Patches:
                 short_name = new_name
             else:
                 break
-        # Strip trailing dots again because the truncation may have
-        # left a trailing dot, which is not allowed
-        short_name = re.sub(r'\.+$', '', short_name)
         assert self.is_name_valid(short_name)
 
         if not unique:

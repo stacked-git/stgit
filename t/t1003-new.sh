@@ -43,6 +43,14 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Invalid patch name: trailing periods in shortened name' '
+    test_config stgit.namelength 10 &&
+    stg new -m "aaa. bbb. ccc." &&
+    test "$(echo $(stg top))" = "aaa-bbb" &&
+    stg delete --top
+'
+
+test_expect_success \
     'Create a patch without giving a name' '
     stg new -m yo &&
     [ "$(echo $(stg top))" = "yo" ] &&
