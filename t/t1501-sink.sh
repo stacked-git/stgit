@@ -63,6 +63,19 @@ test_expect_success 'sink specified patch below a target' '
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4"
 '
 
+test_expect_success 'sink --nopush' '
+    stg sink --nopush --to=p2 &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p4" &&
+    test "$(echo $(stg series --unapplied --noprefix))" = "p2 p3 p22"
+'
+
+test_expect_success 'sink --nopush with multiple patches' '
+    stg sink --nopush p1 p2 p3 &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
+    test "$(echo $(stg series --unapplied --noprefix))" = "p4 p22" &&
+    stg goto p4
+'
+
 test_expect_success 'attempt sink with same to and target' '
     command_error stg sink --to=p3 p3 2>&1 |
     grep -e "Cannot have a sinked patch as target"

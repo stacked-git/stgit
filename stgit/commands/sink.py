@@ -89,13 +89,17 @@ def func(parser, options, args):
     if options.to and options.to in patches:
         raise CmdException('Cannot have a sinked patch as target')
 
-    applied = [p for p in stack.patchorder.applied if p not in patches]
-    if options.to:
-        insert_idx = applied.index(options.to)
+    unapplied_rem = [p for p in stack.patchorder.unapplied if p not in patches]
+    applied_rem = [p for p in stack.patchorder.applied if p not in patches]
+    insert_idx = applied_rem.index(options.to) if options.to else 0
+    stay_applied, re_applied = applied_rem[:insert_idx], applied_rem[insert_idx:]
+
+    if options.nopush:
+        applied = stay_applied + patches
+        unapplied = re_applied + unapplied_rem
     else:
-        insert_idx = 0
-    applied = applied[:insert_idx] + patches + applied[insert_idx:]
-    unapplied = [p for p in stack.patchorder.unapplied if p not in patches]
+        applied = stay_applied + patches + re_applied
+        unapplied = unapplied_rem
 
     iw = stack.repository.default_iw
 
