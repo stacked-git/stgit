@@ -150,6 +150,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         for patch_name in crate::patchrange::parse_contiguous_patch_range(
             patch_ranges,
             stack.state.all_patches(),
+            stack.state.all_patches(),
         )? {
             let oid = stack.state.patches[&patch_name].commit.id();
             let sigil = if Some(&patch_name) == top_patchname {

@@ -116,37 +116,21 @@ fn run(matches: &ArgMatches) -> super::Result {
                 &stack.state.applied,
                 stack.state.all_patches(),
             )
-            .map_err(|e| {
-                if let Error::PatchRange(patch_range, extra) = e {
-                    // See if one or more patches are unapplied in order to produce better
-                    // error message.
-                    let patch_ranges = matches.values_of("patches").unwrap();
-                    if let Ok(patches) = parse_patch_ranges(
-                        patch_ranges,
-                        stack.state.all_patches(),
-                        stack.state.all_patches(),
-                    ) {
-                        match patches
-                            .iter()
-                            .filter(|pn| stack.state.unapplied.contains(pn))
-                            .count()
-                        {
-                            0 => Error::PatchRange(patch_range, extra),
-                            1 => Error::PatchRange(
-                                patch_range,
-                                "patch already unapplied".to_string(),
-                            ),
-                            _ => Error::PatchRange(
-                                patch_range,
-                                "patches already unapplied".to_string(),
-                            ),
-                        }
-                    } else {
-                        Error::PatchRange(patch_range, extra)
-                    }
-                } else {
-                    e
+            .map_err(|e| match e {
+                crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
+                    if stack.state.unapplied.contains(&patchname) =>
+                {
+                    Error::Generic(format!(
+                        "patch `{}` from `{}` is already unapplied",
+                        &patchname, &range
+                    ))
                 }
+                crate::patchrange::Error::PatchNotAllowed { patchname }
+                    if stack.state.unapplied.contains(&patchname) =>
+                {
+                    Error::Generic(format!("patch `{}` is already unapplied", &patchname))
+                }
+                _ => e.into(),
             })?,
         )
     } else {

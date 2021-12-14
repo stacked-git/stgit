@@ -86,9 +86,9 @@ test_expect_success 'Multiple ranges' '
 
 test_expect_success 'Disjoint ranges' '
     command_error stg series p2 p4 2>err &&
-    grep -e "error: invalid patch range \`p4\`" err &&
+    grep -e "error: \`p4\` not contiguous with preceding range \`p2\`" err &&
     command_error stg series p1..p2 p5.. 2>err &&
-    grep -e "error: invalid patch range \`p5\.\.\`" err
+    grep -e "error: \`p5\.\.\` not contiguous with preceding range \`p1\.\.p2\`" err
 '
 fi
 

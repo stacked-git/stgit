@@ -180,12 +180,11 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>, Error> {
         .iter()
         .chain(stack.state.unapplied.iter());
 
-    parse_patch_ranges(series, allowed_patches, stack.state.all_patches()).map_err(|e| match e {
-        e @ Error::PatchRange(_, _) => Error::Generic(if use_stdin {
+    parse_patch_ranges(series, allowed_patches, stack.state.all_patches()).map_err(|e| {
+        Error::Generic(if use_stdin {
             format!("<stdin>: {}", e)
         } else {
             format!("{}: {}", path.to_string_lossy(), e)
-        }),
-        _ => e,
+        })
     })
 }

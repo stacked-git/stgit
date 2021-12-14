@@ -12,17 +12,17 @@ pub(crate) enum Error {
     #[error("JSON deserialize error: {0}")]
     Json(#[from] serde_json::Error),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 
-    #[error("{0}")]
+    #[error(transparent)]
     Format(#[from] std::fmt::Error),
 
-    #[error("{0}")]
+    #[error(transparent)]
     PatchName(#[from] crate::patchname::Error),
 
-    #[error("invalid patch range `{0}`: {1}")]
-    PatchRange(String, String),
+    #[error(transparent)]
+    PatchRange(#[from] crate::patchrange::Error),
 
     #[error("patch `{0}` already exists")]
     PatchNameExists(String),

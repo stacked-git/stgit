@@ -92,7 +92,7 @@ test_expect_success 'Attempt push --noapply on applied patch' '
 else
 test_expect_success 'Attempt push --noapply on applied patch' '
     command_error stg push --noapply b1 2>err &&
-    grep -e "invalid patch range .b1.: patch already applied" err
+    grep -e "error: patch \`b1\` is already applied" err
 '
 fi
 
