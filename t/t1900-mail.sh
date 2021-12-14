@@ -128,17 +128,17 @@ test_expect_success 'Test empty patch' '
 '
 
 test_expect_success 'Invalid --in-reply-to combinations' '
-    echo "$(command_error stg mail --in-reply-to=xxx --no-thread $(stg top) 2>&1)" | \
-        grep -e "in-reply-to option not allowed with" &&
-    echo "$(command_error stg mail --in-reply-to=xxx --unrelated $(stg top) 2>&1)" | \
-        grep -e "in-reply-to option not allowed with"
+    echo "$(command_error stg mail --in-reply-to=xxx --no-thread $(stg top) 2>err)" &&
+    grep -e "in-reply-to option not allowed with" err &&
+    echo "$(command_error stg mail --in-reply-to=xxx --unrelated $(stg top) 2>err)" &&
+    grep -e "in-reply-to option not allowed with" err
 '
 
 test_expect_success 'Invalid --cover option combos' '
-    echo "$(command_error stg mail --cover=cover.txt --unrelated $(stg top) 2>&1)" | \
-        grep -e "cover sending not allowed with --unrelated" &&
-    echo "$(command_error stg mail --edit-cover --unrelated $(stg top) 2>&1)" | \
-        grep -e "cover sending not allowed with --unrelated"
+    echo "$(command_error stg mail --cover=cover.txt --unrelated $(stg top) 2>err)" &&
+    grep -e "cover sending not allowed with --unrelated" err &&
+    echo "$(command_error stg mail --edit-cover --unrelated $(stg top) 2>err)" &&
+    grep -e "cover sending not allowed with --unrelated" err
 '
 
 cat > cover.txt <<EOF

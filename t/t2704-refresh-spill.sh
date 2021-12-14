@@ -17,18 +17,19 @@ test_expect_success 'Initialize the StGit repository and create a patch and add 
 '
 
 test_expect_success 'Attempt refresh --spill -e' '
-    command_error stg refresh --spill -e 2>&1 |
-    grep "Cannot combine --spill with --edit"
+    command_error stg refresh --spill -e 2>err &&
+    grep "Cannot combine --spill with --edit" err
 '
 
 test_expect_success 'Attempt refresh --spill --patch' '
-    command_error stg refresh --spill --patch test-patch 2>&1 |
-    grep "Cannot combine --spill with --patch"
+    command_error stg refresh --spill --patch test-patch 2>err &&
+    grep "Cannot combine --spill with --patch" err
 '
 
 test_expect_success 'Attempt refresh --spill patch0.txt' '
-    command_error stg refresh --spill patch0.txt 2>&1 |
-    grep "Cannot use path limiting with --spill"
+    command_error stg refresh --spill patch0.txt 2>err &&
+    grep "Cannot use path limiting with --spill" err &&
+    rm err
 '
 
 test_expect_success 'Save current patch message to a file' '

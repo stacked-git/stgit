@@ -34,8 +34,8 @@ test_expect_success 'Setup fake editor' '
 test_expect_success 'Bad APPLY_LINE throws an error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>&1 |
-    grep -e "Bad APPLY_LINE"
+    command_error stg rebase --interactive 2>err &&
+    grep -e "Bad APPLY_LINE" err
 '
 
 test_expect_success 'Setup fake editor' '
@@ -59,8 +59,8 @@ test_expect_success 'Setup fake editor' '
 test_expect_success 'Bad todo line throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>&1 |
-    grep -e "Bad todo line"
+    command_error stg rebase --interactive 2>err &&
+    grep -e "Bad todo line" err
 '
 
 test_expect_success 'Setup fake editor' '
@@ -71,8 +71,8 @@ test_expect_success 'Setup fake editor' '
 test_expect_success 'Bad patch name throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>&1 |
-    grep -e "Bad patch name"
+    command_error stg rebase --interactive 2>err &&
+    grep -e "Bad patch name" err
 '
 
 test_expect_success 'Setup fake editor' '
@@ -83,8 +83,8 @@ test_expect_success 'Setup fake editor' '
 test_expect_success 'Bad instruction throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>&1 |
-    grep -e "Unknown instruction"
+    command_error stg rebase --interactive 2>err &&
+    grep -e "Unknown instruction" err
 '
 
 test_expect_success 'Setup stgit stack' '

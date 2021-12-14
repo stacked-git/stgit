@@ -9,8 +9,8 @@ test_expect_success 'Initialize stgit' '
 '
 
 test_expect_success 'Attempt too few arguments' '
-    command_error stg hide   2>&1 | grep -e "No patches specified" &&
-    command_error stg unhide 2>&1 | grep -e "No patches specified"
+    command_error stg hide   2>err && grep -e "No patches specified" err &&
+    command_error stg unhide 2>err && grep -e "No patches specified" err
 '
 
 test_expect_success 'Add some patches' '
@@ -25,8 +25,8 @@ test_expect_success 'Hide already hidden patch' '
 '
 
 test_expect_success 'Attempt unhide non-hidden patch' '
-    command_error stg unhide p0 2>&1 |
-    grep -e "Patch \"p0\" not hidden"
+    command_error stg unhide p0 2>err &&
+    grep -e "Patch \"p0\" not hidden" err
 '
 
 test_expect_success 'Unhide hidden patch' '

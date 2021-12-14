@@ -43,8 +43,8 @@ test_expect_success \
 
 test_expect_success \
     'Invalid arguments' '
-    command_error stg branch -d "a description" bar foo 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg branch -d "a description" bar foo 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success \

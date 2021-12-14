@@ -115,8 +115,8 @@ test_expect_success \
 
 test_expect_success \
     'Invalid num args to rename' '
-    command_error stg branch --rename bar biz bop 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch --rename bar biz bop 2>err &&
+    grep "incorrect number of arguments" err
     '
 
 test_done

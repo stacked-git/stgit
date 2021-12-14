@@ -41,29 +41,29 @@ test_expect_success \
 test_expect_success \
   'Invalid --to and --number arguments' \
   '
-  command_error stg uncommit --to HEAD^ --number 1 2>&1 |
-  grep -e "cannot give both --to and --number"
+  command_error stg uncommit --to HEAD^ --number 1 2>err &&
+  grep -e "cannot give both --to and --number" err
   '
 
 test_expect_success \
   'Invalid --to with patch args' \
   '
-  command_error stg uncommit --to HEAD^ p0 2>&1 |
-  grep -e "cannot specify patch name with --to"
+  command_error stg uncommit --to HEAD^ p0 2>err &&
+  grep -e "cannot specify patch name with --to" err
   '
 
 test_expect_success \
   'Invalid --number' \
   '
-  command_error stg uncommit --number -1 2>&1 |
-  grep -e "invalid value passed to --number"
+  command_error stg uncommit --number -1 2>err &&
+  grep -e "invalid value passed to --number" err
   '
 
 test_expect_success \
   'Too many patch names with --number' \
   '
-  command_error stg uncommit --number 2 p0 p1 2>&1 |
-  grep -e "when using --number, specify at most one patch name"
+  command_error stg uncommit --number 2 p0 p1 2>err &&
+  grep -e "when using --number, specify at most one patch name" err
   '
 
 test_expect_success \
@@ -117,8 +117,8 @@ test_expect_success \
 test_expect_success 'Attempt to reuse patch name' '
   stg uncommit &&
   [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
-  command_error stg uncommit bar-patch 2>&1 |
-  grep -e "Patch name \"bar-patch\" already taken" &&
+  command_error stg uncommit bar-patch 2>err &&
+  grep -e "Patch name \"bar-patch\" already taken" err &&
   stg commit --all
 '
 

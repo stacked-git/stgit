@@ -35,14 +35,14 @@ test_expect_success \
 
 test_expect_success \
     'Too many arguments' '
-    command_error stg clone foo bar2 bar3 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg clone foo bar2 bar3 2>err &&
+    grep -e "incorrect number of arguments" err
     '
 
 test_expect_success \
     'Attempt clone to existing destination' '
-    command_error stg clone foo bar 2>&1 |
-    grep -e "\"bar\" exists. Remove it first"
+    command_error stg clone foo bar 2>err &&
+    grep -e "\"bar\" exists. Remove it first" err
     '
 
 test_done

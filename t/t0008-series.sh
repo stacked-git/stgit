@@ -5,7 +5,8 @@ test_description='Test stg series'
 . ./test-lib.sh
 
 test_expect_success 'Test uninitialized branch' '
-    command_error stg series 2>&1 | grep -e "branch not initialized"
+    command_error stg series 2>err &&
+    grep -e "branch not initialized" err
 '
 
 test_expect_success 'Initialize series' '

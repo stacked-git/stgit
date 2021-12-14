@@ -14,8 +14,8 @@ test_expect_success 'Initialize branch' '
 '
 
 test_expect_success 'Invald num args to protect' '
-    command_error stg branch --protect foo bar 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch --protect foo bar 2>err &&
+    grep "incorrect number of arguments" err
 '
 
 test_expect_success 'Protect branch' '
@@ -32,19 +32,19 @@ test_expect_success 'Protect idempotency' '
 '
 
 test_expect_success 'Attempt cleanup protected' '
-    command_error stg branch --cleanup 2>&1 |
-    grep "This branch is protected"
+    command_error stg branch --cleanup 2>err &&
+    grep "This branch is protected" err
 '
 
 test_expect_success 'Attempt delete protected' '
     stg branch master &&
-    command_error stg branch --delete foo 2>&1 |
-    grep "This branch is protected"
+    command_error stg branch --delete foo 2>err &&
+    grep "This branch is protected" err
 '
 
 test_expect_success 'Invalid num arts to unprotect' '
-    command_error stg branch --unprotect foo bar 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch --unprotect foo bar 2>err &&
+    grep "incorrect number of arguments" err
 '
 
 test_expect_success 'Unprotect branch' '
@@ -69,13 +69,13 @@ test_expect_success 'Cleanup unprotected' '
 '
 
 test_expect_success 'Protect uninitialized branch' '
-    command_error stg branch --protect 2>&1 |
-    grep -E "is not controlled by StGit"
+    command_error stg branch --protect 2>err &&
+    grep -E "is not controlled by StGit" err
 '
 
 test_expect_success 'Protect uninitialized branch' '
-    command_error stg branch --unprotect 2>&1 |
-    grep -E "is not controlled by StGit"
+    command_error stg branch --unprotect 2>err &&
+    grep -E "is not controlled by StGit" err
 '
 
 test_expect_success 'Delete unprotected' '

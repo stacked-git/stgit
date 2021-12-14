@@ -6,8 +6,8 @@ test_description='Test the pick command'
 test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
-	command_error stg pick foo 2>&1 |
-	grep "master: branch not initialized"
+	command_error stg pick foo 2>err &&
+	grep "master: branch not initialized" err
 	'
 
 test_expect_success \
@@ -30,15 +30,15 @@ test_expect_success \
 test_expect_success \
 	'No pick args' \
 	'
-	command_error stg pick 2>&1 |
-	grep "incorrect number of arguments"
+	command_error stg pick 2>err &&
+	grep "incorrect number of arguments" err
 	'
 
 test_expect_success \
 	'Pick --name with multiple patches' \
 	'
-	command_error stg pick --ref-branch foo --name C_and_E C E 2>&1 |
-	grep "name can only be specified with one patch"
+	command_error stg pick --ref-branch foo --name C_and_E C E 2>err &&
+	grep "name can only be specified with one patch" err
 	'
 
 test_expect_success \
@@ -60,8 +60,9 @@ test_expect_success \
 test_expect_success \
 	'Pick --file without --fold' \
 	'
-	command_error stg pick --file d D 2>&1 |
-	grep "file can only be specified with --fold"
+	command_error stg pick --file d D 2>err &&
+	grep "file can only be specified with --fold" err &&
+	rm err
 	'
 
 test_expect_success \
@@ -147,8 +148,9 @@ test_expect_success \
 	'Pick --update without applied patches' \
 	'
 	stg pop -a &&
-	command_error stg pick --update -B foo E 2>&1 |
-	grep "No patches applied"
+	command_error stg pick --update -B foo E 2>err &&
+	grep "No patches applied" err &&
+	rm err
 	'
 
 test_expect_success \
@@ -174,8 +176,9 @@ test_expect_success \
 test_expect_success \
 	'Pick too many commits' \
 	'
-	command_error stg pick --ref-branch foo $(cat C-id) D-foo 2>&1 |
-	grep "Unknown patch name"
+	command_error stg pick --ref-branch foo $(cat C-id) D-foo 2>err &&
+	grep "Unknown patch name" err &&
+	rm err
 	'
 
 test_expect_success \
@@ -183,8 +186,9 @@ test_expect_success \
 	'
 	rm C-id &&
 	stg push A &&
-	conflict stg pick foo:AAA 2>&1 |
-	grep "1 merge conflict(s)" &&
+	conflict stg pick foo:AAA 2>err &&
+	grep "1 merge conflict(s)" err &&
+	rm err &&
 	test "$(stg top)" = "AAA" &&
 	test "$(echo $(stg series -A --noprefix))" = "C2 A AAA" &&
 	test "$(echo $(stg status))" = "UU a" &&
@@ -195,24 +199,24 @@ test_expect_success \
 test_expect_success \
 	'Pick --fold with conflict' \
 	'
-	conflict stg pick --fold --ref-branch=foo AAA 2>&1 |
-	grep "Merge conflict in a" &&
+	conflict stg pick --fold --ref-branch=foo AAA 2>err &&
+	grep "Merge conflict in a" err &&
 	stg reset --hard
 	'
 
 test_expect_success \
 	'Pick --fold --file with conflict' \
 	'
-	conflict stg pick --fold --file a -Bfoo AAA 2>&1 |
-	grep "AAA does not apply cleanly" &&
+	conflict stg pick --fold --file a -Bfoo AAA 2>err &&
+	grep "AAA does not apply cleanly" err &&
 	stg reset --hard
 	'
 
 test_expect_success \
 	'Pick --update with conflict' \
 	'
-	conflict stg pick --update foo:AAA 2>&1 |
-	grep "AAA does not apply cleanly" &&
+	conflict stg pick --update foo:AAA 2>err &&
+	grep "AAA does not apply cleanly" err &&
 	stg reset --hard
 	'
 

@@ -25,8 +25,9 @@ test_expect_success 'Initialize StGit stack with three patches' '
 '
 
 test_expect_success 'Invalid arguments' '
-    command_error stg reset 2>&1 |
-    grep -e "Wrong options"
+    command_error stg reset 2>err &&
+    grep -e "Wrong options" err &&
+    rm err
 '
 
 cat > expected.txt <<EOF

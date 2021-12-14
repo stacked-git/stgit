@@ -23,8 +23,8 @@ test_expect_success 'Create some patches' '
 '
 
 test_expect_success 'No modifications and no file args' '
-    command_error stg patches 2>&1 |
-    grep -e "No files specified or no local changes"
+    command_error stg patches 2>err &&
+    grep -e "No files specified or no local changes" err
 '
 
 cat > expected-evens.log <<EOF
@@ -48,8 +48,8 @@ test_expect_success 'Modifications and no file args' '
 
 test_expect_success 'No patches applied' '
     stg pop -a &&
-    command_error stg patches even.txt 2>&1 |
-    grep -e "No patches applied"
+    command_error stg patches even.txt 2>err &&
+    grep -e "No patches applied" err
 '
 
 test_expect_success 'Patches relative to dir' '

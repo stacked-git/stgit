@@ -78,18 +78,18 @@ test_expect_success 'Float with series from stdin' '
 
 test_expect_success 'Attempt float with empty series' '
     echo "" |
-    command_error stg float -s - 2>&1 |
-    grep -e "No patches to float"
+    command_error stg float -s - 2>err &&
+    grep -e "No patches to float" err
 '
 
 test_expect_success 'Attempt float with series file and arguments' '
-    command_error stg float --series series.txt p1 2>&1 |
-    grep -e "<patches> cannot be used with --series"
+    command_error stg float --series series.txt p1 2>err &&
+    grep -e "<patches> cannot be used with --series" err
 '
 
 test_expect_success 'Attempt float with no series file and no arguments' '
-    command_error stg float 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg float 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success 'Series with bogus patch name' '

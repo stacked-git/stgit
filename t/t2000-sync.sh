@@ -48,15 +48,15 @@ test_expect_success \
 test_expect_success \
     'Attempt sync with current branch' \
     '
-    command_error stg sync -B foo 2>&1 |
-    grep -e "Cannot synchronise with the current branch"
+    command_error stg sync -B foo 2>err &&
+    grep -e "Cannot synchronise with the current branch" err
     '
 
 test_expect_success \
     'Attempt sync without remote branch or series' \
     '
-    command_error stg sync -a 2>&1 |
-    grep -e "No remote branch or series specified"
+    command_error stg sync -a 2>err &&
+    grep -e "No remote branch or series specified" err
     '
 
 test_expect_success \
@@ -64,8 +64,8 @@ test_expect_success \
     '
     test_when_finished "stg goto p3" &&
     stg pop -a &&
-    command_error stg sync -B master 2>&1 |
-    grep -e "no patches applied"
+    command_error stg sync -B master 2>err &&
+    grep -e "no patches applied" err
     '
 
 test_expect_success \
@@ -73,8 +73,8 @@ test_expect_success \
     '
     stg new -m p4 &&
     test_when_finished "stg delete p4" &&
-    command_error stg sync -B master 2>&1 |
-    grep -e "No common patches to be synchronised"
+    command_error stg sync -B master 2>err &&
+    grep -e "No common patches to be synchronised" err
     '
 
 test_expect_success \

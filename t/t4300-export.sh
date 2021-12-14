@@ -38,16 +38,16 @@ test_expect_success 'Export to stdout' '
 
 test_expect_success 'Export with none applied' '
     stg pop -a &&
-    command_error stg export --dir export3 2>&1 |
-    grep -e "No patches applied" &&
+    command_error stg export --dir export3 2>err &&
+    grep -e "No patches applied" err &&
     test_path_is_missing export3 &&
     stg push -a
     '
 
 test_expect_success 'Export with dirty working tree' '
     echo "another line" >> foo.txt &&
-    stg export -d export4 patch-1 2>&1 |
-    grep -e "Warning: Local changes in the tree" &&
+    stg export -d export4 patch-1 2>err &&
+    grep -e "Warning: Local changes in the tree" err &&
     test_path_is_file export4/series &&
     test_path_is_file export4/patch-1 &&
     git checkout foo.txt

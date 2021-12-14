@@ -17,8 +17,8 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'Test too many arguments' '
-    command_error stg clean p0 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg clean p0 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success 'Clean empty patches' '

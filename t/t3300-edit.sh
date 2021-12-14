@@ -35,8 +35,8 @@ write_script diffedit <<EOF
 echo "" > "\$1"
 EOF
 test_expect_success 'Empty editor aborts edit' '
-    EDITOR=./diffedit command_error stg edit 2>&1 |
-    grep -e "Aborting edit due to empty patch description"
+    EDITOR=./diffedit command_error stg edit 2>err &&
+    grep -e "Aborting edit due to empty patch description" err
 '
 rm -f diffedit
 
@@ -200,8 +200,8 @@ write_script diffedit <<EOF
 sed 's/+1,4/+1,5/' "\$1" > "\$1".tmp && mv "\$1".tmp "\$1"
 EOF
 test_expect_success 'Edit patch diff which fails to apply' '
-    EDITOR=./diffedit stg edit -d p2 2>&1 |
-    grep -e "Edited patch did not apply." &&
+    EDITOR=./diffedit command_error stg edit -d p2 2>err &&
+    grep -e "Edited patch did not apply." err &&
     test "$(grep 111 foo)" = "111YY" &&
     test_file_not_empty .stgit-failed.patch
 '

@@ -20,8 +20,8 @@ test_expect_success 'Init repo' '
     '
 
 test_expect_success 'Too many arguments' '
-    command_error stg id patch-1 patch-2 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg id patch-1 patch-2 2>err &&
+    grep -e "incorrect number of arguments" err
     '
 
 test_expect_success 'Provide patch argument' '

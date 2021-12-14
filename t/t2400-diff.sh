@@ -83,18 +83,18 @@ test_expect_success 'Diff revs parent-child' '
 '
 
 test_expect_success 'Diff invalid rev patch name' '
-    command_error stg diff -r foo..bad-name 2>&1 |
-    grep -e "bad-name: Unknown patch or revision name"
+    command_error stg diff -r foo..bad-name 2>err &&
+    grep -e "bad-name: Unknown patch or revision name" err
 '
 
 test_expect_success 'Diff invalid rev too many ..' '
-    command_error stg diff -r foo..bar..baz 2>&1 |
-    grep -e "incorrect parameters to -r"
+    command_error stg diff -r foo..bar..baz 2>err &&
+    grep -e "incorrect parameters to -r" err
 '
 
 test_expect_success 'Diff invalid rev no rev1' '
-    command_error stg diff -r ..baz 2>&1 |
-    grep -e "incorrect parameters to -r"
+    command_error stg diff -r ..baz 2>err &&
+    grep -e "incorrect parameters to -r" err
 '
 
 cat > expected-bar-head-stat.diff <<EOF

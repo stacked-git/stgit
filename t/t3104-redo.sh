@@ -24,8 +24,8 @@ test_expect_success 'Initialize StGit stack with three patches' '
 '
 
 test_expect_success 'Invalid number of patches to redo' '
-    command_error stg redo -n0 2>&1 |
-    grep -e "Bad number of undos to redo"
+    command_error stg redo -n0 2>err &&
+    grep -e "Bad number of undos to redo" err
 '
 
 cat > expected.txt <<EOF

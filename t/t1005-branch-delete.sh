@@ -16,8 +16,8 @@ test_expect_success 'Create a branch (and switch to it)' '
 '
 
 test_expect_success 'Attempt to delete branch with patches' '
-    command_error stg branch --delete master 2>&1 |
-    grep -e "series still contains patches"
+    command_error stg branch --delete master 2>err &&
+    grep -e "series still contains patches" err
 '
 
 test_expect_success 'Force delete branch with patches' '
@@ -37,15 +37,15 @@ test_expect_success 'Make sure the branch files were deleted' '
     '
 
 test_expect_success 'Attempt to delete current branch' '
-    command_error stg branch --delete $(stg branch) 2>&1 |
-    grep -e "Cannot delete the current branch"
+    command_error stg branch --delete $(stg branch) 2>err &&
+    grep -e "Cannot delete the current branch" err
 '
 
 test_expect_success 'Invalid num args to delete' '
-    command_error stg branch --delete 2>&1 |
-    grep -e "incorrect number of arguments" &&
-    command_error stg branch --delete foo extra 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg branch --delete 2>err &&
+    grep -e "incorrect number of arguments" err &&
+    command_error stg branch --delete foo extra 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success 'Create a non-StGit branch and delete it' '
@@ -54,8 +54,8 @@ test_expect_success 'Create a non-StGit branch and delete it' '
 '
 
 test_expect_success 'Delete a nonexistent branch' '
-   command_error stg branch --delete bar 2>&1 |
-   grep -e "no such branch"
+   command_error stg branch --delete bar 2>err &&
+   grep -e "no such branch" err
 '
 
 test_done

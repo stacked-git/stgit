@@ -23,8 +23,8 @@ test_expect_success 'Create a few patches' '
 '
 
 test_expect_success 'Attempt to spill non-topmost patch' '
-    command_error stg pop --spill p0 2>&1 |
-    grep -e "Can only spill topmost applied patches"
+    command_error stg pop --spill p0 2>err &&
+    grep -e "Can only spill topmost applied patches" err
 '
 
 test_expect_success 'Pop a patch, keeping its modifications in the tree' '

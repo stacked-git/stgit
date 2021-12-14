@@ -136,24 +136,24 @@ test_expect_success 'Refresh moved files' '
 test_expect_success 'Attempt invalid options with --index' '
     echo foo4 > foo4.txt &&
     stg add foo4.txt &&
-    command_error stg refresh -i . 2>&1 |
-    grep -e "Only full refresh is available with the --index option" &&
-    command_error stg refresh -i --force 2>&1 |
-    grep -e "You cannot --force a full refresh when using --index mode" &&
-    command_error stg refresh -i --submodules 2>&1 |
-    grep -e "--submodules is meaningless when keeping the current index"
+    command_error stg refresh -i . 2>err &&
+    grep -e "Only full refresh is available with the --index option" err &&
+    command_error stg refresh -i --force 2>err &&
+    grep -e "You cannot --force a full refresh when using --index mode" err &&
+    command_error stg refresh -i --submodules 2>err &&
+    grep -e "--submodules is meaningless when keeping the current index" err
     '
 
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >> foo4.txt &&
-    command_error stg refresh 2>&1 |
-    grep -e "The index is dirty. Did you mean --index?"
+    command_error stg refresh 2>err &&
+    grep -e "The index is dirty. Did you mean --index?" err
 '
 
 test_expect_success 'Attempt to refresh to invalid patch name' '
     stg add foo4.txt &&
-    command_error stg refresh -p bad-patchname 2>&1 |
-    grep -e "bad-patchname: no such patch"
+    command_error stg refresh -p bad-patchname 2>err &&
+    grep -e "bad-patchname: no such patch" err
 '
 
 test_expect_success 'Attempt to refresh with no applied patches' '
@@ -161,16 +161,16 @@ test_expect_success 'Attempt to refresh with no applied patches' '
     stg pop -a &&
     echo foo5 > foo5.txt &&
     git add foo5.txt &&
-    command_error stg refresh 2>&1 |
-    grep -e "Cannot refresh top patch because no patches are applied" &&
+    command_error stg refresh 2>err &&
+    grep -e "Cannot refresh top patch because no patches are applied" err &&
     git rm -f foo5.txt
 '
 
 test_expect_success 'Attempt update with submodules' '
     stg push -a &&
     echo more >> foo2.txt &&
-    command_error stg refresh --update --submodules 2>&1 |
-    grep -e "--submodules is meaningless when only updating modified files"
+    command_error stg refresh --update --submodules 2>err &&
+    grep -e "--submodules is meaningless when only updating modified files" err
 '
 
 test_expect_success 'Test annotate' '
@@ -189,8 +189,8 @@ test_expect_success 'Attempt refresh with open conflict' '
     stg add conflicting.txt &&
     stg refresh &&
     conflict stg push p6 &&
-    command_error stg refresh 2>&1 |
-    grep -e "resolve conflicts first"
+    command_error stg refresh 2>err &&
+    grep -e "resolve conflicts first" err
 '
 
 test_done

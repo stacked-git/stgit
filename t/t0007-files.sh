@@ -28,8 +28,8 @@ test_expect_success 'Too many arguments' '
 '
 
 test_expect_success 'Invalid patch name' '
-    command_error stg files bad-patch-name 2>&1 |
-    grep -e "bad-patch-name: Unknown patch"
+    command_error stg files bad-patch-name 2>err &&
+    grep -e "bad-patch-name: Unknown patch" err
 '
 
 cat > expected-b-c.log <<EOF

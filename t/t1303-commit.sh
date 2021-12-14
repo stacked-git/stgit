@@ -12,7 +12,8 @@ test_expect_success 'Initialize the StGit repository' '
 '
 
 test_expect_success 'Attempt to commit an empty patch' '
-    command_error stg commit p2 2>&1 | grep "Empty patch"
+    command_error stg commit p2 2>err &&
+    grep "Empty patch" err
 '
 
 test_expect_success 'Commit middle patch' '

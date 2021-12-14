@@ -14,28 +14,28 @@ test_expect_success 'Setup patches' '
 '
 
 test_expect_success 'Check --noapply with --all' '
-    command_error stg push --noapply --all 2>&1 |
-    grep -e "Cannot use --noapply with --all"
+    command_error stg push --noapply --all 2>err &&
+    grep -e "Cannot use --noapply with --all" err
 '
 
 test_expect_success 'Check --noapply with --number' '
-    command_error stg push --noapply -n 3 2>&1 |
-    grep -e "Cannot use --noapply with --number"
+    command_error stg push --noapply -n 3 2>err &&
+    grep -e "Cannot use --noapply with --number" err
 '
 
 test_expect_success 'Check --noapply without patch names' '
-    command_error stg push --noapply 2>&1 |
-    grep -e "Must supply patch names with --noapply"
+    command_error stg push --noapply 2>err &&
+    grep -e "Must supply patch names with --noapply" err
 '
 
 test_expect_success 'Check --noapply with --set-tree' '
-    command_error stg push --noapply --set-tree b1 b2 b3 2>&1 |
-    grep -e "Cannot use --noapply with --set-tree"
+    command_error stg push --noapply --set-tree b1 b2 b3 2>err &&
+    grep -e "Cannot use --noapply with --set-tree" err
 '
 
 test_expect_success 'Check --noapply with --merged' '
-    command_error stg push --noapply -m b1 b2 b3 2>&1 |
-    grep -e "Cannot use --noapply with --merged"
+    command_error stg push --noapply -m b1 b2 b3 2>err &&
+    grep -e "Cannot use --noapply with --merged" err
 '
 
 test_expect_success 'Reorder patches b1 b2 b3' '
@@ -50,8 +50,8 @@ test_expect_success 'Push reorded patches b1 b2 b3' '
 '
 
 test_expect_success 'Attempt push --noapply on applied patch' '
-    command_error stg push --noapply b1 2>&1 |
-    grep -e "Patch already applied: b1"
+    command_error stg push --noapply b1 2>err &&
+    grep -e "Patch already applied: b1" err
 '
 
 test_expect_success 'Reorder patches to cause a latent conflict' '

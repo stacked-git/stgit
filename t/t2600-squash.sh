@@ -14,18 +14,18 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'Too few arguments' '
-    command_error stg squash p0 2>&1 |
-    grep -e "Need at least two patches"
+    command_error stg squash p0 2>err &&
+    grep -e "Need at least two patches" err
 '
 
 test_expect_success 'Attempt duplicate patch name' '
-    command_error stg squash -n p3 -- p0 p1 2>&1 |
-    grep -e "Patch name \"p3\" already taken"
+    command_error stg squash -n p3 -- p0 p1 2>err &&
+    grep -e "Patch name \"p3\" already taken" err
 '
 
 test_expect_success 'Attempt invalid patch name' '
-    command_error stg squash -n invalid..name -- p0 p1 2>&1 |
-    grep -e "Patch name \"invalid..name\" is invalid"
+    command_error stg squash -n invalid..name -- p0 p1 2>err &&
+    grep -e "Patch name \"invalid..name\" is invalid" err
 '
 
 test_expect_success 'Attempt out of order' '
@@ -80,8 +80,8 @@ test_expect_success 'Setup fake editor' '
 test_expect_success 'Empty commit message aborts the squash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
-    command_error stg squash --name=p0 p0 q1 2>&1 |
-    grep -e "Aborting squash due to empty commit message" &&
+    command_error stg squash --name=p0 p0 q1 2>err &&
+    grep -e "Aborting squash due to empty commit message" err &&
     test "$(echo $(stg series))" = "+ p0 > q1"
 '
 

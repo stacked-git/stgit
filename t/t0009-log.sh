@@ -5,7 +5,8 @@ test_description='Test the log command.'
 . ./test-lib.sh
 
 test_expect_success 'Attempt log on uninitialized branch' '
-    command_error stg log 2>&1 >/dev/null | grep -e "branch not initialized"
+    command_error stg log 2>err >/dev/null &&
+    grep -e "branch not initialized" err
 '
 
 test_expect_success 'Initialize the StGit repository' '
@@ -31,20 +32,20 @@ test_expect_success 'Test log of all patches' '
 '
 
 test_expect_success 'Test invalid opts with clear' '
-    command_error stg log --diff --clear 2>&1 >/dev/null |
-    grep -e "cannot combine --clear with other options" &&
+    command_error stg log --diff --clear 2>err >/dev/null &&
+    grep -e "cannot combine --clear with other options" err &&
     stg log | head -n 1 | grep -e "uncommit"
 '
 
 test_expect_success 'Test invalid args with clear' '
-    command_error stg log --clear p0 p1 2>&1 >/dev/null |
-    grep -e "cannot combine --clear with patch arguments" &&
+    command_error stg log --clear p0 p1 2>err >/dev/null &&
+    grep -e "cannot combine --clear with patch arguments" err &&
     stg log | head -n 1 | grep -e "uncommit"
 '
 
 test_expect_success 'Test invalid opts with graphical' '
-    command_error stg log --graphical -n 5 p0 p1 2>&1 >/dev/null |
-    grep -e "cannot combine --graphical and --number"
+    command_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
+    grep -e "cannot combine --graphical and --number" err
 '
 
 test_expect_success 'Test log full' '

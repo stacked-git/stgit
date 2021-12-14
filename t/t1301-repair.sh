@@ -16,8 +16,8 @@ test_expect_success 'Repair in a repository without patches' '
 '
 
 test_expect_success 'Repair with invalid arguments' '
-    command_error stg repair xxx 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg repair xxx 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success 'Create a patch' '
@@ -30,8 +30,8 @@ test_expect_success 'Create a patch' '
 test_expect_success 'Attempt repair of protected branch' '
     test_when_finished "stg branch --unprotect" &&
     stg branch --protect &&
-    command_error stg repair 2>&1 |
-    grep -e "This branch is protected"
+    command_error stg repair 2>err &&
+    grep -e "This branch is protected" err
 '
 
 test_expect_success 'Repair when there is nothing to do' '

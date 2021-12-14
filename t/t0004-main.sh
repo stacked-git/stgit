@@ -5,8 +5,8 @@ test_description='Test stg.main'
 . ./test-lib.sh
 
 test_expect_success 'Test no command' '
-    general_error stg 2>&1 |
-    grep -e "usage:"
+    general_error stg 2>err &&
+    grep -e "usage:" err
 '
 
 test_expect_success 'Test help/--help equivalence' '
@@ -16,8 +16,8 @@ test_expect_success 'Test help/--help equivalence' '
 '
 
 test_expect_success 'Test help on invalid command' '
-    general_error stg help invalidcmd 2>&1 |
-    grep -e "Unknown command: invalidcmd"
+    general_error stg help invalidcmd 2>err &&
+    grep -e "Unknown command: invalidcmd" err
 '
 
 test_expect_success 'Test help on regular command' '
@@ -33,8 +33,8 @@ test_expect_success 'Test help on alias command' '
 '
 
 test_expect_success 'Test help on ambiguous command' '
-    general_error stg help pu 2>&1 |
-    grep -e "Ambiguous command: pu"
+    general_error stg help pu 2>err &&
+    grep -e "Ambiguous command: pu" err
 '
 
 test_expect_success 'Test ambiguous alias' '
@@ -42,7 +42,8 @@ test_expect_success 'Test ambiguous alias' '
     stg show-stat &&
     stg init &&
     stg show &&
-    general_error stg sho 2>&1 | grep -e "Ambiguous command: sho"
+    general_error stg sho 2>err &&
+    grep -e "Ambiguous command: sho" err
 '
 
 test_expect_success 'Test version/--version equivalence' '

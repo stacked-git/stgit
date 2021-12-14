@@ -14,14 +14,14 @@ test_expect_success 'Initialize branch' '
 '
 
 test_expect_success 'Cannot cleanup with patches' '
-    command_error stg branch --cleanup 2>&1 |
-    grep "Cannot clean up: the series still contains patches"
+    command_error stg branch --cleanup 2>err &&
+    grep "Cannot clean up: the series still contains patches" err
 '
 
 test_expect_success 'Cannot cleanup with unapplied patches' '
     stg pop &&
-    command_error stg branch --cleanup 2>&1 |
-    grep "Cannot clean up: the series still contains patches"
+    command_error stg branch --cleanup 2>err &&
+    grep "Cannot clean up: the series still contains patches" err
 '
 
 test_expect_success 'Clone branch with patches' '
@@ -34,8 +34,8 @@ test_expect_success 'Force cleanup branch with patches' '
     git config --get-regexp branch\\.foo2\\.stgit &&
     stg branch --cleanup --force &&
     test "$(stg series --noprefix --all)" = "" &&
-    command_error stg new -m p1 2>&1 |
-    grep "branch not initialized" &&
+    command_error stg new -m p1 2>err &&
+    grep "branch not initialized" err &&
     test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit
 '
 
@@ -46,15 +46,15 @@ test_expect_success 'Commit patches' '
 '
 
 test_expect_success 'Invalid num args to cleanup' '
-    command_error stg branch --cleanup foo extra 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch --cleanup foo extra 2>err &&
+    grep "incorrect number of arguments" err
 '
 
 test_expect_success 'Cleanup current branch' '
     stg branch --cleanup &&
     test "$(stg branch)" = "foo" &&
-    command_error stg new -m p1 2>&1 |
-    grep "branch not initialized"
+    command_error stg new -m p1 2>err &&
+    grep "branch not initialized" err
 '
 
 test_expect_success 'Re-initialize branch' '

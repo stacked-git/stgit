@@ -24,16 +24,16 @@ test_expect_success \
 test_expect_success 'dirty workdir aborts rebase' \
 	'
 	echo foo >> file1 &&
-	command_error stg rebase master 2>&1 |
-	grep -e "Worktree not clean."
+	command_error stg rebase master 2>err &&
+	grep -e "Worktree not clean." err
 	'
 
 test_expect_success 'dirty workdir works with --autostash' \
 	'
 	stg rebase master --autostash &&
 	test $(stg series --applied -c) = 1 &&
-	git diff-index HEAD 2>&1 | 
-	grep -e file1
+	git diff-index HEAD |
+	grep -e "file1"
 	'
 
 test_expect_success \
@@ -42,8 +42,8 @@ test_expect_success \
 	test_config stgit.autostash "yes" &&
 	stg rebase master~1 &&
 	test $(stg series --applied -c) = 1 &&
-	git diff-index HEAD 2>&1 | 
-	grep -e file1
+	git diff-index HEAD |
+	grep -e "file1"
 	'
 
 test_expect_success \
@@ -60,8 +60,8 @@ test_expect_success \
 	git checkout --force &&
 	stg rebase master
 	echo baz > file2 &&
-	command_error stg rebase master~1 --interactive --autostash 2>&1 |
-	grep -e "Merge conflict raised when popping stash after rebase"
+	command_error stg rebase master~1 --interactive --autostash 2>err &&
+	grep -e "Merge conflict raised when popping stash after rebase" err
 	'
 
 test_done

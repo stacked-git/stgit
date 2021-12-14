@@ -124,8 +124,8 @@ test_expect_success 'edit with failing hook' '
 '
 
 test_expect_success 'edit --diff with failing hook' '
-    command_error stg edit --diff -m "another" 2>&1 |
-    grep -e "The commit-msg hook failed"
+    command_error stg edit --diff -m "another" 2>err &&
+    grep -e "The commit-msg hook failed" err
 '
 
 test_expect_success 'refresh with failing hook' '

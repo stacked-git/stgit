@@ -14,8 +14,8 @@ test_expect_success \
 
 test_expect_success \
     'Too many arguments' '
-    command_error stg new foo extra_arg 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg new foo extra_arg 2>err &&
+    grep -e "incorrect number of arguments" err
 '
 
 test_expect_success \
@@ -59,8 +59,8 @@ test_expect_success \
 
 test_expect_success \
     'Attempt to create patch with duplicate name' '
-    command_error stg new foo -m "duplicate foo" 2>&1 |
-    grep -e "foo: patch already exists"
+    command_error stg new foo -m "duplicate foo" 2>err &&
+    grep -e "foo: patch already exists" err
 '
 
 test_expect_success \
@@ -77,8 +77,8 @@ test_expect_success \
     echo "something different" > file.txt &&
     stg refresh &&
     conflict stg push p1 &&
-    command_error stg new -m p3 2>&1 |
-    grep -e "Cannot create a new patch -- resolve conflicts first" &&
+    command_error stg new -m p3 2>err &&
+    grep -e "Cannot create a new patch -- resolve conflicts first" err &&
     stg reset --hard
 '
 

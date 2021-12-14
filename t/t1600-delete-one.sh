@@ -19,24 +19,24 @@ test_expect_success \
 test_expect_success \
     'Invalid arguments' \
     '
-    command_error stg delete --top foo 2>&1 |
-    grep -e "Either --top or patches must be specified"
+    command_error stg delete --top foo 2>err &&
+    grep -e "Either --top or patches must be specified" err
     '
 
 test_expect_success \
     'Attempt delete --top with none applied' \
     '
     stg pop &&
-    command_error stg delete --top 2>&1 |
-    grep -e "No patches applied" &&
+    command_error stg delete --top 2>err &&
+    grep -e "No patches applied" err &&
     stg push
     '
 
 test_expect_success \
     'No patches specified' \
     '
-    command_error stg delete 2>&1 |
-    grep -e "No patches specified"
+    command_error stg delete 2>err &&
+    grep -e "No patches specified" err
     '
 
 test_expect_success \

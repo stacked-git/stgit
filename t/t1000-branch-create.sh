@@ -71,20 +71,20 @@ test_expect_success \
 
 test_expect_success \
     'Attempt switching to current branch' '
-    command_error stg branch $(stg branch) 2>&1 |
-    grep "is already the current branch"
+    command_error stg branch $(stg branch) 2>err &&
+    grep "is already the current branch" err
 '
 
 test_expect_success \
     'Attempt no branch command' '
-    command_error stg branch foo bar 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch foo bar 2>err &&
+    grep "incorrect number of arguments" err
 '
 
 test_expect_success \
     'Invalid num arguments to branch list' '
-    command_error stg branch --list new 2>&1 |
-    grep "incorrect number of arguments"
+    command_error stg branch --list new 2>err &&
+    grep "incorrect number of arguments" err
 '
 
 test_expect_success \

@@ -59,8 +59,8 @@ test_expect_success 'Unclean worktree and floating applied patches' '
     echo "foobar" > 4.t &&
     test_when_finished git checkout 4.t &&
     test "$(stg status 4.t)" = " M 4.t" &&
-    command_error stg float --noapply p4 2>&1 |
-    grep -e "Worktree not clean"
+    command_error stg float --noapply p4 2>err &&
+    grep -e "Worktree not clean" err
 '
 
 test_done

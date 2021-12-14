@@ -217,8 +217,8 @@ test_expect_success \
     'Import with bad author_date option' \
     '
     stg delete --top &&
-    command_error stg import --authdate "a long time ago" some.patch 2>&1 |
-    grep -e "\"a long time ago\" is not a valid date"
+    command_error stg import --authdate "a long time ago" some.patch 2>err &&
+    grep -e "\"a long time ago\" is not a valid date" err
     '
 
 test_expect_success \
@@ -268,8 +268,8 @@ test_expect_success \
     'Import empty patch with sign-off' \
     '
     echo "" |
-    stg import -n empty --sign 2>&1 |
-    grep -e "No diff found, creating empty patch" &&
+    stg import -n empty --sign 2>err &&
+    grep -e "No diff found, creating empty patch" err &&
     stg show | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>" &&
     stg top | grep -e "empty" &&
     stg clean &&
@@ -288,15 +288,15 @@ test_expect_success \
 test_expect_success \
     'Attempt url' \
     '
-    command_error stg import --url 2>&1 |
-    grep -e "URL argument required"
+    command_error stg import --url 2>err &&
+    grep -e "URL argument required" err
     '
 
 test_expect_success \
     'Too many arguments' \
     '
-    command_error stg import some.patch some.patch 2>&1 |
-    grep -e "incorrect number of arguments"
+    command_error stg import some.patch some.patch 2>err &&
+    grep -e "incorrect number of arguments" err
     '
 
 test_done

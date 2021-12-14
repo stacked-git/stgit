@@ -15,18 +15,18 @@ test_expect_success 'Create some patches' '
 '
 
 test_expect_success 'Invalid -a/-u options' '
-    command_error stg show --applied --unapplied 2>&1 |
-    grep -e "cannot use both --applied and --unapplied"
+    command_error stg show --applied --unapplied 2>err &&
+    grep -e "cannot use both --applied and --unapplied" err
 '
 
 test_expect_success 'Invalid arg with -a' '
-    command_error stg show --applied patch-aaa 2>&1 |
-    grep -e "patches may not be given with --applied or --unapplied"
+    command_error stg show --applied patch-aaa 2>err &&
+    grep -e "patches may not be given with --applied or --unapplied" err
 '
 
 test_expect_success 'Invalid patch name' '
-    command_error stg show bad-patch-name 2>&1 |
-    grep -e "bad-patch-name: Unknown patch or revision name"
+    command_error stg show bad-patch-name 2>err &&
+    grep -e "bad-patch-name: Unknown patch or revision name" err
 '
 
 test_expect_success 'Show patch' '
@@ -35,8 +35,8 @@ test_expect_success 'Show patch' '
 '
 
 test_expect_success 'Bad diff opts' '
-    command_error stg show --diff-opts=--this-is-bad 2>&1 |
-    grep -e "unrecognized argument: --this-is-bad"
+    command_error stg show --diff-opts=--this-is-bad 2>err &&
+    grep -e "unrecognized argument: --this-is-bad" err
 '
 
 test_expect_success 'Show patch range' '

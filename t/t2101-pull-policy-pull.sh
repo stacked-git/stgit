@@ -29,8 +29,8 @@ test_expect_success \
     'Check protection' \
     '(cd clone &&
       stg branch --protect &&
-      command_error stg pull 2>&1 |
-      grep "This branch is protected" &&
+      command_error stg pull 2>err &&
+      grep "This branch is protected" err &&
       stg branch --unprotect
      )
      '
@@ -50,8 +50,8 @@ test_expect_success \
     '
     (
         cd clone &&
-        command_error stg pull origin master 2>&1 | \
-            grep "incorrect number of arguments"
+        command_error stg pull origin master 2>err &&
+        grep "incorrect number of arguments" err
     )
     '
 
@@ -61,7 +61,8 @@ test_expect_success \
     test_config -C clone branch.master.stgit.pull-policy bogus &&
     (
         cd clone &&
-        command_error stg pull 2>&1 | grep "Unsupported pull-policy"
+        command_error stg pull 2>err &&
+        grep "Unsupported pull-policy" err
     )
     '
 
