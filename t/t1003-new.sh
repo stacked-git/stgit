@@ -106,7 +106,7 @@ test_expect_success \
     test_when_finished test_set_editor false &&
     echo "something else" > file.txt &&
     stg new no-verbose-patch &&
-    test_must_fail grep "something else" raw_commit_message.txt
+    !(grep "something else" raw_commit_message.txt)
 '
 
 test_expect_success \

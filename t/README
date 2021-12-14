@@ -1,6 +1,6 @@
 The mechanism that powers this testsuite is directly imported from the
 Core Git Tests, in directory t/ of the git repository.  Files are base
-on git version 2.20.0.
+on git version v2.34.1-182-ge773545c7f.
 
 Core Git Tests
 ==============
@@ -73,7 +73,8 @@ You can also run each test individually from command line, like this:
 
 You can pass --verbose (or -v), --debug (or -d), and --immediate
 (or -i) command line argument to the test, or by setting STG_TEST_OPTS
-appropriately before running "make".
+appropriately before running "make". Short options can be bundled, i.e.
+'-d -v' is the same as '-dv'.
 
 -v::
 --verbose::
@@ -182,25 +183,27 @@ For an individual test suite --run could be used to specify that
 only some tests should be run or that some tests should be
 excluded from a run.
 
-The argument for --run is a list of individual test numbers or
-ranges with an optional negation prefix that define what tests in
-a test suite to include in the run.  A range is two numbers
-separated with a dash and matches a range of tests with both ends
-been included.  You may omit the first or the second number to
-mean "from the first test" or "up to the very last test"
-respectively.
+The argument for --run, <test-selector>, is a list of description
+substrings or globs or individual test numbers or ranges with an
+optional negation prefix (of '!') that define what tests in a test
+suite to include (or exclude, if negated) in the run.  A range is two
+numbers separated with a dash and matches a range of tests with both
+ends been included.  You may omit the first or the second number to
+mean "from the first test" or "up to the very last test" respectively.
 
-Optional prefix of '!' means that the test or a range of tests
-should be excluded from the run.
+The argument to --run is split on commas into separate strings,
+numbers, and ranges, and picks all tests that match any of the
+individual selection criteria.  If the substring of the description
+text that you want to match includes a comma, use the glob character
+'?' instead.  For example --run='rebase,merge?cherry-pick' would match
+on all tests that match either the glob *rebase* or the glob
+*merge?cherry-pick*.
 
 If --run starts with an unprefixed number or range the initial
 set of tests to run is empty. If the first item starts with '!'
 all the tests are added to the initial set.  After initial set is
 determined every test number or range is added or excluded from
 the set one by one, from left to right.
-
-Individual numbers or ranges could be separated either by a space
-or a comma.
 
 For example, to run only tests up to a specific test (21), one
 could do this:
@@ -214,7 +217,7 @@ or this:
 Common case is to run several setup tests (1, 2, 3) and then a
 specific test (21) that relies on that setup:
 
-    $ sh ./t9200-git-cvsexport-commit.sh --run='1 2 3 21'
+    $ sh ./t9200-git-cvsexport-commit.sh --run='1,2,3,21'
 
 or:
 
@@ -222,17 +225,17 @@ or:
 
 or:
 
-    $ sh ./t9200-git-cvsexport-commit.sh --run='-3 21'
+    $ sh ./t9200-git-cvsexport-commit.sh --run='-3,21'
 
 As noted above, the test set is built by going through the items
 from left to right, so this:
 
-    $ sh ./t9200-git-cvsexport-commit.sh --run='1-4 !3'
+    $ sh ./t9200-git-cvsexport-commit.sh --run='1-4,!3'
 
 will run tests 1, 2, and 4.  Items that come later have higher
 precedence.  It means that this:
 
-    $ sh ./t9200-git-cvsexport-commit.sh --run='!3 1-4'
+    $ sh ./t9200-git-cvsexport-commit.sh --run='!3,1-4'
 
 would just run tests from 1 to 4, including 3.
 
@@ -240,6 +243,18 @@ You may use negation with ranges.  The following will run all
 test in the test suite except from 7 up to 11:
 
     $ sh ./t9200-git-cvsexport-commit.sh --run='!7-11'
+
+Sometimes there may be multiple tests with e.g. "setup" in their name
+that are needed and rather than figuring out the number for all of them
+we can just use "setup" as a substring/glob to match against the test
+description:
+
+    $ sh ./t0050-filesystem.sh --run=setup,9-11
+
+or one could select both the setup tests and the rename ones (assuming all
+relevant tests had those words in their descriptions):
+
+    $ sh ./t0050-filesystem.sh --run=setup,rename
 
 Some tests in a test suite rely on the previous tests performing
 certain actions, specifically some tests are designated as
@@ -258,6 +273,15 @@ The whole test suite could be run to test some special features
 that cannot be easily covered by a few specific test cases. These
 could be enabled by running the test suite with correct STG_TEST_
 environment set.
+
+GIT_TEST_FAIL_PREREQS=<boolean> fails all prerequisites. This is
+useful for discovering issues with the tests where say a later test
+implicitly depends on an optional earlier test.
+
+There's a "FAIL_PREREQS" prerequisite that can be used to test for
+whether this mode is active, and e.g. skip some tests that are hard to
+refactor to deal with it. The "SYMLINKS" prerequisite is currently
+excluded as so much relies on it, but this might change in the future.
 
 PYTHON=<python executable> use alternative python executable to
 run stg in tests. By default `python3` is used. Alternatives such
@@ -408,6 +432,41 @@ Here are the "do's:"
    reports "ok" or "not ok" to the end user running the tests. Under
    --verbose, they are shown to help debug the tests.
 
+ - Be careful when you loop
+
+   You may need to verify multiple things in a loop, but the
+   following does not work correctly:
+
+	test_expect_success 'test three things' '
+	    for i in one two three
+	    do
+		test_something "$i"
+	    done &&
+	    test_something_else
+	'
+
+   Because the status of the loop itself is the exit status of the
+   test_something in the last round, the loop does not fail when
+   "test_something" for "one" or "two" fails.  This is not what you
+   want.
+
+   Instead, you can break out of the loop immediately when you see a
+   failure.  Because all test_expect_* snippets are executed inside
+   a function, "return 1" can be used to fail the test immediately
+   upon a failure:
+
+	test_expect_success 'test three things' '
+	    for i in one two three
+	    do
+		test_something "$i" || return 1
+	    done &&
+	    test_something_else
+	'
+
+   Note that we still &&-chain the loop to propagate failures from
+   earlier commands.
+
+
 And here are the "don'ts:"
 
  - Don't exit() within a <script> part.
@@ -547,7 +606,8 @@ Test harness library
 --------------------
 
 There are a handful helper functions defined in the test harness
-library for your script to use.
+library for your script to use. Some of them are listed below;
+see test-lib-functions.sh for the full list and their options.
 
  - test_expect_success [<prereq>] <message> <script>
 
@@ -593,10 +653,12 @@ library for your script to use.
    argument.  This is primarily meant for use during the
    development of a new test script.
 
- - debug <git-command>
+ - debug [options] <git-command>
 
    Run a git command inside a debugger. This is primarily meant for
-   use when debugging a failing test script.
+   use when debugging a failing test script. With '-t', use your
+   original TERM instead of test-lib.sh's "dumb", so that your
+   debugger interface has colors.
 
  - test_done
 
@@ -720,13 +782,13 @@ library for your script to use.
 
    Check whether a file has the length it is expected to.
 
- - test_path_is_file <path> [<diagnosis>]
-   test_path_is_dir <path> [<diagnosis>]
-   test_path_is_missing <path> [<diagnosis>]
+ - test_path_is_file <path>
+   test_path_is_dir <path>
+   test_path_is_missing <path>
 
    Check if the named path is a file, if the named path is a
    directory, or if the named path does not exist, respectively,
-   and fail otherwise, showing the <diagnosis> text.
+   and fail otherwise.
 
  - test_when_finished <script>
 
@@ -783,7 +845,7 @@ library for your script to use.
 	EOF
 
 
- - test_pause
+ - test_pause [options]
 
 	This command is useful for writing and debugging tests and must be
 	removed before submitting. It halts the execution of the test and
@@ -875,7 +937,7 @@ knows that there will be 256 subdirectories under .git/objects/,
 and it knows that the object ID of an empty tree is a certain
 40-byte string.  This is deliberately done so in t0000-basic.sh
 because the things the very basic core test tries to achieve is
-to serve as a basis for people who are changing the Git internal
+to serve as a basis for people who are changing the Git internals
 drastically.  For these people, after making certain changes,
 not seeing failures from the basic test _is_ a failure.  And
 such drastic changes to the core Git that even changes these

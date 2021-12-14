@@ -23,6 +23,9 @@ cat > expected0.txt <<EOF
 D  y.txt
 EOF
 printf '' > expected1.txt
+cat > expected2.txt <<EOF
+D y.txt
+EOF
 test_expect_success 'stg rm a file' '
     test_when_finished "stg pop -a; git reset --hard"
     stg new -m p0 &&
@@ -33,7 +36,7 @@ test_expect_success 'stg rm a file' '
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
     stg files > files.txt &&
-    test_cmp -w expected0.txt files.txt
+    test_cmp expected2.txt files.txt
 '
 
 cat > expected0.txt <<EOF
@@ -41,6 +44,10 @@ cat > expected0.txt <<EOF
 D  y.txt
 EOF
 printf '' > expected1.txt
+cat > expected2.txt <<EOF
+M x.txt
+D y.txt
+EOF
 test_expect_success 'stg rm a file together with other changes' '
     test_when_finished "stg pop -a; git reset --hard"
     stg new -m p1 &&
@@ -52,13 +59,16 @@ test_expect_success 'stg rm a file together with other changes' '
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
     stg files > files.txt &&
-    test_cmp -w expected0.txt files.txt
+    test_cmp expected2.txt files.txt
 '
 
 cat > expected0.txt <<EOF
  D y.txt
 EOF
 printf '' > expected1.txt
+cat > expected2.txt <<EOF
+D y.txt
+EOF
 test_expect_success 'rm a file' '
     test_when_finished "stg pop -a; git reset --hard"
     stg new -m p2 &&
@@ -69,7 +79,7 @@ test_expect_success 'rm a file' '
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
     stg files > files.txt &&
-    test_cmp -w expected0.txt files.txt
+    test_cmp expected2.txt files.txt
 '
 
 cat > expected0.txt <<EOF
@@ -77,6 +87,10 @@ cat > expected0.txt <<EOF
  D y.txt
 EOF
 printf '' > expected1.txt
+cat > expected2.txt <<EOF
+M x.txt
+D y.txt
+EOF
 test_expect_success 'rm a file together with other changes' '
     test_when_finished "stg pop -a; git reset --hard"
     stg new -m p3 &&
@@ -88,7 +102,7 @@ test_expect_success 'rm a file together with other changes' '
     stg status > status1.txt &&
     test_cmp expected1.txt status1.txt &&
     stg files > files.txt &&
-    test_cmp -w expected0.txt files.txt
+    test_cmp expected2.txt files.txt
 '
 
 test_done
