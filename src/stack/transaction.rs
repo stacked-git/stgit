@@ -307,7 +307,15 @@ impl<'repo> StackTransaction<'repo> {
         if self.discard_changes {
             checkout_builder.force();
         }
-        repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))?;
+        repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))
+            .map_err(|e| {
+                if e.class() == git2::ErrorClass::Checkout && e.code() == git2::ErrorCode::Conflict
+                {
+                    Error::CheckoutConflicts(e.message().to_string())
+                } else {
+                    Error::Git(e)
+                }
+            })?;
         self.current_tree_id = commit.tree_id();
         Ok(())
     }
@@ -420,6 +428,21 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    fn print_deleted(
+        &self,
+        deleted: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+        write!(stdout, "* ")?;
+        color_spec.set_fg(None);
+        stdout.set_color(color_spec.set_dimmed(true))?;
+        writeln!(stdout, "{}", deleted)?;
+        stdout.reset()?;
+        Ok(())
+    }
+
     fn print_popped(
         &self,
         popped: &[PatchName],
@@ -479,6 +502,60 @@ impl<'repo> StackTransaction<'repo> {
 
         writeln!(stdout, "{}", status_str)?;
         Ok(())
+    }
+
+    pub(crate) fn delete_patches<F>(
+        &mut self,
+        should_delete: F,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<Vec<PatchName>, Error>
+    where
+        F: Fn(&PatchName) -> bool,
+    {
+        let all_popped = if let Some(first_pop_pos) = self.applied.iter().position(&should_delete) {
+            self.applied.split_off(first_pop_pos)
+        } else {
+            vec![]
+        };
+
+        self.print_popped(&all_popped, stdout)?;
+
+        let incidental: Vec<PatchName> = all_popped
+            .iter()
+            .filter(|pn| !should_delete(pn))
+            .cloned()
+            .collect();
+
+        for patchname in all_popped.iter().filter(|pn| should_delete(pn)) {
+            self.print_deleted(patchname, stdout)?;
+            self.patch_updates.insert(patchname.clone(), None);
+        }
+
+        let unapplied_size = incidental.len() + self.unapplied.len();
+        let unapplied = std::mem::replace(&mut self.unapplied, Vec::with_capacity(unapplied_size));
+        self.unapplied.append(&mut incidental.clone());
+
+        for patchname in unapplied {
+            if should_delete(&patchname) {
+                self.print_deleted(&patchname, stdout)?;
+                self.patch_updates.insert(patchname, None);
+            } else {
+                self.unapplied.push(patchname);
+            }
+        }
+
+        let mut i = 0;
+        while i < self.hidden.len() {
+            if should_delete(&self.hidden[i]) {
+                let patchname = self.hidden.remove(i);
+                self.print_deleted(&patchname, stdout)?;
+                self.patch_updates.insert(patchname, None);
+            } else {
+                i += 1;
+            }
+        }
+
+        Ok(incidental)
     }
 
     pub(crate) fn pop_patches<F>(

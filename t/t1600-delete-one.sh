@@ -16,12 +16,21 @@ test_expect_success \
     stg refresh
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid arguments' \
     '
     command_error stg delete --top foo 2>err &&
     grep -e "Either --top or patches must be specified" err
     '
+else
+test_expect_success \
+    'Invalid arguments' \
+    '
+    general_error stg delete --top foo 2>err &&
+    grep -e "error: The argument .--top. cannot be used with .<patches>...." err
+    '
+fi
 
 test_expect_success \
     'Attempt delete --top with none applied' \
@@ -32,12 +41,21 @@ test_expect_success \
     stg push
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'No patches specified' \
     '
     command_error stg delete 2>err &&
     grep -e "No patches specified" err
     '
+else
+test_expect_success \
+    'No patches specified' \
+    '
+    general_error stg delete 2>err &&
+    grep -e "The following required arguments were not provided" err
+    '
+fi
 
 test_expect_success \
     'Try to delete a non-existing patch' \
