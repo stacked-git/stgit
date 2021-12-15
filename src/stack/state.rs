@@ -22,7 +22,7 @@ pub(crate) struct StackState<'repo> {
     pub patches: BTreeMap<PatchName, PatchDescriptor<'repo>>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct PatchDescriptor<'repo> {
     pub commit: Commit<'repo>,
 }
