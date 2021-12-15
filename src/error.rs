@@ -25,7 +25,10 @@ pub(crate) enum Error {
     PatchRange(#[from] crate::patchrange::Error),
 
     #[error("patch `{0}` already exists")]
-    PatchNameExists(String),
+    PatchAlreadyExists(crate::patchname::PatchName),
+
+    #[error("patch `{0}` does not exist")]
+    PatchDoesNotExist(crate::patchname::PatchName),
 
     #[error("not on branch, HEAD is detached")]
     HeadDetached,

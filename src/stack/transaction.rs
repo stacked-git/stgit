@@ -428,6 +428,23 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    fn print_rename(
+        &self,
+        old_patchname: &PatchName,
+        new_patchname: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_dimmed(true))?;
+        write!(stdout, "{}", old_patchname)?;
+        color_spec.clear();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(stdout, " => ")?;
+        stdout.reset()?;
+        writeln!(stdout, "{}", new_patchname)?;
+        Ok(())
+    }
+
     fn print_deleted(
         &self,
         deleted: &PatchName,
@@ -502,6 +519,44 @@ impl<'repo> StackTransaction<'repo> {
 
         writeln!(stdout, "{}", status_str)?;
         Ok(())
+    }
+
+    pub(crate) fn rename_patch(
+        &mut self,
+        old_patchname: &PatchName,
+        new_patchname: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        if self.stack.state.patches.contains_key(new_patchname)
+            && self
+                .patch_updates
+                .get(new_patchname)
+                .map_or(true, |maybe_desc| maybe_desc.is_some())
+        {
+            return Err(Error::PatchAlreadyExists(new_patchname.clone()));
+        } else if !self.stack.state.patches.contains_key(old_patchname) {
+            return Err(Error::PatchDoesNotExist(old_patchname.clone()));
+        }
+
+        if let Some(pos) = self.applied.iter().position(|pn| pn == old_patchname) {
+            self.applied[pos] = new_patchname.clone();
+        } else if let Some(pos) = self.unapplied.iter().position(|pn| pn == old_patchname) {
+            self.unapplied[pos] = new_patchname.clone();
+        } else if let Some(pos) = self.hidden.iter().position(|pn| pn == old_patchname) {
+            self.hidden[pos] = new_patchname.clone();
+        } else {
+            panic!(
+                "old patchname `{}` not found in applied, unapplied, or hidden",
+                old_patchname
+            );
+        }
+
+        let patch_desc = self.stack.state.patches[old_patchname].clone();
+        self.patch_updates.insert(old_patchname.clone(), None);
+        self.patch_updates
+            .insert(new_patchname.clone(), Some(patch_desc));
+
+        self.print_rename(old_patchname, new_patchname, stdout)
     }
 
     pub(crate) fn delete_patches<F>(

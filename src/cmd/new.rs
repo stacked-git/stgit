@@ -69,7 +69,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     if let Some(ref patchname) = patchname {
         if stack.state.patches.contains_key(patchname) {
-            return Err(Error::PatchNameExists(patchname.to_string()));
+            return Err(Error::PatchAlreadyExists(patchname.clone()));
         }
     }
 
