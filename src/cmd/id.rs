@@ -9,7 +9,15 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 fn get_app() -> App<'static> {
     App::new("id")
         .about("Print git hash of StGit revision")
-        .long_about("Long about for 'id'.") // TODO
+        .long_about(
+            "Print the hash (object id) of a StGit revision.\n\
+             \n\
+             In addition to standard Git revision specifiers (revspecs), \
+             patches may be specified in the form '[<branch>:]<patch>' or \
+             '[<branch>:]{base}' for the base of a stack. If no branch is \
+             specified, the current branch is used by default. The parent \
+             of a patch may be specified with '[<branch>:]<patch>^'.",
+        )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(Arg::new("revision").help("StGit revision"))
 }
