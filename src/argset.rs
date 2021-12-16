@@ -22,6 +22,7 @@ lazy_static! {
         .short('O')
         .help("Extra options to pass to \"git diff\"")
         .setting(ArgSettings::TakesValue)
+        .setting(ArgSettings::AllowHyphenValues)
         .value_name("OPTIONS")
         .value_hint(ValueHint::Other);
 }
