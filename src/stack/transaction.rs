@@ -460,6 +460,42 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    fn print_hidden(
+        &self,
+        hidden: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        for patchname in hidden {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
+            write!(stdout, "! ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true).set_italic(true))?;
+            writeln!(stdout, "{}", patchname)?;
+            color_spec.clear();
+            stdout.reset()?;
+        }
+        Ok(())
+    }
+
+    fn print_unhidden(
+        &self,
+        unhidden: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        for patchname in unhidden {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(stdout, "- ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true))?;
+            writeln!(stdout, "{}", patchname)?;
+            color_spec.clear();
+            stdout.reset()?;
+        }
+        Ok(())
+    }
+
     fn print_popped(
         &self,
         popped: &[PatchName],
@@ -519,6 +555,56 @@ impl<'repo> StackTransaction<'repo> {
 
         writeln!(stdout, "{}", status_str)?;
         Ok(())
+    }
+
+    pub(crate) fn hide_patches(
+        &mut self,
+        to_hide: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let applied: Vec<PatchName> = self
+            .applied
+            .iter()
+            .filter(|pn| !to_hide.contains(pn))
+            .cloned()
+            .collect();
+
+        let unapplied: Vec<PatchName> = self
+            .unapplied
+            .iter()
+            .filter(|pn| !to_hide.contains(pn))
+            .cloned()
+            .collect();
+
+        let hidden: Vec<PatchName> = to_hide.iter().chain(self.hidden.iter()).cloned().collect();
+
+        self.reorder_patches(Some(&applied), Some(&unapplied), Some(&hidden), stdout)?;
+
+        self.print_hidden(to_hide, stdout)
+    }
+
+    pub(crate) fn unhide_patches(
+        &mut self,
+        to_unhide: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let unapplied: Vec<PatchName> = self
+            .unapplied
+            .iter()
+            .chain(to_unhide.iter())
+            .cloned()
+            .collect();
+
+        let hidden: Vec<PatchName> = self
+            .hidden
+            .iter()
+            .filter(|pn| !to_unhide.contains(pn))
+            .cloned()
+            .collect();
+
+        self.reorder_patches(None, Some(&unapplied), Some(&hidden), stdout)?;
+
+        self.print_unhidden(to_unhide, stdout)
     }
 
     pub(crate) fn rename_patch(
