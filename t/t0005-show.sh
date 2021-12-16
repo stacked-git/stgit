@@ -14,20 +14,44 @@ test_expect_success 'Create some patches' '
     done
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid -a/-u options' '
     command_error stg show --applied --unapplied 2>err &&
     grep -e "cannot use both --applied and --unapplied" err
 '
+else
+test_expect_success 'Combined -A/-U options' '
+    stg show --applied --unapplied >out &&
+    grep -e "patch-aaa" out &&
+    grep -e "patch-bbb" out &&
+    grep -e "patch-ccc" out &&
+    grep -e "patch-ddd" out
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid arg with -a' '
     command_error stg show --applied patch-aaa 2>err &&
     grep -e "patches may not be given with --applied or --unapplied" err
 '
+else
+test_expect_success 'Invalid arg with -A' '
+    general_error stg show --applied patch-aaa 2>err &&
+    grep -e "The argument .--applied. cannot be used with .<patch-rev>\.\.\.." err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid patch name' '
     command_error stg show bad-patch-name 2>err &&
     grep -e "bad-patch-name: Unknown patch or revision name" err
 '
+else
+test_expect_success 'Invalid patch name' '
+    command_error stg show bad-patch-name 2>err &&
+    grep -e "patch or revision \`bad-patch-name\` not found" err
+'
+fi
 
 test_expect_success 'Show patch' '
     stg show patch-bbb |
@@ -92,5 +116,31 @@ test_expect_success 'Run show --stat on patches' '
     test $(grep -c -e " foo.txt | 1 \+" show-a-d-stat.txt) = "2" &&
     test $(grep -c -E "patch-aaa|patch-ddd" show-a-d-stat.txt) = "2"
 '
+
+if test -n "$STG_RUST"; then
+test_expect_success 'Setup for path limiting' '
+    stg new -m many-paths &&
+    mkdir -p dir0/dir1 &&
+    touch dir0/aaa.txt &&
+    touch dir0/bbb.txt &&
+    touch dir0/dir1/ccc.txt &&
+    stg add dir0 &&
+    stg refresh
+'
+
+test_expect_success 'Single path limit' '
+    stg show -- dir0/dir1 >out &&
+    !(grep -e "aaa\.txt" out) &&
+    !(grep -e "bbb\.txt" out) &&
+    grep -e "ccc\.txt" out
+'
+
+test_expect_success 'Multiple path limits' '
+    stg show many-paths -- dir0/aaa.txt dir0/dir1/ccc.txt >out &&
+    grep -e "aaa\.txt" out &&
+    !(grep -e "bbb\.txt" out) &&
+    grep -e "ccc\.txt" out
+'
+fi
 
 test_done
