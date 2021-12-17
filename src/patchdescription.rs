@@ -44,7 +44,7 @@ impl<'repo> PatchDescription<'repo> {
             patchname,
         )?;
         stream.write_all(self.author.name_bytes())?;
-        write!(stream, "<")?;
+        write!(stream, " <")?;
         stream.write_all(self.author.email_bytes())?;
         write!(
             stream,
@@ -265,7 +265,7 @@ mod tests {
     fn round_trip_no_message_no_diff() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Signature::new(
+            author: git2::Signature::new(
                 "The Author",
                 "author@example.com",
                 &git2::Time::new(987654321, -60),
@@ -298,7 +298,7 @@ mod tests {
     fn round_trip_one_line_message() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Signature::new(
+            author: git2::Signature::new(
                 "The Author",
                 "author@example.com",
                 &git2::Time::new(987654321, 360),
@@ -331,7 +331,7 @@ mod tests {
     fn round_trip_multi_line_message() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Signature::new(
+            author: git2::Signature::new(
                 "The Author",
                 "author@example.com",
                 &git2::Time::new(987654321, 360),
@@ -378,7 +378,7 @@ mod tests {
     fn with_diff() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Signature::new(
+            author: git2::Signature::new(
                 "The Author",
                 "author@example.com",
                 &git2::Time::new(987654321, 360),
@@ -435,7 +435,7 @@ mod tests {
     fn with_extra_comments() {
         let patch_desc = PatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Signature::new(
+            author: git2::Signature::new(
                 "The Author",
                 "author@example.com",
                 &git2::Time::new(987654321, 360),
