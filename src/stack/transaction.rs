@@ -4,14 +4,14 @@ use std::io::Write;
 #[cfg(unix)]
 use std::os::unix::ffi::OsStrExt;
 
-use git2::{Commit, Index, Oid, Repository, RepositoryState};
+use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 use crate::stack::{PatchDescriptor, Stack};
-use crate::wrap::repository::commit_ex;
+use crate::wrap::repository::{commit_ex, with_temp_index};
 use crate::wrap::signature;
 use crate::wrap::CommitData;
 
@@ -884,19 +884,6 @@ impl<'repo> StackTransaction<'repo> {
         patches: &'a [PatchName],
         stdout: &mut termcolor::StandardStream,
     ) -> Result<Vec<&'a PatchName>, Error> {
-        fn with_temp_index<F>(repo: &Repository, f: F) -> Result<(), Error>
-        where
-            F: FnOnce(&mut Index) -> Result<(), Error>,
-        {
-            let mut temp_index = Index::new()?;
-            let mut orig_index = repo.index()?;
-            repo.set_index(&mut temp_index)?;
-            let result = f(&mut temp_index);
-            repo.set_index(&mut orig_index)
-                .expect("can reset to original index");
-            result
-        }
-
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
         let head_tree = self.stack.head.tree()?;
