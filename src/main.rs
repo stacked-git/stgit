@@ -275,7 +275,6 @@ fn execute_shell_alias(
 
     if let Some(repo) = repo {
         if let Some(workdir) = repo.workdir() {
-            command.current_dir(workdir);
             if let Ok(cur_dir) = std::env::current_dir() {
                 if let Ok(prefix) = cur_dir.strip_prefix(workdir) {
                     if !cur_dir.starts_with(repo.path()) {

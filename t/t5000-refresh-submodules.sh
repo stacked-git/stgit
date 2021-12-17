@@ -26,7 +26,6 @@ test_expect_success 'refresh with a submodule does not include by default' '
   [ "$(stg status)" = " M submodules/foo" ]
 '
 
-if test -z "$STG_RUST"; then
 test_expect_success 'refresh includes non-submodule changes' '
   mkdir dir2 &&
   touch dir2/file2 &&
@@ -38,19 +37,6 @@ test_expect_success 'refresh includes non-submodule changes' '
   ) &&
   [ "$(stg status)" = " M submodules/foo" ]
 '
-else
-test_expect_success 'refresh includes non-submodule changes' '
-  mkdir dir2 &&
-  touch dir2/file2 &&
-  git add dir2/file2 &&
-  (
-    cd dir2 &&
-    stg refresh &&
-    [ "$(stg status)" = " M submodules/foo" ]
-  ) &&
-  [ "$(stg status)" = " M submodules/foo" ]
-'
-fi
 
 test_expect_success 'refresh with --submodules' '
   (
