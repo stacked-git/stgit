@@ -1,5 +1,3 @@
-#[cfg(unix)]
-use std::os::unix::ffi::OsStrExt;
 use std::{ffi::OsStr, io::Write};
 
 use crate::{error::Error, wrap::signature::get_epoch_time_string};
@@ -103,6 +101,7 @@ fn git_commit_tree(
         command.arg("-S");
     }
     if cfg!(unix) {
+        use std::os::unix::ffi::OsStrExt;
         command
             .env("GIT_AUTHOR_NAME", OsStr::from_bytes(author.name_bytes()))
             .env("GIT_AUTHOR_EMAIL", OsStr::from_bytes(author.email_bytes()))
