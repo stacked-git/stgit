@@ -8,7 +8,7 @@ pub(crate) fn commit_ex(
     committer: &git2::Signature,
     message: &str,
     tree_id: git2::Oid,
-    parent_ids: &[git2::Oid],
+    parent_ids: impl IntoIterator<Item = git2::Oid>,
 ) -> Result<git2::Oid, Error> {
     let (gpgsign, commit_encoding) = if let Ok(config) = repo.config() {
         let gpgsign = config.get_bool("commit.gpgsign").unwrap_or(false);
@@ -34,7 +34,7 @@ pub(crate) fn commit_ex(
         let tree = repo.find_tree(tree_id)?;
         let mut parents: Vec<git2::Commit<'_>> = Vec::new();
         for parent_id in parent_ids {
-            parents.push(repo.find_commit(*parent_id)?);
+            parents.push(repo.find_commit(parent_id)?);
         }
         let parents: Vec<&git2::Commit<'_>> = parents.iter().collect();
 
@@ -89,7 +89,7 @@ fn git_commit_tree(
     committer: &git2::Signature,
     message: &[u8],
     tree_id: git2::Oid,
-    parent_ids: &[git2::Oid],
+    parent_ids: impl IntoIterator<Item = git2::Oid>,
     gpgsign: bool,
 ) -> Result<git2::Oid, Error> {
     let mut command = std::process::Command::new("git");

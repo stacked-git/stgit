@@ -124,7 +124,7 @@ impl<'repo> StackState<'repo> {
             &sig,
             message,
             state_tree_id,
-            &simplified_parents,
+            simplified_parents,
         )?;
 
         let mut parent_set = indexmap::IndexSet::new();
@@ -148,23 +148,25 @@ impl<'repo> StackState<'repo> {
         let mut parent_oids: Vec<Oid> = parent_set.iter().copied().collect();
 
         while parent_oids.len() > MAX_PARENTS {
-            let parent_group_oids: Vec<Oid> = parent_oids
-                .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
-                .collect();
+            let parent_group_oids = parent_oids
+                .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len());
+            // let parent_group_oids: Vec<Oid> = parent_oids
+            //     .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
+            //     .collect();
             let group_oid = commit_ex(
                 repo,
                 &sig,
                 &sig,
                 "parent grouping",
                 state_tree_id,
-                &parent_group_oids,
+                parent_group_oids,
             )?;
             parent_oids.push(group_oid);
         }
 
         parent_oids.insert(0, simplified_parent_id);
 
-        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree_id, &parent_oids)?;
+        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree_id, parent_oids)?;
 
         if let Some(refname) = update_ref {
             repo.reference(refname, commit_oid, true, message)?;

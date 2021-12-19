@@ -38,7 +38,7 @@ impl CommitData {
             &self.committer,
             &self.message,
             self.tree_id,
-            &self.parent_ids,
+            self.parent_ids,
         )
     }
 }

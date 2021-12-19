@@ -345,14 +345,14 @@ impl<'repo> StackTransaction<'repo> {
             let message = patch_commit
                 .message_raw()
                 .ok_or_else(|| Error::NonUtf8Message(patchname.to_string()))?;
-            let parent_ids = vec![self.top().id()];
+            let parent_ids = [self.top().id()];
             let new_commit_id = commit_ex(
                 self.stack.repo,
                 &patch_commit.author(),
                 &default_committer,
                 message,
                 patch_commit.tree_id(),
-                &parent_ids,
+                parent_ids,
             )?;
 
             let commit = self.stack.repo.find_commit(new_commit_id)?;
