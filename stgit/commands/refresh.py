@@ -196,22 +196,21 @@ def write_tree(stack, paths, use_temp_index):
     :rtype: :class:`Tree<stgit.git.Tree>`
 
     """
-
-    def go(index):
-        if paths:
-            iw = IndexAndWorktree(index, stack.repository.default_worktree)
-            iw.update_index(paths)
-        return index.write_tree()
-
     if use_temp_index:
         with stack.repository.temp_index() as index:
+            iw = IndexAndWorktree(index, stack.repository.default_worktree)
             try:
                 index.read_tree(stack.head)
-                return go(index)
+                if paths:
+                    iw.update_index(paths)
+                return index.write_tree()
             finally:
                 stack.repository.default_iw.update_index(paths)
     else:
-        return go(stack.repository.default_index)
+        iw = stack.repository.default_iw
+        if paths:
+            iw.update_index(paths)
+        return iw.index.write_tree()
 
 
 def make_temp_patch(stack, patch_name, tree):
@@ -335,25 +334,18 @@ def absorb(stack, patch_name, temp_name, edit_fun, annotate=None):
     trans = StackTransaction(stack)
     iw = stack.repository.default_iw
     if patch_name in trans.applied:
-        absorb_func = absorb_applied
+        absorbed = absorb_applied(trans, iw, patch_name, temp_name, edit_fun)
     else:
-        absorb_func = absorb_unapplied
-
-    if absorb_func(trans, iw, patch_name, temp_name, edit_fun):
-
-        def info_msg():
-            pass
-
-    else:
-
-        def info_msg():
-            out.warn(
-                'The new changes did not apply cleanly to %s.' % patch_name,
-                'They were saved in %s.' % temp_name,
-            )
+        absorbed = absorb_unapplied(trans, iw, patch_name, temp_name, edit_fun)
 
     r = trans.execute(log_msg, iw)
-    info_msg()
+
+    if not absorbed:
+        out.warn(
+            'The new changes did not apply cleanly to %s.' % patch_name,
+            'They were saved in %s.' % temp_name,
+        )
+
     return r
 
 
