@@ -231,9 +231,11 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
 }
 
 fn find(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    for i in 0..haystack.len() - needle.len() + 1 {
-        if haystack[i..i + needle.len()] == needle[..] {
-            return Some(i);
+    if haystack.len() >= needle.len() {
+        for i in 0..haystack.len() - needle.len() + 1 {
+            if haystack[i..i + needle.len()] == needle[..] {
+                return Some(i);
+            }
         }
     }
     None
