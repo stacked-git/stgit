@@ -5,11 +5,11 @@ use std::str;
 use chrono::{FixedOffset, TimeZone};
 use git2::{Commit, FileMode, Oid, Tree};
 
+use crate::commit::commit_ex;
 use crate::error::Error;
 use crate::patchname::PatchName;
+use crate::signature;
 use crate::stack::serde::RawStackState;
-use crate::wrap::repository::commit_ex;
-use crate::wrap::signature;
 
 use super::iter::AllPatches;
 
@@ -118,14 +118,8 @@ impl<'repo> StackState<'repo> {
             None => vec![],
         };
 
-        let simplified_parent_id = commit_ex(
-            repo,
-            &sig,
-            &sig,
-            message,
-            state_tree_id,
-            simplified_parents,
-        )?;
+        let simplified_parent_id =
+            commit_ex(repo, &sig, &sig, message, state_tree_id, simplified_parents)?;
 
         let mut parent_set = indexmap::IndexSet::new();
         parent_set.insert(self.head.id());
@@ -148,8 +142,8 @@ impl<'repo> StackState<'repo> {
         let mut parent_oids: Vec<Oid> = parent_set.iter().copied().collect();
 
         while parent_oids.len() > MAX_PARENTS {
-            let parent_group_oids = parent_oids
-                .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len());
+            let parent_group_oids =
+                parent_oids.drain(parent_oids.len() - MAX_PARENTS..parent_oids.len());
             // let parent_group_oids: Vec<Oid> = parent_oids
             //     .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
             //     .collect();

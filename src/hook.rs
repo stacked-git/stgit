@@ -1,9 +1,6 @@
 use std::{ffi::OsStr, io::Write, path::PathBuf};
 
-use crate::{
-    error::Error,
-    wrap::{signature::get_epoch_time_string, CommitData},
-};
+use crate::{commit::CommitData, error::Error, signature::get_epoch_time_string};
 
 pub(crate) fn run_commit_msg_hook(
     repo: &git2::Repository,

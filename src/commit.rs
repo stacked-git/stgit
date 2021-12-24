@@ -1,6 +1,62 @@
 use std::{ffi::OsStr, io::Write};
 
-use crate::{error::Error, wrap::signature::get_epoch_time_string};
+use crate::{error::Error, signature::get_epoch_time_string};
+
+pub(crate) struct CommitData {
+    pub author: git2::Signature<'static>,
+    pub committer: git2::Signature<'static>,
+    pub message: String,
+    pub tree_id: git2::Oid,
+    pub parent_ids: Vec<git2::Oid>,
+}
+
+impl CommitData {
+    pub fn new(
+        author: git2::Signature<'static>,
+        committer: git2::Signature<'static>,
+        message: String,
+        tree_id: git2::Oid,
+        parent_ids: Vec<git2::Oid>,
+    ) -> Self {
+        Self {
+            author,
+            committer,
+            message,
+            tree_id,
+            parent_ids,
+        }
+    }
+
+    pub fn replace_message(self, message: String) -> Self {
+        Self { message, ..self }
+    }
+
+    pub fn commit(self, repo: &git2::Repository) -> Result<git2::Oid, Error> {
+        commit_ex(
+            repo,
+            &self.author,
+            &self.committer,
+            &self.message,
+            self.tree_id,
+            self.parent_ids,
+        )
+    }
+}
+
+impl From<&git2::Commit<'_>> for CommitData {
+    fn from(commit: &git2::Commit<'_>) -> Self {
+        Self {
+            author: commit.author().to_owned(),
+            committer: commit.committer().to_owned(),
+            message: commit
+                .message_raw()
+                .expect("Cannot extract CommitData from non-utf-8 encoded Commit")
+                .to_string(),
+            tree_id: commit.tree_id(),
+            parent_ids: commit.parent_ids().collect(),
+        }
+    }
+}
 
 pub(crate) fn commit_ex(
     repo: &git2::Repository,
@@ -39,46 +95,6 @@ pub(crate) fn commit_ex(
         let parents: Vec<&git2::Commit<'_>> = parents.iter().collect();
 
         Ok(repo.commit(None, author, committer, message, &tree, &parents)?)
-    }
-}
-
-pub(crate) fn get_branch<'repo>(
-    repo: &'repo git2::Repository,
-    branch_name: Option<&str>,
-) -> Result<git2::Branch<'repo>, Error> {
-    if let Some(name) = branch_name {
-        let branch = repo
-            .find_branch(name, git2::BranchType::Local)
-            .map_err(|e| {
-                if e.class() == git2::ErrorClass::Reference {
-                    match e.code() {
-                        git2::ErrorCode::NotFound => Error::BranchNotFound(name.to_string()),
-                        git2::ErrorCode::InvalidSpec => Error::InvalidBranchName(name.to_string()),
-                        git2::ErrorCode::UnbornBranch => Error::UnbornBranch(format!("`{}`", name)),
-                        _ => e.into(),
-                    }
-                } else {
-                    e.into()
-                }
-            })?;
-        Ok(branch)
-    } else if repo.head_detached()? {
-        Err(Error::HeadDetached)
-    } else {
-        let head = repo.head().map_err(|e| {
-            if e.code() == git2::ErrorCode::UnbornBranch {
-                Error::UnbornBranch(e.message().to_string())
-            } else {
-                e.into()
-            }
-        })?;
-        if head.is_branch() {
-            Ok(git2::Branch::wrap(head))
-        } else {
-            Err(Error::HeadNotBranch(
-                String::from_utf8_lossy(head.name_bytes()).to_string(),
-            ))
-        }
     }
 }
 
@@ -181,17 +197,4 @@ fn git_commit_tree(
             output.status.code().unwrap_or(-1)
         )))
     }
-}
-
-pub(crate) fn with_temp_index<F, T>(repo: &git2::Repository, f: F) -> Result<T, Error>
-where
-    F: FnOnce(&mut git2::Index) -> Result<T, Error>,
-{
-    let mut temp_index = git2::Index::new()?;
-    let mut orig_index = repo.index()?;
-    repo.set_index(&mut temp_index)?;
-    let result = f(&mut temp_index);
-    repo.set_index(&mut orig_index)
-        .expect("can reset to original index");
-    result
 }

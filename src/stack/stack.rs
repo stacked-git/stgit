@@ -9,7 +9,6 @@ use super::transaction::ExecuteContext;
 use super::{ConflictMode, PatchDescriptor, StackTransaction};
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
-use crate::wrap::repository::get_branch;
 
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
@@ -202,6 +201,46 @@ fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| Error::NonUtf8BranchName(String::from_utf8_lossy(name_bytes).to_string()))?
         .to_string())
+}
+
+fn get_branch<'repo>(
+    repo: &'repo git2::Repository,
+    branch_name: Option<&str>,
+) -> Result<git2::Branch<'repo>, Error> {
+    if let Some(name) = branch_name {
+        let branch = repo
+            .find_branch(name, git2::BranchType::Local)
+            .map_err(|e| {
+                if e.class() == git2::ErrorClass::Reference {
+                    match e.code() {
+                        git2::ErrorCode::NotFound => Error::BranchNotFound(name.to_string()),
+                        git2::ErrorCode::InvalidSpec => Error::InvalidBranchName(name.to_string()),
+                        git2::ErrorCode::UnbornBranch => Error::UnbornBranch(format!("`{}`", name)),
+                        _ => e.into(),
+                    }
+                } else {
+                    e.into()
+                }
+            })?;
+        Ok(branch)
+    } else if repo.head_detached()? {
+        Err(Error::HeadDetached)
+    } else {
+        let head = repo.head().map_err(|e| {
+            if e.code() == git2::ErrorCode::UnbornBranch {
+                Error::UnbornBranch(e.message().to_string())
+            } else {
+                e.into()
+            }
+        })?;
+        if head.is_branch() {
+            Ok(git2::Branch::wrap(head))
+        } else {
+            Err(Error::HeadNotBranch(
+                String::from_utf8_lossy(head.name_bytes()).to_string(),
+            ))
+        }
+    }
 }
 
 fn ensure_patch_refs<'repo>(

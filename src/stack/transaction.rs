@@ -8,12 +8,12 @@ use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
+use crate::commit::{commit_ex, CommitData};
 use crate::error::{repo_state_to_str, Error};
+use crate::index::with_temp_index;
 use crate::patchname::PatchName;
+use crate::signature;
 use crate::stack::{PatchDescriptor, Stack};
-use crate::wrap::repository::{commit_ex, with_temp_index};
-use crate::wrap::signature;
-use crate::wrap::CommitData;
 
 use super::iter::AllPatches;
 

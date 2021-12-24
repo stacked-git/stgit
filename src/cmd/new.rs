@@ -3,11 +3,12 @@ use git2::DiffOptions;
 
 use crate::{
     argset,
+    commit::CommitData,
     error::Error,
     patchdescription::PatchDescription,
     patchname::PatchName,
+    signature,
     stack::{ConflictMode, Stack},
-    wrap::{signature, CommitData},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {

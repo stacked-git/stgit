@@ -112,7 +112,7 @@ fn get_app() -> App<'static> {
         .args(&*crate::message::MESSAGE_ARGS)
         .arg(&*argset::HOOK_ARG)
         .args(&*crate::trailers::TRAILER_ARGS)
-        .args(&*crate::wrap::signature::AUTHOR_SIGNATURE_ARGS)
+        .args(&*crate::signature::AUTHOR_SIGNATURE_ARGS)
         .arg(&*argset::DIFF_OPTS_ARG)
 }
 

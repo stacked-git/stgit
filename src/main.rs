@@ -5,18 +5,20 @@ mod alias;
 mod argset;
 mod cmd;
 mod color;
+mod commit;
 mod edit;
 mod error;
 mod hook;
+mod index;
 mod message;
 mod patchdescription;
 mod patchname;
 mod patchrange;
 mod revspec;
+mod signature;
 mod stack;
 mod templates;
 mod trailers;
-mod wrap;
 
 use std::{
     ffi::{OsStr, OsString},

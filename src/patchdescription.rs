@@ -4,7 +4,7 @@ use chrono::DateTime;
 
 use crate::error::Error;
 use crate::patchname::PatchName;
-use crate::wrap::signature;
+use crate::signature;
 
 pub(crate) struct PatchDescription<'repo> {
     pub patchname: Option<PatchName>,
