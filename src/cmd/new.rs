@@ -76,6 +76,8 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let config = repo.config()?;
 
+    let opt_edit = matches.is_present("edit");
+    let opt_diff = matches.is_present("diff");
     let verbose =
         matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
     let len_limit: Option<usize> = config
@@ -91,7 +93,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let (message, must_edit) =
         if let Some(message) = crate::message::get_message_from_args(matches)? {
-            let force_edit = matches.is_present("edit");
+            let force_edit = opt_edit || opt_diff;
             if force_edit && patchname.is_none() && !message.is_empty() {
                 patchname = Some(PatchName::make_unique(
                     &message,
@@ -112,7 +114,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let autosign = config.get_string("stgit.autosign").ok();
     let message = crate::trailers::add_trailers(message, matches, &committer, autosign.as_deref())?;
 
-    let diff = if must_edit && verbose {
+    let diff = if must_edit && (verbose || opt_diff) {
         Some(repo.diff_tree_to_workdir(
             Some(&tree),
             Some(DiffOptions::new().enable_fast_untracked_dirs(true)),
