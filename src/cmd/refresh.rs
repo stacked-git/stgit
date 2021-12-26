@@ -8,7 +8,7 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 }
 
 fn get_app() -> App<'static> {
-    App::new("refresh")
+    let app = App::new("refresh")
         .about("Incorporate worktree changes into current patch")
         .long_about(
             "Include the latest work tree and index changes in the \
@@ -109,11 +109,9 @@ fn get_app() -> App<'static> {
                 emptying patch content",
                 ),
         )
-        .args(&*crate::message::MESSAGE_ARGS)
-        .arg(&*argset::HOOK_ARG)
-        .args(&*crate::trailers::TRAILER_ARGS)
-        .args(&*crate::signature::AUTHOR_SIGNATURE_ARGS)
-        .arg(&*argset::DIFF_OPTS_ARG)
+        .arg(&*argset::HOOK_ARG);
+
+    crate::patchedit::add_args(app)
 }
 
 fn run(_matches: &ArgMatches) -> super::Result {

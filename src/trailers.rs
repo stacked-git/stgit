@@ -1,81 +1,8 @@
 use std::io::Write;
 
-use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
+use clap::ArgMatches;
 
 use crate::error::Error;
-
-lazy_static! {
-    pub(crate) static ref TRAILER_ARGS: [Arg<'static>; 6] = [
-        Arg::new("sign")
-            .long("sign")
-            .help("Add \"Signed-off-by:\" trailer")
-            .long_help(
-                "Add \"Signed-off-by:\" trailer.\n\
-                 \n\
-                 The value is optional and defaults to the committer name and email. \
-                 This option may be provided multiple times."
-            )
-            .value_name("value")
-            .takes_value(true)
-            .min_values(0)
-            .require_equals(true)
-            .multiple_occurrences(true),
-        Arg::new("ack")
-            .long("ack")
-            .help("Add \"Acked-by:\" trailer")
-            .long_help(
-                "Add \"Acked-by:\" trailer.\n\
-                 \n\
-                 The value is optional and defaults to the committer's name and email. \
-                 This option may be provided multiple times."
-            )
-            .value_name("value")
-            .takes_value(true)
-            .min_values(0)
-            .max_values(1)
-            .require_equals(true)
-            .multiple_occurrences(true),
-        Arg::new("review")
-            .long("review")
-            .help("Add \"Reviewed-by:\" trailer")
-            .long_help(
-                "Add \"Reviewed-by:\" trailer.\n\
-                 \n\
-                 The value is optional and defaults to the committer's name and email. \
-                 This option may be provided multiple times."
-            )
-            .value_name("value")
-            .takes_value(true)
-            .min_values(0)
-            .max_values(1)
-            .require_equals(true)
-            .multiple_occurrences(true),
-        Arg::new("sign-by")
-            .long("sign-by")
-            .help("DEPRECATED: use --sign=value")
-            .hide(true)
-            .setting(ArgSettings::MultipleOccurrences)
-            .setting(ArgSettings::TakesValue)
-            .value_name("VALUE")
-            .value_hint(ValueHint::EmailAddress),
-        Arg::new("ack-by")
-            .long("ack-by")
-            .help("DEPRECATED: use --ack=value")
-            .hide(true)
-            .setting(ArgSettings::MultipleOccurrences)
-            .setting(ArgSettings::TakesValue)
-            .value_name("VALUE")
-            .value_hint(ValueHint::EmailAddress),
-        Arg::new("review-by")
-            .long("review-by")
-            .help("DEPRECATED: use --review=value")
-            .hide(true)
-            .setting(ArgSettings::MultipleOccurrences)
-            .setting(ArgSettings::TakesValue)
-            .value_name("VALUE")
-            .value_hint(ValueHint::EmailAddress),
-    ];
-}
 
 pub(crate) fn add_trailers(
     message: String,

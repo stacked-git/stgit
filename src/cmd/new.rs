@@ -16,7 +16,7 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 }
 
 fn get_app() -> App<'static> {
-    App::new("new")
+    let app = App::new("new")
         .about("Create a new patch at top of the stack")
         .long_about(
             "Create a new, empty patch on the current stack. The new \
@@ -41,16 +41,13 @@ fn get_app() -> App<'static> {
                 .short('v')
                 .help("Show diff in message template"),
         )
-        .args(&*signature::AUTHOR_SIGNATURE_ARGS)
-        .args(&*crate::message::MESSAGE_ARGS)
-        .arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
-        .args(&*crate::trailers::TRAILER_ARGS)
         .arg(&*argset::HOOK_ARG)
         .arg(
             Arg::new("patchname")
                 .help("Name for new patch")
                 .value_hint(ValueHint::Other),
-        )
+        );
+    crate::patchedit::add_args(app).arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {

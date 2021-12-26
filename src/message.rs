@@ -3,34 +3,6 @@ use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
 use crate::error::Error;
 
 lazy_static! {
-    pub(crate) static ref MESSAGE_ARGS: [Arg<'static>; 4] = [
-        Arg::new("message")
-            .long("message")
-            .short('m')
-            .help("Use MESSAGE for patch")
-            .long_help("Use MESSAGE instead of invoking the editor")
-            .setting(ArgSettings::TakesValue)
-            .setting(ArgSettings::AllowInvalidUtf8)
-            .value_name("MESSAGE")
-            .value_hint(ValueHint::Other)
-            .conflicts_with("file"),
-        Arg::new("file")
-            .long("file")
-            .short('f')
-            .help("Get message from FILE")
-            .long_help("Use the contents of FILE instead of invoking the editor")
-            .setting(ArgSettings::TakesValue)
-            .value_name("FILE")
-            .value_hint(ValueHint::FilePath),
-        Arg::new("edit")
-            .long("edit")
-            .short('e')
-            .help("Invoke editor for patch description"),
-        Arg::new("diff")
-            .long("diff")
-            .short('d')
-            .help("Show diff when editing patch description"),
-    ];
     pub(crate) static ref MESSAGE_TEMPLATE_ARG: Arg<'static> = Arg::new("save-template")
         .long("save-template")
         .help("Save the message template to FILE and exit")
