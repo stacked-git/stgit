@@ -175,6 +175,8 @@ test_expect_success 'Setup fake editor' '
     cat "$1" > raw_commit_message.txt
 	EOF
 '
+
+if test -z "$STG_RUST"; then
 test_expect_success \
     'New without verbose flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -183,7 +185,18 @@ test_expect_success \
     stg new no-verbose-patch &&
     !(grep "something else" raw_commit_message.txt)
 '
+else
+test_expect_success \
+    'New without diff flag' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    echo "something else" > file.txt &&
+    stg new no-verbose-patch &&
+    !(grep "something else" raw_commit_message.txt)
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'New with verbose flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -192,7 +205,18 @@ test_expect_success \
     stg show | grep "Patch Description Template" &&
     grep "something else" raw_commit_message.txt
 '
+else
+test_expect_success \
+    'New with diff flag' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    stg new --edit --diff verbose-flag-patch &&
+    stg show | grep "Patch Description Template" &&
+    grep "something else" raw_commit_message.txt
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'New with verbose config option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -201,7 +225,18 @@ test_expect_success \
     stg new verbose-config-patch &&
     grep "something else" raw_commit_message.txt
 '
+else
+test_expect_success \
+    'New with verbose config option' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    test_config stgit.edit.verbose "1" &&
+    stg new verbose-config-patch &&
+    grep "something else" raw_commit_message.txt
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'New with verbose config boolean option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -210,6 +245,16 @@ test_expect_success \
     stg new verbose-config-bool-patch &&
     grep "something else" raw_commit_message.txt
 '
+else
+test_expect_success \
+    'New with verbose config boolean option' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    test_config stgit.edit.verbose "true" &&
+    stg new verbose-config-bool-patch &&
+    grep "something else" raw_commit_message.txt
+'
+fi
 
 test_expect_success \
     'Use stgit.autosign' '
@@ -218,9 +263,16 @@ test_expect_success \
     git cat-file -p HEAD | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"
 '
+else
+test_expect_success \
+    'Patch with slash in name' '
+    command_error stg new bar/foo -m "patch bar/foo"
+'
+fi
 
 test_done

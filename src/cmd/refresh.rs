@@ -231,7 +231,8 @@ fn run(matches: &ArgMatches) -> super::Result {
                 let (new_patchname, commit_id) = crate::patchedit::edit(
                     trans,
                     &repo,
-                    &patchname,
+                    Some(&patchname),
+                    Some(trans.get_patch_commit(&patchname)),
                     matches,
                     PatchEditOverlay {
                         tree_id: Some(temp_commit.tree_id()),
@@ -285,7 +286,8 @@ fn run(matches: &ArgMatches) -> super::Result {
                     let (new_patchname, commit_id) = crate::patchedit::edit(
                         trans,
                         &repo,
-                        &patchname,
+                        Some(&patchname),
+                        Some(trans.get_patch_commit(&patchname)),
                         matches,
                         PatchEditOverlay {
                             tree_id: Some(tree_id),

@@ -1,10 +1,10 @@
-use clap::{App, Arg, ArgMatches, ValueHint};
-use git2::DiffOptions;
+use clap::{App, Arg, ArgGroup, ArgMatches, ValueHint};
+
+use super::refresh;
 
 use crate::{
-    commit::CommitExtended,
     error::Error,
-    patchdescription::PatchDescription,
+    patchedit,
     patchname::PatchName,
     signature,
     stack::{ConflictMode, Stack, StackStateAccess},
@@ -35,17 +35,83 @@ fn get_app() -> App<'static> {
              file (if available) is used to pre-fill the editor.",
         )
         .arg(
-            Arg::new("verbose")
-                .long("verbose")
-                .short('v')
-                .help("Show diff in message template"),
-        )
-        .arg(
             Arg::new("patchname")
                 .help("Name for new patch")
                 .value_hint(ValueHint::Other),
-        );
-    crate::patchedit::add_args(app).arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
+        )
+        .arg(
+            Arg::new("pathspecs")
+                .help("Refresh files matching path(s)")
+                .long_help(
+                    "Refresh files matching path(s). \
+                     Specifying paths implies '--refresh'. \
+                     Using '--refresh' without any paths will target all modified files.",
+                )
+                .value_name("path")
+                .last(true)
+                .multiple_values(true)
+                .allow_invalid_utf8(true)
+                .forbid_empty_values(true)
+                .value_hint(ValueHint::AnyPath),
+        )
+        .help_heading("REFRESH OPTIONS")
+        .arg(
+            Arg::new("refresh")
+                .long("refresh")
+                .short('r')
+                .help("Refresh new patch with changes from work tree or index")
+                .long_help(
+                    "Refresh the new patch with changes from work tree. \
+                     New patches are empty by default, but with this option \
+                     the new patch will capture outstanding changes in the work \
+                     tree as if \"stg refresh\" was run. \
+                     Use \"--index\" to refresh from the index instead of the work tree.",
+                ),
+        )
+        .arg(
+            Arg::new("index")
+                .long("index")
+                .short('i')
+                .help("Refresh from index instead of work tree")
+                .long_help(
+                    "Instead of refreshing the patch with the current \
+                     contents of the worktree, use the current contents \
+                     of the index.",
+                )
+                .requires("refresh")
+                .conflicts_with_all(&["pathspecs", "submodules", "force"]),
+        )
+        .arg(
+            Arg::new("force")
+                .long("force")
+                .short('F')
+                .help("Force refresh with staged and unstaged changes")
+                .long_help(
+                    "Force refresh with staged and unstaged changes.\n\
+                     \n\
+                     By default, if there are staged changes in the index along with \
+                     unstaged changes in the work tree, the command will abort. This \
+                     option forces the command to proceed using both the staged and \
+                     unstaged changes.",
+                )
+                .requires("refresh")
+                .conflicts_with("index"),
+        )
+        .arg(
+            Arg::new("submodules")
+                .long("submodules")
+                .short('s')
+                .help("Include submodules in patch content")
+                .requires("refresh"),
+        )
+        .arg(
+            Arg::new("no-submodules")
+                .long("no-submodules")
+                .help("Exclude submodules in patch content")
+                .requires("refresh"),
+        )
+        .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
+    patchedit::add_args(app).arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
@@ -57,118 +123,50 @@ fn run(matches: &ArgMatches) -> super::Result {
     stack.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
 
-    let mut patchname = if let Some(name) = matches.value_of("patchname") {
-        Some(name.parse::<PatchName>()?)
+    let patchname = if let Some(name) = matches.value_of("patchname") {
+        let patchname = name.parse::<PatchName>()?;
+        if stack.has_patch(&patchname) {
+            return Err(Error::PatchAlreadyExists(patchname));
+        } else {
+            Some(patchname)
+        }
     } else {
         None
     };
-
-    if let Some(ref patchname) = patchname {
-        if stack.has_patch(patchname) {
-            return Err(Error::PatchAlreadyExists(patchname.clone()));
-        }
-    }
 
     let config = repo.config()?;
 
-    let opt_edit = matches.is_present("edit");
-    let opt_diff = matches.is_present("diff");
-    let verbose =
-        matches.is_present("verbose") || config.get_bool("stgit.new.verbose").unwrap_or(false);
-    let len_limit: Option<usize> = config
-        .get_i32("stgit.namelength")
-        .ok()
-        .and_then(|n| usize::try_from(n).ok());
-    let disallow_patches: Vec<&PatchName> = stack.all_patches().collect();
-    let allowed_patches = vec![];
+    let tree_id = if matches.is_present("refresh") || matches.is_present("pathspecs") {
+        refresh::assemble_refresh_tree(&stack, matches, None)?
+    } else {
+        stack.head.tree_id()
+    };
 
-    let tree = stack.head.tree()?;
     let parent_id = stack.head.id();
 
-    let (message, must_edit) =
-        if let Some(message) = crate::message::get_message_from_args(matches)? {
-            let force_edit = opt_edit || opt_diff;
-            if force_edit && patchname.is_none() && !message.is_empty() {
-                patchname = Some(PatchName::make_unique(
-                    &message,
-                    len_limit,
-                    true,
-                    &allowed_patches,
-                    &disallow_patches,
-                ));
-            }
-            (message, force_edit)
-        } else if let Some(message_template) = crate::message::get_message_template(&repo)? {
-            (message_template, true)
-        } else {
-            (String::new(), true)
-        };
+    let (new_patchname, commit_id) = patchedit::edit(
+        &stack,
+        &repo,
+        patchname.as_ref(),
+        None,
+        matches,
+        patchedit::PatchEditOverlay {
+            author: Some(signature::make_author(Some(&config), matches)?),
+            message: None,
+            tree_id: Some(tree_id),
+            parent_id: Some(parent_id),
+        },
+    )?;
 
-    let committer = signature::default_committer(Some(&config))?;
-    let autosign = config.get_string("stgit.autosign").ok();
-    let message = crate::trailers::add_trailers(message, matches, &committer, autosign.as_deref())?;
-
-    let diff = if must_edit && (verbose || opt_diff) {
-        Some(repo.diff_tree_to_workdir(
-            Some(&tree),
-            Some(DiffOptions::new().enable_fast_untracked_dirs(true)),
-        )?)
-    } else {
-        None
-    };
-
-    let patch_description = PatchDescription {
-        patchname,
-        author: signature::make_author(Some(&config), matches)?,
-        message,
-        diff,
-    };
-
-    let PatchDescription {
-        patchname,
-        author,
-        message,
-        ..
-    } = if must_edit {
-        crate::edit::edit_interactive(patch_description, &config)?
-    } else {
-        patch_description
-    };
+    let patchname = new_patchname.unwrap_or_else(|| {
+        patchname.expect("patchedit::edit() must generate a patch name if it is not given one")
+    });
 
     if let Some(template_path) = matches.value_of_os("save-template") {
-        std::fs::write(template_path, &message)?;
+        let patch_commit = repo.find_commit(commit_id)?;
+        std::fs::write(template_path, patch_commit.message_raw_bytes())?;
         return Ok(());
     }
-
-    let message = if !matches.is_present("no-verify") {
-        crate::hook::run_commit_msg_hook(&repo, message, false)?
-    } else {
-        message
-    };
-
-    let patchname: PatchName = {
-        if let Some(patchname) = patchname {
-            if must_edit {
-                PatchName::make_unique(
-                    patchname.as_ref(),
-                    len_limit,
-                    false,
-                    &allowed_patches,
-                    &disallow_patches,
-                )
-            } else {
-                patchname
-            }
-        } else {
-            PatchName::make_unique(
-                &message,
-                len_limit,
-                true, // lowercase
-                &allowed_patches,
-                &disallow_patches,
-            )
-        }
-    };
 
     let discard_changes = false;
     let use_index_and_worktree = false;
@@ -177,13 +175,8 @@ fn run(matches: &ArgMatches) -> super::Result {
             ConflictMode::Disallow,
             discard_changes,
             use_index_and_worktree,
-            |trans| {
-                let patch_commit_id =
-                    repo.commit_ex(&author, &committer, &message, tree.id(), [parent_id])?;
-                trans.push_applied(&patchname, patch_commit_id)?;
-                Ok(())
-            },
+            |trans| trans.push_applied(&patchname, commit_id),
         )
-        .execute(&format!("new: {}", patchname))?;
+        .execute(&format!("new: {}", &patchname))?;
     Ok(())
 }
