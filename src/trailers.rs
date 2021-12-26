@@ -8,30 +8,68 @@ lazy_static! {
     pub(crate) static ref TRAILER_ARGS: [Arg<'static>; 6] = [
         Arg::new("sign")
             .long("sign")
-            .help("Add \"Signed-off-by:\" trailer"),
-        Arg::new("sign-by")
-            .long("sign-by")
-            .help("Add \"Signed-off-by:\" trailer with custom VALUE")
-            .setting(ArgSettings::MultipleOccurrences)
-            .setting(ArgSettings::TakesValue)
-            .value_name("VALUE")
-            .value_hint(ValueHint::EmailAddress),
+            .help("Add \"Signed-off-by:\" trailer")
+            .long_help(
+                "Add \"Signed-off-by:\" trailer.\n\
+                 \n\
+                 The value is optional and defaults to the committer name and email. \
+                 This option may be provided multiple times."
+            )
+            .value_name("value")
+            .takes_value(true)
+            .min_values(0)
+            .require_equals(true)
+            .multiple_occurrences(true),
         Arg::new("ack")
             .long("ack")
-            .help("Add \"Acked-by:\" trailer"),
-        Arg::new("ack-by")
-            .long("ack-by")
-            .help("Add \"Acked-by:\" trailer with custom VALUE")
+            .help("Add \"Acked-by:\" trailer")
+            .long_help(
+                "Add \"Acked-by:\" trailer.\n\
+                 \n\
+                 The value is optional and defaults to the committer's name and email. \
+                 This option may be provided multiple times."
+            )
+            .value_name("value")
+            .takes_value(true)
+            .min_values(0)
+            .max_values(1)
+            .require_equals(true)
+            .multiple_occurrences(true),
+        Arg::new("review")
+            .long("review")
+            .help("Add \"Reviewed-by:\" trailer")
+            .long_help(
+                "Add \"Reviewed-by:\" trailer.\n\
+                 \n\
+                 The value is optional and defaults to the committer's name and email. \
+                 This option may be provided multiple times."
+            )
+            .value_name("value")
+            .takes_value(true)
+            .min_values(0)
+            .max_values(1)
+            .require_equals(true)
+            .multiple_occurrences(true),
+        Arg::new("sign-by")
+            .long("sign-by")
+            .help("DEPRECATED: use --sign=value")
+            .hide(true)
             .setting(ArgSettings::MultipleOccurrences)
             .setting(ArgSettings::TakesValue)
             .value_name("VALUE")
             .value_hint(ValueHint::EmailAddress),
-        Arg::new("review")
-            .long("review")
-            .help("Add \"Reviewed-by:\" trailer"),
+        Arg::new("ack-by")
+            .long("ack-by")
+            .help("DEPRECATED: use --ack=value")
+            .hide(true)
+            .setting(ArgSettings::MultipleOccurrences)
+            .setting(ArgSettings::TakesValue)
+            .value_name("VALUE")
+            .value_hint(ValueHint::EmailAddress),
         Arg::new("review-by")
             .long("review-by")
-            .help("Add \"Reviewed-by:\" trailer with custom VALUE")
+            .help("DEPRECATED: use --review=value")
+            .hide(true)
             .setting(ArgSettings::MultipleOccurrences)
             .setting(ArgSettings::TakesValue)
             .value_name("VALUE")
@@ -47,34 +85,45 @@ pub(crate) fn add_trailers(
 ) -> Result<String, Error> {
     // TODO: return cow str?
     let mut trailers: Vec<(&str, &str)> = vec![];
-    if let Some(by) = get_value_of("ack-by", matches)? {
-        trailers.push(("Acked-by", by));
-    }
-    if let Some(by) = get_value_of("sign-by", matches)? {
-        trailers.push(("Signed-off-by", by))
-    }
-    if let Some(by) = get_value_of("review-by", matches)? {
-        trailers.push(("Reviewed-by", by));
-    }
-    let default_by = if let (Some(name), Some(email)) = (signature.name(), signature.email()) {
+
+    let default_value = if let (Some(name), Some(email)) = (signature.name(), signature.email()) {
         format!("{} <{}>", name, email)
     } else {
         return Err(Error::NonUtf8Signature(
             "trailer requires utf-8 signature".to_string(),
         ));
     };
-    if matches.is_present("sign") {
-        trailers.push(("Signed-off-by", &default_by));
-    }
-    if matches.is_present("ack") {
-        trailers.push(("Acked-by", &default_by));
-    }
-    if matches.is_present("review") {
-        trailers.push(("Reviewed-by", &default_by));
+
+    for (opt_name, old_by_opt, trailer) in &[
+        ("sign", "sign-by", "Signed-off-by"),
+        ("ack", "ack-by", "Acked-by"),
+        ("review", "review-by", "Reviewed-by"),
+    ] {
+        let mut values = if let Some(values) = matches.values_of(opt_name) {
+            values.collect()
+        } else {
+            vec![]
+        };
+
+        // The option was provided at least once without a value.
+        let occurrences: usize = (matches.occurrences_of(opt_name) as u64)
+            .try_into()
+            .unwrap();
+        if values.len() < occurrences {
+            values.push(default_value.as_str());
+        }
+
+        if let Some(by_values) = matches.values_of(old_by_opt) {
+            values.extend(by_values);
+        }
+
+        for value in values {
+            trailers.push((trailer, value));
+        }
     }
 
     if let Some(autosign) = autosign {
-        trailers.push((autosign, &default_by));
+        trailers.push((autosign, &default_value));
     }
 
     if !trailers.is_empty() {
@@ -106,20 +155,5 @@ pub(crate) fn add_trailers(
         }
     } else {
         Ok(message)
-    }
-}
-
-fn get_value_of<'a>(argname: &str, matches: &'a ArgMatches) -> Result<Option<&'a str>, Error> {
-    if let Some(value_os) = matches.value_of_os(argname) {
-        if let Some(value) = value_os.to_str() {
-            Ok(Some(value))
-        } else {
-            Err(Error::NonUtf8Argument(
-                argname.into(),
-                value_os.to_string_lossy().to_string(),
-            ))
-        }
-    } else {
-        Ok(None)
     }
 }
