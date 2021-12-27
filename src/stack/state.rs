@@ -5,7 +5,7 @@ use std::str;
 use chrono::{FixedOffset, TimeZone};
 use git2::{Commit, FileMode, Oid, Tree};
 
-use crate::commit::commit_ex;
+use crate::commit::CommitExtended;
 use crate::error::Error;
 use crate::patchname::PatchName;
 use crate::signature;
@@ -119,7 +119,7 @@ impl<'repo> StackState<'repo> {
         };
 
         let simplified_parent_id =
-            commit_ex(repo, &sig, &sig, message, state_tree_id, simplified_parents)?;
+            repo.commit_ex(&sig, &sig, message, state_tree_id, simplified_parents)?;
 
         let mut parent_set = indexmap::IndexSet::new();
         parent_set.insert(self.head.id());
@@ -147,8 +147,7 @@ impl<'repo> StackState<'repo> {
             // let parent_group_oids: Vec<Oid> = parent_oids
             //     .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
             //     .collect();
-            let group_oid = commit_ex(
-                repo,
+            let group_oid = repo.commit_ex(
                 &sig,
                 &sig,
                 "parent grouping",
@@ -160,7 +159,7 @@ impl<'repo> StackState<'repo> {
 
         parent_oids.insert(0, simplified_parent_id);
 
-        let commit_oid = commit_ex(repo, &sig, &sig, message, state_tree_id, parent_oids)?;
+        let commit_oid = repo.commit_ex(&sig, &sig, message, state_tree_id, parent_oids)?;
 
         if let Some(refname) = update_ref {
             repo.reference(refname, commit_oid, true, message)?;

@@ -8,7 +8,7 @@ use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
-use crate::commit::{commit_ex, CommitData};
+use crate::commit::{CommitData, CommitExtended};
 use crate::error::{repo_state_to_str, Error};
 use crate::index::with_temp_index;
 use crate::patchname::PatchName;
@@ -346,8 +346,7 @@ impl<'repo> StackTransaction<'repo> {
                 .message_raw()
                 .ok_or_else(|| Error::NonUtf8Message(patchname.to_string()))?;
             let parent_ids = [self.top().id()];
-            let new_commit_id = commit_ex(
-                self.stack.repo,
+            let new_commit_id = self.stack.repo.commit_ex(
                 &patch_commit.author(),
                 &default_committer,
                 message,
