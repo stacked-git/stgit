@@ -10,7 +10,7 @@ use termcolor::WriteColor;
 
 use crate::commit::{CommitData, CommitExtended};
 use crate::error::{repo_state_to_str, Error};
-use crate::index::with_temp_index;
+use crate::index::TemporaryIndex;
 use crate::patchname::PatchName;
 use crate::signature;
 use crate::stack::{PatchDescriptor, Stack};
@@ -887,7 +887,7 @@ impl<'repo> StackTransaction<'repo> {
         let mut merged: Vec<&PatchName> = vec![];
         let head_tree = self.stack.head.tree()?;
 
-        with_temp_index(repo, |temp_index| {
+        repo.with_temp_index(|temp_index| {
             temp_index.read_tree(&head_tree)?;
 
             for patchname in patches.iter().rev() {
