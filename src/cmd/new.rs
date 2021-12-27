@@ -126,7 +126,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let patch_desc = PatchDescription {
         patchname,
         author: signature::make_author(Some(&config), matches)?,
-        message: Some(message),
+        message,
         diff,
     };
 
@@ -136,8 +136,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         patch_desc
     };
 
-    // TODO: change PatchDescription.message from Option<String> to String
-    let message = patch_desc.message.unwrap_or_else(String::new);
+    let message = patch_desc.message;
 
     let mut cd = CommitData::new(patch_desc.author, committer, message, tree.id(), parents);
 

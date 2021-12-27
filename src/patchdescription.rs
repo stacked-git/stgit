@@ -9,7 +9,7 @@ use crate::signature::{self, TimeExtended};
 pub(crate) struct PatchDescription<'repo> {
     pub patchname: Option<PatchName>,
     pub author: git2::Signature<'static>,
-    pub message: Option<String>,
+    pub message: String,
     pub diff: Option<git2::Diff<'repo>>,
 }
 
@@ -57,11 +57,7 @@ impl<'repo> PatchDescription<'repo> {
 
     fn write_header_and_message<S: Write>(&self, stream: &mut S) -> Result<(), Error> {
         self.write_header(stream)?;
-        let message = if let Some(message) = &self.message {
-            message.trim_end_matches('\n')
-        } else {
-            ""
-        };
+        let message = self.message.trim_end_matches('\n');
         write!(stream, "\n{}\n", message)?;
         Ok(())
     }
@@ -215,11 +211,9 @@ impl TryFrom<&[u8]> for PatchDescription<'_> {
             message.pop();
         }
 
-        let message = if message.trim().is_empty() {
-            None
-        } else {
-            Some(message)
-        };
+        if message.trim().is_empty() {
+            message.clear();
+        }
 
         Ok(Self {
             patchname,
@@ -273,7 +267,7 @@ mod tests {
                 &git2::Time::new(987654321, -60),
             )
             .unwrap(),
-            message: None,
+            message: "".to_string(),
             diff: None,
         };
 
@@ -306,7 +300,7 @@ mod tests {
                 &git2::Time::new(987654321, 360),
             )
             .unwrap(),
-            message: Some("Subject\n".to_string()),
+            message: "Subject\n".to_string(),
             diff: None,
         };
 
@@ -339,16 +333,14 @@ mod tests {
                 &git2::Time::new(987654321, 360),
             )
             .unwrap(),
-            message: Some(
-                "Subject\n\
-                 \n\
-                 Body of message.\n\
-                 More body of message.\n\
-                 \n\
-                 With-a-trailer: yes\n\
-                 "
-                .to_string(),
-            ),
+            message: "Subject\n\
+                      \n\
+                      Body of message.\n\
+                      More body of message.\n\
+                      \n\
+                      With-a-trailer: yes\n\
+                      "
+            .to_string(),
             diff: None,
         };
 
@@ -386,7 +378,7 @@ mod tests {
                 &git2::Time::new(987654321, 360),
             )
             .unwrap(),
-            message: Some("Subject\n".to_string()),
+            message: "Subject\n".to_string(),
             diff: Some(
                 git2::Diff::from_buffer(
                     "diff --git a/foo.txt b/foo.txt\n\
@@ -443,15 +435,13 @@ mod tests {
                 &git2::Time::new(987654321, 360),
             )
             .unwrap(),
-            message: Some(
-                "Subject\n\
-                 \n\
-                 Body of message.\n   # Indented: not a comment.\n\
-                 \n\
-                 With-a-trailer: yes\n\
-                 "
-                .to_string(),
-            ),
+            message: "Subject\n\
+                      \n\
+                      Body of message.\n   # Indented: not a comment.\n\
+                      \n\
+                      With-a-trailer: yes\n\
+                      "
+            .to_string(),
             diff: None,
         };
 
@@ -563,7 +553,7 @@ mod tests {
         # Instruction\n";
 
         let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
-        assert_eq!(pd.message.unwrap(), "Subject\n");
+        assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
@@ -581,7 +571,7 @@ mod tests {
 
         let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
 
-        assert_eq!(pd.message.unwrap(), "Subject\n");
+        assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
@@ -596,7 +586,7 @@ mod tests {
 
         let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
 
-        assert_eq!(pd.message.unwrap(), "Subject\n");
+        assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
@@ -610,7 +600,7 @@ mod tests {
 
         let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
 
-        assert_eq!(pd.message.unwrap(), "Subject\n");
+        assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
@@ -636,12 +626,12 @@ mod tests {
         let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
 
         assert_eq!(
-            pd.message.unwrap(),
+            pd.message,
             "Subject\n\
-                                         \n\
-                                         body\n\
-                                         \n\
-                                         more body\n"
+             \n\
+             body\n\
+             \n\
+             more body\n"
         );
     }
 }
