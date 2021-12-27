@@ -4,7 +4,7 @@ use chrono::DateTime;
 
 use crate::error::Error;
 use crate::patchname::PatchName;
-use crate::signature;
+use crate::signature::{self, TimeExtended};
 
 pub(crate) struct PatchDescription<'repo> {
     pub patchname: Option<PatchName>,
@@ -35,7 +35,7 @@ impl<'repo> PatchDescription<'repo> {
         } else {
             ""
         };
-        let authdate = signature::get_datetime(self.author.when()).format("%Y-%m-%d %H:%M:%S %z");
+        let authdate = self.author.datetime().format("%Y-%m-%d %H:%M:%S %z");
 
         write!(
             stream,

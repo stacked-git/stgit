@@ -1,6 +1,6 @@
 use std::{ffi::OsStr, io::Write};
 
-use crate::{error::Error, signature::get_epoch_time_string};
+use crate::{error::Error, signature::TimeExtended};
 
 pub(crate) struct CommitData {
     pub author: git2::Signature<'static>,
@@ -142,11 +142,8 @@ fn git_commit_tree(
                 OsStr::from_bytes(committer.email_bytes()),
             )
             // TODO: reencode dates?
-            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
-            .env(
-                "GIT_COMMITTER_DATE",
-                get_epoch_time_string(committer.when()),
-            );
+            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
+            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
     } else {
         command
             .env(
@@ -173,11 +170,8 @@ fn git_commit_tree(
                     .email()
                     .expect("committer email must be valid utf-8 on non-unix"),
             )
-            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
-            .env(
-                "GIT_COMMITTER_DATE",
-                get_epoch_time_string(committer.when()),
-            );
+            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
+            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
     }
 
     command

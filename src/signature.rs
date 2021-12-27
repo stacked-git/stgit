@@ -191,20 +191,37 @@ pub(crate) fn override_author(
     }
 }
 
-pub(crate) fn get_datetime(when: git2::Time) -> DateTime<FixedOffset> {
-    FixedOffset::east(when.offset_minutes() * 60).timestamp(when.seconds(), 0)
+pub(crate) trait TimeExtended {
+    fn datetime(&self) -> DateTime<FixedOffset>;
+    fn epoch_time_string(&self) -> String;
 }
 
-pub(crate) fn get_epoch_time_string(when: git2::Time) -> String {
-    let offset_hours = when.offset_minutes() / 60;
-    let offset_minutes = when.offset_minutes() % 60;
-    format!(
-        "{} {}{:02}{:02}",
-        when.seconds(),
-        when.sign(),
-        offset_hours,
-        offset_minutes
-    )
+impl TimeExtended for git2::Time {
+    fn datetime(&self) -> DateTime<FixedOffset> {
+        FixedOffset::east(self.offset_minutes() * 60).timestamp(self.seconds(), 0)
+    }
+
+    fn epoch_time_string(&self) -> String {
+        let offset_hours = self.offset_minutes() / 60;
+        let offset_minutes = self.offset_minutes() % 60;
+        format!(
+            "{} {}{:02}{:02}",
+            self.seconds(),
+            self.sign(),
+            offset_hours,
+            offset_minutes
+        )
+    }
+}
+
+impl TimeExtended for git2::Signature<'_> {
+    fn datetime(&self) -> DateTime<FixedOffset> {
+        self.when().datetime()
+    }
+
+    fn epoch_time_string(&self) -> String {
+        self.when().epoch_time_string()
+    }
 }
 
 #[allow(dead_code)]

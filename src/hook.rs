@@ -1,6 +1,6 @@
 use std::{ffi::OsStr, io::Write, path::PathBuf};
 
-use crate::{commit::CommitData, error::Error, signature::get_epoch_time_string};
+use crate::{commit::CommitData, error::Error, signature::TimeExtended};
 
 pub(crate) fn run_commit_msg_hook(
     repo: &git2::Repository,
@@ -48,11 +48,8 @@ pub(crate) fn run_commit_msg_hook(
                 OsStr::from_bytes(committer.email_bytes()),
             )
             // TODO: reencode dates?
-            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
-            .env(
-                "GIT_COMMITTER_DATE",
-                get_epoch_time_string(committer.when()),
-            );
+            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
+            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
     } else {
         hook_command
             .env(
@@ -79,11 +76,8 @@ pub(crate) fn run_commit_msg_hook(
                     .email()
                     .expect("committer email must be valid utf-8 on non-unix"),
             )
-            .env("GIT_AUTHOR_DATE", get_epoch_time_string(author.when()))
-            .env(
-                "GIT_COMMITTER_DATE",
-                get_epoch_time_string(committer.when()),
-            );
+            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
+            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
     }
     hook_command.env("GIT_INDEX_FILE", index_path);
     if !editor_is_used {
