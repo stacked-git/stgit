@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     error::Error,
     patchname::PatchName,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -50,7 +50,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         let new_patchname = patches.remove(1);
         let old_patchname = patches.remove(0);
         (old_patchname, new_patchname)
-    } else if let Some(top_patchname) = stack.state.applied.last() {
+    } else if let Some(top_patchname) = stack.applied().last() {
         assert_eq!(patches.len(), 1);
         (top_patchname.clone(), patches.remove(0))
     } else {

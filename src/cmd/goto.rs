@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     error::Error,
     patchname::PatchName,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -44,8 +44,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         stack.check_worktree_clean()?;
     }
 
-    let patchname = if stack.state.patches.contains_key(&patchname) {
-        if stack.state.hidden.contains(&patchname) {
+    let patchname = if stack.has_patch(&patchname) {
+        if stack.is_hidden(&patchname) {
             Err(Error::Generic("Cannot goto a hidden patch".to_string()))
         } else {
             Ok(patchname)
@@ -69,15 +69,14 @@ fn run(matches: &ArgMatches) -> super::Result {
             let oid_prefix: &str = patchname.as_ref();
             let oid_prefix: String = oid_prefix.to_ascii_lowercase();
             let oid_matches: Vec<&PatchName> = stack
-                .state
-                .patches
-                .iter()
-                .filter_map(|(pn, desc)| {
-                    if desc.commit.id().to_string().starts_with(&oid_prefix) {
-                        Some(pn)
-                    } else {
-                        None
-                    }
+                .all_patches()
+                .filter(|pn| {
+                    stack
+                        .get_patch(pn)
+                        .commit
+                        .id()
+                        .to_string()
+                        .starts_with(&oid_prefix)
                 })
                 .collect();
 

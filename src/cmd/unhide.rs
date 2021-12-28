@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -44,8 +44,8 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let patches: Vec<PatchName> = parse_patch_ranges(
         patch_ranges,
-        &stack.state.hidden,
-        stack.state.all_patches(),
+        stack.hidden(),
+        stack.all_patches(),
     )
     .map_err(|e| match e {
         crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => Error::Generic(

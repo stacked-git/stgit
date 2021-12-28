@@ -6,7 +6,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -72,12 +72,8 @@ fn run(matches: &ArgMatches) -> super::Result {
             .expect("clap ensures either patches or series");
         parse_patch_ranges(
             patch_ranges,
-            stack
-                .state
-                .applied
-                .iter()
-                .chain(stack.state.unapplied.iter()),
-            stack.state.all_patches(),
+            stack.applied_and_unapplied(),
+            stack.all_patches(),
         )?
     };
 
@@ -85,43 +81,34 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Err(Error::Generic("no patches to float".to_string()));
     }
 
-    if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.state.applied.contains(pn))) {
+    if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.is_applied(pn))) {
         stack.check_index_clean()?;
         stack.check_worktree_clean()?;
     }
 
     let (applied, unapplied) = if opt_noapply {
         let applied: Vec<PatchName> = stack
-            .state
-            .applied
+            .applied()
             .iter()
             .filter(|pn| !patches.contains(pn))
             .cloned()
             .collect();
         let unapplied: Vec<PatchName> = patches
             .iter()
-            .chain(
-                stack
-                    .state
-                    .unapplied
-                    .iter()
-                    .filter(|pn| !patches.contains(pn)),
-            )
+            .chain(stack.unapplied().iter().filter(|pn| !patches.contains(pn)))
             .cloned()
             .collect();
         (applied, unapplied)
     } else {
         let applied: Vec<PatchName> = stack
-            .state
-            .applied
+            .applied()
             .iter()
             .filter(|pn| !patches.contains(pn))
             .chain(patches.iter())
             .cloned()
             .collect();
         let unapplied: Vec<PatchName> = stack
-            .state
-            .unapplied
+            .unapplied()
             .iter()
             .filter(|pn| !patches.contains(pn))
             .cloned()
@@ -174,13 +161,9 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>, Error> {
         .filter(|s| !s.is_empty())
         .collect();
 
-    let allowed_patches = stack
-        .state
-        .applied
-        .iter()
-        .chain(stack.state.unapplied.iter());
+    let allowed_patches = stack.applied_and_unapplied();
 
-    parse_patch_ranges(series, allowed_patches, stack.state.all_patches()).map_err(|e| {
+    parse_patch_ranges(series, allowed_patches, stack.all_patches()).map_err(|e| {
         Error::Generic(if use_stdin {
             format!("<stdin>: {}", e)
         } else {

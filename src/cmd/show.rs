@@ -1,7 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
 use crate::error::Error;
-use crate::stack::Stack;
+use crate::stack::{Stack, StackStateAccess};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("show", super::StGitCommand { get_app, run })
@@ -81,18 +81,18 @@ fn run(matches: &ArgMatches) -> super::Result {
     let mut oids: Vec<git2::Oid> = Vec::new();
 
     if opt_applied {
-        for patchname in &stack.state.applied {
-            oids.push(stack.state.patches[patchname].commit.id());
+        for patchname in stack.applied() {
+            oids.push(stack.get_patch(patchname).commit.id());
         }
     }
     if opt_unapplied {
-        for patchname in &stack.state.unapplied {
-            oids.push(stack.state.patches[patchname].commit.id());
+        for patchname in stack.unapplied() {
+            oids.push(stack.get_patch(patchname).commit.id());
         }
     }
     if opt_hidden {
-        for patchname in &stack.state.hidden {
-            oids.push(stack.state.patches[patchname].commit.id());
+        for patchname in stack.hidden() {
+            oids.push(stack.get_patch(patchname).commit.id());
         }
     }
     if let Some(patch_rev) = opt_patch_revs {
@@ -104,7 +104,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             ) {
                 Ok(patchnames) => {
                     for patchname in &patchnames {
-                        oids.push(stack.state.patches[patchname].commit.id())
+                        oids.push(stack.get_patch(patchname).commit.id())
                     }
                 }
                 Err(crate::patchrange::Error::PatchNotKnown { patchname: _ }) => {

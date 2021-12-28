@@ -3,7 +3,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -41,16 +41,13 @@ fn run(matches: &ArgMatches) -> super::Result {
         .values_of("patches")
         .expect("clap ensures at least one range is provided");
 
-    let patches: Vec<PatchName> = parse_patch_ranges(
-        patch_ranges,
-        stack.state.all_patches(),
-        stack.state.all_patches(),
-    )?;
+    let patches: Vec<PatchName> =
+        parse_patch_ranges(patch_ranges, stack.all_patches(), stack.all_patches())?;
 
     // Already hidden patches are silent no-ops.
     let to_hide: Vec<PatchName> = patches
         .iter()
-        .filter(|pn| !stack.state.hidden.contains(pn))
+        .filter(|pn| !stack.is_hidden(pn))
         .cloned()
         .collect();
 

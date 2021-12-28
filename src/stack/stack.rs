@@ -3,8 +3,7 @@ use std::str::FromStr;
 
 use git2::{Branch, Commit, Reference, RepositoryState};
 
-use super::iter::AllPatches;
-use super::state::StackState;
+use super::state::{StackState, StackStateAccess};
 use super::transaction::ExecuteContext;
 use super::{ConflictMode, PatchDescriptor, StackTransaction};
 use crate::error::{repo_state_to_str, Error};
@@ -17,7 +16,7 @@ pub(crate) struct Stack<'repo> {
     pub(crate) base: Commit<'repo>,
     pub(crate) head: Commit<'repo>,
     pub(crate) state_ref: Reference<'repo>,
-    pub(crate) state: StackState<'repo>,
+    state: StackState<'repo>,
 }
 
 impl<'repo> Stack<'repo> {
@@ -78,10 +77,6 @@ impl<'repo> Stack<'repo> {
             state_ref,
             state,
         })
-    }
-
-    pub fn all_patches(&self) -> AllPatches<'_> {
-        self.state.all_patches()
     }
 
     pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
@@ -179,12 +174,50 @@ impl<'repo> Stack<'repo> {
             .transact(f)
     }
 
+    pub(crate) fn state_mut(&mut self) -> &mut StackState<'repo> {
+        &mut self.state
+    }
+
     pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
         get_patch_refname(&self.branch_name, patchname.as_ref())
     }
 
     pub(crate) fn patch_revspec(&self, patch_spec: &str) -> String {
         get_patch_refname(&self.branch_name, patch_spec)
+    }
+}
+
+impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
+    fn applied(&self) -> &[PatchName] {
+        &self.state.applied
+    }
+
+    fn unapplied(&self) -> &[PatchName] {
+        &self.state.unapplied
+    }
+
+    fn hidden(&self) -> &[PatchName] {
+        &self.state.hidden
+    }
+
+    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo> {
+        &self.state.patches[patchname]
+    }
+
+    fn has_patch(&self, patchname: &PatchName) -> bool {
+        self.state.patches.contains_key(patchname)
+    }
+
+    fn top(&self) -> &Commit<'repo> {
+        if let Some(patchname) = self.applied().last() {
+            &self.state.patches[patchname].commit
+        } else {
+            &self.state.head
+        }
+    }
+
+    fn head(&self) -> &Commit<'repo> {
+        &self.state.head
     }
 }
 

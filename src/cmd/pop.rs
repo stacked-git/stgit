@@ -5,7 +5,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -83,14 +83,14 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Ok(());
     }
 
-    if stack.state.applied.is_empty() {
+    if stack.applied().is_empty() {
         return Err(Error::NoAppliedPatches);
     }
 
     let mut patches: indexmap::IndexSet<PatchName> = if matches.is_present("all") {
-        stack.state.applied.iter().cloned().collect()
+        stack.applied().iter().cloned().collect()
     } else if let Some(number) = opt_number {
-        let num_applied = stack.state.applied.len();
+        let num_applied = stack.applied().len();
         let num_to_take: usize = {
             if number >= 0 {
                 std::cmp::min(number as usize, num_applied)
@@ -102,8 +102,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             }
         };
         stack
-            .state
-            .applied
+            .applied()
             .iter()
             .rev()
             .take(num_to_take)
@@ -111,30 +110,27 @@ fn run(matches: &ArgMatches) -> super::Result {
             .collect()
     } else if let Some(patch_ranges) = matches.values_of("patches") {
         indexmap::IndexSet::from_iter(
-            parse_patch_ranges(
-                patch_ranges,
-                &stack.state.applied,
-                stack.state.all_patches(),
-            )
-            .map_err(|e| match e {
-                crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
-                    if stack.state.unapplied.contains(&patchname) =>
-                {
-                    Error::Generic(format!(
-                        "patch `{}` from `{}` is already unapplied",
-                        &patchname, &range
-                    ))
-                }
-                crate::patchrange::Error::PatchNotAllowed { patchname }
-                    if stack.state.unapplied.contains(&patchname) =>
-                {
-                    Error::Generic(format!("patch `{}` is already unapplied", &patchname))
-                }
-                _ => e.into(),
-            })?,
+            parse_patch_ranges(patch_ranges, stack.applied(), stack.all_patches()).map_err(
+                |e| match e {
+                    crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
+                        if stack.is_unapplied(&patchname) =>
+                    {
+                        Error::Generic(format!(
+                            "patch `{}` from `{}` is already unapplied",
+                            &patchname, &range
+                        ))
+                    }
+                    crate::patchrange::Error::PatchNotAllowed { patchname }
+                        if stack.is_unapplied(&patchname) =>
+                    {
+                        Error::Generic(format!("patch `{}` is already unapplied", &patchname))
+                    }
+                    _ => e.into(),
+                },
+            )?,
         )
     } else {
-        stack.state.applied.iter().rev().take(1).cloned().collect()
+        stack.applied().iter().rev().take(1).cloned().collect()
     };
 
     assert!(!patches.is_empty());
@@ -152,7 +148,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let mut new_unapplied: Vec<PatchName> = vec![];
     let mut new_applied: Vec<PatchName> = vec![];
 
-    for pn in &stack.state.applied {
+    for pn in stack.applied() {
         if let Some(patchname) = patches.swap_take(pn) {
             new_unapplied.push(patchname);
         } else {
@@ -162,8 +158,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     if opt_spill {
         let topmost_applied: Vec<PatchName> = stack
-            .state
-            .applied
+            .applied()
             .iter()
             .rev()
             .take(new_unapplied.len())
@@ -177,10 +172,9 @@ fn run(matches: &ArgMatches) -> super::Result {
         }
     }
 
-    new_unapplied.reserve(stack.state.unapplied.len());
+    new_unapplied.reserve(stack.unapplied().len());
     stack
-        .state
-        .unapplied
+        .unapplied()
         .iter()
         .for_each(|pn| new_unapplied.push(pn.clone()));
 

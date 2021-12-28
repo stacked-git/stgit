@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -109,14 +109,14 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Ok(());
     }
 
-    if stack.state.unapplied.is_empty() {
+    if stack.unapplied().is_empty() {
         return Err(Error::NoUnappliedPatches);
     }
 
     let mut patches: Vec<PatchName> = if matches.is_present("all") {
-        stack.state.unapplied.clone()
+        stack.unapplied().to_vec()
     } else if let Some(number) = opt_number {
-        let num_unapplied = stack.state.unapplied.len();
+        let num_unapplied = stack.unapplied().len();
         let num_to_take: usize = {
             if number >= 0 {
                 std::cmp::min(number as usize, num_unapplied)
@@ -127,36 +127,32 @@ fn run(matches: &ArgMatches) -> super::Result {
             }
         };
         stack
-            .state
-            .unapplied
+            .unapplied()
             .iter()
             .take(num_to_take)
             .cloned()
             .collect()
     } else if let Some(patch_ranges) = matches.values_of("patches") {
-        parse_patch_ranges(
-            patch_ranges,
-            &stack.state.unapplied,
-            stack.state.all_patches(),
-        )
-        .map_err(|e| match e {
-            crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
-                if stack.state.applied.contains(&patchname) =>
-            {
-                Error::Generic(format!(
-                    "patch `{}` from `{}` is already applied",
-                    &patchname, &range
-                ))
+        parse_patch_ranges(patch_ranges, stack.unapplied(), stack.all_patches()).map_err(|e| {
+            match e {
+                crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
+                    if stack.is_applied(&patchname) =>
+                {
+                    Error::Generic(format!(
+                        "patch `{}` from `{}` is already applied",
+                        &patchname, &range
+                    ))
+                }
+                crate::patchrange::Error::PatchNotAllowed { patchname }
+                    if stack.is_applied(&patchname) =>
+                {
+                    Error::Generic(format!("patch `{}` is already applied", &patchname))
+                }
+                _ => e.into(),
             }
-            crate::patchrange::Error::PatchNotAllowed { patchname }
-                if stack.state.applied.contains(&patchname) =>
-            {
-                Error::Generic(format!("patch `{}` is already applied", &patchname))
-            }
-            _ => e.into(),
         })?
     } else {
-        stack.state.unapplied.iter().take(1).cloned().collect()
+        stack.unapplied().iter().take(1).cloned().collect()
     };
 
     assert!(!patches.is_empty());

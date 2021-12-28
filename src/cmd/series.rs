@@ -4,7 +4,10 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use git2::Oid;
 use termcolor::WriteColor;
 
-use crate::{patchname::PatchName, stack::Stack};
+use crate::{
+    patchname::PatchName,
+    stack::{Stack, StackStateAccess},
+};
 
 use super::StGitCommand;
 
@@ -146,23 +149,23 @@ fn run(matches: &ArgMatches) -> super::Result {
     let mut patches: Vec<(PatchName, Oid, char)> = vec![];
 
     if let Some(patch_ranges) = matches.values_of("patch-range") {
-        let top_patchname = stack.state.applied.last();
-        for patch_name in crate::patchrange::parse_contiguous_patch_range(
+        let top_patchname = stack.applied().last();
+        for patchname in crate::patchrange::parse_contiguous_patch_range(
             patch_ranges,
-            stack.state.all_patches(),
-            stack.state.all_patches(),
+            stack.all_patches(),
+            stack.all_patches(),
         )? {
-            let oid = stack.state.patches[&patch_name].commit.id();
-            let sigil = if Some(&patch_name) == top_patchname {
+            let oid = stack.get_patch(&patchname).commit.id();
+            let sigil = if Some(&patchname) == top_patchname {
                 '>'
-            } else if stack.state.applied.contains(&patch_name) {
+            } else if stack.is_applied(&patchname) {
                 '+'
-            } else if stack.state.unapplied.contains(&patch_name) {
+            } else if stack.is_unapplied(&patchname) {
                 '-'
             } else {
                 '!'
             };
-            patches.push((patch_name, oid, sigil));
+            patches.push((patchname, oid, sigil));
         }
     } else {
         let show_applied = opt_applied || opt_all || !(opt_unapplied || opt_hidden);
@@ -170,37 +173,36 @@ fn run(matches: &ArgMatches) -> super::Result {
         let show_hidden = opt_hidden || opt_all;
 
         if show_applied {
-            if let Some((last_patch_name, rest)) = stack.state.applied.split_last() {
-                for patch_name in rest {
-                    let oid = stack.state.patches[patch_name].commit.id();
-                    patches.push((patch_name.clone(), oid, '+'));
+            if let Some((last_patchname, rest)) = stack.applied().split_last() {
+                for patchname in rest {
+                    let oid = stack.get_patch(patchname).commit.id();
+                    patches.push((patchname.clone(), oid, '+'));
                 }
-                let last_oid = stack.state.patches[last_patch_name].commit.id();
-                patches.push((last_patch_name.clone(), last_oid, '>'));
+                let last_oid = stack.get_patch(last_patchname).commit.id();
+                patches.push((last_patchname.clone(), last_oid, '>'));
             }
         }
 
         if show_unapplied {
-            for patch_name in stack.state.unapplied {
-                let oid = stack.state.patches[&patch_name].commit.id();
-                patches.push((patch_name, oid, '-'));
+            for patchname in stack.unapplied() {
+                let oid = stack.get_patch(patchname).commit.id();
+                patches.push((patchname.clone(), oid, '-'));
             }
         }
 
         if show_hidden {
-            for patch_name in stack.state.hidden {
-                let oid = stack.state.patches[&patch_name].commit.id();
-                patches.push((patch_name, oid, '!'));
+            for patchname in stack.hidden() {
+                let oid = stack.get_patch(patchname).commit.id();
+                patches.push((patchname.clone(), oid, '!'));
             }
         }
     }
 
     if let Some(cmp_stack) = cmp_stack {
-        patches.retain(|(patch_name, _, _)| {
+        patches.retain(|(patchname, _, _)| {
             cmp_stack
-                .state
                 .all_patches()
-                .all(|cmp_patch_name| patch_name != cmp_patch_name)
+                .all(|cmp_patchname| patchname != cmp_patchname)
         });
     }
 
@@ -238,12 +240,8 @@ fn run(matches: &ArgMatches) -> super::Result {
         ""
     };
 
-    let patch_name_width = if opt_description || opt_author {
-        patches
-            .iter()
-            .map(|(patch_name, _, _)| patch_name.len())
-            .max()
-            .unwrap_or(0)
+    let patchname_width = if opt_description || opt_author {
+        patches.iter().map(|(pn, _, _)| pn.len()).max().unwrap_or(0)
     } else {
         0
     };
@@ -271,7 +269,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
 
-    for (patch_name, oid, sigil) in patches {
+    for (patchname, oid, sigil) in patches {
         let commit = repo.find_commit(oid)?;
 
         if opt_empty {
@@ -309,8 +307,8 @@ fn run(matches: &ArgMatches) -> super::Result {
             stdout,
             "{0}{1:width$}",
             branch_prefix,
-            patch_name,
-            width = patch_name_width
+            patchname,
+            width = patchname_width
         )?;
 
         if opt_author {

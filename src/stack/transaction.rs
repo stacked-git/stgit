@@ -13,9 +13,7 @@ use crate::error::{repo_state_to_str, Error};
 use crate::index::TemporaryIndex;
 use crate::patchname::PatchName;
 use crate::signature;
-use crate::stack::{PatchDescriptor, Stack};
-
-use super::iter::AllPatches;
+use crate::stack::{PatchDescriptor, Stack, StackStateAccess};
 
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
@@ -72,7 +70,7 @@ impl<'repo> ExecuteContext<'repo> {
         // Check consistency
         for (patchname, oid) in transaction.patch_updates.iter() {
             if oid.is_none() {
-                assert!(transaction.stack.state.patches.contains_key(patchname));
+                assert!(transaction.stack.has_patch(patchname));
             } else {
                 assert!(transaction.all_patches().any(|pn| pn == patchname));
             }
@@ -88,12 +86,11 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let trans_head = transaction.head().clone();
-        let trans_head_id = trans_head.id();
-
         let set_head = true; // TODO: argument
         let allow_bad_head = false; // TODO: argument
         if set_head {
+            let trans_head = transaction.head().clone();
+
             if transaction.use_index_and_worktree {
                 let stack_head = transaction.stack.head.clone();
                 let result = transaction.checkout(&trans_head, allow_bad_head);
@@ -108,7 +105,7 @@ impl<'repo> ExecuteContext<'repo> {
                 .stack
                 .branch
                 .get_mut()
-                .set_target(trans_head_id, reflog_msg)?;
+                .set_target(trans_head.id(), reflog_msg)?;
         }
 
         let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
@@ -119,14 +116,14 @@ impl<'repo> ExecuteContext<'repo> {
         };
 
         // Update patch refs and stack state refs
-        let state_refname = transaction.stack.state_ref.name().unwrap();
         let mut git_trans = repo.transaction()?;
         let reflog_signature = None; // Use default signature
 
-        git_trans.lock_ref(state_refname)?;
+        git_trans.lock_ref(transaction.stack.state_ref.name().unwrap())?;
 
         for (patchname, maybe_desc) in &transaction.patch_updates {
             let patch_refname = transaction.stack.patch_refname(patchname);
+            let state = transaction.stack.state_mut();
             git_trans.lock_ref(&patch_refname)?;
 
             if let Some(patch_desc) = maybe_desc {
@@ -136,16 +133,10 @@ impl<'repo> ExecuteContext<'repo> {
                     reflog_signature,
                     reflog_msg,
                 )?;
-                if let Some(old_desc) = transaction
-                    .stack
-                    .state
-                    .patches
-                    .insert(patchname.clone(), patch_desc.clone())
+                if let Some(old_desc) = state.patches.insert(patchname.clone(), patch_desc.clone())
                 {
-                    if let Ok(old_note) =
-                        transaction.stack.repo.find_note(None, old_desc.commit.id())
-                    {
-                        transaction.stack.repo.note(
+                    if let Ok(old_note) = repo.find_note(None, old_desc.commit.id()) {
+                        repo.note(
                             &old_note.author(),
                             &old_note.committer(),
                             None,
@@ -157,29 +148,31 @@ impl<'repo> ExecuteContext<'repo> {
                 }
             } else {
                 git_trans.remove(&patch_refname)?;
-                transaction.stack.state.patches.remove(patchname);
+                state.patches.remove(patchname);
             }
         }
 
         // For printing applied patch name...
-        let _old_applied_pn = transaction
-            .stack
-            .state
-            .applied
-            .last()
-            .map(|pn| pn.to_string());
+        let _old_applied_pn = transaction.stack.applied().last().map(|pn| pn.to_string());
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
 
         let prev_state_commit = transaction.stack.state_ref.peel_to_commit()?;
         let head = transaction.head().clone();
-        transaction.stack.state.prev = Some(prev_state_commit);
-        transaction.stack.state.head = head;
-        transaction.stack.state.applied = transaction.applied;
-        transaction.stack.state.unapplied = transaction.unapplied;
-        transaction.stack.state.hidden = transaction.hidden;
 
-        let state_commit_id = transaction.stack.state.commit(repo, None, reflog_msg)?;
-        git_trans.set_target(state_refname, state_commit_id, reflog_signature, reflog_msg)?;
+        let state = transaction.stack.state_mut();
+        state.prev = Some(prev_state_commit);
+        state.head = head;
+        state.applied = transaction.applied;
+        state.unapplied = transaction.unapplied;
+        state.hidden = transaction.hidden;
+
+        let state_commit_id = state.commit(repo, None, reflog_msg)?;
+        git_trans.set_target(
+            transaction.stack.state_ref.name().unwrap(),
+            state_commit_id,
+            reflog_signature,
+            reflog_msg,
+        )?;
 
         git_trans.commit()?;
 
@@ -199,9 +192,9 @@ impl<'repo> StackTransaction<'repo> {
         use_index_and_worktree: bool,
     ) -> TransactionContext {
         let current_tree_id = stack.head.tree_id();
-        let applied = stack.state.applied.clone();
-        let unapplied = stack.state.unapplied.clone();
-        let hidden = stack.state.hidden.clone();
+        let applied = stack.applied().to_vec();
+        let unapplied = stack.unapplied().to_vec();
+        let hidden = stack.hidden().to_vec();
         TransactionContext(Self {
             stack,
             conflict_mode,
@@ -219,53 +212,12 @@ impl<'repo> StackTransaction<'repo> {
         })
     }
 
-    pub(crate) fn top(&self) -> &Commit<'repo> {
-        if let Some(patchname) = self.applied.last() {
-            if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-                &maybe_desc
-                    .as_ref()
-                    .expect("top should not attempt to access deleted patch")
-                    .commit
-            } else {
-                &self.stack.state.patches[patchname].commit
-            }
-        } else {
-            self.base()
-        }
-    }
-
     pub(crate) fn base(&self) -> &Commit<'repo> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
             &self.stack.base
         }
-    }
-
-    pub(crate) fn head(&self) -> &Commit<'repo> {
-        if let Some(commit) = self.updated_head.as_ref() {
-            commit
-        } else {
-            self.top()
-        }
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn applied(&self) -> &[PatchName] {
-        &self.applied
-    }
-
-    pub(crate) fn unapplied(&self) -> &[PatchName] {
-        &self.unapplied
-    }
-
-    #[allow(dead_code)]
-    pub(crate) fn hidden(&self) -> &[PatchName] {
-        &self.hidden
-    }
-
-    pub(crate) fn all_patches(&self) -> AllPatches {
-        AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
     pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<(), Error> {
@@ -290,7 +242,7 @@ impl<'repo> StackTransaction<'repo> {
                     ConflictMode::Allow => Ok(()),
                     ConflictMode::AllowIfSameTop => {
                         let top = self.applied.last();
-                        if top.is_some() && top == self.stack.state.applied.last() {
+                        if top.is_some() && top == self.stack.applied().last() {
                             Ok(())
                         } else {
                             Err(Error::OutstandingConflicts)
@@ -326,16 +278,7 @@ impl<'repo> StackTransaction<'repo> {
         is_last: bool,
         stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
-        let patch_desc = {
-            if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-                maybe_desc
-                    .as_ref()
-                    .expect("should not attempt to access deleted patch")
-            } else {
-                &self.stack.state.patches[patchname]
-            }
-        };
-        let patch_commit = &patch_desc.commit;
+        let patch_commit = self.get_patch_commit(patchname);
         let config = self.stack.repo.config()?;
         let parent = patch_commit.parent(0)?;
         let is_empty = parent.tree_id() == patch_commit.tree_id();
@@ -612,14 +555,14 @@ impl<'repo> StackTransaction<'repo> {
         new_patchname: &PatchName,
         stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
-        if self.stack.state.patches.contains_key(new_patchname)
+        if self.stack.has_patch(new_patchname)
             && self
                 .patch_updates
                 .get(new_patchname)
                 .map_or(true, |maybe_desc| maybe_desc.is_some())
         {
             return Err(Error::PatchAlreadyExists(new_patchname.clone()));
-        } else if !self.stack.state.patches.contains_key(old_patchname) {
+        } else if !self.stack.has_patch(old_patchname) {
             return Err(Error::PatchDoesNotExist(old_patchname.clone()));
         }
 
@@ -636,7 +579,7 @@ impl<'repo> StackTransaction<'repo> {
             );
         }
 
-        let patch_desc = self.stack.state.patches[old_patchname].clone();
+        let patch_desc = self.stack.get_patch(old_patchname).clone();
         self.patch_updates.insert(old_patchname.clone(), None);
         self.patch_updates
             .insert(new_patchname.clone(), Some(patch_desc));
@@ -744,22 +687,11 @@ impl<'repo> StackTransaction<'repo> {
         is_last: bool,
         stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
-        let patch_commit = {
-            if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-                maybe_desc
-                    .as_ref()
-                    .expect("should not attempt to access deleted patch")
-            } else {
-                &self.stack.state.patches[patchname]
-            }
-        }
-        .commit
-        .clone();
-
         let repo = self.stack.repo;
         let config = repo.config()?;
         let default_committer = signature::default_committer(Some(&config))?;
         let new_parent = self.top();
+        let patch_commit = self.get_patch_commit(patchname).clone();
 
         let mut cd = CommitData::from(&patch_commit);
         cd.parent_ids = vec![new_parent.id()];
@@ -891,16 +823,7 @@ impl<'repo> StackTransaction<'repo> {
             temp_index.read_tree(&head_tree)?;
 
             for patchname in patches.iter().rev() {
-                let patch_desc = {
-                    if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-                        maybe_desc
-                            .as_ref()
-                            .expect("should not attempt to access deleted patch")
-                    } else {
-                        &self.stack.state.patches[patchname]
-                    }
-                };
-                let patch_commit = &patch_desc.commit;
+                let patch_commit = self.get_patch_commit(patchname);
                 let patch_tree = patch_commit.tree()?;
                 let parent_commit = patch_commit.parent(0)?;
                 let parent_tree = parent_commit.tree()?;
@@ -931,5 +854,53 @@ impl<'repo> StackTransaction<'repo> {
         }
 
         Ok(merged)
+    }
+}
+
+impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
+    fn applied(&self) -> &[PatchName] {
+        &self.applied
+    }
+
+    fn unapplied(&self) -> &[PatchName] {
+        &self.unapplied
+    }
+
+    fn hidden(&self) -> &[PatchName] {
+        &self.hidden
+    }
+
+    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo> {
+        if let Some(maybe_desc) = self.patch_updates.get(patchname) {
+            maybe_desc
+                .as_ref()
+                .expect("should not attempt to access deleted patch")
+        } else {
+            self.stack.get_patch(patchname)
+        }
+    }
+
+    fn has_patch(&self, patchname: &PatchName) -> bool {
+        if let Some(maybe_desc) = self.patch_updates.get(patchname) {
+            maybe_desc.is_some()
+        } else {
+            self.stack.has_patch(patchname)
+        }
+    }
+
+    fn top(&self) -> &Commit<'repo> {
+        if let Some(patchname) = self.applied.last() {
+            self.get_patch_commit(patchname)
+        } else {
+            self.base()
+        }
+    }
+
+    fn head(&self) -> &Commit<'repo> {
+        if let Some(commit) = self.updated_head.as_ref() {
+            commit
+        } else {
+            self.top()
+        }
     }
 }

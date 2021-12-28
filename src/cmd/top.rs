@@ -3,7 +3,10 @@ use std::io::Write;
 use clap::App;
 use termcolor::WriteColor;
 
-use crate::{error::Error, stack::Stack};
+use crate::{
+    error::Error,
+    stack::{Stack, StackStateAccess},
+};
 
 use super::StGitCommand;
 
@@ -28,7 +31,7 @@ fn run(matches: &clap::ArgMatches) -> super::Result {
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 
-    if let Some(patchname) = stack.state.applied.last() {
+    if let Some(patchname) = stack.applied().last() {
         let mut stdout = crate::color::get_color_stdout(matches);
         let mut color_spec = termcolor::ColorSpec::new();
         color_spec.set_bold(true);

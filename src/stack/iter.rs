@@ -24,3 +24,19 @@ impl<'s> Iterator for AllPatches<'s> {
         self.0.next()
     }
 }
+
+pub(crate) struct BothPatches<'s>(Chain<Iter<'s, PatchName>, Iter<'s, PatchName>>);
+
+impl<'s> BothPatches<'s> {
+    pub(crate) fn new(a: &'s [PatchName], b: &'s [PatchName]) -> Self {
+        Self(a.iter().chain(b.iter()))
+    }
+}
+
+impl<'s> Iterator for BothPatches<'s> {
+    type Item = &'s PatchName;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}

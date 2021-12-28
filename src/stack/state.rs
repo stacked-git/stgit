@@ -11,7 +11,7 @@ use crate::patchname::PatchName;
 use crate::signature;
 use crate::stack::serde::RawStackState;
 
-use super::iter::AllPatches;
+use super::iter::{AllPatches, BothPatches};
 
 pub(crate) struct StackState<'repo> {
     pub prev: Option<Commit<'repo>>,
@@ -25,6 +25,44 @@ pub(crate) struct StackState<'repo> {
 #[derive(Clone, Debug)]
 pub(crate) struct PatchDescriptor<'repo> {
     pub commit: Commit<'repo>,
+}
+
+pub(crate) trait StackStateAccess<'repo> {
+    fn applied(&self) -> &[PatchName];
+    fn unapplied(&self) -> &[PatchName];
+    fn hidden(&self) -> &[PatchName];
+    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo>;
+    fn has_patch(&self, patchname: &PatchName) -> bool;
+    fn top(&self) -> &Commit<'repo>;
+    fn head(&self) -> &Commit<'repo>;
+
+    fn get_patch_commit(&self, patchname: &PatchName) -> &Commit<'repo> {
+        &self.get_patch(patchname).commit
+    }
+
+    fn is_applied(&self, patchname: &PatchName) -> bool {
+        self.applied().contains(patchname)
+    }
+
+    fn is_unapplied(&self, patchname: &PatchName) -> bool {
+        self.unapplied().contains(patchname)
+    }
+
+    fn is_hidden(&self, patchname: &PatchName) -> bool {
+        self.hidden().contains(patchname)
+    }
+
+    fn all_patches(&self) -> AllPatches<'_> {
+        AllPatches::new(self.applied(), self.unapplied(), self.hidden())
+    }
+
+    fn applied_and_unapplied(&self) -> BothPatches<'_> {
+        BothPatches::new(self.applied(), self.unapplied())
+    }
+
+    fn unapplied_and_hidden(&self) -> BothPatches<'_> {
+        BothPatches::new(self.unapplied(), self.hidden())
+    }
 }
 
 const MAX_PARENTS: usize = 16;

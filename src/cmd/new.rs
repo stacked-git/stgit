@@ -8,7 +8,7 @@ use crate::{
     patchdescription::PatchDescription,
     patchname::PatchName,
     signature,
-    stack::{ConflictMode, Stack},
+    stack::{ConflictMode, Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -69,7 +69,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     };
 
     if let Some(ref patchname) = patchname {
-        if stack.state.patches.contains_key(patchname) {
+        if stack.has_patch(patchname) {
             return Err(Error::PatchAlreadyExists(patchname.clone()));
         }
     }

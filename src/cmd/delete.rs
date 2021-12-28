@@ -4,7 +4,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -52,7 +52,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let opt_spill = matches.is_present("spill");
 
     let patches: Vec<PatchName> = if matches.is_present("top") {
-        if let Some(patchname) = stack.state.applied.last() {
+        if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {
             return Err(Error::NoAppliedPatches);
@@ -61,17 +61,12 @@ fn run(matches: &ArgMatches) -> super::Result {
         let patch_ranges = matches
             .values_of("patches")
             .expect("clap will ensure either patches or --top");
-        parse_patch_ranges(
-            patch_ranges,
-            stack.state.all_patches(),
-            stack.state.all_patches(),
-        )?
+        parse_patch_ranges(patch_ranges, stack.all_patches(), stack.all_patches())?
     };
 
     if opt_spill
         && stack
-            .state
-            .applied
+            .applied()
             .iter()
             .rev()
             .take(patches.len())

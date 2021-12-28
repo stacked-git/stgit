@@ -6,7 +6,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackTransaction},
+    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
 };
 
 use super::StGitCommand;
@@ -88,12 +88,12 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     if let Some(target_patch) = &opt_target {
-        if !stack.state.patches.contains_key(target_patch) {
+        if !stack.has_patch(target_patch) {
             return Err(Error::Generic(format!(
                 "target patch `{}` does not exist",
                 target_patch
             )));
-        } else if !stack.state.applied.contains(target_patch) {
+        } else if !stack.is_applied(target_patch) {
             return Err(Error::Generic(format!(
                 "cannot sink below `{}` since it is not applied",
                 target_patch
@@ -104,14 +104,10 @@ fn run(matches: &ArgMatches) -> super::Result {
     let patches: Vec<PatchName> = if let Some(patch_ranges) = matches.values_of("patches") {
         parse_patch_ranges(
             patch_ranges,
-            stack
-                .state
-                .applied
-                .iter()
-                .chain(stack.state.unapplied.iter()),
-            stack.state.all_patches(),
+            stack.applied_and_unapplied(),
+            stack.all_patches(),
         )?
-    } else if let Some(patchname) = stack.state.applied.last() {
+    } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]
     } else {
         return Err(Error::NoAppliedPatches);
@@ -127,16 +123,14 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     let mut remaining_unapplied: Vec<PatchName> = stack
-        .state
-        .unapplied
+        .unapplied()
         .iter()
         .filter(|pn| !patches.contains(pn))
         .cloned()
         .collect();
 
     let mut remaining_applied: Vec<PatchName> = stack
-        .state
-        .applied
+        .applied()
         .iter()
         .filter(|pn| !patches.contains(pn))
         .cloned()
