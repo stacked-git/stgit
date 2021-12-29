@@ -128,6 +128,7 @@ pub(crate) fn commit_tree(
 pub(crate) fn apply_treediff_to_index(
     tree1: git2::Oid,
     tree2: git2::Oid,
+    worktree: &Path,
     index_path: &Path,
 ) -> Result<bool, Error> {
     let mut diff_tree_child = Command::new("git")
@@ -144,6 +145,7 @@ pub(crate) fn apply_treediff_to_index(
     let apply_output = Command::new("git")
         .args(["apply", "--cached"]) // --3way
         .env("GIT_INDEX_FILE", index_path)
+        .current_dir(worktree)
         .stdin(diff_tree_child.stdout.take().unwrap())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
@@ -160,12 +162,27 @@ pub(crate) fn apply_treediff_to_index(
     }
 }
 
+pub(crate) fn merge_recursive_or_mergetool(
+    base_tree_id: git2::Oid,
+    our_tree_id: git2::Oid,
+    their_tree_id: git2::Oid,
+    index_path: &Path, // TODO: does this matter?
+    use_mergetool: bool,
+) -> Result<Vec<OsString>, Error> {
+    if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
+        return Ok(vec![]);
+    } else if use_mergetool {
+        mergetool(index_path)?;
+    }
+    ls_files_unmerged(index_path)
+}
+
 pub(crate) fn merge_recursive(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
     index_path: &Path, // TODO: does this matter?
-) -> Result<Option<Vec<OsString>>, Error> {
+) -> Result<bool, Error> {
     let output = Command::new("git")
         .arg("merge-recursive")
         .arg(base_tree_id.to_string())
@@ -183,15 +200,15 @@ pub(crate) fn merge_recursive(
         .map_err(Error::GitExecute)?;
 
     if output.status.success() {
-        Ok(None)
+        Ok(true)
     } else if output.status.code() == Some(1) {
-        Ok(Some(parse_conflicts(&output.stdout)))
+        Ok(false)
     } else {
         Err(make_cmd_err("merge-recursive", &output.stderr))
     }
 }
 
-pub(crate) fn mergetool(index_path: &Path) -> Result<Option<Vec<OsString>>, Error> {
+pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
     let output = Command::new("git")
         .arg("merge-tool")
         .env("GIT_INDEX_FILE", index_path)
@@ -201,11 +218,31 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<Option<Vec<OsString>>, Erro
         .output()
         .map_err(Error::GitExecute)?;
     if output.status.success() {
-        Ok(None)
+        Ok(true)
     } else if output.status.code() == Some(1) {
-        Ok(Some(parse_conflicts(&output.stdout)))
+        Ok(false)
     } else {
         Err(make_cmd_err("mergetool", &output.stderr))
+    }
+}
+
+pub(crate) fn ls_files_unmerged(index_path: &Path) -> Result<Vec<OsString>, Error> {
+    let output = Command::new("git")
+        .args(["ls-files", "--unmerged", "-z"])
+        .env("GIT_INDEX_FILE", index_path)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+    if output.status.success() {
+        Ok(output
+            .stdout
+            .split(|&c| c == b'\0')
+            .filter_map(|line| line.split(|&c| c == b'\t').nth(1).map(osstring_from_bytes))
+            .collect())
+    } else {
+        Err(make_cmd_err("ls-files --unmerged", &output.stderr))
     }
 }
 
@@ -297,20 +334,6 @@ pub(crate) fn interpret_trailers<'a>(
 fn make_cmd_err(command_name: &str, stderr: &[u8]) -> Error {
     let err_str = String::from_utf8_lossy(stderr);
     Error::GitCommand(command_name.to_string(), err_str.trim_end().to_string())
-}
-
-fn parse_conflicts(output: &[u8]) -> Vec<OsString> {
-    let conflict_label = b"CONFLICT ";
-    output
-        .split(|&c| c == b'\n')
-        .filter_map(|line| {
-            if line.starts_with(conflict_label) {
-                Some(osstring_from_bytes(line))
-            } else {
-                None
-            }
-        })
-        .collect()
 }
 
 fn parse_oid(output: &[u8]) -> Result<git2::Oid, Error> {

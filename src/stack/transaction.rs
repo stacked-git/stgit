@@ -1,19 +1,18 @@
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::io::Write;
-#[cfg(unix)]
-use std::os::unix::ffi::OsStrExt;
 
 use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
-use crate::commit::{CommitData, CommitExtended};
+use crate::commit::CommitExtended;
 use crate::error::{repo_state_to_str, Error};
 use crate::index::TemporaryIndex;
 use crate::patchname::PatchName;
 use crate::signature;
 use crate::stack::{PatchDescriptor, Stack, StackStateAccess};
+use crate::stupid;
 
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
@@ -54,18 +53,26 @@ enum PushStatus {
 
 impl<'repo> TransactionContext<'repo> {
     #[must_use]
-    pub(crate) fn transact<F>(mut self, f: F) -> ExecuteContext<'repo>
+    pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
     where
         F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
     {
-        self.0.error = f(&mut self.0).err();
-        ExecuteContext(self.0)
+        let mut transaction = self.0;
+        transaction.error = f(&mut transaction).err();
+        ExecuteContext(transaction)
     }
 }
 
 impl<'repo> ExecuteContext<'repo> {
     pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>, Error> {
         let mut transaction = self.0;
+
+        // Only proceed for halt errors
+        match transaction.error {
+            None => {}
+            Some(Error::TransactionHalt(_)) => {}
+            Some(e) => return Err(e),
+        }
 
         // Check consistency
         for (patchname, oid) in transaction.patch_updates.iter() {
@@ -721,85 +728,93 @@ impl<'repo> StackTransaction<'repo> {
         let repo = self.stack.repo;
         let config = repo.config()?;
         let default_committer = signature::default_committer(Some(&config))?;
-        let new_parent = self.top();
         let patch_commit = self.get_patch_commit(patchname).clone();
-
-        let mut cd = CommitData::from(&patch_commit);
-        cd.parent_ids = vec![new_parent.id()];
-        cd.committer = default_committer;
-
         let old_parent = patch_commit.parent(0)?;
-        let old_base_tree = old_parent.tree()?;
+        let new_parent = self.top().clone();
 
+        let mut merge_conflict = false;
         let mut push_status = if already_merged {
             PushStatus::AlreadyMerged
         } else {
             PushStatus::Unmodified
         };
-        let mut merge_conflict = false;
 
-        cd.tree_id = if already_merged {
-            old_base_tree.id()
+        let new_tree_id = if already_merged {
+            old_parent.tree_id()
         } else {
-            let base = old_base_tree;
-            let ours = new_parent.tree()?;
-            let theirs = patch_commit.tree()?;
-            let mut merge_options = git2::MergeOptions::new();
-            merge_options.patience(true);
-            let mut temp_index = repo.merge_trees(&base, &ours, &theirs, Some(&merge_options))?;
-            if temp_index.has_conflicts() {
-                if !self.use_index_and_worktree {
-                    return Err(Error::PatchApplicationUnclean(patchname.to_string()));
-                }
+            let base = old_parent.tree_id();
+            let ours = new_parent.tree_id();
+            let theirs = patch_commit.tree_id();
 
-                // TODO stgit.autoimerge
-                // TODO compat: python version runs git merge-recursive in the worktree
-                // It seems like the old temp index merge did not use `git apply
-                // --3way`, which meant that it would fail in cases where the new
-                // temp-index merge succeeds.  Not sure if there are cases where old
-                // iw.merge() would succeed where new repo.merge_trees() (above) would
-                // fail?
-                let mut opts = git2::build::CheckoutBuilder::new();
-                opts.allow_conflicts(false);
-                opts.our_label("current");
-                opts.their_label(patchname.as_ref()); // Compat: "patch"
-                repo.checkout_index(Some(&mut temp_index), Some(&mut opts))
-                    .map_err(|e| {
-                        if e.class() == git2::ErrorClass::Checkout
-                            && e.code() == git2::ErrorCode::Conflict
-                        {
-                            Error::CheckoutConflicts(e.message().to_string())
-                        } else {
-                            Error::Git(e)
+            let default_index = repo.index()?;
+            let default_index_path = default_index.path().unwrap();
+
+            repo.with_temp_index_file(|temp_index| {
+                let temp_index_path = temp_index.path().unwrap();
+                stupid::read_tree(ours, temp_index_path)?;
+                if stupid::apply_treediff_to_index(
+                    base,
+                    theirs,
+                    repo.workdir().unwrap(),
+                    temp_index_path,
+                )? {
+                    stupid::write_tree(temp_index_path)
+                } else if !self.use_index_and_worktree {
+                    return Err(Error::TransactionHalt(format!(
+                        "{} does not apply cleanly",
+                        patchname
+                    )));
+                } else {
+                    if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
+                        return Err(Error::TransactionHalt("index/worktree dirty".to_string()));
+                    }
+
+                    self.current_tree_id = ours;
+
+                    let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
+                    match stupid::merge_recursive_or_mergetool(
+                        base,
+                        ours,
+                        theirs,
+                        default_index_path,
+                        use_mergetool,
+                    ) {
+                        Ok(conflicts) if conflicts.is_empty() => {
+                            // Success, no conflicts
+                            let tree_id = stupid::write_tree(default_index_path)?;
+                            self.current_tree_id = tree_id;
+                            Ok(tree_id)
                         }
-                    })?;
-                self.current_tree_id = ours.id();
-
-                merge_conflict = true;
-                push_status = PushStatus::Conflict;
-                for conflict in temp_index.conflicts()? {
-                    let conflict = conflict?;
-                    if let Some(entry) = conflict.our {
-                        let path = std::ffi::OsStr::from_bytes(&entry.path).to_os_string();
-                        self.conflicts.push(path);
+                        Ok(mut conflicts) => {
+                            self.conflicts.append(&mut conflicts);
+                            merge_conflict = true;
+                            push_status = PushStatus::Conflict;
+                            Ok(ours)
+                        }
+                        Err(_) => Err(Error::TransactionHalt("index/worktree dirty".to_string())),
                     }
                 }
-                ours.id()
-            } else {
-                temp_index.write_tree_to(repo)?
-            }
+            })?
         };
 
         // TODO: want the "+ patch (modified)" status to indicate whether the patch's *diff*
         // from its new parent is different than from its old parent.
-        let is_tree_modified = cd.tree_id != patch_commit.tree_id();
+        let is_tree_modified = new_tree_id != patch_commit.tree_id();
 
         if is_tree_modified {
             push_status = PushStatus::Modified;
         }
 
-        if is_tree_modified || cd.parent_ids[0] != patch_commit.parent_id(0).unwrap() {
-            let new_patch_commit_id = cd.commit(repo)?;
+        if is_tree_modified || new_parent.id() != old_parent.id() {
+            let new_patch_commit_id = repo.commit_ex(
+                &patch_commit.author(),
+                &default_committer,
+                patch_commit
+                    .message_raw()
+                    .expect("patch message must be utf8"),
+                new_tree_id,
+                [new_parent.id()],
+            )?;
             let commit = repo.find_commit(new_patch_commit_id)?;
             if merge_conflict {
                 // In the case of a conflict, update() will be called after the
@@ -808,11 +823,7 @@ impl<'repo> StackTransaction<'repo> {
                 self.updated_head = Some(commit.clone());
             }
 
-            if commit
-                .parent(0)
-                .map(|parent| parent.tree_id() == commit.tree_id())
-                .unwrap_or(false)
-            {
+            if new_tree_id == new_parent.tree_id() {
                 push_status = PushStatus::Empty;
             }
 
@@ -835,7 +846,10 @@ impl<'repo> StackTransaction<'repo> {
         self.print_pushed(patchname, push_status, is_last, stdout)?;
 
         if merge_conflict {
-            Err(Error::MergeConflicts(self.conflicts.len()))
+            Err(Error::TransactionHalt(format!(
+                "{} merge conflicts",
+                self.conflicts.len()
+            )))
         } else {
             Ok(())
         }

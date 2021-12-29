@@ -159,7 +159,7 @@ fn main() {
     };
 
     match result {
-        Err(e @ error::Error::MergeConflicts(_)) => {
+        Err(e @ error::Error::TransactionHalt(_)) => {
             print_error_message(e);
             std::process::exit(CONFLICT_ERROR)
         }

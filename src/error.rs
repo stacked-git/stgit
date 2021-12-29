@@ -136,6 +136,9 @@ pub(crate) enum Error {
     #[error("{0}\nCommand aborted (all changes rolled back)")]
     TransactionAborted(String),
 
+    #[error("{0}")]
+    TransactionHalt(String),
+
     #[error("No patches applied")]
     NoAppliedPatches,
 
@@ -144,12 +147,6 @@ pub(crate) enum Error {
 
     #[error("No unapplied patches")]
     NoUnappliedPatches,
-
-    #[error("{0} merge conflicts")]
-    MergeConflicts(usize),
-
-    #[error("{0} does not apply cleanly")]
-    PatchApplicationUnclean(String),
 
     #[error("{0}")]
     CheckoutConflicts(String),
