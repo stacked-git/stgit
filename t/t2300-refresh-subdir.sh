@@ -54,13 +54,17 @@ test_expect_success 'refresh -u' '
     echo xyzzy >> bar/bar.txt &&
     echo xyzzy >> bar/baz.txt &&
     stg refresh -u &&
-    test "$(echo $(stg status))" = "M bar/bar.txt M foo.txt"
+    test "$(echo $(stg status))" = "M bar/bar.txt M foo.txt" &&
+    test "$(echo $(stg files p0))" = "A bar/bar.txt A foo.txt" &&
+    test "$(echo $(stg files p1))" = "A bar/baz.txt"
 '
 
 test_expect_success 'refresh -u -p <subdir>' '
     echo xyzzy >> bar/baz.txt &&
     stg refresh -p p0 -u bar &&
-    test "$(echo $(stg status))" = "M bar/baz.txt M foo.txt"
+    test "$(echo $(stg status))" = "M bar/baz.txt M foo.txt" &&
+    test "$(echo $(stg files p0))" = "A bar/bar.txt A foo.txt" &&
+    test "$(echo $(stg files p1))" = "A bar/baz.txt"
 '
 
 test_expect_success 'refresh an unapplied patch' '
