@@ -101,11 +101,13 @@ impl<'repo> ExecuteContext<'repo> {
                 }
             }
 
-            transaction
+            let updated_ref = transaction
                 .stack
                 .branch
                 .get_mut()
                 .set_target(trans_head.id(), reflog_msg)?;
+            transaction.stack.branch = git2::Branch::wrap(updated_ref);
+            transaction.stack.head = trans_head;
         }
 
         let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
