@@ -137,13 +137,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             } else {
                 vec![]
             };
-
-            for (i, patchname) in (&to_apply).iter().enumerate() {
-                let already_merged = merged.contains(&patchname);
-                let is_last = i + 1 == to_apply.len();
-                trans.push_patch(patchname, already_merged, is_last, &mut stdout)?;
-            }
-
+            trans.push_patches_ex(&to_apply, |pn| merged.contains(&pn), &mut stdout)?;
             Ok(())
         }
     });

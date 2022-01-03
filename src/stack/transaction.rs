@@ -347,11 +347,7 @@ impl<'repo> StackTransaction<'repo> {
             self.pop_patches(|pn| to_pop.contains(pn), stdout)?;
 
             let to_push = &applied[num_common..];
-            for (i, pn) in to_push.iter().enumerate() {
-                let already_merged = false;
-                let is_last = i + 1 == to_push.len();
-                self.push_patch(pn, already_merged, is_last, stdout)?;
-            }
+            self.push_patches(to_push, stdout)?;
 
             assert_eq!(self.applied, applied);
 
@@ -681,6 +677,36 @@ impl<'repo> StackTransaction<'repo> {
         self.print_popped(&all_popped, stdout)?;
 
         Ok(incidental)
+    }
+
+    pub(crate) fn push_patches<P>(
+        &mut self,
+        patchnames: &[P],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error>
+    where
+        P: AsRef<PatchName>,
+    {
+        let already_merged = |_: &PatchName| false;
+        self.push_patches_ex(patchnames, already_merged, stdout)
+    }
+
+    pub(crate) fn push_patches_ex<P, F>(
+        &mut self,
+        patchnames: &[P],
+        already_merged: F,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error>
+    where
+        P: AsRef<PatchName>,
+        F: Fn(&PatchName) -> bool,
+    {
+        for (i, patchname) in patchnames.iter().enumerate() {
+            let is_last = i + 1 == patchnames.len();
+            let merged = already_merged(patchname.as_ref());
+            self.push_patch(patchname.as_ref(), merged, is_last, stdout)?;
+        }
+        Ok(())
     }
 
     pub(crate) fn push_patch(

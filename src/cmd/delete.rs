@@ -98,11 +98,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let exec_context = trans_context.transact(|trans| {
         let to_push = trans.delete_patches(|pn| patches.contains(pn), &mut stdout)?;
-        for (i, patchname) in to_push.iter().enumerate() {
-            let is_last = i + 1 == patches.len();
-            let already_merged = false;
-            trans.push_patch(patchname, already_merged, is_last, &mut stdout)?;
-        }
+        trans.push_patches(&to_push, &mut stdout)?;
         Ok(())
     });
     exec_context.execute("delete")?;
