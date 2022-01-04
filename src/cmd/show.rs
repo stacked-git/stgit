@@ -1,7 +1,10 @@
 use clap::{App, Arg, ArgMatches};
 
-use crate::error::Error;
-use crate::stack::{Stack, StackStateAccess};
+use crate::{
+    error::Error,
+    stack::{Stack, StackStateAccess},
+    stupid,
+};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("show", super::StGitCommand { get_app, run })
@@ -147,35 +150,10 @@ fn run(matches: &ArgMatches) -> super::Result {
         oids.push(stack.head.id());
     }
 
-    let mut command = std::process::Command::new("git");
-    command.arg("show");
-    if opt_stat {
-        command.arg("--stat").arg("--summary");
-    } else {
-        command.arg("--patch");
-    }
-
-    if let Some(diff_opts) = matches.value_of("diff-opts") {
-        for opt in diff_opts.split_ascii_whitespace() {
-            command.arg(opt);
-        }
-    }
-
-    for oid in &oids {
-        command.arg(&oid.to_string());
-    }
-
-    command.arg("--");
-
-    if let Some(path_limits) = matches.values_of_os("path_limits") {
-        command.args(path_limits);
-    }
-
-    let status = command.status()?;
-
-    if !status.success() {
-        Err(Error::Generic("subordinate `git show` failed".to_string()))
-    } else {
-        Ok(())
-    }
+    stupid::show(
+        oids,
+        matches.values_of_os("path_limits"),
+        opt_stat,
+        matches.value_of("diff-opts"),
+    )
 }

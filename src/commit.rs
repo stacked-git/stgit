@@ -1,6 +1,4 @@
-use std::{ffi::OsStr, io::Write};
-
-use crate::{error::Error, signature::TimeExtended};
+use crate::{error::Error, stupid};
 
 pub(crate) struct CommitData {
     pub author: git2::Signature<'static>,
@@ -87,7 +85,7 @@ impl CommitExtended for git2::Repository {
         if gpgsign || commit_encoding.is_some() {
             // TODO: encode message
             // Use git for any commit that needs to be signed
-            git_commit_tree(
+            stupid::commit_tree(
                 self.path(),
                 author,
                 committer,
@@ -107,100 +105,5 @@ impl CommitExtended for git2::Repository {
 
             Ok(self.commit(None, author, committer, message, &tree, &parents)?)
         }
-    }
-}
-
-#[inline]
-fn git_commit_tree(
-    repo_path: &std::path::Path,
-    author: &git2::Signature,
-    committer: &git2::Signature,
-    message: &[u8],
-    tree_id: git2::Oid,
-    parent_ids: impl IntoIterator<Item = git2::Oid>,
-    gpgsign: bool,
-) -> Result<git2::Oid, Error> {
-    let mut command = std::process::Command::new("git");
-    command.arg("commit-tree").arg(format!("{}", tree_id));
-    for parent_id in parent_ids {
-        command.arg("-p").arg(format!("{}", parent_id));
-    }
-    if gpgsign {
-        command.arg("-S");
-    }
-    if cfg!(unix) {
-        use std::os::unix::ffi::OsStrExt;
-        command
-            .env("GIT_AUTHOR_NAME", OsStr::from_bytes(author.name_bytes()))
-            .env("GIT_AUTHOR_EMAIL", OsStr::from_bytes(author.email_bytes()))
-            .env(
-                "GIT_COMMITTER_NAME",
-                OsStr::from_bytes(committer.name_bytes()),
-            )
-            .env(
-                "GIT_COMMITTER_EMAIL",
-                OsStr::from_bytes(committer.email_bytes()),
-            )
-            // TODO: reencode dates?
-            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
-    } else {
-        command
-            .env(
-                "GIT_AUTHOR_NAME",
-                &author
-                    .name()
-                    .expect("author name must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_AUTHOR_EMAIL",
-                &author
-                    .email()
-                    .expect("author email must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_COMMITTER_NAME",
-                &committer
-                    .name()
-                    .expect("committer name must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_COMMITTER_EMAIL",
-                &committer
-                    .email()
-                    .expect("committer email must be valid utf-8 on non-unix"),
-            )
-            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
-    }
-
-    command
-        .env("GIT_DIR", repo_path)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-
-    let mut child = command.spawn()?;
-
-    {
-        let mut stdin = child
-            .stdin
-            .take()
-            .expect("failed to open stdin of `git commit-tree`");
-
-        stdin.write_all(message)?;
-    }
-
-    let output = child.wait_with_output()?;
-    if output.status.success() {
-        let output_str =
-            std::str::from_utf8(&output.stdout).expect("`git commit-tree` output non-UTF8 oid");
-        Ok(git2::Oid::from_str(output_str.trim_end())?)
-    } else {
-        Err(Error::Generic(format!(
-            "`git commit-tree`: {} ({})",
-            String::from_utf8_lossy(&output.stderr).trim_end(),
-            output.status.code().unwrap_or(-1)
-        )))
     }
 }

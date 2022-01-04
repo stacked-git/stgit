@@ -18,6 +18,7 @@ mod patchrange;
 mod revspec;
 mod signature;
 mod stack;
+mod stupid;
 mod templates;
 mod trailers;
 

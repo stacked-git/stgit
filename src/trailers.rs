@@ -1,8 +1,6 @@
-use std::io::Write;
-
 use clap::ArgMatches;
 
-use crate::error::Error;
+use crate::{error::Error, stupid};
 
 pub(crate) fn add_trailers(
     message: String,
@@ -53,34 +51,9 @@ pub(crate) fn add_trailers(
         trailers.push((autosign, &default_value));
     }
 
-    if !trailers.is_empty() {
-        let mut child = std::process::Command::new("git")
-            .arg("interpret-trailers")
-            .args(
-                trailers
-                    .iter()
-                    .map(|(trailer, by)| format!("--trailer={}={}", trailer, by)),
-            )
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .spawn()?;
-        // TODO: don't use expect on main thread
-        let mut stdin = child
-            .stdin
-            .take()
-            .expect("failed to open stdin for `git interpret-trailers`");
-        std::thread::spawn(move || {
-            stdin
-                .write_all(message.as_bytes())
-                .expect("failed to write stdin for `git interpret-trailers`");
-        });
-
-        let output = child.wait_with_output()?;
-        unsafe {
-            let message = String::from_utf8_unchecked(output.stdout);
-            Ok(message)
-        }
-    } else {
+    if trailers.is_empty() {
         Ok(message)
+    } else {
+        stupid::interpret_trailers(message, trailers)
     }
 }

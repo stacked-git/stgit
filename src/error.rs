@@ -21,6 +21,12 @@ pub(crate) enum Error {
     #[error(transparent)]
     PatchRange(#[from] crate::patchrange::Error),
 
+    #[error("could not execute `git`: {0}")]
+    GitExecute(std::io::Error),
+
+    #[error("`git {0}`: {1}")]
+    GitCommand(String, String),
+
     #[error("patch `{0}` already exists")]
     PatchAlreadyExists(crate::patchname::PatchName),
 

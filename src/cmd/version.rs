@@ -1,5 +1,7 @@
 use clap::{App, ArgMatches};
 
+use crate::stupid;
+
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("version", super::StGitCommand { get_app, run })
 }
@@ -10,9 +12,6 @@ fn get_app() -> App<'static> {
 
 fn run(_: &ArgMatches) -> super::Result {
     println!("Stacked Git {}", env!("CARGO_PKG_VERSION"));
-    std::process::Command::new("git")
-        .arg("--version")
-        .status()
-        .expect("Failed to run git process");
+    println!("{}", stupid::version()?);
     Ok(())
 }
