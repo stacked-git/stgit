@@ -554,7 +554,9 @@ impl<'repo> StackTransaction<'repo> {
         new_patchname: &PatchName,
         stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
-        if self.stack.has_patch(new_patchname)
+        if new_patchname == old_patchname {
+            return Ok(());
+        } else if self.stack.has_patch(new_patchname)
             && self
                 .patch_updates
                 .get(new_patchname)

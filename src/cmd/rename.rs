@@ -57,6 +57,10 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Err(Error::NoAppliedPatches);
     };
 
+    if old_patchname == new_patchname {
+        return Err(Error::PatchAlreadyExists(new_patchname));
+    }
+
     let mut stdout = crate::color::get_color_stdout(matches);
 
     let discard_changes = false;
