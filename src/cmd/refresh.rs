@@ -116,6 +116,12 @@ fn get_app() -> App<'static> {
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]))
         .arg(
+            Arg::new("spill")
+                .long("spill")
+                .help("OBSOLETE: use 'stg spill'")
+                .hide(true),
+        )
+        .arg(
             Arg::new("pathspecs")
                 .help("Only refresh files matching path")
                 .value_name("path")
@@ -127,6 +133,12 @@ fn get_app() -> App<'static> {
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
+    if matches.is_present("spill") {
+        return Err(Error::Generic(
+            "`stg refresh --spill` is obsolete; use `stg spill` instead".to_string(),
+        ));
+    }
+
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 

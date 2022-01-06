@@ -35,6 +35,7 @@ pub(crate) mod reset;
 pub(crate) mod series;
 pub(crate) mod show;
 pub(crate) mod sink;
+pub(crate) mod spill;
 pub(crate) mod squash;
 pub(crate) mod sync;
 pub(crate) mod top;
@@ -69,6 +70,7 @@ pub(crate) fn get_commands() -> Commands {
         series::get_command(),
         show::get_command(),
         sink::get_command(),
+        spill::get_command(),
         top::get_command(),
         unhide::get_command(),
         version::get_command(),

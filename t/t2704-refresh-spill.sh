@@ -1,7 +1,7 @@
 #!/bin/sh
 # shellcheck disable=SC2016
 
-test_description='Test "stg pop --spill"'
+test_description='Test "stg refresh --spill"'
 
 . ./test-lib.sh
 
@@ -16,6 +16,7 @@ test_expect_success 'Initialize the StGit repository and create a patch and add 
     git add -A
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt refresh --spill -e' '
     command_error stg refresh --spill -e 2>err &&
     grep "Cannot combine --spill with --edit" err
@@ -91,5 +92,11 @@ test_expect_success 'Spill with annotation' '
     stg refresh --spill --annotate banana &&
     stg log -f -n1 | grep -e "banana"
 '
+else
+test_expect_success 'Attempt deprecated refresh --spill' '
+    command_error stg refresh --spill 2>err &&
+    grep "\`stg refresh --spill\` is obsolete; use \`stg spill\` instead" err
+'
+fi
 
 test_done
