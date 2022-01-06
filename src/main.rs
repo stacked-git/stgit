@@ -26,7 +26,6 @@ use std::{
 };
 
 use clap::{crate_version, App, AppSettings, ArgMatches, ValueHint};
-use pyo3::prelude::*;
 use termcolor::WriteColor;
 
 const GENERAL_ERROR: i32 = 1;
@@ -374,26 +373,12 @@ fn get_aliases(
 }
 
 fn punt_to_python() -> cmd::Result {
-    let result: Result<(), pyo3::PyErr> = Python::with_gil(|py| {
-        let stgit_main = py.import("stgit.main")?;
-        let main = stgit_main.getattr("main")?;
-        let argv: Vec<String> = std::env::args().collect();
-        let ret_val = main.call1((argv,))?;
-        let rc = if ret_val.is_none() {
-            0
-        } else {
-            ret_val.extract()?
-        };
-        unsafe { pyo3::ffi::Py_Finalize() }
-        std::process::exit(rc);
-    });
-
-    if let Err(e) = result {
-        Python::with_gil(|py| e.print(py));
-        Err(error::Error::Python(e))
-    } else {
-        Ok(())
-    }
+    let status = std::process::Command::new("python")
+        .args(["-m", "stgit"])
+        .args(std::env::args_os().skip(1))
+        .status()
+        .map_err(|e| error::Error::Generic(format!("failed to run python: {}", e)))?;
+    std::process::exit(status.code().unwrap_or(-1));
 }
 
 fn print_error_message<T: ToString>(err: T) {

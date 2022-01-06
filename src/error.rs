@@ -6,9 +6,6 @@ pub(crate) enum Error {
     #[error("Git2: {0}")]
     Git(#[from] git2::Error),
 
-    #[error("Python: {0}")]
-    Python(#[from] pyo3::PyErr),
-
     #[error("JSON deserialize error: {0}")]
     Json(#[from] serde_json::Error),
 
