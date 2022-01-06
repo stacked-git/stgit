@@ -8,9 +8,6 @@ lazy_static! {
         .setting(ArgSettings::TakesValue)
         .value_name("BRANCH")
         .value_hint(ValueHint::Other);
-    pub(crate) static ref HOOK_ARG: Arg<'static> = Arg::new("no-verify")
-        .long("no-verify")
-        .help("Disable commit-msg hook");
     pub(crate) static ref KEEP_ARG: Arg<'static> =
         Arg::new("keep").long("keep").help("Keep the local changes");
     pub(crate) static ref MERGED_ARG: Arg<'static> = Arg::new("merged")

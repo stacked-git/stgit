@@ -1,6 +1,6 @@
-use std::{ffi::OsStr, io::Write, path::PathBuf};
+use std::{io::Write, path::PathBuf};
 
-use crate::{commit::CommitData, error::Error, signature::TimeExtended};
+use crate::error::Error;
 
 fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
     let hooks_path = if let Ok(config) = repo.config() {
@@ -21,20 +21,19 @@ fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
 pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> Result<(), Error> {
     let hook_name = "pre-commit";
     let hook_path = get_hook_path(repo, hook_name);
-
-    let meta = match std::fs::metadata(&hook_path) {
+    let hook_meta = match std::fs::metadata(&hook_path) {
         Ok(meta) => meta,
         Err(_) => return Ok(()), // ignore missing hook
     };
 
-    if !meta.is_file() {
+    if !hook_meta.is_file() {
         return Ok(());
     }
 
     if cfg!(unix) {
         use std::os::linux::fs::MetadataExt;
         // Ignore non-executable hooks
-        if meta.st_mode() & 0o111 == 0 {
+        if hook_meta.st_mode() & 0o111 == 0 {
             return Ok(());
         }
     }
@@ -68,17 +67,30 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
 
 pub(crate) fn run_commit_msg_hook(
     repo: &git2::Repository,
-    commit_data: CommitData,
+    message: String,
     editor_is_used: bool,
-) -> Result<CommitData, Error> {
+) -> Result<String, Error> {
     let hook_name = "commit-msg";
     let hook_path = get_hook_path(repo, hook_name);
-    if !hook_path.is_file() {
-        return Ok(commit_data);
+    let hook_meta = match std::fs::metadata(&hook_path) {
+        Ok(meta) => meta,
+        Err(_) => return Ok(message), // ignore missing hook
+    };
+
+    if !hook_meta.is_file() {
+        return Ok(message);
+    }
+
+    if cfg!(unix) {
+        use std::os::linux::fs::MetadataExt;
+        // Ignore non-executable hooks
+        if hook_meta.st_mode() & 0o111 == 0 {
+            return Ok(message);
+        }
     }
 
     let mut msg_file = tempfile::NamedTempFile::new()?;
-    msg_file.write_all(commit_data.message.as_bytes())?;
+    msg_file.write_all(message.as_bytes())?;
     let msg_file_path = msg_file.into_temp_path();
 
     let index = repo.index()?;
@@ -87,53 +99,6 @@ pub(crate) fn run_commit_msg_hook(
     // TODO: when git runs this hook, it only sets GIT_INDEX_FILE and sometimes
     // GIT_EDITOR. So author and committer vars are not clearly required.
     let mut hook_command = std::process::Command::new(hook_path);
-    let author = &commit_data.author;
-    let committer = &commit_data.committer;
-    if cfg!(unix) {
-        use std::os::unix::ffi::OsStrExt;
-        hook_command
-            .env("GIT_AUTHOR_NAME", OsStr::from_bytes(author.name_bytes()))
-            .env("GIT_AUTHOR_EMAIL", OsStr::from_bytes(author.email_bytes()))
-            .env(
-                "GIT_COMMITTER_NAME",
-                OsStr::from_bytes(committer.name_bytes()),
-            )
-            .env(
-                "GIT_COMMITTER_EMAIL",
-                OsStr::from_bytes(committer.email_bytes()),
-            )
-            // TODO: reencode dates?
-            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
-    } else {
-        hook_command
-            .env(
-                "GIT_AUTHOR_NAME",
-                author
-                    .name()
-                    .expect("author name must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_AUTHOR_EMAIL",
-                author
-                    .email()
-                    .expect("author email must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_COMMITTER_NAME",
-                committer
-                    .name()
-                    .expect("committer name must be valid utf-8 on non-unix"),
-            )
-            .env(
-                "GIT_COMMITTER_EMAIL",
-                committer
-                    .email()
-                    .expect("committer email must be valid utf-8 on non-unix"),
-            )
-            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.epoch_time_string());
-    }
     hook_command.env("GIT_INDEX_FILE", index_path);
     if !editor_is_used {
         hook_command.env("GIT_EDITOR", ":");
@@ -154,7 +119,7 @@ pub(crate) fn run_commit_msg_hook(
             )
         })?;
 
-        Ok(commit_data.replace_message(message))
+        Ok(message)
     } else {
         Err(Error::Hook(
             hook_name.to_string(),

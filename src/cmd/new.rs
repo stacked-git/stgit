@@ -2,8 +2,7 @@ use clap::{App, Arg, ArgMatches, ValueHint};
 use git2::DiffOptions;
 
 use crate::{
-    argset,
-    commit::CommitData,
+    commit::CommitExtended,
     error::Error,
     patchdescription::PatchDescription,
     patchname::PatchName,
@@ -41,7 +40,6 @@ fn get_app() -> App<'static> {
                 .short('v')
                 .help("Show diff in message template"),
         )
-        .arg(&*argset::HOOK_ARG)
         .arg(
             Arg::new("patchname")
                 .help("Name for new patch")
@@ -84,9 +82,8 @@ fn run(matches: &ArgMatches) -> super::Result {
     let disallow_patches: Vec<&PatchName> = stack.all_patches().collect();
     let allowed_patches = vec![];
 
-    let head_ref = repo.head()?;
-    let tree = head_ref.peel_to_tree()?;
-    let parents = vec![head_ref.peel_to_commit()?.id()];
+    let tree = stack.head.tree()?;
+    let parent_id = stack.head.id();
 
     let (message, must_edit) =
         if let Some(message) = crate::message::get_message_from_args(matches)? {
@@ -120,34 +117,37 @@ fn run(matches: &ArgMatches) -> super::Result {
         None
     };
 
-    let patch_desc = PatchDescription {
+    let patch_description = PatchDescription {
         patchname,
         author: signature::make_author(Some(&config), matches)?,
         message,
         diff,
     };
 
-    let patch_desc = if must_edit {
-        crate::edit::edit_interactive(patch_desc, &config)?
+    let PatchDescription {
+        patchname,
+        author,
+        message,
+        ..
+    } = if must_edit {
+        crate::edit::edit_interactive(patch_description, &config)?
     } else {
-        patch_desc
+        patch_description
     };
 
-    let message = patch_desc.message;
-
-    let mut cd = CommitData::new(patch_desc.author, committer, message, tree.id(), parents);
-
     if let Some(template_path) = matches.value_of_os("save-template") {
-        std::fs::write(template_path, &cd.message)?;
+        std::fs::write(template_path, &message)?;
         return Ok(());
     }
 
-    if !matches.is_present("no-verify") {
-        cd = crate::hook::run_commit_msg_hook(&repo, cd, false)?;
-    }
+    let message = if !matches.is_present("no-verify") {
+        crate::hook::run_commit_msg_hook(&repo, message, false)?
+    } else {
+        message
+    };
 
     let patchname: PatchName = {
-        if let Some(patchname) = patch_desc.patchname {
+        if let Some(patchname) = patchname {
             if must_edit {
                 PatchName::make_unique(
                     patchname.as_ref(),
@@ -161,7 +161,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             }
         } else {
             PatchName::make_unique(
-                &cd.message,
+                &message,
                 len_limit,
                 true, // lowercase
                 &allowed_patches,
@@ -178,7 +178,8 @@ fn run(matches: &ArgMatches) -> super::Result {
             discard_changes,
             use_index_and_worktree,
             |trans| {
-                let patch_commit_id = cd.commit(&repo)?;
+                let patch_commit_id =
+                    repo.commit_ex(&author, &committer, &message, tree.id(), [parent_id])?;
                 trans.push_applied(&patchname, patch_commit_id)?;
                 Ok(())
             },

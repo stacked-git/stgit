@@ -1,7 +1,5 @@
 use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 
-use crate::argset;
-
 #[allow(dead_code)]
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("refresh", super::StGitCommand { get_app, run })
@@ -108,8 +106,7 @@ fn get_app() -> App<'static> {
                     "Spill patch content to worktree and index, \
                 emptying patch content",
                 ),
-        )
-        .arg(&*argset::HOOK_ARG);
+        );
 
     crate::patchedit::add_args(app)
 }

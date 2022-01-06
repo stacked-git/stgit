@@ -13,7 +13,6 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .short('e')
                 .help("Invoke editor for patch description"),
         )
-        // TODO: add --no-verify
         .arg(
             Arg::new("diff")
                 .long("diff")
@@ -42,6 +41,11 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 )
                 .setting(ArgSettings::TakesValue)
                 .value_hint(ValueHint::FilePath),
+        )
+        .arg(
+            Arg::new("no-verify")
+                .long("no-verify")
+                .help("Disable commit-msg hook"),
         )
         .arg(
             Arg::new("sign")
@@ -192,27 +196,47 @@ pub(crate) fn edit<'repo>(
     let author = author.unwrap_or_else(|| patch_commit.author());
     let author = crate::signature::override_author(&author, matches)?;
     let committer = patch_commit.committer();
-
-    let message = get_message_from_args(matches)?.unwrap_or_else(|| {
-        message.unwrap_or_else(|| {
-            patch_commit
-                .message_raw()
-                .expect("existing patch should have utf-8 message")
-                .to_string()
-        })
-    });
+    let mut is_message_modified = false;
+    let message = if let Some(message) = get_message_from_args(matches)? {
+        is_message_modified = true;
+        message
+    } else if let Some(message) = message {
+        is_message_modified = true;
+        message
+    } else {
+        patch_commit
+            .message_raw()
+            .expect("existing patch should have utf-8 message")
+            .to_string()
+    };
 
     let config = repo.config()?;
     let autosign = config.get_string("stgit.autosign").ok();
     let default_committer = crate::signature::default_committer(Some(&config))?;
-    let message =
-        crate::trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?;
+    let message = {
+        let before_message = message.clone();
+        let message = crate::trailers::add_trailers(
+            message,
+            matches,
+            &default_committer,
+            autosign.as_deref(),
+        )?;
+        if before_message != message {
+            is_message_modified = true;
+        }
+        message
+    };
 
     let tree_id = tree_id.unwrap_or_else(|| patch_commit.tree_id());
     let parent_id = parent_id.unwrap_or_else(|| patch_commit.parent_id(0).unwrap());
 
     if !matches.is_present("edit") {
         let new_patchname = None;
+        let message = if is_message_modified && !matches.is_present("no-verify") {
+            crate::hook::run_commit_msg_hook(repo, message, false)?
+        } else {
+            message
+        };
         let commit_id = repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?;
         Ok((new_patchname, commit_id))
     } else {
@@ -264,6 +288,12 @@ pub(crate) fn edit<'repo>(
                 &allowed_patches,
                 &disallow_patches,
             ))
+        };
+
+        let new_message = if !matches.is_present("no-verify") {
+            crate::hook::run_commit_msg_hook(repo, new_message, false)?
+        } else {
+            new_message
         };
 
         let commit_id = repo.commit_ex(
