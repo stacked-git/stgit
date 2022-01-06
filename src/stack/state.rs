@@ -19,11 +19,11 @@ pub(crate) struct StackState<'repo> {
     pub applied: Vec<PatchName>,
     pub unapplied: Vec<PatchName>,
     pub hidden: Vec<PatchName>,
-    pub patches: BTreeMap<PatchName, PatchDescriptor<'repo>>,
+    pub patches: BTreeMap<PatchName, PatchState<'repo>>,
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct PatchDescriptor<'repo> {
+pub(crate) struct PatchState<'repo> {
     pub commit: Commit<'repo>,
 }
 
@@ -31,7 +31,7 @@ pub(crate) trait StackStateAccess<'repo> {
     fn applied(&self) -> &[PatchName];
     fn unapplied(&self) -> &[PatchName];
     fn hidden(&self) -> &[PatchName];
-    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo>;
+    fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo>;
     fn has_patch(&self, patchname: &PatchName) -> bool;
     fn top(&self) -> &Commit<'repo>;
     fn head(&self) -> &Commit<'repo>;
@@ -95,9 +95,9 @@ impl<'repo> StackState<'repo> {
         raw_state: RawStackState,
     ) -> Result<Self, Error> {
         let mut patches = BTreeMap::new();
-        for (patchname, raw_desc) in raw_state.patches {
-            let commit = repo.find_commit(raw_desc.oid)?;
-            patches.insert(patchname, PatchDescriptor { commit });
+        for (patchname, raw_state) in raw_state.patches {
+            let commit = repo.find_commit(raw_state.oid)?;
+            patches.insert(patchname, PatchState { commit });
         }
         Ok(Self {
             prev: if let Some(prev_id) = raw_state.prev {
@@ -268,8 +268,8 @@ impl<'repo> StackState<'repo> {
         let commit = &self.patches[patch_name].commit;
 
         if let Some(prev_state) = prev_state {
-            if let Some(prev_desc) = prev_state.patches.get(patch_name) {
-                if prev_desc.commit.id() == commit.id() {
+            if let Some(prev_patch) = prev_state.patches.get(patch_name) {
+                if prev_patch.commit.id() == commit.id() {
                     if let Some(prev_patches_tree) = prev_patches_tree {
                         if let Some(prev_patch_entry) =
                             prev_patches_tree.get_name(patch_name.as_ref())

@@ -11,7 +11,7 @@ use crate::error::{repo_state_to_str, Error};
 use crate::index::TemporaryIndex;
 use crate::patchname::PatchName;
 use crate::signature;
-use crate::stack::{PatchDescriptor, Stack, StackStateAccess};
+use crate::stack::{PatchState, Stack, StackStateAccess};
 use crate::stupid;
 
 pub(crate) struct StackTransaction<'repo> {
@@ -19,7 +19,7 @@ pub(crate) struct StackTransaction<'repo> {
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
-    patch_updates: BTreeMap<PatchName, Option<PatchDescriptor<'repo>>>,
+    patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
@@ -130,26 +130,25 @@ impl<'repo> ExecuteContext<'repo> {
 
         git_trans.lock_ref(&transaction.stack.refname)?;
 
-        for (patchname, maybe_desc) in &transaction.patch_updates {
+        for (patchname, maybe_patch) in &transaction.patch_updates {
             let patch_refname = transaction.stack.patch_refname(patchname);
             let state = transaction.stack.state_mut();
             git_trans.lock_ref(&patch_refname)?;
 
-            if let Some(patch_desc) = maybe_desc {
+            if let Some(patch) = maybe_patch {
                 git_trans.set_target(
                     &patch_refname,
-                    patch_desc.commit.id(),
+                    patch.commit.id(),
                     reflog_signature,
                     reflog_msg,
                 )?;
-                if let Some(old_desc) = state.patches.insert(patchname.clone(), patch_desc.clone())
-                {
-                    if let Ok(old_note) = repo.find_note(None, old_desc.commit.id()) {
+                if let Some(old_patch) = state.patches.insert(patchname.clone(), patch.clone()) {
+                    if let Ok(old_note) = repo.find_note(None, old_patch.commit.id()) {
                         repo.note(
                             &old_note.author(),
                             &old_note.committer(),
                             None,
-                            patch_desc.commit.id(),
+                            patch.commit.id(),
                             old_note.message().unwrap(),
                             false,
                         )?;
@@ -234,7 +233,7 @@ impl<'repo> StackTransaction<'repo> {
         let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
-            .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+            .insert(patchname.clone(), Some(PatchState { commit }));
         Ok(())
     }
 
@@ -309,7 +308,7 @@ impl<'repo> StackTransaction<'repo> {
 
             let commit = self.stack.repo.find_commit(new_commit_id)?;
             self.patch_updates
-                .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+                .insert(patchname.clone(), Some(PatchState { commit }));
 
             PushStatus::Modified
         } else {
@@ -567,7 +566,7 @@ impl<'repo> StackTransaction<'repo> {
             && self
                 .patch_updates
                 .get(new_patchname)
-                .map_or(true, |maybe_desc| maybe_desc.is_some())
+                .map_or(true, |maybe_patch| maybe_patch.is_some())
         {
             return Err(Error::PatchAlreadyExists(new_patchname.clone()));
         } else if !self.stack.has_patch(old_patchname) {
@@ -587,10 +586,10 @@ impl<'repo> StackTransaction<'repo> {
             );
         }
 
-        let patch_desc = self.stack.get_patch(old_patchname).clone();
+        let patch = self.stack.get_patch(old_patchname).clone();
         self.patch_updates.insert(old_patchname.clone(), None);
         self.patch_updates
-            .insert(new_patchname.clone(), Some(patch_desc));
+            .insert(new_patchname.clone(), Some(patch));
 
         self.print_rename(old_patchname, new_patchname, stdout)
     }
@@ -828,7 +827,7 @@ impl<'repo> StackTransaction<'repo> {
             }
 
             self.patch_updates
-                .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+                .insert(patchname.clone(), Some(PatchState { commit }));
         }
 
         if merge_conflict {
@@ -862,7 +861,7 @@ impl<'repo> StackTransaction<'repo> {
             .expect("may only be called if there is an applied patch");
         let commit = self.stack.repo.find_commit(commit_id)?;
         self.patch_updates
-            .insert(top_patchname.clone(), Some(PatchDescriptor { commit }));
+            .insert(top_patchname.clone(), Some(PatchState { commit }));
         Ok(())
     }
 
@@ -873,7 +872,7 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         self.patch_updates
-            .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+            .insert(patchname.clone(), Some(PatchState { commit }));
         Ok(())
     }
 
@@ -937,9 +936,9 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         &self.hidden
     }
 
-    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo> {
-        if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-            maybe_desc
+    fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo> {
+        if let Some(maybe_patch) = self.patch_updates.get(patchname) {
+            maybe_patch
                 .as_ref()
                 .expect("should not attempt to access deleted patch")
         } else {
@@ -948,8 +947,8 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
     }
 
     fn has_patch(&self, patchname: &PatchName) -> bool {
-        if let Some(maybe_desc) = self.patch_updates.get(patchname) {
-            maybe_desc.is_some()
+        if let Some(maybe_patch) = self.patch_updates.get(patchname) {
+            maybe_patch.is_some()
         } else {
             self.stack.has_patch(patchname)
         }

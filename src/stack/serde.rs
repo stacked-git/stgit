@@ -14,10 +14,10 @@ pub(crate) struct RawStackState {
     pub applied: Vec<PatchName>,
     pub unapplied: Vec<PatchName>,
     pub hidden: Vec<PatchName>,
-    pub patches: BTreeMap<PatchName, RawPatchDescriptor>,
+    pub patches: BTreeMap<PatchName, RawPatchState>,
 }
 
-pub(crate) struct RawPatchDescriptor {
+pub(crate) struct RawPatchState {
     pub oid: Oid,
 }
 
@@ -43,11 +43,11 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             pub applied: Vec<PatchName>,
             pub unapplied: Vec<PatchName>,
             pub hidden: Vec<PatchName>,
-            pub patches: BTreeMap<PatchName, DeserPatchDescriptor>,
+            pub patches: BTreeMap<PatchName, DeserPatchState>,
         }
 
         #[derive(serde::Deserialize)]
-        struct DeserPatchDescriptor {
+        struct DeserPatchState {
             pub oid: String,
         }
 
@@ -73,14 +73,14 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &ds.head)))?;
 
         let mut patches = BTreeMap::new();
-        for (patch_name, raw_patch_desc) in ds.patches {
-            let oid = Oid::from_str(&raw_patch_desc.oid).map_err(|_| {
+        for (patch_name, raw_patch) in ds.patches {
+            let oid = Oid::from_str(&raw_patch.oid).map_err(|_| {
                 D::Error::custom(format!(
                     "invalid oid for patch `{}`: '{}'",
-                    patch_name, &raw_patch_desc.oid
+                    patch_name, &raw_patch.oid
                 ))
             })?;
-            patches.insert(patch_name, RawPatchDescriptor { oid });
+            patches.insert(patch_name, RawPatchState { oid });
         }
 
         Ok(RawStackState {
@@ -107,22 +107,22 @@ impl serde::Serialize for super::state::StackState<'_> {
             pub applied: &'a Vec<PatchName>,
             pub unapplied: &'a Vec<PatchName>,
             pub hidden: &'a Vec<PatchName>,
-            pub patches: BTreeMap<&'a PatchName, SerializablePatchDescriptor>,
+            pub patches: BTreeMap<&'a PatchName, SerializablePatchState>,
         }
 
         #[derive(serde::Serialize)]
-        struct SerializablePatchDescriptor {
+        struct SerializablePatchState {
             pub oid: String,
         }
 
         let prev: Option<String> = self.prev.as_ref().map(|commit| commit.id().to_string());
         let head: String = self.head.id().to_string();
-        let mut patches: BTreeMap<&PatchName, SerializablePatchDescriptor> = BTreeMap::new();
-        for (patch_name, patch_desc) in &self.patches {
+        let mut patches: BTreeMap<&PatchName, SerializablePatchState> = BTreeMap::new();
+        for (patch_name, patch_state) in &self.patches {
             patches.insert(
                 patch_name,
-                SerializablePatchDescriptor {
-                    oid: patch_desc.commit.id().to_string(),
+                SerializablePatchState {
+                    oid: patch_state.commit.id().to_string(),
                 },
             );
         }

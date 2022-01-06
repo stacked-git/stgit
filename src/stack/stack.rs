@@ -5,7 +5,7 @@ use git2::{Branch, Commit, RepositoryState};
 
 use super::state::{StackState, StackStateAccess};
 use super::transaction::ExecuteContext;
-use super::{ConflictMode, PatchDescriptor, StackTransaction};
+use super::{ConflictMode, PatchState, StackTransaction};
 use crate::error::{repo_state_to_str, Error};
 use crate::patchname::PatchName;
 
@@ -196,7 +196,7 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
         &self.state.hidden
     }
 
-    fn get_patch(&self, patchname: &PatchName) -> &PatchDescriptor<'repo> {
+    fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo> {
         &self.state.patches[patchname]
     }
 
@@ -279,7 +279,7 @@ fn ensure_patch_refs<'repo>(
 ) -> Result<(), Error> {
     let patch_ref_prefix = get_patch_refname(branch_name, "");
     let patch_ref_glob = get_patch_refname(branch_name, "*");
-    let mut state_patches: BTreeMap<&PatchName, &PatchDescriptor> = state.patches.iter().collect();
+    let mut state_patches: BTreeMap<&PatchName, &PatchState> = state.patches.iter().collect();
 
     for existing_ref in repo.references_glob(&patch_ref_glob)? {
         let mut existing_ref = existing_ref?;
