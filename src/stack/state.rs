@@ -2,14 +2,13 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::str;
 
-use chrono::{FixedOffset, TimeZone};
 use git2::{Commit, FileMode, Oid, Tree};
 
-use crate::commit::CommitExtended;
 use crate::error::Error;
 use crate::patchname::PatchName;
 use crate::signature;
 use crate::stack::serde::RawStackState;
+use crate::{commit::CommitExtended, signature::TimeExtended};
 
 use super::iter::{AllPatches, BothPatches};
 
@@ -284,11 +283,6 @@ impl<'repo> StackState<'repo> {
         }
 
         let parent = commit.parent(0)?;
-        let commit_time = commit.time();
-
-        let commit_datetime = FixedOffset::east(commit_time.offset_minutes() * 60)
-            .timestamp(commit_time.seconds(), 0);
-
         let mut patch_meta: Vec<u8> = Vec::with_capacity(1024);
         write!(
             patch_meta,
@@ -300,7 +294,7 @@ impl<'repo> StackState<'repo> {
             parent.tree_id(),
             commit.tree_id(),
             commit.author(),
-            commit_datetime.format("%Y-%m-%d %H:%M:%S %z"),
+            commit.time().datetime().format("%Y-%m-%d %H:%M:%S %z"),
         )?;
         patch_meta.write_all(commit.message_raw_bytes())?;
 
