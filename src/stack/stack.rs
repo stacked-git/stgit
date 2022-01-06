@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
-use git2::{Branch, Commit, Reference, RepositoryState};
+use git2::{Branch, Commit, RepositoryState};
 
 use super::state::{StackState, StackStateAccess};
 use super::transaction::ExecuteContext;
@@ -15,7 +15,7 @@ pub(crate) struct Stack<'repo> {
     pub(crate) branch: Branch<'repo>,
     pub(crate) base: Commit<'repo>,
     pub(crate) head: Commit<'repo>,
-    pub(crate) state_ref: Reference<'repo>,
+    pub(crate) refname: String,
     state: StackState<'repo>,
 }
 
@@ -28,15 +28,14 @@ impl<'repo> Stack<'repo> {
         let branch_name = get_branch_name(&branch)?;
         let head = branch.get().peel_to_commit()?;
         let base = head.clone();
-        let state_refname = state_refname_from_branch_name(&branch_name);
+        let refname = state_refname_from_branch_name(&branch_name);
 
-        if repo.find_reference(&state_refname).is_ok() {
+        if repo.find_reference(&refname).is_ok() {
             return Err(Error::StackAlreadyInitialized(branch_name));
         }
         let state = StackState::new(head.clone());
-        state.commit(repo, Some(&state_refname), "initialize")?;
+        state.commit(repo, Some(&refname), "initialize")?;
         ensure_patch_refs(repo, &branch_name, &state)?;
-        let state_ref = repo.find_reference(&state_refname)?;
 
         Ok(Self {
             repo,
@@ -44,7 +43,7 @@ impl<'repo> Stack<'repo> {
             branch,
             base,
             head,
-            state_ref,
+            refname,
             state,
         })
     }
@@ -56,9 +55,9 @@ impl<'repo> Stack<'repo> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let head = branch.get().peel_to_commit()?;
-        let stack_refname = state_refname_from_branch_name(&branch_name);
+        let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
-            .find_reference(&stack_refname)
+            .find_reference(&refname)
             .map_err(|_| Error::StackNotInitialized(branch_name.to_string()))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
@@ -74,7 +73,7 @@ impl<'repo> Stack<'repo> {
             branch,
             base,
             head,
-            state_ref,
+            refname,
             state,
         })
     }
@@ -133,7 +132,8 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn log_external_mods(self) -> Result<Self, Error> {
-        let prev_state_commit = self.state_ref.peel_to_commit()?;
+        let state_ref = self.repo.find_reference(&self.refname)?;
+        let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
         let state = self
             .state
@@ -145,19 +145,15 @@ impl<'repo> Stack<'repo> {
         let reflog_msg = "external modifications";
 
         let state_commit_id = state.commit(self.repo, None, message)?;
-        let state_ref = self.repo.reference_matching(
-            self.state_ref.name().unwrap(),
+        self.repo.reference_matching(
+            &self.refname,
             state_commit_id,
             true,
             prev_state_commit_id,
             reflog_msg,
         )?;
 
-        Ok(Self {
-            state,
-            state_ref,
-            ..self
-        })
+        Ok(Self { state, ..self })
     }
 
     pub(crate) fn transaction<F>(

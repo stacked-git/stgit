@@ -119,7 +119,7 @@ impl<'repo> ExecuteContext<'repo> {
         let mut git_trans = repo.transaction()?;
         let reflog_signature = None; // Use default signature
 
-        git_trans.lock_ref(transaction.stack.state_ref.name().unwrap())?;
+        git_trans.lock_ref(&transaction.stack.refname)?;
 
         for (patchname, maybe_desc) in &transaction.patch_updates {
             let patch_refname = transaction.stack.patch_refname(patchname);
@@ -156,7 +156,8 @@ impl<'repo> ExecuteContext<'repo> {
         let _old_applied_pn = transaction.stack.applied().last().map(|pn| pn.to_string());
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
 
-        let prev_state_commit = transaction.stack.state_ref.peel_to_commit()?;
+        let stack_ref = repo.find_reference(&transaction.stack.refname)?;
+        let prev_state_commit = stack_ref.peel_to_commit()?;
         let head = transaction.head().clone();
 
         let state = transaction.stack.state_mut();
@@ -168,7 +169,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         let state_commit_id = state.commit(repo, None, reflog_msg)?;
         git_trans.set_target(
-            transaction.stack.state_ref.name().unwrap(),
+            &transaction.stack.refname,
             state_commit_id,
             reflog_signature,
             reflog_msg,
