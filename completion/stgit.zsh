@@ -377,6 +377,7 @@ _stg-push() {
     __stg_add_args_merged
     subcmd_args+=(
         '--reverse[push patches in reverse order]'
+        '--noapply[push without applying]'
         '--set-tree[push patch with the original tree]'
         - group-all
         '(-a --all)'{-a,--all}'[push all unapplied patches]'
