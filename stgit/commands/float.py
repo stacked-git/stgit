@@ -44,7 +44,7 @@ options = [
     opt(
         '--noapply',
         action='store_true',
-        short='Reorder patches by floating without applying.',
+        short='Reorder patches by floating without applying',
     ),
     opt(
         '-s',

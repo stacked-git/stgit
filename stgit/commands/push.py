@@ -65,7 +65,7 @@ options = [
     opt(
         '--noapply',
         action='store_true',
-        short='Reorder patches by pushing without applying.',
+        short='Reorder patches by pushing without applying',
     ),
     opt(
         '--set-tree',
