@@ -420,7 +420,7 @@ _stg-refresh() {
         '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
         '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
         '(-i --index)'{-i,--index}'[refresh from index instead of worktree]'
-        '(-p --patch)'{-p,--patch=}'[refresh patch other than top patch]: :__stg_patches_applied'
+        '(-p --patch)'{-p,--patch=}'[refresh patch other than top patch]: :__stg_patches_all'
         '--spill[Spill patch contents to worktree and index, and erase patch content]'
         + '(update-files)'
         '(-u --update)'{-u,--update}'[only update current patch files]'
