@@ -120,7 +120,8 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
         patchname = 'revert-' + patchname
 
     if patchname:
-        patchname = stack.patches.make_name(patchname, lower=False)
+        if patchname in stack.patches:
+            patchname = stack.patches.make_name(patchname, lower=False)
     else:
         patchname = stack.patches.make_name(commit.data.message_str)
 

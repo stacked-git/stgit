@@ -41,6 +41,7 @@ test_expect_success \
 	echo "AAA" >> a &&
 	echo "AA" >> a &&
 	stg refresh &&
+	stg new -m "fancy patchname" Fancy@name &&
 	stg branch master
 	'
 
@@ -56,6 +57,23 @@ test_expect_success \
 	'
 	command_error stg pick --ref-branch foo --name C_and_E C E 2>err &&
 	grep "name can only be specified with one patch" err
+	'
+
+test_expect_success \
+	'Pick preserves fancy patch name' \
+	'
+	stg pick -B foo Fancy@name &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B Fancy@name" &&
+	stg delete --top
+	'
+
+test_expect_success \
+	'Pick fancy patch name conflict' \
+	'
+	stg new -m "also fancy name" Fancy@name &&
+	stg pick -B foo Fancy@name &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B Fancy@name Fancy-name" &&
+	stg delete Fancy@name Fancy-name
 	'
 
 test_expect_success \
