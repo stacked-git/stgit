@@ -117,8 +117,8 @@ impl<'repo> StackState<'repo> {
     }
 
     pub fn top(&self) -> &Commit<'repo> {
-        if let Some(patch_name) = self.applied.last() {
-            &self.patches[patch_name].commit
+        if let Some(patchname) = self.applied.last() {
+            &self.patches[patchname].commit
         } else {
             &self.head
         }
@@ -161,18 +161,18 @@ impl<'repo> StackState<'repo> {
         let mut parent_set = indexmap::IndexSet::new();
         parent_set.insert(self.head.id());
         parent_set.insert(self.top().id());
-        for patch_name in &self.unapplied {
-            parent_set.insert(self.patches[patch_name].commit.id());
+        for patchname in &self.unapplied {
+            parent_set.insert(self.patches[patchname].commit.id());
         }
-        for patch_name in &self.hidden {
-            parent_set.insert(self.patches[patch_name].commit.id());
+        for patchname in &self.hidden {
+            parent_set.insert(self.patches[patchname].commit.id());
         }
 
         if let Some(prev_commit) = &self.prev {
             parent_set.insert(prev_commit.id());
             let (prev_state, _) = prev_state_tree.unwrap();
-            for patch_name in prev_state.all_patches() {
-                parent_set.remove(&prev_state.patches[patch_name].commit.id());
+            for patchname in prev_state.all_patches() {
+                parent_set.remove(&prev_state.patches[patchname].commit.id());
             }
         }
 
@@ -247,10 +247,10 @@ impl<'repo> StackState<'repo> {
         prev_patches_tree: Option<Tree>,
     ) -> Result<Oid, Error> {
         let mut builder = repo.treebuilder(None)?;
-        for patch_name in self.all_patches() {
+        for patchname in self.all_patches() {
             builder.insert(
-                patch_name.to_string(),
-                self.make_patch_meta(repo, patch_name, prev_state, prev_patches_tree.as_ref())?,
+                patchname.to_string(),
+                self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree.as_ref())?,
                 i32::from(FileMode::Blob),
             )?;
         }
@@ -260,18 +260,18 @@ impl<'repo> StackState<'repo> {
     fn make_patch_meta(
         &self,
         repo: &git2::Repository,
-        patch_name: &PatchName,
+        patchname: &PatchName,
         prev_state: Option<&StackState>,
         prev_patches_tree: Option<&Tree>,
     ) -> Result<Oid, Error> {
-        let commit = &self.patches[patch_name].commit;
+        let commit = &self.patches[patchname].commit;
 
         if let Some(prev_state) = prev_state {
-            if let Some(prev_patch) = prev_state.patches.get(patch_name) {
+            if let Some(prev_patch) = prev_state.patches.get(patchname) {
                 if prev_patch.commit.id() == commit.id() {
                     if let Some(prev_patches_tree) = prev_patches_tree {
                         if let Some(prev_patch_entry) =
-                            prev_patches_tree.get_name(patch_name.as_ref())
+                            prev_patches_tree.get_name(patchname.as_ref())
                         {
                             if let Some(git2::ObjectType::Blob) = prev_patch_entry.kind() {
                                 return Ok(prev_patch_entry.id());

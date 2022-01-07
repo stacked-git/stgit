@@ -73,14 +73,14 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &ds.head)))?;
 
         let mut patches = BTreeMap::new();
-        for (patch_name, raw_patch) in ds.patches {
+        for (patchname, raw_patch) in ds.patches {
             let oid = Oid::from_str(&raw_patch.oid).map_err(|_| {
                 D::Error::custom(format!(
                     "invalid oid for patch `{}`: '{}'",
-                    patch_name, &raw_patch.oid
+                    patchname, &raw_patch.oid
                 ))
             })?;
-            patches.insert(patch_name, RawPatchState { oid });
+            patches.insert(patchname, RawPatchState { oid });
         }
 
         Ok(RawStackState {
@@ -118,9 +118,9 @@ impl serde::Serialize for super::state::StackState<'_> {
         let prev: Option<String> = self.prev.as_ref().map(|commit| commit.id().to_string());
         let head: String = self.head.id().to_string();
         let mut patches: BTreeMap<&PatchName, SerializablePatchState> = BTreeMap::new();
-        for (patch_name, patch_state) in &self.patches {
+        for (patchname, patch_state) in &self.patches {
             patches.insert(
-                patch_name,
+                patchname,
                 SerializablePatchState {
                     oid: patch_state.commit.id().to_string(),
                 },
