@@ -330,7 +330,7 @@ _stg-pick() {
         '(-r --revert)'{-r,--revert}'[revert given commit object]'
         '(-p --parent=)'{-p,--parent}'[use commit id as parent]:commit'
         '(-x --expose)'{-x,--expose}'[append imported commit id to patch log]'
-        '--unapplied[keep patch unapplied]'
+        '--noapply[keep patch unapplied]'
         '*'{-f,--file=}'[only fold given file]: :_files'
         '*:patches:__stg_patches_refbranch'
         + '(mode)'

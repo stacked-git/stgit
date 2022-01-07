@@ -14,16 +14,33 @@ test_expect_success \
 	'Initialize the StGit repository' \
 	'
 	stg init &&
-	stg new A -m "a" && echo A > a && stg add a && stg refresh &&
-	stg new B -m "b" && echo B > b && stg add b && stg refresh &&
+	stg new A -m "a" &&
+	echo A > a &&
+	stg add a &&
+	stg refresh &&
+	stg new B -m "b" &&
+	echo B > b &&
+	stg add b &&
+	stg refresh &&
 	stg branch --clone foo &&
-	stg new C -m "c" && echo C > c && stg add c && stg refresh &&
-	stg new D-foo -m "d" && echo D > d && stg add d && stg refresh &&
+	stg new C -m "c" &&
+	echo C > c &&
+	stg add c &&
+	stg refresh &&
+	stg new D-foo -m "d" &&
+	echo D > d &&
+	stg add d &&
+	stg refresh &&
 	stg new E -m "e" &&
-	echo AA >> a && echo BB >> b && echo CC >> c &&
+	echo AA >> a &&
+	echo BB >> b &&
+	echo CC >> c &&
 	stg refresh &&
 	stg new AAA -m "aaa" &&
-	echo "A" > a && echo "AAA" >> a && echo "AA" >> a && stg refresh &&
+	echo "A" > a &&
+	echo "AAA" >> a &&
+	echo "AA" >> a &&
+	stg refresh &&
 	stg branch master
 	'
 
@@ -50,9 +67,25 @@ test_expect_success \
 	'
 
 test_expect_success \
-	'Pick --unapplied remote patch' \
+	'Pick --noapply remote patch' \
 	'
-	stg pick --unapplied --ref-branch foo --name D D-foo &&
+	stg pick --noapply --ref-branch foo --name D D-foo &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B C" &&
+	test "$(echo $(stg series --unapplied --noprefix))" = "D"
+	'
+
+test_expect_success \
+	'Pick --noapply several patches' \
+	'
+	stg delete C..D &&
+	stg pick -B foo --noapply C E AAA &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B" &&
+	test "$(echo $(stg series --unapplied --noprefix))" = "C E AAA" &&
+	stg goto AAA &&
+	test "$(echo $(cat a))" = "A AAA AA" &&
+	stg goto C &&
+	stg delete E AAA &&
+	stg pick --noapply --name D foo:D-foo &&
 	test "$(echo $(stg series --applied --noprefix))" = "A B C" &&
 	test "$(echo $(stg series --unapplied --noprefix))" = "D"
 	'

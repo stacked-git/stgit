@@ -101,7 +101,7 @@ options = [
         short='Only fold the given file (can be used multiple times)',
     ),
     opt(
-        '--unapplied',
+        '--noapply',
         action='store_true',
         short='Keep the patch unapplied',
     ),
@@ -224,14 +224,14 @@ def __pick_commit(stack, ref_stack, iw, commit, patchname, options):
             )
         )
 
-        if not options.unapplied:
+        if not options.noapply:
             check_head_top_equal(stack)
 
         trans = StackTransaction(stack)
         trans.patches[patchname] = new_commit
 
         trans.unapplied.append(patchname)
-        if not options.unapplied:
+        if not options.noapply:
             try:
                 trans.push_patch(patchname, iw, allow_interactive=True)
             except TransactionHalted:
@@ -265,7 +265,7 @@ def func(parser, options, args):
     stack = repository.get_stack()
     iw = repository.default_iw
 
-    if not options.unapplied:
+    if not options.noapply:
         check_local_changes(repository)
         check_conflicts(iw)
         check_head_top_equal(stack)
@@ -313,8 +313,6 @@ def func(parser, options, args):
         patchname = None
         retval = __pick_commit(stack, ref_stack, iw, commit, patchname, options)
     else:
-        if options.unapplied:
-            patches.reverse()
         for patchname in patches:
             commit = git_commit(patchname, repository, ref_stack.name)
             retval = __pick_commit(stack, ref_stack, iw, commit, patchname, options)
