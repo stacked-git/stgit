@@ -394,7 +394,7 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<(), Error> {
         let mut color_spec = termcolor::ColorSpec::new();
         stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-        write!(stdout, "* ")?;
+        write!(stdout, "# ")?;
         color_spec.set_fg(None);
         stdout.set_color(color_spec.set_dimmed(true))?;
         writeln!(stdout, "{}", deleted)?;
