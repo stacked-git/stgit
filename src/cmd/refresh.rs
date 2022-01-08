@@ -144,21 +144,10 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     stack.check_head_top_mismatch()?;
 
-    let opt_submodules = matches.is_present("submodules");
-    let opt_nosubmodules = matches.is_present("no-submodules");
-
-    let use_submodules = if !opt_submodules && !opt_nosubmodules {
-        let config = repo.config()?;
-        config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
-    } else {
-        opt_submodules
-    };
-
-    let opt_patchname: Option<PatchName> = matches
+    let patchname = if let Some(patchname) = matches
         .value_of("patch")
-        .map(|s| PatchName::from_str(s).expect("clap already validated"));
-
-    let patchname = if let Some(patchname) = opt_patchname {
+        .map(|s| PatchName::from_str(s).expect("clap already validated"))
+    {
         if stack.has_patch(&patchname) {
             patchname
         } else {
@@ -170,133 +159,11 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Err(Error::NoAppliedPatches);
     };
 
-    let opt_index = matches.is_present("index");
-    let opt_force = matches.is_present("force");
-    let opt_update = matches.is_present("update");
-    let opt_pathspecs = matches.values_of_os("pathspecs");
-    let is_path_limiting = opt_update || opt_pathspecs.is_some();
-
-    let refresh_paths: IndexSet<PathBuf> = {
-        if opt_index {
-            // When refreshing from the index, no path limiting may be used.
-            IndexSet::new()
-        } else {
-            let mut status_opts = git2::StatusOptions::new();
-            status_opts.show(git2::StatusShow::IndexAndWorkdir);
-            status_opts.exclude_submodules(!use_submodules);
-
-            if let Some(pathspecs) = opt_pathspecs {
-                let workdir = repo.workdir().expect("not a bare repository");
-                let curdir = std::env::current_dir()?;
-
-                for pathspec in pathspecs {
-                    let norm_pathspec =
-                        pathspec::normalize_pathspec(workdir, &curdir, Path::new(pathspec))?;
-                    status_opts.pathspec(norm_pathspec);
-                }
-            }
-
-            let mut refresh_paths: IndexSet<PathBuf> = repo
-                .statuses(Some(&mut status_opts))?
-                .iter()
-                .map(|entry| PathBuf::from(path_from_bytes(entry.path_bytes())))
-                .collect();
-
-            if opt_update {
-                // Restrict update to the paths that were already part of the patch.
-                let patch_commit = stack.get_patch_commit(&patchname);
-                let patch_tree = patch_commit.tree()?;
-                let parent_tree = patch_commit.parent(0)?.tree()?;
-                let mut diff_opts = git2::DiffOptions::new();
-                diff_opts.ignore_submodules(!use_submodules);
-                diff_opts.force_binary(true); // Less expensive(?)
-
-                let mut patch_paths: IndexSet<PathBuf> = IndexSet::new();
-
-                repo.diff_tree_to_tree(
-                    Some(&parent_tree),
-                    Some(&patch_tree),
-                    Some(&mut diff_opts),
-                )?
-                .foreach(
-                    &mut |delta, _| {
-                        if let Some(old_path) = delta.old_file().path() {
-                            patch_paths.insert(old_path.to_owned());
-                        }
-                        if let Some(new_path) = delta.new_file().path() {
-                            patch_paths.insert(new_path.to_owned());
-                        }
-                        true
-                    },
-                    None,
-                    None,
-                    None,
-                )?;
-
-                // Set intersection to determine final subset of paths.
-                refresh_paths.retain(|path| patch_paths.contains(path));
-            }
-
-            // Ensure no conflicts in the files to be refreshed.
-            if repo
-                .index()?
-                .conflicts()?
-                .filter_map(|maybe_entry| maybe_entry.ok())
-                .any(|conflict| {
-                    if let (Some(our), Some(their)) = (&conflict.our, &conflict.their) {
-                        refresh_paths.contains(path_from_bytes(&our.path))
-                            || (their.path != our.path
-                                && refresh_paths.contains(path_from_bytes(&their.path)))
-                    } else if let Some(our) = conflict.our {
-                        refresh_paths.contains(path_from_bytes(&our.path))
-                    } else if let Some(their) = conflict.their {
-                        refresh_paths.contains(path_from_bytes(&their.path))
-                    } else {
-                        false
-                    }
-                })
-            {
-                return Err(Error::OutstandingConflicts);
-            }
-
-            // Ensure worktree and index states are valid for the given options.
-            // Forcing means changes will be taken from both the index and worktree.
-            // If not forcing, all changes must be either in the index or worktree,
-            // but not both.
-            if !opt_force {
-                let mut status_opts = git2::StatusOptions::new();
-                status_opts.show(git2::StatusShow::Index);
-                status_opts.exclude_submodules(!use_submodules);
-                let is_index_clean = repo.statuses(Some(&mut status_opts))?.is_empty();
-
-                if !is_index_clean {
-                    let mut status_opts = git2::StatusOptions::new();
-                    status_opts.show(git2::StatusShow::Workdir);
-                    status_opts.exclude_submodules(!use_submodules);
-                    let is_worktree_clean = repo.statuses(Some(&mut status_opts))?.is_empty();
-
-                    if !is_worktree_clean {
-                        return Err(Error::Generic(
-                            "the index is dirty; consider using `--index` or `--force`".to_string(),
-                        ));
-                    }
-                }
-            }
-
-            refresh_paths
-        }
-    };
-
-    let tree_id = assemble_tree(&stack, &refresh_paths, is_path_limiting)?;
-    let tree_id = if matches.is_present("no-verify") {
-        tree_id
-    } else {
-        run_pre_commit_hook(&repo, matches.is_present("edit"))?;
-        // Re-read index from filesystem because pre-commit hook may have modified it
-        let mut index = repo.index()?;
-        index.read(false)?;
-        index.write_tree()?
-    };
+    let tree_id = assemble_refresh_tree(
+        &stack,
+        matches,
+        matches.is_present("update").then(|| &patchname),
+    )?;
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut log_msg = "refresh ".to_string();
@@ -456,34 +323,183 @@ fn run(matches: &ArgMatches) -> super::Result {
     Ok(())
 }
 
-fn assemble_tree(
-    stack: &Stack,
-    paths: &IndexSet<PathBuf>,
-    use_temp_index: bool,
-) -> Result<git2::Oid, Error> {
-    let mut default_index = stack.repo.index()?;
+fn determine_refresh_paths(
+    repo: &git2::Repository,
+    pathspecs: Option<clap::OsValues>,
+    patch_commit: Option<&git2::Commit>,
+    use_submodules: bool,
+    force: bool,
+) -> Result<IndexSet<PathBuf>, Error> {
+    let mut status_opts = git2::StatusOptions::new();
+    status_opts.show(git2::StatusShow::IndexAndWorkdir);
+    status_opts.exclude_submodules(!use_submodules);
 
-    // N.B. using temp index is necessary for the cases where there are conflicts in the
-    // default index. I.e. by using a temp index, a subset of paths without conflicts
-    // may be formed into a coherent tree while leaving the default index as-is.
-    let tree_id_result = if use_temp_index {
-        let head_tree = stack.head.tree()?;
-        let tree_id_result = stack.repo.with_temp_index(|temp_index| {
-            temp_index.read_tree(&head_tree)?;
-            temp_index.add_all(paths, git2::IndexAddOption::DEFAULT, None)?;
-            Ok(temp_index.write_tree()?)
-        });
+    if let Some(pathspecs) = pathspecs {
+        let workdir = repo.workdir().expect("not a bare repository");
+        let curdir = std::env::current_dir()?;
 
-        default_index.update_all(paths, None)?;
-        tree_id_result
-    } else {
-        if !paths.is_empty() {
-            default_index.update_all(paths, None)?;
+        for pathspec in pathspecs {
+            let norm_pathspec =
+                pathspec::normalize_pathspec(workdir, &curdir, Path::new(pathspec))?;
+            status_opts.pathspec(norm_pathspec);
         }
-        Ok(default_index.write_tree()?)
+    }
+
+    let mut refresh_paths: IndexSet<PathBuf> = repo
+        .statuses(Some(&mut status_opts))?
+        .iter()
+        .map(|entry| PathBuf::from(path_from_bytes(entry.path_bytes())))
+        .collect();
+
+    if let Some(patch_commit) = patch_commit {
+        // Restrict update to the paths that were already part of the patch.
+        let patch_tree = patch_commit.tree()?;
+        let parent_tree = patch_commit.parent(0)?.tree()?;
+        let mut diff_opts = git2::DiffOptions::new();
+        diff_opts.ignore_submodules(!use_submodules);
+        diff_opts.force_binary(true); // Less expensive(?)
+
+        let mut patch_paths: IndexSet<PathBuf> = IndexSet::new();
+
+        repo.diff_tree_to_tree(Some(&parent_tree), Some(&patch_tree), Some(&mut diff_opts))?
+            .foreach(
+                &mut |delta, _| {
+                    if let Some(old_path) = delta.old_file().path() {
+                        patch_paths.insert(old_path.to_owned());
+                    }
+                    if let Some(new_path) = delta.new_file().path() {
+                        patch_paths.insert(new_path.to_owned());
+                    }
+                    true
+                },
+                None,
+                None,
+                None,
+            )?;
+
+        // Set intersection to determine final subset of paths.
+        refresh_paths.retain(|path| patch_paths.contains(path));
+    }
+
+    // Ensure no conflicts in the files to be refreshed.
+    if repo
+        .index()?
+        .conflicts()?
+        .filter_map(|maybe_entry| maybe_entry.ok())
+        .any(|conflict| {
+            if let (Some(our), Some(their)) = (&conflict.our, &conflict.their) {
+                refresh_paths.contains(path_from_bytes(&our.path))
+                    || (their.path != our.path
+                        && refresh_paths.contains(path_from_bytes(&their.path)))
+            } else if let Some(our) = conflict.our {
+                refresh_paths.contains(path_from_bytes(&our.path))
+            } else if let Some(their) = conflict.their {
+                refresh_paths.contains(path_from_bytes(&their.path))
+            } else {
+                false
+            }
+        })
+    {
+        return Err(Error::OutstandingConflicts);
+    }
+
+    // Ensure worktree and index states are valid for the given options.
+    // Forcing means changes will be taken from both the index and worktree.
+    // If not forcing, all changes must be either in the index or worktree,
+    // but not both.
+    if !force {
+        let mut status_opts = git2::StatusOptions::new();
+        status_opts.show(git2::StatusShow::Index);
+        status_opts.exclude_submodules(!use_submodules);
+        let is_index_clean = repo.statuses(Some(&mut status_opts))?.is_empty();
+
+        if !is_index_clean {
+            let mut status_opts = git2::StatusOptions::new();
+            status_opts.show(git2::StatusShow::Workdir);
+            status_opts.exclude_submodules(!use_submodules);
+            let is_worktree_clean = repo.statuses(Some(&mut status_opts))?.is_empty();
+
+            if !is_worktree_clean {
+                return Err(Error::Generic(
+                    "the index is dirty; consider using `--index` or `--force`".to_string(),
+                ));
+            }
+        }
+    }
+
+    Ok(refresh_paths)
+}
+
+pub(crate) fn assemble_refresh_tree(
+    stack: &Stack,
+    matches: &ArgMatches,
+    limit_to_patchname: Option<&PatchName>,
+) -> Result<git2::Oid, Error> {
+    let repo = stack.repo;
+    let opt_submodules = matches.is_present("submodules");
+    let opt_nosubmodules = matches.is_present("no-submodules");
+    let use_submodules = if !opt_submodules && !opt_nosubmodules {
+        let config = repo.config()?;
+        config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
+    } else {
+        opt_submodules
     };
-    default_index.write()?;
-    tree_id_result
+    let opt_pathspecs = matches.values_of_os("pathspecs");
+    let is_path_limiting = limit_to_patchname.is_some() || opt_pathspecs.is_some();
+
+    let refresh_paths = if matches.is_present("index") {
+        // When refreshing from the index, no path limiting may be used.
+        assert!(!is_path_limiting);
+        IndexSet::new()
+    } else {
+        let maybe_patch_commit = limit_to_patchname.map(|pn| stack.get_patch_commit(pn));
+        determine_refresh_paths(
+            repo,
+            opt_pathspecs,
+            maybe_patch_commit,
+            use_submodules,
+            matches.is_present("force"),
+        )?
+    };
+
+    let tree_id = {
+        let paths: &IndexSet<PathBuf> = &refresh_paths;
+        let mut default_index = stack.repo.index()?;
+
+        // N.B. using temp index is necessary for the cases where there are conflicts in the
+        // default index. I.e. by using a temp index, a subset of paths without conflicts
+        // may be formed into a coherent tree while leaving the default index as-is.
+        let tree_id_result = if is_path_limiting {
+            let head_tree = stack.head.tree()?;
+            let tree_id_result = stack.repo.with_temp_index(|temp_index| {
+                temp_index.read_tree(&head_tree)?;
+                temp_index.add_all(paths, git2::IndexAddOption::DEFAULT, None)?;
+                Ok(temp_index.write_tree()?)
+            });
+
+            default_index.update_all(paths, None)?;
+            tree_id_result
+        } else {
+            if !paths.is_empty() {
+                default_index.update_all(paths, None)?;
+            }
+            Ok(default_index.write_tree()?)
+        };
+        default_index.write()?;
+        tree_id_result
+    }?;
+
+    let tree_id = if matches.is_present("no-verify") {
+        tree_id
+    } else {
+        run_pre_commit_hook(repo, matches.is_present("edit"))?;
+        // Re-read index from filesystem because pre-commit hook may have modified it
+        let mut index = repo.index()?;
+        index.read(false)?;
+        index.write_tree()?
+    };
+
+    Ok(tree_id)
 }
 
 #[cfg(unix)]
