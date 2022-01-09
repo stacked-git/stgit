@@ -753,7 +753,7 @@ impl<'repo> StackTransaction<'repo> {
             let default_index = repo.index()?;
             let default_index_path = default_index.path().unwrap();
 
-            repo.with_temp_index_file(|temp_index| {
+            if let Some(tree_id) = repo.with_temp_index_file(|temp_index| {
                 let temp_index_path = temp_index.path().unwrap();
                 stupid::read_tree(ours, temp_index_path)?;
                 if stupid::apply_treediff_to_index(
@@ -762,44 +762,54 @@ impl<'repo> StackTransaction<'repo> {
                     repo.workdir().unwrap(),
                     temp_index_path,
                 )? {
-                    stupid::write_tree(temp_index_path)
-                } else if !self.use_index_and_worktree {
-                    return Err(Error::TransactionHalt(format!(
-                        "{} does not apply cleanly",
-                        patchname
-                    )));
-                } else {
-                    if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
-                        return Err(Error::TransactionHalt("index/worktree dirty".to_string()));
+                    if let Ok(tree_id) = stupid::write_tree(temp_index_path) {
+                        Ok(Some(tree_id))
+                    } else {
+                        Ok(None)
                     }
+                } else {
+                    Ok(None)
+                }
+            })? {
+                tree_id
+            } else if !self.use_index_and_worktree {
+                return Err(Error::TransactionHalt(format!(
+                    "{} does not apply cleanly",
+                    patchname
+                )));
+            } else {
+                if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
+                    return Err(Error::TransactionHalt("index/worktree dirty".to_string()));
+                }
+                self.current_tree_id = ours;
 
-                    self.current_tree_id = ours;
-
-                    let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
-                    match stupid::merge_recursive_or_mergetool(
-                        base,
-                        ours,
-                        theirs,
-                        default_index_path,
-                        use_mergetool,
-                    ) {
-                        Ok(conflicts) if conflicts.is_empty() => {
-                            // Success, no conflicts
-                            let tree_id = stupid::write_tree(default_index_path)?;
-                            self.current_tree_id = tree_id;
-                            push_status = PushStatus::Modified;
-                            Ok(tree_id)
-                        }
-                        Ok(mut conflicts) => {
-                            self.conflicts.append(&mut conflicts);
-                            merge_conflict = true;
-                            push_status = PushStatus::Conflict;
-                            Ok(ours)
-                        }
-                        Err(_) => Err(Error::TransactionHalt("index/worktree dirty".to_string())),
+                let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
+                match stupid::merge_recursive_or_mergetool(
+                    base,
+                    ours,
+                    theirs,
+                    default_index_path,
+                    use_mergetool,
+                ) {
+                    Ok(conflicts) if conflicts.is_empty() => {
+                        // Success, no conflicts
+                        let tree_id = stupid::write_tree(default_index_path)
+                            .map_err(|_| Error::TransactionHalt("conflicting merge".to_string()))?;
+                        self.current_tree_id = tree_id;
+                        push_status = PushStatus::Modified;
+                        tree_id
+                    }
+                    Ok(mut conflicts) => {
+                        self.conflicts.append(&mut conflicts);
+                        merge_conflict = true;
+                        push_status = PushStatus::Conflict;
+                        ours
+                    }
+                    Err(_) => {
+                        return Err(Error::TransactionHalt("index/worktree dirty".to_string()))
                     }
                 }
-            })?
+            }
         };
 
         if new_tree_id != patch_commit.tree_id() || new_parent.id() != old_parent.id() {
