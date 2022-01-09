@@ -168,6 +168,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Ok(());
     }
 
+    let mut stdout = crate::color::get_color_stdout(matches);
     let discard_changes = false;
     let use_index_and_worktree = false;
     stack
@@ -175,7 +176,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             ConflictMode::Disallow,
             discard_changes,
             use_index_and_worktree,
-            |trans| trans.push_applied(&patchname, commit_id),
+            |trans| trans.push_applied(&patchname, commit_id, &mut stdout),
         )
         .execute(&format!("new: {}", &patchname))?;
     Ok(())

@@ -194,7 +194,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             ConflictMode::Disallow,
             discard_changes,
             use_index_and_worktree,
-            |trans| trans.push_applied(&temp_patchname, temp_commit_id),
+            |trans| trans.push_applied(&temp_patchname, temp_commit_id, &mut stdout),
         )
         .execute(&format!(
             "refresh {} (create temporary patch)",

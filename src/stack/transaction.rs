@@ -44,6 +44,7 @@ pub(crate) enum ConflictMode {
 }
 
 enum PushStatus {
+    New,
     AlreadyMerged,
     Conflict,
     Empty,
@@ -229,11 +230,17 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
-    pub(crate) fn push_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<(), Error> {
+    pub(crate) fn push_applied(
+        &mut self,
+        patchname: &PatchName,
+        oid: Oid,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
+        self.print_pushed(patchname, PushStatus::New, true, stdout)?;
         Ok(())
     }
 
@@ -493,6 +500,7 @@ impl<'repo> StackTransaction<'repo> {
         stdout.reset()?;
 
         let status_str = match status {
+            PushStatus::New => " (new)",
             PushStatus::AlreadyMerged => " (merged)",
             PushStatus::Conflict => " (conflict)",
             PushStatus::Empty => " (empty)",
