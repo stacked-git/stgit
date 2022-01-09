@@ -740,13 +740,10 @@ impl<'repo> StackTransaction<'repo> {
         let new_parent = self.top().clone();
 
         let mut merge_conflict = false;
-        let mut push_status = if already_merged {
-            PushStatus::AlreadyMerged
-        } else {
-            PushStatus::Unmodified
-        };
+        let mut push_status = PushStatus::Unmodified;
 
         let new_tree_id = if already_merged {
+            push_status = PushStatus::AlreadyMerged;
             old_parent.tree_id()
         } else {
             let base = old_parent.tree_id();
@@ -790,6 +787,7 @@ impl<'repo> StackTransaction<'repo> {
                             // Success, no conflicts
                             let tree_id = stupid::write_tree(default_index_path)?;
                             self.current_tree_id = tree_id;
+                            push_status = PushStatus::Modified;
                             Ok(tree_id)
                         }
                         Ok(mut conflicts) => {
@@ -804,16 +802,8 @@ impl<'repo> StackTransaction<'repo> {
             })?
         };
 
-        // TODO: want the "+ patch (modified)" status to indicate whether the patch's *diff*
-        // from its new parent is different than from its old parent.
-        let is_tree_modified = new_tree_id != patch_commit.tree_id();
-
-        if is_tree_modified {
-            push_status = PushStatus::Modified;
-        }
-
-        if is_tree_modified || new_parent.id() != old_parent.id() {
-            let new_patch_commit_id = repo.commit_ex(
+        if new_tree_id != patch_commit.tree_id() || new_parent.id() != old_parent.id() {
+            let commit_id = repo.commit_ex(
                 &patch_commit.author(),
                 &default_committer,
                 patch_commit
@@ -822,7 +812,7 @@ impl<'repo> StackTransaction<'repo> {
                 new_tree_id,
                 [new_parent.id()],
             )?;
-            let commit = repo.find_commit(new_patch_commit_id)?;
+            let commit = repo.find_commit(commit_id)?;
             if merge_conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
