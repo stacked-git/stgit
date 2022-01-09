@@ -1,5 +1,137 @@
 # Changelog
 
+## [2.0.0-alpha.1] 2022-06-17
+
+### Removed
+
+### Added
+- `stg series` gains the `-i/--commit-id` option to display patches'
+  commit ids.
+- `stg series` colorized output is modified. The main change is that
+  patch descriptions are no longer yellow.
+- `stg version` now displays copyright and license statements.
+- `stg version` gains `-s/--short` flag to show shortened version info.
+- The `stgit.diff-opts` configuration variable is now respected as it
+  was in the Python implementation.
+- `stg completion` command provides runtime support for shell completions.
+- `stg completion bash` generates bash shell completion script.
+- `stg completion fish` generates fish shell completion script.
+- `stg completion zsh` outputs zsh shell completion script.
+- `stg completion list` shows StGit commands and aliases and is used at
+  completion-time by shell completion scripts.
+
+### Changed
+- The `-O/--diff-opts` flag now allows both multiple space separated
+  opts in one value as well as multiple occurrences of `-O/--diff-opts`
+  on the same command line. This behavior is compatible with the Python
+  implementation.
+- `stg series` help output splits options into a few sections.
+- Dependencies are updated to more recent versions in Cargo.lock.
+
+### Fixed
+- `stg edit --set-tree` no longer causes the interactive editor to be
+  implicitly invoked.
+- Repair build for non-Linux unix targets (including MacOS) and Windows
+  targets.
+- Avoid case insensitive patch name collisions. On operating systems
+  with case-insensitive paths, patch names that only differ by case lead
+  to patch reference collisions. StGit now ensures that patch names are
+  distinct under case insensitive comparisions.
+- Add missing `-t` short option for `--set-tree` for `stg edit`.
+- Add missing `-k` short option for `--keep`.
+
+
+## [2.0.0-alpha.0] 2022-05-17
+
+### Removed
+- `stg edit` no longer accepts `-O/--diff-opts`. Custom diff options is
+  in conflict with editable diffs since many (most?) diff options cause
+  the diff to no long be applicable.
+- `stg files` no longer accepts `-O/--diff-opts`. This option was of
+  marginal value since it only had a possible side effect when `--stat`
+  was being used.
+- `stg clone` is removed (at least for the time being). Use `git clone`
+  and `stg init` instead.
+- `stg mail` is removed, but will be re-added or replaced prior to the
+  2.0.0 release.
+
+### Added
+- `stg new --refresh` allows a new patch to be refreshed with changes in
+  one step. The `-i/--index`, `-F/--force`, `-s/--submodules`, and
+  `--no-submodules` options from `stg refresh` are also available to
+  `stg new`.
+- `stg id` now accepts the `-b/--branch` option.
+- `stg spill` replaces `stg refresh --spill`.
+
+### Changed
+- The `--ack` and `--review` options now optionally take a value. The
+  `--ack-by` and `--review-by` options are deprecated.
+- Commands such as `stg goto`, `stg push`, and `stg pop` now require
+  full/correct patch names on the command line and no longer accept
+  unambiguous patch name prefixes. When an inexact patch name is
+  provided on the command line, the error message will now indicate
+  similar valid patch names.
+- `stg branch` output is now generally less verbose.
+- `stg branch --describe` replaces `stg branch --description`. The
+  `--description` subcommand remains supported as a hidden alias to
+  `--describe`, but the description string must now be provided as its
+  own argument; i.e. `--description="description string"` is no longer
+  supported.
+- `stg branch --list` now produces colorized output. The `--color`
+  option or `NO_COLOR` environment variable may be used to affect this
+  behavior.
+- `stg branch --rename` now supports renaming regular git branches in
+  addition to StGit-enabled branches.
+- `stg clean` now uses `-A` and `-U` short options for `--applied` and
+  `--unapplied` instead of `-a` and `-u`. This is done for consistency
+  with `stg series` and `stg show`.
+- `stg import` now only recognizes compressed patches by their file
+  extension (`.bz2` or `.gz`) and no longer attempts to decompress using
+  all known decompressors.
+- `stg import` support for compressed input files is selectable at
+   compile time using the `import-compressed` feature.
+- `stg import` support for importing from a URL is selectable at compile
+  time using the `import-url` feature.
+- `stg log` now colorizes output by default. The `--color` option or
+  `NO_COLOR` environment variable may be used to affect this behavior.
+- `stgit.new.verbose` changed to `stgit.edit.verbose` and now affects edit
+  behavior for `edit`, `refresh`, and `squash` along with `new`.
+- `stg new` now accepts `-e/--edit` and `-d/--diff` instead of `-v/--verbose`
+- `stg pick` now allows a mix of commits and patches to be picked
+  whereas previously only a single commit xor multiple patches could be
+  picked.
+- `stg pick` now performs a single stack transaction for all the picked
+  patches/commits instead of one transaction per pick.
+- `stg rebase --interactive` the "squash" and "fixup" instructions may
+  no longer be applied to the first patch in the instruction list. The
+  stated semantics of both "squash" and "fixup" is that they squash the
+  labeled patch with the preceding patch, which is not possible/valid
+  when there is no preceding patch.
+- `stg refresh` no longer has the `--spill` flag. Use `stg spill`
+  instead.
+- Updated colorized output for `stg series`.
+- `stg series` now requires patch range arguments to be both in-order
+  and contiguous. Constraining patch ranges in this manner ensures that
+  the output from `stg series` is always a valid/correct view of a
+  subset of the series.
+- `stg show` diff can now be limited to certain paths by specifying path
+  limits on the command line.
+- `stg show` diff output respects the `--color` option.
+- The new `--signoff` patch edit option supercedes the deprecated
+  `--sign` and `--sign-by` options. `--signoff` without its optional
+  value does the same thing as `--sign`, while `--signoff=<value>` does
+  the same thing as `--sign-by=<value>`.
+- `stg squash` now allows the full suite of patch edit options,
+  including `-d/--diff`. Previously only a few message-related options
+  were available.
+
+### Fixed
+- `stg branch --create` inherits the current branch's remote branch
+  configuration, if available. The Python implementation had an apparent
+  bug that prevented inheriting the remote branch configuration when
+  creating from the current branch.
+
+
 ## [1.5] 2022-01-28
 
 ### Removed
