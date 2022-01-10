@@ -87,6 +87,7 @@ _stg-commit() {
 
 _stg-delete() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_branch
     subcmd_args+=(
         '--spill[spill patch contents to worktree and index]'
@@ -156,6 +157,7 @@ _stg-files() {
 
 _stg-float() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_keep
     subcmd_args+=(
         '--noapply[Reorder patches by floating without applying]'
@@ -179,6 +181,7 @@ _stg-fold() {
 
 _stg-goto() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
     subcmd_args+=(
@@ -193,6 +196,7 @@ _stg-help() {
 
 _stg-hide() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_branch
     subcmd_args+=(
         ':patches:__stg_patches_unhidden'
@@ -296,6 +300,7 @@ _stg-new() {
     declare -A opt_args
 
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_author
     __stg_add_args_sign
     __stg_add_args_hook
@@ -323,6 +328,7 @@ _stg-new() {
 
 _stg-next() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_branch
     _arguments -s -S $subcmd_args
 }
@@ -359,6 +365,7 @@ _stg-pick() {
 
 _stg-pop() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_keep
     subcmd_args+=(
         '(-s --spill)'{-s,--spill}'[pop a patch keeping its modifications in the tree]'
@@ -374,6 +381,7 @@ _stg-pop() {
 
 _stg-prev() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_branch
     _arguments -s -S $subcmd_args
 }
@@ -390,6 +398,7 @@ _stg-pull() {
 
 _stg-push() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
     subcmd_args+=(
@@ -427,6 +436,7 @@ _stg-redo() {
 
 _stg-refresh() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_author
     __stg_add_args_edit
     __stg_add_args_hook
@@ -453,6 +463,7 @@ _stg-refresh() {
 _stg-rename() {
     __stg_add_args_help
     __stg_add_args_branch
+    __stg_add_args_color
     subcmd_args+=(
         ':old-patch:__stg_patches_all'
     )
@@ -477,6 +488,7 @@ _stg-reset() {
 _stg-series() {
     __stg_add_args_help
     __stg_add_args_branch
+    __stg_add_args_color
     subcmd_args+=(
         '--author[show the author name for each patch]'
         '(-c --count)'{-c,--count}'[print number of patches]'
@@ -531,6 +543,7 @@ _stg-show() {
 
 _stg-sink() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_keep
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after sinking]'
@@ -542,6 +555,7 @@ _stg-sink() {
 
 _stg-spill() {
     __stg_add_args_help
+    __stg_add_args_color
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate}'[annotate patch log entry]:annotation'
         '(-r --reset)'{-r,--reset}'[also reset the index]'
@@ -587,6 +601,7 @@ _stg-sync() {
 
 _stg-top() {
     __stg_add_args_help
+    __stg_add_args_color
     __stg_add_args_branch
     _arguments -s -S $subcmd_args
 }
@@ -636,6 +651,12 @@ __stg_add_args_author() {
 __stg_add_args_branch() {
     subcmd_args+=(
         '(-b --branch)'{-b,--branch=}'[specify another branch]: :__stg_branch_stgit'
+    )
+}
+
+__stg_add_args_color() {
+    subcmd_args+=(
+        '--color=-[when to colorize output]:when:(auto always ansi never)'
     )
 }
 
@@ -1053,6 +1074,7 @@ _stgit() {
             '(- :)--help[print help information]' \
             '(- :)--version[display version information]' \
             '-C[run as if stg was started in given path]: :_directories' \
+            '--color=-[when to colorize output]:when:(auto always ansi never)' \
             '(-): :->command' \
             '(-)*:: :->option-or-argument' && ret=0
 
