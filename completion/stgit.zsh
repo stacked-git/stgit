@@ -499,17 +499,33 @@ _stg-series() {
 }
 
 _stg-show() {
+    local curcontext=$curcontext state line ret=1
+    declare -A opt_args
+
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_diffopts
     subcmd_args+=(
         '(-s --stat)'{-s,--stat}'[show diff stat]'
-        '*:patches:__stg_patches_all'
-        + '(patch-selection)'
-        '(-a --applied)'{-a,--applied}'[show applied patches]'
-        '(-u --unapplied)'{-u,--unapplied}'[show unapplied patches]'
+        '(-)--[start file arguments]: :->cached-files'
     )
-    _arguments -s -S $subcmd_args
+    if [[ -n $words[(I)--] ]]; then
+        subcmd_args+=(
+            '(-A --applied *)'{-A,--applied}'[show applied patches]'
+            '(-U --unapplied *)'{-U,--unapplied}'[show unapplied patches]'
+            '(-H --hidden *)'{-H,--hidden}'[show hidden patches]'
+            '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_patches_all'
+        )
+    fi
+    _arguments -C -s $subcmd_args && ret=0
+
+    case $state in
+        (cached-files)
+            __stg_ignore_line __stg_cached_files
+            ;;
+    esac
+
+    return ret
 }
 
 _stg-sink() {
@@ -792,6 +808,10 @@ __stg_files () {
 
  # _wanted $tag expl $description _files -g '{'${(j:,:)files}'}' $compadd_opts -
   _wanted $tag expl $description _multi_parts -f $compadd_opts - / files
+}
+
+__stg_cached_files () {
+  __stg_files --cached cached-files 'cached file' $*
 }
 
 __stg_modified_files () {
