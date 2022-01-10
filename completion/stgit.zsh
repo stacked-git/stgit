@@ -291,17 +291,33 @@ _stg-mail() {
 }
 
 _stg-new() {
+    local curcontext=$curcontext state line ret=1
+    declare -A opt_args
+
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_sign
     __stg_add_args_hook
     __stg_add_args_savetemplate
     subcmd_args+=(
-        '(-v --verbose)'{-v,--verbose}'[show diff of file changes]'
-        ':: :_guard "([^-]?#|)" name'
+        '(-r --refresh)'{-r,--refresh}'[refresh new patch]'
+        '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
+        '(-i --index)'{-i,--index}'[refresh from index instead of worktree]'
+        '(-)--[start file arguments]: :->modified-file'
     )
+    if [[ -n $words[(I)--] ]]; then
+        subcmd_args+=(':: :_guard "([^-]?#|)" patchname')
+    fi
     __stg_add_args_message
-    _arguments -s -S $subcmd_args
+    _arguments -C -s $subcmd_args && ret=0
+
+    case $state in
+        (modified-file)
+            __stg_ignore_line __stg_modified_files && ret=0
+            ;;
+    esac
+
+    return ret
 }
 
 _stg-next() {
@@ -424,7 +440,7 @@ _stg-refresh() {
         '--spill[Spill patch contents to worktree and index, and erase patch content]'
         + '(update-files)'
         '(-u --update)'{-u,--update}'[only update current patch files]'
-        '*:files:__stg_changed_files'
+        '*:files:__stg_modified_files'
         + '(submodules)'
         '(-s --submodules)'{-s,--submodules}'[include submodules in refresh]'
         '--no-submodules[exclude submodules from refresh]'
@@ -639,12 +655,9 @@ __stg_add_args_savetemplate() {
 
 __stg_add_args_sign() {
     subcmd_args+=(
-        '--ack[add Acked-by trailer]'
-        '--ack-by[add Acked-by trailer]:value'
-        '--review[add Reviewed-by trailer]'
-        '--review-by[add Reviewed-by trailer]:value'
-        '--sign[add Signed-off-by trailer]'
-        '--sign-by[add Signed-off-by trailer]:value'
+        '--ack=-[add Acked-by trailer]'
+        '--review=-[add Reviewed-by trailer]'
+        '--sign=-[add Signed-off-by trailer]'
     )
 }
 
@@ -748,6 +761,41 @@ __stg_files_relative() {
     done
 
     print ${(pj:\0:)files}
+}
+
+__stg_files () {
+  local compadd_opts opts tag description gitcdup gitprefix files expl
+
+  zparseopts -D -E -a compadd_opts V+: J+: 1 2 o+: n f x+: X+: M+: P: S: r: R: q F:
+  zparseopts -D -E -a opts -- -cached -deleted -modified -others -ignored -unmerged -killed x+: --exclude+:
+  tag=$1 description=$2; shift 2
+
+  gitcdup=$(_call_program gitcdup git rev-parse --show-cdup 2>/dev/null)
+  __stg_git_command_successful $pipestatus || return 1
+
+  gitprefix=$(_call_program gitprefix git rev-parse --show-prefix 2>/dev/null)
+  __stg_git_command_successful $pipestatus || return 1
+
+  # TODO: --directory should probably be added to $opts when --others is given.
+
+  local pref=$gitcdup$gitprefix$PREFIX
+
+  # First allow ls-files to pattern-match in case of remote repository
+  files=(${(0)"$(_call_program files git ls-files -z --exclude-standard ${(q)opts} -- ${(q)${pref:+$pref\*}:-.} 2>/dev/null)"})
+  __stg_git_command_successful $pipestatus || return
+
+  # If ls-files succeeded but returned nothing, try again with no pattern
+  if [[ -z "$files" && -n "$pref" ]]; then
+    files=(${(0)"$(_call_program files git ls-files -z --exclude-standard ${(q)opts} -- 2>/dev/null)"})
+    __stg_git_command_successful $pipestatus || return
+  fi
+
+ # _wanted $tag expl $description _files -g '{'${(j:,:)files}'}' $compadd_opts -
+  _wanted $tag expl $description _multi_parts -f $compadd_opts - / files
+}
+
+__stg_modified_files () {
+  __stg_files --modified modified-files 'modified file' $*
 }
 
 __stg_diff-index_files () {
@@ -866,6 +914,11 @@ __stg_subcommands() {
 
 __stg_caching_policy() {
     [[ =$service -nt $1 ]]
+}
+
+__stg_ignore_line () {
+  local -a ignored=(${line:#${words[CURRENT]}})
+  $* -F ignored
 }
 
 _stgit() {
