@@ -310,6 +310,21 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    pub(crate) fn push_tree_patches<P>(
+        &mut self,
+        patchnames: &[P],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error>
+    where
+        P: AsRef<PatchName>,
+    {
+        for (i, patchname) in patchnames.iter().enumerate() {
+            let is_last = i + 1 == patchnames.len();
+            self.push_tree(patchname.as_ref(), is_last, stdout)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn push_tree(
         &mut self,
         patchname: &PatchName,
