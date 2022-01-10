@@ -202,6 +202,7 @@ _stg-hide() {
 
 _stg-id() {
     __stg_add_args_help
+    __stg_add_args_branch
     subcmd_args+=(
         ':references:__stg_patches_all'
     )
