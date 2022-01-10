@@ -975,44 +975,31 @@ __stg_ignore_line () {
 }
 
 _stgit() {
-    local curcontext="$curcontext" state line expl ret=1
-    typeset -A opt_args
-
-    # Special cases for git aliases
-    case "$words[2]" in
-        (add|mv|rm|status)
-            words[1]=git
-            ;;
-        (resolved)
-            words[1]=git
-            words[2]=add
-            ;;
-    esac
-    if [ "$words[1]" = git ]; then
-        _normal && ret=0
-        return ret
-    fi
-
     local update_policy
     zstyle -s ":completion:*:*:stg:*" cache-policy update_policy
     if [[ -z "$update_policy" ]]; then
         zstyle ":completion:*:*:stg:*" cache-policy __stg_caching_policy
     fi
 
-    _arguments -C -A "-*" \
-               '(-)--help[print help information]' \
-               '(*)--version[display version information]' \
-               '1: :->command' \
-               '*:: :->args' && ret=0
-
-    if [[ -n $state ]] && (( ! $+_stg_cmds )); then
+    if (( ! $+_stg_cmds )); then
         typeset -a _stg_cmds
         if _cache_invalid stg-cmds || ! _retrieve_cache stg-cmds; then
             _stg_cmds=(
                 ${${${(M)${(f)"$(stg help 2> /dev/null)"}## *}#  }/#(#b)([^[:space:]]##)[[:space:]]##(*)/$match[1]:$match[2]}
             )
+
+            # TODO: get aliases exclusively from config (see below)
+            local -a aliases_to_remove=(
+                'add:git add'
+                'mv:git mv'
+                'resolved:git add'
+                'rm:git rm'
+                'status:git status -s'
+            )
+
             # TODO: temporary until rust implementation becomes parseable.
-            _stg_cmds+=(spill)
+            _stg_cmds+=('spill:spill patch contents')
+
             if (( $? == 0 )); then
                 _store_cache stg-cmds _stg_cmds
             else
@@ -1021,21 +1008,78 @@ _stgit() {
         fi
     fi
 
-    case $state in
-        (command)
-            __stg_subcommands && ret=0
-            ;;
-        (args)
-            local -a subcmd_args
-            local subcmd=$words[1]
-            curcontext="${curcontext%:*:*}:stg-$subcmd:"
-            if ! _call_function ret _stg-$subcmd; then
-                _message "unknown sub-command: $subcmd"
+    if (( CURRENT > 2 )); then
+        local -a aliases
+        local -A stg_aliases=(
+            [add]='!git add'
+            [mv]='!git mv'
+            [resolved]='!git add'
+            [rm]='!git rm'
+            [status]='!git status -s'
+        )
+        local a k v
+        local endopt='!(-)--end-of-options'
+        # TODO: maybe get aliases from `stg help` instead of `git config`?
+        aliases=(${(0)"$(_call_program aliases git config -z --get-regexp '\^stgit\.alias\.')"})
+        for a in ${aliases}; do
+            k="${${a/$'\n'*}/stgit.alias.}"
+            v="${a#*$'\n'}"
+            stg_aliases[$k]="$v"
+        done
+
+        if (( $+stg_aliases[$words[2]] && !$+_stg_cmds[$words[2]] )); then
+            local -a tmpwords expalias
+            expalias=(${(z)stg_aliases[$words[2]]})
+            tmpwords=(${words[1]} ${expalias})
+            if [[ -n "${words[3,-1]}" ]] ; then
+                tmpwords+=(${words[3,-1]})
             fi
-            ;;
-    esac
+            [[ -n ${words[$CURRENT]} ]] || tmpwords+=('')
+            (( CURRENT += ${#expalias} - 1 ))
+            words=("${tmpwords[@]}")
+            unset tmpwords expalias
+        fi
+
+        unset stg_aliases aliases
+    fi
+
+    integer ret=1
+
+    if [[ $service == stg ]]; then
+        local curcontext="$curcontext" state line
+        typeset -A opt_args
+
+        _arguments -C \
+            '(- :)--help[print help information]' \
+            '(- :)--version[display version information]' \
+            '-C[run as if stg was started in given path]: :_directories' \
+            '(-): :->command' \
+            '(-)*:: :->option-or-argument' && ret=0
+
+        case $state in
+            (command)
+                __stg_subcommands && ret=0
+                ;;
+            (option-or-argument)
+                curcontext=${curcontext%:*:*}:stg-$words[1]:
+                local -a subcmd_args
+                if ! _call_function ret _stg-$words[1]; then
+                    if [[ $words[1] = \!* ]]; then
+                        words[1]=${words[1]##\!}
+                        _normal && ret=0
+                    elif zstyle -T :completion:$curcontext: use-fallback; then
+                        _default && ret=0
+                    else
+                        _message "unknown sub-command: $words[1]"
+                    fi
+                fi
+                ;;
+        esac
+    else
+        _call_function ret _$service
+    fi
 
     return ret
 }
 
-_stgit "$@"
+_stgit
