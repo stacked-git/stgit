@@ -539,6 +539,26 @@ _stg-sink() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-spill() {
+    __stg_add_args_help
+    subcmd_args+=(
+        '(-a --annotate)'{-a,--annotate}'[annotate patch log entry]:annotation'
+        '(-r --reset)'{-r,--reset}'[also reset the index]'
+        '(-)--[start file arguments]: :->patch-files'
+        '*:: :->patch-files'
+    )
+
+    _arguments -C -s $subcmd_args && ret=0
+
+    case $state in
+        (patch-files)
+            __stg_ignore_line __stg_patch_files
+            ;;
+    esac
+
+    return ret
+}
+
 _stg-squash() {
     __stg_add_args_help
     __stg_add_args_hook
@@ -861,6 +881,18 @@ __stg_files_known() {
     _wanted -V known-files expl "known files" _multi_parts - / known_files
 }
 
+__stg_patch_files () {
+    local files expl top_id
+    top_id=$(stg id 2>/dev/null)
+
+    files=$(_call_program patch-files git diff -z --name-only --no-color $top_id~ $top_id 2>/dev/null)
+    __stg_git_command_successful $pipestatus || return 1
+    files=(${(0)"$(__stg_files_relative $files)"})
+    __stg_git_command_successful $pipestatus || return 1
+
+    _wanted patch-files expl "patch files" _multi_parts $@ -f - / files
+}
+
 __stg_get_branch_opt() {
     local short long i
     short=${1:-'-b'}
@@ -978,6 +1010,8 @@ _stgit() {
             _stg_cmds=(
                 ${${${(M)${(f)"$(stg help 2> /dev/null)"}## *}#  }/#(#b)([^[:space:]]##)[[:space:]]##(*)/$match[1]:$match[2]}
             )
+            # TODO: temporary until rust implementation becomes parseable.
+            _stg_cmds+=(spill)
             if (( $? == 0 )); then
                 _store_cache stg-cmds _stg_cmds
             else
