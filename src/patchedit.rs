@@ -172,7 +172,7 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
 }
 
 #[derive(Default)]
-pub(crate) struct PatchEditOverlay {
+pub(crate) struct Overlay {
     pub(crate) author: Option<git2::Signature<'static>>,
     pub(crate) message: Option<String>,
     pub(crate) tree_id: Option<git2::Oid>,
@@ -185,9 +185,9 @@ pub(crate) fn edit<'repo>(
     patchname: Option<&PatchName>,
     patch_commit: Option<&git2::Commit>,
     matches: &ArgMatches,
-    overlay: PatchEditOverlay,
+    overlay: Overlay,
 ) -> Result<(Option<PatchName>, git2::Oid), Error> {
-    let PatchEditOverlay {
+    let Overlay {
         author,
         message,
         tree_id,

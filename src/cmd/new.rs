@@ -150,7 +150,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         patchname.as_ref(),
         None,
         matches,
-        patchedit::PatchEditOverlay {
+        patchedit::Overlay {
             author: Some(signature::make_author(Some(&config), matches)?),
             message: None,
             tree_id: Some(tree_id),

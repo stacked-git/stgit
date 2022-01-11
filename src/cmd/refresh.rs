@@ -12,7 +12,7 @@ use crate::{
     error::Error,
     hook::run_pre_commit_hook,
     index::TemporaryIndex,
-    patchedit::PatchEditOverlay,
+    patchedit,
     patchname::PatchName,
     pathspec,
     stack::{ConflictMode, Stack, StackStateAccess},
@@ -129,7 +129,7 @@ fn get_app() -> App<'static> {
                 .allow_invalid_utf8(true),
         );
 
-    crate::patchedit::add_args(app)
+    patchedit::add_args(app)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
@@ -228,13 +228,13 @@ fn run(matches: &ArgMatches) -> super::Result {
                 let top_name = to_pop.pop();
                 assert_eq!(top_name.as_ref(), Some(&temp_patchname));
 
-                let (new_patchname, commit_id) = crate::patchedit::edit(
+                let (new_patchname, commit_id) = patchedit::edit(
                     trans,
                     &repo,
                     Some(&patchname),
                     Some(trans.get_patch_commit(&patchname)),
                     matches,
-                    PatchEditOverlay {
+                    patchedit::Overlay {
                         tree_id: Some(temp_commit.tree_id()),
                         ..Default::default()
                     },
@@ -283,13 +283,13 @@ fn run(matches: &ArgMatches) -> super::Result {
                         Ok(None)
                     }
                 })? {
-                    let (new_patchname, commit_id) = crate::patchedit::edit(
+                    let (new_patchname, commit_id) = patchedit::edit(
                         trans,
                         &repo,
                         Some(&patchname),
                         Some(trans.get_patch_commit(&patchname)),
                         matches,
-                        PatchEditOverlay {
+                        patchedit::Overlay {
                             tree_id: Some(tree_id),
                             ..Default::default()
                         },
