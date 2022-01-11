@@ -761,43 +761,52 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<Vec<&'a PatchName>, Error> {
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
-        let head_tree = self.stack.head.tree()?;
 
-        repo.with_temp_index(|temp_index| {
-            temp_index.read_tree(&head_tree)?;
+        repo.with_temp_index_file(|temp_index| {
+            let temp_index_path = temp_index.path().unwrap();
+            stupid::read_tree(self.stack.head.tree_id(), temp_index_path)?;
 
             for patchname in patches.iter().rev() {
                 let patch_commit = self.get_patch_commit(patchname);
-                let patch_tree = patch_commit.tree()?;
                 let parent_commit = patch_commit.parent(0)?;
-                let parent_tree = parent_commit.tree()?;
 
-                if patch_commit.parent_count() == 1 && patch_tree.id() == parent_tree.id() {
+                if patch_commit.parent_count() == 1
+                    && patch_commit.tree_id() == parent_commit.tree_id()
+                {
                     continue; // No change
                 }
 
-                let diff = repo.diff_tree_to_tree(Some(&patch_tree), Some(&parent_tree), None)?;
-                if let Ok(index) = repo.apply_to_tree(&head_tree, &diff, None) {
-                    if !index.has_conflicts() {
-                        merged.push(patchname);
-                    }
+                if stupid::apply_treediff_to_index(
+                    patch_commit.tree_id(),
+                    parent_commit.tree_id(),
+                    repo.workdir().unwrap(),
+                    temp_index_path,
+                )? {
+                    merged.push(patchname);
                 }
             }
 
             Ok(())
         })?;
 
-        {
-            write!(stdout, "Found ")?;
-            let mut color_spec = termcolor::ColorSpec::new();
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-            write!(stdout, "{}", merged.len())?;
-            stdout.reset()?;
-            let plural = if merged.len() == 1 { "" } else { "es" };
-            writeln!(stdout, " patch{} merged upstream", plural)?;
-        }
+        self.print_merged(&merged, stdout)?;
 
         Ok(merged)
+    }
+
+    fn print_merged(
+        &self,
+        merged_patches: &[&PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        write!(stdout, "Found ")?;
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(stdout, "{}", merged_patches.len())?;
+        stdout.reset()?;
+        let plural = if merged_patches.len() == 1 { "" } else { "es" };
+        writeln!(stdout, " patch{} merged upstream", plural)?;
+        Ok(())
     }
 
     fn print_rename(
