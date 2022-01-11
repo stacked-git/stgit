@@ -230,20 +230,6 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
-    pub(crate) fn push_applied(
-        &mut self,
-        patchname: &PatchName,
-        oid: Oid,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let commit = self.stack.repo.find_commit(oid)?;
-        self.applied.push(patchname.clone());
-        self.patch_updates
-            .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_pushed(patchname, PushStatus::New, true, stdout)?;
-        Ok(())
-    }
-
     fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
         let repo = self.stack.repo;
         if !allow_bad_head {
@@ -285,6 +271,42 @@ impl<'repo> StackTransaction<'repo> {
                 }
             })?;
         self.current_tree_id = commit.tree_id();
+        Ok(())
+    }
+
+    pub(crate) fn update_top(&mut self, commit_id: Oid) -> Result<(), Error> {
+        let top_patchname = self
+            .applied
+            .last()
+            .expect("may only be called if there is an applied patch");
+        let commit = self.stack.repo.find_commit(commit_id)?;
+        self.patch_updates
+            .insert(top_patchname.clone(), Some(PatchState { commit }));
+        Ok(())
+    }
+
+    pub(crate) fn update_patch(
+        &mut self,
+        patchname: &PatchName,
+        commit_id: Oid,
+    ) -> Result<(), Error> {
+        let commit = self.stack.repo.find_commit(commit_id)?;
+        self.patch_updates
+            .insert(patchname.clone(), Some(PatchState { commit }));
+        Ok(())
+    }
+
+    pub(crate) fn push_applied(
+        &mut self,
+        patchname: &PatchName,
+        oid: Oid,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let commit = self.stack.repo.find_commit(oid)?;
+        self.applied.push(patchname.clone());
+        self.patch_updates
+            .insert(patchname.clone(), Some(PatchState { commit }));
+        self.print_pushed(patchname, PushStatus::New, true, stdout)?;
         Ok(())
     }
 
@@ -379,136 +401,6 @@ impl<'repo> StackTransaction<'repo> {
             self.hidden = hidden.to_vec();
         }
 
-        Ok(())
-    }
-
-    fn print_rename(
-        &self,
-        old_patchname: &PatchName,
-        new_patchname: &PatchName,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_dimmed(true))?;
-        write!(stdout, "{}", old_patchname)?;
-        color_spec.clear();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-        write!(stdout, " => ")?;
-        stdout.reset()?;
-        writeln!(stdout, "{}", new_patchname)?;
-        Ok(())
-    }
-
-    fn print_deleted(
-        &self,
-        deleted: &PatchName,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-        write!(stdout, "# ")?;
-        color_spec.set_fg(None);
-        stdout.set_color(color_spec.set_dimmed(true))?;
-        writeln!(stdout, "{}", deleted)?;
-        stdout.reset()?;
-        Ok(())
-    }
-
-    fn print_hidden(
-        &self,
-        hidden: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let mut color_spec = termcolor::ColorSpec::new();
-        for patchname in hidden {
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
-            write!(stdout, "! ")?;
-            color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true).set_italic(true))?;
-            writeln!(stdout, "{}", patchname)?;
-            color_spec.clear();
-            stdout.reset()?;
-        }
-        Ok(())
-    }
-
-    fn print_unhidden(
-        &self,
-        unhidden: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let mut color_spec = termcolor::ColorSpec::new();
-        for patchname in unhidden {
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(stdout, "- ")?;
-            color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true))?;
-            writeln!(stdout, "{}", patchname)?;
-            color_spec.clear();
-            stdout.reset()?;
-        }
-        Ok(())
-    }
-
-    fn print_popped(
-        &self,
-        popped: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        if !popped.is_empty() {
-            let mut color_spec = termcolor::ColorSpec::new();
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(stdout, "- ")?;
-            color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true))?;
-            write!(stdout, "{}", popped[0])?;
-            if popped.len() > 1 {
-                stdout.set_color(color_spec.set_dimmed(false))?;
-                write!(stdout, "..")?;
-                stdout.set_color(color_spec.set_dimmed(true))?;
-                let last = &popped[popped.len() - 1];
-                write!(stdout, "{}", last)?;
-            }
-            stdout.reset()?;
-            writeln!(stdout)?;
-        }
-        Ok(())
-    }
-
-    fn print_pushed(
-        &self,
-        patchname: &PatchName,
-        status: PushStatus,
-        is_last: bool,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let sigil = if is_last { '>' } else { '+' };
-        let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(
-            color_spec.set_fg(Some(if let PushStatus::Conflict = status {
-                termcolor::Color::Red
-            } else if is_last {
-                termcolor::Color::Blue
-            } else {
-                termcolor::Color::Green
-            })),
-        )?;
-        write!(stdout, "{} ", sigil)?;
-        color_spec.clear();
-        stdout.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
-        write!(stdout, "{}", patchname)?;
-        stdout.reset()?;
-
-        let status_str = match status {
-            PushStatus::New => " (new)",
-            PushStatus::AlreadyMerged => " (merged)",
-            PushStatus::Conflict => " (conflict)",
-            PushStatus::Empty => " (empty)",
-            PushStatus::Modified => " (modified)",
-            PushStatus::Unmodified => "",
-        };
-
-        writeln!(stdout, "{}", status_str)?;
         Ok(())
     }
 
@@ -862,28 +754,6 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
-    pub(crate) fn update_top(&mut self, commit_id: Oid) -> Result<(), Error> {
-        let top_patchname = self
-            .applied
-            .last()
-            .expect("may only be called if there is an applied patch");
-        let commit = self.stack.repo.find_commit(commit_id)?;
-        self.patch_updates
-            .insert(top_patchname.clone(), Some(PatchState { commit }));
-        Ok(())
-    }
-
-    pub(crate) fn update_patch(
-        &mut self,
-        patchname: &PatchName,
-        commit_id: Oid,
-    ) -> Result<(), Error> {
-        let commit = self.stack.repo.find_commit(commit_id)?;
-        self.patch_updates
-            .insert(patchname.clone(), Some(PatchState { commit }));
-        Ok(())
-    }
-
     pub(crate) fn check_merged<'a>(
         &self,
         patches: &'a [PatchName],
@@ -928,6 +798,136 @@ impl<'repo> StackTransaction<'repo> {
         }
 
         Ok(merged)
+    }
+
+    fn print_rename(
+        &self,
+        old_patchname: &PatchName,
+        new_patchname: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_dimmed(true))?;
+        write!(stdout, "{}", old_patchname)?;
+        color_spec.clear();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(stdout, " => ")?;
+        stdout.reset()?;
+        writeln!(stdout, "{}", new_patchname)?;
+        Ok(())
+    }
+
+    fn print_deleted(
+        &self,
+        deleted: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+        write!(stdout, "# ")?;
+        color_spec.set_fg(None);
+        stdout.set_color(color_spec.set_dimmed(true))?;
+        writeln!(stdout, "{}", deleted)?;
+        stdout.reset()?;
+        Ok(())
+    }
+
+    fn print_hidden(
+        &self,
+        hidden: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        for patchname in hidden {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
+            write!(stdout, "! ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true).set_italic(true))?;
+            writeln!(stdout, "{}", patchname)?;
+            color_spec.clear();
+            stdout.reset()?;
+        }
+        Ok(())
+    }
+
+    fn print_unhidden(
+        &self,
+        unhidden: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let mut color_spec = termcolor::ColorSpec::new();
+        for patchname in unhidden {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(stdout, "- ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true))?;
+            writeln!(stdout, "{}", patchname)?;
+            color_spec.clear();
+            stdout.reset()?;
+        }
+        Ok(())
+    }
+
+    fn print_popped(
+        &self,
+        popped: &[PatchName],
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        if !popped.is_empty() {
+            let mut color_spec = termcolor::ColorSpec::new();
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(stdout, "- ")?;
+            color_spec.set_fg(None);
+            stdout.set_color(color_spec.set_dimmed(true))?;
+            write!(stdout, "{}", popped[0])?;
+            if popped.len() > 1 {
+                stdout.set_color(color_spec.set_dimmed(false))?;
+                write!(stdout, "..")?;
+                stdout.set_color(color_spec.set_dimmed(true))?;
+                let last = &popped[popped.len() - 1];
+                write!(stdout, "{}", last)?;
+            }
+            stdout.reset()?;
+            writeln!(stdout)?;
+        }
+        Ok(())
+    }
+
+    fn print_pushed(
+        &self,
+        patchname: &PatchName,
+        status: PushStatus,
+        is_last: bool,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let sigil = if is_last { '>' } else { '+' };
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(
+            color_spec.set_fg(Some(if let PushStatus::Conflict = status {
+                termcolor::Color::Red
+            } else if is_last {
+                termcolor::Color::Blue
+            } else {
+                termcolor::Color::Green
+            })),
+        )?;
+        write!(stdout, "{} ", sigil)?;
+        color_spec.clear();
+        stdout.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
+        write!(stdout, "{}", patchname)?;
+        stdout.reset()?;
+
+        let status_str = match status {
+            PushStatus::New => " (new)",
+            PushStatus::AlreadyMerged => " (merged)",
+            PushStatus::Conflict => " (conflict)",
+            PushStatus::Empty => " (empty)",
+            PushStatus::Modified => " (modified)",
+            PushStatus::Unmodified => "",
+        };
+
+        writeln!(stdout, "{}", status_str)?;
+        Ok(())
     }
 }
 
