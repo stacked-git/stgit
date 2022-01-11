@@ -296,7 +296,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn push_applied(
+    pub(crate) fn push_new(
         &mut self,
         patchname: &PatchName,
         oid: Oid,
