@@ -12,7 +12,7 @@ use crate::error::Error;
 //     # Lines starting with '#' will be ignored, and an empty message\n\
 //     # aborts the edit.\n";
 
-static EDIT_INSTRUCTION_NEW: &str = "\
+pub(crate) static EDIT_INSTRUCTION_NEW: &str = "\
     # Please enter the message for your patch. Lines starting with\n\
     # '#' will be ignored. An empty message aborts the new patch.\n\
     # The patch name and author information may also be modified.\n";
@@ -20,7 +20,7 @@ static EDIT_INSTRUCTION_NEW: &str = "\
 static EDIT_FILE_NAME: &str = ".stgit-edit";
 
 pub(crate) fn edit_interactive(
-    patch_desc: PatchDescription,
+    patch_desc: &PatchDescription,
     config: &git2::Config,
 ) -> Result<PatchDescription, Error> {
     {
@@ -32,7 +32,7 @@ pub(crate) fn edit_interactive(
     }
 
     let buf = call_editor(EDIT_FILE_NAME, config)?;
-    let patch_desc = PatchDescription::try_from(buf)?;
+    let patch_desc = PatchDescription::try_from(buf.as_slice())?;
     Ok(patch_desc)
 }
 

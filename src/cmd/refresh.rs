@@ -129,7 +129,7 @@ fn get_app() -> App<'static> {
                 .allow_invalid_utf8(true),
         );
 
-    patchedit::add_args(app)
+    patchedit::add_args(app, false)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
@@ -181,10 +181,9 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let temp_patchname = {
         let len_limit = None;
-        let lower = true;
         let allow = vec![];
         let disallow: Vec<&PatchName> = stack.all_patches().collect();
-        PatchName::make_unique("refresh-temp", len_limit, lower, &allow, &disallow)
+        PatchName::make("refresh-temp", len_limit).uniquify(&allow, &disallow)
     };
 
     let discard_changes = false;
@@ -228,22 +227,27 @@ fn run(matches: &ArgMatches) -> super::Result {
                 let top_name = to_pop.pop();
                 assert_eq!(top_name.as_ref(), Some(&temp_patchname));
 
-                let (new_patchname, commit_id) = patchedit::edit(
-                    trans,
-                    &repo,
-                    Some(&patchname),
-                    Some(trans.get_patch_commit(&patchname)),
-                    matches,
-                    patchedit::Overlay {
-                        tree_id: Some(temp_commit.tree_id()),
-                        ..Default::default()
-                    },
-                )?;
+                let (new_patchname, commit_id) = match patchedit::EditBuilder::default()
+                    .original_patchname(Some(&patchname))
+                    .existing_patch_commit(trans.get_patch_commit(&patchname))
+                    .override_tree_id(temp_commit.tree_id())
+                    .allow_diff_edit(false)
+                    .allow_template_save(false)
+                    .edit(trans, &repo, matches)?
+                {
+                    patchedit::EditOutcome::Committed {
+                        patchname: new_patchname,
+                        commit_id,
+                    } => (new_patchname, commit_id),
+                    patchedit::EditOutcome::TemplateSaved(_) => {
+                        panic!("not allowed for refresh")
+                    }
+                };
 
                 trans.delete_patches(|pn| pn == &temp_patchname, &mut stdout)?;
                 assert_eq!(Some(&patchname), trans.applied().last());
                 trans.update_top(commit_id)?;
-                if let Some(new_patchname) = new_patchname {
+                if new_patchname != patchname {
                     trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
                     log_msg.push_str(new_patchname.as_ref());
                 } else {
@@ -283,19 +287,25 @@ fn run(matches: &ArgMatches) -> super::Result {
                         Ok(None)
                     }
                 })? {
-                    let (new_patchname, commit_id) = patchedit::edit(
-                        trans,
-                        &repo,
-                        Some(&patchname),
-                        Some(trans.get_patch_commit(&patchname)),
-                        matches,
-                        patchedit::Overlay {
-                            tree_id: Some(tree_id),
-                            ..Default::default()
-                        },
-                    )?;
+                    let (new_patchname, commit_id) = match patchedit::EditBuilder::default()
+                        .original_patchname(Some(&patchname))
+                        .existing_patch_commit(trans.get_patch_commit(&patchname))
+                        .override_tree_id(tree_id)
+                        .allow_diff_edit(false)
+                        .allow_template_save(false)
+                        .edit(trans, &repo, matches)?
+                    {
+                        patchedit::EditOutcome::Committed {
+                            patchname: new_patchname,
+                            commit_id,
+                        } => (new_patchname, commit_id),
+                        patchedit::EditOutcome::TemplateSaved(_) => {
+                            panic!("not allowed for refresh")
+                        }
+                    };
+
                     trans.update_patch(&patchname, commit_id)?;
-                    if let Some(new_patchname) = new_patchname {
+                    if new_patchname != patchname {
                         trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
                         log_msg.push_str(new_patchname.as_ref());
                     } else {
@@ -317,7 +327,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     if !absorb_success {
         println!(
             "The new changes did not apply cleanly to {}. \
-                They were saved in {}.",
+             They were saved in {}.",
             &patchname, &temp_patchname,
         );
     }

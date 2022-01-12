@@ -1,20 +1,22 @@
 mod description;
 mod interactive;
-mod message;
 mod trailers;
 
-use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
+use std::{ffi::OsString, fs::File, io::BufWriter, sync::Arc};
+
+use clap::{Arg, ArgMatches, ValueHint};
+
+use crate::index::TemporaryIndex;
 
 use super::{
     commit::CommitExtended, error::Error, patchname::PatchName, stack::StackStateAccess, stupid,
 };
 use description::{DiffBuffer, PatchDescription};
 use interactive::edit_interactive;
-pub(crate) use message::MESSAGE_TEMPLATE_ARG;
-use message::{get_message_from_args, get_message_template};
 
-pub(crate) fn add_args(app: clap::App) -> clap::App {
-    app.help_heading("PATCH EDIT OPTIONS")
+pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
+    let app = app
+        .help_heading("PATCH EDIT OPTIONS")
         .arg(
             Arg::new("edit")
                 .long("edit")
@@ -33,8 +35,9 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .short('m')
                 .help("Use message for patch")
                 .long_help("Use message instead of invoking the editor")
-                .setting(ArgSettings::TakesValue)
-                .setting(ArgSettings::AllowInvalidUtf8)
+                .takes_value(true)
+                .allow_invalid_utf8(false)
+                .forbid_empty_values(false)
                 .value_hint(ValueHint::Other)
                 .conflicts_with("file"),
         )
@@ -47,7 +50,9 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                     "Use the contents of file instead of invoking the editor. \
                      Use \"-\" to read from stdin.",
                 )
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
+                .forbid_empty_values(true)
+                .allow_invalid_utf8(true)
                 .value_hint(ValueHint::FilePath),
         )
         .arg(
@@ -110,8 +115,8 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .long("sign-by")
                 .help("DEPRECATED: use --sign=value")
                 .hide(true)
-                .setting(ArgSettings::MultipleOccurrences)
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
+                .multiple_occurrences(true)
                 .value_name("VALUE")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -120,8 +125,8 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .long("ack-by")
                 .help("DEPRECATED: use --ack=value")
                 .hide(true)
-                .setting(ArgSettings::MultipleOccurrences)
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
+                .multiple_occurrences(true)
                 .value_name("VALUE")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -130,8 +135,8 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .long("review-by")
                 .help("DEPRECATED: use --review=value")
                 .hide(true)
-                .setting(ArgSettings::MultipleOccurrences)
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
+                .multiple_occurrences(true)
                 .value_name("VALUE")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -176,124 +181,219 @@ pub(crate) fn add_args(app: clap::App) -> clap::App {
                 .takes_value(true)
                 .allow_invalid_utf8(true)
                 .value_hint(ValueHint::Other),
+        );
+    if add_save_template {
+        app.arg(
+            Arg::new("save-template")
+                .long("save-template")
+                .help("Save the patch description to FILE and exit")
+                .long_help(
+                    "Instead of running the command, just write the patch description \
+                     to FILE, and exit. (If FILE is \"-\", write to stdout.)\n\
+                     \n\
+                     When driving StGit from another program, it may be useful to \
+                     first call a command with '--save-template', then let the user \
+                     edit the message, and then call the same command with '--file'.",
+                )
+                .takes_value(true)
+                .forbid_empty_values(true)
+                .allow_invalid_utf8(true)
+                .value_name("FILE")
+                .value_hint(ValueHint::FilePath)
+                .conflicts_with_all(&["message", "file"]),
         )
+    } else {
+        app
+    }
+}
+
+pub(crate) enum EditOutcome {
+    TemplateSaved(OsString),
+    Committed {
+        patchname: PatchName,
+        commit_id: git2::Oid,
+    },
 }
 
 #[derive(Default)]
-pub(crate) struct Overlay {
+struct Overlay {
     pub(crate) author: Option<git2::Signature<'static>>,
     pub(crate) message: Option<String>,
     pub(crate) tree_id: Option<git2::Oid>,
     pub(crate) parent_id: Option<git2::Oid>,
 }
 
-pub(crate) fn edit<'repo>(
-    stack_state: &impl StackStateAccess<'repo>,
-    repo: &'repo git2::Repository,
-    patchname: Option<&PatchName>,
-    patch_commit: Option<&git2::Commit>,
-    matches: &ArgMatches,
+#[derive(Default)]
+pub(crate) struct EditBuilder<'a, 'repo> {
+    original_patchname: Option<PatchName>,
+    patch_commit: Option<&'a git2::Commit<'repo>>,
+    allow_diff_edit: bool,
+    allow_template_save: bool,
     overlay: Overlay,
-) -> Result<(Option<PatchName>, git2::Oid), Error> {
-    let Overlay {
-        author,
-        message,
-        tree_id,
-        parent_id,
-    } = overlay;
-    let author = author.unwrap_or_else(|| {
-        patch_commit
-            .expect("existing patch or author overlay is required")
-            .author()
-    });
-    let author = crate::signature::override_author(&author, matches)?;
-    let config = repo.config()?;
-    let default_committer = crate::signature::default_committer(Some(&config))?;
-    let committer = patch_commit
-        .map(|commit| commit.committer())
-        .unwrap_or_else(|| default_committer.clone());
+}
 
-    let mut is_message_modified = false;
-    let mut must_edit = matches.is_present("edit");
-    let message = if let Some(message) = get_message_from_args(matches)? {
-        is_message_modified = true;
-        message
-    } else if let Some(message) = message {
-        is_message_modified = true;
-        message
-    } else if let Some(patch_commit) = patch_commit {
-        patch_commit
-            .message_raw()
-            .expect("existing patch should have utf-8 message")
-            .to_string()
-    } else if let Some(message_template) = get_message_template(repo)? {
-        must_edit = true;
-        message_template
-    } else {
-        must_edit = true;
-        "".to_string()
-    };
+impl<'a, 'repo> EditBuilder<'a, 'repo> {
+    pub(crate) fn allow_diff_edit(mut self, allow: bool) -> Self {
+        self.allow_diff_edit = allow;
+        self
+    }
 
-    let patchname2 = if let Some(patchname) = patchname {
-        Some(patchname.clone())
-    } else if !message.is_empty() {
-        let len_limit: Option<usize> = config
+    pub(crate) fn allow_template_save(mut self, allow: bool) -> Self {
+        self.allow_template_save = allow;
+        self
+    }
+
+    pub(crate) fn original_patchname(mut self, patchname: Option<&PatchName>) -> Self {
+        self.original_patchname = patchname.cloned();
+        self
+    }
+
+    pub(crate) fn existing_patch_commit(mut self, commit: &'a git2::Commit<'repo>) -> Self {
+        self.patch_commit = Some(commit);
+        self
+    }
+
+    pub(crate) fn default_author(mut self, author: git2::Signature<'static>) -> Self {
+        self.overlay.author = Some(author);
+        self
+    }
+
+    pub(crate) fn _default_message(mut self, message: String) -> Self {
+        self.overlay.message = Some(message);
+        self
+    }
+
+    pub(crate) fn override_tree_id(mut self, tree_id: git2::Oid) -> Self {
+        self.overlay.tree_id = Some(tree_id);
+        self
+    }
+
+    pub(crate) fn override_parent_id(mut self, parent_id: git2::Oid) -> Self {
+        self.overlay.parent_id = Some(parent_id);
+        self
+    }
+
+    pub(crate) fn edit(
+        self,
+        stack_state: &impl StackStateAccess<'repo>,
+        repo: &'repo git2::Repository,
+        matches: &ArgMatches,
+    ) -> Result<EditOutcome, Error> {
+        let EditBuilder {
+            original_patchname,
+            patch_commit,
+            allow_diff_edit,
+            allow_template_save,
+            overlay:
+                Overlay {
+                    author: overlay_author,
+                    message: overlay_message,
+                    tree_id: overlay_tree_id,
+                    parent_id: overlay_parent_id,
+                },
+        } = self;
+
+        let config = repo.config()?;
+        let default_committer = crate::signature::default_committer(Some(&config))?;
+        let committer = patch_commit
+            .map(|commit| commit.committer().to_owned())
+            .unwrap_or_else(|| default_committer.clone());
+
+        let PatchDescription {
+            patchname: file_patchname,
+            author: file_author,
+            message: file_message,
+            diff: file_diff,
+        } = if let Some(file_os) = matches.value_of_os("file") {
+            PatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
+        } else {
+            Default::default() // i.e. all Nones
+        };
+
+        let author = if file_author.is_some() {
+            file_author
+        } else {
+            let author = overlay_author.unwrap_or_else(|| {
+                patch_commit
+                    .expect("existing patch or author overlay is required")
+                    .author()
+            });
+            Some(crate::signature::override_author(&author, matches)?)
+        };
+
+        let mut need_interactive_edit =
+            matches.is_present("edit") || (allow_diff_edit && matches.is_present("diff"));
+
+        let message = if matches.is_present("file") {
+            file_message
+        } else if let Some(args_message) = matches.value_of("message") {
+            git2::message_prettify(args_message, None)?
+        } else if let Some(overlay_message) = overlay_message {
+            overlay_message
+        } else if let Some(patch_commit) = patch_commit {
+            let patch_commit_message = patch_commit
+                .message_raw()
+                .expect("existing patch should have utf-8 message")
+                .to_string();
+            patch_commit_message
+        } else if let Some(message_template) =
+            crate::templates::get_template(repo, "patchdescr.tmpl")?
+        {
+            need_interactive_edit = true;
+            message_template
+        } else {
+            need_interactive_edit = true;
+            "".to_string()
+        };
+
+        let patchname_len_limit: Option<usize> = config
             .get_i32("stgit.namelength")
             .ok()
             .and_then(|n| usize::try_from(n).ok());
-        let disallow_patches: Vec<&PatchName> = stack_state.all_patches().collect();
-        let allowed_patches = [];
-        Some(PatchName::make_unique(
-            &message,
-            len_limit,
-            true, // lowercase
-            &allowed_patches,
-            &disallow_patches,
-        ))
-    } else {
-        None
-    };
+        let disallow_patchnames: Vec<&PatchName> = stack_state.all_patches().collect();
+        let allowed_patchnames: Vec<&PatchName> =
+            if let Some(original_patchname) = original_patchname.as_ref() {
+                vec![original_patchname]
+            } else {
+                vec![]
+            };
 
-    let message = {
-        let autosign = config.get_string("stgit.autosign").ok();
-        let before_message = message.clone();
-        let message =
-            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?;
-        if before_message != message {
-            is_message_modified = true;
-        }
-        message
-    };
-
-    let tree_id = tree_id.unwrap_or_else(|| {
-        patch_commit
-            .expect("existing patch or tree_id overlays is required")
-            .tree_id()
-    });
-
-    let parent_id = parent_id.unwrap_or_else(|| {
-        patch_commit
-            .expect("existing patch or parent_id overlay is required")
-            .parent_id(0)
-            .unwrap()
-    });
-
-    if !must_edit {
-        let message = if is_message_modified && !matches.is_present("no-verify") {
-            crate::hook::run_commit_msg_hook(repo, message, false)?
+        let patchname = if let Some(file_patchname) = file_patchname {
+            Some(file_patchname.uniquify(&allowed_patchnames, &disallow_patchnames))
+        } else if let Some(original_patchname) = original_patchname.as_ref() {
+            Some(original_patchname.clone())
+        } else if !message.is_empty() {
+            Some(
+                PatchName::make(&message, patchname_len_limit)
+                    .uniquify(&allowed_patchnames, &disallow_patchnames),
+            )
         } else {
-            message
-        };
-        let new_patchname = if patchname.is_some() {
             None
-        } else {
-            patchname2
         };
-        let commit_id = repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?;
-        Ok((new_patchname, commit_id))
-    } else {
-        let diff = if matches.is_present("diff")
-            || config.get_bool("stgit.edit.verbose").unwrap_or(false)
+
+        let message = {
+            let autosign = config.get_string("stgit.autosign").ok();
+            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?
+        };
+
+        let tree_id = overlay_tree_id.unwrap_or_else(|| {
+            patch_commit
+                .expect("patch_commit or tree_id overlay is required")
+                .tree_id()
+        });
+
+        let parent_id = overlay_parent_id.unwrap_or_else(|| {
+            patch_commit
+                .expect("patch_commit or parent_id overlay is required")
+                .parent_id(0)
+                .unwrap()
+        });
+
+        let (diff, computed_diff) = if file_diff.is_some() {
+            (file_diff, None)
+        } else if need_interactive_edit
+            && (matches.is_present("diff")
+                || config.get_bool("stgit.edit.verbose").unwrap_or(false))
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
@@ -312,65 +412,109 @@ pub(crate) fn edit<'repo>(
                 stupid::update_index_refresh()?;
                 stupid::diff_index(old_tree.id())?
             };
-            DiffBuffer::from_bytes(diff_buf.as_slice())
+            let computed_diff = DiffBuffer(diff_buf);
+            (Some(computed_diff.clone()), Some(computed_diff))
         } else {
-            None
+            (None, None)
         };
 
-        let patch_description = PatchDescription {
-            patchname: patchname2,
+        let is_message_modified = || {
+            patch_commit
+                .map(|commit| commit.message_raw() != Some(message.as_str()))
+                .unwrap_or(true)
+        };
+
+        let need_commit_msg_hook =
+            !matches.is_present("no-verify") && (need_interactive_edit || is_message_modified());
+
+        let mut patch_description = PatchDescription {
+            patchname,
             author,
             message,
             diff,
         };
 
-        let patch_description = edit_interactive(patch_description, &config)?;
+        if allow_template_save && matches.is_present("save-template") {
+            let path = matches.value_of_os("save-template").unwrap().to_owned();
+            let mut stream = BufWriter::new(File::create(&path)?);
+            patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+            return Ok(EditOutcome::TemplateSaved(path));
+        }
 
         let PatchDescription {
-            patchname: new_patchname,
-            author: new_author,
-            message: new_message,
-            ..
-        } = patch_description;
+            patchname,
+            author,
+            message,
+            diff,
+        } = if need_interactive_edit {
+            let mut edited_patch_description = edit_interactive(&patch_description, &config)?;
+            if edited_patch_description.author.is_none() {
+                edited_patch_description.author = patch_description.author.take();
+            }
+            edited_patch_description
+        } else {
+            patch_description
+        };
 
-        // Patch name may be different after edit.
-        let new_patchname = if let Some(new_patchname) = new_patchname {
-            if Some(&new_patchname) == patchname {
-                None
-            } else if !stack_state.has_patch(&new_patchname) {
-                Some(new_patchname)
-            } else {
-                return Err(Error::PatchAlreadyExists(new_patchname));
+        let need_to_apply_diff =
+            allow_diff_edit && diff.is_some() && diff.as_ref() != computed_diff.as_ref();
+
+        let tree_id = if need_to_apply_diff {
+            let diff = Arc::new(diff.unwrap().0);
+
+            match repo.with_temp_index_file(|temp_index| {
+                let temp_index_path = temp_index.path().unwrap();
+                stupid::read_tree(parent_id, temp_index_path)?;
+                stupid::apply_to_index(Arc::clone(&diff), temp_index_path)?;
+                stupid::write_tree(temp_index_path)
+            }) {
+                Ok(tree_id) => tree_id,
+                Err(e) => {
+                    let diff = Arc::try_unwrap(diff)
+                        .expect("apply_to_index should have released its reference");
+                    let diff = Some(DiffBuffer(diff));
+                    let failed_description_path = ".stgit-failed.patch";
+                    let mut stream = BufWriter::new(File::create(&failed_description_path)?);
+                    let failed_patch_description = PatchDescription {
+                        patchname,
+                        author,
+                        message,
+                        diff,
+                    };
+                    failed_patch_description
+                        .write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+                    return Err(Error::Generic(format!(
+                        "Edited patch did not apply due to:\n\
+                         {e:#}\n\
+                         The patch description has been saved to `{failed_description_path}`."
+                    )));
+                }
             }
         } else {
-            let len_limit: Option<usize> = config
-                .get_i32("stgit.namelength")
-                .ok()
-                .and_then(|n| usize::try_from(n).ok());
-            let disallow_patches: Vec<&PatchName> = stack_state.all_patches().collect();
-            let allowed_patches: Vec<&PatchName> = if let Some(patchname) = patchname.as_ref() {
-                vec![patchname]
-            } else {
-                vec![]
-            };
-            Some(PatchName::make_unique(
-                &new_message,
-                len_limit,
-                true, // lowercase
-                &allowed_patches,
-                &disallow_patches,
-            ))
+            tree_id
         };
 
-        let new_message = if !matches.is_present("no-verify") {
-            crate::hook::run_commit_msg_hook(repo, new_message, false)?
+        let author = author.unwrap();
+
+        let message = if need_commit_msg_hook {
+            // TODO: Want to save patch description here too
+            crate::hook::run_commit_msg_hook(repo, message, false)?
         } else {
-            new_message
+            message
         };
 
-        let commit_id =
-            repo.commit_ex(&new_author, &committer, &new_message, tree_id, [parent_id])?;
+        let patchname = if let Some(patchname) = patchname {
+            patchname.uniquify(&allowed_patchnames, &disallow_patchnames)
+        } else {
+            PatchName::make(&message, patchname_len_limit)
+                .uniquify(&allowed_patchnames, &disallow_patchnames)
+        };
 
-        Ok((new_patchname, commit_id))
+        let commit_id = repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?;
+
+        Ok(EditOutcome::Committed {
+            patchname,
+            commit_id,
+        })
     }
 }

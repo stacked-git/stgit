@@ -102,9 +102,6 @@ pub(crate) enum Error {
     #[error("{0}")]
     MissingSignature(String),
 
-    #[error("failed to parse patch description: {0}")]
-    ParsePatchDescription(String),
-
     #[error("resolve outstanding conflicts first")]
     OutstandingConflicts,
 

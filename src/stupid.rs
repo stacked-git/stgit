@@ -3,12 +3,39 @@ use std::{
     io::Write,
     path::Path,
     process::{Command, Stdio},
+    sync::Arc,
 };
 
 use indexmap::IndexSet;
 
 use crate::error::Error;
 use crate::signature::TimeExtended;
+
+pub(crate) fn apply_to_index(diff: Arc<Vec<u8>>, index_path: &Path) -> Result<(), Error> {
+    let mut child = Command::new("git")
+        .args(["apply", "--cached"])
+        // TODO: use --recount?
+        .env("GIT_INDEX_FILE", index_path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(Error::GitExecute)?;
+
+    let mut stdin = child.stdin.take().unwrap();
+    let handle = std::thread::spawn(move || {
+        stdin
+            .write_all(diff.as_ref())
+            .expect("failed to write stdin for `git apply`");
+    });
+    let output = child.wait_with_output()?;
+    handle.join().unwrap();
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("apply", &output.stderr))
+    }
+}
 
 pub(crate) fn version() -> Result<String, Error> {
     let output = Command::new("git")

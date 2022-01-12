@@ -23,7 +23,7 @@ impl PatchName {
         self.0.len()
     }
 
-    pub(crate) fn make(raw: &str, len_limit: Option<usize>, lower: bool) -> Self {
+    pub(crate) fn make(raw: &str, len_limit: Option<usize>) -> Self {
         let default_name = "patch";
         let mut candidate: &str = default_name;
 
@@ -52,9 +52,7 @@ impl PatchName {
             }
         }
 
-        if lower {
-            name = name.to_lowercase();
-        }
+        name = name.to_lowercase();
 
         candidate = &name;
         loop {
@@ -94,33 +92,27 @@ impl PatchName {
         Self::from_str(&short_name).unwrap()
     }
 
-    pub(crate) fn make_unique<P>(
-        raw: &str,
-        len_limit: Option<usize>,
-        lower: bool,
-        allow: &[P],
-        disallow: &[P],
-    ) -> Self
+    pub(crate) fn uniquify<P>(self, allow: &[P], disallow: &[P]) -> Self
     where
         P: AsRef<PatchName>,
     {
-        let mut name = Self::make(raw, len_limit, lower);
+        let mut candidate = self;
         loop {
-            if allow.iter().any(|pn| *pn.as_ref() == name)
-                || disallow.iter().all(|pn| *pn.as_ref() != name)
+            if allow.iter().any(|pn| pn.as_ref() == &candidate)
+                || disallow.iter().all(|pn| pn.as_ref() != &candidate)
             {
-                break name;
+                break candidate;
             } else {
-                let inner = &name.0;
+                let inner = &candidate.0;
                 let base = inner.trim_end_matches(|c: char| c.is_ascii_digit());
                 let num_digits = inner.len() - base.len();
-                name = if num_digits > 0 {
+                candidate = if num_digits > 0 {
                     let digits_str = &inner[inner.len() - num_digits..];
                     let n: usize = digits_str.parse().unwrap();
                     Self(format!("{}{}", base, n + 1))
                 } else {
                     Self(format!("{}-1", base))
-                };
+                }
             }
         }
     }
@@ -275,41 +267,37 @@ mod tests {
     #[test]
     fn make_patch_names() {
         let cases = [
-            // raw, expected, len_limit, lower
-            ("hi", "hi", None, true),
-            ("Hi", "hi", None, true),
-            ("Hi", "Hi", None, false),
-            ("--!..yo..!--", "yo", None, true),
-            ("patch.Lock", "patch.Lock", None, false),
-            ("patch.Lock", "patch", None, true),
+            // raw, expected, len_limit
+            ("hi", "hi", None),
+            ("Hi", "hi", None),
+            ("--!..yo..!--", "yo", None),
+            ("patch.lock", "patch", None),
+            ("patch.Lock", "patch", None),
             (
                 ".-#.-#.-.###yo-ho.lock.lock.lock...#---...---",
                 "yo-ho",
                 None,
-                true,
             ),
-            ("alpha/beta/gamma/", "alpha-beta-gamma", None, true),
+            ("alpha/beta/gamma/", "alpha-beta-gamma", None),
             (
                 "alpha/beta/gamma/",
                 "alpha-beta",
                 Some("alpha-beta-ga".len()),
-                true,
             ),
             (
                 "@{<foo^%zle[hi](there)?,\\friend>}",
                 "foo-zle-hi-there-friend",
                 None,
-                true,
             ),
-            ("__-__", "__-__", Some(10), true),
-            ("the name", "the-name", None, true),
+            ("__-__", "__-__", Some(10)),
+            ("the name", "the-name", None),
             // Long names are only shortened at '-' word boundaries.
-            ("superlongname", "superlongname", Some(6), true),
-            ("super-longname", "super", Some(6), true),
+            ("superlongname", "superlongname", Some(6)),
+            ("super-longname", "super", Some(6)),
         ];
 
-        for (raw, expected, len_limit, lower) in cases.iter() {
-            let made = PatchName::make(raw, *len_limit, *lower);
+        for (raw, expected, len_limit) in cases.iter() {
+            let made = PatchName::make(raw, *len_limit);
             assert_eq!(&made.0, expected);
         }
     }
@@ -319,19 +307,14 @@ mod tests {
         let allow = [PatchName("allow".into())];
         let disallow = [PatchName("patch".into()), PatchName("patch-1".into())];
         let cases = [
-            // raw, expected, len_limit, lower
-            ("patch", "patch-2", None, true),
-            ("Patch1", "patch1", None, true),
+            // raw, expected, len_limit
+            ("patch", "patch-2", None),
+            ("Patch1", "patch1", None),
         ];
 
-        for (raw, expected, len_limit, lower) in cases.iter() {
-            let unique = PatchName::make_unique(
-                raw,
-                *len_limit,
-                *lower,
-                allow.as_slice(),
-                disallow.as_slice(),
-            );
+        for (raw, expected, len_limit) in cases.iter() {
+            let unique =
+                PatchName::make(raw, *len_limit).uniquify(allow.as_slice(), disallow.as_slice());
             assert_eq!(&unique.0, expected);
         }
     }

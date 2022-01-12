@@ -52,7 +52,8 @@ fn get_app() -> App<'static> {
                 .multiple_values(true)
                 .allow_invalid_utf8(true)
                 .forbid_empty_values(true)
-                .value_hint(ValueHint::AnyPath),
+                .value_hint(ValueHint::AnyPath)
+                .conflicts_with("save-template"),
         )
         .help_heading("REFRESH OPTIONS")
         .arg(
@@ -66,7 +67,8 @@ fn get_app() -> App<'static> {
                      the new patch will capture outstanding changes in the work \
                      tree as if \"stg refresh\" was run. \
                      Use \"--index\" to refresh from the index instead of the work tree.",
-                ),
+                )
+                .conflicts_with("save-template"),
         )
         .arg(
             Arg::new("index")
@@ -111,7 +113,7 @@ fn get_app() -> App<'static> {
                 .requires("refresh"),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
-    patchedit::add_args(app).arg(&*patchedit::MESSAGE_TEMPLATE_ARG)
+    patchedit::add_args(app, true)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {
@@ -136,7 +138,9 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let config = repo.config()?;
 
-    let tree_id = if matches.is_present("refresh") || matches.is_present("pathspecs") {
+    let is_refreshing = matches.is_present("refresh") || matches.is_present("pathspecs");
+
+    let tree_id = if is_refreshing {
         refresh::assemble_refresh_tree(&stack, matches, None)?
     } else {
         stack.head.tree_id()
@@ -144,23 +148,21 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let parent_id = stack.head.id();
 
-    let (new_patchname, commit_id) = patchedit::edit(
-        &stack,
-        &repo,
-        patchname.as_ref(),
-        None,
-        matches,
-        patchedit::Overlay {
-            author: Some(signature::make_author(Some(&config), matches)?),
-            message: None,
-            tree_id: Some(tree_id),
-            parent_id: Some(parent_id),
-        },
-    )?;
-
-    let patchname = new_patchname.unwrap_or_else(|| {
-        patchname.expect("patchedit::edit() must generate a patch name if it is not given one")
-    });
+    let (patchname, commit_id) = match patchedit::EditBuilder::default()
+        .allow_diff_edit(false)
+        .allow_template_save(!is_refreshing)
+        .original_patchname(patchname.as_ref())
+        .default_author(signature::make_author(Some(&config), matches)?)
+        .override_tree_id(tree_id)
+        .override_parent_id(parent_id)
+        .edit(&stack, &repo, matches)?
+    {
+        patchedit::EditOutcome::TemplateSaved(_) => return Ok(()),
+        patchedit::EditOutcome::Committed {
+            patchname,
+            commit_id,
+        } => (patchname, commit_id),
+    };
 
     if let Some(template_path) = matches.value_of_os("save-template") {
         let patch_commit = repo.find_commit(commit_id)?;
