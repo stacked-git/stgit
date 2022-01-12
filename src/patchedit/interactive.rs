@@ -3,8 +3,8 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+use super::description::PatchDescription;
 use crate::error::Error;
-use crate::patchdescription::PatchDescription;
 
 // static EDIT_INSTRUCTION: &'static str = "\
 //     # Everything here is editable! You can modify the patch name,\n\

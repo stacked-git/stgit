@@ -111,7 +111,7 @@ fn get_app() -> App<'static> {
                 .requires("refresh"),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
-    patchedit::add_args(app).arg(&*crate::message::MESSAGE_TEMPLATE_ARG)
+    patchedit::add_args(app).arg(&*patchedit::MESSAGE_TEMPLATE_ARG)
 }
 
 fn run(matches: &ArgMatches) -> super::Result {

@@ -1,15 +1,17 @@
+mod description;
+mod interactive;
+mod message;
+mod trailers;
+
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
 
-use crate::{
-    commit::CommitExtended,
-    edit::edit_interactive,
-    error::Error,
-    message::get_message_from_args,
-    patchdescription::{DiffBuffer, PatchDescription},
-    patchname::PatchName,
-    stack::StackStateAccess,
-    stupid,
+use super::{
+    commit::CommitExtended, error::Error, patchname::PatchName, stack::StackStateAccess, stupid,
 };
+use description::{DiffBuffer, PatchDescription};
+use interactive::edit_interactive;
+pub(crate) use message::MESSAGE_TEMPLATE_ARG;
+use message::{get_message_from_args, get_message_template};
 
 pub(crate) fn add_args(app: clap::App) -> clap::App {
     app.help_heading("PATCH EDIT OPTIONS")
@@ -224,7 +226,7 @@ pub(crate) fn edit<'repo>(
             .message_raw()
             .expect("existing patch should have utf-8 message")
             .to_string()
-    } else if let Some(message_template) = crate::message::get_message_template(repo)? {
+    } else if let Some(message_template) = get_message_template(repo)? {
         must_edit = true;
         message_template
     } else {
@@ -255,12 +257,8 @@ pub(crate) fn edit<'repo>(
     let message = {
         let autosign = config.get_string("stgit.autosign").ok();
         let before_message = message.clone();
-        let message = crate::trailers::add_trailers(
-            message,
-            matches,
-            &default_committer,
-            autosign.as_deref(),
-        )?;
+        let message =
+            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?;
         if before_message != message {
             is_message_modified = true;
         }

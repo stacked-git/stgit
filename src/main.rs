@@ -6,12 +6,9 @@ mod argset;
 mod cmd;
 mod color;
 mod commit;
-mod edit;
 mod error;
 mod hook;
 mod index;
-mod message;
-mod patchdescription;
 mod patchedit;
 mod patchname;
 mod patchrange;
@@ -21,7 +18,6 @@ mod signature;
 mod stack;
 mod stupid;
 mod templates;
-mod trailers;
 
 use std::{
     ffi::{OsStr, OsString},
