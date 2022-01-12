@@ -127,6 +127,39 @@ pub(crate) fn commit_tree(
     }
 }
 
+pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
+    let output = Command::new("git")
+        .args(["diff-index", "-p", "--full-index"])
+        .arg(tree_id.to_string())
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(make_cmd_err("diff-tree", &output.stderr))
+    }
+}
+
+pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<u8>, Error> {
+    let output = Command::new("git")
+        .args(["diff-tree", "-p", "--full-index"])
+        .arg(tree1.to_string())
+        .arg(tree2.to_string())
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(make_cmd_err("diff-tree", &output.stderr))
+    }
+}
+
 pub(crate) fn apply_treediff_to_index(
     tree1: git2::Oid,
     tree2: git2::Oid,
@@ -291,6 +324,22 @@ pub(crate) fn read_tree_checkout(
     } else {
         let e = String::from_utf8(output.stderr).unwrap();
         Err(Error::CheckoutConflicts(e))
+    }
+}
+
+pub(crate) fn update_index_refresh() -> Result<(), Error> {
+    let output = Command::new("git")
+        .args(["update-index", "-q", "--unmerged", "--refresh"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("update-index", &output.stderr))
     }
 }
 

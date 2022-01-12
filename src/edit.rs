@@ -19,10 +19,10 @@ static EDIT_INSTRUCTION_NEW: &str = "\
 
 static EDIT_FILE_NAME: &str = ".stgit-edit";
 
-pub(crate) fn edit_interactive<'repo>(
-    patch_desc: PatchDescription<'repo>,
+pub(crate) fn edit_interactive(
+    patch_desc: PatchDescription,
     config: &git2::Config,
-) -> Result<PatchDescription<'repo>, Error> {
+) -> Result<PatchDescription, Error> {
     {
         // TODO: file naming.
         // TODO: put file at worktree root?
@@ -32,7 +32,6 @@ pub(crate) fn edit_interactive<'repo>(
     }
 
     let buf = call_editor(EDIT_FILE_NAME, config)?;
-    let buf: &[u8] = &buf;
     let patch_desc = PatchDescription::try_from(buf)?;
     Ok(patch_desc)
 }

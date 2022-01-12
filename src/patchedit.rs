@@ -1,8 +1,14 @@
 use clap::{Arg, ArgMatches, ArgSettings, ValueHint};
 
 use crate::{
-    commit::CommitExtended, edit::edit_interactive, error::Error, message::get_message_from_args,
-    patchdescription::PatchDescription, patchname::PatchName, stack::StackStateAccess,
+    commit::CommitExtended,
+    edit::edit_interactive,
+    error::Error,
+    message::get_message_from_args,
+    patchdescription::{DiffBuffer, PatchDescription},
+    patchname::PatchName,
+    stack::StackStateAccess,
+    stupid,
 };
 
 pub(crate) fn add_args(app: clap::App) -> clap::App {
@@ -293,8 +299,8 @@ pub(crate) fn edit<'repo>(
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
-            let diff = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
-                repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?
+            let diff_buf = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
+                stupid::diff_tree_patch(old_tree.id(), new_tree.id())?
             } else {
                 // This is a special case for `stg new` without the `--refresh` option.
                 // In this case, the patch description shows the diff of changes in the
@@ -305,12 +311,10 @@ pub(crate) fn edit<'repo>(
                 // --edit and --diff), it would be better to not have this special case
                 // since in all other contexts, the patch description's diff shows the
                 // changes actually being recorded to the patch.
-                repo.diff_tree_to_workdir(
-                    Some(&old_tree),
-                    Some(git2::DiffOptions::new().enable_fast_untracked_dirs(true)),
-                )?
+                stupid::update_index_refresh()?;
+                stupid::diff_index(old_tree.id())?
             };
-            Some(diff)
+            DiffBuffer::from_bytes(diff_buf.as_slice())
         } else {
             None
         };

@@ -6,14 +6,35 @@ use crate::error::Error;
 use crate::patchname::PatchName;
 use crate::signature::{self, TimeExtended};
 
-pub(crate) struct PatchDescription<'repo> {
+pub(crate) struct DiffBuffer(Vec<u8>);
+
+impl DiffBuffer {
+    pub(crate) fn from_bytes(buf: &[u8]) -> Option<Self> {
+        let needle = b"\ndiff --git";
+        if buf.starts_with(&needle[1..]) {
+            Some(Self(buf.to_vec()))
+        } else if let Some(pos) = find(buf, needle) {
+            Some(Self(buf[pos + 1..].to_vec()))
+        } else {
+            None
+        }
+    }
+}
+
+impl AsRef<[u8]> for DiffBuffer {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
+pub(crate) struct PatchDescription {
     pub patchname: Option<PatchName>,
     pub author: git2::Signature<'static>,
     pub message: String,
-    pub diff: Option<git2::Diff<'repo>>,
+    pub diff: Option<DiffBuffer>,
 }
 
-impl<'repo> PatchDescription<'repo> {
+impl PatchDescription {
     pub(crate) fn write<S: Write>(
         &self,
         stream: &mut S,
@@ -63,50 +84,40 @@ impl<'repo> PatchDescription<'repo> {
     }
 
     fn write_diff<S: Write>(&self, stream: &mut S) -> Result<(), Error> {
-        if let Some(diff) = &self.diff {
+        if let Some(diff) = self.diff.as_ref() {
             stream.write_all(b"---\n")?;
-            diff.print(git2::DiffFormat::Patch, |_, _, line| {
-                let expectation = "failure while writing diff to stream";
-                if let sigil @ ('+' | '-' | ' ') = line.origin() {
-                    let mut buf = [0; 1];
-                    sigil.encode_utf8(&mut buf);
-                    stream.write_all(&buf).expect(expectation);
-                }
-                stream.write_all(line.content()).expect(expectation);
-                true
-            })?;
+            stream.write_all(diff.as_ref())?;
         }
         Ok(())
     }
 }
 
-impl TryFrom<&[u8]> for PatchDescription<'_> {
+impl TryFrom<Vec<u8>> for PatchDescription {
     type Error = Error;
 
-    fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buf: Vec<u8>) -> Result<Self, Self::Error> {
+        let mut buf = buf;
         let diff_marker = b"\n---\n";
-        let marker_pos = find(buf, diff_marker);
+        let marker_pos = find(&buf, diff_marker);
         let (header, diff) = if let Some(pos) = marker_pos {
-            let diff_pos = pos + diff_marker.len();
-            (
-                &buf[..pos],
-                Some(git2::Diff::from_buffer(&buf[diff_pos..])?),
-            )
+            let maybe_diff_buf = DiffBuffer::from_bytes(&buf[pos + diff_marker.len()..]);
+            buf.truncate(pos);
+            (buf, maybe_diff_buf)
         } else {
             (buf, None)
         };
-        let header = std::str::from_utf8(header).map_err(|_| Error::NonUtf8PatchDescription)?;
+        let header = String::from_utf8(header).map_err(|_| Error::NonUtf8PatchDescription)?;
 
         let mut raw_patchname: Option<String> = None;
         let mut raw_author: Option<String> = None;
         let mut raw_authdate: Option<String> = None;
         let mut consuming_message: bool = false;
         let mut consecutive_empty: usize = 0;
-        let mut message = String::with_capacity(if let Some(pos) = marker_pos {
-            pos
+        let mut message = if let Some(pos) = marker_pos {
+            String::with_capacity(pos)
         } else {
-            buf.len()
-        });
+            String::new()
+        };
 
         for line in header.split_inclusive('\n') {
             if line.starts_with('#') {
@@ -285,7 +296,7 @@ mod tests {
              # Instruction\n",
         );
 
-        let new_pd = PatchDescription::try_from(buf.as_slice()).unwrap();
+        let new_pd = PatchDescription::try_from(buf).unwrap();
 
         compare_patch_descs(&new_pd, &patch_desc);
     }
@@ -318,7 +329,7 @@ mod tests {
              # Instruction\n",
         );
 
-        let new_pd = PatchDescription::try_from(buf.as_slice()).unwrap();
+        let new_pd = PatchDescription::try_from(buf).unwrap();
 
         compare_patch_descs(&new_pd, &patch_desc);
     }
@@ -363,7 +374,7 @@ mod tests {
              # Instruction\n",
         );
 
-        let new_pd = PatchDescription::try_from(buf.as_slice()).unwrap();
+        let new_pd = PatchDescription::try_from(buf).unwrap();
 
         compare_patch_descs(&new_pd, &patch_desc);
     }
@@ -379,20 +390,18 @@ mod tests {
             )
             .unwrap(),
             message: "Subject\n".to_string(),
-            diff: Some(
-                git2::Diff::from_buffer(
-                    "diff --git a/foo.txt b/foo.txt\n\
-                 index ce01362..a21e91b 100644\n\
-                 --- a/foo.txt\n\
-                 +++ b/foo.txt\n\
-                 @@ -1 +1 @@\n\
-                 -hello\n\
-                 +goodbye\n\
-                 \\ No newline at end of file\n\
-                 "
-                    .as_bytes(),
-                )
-                .unwrap(),
+            diff: DiffBuffer::from_bytes(
+                b"\n\
+                  Some stuff before first diff --git\n\
+                  \n\
+                  diff --git a/foo.txt b/foo.txt\n\
+                  index ce01362..a21e91b 100644\n\
+                  --- a/foo.txt\n\
+                  +++ b/foo.txt\n\
+                  @@ -1 +1 @@\n\
+                  -hello\n\
+                  +goodbye\n\
+                  \\ No newline at end of file\n",
             ),
         };
 
@@ -416,11 +425,10 @@ mod tests {
              @@ -1 +1 @@\n\
              -hello\n\
              +goodbye\n\
-             \\ No newline at end of file\n\
-             ",
+             \\ No newline at end of file\n",
         );
 
-        let new_pd = PatchDescription::try_from(buf.as_slice()).unwrap();
+        let new_pd = PatchDescription::try_from(buf).unwrap();
 
         compare_patch_descs(&new_pd, &patch_desc);
     }
@@ -463,31 +471,31 @@ mod tests {
              # Instruction\n",
         );
 
-        let updated = "# These are headers\n\
-                       Patch:  patch\n\
-                       # The author signature is below\n\
-                       Author: The Author <author@example.com>\n\
-                       Date:   2001-04-19 10:25:21 +0600\n\
-                       # Next line must be blank.
-                       \n\
-                       # Subject is below\n\
-                       Subject\n\
-                       \n\
-                       Body of message.\n   # Indented: not a comment.\n\
-                       \n\
-                       # Trailer is below\n\
-                       With-a-trailer: yes\n\
-                       \n\
-                       # Instruction\n";
+        let updated = b"# These are headers\n\
+                        Patch:  patch\n\
+                        # The author signature is below\n\
+                        Author: The Author <author@example.com>\n\
+                        Date:   2001-04-19 10:25:21 +0600\n\
+                        # Next line must be blank.\n\
+                        \n\
+                        # Subject is below\n\
+                        Subject\n\
+                        \n\
+                        Body of message.\n   # Indented: not a comment.\n\
+                        \n\
+                        # Trailer is below\n\
+                        With-a-trailer: yes\n\
+                        \n\
+                        # Instruction\n";
 
-        let new_pd = PatchDescription::try_from(updated.as_bytes()).unwrap();
+        let new_pd = PatchDescription::try_from(updated.to_vec()).unwrap();
 
         compare_patch_descs(&new_pd, &patch_desc);
     }
 
     #[test]
     fn missing_patch_header() {
-        let description = "\
+        let description = b"\
         # Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
@@ -496,12 +504,12 @@ mod tests {
         \n\
         # Instruction\n";
 
-        assert!(PatchDescription::try_from(description.as_bytes()).is_err());
+        assert!(PatchDescription::try_from(description.to_vec()).is_err());
     }
 
     #[test]
     fn missing_date_header() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         # Date:   2001-04-19 10:25:21 +0600\n\
@@ -510,12 +518,12 @@ mod tests {
         \n\
         # Instruction\n";
 
-        assert!(PatchDescription::try_from(description.as_bytes()).is_err());
+        assert!(PatchDescription::try_from(description.to_vec()).is_err());
     }
 
     #[test]
     fn extra_header() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Extra:  nope\n\
         Author: The Author <author@example.com>\n\
@@ -525,12 +533,12 @@ mod tests {
         \n\
         # Instruction\n";
 
-        assert!(PatchDescription::try_from(description.as_bytes()).is_err());
+        assert!(PatchDescription::try_from(description.to_vec()).is_err());
     }
 
     #[test]
     fn invalid_date() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001/04/19 10:25:21 +0600\n\
@@ -539,12 +547,12 @@ mod tests {
         \n\
         # Instruction\n";
 
-        assert!(PatchDescription::try_from(description.as_bytes()).is_err());
+        assert!(PatchDescription::try_from(description.to_vec()).is_err());
     }
 
     #[test]
     fn no_blank_before_message() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
@@ -552,13 +560,13 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
+        let pd = PatchDescription::try_from(description.to_vec()).unwrap();
         assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
     fn extra_blanks_before_message() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
@@ -569,14 +577,14 @@ mod tests {
         \n\
         # Instruction\n";
 
-        let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
+        let pd = PatchDescription::try_from(description.to_vec()).unwrap();
 
         assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
     fn no_blank_before_end() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
@@ -584,28 +592,28 @@ mod tests {
         Subject\n\
         # Instruction\n";
 
-        let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
+        let pd = PatchDescription::try_from(description.to_vec()).unwrap();
 
         assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
     fn no_eol_message() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
         \n\
         Subject";
 
-        let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
+        let pd = PatchDescription::try_from(description.to_vec()).unwrap();
 
         assert_eq!(pd.message, "Subject\n");
     }
 
     #[test]
     fn extra_blanks_in_message() {
-        let description = "\
+        let description = b"\
         Patch:  patch\n\
         Author: The Author <author@example.com>\n\
         Date:   2001-04-19 10:25:21 +0600\n\
@@ -623,7 +631,7 @@ mod tests {
         # Instruction\n\
         \n";
 
-        let pd = PatchDescription::try_from(description.as_bytes()).unwrap();
+        let pd = PatchDescription::try_from(description.to_vec()).unwrap();
 
         assert_eq!(
             pd.message,
