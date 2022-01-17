@@ -5,6 +5,8 @@ use std::{
     process::{Command, Stdio},
 };
 
+use indexmap::IndexSet;
+
 use crate::error::Error;
 use crate::signature::TimeExtended;
 
@@ -166,6 +168,7 @@ pub(crate) fn merge_recursive_or_mergetool(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
+    worktree: &Path,
     index_path: &Path, // TODO: does this matter?
     use_mergetool: bool,
 ) -> Result<Vec<OsString>, Error> {
@@ -174,7 +177,7 @@ pub(crate) fn merge_recursive_or_mergetool(
     } else if use_mergetool {
         mergetool(index_path)?;
     }
-    ls_files_unmerged(index_path)
+    ls_files_unmerged(worktree, index_path)
 }
 
 pub(crate) fn merge_recursive(
@@ -226,9 +229,13 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
     }
 }
 
-pub(crate) fn ls_files_unmerged(index_path: &Path) -> Result<Vec<OsString>, Error> {
+pub(crate) fn ls_files_unmerged(
+    worktree: &Path,
+    index_path: &Path,
+) -> Result<Vec<OsString>, Error> {
     let output = Command::new("git")
         .args(["ls-files", "--unmerged", "-z"])
+        .current_dir(worktree)
         .env("GIT_INDEX_FILE", index_path)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -236,11 +243,12 @@ pub(crate) fn ls_files_unmerged(index_path: &Path) -> Result<Vec<OsString>, Erro
         .output()
         .map_err(Error::GitExecute)?;
     if output.status.success() {
-        Ok(output
+        let mut conflicts: IndexSet<OsString> = output
             .stdout
             .split(|&c| c == b'\0')
             .filter_map(|line| line.split(|&c| c == b'\t').nth(1).map(osstring_from_bytes))
-            .collect())
+            .collect();
+        Ok(conflicts.drain(..).collect())
     } else {
         Err(make_cmd_err("ls-files --unmerged", &output.stderr))
     }

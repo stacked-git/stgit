@@ -680,6 +680,7 @@ impl<'repo> StackTransaction<'repo> {
                     base,
                     ours,
                     theirs,
+                    repo.workdir().unwrap(),
                     default_index_path,
                     use_mergetool,
                 ) {
