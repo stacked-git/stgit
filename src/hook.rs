@@ -1,6 +1,6 @@
 use std::{io::Write, path::PathBuf};
 
-use crate::error::Error;
+use crate::{commit::CommitMessage, error::Error};
 
 fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
     let hooks_path = if let Ok(config) = repo.config() {
@@ -65,11 +65,11 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
     }
 }
 
-pub(crate) fn run_commit_msg_hook(
+pub(crate) fn run_commit_msg_hook<'repo>(
     repo: &git2::Repository,
-    message: String,
+    message: CommitMessage<'repo>,
     editor_is_used: bool,
-) -> Result<String, Error> {
+) -> Result<CommitMessage<'repo>, Error> {
     let hook_name = "commit-msg";
     let hook_path = get_hook_path(repo, hook_name);
     let hook_meta = match std::fs::metadata(&hook_path) {
@@ -90,7 +90,7 @@ pub(crate) fn run_commit_msg_hook(
     }
 
     let mut msg_file = tempfile::NamedTempFile::new()?;
-    msg_file.write_all(message.as_bytes())?;
+    msg_file.write_all(message.raw_bytes())?;
     let msg_file_path = msg_file.into_temp_path();
 
     let index = repo.index()?;
@@ -112,14 +112,16 @@ pub(crate) fn run_commit_msg_hook(
 
     if status.success() {
         let message_bytes = std::fs::read(&msg_file_path)?;
-        let message = String::from_utf8(message_bytes).map_err(|_| {
-            Error::Hook(
-                hook_name.to_string(),
-                "message is not valid UTF-8".to_string(),
-            )
-        })?;
-
-        Ok(message)
+        let encoding = message.encoding()?;
+        let message = encoding
+            .decode_without_bom_handling_and_without_replacement(&message_bytes)
+            .ok_or_else(|| {
+                Error::Hook(
+                    hook_name.to_string(),
+                    format!("message could not be decoded with `{}`", encoding.name()),
+                )
+            })?;
+        Ok(CommitMessage::from(message.to_string()))
     } else {
         Err(Error::Hook(
             hook_name.to_string(),

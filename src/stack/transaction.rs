@@ -6,7 +6,7 @@ use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
-use crate::commit::CommitExtended;
+use crate::commit::{CommitExtended, CommitMessageExtended};
 use crate::error::{repo_state_to_str, Error};
 use crate::index::TemporaryIndex;
 use crate::patchname::PatchName;
@@ -338,14 +338,12 @@ impl<'repo> StackTransaction<'repo> {
 
         let push_status = if patch_commit.parent_id(0)? != self.top().id() {
             let default_committer = signature::default_committer(Some(&config))?;
-            let message = patch_commit
-                .message_raw()
-                .ok_or_else(|| Error::NonUtf8Message(patchname.to_string()))?;
+            let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
             let new_commit_id = self.stack.repo.commit_ex(
                 &patch_commit.author(),
                 &default_committer,
-                message,
+                &message,
                 patch_commit.tree_id(),
                 parent_ids,
             )?;
@@ -724,9 +722,7 @@ impl<'repo> StackTransaction<'repo> {
             let commit_id = repo.commit_ex(
                 &patch_commit.author(),
                 &default_committer,
-                patch_commit
-                    .message_raw()
-                    .expect("patch message must be utf8"),
+                &patch_commit.message_ex(),
                 new_tree_id,
                 [new_parent.id()],
             )?;

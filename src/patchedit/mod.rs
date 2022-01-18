@@ -6,7 +6,10 @@ use std::{ffi::OsString, fs::File, io::BufWriter};
 
 use clap::{Arg, ArgMatches, ValueHint};
 
-use crate::index::TemporaryIndex;
+use crate::{
+    commit::{CommitMessage, CommitMessageExtended},
+    index::TemporaryIndex,
+};
 
 use super::{
     commit::CommitExtended, error::Error, patchname::PatchName, stack::StackStateAccess, stupid,
@@ -349,25 +352,21 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 .any(|&arg| matches.is_present(arg)));
 
         let message = if matches.is_present("file") {
-            file_message
+            CommitMessage::from(file_message)
         } else if let Some(args_message) = matches.value_of("message") {
-            git2::message_prettify(args_message, None)?
+            CommitMessage::from(git2::message_prettify(args_message, None)?)
         } else if let Some(overlay_message) = overlay_message {
-            overlay_message
+            CommitMessage::from(overlay_message)
         } else if let Some(patch_commit) = patch_commit {
-            let patch_commit_message = patch_commit
-                .message_raw()
-                .expect("existing patch should have utf-8 message")
-                .to_string();
-            patch_commit_message
+            patch_commit.message_ex()
         } else if let Some(message_template) =
             crate::templates::get_template(repo, "patchdescr.tmpl")?
         {
             need_interactive_edit = true;
-            message_template
+            CommitMessage::from(message_template)
         } else {
             need_interactive_edit = true;
-            "".to_string()
+            CommitMessage::default()
         };
 
         let patchname_len_limit: Option<usize> = config
@@ -388,7 +387,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             Some(original_patchname.clone())
         } else if !message.is_empty() {
             Some(
-                PatchName::make(&message, patchname_len_limit)
+                PatchName::make(&message.decode()?, patchname_len_limit)
                     .uniquify(&allowed_patchnames, &disallow_patchnames),
             )
         } else {
@@ -397,21 +396,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let message = {
             let autosign = config.get_string("stgit.autosign").ok();
-            match trailers::add_trailers(
-                &message,
-                matches,
-                &default_committer,
-                autosign.as_deref(),
-            )? {
-                Some(message_bytes) => String::from_utf8(message_bytes).map_err(|_| {
-                    Error::NonUtf8Message(
-                        patchname
-                            .as_ref()
-                            .map_or_else(|| "<undetermined>".to_string(), |pn| pn.to_string()),
-                    )
-                })?,
-                None => message,
-            }
+            // N.B. add_trailers needs to operate on utf-8 data. The user providing
+            // trailer-altering options (e.g. --review) will force the message to be
+            // decoded. In such cases the returned message will wrap a utf-8 String.
+            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?
         };
 
         let tree_id = overlay_tree_id.unwrap_or_else(|| {
@@ -458,40 +446,50 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let is_message_modified = || {
             patch_commit
-                .map(|commit| commit.message_raw() != Some(message.as_str()))
+                .map(|commit| commit.message_raw_bytes() != message.raw_bytes())
                 .unwrap_or(true)
         };
 
         let need_commit_msg_hook =
             !matches.is_present("no-verify") && (need_interactive_edit || is_message_modified());
 
-        let mut patch_description = PatchDescription {
-            patchname,
-            author,
-            message,
-            diff,
-        };
-
         if allow_template_save && matches.is_present("save-template") {
+            let message = message.decode()?.to_string();
+            let patch_description = PatchDescription {
+                patchname,
+                author,
+                message,
+                diff,
+            };
             let path = matches.value_of_os("save-template").unwrap().to_owned();
             let mut stream = BufWriter::new(File::create(&path)?);
             patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
             return Ok(EditOutcome::TemplateSaved(path));
         }
 
-        let PatchDescription {
-            patchname,
-            author,
-            message,
-            diff,
-        } = if need_interactive_edit {
-            let mut edited_patch_description = edit_interactive(&patch_description, &config)?;
-            if edited_patch_description.author.is_none() {
-                edited_patch_description.author = patch_description.author.take();
-            }
-            edited_patch_description
+        let (patchname, author, message, diff) = if need_interactive_edit {
+            let mut patch_description = PatchDescription {
+                patchname,
+                author,
+                message: message.decode()?.to_string(),
+                diff,
+            };
+
+            let PatchDescription {
+                patchname: edited_patchname,
+                author: edited_author,
+                message: edited_message,
+                diff: edited_diff,
+            } = edit_interactive(&patch_description, &config)?;
+
+            (
+                edited_patchname,
+                edited_author.or_else(|| patch_description.author.take()),
+                CommitMessage::from(edited_message),
+                edited_diff,
+            )
         } else {
-            patch_description
+            (patchname, author, message, diff)
         };
 
         let need_to_apply_diff =
@@ -514,7 +512,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     let failed_patch_description = PatchDescription {
                         patchname,
                         author,
-                        message,
+                        message: message.decode()?.to_string(),
                         diff,
                     };
                     failed_patch_description
@@ -542,7 +540,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let patchname = if let Some(patchname) = patchname {
             patchname.uniquify(&allowed_patchnames, &disallow_patchnames)
         } else {
-            PatchName::make(&message, patchname_len_limit)
+            PatchName::make(&message.decode()?, patchname_len_limit)
                 .uniquify(&allowed_patchnames, &disallow_patchnames)
         };
 

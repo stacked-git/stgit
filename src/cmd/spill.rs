@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
-    commit::CommitExtended,
+    commit::{CommitExtended, CommitMessageExtended},
     error::Error,
     index::TemporaryIndex,
     stack::{ConflictMode, Stack, StackStateAccess},
@@ -99,7 +99,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let new_commit_id = repo.commit_ex(
         &patch_commit.author(),
         &patch_commit.committer(),
-        patch_commit.message_raw().unwrap(),
+        &patch_commit.message_ex(),
         tree_id,
         patch_commit.parent_ids(),
     )?;

@@ -8,7 +8,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use indexmap::IndexSet;
 
 use crate::{
-    commit::CommitExtended,
+    commit::{CommitExtended, CommitMessage},
     error::Error,
     hook::run_pre_commit_hook,
     index::TemporaryIndex,
@@ -174,7 +174,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let temp_commit_id = stack.repo.commit_ex(
         &patch_commit.author(),
         &patch_commit.committer(),
-        &format!("Refresh of {}", &patchname),
+        &CommitMessage::from(format!("Refresh of {}", &patchname)),
         tree_id,
         [stack.head().id()],
     )?;
