@@ -2,7 +2,7 @@ mod description;
 mod interactive;
 mod trailers;
 
-use std::{ffi::OsString, fs::File, io::BufWriter, sync::Arc};
+use std::{ffi::OsString, fs::File, io::BufWriter};
 
 use clap::{Arg, ArgMatches, ValueHint};
 
@@ -373,7 +373,21 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let message = {
             let autosign = config.get_string("stgit.autosign").ok();
-            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?
+            match trailers::add_trailers(
+                &message,
+                matches,
+                &default_committer,
+                autosign.as_deref(),
+            )? {
+                Some(message_bytes) => String::from_utf8(message_bytes).map_err(|_| {
+                    Error::NonUtf8Message(
+                        patchname
+                            .as_ref()
+                            .map_or_else(|| "<undetermined>".to_string(), |pn| pn.to_string()),
+                    )
+                })?,
+                None => message,
+            }
         };
 
         let tree_id = overlay_tree_id.unwrap_or_else(|| {
@@ -460,18 +474,16 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             allow_diff_edit && diff.is_some() && diff.as_ref() != computed_diff.as_ref();
 
         let tree_id = if need_to_apply_diff {
-            let diff = Arc::new(diff.unwrap().0);
+            let diff = diff.unwrap().0;
 
             match repo.with_temp_index_file(|temp_index| {
                 let temp_index_path = temp_index.path().unwrap();
                 stupid::read_tree(parent_id, temp_index_path)?;
-                stupid::apply_to_index(Arc::clone(&diff), temp_index_path)?;
+                stupid::apply_to_index(&diff, temp_index_path)?;
                 stupid::write_tree(temp_index_path)
             }) {
                 Ok(tree_id) => tree_id,
                 Err(e) => {
-                    let diff = Arc::try_unwrap(diff)
-                        .expect("apply_to_index should have released its reference");
                     let diff = Some(DiffBuffer(diff));
                     let failed_description_path = ".stgit-failed.patch";
                     let mut stream = BufWriter::new(File::create(&failed_description_path)?);

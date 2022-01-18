@@ -2,8 +2,7 @@ use std::{
     ffi::{OsStr, OsString},
     io::Write,
     path::Path,
-    process::{Command, Stdio},
-    sync::Arc,
+    process::{Child, Command, Output, Stdio},
 };
 
 use indexmap::IndexSet;
@@ -11,8 +10,8 @@ use indexmap::IndexSet;
 use crate::error::Error;
 use crate::signature::TimeExtended;
 
-pub(crate) fn apply_to_index(diff: Arc<Vec<u8>>, index_path: &Path) -> Result<(), Error> {
-    let mut child = Command::new("git")
+pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error> {
+    let child = Command::new("git")
         .args(["apply", "--cached"])
         // TODO: use --recount?
         .env("GIT_INDEX_FILE", index_path)
@@ -21,15 +20,7 @@ pub(crate) fn apply_to_index(diff: Arc<Vec<u8>>, index_path: &Path) -> Result<()
         .stderr(Stdio::piped())
         .spawn()
         .map_err(Error::GitExecute)?;
-
-    let mut stdin = child.stdin.take().unwrap();
-    let handle = std::thread::spawn(move || {
-        stdin
-            .write_all(diff.as_ref())
-            .expect("failed to write stdin for `git apply`");
-    });
-    let output = child.wait_with_output()?;
-    handle.join().unwrap();
+    let output = in_and_out(child, diff)?;
     if output.status.success() {
         Ok(())
     } else {
@@ -388,10 +379,10 @@ pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
 }
 
 pub(crate) fn interpret_trailers<'a>(
-    message: String,
+    message: &[u8],
     trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
-) -> Result<String, Error> {
-    let mut child = Command::new("git")
+) -> Result<Vec<u8>, Error> {
+    let child = Command::new("git")
         .arg("interpret-trailers")
         .args(
             trailers
@@ -403,16 +394,8 @@ pub(crate) fn interpret_trailers<'a>(
         .spawn()
         .map_err(Error::GitExecute)?;
 
-    let mut stdin = child.stdin.take().unwrap();
-    std::thread::spawn(move || {
-        stdin
-            .write_all(message.as_bytes())
-            .expect("failed to write stdin for `git interpret-trailers`");
-    });
-
-    let output = child.wait_with_output()?;
-    let message = unsafe { String::from_utf8_unchecked(output.stdout) };
-    Ok(message)
+    let output = in_and_out(child, message)?;
+    Ok(output.stdout)
 }
 
 fn make_cmd_err(command_name: &str, stderr: &[u8]) -> Error {
@@ -425,6 +408,40 @@ fn parse_oid(output: &[u8]) -> Result<git2::Oid, Error> {
         .expect("object name must be utf8")
         .trim_end(); // Trim trailing newline
     Ok(git2::Oid::from_str(oid_hex)?)
+}
+
+/// Write input to child process and gather its output.
+///
+/// The input data is written from a separate thread to avoid potential
+/// deadlock that can occur if the child process's input buffer is filled
+/// without concurrently reading from the child's stdout and stderr.
+fn in_and_out(mut child: Child, input: &[u8]) -> Result<Output, Error> {
+    struct SendSlice(*const u8, usize);
+    impl SendSlice {
+        fn from(slice: &[u8]) -> Self {
+            Self(slice.as_ptr(), slice.len())
+        }
+
+        unsafe fn take<'a>(self) -> &'a [u8] {
+            let SendSlice(ptr, len) = self;
+            std::slice::from_raw_parts(ptr, len)
+        }
+    }
+    unsafe impl Send for SendSlice {}
+    unsafe impl Sync for SendSlice {}
+
+    let send_input = SendSlice::from(input);
+    let mut stdin = child.stdin.take().unwrap();
+    let handle = std::thread::spawn(move || {
+        // Safety: the input slice will not outlive the thread because
+        // the thread is joined before this function returns.
+        let input = unsafe { send_input.take() };
+        stdin.write_all(input).unwrap();
+    });
+    let output_result = child.wait_with_output();
+    handle.join().unwrap();
+    let output = output_result?;
+    Ok(output)
 }
 
 #[cfg(unix)]

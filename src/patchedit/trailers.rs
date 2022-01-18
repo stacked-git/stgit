@@ -3,11 +3,11 @@ use clap::ArgMatches;
 use crate::{error::Error, stupid};
 
 pub(crate) fn add_trailers(
-    message: String,
+    message: &str,
     matches: &ArgMatches,
     signature: &git2::Signature,
     autosign: Option<&str>,
-) -> Result<String, Error> {
+) -> Result<Option<Vec<u8>>, Error> {
     // TODO: return cow str?
     let mut trailers: Vec<(&str, &str)> = vec![];
 
@@ -52,8 +52,9 @@ pub(crate) fn add_trailers(
     }
 
     if trailers.is_empty() {
-        Ok(message)
+        Ok(None)
     } else {
-        stupid::interpret_trailers(message, trailers)
+        let message = stupid::interpret_trailers(message.as_bytes(), trailers)?;
+        Ok(Some(message))
     }
 }
