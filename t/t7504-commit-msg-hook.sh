@@ -6,6 +6,14 @@ test_description='commit-msg hook'
 
 stg init
 
+commit_msg_is () {
+    test "$(git log --pretty=format:%s%b -1)" = "$1"
+}
+
+top_is () {
+    test "$(stg top)" = "$1"
+}
+
 # set up fake editor for interactive editing
 write_script fake-editor <<'EOF'
 cp FAKE_MSG "$1"
@@ -13,8 +21,9 @@ exit 0
 EOF
 
 write_script fake-editor2 <<'EOF'
-cat "$1" | sed "s/REPLACE/$(cat FAKE_MSG)/" > "$1.tmp" &&
-mv "$1.tmp" "$1"
+cat "$1" | head -n 4 > "$1.tmp" &&
+cat FAKE_MSG >> "$1.tmp" &&
+cp "$1.tmp" "$1"
 exit 0
 EOF
 
@@ -26,12 +35,21 @@ FAKE_EDITOR2="$(pwd)/fake-editor2"
 export FAKE_EDITOR2
 
 test_expect_success 'new --no-verify with no hook' '
-    stg new --no-verify -m "bar" new-nv-no-hook
+    stg new --no-verify -m "bar" new-nv-no-hook &&
+    commit_msg_is "bar"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'new --no-verify with no hook (editor)' '
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg new --no-verify new-nv-no-hook-edit
+    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg new --no-verify new-nv-no-hook-edit &&
+    commit_msg_is ""
 '
+else
+test_expect_success 'new --no-verify with no hook (editor)' '
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify new-nv-no-hook-edit &&
+    commit_msg_is ""
+'
+fi
 
 # now install hook
 HOOKDIR="$(git rev-parse --git-dir)/hooks"
@@ -42,39 +60,57 @@ exit 0
 EOF
 
 test_expect_success 'new with succeeding hook' '
-    stg new -m "more" more
+    stg new -m "more" more &&
+    commit_msg_is "more"
 '
 
 test_expect_success 'edit with succeeding hook' '
-    stg edit -m "mmore" more
+    stg edit -m "mmore" more &&
+    commit_msg_is "mmore"
 '
 
 test_expect_success 'refresh with succeeding hook' '
     echo "more" >> file &&
     git add file &&
-    stg refresh -m "mmmore"
+    stg refresh -m "mmmore" &&
+    commit_msg_is "mmmore"
 '
 
 test_expect_success 'squash with succeeding hook' '
-    stg squash -n more -m "mmmmore" new-nv-no-hook-edit more
+    stg squash -n more -m "mmmmore" new-nv-no-hook-edit more &&
+    commit_msg_is "mmmmore" &&
+    top_is more
 '
 
 if test -z "$STG_RUST"; then
 test_expect_success 'new with succeeding hook (editor)' '
     echo "more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg new more-more
+    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg new more-more &&
+    commit_msg_is "more more"
 '
 else
 test_expect_success 'new with succeeding hook (editor)' '
     echo "more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new more-more -m REPLACE -e
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new more-more &&
+    top_is more-more &&
+    commit_msg_is "more more"
 '
 fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit with succeeding hook (editor)' '
     echo "mmore more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit more-more
+    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit more-more &&
+    commit_msg_is "mmore more"
 '
+else
+test_expect_success 'edit with succeeding hook (editor)' '
+    echo "mmore more" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg edit more-more &&
+    top_is more-more &&
+    commit_msg_is "mmore more"
+'
+fi
 
 if test -z "$STG_RUST"; then
 test_expect_success 'refresh with succeeding hook (editor)' '
@@ -88,7 +124,7 @@ else
 test_expect_success 'refresh with succeeding hook (editor)' '
     echo "more more more" >> file &&
     echo "more more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e &&
     git diff-files --quiet &&
     git diff-index --quiet HEAD
 '
@@ -100,20 +136,24 @@ test_expect_success 'squash with succeeding hook (editor)' '
 '
 
 test_expect_success 'new --no-verify with succeeding hook' '
-    stg new --no-verify -m "even more" even-more
+    stg new --no-verify -m "even more" even-more &&
+    top_is even-more
 '
 
 test_expect_success 'edit --no-verify with succeeding hook' '
-    stg edit --no-verify -m "even mmore"
+    stg edit --no-verify -m "even mmore" &&
+    top_is even-more
 '
 
 test_expect_success 'refresh --no-verify with succeeding hook' '
     echo "even more" >> file &&
-    stg refresh --no-verify -m "even mmmore"
+    stg refresh --no-verify -m "even mmmore" &&
+    top_is even-more
 '
 
 test_expect_success 'squash --no-verify with succeeding hook' '
-    stg squash --no-verify -m "even mmmmore" -n e-m more-more even-more
+    stg squash --no-verify -m "even mmmmore" -n e-m more-more even-more &&
+    top_is e-m
 '
 
 if test -z "$STG_RUST"; then
@@ -124,14 +164,24 @@ test_expect_success 'new --no-verify with succeeding hook (editor)' '
 else
 test_expect_success 'new --no-verify with succeeding hook (editor)' '
     echo "even more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify -m REPLACE -e e-m-m
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify e-m-m &&
+    top_is e-m-m &&
+    commit_msg_is "even more more"
 '
 fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit --no-verify with succeeding hook (editor)' '
     echo "even mmore more" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit --no-verify
 '
+else
+test_expect_success 'edit --no-verify with succeeding hook (editor)' '
+    echo "even mmore more" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg edit --no-verify &&
+    commit_msg_is "even mmore more"
+'
+fi
 
 if test -z "$STG_RUST"; then
 test_expect_success 'refresh --no-verify with succeeding hook (editor)' '
@@ -143,7 +193,9 @@ else
 test_expect_success 'refresh --no-verify with succeeding hook (editor)' '
     echo "even more more" >> file &&
     echo "even mmore mmore" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify &&
+    top_is e-m-m &&
+    commit_msg_is "even mmore mmore"
 '
 fi
 
@@ -165,10 +217,17 @@ test_expect_success 'edit with failing hook' '
     command_error stg edit -m "another"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit --diff with failing hook' '
     command_error stg edit --diff -m "another" 2>err &&
     grep -e "The commit-msg hook failed" err
 '
+else
+test_expect_success 'edit --diff with failing hook' '
+    command_error stg edit --diff -m "another" 2>err &&
+    grep -e "error: \`commit-msg\` hook: returned 1" err
+'
+fi
 
 test_expect_success 'refresh with failing hook' '
     command_error stg refresh -m "another" &&
@@ -179,15 +238,31 @@ test_expect_success 'squash with failing hook' '
     command_error stg squash -m "another" -n another new-nv-no-hook mo
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'new with failing hook (editor)' '
     echo "more another" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" command_error stg new more-another
 '
+else
+test_expect_success 'new with failing hook (editor)' '
+    echo "more another" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" command_error stg new more-another &&
+    top_is mo &&
+    commit_msg_is "even more more"
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit with failing hook (editor)' '
     echo "more another" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" command_error stg edit
 '
+else
+test_expect_success 'edit with failing hook (editor)' '
+    echo "more another" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" command_error stg edit
+'
+fi
 
 if test -z "$STG_RUST"; then
 test_expect_success 'refresh with failing hook (editor)' '
@@ -200,7 +275,7 @@ else
 test_expect_success 'refresh with failing hook (editor)' '
     echo "more another" >> file &&
     echo "more another" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" command_error stg refresh -e -m REPLACE &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" command_error stg refresh -e &&
     stg delete refresh-temp
 '
 fi
@@ -235,14 +310,25 @@ test_expect_success 'new --no-verify with failing hook (editor)' '
 else
 test_expect_success 'new --no-verify with failing hook (editor)' '
     echo "more stuff" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg new --no-verify -m "" m-s
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify m-s &&
+    top_is m-s &&
+    commit_msg_is "more stuff"
 '
 fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit --no-verify with failing hook (editor)' '
     echo "mmore stuff" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit --no-verify m-s
 '
+else
+test_expect_success 'edit --no-verify with failing hook (editor)' '
+    echo "mmore stuff" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg edit --no-verify m-s &&
+    top_is m-s &&
+    commit_msg_is "mmore stuff"
+'
+fi
 
 if test -z "$STG_RUST"; then
 test_expect_success 'refresh --no-verify with failing hook (editor)' '
@@ -254,7 +340,9 @@ else
 test_expect_success 'refresh --no-verify with failing hook (editor)' '
     echo "more stuff" >> file &&
     echo "mmmore stuff" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify &&
+    top_is m-s &&
+    commit_msg_is "mmmore stuff"
 '
 fi
 
@@ -279,7 +367,8 @@ else
 test_expect_success 'refresh with non-executable hook (editor)' '
     echo "content again" >> file &&
     echo "content again" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e &&
+    commit_msg_is "content again"
 '
 fi
 
@@ -298,7 +387,8 @@ else
 test_expect_success 'refresh --no-verify with non-executable hook (editor)' '
     echo "even more content" >> file &&
     echo "even more content" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify &&
+    commit_msg_is "even more content"
 '
 fi
 
@@ -307,10 +397,6 @@ write_script "$HOOK" <<'EOF'
 echo "new message" > "$1"
 exit 0
 EOF
-
-commit_msg_is () {
-    test "$(git log --pretty=format:%s%b -1)" = "$1"
-}
 
 test_expect_success 'new hook edits commit message' '
     stg new -m "additional" additional &&
@@ -331,7 +417,7 @@ test_expect_success 'new hook edits commit message (editor)' '
 else
 test_expect_success 'new hook edits commit message (editor)' '
     echo "additional content" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new -e -m REPLACE additional-content &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new additional-content &&
     commit_msg_is "new message"
 '
 fi
@@ -345,7 +431,7 @@ test_expect_success "new hook doesn't edit commit message (editor)" '
 else
 test_expect_success "new hook doesn't edit commit message (editor)" '
     echo "more plus" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify -m REPLACE -e more-plus &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg new --no-verify more-plus &&
     commit_msg_is "more plus"
 '
 fi
@@ -360,17 +446,33 @@ test_expect_success "edit hook doesn't edit commit message" '
     commit_msg_is "plus"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'edit hook edits commit message (editor)' '
     echo "additional content" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit &&
     commit_msg_is "new message"
 '
+else
+test_expect_success 'edit hook edits commit message (editor)' '
+    echo "additional content" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg edit &&
+    commit_msg_is "new message"
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success "edit hook doesn't edit commit message (editor)" '
     echo "more plus" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit --no-verify &&
     commit_msg_is "more plus"
 '
+else
+test_expect_success "edit hook doesn't edit commit message (editor)" '
+    echo "more plus" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg edit --no-verify &&
+    commit_msg_is "more plus"
+'
+fi
 
 test_expect_success 'refresh hook edits commit message' '
     echo "additional" >> file &&
@@ -395,7 +497,7 @@ else
 test_expect_success 'refresh hook edits commit message (editor)' '
     echo "additional content" >> file &&
     echo "additional content" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e &&
     commit_msg_is "new message"
 '
 fi
@@ -411,7 +513,7 @@ else
 test_expect_success "refresh hook doesn't edit commit message (editor)" '
     echo "more plus" >> file &&
     echo "more plus" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify &&
     commit_msg_is "more plus"
 '
 fi
