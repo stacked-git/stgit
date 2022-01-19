@@ -274,7 +274,11 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn update_top(&mut self, commit_id: Oid) -> Result<(), Error> {
+    pub(crate) fn update_top(
+        &mut self,
+        commit_id: Oid,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
         let top_patchname = self
             .applied
             .last()
@@ -282,6 +286,7 @@ impl<'repo> StackTransaction<'repo> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         self.patch_updates
             .insert(top_patchname.clone(), Some(PatchState { commit }));
+        self.print_updated(top_patchname, stdout)?;
         Ok(())
     }
 
@@ -289,10 +294,12 @@ impl<'repo> StackTransaction<'repo> {
         &mut self,
         patchname: &PatchName,
         commit_id: Oid,
+        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
+        self.print_updated(patchname, stdout)?;
         Ok(())
     }
 
@@ -948,6 +955,32 @@ impl<'repo> StackTransaction<'repo> {
         };
 
         writeln!(stdout, "{}", status_str)?;
+        Ok(())
+    }
+
+    fn print_updated(
+        &self,
+        patchname: &PatchName,
+        stdout: &mut termcolor::StandardStream,
+    ) -> Result<(), Error> {
+        let (is_applied, is_top) =
+            if let Some(pos) = self.applied().iter().position(|pn| pn == patchname) {
+                (true, pos + 1 == self.applied.len())
+            } else {
+                (false, false)
+            };
+        let mut color_spec = termcolor::ColorSpec::new();
+        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
+        write!(stdout, "& ")?;
+        color_spec.clear();
+        stdout.set_color(
+            color_spec
+                .set_bold(is_top)
+                .set_intense(is_applied && !is_top)
+                .set_dimmed(!is_applied),
+        )?;
+        writeln!(stdout, "{}", patchname)?;
+        stdout.reset()?;
         Ok(())
     }
 }

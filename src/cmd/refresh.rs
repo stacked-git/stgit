@@ -247,7 +247,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
                 trans.delete_patches(|pn| pn == &temp_patchname, &mut stdout)?;
                 assert_eq!(Some(&patchname), trans.applied().last());
-                trans.update_top(commit_id)?;
+                trans.update_top(commit_id, &mut stdout)?;
                 if new_patchname != patchname {
                     trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
                     log_msg.push_str(new_patchname.as_ref());
@@ -305,7 +305,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                         }
                     };
 
-                    trans.update_patch(&patchname, commit_id)?;
+                    trans.update_patch(&patchname, commit_id, &mut stdout)?;
                     if new_patchname != patchname {
                         trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
                         log_msg.push_str(new_patchname.as_ref());

@@ -146,7 +146,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                             // TODO: log stack state here?
                         }
 
-                        trans.update_patch(&new_patchname, commit_id)?;
+                        trans.update_patch(&new_patchname, commit_id, &mut stdout)?;
 
                         if matches.is_present("set-tree") {
                             trans.push_tree_patches(&popped, &mut stdout)?;

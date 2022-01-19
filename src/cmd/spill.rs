@@ -109,6 +109,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     } else {
         format!("spill {}", patchname)
     };
+    let mut stdout = crate::color::get_color_stdout(matches);
     let conflict_mode = ConflictMode::Allow;
     let discard_changes = false;
     let use_index_and_worktree = false;
@@ -118,7 +119,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
-            |trans| trans.update_patch(&patchname, new_commit_id),
+            |trans| trans.update_patch(&patchname, new_commit_id, &mut stdout),
         )
         .execute(&reflog_msg)?;
 
