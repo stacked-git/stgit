@@ -232,6 +232,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                     .existing_patch_commit(trans.get_patch_commit(&patchname))
                     .override_tree_id(temp_commit.tree_id())
                     .allow_diff_edit(false)
+                    .allow_implicit_edit(false)
                     .allow_template_save(false)
                     .edit(trans, &repo, matches)?
                 {

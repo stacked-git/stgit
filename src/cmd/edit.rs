@@ -110,6 +110,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         .original_patchname(Some(&patchname))
         .existing_patch_commit(patch_commit)
         .allow_diff_edit(true)
+        .allow_implicit_edit(true)
         .allow_template_save(true)
         .override_tree_id(tree_id)
         .edit(&stack, &repo, matches)?

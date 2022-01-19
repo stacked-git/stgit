@@ -150,6 +150,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let (patchname, commit_id) = match patchedit::EditBuilder::default()
         .allow_diff_edit(false)
+        .allow_implicit_edit(true)
         .allow_template_save(!is_refreshing)
         .original_patchname(patchname.as_ref())
         .default_author(signature::make_author(Some(&config), matches)?)

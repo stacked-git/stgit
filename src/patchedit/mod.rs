@@ -228,6 +228,7 @@ pub(crate) struct EditBuilder<'a, 'repo> {
     original_patchname: Option<PatchName>,
     patch_commit: Option<&'a git2::Commit<'repo>>,
     allow_diff_edit: bool,
+    allow_implicit_edit: bool,
     allow_template_save: bool,
     overlay: Overlay,
 }
@@ -235,6 +236,11 @@ pub(crate) struct EditBuilder<'a, 'repo> {
 impl<'a, 'repo> EditBuilder<'a, 'repo> {
     pub(crate) fn allow_diff_edit(mut self, allow: bool) -> Self {
         self.allow_diff_edit = allow;
+        self
+    }
+
+    pub(crate) fn allow_implicit_edit(mut self, allow: bool) -> Self {
+        self.allow_implicit_edit = allow;
         self
     }
 
@@ -283,6 +289,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             original_patchname,
             patch_commit,
             allow_diff_edit,
+            allow_implicit_edit,
             allow_template_save,
             overlay:
                 Overlay {
@@ -321,8 +328,25 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             Some(crate::signature::override_author(&author, matches)?)
         };
 
-        let mut need_interactive_edit =
-            matches.is_present("edit") || (allow_diff_edit && matches.is_present("diff"));
+        let mut need_interactive_edit = matches.is_present("edit")
+            || (allow_diff_edit && matches.is_present("diff"))
+            || (allow_implicit_edit
+                && ![
+                    "message",
+                    "file",
+                    "sign",
+                    "ack",
+                    "review",
+                    "sign-by",
+                    "ack-by",
+                    "review-by",
+                    "author",
+                    "authname",
+                    "authemail",
+                    "authdate",
+                ]
+                .iter()
+                .any(|&arg| matches.is_present(arg)));
 
         let message = if matches.is_present("file") {
             file_message
