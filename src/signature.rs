@@ -78,12 +78,8 @@ fn make_default(
 
     let date_key = get_env_key(role, SignatureComponent::Date);
     let signature = if let Some(date) = get_from_env(date_key)? {
-        if date == "now" {
-            git2::Signature::now(&name, &email)?
-        } else {
-            let when = parse_time(&date, date_key)?;
-            git2::Signature::new(&name, &email, &when)?
-        }
+        let when = parse_time(&date, date_key)?;
+        git2::Signature::new(&name, &email, &when)?
     } else {
         git2::Signature::now(&name, &email)?
     };
@@ -132,12 +128,8 @@ pub(crate) fn override_author(
         let email = email
             .as_deref()
             .unwrap_or_else(|| signature.email().expect("author signature must be utf-8"));
-        if authdate == "now" {
-            Ok(git2::Signature::now(name, email)?)
-        } else {
-            let when = parse_time(&authdate, "authdate")?;
-            Ok(git2::Signature::new(name, email, &when)?)
-        }
+        let when = parse_time(&authdate, "authdate")?;
+        Ok(git2::Signature::new(name, email, &when)?)
     } else if name.is_some() || email.is_some() {
         let name = name
             .as_deref()
@@ -267,42 +259,40 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str), Error> 
     Err(Error::InvalidNameEmail(name_email.into()))
 }
 
-pub(crate) fn parse_time(time_str: &str, whence: &str) -> Result<git2::Time, Error> {
+/// Attempt to parse a time string of one of several well-known formats.
+///
+/// | Git date format   | Example date                     |
+/// |-------------------|----------------------------------|
+/// | `default`         | `Thu Jan 6 09:32:07 2022 -0500`  |
+/// | `rfc2822`         | `Thu, 6 Jan 2022 09:32:07 -0500` |
+/// | `iso8601`         | `2022-01-06 09:32:07 -0500`      |
+/// | `iso8601-strict`  | `2022-01-06T09:32:07-05:00`      |
+/// | `raw`             | `1641479527 -0500`               |
+/// | `now`             | `now`                            |
+///
+fn parse_time(time_str: &str, whence: &str) -> Result<git2::Time, Error> {
     let time_str = time_str.trim();
-    if let Some((timestamp_str, remainder)) = time_str.split_once(' ') {
-        let timestamp = timestamp_str
-            .parse::<i64>()
-            .map_err(|_| Error::InvalidDate(time_str.into(), whence.into()))?;
-        let rem_len = remainder.len();
-        let (sign, hhmm) = if rem_len == 5 {
-            // E.g. +HHMM or -HHMM
-            let sign = match remainder.chars().next() {
-                Some('+') => '+',
-                Some('-') => '-',
-                _ => {
-                    return Err(Error::InvalidDate(time_str.into(), whence.into()));
-                }
-            };
-            let hhmm = remainder.get(1..5).unwrap();
-            (sign, hhmm)
-        } else if rem_len == 4 && remainder.chars().next().unwrap().is_ascii_digit() {
-            // E.g. HHMM or HHMM
-            ('+', remainder)
-        } else {
-            return Err(Error::InvalidDate(time_str.into(), whence.into()));
-        };
 
-        let hhmm = hhmm
-            .parse::<i32>()
-            .map_err(|_| Error::InvalidDate(time_str.into(), whence.into()))?;
-        let mut offset = (hhmm / 100) * 60 + (hhmm % 100);
-        if sign == '-' {
-            offset = -offset;
-        }
-        Ok(git2::Time::new(timestamp, offset))
-    } else {
-        Err(Error::InvalidDate(time_str.into(), whence.into()))
+    if time_str == "now" {
+        let dt = chrono::Local::now();
+        let time = git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60);
+        return Ok(time);
     }
+
+    for format_str in [
+        "%a %b %e %T %Y %z",  // default
+        "%a, %e %b %Y %T %z", // rfc2822
+        "%F %T %z",           // iso8601
+        "%+",                 // iso8601-strict (rfc3339)
+        "%s %#z",             // raw
+    ] {
+        if let Ok(dt) = DateTime::parse_from_str(time_str, format_str) {
+            let time = git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60);
+            return Ok(time);
+        }
+    }
+
+    Err(Error::InvalidDate(time_str.into(), whence.into()))
 }
 
 #[cfg(test)]
@@ -318,19 +308,29 @@ mod tests {
     }
 
     #[test]
+    fn parse_all_time_formats() {
+        let time = parse_time("1641479527 -0500", "").unwrap();
+        for s in [
+            "Thu Jan 6 09:32:07 2022 -0500",
+            "Thu, 6 Jan 2022 09:32:07 -0500",
+            "2022-01-06 09:32:07 -0500",
+            "2022-01-06T09:32:07-05:00",
+        ] {
+            assert_eq!(time, parse_time(s, "").unwrap());
+        }
+    }
+
+    #[test]
+    fn parse_time_now() {
+        parse_time("now", "").unwrap();
+    }
+
+    #[test]
     fn test_parse_time_negative_offset() {
         let time = parse_time("123456 -0230", "").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_minutes(), -150);
         assert_eq!(time.sign(), '-');
-    }
-
-    #[test]
-    fn test_parse_time_no_offset_sign() {
-        let time = parse_time("123456 0230", "").unwrap();
-        assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_minutes(), 150);
-        assert_eq!(time.sign(), '+');
     }
 
     #[test]
