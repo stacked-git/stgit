@@ -305,6 +305,23 @@ pub(crate) fn ls_files_unmerged(
     }
 }
 
+pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), Error> {
+    let output = Command::new("git")
+        .args(["notes", "copy"])
+        .arg(from_oid.to_string())
+        .arg(to_oid.to_string())
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("notes copy", &output.stderr))
+    }
+}
+
 pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Error> {
     let output = Command::new("git")
         .arg("read-tree")

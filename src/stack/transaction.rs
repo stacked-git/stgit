@@ -143,18 +143,7 @@ impl<'repo> ExecuteContext<'repo> {
                     reflog_signature,
                     reflog_msg,
                 )?;
-                if let Some(old_patch) = state.patches.insert(patchname.clone(), patch.clone()) {
-                    if let Ok(old_note) = repo.find_note(None, old_patch.commit.id()) {
-                        repo.note(
-                            &old_note.author(),
-                            &old_note.committer(),
-                            None,
-                            patch.commit.id(),
-                            old_note.message().unwrap(),
-                            false,
-                        )?;
-                    }
-                }
+                state.patches.insert(patchname.clone(), patch.clone());
             } else {
                 git_trans.remove(&patch_refname)?;
                 state.patches.remove(patchname);
@@ -274,22 +263,6 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn update_top(
-        &mut self,
-        commit_id: Oid,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        let top_patchname = self
-            .applied
-            .last()
-            .expect("may only be called if there is an applied patch");
-        let commit = self.stack.repo.find_commit(commit_id)?;
-        self.patch_updates
-            .insert(top_patchname.clone(), Some(PatchState { commit }));
-        self.print_updated(top_patchname, stdout)?;
-        Ok(())
-    }
-
     pub(crate) fn update_patch(
         &mut self,
         patchname: &PatchName,
@@ -297,6 +270,11 @@ impl<'repo> StackTransaction<'repo> {
         stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(commit_id)?;
+        let old_commit = self.get_patch_commit(patchname);
+        // Failure to copy is okay. The old commit may not have a note to copy.
+        if let Err(e @ Error::GitExecute(_)) = stupid::notes_copy(old_commit.id(), commit_id) {
+            return Err(e);
+        }
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
         self.print_updated(patchname, stdout)?;
@@ -356,6 +334,11 @@ impl<'repo> StackTransaction<'repo> {
             )?;
 
             let commit = self.stack.repo.find_commit(new_commit_id)?;
+            if let Err(e @ Error::GitExecute(_)) =
+                stupid::notes_copy(patch_commit.id(), new_commit_id)
+            {
+                return Err(e);
+            }
             self.patch_updates
                 .insert(patchname.clone(), Some(PatchState { commit }));
 
@@ -734,6 +717,10 @@ impl<'repo> StackTransaction<'repo> {
                 [new_parent.id()],
             )?;
             let commit = repo.find_commit(commit_id)?;
+            if let Err(e @ Error::GitExecute(_)) = stupid::notes_copy(patch_commit.id(), commit_id)
+            {
+                return Err(e);
+            };
             if merge_conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
