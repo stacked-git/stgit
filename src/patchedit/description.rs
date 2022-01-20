@@ -125,6 +125,16 @@ impl TryFrom<&[u8]> for PatchDescription {
             }
         }
 
+        if raw_patchname.is_none()
+            && raw_author.is_none()
+            && raw_authdate.is_none()
+            && message.trim().is_empty()
+        {
+            return Err(Error::Generic(
+                "Aborting edit due to empty patch description".to_string(),
+            ));
+        }
+
         let patchname = if let Some(patchname) = raw_patchname {
             if !patchname.is_empty() {
                 Some(patchname.parse::<PatchName>()?)
