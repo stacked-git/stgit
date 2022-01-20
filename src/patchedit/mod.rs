@@ -2,7 +2,11 @@ mod description;
 mod interactive;
 mod trailers;
 
-use std::{ffi::OsString, fs::File, io::BufWriter};
+use std::{
+    ffi::OsString,
+    fs::File,
+    io::{BufWriter, Read},
+};
 
 use clap::{Arg, ArgMatches, ValueHint};
 
@@ -315,7 +319,13 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             message: file_message,
             diff: file_diff,
         } = if let Some(file_os) = matches.value_of_os("file") {
-            PatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
+            if file_os.to_str() == Some("-") {
+                let mut buf: Vec<u8> = Vec::with_capacity(8192);
+                std::io::stdin().read_to_end(&mut buf)?;
+                PatchDescription::try_from(buf.as_slice())?
+            } else {
+                PatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
+            }
         } else {
             Default::default() // i.e. all Nones
         };
@@ -462,8 +472,13 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 diff,
             };
             let path = matches.value_of_os("save-template").unwrap().to_owned();
-            let mut stream = BufWriter::new(File::create(&path)?);
-            patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+            if path.to_str() == Some("-") {
+                let mut stream = BufWriter::new(std::io::stdout());
+                patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+            } else {
+                let mut stream = BufWriter::new(File::create(&path)?);
+                patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+            };
             return Ok(EditOutcome::TemplateSaved(path));
         }
 
