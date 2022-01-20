@@ -80,6 +80,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
+                .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
         )
@@ -96,7 +97,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
-                .max_values(1)
+                .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
         )
@@ -113,7 +114,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
-                .max_values(1)
+                .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
         )
