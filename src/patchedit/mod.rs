@@ -11,13 +11,14 @@ use std::{
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
-    commit::{CommitMessage, CommitMessageExtended},
+    commit::{CommitExtended, CommitMessage, CommitMessageExtended},
+    error::Error,
     index::TemporaryIndex,
+    patchname::PatchName,
+    stack::StackStateAccess,
+    stupid,
 };
 
-use super::{
-    commit::CommitExtended, error::Error, patchname::PatchName, stack::StackStateAccess, stupid,
-};
 use description::{DiffBuffer, PatchDescription};
 use interactive::edit_interactive;
 
