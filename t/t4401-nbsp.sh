@@ -21,17 +21,10 @@ test_expect_success 'new patch with nbsp in name' '
     test "$(echo $(stg series --noprefix))" = "a${nbsp}patch"
 '
 
-if test -z "$STG_RUST"; then
 test_expect_success 'patch with nbsp in description' '
     stg new -m "b${nbsp}patch" &&
     test "$(echo $(stg series --noprefix))" = "a${nbsp}patch b-patch"
 '
-else
-test_expect_success 'patch with nbsp in description' '
-    stg new -m "b${nbsp}patch" &&
-    test "$(echo $(stg series --noprefix))" = "a${nbsp}patch b${nbsp}patch"
-'
-fi
 
 test_expect_success 'push pop patch with nbsp' '
     stg pop "a${nbsp}patch" &&

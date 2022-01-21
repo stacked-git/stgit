@@ -25,28 +25,53 @@ impl PatchName {
 
     pub(crate) fn make(raw: &str, len_limit: Option<usize>) -> Self {
         let default_name = "patch";
-        let mut candidate: &str = default_name;
 
-        for line in raw.lines() {
-            let trimmed = line.trim();
-            if !trimmed.is_empty() {
-                candidate = trimmed;
-                break;
-            }
-        }
+        let base = raw
+            .lines()
+            .filter_map(|line| {
+                let trimmed = line.trim();
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed)
+                }
+            })
+            .next()
+            .unwrap_or(default_name);
 
-        let mut name = String::with_capacity(candidate.len());
+        let mut name = String::with_capacity(base.len());
         let mut prev = '\0';
 
-        for c in candidate.chars() {
-            if c.is_alphanumeric()
-                || (c.is_whitespace() && !c.is_ascii_whitespace())
-                || c == '_'
-                || ((c == '.' || c == '-') && prev != c)
-            {
+        // Git has a bunch of rules about which ascii symbols are valid
+        // in ref names (see git-check-ref-format(1)), but to keep
+        // generated patch names clean, most ascii symbols are mapped to
+        // '-' in the generated patch name.
+        //
+        // Characters that are valid and _could_ be allowed in patchnames:
+        //   ()<>!#$%'"`|;,]}+=
+        //
+        // Characters that are never valid:
+        //   ~:^&*[  (along with control characters)
+        //
+        // Characters that are valid in some contexts:
+        //   @{/.
+        for c in base.chars() {
+            if c.is_whitespace() || c.is_control() {
+                if prev != '-' {
+                    name.push('-');
+                    prev = '-';
+                }
+            } else if c.is_alphanumeric() || c == '_' || !c.is_ascii() {
                 name.push(c);
                 prev = c;
-            } else if prev != '-' {
+            } else if c == '-' || c == '.' {
+                // '.' and '-' are okay, but not consecutively
+                if prev != '-' && prev != '.' {
+                    name.push(c);
+                    prev = c;
+                }
+            } else if prev != '-' && prev != '.' {
+                // Replace non-alphanumeric ascii chars with '-'
                 name.push('-');
                 prev = '-';
             }
@@ -54,42 +79,52 @@ impl PatchName {
 
         name = name.to_lowercase();
 
-        candidate = &name;
+        let mut candidate = name.as_str();
         loop {
             let prev_len = candidate.len();
             candidate = candidate.trim_end_matches(".lock");
-            candidate = candidate.trim_matches(|c| c == '.' || c == '-');
+            candidate = candidate.trim_matches(|c| c == '-' || c == '.');
             if candidate.len() == prev_len {
                 break;
             }
         }
 
-        let short_name = if let Some(len_limit) = len_limit {
-            if candidate.len() > len_limit && len_limit > 0 {
-                let mut word_iter = candidate.split('-').map(|w| w.trim_end_matches('.'));
-                let mut short = String::with_capacity(len_limit);
-                short.push_str(word_iter.next().unwrap_or(default_name));
+        if candidate.is_empty() {
+            candidate = default_name;
+        }
 
-                for word in word_iter {
-                    if short.len() + 1 + word.len() <= len_limit {
-                        short.push('-');
-                        short.push_str(word);
-                    } else {
-                        break;
-                    }
+        if len_limit
+            .map(|limit| limit > 0 && candidate.len() > limit)
+            .unwrap_or(false)
+        {
+            let len_limit = len_limit.unwrap();
+            let mut word_iter = candidate.split('-').filter_map(|w| {
+                let w = w.trim_matches('.');
+                if w.is_empty() {
+                    None
+                } else {
+                    Some(w)
                 }
-                short
-            } else {
-                candidate.to_string()
-            }
-        } else {
-            candidate.to_string()
-        };
+            });
+            let mut short = String::with_capacity(len_limit);
+            short.push_str(word_iter.next().unwrap_or(default_name));
 
-        // TODO: could use Self(short_name) instead.
-        // Calling from_str() performs all of the parse-time checking
-        // to ensure make() adheres to all the rules.
-        Self::from_str(&short_name).unwrap()
+            for word in word_iter {
+                if short.len() + 1 + word.len() <= len_limit {
+                    short.push('-');
+                    short.push_str(word);
+                } else {
+                    break;
+                }
+            }
+
+            // Could use Self(short) here, but calling try_from()/from_str()
+            // validates the generated patchname.
+            Self::try_from(short).expect("\"{short}\" generated from \"{base}\" should be valid")
+        } else {
+            Self::from_str(candidate)
+                .expect("\"{candidate}\" generated from \"{base}\" should be valid")
+        }
     }
 
     pub(crate) fn uniquify<P>(self, allow: &[P], disallow: &[P]) -> Self
@@ -116,39 +151,8 @@ impl PatchName {
             }
         }
     }
-}
 
-impl AsRef<str> for PatchName {
-    #[inline]
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl AsRef<PatchName> for PatchName {
-    #[inline]
-    fn as_ref(&self) -> &Self {
-        self
-    }
-}
-
-// impl<'a> From<&'a PatchName> for &'a str {
-//     #[inline]
-//     fn from(pn: &'a PatchName) -> Self {
-//         &pn.0
-//     }
-// }
-
-impl std::fmt::Display for PatchName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-impl FromStr for PatchName {
-    type Err = Error;
-
-    fn from_str(name: &str) -> Result<Self, Self::Err> {
+    fn validate(name: &str) -> Result<(), Error> {
         if name.is_empty() {
             return Err(Error::InvalidPatchName(
                 name.into(),
@@ -208,7 +212,43 @@ impl FromStr for PatchName {
             ));
         }
 
-        Ok(Self(name.into()))
+        Ok(())
+    }
+}
+
+impl AsRef<str> for PatchName {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl AsRef<PatchName> for PatchName {
+    #[inline]
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl std::fmt::Display for PatchName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl FromStr for PatchName {
+    type Err = Error;
+
+    fn from_str(name: &str) -> Result<Self, Self::Err> {
+        Self::validate(name).map(|_| Self(name.into()))
+    }
+}
+
+impl TryFrom<String> for PatchName {
+    type Error = Error;
+
+    fn try_from(name: String) -> Result<Self, Self::Error> {
+        Self::validate(name.as_str()).map(|_| Self(name))
     }
 }
 
@@ -271,8 +311,10 @@ mod tests {
             ("hi", "hi", None),
             ("Hi", "hi", None),
             ("--!..yo..!--", "yo", None),
-            ("patch.lock", "patch", None),
-            ("patch.Lock", "patch", None),
+            ("apatch.lock", "apatch", None),
+            ("apatch.Lock", "apatch", None),
+            ("-..-", "patch", None),
+            (".--.", "patch", None),
             (
                 ".-#.-#.-.###yo-ho.lock.lock.lock...#---...---",
                 "yo-ho",
