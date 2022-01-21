@@ -58,6 +58,20 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Tricky generated patch name a:.b.:' '
+    stg new -m "a:.b.:" &&
+    test "$(echo $(stg top))" = "a-b" &&
+    stg delete --top
+'
+
+test_expect_success \
+    'Tricky generated patch name .--.' '
+    stg new -m ".--." &&
+    test "$(echo $(stg top))" = "patch" &&
+    stg delete --top
+'
+
+test_expect_success \
     'Attempt to create patch with duplicate name' '
     command_error stg new foo -m "duplicate foo" 2>err &&
     grep -e "foo: patch already exists" err

@@ -142,7 +142,7 @@ class Patches:
 
     def new(self, name, commit, msg):
         assert name not in self
-        assert self.is_name_valid(name)
+        assert self.is_name_valid(name), repr(name)
         self._stack.repository.refs.set(self._patch_ref(name), commit, msg)
 
     def update(self, name, commit, msg):
@@ -170,50 +170,84 @@ class Patches:
         """
         default_name = 'patch'
 
-        for line in raw.split('\n'):
-            if line:
+        for line in raw.splitlines():
+            trimmed = line.strip()
+            if trimmed:
+                candidate = trimmed
                 break
-
-        if not line:
-            line = default_name
+        else:
+            candidate = default_name
 
         if lower:
-            line = line.lower()
+            candidate = candidate.lower()
 
-        parts = []
-        for part in line.split('/'):
-            # fmt: off
-            part = re.sub(r'\.lock$', '', part)    # Disallowed in Git refs
-            part = re.sub(r'^\.+|\.+$', '', part)  # Cannot start or end with '.'
-            part = re.sub(r'\.+', '.', part)       # No consecutive '.'
-            part = re.sub(r'[^\w.]+', '-', part)   # Non-word and whitespace to dashes
-            part = re.sub(r'-+', '-', part)        # Squash consecutive dashes
-            part = re.sub(r'^-+|-+$', '', part)    # Remove leading and trailing dashes
-            # fmt: on
-            if part:
-                parts.append(part)
+        name = ""
+        prev = ''
 
-        long_name = '/'.join(parts)
+        # Git has a bunch of rules about which ascii symbols are valid
+        # in ref names (see git-check-ref-format(1)), but to keep
+        # generated patch names clean, most ascii symbols are mapped to
+        # '-' in the generated patch name.
+        #
+        # Characters that are valid and _could_ be allowed in patchnames:
+        #   ()<>!#$%'"`|;,]}+=
+        #
+        # Characters that are never valid:
+        #   ~:^&*[  (along with control characters)
+        #
+        # Characters that are valid in some contexts:
+        #   @{/.
+        for c in candidate:
+            if c.isspace() or not c.isprintable():
+                # Replace all ascii and unicode whitespace and non-printables
+                if prev != '-':
+                    name += '-'
+                    prev = '-'
+            elif c.isalnum() or c == '_' or not c.isascii():
+                # Accept all ascii alphanumerics and '_' along with
+                # remaining printable, non-whitespace unicode characters.
+                name += c
+                prev = c
+            elif c in '-.':
+                # '.' and '-' are okay, but not consecutively
+                if prev not in '-.':
+                    name += c
+                    prev = c
+            elif prev not in '-.':
+                # Replace non-alphanumeric ascii chars with '-'
+                name += '-'
+                prev = '-'
 
-        # TODO: slashes could be allowed in the future.
-        long_name = long_name.replace('/', '-')
-
-        if not long_name:
-            long_name = default_name
-
-        assert self.is_name_valid(long_name)
-
-        name_len = config.getint('stgit.namelength')
-
-        words = [word.rstrip('.') for word in long_name.split('-')]
-        short_name = words[0]
-        for word in words[1:]:
-            new_name = '%s-%s' % (short_name, word)
-            if name_len <= 0 or len(new_name) <= name_len:
-                short_name = new_name
-            else:
+        while True:
+            prev_len = len(name)
+            while name.endswith(".lock"):
+                name = name.rsplit(".lock", 1)[0]
+            name = name.strip('-.')
+            if len(name) == prev_len:
                 break
-        assert self.is_name_valid(short_name)
+
+        # Might not be anything left after the above stripping
+        if not name:
+            name = default_name
+
+        len_limit = config.getint('stgit.namelength')
+
+        if len_limit is None or len_limit <= 0 or len(name) <= len_limit:
+            short_name = name
+        else:
+            words = [w.strip('.') for w in name.split('-')]
+            if words:
+                short_name = words.pop(0)
+            else:
+                short_name = default_name
+
+            for word in words:
+                if len(short_name) + 1 + len(word) <= len_limit:
+                    short_name += '-' + word
+                else:
+                    break
+
+        assert self.is_name_valid(short_name), (candidate, short_name)
 
         if not unique:
             return short_name
@@ -233,7 +267,7 @@ class Patches:
             else:
                 unique_name = '%s-1' % unique_name
 
-        assert self.is_name_valid(unique_name)
+        assert self.is_name_valid(unique_name), (candidate, unique_name)
         return unique_name
 
 
