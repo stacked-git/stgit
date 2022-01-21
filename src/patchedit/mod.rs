@@ -385,7 +385,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let patchname_len_limit: Option<usize> = config
             .get_i32("stgit.namelength")
             .ok()
-            .and_then(|n| usize::try_from(n).ok());
+            .and_then(|n| usize::try_from(n).ok())
+            .or(Some(30));
         let disallow_patchnames: Vec<&PatchName> = stack_state.all_patches().collect();
         let allowed_patchnames: Vec<&PatchName> =
             if let Some(original_patchname) = original_patchname.as_ref() {
