@@ -12,12 +12,17 @@ use crate::error::Error;
 //     # Lines starting with '#' will be ignored, and an empty message\n\
 //     # aborts the edit.\n";
 
-pub(crate) static EDIT_INSTRUCTION_NEW: &str = "\
+pub(crate) static EDIT_INSTRUCTION: &str = "\
     # Please enter the message for your patch. Lines starting with\n\
     # '#' will be ignored. An empty message aborts the new patch.\n\
     # The patch name and author information may also be modified.\n";
 
-static EDIT_FILE_NAME: &str = ".stgit-edit";
+pub(crate) static EDIT_INSTRUCTION_READ_ONLY_DIFF: &str =
+    "# The diff below is for reference. Any edits will be ignored.\n";
+
+pub(crate) static EDIT_INSTRUCTION_EDITABLE_DIFF: &str = "# The diff below may be edited.\n";
+
+static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
 
 pub(crate) fn edit_interactive(
     patch_desc: &PatchDescription,
@@ -28,7 +33,7 @@ pub(crate) fn edit_interactive(
         // TODO: put file at worktree root?
         let file = File::create(EDIT_FILE_NAME)?;
         let mut stream = BufWriter::new(file);
-        patch_desc.write(&mut stream, Some(EDIT_INSTRUCTION_NEW))?;
+        patch_desc.write(&mut stream)?;
     }
 
     let buf = call_editor(EDIT_FILE_NAME, config)?;

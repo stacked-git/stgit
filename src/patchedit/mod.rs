@@ -320,6 +320,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             author: file_author,
             message: file_message,
             diff: file_diff,
+            ..
         } = if let Some(file_os) = matches.value_of_os("file") {
             if file_os.to_str() == Some("-") {
                 let mut buf: Vec<u8> = Vec::with_capacity(8192);
@@ -465,21 +466,30 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let need_commit_msg_hook =
             !matches.is_present("no-verify") && (need_interactive_edit || is_message_modified());
 
+        let instruction = Some(interactive::EDIT_INSTRUCTION);
+        let diff_instruction = Some(if allow_diff_edit {
+            interactive::EDIT_INSTRUCTION_EDITABLE_DIFF
+        } else {
+            interactive::EDIT_INSTRUCTION_READ_ONLY_DIFF
+        });
+
         if allow_template_save && matches.is_present("save-template") {
             let message = message.decode()?.to_string();
             let patch_description = PatchDescription {
                 patchname,
                 author,
                 message,
+                instruction,
+                diff_instruction,
                 diff,
             };
             let path = matches.value_of_os("save-template").unwrap().to_owned();
             if path.to_str() == Some("-") {
                 let mut stream = BufWriter::new(std::io::stdout());
-                patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+                patch_description.write(&mut stream)?;
             } else {
                 let mut stream = BufWriter::new(File::create(&path)?);
-                patch_description.write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+                patch_description.write(&mut stream)?;
             };
             return Ok(EditOutcome::TemplateSaved(path));
         }
@@ -489,6 +499,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 patchname,
                 author,
                 message: message.decode()?.to_string(),
+                instruction,
+                diff_instruction,
                 diff,
             };
 
@@ -497,6 +509,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 author: edited_author,
                 message: edited_message,
                 diff: edited_diff,
+                ..
             } = edit_interactive(&patch_description, &config)?;
 
             (
@@ -530,10 +543,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                         patchname,
                         author,
                         message: message.decode()?.to_string(),
+                        instruction,
+                        diff_instruction,
                         diff,
                     };
-                    failed_patch_description
-                        .write(&mut stream, Some(interactive::EDIT_INSTRUCTION_NEW))?;
+                    failed_patch_description.write(&mut stream)?;
                     return Err(Error::Generic(format!(
                         "Edited patch did not apply due to:\n\
                          {e:#}\n\

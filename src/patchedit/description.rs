@@ -20,15 +20,13 @@ pub(crate) struct PatchDescription {
     pub patchname: Option<PatchName>,
     pub author: Option<git2::Signature<'static>>,
     pub message: String,
+    pub instruction: Option<&'static str>,
+    pub diff_instruction: Option<&'static str>,
     pub diff: Option<DiffBuffer>,
 }
 
 impl PatchDescription {
-    pub(crate) fn write<S: Write>(
-        &self,
-        stream: &mut S,
-        instruction: Option<&str>,
-    ) -> Result<(), Error> {
+    pub(crate) fn write<S: Write>(&self, stream: &mut S) -> Result<(), Error> {
         let patchname = if let Some(patchname) = &self.patchname {
             patchname.as_ref()
         } else {
@@ -48,12 +46,15 @@ impl PatchDescription {
         }
         let message = self.message.trim_end_matches('\n');
         write!(stream, "\n{message}\n")?;
-        if let Some(instruction) = instruction {
-            writeln!(stream, "\n{}", instruction.trim_end())?;
+        if let Some(instruction) = self.instruction {
+            write!(stream, "\n{}", instruction)?;
         } else {
             writeln!(stream)?;
         }
         if let Some(diff) = self.diff.as_ref() {
+            if let Some(diff_instruction) = self.diff_instruction {
+                write!(stream, "{}", diff_instruction)?;
+            }
             stream.write_all(b"---\n")?;
             stream.write_all(diff.as_ref())?;
         }
@@ -178,10 +179,15 @@ impl TryFrom<&[u8]> for PatchDescription {
             None
         };
 
+        let instruction = None;
+        let diff_instruction = None;
+
         Ok(Self {
             patchname,
             author,
             message,
+            instruction,
+            diff_instruction,
             diff,
         })
     }
@@ -216,12 +222,19 @@ mod tests {
             assert!(pd0.author.is_none() && pd1.author.is_none());
         }
         assert_eq!(pd0.message, pd1.message);
-        assert!(
-            pd0.diff == pd1.diff,
-            "diffs differ pd0 is {} pd1 is {}",
-            if pd0.diff.is_some() { "Some" } else { "None" },
-            if pd1.diff.is_some() { "Some" } else { "None" },
-        );
+        if let (Some(diff0), Some(diff1)) = (&pd0.diff, &pd1.diff) {
+            assert_eq!(
+                std::str::from_utf8(diff0.0.as_slice()).unwrap(),
+                std::str::from_utf8(diff1.0.as_slice()).unwrap(),
+            )
+        } else {
+            assert!(
+                pd0.diff == pd1.diff,
+                "diffs differ pd0 is {} pd1 is {}",
+                if pd0.diff.is_some() { "Some" } else { "None" },
+                if pd1.diff.is_some() { "Some" } else { "None" },
+            );
+        }
     }
 
     #[test]
@@ -237,11 +250,13 @@ mod tests {
                 .unwrap(),
             ),
             message: "".to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: None,
             diff: None,
         };
 
         let mut buf: Vec<u8> = vec![];
-        patch_desc.write(&mut buf, Some("# Instruction\n")).unwrap();
+        patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
             std::str::from_utf8(buf.as_slice()).unwrap(),
@@ -272,11 +287,13 @@ mod tests {
                 .unwrap(),
             ),
             message: "Subject\n".to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: None,
             diff: None,
         };
 
         let mut buf: Vec<u8> = vec![];
-        patch_desc.write(&mut buf, Some("# Instruction\n")).unwrap();
+        patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
             std::str::from_utf8(buf.as_slice()).unwrap(),
@@ -314,11 +331,13 @@ mod tests {
                       With-a-trailer: yes\n\
                       "
             .to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: None,
             diff: None,
         };
 
         let mut buf: Vec<u8> = vec![];
-        patch_desc.write(&mut buf, Some("# Instruction\n")).unwrap();
+        patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
             std::str::from_utf8(buf.as_slice()).unwrap(),
@@ -354,6 +373,8 @@ mod tests {
                 .unwrap(),
             ),
             message: "Subject\n".to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: Some("# Diff instruction\n"),
             diff: Some(DiffBuffer(
                 b"\n\
                   Some stuff before first diff --git\n\
@@ -371,7 +392,7 @@ mod tests {
         };
 
         let mut buf: Vec<u8> = vec![];
-        pd.write(&mut buf, Some("# Instruction\n")).unwrap();
+        pd.write(&mut buf).unwrap();
 
         assert_eq!(
             std::str::from_utf8(buf.as_slice()).unwrap(),
@@ -382,6 +403,7 @@ mod tests {
              Subject\n\
              \n\
              # Instruction\n\
+             # Diff instruction\n\
              ---\n\
              \n\
              Some stuff before first diff --git\n\
@@ -420,11 +442,13 @@ mod tests {
                       With-a-trailer: yes\n\
                       "
             .to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: None,
             diff: None,
         };
 
         let mut buf: Vec<u8> = vec![];
-        patch_desc.write(&mut buf, Some("# Instruction\n")).unwrap();
+        patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
             std::str::from_utf8(buf.as_slice()).unwrap(),
@@ -485,6 +509,8 @@ mod tests {
                 .unwrap(),
             ),
             message: "Subject\n".to_string(),
+            instruction: Some("# Instruction\n"),
+            diff_instruction: None,
             diff: None,
         };
 
@@ -521,6 +547,8 @@ mod tests {
                 .unwrap(),
             ),
             message: "Subject\n".to_string(),
+            instruction: None,
+            diff_instruction: None,
             diff: None,
         };
 
@@ -550,6 +578,8 @@ mod tests {
                       \n\
                       Subject\n"
                 .to_string(),
+            instruction: None,
+            diff_instruction: None,
             diff: None,
         };
 
@@ -673,14 +703,8 @@ mod tests {
             b"---\n  \n",
             b"---\n  \n",
         ] {
-            let pd = PatchDescription::try_from(description).unwrap();
-            let expected = PatchDescription {
-                patchname: None,
-                author: None,
-                message: "".to_string(),
-                diff: None,
-            };
-            compare_patch_descs(&expected, &pd);
+            let result = PatchDescription::try_from(description);
+            assert!(result.is_err());
         }
     }
 }
