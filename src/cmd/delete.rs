@@ -1,6 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
@@ -85,14 +86,13 @@ fn run(matches: &ArgMatches) -> super::Result {
     // stack.check_index_clean()?;
     // stack.check_worktree_clean()?;
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .use_index_and_worktree(opt_branch.is_none() && !opt_spill)
+        .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
-            let to_push = trans.delete_patches(|pn| patches.contains(pn), &mut stdout)?;
-            trans.push_patches(&to_push, &mut stdout)?;
+            let to_push = trans.delete_patches(|pn| patches.contains(pn))?;
+            trans.push_patches(&to_push)?;
             Ok(())
         })
         .execute("delete")?;

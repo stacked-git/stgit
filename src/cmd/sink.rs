@@ -3,6 +3,7 @@ use std::str::FromStr;
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
@@ -165,14 +166,11 @@ fn run(matches: &ArgMatches) -> super::Result {
         (applied, remaining_unapplied)
     };
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
-        .transact(|trans| {
-            trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
-        })
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.reorder_patches(Some(&applied), Some(&unapplied), None))
         .execute("sink")?;
 
     Ok(())

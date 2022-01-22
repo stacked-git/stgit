@@ -3,6 +3,7 @@ use std::path::{Path, PathBuf};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     commit::{CommitExtended, CommitMessageExtended},
     error::Error,
     index::TemporaryIndex,
@@ -109,13 +110,13 @@ fn run(matches: &ArgMatches) -> super::Result {
     } else {
         format!("spill {}", patchname)
     };
-    let mut stdout = crate::color::get_color_stdout(matches);
     let patchname = patchname.clone();
 
     stack
         .setup_transaction()
         .allow_conflicts(true)
-        .transact(|trans| trans.update_patch(&patchname, new_commit_id, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.update_patch(&patchname, new_commit_id))
         .execute(&reflog_msg)?;
 
     if matches.is_present("reset") {

@@ -3,6 +3,7 @@ use std::str::FromStr;
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
@@ -61,12 +62,11 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Err(Error::PatchAlreadyExists(new_patchname));
     }
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .allow_conflicts(true)
-        .transact(|trans| trans.rename_patch(&old_patchname, &new_patchname, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.rename_patch(&old_patchname, &new_patchname))
         .execute(&format!("rename {old_patchname} {new_patchname}"))?;
 
     Ok(())

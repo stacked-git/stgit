@@ -8,6 +8,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use indexmap::IndexSet;
 
 use crate::{
+    color::get_color_stdout,
     commit::{CommitExtended, CommitMessage},
     error::Error,
     hook::run_pre_commit_hook,
@@ -165,7 +166,6 @@ fn run(matches: &ArgMatches) -> super::Result {
         matches.is_present("update").then(|| &patchname),
     )?;
 
-    let mut stdout = crate::color::get_color_stdout(matches);
     let mut log_msg = "refresh ".to_string();
     let opt_annotate = matches.value_of("annotate");
 
@@ -188,7 +188,8 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let stack = stack
         .setup_transaction()
-        .transact(|trans| trans.push_new(&temp_patchname, temp_commit_id, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.push_new(&temp_patchname, temp_commit_id))
         .execute(&format!(
             "refresh {} (create temporary patch)",
             &temp_patchname
@@ -198,19 +199,20 @@ fn run(matches: &ArgMatches) -> super::Result {
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
                 // Absorb temp patch into already applied patch
                 let to_pop = trans.applied()[pos + 1..].to_vec();
                 if to_pop.len() > 1 {
-                    let popped_extra = trans.pop_patches(|pn| to_pop.contains(pn), &mut stdout)?;
+                    let popped_extra = trans.pop_patches(|pn| to_pop.contains(pn))?;
                     assert!(
                         popped_extra.is_empty(),
                         "only requested patches should be popped"
                     );
                     let is_last = true;
                     let already_merged = false;
-                    trans.push_patch(&temp_patchname, already_merged, is_last, &mut stdout)?;
+                    trans.push_patch(&temp_patchname, already_merged, is_last)?;
                 }
 
                 let temp_commit = trans.get_patch_commit(&temp_patchname);
@@ -237,11 +239,11 @@ fn run(matches: &ArgMatches) -> super::Result {
                     }
                 };
 
-                trans.delete_patches(|pn| pn == &temp_patchname, &mut stdout)?;
+                trans.delete_patches(|pn| pn == &temp_patchname)?;
                 assert_eq!(Some(&patchname), trans.applied().last());
-                trans.update_patch(&patchname, commit_id, &mut stdout)?;
+                trans.update_patch(&patchname, commit_id)?;
                 if new_patchname != patchname {
-                    trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
+                    trans.rename_patch(&patchname, &new_patchname)?;
                     log_msg.push_str(new_patchname.as_ref());
                 } else {
                     log_msg.push_str(patchname.as_ref());
@@ -251,11 +253,11 @@ fn run(matches: &ArgMatches) -> super::Result {
                     log_msg.push_str(annotation);
                 }
 
-                trans.push_patches(&to_pop, &mut stdout)?;
+                trans.push_patches(&to_pop)?;
                 absorb_success = true;
             } else {
                 // Absorb temp patch into unapplied patch
-                let popped_extra = trans.pop_patches(|pn| pn == &temp_patchname, &mut stdout)?;
+                let popped_extra = trans.pop_patches(|pn| pn == &temp_patchname)?;
                 assert!(popped_extra.is_empty());
 
                 // Try to create the new tree of the refreshed patch.
@@ -297,9 +299,9 @@ fn run(matches: &ArgMatches) -> super::Result {
                         }
                     };
 
-                    trans.update_patch(&patchname, commit_id, &mut stdout)?;
+                    trans.update_patch(&patchname, commit_id)?;
                     if new_patchname != patchname {
-                        trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
+                        trans.rename_patch(&patchname, &new_patchname)?;
                         log_msg.push_str(new_patchname.as_ref());
                     } else {
                         log_msg.push_str(patchname.as_ref());
@@ -308,7 +310,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                         log_msg.push_str("\n\n");
                         log_msg.push_str(annotation);
                     }
-                    trans.delete_patches(|pn| pn == &temp_patchname, &mut stdout)?;
+                    trans.delete_patches(|pn| pn == &temp_patchname)?;
                     absorb_success = true;
                 }
             }

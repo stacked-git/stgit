@@ -1,6 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
     stack::{Stack, StackStateAccess},
@@ -51,11 +52,10 @@ fn run(matches: &ArgMatches) -> super::Result {
         .cloned()
         .collect();
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
-        .transact(|trans| trans.hide_patches(&to_hide, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.hide_patches(&to_hide))
         .execute("hide")?;
 
     Ok(())

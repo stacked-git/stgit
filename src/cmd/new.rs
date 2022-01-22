@@ -3,6 +3,7 @@ use clap::{App, Arg, ArgGroup, ArgMatches, ValueHint};
 use super::refresh;
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchedit,
     patchname::PatchName,
@@ -171,11 +172,10 @@ fn run(matches: &ArgMatches) -> super::Result {
         return Ok(());
     }
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
-        .transact(|trans| trans.push_new(&patchname, commit_id, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.push_new(&patchname, commit_id))
         .execute(&format!("new: {}", &patchname))?;
     Ok(())
 }

@@ -1,6 +1,7 @@
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
@@ -57,12 +58,11 @@ fn run(matches: &ArgMatches) -> super::Result {
         _ => e.into(),
     })?;
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .allow_conflicts(true)
-        .transact(|trans| trans.unhide_patches(&patches, &mut stdout))
+        .with_output_stream(get_color_stdout(matches))
+        .transact(|trans| trans.unhide_patches(&patches))
         .execute("unhide")?;
 
     Ok(())

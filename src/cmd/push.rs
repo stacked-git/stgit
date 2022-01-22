@@ -1,6 +1,7 @@
 use clap::{App, Arg, ArgMatches, ArgSettings};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
@@ -175,16 +176,15 @@ fn run(matches: &ArgMatches) -> super::Result {
         patches.reverse();
     }
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if opt_settree {
                 for (i, patchname) in (&patches).iter().enumerate() {
                     let is_last = i + 1 == patches.len();
-                    trans.push_tree(patchname, is_last, &mut stdout)?;
+                    trans.push_tree(patchname, is_last)?;
                 }
             } else if opt_noapply {
                 let mut unapplied = patches.clone();
@@ -195,14 +195,14 @@ fn run(matches: &ArgMatches) -> super::Result {
                         .filter(|pn| !patches.contains(pn))
                         .cloned(),
                 );
-                trans.reorder_patches(None, Some(&unapplied), None, &mut stdout)?;
+                trans.reorder_patches(None, Some(&unapplied), None)?;
             } else {
                 let merged = if opt_merged {
-                    trans.check_merged(&patches, &mut stdout)?
+                    trans.check_merged(&patches)?
                 } else {
                     vec![]
                 };
-                trans.push_patches_ex(&patches, |pn| merged.contains(&pn), &mut stdout)?;
+                trans.push_patches_ex(&patches, |pn| merged.contains(&pn))?;
             }
             Ok(())
         })

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::io::Write;
@@ -16,14 +17,15 @@ use crate::stupid;
 
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,
+    output: Option<termcolor::StandardStream>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
-    // TODO: add output buf/interface
 }
 
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
+    output: RefCell<termcolor::StandardStream>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
@@ -65,15 +67,18 @@ enum PushStatus {
 }
 
 impl<'repo> TransactionBuilder<'repo> {
+    #[must_use]
     pub(crate) fn new(stack: Stack<'repo>) -> Self {
         Self {
             stack,
+            output: None,
             conflict_mode: ConflictMode::Disallow,
             discard_changes: false,
             use_index_and_worktree: false,
         }
     }
 
+    #[must_use]
     pub(crate) fn allow_conflicts(mut self, allow: bool) -> Self {
         self.conflict_mode = if allow {
             ConflictMode::Allow
@@ -83,8 +88,15 @@ impl<'repo> TransactionBuilder<'repo> {
         self
     }
 
+    #[must_use]
     pub(crate) fn use_index_and_worktree(mut self, allow: bool) -> Self {
         self.use_index_and_worktree = allow;
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn with_output_stream(mut self, output: termcolor::StandardStream) -> Self {
+        self.output = Some(output);
         self
     }
 
@@ -95,10 +107,14 @@ impl<'repo> TransactionBuilder<'repo> {
     {
         let Self {
             stack,
+            output,
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
         } = self;
+
+        let output = output.expect("with_output_stream() must be called");
+        let output = RefCell::new(output);
 
         let current_tree_id = stack.head.tree_id();
         let applied = stack.applied().to_vec();
@@ -107,6 +123,7 @@ impl<'repo> TransactionBuilder<'repo> {
 
         let mut transaction = StackTransaction {
             stack,
+            output,
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
@@ -303,7 +320,6 @@ impl<'repo> StackTransaction<'repo> {
         &mut self,
         patchname: &PatchName,
         commit_id: Oid,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
@@ -313,45 +329,31 @@ impl<'repo> StackTransaction<'repo> {
         }
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_updated(patchname, stdout)?;
+        self.print_updated(patchname)?;
         Ok(())
     }
 
-    pub(crate) fn push_new(
-        &mut self,
-        patchname: &PatchName,
-        oid: Oid,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    pub(crate) fn push_new(&mut self, patchname: &PatchName, oid: Oid) -> Result<(), Error> {
         let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_pushed(patchname, PushStatus::New, true, stdout)?;
+        self.print_pushed(patchname, PushStatus::New, true)?;
         Ok(())
     }
 
-    pub(crate) fn push_tree_patches<P>(
-        &mut self,
-        patchnames: &[P],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error>
+    pub(crate) fn push_tree_patches<P>(&mut self, patchnames: &[P]) -> Result<(), Error>
     where
         P: AsRef<PatchName>,
     {
         for (i, patchname) in patchnames.iter().enumerate() {
             let is_last = i + 1 == patchnames.len();
-            self.push_tree(patchname.as_ref(), is_last, stdout)?;
+            self.push_tree(patchname.as_ref(), is_last)?;
         }
         Ok(())
     }
 
-    pub(crate) fn push_tree(
-        &mut self,
-        patchname: &PatchName,
-        is_last: bool,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<(), Error> {
         let patch_commit = self.get_patch_commit(patchname);
         let config = self.stack.repo.config()?;
         let parent = patch_commit.parent(0)?;
@@ -399,7 +401,7 @@ impl<'repo> StackTransaction<'repo> {
 
         self.applied.push(patchname.clone());
 
-        self.print_pushed(patchname, push_status, is_last, stdout)
+        self.print_pushed(patchname, push_status, is_last)
     }
 
     pub(crate) fn reorder_patches(
@@ -407,7 +409,6 @@ impl<'repo> StackTransaction<'repo> {
         applied: Option<&[PatchName]>,
         unapplied: Option<&[PatchName]>,
         hidden: Option<&[PatchName]>,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         if let Some(applied) = applied {
             let num_common = self
@@ -418,16 +419,16 @@ impl<'repo> StackTransaction<'repo> {
                 .count();
 
             let to_pop: IndexSet<PatchName> = self.applied[num_common..].iter().cloned().collect();
-            self.pop_patches(|pn| to_pop.contains(pn), stdout)?;
+            self.pop_patches(|pn| to_pop.contains(pn))?;
 
             let to_push = &applied[num_common..];
-            self.push_patches(to_push, stdout)?;
+            self.push_patches(to_push)?;
 
             assert_eq!(self.applied, applied);
 
             if to_push.is_empty() {
                 if let Some(last) = applied.last() {
-                    self.print_pushed(last, PushStatus::Unmodified, true, stdout)?;
+                    self.print_pushed(last, PushStatus::Unmodified, true)?;
                 }
             }
         }
@@ -443,11 +444,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn hide_patches(
-        &mut self,
-        to_hide: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<(), Error> {
         let applied: Vec<PatchName> = self
             .applied
             .iter()
@@ -464,16 +461,12 @@ impl<'repo> StackTransaction<'repo> {
 
         let hidden: Vec<PatchName> = to_hide.iter().chain(self.hidden.iter()).cloned().collect();
 
-        self.reorder_patches(Some(&applied), Some(&unapplied), Some(&hidden), stdout)?;
+        self.reorder_patches(Some(&applied), Some(&unapplied), Some(&hidden))?;
 
-        self.print_hidden(to_hide, stdout)
+        self.print_hidden(to_hide)
     }
 
-    pub(crate) fn unhide_patches(
-        &mut self,
-        to_unhide: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    pub(crate) fn unhide_patches(&mut self, to_unhide: &[PatchName]) -> Result<(), Error> {
         let unapplied: Vec<PatchName> = self
             .unapplied
             .iter()
@@ -488,16 +481,15 @@ impl<'repo> StackTransaction<'repo> {
             .cloned()
             .collect();
 
-        self.reorder_patches(None, Some(&unapplied), Some(&hidden), stdout)?;
+        self.reorder_patches(None, Some(&unapplied), Some(&hidden))?;
 
-        self.print_unhidden(to_unhide, stdout)
+        self.print_unhidden(to_unhide)
     }
 
     pub(crate) fn rename_patch(
         &mut self,
         old_patchname: &PatchName,
         new_patchname: &PatchName,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         if new_patchname == old_patchname {
             return Ok(());
@@ -530,14 +522,10 @@ impl<'repo> StackTransaction<'repo> {
         self.patch_updates
             .insert(new_patchname.clone(), Some(patch));
 
-        self.print_rename(old_patchname, new_patchname, stdout)
+        self.print_rename(old_patchname, new_patchname)
     }
 
-    pub(crate) fn delete_patches<F>(
-        &mut self,
-        should_delete: F,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<Vec<PatchName>, Error>
+    pub(crate) fn delete_patches<F>(&mut self, should_delete: F) -> Result<Vec<PatchName>, Error>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -547,7 +535,7 @@ impl<'repo> StackTransaction<'repo> {
             vec![]
         };
 
-        self.print_popped(&all_popped, stdout)?;
+        self.print_popped(&all_popped)?;
 
         let incidental: Vec<PatchName> = all_popped
             .iter()
@@ -556,7 +544,7 @@ impl<'repo> StackTransaction<'repo> {
             .collect();
 
         for patchname in all_popped.iter().filter(|pn| should_delete(pn)) {
-            self.print_deleted(patchname, stdout)?;
+            self.print_deleted(patchname)?;
             self.patch_updates.insert(patchname.clone(), None);
         }
 
@@ -566,7 +554,7 @@ impl<'repo> StackTransaction<'repo> {
 
         for patchname in unapplied {
             if should_delete(&patchname) {
-                self.print_deleted(&patchname, stdout)?;
+                self.print_deleted(&patchname)?;
                 self.patch_updates.insert(patchname, None);
             } else {
                 self.unapplied.push(patchname);
@@ -577,7 +565,7 @@ impl<'repo> StackTransaction<'repo> {
         while i < self.hidden.len() {
             if should_delete(&self.hidden[i]) {
                 let patchname = self.hidden.remove(i);
-                self.print_deleted(&patchname, stdout)?;
+                self.print_deleted(&patchname)?;
                 self.patch_updates.insert(patchname, None);
             } else {
                 i += 1;
@@ -587,11 +575,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
-    pub(crate) fn pop_patches<F>(
-        &mut self,
-        should_pop: F,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<Vec<PatchName>, Error>
+    pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Result<Vec<PatchName>, Error>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -621,28 +605,23 @@ impl<'repo> StackTransaction<'repo> {
         self.unapplied.append(&mut requested);
         self.unapplied.append(&mut unapplied);
 
-        self.print_popped(&all_popped, stdout)?;
+        self.print_popped(&all_popped)?;
 
         Ok(incidental)
     }
 
-    pub(crate) fn push_patches<P>(
-        &mut self,
-        patchnames: &[P],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error>
+    pub(crate) fn push_patches<P>(&mut self, patchnames: &[P]) -> Result<(), Error>
     where
         P: AsRef<PatchName>,
     {
         let already_merged = |_: &PatchName| false;
-        self.push_patches_ex(patchnames, already_merged, stdout)
+        self.push_patches_ex(patchnames, already_merged)
     }
 
     pub(crate) fn push_patches_ex<P, F>(
         &mut self,
         patchnames: &[P],
         already_merged: F,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error>
     where
         P: AsRef<PatchName>,
@@ -651,7 +630,7 @@ impl<'repo> StackTransaction<'repo> {
         for (i, patchname) in patchnames.iter().enumerate() {
             let is_last = i + 1 == patchnames.len();
             let merged = already_merged(patchname.as_ref());
-            self.push_patch(patchname.as_ref(), merged, is_last, stdout)?;
+            self.push_patch(patchname.as_ref(), merged, is_last)?;
         }
         Ok(())
     }
@@ -661,7 +640,6 @@ impl<'repo> StackTransaction<'repo> {
         patchname: &PatchName,
         already_merged: bool,
         is_last: bool,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
         let repo = self.stack.repo;
         let config = repo.config()?;
@@ -784,7 +762,7 @@ impl<'repo> StackTransaction<'repo> {
         }
         self.applied.push(patchname.clone());
 
-        self.print_pushed(patchname, push_status, is_last, stdout)?;
+        self.print_pushed(patchname, push_status, is_last)?;
 
         if merge_conflict {
             Err(Error::TransactionHalt(format!(
@@ -799,7 +777,6 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn check_merged<'a>(
         &self,
         patches: &'a [PatchName],
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<Vec<&'a PatchName>, Error> {
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
@@ -831,23 +808,20 @@ impl<'repo> StackTransaction<'repo> {
             Ok(())
         })?;
 
-        self.print_merged(&merged, stdout)?;
+        self.print_merged(&merged)?;
 
         Ok(merged)
     }
 
-    fn print_merged(
-        &self,
-        merged_patches: &[&PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
-        write!(stdout, "Found ")?;
+    fn print_merged(&self, merged_patches: &[&PatchName]) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
+        write!(output, "Found ")?;
         let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-        write!(stdout, "{}", merged_patches.len())?;
-        stdout.reset()?;
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(output, "{}", merged_patches.len())?;
+        output.reset()?;
         let plural = if merged_patches.len() == 1 { "" } else { "es" };
-        writeln!(stdout, " patch{} merged upstream", plural)?;
+        writeln!(output, " patch{} merged upstream", plural)?;
         Ok(())
     }
 
@@ -855,91 +829,79 @@ impl<'repo> StackTransaction<'repo> {
         &self,
         old_patchname: &PatchName,
         new_patchname: &PatchName,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_dimmed(true))?;
-        write!(stdout, "{}", old_patchname)?;
+        output.set_color(color_spec.set_dimmed(true))?;
+        write!(output, "{}", old_patchname)?;
         color_spec.clear();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-        write!(stdout, " => ")?;
-        stdout.reset()?;
-        writeln!(stdout, "{}", new_patchname)?;
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(output, " => ")?;
+        output.reset()?;
+        writeln!(output, "{}", new_patchname)?;
         Ok(())
     }
 
-    fn print_deleted(
-        &self,
-        deleted: &PatchName,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    fn print_deleted(&self, deleted: &PatchName) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-        write!(stdout, "# ")?;
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+        write!(output, "# ")?;
         color_spec.set_fg(None);
-        stdout.set_color(color_spec.set_dimmed(true))?;
-        writeln!(stdout, "{}", deleted)?;
-        stdout.reset()?;
+        output.set_color(color_spec.set_dimmed(true))?;
+        writeln!(output, "{}", deleted)?;
+        output.reset()?;
         Ok(())
     }
 
-    fn print_hidden(
-        &self,
-        hidden: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    fn print_hidden(&self, hidden: &[PatchName]) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         for patchname in hidden {
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
-            write!(stdout, "! ")?;
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
+            write!(output, "! ")?;
             color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true).set_italic(true))?;
-            writeln!(stdout, "{}", patchname)?;
+            output.set_color(color_spec.set_dimmed(true).set_italic(true))?;
+            writeln!(output, "{}", patchname)?;
             color_spec.clear();
-            stdout.reset()?;
+            output.reset()?;
         }
         Ok(())
     }
 
-    fn print_unhidden(
-        &self,
-        unhidden: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    fn print_unhidden(&self, unhidden: &[PatchName]) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         for patchname in unhidden {
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(stdout, "- ")?;
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(output, "- ")?;
             color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true))?;
-            writeln!(stdout, "{}", patchname)?;
+            output.set_color(color_spec.set_dimmed(true))?;
+            writeln!(output, "{}", patchname)?;
             color_spec.clear();
-            stdout.reset()?;
+            output.reset()?;
         }
         Ok(())
     }
 
-    fn print_popped(
-        &self,
-        popped: &[PatchName],
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    fn print_popped(&self, popped: &[PatchName]) -> Result<(), Error> {
         if !popped.is_empty() {
+            let mut output = self.output.borrow_mut();
             let mut color_spec = termcolor::ColorSpec::new();
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(stdout, "- ")?;
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
+            write!(output, "- ")?;
             color_spec.set_fg(None);
-            stdout.set_color(color_spec.set_dimmed(true))?;
-            write!(stdout, "{}", popped[0])?;
+            output.set_color(color_spec.set_dimmed(true))?;
+            write!(output, "{}", popped[0])?;
             if popped.len() > 1 {
-                stdout.set_color(color_spec.set_dimmed(false))?;
-                write!(stdout, "..")?;
-                stdout.set_color(color_spec.set_dimmed(true))?;
+                output.set_color(color_spec.set_dimmed(false))?;
+                write!(output, "..")?;
+                output.set_color(color_spec.set_dimmed(true))?;
                 let last = &popped[popped.len() - 1];
-                write!(stdout, "{}", last)?;
+                write!(output, "{}", last)?;
             }
-            stdout.reset()?;
-            writeln!(stdout)?;
+            output.reset()?;
+            writeln!(output)?;
         }
         Ok(())
     }
@@ -949,11 +911,11 @@ impl<'repo> StackTransaction<'repo> {
         patchname: &PatchName,
         status: PushStatus,
         is_last: bool,
-        stdout: &mut termcolor::StandardStream,
     ) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let sigil = if is_last { '>' } else { '+' };
         let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(
+        output.set_color(
             color_spec.set_fg(Some(if let PushStatus::Conflict = status {
                 termcolor::Color::Red
             } else if is_last {
@@ -962,11 +924,11 @@ impl<'repo> StackTransaction<'repo> {
                 termcolor::Color::Green
             })),
         )?;
-        write!(stdout, "{} ", sigil)?;
+        write!(output, "{} ", sigil)?;
         color_spec.clear();
-        stdout.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
-        write!(stdout, "{}", patchname)?;
-        stdout.reset()?;
+        output.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
+        write!(output, "{}", patchname)?;
+        output.reset()?;
 
         let status_str = match status {
             PushStatus::New => " (new)",
@@ -977,15 +939,12 @@ impl<'repo> StackTransaction<'repo> {
             PushStatus::Unmodified => "",
         };
 
-        writeln!(stdout, "{}", status_str)?;
+        writeln!(output, "{}", status_str)?;
         Ok(())
     }
 
-    fn print_updated(
-        &self,
-        patchname: &PatchName,
-        stdout: &mut termcolor::StandardStream,
-    ) -> Result<(), Error> {
+    fn print_updated(&self, patchname: &PatchName) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
         let (is_applied, is_top) =
             if let Some(pos) = self.applied().iter().position(|pn| pn == patchname) {
                 (true, pos + 1 == self.applied.len())
@@ -993,17 +952,17 @@ impl<'repo> StackTransaction<'repo> {
                 (false, false)
             };
         let mut color_spec = termcolor::ColorSpec::new();
-        stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
-        write!(stdout, "& ")?;
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
+        write!(output, "& ")?;
         color_spec.clear();
-        stdout.set_color(
+        output.set_color(
             color_spec
                 .set_bold(is_top)
                 .set_intense(is_applied && !is_top)
                 .set_dimmed(!is_applied),
         )?;
-        writeln!(stdout, "{}", patchname)?;
-        stdout.reset()?;
+        writeln!(output, "{}", patchname)?;
+        output.reset()?;
         Ok(())
     }
 }

@@ -2,6 +2,7 @@ use clap::{App, Arg, ArgMatches, ArgSettings};
 use std::iter::FromIterator;
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
@@ -178,13 +179,12 @@ fn run(matches: &ArgMatches) -> super::Result {
         .iter()
         .for_each(|pn| new_unapplied.push(pn.clone()));
 
-    let mut stdout = crate::color::get_color_stdout(matches);
-
     stack
         .setup_transaction()
         .use_index_and_worktree(!opt_spill)
+        .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
-            trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None, &mut stdout)?;
+            trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None)?;
             Ok(())
         })
         .execute("pop")?;

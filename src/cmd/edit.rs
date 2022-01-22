@@ -3,6 +3,7 @@ use std::str::FromStr;
 use clap::{App, Arg, ArgMatches, ValueHint};
 
 use crate::{
+    color::get_color_stdout,
     error::Error,
     patchedit,
     patchname::PatchName,
@@ -120,17 +121,16 @@ fn run(matches: &ArgMatches) -> super::Result {
             patchname: new_patchname,
             commit_id,
         } => {
-            let mut stdout = crate::color::get_color_stdout(matches);
             stack
                 .setup_transaction()
                 .allow_conflicts(true)
                 .use_index_and_worktree(true)
+                .with_output_stream(get_color_stdout(matches))
                 .transact(|trans| {
                     let popped =
                         if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
                             let to_pop = trans.applied()[pos + 1..].to_vec();
-                            let popped_extra =
-                                trans.pop_patches(|pn| to_pop.contains(pn), &mut stdout)?;
+                            let popped_extra = trans.pop_patches(|pn| to_pop.contains(pn))?;
                             assert!(popped_extra.is_empty());
                             to_pop
                         } else {
@@ -138,16 +138,16 @@ fn run(matches: &ArgMatches) -> super::Result {
                         };
 
                     if new_patchname != patchname {
-                        trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
+                        trans.rename_patch(&patchname, &new_patchname)?;
                         // TODO: log stack state here?
                     }
 
-                    trans.update_patch(&new_patchname, commit_id, &mut stdout)?;
+                    trans.update_patch(&new_patchname, commit_id)?;
 
                     if matches.is_present("set-tree") {
-                        trans.push_tree_patches(&popped, &mut stdout)?;
+                        trans.push_tree_patches(&popped)?;
                     } else {
-                        trans.push_patches(&popped, &mut stdout)?;
+                        trans.push_patches(&popped)?;
                     }
                     Ok(())
                 })
