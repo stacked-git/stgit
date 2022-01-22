@@ -15,7 +15,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     pathspec,
-    stack::{ConflictMode, Stack, StackStateAccess},
+    stack::{Stack, StackStateAccess},
     stupid,
 };
 
@@ -186,27 +186,19 @@ fn run(matches: &ArgMatches) -> super::Result {
         PatchName::make("refresh-temp", len_limit).uniquify(&allow, &disallow)
     };
 
-    let discard_changes = false;
-    let use_index_and_worktree = false;
     let stack = stack
-        .transaction(
-            ConflictMode::Disallow,
-            discard_changes,
-            use_index_and_worktree,
-            |trans| trans.push_new(&temp_patchname, temp_commit_id, &mut stdout),
-        )
+        .setup_transaction()
+        .transact(|trans| trans.push_new(&temp_patchname, temp_commit_id, &mut stdout))
         .execute(&format!(
             "refresh {} (create temporary patch)",
             &temp_patchname
         ))?;
 
     let mut absorb_success = false;
-    let use_index_and_worktree = true;
-    let exec_context = stack.transaction(
-        ConflictMode::Disallow,
-        discard_changes,
-        use_index_and_worktree,
-        |trans| {
+    stack
+        .setup_transaction()
+        .use_index_and_worktree(true)
+        .transact(|trans| {
             if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
                 // Absorb temp patch into already applied patch
                 let to_pop = trans.applied()[pos + 1..].to_vec();
@@ -321,9 +313,8 @@ fn run(matches: &ArgMatches) -> super::Result {
                 }
             }
             Ok(())
-        },
-    );
-    exec_context.execute(&log_msg)?;
+        })
+        .execute(&log_msg)?;
 
     if !absorb_success {
         println!(

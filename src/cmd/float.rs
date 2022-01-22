@@ -6,7 +6,7 @@ use crate::{
     error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
+    stack::{Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -118,20 +118,13 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let mut stdout = crate::color::get_color_stdout(matches);
 
-    let discard_changes = false;
-    let use_index_and_worktree = true;
-
-    let trans_context = StackTransaction::make_context(
-        stack,
-        ConflictMode::Disallow,
-        discard_changes,
-        use_index_and_worktree,
-    );
-
-    let exec_context = trans_context.transact(|trans| {
-        trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
-    });
-    exec_context.execute("float")?;
+    stack
+        .setup_transaction()
+        .use_index_and_worktree(true)
+        .transact(|trans| {
+            trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
+        })
+        .execute("float")?;
 
     Ok(())
 }

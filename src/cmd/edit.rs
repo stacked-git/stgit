@@ -6,7 +6,7 @@ use crate::{
     error::Error,
     patchedit,
     patchname::PatchName,
-    stack::{ConflictMode, Stack, StackStateAccess},
+    stack::{Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -121,17 +121,13 @@ fn run(matches: &ArgMatches) -> super::Result {
             commit_id,
         } => {
             let mut stdout = crate::color::get_color_stdout(matches);
-            let discard_changes = false;
-            let use_index_and_worktree = true;
             stack
-                .transaction(
-                    ConflictMode::Allow,
-                    discard_changes,
-                    use_index_and_worktree,
-                    |trans| {
-                        let popped = if let Some(pos) =
-                            trans.applied().iter().position(|pn| pn == &patchname)
-                        {
+                .setup_transaction()
+                .allow_conflicts(true)
+                .use_index_and_worktree(true)
+                .transact(|trans| {
+                    let popped =
+                        if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
                             let to_pop = trans.applied()[pos + 1..].to_vec();
                             let popped_extra =
                                 trans.pop_patches(|pn| to_pop.contains(pn), &mut stdout)?;
@@ -141,21 +137,20 @@ fn run(matches: &ArgMatches) -> super::Result {
                             vec![]
                         };
 
-                        if new_patchname != patchname {
-                            trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
-                            // TODO: log stack state here?
-                        }
+                    if new_patchname != patchname {
+                        trans.rename_patch(&patchname, &new_patchname, &mut stdout)?;
+                        // TODO: log stack state here?
+                    }
 
-                        trans.update_patch(&new_patchname, commit_id, &mut stdout)?;
+                    trans.update_patch(&new_patchname, commit_id, &mut stdout)?;
 
-                        if matches.is_present("set-tree") {
-                            trans.push_tree_patches(&popped, &mut stdout)?;
-                        } else {
-                            trans.push_patches(&popped, &mut stdout)?;
-                        }
-                        Ok(())
-                    },
-                )
+                    if matches.is_present("set-tree") {
+                        trans.push_tree_patches(&popped, &mut stdout)?;
+                    } else {
+                        trans.push_patches(&popped, &mut stdout)?;
+                    }
+                    Ok(())
+                })
                 .execute(&format!("edit: {}", &patchname))?;
             Ok(())
         }

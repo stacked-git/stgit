@@ -3,11 +3,15 @@ use std::str::FromStr;
 
 use git2::{Branch, Commit, RepositoryState};
 
-use super::state::{StackState, StackStateAccess};
-use super::transaction::ExecuteContext;
-use super::{ConflictMode, PatchState, StackTransaction};
-use crate::error::{repo_state_to_str, Error};
-use crate::patchname::PatchName;
+use super::{
+    state::{StackState, StackStateAccess},
+    transaction::TransactionBuilder,
+    PatchState,
+};
+use crate::{
+    error::{repo_state_to_str, Error},
+    patchname::PatchName,
+};
 
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
@@ -156,18 +160,8 @@ impl<'repo> Stack<'repo> {
         Ok(Self { state, ..self })
     }
 
-    pub(crate) fn transaction<F>(
-        self,
-        conflict_mode: ConflictMode,
-        discard_changes: bool,
-        use_index_and_worktree: bool,
-        f: F,
-    ) -> ExecuteContext<'repo>
-    where
-        F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
-    {
-        StackTransaction::make_context(self, conflict_mode, discard_changes, use_index_and_worktree)
-            .transact(f)
+    pub(crate) fn setup_transaction(self) -> TransactionBuilder<'repo> {
+        TransactionBuilder::new(self)
     }
 
     pub(crate) fn state_mut(&mut self) -> &mut StackState<'repo> {

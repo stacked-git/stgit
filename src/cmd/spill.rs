@@ -6,7 +6,7 @@ use crate::{
     commit::{CommitExtended, CommitMessageExtended},
     error::Error,
     index::TemporaryIndex,
-    stack::{ConflictMode, Stack, StackStateAccess},
+    stack::{Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -110,17 +110,12 @@ fn run(matches: &ArgMatches) -> super::Result {
         format!("spill {}", patchname)
     };
     let mut stdout = crate::color::get_color_stdout(matches);
-    let conflict_mode = ConflictMode::Allow;
-    let discard_changes = false;
-    let use_index_and_worktree = false;
     let patchname = patchname.clone();
+
     stack
-        .transaction(
-            conflict_mode,
-            discard_changes,
-            use_index_and_worktree,
-            |trans| trans.update_patch(&patchname, new_commit_id, &mut stdout),
-        )
+        .setup_transaction()
+        .allow_conflicts(true)
+        .transact(|trans| trans.update_patch(&patchname, new_commit_id, &mut stdout))
         .execute(&reflog_msg)?;
 
     if matches.is_present("reset") {

@@ -3,7 +3,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
+    stack::{Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -53,17 +53,10 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let mut stdout = crate::color::get_color_stdout(matches);
 
-    let discard_changes = false;
-    let use_index_and_worktree = false;
-    let trans_context = StackTransaction::make_context(
-        stack,
-        ConflictMode::Allow,
-        discard_changes,
-        use_index_and_worktree,
-    );
-
-    let exec_context = trans_context.transact(|trans| trans.hide_patches(&to_hide, &mut stdout));
-    exec_context.execute("hide")?;
+    stack
+        .setup_transaction()
+        .transact(|trans| trans.hide_patches(&to_hide, &mut stdout))
+        .execute("hide")?;
 
     Ok(())
 }

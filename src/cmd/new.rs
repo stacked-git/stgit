@@ -7,7 +7,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     signature,
-    stack::{ConflictMode, Stack, StackStateAccess},
+    stack::{Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -172,15 +172,10 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     let mut stdout = crate::color::get_color_stdout(matches);
-    let discard_changes = false;
-    let use_index_and_worktree = false;
+
     stack
-        .transaction(
-            ConflictMode::Disallow,
-            discard_changes,
-            use_index_and_worktree,
-            |trans| trans.push_new(&patchname, commit_id, &mut stdout),
-        )
+        .setup_transaction()
+        .transact(|trans| trans.push_new(&patchname, commit_id, &mut stdout))
         .execute(&format!("new: {}", &patchname))?;
     Ok(())
 }

@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     error::Error,
     patchname::PatchName,
-    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
+    stack::{Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -107,42 +107,34 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let mut stdout = crate::color::get_color_stdout(matches);
 
-    let discard_changes = false;
-    let use_index_and_worktree = true;
-
-    let trans_context = StackTransaction::make_context(
-        stack,
-        ConflictMode::Disallow,
-        discard_changes,
-        use_index_and_worktree,
-    );
-
-    let exec_context = trans_context.transact(|trans| {
-        if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
-            let applied = trans.applied()[0..=pos].to_vec();
-            let mut unapplied = trans.applied()[pos + 1..].to_vec();
-            unapplied.extend(trans.unapplied().iter().cloned());
-            trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
-        } else {
-            let pos = trans
-                .unapplied()
-                .iter()
-                .position(|pn| pn == &patchname)
-                .expect("already determined patch exists and not hidden or applied");
-
-            let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
-
-            let merged = if opt_merged {
-                trans.check_merged(&to_apply, &mut stdout)?
+    stack
+        .setup_transaction()
+        .use_index_and_worktree(true)
+        .transact(|trans| {
+            if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
+                let applied = trans.applied()[0..=pos].to_vec();
+                let mut unapplied = trans.applied()[pos + 1..].to_vec();
+                unapplied.extend(trans.unapplied().iter().cloned());
+                trans.reorder_patches(Some(&applied), Some(&unapplied), None, &mut stdout)
             } else {
-                vec![]
-            };
-            trans.push_patches_ex(&to_apply, |pn| merged.contains(&pn), &mut stdout)?;
-            Ok(())
-        }
-    });
+                let pos = trans
+                    .unapplied()
+                    .iter()
+                    .position(|pn| pn == &patchname)
+                    .expect("already determined patch exists and not hidden or applied");
 
-    exec_context.execute("goto")?;
+                let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
+
+                let merged = if opt_merged {
+                    trans.check_merged(&to_apply, &mut stdout)?
+                } else {
+                    vec![]
+                };
+                trans.push_patches_ex(&to_apply, |pn| merged.contains(&pn), &mut stdout)?;
+                Ok(())
+            }
+        })
+        .execute("goto")?;
 
     Ok(())
 }

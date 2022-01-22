@@ -14,11 +14,20 @@ use crate::signature;
 use crate::stack::{PatchState, Stack, StackStateAccess};
 use crate::stupid;
 
+pub(crate) struct TransactionBuilder<'repo> {
+    stack: Stack<'repo>,
+    conflict_mode: ConflictMode,
+    discard_changes: bool,
+    use_index_and_worktree: bool,
+    // TODO: add output buf/interface
+}
+
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
+
     patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
@@ -43,6 +52,12 @@ pub(crate) enum ConflictMode {
     AllowIfSameTop,
 }
 
+impl Default for ConflictMode {
+    fn default() -> Self {
+        Self::Disallow
+    }
+}
+
 enum PushStatus {
     New,
     AlreadyMerged,
@@ -50,6 +65,51 @@ enum PushStatus {
     Empty,
     Modified,
     Unmodified,
+}
+
+impl<'repo> TransactionBuilder<'repo> {
+    pub(crate) fn new(stack: Stack<'repo>) -> Self {
+        Self {
+            stack,
+            conflict_mode: ConflictMode::Disallow,
+            discard_changes: false,
+            use_index_and_worktree: false,
+        }
+    }
+
+    pub(crate) fn allow_conflicts(mut self, allow: bool) -> Self {
+        self.conflict_mode = if allow {
+            ConflictMode::Allow
+        } else {
+            ConflictMode::Disallow
+        };
+        self
+    }
+
+    pub(crate) fn use_index_and_worktree(mut self, allow: bool) -> Self {
+        self.use_index_and_worktree = allow;
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
+    where
+        F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
+    {
+        let Self {
+            stack,
+            conflict_mode,
+            discard_changes,
+            use_index_and_worktree,
+        } = self;
+        StackTransaction::make_context(
+            stack,
+            conflict_mode,
+            discard_changes,
+            use_index_and_worktree,
+        )
+        .transact(f)
+    }
 }
 
 impl<'repo> TransactionContext<'repo> {

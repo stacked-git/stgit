@@ -5,7 +5,7 @@ use clap::{App, Arg, ArgMatches};
 use crate::{
     error::Error,
     patchname::PatchName,
-    stack::{ConflictMode, Stack, StackStateAccess, StackTransaction},
+    stack::{Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -63,18 +63,11 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let mut stdout = crate::color::get_color_stdout(matches);
 
-    let discard_changes = false;
-    let use_index_and_worktree = false;
-    let trans_context = StackTransaction::make_context(
-        stack,
-        ConflictMode::Allow,
-        discard_changes,
-        use_index_and_worktree,
-    );
-
-    let exec_context = trans_context
-        .transact(|trans| trans.rename_patch(&old_patchname, &new_patchname, &mut stdout));
-    exec_context.execute(&format!("rename {} to {}", &old_patchname, &new_patchname))?;
+    stack
+        .setup_transaction()
+        .allow_conflicts(true)
+        .transact(|trans| trans.rename_patch(&old_patchname, &new_patchname, &mut stdout))
+        .execute(&format!("rename {old_patchname} {new_patchname}"))?;
 
     Ok(())
 }
