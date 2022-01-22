@@ -39,13 +39,10 @@ pub(crate) struct StackTransaction<'repo> {
     conflicts: Vec<OsString>,
 }
 
-pub(crate) struct TransactionContext<'repo>(StackTransaction<'repo>);
 pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
 
 pub(crate) enum ConflictMode {
     Disallow,
-
-    #[allow(dead_code)]
     Allow,
 
     #[allow(dead_code)]
@@ -102,24 +99,30 @@ impl<'repo> TransactionBuilder<'repo> {
             discard_changes,
             use_index_and_worktree,
         } = self;
-        StackTransaction::make_context(
+
+        let current_tree_id = stack.head.tree_id();
+        let applied = stack.applied().to_vec();
+        let unapplied = stack.unapplied().to_vec();
+        let hidden = stack.hidden().to_vec();
+
+        let mut transaction = StackTransaction {
             stack,
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
-        )
-        .transact(f)
-    }
-}
+            patch_updates: BTreeMap::new(),
+            applied,
+            unapplied,
+            hidden,
+            error: None,
+            updated_head: None,
+            updated_base: None,
+            current_tree_id,
+            conflicts: Vec::new(),
+        };
 
-impl<'repo> TransactionContext<'repo> {
-    #[must_use]
-    pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
-    where
-        F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
-    {
-        let mut transaction = self.0;
         transaction.error = f(&mut transaction).err();
+
         ExecuteContext(transaction)
     }
 }
@@ -244,33 +247,6 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 impl<'repo> StackTransaction<'repo> {
-    pub(crate) fn make_context(
-        stack: Stack<'repo>,
-        conflict_mode: ConflictMode,
-        discard_changes: bool,
-        use_index_and_worktree: bool,
-    ) -> TransactionContext {
-        let current_tree_id = stack.head.tree_id();
-        let applied = stack.applied().to_vec();
-        let unapplied = stack.unapplied().to_vec();
-        let hidden = stack.hidden().to_vec();
-        TransactionContext(Self {
-            stack,
-            conflict_mode,
-            discard_changes,
-            use_index_and_worktree,
-            patch_updates: BTreeMap::new(),
-            applied,
-            unapplied,
-            hidden,
-            error: None,
-            updated_head: None,
-            updated_base: None,
-            current_tree_id,
-            conflicts: Vec::new(),
-        })
-    }
-
     pub(crate) fn base(&self) -> &Commit<'repo> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
