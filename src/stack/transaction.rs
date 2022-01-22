@@ -39,6 +39,7 @@ pub(crate) struct StackTransaction<'repo> {
     current_tree_id: Oid,
     error: Option<Error>,
     conflicts: Vec<OsString>,
+    printed_top: bool,
 }
 
 pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
@@ -136,6 +137,7 @@ impl<'repo> TransactionBuilder<'repo> {
             updated_base: None,
             current_tree_id,
             conflicts: Vec::new(),
+            printed_top: false,
         };
 
         transaction.error = f(&mut transaction).err();
@@ -233,6 +235,13 @@ impl<'repo> ExecuteContext<'repo> {
         // For printing applied patch name...
         let _old_applied_pn = transaction.stack.applied().last().map(|pn| pn.to_string());
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
+        let new_top_patchname = transaction.applied.last().cloned();
+
+        if !transaction.printed_top {
+            if let Some(top_patchname) = new_top_patchname.as_ref() {
+                transaction.print_pushed(top_patchname, PushStatus::Unmodified, true)?;
+            }
+        }
 
         let stack_ref = repo.find_reference(&transaction.stack.refname)?;
         let prev_state_commit = stack_ref.peel_to_commit()?;
@@ -913,7 +922,7 @@ impl<'repo> StackTransaction<'repo> {
     }
 
     fn print_pushed(
-        &self,
+        &mut self,
         patchname: &PatchName,
         status: PushStatus,
         is_last: bool,
@@ -946,6 +955,9 @@ impl<'repo> StackTransaction<'repo> {
         };
 
         writeln!(output, "{}", status_str)?;
+        if is_last {
+            self.printed_top = true;
+        }
         Ok(())
     }
 
