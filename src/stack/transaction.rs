@@ -544,28 +544,38 @@ impl<'repo> StackTransaction<'repo> {
             vec![]
         };
 
-        self.print_popped(&all_popped)?;
-
         let incidental: Vec<PatchName> = all_popped
             .iter()
             .filter(|pn| !should_delete(pn))
             .cloned()
             .collect();
 
-        for patchname in all_popped.iter().filter(|pn| should_delete(pn)) {
-            self.print_deleted(patchname)?;
-            self.patch_updates.insert(patchname.clone(), None);
-        }
-
         let unapplied_size = incidental.len() + self.unapplied.len();
         let unapplied = std::mem::replace(&mut self.unapplied, Vec::with_capacity(unapplied_size));
         self.unapplied.append(&mut incidental.clone());
 
+        self.print_popped(&all_popped)?;
+
+        // Gather contiguous groups of deleted patchnames for printing.
+        let mut deleted_group: Vec<PatchName> = Vec::with_capacity(all_popped.len());
+
+        for patchname in all_popped {
+            if should_delete(&patchname) {
+                deleted_group.push(patchname.clone());
+                self.patch_updates.insert(patchname, None);
+            } else if !deleted_group.is_empty() {
+                self.print_deleted(&deleted_group)?;
+                deleted_group.clear();
+            }
+        }
+
         for patchname in unapplied {
             if should_delete(&patchname) {
-                self.print_deleted(&patchname)?;
+                deleted_group.push(patchname.clone());
                 self.patch_updates.insert(patchname, None);
             } else {
+                self.print_deleted(&deleted_group)?;
+                deleted_group.clear();
                 self.unapplied.push(patchname);
             }
         }
@@ -574,11 +584,17 @@ impl<'repo> StackTransaction<'repo> {
         while i < self.hidden.len() {
             if should_delete(&self.hidden[i]) {
                 let patchname = self.hidden.remove(i);
-                self.print_deleted(&patchname)?;
+                deleted_group.push(patchname.clone());
                 self.patch_updates.insert(patchname, None);
             } else {
                 i += 1;
+                self.print_deleted(&deleted_group)?;
+                deleted_group.clear();
             }
+        }
+
+        if !deleted_group.is_empty() {
+            self.print_deleted(&deleted_group)?;
         }
 
         Ok(incidental)
@@ -857,15 +873,25 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_deleted(&self, deleted: &PatchName) -> Result<(), Error> {
-        let mut output = self.output.borrow_mut();
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-        write!(output, "# ")?;
-        color_spec.set_fg(None);
-        output.set_color(color_spec.set_dimmed(true))?;
-        writeln!(output, "{}", deleted)?;
-        output.reset()?;
+    fn print_deleted(&self, deleted: &[PatchName]) -> Result<(), Error> {
+        if !deleted.is_empty() {
+            let mut output = self.output.borrow_mut();
+            let mut color_spec = termcolor::ColorSpec::new();
+            output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
+            write!(output, "# ")?;
+            color_spec.set_fg(None);
+            output.set_color(color_spec.set_dimmed(true))?;
+            write!(output, "{}", deleted[0])?;
+            if deleted.len() > 1 {
+                output.set_color(color_spec.set_dimmed(false))?;
+                write!(output, "..")?;
+                output.set_color(color_spec.set_dimmed(true))?;
+                let last = &deleted[deleted.len() - 1];
+                write!(output, "{}", last)?;
+            }
+            output.reset()?;
+            writeln!(output)?;
+        }
         Ok(())
     }
 
