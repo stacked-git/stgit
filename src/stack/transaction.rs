@@ -654,6 +654,12 @@ impl<'repo> StackTransaction<'repo> {
         let new_tree_id = if already_merged {
             push_status = PushStatus::AlreadyMerged;
             old_parent.tree_id()
+        } else if old_parent.tree_id() == new_parent.tree_id() {
+            patch_commit.tree_id()
+        } else if old_parent.tree_id() == patch_commit.tree_id() {
+            new_parent.tree_id()
+        } else if new_parent.tree_id() == patch_commit.tree_id() {
+            patch_commit.tree_id()
         } else {
             let base = old_parent.tree_id();
             let ours = new_parent.tree_id();
