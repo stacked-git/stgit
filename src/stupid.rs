@@ -28,71 +28,40 @@ pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error
     }
 }
 
-pub(crate) fn version() -> Result<String, Error> {
-    let output = Command::new("git")
-        .arg("version")
+pub(crate) fn apply_treediff_to_index(
+    tree1: git2::Oid,
+    tree2: git2::Oid,
+    worktree: &Path,
+    index_path: &Path,
+) -> Result<bool, Error> {
+    let mut diff_tree_child = Command::new("git")
+        .args(["diff-tree", "--full-index", "--binary", "--patch"])
+        .arg(tree1.to_string())
+        .arg(tree2.to_string())
+        .arg("--")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
-        .output()
+        .spawn()
         .map_err(Error::GitExecute)?;
-    if output.status.success() {
-        let mut version_line =
-            String::from_utf8(output.stdout).expect("git version should be utf8");
-        if version_line.ends_with('\n') {
-            version_line.pop();
-        }
-        Ok(version_line)
-    } else {
-        Err(make_cmd_err("version", &output.stderr))
-    }
-}
 
-pub(crate) fn show<I, S>(
-    oids: impl IntoIterator<Item = git2::Oid>,
-    pathspecs: Option<I>,
-    stat: bool,
-    diff_opts: Option<&str>,
-) -> Result<(), Error>
-where
-    I: IntoIterator<Item = S>,
-    S: AsRef<OsStr>,
-{
-    let mut command = Command::new("git");
-    command.arg("show");
-    if stat {
-        command.args(["--stat", "--summary"]);
-    } else {
-        command.arg("--patch");
-    }
-
-    if let Some(diff_opts) = diff_opts {
-        for opt in diff_opts.split_ascii_whitespace() {
-            command.arg(opt);
-        }
-    }
-
-    for oid in oids {
-        command.arg(oid.to_string());
-    }
-
-    command.arg("--");
-
-    if let Some(pathspecs) = pathspecs {
-        command.args(pathspecs);
-    }
-
-    let output = command
-        .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
+    let apply_output = Command::new("git")
+        .args(["apply", "--cached"]) // --3way
+        .env("GIT_INDEX_FILE", index_path)
+        .current_dir(worktree)
+        .stdin(diff_tree_child.stdout.take().unwrap())
+        .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .output()
         .map_err(Error::GitExecute)?;
 
-    if output.status.success() {
-        Ok(())
+    let diff_tree_output = diff_tree_child.wait_with_output()?;
+    if !diff_tree_output.status.success() {
+        Err(make_cmd_err("diff-tree", &diff_tree_output.stderr))
+    } else if apply_output.status.success() {
+        Ok(true)
     } else {
-        Err(make_cmd_err("show", &output.stderr))
+        Ok(false)
     }
 }
 
@@ -178,57 +147,24 @@ pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<
     }
 }
 
-pub(crate) fn apply_treediff_to_index(
-    tree1: git2::Oid,
-    tree2: git2::Oid,
-    worktree: &Path,
-    index_path: &Path,
-) -> Result<bool, Error> {
-    let mut diff_tree_child = Command::new("git")
-        .args(["diff-tree", "--full-index", "--binary", "--patch"])
-        .arg(tree1.to_string())
-        .arg(tree2.to_string())
-        .arg("--")
-        .stdin(Stdio::null())
+pub(crate) fn interpret_trailers<'a>(
+    message: &[u8],
+    trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
+) -> Result<Vec<u8>, Error> {
+    let child = Command::new("git")
+        .arg("interpret-trailers")
+        .args(
+            trailers
+                .into_iter()
+                .map(|(trailer, by)| format!("--trailer={}={}", trailer, by)),
+        )
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
         .spawn()
         .map_err(Error::GitExecute)?;
 
-    let apply_output = Command::new("git")
-        .args(["apply", "--cached"]) // --3way
-        .env("GIT_INDEX_FILE", index_path)
-        .current_dir(worktree)
-        .stdin(diff_tree_child.stdout.take().unwrap())
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .output()
-        .map_err(Error::GitExecute)?;
-
-    let diff_tree_output = diff_tree_child.wait_with_output()?;
-    if !diff_tree_output.status.success() {
-        Err(make_cmd_err("diff-tree", &diff_tree_output.stderr))
-    } else if apply_output.status.success() {
-        Ok(true)
-    } else {
-        Ok(false)
-    }
-}
-
-pub(crate) fn merge_recursive_or_mergetool(
-    base_tree_id: git2::Oid,
-    our_tree_id: git2::Oid,
-    their_tree_id: git2::Oid,
-    worktree: &Path,
-    index_path: &Path, // TODO: does this matter?
-    use_mergetool: bool,
-) -> Result<Vec<OsString>, Error> {
-    if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
-        return Ok(vec![]);
-    } else if use_mergetool {
-        mergetool(index_path)?;
-    }
-    ls_files_unmerged(worktree, index_path)
+    let output = in_and_out(child, message)?;
+    Ok(output.stdout)
 }
 
 pub(crate) fn merge_recursive(
@@ -260,6 +196,22 @@ pub(crate) fn merge_recursive(
     } else {
         Err(make_cmd_err("merge-recursive", &output.stderr))
     }
+}
+
+pub(crate) fn merge_recursive_or_mergetool(
+    base_tree_id: git2::Oid,
+    our_tree_id: git2::Oid,
+    their_tree_id: git2::Oid,
+    worktree: &Path,
+    index_path: &Path, // TODO: does this matter?
+    use_mergetool: bool,
+) -> Result<Vec<OsString>, Error> {
+    if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
+        return Ok(vec![]);
+    } else if use_mergetool {
+        mergetool(index_path)?;
+    }
+    ls_files_unmerged(worktree, index_path)
 }
 
 pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
@@ -362,6 +314,54 @@ pub(crate) fn read_tree_checkout(
     }
 }
 
+pub(crate) fn show<I, S>(
+    oids: impl IntoIterator<Item = git2::Oid>,
+    pathspecs: Option<I>,
+    stat: bool,
+    diff_opts: Option<&str>,
+) -> Result<(), Error>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new("git");
+    command.arg("show");
+    if stat {
+        command.args(["--stat", "--summary"]);
+    } else {
+        command.arg("--patch");
+    }
+
+    if let Some(diff_opts) = diff_opts {
+        for opt in diff_opts.split_ascii_whitespace() {
+            command.arg(opt);
+        }
+    }
+
+    for oid in oids {
+        command.arg(oid.to_string());
+    }
+
+    command.arg("--");
+
+    if let Some(pathspecs) = pathspecs {
+        command.args(pathspecs);
+    }
+
+    let output = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("show", &output.stderr))
+    }
+}
+
 pub(crate) fn update_index_refresh() -> Result<(), Error> {
     let output = Command::new("git")
         .args(["update-index", "-q", "--unmerged", "--refresh"])
@@ -375,6 +375,26 @@ pub(crate) fn update_index_refresh() -> Result<(), Error> {
         Ok(())
     } else {
         Err(make_cmd_err("update-index", &output.stderr))
+    }
+}
+
+pub(crate) fn version() -> Result<String, Error> {
+    let output = Command::new("git")
+        .arg("version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(Error::GitExecute)?;
+    if output.status.success() {
+        let mut version_line =
+            String::from_utf8(output.stdout).expect("git version should be utf8");
+        if version_line.ends_with('\n') {
+            version_line.pop();
+        }
+        Ok(version_line)
+    } else {
+        Err(make_cmd_err("version", &output.stderr))
     }
 }
 
@@ -393,26 +413,6 @@ pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
     } else {
         Err(make_cmd_err("write-tree", &output.stderr))
     }
-}
-
-pub(crate) fn interpret_trailers<'a>(
-    message: &[u8],
-    trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
-) -> Result<Vec<u8>, Error> {
-    let child = Command::new("git")
-        .arg("interpret-trailers")
-        .args(
-            trailers
-                .into_iter()
-                .map(|(trailer, by)| format!("--trailer={}={}", trailer, by)),
-        )
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .map_err(Error::GitExecute)?;
-
-    let output = in_and_out(child, message)?;
-    Ok(output.stdout)
 }
 
 fn make_cmd_err(command_name: &str, stderr: &[u8]) -> Error {
