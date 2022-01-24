@@ -1,3 +1,19 @@
+//! Execute commands with git, the stupid content tracker.
+//!
+//! Each function in this module calls-out to a specific git command that is useful to
+//! StGit. This module exists to overcome limitations of libgit2, including:
+//!
+//! - libgit2 behavior is not automatically affected by git configuration. For
+//!   operations where StGit wants to be use/respect git configuration, using git
+//!   directly is a fast-path to correct behavior.
+//! - libgit2 [`does not always apply patches correctly`]. This is essential behavior
+//!   for StGit (but perhaps not so much for other libgit2 applications?).
+//! - libgit2 is missing some behaviors that StGit requires. For example, StGit needs to
+//!   support the full breadth of commit signing. Running `git commit-tree -s` buys all
+//!   this behavior without having to cobble it together with yet more rust dependencies.
+//!
+//! [`does not always apply patches correctly`]: https://github.com/libgit2/libgit2/issues/5717
+
 use std::{
     ffi::{OsStr, OsString},
     io::Write,
@@ -10,6 +26,7 @@ use indexmap::IndexSet;
 use crate::error::Error;
 use crate::signature::TimeExtended;
 
+/// Apply a patch (diff) to the specified index using `git apply --cached`.
 pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error> {
     let child = Command::new("git")
         .args(["apply", "--cached"])
@@ -28,6 +45,11 @@ pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error
     }
 }
 
+/// Apply diff between two trees to specified index.
+///
+/// Pipes `git diff-tree | git apply --cached`.
+///
+/// Returns `true` if the patch application is successful, `false` otherwise.
 pub(crate) fn apply_treediff_to_index(
     tree1: git2::Oid,
     tree2: git2::Oid,
@@ -65,6 +87,9 @@ pub(crate) fn apply_treediff_to_index(
     }
 }
 
+/// Create a commit for the specified tree id using `git commit-tree`.
+///
+/// The newly created commit id is returned.
 pub(crate) fn commit_tree(
     repo_path: &std::path::Path,
     author: &git2::Signature,
@@ -114,6 +139,7 @@ pub(crate) fn commit_tree(
     }
 }
 
+/// Generate diff between specified tree and the working tree or index with `git diff-index`.
 pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
     let output = Command::new("git")
         .args(["diff-index", "-p", "--full-index"])
@@ -126,10 +152,11 @@ pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
     if output.status.success() {
         Ok(output.stdout)
     } else {
-        Err(make_cmd_err("diff-tree", &output.stderr))
+        Err(make_cmd_err("diff-index", &output.stderr))
     }
 }
 
+/// Generate diff between two trees using `git diff-tree -p`.
 pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<u8>, Error> {
     let output = Command::new("git")
         .args(["diff-tree", "-p", "--full-index"])
@@ -147,6 +174,7 @@ pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<
     }
 }
 
+/// Add trailers to commit message with `git interpret-trailers`.
 pub(crate) fn interpret_trailers<'a>(
     message: &[u8],
     trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
@@ -167,6 +195,9 @@ pub(crate) fn interpret_trailers<'a>(
     Ok(output.stdout)
 }
 
+/// Perform three-way merge with `git merge-recursive`.
+///
+/// Returns `true` if the merge was successful, `false` otherwise.
 pub(crate) fn merge_recursive(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
@@ -198,6 +229,7 @@ pub(crate) fn merge_recursive(
     }
 }
 
+/// Perfom three-way merge, with optional auto-resolution of conflicts with `git merge-tool`.
 pub(crate) fn merge_recursive_or_mergetool(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
@@ -214,6 +246,7 @@ pub(crate) fn merge_recursive_or_mergetool(
     ls_files_unmerged(worktree, index_path)
 }
 
+/// Attempt to resolve outstanding merge conflicts with `git merge-tool`.
 pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
     let output = Command::new("git")
         .arg("merge-tool")
@@ -232,6 +265,7 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
     }
 }
 
+/// Gather list of unmerged files using `git ls-files --unmerged`.
 pub(crate) fn ls_files_unmerged(
     worktree: &Path,
     index_path: &Path,
@@ -257,6 +291,7 @@ pub(crate) fn ls_files_unmerged(
     }
 }
 
+/// Copy notes from one object to another using `git notes copy`.
 pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), Error> {
     let output = Command::new("git")
         .args(["notes", "copy"])
@@ -274,6 +309,7 @@ pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), E
     }
 }
 
+/// Read content of a tree into specified index using `git read-tree`.
 pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Error> {
     let output = Command::new("git")
         .arg("read-tree")
@@ -292,6 +328,7 @@ pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Err
     }
 }
 
+/// Checkout tree to working tree using `git read-tree`.
 pub(crate) fn read_tree_checkout(
     old_tree_id: git2::Oid,
     new_tree_id: git2::Oid,
@@ -314,6 +351,7 @@ pub(crate) fn read_tree_checkout(
     }
 }
 
+/// Show objects using `git show`.
 pub(crate) fn show<I, S>(
     oids: impl IntoIterator<Item = git2::Oid>,
     pathspecs: Option<I>,
@@ -362,6 +400,7 @@ where
     }
 }
 
+/// Update default index from working tree with `git update-index`.
 pub(crate) fn update_index_refresh() -> Result<(), Error> {
     let output = Command::new("git")
         .args(["update-index", "-q", "--unmerged", "--refresh"])
@@ -378,6 +417,7 @@ pub(crate) fn update_index_refresh() -> Result<(), Error> {
     }
 }
 
+/// Get git version with `git version`.
 pub(crate) fn version() -> Result<String, Error> {
     let output = Command::new("git")
         .arg("version")
@@ -398,6 +438,7 @@ pub(crate) fn version() -> Result<String, Error> {
     }
 }
 
+/// Write tree object from content of specified index using `git write-tree`.
 pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
     let output = Command::new("git")
         .arg("write-tree")
