@@ -643,15 +643,16 @@ impl<'repo> StackTransaction<'repo> {
     where
         P: AsRef<PatchName>,
     {
-        let merged = if check_merged {
-            Some(self.check_merged(patchnames)?)
-        } else {
-            None
-        };
-
         let default_index = self.stack.repo.index()?;
         self.stack.repo.with_temp_index_file(|temp_index| {
             let mut temp_index_tree_id: Option<git2::Oid> = None;
+
+            let merged = if check_merged {
+                Some(self.check_merged(patchnames, temp_index, &mut temp_index_tree_id)?)
+            } else {
+                None
+            };
+
             for (i, patchname) in patchnames.iter().enumerate() {
                 let patchname = patchname.as_ref();
                 let is_last = i + 1 == patchnames.len();
@@ -826,40 +827,41 @@ impl<'repo> StackTransaction<'repo> {
     fn check_merged<'a, P>(
         &self,
         patchnames: &'a [P],
+        temp_index: &mut git2::Index,
+        temp_index_tree_id: &mut Option<git2::Oid>,
     ) -> Result<Vec<&'a PatchName>, Error>
     where
         P: AsRef<PatchName>,
     {
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
+        let temp_index_path = temp_index.path().unwrap();
 
-        repo.with_temp_index_file(|temp_index| {
-            let temp_index_path = temp_index.path().unwrap();
+        if temp_index_tree_id != &Some(self.stack.head.tree_id()) {
             stupid::read_tree(self.stack.head.tree_id(), temp_index_path)?;
+            *temp_index_tree_id = Some(self.stack.head.tree_id());
+        }
 
-            for patchname in patchnames.iter().rev() {
-                let patchname = patchname.as_ref();
-                let patch_commit = self.get_patch_commit(patchname);
-                let parent_commit = patch_commit.parent(0)?;
+        for patchname in patchnames.iter().rev() {
+            let patchname = patchname.as_ref();
+            let patch_commit = self.get_patch_commit(patchname);
+            let parent_commit = patch_commit.parent(0)?;
 
-                if patch_commit.parent_count() == 1
-                    && patch_commit.tree_id() == parent_commit.tree_id()
-                {
-                    continue; // No change
-                }
-
-                if stupid::apply_treediff_to_index(
-                    patch_commit.tree_id(),
-                    parent_commit.tree_id(),
-                    repo.workdir().unwrap(),
-                    temp_index_path,
-                )? {
-                    merged.push(patchname);
-                }
+            if patch_commit.parent_count() == 1 && patch_commit.tree_id() == parent_commit.tree_id()
+            {
+                continue; // No change
             }
 
-            Ok(())
-        })?;
+            if stupid::apply_treediff_to_index(
+                patch_commit.tree_id(),
+                parent_commit.tree_id(),
+                repo.workdir().unwrap(),
+                temp_index_path,
+            )? {
+                merged.push(patchname);
+                *temp_index_tree_id = None;
+            }
+        }
 
         self.print_merged(&merged)?;
 
