@@ -210,9 +210,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                         popped_extra.is_empty(),
                         "only requested patches should be popped"
                     );
-                    let is_last = true;
-                    let already_merged = false;
-                    trans.push_patch(&temp_patchname, already_merged, is_last)?;
+                    trans.push_patches(&[&temp_patchname])?;
                 }
 
                 let temp_commit = trans.get_patch_commit(&temp_patchname);

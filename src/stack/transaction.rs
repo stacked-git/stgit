@@ -652,19 +652,33 @@ impl<'repo> StackTransaction<'repo> {
         P: AsRef<PatchName>,
         F: Fn(&PatchName) -> bool,
     {
-        for (i, patchname) in patchnames.iter().enumerate() {
-            let is_last = i + 1 == patchnames.len();
-            let merged = already_merged(patchname.as_ref());
-            self.push_patch(patchname.as_ref(), merged, is_last)?;
-        }
-        Ok(())
+        let default_index = self.stack.repo.index()?;
+        self.stack.repo.with_temp_index_file(|temp_index| {
+            let mut temp_index_tree_id: Option<git2::Oid> = None;
+            for (i, patchname) in patchnames.iter().enumerate() {
+                let is_last = i + 1 == patchnames.len();
+                let merged = already_merged(patchname.as_ref());
+                self.push_patch(
+                    patchname.as_ref(),
+                    merged,
+                    is_last,
+                    &default_index,
+                    temp_index,
+                    &mut temp_index_tree_id,
+                )?;
+            }
+            Ok(())
+        })
     }
 
-    pub(crate) fn push_patch(
+    fn push_patch(
         &mut self,
         patchname: &PatchName,
         already_merged: bool,
         is_last: bool,
+        default_index: &git2::Index,
+        temp_index: &mut git2::Index,
+        temp_index_tree_id: &mut Option<git2::Oid>,
     ) -> Result<(), Error> {
         let repo = self.stack.repo;
         let config = repo.config()?;
@@ -686,31 +700,33 @@ impl<'repo> StackTransaction<'repo> {
         } else if new_parent.tree_id() == patch_commit.tree_id() {
             patch_commit.tree_id()
         } else {
+            let (ours, theirs) = if temp_index_tree_id == &Some(patch_commit.tree_id()) {
+                (patch_commit.tree_id(), new_parent.tree_id())
+            } else {
+                (new_parent.tree_id(), patch_commit.tree_id())
+            };
             let base = old_parent.tree_id();
-            let ours = new_parent.tree_id();
-            let theirs = patch_commit.tree_id();
+            // let ours = new_parent.tree_id();
+            // let theirs = patch_commit.tree_id();
 
-            let default_index = repo.index()?;
-            let default_index_path = default_index.path().unwrap();
-
-            if let Some(tree_id) = repo.with_temp_index_file(|temp_index| {
-                let temp_index_path = temp_index.path().unwrap();
+            let temp_index_path = temp_index.path().unwrap();
+            if temp_index_tree_id != &Some(ours) {
                 stupid::read_tree(ours, temp_index_path)?;
-                if stupid::apply_treediff_to_index(
-                    base,
-                    theirs,
-                    repo.workdir().unwrap(),
-                    temp_index_path,
-                )? {
-                    if let Ok(tree_id) = stupid::write_tree(temp_index_path) {
-                        Ok(Some(tree_id))
-                    } else {
-                        Ok(None)
-                    }
-                } else {
-                    Ok(None)
-                }
-            })? {
+                *temp_index_tree_id = Some(ours);
+            }
+
+            let maybe_tree_id = if stupid::apply_treediff_to_index(
+                base,
+                theirs,
+                repo.workdir().unwrap(),
+                temp_index_path,
+            )? {
+                stupid::write_tree(temp_index_path).ok()
+            } else {
+                None
+            };
+
+            if let Some(tree_id) = maybe_tree_id {
                 tree_id
             } else if !self.use_index_and_worktree {
                 return Err(Error::TransactionHalt(format!(
@@ -723,6 +739,7 @@ impl<'repo> StackTransaction<'repo> {
                 }
                 self.current_tree_id = ours;
 
+                let default_index_path = default_index.path().unwrap();
                 let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
                 match stupid::merge_recursive_or_mergetool(
                     base,
