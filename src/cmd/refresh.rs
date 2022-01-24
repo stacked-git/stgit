@@ -210,7 +210,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                         popped_extra.is_empty(),
                         "only requested patches should be popped"
                     );
-                    trans.push_patches(&[&temp_patchname])?;
+                    trans.push_patches(&[&temp_patchname], false)?;
                 }
 
                 let temp_commit = trans.get_patch_commit(&temp_patchname);
@@ -251,7 +251,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                     log_msg.push_str(annotation);
                 }
 
-                trans.push_patches(&to_pop)?;
+                trans.push_patches(&to_pop, false)?;
                 absorb_success = true;
             } else {
                 // Absorb temp patch into unapplied patch

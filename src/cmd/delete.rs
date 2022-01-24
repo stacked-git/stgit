@@ -92,7 +92,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             let to_push = trans.delete_patches(|pn| patches.contains(pn))?;
-            trans.push_patches(&to_push)?;
+            trans.push_patches(&to_push, false)?;
             Ok(())
         })
         .execute("delete")?;

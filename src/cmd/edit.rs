@@ -145,11 +145,10 @@ fn run(matches: &ArgMatches) -> super::Result {
                     trans.update_patch(&new_patchname, commit_id)?;
 
                     if matches.is_present("set-tree") {
-                        trans.push_tree_patches(&popped)?;
+                        trans.push_tree_patches(&popped)
                     } else {
-                        trans.push_patches(&popped)?;
+                        trans.push_patches(&popped, false)
                     }
-                    Ok(())
                 })
                 .execute(&format!("edit: {}", &patchname))?;
             Ok(())

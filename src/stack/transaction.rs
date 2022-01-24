@@ -431,7 +431,7 @@ impl<'repo> StackTransaction<'repo> {
             self.pop_patches(|pn| to_pop.contains(pn))?;
 
             let to_push = &applied[num_common..];
-            self.push_patches(to_push)?;
+            self.push_patches(to_push, false)?;
 
             assert_eq!(self.applied, applied);
 
@@ -635,32 +635,33 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
-    pub(crate) fn push_patches<P>(&mut self, patchnames: &[P]) -> Result<(), Error>
-    where
-        P: AsRef<PatchName>,
-    {
-        let already_merged = |_: &PatchName| false;
-        self.push_patches_ex(patchnames, already_merged)
-    }
-
-    pub(crate) fn push_patches_ex<P, F>(
+    pub(crate) fn push_patches<P>(
         &mut self,
         patchnames: &[P],
-        already_merged: F,
+        check_merged: bool,
     ) -> Result<(), Error>
     where
         P: AsRef<PatchName>,
-        F: Fn(&PatchName) -> bool,
     {
+        let merged = if check_merged {
+            Some(self.check_merged(patchnames)?)
+        } else {
+            None
+        };
+
         let default_index = self.stack.repo.index()?;
         self.stack.repo.with_temp_index_file(|temp_index| {
             let mut temp_index_tree_id: Option<git2::Oid> = None;
             for (i, patchname) in patchnames.iter().enumerate() {
+                let patchname = patchname.as_ref();
                 let is_last = i + 1 == patchnames.len();
-                let merged = already_merged(patchname.as_ref());
+                let already_merged = merged
+                    .as_ref()
+                    .map(|merged| merged.contains(&patchname))
+                    .unwrap_or(false);
                 self.push_patch(
-                    patchname.as_ref(),
-                    merged,
+                    patchname,
+                    already_merged,
                     is_last,
                     &default_index,
                     temp_index,
@@ -822,10 +823,13 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
-    pub(crate) fn check_merged<'a>(
+    fn check_merged<'a, P>(
         &self,
-        patches: &'a [PatchName],
-    ) -> Result<Vec<&'a PatchName>, Error> {
+        patchnames: &'a [P],
+    ) -> Result<Vec<&'a PatchName>, Error>
+    where
+        P: AsRef<PatchName>,
+    {
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
 
@@ -833,7 +837,8 @@ impl<'repo> StackTransaction<'repo> {
             let temp_index_path = temp_index.path().unwrap();
             stupid::read_tree(self.stack.head.tree_id(), temp_index_path)?;
 
-            for patchname in patches.iter().rev() {
+            for patchname in patchnames.iter().rev() {
+                let patchname = patchname.as_ref();
                 let patch_commit = self.get_patch_commit(patchname);
                 let parent_commit = patch_commit.parent(0)?;
 

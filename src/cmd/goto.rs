@@ -124,13 +124,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                     .expect("already determined patch exists and not hidden or applied");
 
                 let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
-
-                let merged = if opt_merged {
-                    trans.check_merged(&to_apply)?
-                } else {
-                    vec![]
-                };
-                trans.push_patches_ex(&to_apply, |pn| merged.contains(&pn))?;
+                trans.push_patches(&to_apply, opt_merged)?;
                 Ok(())
             }
         })

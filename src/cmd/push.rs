@@ -186,6 +186,7 @@ fn run(matches: &ArgMatches) -> super::Result {
                     let is_last = i + 1 == patches.len();
                     trans.push_tree(patchname, is_last)?;
                 }
+                Ok(())
             } else if opt_noapply {
                 let mut unapplied = patches.clone();
                 unapplied.extend(
@@ -195,16 +196,10 @@ fn run(matches: &ArgMatches) -> super::Result {
                         .filter(|pn| !patches.contains(pn))
                         .cloned(),
                 );
-                trans.reorder_patches(None, Some(&unapplied), None)?;
+                trans.reorder_patches(None, Some(&unapplied), None)
             } else {
-                let merged = if opt_merged {
-                    trans.check_merged(&patches)?
-                } else {
-                    vec![]
-                };
-                trans.push_patches_ex(&patches, |pn| merged.contains(&pn))?;
+                trans.push_patches(&patches, opt_merged)
             }
-            Ok(())
         })
         .execute("push")?;
 
