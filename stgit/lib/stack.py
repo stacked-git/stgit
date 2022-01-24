@@ -203,7 +203,7 @@ class Patches:
                 if prev != '-':
                     name += '-'
                     prev = '-'
-            elif c.isalnum() or c == '_' or not c.isascii():
+            elif c.isalnum() or c == '_' or not ord(c) < 127:
                 # Accept all ascii alphanumerics and '_' along with
                 # remaining printable, non-whitespace unicode characters.
                 name += c
