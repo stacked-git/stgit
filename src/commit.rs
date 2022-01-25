@@ -326,8 +326,8 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
 }
 
 pub(crate) struct CommitOptions<'a> {
-    commit_encoding: Option<&'a str>,
-    gpgsign: bool,
+    pub(crate) commit_encoding: Option<&'a str>,
+    pub(crate) gpgsign: bool,
 }
 
 pub(crate) trait RepositoryCommitExtended {
@@ -347,7 +347,7 @@ pub(crate) trait RepositoryCommitExtended {
         message: &CommitMessage,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
-        options: CommitOptions,
+        options: &CommitOptions,
     ) -> Result<git2::Oid, Error>;
 }
 
@@ -370,7 +370,7 @@ impl RepositoryCommitExtended for git2::Repository {
             message,
             tree_id,
             parent_ids,
-            CommitOptions {
+            &CommitOptions {
                 commit_encoding,
                 gpgsign,
             },
@@ -384,7 +384,7 @@ impl RepositoryCommitExtended for git2::Repository {
         message: &CommitMessage,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
-        options: CommitOptions<'_>,
+        options: &CommitOptions<'_>,
     ) -> Result<git2::Oid, Error> {
         let commit_encoding = match options.commit_encoding {
             Some(s) => {

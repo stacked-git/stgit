@@ -5,7 +5,7 @@ use std::str;
 use git2::{Commit, FileMode, Oid, Tree};
 
 use crate::{
-    commit::{CommitMessage, RepositoryCommitExtended},
+    commit::{CommitMessage, CommitOptions, RepositoryCommitExtended},
     error::Error,
     patchname::PatchName,
     signature::{SignatureExtended, TimeExtended},
@@ -159,8 +159,22 @@ impl<'repo> StackState<'repo> {
 
         let message = CommitMessage::from(message);
 
-        let simplified_parent_id =
-            repo.commit_ex(&sig, &sig, &message, state_tree_id, simplified_parents)?;
+        let commit_opts = CommitOptions {
+            commit_encoding: None,
+            gpgsign: config
+                .get_bool("stgit.gpgsign")
+                .or_else(|_| config.get_bool("commit.gpgsign"))
+                .unwrap_or(false),
+        };
+
+        let simplified_parent_id = repo.commit_with_options(
+            &sig,
+            &sig,
+            &message,
+            state_tree_id,
+            simplified_parents,
+            &commit_opts,
+        )?;
 
         let mut parent_set = indexmap::IndexSet::new();
         parent_set.insert(self.head.id());
@@ -188,19 +202,27 @@ impl<'repo> StackState<'repo> {
             // let parent_group_oids: Vec<Oid> = parent_oids
             //     .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
             //     .collect();
-            let group_oid = repo.commit_ex(
+            let group_oid = repo.commit_with_options(
                 &sig,
                 &sig,
                 &CommitMessage::from("parent grouping"),
                 state_tree_id,
                 parent_group_oids,
+                &commit_opts,
             )?;
             parent_oids.push(group_oid);
         }
 
         parent_oids.insert(0, simplified_parent_id);
 
-        let commit_oid = repo.commit_ex(&sig, &sig, &message, state_tree_id, parent_oids)?;
+        let commit_oid = repo.commit_with_options(
+            &sig,
+            &sig,
+            &message,
+            state_tree_id,
+            parent_oids,
+            &commit_opts,
+        )?;
 
         if let Some(refname) = update_ref {
             repo.reference(refname, commit_oid, true, &message.decode()?)?;
