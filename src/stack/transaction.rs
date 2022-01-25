@@ -8,7 +8,7 @@ use indexmap::IndexSet;
 use termcolor::WriteColor;
 
 use crate::{
-    commit::{CommitExtended, CommitMessageExtended},
+    commit::{CommitExtended, RepositoryCommitExtended},
     error::{repo_state_to_str, Error},
     index::TemporaryIndex,
     patchname::PatchName,

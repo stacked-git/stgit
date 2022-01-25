@@ -11,7 +11,7 @@ use std::{
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
-    commit::{CommitExtended, CommitMessage, CommitMessageExtended},
+    commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
     error::Error,
     index::TemporaryIndex,
     patchname::PatchName,

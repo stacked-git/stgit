@@ -5,7 +5,7 @@ use std::str;
 use git2::{Commit, FileMode, Oid, Tree};
 
 use crate::{
-    commit::{CommitExtended, CommitMessage},
+    commit::{CommitMessage, RepositoryCommitExtended},
     error::Error,
     patchname::PatchName,
     signature::{SignatureExtended, TimeExtended},

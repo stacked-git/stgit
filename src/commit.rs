@@ -211,11 +211,11 @@ impl<'a> PartialEq for CommitMessage<'a> {
     }
 }
 
-pub(crate) trait CommitMessageExtended<'a> {
+pub(crate) trait CommitExtended<'a> {
     fn message_ex(&self) -> CommitMessage;
 }
 
-impl<'a> CommitMessageExtended<'a> for git2::Commit<'a> {
+impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     fn message_ex(&self) -> CommitMessage {
         if let Some(message) = self.message_raw() {
             CommitMessage::Str(message)
@@ -228,7 +228,7 @@ impl<'a> CommitMessageExtended<'a> for git2::Commit<'a> {
     }
 }
 
-pub(crate) trait CommitExtended {
+pub(crate) trait RepositoryCommitExtended {
     fn commit_ex(
         &self,
         author: &git2::Signature,
@@ -239,7 +239,7 @@ pub(crate) trait CommitExtended {
     ) -> Result<git2::Oid, Error>;
 }
 
-impl CommitExtended for git2::Repository {
+impl RepositoryCommitExtended for git2::Repository {
     fn commit_ex(
         &self,
         author: &git2::Signature,

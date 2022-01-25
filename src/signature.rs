@@ -1,6 +1,4 @@
 use chrono::{DateTime, FixedOffset, TimeZone};
-use clap::ArgMatches;
-use git2::Config;
 
 use crate::error::Error;
 
@@ -92,7 +90,7 @@ enum SignatureComponent {
 }
 
 fn make_default(
-    config: Option<&Config>,
+    config: Option<&git2::Config>,
     role: SignatureRole,
 ) -> Result<git2::Signature<'static>, Error> {
     let name = if let Some(name) = get_from_env(get_env_key(role, SignatureComponent::Name))? {
@@ -194,7 +192,7 @@ pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -
     same_person(a, b) && a.when() == b.when()
 }
 
-fn get_from_config(config: &Config, key: &str) -> Result<Option<String>, Error> {
+fn get_from_config(config: &git2::Config, key: &str) -> Result<Option<String>, Error> {
     match config.get_string(key) {
         Ok(value) => Ok(Some(value)),
         Err(e) => match (e.class(), e.code()) {
@@ -241,7 +239,7 @@ fn get_from_env(key: &str) -> Result<Option<String>, Error> {
     }
 }
 
-fn get_from_arg(arg: &str, matches: &ArgMatches) -> Result<Option<String>, Error> {
+fn get_from_arg(arg: &str, matches: &clap::ArgMatches) -> Result<Option<String>, Error> {
     if let Some(value_os) = matches.value_of_os(arg) {
         let value_str: &str = value_os.to_str().ok_or_else(|| {
             Error::NonUtf8Argument(arg.into(), value_os.to_string_lossy().to_string())

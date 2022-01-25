@@ -9,7 +9,7 @@ use indexmap::IndexSet;
 
 use crate::{
     color::get_color_stdout,
-    commit::{CommitExtended, CommitMessage},
+    commit::{CommitMessage, RepositoryCommitExtended},
     error::Error,
     hook::run_pre_commit_hook,
     index::TemporaryIndex,

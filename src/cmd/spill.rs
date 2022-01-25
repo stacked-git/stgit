@@ -4,7 +4,7 @@ use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    commit::{CommitExtended, CommitMessageExtended},
+    commit::{CommitExtended, RepositoryCommitExtended},
     error::Error,
     index::TemporaryIndex,
     stack::{Stack, StackStateAccess},
