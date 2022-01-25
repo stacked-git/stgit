@@ -336,13 +336,26 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let author = if file_author.is_some() {
             file_author
+        } else if let Some(overlay_author) = overlay_author {
+            Some(overlay_author.override_author(matches)?)
         } else {
-            let author = overlay_author.unwrap_or_else(|| {
-                patch_commit
-                    .expect("existing patch or author overlay is required")
-                    .author()
-            });
-            Some(author.override_author(matches)?)
+            // Problem: the patch commit, which may not have been created by StGit,
+            // may have mal-encoded author. I.e. the author is not encoded with the
+            // nominal i18n.commitEncoding and/or it is not valid UTF-8.
+            //
+            // The approach here is to try to get the author signature from
+            // whereever possible *before* even trying to inspect/decode the author
+            // from the existing patch commit. I.e. it will be an error of the
+            // existing patch commit's author is broken, but only if the author
+            // signature has to be derived from that commit.
+            let patch_commit = patch_commit.expect("existing patch or author overlay is required");
+            if let Some(args_author) =
+                git2::Signature::author_from_args(matches, Some(patch_commit.author().when()))?
+            {
+                Some(args_author)
+            } else {
+                Some(patch_commit.author_strict()?.override_author(matches)?)
+            }
         };
 
         let mut need_interactive_edit = matches.is_present("edit")

@@ -16,6 +16,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     pathspec,
+    signature::SignatureExtended,
     stack::{Stack, StackStateAccess},
     stupid,
 };
@@ -142,6 +143,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let config = repo.config()?;
 
     stack.check_head_top_mismatch()?;
 
@@ -162,6 +164,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let tree_id = assemble_refresh_tree(
         &stack,
+        &config,
         matches,
         matches.is_present("update").then(|| &patchname),
     )?;
@@ -170,10 +173,9 @@ fn run(matches: &ArgMatches) -> super::Result {
     let opt_annotate = matches.value_of("annotate");
 
     // Make temp patch
-    let patch_commit = stack.get_patch_commit(&patchname);
     let temp_commit_id = stack.repo.commit_ex(
-        &patch_commit.author(),
-        &patch_commit.committer(),
+        &git2::Signature::make_author(Some(&config), matches)?,
+        &git2::Signature::default_committer(Some(&config))?,
         &CommitMessage::from(format!("Refresh of {}", &patchname)),
         tree_id,
         [stack.head().id()],
@@ -436,6 +438,7 @@ fn determine_refresh_paths(
 
 pub(crate) fn assemble_refresh_tree(
     stack: &Stack,
+    config: &git2::Config,
     matches: &ArgMatches,
     limit_to_patchname: Option<&PatchName>,
 ) -> Result<git2::Oid, Error> {
@@ -443,7 +446,6 @@ pub(crate) fn assemble_refresh_tree(
     let opt_submodules = matches.is_present("submodules");
     let opt_nosubmodules = matches.is_present("no-submodules");
     let use_submodules = if !opt_submodules && !opt_nosubmodules {
-        let config = repo.config()?;
         config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
     } else {
         opt_submodules

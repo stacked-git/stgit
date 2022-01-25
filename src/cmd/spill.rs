@@ -98,8 +98,8 @@ fn run(matches: &ArgMatches) -> super::Result {
     };
 
     let new_commit_id = repo.commit_ex(
-        &patch_commit.author(),
-        &patch_commit.committer(),
+        &patch_commit.author_strict()?,
+        &patch_commit.committer_strict()?,
         &patch_commit.message_ex(),
         tree_id,
         patch_commit.parent_ids(),

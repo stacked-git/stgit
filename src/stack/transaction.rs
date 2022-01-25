@@ -375,7 +375,7 @@ impl<'repo> StackTransaction<'repo> {
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
             let new_commit_id = self.stack.repo.commit_ex(
-                &patch_commit.author(),
+                &patch_commit.author_strict()?,
                 &default_committer,
                 &message,
                 patch_commit.tree_id(),
@@ -776,7 +776,7 @@ impl<'repo> StackTransaction<'repo> {
 
         if new_tree_id != patch_commit.tree_id() || new_parent.id() != old_parent.id() {
             let commit_id = repo.commit_ex(
-                &patch_commit.author(),
+                &patch_commit.author_strict()?,
                 &default_committer,
                 &patch_commit.message_ex(),
                 new_tree_id,

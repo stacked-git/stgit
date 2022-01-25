@@ -5,6 +5,7 @@ use git2::Oid;
 use termcolor::WriteColor;
 
 use crate::{
+    commit::CommitExtended,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
 };
@@ -313,13 +314,18 @@ fn run(matches: &ArgMatches) -> super::Result {
 
         if opt_author {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-            let author: git2::Signature = commit.author();
-            let author_name: &str = if let Some(name) = author.name() {
-                name
+            if let Ok(author) = commit.author_strict() {
+                write!(
+                    stdout,
+                    " # {:width$}",
+                    &author.name().unwrap(),
+                    width = author_width
+                )?;
             } else {
-                UNPRINTABLE
-            };
-            write!(stdout, " # {:width$}", author_name, width = author_width)?;
+                let author = commit.author();
+                let name = String::from_utf8_lossy(author.name_bytes());
+                write!(stdout, " # {:width$}", &name, width = author_width)?;
+            }
         }
         if opt_description {
             let suffix = match commit.summary() {

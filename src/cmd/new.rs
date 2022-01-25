@@ -142,7 +142,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let is_refreshing = matches.is_present("refresh") || matches.is_present("pathspecs");
 
     let tree_id = if is_refreshing {
-        refresh::assemble_refresh_tree(&stack, matches, None)?
+        refresh::assemble_refresh_tree(&stack, &config, matches, None)?
     } else {
         stack.head.tree_id()
     };

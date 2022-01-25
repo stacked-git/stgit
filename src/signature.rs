@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use chrono::{DateTime, FixedOffset, TimeZone};
 
 use crate::error::Error;
@@ -11,10 +13,15 @@ pub(crate) trait SignatureExtended {
     ) -> Result<git2::Signature<'static>, Error> {
         Self::default_author(config)?.override_author(matches)
     }
+    fn author_from_args(
+        matches: &clap::ArgMatches,
+        when: Option<git2::Time>,
+    ) -> Result<Option<git2::Signature<'static>>, Error>;
     fn override_author(
         &self,
         matches: &clap::ArgMatches,
     ) -> Result<git2::Signature<'static>, Error>;
+    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>, Error>;
 }
 
 impl SignatureExtended for git2::Signature<'_> {
@@ -26,52 +33,90 @@ impl SignatureExtended for git2::Signature<'_> {
         make_default(config, SignatureRole::Committer)
     }
 
+    fn author_from_args(
+        matches: &clap::ArgMatches,
+        when: Option<git2::Time>,
+    ) -> Result<Option<git2::Signature<'static>>, Error> {
+        let when = if let Some(when) = when {
+            when
+        } else if let Some(authdate) = get_from_arg("authdate", matches)? {
+            parse_time(&authdate, "authdate")?
+        } else {
+            return Ok(None);
+        };
+
+        if let Some(name_email) = get_from_arg("author", matches)? {
+            let (name, email) = parse_name_email(&name_email)?;
+            let author = git2::Signature::new(name, email, &when)?;
+            Ok(Some(author))
+        } else if let (Some(name), Some(email)) = (
+            get_from_arg("authname", matches)?,
+            get_from_arg("authemail", matches)?,
+        ) {
+            let author = git2::Signature::new(&name, &email, &when)?;
+            Ok(Some(author))
+        } else {
+            Ok(None)
+        }
+    }
+
     fn override_author(
         &self,
         matches: &clap::ArgMatches,
     ) -> Result<git2::Signature<'static>, Error> {
-        let (author_name, author_email): (Option<String>, Option<String>) =
-            if let Some(name_email) = get_from_arg("author", matches)? {
-                let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
-                (
-                    Some(parsed_name.to_string()),
-                    Some(parsed_email.to_string()),
-                )
+        let when = if let Some(authdate) = get_from_arg("authdate", matches)? {
+            parse_time(&authdate, "authdate")?
+        } else {
+            self.when()
+        };
+
+        if let Some(name_email) = get_from_arg("author", matches)? {
+            let (name, email) = parse_name_email(&name_email)?;
+            Ok(git2::Signature::new(name, email, &when)?)
+        } else {
+            let name = if let Some(authname) = get_from_arg("authname", matches)? {
+                authname
             } else {
-                (None, None)
+                Cow::Borrowed(self.name().expect("author signature must be utf-8"))
             };
 
-        let name = if let Some(author_name) = author_name {
-            Some(author_name)
+            let email = if let Some(authemail) = get_from_arg("authemail", matches)? {
+                authemail
+            } else {
+                Cow::Borrowed(self.email().expect("author signature must be utf-8"))
+            };
+
+            Ok(git2::Signature::new(&name, &email, &when)?)
+        }
+    }
+
+    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>, Error> {
+        let encoding = if let Some(encoding_name) = encoding_name {
+            encoding_rs::Encoding::for_label(encoding_name.as_bytes()).ok_or_else(|| {
+                Error::Generic(format!("Unhandled commit encoding `{}`", encoding_name,))
+            })?
         } else {
-            get_from_arg("authname", matches)?
+            encoding_rs::UTF_8
         };
 
-        let email = if let Some(author_email) = author_email {
-            Some(author_email)
+        if let Some(name) =
+            encoding.decode_without_bom_handling_and_without_replacement(self.name_bytes())
+        {
+            if let Some(email) =
+                encoding.decode_without_bom_handling_and_without_replacement(self.email_bytes())
+            {
+                Ok(git2::Signature::new(&name, &email, &self.when())?)
+            } else {
+                Err(Error::Generic(format!(
+                    "could not decode signature email as `{}`",
+                    encoding.name(),
+                )))
+            }
         } else {
-            get_from_arg("authemail", matches)?
-        };
-
-        if let Some(authdate) = get_from_arg("authdate", matches)? {
-            let name = name
-                .as_deref()
-                .unwrap_or_else(|| self.name().expect("author signature must be utf-8"));
-            let email = email
-                .as_deref()
-                .unwrap_or_else(|| self.email().expect("author signature must be utf-8"));
-            let when = parse_time(&authdate, "authdate")?;
-            Ok(git2::Signature::new(name, email, &when)?)
-        } else if name.is_some() || email.is_some() {
-            let name = name
-                .as_deref()
-                .unwrap_or_else(|| self.name().expect("author signature must be utf-8"));
-            let email = email
-                .as_deref()
-                .unwrap_or_else(|| self.email().expect("author signature must be utf-8"));
-            Ok(git2::Signature::new(name, email, &self.when())?)
-        } else {
-            Ok(self.to_owned())
+            Err(Error::Generic(format!(
+                "could not decode signature name as `{}`",
+                encoding.name(),
+            )))
         }
     }
 }
@@ -239,12 +284,15 @@ fn get_from_env(key: &str) -> Result<Option<String>, Error> {
     }
 }
 
-fn get_from_arg(arg: &str, matches: &clap::ArgMatches) -> Result<Option<String>, Error> {
+fn get_from_arg<'a>(
+    arg: &str,
+    matches: &'a clap::ArgMatches,
+) -> Result<Option<Cow<'a, str>>, Error> {
     if let Some(value_os) = matches.value_of_os(arg) {
         let value_str: &str = value_os.to_str().ok_or_else(|| {
             Error::NonUtf8Argument(arg.into(), value_os.to_string_lossy().to_string())
         })?;
-        Ok(Some(value_str.to_string()))
+        Ok(Some(Cow::Borrowed(value_str)))
     } else {
         Ok(None)
     }

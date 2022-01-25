@@ -297,7 +297,7 @@ impl<'repo> StackState<'repo> {
              \n",
             parent.tree_id(),
             commit.tree_id(),
-            commit.author(),
+            commit.author(), // N.B. uses String::from_utf8_lossy()
             commit.time().datetime().format("%Y-%m-%d %H:%M:%S %z"),
         )?;
         patch_meta.write_all(commit.message_raw_bytes())?;
