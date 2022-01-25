@@ -69,20 +69,12 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
-    pub(crate) fn encode(&'a self, label: Option<&str>) -> Result<Cow<'a, [u8]>, Error> {
-        let target_encoding = if let Some(label) = label {
-            if let Some(encoding) = encoding_rs::Encoding::for_label(label.as_bytes()) {
-                encoding
-            } else {
-                return Err(Error::Generic(format!(
-                    "Unhandled commit message encoding `{}`",
-                    label
-                )));
-            }
-        } else {
-            encoding_rs::UTF_8
-        };
-
+    pub(crate) fn encode_with(
+        &'a self,
+        target_encoding: Option<&'static encoding_rs::Encoding>,
+    ) -> Result<Cow<'a, [u8]>, Error> {
+        let is_encoding_specified = target_encoding.is_some();
+        let target_encoding = target_encoding.unwrap_or(encoding_rs::UTF_8);
         match self {
             CommitMessage::Str(s) => {
                 if target_encoding == encoding_rs::UTF_8 {
@@ -149,7 +141,7 @@ impl<'a> CommitMessage<'a> {
                             encoding_str
                         )))
                     }
-                } else if label.is_none() {
+                } else if !is_encoding_specified {
                     // No current encoding.
                     //
                     // No target encoding either. Assume current mystery encoding is
@@ -177,6 +169,22 @@ impl<'a> CommitMessage<'a> {
             }
         }
     }
+
+    // pub(crate) fn encode(&'a self, label: Option<&str>) -> Result<Cow<'a, [u8]>, Error> {
+    //     let target_encoding = if let Some(label) = label {
+    //         if let Some(encoding) = encoding_rs::Encoding::for_label(label.as_bytes()) {
+    //             Some(encoding)
+    //         } else {
+    //             return Err(Error::Generic(format!(
+    //                 "Unhandled commit message encoding `{}`",
+    //                 label
+    //             )));
+    //         }
+    //     } else {
+    //         None
+    //     };
+    //     self.encode_with(target_encoding)
+    // }
 
     pub(crate) fn raw_bytes(&self) -> &[u8] {
         match self {
@@ -317,6 +325,11 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     }
 }
 
+pub(crate) struct CommitOptions<'a> {
+    commit_encoding: Option<&'a str>,
+    gpgsign: bool,
+}
+
 pub(crate) trait RepositoryCommitExtended {
     fn commit_ex(
         &self,
@@ -325,6 +338,16 @@ pub(crate) trait RepositoryCommitExtended {
         message: &CommitMessage,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
+    ) -> Result<git2::Oid, Error>;
+
+    fn commit_with_options(
+        &self,
+        author: &git2::Signature,
+        committer: &git2::Signature,
+        message: &CommitMessage,
+        tree_id: git2::Oid,
+        parent_ids: impl IntoIterator<Item = git2::Oid>,
+        options: CommitOptions,
     ) -> Result<git2::Oid, Error>;
 }
 
@@ -338,30 +361,53 @@ impl RepositoryCommitExtended for git2::Repository {
         parent_ids: impl IntoIterator<Item = git2::Oid>,
     ) -> Result<git2::Oid, Error> {
         let config = self.config()?;
-        let commit_encoding_str = config.get_string("i18n.commitencoding").ok();
-        let commit_encoding_str = commit_encoding_str.as_deref();
-        let commit_encoding = match commit_encoding_str {
+        let commit_encoding = config.get_string("i18n.commitencoding").ok();
+        let commit_encoding = commit_encoding.as_deref();
+        let gpgsign = config.get_bool("commit.gpgsign").unwrap_or(false);
+        self.commit_with_options(
+            author,
+            committer,
+            message,
+            tree_id,
+            parent_ids,
+            CommitOptions {
+                commit_encoding,
+                gpgsign,
+            },
+        )
+    }
+
+    fn commit_with_options(
+        &self,
+        author: &git2::Signature,
+        committer: &git2::Signature,
+        message: &CommitMessage,
+        tree_id: git2::Oid,
+        parent_ids: impl IntoIterator<Item = git2::Oid>,
+        options: CommitOptions<'_>,
+    ) -> Result<git2::Oid, Error> {
+        let commit_encoding = match options.commit_encoding {
             Some(s) => {
                 let encoding = encoding_rs::Encoding::for_label(s.as_bytes()).ok_or_else(|| {
                     Error::Generic(format!("Unhandled i18n.commitEncoding `{}`", s))
                 })?;
-                encoding
+                Some(encoding)
             }
-            None => encoding_rs::UTF_8,
+            None => None,
         };
 
-        let gpgsign = config.get_bool("commit.gpgsign").unwrap_or(false);
-
-        if gpgsign || commit_encoding != encoding_rs::UTF_8 {
+        if options.gpgsign
+            || (commit_encoding.is_some() && commit_encoding != Some(encoding_rs::UTF_8))
+        {
             // Use git for any commit that needs to be signed
             stupid::commit_tree(
                 self.path(),
                 author,
                 committer,
-                &message.encode(commit_encoding_str)?,
+                &message.encode_with(commit_encoding)?,
                 tree_id,
                 parent_ids,
-                gpgsign,
+                options.gpgsign,
             )
         } else {
             // Use git2 for all other occasions
