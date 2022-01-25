@@ -4,12 +4,13 @@ use std::str;
 
 use git2::{Commit, FileMode, Oid, Tree};
 
-use crate::commit::CommitMessage;
-use crate::error::Error;
-use crate::patchname::PatchName;
-use crate::signature;
-use crate::stack::serde::RawStackState;
-use crate::{commit::CommitExtended, signature::TimeExtended};
+use crate::{
+    commit::{CommitExtended, CommitMessage},
+    error::Error,
+    patchname::PatchName,
+    signature::{SignatureExtended, TimeExtended},
+    stack::serde::RawStackState,
+};
 
 use super::iter::{AllPatches, BothPatches};
 
@@ -149,7 +150,7 @@ impl<'repo> StackState<'repo> {
         };
         let state_tree_id = self.make_tree(repo, &prev_state_tree)?;
         let config = repo.config()?; // TODO: wrapped config
-        let sig = signature::default_committer(Some(&config))?;
+        let sig = git2::Signature::default_committer(Some(&config))?;
 
         let simplified_parents: Vec<Oid> = match &self.prev {
             Some(prev_commit) => vec![prev_commit.parent_id(0)?],

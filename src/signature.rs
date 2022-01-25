@@ -4,6 +4,80 @@ use git2::Config;
 
 use crate::error::Error;
 
+pub(crate) trait SignatureExtended {
+    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error>;
+    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error>;
+    fn make_author(
+        config: Option<&git2::Config>,
+        matches: &clap::ArgMatches,
+    ) -> Result<git2::Signature<'static>, Error> {
+        Self::default_author(config)?.override_author(matches)
+    }
+    fn override_author(
+        &self,
+        matches: &clap::ArgMatches,
+    ) -> Result<git2::Signature<'static>, Error>;
+}
+
+impl SignatureExtended for git2::Signature<'_> {
+    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error> {
+        make_default(config, SignatureRole::Author)
+    }
+
+    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error> {
+        make_default(config, SignatureRole::Committer)
+    }
+
+    fn override_author(
+        &self,
+        matches: &clap::ArgMatches,
+    ) -> Result<git2::Signature<'static>, Error> {
+        let (author_name, author_email): (Option<String>, Option<String>) =
+            if let Some(name_email) = get_from_arg("author", matches)? {
+                let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
+                (
+                    Some(parsed_name.to_string()),
+                    Some(parsed_email.to_string()),
+                )
+            } else {
+                (None, None)
+            };
+
+        let name = if let Some(author_name) = author_name {
+            Some(author_name)
+        } else {
+            get_from_arg("authname", matches)?
+        };
+
+        let email = if let Some(author_email) = author_email {
+            Some(author_email)
+        } else {
+            get_from_arg("authemail", matches)?
+        };
+
+        if let Some(authdate) = get_from_arg("authdate", matches)? {
+            let name = name
+                .as_deref()
+                .unwrap_or_else(|| self.name().expect("author signature must be utf-8"));
+            let email = email
+                .as_deref()
+                .unwrap_or_else(|| self.email().expect("author signature must be utf-8"));
+            let when = parse_time(&authdate, "authdate")?;
+            Ok(git2::Signature::new(name, email, &when)?)
+        } else if name.is_some() || email.is_some() {
+            let name = name
+                .as_deref()
+                .unwrap_or_else(|| self.name().expect("author signature must be utf-8"));
+            let email = email
+                .as_deref()
+                .unwrap_or_else(|| self.email().expect("author signature must be utf-8"));
+            Ok(git2::Signature::new(name, email, &self.when())?)
+        } else {
+            Ok(self.to_owned())
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 enum SignatureRole {
     Author,
@@ -15,16 +89,6 @@ enum SignatureComponent {
     Name,
     Email,
     Date,
-}
-
-pub(crate) fn default_author(config: Option<&Config>) -> Result<git2::Signature<'static>, Error> {
-    make_default(config, SignatureRole::Author)
-}
-
-pub(crate) fn default_committer(
-    config: Option<&Config>,
-) -> Result<git2::Signature<'static>, Error> {
-    make_default(config, SignatureRole::Committer)
 }
 
 fn make_default(
@@ -85,62 +149,6 @@ fn make_default(
     };
 
     Ok(signature)
-}
-
-pub(crate) fn make_author(
-    config: Option<&Config>,
-    matches: &ArgMatches,
-) -> Result<git2::Signature<'static>, Error> {
-    override_author(&default_author(config)?, matches)
-}
-
-pub(crate) fn override_author(
-    signature: &git2::Signature<'_>,
-    matches: &ArgMatches,
-) -> Result<git2::Signature<'static>, Error> {
-    let (author_name, author_email): (Option<String>, Option<String>) =
-        if let Some(name_email) = get_from_arg("author", matches)? {
-            let (parsed_name, parsed_email) = parse_name_email(&name_email)?;
-            (
-                Some(parsed_name.to_string()),
-                Some(parsed_email.to_string()),
-            )
-        } else {
-            (None, None)
-        };
-
-    let name = if let Some(author_name) = author_name {
-        Some(author_name)
-    } else {
-        get_from_arg("authname", matches)?
-    };
-
-    let email = if let Some(author_email) = author_email {
-        Some(author_email)
-    } else {
-        get_from_arg("authemail", matches)?
-    };
-
-    if let Some(authdate) = get_from_arg("authdate", matches)? {
-        let name = name
-            .as_deref()
-            .unwrap_or_else(|| signature.name().expect("author signature must be utf-8"));
-        let email = email
-            .as_deref()
-            .unwrap_or_else(|| signature.email().expect("author signature must be utf-8"));
-        let when = parse_time(&authdate, "authdate")?;
-        Ok(git2::Signature::new(name, email, &when)?)
-    } else if name.is_some() || email.is_some() {
-        let name = name
-            .as_deref()
-            .unwrap_or_else(|| signature.name().expect("author signature must be utf-8"));
-        let email = email
-            .as_deref()
-            .unwrap_or_else(|| signature.email().expect("author signature must be utf-8"));
-        Ok(git2::Signature::new(name, email, &signature.when())?)
-    } else {
-        Ok(signature.to_owned())
-    }
 }
 
 pub(crate) trait TimeExtended {

@@ -7,7 +7,7 @@ use crate::{
     error::Error,
     patchedit,
     patchname::PatchName,
-    signature,
+    signature::SignatureExtended,
     stack::{Stack, StackStateAccess},
 };
 
@@ -154,7 +154,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         .allow_implicit_edit(true)
         .allow_template_save(!is_refreshing)
         .original_patchname(patchname.as_ref())
-        .default_author(signature::make_author(Some(&config), matches)?)
+        .default_author(git2::Signature::make_author(Some(&config), matches)?)
         .override_tree_id(tree_id)
         .override_parent_id(parent_id)
         .edit(&stack, &repo, matches)?

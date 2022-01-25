@@ -15,6 +15,7 @@ use crate::{
     error::Error,
     index::TemporaryIndex,
     patchname::PatchName,
+    signature::SignatureExtended,
     stack::StackStateAccess,
     stupid,
 };
@@ -310,7 +311,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         } = self;
 
         let config = repo.config()?;
-        let default_committer = crate::signature::default_committer(Some(&config))?;
+        let default_committer = git2::Signature::default_committer(Some(&config))?;
         let committer = patch_commit
             .map(|commit| commit.committer().to_owned())
             .unwrap_or_else(|| default_committer.clone());
@@ -341,7 +342,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     .expect("existing patch or author overlay is required")
                     .author()
             });
-            Some(crate::signature::override_author(&author, matches)?)
+            Some(author.override_author(matches)?)
         };
 
         let mut need_interactive_edit = matches.is_present("edit")

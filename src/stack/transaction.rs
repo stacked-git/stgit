@@ -7,13 +7,15 @@ use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
-use crate::commit::{CommitExtended, CommitMessageExtended};
-use crate::error::{repo_state_to_str, Error};
-use crate::index::TemporaryIndex;
-use crate::patchname::PatchName;
-use crate::signature;
-use crate::stack::{PatchState, Stack, StackStateAccess};
-use crate::stupid;
+use crate::{
+    commit::{CommitExtended, CommitMessageExtended},
+    error::{repo_state_to_str, Error},
+    index::TemporaryIndex,
+    patchname::PatchName,
+    signature::SignatureExtended,
+    stack::{PatchState, Stack, StackStateAccess},
+    stupid,
+};
 
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,
@@ -369,7 +371,7 @@ impl<'repo> StackTransaction<'repo> {
         let is_empty = parent.tree_id() == patch_commit.tree_id();
 
         let push_status = if patch_commit.parent_id(0)? != self.top().id() {
-            let default_committer = signature::default_committer(Some(&config))?;
+            let default_committer = git2::Signature::default_committer(Some(&config))?;
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
             let new_commit_id = self.stack.repo.commit_ex(
@@ -684,7 +686,7 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<(), Error> {
         let repo = self.stack.repo;
         let config = repo.config()?;
-        let default_committer = signature::default_committer(Some(&config))?;
+        let default_committer = git2::Signature::default_committer(Some(&config))?;
         let patch_commit = self.get_patch_commit(patchname).clone();
         let old_parent = patch_commit.parent(0)?;
         let new_parent = self.top().clone();
