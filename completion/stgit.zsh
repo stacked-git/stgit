@@ -117,7 +117,7 @@ _stg-edit() {
     __stg_add_args_edit
     __stg_add_args_hook
     __stg_add_args_savetemplate
-    __stg_add_args_sign
+    __stg_add_args_trailers
     subcmd_args+=(
         '(-d --diff)'{-d,--diff}'[edit patch diff]'
         '(-t --set-tree)'{-t,--set-tree=}'[set git tree of patch]:treeish'
@@ -217,7 +217,7 @@ _stg-import() {
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
-    __stg_add_args_sign
+    __stg_add_args_trailers
     subcmd_args+=(
         '(-n --name)'{-n,--name}'[name for imported patch]'
         '(-p --strip)'{-p+,--strip=}'[remove N leading directories from diff paths]:num'
@@ -302,7 +302,7 @@ _stg-new() {
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_author
-    __stg_add_args_sign
+    __stg_add_args_trailers
     __stg_add_args_hook
     __stg_add_args_savetemplate
     subcmd_args+=(
@@ -440,7 +440,7 @@ _stg-refresh() {
     __stg_add_args_author
     __stg_add_args_edit
     __stg_add_args_hook
-    __stg_add_args_sign
+    __stg_add_args_trailers
     __stg_add_args_diffopts
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate=}'[annotate patch log entry]:note'
@@ -711,11 +711,11 @@ __stg_add_args_savetemplate() {
     )
 }
 
-__stg_add_args_sign() {
+__stg_add_args_trailers() {
     subcmd_args+=(
         '--ack=-[add Acked-by trailer]'
         '--review=-[add Reviewed-by trailer]'
-        '--sign=-[add Signed-off-by trailer]'
+        '--signoff=-[add Signed-off-by trailer]'
     )
 }
 

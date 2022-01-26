@@ -44,6 +44,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .short('m')
                 .help("Use message for patch")
                 .long_help("Use message instead of invoking the editor")
+                .value_name("message")
                 .takes_value(true)
                 .allow_invalid_utf8(false)
                 .forbid_empty_values(false)
@@ -59,6 +60,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                     "Use the contents of file instead of invoking the editor. \
                      Use \"-\" to read from stdin.",
                 )
+                .value_name("path")
                 .takes_value(true)
                 .forbid_empty_values(true)
                 .allow_invalid_utf8(true)
@@ -70,8 +72,9 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .help("Disable commit-msg hook"),
         )
         .arg(
-            Arg::new("sign")
-                .long("sign")
+            Arg::new("signoff")
+                .long("signoff")
+                .alias("sign")
                 .help("Add Signed-off-by message trailer")
                 .long_help(
                     "Add \"Signed-off-by\" message trailer.\n\
@@ -82,6 +85,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
+                .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
@@ -99,6 +103,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
+                .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
@@ -116,6 +121,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
                 .value_name("value")
                 .takes_value(true)
                 .min_values(0)
+                .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
                 .multiple_occurrences(true),
@@ -154,6 +160,7 @@ pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
             Arg::new("author")
                 .long("author")
                 .help("Set the author \"name <email>\"")
+                .value_name("name-and-email")
                 .takes_value(true)
                 .allow_invalid_utf8(true)
                 .value_hint(ValueHint::Other),
@@ -364,7 +371,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 && ![
                     "message",
                     "file",
-                    "sign",
+                    "signoff",
                     "ack",
                     "review",
                     "sign-by",

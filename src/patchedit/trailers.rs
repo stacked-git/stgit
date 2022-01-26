@@ -11,7 +11,7 @@ pub(crate) fn add_trailers<'a>(
     let mut trailers: Vec<(usize, &str, &str)> = vec![];
 
     for (opt_name, old_by_opt, trailer) in &[
-        ("sign", "sign-by", "Signed-off-by"),
+        ("signoff", "sign-by", "Signed-off-by"),
         ("ack", "ack-by", "Acked-by"),
         ("review", "review-by", "Reviewed-by"),
     ] {
