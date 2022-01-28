@@ -56,8 +56,8 @@ _stg-branch() {
 _stg-clean() {
     __stg_add_args_help
     subcmd_args+=(
-        '(-a --applied)'{-a,--applied}'[delete empty applied patches]'
-        '(-u --unapplied)'{-u,--unapplied}'[delete empty unapplied patches]'
+        '(-A --applied)'{-A,--applied}'[delete empty applied patches]'
+        '(-U --unapplied)'{-U,--unapplied}'[delete empty unapplied patches]'
     )
     _arguments -s -S $subcmd_args
 }

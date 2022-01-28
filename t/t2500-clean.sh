@@ -16,10 +16,17 @@ test_expect_success 'Initialize StGit stack' '
     stg pop
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test too many arguments' '
     command_error stg clean p0 2>err &&
     grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success 'Test too many arguments' '
+    general_error stg clean p0 2>err &&
+    grep -e "Found argument .p0. which wasn.t expected, or isn.t valid in this context" err
+'
+fi
 
 test_expect_success 'Clean empty patches' '
     [ "$(echo $(stg series --applied --noprefix))" = "e0 p0 e1" ] &&

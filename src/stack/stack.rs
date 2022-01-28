@@ -84,7 +84,11 @@ impl<'repo> Stack<'repo> {
 
     pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
         if self.repo.index()?.has_conflicts() {
-            Err(Error::OutstandingConflicts)
+            if conflicts_okay {
+                Ok(())
+            } else {
+                Err(Error::OutstandingConflicts)
+            }
         } else {
             match self.repo.state() {
                 RepositoryState::Clean => Ok(()),
