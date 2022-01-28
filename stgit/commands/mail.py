@@ -665,7 +665,7 @@ def __build_cover(tmpl, msg_id, options, patches):
     extra_cc = []
     if options.auto:
         for pn in patches:
-            message_str = stack.patchs[pn].data.message_str
+            message_str = stack.patches[pn].data.message_str
             if message_str:
                 descr = message_str.strip()
                 extra_cc.extend(__get_signers_list(descr))
