@@ -56,6 +56,7 @@ pub(crate) fn get_commands() -> Commands {
     BTreeMap::from([
         clean::get_command(),
         delete::get_command(),
+        diff::get_command(),
         edit::get_command(),
         float::get_command(),
         goto::get_command(),
@@ -80,8 +81,6 @@ pub(crate) fn get_commands() -> Commands {
 }
 
 pub(crate) const PYTHON_COMMANDS: &[&str] = &[
-    "branch", "clone", "commit", "diff", "export", "files", "fold", "import", "log", "mail",
-    "patches", "pick", "pull", "rebase", "redo", "repair", "reset", "squash", "sync",
-    "uncommit",
-    "undo",
+    "branch", "clone", "commit", "export", "files", "fold", "import", "log", "mail", "patches",
+    "pick", "pull", "rebase", "redo", "repair", "reset", "squash", "sync", "uncommit", "undo",
 ];
