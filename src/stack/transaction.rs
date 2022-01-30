@@ -119,7 +119,7 @@ impl<'repo> TransactionBuilder<'repo> {
         let output = output.expect("with_output_stream() must be called");
         let output = RefCell::new(output);
 
-        let current_tree_id = stack.head.tree_id();
+        let current_tree_id = stack.branch_head.tree_id();
         let applied = stack.applied().to_vec();
         let unapplied = stack.unapplied().to_vec();
         let hidden = stack.hidden().to_vec();
@@ -184,7 +184,7 @@ impl<'repo> ExecuteContext<'repo> {
             let trans_head = transaction.head().clone();
 
             if transaction.use_index_and_worktree {
-                let stack_head = transaction.stack.head.clone();
+                let stack_head = transaction.stack.branch_head.clone();
                 let result = transaction.checkout(&trans_head, allow_bad_head);
                 if let Err(err) = result {
                     let allow_bad_head = true;
@@ -198,8 +198,9 @@ impl<'repo> ExecuteContext<'repo> {
                 .branch
                 .get_mut()
                 .set_target(trans_head.id(), reflog_msg)?;
-            transaction.stack.branch = git2::Branch::wrap(updated_ref);
-            transaction.stack.head = trans_head;
+            transaction
+                .stack
+                .update_head(git2::Branch::wrap(updated_ref), trans_head);
         }
 
         let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
@@ -275,14 +276,6 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 impl<'repo> StackTransaction<'repo> {
-    pub(crate) fn base(&self) -> &Commit<'repo> {
-        if let Some(commit) = self.updated_base.as_ref() {
-            commit
-        } else {
-            &self.stack.base
-        }
-    }
-
     fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
         let repo = self.stack.repo;
         if !allow_bad_head {
@@ -838,10 +831,11 @@ impl<'repo> StackTransaction<'repo> {
         let repo = self.stack.repo;
         let mut merged: Vec<&PatchName> = vec![];
         let temp_index_path = temp_index.path().unwrap();
+        let head_tree_id = self.stack.branch_head.tree_id();
 
-        if temp_index_tree_id != &Some(self.stack.head.tree_id()) {
-            stupid::read_tree(self.stack.head.tree_id(), temp_index_path)?;
-            *temp_index_tree_id = Some(self.stack.head.tree_id());
+        if temp_index_tree_id != &Some(head_tree_id) {
+            stupid::read_tree(head_tree_id, temp_index_path)?;
+            *temp_index_tree_id = Some(head_tree_id);
         }
 
         for patchname in patchnames.iter().rev() {
@@ -1081,6 +1075,14 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
             commit
         } else {
             self.top()
+        }
+    }
+
+    fn base(&self) -> &Commit<'repo> {
+        if let Some(commit) = self.updated_base.as_ref() {
+            commit
+        } else {
+            self.stack.base()
         }
     }
 }

@@ -144,10 +144,10 @@ fn run(matches: &ArgMatches) -> super::Result {
     let tree_id = if is_refreshing {
         refresh::assemble_refresh_tree(&stack, &config, matches, None)?
     } else {
-        stack.head.tree_id()
+        stack.branch_head.tree_id()
     };
 
-    let parent_id = stack.head.id();
+    let parent_id = stack.branch_head.id();
 
     let (patchname, commit_id) = match patchedit::EditBuilder::default()
         .allow_diff_edit(false)

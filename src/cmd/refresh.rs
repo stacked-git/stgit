@@ -178,7 +178,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         &git2::Signature::default_committer(Some(&config))?,
         &CommitMessage::from(format!("Refresh of {}", &patchname)),
         tree_id,
-        [stack.head().id()],
+        [stack.branch_head.id()],
     )?;
 
     let temp_patchname = {
@@ -476,7 +476,7 @@ pub(crate) fn assemble_refresh_tree(
         // default index. I.e. by using a temp index, a subset of paths without conflicts
         // may be formed into a coherent tree while leaving the default index as-is.
         let tree_id_result = if is_path_limiting {
-            let head_tree = stack.head.tree()?;
+            let head_tree = stack.branch_head.tree()?;
             let tree_id_result = stack.repo.with_temp_index(|temp_index| {
                 temp_index.read_tree(&head_tree)?;
                 temp_index.add_all(paths, git2::IndexAddOption::DEFAULT, None)?;

@@ -147,7 +147,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             }
         }
     } else if !opt_applied && !opt_unapplied && !opt_hidden {
-        oids.push(stack.head.id());
+        oids.push(stack.branch_head.id());
     }
 
     stupid::show(

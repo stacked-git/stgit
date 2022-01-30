@@ -17,9 +17,9 @@ pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
     pub(crate) branch: Branch<'repo>,
-    pub(crate) base: Commit<'repo>,
-    pub(crate) head: Commit<'repo>,
+    pub(crate) branch_head: Commit<'repo>,
     pub(crate) refname: String,
+    base: Commit<'repo>,
     state: StackState<'repo>,
 }
 
@@ -30,14 +30,14 @@ impl<'repo> Stack<'repo> {
     ) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
-        let head = branch.get().peel_to_commit()?;
-        let base = head.clone();
+        let branch_head = branch.get().peel_to_commit()?;
+        let base = branch_head.clone();
         let refname = state_refname_from_branch_name(&branch_name);
 
         if repo.find_reference(&refname).is_ok() {
             return Err(Error::StackAlreadyInitialized(branch_name));
         }
-        let state = StackState::new(head.clone());
+        let state = StackState::new(branch_head.clone());
         state.commit(repo, Some(&refname), "initialize")?;
         ensure_patch_refs(repo, &branch_name, &state)?;
 
@@ -45,9 +45,9 @@ impl<'repo> Stack<'repo> {
             repo,
             branch_name,
             branch,
-            base,
-            head,
+            branch_head,
             refname,
+            base,
             state,
         })
     }
@@ -58,7 +58,7 @@ impl<'repo> Stack<'repo> {
     ) -> Result<Self, Error> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
-        let head = branch.get().peel_to_commit()?;
+        let branch_head = branch.get().peel_to_commit()?;
         let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&refname)
@@ -68,16 +68,16 @@ impl<'repo> Stack<'repo> {
         let base = if let Some(first_patchname) = state.applied.first() {
             state.patches[first_patchname].commit.parent(0)?
         } else {
-            head.clone()
+            branch_head.clone()
         };
         ensure_patch_refs(repo, &branch_name, &state)?;
         Ok(Self {
             repo,
             branch_name,
             branch,
-            base,
-            head,
+            branch_head,
             refname,
+            base,
             state,
         })
     }
@@ -107,7 +107,7 @@ impl<'repo> Stack<'repo> {
     }
 
     pub fn is_head_top(&self) -> bool {
-        self.state.applied.is_empty() || self.state.head.id() == self.head.id()
+        self.state.applied.is_empty() || self.state.head.id() == self.branch_head.id()
     }
 
     pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
@@ -145,7 +145,7 @@ impl<'repo> Stack<'repo> {
         let prev_state_commit_id = prev_state_commit.id();
         let state = self
             .state
-            .advance_head(self.head.clone(), prev_state_commit);
+            .advance_head(self.branch_head.clone(), prev_state_commit);
 
         let message = "external modifications\n\
                        \n\
@@ -166,6 +166,11 @@ impl<'repo> Stack<'repo> {
 
     pub(crate) fn setup_transaction(self) -> TransactionBuilder<'repo> {
         TransactionBuilder::new(self)
+    }
+
+    pub(crate) fn update_head(&mut self, branch: git2::Branch<'repo>, commit: git2::Commit<'repo>) {
+        self.branch = branch;
+        self.branch_head = commit;
     }
 
     pub(crate) fn state_mut(&mut self) -> &mut StackState<'repo> {
@@ -212,6 +217,10 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
 
     fn head(&self) -> &Commit<'repo> {
         &self.state.head
+    }
+
+    fn base(&self) -> &Commit<'repo> {
+        &self.base
     }
 }
 

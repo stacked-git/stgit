@@ -36,6 +36,7 @@ pub(crate) trait StackStateAccess<'repo> {
     fn has_patch(&self, patchname: &PatchName) -> bool;
     fn top(&self) -> &Commit<'repo>;
     fn head(&self) -> &Commit<'repo>;
+    fn base(&self) -> &Commit<'repo>;
 
     fn get_patch_commit(&self, patchname: &PatchName) -> &Commit<'repo> {
         &self.get_patch(patchname).commit
