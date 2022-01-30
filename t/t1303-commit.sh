@@ -11,10 +11,17 @@ test_expect_success 'Initialize the StGit repository' '
     stg pop
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt to commit an empty patch' '
     command_error stg commit p2 2>err &&
     grep "Empty patch" err
 '
+else
+test_expect_success 'Attempt to commit an empty patch' '
+    command_error stg commit p2 2>err &&
+    grep "Attempt to commit empty patch \`p2\`" err
+'
+fi
 
 test_expect_success 'Commit middle patch' '
     stg commit --allow-empty p2 &&
@@ -33,7 +40,7 @@ test_expect_success 'Commit all patches' '
 '
 
 # stg commit with top != head should not succeed, since the committed
-# patches are poptentially lost.
+# patches are potentially lost.
 test_expect_success 'Commit when top != head (should fail)' '
     stg new -m foo &&
     git reset --hard HEAD^ &&

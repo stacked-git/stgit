@@ -49,8 +49,6 @@ pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
 pub(crate) enum ConflictMode {
     Disallow,
     Allow,
-
-    #[allow(dead_code)]
     AllowIfSameTop,
 }
 
@@ -85,6 +83,16 @@ impl<'repo> TransactionBuilder<'repo> {
     pub(crate) fn allow_conflicts(mut self, allow: bool) -> Self {
         self.conflict_mode = if allow {
             ConflictMode::Allow
+        } else {
+            ConflictMode::Disallow
+        };
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn allow_conflicts_if_same_top(mut self, allow: bool) -> Self {
+        self.conflict_mode = if allow {
+            ConflictMode::AllowIfSameTop
         } else {
             ConflictMode::Disallow
         };
@@ -446,6 +454,38 @@ impl<'repo> StackTransaction<'repo> {
         }
 
         Ok(())
+    }
+
+    pub(crate) fn commit_patches(&mut self, to_commit: &[PatchName]) -> Result<(), Error> {
+        let num_common = self
+            .applied()
+            .iter()
+            .zip(to_commit.iter())
+            .take_while(|(pn0, pn1)| pn0 == pn1)
+            .count();
+
+        let to_push: Vec<PatchName> = if num_common < to_commit.len() {
+            let to_push: Vec<PatchName> = self.applied()[num_common..]
+                .iter()
+                .filter(|pn| !to_commit.contains(*pn))
+                .cloned()
+                .collect();
+
+            self.pop_patches(|pn| to_push.contains(pn))?;
+            self.push_patches(&to_commit[num_common..], false)?;
+            to_push
+        } else {
+            vec![]
+        };
+
+        self.print_committed(to_commit)?;
+
+        self.updated_base = Some(self.get_patch_commit(to_commit.last().unwrap()).clone());
+        for patchname in to_commit {
+            self.patch_updates.insert(patchname.clone(), None);
+        }
+        self.applied = self.applied.split_off(to_commit.len());
+        self.push_patches(&to_push, false)
     }
 
     pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<(), Error> {
@@ -890,6 +930,26 @@ impl<'repo> StackTransaction<'repo> {
         write!(output, " => ")?;
         output.reset()?;
         writeln!(output, "{}", new_patchname)?;
+        Ok(())
+    }
+
+    fn print_committed(&self, committed: &[PatchName]) -> Result<(), Error> {
+        let mut output = self.output.borrow_mut();
+        let mut color_spec = termcolor::ColorSpec::new();
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::White)))?;
+        write!(output, "$ ")?;
+        color_spec.set_fg(None);
+        output.set_color(color_spec.set_intense(true))?;
+        write!(output, "{}", committed[0])?;
+        if committed.len() > 1 {
+            output.set_color(color_spec.set_intense(false))?;
+            write!(output, "..")?;
+            output.set_color(color_spec.set_intense(true))?;
+            let last = &committed[committed.len() - 1];
+            write!(output, "{}", last)?;
+        }
+        output.reset()?;
+        writeln!(output)?;
         Ok(())
     }
 
