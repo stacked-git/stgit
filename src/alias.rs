@@ -76,24 +76,23 @@ pub(crate) fn get_aliases(
         if let Ok(entries) = config.entries(Some("stgit.alias.*")) {
             for entry in entries.flatten() {
                 if let Some(config_key) = entry.name() {
-                    let name = config_key
-                        .strip_prefix("stgit.alias.")
-                        .expect("stgit.alias.* glob problem");
-                    if entry.has_value() {
-                        if let Some(command) = entry.value() {
-                            if !excluded.iter().any(|n| *n == name) {
-                                let key = name.to_string();
-                                let alias = Alias::new(name, command);
-                                aliases.insert(key, alias);
+                    if let Some(name) = config_key.strip_prefix("stgit.alias.") {
+                        if entry.has_value() {
+                            if let Some(command) = entry.value() {
+                                if !excluded.iter().any(|n| *n == name) {
+                                    let key = name.to_string();
+                                    let alias = Alias::new(name, command);
+                                    aliases.insert(key, alias);
+                                }
+                            } else {
+                                return Err(Error::NonUtf8AliasValue(
+                                    name.to_string(),
+                                    config_level_to_str(entry.level()).to_string(),
+                                ));
                             }
                         } else {
-                            return Err(Error::NonUtf8AliasValue(
-                                name.to_string(),
-                                config_level_to_str(entry.level()).to_string(),
-                            ));
+                            aliases.remove(name);
                         }
-                    } else {
-                        aliases.remove(name);
                     }
                 } else {
                     return Err(Error::NonUtf8AliasName(
