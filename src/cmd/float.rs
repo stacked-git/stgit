@@ -1,10 +1,10 @@
 use std::path::Path;
 
+use anyhow::{anyhow, Context, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
     stack::{Stack, StackStateAccess},
@@ -53,7 +53,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
@@ -79,7 +79,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     };
 
     if patches.is_empty() {
-        return Err(Error::Generic("no patches to float".to_string()));
+        return Err(anyhow!("no patches to float"));
     }
 
     if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.is_applied(pn))) {
@@ -127,7 +127,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     Ok(())
 }
 
-fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>, Error> {
+fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
     let use_stdin = path == Path::new("-");
     let contents: String = if use_stdin {
         use std::io::Read;
@@ -154,11 +154,11 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>, Error> {
 
     let allowed_patches = stack.applied_and_unapplied();
 
-    parse_patch_ranges(series, allowed_patches, stack.all_patches()).map_err(|e| {
-        Error::Generic(if use_stdin {
-            format!("<stdin>: {}", e)
+    parse_patch_ranges(series, allowed_patches, stack.all_patches()).with_context(|| {
+        if use_stdin {
+            "<stdin>".to_string()
         } else {
-            format!("{}: {}", path.to_string_lossy(), e)
-        })
+            path.to_string_lossy().to_string()
+        }
     })
 }

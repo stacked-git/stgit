@@ -1,17 +1,16 @@
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
+use anyhow::{anyhow, Context, Result};
 use git2::{Branch, Commit, RepositoryState};
 
 use super::{
+    error::{repo_state_to_str, Error},
     state::{StackState, StackStateAccess},
     transaction::TransactionBuilder,
     PatchState,
 };
-use crate::{
-    error::{repo_state_to_str, Error},
-    patchname::PatchName,
-};
+use crate::patchname::PatchName;
 
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
@@ -27,7 +26,7 @@ impl<'repo> Stack<'repo> {
     pub(crate) fn initialize(
         repo: &'repo git2::Repository,
         branch_name: Option<&str>,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
@@ -35,7 +34,7 @@ impl<'repo> Stack<'repo> {
         let refname = state_refname_from_branch_name(&branch_name);
 
         if repo.find_reference(&refname).is_ok() {
-            return Err(Error::StackAlreadyInitialized(branch_name));
+            return Err(anyhow!("branch `{branch_name}` already initialized"));
         }
         let state = StackState::new(branch_head.clone());
         state.commit(repo, Some(&refname), "initialize")?;
@@ -52,17 +51,14 @@ impl<'repo> Stack<'repo> {
         })
     }
 
-    pub fn from_branch(
-        repo: &'repo git2::Repository,
-        branch_name: Option<&str>,
-    ) -> Result<Self, Error> {
+    pub fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
         let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&refname)
-            .map_err(|_| Error::StackNotInitialized(branch_name.to_string()))?;
+            .map_err(|_| anyhow!("branch `{branch_name}` not initialized"))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         let base = if let Some(first_patchname) = state.applied.first() {
@@ -82,12 +78,12 @@ impl<'repo> Stack<'repo> {
         })
     }
 
-    pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<(), Error> {
+    pub fn check_repository_state(&self, conflicts_okay: bool) -> Result<()> {
         if self.repo.index()?.has_conflicts() {
             if conflicts_okay {
                 Ok(())
             } else {
-                Err(Error::OutstandingConflicts)
+                Err(Error::OutstandingConflicts.into())
             }
         } else {
             match self.repo.state() {
@@ -96,12 +92,12 @@ impl<'repo> Stack<'repo> {
                     if conflicts_okay {
                         Ok(())
                     } else {
-                        Err(Error::OutstandingConflicts)
+                        Err(Error::OutstandingConflicts.into())
                     }
                 }
-                state => Err(Error::ActiveRepositoryState(
-                    repo_state_to_str(state).to_string(),
-                )),
+                state => {
+                    Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into())
+                }
             }
         }
     }
@@ -110,36 +106,42 @@ impl<'repo> Stack<'repo> {
         self.state.applied.is_empty() || self.state.head.id() == self.branch_head.id()
     }
 
-    pub fn check_head_top_mismatch(&self) -> Result<(), Error> {
+    pub fn check_head_top_mismatch(&self) -> Result<()> {
         if self.is_head_top() {
             Ok(())
         } else {
-            Err(Error::StackTopHeadMismatch)
+            Err(anyhow!(
+                "HEAD and stack top are not the same. \
+                 This can happen if you modify the branch with git. \
+                 See `stg repair --help` for next steps to take."
+            ))
         }
     }
 
-    pub fn check_index_clean(&self) -> Result<(), Error> {
+    pub fn check_index_clean(&self) -> Result<()> {
         let mut status_options = git2::StatusOptions::new();
         status_options.show(git2::StatusShow::Index);
         if self.repo.statuses(Some(&mut status_options))?.is_empty() {
             Ok(())
         } else {
-            Err(Error::DirtyIndex)
+            Err(anyhow!("Index not clean. Use `refresh` or `reset --hard`"))
         }
     }
 
-    pub fn check_worktree_clean(&self) -> Result<(), Error> {
+    pub fn check_worktree_clean(&self) -> Result<()> {
         let mut status_options = git2::StatusOptions::new();
         status_options.show(git2::StatusShow::Workdir);
         status_options.exclude_submodules(true);
         if self.repo.statuses(Some(&mut status_options))?.is_empty() {
             Ok(())
         } else {
-            Err(Error::DirtyWorktree)
+            Err(anyhow!(
+                "Worktree not clean. Use `refresh` or `reset --hard`"
+            ))
         }
     }
 
-    pub fn log_external_mods(self) -> Result<Self, Error> {
+    pub fn log_external_mods(self) -> Result<Self> {
         let state_ref = self.repo.find_reference(&self.refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
@@ -232,48 +234,54 @@ fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
     format!("refs/patches/{}/{}", &branch_name, patch_spec)
 }
 
-fn get_branch_name(branch: &Branch<'_>) -> Result<String, Error> {
+fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
-        .map_err(|_| Error::NonUtf8BranchName(String::from_utf8_lossy(name_bytes).to_string()))?
+        .map_err(|_| {
+            anyhow!(
+                "non-UTF-8 branch name `{}`",
+                String::from_utf8_lossy(name_bytes)
+            )
+        })?
         .to_string())
 }
 
 fn get_branch<'repo>(
     repo: &'repo git2::Repository,
     branch_name: Option<&str>,
-) -> Result<git2::Branch<'repo>, Error> {
+) -> Result<git2::Branch<'repo>> {
     if let Some(name) = branch_name {
-        let branch = repo
-            .find_branch(name, git2::BranchType::Local)
-            .map_err(|e| {
-                if e.class() == git2::ErrorClass::Reference {
-                    match e.code() {
-                        git2::ErrorCode::NotFound => Error::BranchNotFound(name.to_string()),
-                        git2::ErrorCode::InvalidSpec => Error::InvalidBranchName(name.to_string()),
-                        git2::ErrorCode::UnbornBranch => Error::UnbornBranch(format!("`{}`", name)),
-                        _ => e.into(),
+        let branch =
+            repo.find_branch(name, git2::BranchType::Local)
+                .map_err(|e| -> anyhow::Error {
+                    if e.class() == git2::ErrorClass::Reference {
+                        match e.code() {
+                            git2::ErrorCode::NotFound => {
+                                anyhow!("branch `{name}` not found")
+                            }
+                            git2::ErrorCode::InvalidSpec => {
+                                anyhow!("invalid branch name `{name}`")
+                            }
+                            git2::ErrorCode::UnbornBranch => {
+                                anyhow!("unborn branch `{name}`")
+                            }
+                            _ => e.into(),
+                        }
+                    } else {
+                        e.into()
                     }
-                } else {
-                    e.into()
-                }
-            })?;
+                })?;
         Ok(branch)
     } else if repo.head_detached()? {
-        Err(Error::HeadDetached)
+        Err(anyhow!("not on branch, HEAD is detached"))
     } else {
-        let head = repo.head().map_err(|e| {
-            if e.code() == git2::ErrorCode::UnbornBranch {
-                Error::UnbornBranch(e.message().to_string())
-            } else {
-                e.into()
-            }
-        })?;
+        let head = repo.head().context("failed to get HEAD reference")?;
         if head.is_branch() {
             Ok(git2::Branch::wrap(head))
         } else {
-            Err(Error::HeadNotBranch(
-                String::from_utf8_lossy(head.name_bytes()).to_string(),
+            Err(anyhow!(
+                "not on branch, HEAD points at `{}`",
+                String::from_utf8_lossy(head.name_bytes())
             ))
         }
     }
@@ -283,7 +291,7 @@ fn ensure_patch_refs<'repo>(
     repo: &'repo git2::Repository,
     branch_name: &str,
     state: &StackState,
-) -> Result<(), Error> {
+) -> Result<()> {
     let patch_ref_prefix = get_patch_refname(branch_name, "");
     let patch_ref_glob = get_patch_refname(branch_name, "*");
     let mut state_patches: BTreeMap<&PatchName, &PatchState> = state.patches.iter().collect();

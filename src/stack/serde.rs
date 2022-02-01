@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
+use anyhow::{Context, Result};
 use git2::Oid;
 
-use crate::error::Error;
 use crate::patchname::PatchName;
 
 /// Raw state deserialization representation.
@@ -22,8 +22,8 @@ pub(crate) struct RawPatchState {
 }
 
 impl RawStackState {
-    pub(crate) fn from_stack_json(data: &[u8]) -> Result<Self, Error> {
-        serde_json::from_slice(data).map_err(Error::Json)
+    pub(crate) fn from_stack_json(data: &[u8]) -> Result<Self> {
+        serde_json::from_slice(data).context("derserializing stack state")
     }
 }
 

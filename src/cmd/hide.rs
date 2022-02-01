@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
@@ -31,7 +32,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;

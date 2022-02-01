@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 
+use anyhow::{anyhow, Result};
 use git2::{Config, ConfigLevel};
-
-use crate::error::Error;
 
 pub(crate) type Aliases = BTreeMap<String, Alias>;
 
@@ -57,10 +56,7 @@ impl Alias {
     }
 }
 
-pub(crate) fn get_aliases(
-    config: Option<&Config>,
-    excluded: Vec<&'static str>,
-) -> Result<Aliases, Error> {
+pub(crate) fn get_aliases(config: Option<&Config>, excluded: Vec<&'static str>) -> Result<Aliases> {
     let mut aliases: Aliases = BTreeMap::from(
         [
             ("add", "!git add"),
@@ -85,9 +81,9 @@ pub(crate) fn get_aliases(
                                     aliases.insert(key, alias);
                                 }
                             } else {
-                                return Err(Error::NonUtf8AliasValue(
-                                    name.to_string(),
-                                    config_level_to_str(entry.level()).to_string(),
+                                return Err(anyhow!(
+                                    "non-UTF-8 alias value for `{name}` in {}",
+                                    config_level_to_str(entry.level()),
                                 ));
                             }
                         } else {
@@ -95,9 +91,10 @@ pub(crate) fn get_aliases(
                         }
                     }
                 } else {
-                    return Err(Error::NonUtf8AliasName(
-                        String::from_utf8_lossy(entry.name_bytes()).to_string(),
-                        config_level_to_str(entry.level()).to_string(),
+                    return Err(anyhow!(
+                        "non-UTF-8 alias name `{}` in {}",
+                        String::from_utf8_lossy(entry.name_bytes()),
+                        config_level_to_str(entry.level()),
                     ));
                 }
             }

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 
 use crate::revspec::parse_stgit_revision;
@@ -22,7 +23,7 @@ fn get_app() -> App<'static> {
         .arg(Arg::new("revision").help("StGit revision"))
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let opt_branch = matches.value_of("branch");
     let opt_spec = matches.value_of("revision");
 

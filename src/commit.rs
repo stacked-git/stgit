@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 
-use crate::{error::Error, stupid};
+use anyhow::{anyhow, Result};
+
+use crate::stupid;
 
 pub(crate) enum CommitMessage<'a> {
     Str(&'a str),
@@ -20,23 +22,21 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
-    pub(crate) fn encoding(&self) -> Result<&'static encoding_rs::Encoding, Error> {
+    pub(crate) fn encoding(&self) -> Result<&'static encoding_rs::Encoding> {
         match self {
             Self::Str(_) => Ok(encoding_rs::UTF_8),
             Self::String(_) => Ok(encoding_rs::UTF_8),
             Self::Raw { bytes: _, encoding } => {
                 if let Some(encoding_str) = encoding {
                     let encoding = encoding_rs::Encoding::for_label(encoding_str.as_bytes())
-                        .ok_or_else(|| {
-                            Error::Generic(format!("Unhandled message encoding `{}`", encoding_str))
-                        })?;
+                        .ok_or_else(|| anyhow!("Unhandled message encoding `{encoding_str}`"))?;
                     if encoding.is_single_byte() {
                         Ok(encoding)
                     } else {
-                        Err(Error::Generic(format!(
+                        Err(anyhow!(
                             "Message encoding `{}` is not single-byte",
                             encoding.name()
-                        )))
+                        ))
                     }
                 } else {
                     // Fallback to latin1.
@@ -49,7 +49,7 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
-    pub(crate) fn decode(&'a self) -> Result<Cow<'a, str>, Error> {
+    pub(crate) fn decode(&'a self) -> Result<Cow<'a, str>> {
         match self {
             Self::Str(s) => Ok(Cow::Borrowed(s)),
             Self::String(s) => Ok(Cow::Borrowed(s)),
@@ -60,10 +60,10 @@ impl<'a> CommitMessage<'a> {
                 {
                     Ok(message)
                 } else {
-                    Err(Error::Generic(format!(
+                    Err(anyhow!(
                         "Replacements while decoding message with `{}`",
                         encoding.name()
-                    )))
+                    ))
                 }
             }
         }
@@ -72,7 +72,7 @@ impl<'a> CommitMessage<'a> {
     pub(crate) fn encode_with(
         &'a self,
         target_encoding: Option<&'static encoding_rs::Encoding>,
-    ) -> Result<Cow<'a, [u8]>, Error> {
+    ) -> Result<Cow<'a, [u8]>> {
         let is_encoding_specified = target_encoding.is_some();
         let target_encoding = target_encoding.unwrap_or(encoding_rs::UTF_8);
         match self {
@@ -83,10 +83,10 @@ impl<'a> CommitMessage<'a> {
                     let (encoded, _actual_encoding, any_replacements) = target_encoding.encode(s);
 
                     if any_replacements {
-                        Err(Error::Generic(format!(
+                        Err(anyhow!(
                             "Failed to encode commit message with `{}`",
                             target_encoding.name(),
-                        )))
+                        ))
                     } else {
                         Ok(encoded)
                     }
@@ -99,10 +99,10 @@ impl<'a> CommitMessage<'a> {
                     let (encoded, _actual_encoding, any_replacements) = target_encoding.encode(s);
 
                     if any_replacements {
-                        Err(Error::Generic(format!(
+                        Err(anyhow!(
                             "Failed to encode commit message with `{}`",
                             target_encoding.name(),
-                        )))
+                        ))
                     } else {
                         Ok(encoded)
                     }
@@ -121,25 +121,24 @@ impl<'a> CommitMessage<'a> {
                             let (encoded, _actual_encoding, any_replacements) =
                                 target_encoding.encode(&message);
                             if any_replacements {
-                                Err(Error::Generic(format!(
+                                Err(anyhow!(
                                     "Failed to reencode commit message from `{}` to `{}`",
                                     current_encoding.name(),
                                     target_encoding.name(),
-                                )))
+                                ))
                             } else {
                                 Ok(Cow::Owned(encoded.to_vec()))
                             }
                         } else {
-                            Err(Error::Generic(format!(
+                            Err(anyhow!(
                                 "Failed to decode commit message with `{}`",
                                 current_encoding.name(),
-                            )))
+                            ))
                         }
                     } else {
-                        Err(Error::Generic(format!(
-                            "Unhandled commit message encoding `{}`",
-                            encoding_str
-                        )))
+                        Err(anyhow!(
+                            "Unhandled commit message encoding `{encoding_str}`"
+                        ))
                     }
                 } else if !is_encoding_specified {
                     // No current encoding.
@@ -160,17 +159,17 @@ impl<'a> CommitMessage<'a> {
                     {
                         Ok(Cow::Borrowed(bytes))
                     } else {
-                        Err(Error::Generic(format!(
+                        Err(anyhow!(
                             "Cannot encode commit message with unknown encoding to `{}`",
                             target_encoding.name(),
-                        )))
+                        ))
                     }
                 }
             }
         }
     }
 
-    // pub(crate) fn encode(&'a self, label: Option<&str>) -> Result<Cow<'a, [u8]>, Error> {
+    // pub(crate) fn encode(&'a self, label: Option<&str>) -> Result<Cow<'a, [u8]>> {
     //     let target_encoding = if let Some(label) = label {
     //         if let Some(encoding) = encoding_rs::Encoding::for_label(label.as_bytes()) {
     //             Some(encoding)
@@ -220,8 +219,8 @@ impl<'a> PartialEq for CommitMessage<'a> {
 }
 
 pub(crate) trait CommitExtended<'a> {
-    fn author_strict(&self) -> Result<git2::Signature<'static>, Error>;
-    fn committer_strict(&self) -> Result<git2::Signature<'static>, Error>;
+    fn author_strict(&self) -> Result<git2::Signature<'static>>;
+    fn committer_strict(&self) -> Result<git2::Signature<'static>>;
     fn message_ex(&self) -> CommitMessage;
 }
 
@@ -238,15 +237,15 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     /// This method takes into account the commit's encoding and attempts to decode the
     /// author name and email into UTF-8. The signature returned by this method is
     /// guaranteed to have valid UTF-8 name and email strs.
-    fn author_strict(&self) -> Result<git2::Signature<'static>, Error> {
+    fn author_strict(&self) -> Result<git2::Signature<'static>> {
         let sig = self.author();
         let encoding = if let Some(encoding_name) = self.message_encoding() {
             encoding_rs::Encoding::for_label(encoding_name.as_bytes()).ok_or_else(|| {
-                Error::Generic(format!(
+                anyhow!(
                     "Unhandled commit encoding `{}` in commit `{}`",
                     encoding_name,
                     self.id()
-                ))
+                )
             })?
         } else {
             encoding_rs::UTF_8
@@ -260,31 +259,31 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
             {
                 Ok(git2::Signature::new(&name, &email, &sig.when())?)
             } else {
-                Err(Error::Generic(format!(
+                Err(anyhow!(
                     "could not decode author email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id(),
-                )))
+                ))
             }
         } else {
-            Err(Error::Generic(format!(
+            Err(anyhow!(
                 "could not decode author name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id(),
-            )))
+            ))
         }
     }
 
     /// Get committer signature, strictly.
-    fn committer_strict(&self) -> Result<git2::Signature<'static>, Error> {
+    fn committer_strict(&self) -> Result<git2::Signature<'static>> {
         let sig = self.committer();
         let encoding = if let Some(encoding_name) = self.message_encoding() {
             encoding_rs::Encoding::for_label(encoding_name.as_bytes()).ok_or_else(|| {
-                Error::Generic(format!(
+                anyhow!(
                     "Unhandled commit encoding `{}` in commit `{}`",
                     encoding_name,
                     self.id()
-                ))
+                )
             })?
         } else {
             encoding_rs::UTF_8
@@ -298,18 +297,18 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
             {
                 Ok(git2::Signature::new(&name, &email, &sig.when())?)
             } else {
-                Err(Error::Generic(format!(
+                Err(anyhow!(
                     "could not decode committer email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id(),
-                )))
+                ))
             }
         } else {
-            Err(Error::Generic(format!(
+            Err(anyhow!(
                 "could not decode committer name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id(),
-            )))
+            ))
         }
     }
 
@@ -338,7 +337,7 @@ pub(crate) trait RepositoryCommitExtended {
         message: &CommitMessage,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
-    ) -> Result<git2::Oid, Error>;
+    ) -> Result<git2::Oid>;
 
     fn commit_with_options(
         &self,
@@ -348,7 +347,7 @@ pub(crate) trait RepositoryCommitExtended {
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
         options: &CommitOptions,
-    ) -> Result<git2::Oid, Error>;
+    ) -> Result<git2::Oid>;
 }
 
 impl RepositoryCommitExtended for git2::Repository {
@@ -359,7 +358,7 @@ impl RepositoryCommitExtended for git2::Repository {
         message: &CommitMessage,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
-    ) -> Result<git2::Oid, Error> {
+    ) -> Result<git2::Oid> {
         let config = self.config()?;
         let commit_encoding = config.get_string("i18n.commitencoding").ok();
         let commit_encoding = commit_encoding.as_deref();
@@ -385,12 +384,11 @@ impl RepositoryCommitExtended for git2::Repository {
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
         options: &CommitOptions<'_>,
-    ) -> Result<git2::Oid, Error> {
+    ) -> Result<git2::Oid> {
         let commit_encoding = match options.commit_encoding {
             Some(s) => {
-                let encoding = encoding_rs::Encoding::for_label(s.as_bytes()).ok_or_else(|| {
-                    Error::Generic(format!("Unhandled i18n.commitEncoding `{}`", s))
-                })?;
+                let encoding = encoding_rs::Encoding::for_label(s.as_bytes())
+                    .ok_or_else(|| anyhow!("Unhandled i18n.commitEncoding `{s}`"))?;
                 Some(encoding)
             }
             None => None,

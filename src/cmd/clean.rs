@@ -1,8 +1,8 @@
+use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
     stupid,
@@ -36,7 +36,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
@@ -98,7 +98,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     Ok(())
 }
 
-fn is_empty(stack: &Stack, patchname: &PatchName) -> Result<bool, Error> {
+fn is_empty(stack: &Stack, patchname: &PatchName) -> Result<bool> {
     let patch_commit = stack.get_patch_commit(patchname);
     Ok(patch_commit.parent_count() == 1
         && patch_commit.tree_id()

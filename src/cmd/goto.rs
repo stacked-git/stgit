@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
 };
@@ -29,7 +29,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let patchname: PatchName = matches.value_of_t("patch").unwrap();
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
@@ -47,7 +47,7 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     let patchname = if stack.has_patch(&patchname) {
         if stack.is_hidden(&patchname) {
-            Err(Error::Generic("Cannot goto a hidden patch".to_string()))
+            Err(anyhow!("Cannot goto a hidden patch"))
         } else {
             Ok(patchname)
         }
@@ -62,10 +62,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             for pn in similar_names {
                 println!("  {}", pn);
             }
-            Err(Error::Generic(format!(
-                "ambiguous patch name `{}`",
-                &patchname
-            )))
+            Err(anyhow!("ambiguous patch name `{patchname}`"))
         } else if patchname.len() >= 4 && git2::Oid::from_str(patchname.as_ref()).is_ok() {
             let oid_prefix: &str = patchname.as_ref();
             let oid_prefix: String = oid_prefix.to_ascii_lowercase();
@@ -82,27 +79,18 @@ fn run(matches: &ArgMatches) -> super::Result {
                 .collect();
 
             match oid_matches.len() {
-                0 => Err(Error::Generic(format!(
-                    "no patch associated with `{}`",
-                    &patchname
-                ))),
+                0 => Err(anyhow!("no patch associated with `{patchname}`")),
                 1 => Ok(oid_matches[0].clone()),
                 _ => {
                     println!("Possible patches:");
                     for pn in oid_matches {
                         println!("  {}", pn);
                     }
-                    Err(Error::Generic(format!(
-                        "ambiguous commit id `{}`",
-                        &patchname
-                    )))
+                    Err(anyhow!("ambiguous commit id `{patchname}`"))
                 }
             }
         } else {
-            Err(Error::Generic(format!(
-                "patch `{}` does not exist",
-                &patchname
-            )))
+            Err(anyhow!("patch `{patchname}` does not exist"))
         }
     }?;
 

@@ -1,3 +1,4 @@
+mod error;
 mod iter;
 mod serde;
 #[allow(clippy::module_inception)]
@@ -7,3 +8,4 @@ mod transaction;
 
 pub(crate) use stack::Stack;
 pub(crate) use state::{PatchState, StackStateAccess};
+pub(crate) use error::Error;

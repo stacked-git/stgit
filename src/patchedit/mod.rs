@@ -8,11 +8,11 @@ use std::{
     io::{BufWriter, Read},
 };
 
+use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
-    error::Error,
     index::TemporaryIndex,
     patchname::PatchName,
     signature::SignatureExtended,
@@ -301,7 +301,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         stack_state: &impl StackStateAccess<'repo>,
         repo: &'repo git2::Repository,
         matches: &ArgMatches,
-    ) -> Result<EditOutcome, Error> {
+    ) -> Result<EditOutcome> {
         let EditBuilder {
             original_patchname,
             patch_commit,
@@ -570,11 +570,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                         diff,
                     };
                     failed_patch_description.write(&mut stream)?;
-                    return Err(Error::Generic(format!(
+                    return Err(anyhow!(
                         "Edited patch did not apply due to:\n\
                          {e:#}\n\
                          The patch description has been saved to `{failed_description_path}`."
-                    )));
+                    ));
                 }
             }
         } else {

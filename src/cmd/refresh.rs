@@ -4,20 +4,20 @@ use std::{
     str::FromStr,
 };
 
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use indexmap::IndexSet;
 
 use crate::{
     color::get_color_stdout,
     commit::{CommitMessage, RepositoryCommitExtended},
-    error::Error,
     hook::run_pre_commit_hook,
     index::TemporaryIndex,
     patchedit,
     patchname::PatchName,
     pathspec,
     signature::SignatureExtended,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
     stupid,
 };
 
@@ -134,10 +134,10 @@ fn get_app() -> App<'static> {
     patchedit::add_args(app, false)
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     if matches.is_present("spill") {
-        return Err(Error::Generic(
-            "`stg refresh --spill` is obsolete; use `stg spill` instead".to_string(),
+        return Err(anyhow!(
+            "`stg refresh --spill` is obsolete; use `stg spill` instead"
         ));
     }
 
@@ -154,12 +154,12 @@ fn run(matches: &ArgMatches) -> super::Result {
         if stack.has_patch(&patchname) {
             patchname
         } else {
-            return Err(Error::PatchDoesNotExist(patchname));
+            return Err(anyhow!("patch `{patchname}` does not exist"));
         }
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     };
 
     let tree_id = assemble_refresh_tree(
@@ -335,7 +335,7 @@ fn determine_refresh_paths(
     patch_commit: Option<&git2::Commit>,
     use_submodules: bool,
     force: bool,
-) -> Result<IndexSet<PathBuf>, Error> {
+) -> Result<IndexSet<PathBuf>> {
     let mut status_opts = git2::StatusOptions::new();
     status_opts.show(git2::StatusShow::IndexAndWorkdir);
     status_opts.exclude_submodules(!use_submodules);
@@ -406,7 +406,7 @@ fn determine_refresh_paths(
             }
         })
     {
-        return Err(Error::OutstandingConflicts);
+        return Err(Error::OutstandingConflicts.into());
     }
 
     // Ensure worktree and index states are valid for the given options.
@@ -426,8 +426,8 @@ fn determine_refresh_paths(
             let is_worktree_clean = repo.statuses(Some(&mut status_opts))?.is_empty();
 
             if !is_worktree_clean {
-                return Err(Error::Generic(
-                    "the index is dirty; consider using `--index` or `--force`".to_string(),
+                return Err(anyhow!(
+                    "the index is dirty; consider using `--index` or `--force`",
                 ));
             }
         }
@@ -441,7 +441,7 @@ pub(crate) fn assemble_refresh_tree(
     config: &git2::Config,
     matches: &ArgMatches,
     limit_to_patchname: Option<&PatchName>,
-) -> Result<git2::Oid, Error> {
+) -> Result<git2::Oid> {
     let repo = stack.repo;
     let opt_submodules = matches.is_present("submodules");
     let opt_nosubmodules = matches.is_present("no-submodules");

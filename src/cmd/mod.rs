@@ -44,12 +44,11 @@ pub(crate) mod undo;
 pub(crate) mod unhide;
 pub(crate) mod version;
 
-pub(crate) type Result = std::result::Result<(), crate::error::Error>;
 pub(crate) type Commands = BTreeMap<&'static str, StGitCommand>;
 
 pub(crate) struct StGitCommand {
     pub get_app: fn() -> clap::App<'static>,
-    pub run: fn(&clap::ArgMatches) -> Result,
+    pub run: fn(&clap::ArgMatches) -> anyhow::Result<()>,
 }
 
 pub(crate) fn get_commands() -> Commands {

@@ -1,12 +1,13 @@
-use clap::{App, Arg, ArgMatches, ArgSettings};
 use std::iter::FromIterator;
+
+use anyhow::{anyhow, Result};
+use clap::{App, Arg, ArgMatches, ArgSettings};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -70,7 +71,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
@@ -85,7 +86,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     }
 
     let mut patches: indexmap::IndexSet<PatchName> = if matches.is_present("all") {
@@ -116,15 +117,12 @@ fn run(matches: &ArgMatches) -> super::Result {
                     crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                         if stack.is_unapplied(&patchname) =>
                     {
-                        Error::Generic(format!(
-                            "patch `{}` from `{}` is already unapplied",
-                            &patchname, &range
-                        ))
+                        anyhow!("patch `{patchname}` from `{range}` is already unapplied")
                     }
                     crate::patchrange::Error::PatchNotAllowed { patchname }
                         if stack.is_unapplied(&patchname) =>
                     {
-                        Error::Generic(format!("patch `{}` is already unapplied", &patchname))
+                        anyhow!("patch `{patchname}` is already unapplied")
                     }
                     _ => e.into(),
                 },
@@ -167,9 +165,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             .cloned()
             .collect();
         if new_unapplied != topmost_applied {
-            return Err(Error::Generic(
-                "only topmost patches may be spilled".to_string(),
-            ));
+            return Err(anyhow!("only topmost patches may be spilled"));
         }
     }
 

@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -70,7 +70,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
@@ -90,15 +90,11 @@ fn run(matches: &ArgMatches) -> super::Result {
 
     if let Some(target_patch) = &opt_target {
         if !stack.has_patch(target_patch) {
-            return Err(Error::Generic(format!(
-                "target patch `{}` does not exist",
-                target_patch
-            )));
+            return Err(anyhow!("target patch `{target_patch}` does not exist"));
         } else if !stack.is_applied(target_patch) {
-            return Err(Error::Generic(format!(
-                "cannot sink below `{}` since it is not applied",
-                target_patch
-            )));
+            return Err(anyhow!(
+                "cannot sink below `{target_patch}` since it is not applied"
+            ));
         }
     }
 
@@ -111,15 +107,14 @@ fn run(matches: &ArgMatches) -> super::Result {
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]
     } else {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     };
 
     if let Some(target_patch) = &opt_target {
         if patches.contains(target_patch) {
-            return Err(Error::Generic(format!(
-                "target patch `{}` may not also be a patch to sink",
-                target_patch
-            )));
+            return Err(anyhow!(
+                "target patch `{target_patch}` may not also be a patch to sink",
+            ));
         }
     }
 

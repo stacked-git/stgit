@@ -1,11 +1,11 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -46,7 +46,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
@@ -56,7 +56,7 @@ fn run(matches: &ArgMatches) -> super::Result {
         if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {
-            return Err(Error::NoAppliedPatches);
+            return Err(Error::NoAppliedPatches.into());
         }
     } else {
         let patch_ranges = matches
@@ -73,9 +73,7 @@ fn run(matches: &ArgMatches) -> super::Result {
             .take(patches.len())
             .any(|pn| !patches.contains(pn))
     {
-        return Err(Error::Generic(
-            "can only spill topmost applied patches".to_string(),
-        ));
+        return Err(anyhow!("can only spill topmost applied patches"));
     }
 
     let conflicts_okay = false;

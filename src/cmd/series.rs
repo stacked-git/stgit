@@ -1,5 +1,6 @@
 use std::io::Write;
 
+use anyhow::Result;
 use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
 use git2::Oid;
 use termcolor::WriteColor;
@@ -129,7 +130,7 @@ fn get_app() -> App<'static> {
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let opt_missing = matches.value_of("missing");

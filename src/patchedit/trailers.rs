@@ -1,13 +1,14 @@
+use anyhow::{anyhow, Result};
 use clap::ArgMatches;
 
-use crate::{commit::CommitMessage, error::Error, stupid};
+use crate::{commit::CommitMessage, stupid};
 
 pub(crate) fn add_trailers<'a>(
     message: CommitMessage<'a>,
     matches: &ArgMatches,
     signature: &git2::Signature,
     autosign: Option<&str>,
-) -> Result<CommitMessage<'a>, Error> {
+) -> Result<CommitMessage<'a>> {
     let mut trailers: Vec<(usize, &str, &str)> = vec![];
 
     for (opt_name, old_by_opt, trailer) in &[
@@ -37,9 +38,7 @@ pub(crate) fn add_trailers<'a>(
         {
             format!("{} <{}>", name, email)
         } else {
-            return Err(Error::NonUtf8Signature(
-                "trailer requires utf-8 signature".to_string(),
-            ));
+            return Err(anyhow!("trailer requires utf-8 signature"));
         };
 
         if let Some(autosign) = autosign {
@@ -59,9 +58,8 @@ pub(crate) fn add_trailers<'a>(
                 }
             }),
         )?;
-        let message = String::from_utf8(message_bytes).map_err(|_| {
-            Error::Generic("Could not decode message after adding trailers".to_string())
-        })?;
+        let message = String::from_utf8(message_bytes)
+            .map_err(|_| anyhow!("Could not decode message after adding trailers"))?;
         Ok(CommitMessage::from(message))
     }
 }

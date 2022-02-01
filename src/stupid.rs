@@ -21,13 +21,15 @@ use std::{
     process::{Child, Command, Output, Stdio},
 };
 
+use anyhow::{anyhow, Context, Result};
 use indexmap::IndexSet;
 
-use crate::error::Error;
 use crate::signature::TimeExtended;
 
+const GIT_EXEC_FAIL: &str = "could not execute `git`";
+
 /// Apply a patch (diff) to the specified index using `git apply --cached`.
-pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error> {
+pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<()> {
     let child = Command::new("git")
         .args(["apply", "--cached"])
         // TODO: use --recount?
@@ -36,7 +38,7 @@ pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<(), Error
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     let output = in_and_out(child, diff)?;
     if output.status.success() {
         Ok(())
@@ -55,7 +57,7 @@ pub(crate) fn apply_treediff_to_index(
     tree2: git2::Oid,
     worktree: &Path,
     index_path: &Path,
-) -> Result<bool, Error> {
+) -> Result<bool> {
     let mut diff_tree_child = Command::new("git")
         .args(["diff-tree", "--full-index", "--binary", "--patch"])
         .arg(tree1.to_string())
@@ -65,7 +67,7 @@ pub(crate) fn apply_treediff_to_index(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     let apply_output = Command::new("git")
         .args(["apply", "--cached"]) // --3way
@@ -75,7 +77,7 @@ pub(crate) fn apply_treediff_to_index(
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     let diff_tree_output = diff_tree_child.wait_with_output()?;
     if !diff_tree_output.status.success() {
@@ -98,7 +100,7 @@ pub(crate) fn commit_tree(
     tree_id: git2::Oid,
     parent_ids: impl IntoIterator<Item = git2::Oid>,
     gpgsign: bool,
-) -> Result<git2::Oid, Error> {
+) -> Result<git2::Oid> {
     let mut command = Command::new("git");
     command.arg("commit-tree").arg(tree_id.to_string());
     for parent_id in parent_ids {
@@ -125,7 +127,7 @@ pub(crate) fn commit_tree(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
-    let mut child = command.spawn().map_err(Error::GitExecute)?;
+    let mut child = command.spawn().context(GIT_EXEC_FAIL)?;
 
     {
         child.stdin.take().unwrap().write_all(message)?;
@@ -139,8 +141,52 @@ pub(crate) fn commit_tree(
     }
 }
 
+/// Interactive diff
+pub(crate) fn diff<I, S>(
+    revspec: &str,
+    pathspecs: Option<I>,
+    stat: bool,
+    diff_opts: Option<&str>,
+) -> Result<()>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new("git");
+    command.arg("diff");
+    if stat {
+        command.args(["--stat", "--summary"]);
+    }
+
+    if let Some(diff_opts) = diff_opts {
+        for opt in diff_opts.split_ascii_whitespace() {
+            command.arg(opt);
+        }
+    }
+
+    command.arg(revspec);
+    command.arg("--");
+
+    if let Some(pathspecs) = pathspecs {
+        command.args(pathspecs);
+    }
+
+    let output = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("diff", &output.stderr))
+    }
+}
+
 /// Generate diff between specified tree and the working tree or index with `git diff-index`.
-pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
+pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>> {
     let output = Command::new("git")
         .args(["diff-index", "-p", "--full-index"])
         .arg(tree_id.to_string())
@@ -148,7 +194,7 @@ pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         Ok(output.stdout)
     } else {
@@ -157,7 +203,7 @@ pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>, Error> {
 }
 
 /// Generate diff between two trees using `git diff-tree -p`.
-pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<u8>, Error> {
+pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<u8>> {
     let output = Command::new("git")
         .args(["diff-tree", "-p", "--full-index"])
         .arg(tree1.to_string())
@@ -166,7 +212,7 @@ pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         Ok(output.stdout)
     } else {
@@ -178,7 +224,7 @@ pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<
 pub(crate) fn interpret_trailers<'a>(
     message: &[u8],
     trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
-) -> Result<Vec<u8>, Error> {
+) -> Result<Vec<u8>> {
     let child = Command::new("git")
         .arg("interpret-trailers")
         .args(
@@ -189,7 +235,7 @@ pub(crate) fn interpret_trailers<'a>(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     let output = in_and_out(child, message)?;
     Ok(output.stdout)
@@ -203,7 +249,7 @@ pub(crate) fn merge_recursive(
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
     index_path: &Path, // TODO: does this matter?
-) -> Result<bool, Error> {
+) -> Result<bool> {
     let output = Command::new("git")
         .arg("merge-recursive")
         .arg(base_tree_id.to_string())
@@ -218,7 +264,7 @@ pub(crate) fn merge_recursive(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         Ok(true)
@@ -237,7 +283,7 @@ pub(crate) fn merge_recursive_or_mergetool(
     worktree: &Path,
     index_path: &Path, // TODO: does this matter?
     use_mergetool: bool,
-) -> Result<Vec<OsString>, Error> {
+) -> Result<Vec<OsString>> {
     if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
         return Ok(vec![]);
     } else if use_mergetool {
@@ -247,7 +293,7 @@ pub(crate) fn merge_recursive_or_mergetool(
 }
 
 /// Attempt to resolve outstanding merge conflicts with `git merge-tool`.
-pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
+pub(crate) fn mergetool(index_path: &Path) -> Result<bool> {
     let output = Command::new("git")
         .arg("merge-tool")
         .env("GIT_INDEX_FILE", index_path)
@@ -255,7 +301,7 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         Ok(true)
     } else if output.status.code() == Some(1) {
@@ -266,10 +312,7 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<bool, Error> {
 }
 
 /// Gather list of unmerged files using `git ls-files --unmerged`.
-pub(crate) fn ls_files_unmerged(
-    worktree: &Path,
-    index_path: &Path,
-) -> Result<Vec<OsString>, Error> {
+pub(crate) fn ls_files_unmerged(worktree: &Path, index_path: &Path) -> Result<Vec<OsString>> {
     let output = Command::new("git")
         .args(["ls-files", "--unmerged", "-z"])
         .current_dir(worktree)
@@ -278,7 +321,7 @@ pub(crate) fn ls_files_unmerged(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         let mut conflicts: IndexSet<OsString> = output
             .stdout
@@ -292,7 +335,7 @@ pub(crate) fn ls_files_unmerged(
 }
 
 /// Copy notes from one object to another using `git notes copy`.
-pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), Error> {
+pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<()> {
     let output = Command::new("git")
         .args(["notes", "copy"])
         .arg(from_oid.to_string())
@@ -301,7 +344,7 @@ pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), E
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         Ok(())
     } else {
@@ -310,7 +353,7 @@ pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<(), E
 }
 
 /// Read content of a tree into specified index using `git read-tree`.
-pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Error> {
+pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<()> {
     let output = Command::new("git")
         .arg("read-tree")
         .arg(tree_id.to_string())
@@ -319,7 +362,7 @@ pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Err
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         Ok(())
@@ -329,25 +372,26 @@ pub(crate) fn read_tree(tree_id: git2::Oid, index_path: &Path) -> Result<(), Err
 }
 
 /// Checkout tree to working tree using `git read-tree`.
-pub(crate) fn read_tree_checkout(
-    old_tree_id: git2::Oid,
-    new_tree_id: git2::Oid,
-) -> Result<(), Error> {
+pub(crate) fn read_tree_checkout(old_tree_id: git2::Oid, new_tree_id: git2::Oid) -> Result<()> {
     let output = Command::new("git")
-        .args(["read-tree", "-u", "-m", "--exclude-per-directory=.gitignore"])
+        .args([
+            "read-tree",
+            "-m",
+            "-u",
+            "--exclude-per-directory=.gitignore",
+        ])
         .arg(old_tree_id.to_string())
         .arg(new_tree_id.to_string())
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         Ok(())
     } else {
-        let e = String::from_utf8(output.stderr).unwrap();
-        Err(Error::CheckoutConflicts(e))
+        Err(make_cmd_err("read-tree -m -u", &output.stderr))
     }
 }
 
@@ -357,7 +401,7 @@ pub(crate) fn show<I, S>(
     pathspecs: Option<I>,
     stat: bool,
     diff_opts: Option<&str>,
-) -> Result<(), Error>
+) -> Result<()>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
@@ -391,7 +435,7 @@ where
         .stdout(Stdio::inherit())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         Ok(())
@@ -401,14 +445,14 @@ where
 }
 
 /// Update default index from working tree with `git update-index`.
-pub(crate) fn update_index_refresh() -> Result<(), Error> {
+pub(crate) fn update_index_refresh() -> Result<()> {
     let output = Command::new("git")
         .args(["update-index", "-q", "--unmerged", "--refresh"])
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         Ok(())
@@ -418,14 +462,14 @@ pub(crate) fn update_index_refresh() -> Result<(), Error> {
 }
 
 /// Get git version with `git version`.
-pub(crate) fn version() -> Result<String, Error> {
+pub(crate) fn version() -> Result<String> {
     let output = Command::new("git")
         .arg("version")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
     if output.status.success() {
         let mut version_line =
             String::from_utf8(output.stdout).expect("git version should be utf8");
@@ -439,7 +483,7 @@ pub(crate) fn version() -> Result<String, Error> {
 }
 
 /// Write tree object from content of specified index using `git write-tree`.
-pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
+pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid> {
     let output = Command::new("git")
         .arg("write-tree")
         .env("GIT_INDEX_FILE", index_path)
@@ -447,7 +491,7 @@ pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .output()
-        .map_err(Error::GitExecute)?;
+        .context(GIT_EXEC_FAIL)?;
 
     if output.status.success() {
         parse_oid(&output.stdout)
@@ -456,12 +500,13 @@ pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid, Error> {
     }
 }
 
-fn make_cmd_err(command_name: &str, stderr: &[u8]) -> Error {
+fn make_cmd_err(command_name: &str, stderr: &[u8]) -> anyhow::Error {
     let err_str = String::from_utf8_lossy(stderr);
-    Error::GitCommand(command_name.to_string(), err_str.trim_end().to_string())
+    let err_str = err_str.trim_end().to_string();
+    anyhow!(err_str).context(format!("`git {command_name}`"))
 }
 
-fn parse_oid(output: &[u8]) -> Result<git2::Oid, Error> {
+fn parse_oid(output: &[u8]) -> Result<git2::Oid> {
     let oid_hex = std::str::from_utf8(output)
         .expect("object name must be utf8")
         .trim_end(); // Trim trailing newline
@@ -473,7 +518,7 @@ fn parse_oid(output: &[u8]) -> Result<git2::Oid, Error> {
 /// The input data is written from a separate thread to avoid potential
 /// deadlock that can occur if the child process's input buffer is filled
 /// without concurrently reading from the child's stdout and stderr.
-fn in_and_out(mut child: Child, input: &[u8]) -> Result<Output, Error> {
+fn in_and_out(mut child: Child, input: &[u8]) -> Result<Output> {
     struct SendSlice(*const u8, usize);
     impl SendSlice {
         fn from(slice: &[u8]) -> Self {

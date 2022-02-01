@@ -1,10 +1,11 @@
 use std::io::Write;
 
-use chrono::DateTime;
+use anyhow::{anyhow, Context, Result};
 
-use crate::error::Error;
-use crate::patchname::PatchName;
-use crate::signature::{self, TimeExtended};
+use crate::{
+    patchname::PatchName,
+    signature::{self, TimeExtended},
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub(crate) struct DiffBuffer(pub(crate) Vec<u8>);
@@ -26,7 +27,7 @@ pub(crate) struct PatchDescription {
 }
 
 impl PatchDescription {
-    pub(crate) fn write<S: Write>(&self, stream: &mut S) -> Result<(), Error> {
+    pub(crate) fn write<S: Write>(&self, stream: &mut S) -> Result<()> {
         let patchname = if let Some(patchname) = &self.patchname {
             patchname.as_ref()
         } else {
@@ -63,7 +64,7 @@ impl PatchDescription {
 }
 
 impl TryFrom<&[u8]> for PatchDescription {
-    type Error = Error;
+    type Error = anyhow::Error;
 
     fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
         let mut raw_patchname: Option<String> = None;
@@ -82,7 +83,8 @@ impl TryFrom<&[u8]> for PatchDescription {
             }
 
             // Every line before the diff must be valid utf8
-            let line = std::str::from_utf8(line).map_err(|_| Error::NonUtf8PatchDescription)?;
+            let line = std::str::from_utf8(line)
+                .map_err(|_| anyhow!("patch description contains non-UTF-8 data"))?;
             let trimmed = line.trim_end();
 
             if trimmed == "---" {
@@ -131,9 +133,7 @@ impl TryFrom<&[u8]> for PatchDescription {
             && raw_authdate.is_none()
             && message.trim().is_empty()
         {
-            return Err(Error::Generic(
-                "Aborting edit due to empty patch description".to_string(),
-            ));
+            return Err(anyhow!("Aborting edit due to empty patch description"));
         }
 
         let patchname = if let Some(patchname) = raw_patchname {
@@ -149,9 +149,7 @@ impl TryFrom<&[u8]> for PatchDescription {
         let author = if let Some(author) = raw_author {
             let (name, email) = signature::parse_name_email(&author)?;
             if let Some(date_str) = raw_authdate {
-                let dt = DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S %z")
-                    .map_err(|_| Error::InvalidDate(date_str, "patch description".to_string()))?;
-                let when = git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60);
+                let when = signature::parse_time(&date_str).context("patch description date")?;
                 Some(git2::Signature::new(name, email, &when)?)
             } else {
                 Some(git2::Signature::now(name, email)?)

@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchedit,
     patchname::PatchName,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -59,7 +59,7 @@ fn get_app() -> App<'static> {
     )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
@@ -82,18 +82,15 @@ fn run(matches: &ArgMatches) -> super::Result {
                 for pn in similar_names {
                     println!("  {}", pn);
                 }
-                Err(Error::Generic(format!(
-                    "ambiguous patch name `{}`",
-                    &patchname
-                )))
+                Err(anyhow!("ambiguous patch name `{}`", &patchname))
             } else {
-                Err(Error::PatchDoesNotExist(patchname.clone()))
+                Err(anyhow!("patch `{patchname}` does not exist"))
             };
         }
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     };
 
     let patch_commit = stack.get_patch_commit(&patchname);

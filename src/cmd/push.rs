@@ -1,8 +1,8 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches, ArgSettings};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
     stack::{Stack, StackStateAccess},
@@ -96,7 +96,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
@@ -111,7 +111,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     }
 
     if stack.unapplied().is_empty() {
-        return Err(Error::NoUnappliedPatches);
+        return Err(anyhow!("No unapplied patches"));
     }
 
     let mut patches: Vec<PatchName> = if matches.is_present("all") {
@@ -139,15 +139,12 @@ fn run(matches: &ArgMatches) -> super::Result {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                     if stack.is_applied(&patchname) =>
                 {
-                    Error::Generic(format!(
-                        "patch `{}` from `{}` is already applied",
-                        &patchname, &range
-                    ))
+                    anyhow!("patch `{patchname}` from `{range}` is already applied")
                 }
                 crate::patchrange::Error::PatchNotAllowed { patchname }
                     if stack.is_applied(&patchname) =>
                 {
-                    Error::Generic(format!("patch `{}` is already applied", &patchname))
+                    anyhow!("patch `{patchname}` is already applied")
                 }
                 _ => e.into(),
             }

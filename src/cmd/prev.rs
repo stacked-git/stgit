@@ -1,12 +1,10 @@
 use std::io::Write;
 
+use anyhow::{anyhow, Result};
 use clap::App;
 use termcolor::WriteColor;
 
-use crate::{
-    error::Error,
-    stack::{Stack, StackStateAccess},
-};
+use crate::stack::{Stack, StackStateAccess};
 
 use super::StGitCommand;
 
@@ -27,7 +25,7 @@ fn get_app() -> App<'static> {
         .arg(&*crate::argset::BRANCH_ARG)
 }
 
-fn run(matches: &clap::ArgMatches) -> super::Result {
+fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
@@ -43,6 +41,6 @@ fn run(matches: &clap::ArgMatches) -> super::Result {
         writeln!(stdout)?;
         Ok(())
     } else {
-        Err(Error::NotEnoughPatchesApplied)
+        Err(anyhow!("Not enough patches applied"))
     }
 }

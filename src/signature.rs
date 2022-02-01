@@ -1,46 +1,42 @@
 use std::borrow::Cow;
 
+use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, FixedOffset, TimeZone};
 
-use crate::error::Error;
-
 pub(crate) trait SignatureExtended {
-    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error>;
-    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error>;
+    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>>;
+    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>>;
     fn make_author(
         config: Option<&git2::Config>,
         matches: &clap::ArgMatches,
-    ) -> Result<git2::Signature<'static>, Error> {
+    ) -> Result<git2::Signature<'static>> {
         Self::default_author(config)?.override_author(matches)
     }
     fn author_from_args(
         matches: &clap::ArgMatches,
         when: Option<git2::Time>,
-    ) -> Result<Option<git2::Signature<'static>>, Error>;
-    fn override_author(
-        &self,
-        matches: &clap::ArgMatches,
-    ) -> Result<git2::Signature<'static>, Error>;
-    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>, Error>;
+    ) -> Result<Option<git2::Signature<'static>>>;
+    fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>>;
+    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>>;
 }
 
 impl SignatureExtended for git2::Signature<'_> {
-    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error> {
+    fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>> {
         make_default(config, SignatureRole::Author)
     }
 
-    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>, Error> {
+    fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>> {
         make_default(config, SignatureRole::Committer)
     }
 
     fn author_from_args(
         matches: &clap::ArgMatches,
         when: Option<git2::Time>,
-    ) -> Result<Option<git2::Signature<'static>>, Error> {
+    ) -> Result<Option<git2::Signature<'static>>> {
         let when = if let Some(when) = when {
             when
         } else if let Some(authdate) = get_from_arg("authdate", matches)? {
-            parse_time(&authdate, "authdate")?
+            parse_time(&authdate).context("authdate")?
         } else {
             return Ok(None);
         };
@@ -60,12 +56,9 @@ impl SignatureExtended for git2::Signature<'_> {
         }
     }
 
-    fn override_author(
-        &self,
-        matches: &clap::ArgMatches,
-    ) -> Result<git2::Signature<'static>, Error> {
+    fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>> {
         let when = if let Some(authdate) = get_from_arg("authdate", matches)? {
-            parse_time(&authdate, "authdate")?
+            parse_time(&authdate).context("authdate")?
         } else {
             self.when()
         };
@@ -90,11 +83,10 @@ impl SignatureExtended for git2::Signature<'_> {
         }
     }
 
-    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>, Error> {
+    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>> {
         let encoding = if let Some(encoding_name) = encoding_name {
-            encoding_rs::Encoding::for_label(encoding_name.as_bytes()).ok_or_else(|| {
-                Error::Generic(format!("Unhandled commit encoding `{}`", encoding_name,))
-            })?
+            encoding_rs::Encoding::for_label(encoding_name.as_bytes())
+                .ok_or_else(|| anyhow!("Unhandled commit encoding `{encoding_name}`"))?
         } else {
             encoding_rs::UTF_8
         };
@@ -107,16 +99,16 @@ impl SignatureExtended for git2::Signature<'_> {
             {
                 Ok(git2::Signature::new(&name, &email, &self.when())?)
             } else {
-                Err(Error::Generic(format!(
+                Err(anyhow!(
                     "could not decode signature email as `{}`",
                     encoding.name(),
-                )))
+                ))
             }
         } else {
-            Err(Error::Generic(format!(
+            Err(anyhow!(
                 "could not decode signature name as `{}`",
                 encoding.name(),
-            )))
+            ))
         }
     }
 }
@@ -137,7 +129,7 @@ enum SignatureComponent {
 fn make_default(
     config: Option<&git2::Config>,
     role: SignatureRole,
-) -> Result<git2::Signature<'static>, Error> {
+) -> Result<git2::Signature<'static>> {
     let name = if let Some(name) = get_from_env(get_env_key(role, SignatureComponent::Name))? {
         name
     } else if let Some(config) = config {
@@ -147,19 +139,15 @@ fn make_default(
         } else if let Some(name) = get_from_config(config, "user.name")? {
             name
         } else if get_from_config(config, "user.email")?.is_none() {
-            return Err(Error::MissingSignature(
-                "`user.name` and `user.email` not configured".to_string(),
-            ));
+            return Err(anyhow!("`user.name` and `user.email` not configured"));
         } else {
-            return Err(Error::MissingSignature(
-                "`user.name` not configured".to_string(),
-            ));
+            return Err(anyhow!("`user.name` not configured"));
         }
     } else {
-        return Err(Error::MissingSignature(format!(
+        return Err(anyhow!(
             "no config available and no `{}`",
             get_env_key(role, SignatureComponent::Name),
-        )));
+        ));
     };
 
     let email = if let Some(email) = get_from_env(get_env_key(role, SignatureComponent::Email))? {
@@ -172,20 +160,18 @@ fn make_default(
         } else if let Some(email) = get_from_config(config, "user.email")? {
             email
         } else {
-            return Err(Error::MissingSignature(
-                "`user.email` not configured".to_string(),
-            ));
+            return Err(anyhow!("`user.email` not configured"));
         }
     } else {
-        return Err(Error::MissingSignature(format!(
+        return Err(anyhow!(
             "no config available and no `{}`",
             get_env_key(role, SignatureComponent::Email),
-        )));
+        ));
     };
 
     let date_key = get_env_key(role, SignatureComponent::Date);
     let signature = if let Some(date) = get_from_env(date_key)? {
-        let when = parse_time(&date, date_key)?;
+        let when = parse_time(&date).context(date_key)?;
         git2::Signature::new(&name, &email, &when)?
     } else {
         git2::Signature::now(&name, &email)?
@@ -237,14 +223,14 @@ pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -
     same_person(a, b) && a.when() == b.when()
 }
 
-fn get_from_config(config: &git2::Config, key: &str) -> Result<Option<String>, Error> {
+fn get_from_config(config: &git2::Config, key: &str) -> Result<Option<String>> {
     match config.get_string(key) {
         Ok(value) => Ok(Some(value)),
         Err(e) => match (e.class(), e.code()) {
             (git2::ErrorClass::Config, git2::ErrorCode::NotFound) => Ok(None),
-            (git2::ErrorClass::None, git2::ErrorCode::GenericError) => Err(
-                Error::NonUtf8Signature(format!("`{}` in config is not valid UTF-8", key)),
-            ),
+            (git2::ErrorClass::None, git2::ErrorCode::GenericError) => {
+                Err(anyhow!("`{key}` in config is not valid UTF-8"))
+            }
             _ => Err(e.into()),
         },
     }
@@ -273,32 +259,28 @@ fn get_config_key(role: SignatureRole, component: SignatureComponent) -> &'stati
     }
 }
 
-fn get_from_env(key: &str) -> Result<Option<String>, Error> {
+fn get_from_env(key: &str) -> Result<Option<String>> {
     match std::env::var(key) {
         Ok(s) => Ok(Some(s)),
         Err(std::env::VarError::NotPresent) => Ok(None),
-        Err(std::env::VarError::NotUnicode(_os_str)) => Err(Error::NonUtf8Signature(format!(
-            "`{}` from environment is not valid UTF-8",
-            key
-        ))),
+        Err(std::env::VarError::NotUnicode(_os_str)) => {
+            Err(anyhow!("`{key}` from environment is not valid UTF-8"))
+        }
     }
 }
 
-fn get_from_arg<'a>(
-    arg: &str,
-    matches: &'a clap::ArgMatches,
-) -> Result<Option<Cow<'a, str>>, Error> {
+fn get_from_arg<'a>(arg: &str, matches: &'a clap::ArgMatches) -> Result<Option<Cow<'a, str>>> {
     if let Some(value_os) = matches.value_of_os(arg) {
-        let value_str: &str = value_os.to_str().ok_or_else(|| {
-            Error::NonUtf8Argument(arg.into(), value_os.to_string_lossy().to_string())
-        })?;
+        let value_str: &str = value_os
+            .to_str()
+            .ok_or_else(|| anyhow!("non-UTF-8 {arg} `{}`", value_os.to_string_lossy()))?;
         Ok(Some(Cow::Borrowed(value_str)))
     } else {
         Ok(None)
     }
 }
 
-pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str), Error> {
+pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
     let name_email = name_email.trim();
     let delimiters = [('<', '>'), ('(', ')')];
     for (start_delim, end_delim) in &delimiters {
@@ -310,7 +292,7 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str), Error> 
             }
         }
     }
-    Err(Error::InvalidNameEmail(name_email.into()))
+    Err(anyhow!("invalid name and email `{name_email}`"))
 }
 
 /// Attempt to parse a time string of one of several well-known formats.
@@ -324,7 +306,7 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str), Error> 
 /// | `raw`             | `1641479527 -0500`               |
 /// | `now`             | `now`                            |
 ///
-fn parse_time(time_str: &str, whence: &str) -> Result<git2::Time, Error> {
+pub(crate) fn parse_time(time_str: &str) -> Result<git2::Time> {
     let time_str = time_str.trim();
 
     if time_str == "now" {
@@ -346,7 +328,7 @@ fn parse_time(time_str: &str, whence: &str) -> Result<git2::Time, Error> {
         }
     }
 
-    Err(Error::InvalidDate(time_str.into(), whence.into()))
+    Err(anyhow!("invalid date `{time_str}`"))
 }
 
 #[cfg(test)]
@@ -355,7 +337,7 @@ mod tests {
 
     #[test]
     fn test_parse_time() {
-        let time = parse_time("123456 +0600", "").unwrap();
+        let time = parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_minutes(), 6 * 60);
         assert_eq!(time.sign(), '+');
@@ -363,25 +345,25 @@ mod tests {
 
     #[test]
     fn parse_all_time_formats() {
-        let time = parse_time("1641479527 -0500", "").unwrap();
+        let time = parse_time("1641479527 -0500").unwrap();
         for s in [
             "Thu Jan 6 09:32:07 2022 -0500",
             "Thu, 6 Jan 2022 09:32:07 -0500",
             "2022-01-06 09:32:07 -0500",
             "2022-01-06T09:32:07-05:00",
         ] {
-            assert_eq!(time, parse_time(s, "").unwrap());
+            assert_eq!(time, parse_time(s).unwrap());
         }
     }
 
     #[test]
     fn parse_time_now() {
-        parse_time("now", "").unwrap();
+        parse_time("now").unwrap();
     }
 
     #[test]
     fn test_parse_time_negative_offset() {
-        let time = parse_time("123456 -0230", "").unwrap();
+        let time = parse_time("123456 -0230").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_minutes(), -150);
         assert_eq!(time.sign(), '-');
@@ -389,11 +371,11 @@ mod tests {
 
     #[test]
     fn test_parse_bad_times() {
-        assert!(parse_time("123456 !0600", "").is_err());
-        assert!(parse_time("123456 +060", "").is_err());
-        assert!(parse_time("123456 -060", "").is_err());
-        assert!(parse_time("123456 +06000", "").is_err());
-        assert!(parse_time("123456 06000", "").is_err());
+        assert!(parse_time("123456 !0600").is_err());
+        assert!(parse_time("123456 +060").is_err());
+        assert!(parse_time("123456 -060").is_err());
+        assert!(parse_time("123456 +06000").is_err());
+        assert!(parse_time("123456 06000").is_err());
     }
 
     #[test]

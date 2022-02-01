@@ -1,6 +1,8 @@
 use std::{io::Write, path::PathBuf};
 
-use crate::{commit::CommitMessage, error::Error};
+use anyhow::{anyhow, Context, Result};
+
+use crate::commit::CommitMessage;
 
 fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
     let hooks_path = if let Ok(config) = repo.config() {
@@ -18,7 +20,7 @@ fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
     hooks_root.join(hook_name)
 }
 
-pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> Result<(), Error> {
+pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> Result<()> {
     let hook_name = "pre-commit";
     let hook_path = get_hook_path(repo, hook_name);
     let hook_meta = match std::fs::metadata(&hook_path) {
@@ -53,14 +55,14 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
 
     let status = hook_command
         .status()
-        .map_err(|e| Error::Hook(hook_name.to_string(), e.to_string()))?;
+        .with_context(|| format!("`{hook_name}` hook"))?;
 
     if status.success() {
         Ok(())
     } else {
-        Err(Error::Hook(
-            hook_name.to_string(),
-            format!("returned {}", status.code().unwrap_or(-1)),
+        Err(anyhow!(
+            "`{hook_name}` hook returned {}",
+            status.code().unwrap_or(-1)
         ))
     }
 }
@@ -69,7 +71,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     repo: &git2::Repository,
     message: CommitMessage<'repo>,
     editor_is_used: bool,
-) -> Result<CommitMessage<'repo>, Error> {
+) -> Result<CommitMessage<'repo>> {
     let hook_name = "commit-msg";
     let hook_path = get_hook_path(repo, hook_name);
     let hook_meta = match std::fs::metadata(&hook_path) {
@@ -108,7 +110,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
 
     let status = hook_command
         .status()
-        .map_err(|e| Error::Hook(hook_name.to_string(), e.to_string()))?;
+        .with_context(|| format!("`{hook_name}` hook"))?;
 
     if status.success() {
         let message_bytes = std::fs::read(&msg_file_path)?;
@@ -116,16 +118,14 @@ pub(crate) fn run_commit_msg_hook<'repo>(
         let message = encoding
             .decode_without_bom_handling_and_without_replacement(&message_bytes)
             .ok_or_else(|| {
-                Error::Hook(
-                    hook_name.to_string(),
-                    format!("message could not be decoded with `{}`", encoding.name()),
-                )
+                anyhow!("message could not be decoded with `{}`", encoding.name())
+                    .context("`{hook_name}` hook")
             })?;
         Ok(CommitMessage::from(message.to_string()))
     } else {
-        Err(Error::Hook(
-            hook_name.to_string(),
-            format!("returned {}", status.code().unwrap_or(-1)),
+        Err(anyhow!(
+            "`{hook_name}` hook returned {}",
+            status.code().unwrap_or(-1)
         ))
     }
 }

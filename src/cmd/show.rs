@@ -1,7 +1,8 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
-    error::Error,
+    revspec::Error as RevError,
     stack::{Stack, StackStateAccess},
     stupid,
 };
@@ -70,7 +71,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
@@ -113,14 +114,13 @@ fn run(matches: &ArgMatches) -> super::Result {
                 Err(crate::patchrange::Error::PatchNotKnown { patchname: _ }) => {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(patch_rev), opt_branch)
-                            .map_err(|rev_err| match rev_err {
-                                Error::InvalidRevision(spec) => {
-                                    Error::Generic(format!("invalid revision spec `{}`", spec))
+                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
+                                Some(RevError::InvalidRevision(spec)) => {
+                                    anyhow!("invalid revision spec `{spec}`")
                                 }
-                                Error::RevisionNotFound(spec) => Error::Generic(format!(
-                                    "patch or revision `{}` not found",
-                                    spec
-                                )),
+                                Some(RevError::RevisionNotFound(spec)) => {
+                                    anyhow!("patch or revision `{spec}` not found")
+                                }
                                 _ => rev_err,
                             })?;
                     oids.push(oid);
@@ -128,15 +128,13 @@ fn run(matches: &ArgMatches) -> super::Result {
                 Err(crate::patchrange::Error::PatchName(_)) => {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(patch_rev), opt_branch)
-                            .map_err(|rev_err| match rev_err {
-                                Error::InvalidRevision(spec) => Error::Generic(format!(
-                                    "invalid patch or revision spec `{}`",
-                                    spec
-                                )),
-                                Error::RevisionNotFound(spec) => Error::Generic(format!(
-                                    "invalid patch or revision `{}` not found",
-                                    spec
-                                )),
+                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
+                                Some(RevError::InvalidRevision(spec)) => {
+                                    anyhow!("invalid patch or revision spec `{spec}`")
+                                }
+                                Some(RevError::RevisionNotFound(spec)) => {
+                                    anyhow!("invalid patch or revision `{spec}` not found",)
+                                }
                                 _ => rev_err,
                             })?;
                     oids.push(oid);

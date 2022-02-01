@@ -1,12 +1,12 @@
 use std::str::FromStr;
 
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -36,7 +36,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
@@ -55,11 +55,11 @@ fn run(matches: &ArgMatches) -> super::Result {
         assert_eq!(patches.len(), 1);
         (top_patchname.clone(), patches.remove(0))
     } else {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     };
 
     if old_patchname == new_patchname {
-        return Err(Error::PatchAlreadyExists(new_patchname));
+        return Err(anyhow!("patch `{new_patchname}` already exists"));
     }
 
     stack

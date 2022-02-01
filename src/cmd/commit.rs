@@ -1,11 +1,11 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 use super::StGitCommand;
@@ -62,7 +62,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
@@ -88,14 +88,14 @@ fn run(matches: &ArgMatches) -> super::Result {
         if number == 0 {
             return Ok(());
         } else if number > stack.applied().len() {
-            return Err(Error::Generic(format!(
+            return Err(anyhow!(
                 "There are not `{number}` applied patches to commit"
-            )));
+            ));
         } else {
             stack.applied()[0..number].to_vec()
         }
     } else if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches);
+        return Err(Error::NoAppliedPatches.into());
     } else if matches.is_present("all") {
         stack.applied().to_vec()
     } else {
@@ -112,15 +112,15 @@ fn run(matches: &ArgMatches) -> super::Result {
             }
         }
         if empty_patches.len() == 1 {
-            return Err(Error::Generic(format!(
+            return Err(anyhow!(
                 "Attempt to commit empty patch `{}`; use --allow-empty to override",
                 empty_patches[0],
-            )));
+            ));
         } else if !empty_patches.is_empty() {
-            return Err(Error::Generic(format!(
+            return Err(anyhow!(
                 "Attempt to commit {} empty patches; use `--allow-empty` to override",
                 empty_patches.len(),
-            )));
+            ));
         }
     }
 

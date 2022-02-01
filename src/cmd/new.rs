@@ -1,10 +1,10 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgGroup, ArgMatches, ValueHint};
 
 use super::refresh;
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchedit,
     patchname::PatchName,
     signature::SignatureExtended,
@@ -117,7 +117,7 @@ fn get_app() -> App<'static> {
     patchedit::add_args(app, true)
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;
@@ -129,7 +129,7 @@ fn run(matches: &ArgMatches) -> super::Result {
     let patchname = if let Some(name) = matches.value_of("patchname") {
         let patchname = name.parse::<PatchName>()?;
         if stack.has_patch(&patchname) {
-            return Err(Error::PatchAlreadyExists(patchname));
+            return Err(anyhow!("patch `{patchname}` already exists"));
         } else {
             Some(patchname)
         }

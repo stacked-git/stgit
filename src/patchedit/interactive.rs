@@ -3,8 +3,9 @@ use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 
+use anyhow::{anyhow, Result};
+
 use super::description::PatchDescription;
-use crate::error::Error;
 
 // static EDIT_INSTRUCTION: &'static str = "\
 //     # Everything here is editable! You can modify the patch name,\n\
@@ -27,7 +28,7 @@ static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
 pub(crate) fn edit_interactive(
     patch_desc: &PatchDescription,
     config: &git2::Config,
-) -> Result<PatchDescription, Error> {
+) -> Result<PatchDescription> {
     {
         // TODO: file naming.
         // TODO: put file at worktree root?
@@ -56,7 +57,7 @@ fn is_terminal_dumb() -> bool {
     }
 }
 
-fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>, Error> {
+fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>> {
     let editor = get_editor(config);
 
     if editor != *":" {
@@ -91,7 +92,10 @@ fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>
         let status = child.wait()?;
 
         if !status.success() {
-            return Err(Error::EditorFail(editor.to_string_lossy().to_string()));
+            return Err(anyhow!(
+                "problem with the editor `{}`",
+                editor.to_string_lossy()
+            ));
         }
 
         if use_advice && !is_dumb {

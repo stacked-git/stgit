@@ -225,7 +225,7 @@ test_expect_success 'edit --diff with failing hook' '
 else
 test_expect_success 'edit --diff with failing hook' '
     command_error stg edit --diff -m "another" 2>err &&
-    grep -e "error: \`commit-msg\` hook: returned 1" err
+    grep -e "error: \`commit-msg\` hook returned 1" err
 '
 fi
 

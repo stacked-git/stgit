@@ -1,8 +1,8 @@
+use anyhow::{anyhow, Result};
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
-    error::Error,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
     stack::{Stack, StackStateAccess},
@@ -32,7 +32,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
@@ -43,20 +43,18 @@ fn run(matches: &ArgMatches) -> super::Result {
         .values_of("patches")
         .expect("clap ensures at least one range is provided");
 
-    let patches: Vec<PatchName> = parse_patch_ranges(
-        patch_ranges,
-        stack.hidden(),
-        stack.all_patches(),
-    )
-    .map_err(|e| match e {
-        crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => Error::Generic(
-            format!("patch `{}` from `{}` is not hidden", &patchname, &range),
-        ),
-        crate::patchrange::Error::PatchNotAllowed { patchname } => {
-            Error::Generic(format!("patch `{}` is not hidden", &patchname))
-        }
-        _ => e.into(),
-    })?;
+    let patches: Vec<PatchName> =
+        parse_patch_ranges(patch_ranges, stack.hidden(), stack.all_patches()).map_err(
+            |e| match e {
+                crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
+                    anyhow!("patch `{patchname}` from `{range}` is not hidden")
+                }
+                crate::patchrange::Error::PatchNotAllowed { patchname } => {
+                    anyhow!("patch `{patchname}` is not hidden")
+                }
+                _ => e.into(),
+            },
+        )?;
 
     stack
         .setup_transaction()

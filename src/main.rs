@@ -6,7 +6,6 @@ mod argset;
 mod cmd;
 mod color;
 mod commit;
-mod error;
 mod hook;
 mod index;
 mod patchedit;
@@ -24,6 +23,7 @@ use std::{
     io::Write,
 };
 
+use anyhow::{anyhow, Context, Result};
 use clap::{crate_version, App, AppSettings, ArgMatches, ValueHint};
 use termcolor::WriteColor;
 
@@ -97,9 +97,9 @@ fn main() {
     let result = if let Ok(matches) = app.try_get_matches_from(&argv) {
         // N.B. changing directories here, early, affects which aliases will
         // ultimately be found.
-        change_directories(&matches);
-
-        if matches.is_present("help-option") {
+        if let Err(e) = change_directories(&matches) {
+            Err(e)
+        } else if matches.is_present("help-option") {
             full_app_help(argv, commands, None)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known commands, then only the App for that
@@ -155,38 +155,32 @@ fn main() {
         full_app_help(argv, commands, None)
     };
 
-    match result {
-        Err(e @ error::Error::TransactionHalt(_)) => {
-            print_error_message(e);
-            std::process::exit(CONFLICT_ERROR)
-        }
-        Err(e @ error::Error::CheckoutConflicts(_)) => {
-            print_error_message(e);
-            std::process::exit(CONFLICT_ERROR)
-        }
+    let code = match result {
+        Ok(()) => 0,
         Err(e) => {
+            let code = match e.downcast_ref::<stack::Error>() {
+                Some(stack::Error::TransactionHalt(_) | stack::Error::CheckoutConflicts(_)) => {
+                    CONFLICT_ERROR
+                }
+                _ => COMMAND_ERROR,
+            };
             print_error_message(e);
-            std::process::exit(COMMAND_ERROR)
+            code
         }
-        _ => std::process::exit(0),
-    }
+    };
+    std::process::exit(code);
 }
 
 /// Change the current directory based on any -C options from the top-level App matches.
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
-fn change_directories(matches: &ArgMatches) {
+fn change_directories(matches: &ArgMatches) -> Result<()> {
     if let Some(paths) = matches.values_of_os("change_dir") {
         for path in paths.filter(|p| !p.is_empty()) {
-            std::env::set_current_dir(path).unwrap_or_else(|e| {
-                print_error_message(format!(
-                    "cannot change to `{0}`: {1}",
-                    path.to_string_lossy(),
-                    e,
-                ));
-                std::process::exit(GENERAL_ERROR);
-            });
+            std::env::set_current_dir(path)
+                .with_context(|| format!("cannot change to `{}`", path.to_string_lossy()))?;
         }
     }
+    Ok(())
 }
 
 /// Process argv using full top-level App instance with the expectation that argv is
@@ -196,7 +190,7 @@ fn full_app_help(
     argv: Vec<OsString>,
     commands: cmd::Commands,
     aliases: Option<alias::Aliases>,
-) -> cmd::Result {
+) -> Result<()> {
     let aliases = if let Some(aliases) = aliases {
         aliases
     } else {
@@ -220,7 +214,7 @@ fn full_app_help(
 /// matched in argv such that it is guaranteed to be matched again here.
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (`argv[0]`).
-fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> cmd::Result {
+fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<()> {
     let top_app = get_base_app().subcommand((command.get_app)());
     match top_app.try_get_matches_from(argv) {
         Ok(top_matches) => {
@@ -243,7 +237,7 @@ fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: &[&OsStr],
     repo: Option<&git2::Repository>,
-) -> cmd::Result {
+) -> Result<()> {
     if let Some(first_arg) = user_args.get(0) {
         if ["-h", "--help"].contains(&first_arg.to_str().unwrap_or("")) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
@@ -300,8 +294,11 @@ fn execute_shell_alias(
         }
     }
 
-    let status = command.status().map_err(|e| {
-        error::Error::ExecuteAlias(alias.name.clone(), alias.command.clone(), e.to_string())
+    let status = command.status().with_context(|| {
+        format!(
+            "while expanding shell alias `{}`: `{}`",
+            alias.name, alias.command
+        )
     })?;
     if status.success() {
         Ok(())
@@ -317,7 +314,7 @@ fn execute_stgit_alias(
     user_args: &[&OsStr],
     commands: &cmd::Commands,
     aliases: &alias::Aliases,
-) -> cmd::Result {
+) -> Result<()> {
     match alias.split() {
         Ok(alias_args) => {
             let mut new_argv: Vec<OsString> =
@@ -340,15 +337,16 @@ fn execute_stgit_alias(
             if let Some(command) = commands.get(resolved_cmd_name) {
                 execute_command(command, new_argv)
             } else if aliases.contains_key(resolved_cmd_name) {
-                Err(error::Error::RecursiveAlias(alias.name.clone()))
+                Err(anyhow!("recursive alias `{}`", alias.name))
             } else {
-                Err(error::Error::BadAlias(
-                    alias.name.clone(),
-                    format!("`{0}` is not a stg command", resolved_cmd_name),
+                Err(anyhow!(
+                    "bad alias for `{}`: `{}` is not a stg command",
+                    alias.name,
+                    resolved_cmd_name
                 ))
             }
         }
-        Err(reason) => Err(error::Error::BadAlias(alias.name.clone(), reason)),
+        Err(reason) => Err(anyhow!("bad alias for `{}`: {}", alias.name, reason)),
     }
 }
 
@@ -357,9 +355,7 @@ fn execute_stgit_alias(
 /// global and system configs.
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options being processed.
-fn get_aliases(
-    commands: &cmd::Commands,
-) -> Result<(alias::Aliases, Option<git2::Repository>), error::Error> {
+fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2::Repository>)> {
     let maybe_repo = git2::Repository::open_from_env().ok();
     let maybe_config = if let Some(ref repo) = maybe_repo {
         repo.config()
@@ -371,16 +367,16 @@ fn get_aliases(
     alias::get_aliases(maybe_config.as_ref(), excluded).map(|aliases| (aliases, maybe_repo))
 }
 
-fn punt_to_python() -> cmd::Result {
+fn punt_to_python() -> Result<()> {
     let status = std::process::Command::new("python")
         .args(["-m", "stgit"])
         .args(std::env::args_os().skip(1))
         .status()
-        .map_err(|e| error::Error::Generic(format!("failed to run python: {}", e)))?;
+        .context("failed to run python")?;
     std::process::exit(status.code().unwrap_or(-1));
 }
 
-fn print_error_message<T: ToString>(err: T) {
+fn print_error_message(err: anyhow::Error) {
     let color_choice = if atty::is(atty::Stream::Stderr) {
         termcolor::ColorChoice::Auto
     } else {
@@ -395,7 +391,7 @@ fn print_error_message<T: ToString>(err: T) {
     stderr
         .set_color(color.set_fg(None).set_bold(false))
         .unwrap();
-    let err_string: String = err.to_string();
+    let err_string = format!("{:#}", err);
     let mut remainder: &str = &err_string;
     loop {
         let parts: Vec<&str> = remainder.splitn(3, '`').collect();

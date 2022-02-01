@@ -1,13 +1,13 @@
 use std::path::{Path, PathBuf};
 
+use anyhow::Result;
 use clap::{App, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
-    error::Error,
     index::TemporaryIndex,
-    stack::{Stack, StackStateAccess},
+    stack::{Error, Stack, StackStateAccess},
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -52,7 +52,7 @@ fn get_app() -> App<'static> {
         )
 }
 
-fn run(matches: &ArgMatches) -> super::Result {
+fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 

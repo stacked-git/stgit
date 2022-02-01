@@ -1,19 +1,19 @@
-use crate::error::Error;
+use anyhow::Result;
 
 pub(crate) trait TemporaryIndex {
-    fn with_temp_index<F, T>(&self, f: F) -> Result<T, Error>
+    fn with_temp_index<F, T>(&self, f: F) -> Result<T>
     where
-        F: FnOnce(&mut git2::Index) -> Result<T, Error>;
+        F: FnOnce(&mut git2::Index) -> Result<T>;
 
-    fn with_temp_index_file<F, T>(&self, f: F) -> Result<T, Error>
+    fn with_temp_index_file<F, T>(&self, f: F) -> Result<T>
     where
-        F: FnOnce(&mut git2::Index) -> Result<T, Error>;
+        F: FnOnce(&mut git2::Index) -> Result<T>;
 }
 
 impl TemporaryIndex for git2::Repository {
-    fn with_temp_index<F, T>(&self, f: F) -> Result<T, Error>
+    fn with_temp_index<F, T>(&self, f: F) -> Result<T>
     where
-        F: FnOnce(&mut git2::Index) -> Result<T, Error>,
+        F: FnOnce(&mut git2::Index) -> Result<T>,
     {
         let mut temp_index = git2::Index::new()?;
         let mut orig_index = self.index()?;
@@ -24,9 +24,9 @@ impl TemporaryIndex for git2::Repository {
         result
     }
 
-    fn with_temp_index_file<F, T>(&self, f: F) -> Result<T, Error>
+    fn with_temp_index_file<F, T>(&self, f: F) -> Result<T>
     where
-        F: FnOnce(&mut git2::Index) -> Result<T, Error>,
+        F: FnOnce(&mut git2::Index) -> Result<T>,
     {
         // TODO: dynamic file name
         let temp_index_path = self.path().join("index-temp-stgit");

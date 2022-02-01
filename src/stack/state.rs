@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::str;
 
+use anyhow::{anyhow, Result};
 use git2::{Commit, FileMode, Oid, Tree};
 
 use crate::{
     commit::{CommitMessage, CommitOptions, RepositoryCommitExtended},
-    error::Error,
     patchname::PatchName,
     signature::{SignatureExtended, TimeExtended},
     stack::serde::RawStackState,
@@ -81,21 +81,18 @@ impl<'repo> StackState<'repo> {
         }
     }
 
-    pub(super) fn from_tree(repo: &'repo git2::Repository, tree: &Tree) -> Result<Self, Error> {
+    pub(super) fn from_tree(repo: &'repo git2::Repository, tree: &Tree) -> Result<Self> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
             let stack_json_blob = repo.find_object(stack_json.id(), None)?.peel_to_blob()?;
             let raw_state = RawStackState::from_stack_json(stack_json_blob.content())?;
             Self::from_raw_state(repo, raw_state)
         } else {
-            Err(Error::StackMetadataNotFound)
+            Err(anyhow!("stack metadata not found"))
         }
     }
 
-    fn from_raw_state(
-        repo: &'repo git2::Repository,
-        raw_state: RawStackState,
-    ) -> Result<Self, Error> {
+    fn from_raw_state(repo: &'repo git2::Repository, raw_state: RawStackState) -> Result<Self> {
         let mut patches = BTreeMap::new();
         for (patchname, raw_state) in raw_state.patches {
             let commit = repo.find_commit(raw_state.oid)?;
@@ -140,7 +137,7 @@ impl<'repo> StackState<'repo> {
         repo: &'repo git2::Repository,
         update_ref: Option<&str>,
         message: &str,
-    ) -> Result<Oid, Error> {
+    ) -> Result<Oid> {
         let prev_state_tree = match &self.prev {
             Some(prev_commit) => {
                 let prev_tree = prev_commit.tree()?;
@@ -236,7 +233,7 @@ impl<'repo> StackState<'repo> {
         &self,
         repo: &'repo git2::Repository,
         prev_state_and_tree: &Option<(Self, Tree)>,
-    ) -> Result<Oid, Error> {
+    ) -> Result<Oid> {
         let mut builder = repo.treebuilder(None)?;
         builder.insert(
             "stack.json",
@@ -272,7 +269,7 @@ impl<'repo> StackState<'repo> {
         repo: &git2::Repository,
         prev_state: Option<&StackState>,
         prev_patches_tree: Option<Tree>,
-    ) -> Result<Oid, Error> {
+    ) -> Result<Oid> {
         let mut builder = repo.treebuilder(None)?;
         for patchname in self.all_patches() {
             builder.insert(
@@ -290,7 +287,7 @@ impl<'repo> StackState<'repo> {
         patchname: &PatchName,
         prev_state: Option<&StackState>,
         prev_patches_tree: Option<&Tree>,
-    ) -> Result<Oid, Error> {
+    ) -> Result<Oid> {
         let commit = &self.patches[patchname].commit;
 
         if let Some(prev_state) = prev_state {

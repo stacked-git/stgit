@@ -3,19 +3,21 @@ use std::collections::BTreeMap;
 use std::ffi::OsString;
 use std::io::Write;
 
+use anyhow::{anyhow, Result};
 use git2::{Commit, Oid, RepositoryState};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
-    error::{repo_state_to_str, Error},
     index::TemporaryIndex,
     patchname::PatchName,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid,
 };
+
+use super::error::{repo_state_to_str, Error};
 
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,
@@ -39,7 +41,7 @@ pub(crate) struct StackTransaction<'repo> {
     updated_head: Option<Commit<'repo>>,
     updated_base: Option<Commit<'repo>>,
     current_tree_id: Oid,
-    error: Option<Error>,
+    error: Option<anyhow::Error>,
     conflicts: Vec<OsString>,
     printed_top: bool,
 }
@@ -114,7 +116,7 @@ impl<'repo> TransactionBuilder<'repo> {
     #[must_use]
     pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
     where
-        F: FnOnce(&mut StackTransaction) -> Result<(), Error>,
+        F: FnOnce(&mut StackTransaction) -> Result<()>,
     {
         let Self {
             stack,
@@ -157,14 +159,15 @@ impl<'repo> TransactionBuilder<'repo> {
 }
 
 impl<'repo> ExecuteContext<'repo> {
-    pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>, Error> {
+    pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>> {
         let mut transaction = self.0;
 
         // Only proceed for halt errors
-        match transaction.error {
-            None => {}
-            Some(Error::TransactionHalt(_)) => {}
-            Some(e) => return Err(e),
+        if let Some(err) = &transaction.error {
+            match err.downcast_ref::<Error>() {
+                Some(Error::TransactionHalt(_)) => {}
+                _ => return Err(transaction.error.unwrap()),
+            }
         }
 
         // Check consistency
@@ -197,7 +200,7 @@ impl<'repo> ExecuteContext<'repo> {
                 if let Err(err) = result {
                     let allow_bad_head = true;
                     transaction.checkout(&stack_head, allow_bad_head)?;
-                    return Err(Error::TransactionAborted(err.to_string()));
+                    return Err(Error::TransactionAborted(err.to_string()).into());
                 }
             }
 
@@ -284,7 +287,7 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 impl<'repo> StackTransaction<'repo> {
-    fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<(), Error> {
+    fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<()> {
         let repo = self.stack.repo;
         if !allow_bad_head {
             self.stack.check_head_top_mismatch()?;
@@ -294,20 +297,20 @@ impl<'repo> StackTransaction<'repo> {
             return match repo.state() {
                 RepositoryState::Clean => Ok(()),
                 RepositoryState::Merge | RepositoryState::RebaseMerge => match self.conflict_mode {
-                    ConflictMode::Disallow => Err(Error::OutstandingConflicts),
+                    ConflictMode::Disallow => Err(Error::OutstandingConflicts.into()),
                     ConflictMode::Allow => Ok(()),
                     ConflictMode::AllowIfSameTop => {
                         let top = self.applied.last();
                         if top.is_some() && top == self.stack.applied().last() {
                             Ok(())
                         } else {
-                            Err(Error::OutstandingConflicts)
+                            Err(Error::OutstandingConflicts.into())
                         }
                     }
                 },
-                state => Err(Error::ActiveRepositoryState(
-                    repo_state_to_str(state).to_string(),
-                )),
+                state => {
+                    Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into())
+                }
             };
         }
 
@@ -316,36 +319,30 @@ impl<'repo> StackTransaction<'repo> {
             checkout_builder.force();
         }
         repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))
-            .map_err(|e| {
+            .map_err(|e| -> anyhow::Error {
                 if e.class() == git2::ErrorClass::Checkout && e.code() == git2::ErrorCode::Conflict
                 {
-                    Error::CheckoutConflicts(e.message().to_string())
+                    Error::CheckoutConflicts(e.message().to_string()).into()
                 } else {
-                    Error::Git(e)
+                    e.into()
                 }
             })?;
         self.current_tree_id = commit.tree_id();
         Ok(())
     }
 
-    pub(crate) fn update_patch(
-        &mut self,
-        patchname: &PatchName,
-        commit_id: Oid,
-    ) -> Result<(), Error> {
+    pub(crate) fn update_patch(&mut self, patchname: &PatchName, commit_id: Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
         // Failure to copy is okay. The old commit may not have a note to copy.
-        if let Err(e @ Error::GitExecute(_)) = stupid::notes_copy(old_commit.id(), commit_id) {
-            return Err(e);
-        }
+        stupid::notes_copy(old_commit.id(), commit_id).ok();
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
         self.print_updated(patchname)?;
         Ok(())
     }
 
-    pub(crate) fn push_new(&mut self, patchname: &PatchName, oid: Oid) -> Result<(), Error> {
+    pub(crate) fn push_new(&mut self, patchname: &PatchName, oid: Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
@@ -354,7 +351,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn push_tree_patches<P>(&mut self, patchnames: &[P]) -> Result<(), Error>
+    pub(crate) fn push_tree_patches<P>(&mut self, patchnames: &[P]) -> Result<()>
     where
         P: AsRef<PatchName>,
     {
@@ -365,7 +362,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<(), Error> {
+    pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<()> {
         let patch_commit = self.get_patch_commit(patchname);
         let config = self.stack.repo.config()?;
         let parent = patch_commit.parent(0)?;
@@ -384,11 +381,7 @@ impl<'repo> StackTransaction<'repo> {
             )?;
 
             let commit = self.stack.repo.find_commit(new_commit_id)?;
-            if let Err(e @ Error::GitExecute(_)) =
-                stupid::notes_copy(patch_commit.id(), new_commit_id)
-            {
-                return Err(e);
-            }
+            stupid::notes_copy(patch_commit.id(), new_commit_id).ok();
             self.patch_updates
                 .insert(patchname.clone(), Some(PatchState { commit }));
 
@@ -421,7 +414,7 @@ impl<'repo> StackTransaction<'repo> {
         applied: Option<&[PatchName]>,
         unapplied: Option<&[PatchName]>,
         hidden: Option<&[PatchName]>,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if let Some(applied) = applied {
             let num_common = self
                 .applied
@@ -456,7 +449,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn commit_patches(&mut self, to_commit: &[PatchName]) -> Result<(), Error> {
+    pub(crate) fn commit_patches(&mut self, to_commit: &[PatchName]) -> Result<()> {
         let num_common = self
             .applied()
             .iter()
@@ -488,7 +481,7 @@ impl<'repo> StackTransaction<'repo> {
         self.push_patches(&to_push, false)
     }
 
-    pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<(), Error> {
+    pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<()> {
         let applied: Vec<PatchName> = self
             .applied
             .iter()
@@ -510,7 +503,7 @@ impl<'repo> StackTransaction<'repo> {
         self.print_hidden(to_hide)
     }
 
-    pub(crate) fn unhide_patches(&mut self, to_unhide: &[PatchName]) -> Result<(), Error> {
+    pub(crate) fn unhide_patches(&mut self, to_unhide: &[PatchName]) -> Result<()> {
         let unapplied: Vec<PatchName> = self
             .unapplied
             .iter()
@@ -534,7 +527,7 @@ impl<'repo> StackTransaction<'repo> {
         &mut self,
         old_patchname: &PatchName,
         new_patchname: &PatchName,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         if new_patchname == old_patchname {
             return Ok(());
         } else if self.stack.has_patch(new_patchname)
@@ -543,9 +536,9 @@ impl<'repo> StackTransaction<'repo> {
                 .get(new_patchname)
                 .map_or(true, |maybe_patch| maybe_patch.is_some())
         {
-            return Err(Error::PatchAlreadyExists(new_patchname.clone()));
+            return Err(anyhow!("patch `{new_patchname}` already exists"));
         } else if !self.stack.has_patch(old_patchname) {
-            return Err(Error::PatchDoesNotExist(old_patchname.clone()));
+            return Err(anyhow!("patch `{old_patchname}` does not exist"));
         }
 
         if let Some(pos) = self.applied.iter().position(|pn| pn == old_patchname) {
@@ -569,7 +562,7 @@ impl<'repo> StackTransaction<'repo> {
         self.print_rename(old_patchname, new_patchname)
     }
 
-    pub(crate) fn delete_patches<F>(&mut self, should_delete: F) -> Result<Vec<PatchName>, Error>
+    pub(crate) fn delete_patches<F>(&mut self, should_delete: F) -> Result<Vec<PatchName>>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -635,7 +628,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
-    pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Result<Vec<PatchName>, Error>
+    pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Result<Vec<PatchName>>
     where
         F: Fn(&PatchName) -> bool,
     {
@@ -670,11 +663,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
-    pub(crate) fn push_patches<P>(
-        &mut self,
-        patchnames: &[P],
-        check_merged: bool,
-    ) -> Result<(), Error>
+    pub(crate) fn push_patches<P>(&mut self, patchnames: &[P], check_merged: bool) -> Result<()>
     where
         P: AsRef<PatchName>,
     {
@@ -716,7 +705,7 @@ impl<'repo> StackTransaction<'repo> {
         default_index: &git2::Index,
         temp_index: &mut git2::Index,
         temp_index_tree_id: &mut Option<git2::Oid>,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let repo = self.stack.repo;
         let config = repo.config()?;
         let default_committer = git2::Signature::default_committer(Some(&config))?;
@@ -769,10 +758,11 @@ impl<'repo> StackTransaction<'repo> {
                 return Err(Error::TransactionHalt(format!(
                     "{} does not apply cleanly",
                     patchname
-                )));
+                ))
+                .into());
             } else {
                 if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
-                    return Err(Error::TransactionHalt("index/worktree dirty".to_string()));
+                    return Err(Error::TransactionHalt("index/worktree dirty".to_string()).into());
                 }
                 self.current_tree_id = ours;
 
@@ -801,7 +791,9 @@ impl<'repo> StackTransaction<'repo> {
                         ours
                     }
                     Err(_) => {
-                        return Err(Error::TransactionHalt("index/worktree dirty".to_string()))
+                        return Err(
+                            Error::TransactionHalt("index/worktree dirty".to_string()).into()
+                        )
                     }
                 }
             }
@@ -816,10 +808,7 @@ impl<'repo> StackTransaction<'repo> {
                 [new_parent.id()],
             )?;
             let commit = repo.find_commit(commit_id)?;
-            if let Err(e @ Error::GitExecute(_)) = stupid::notes_copy(patch_commit.id(), commit_id)
-            {
-                return Err(e);
-            };
+            stupid::notes_copy(patch_commit.id(), commit_id).ok();
             if merge_conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
@@ -850,10 +839,7 @@ impl<'repo> StackTransaction<'repo> {
         self.print_pushed(patchname, push_status, is_last)?;
 
         if merge_conflict {
-            Err(Error::TransactionHalt(format!(
-                "{} merge conflicts",
-                self.conflicts.len()
-            )))
+            Err(Error::TransactionHalt(format!("{} merge conflicts", self.conflicts.len())).into())
         } else {
             Ok(())
         }
@@ -864,7 +850,7 @@ impl<'repo> StackTransaction<'repo> {
         patchnames: &'a [P],
         temp_index: &mut git2::Index,
         temp_index_tree_id: &mut Option<git2::Oid>,
-    ) -> Result<Vec<&'a PatchName>, Error>
+    ) -> Result<Vec<&'a PatchName>>
     where
         P: AsRef<PatchName>,
     {
@@ -904,7 +890,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(merged)
     }
 
-    fn print_merged(&self, merged_patches: &[&PatchName]) -> Result<(), Error> {
+    fn print_merged(&self, merged_patches: &[&PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         write!(output, "Found ")?;
         let mut color_spec = termcolor::ColorSpec::new();
@@ -916,11 +902,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_rename(
-        &self,
-        old_patchname: &PatchName,
-        new_patchname: &PatchName,
-    ) -> Result<(), Error> {
+    fn print_rename(&self, old_patchname: &PatchName, new_patchname: &PatchName) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         output.set_color(color_spec.set_dimmed(true))?;
@@ -933,7 +915,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_committed(&self, committed: &[PatchName]) -> Result<(), Error> {
+    fn print_committed(&self, committed: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         output.set_color(color_spec.set_fg(Some(termcolor::Color::White)))?;
@@ -953,7 +935,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_deleted(&self, deleted: &[PatchName]) -> Result<(), Error> {
+    fn print_deleted(&self, deleted: &[PatchName]) -> Result<()> {
         if !deleted.is_empty() {
             let mut output = self.output.borrow_mut();
             let mut color_spec = termcolor::ColorSpec::new();
@@ -975,7 +957,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_hidden(&self, hidden: &[PatchName]) -> Result<(), Error> {
+    fn print_hidden(&self, hidden: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         for patchname in hidden {
@@ -990,7 +972,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_unhidden(&self, unhidden: &[PatchName]) -> Result<(), Error> {
+    fn print_unhidden(&self, unhidden: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         for patchname in unhidden {
@@ -1005,7 +987,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_popped(&self, popped: &[PatchName]) -> Result<(), Error> {
+    fn print_popped(&self, popped: &[PatchName]) -> Result<()> {
         if !popped.is_empty() {
             let mut output = self.output.borrow_mut();
             let mut color_spec = termcolor::ColorSpec::new();
@@ -1032,7 +1014,7 @@ impl<'repo> StackTransaction<'repo> {
         patchname: &PatchName,
         status: PushStatus,
         is_last: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let sigil = if is_last { '>' } else { '+' };
         let mut color_spec = termcolor::ColorSpec::new();
@@ -1067,7 +1049,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    fn print_updated(&self, patchname: &PatchName) -> Result<(), Error> {
+    fn print_updated(&self, patchname: &PatchName) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let (is_applied, is_top) =
             if let Some(pos) = self.applied().iter().position(|pn| pn == patchname) {

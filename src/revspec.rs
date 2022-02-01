@@ -1,13 +1,22 @@
+use anyhow::Result;
 use git2::Oid;
 
-use crate::error::Error;
 use crate::stack::{Stack, StackStateAccess};
+
+#[derive(thiserror::Error, Debug)]
+pub(crate) enum Error {
+    #[error("invalid StGit revision `{0}`")]
+    InvalidRevision(String),
+
+    #[error("revision not found `{0}`")]
+    RevisionNotFound(String),
+}
 
 pub(crate) fn parse_stgit_revision<'repo>(
     repo: &'repo git2::Repository,
     spec: Option<&str>,
     branch: Option<&str>,
-) -> Result<Oid, Error> {
+) -> Result<Oid> {
     let (branch, spec) = if let Some(spec) = spec {
         if let Some((branch, spec)) = spec.split_once(':') {
             // The branch from the spec string overrides the branch argument.
@@ -39,11 +48,13 @@ pub(crate) fn parse_stgit_revision<'repo>(
     }
 }
 
-fn revparse_single(repo: &git2::Repository, spec: &str) -> Result<Oid, Error> {
-    let object = repo.revparse_single(spec).map_err(|e| match e.code() {
-        git2::ErrorCode::InvalidSpec => Error::InvalidRevision(spec.to_string()),
-        git2::ErrorCode::NotFound => Error::RevisionNotFound(spec.to_string()),
-        _ => e.into(),
+fn revparse_single(repo: &git2::Repository, spec: &str) -> Result<Oid> {
+    let object = repo.revparse_single(spec).map_err(|e| -> anyhow::Error {
+        match e.code() {
+            git2::ErrorCode::InvalidSpec => Error::InvalidRevision(spec.to_string()).into(),
+            git2::ErrorCode::NotFound => Error::RevisionNotFound(spec.to_string()).into(),
+            _ => e.into(),
+        }
     })?;
     Ok(object.id())
 }

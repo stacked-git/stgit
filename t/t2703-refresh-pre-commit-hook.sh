@@ -75,7 +75,7 @@ else
 test_expect_success 'refresh with failing hook' '
     echo "pre-commit-hook-fail" >> file &&
     command_error stg refresh 2>err &&
-    grep -e "\`pre-commit\` hook: returned 1" err &&
+    grep -e "\`pre-commit\` hook returned 1" err &&
     git reset HEAD
 '
 fi
@@ -91,7 +91,7 @@ else
 test_expect_success 'refresh with path limiting, failing hook' '
     echo "pre-commit-hook-path-limiting-fail" >> file &&
     command_error stg refresh file 2>err &&
-    grep -e "\`pre-commit\` hook: returned 1" err &&
+    grep -e "\`pre-commit\` hook returned 1" err &&
     git reset HEAD
 '
 fi
@@ -154,7 +154,7 @@ else
 test_expect_success 'refresh with failing hook that modifies file' '
     echo "pre-commit-hook-remove-whitespace  " >> file &&
     command_error stg refresh 2>err &&
-    grep -e "\`pre-commit\` hook: returned 1" err &&
+    grep -e "\`pre-commit\` hook returned 1" err &&
     [ "$(git diff --name-only)" = "file" ] &&
     [ "$(git diff --cached --name-only)" = "file" ] &&
     [ "$(tail -1 file)" = "pre-commit-hook-remove-whitespace" ]
