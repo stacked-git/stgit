@@ -146,6 +146,7 @@ pub(crate) fn diff<I, S>(
     revspec: &str,
     pathspecs: Option<I>,
     stat: bool,
+    color_opt: Option<&str>,
     diff_opts: Option<&str>,
 ) -> Result<()>
 where
@@ -156,6 +157,10 @@ where
     command.arg("diff");
     if stat {
         command.args(["--stat", "--summary"]);
+    }
+
+    if let Some(color_opt) = map_color_opt(color_opt) {
+        command.arg(format!("--color={color_opt}"));
     }
 
     if let Some(diff_opts) = diff_opts {
@@ -400,6 +405,7 @@ pub(crate) fn show<I, S>(
     oids: impl IntoIterator<Item = git2::Oid>,
     pathspecs: Option<I>,
     stat: bool,
+    color_opt: Option<&str>,
     diff_opts: Option<&str>,
 ) -> Result<()>
 where
@@ -412,6 +418,10 @@ where
         command.args(["--stat", "--summary"]);
     } else {
         command.arg("--patch");
+    }
+
+    if let Some(color_opt) = map_color_opt(color_opt) {
+        command.arg(format!("--color={color_opt}"));
     }
 
     if let Some(diff_opts) = diff_opts {
@@ -545,6 +555,10 @@ fn in_and_out(mut child: Child, input: &[u8]) -> Result<Output> {
     handle.join().unwrap();
     let output = output_result?;
     Ok(output)
+}
+
+fn map_color_opt(opt: Option<&str>) -> Option<&str> {
+    opt.map(|o| if o == "ansi" { "always" } else { o })
 }
 
 #[cfg(unix)]

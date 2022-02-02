@@ -152,6 +152,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         oids,
         matches.values_of_os("path_limits"),
         opt_stat,
+        matches.value_of("color"),
         matches.value_of("diff-opts"),
     )
 }

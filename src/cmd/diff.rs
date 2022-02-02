@@ -79,6 +79,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &revspec,
         matches.values_of_os("pathspecs"),
         matches.is_present("stat"),
+        matches.value_of("color"),
         matches.value_of("diff-opts"),
     )
 }
