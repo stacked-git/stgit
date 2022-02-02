@@ -459,7 +459,14 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
             let diff_buf = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
-                stupid::diff_tree_patch(old_tree.id(), new_tree.id())?
+                stupid::diff_tree_patch(
+                    old_tree.id(),
+                    new_tree.id(),
+                    <Option<Vec<OsString>>>::None,
+                    true,
+                    false,
+                    None,
+                )?
             } else {
                 // This is a special case for `stg new` without the `--refresh` option.
                 // In this case, the patch description shows the diff of changes in the

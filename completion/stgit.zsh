@@ -339,7 +339,7 @@ _stg-patches() {
     __stg_add_args_diffopts
     subcmd_args+=(
         '(-d --diff)'{-d,--diff}'[show diffs of given files]'
-        '*:files:__stg_files_known'
+        '*:files:__stg_cached_files'
     )
     _arguments -s -S $subcmd_args
 }
@@ -892,15 +892,6 @@ __stg_changed_files () {
   _alternative \
     'changed-in-index-files::__stg_changed-in-index_files' \
     'changed-in-working-tree-files::__stg_changed-in-working-tree_files'
-}
-
-__stg_files_known() {
-    declare -a known_files
-    known_files=(
-        ${(f)"$(_call_program known-files git ls-files 2>/dev/null)"}
-    )
-    local expl
-    _wanted -V known-files expl "known files" _multi_parts - / known_files
 }
 
 __stg_patch_files () {

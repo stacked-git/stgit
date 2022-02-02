@@ -22,6 +22,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
+use bstr::{BString, ByteSlice, ByteVec};
 use indexmap::IndexSet;
 
 use crate::signature::TimeExtended;
@@ -207,12 +208,67 @@ pub(crate) fn diff_index(tree_id: git2::Oid) -> Result<Vec<u8>> {
     }
 }
 
+pub(crate) fn diff_index_names(tree_id: git2::Oid, relative: Option<&Path>) -> Result<Vec<u8>> {
+    let mut command = Command::new("git");
+    command.args(["diff-index", "--name-only", "-z"]);
+
+    if let Some(relative) = relative {
+        let mut arg = BString::from("--relative=");
+        let relative = <[u8]>::from_os_str(relative.as_os_str())
+            .expect("relative path is valid UTF-8 on Windows");
+        arg.push_str(relative);
+        let arg = arg
+            .to_os_str()
+            .context("building --relative arg for `git diff-index`")?;
+        command.arg(arg);
+    }
+
+    let output = command
+        .arg(tree_id.to_string())
+        .arg("--")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(make_cmd_err("diff-index", &output.stderr))
+    }
+}
+
 /// Generate diff between two trees using `git diff-tree -p`.
-pub(crate) fn diff_tree_patch(tree1: git2::Oid, tree2: git2::Oid) -> Result<Vec<u8>> {
-    let output = Command::new("git")
-        .args(["diff-tree", "-p", "--full-index"])
-        .arg(tree1.to_string())
-        .arg(tree2.to_string())
+pub(crate) fn diff_tree_patch<I, S>(
+    tree1: git2::Oid,
+    tree2: git2::Oid,
+    pathspecs: Option<I>,
+    full_index: bool,
+    color: bool,
+    diff_opts: Option<&str>,
+) -> Result<Vec<u8>>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new("git");
+    command.args(["diff-tree", "-p"]);
+    if full_index {
+        command.arg("--full-index");
+    }
+    if color {
+        command.arg("--color");
+    }
+    if let Some(diff_opts) = diff_opts {
+        command.args(diff_opts.split_ascii_whitespace());
+    }
+    command.args([tree1.to_string(), tree2.to_string()]);
+    if let Some(pathspecs) = pathspecs {
+        command.arg("--");
+        command.args(pathspecs);
+    }
+    let output = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -397,6 +453,54 @@ pub(crate) fn read_tree_checkout(old_tree_id: git2::Oid, new_tree_id: git2::Oid)
         Ok(())
     } else {
         Err(make_cmd_err("read-tree -m -u", &output.stderr))
+    }
+}
+
+/// Get list of revisions using `git rev-list`.
+pub(crate) fn rev_list<I, S>(
+    base: git2::Oid,
+    top: git2::Oid,
+    worktree: Option<&Path>,
+    pathspecs: Option<I>,
+) -> Result<Vec<git2::Oid>>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new("git");
+    command.arg("rev-list").arg(format!("{base}..{top}"));
+
+    if let Some(worktree) = worktree {
+        command.current_dir(worktree);
+    }
+
+    command.arg("--");
+    if let Some(pathspecs) = pathspecs {
+        command.args(pathspecs);
+    }
+
+    let output = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+
+    if output.status.success() {
+        let mut oids: Vec<git2::Oid> = Vec::new();
+        for line in output
+            .stdout
+            .split_str("\n")
+            .filter(|line| !line.is_empty())
+        {
+            let oid_str = line.to_str().context("converting oid")?;
+            let oid = git2::Oid::from_str(oid_str)
+                .with_context(|| format!("converting oid `{oid_str}`"))?;
+            oids.push(oid)
+        }
+        Ok(oids)
+    } else {
+        Err(make_cmd_err("rev-list", &output.stderr))
     }
 }
 

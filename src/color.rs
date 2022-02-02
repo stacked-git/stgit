@@ -28,7 +28,11 @@ pub(crate) fn get_color_arg() -> Arg<'static> {
 }
 
 pub(crate) fn get_color_stdout(matches: &ArgMatches) -> StandardStream {
-    let color_choice = match matches.value_of("color").unwrap_or("auto") {
+    StandardStream::stdout(get_color_choice(matches))
+}
+
+pub(crate) fn get_color_choice(matches: &ArgMatches) -> ColorChoice {
+    match matches.value_of("color").unwrap_or("auto") {
         "always" => ColorChoice::Always,
         "ansi" => ColorChoice::AlwaysAnsi,
         "auto" => {
@@ -39,6 +43,5 @@ pub(crate) fn get_color_stdout(matches: &ArgMatches) -> StandardStream {
             }
         }
         _ => ColorChoice::Never,
-    };
-    StandardStream::stdout(color_choice)
+    }
 }
