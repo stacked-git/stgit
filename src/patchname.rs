@@ -1,12 +1,20 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
-    #[error("invalid patch name `{0}` ({1})")]
-    InvalidPatchName(String, String),
+    #[error("invalid patch name `{name}`: {reason}")]
+    InvalidPatchName { name: String, reason: String },
+}
+
+impl Error {
+    pub(crate) fn invalid(name: &str, reason: &str) -> Self {
+        Self::InvalidPatchName {
+            name: name.into(),
+            reason: reason.into(),
+        }
+    }
 }
 
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -154,10 +162,7 @@ impl PatchName {
 
     fn validate(name: &str) -> Result<(), Error> {
         if name.is_empty() {
-            return Err(Error::InvalidPatchName(
-                name.into(),
-                "patch name may not be empty".into(),
-            ));
+            return Err(Error::invalid(name, "patch name may not be empty"));
         }
 
         let mut prev = '\0';
@@ -165,35 +170,26 @@ impl PatchName {
         for (i, c) in name.chars().enumerate() {
             if c == '.' {
                 if i == 0 {
-                    return Err(Error::InvalidPatchName(
-                        name.into(),
-                        "patch name may not start with '.'".into(),
-                    ));
+                    return Err(Error::invalid(name, "patch name may not start with '.'"));
                 } else if prev == '.' {
-                    return Err(Error::InvalidPatchName(
-                        name.into(),
-                        "patch name may not contain '..'".into(),
-                    ));
+                    return Err(Error::invalid(name, "patch name may not contain '..'"));
                 }
             } else if prev == '@' && c == '{' {
-                return Err(Error::InvalidPatchName(
-                    name.into(),
-                    "patch name may not contain '@{'".into(),
-                ));
+                return Err(Error::invalid(name, "patch name may not contain '@{'"));
             } else if c.is_ascii_whitespace() {
-                return Err(Error::InvalidPatchName(
-                    name.into(),
-                    "patch name may not contain whitespace".into(),
+                return Err(Error::invalid(
+                    name,
+                    "patch name may not contain whitespace",
                 ));
             } else if c.is_control() {
-                return Err(Error::InvalidPatchName(
-                    name.into(),
-                    "patch name may not contain control characters".into(),
+                return Err(Error::invalid(
+                    name,
+                    "patch name may not contain control characters",
                 ));
             } else if let '~' | '^' | ':' | '/' | '\\' | '?' | '[' | '*' | '\x7f' = c {
-                return Err(Error::InvalidPatchName(
-                    name.into(),
-                    format!("patch name may not contain '{}'", c),
+                return Err(Error::invalid(
+                    name,
+                    &format!("patch name may not contain '{}'", c),
                 ));
             }
 
@@ -201,15 +197,9 @@ impl PatchName {
         }
 
         if prev == '.' {
-            return Err(Error::InvalidPatchName(
-                name.into(),
-                "patch name may not end with '.'".into(),
-            ));
+            return Err(Error::invalid(name, "patch name may not end with '.'"));
         } else if prev == 'k' && name.ends_with(".lock") {
-            return Err(Error::InvalidPatchName(
-                name.into(),
-                "patch name may not end with '.lock'".into(),
-            ));
+            return Err(Error::invalid(name, "patch name may not end with '.lock'"));
         }
 
         Ok(())
