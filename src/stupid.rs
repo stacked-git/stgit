@@ -30,11 +30,16 @@ use crate::signature::TimeExtended;
 const GIT_EXEC_FAIL: &str = "could not execute `git`";
 
 /// Apply a patch (diff) to the specified index using `git apply --cached`.
-pub(crate) fn apply_to_index(diff: &[u8], index_path: &Path) -> Result<()> {
+pub(crate) fn apply_to_index(
+    diff: &[u8],
+    worktree: &Path,
+    index_path: &Path,
+) -> Result<()> {
     let child = Command::new("git")
         .args(["apply", "--cached"])
         // TODO: use --recount?
         .env("GIT_INDEX_FILE", index_path)
+        .current_dir(worktree)
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())

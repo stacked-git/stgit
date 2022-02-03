@@ -559,8 +559,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
             match repo.with_temp_index_file(|temp_index| {
                 let temp_index_path = temp_index.path().unwrap();
+                let workdir = repo.workdir().unwrap();
                 stupid::read_tree(parent_id, temp_index_path)?;
-                stupid::apply_to_index(&diff, temp_index_path)?;
+                stupid::apply_to_index(&diff, workdir, temp_index_path)?;
                 stupid::write_tree(temp_index_path)
             }) {
                 Ok(tree_id) => tree_id,
