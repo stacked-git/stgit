@@ -30,11 +30,7 @@ use crate::signature::TimeExtended;
 const GIT_EXEC_FAIL: &str = "could not execute `git`";
 
 /// Apply a patch (diff) to the specified index using `git apply --cached`.
-pub(crate) fn apply_to_index(
-    diff: &[u8],
-    worktree: &Path,
-    index_path: &Path,
-) -> Result<()> {
+pub(crate) fn apply_to_index(diff: &[u8], worktree: &Path, index_path: &Path) -> Result<()> {
     let child = Command::new("git")
         .args(["apply", "--cached"])
         // TODO: use --recount?
@@ -253,6 +249,40 @@ pub(crate) fn diff_index_names(tree_id: git2::Oid, relative: Option<&Path>) -> R
         Ok(output.stdout)
     } else {
         Err(make_cmd_err("diff-index", &output.stderr))
+    }
+}
+
+/// Interative diff-tree (for 'stg files').
+pub(crate) fn diff_tree_files(
+    tree1: git2::Oid,
+    tree2: git2::Oid,
+    stat: bool,
+    name_only: bool,
+    color_opt: Option<&str>,
+) -> Result<Vec<u8>> {
+    let mut command = Command::new("git");
+    command.args(["diff-tree", "-r"]);
+    if stat {
+        command.args(["--stat", "--summary"]);
+    } else if name_only {
+        command.arg("--name-only");
+    } else {
+        command.arg("--name-status");
+    }
+    if let Some(color_opt) = map_color_opt(color_opt) {
+        command.arg(format!("--color={color_opt}"));
+    }
+    command.args([tree1.to_string(), tree2.to_string()]);
+    let output = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        Ok(output.stdout)
+    } else {
+        Err(make_cmd_err("diff-tree", &output.stderr))
     }
 }
 

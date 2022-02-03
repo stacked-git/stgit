@@ -19,18 +19,37 @@ test_expect_success 'Create some patches' '
     stg refresh
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid bare and stat' '
     command_error stg files --bare --stat
 '
+else
+test_expect_success 'Invalid bare and stat' '
+    general_error stg files --bare --stat
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Too many arguments' '
     command_error stg files patch-a-b patch-b-c
 '
+else
+test_expect_success 'Too many arguments' '
+    general_error stg files patch-a-b patch-b-c
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid patch name' '
     command_error stg files bad-patch-name 2>err &&
     grep -e "bad-patch-name: Unknown patch" err
 '
+else
+test_expect_success 'Invalid patch name' '
+    command_error stg files bad-patch-name 2>err &&
+    grep -e "error: revision not found \`bad-patch-name\`" err
+'
+fi
 
 cat > expected-b-c.log <<EOF
 M b.txt
