@@ -110,10 +110,22 @@ pub(crate) fn commit_tree(
     if gpgsign {
         command.arg("-S");
     }
-    let author_name = osstr_from_bytes(author.name_bytes());
-    let author_email = osstr_from_bytes(author.email_bytes());
-    let committer_name = osstr_from_bytes(committer.name_bytes());
-    let committer_email = osstr_from_bytes(committer.email_bytes());
+    let author_name = author
+        .name_bytes()
+        .to_os_str()
+        .context("setting GIT_AUTHOR_NAME from author name")?;
+    let author_email = author
+        .email_bytes()
+        .to_os_str()
+        .context("setting GIT_AUTHOR_EMAIL from author email")?;
+    let committer_name = committer
+        .name_bytes()
+        .to_os_str()
+        .context("setting GIT_COMMITTER_NAME from author name")?;
+    let committer_email = committer
+        .email_bytes()
+        .to_os_str()
+        .context("setting GIT_COMMITTER_EMAIL from author email")?;
 
     command
         .env("GIT_AUTHOR_NAME", author_name)
@@ -386,8 +398,15 @@ pub(crate) fn ls_files_unmerged(worktree: &Path, index_path: &Path) -> Result<Ve
     if output.status.success() {
         let mut conflicts: IndexSet<OsString> = output
             .stdout
-            .split(|&c| c == b'\0')
-            .filter_map(|line| line.split(|&c| c == b'\t').nth(1).map(osstring_from_bytes))
+            .split_str(b"\0")
+            .filter_map(|line| {
+                line.split_str(b"\t").nth(1).map(|name_bytes| {
+                    name_bytes
+                        .to_os_str()
+                        .expect("git file names must be utf-8 on Windows")
+                        .into()
+                })
+            })
             .collect();
         Ok(conflicts.drain(..).collect())
     } else {
@@ -663,26 +682,4 @@ fn in_and_out(mut child: Child, input: &[u8]) -> Result<Output> {
 
 fn map_color_opt(opt: Option<&str>) -> Option<&str> {
     opt.map(|o| if o == "ansi" { "always" } else { o })
-}
-
-#[cfg(unix)]
-pub(crate) fn osstr_from_bytes(b: &[u8]) -> &OsStr {
-    use std::os::unix::ffi::OsStrExt;
-    OsStr::from_bytes(b)
-}
-
-#[cfg(windows)]
-pub(crate) fn osstr_from_bytes(b: &[u8]) -> &OsStr {
-    std::str::from_utf8(b).expect("paths on Windows must be utf8")
-}
-
-#[cfg(unix)]
-pub(crate) fn osstring_from_bytes(b: &[u8]) -> OsString {
-    use std::os::unix::ffi::OsStrExt;
-    OsString::from(OsStr::from_bytes(b))
-}
-
-#[cfg(windows)]
-pub(crate) fn osstring_from_bytes(b: &[u8]) -> OsString {
-    OsString::from(std::str::from_utf8(b).expect("paths on Windows must be utf8"))
 }
