@@ -38,33 +38,69 @@ test_expect_success \
 	stg commit --all
 	'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
   'Invalid --to and --number arguments' \
   '
   command_error stg uncommit --to HEAD^ --number 1 2>err &&
   grep -e "cannot give both --to and --number" err
   '
+else
+test_expect_success \
+  'Invalid --to and --number arguments' \
+  '
+  general_error stg uncommit --to HEAD^ --number 1 2>err &&
+  grep -e "error: The argument .--to <commitish>. cannot be used with .--number <number>." err
+  '
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
   'Invalid --to with patch args' \
   '
   command_error stg uncommit --to HEAD^ p0 2>err &&
   grep -e "cannot specify patch name with --to" err
   '
+else
+test_expect_success \
+  'Invalid --to with patch args' \
+  '
+  general_error stg uncommit --to HEAD^ p0 2>err &&
+  grep -e "error: The argument .--to <commitish>. cannot be used with .<patchname>\.\.\.." err
+  '
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
   'Invalid --number' \
   '
   command_error stg uncommit --number -1 2>err &&
   grep -e "invalid value passed to --number" err
   '
+else
+test_expect_success \
+  'Invalid --number' \
+  '
+  general_error stg uncommit --number -1 2>err &&
+  grep -e "Invalid value for .--number <number>.: .-1. is not a positive integer" err
+  '
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
   'Too many patch names with --number' \
   '
   command_error stg uncommit --number 2 p0 p1 2>err &&
   grep -e "when using --number, specify at most one patch name" err
   '
+else
+test_expect_success \
+  'Too many patch names with --number' \
+  '
+  command_error stg uncommit --number 2 p0 p1 2>err &&
+  grep -e "when using \`--number\`, specify at most one patch name" err
+  '
+fi
 
 test_expect_success \
 	'Uncommit the patches using names' \
@@ -114,6 +150,7 @@ test_expect_success \
   stg commit --all
   '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt to reuse patch name' '
   stg uncommit &&
   [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
@@ -121,10 +158,26 @@ test_expect_success 'Attempt to reuse patch name' '
   grep -e "Patch name \"bar-patch\" already taken" err &&
   stg commit --all
 '
+else
+test_expect_success 'Attempt to reuse patch name' '
+  stg uncommit &&
+  [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
+  command_error stg uncommit bar-patch 2>err &&
+  grep -e "patch \`bar-patch\` already exists" err &&
+  stg commit --all
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt to use invalid patch name' '
   command_error stg uncommit bad..patchname
 '
+else
+test_expect_success 'Attempt to use invalid patch name' '
+  general_error stg uncommit bad..patchname 2>err &&
+  grep -e "error: Invalid value for .<patchname>\.\.\.." err
+'
+fi
 
 test_expect_success 'Uncommit a commit with not precisely one parent' '
     command_error stg uncommit -n 5  &&

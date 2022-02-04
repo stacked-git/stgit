@@ -135,6 +135,14 @@ impl PatchName {
         }
     }
 
+    pub(crate) fn get_length_limit(config: &git2::Config) -> Option<usize> {
+        config
+            .get_i32("stgit.namelength")
+            .ok()
+            .and_then(|n| usize::try_from(n).ok())
+            .or(Some(30))
+    }
+
     pub(crate) fn uniquify<P>(self, allow: &[P], disallow: &[P]) -> Self
     where
         P: AsRef<PatchName>,

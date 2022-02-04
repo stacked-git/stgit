@@ -449,6 +449,27 @@ pub(crate) fn ls_files_unmerged(worktree: &Path, index_path: &Path) -> Result<Ve
     }
 }
 
+/// Get merge bases using `git merge-base`.
+pub(crate) fn merge_bases(commit1_id: git2::Oid, commit2_id: git2::Oid) -> Result<Vec<git2::Oid>> {
+    let output = Command::new("git")
+        .args(["merge-base", "--all"])
+        .args([commit1_id.to_string(), commit2_id.to_string()])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        let mut bases: Vec<git2::Oid> = Vec::new();
+        for line in output.stdout.lines() {
+            bases.push(parse_oid(line)?);
+        }
+        Ok(bases)
+    } else {
+        Err(make_cmd_err("ls-files --unmerged", &output.stderr))
+    }
+}
+
 /// Copy notes from one object to another using `git notes copy`.
 pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<()> {
     let output = Command::new("git")
@@ -547,14 +568,28 @@ where
             .split_str("\n")
             .filter(|line| !line.is_empty())
         {
-            let oid_str = line.to_str().context("converting oid")?;
-            let oid = git2::Oid::from_str(oid_str)
-                .with_context(|| format!("converting oid `{oid_str}`"))?;
-            oids.push(oid)
+            oids.push(parse_oid(line)?);
         }
         Ok(oids)
     } else {
         Err(make_cmd_err("rev-list", &output.stderr))
+    }
+}
+
+/// Parse a single revision specification
+pub(crate) fn rev_parse_single(revspec: &str) -> Result<git2::Oid> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--verify", "--end-of-options"])
+        .arg(revspec)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        parse_oid(&output.stdout)
+    } else {
+        Err(make_cmd_err("rev-parse", &output.stderr))
     }
 }
 
@@ -675,10 +710,8 @@ fn make_cmd_err(command_name: &str, stderr: &[u8]) -> anyhow::Error {
 }
 
 fn parse_oid(output: &[u8]) -> Result<git2::Oid> {
-    let oid_hex = std::str::from_utf8(output)
-        .expect("object name must be utf8")
-        .trim_end(); // Trim trailing newline
-    Ok(git2::Oid::from_str(oid_hex)?)
+    let oid_hex = output.to_str().context("parsing oid")?.trim_end();
+    git2::Oid::from_str(oid_hex).with_context(|| format!("converting oid `{oid_hex}`"))
 }
 
 /// Write input to child process and gather its output.

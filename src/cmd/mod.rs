@@ -77,6 +77,7 @@ pub(crate) fn get_commands() -> Commands {
         sink::get_command(),
         spill::get_command(),
         top::get_command(),
+        uncommit::get_command(),
         unhide::get_command(),
         version::get_command(),
     ])
@@ -84,5 +85,5 @@ pub(crate) fn get_commands() -> Commands {
 
 pub(crate) const PYTHON_COMMANDS: &[&str] = &[
     "branch", "clone", "export", "fold", "import", "log", "mail", "pick", "pull", "rebase", "redo",
-    "repair", "reset", "squash", "sync", "uncommit", "undo",
+    "repair", "reset", "squash", "sync", "undo",
 ];

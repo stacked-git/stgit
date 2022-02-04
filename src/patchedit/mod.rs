@@ -403,11 +403,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             CommitMessage::default()
         };
 
-        let patchname_len_limit: Option<usize> = config
-            .get_i32("stgit.namelength")
-            .ok()
-            .and_then(|n| usize::try_from(n).ok())
-            .or(Some(30));
+        let patchname_len_limit = PatchName::get_length_limit(&config);
         let disallow_patchnames: Vec<&PatchName> = stack_state.all_patches().collect();
         let allowed_patchnames: Vec<&PatchName> =
             if let Some(original_patchname) = original_patchname.as_ref() {

@@ -25,6 +25,7 @@ pub(crate) struct TransactionBuilder<'repo> {
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
+    set_head: bool,
 }
 
 pub(crate) struct StackTransaction<'repo> {
@@ -33,6 +34,7 @@ pub(crate) struct StackTransaction<'repo> {
     conflict_mode: ConflictMode,
     discard_changes: bool,
     use_index_and_worktree: bool,
+    set_head: bool,
 
     patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
@@ -78,6 +80,7 @@ impl<'repo> TransactionBuilder<'repo> {
             conflict_mode: ConflictMode::Disallow,
             discard_changes: false,
             use_index_and_worktree: false,
+            set_head: true,
         }
     }
 
@@ -114,6 +117,12 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     #[must_use]
+    pub(crate) fn set_head(mut self, yes: bool) -> Self {
+        self.set_head = yes;
+        self
+    }
+
+    #[must_use]
     pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
     where
         F: FnOnce(&mut StackTransaction) -> Result<()>,
@@ -124,6 +133,7 @@ impl<'repo> TransactionBuilder<'repo> {
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
+            set_head,
         } = self;
 
         let output = output.expect("with_output_stream() must be called");
@@ -140,6 +150,7 @@ impl<'repo> TransactionBuilder<'repo> {
             conflict_mode,
             discard_changes,
             use_index_and_worktree,
+            set_head,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
@@ -189,9 +200,8 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let set_head = true; // TODO: argument
         let allow_bad_head = false; // TODO: argument
-        if set_head {
+        if transaction.set_head {
             let trans_head = transaction.head().clone();
 
             if transaction.use_index_and_worktree {
@@ -479,6 +489,26 @@ impl<'repo> StackTransaction<'repo> {
         }
         self.applied = self.applied.split_off(to_commit.len());
         self.push_patches(&to_push, false)
+    }
+
+    /// Uncommit patches from the base of the stack.
+    ///
+    /// The (patchname, commit_id) pairs must be in application order. I.e. the furthest
+    /// ancestor of the current base first and the current base last.
+    pub(crate) fn uncommit_patches<'a>(
+        &mut self,
+        patches: impl IntoIterator<Item = (&'a PatchName, git2::Oid)>,
+    ) -> Result<()> {
+        let mut new_applied: Vec<_> = Vec::with_capacity(self.applied.len());
+        for (patchname, commit_id) in patches {
+            let commit = self.stack.repo.find_commit(commit_id)?;
+            self.patch_updates
+                .insert(patchname.clone(), Some(PatchState { commit }));
+            new_applied.push(patchname.clone());
+        }
+        new_applied.append(&mut self.applied);
+        self.applied = new_applied;
+        Ok(())
     }
 
     pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<()> {
