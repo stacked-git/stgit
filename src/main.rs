@@ -158,13 +158,17 @@ fn main() {
     let code = match result {
         Ok(()) => 0,
         Err(e) => {
+            print_error_message(&e);
             let code = match e.downcast_ref::<stack::Error>() {
-                Some(stack::Error::TransactionHalt(_) | stack::Error::CheckoutConflicts(_)) => {
+                Some(stack::Error::TransactionHalt { conflicts, .. }) => {
+                    if *conflicts {
+                        print_merge_conflicts();
+                    }
                     CONFLICT_ERROR
                 }
+                Some(stack::Error::CheckoutConflicts(_)) => CONFLICT_ERROR,
                 _ => COMMAND_ERROR,
             };
-            print_error_message(e);
             code
         }
     };
@@ -376,7 +380,7 @@ fn punt_to_python() -> Result<()> {
     std::process::exit(status.code().unwrap_or(-1));
 }
 
-fn print_error_message(err: anyhow::Error) {
+fn print_error_message(err: &anyhow::Error) {
     let color_choice = if atty::is(atty::Stream::Stderr) {
         termcolor::ColorChoice::Auto
     } else {
@@ -421,4 +425,21 @@ fn print_error_message(err: anyhow::Error) {
             _ => panic!("unhandled split len"),
         }
     }
+}
+
+fn print_merge_conflicts() {
+    let cdup: OsString = stupid::rev_parse_cdup().unwrap_or_else(|_| OsString::from(""));
+    let conflicts: Vec<OsString> = stupid::diff_unmerged_names().unwrap_or_else(|_| Vec::new());
+    let pathspecs = if cdup.is_empty() {
+        conflicts
+    } else {
+        let mut pathspecs: Vec<OsString> = Vec::new();
+        let cdup = std::path::Path::new(&cdup);
+        for conflict in conflicts {
+            let path: OsString = cdup.join(conflict).into();
+            pathspecs.push(path);
+        }
+        pathspecs
+    };
+    stupid::status_short(Some(pathspecs)).unwrap_or_default();
 }

@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::ffi::OsString;
 use std::io::Write;
 
 use anyhow::{anyhow, Result};
@@ -44,7 +43,6 @@ pub(crate) struct StackTransaction<'repo> {
     updated_base: Option<Commit<'repo>>,
     current_tree_id: Oid,
     error: Option<anyhow::Error>,
-    conflicts: Vec<OsString>,
     printed_top: bool,
 }
 
@@ -62,6 +60,7 @@ impl Default for ConflictMode {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
 enum PushStatus {
     New,
     AlreadyMerged,
@@ -159,7 +158,6 @@ impl<'repo> TransactionBuilder<'repo> {
             updated_head: None,
             updated_base: None,
             current_tree_id,
-            conflicts: Vec::new(),
             printed_top: false,
         };
 
@@ -174,12 +172,14 @@ impl<'repo> ExecuteContext<'repo> {
         let mut transaction = self.0;
 
         // Only proceed for halt errors
-        if let Some(err) = &transaction.error {
+        let has_conflicts = if let Some(err) = &transaction.error {
             match err.downcast_ref::<Error>() {
-                Some(Error::TransactionHalt(_)) => {}
+                Some(Error::TransactionHalt { conflicts, .. }) => *conflicts,
                 _ => return Err(transaction.error.unwrap()),
             }
-        }
+        } else {
+            false
+        };
 
         // Check consistency
         for (patchname, oid) in transaction.patch_updates.iter() {
@@ -224,10 +224,11 @@ impl<'repo> ExecuteContext<'repo> {
                 .update_head(git2::Branch::wrap(updated_ref), trans_head);
         }
 
-        let conflict_msg = format!("{} (CONFLICT)", reflog_msg);
-        let reflog_msg = if transaction.conflicts.is_empty() {
+        let conflict_msg;
+        let reflog_msg = if has_conflicts {
             reflog_msg
         } else {
+            conflict_msg = format!("{} (CONFLICT)", reflog_msg);
             &conflict_msg
         };
 
@@ -743,7 +744,6 @@ impl<'repo> StackTransaction<'repo> {
         let old_parent = patch_commit.parent(0)?;
         let new_parent = self.top().clone();
 
-        let mut merge_conflict = false;
         let mut push_status = PushStatus::Unmodified;
 
         let new_tree_id = if already_merged {
@@ -785,14 +785,18 @@ impl<'repo> StackTransaction<'repo> {
             if let Some(tree_id) = maybe_tree_id {
                 tree_id
             } else if !self.use_index_and_worktree {
-                return Err(Error::TransactionHalt(format!(
-                    "{} does not apply cleanly",
-                    patchname
-                ))
+                return Err(Error::TransactionHalt {
+                    msg: format!("{} does not apply cleanly", patchname),
+                    conflicts: false,
+                }
                 .into());
             } else {
                 if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
-                    return Err(Error::TransactionHalt("index/worktree dirty".to_string()).into());
+                    return Err(Error::TransactionHalt {
+                        msg: "index/worktree dirty".to_string(),
+                        conflicts: false,
+                    }
+                    .into());
                 }
                 self.current_tree_id = ours;
 
@@ -802,28 +806,31 @@ impl<'repo> StackTransaction<'repo> {
                     base,
                     ours,
                     theirs,
-                    repo.workdir().unwrap(),
                     default_index_path,
                     use_mergetool,
                 ) {
-                    Ok(conflicts) if conflicts.is_empty() => {
+                    Ok(true) => {
                         // Success, no conflicts
-                        let tree_id = stupid::write_tree(default_index_path)
-                            .map_err(|_| Error::TransactionHalt("conflicting merge".to_string()))?;
+                        let tree_id = stupid::write_tree(default_index_path).map_err(|_| {
+                            Error::TransactionHalt {
+                                msg: "conflicting merge".to_string(),
+                                conflicts: false,
+                            }
+                        })?;
                         self.current_tree_id = tree_id;
                         push_status = PushStatus::Modified;
                         tree_id
                     }
-                    Ok(mut conflicts) => {
-                        self.conflicts.append(&mut conflicts);
-                        merge_conflict = true;
+                    Ok(false) => {
                         push_status = PushStatus::Conflict;
                         ours
                     }
                     Err(_) => {
-                        return Err(
-                            Error::TransactionHalt("index/worktree dirty".to_string()).into()
-                        )
+                        return Err(Error::TransactionHalt {
+                            msg: "index/worktree dirty".to_string(),
+                            conflicts: false,
+                        }
+                        .into())
                     }
                 }
             }
@@ -839,14 +846,12 @@ impl<'repo> StackTransaction<'repo> {
             )?;
             let commit = repo.find_commit(commit_id)?;
             stupid::notes_copy(patch_commit.id(), commit_id).ok();
-            if merge_conflict {
+            if push_status == PushStatus::Conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
                 // here ensures that the real stack top will be checked-out.
                 self.updated_head = Some(commit.clone());
-            }
-
-            if new_tree_id == new_parent.tree_id() {
+            } else if new_tree_id == new_parent.tree_id() {
                 push_status = PushStatus::Empty;
             }
 
@@ -854,7 +859,7 @@ impl<'repo> StackTransaction<'repo> {
                 .insert(patchname.clone(), Some(PatchState { commit }));
         }
 
-        if merge_conflict {
+        if push_status == PushStatus::Conflict {
             // The final checkout at execute-time must allow these push conflicts.
             self.conflict_mode = ConflictMode::Allow;
         }
@@ -868,8 +873,12 @@ impl<'repo> StackTransaction<'repo> {
 
         self.print_pushed(patchname, push_status, is_last)?;
 
-        if merge_conflict {
-            Err(Error::TransactionHalt(format!("{} merge conflicts", self.conflicts.len())).into())
+        if push_status == PushStatus::Conflict {
+            Err(Error::TransactionHalt {
+                msg: "merge conflicts".to_string(),
+                conflicts: true,
+            }
+            .into())
         } else {
             Ok(())
         }

@@ -16,8 +16,8 @@ pub(crate) enum Error {
     #[error("{0}\nCommand aborted (all changes rolled back)")]
     TransactionAborted(String),
 
-    #[error("{0}")]
-    TransactionHalt(String),
+    #[error("{msg}")]
+    TransactionHalt { msg: String, conflicts: bool },
 }
 
 pub(crate) fn repo_state_to_str(state: git2::RepositoryState) -> &'static str {

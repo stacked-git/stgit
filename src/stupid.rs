@@ -328,6 +328,32 @@ where
     }
 }
 
+/// Get unmerged path list using `git diff --name-only --diff-filter=U`.
+///
+/// The returned unmerged paths are relative to the work tree root regardless of the
+/// current working dir.
+pub(crate) fn diff_unmerged_names() -> Result<Vec<OsString>> {
+    let output = Command::new("git")
+        .args(["diff", "--name-only", "--diff-filter=U", "-z"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        let mut paths: Vec<OsString> = Vec::new();
+        for path_bytes in output.stdout.split_str(b"\0") {
+            if !path_bytes.is_empty() {
+                let path = path_bytes.to_os_str().context("getting unmerged path")?;
+                paths.push(path.into());
+            }
+        }
+        Ok(paths)
+    } else {
+        Err(make_cmd_err("diff", &output.stderr))
+    }
+}
+
 /// Add trailers to commit message with `git interpret-trailers`.
 pub(crate) fn interpret_trailers<'a>(
     message: &[u8],
@@ -388,16 +414,16 @@ pub(crate) fn merge_recursive_or_mergetool(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
-    worktree: &Path,
     index_path: &Path, // TODO: does this matter?
     use_mergetool: bool,
-) -> Result<Vec<OsString>> {
+) -> Result<bool> {
     if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
-        return Ok(vec![]);
+        Ok(true)
     } else if use_mergetool {
-        mergetool(index_path)?;
+        mergetool(index_path)
+    } else {
+        Ok(false)
     }
-    ls_files_unmerged(worktree, index_path)
 }
 
 /// Attempt to resolve outstanding merge conflicts with `git merge-tool`.
@@ -576,6 +602,28 @@ where
     }
 }
 
+/// Get cdup for current directory from `git rev-parse --show-cdup`.
+pub(crate) fn rev_parse_cdup() -> Result<OsString> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--show-cdup"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        let mut stdout = output.stdout;
+        let last = stdout.pop();
+        assert_eq!(last, Some(b'\n'));
+        match stdout.into_os_string() {
+            Ok(cdup) => Ok(cdup),
+            Err(_) => Err(anyhow!("could not convert cdup to path")),
+        }
+    } else {
+        Err(make_cmd_err("rev-parse", &output.stderr))
+    }
+}
+
 /// Parse a single revision specification
 pub(crate) fn rev_parse_single(revspec: &str) -> Result<git2::Oid> {
     let output = Command::new("git")
@@ -629,6 +677,32 @@ where
 
     command.arg("--");
 
+    if let Some(pathspecs) = pathspecs {
+        command.args(pathspecs);
+    }
+
+    let output = command
+        .stdin(Stdio::null())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("show", &output.stderr))
+    }
+}
+
+/// Show short status using `git status`.
+pub(crate) fn status_short<I, S>(pathspecs: Option<I>) -> Result<()>
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut command = Command::new("git");
+    command.args(["status", "-s", "--"]);
     if let Some(pathspecs) = pathspecs {
         command.args(pathspecs);
     }
