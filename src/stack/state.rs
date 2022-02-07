@@ -92,7 +92,10 @@ impl<'repo> StackState<'repo> {
         }
     }
 
-    fn from_raw_state(repo: &'repo git2::Repository, raw_state: RawStackState) -> Result<Self> {
+    pub(super) fn from_raw_state(
+        repo: &'repo git2::Repository,
+        raw_state: RawStackState,
+    ) -> Result<Self> {
         let mut patches = BTreeMap::new();
         for (patchname, raw_state) in raw_state.patches {
             let commit = repo.find_commit(raw_state.oid)?;

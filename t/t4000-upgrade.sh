@@ -7,8 +7,13 @@ test_description='Make sure that we can use old StGit repositories'
 
 . ./test-lib.sh
 
-for ver in 1.1 1.0 0.19 0.12 0.8; do
+if test -z "$STG_RUST"; then
+    versions="1.1 1.0 0.19 0.12 0.8"
+else
+    versions="1.1 1.0"
+fi
 
+for ver in $versions; do
     tar zxf "$TEST_DIRECTORY"/t4000/$ver.tar.gz
     cd $ver || exit 1
 

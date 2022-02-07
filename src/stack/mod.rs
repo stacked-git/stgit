@@ -5,6 +5,7 @@ mod serde;
 mod stack;
 mod state;
 mod transaction;
+mod upgrade;
 
 pub(crate) use error::Error;
 pub(crate) use stack::Stack;

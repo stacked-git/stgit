@@ -8,6 +8,7 @@ use super::{
     error::{repo_state_to_str, Error},
     state::{StackState, StackStateAccess},
     transaction::TransactionBuilder,
+    upgrade::stack_upgrade,
     PatchState,
 };
 use crate::patchname::PatchName;
@@ -33,6 +34,8 @@ impl<'repo> Stack<'repo> {
         let base = branch_head.clone();
         let refname = state_refname_from_branch_name(&branch_name);
 
+        stack_upgrade(repo, &branch_name)?;
+
         if repo.find_reference(&refname).is_ok() {
             return Err(anyhow!("branch `{branch_name}` already initialized"));
         }
@@ -55,6 +58,9 @@ impl<'repo> Stack<'repo> {
         let branch = get_branch(repo, branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
+
+        stack_upgrade(repo, &branch_name)?;
+
         let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&refname)
@@ -227,11 +233,11 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
 }
 
 fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
-    format!("refs/stacks/{}", branch_shorthand)
+    format!("refs/stacks/{branch_shorthand}")
 }
 
 fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
-    format!("refs/patches/{}/{}", &branch_name, patch_spec)
+    format!("refs/patches/{branch_name}/{patch_spec}")
 }
 
 fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
