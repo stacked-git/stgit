@@ -1,7 +1,7 @@
 use std::{collections::HashSet, str::FromStr};
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -12,11 +12,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("uncommit", super::StGitCommand { get_app, run })
+    ("uncommit", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("uncommit")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("uncommit")
         .about("Convert regular Git commits into StGit patches")
         .long_about(
             "Convert one or more Git commits from the base of the current stack into \

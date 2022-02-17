@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -13,11 +13,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("sink", StGitCommand { get_app, run })
+    ("sink", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("sink")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("sink")
         .about("Move patches deeper in the stack")
         .long_about(
             "Move the specified patches down the stack.\n\

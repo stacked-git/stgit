@@ -1,7 +1,7 @@
 use std::iter::FromIterator;
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches, ArgSettings};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -13,11 +13,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("pop", StGitCommand { get_app, run })
+    ("pop", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("pop")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("pop")
         .about("Pop (unapply) one or more applied patches")
         .long_about(
             "Pop (unapply) one or more applied patches.\n\
@@ -48,8 +48,8 @@ fn get_app() -> App<'static> {
                      A negative number indicates to pop all but that number \
                      of patches",
                 )
-                .setting(ArgSettings::TakesValue)
-                .setting(ArgSettings::AllowHyphenValues) // i.e. for negative ints
+                .takes_value(true)
+                .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("NUMBER")
                 .validator(|s| {
                     s.parse::<isize>()

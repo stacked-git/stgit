@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches, ArgSettings};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("push", StGitCommand { get_app, run })
+    ("push", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("push")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("push")
         .about("Push (apply) one or more unapplied patches")
         .long_about(
             "Push one or more unapplied patches from the series onto the stack.\n\
@@ -47,8 +47,8 @@ fn get_app() -> App<'static> {
                      A negative number indicates to push all but that number \
                      of patches",
                 )
-                .setting(ArgSettings::TakesValue)
-                .setting(ArgSettings::AllowHyphenValues) // i.e. for negative ints
+                .takes_value(true)
+                .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("NUMBER")
                 .validator(|s| {
                     s.parse::<isize>()

@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("unhide", StGitCommand { get_app, run })
+    ("unhide", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("unhide")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("unhide")
         .about("Unhide hidden patches")
         .long_about(
             "Unhide hidden patches in the series.\n\

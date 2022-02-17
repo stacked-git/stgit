@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgGroup, ArgMatches, ValueHint};
+use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 
 use super::refresh;
 
@@ -12,11 +12,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("new", super::StGitCommand { get_app, run })
+    ("new", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    let app = App::new("new")
+fn make() -> clap::Command<'static> {
+    let app = clap::Command::new("new")
         .about("Create a new patch at top of the stack")
         .long_about(
             "Create a new, empty patch on the current stack. The new \
@@ -56,7 +56,7 @@ fn get_app() -> App<'static> {
                 .value_hint(ValueHint::AnyPath)
                 .conflicts_with("save-template"),
         )
-        .help_heading("REFRESH OPTIONS")
+        .next_help_heading("REFRESH OPTIONS")
         .arg(
             Arg::new("refresh")
                 .long("refresh")

@@ -1,14 +1,14 @@
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::revspec::parse_stgit_revision;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("id", super::StGitCommand { get_app, run })
+    ("id", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("id")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("id")
         .about("Print git hash of StGit revision")
         .long_about(
             "Print the hash (object id) of a StGit revision.\n\

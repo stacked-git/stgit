@@ -66,11 +66,11 @@ pub(crate) fn add_trailers<'a>(
 
 #[cfg(test)]
 mod test {
-    use clap::{App, Arg};
+    use clap::Arg;
 
     #[test]
     fn val_ind_occ() {
-        let m = App::new("myapp")
+        let m = clap::Command::new("myapp")
             .arg(
                 Arg::new("sign-off")
                     .long("sign-off")

@@ -49,7 +49,6 @@ test_expect_success 'Test finding aliases without -C' '
 
 test_expect_success 'Test finding aliases with -C' '
     stg -C foo/bar -C baz -h | grep "nested-alias" &&
-    stg -C foo/bar -C baz 2>&1 >/dev/null | grep "nested-alias" &&
     test $(stg -C foo -C bar/baz -h | grep -c "top-level-alias") = 0
 '
 

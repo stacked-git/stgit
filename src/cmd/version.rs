@@ -1,14 +1,14 @@
 use anyhow::Result;
-use clap::{App, ArgMatches};
+use clap::ArgMatches;
 
 use crate::stupid;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("version", super::StGitCommand { get_app, run })
+    ("version", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("version").about("Print version information and exit")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("version").about("Print version information and exit")
 }
 
 fn run(_: &ArgMatches) -> Result<()> {

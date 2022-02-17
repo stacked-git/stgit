@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     revspec::Error as RevError,
@@ -8,11 +8,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("show", super::StGitCommand { get_app, run })
+    ("show", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("show")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("show")
         .about("Show patch commits")
         // .override_usage("xxx")
         .long_about(

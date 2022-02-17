@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches, ValueHint};
+use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("edit", super::StGitCommand { get_app, run })
+    ("edit", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    let app = App::new("edit")
+fn make() -> clap::Command<'static> {
+    let app = clap::Command::new("edit")
         .about("Edit a patch")
         .long_about(
             "Edit a patch. Various aspects of a patch may be edited, including the \

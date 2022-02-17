@@ -2,16 +2,16 @@ use std::io::Write;
 
 use anyhow::Result;
 use bstr::ByteSlice;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{revspec::parse_stgit_revision, stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("files", super::StGitCommand { get_app, run })
+    ("files", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("files")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("files")
         .about("Show files modified by a patch")
         .long_about(
             "Show the files modified by a patch. The files of the topmost \

@@ -82,7 +82,7 @@ test_expect_success \
   'Invalid --number' \
   '
   general_error stg uncommit --number -1 2>err &&
-  grep -e "Invalid value for .--number <number>.: .-1. is not a positive integer" err
+  grep -e "Invalid value \"-1\" for .--number <number>.: .-1. is not a positive integer" err
   '
 fi
 
@@ -175,7 +175,7 @@ test_expect_success 'Attempt to use invalid patch name' '
 else
 test_expect_success 'Attempt to use invalid patch name' '
   general_error stg uncommit bad..patchname 2>err &&
-  grep -e "error: Invalid value for .<patchname>\.\.\.." err
+  grep -e "error: Invalid value \"bad\.\.patchname\" for .<patchname>\.\.\.." err
 '
 fi
 

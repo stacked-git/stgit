@@ -23,9 +23,9 @@ use crate::{
 use description::{DiffBuffer, PatchDescription};
 use interactive::edit_interactive;
 
-pub(crate) fn add_args(app: clap::App, add_save_template: bool) -> clap::App {
+pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Command {
     let app = app
-        .help_heading("PATCH EDIT OPTIONS")
+        .next_help_heading("PATCH EDIT OPTIONS")
         .arg(
             Arg::new("edit")
                 .long("edit")

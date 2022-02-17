@@ -3,7 +3,7 @@ use std::io::Write;
 
 use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
-use clap::{App, Arg, ArgMatches, ValueHint};
+use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     stack::{Error, Stack, StackStateAccess},
@@ -11,11 +11,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("patches", super::StGitCommand { get_app, run })
+    ("patches", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("patches")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("patches")
         .about("Show patches that modify files")
         .long_about(
             "Show the applied patches modifying the given paths. Without path \

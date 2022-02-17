@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -13,11 +13,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("float", StGitCommand { get_app, run })
+    ("float", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("float")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("float")
         .about("Push patches to the top, even if applied")
         .long_about(
             "Push patches to the top, even if applied.\n\

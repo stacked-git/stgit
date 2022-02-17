@@ -1,14 +1,14 @@
 use anyhow::Result;
-use clap::{App, ArgMatches};
+use clap::ArgMatches;
 
 use crate::stack::Stack;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("init", super::StGitCommand { get_app, run })
+    ("init", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("init").about("Initialize StGit stack on current branch")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("init").about("Initialize StGit stack on current branch")
 }
 
 fn run(_: &ArgMatches) -> Result<()> {

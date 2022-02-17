@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -12,11 +12,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("goto", StGitCommand { get_app, run })
+    ("goto", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("goto")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("goto")
         .about("Go to patch by pushing or popping as necessary")
         .arg(&*crate::argset::KEEP_ARG)
         .arg(&*crate::argset::MERGED_ARG)

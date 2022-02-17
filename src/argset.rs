@@ -1,11 +1,11 @@
-use clap::{Arg, ArgSettings, ValueHint};
+use clap::{Arg, ValueHint};
 
 lazy_static! {
     pub(crate) static ref BRANCH_ARG: Arg<'static> = Arg::new("branch")
         .long("branch")
         .short('b')
         .help("Use BRANCH instead of current branch")
-        .setting(ArgSettings::TakesValue)
+        .takes_value(true)
         .value_name("BRANCH")
         .value_hint(ValueHint::Other);
     pub(crate) static ref KEEP_ARG: Arg<'static> =
@@ -18,8 +18,8 @@ lazy_static! {
         .long("diff-opts")
         .short('O')
         .help("Extra options to pass to \"git diff\"")
-        .setting(ArgSettings::TakesValue)
-        .setting(ArgSettings::AllowHyphenValues)
+        .takes_value(true)
+        .allow_hyphen_values(true)
         .value_name("OPTIONS")
         .value_hint(ValueHint::Other);
 }

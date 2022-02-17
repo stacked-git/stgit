@@ -32,7 +32,7 @@ impl Alias {
         }
     }
 
-    pub(crate) fn get_app(&self) -> clap::App<'static> {
+    pub(crate) fn make(&self) -> clap::Command<'static> {
         let about = match self.kind {
             AliasKind::StGit => format!("Alias for `stg {0}`", &self.command),
             AliasKind::Shell => format!("Alias for shell command `{}`", &self.command),
@@ -40,14 +40,14 @@ impl Alias {
         // TODO: future versions of clap may allow about argument to be something other
         // than Into<&'help str>, which could avoid having to do this leak trick.
         let about: &'static str = Box::leak(about.into_boxed_str());
-        clap::App::new(&self.name)
+        clap::Command::new(&self.name)
             .about(about)
-            .setting(clap::AppSettings::TrailingVarArg)
+            .trailing_var_arg(true)
             .arg(
                 clap::Arg::new("args")
                     .help("Extra arguments to aliased command")
-                    .setting(clap::ArgSettings::MultipleValues)
-                    .setting(clap::ArgSettings::AllowHyphenValues),
+                    .multiple_values(true)
+                    .allow_hyphen_values(true),
             )
     }
 

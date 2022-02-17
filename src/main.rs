@@ -24,39 +24,39 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use clap::{crate_version, App, AppSettings, ArgMatches, ValueHint};
+use clap::{crate_version, AppSettings, ArgMatches, ValueHint};
 use termcolor::WriteColor;
 
 const GENERAL_ERROR: i32 = 1;
 const COMMAND_ERROR: i32 = 2;
 const CONFLICT_ERROR: i32 = 3;
 
-fn get_base_app() -> App<'static> {
-    App::new("stg")
+fn get_base_app() -> clap::Command<'static> {
+    clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::DeriveDisplayOrder)
-        .global_setting(AppSettings::HelpExpected)
+        .help_expected(true)
         .max_term_width(88)
         .arg(
             clap::Arg::new("change_dir")
                 .short('C')
                 .help("Run as if started in PATH")
-                .setting(clap::ArgSettings::AllowInvalidUtf8)
-                .setting(clap::ArgSettings::MultipleOccurrences)
-                .setting(clap::ArgSettings::AllowHyphenValues)
+                .allow_invalid_utf8(true)
+                .multiple_occurrences(true)
+                .allow_hyphen_values(true)
                 .value_name("PATH")
                 .value_hint(ValueHint::AnyPath),
         )
         .arg(color::get_color_arg().global(true))
 }
 
-/// Just enough of an App instance to find candidate subcommands
-fn get_bootstrap_app() -> App<'static> {
+/// Just enough of an Command instance to find candidate subcommands
+fn get_bootstrap_app() -> clap::Command<'static> {
     get_base_app()
-        .setting(AppSettings::AllowExternalSubcommands)
-        .setting(AppSettings::DisableHelpFlag)
-        .setting(AppSettings::DisableHelpSubcommand)
-        .setting(AppSettings::AllowInvalidUtf8ForExternalSubcommands)
+        .allow_external_subcommands(true)
+        .disable_help_flag(true)
+        .disable_help_subcommand(true)
+        .allow_invalid_utf8_for_external_subcommands(true)
         .arg(
             clap::Arg::new("help-option")
                 .short('h')
@@ -65,21 +65,21 @@ fn get_bootstrap_app() -> App<'static> {
         )
 }
 
-/// Builds on the minimal App to compose a complete top-level App instance.
-fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> App<'static> {
+/// Builds on the minimal Command to compose a complete top-level Command instance.
+fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> clap::Command<'static> {
     get_base_app()
         .version(crate_version!())
         .global_setting(AppSettings::DeriveDisplayOrder)
-        .global_setting(AppSettings::UseLongFormatForHelpSubcommand)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .subcommand_help_heading("COMMANDS")
         .subcommand_value_name("command")
-        .subcommands(commands.values().map(|command| (command.get_app)()))
-        .subcommands(aliases.values().map(|alias| alias.get_app()))
+        .subcommands(commands.values().map(|command| (command.make)()))
+        .subcommands(aliases.values().map(|alias| alias.make()))
         .subcommands(
             cmd::PYTHON_COMMANDS
                 .iter()
-                .map(|name| App::new(*name).about("Implemented in Python")),
+                .map(|name| clap::Command::new(*name).about("Implemented in Python")),
         )
 }
 
@@ -87,12 +87,12 @@ fn main() {
     let argv: Vec<OsString> = std::env::args_os().collect();
     let commands = cmd::get_commands();
 
-    // Avoid the expense of constructing a full-blown clap::App with all the dozens of
+    // Avoid the expense of constructing a full-blown clap::Command with all the dozens of
     // subcommands except in the few cases where that is warranted. In most cases, only
-    // the App instance of a single StGit subcommand is required.
+    // the Command instance of a single StGit subcommand is required.
     let app = get_bootstrap_app();
 
-    // First, using a minimal top-level App instance, let clap find anything that looks
+    // First, using a minimal top-level Command instance, let clap find anything that looks
     // like a subcommand name (i.e. by using AppSettings::AllowExternalSubcommands).
     let result = if let Ok(matches) = app.try_get_matches_from(&argv) {
         // N.B. changing directories here, early, affects which aliases will
@@ -102,9 +102,9 @@ fn main() {
         } else if matches.is_present("help-option") {
             full_app_help(argv, commands, None)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
-            // If the name matches any known commands, then only the App for that
+            // If the name matches any known commands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
-            // and constructing all commands' App instances are avoided.
+            // and constructing all commands' Command instances are avoided.
             if let Some(command) = commands.get(sub_name) {
                 execute_command(command, argv)
             } else if cmd::PYTHON_COMMANDS.contains(&sub_name) {
@@ -113,7 +113,7 @@ fn main() {
                 // If the subcommand name does not match a known command, the aliases
                 // are located, which involves finding the Git repo and parsing the
                 // various levels of config files. If the subcommand name matches an
-                // alias, it is executed and the cost of constructing all commands' App
+                // alias, it is executed and the cost of constructing all commands' Command
                 // instances is still avoided.
                 match get_aliases(&commands) {
                     Ok((aliases, maybe_repo)) => {
@@ -135,10 +135,10 @@ fn main() {
                             }
                         } else {
                             // If no command or alias matches can be determined from the
-                            // above process, then a complete clap::App instance is
-                            // constructed with all subcommand App instances for each
+                            // above process, then a complete clap::Command instance is
+                            // constructed with all subcommand Command instances for each
                             // command and alias. The command line is then re-processed
-                            // by this full-blown App instance which is expected to
+                            // by this full-blown Command instance which is expected to
                             // terminate with an appropriate help message.
                             full_app_help(argv, commands, Some(aliases))
                         }
@@ -175,7 +175,7 @@ fn main() {
     std::process::exit(code);
 }
 
-/// Change the current directory based on any -C options from the top-level App matches.
+/// Change the current directory based on any -C options from the top-level Command matches.
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
 fn change_directories(matches: &ArgMatches) -> Result<()> {
     if let Some(paths) = matches.values_of_os("change_dir") {
@@ -187,8 +187,8 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-/// Process argv using full top-level App instance with the expectation that argv is
-/// somehow invalid. The full App can then output a help message with a complete view of
+/// Process argv using full top-level Command instance with the expectation that argv is
+/// somehow invalid. The full Command can then output a help message with a complete view of
 /// all commands and aliases, and then terminate to process.
 fn full_app_help(
     argv: Vec<OsString>,
@@ -219,7 +219,7 @@ fn full_app_help(
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (`argv[0]`).
 fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<()> {
-    let top_app = get_base_app().subcommand((command.get_app)());
+    let top_app = get_base_app().subcommand((command.make)());
     match top_app.try_get_matches_from(argv) {
         Ok(top_matches) => {
             let (_, cmd_matches) = top_matches

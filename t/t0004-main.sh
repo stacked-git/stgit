@@ -30,7 +30,7 @@ test_expect_success 'Test help on invalid command' '
 else
 test_expect_success 'Test help on invalid command' '
     general_error stg help invalidcmd 2>err &&
-    grep -e "error:  The subcommand .invalidcmd. wasn.t recognized" err
+    grep -e "error: The subcommand .invalidcmd. wasn.t recognized" err
 '
 fi
 

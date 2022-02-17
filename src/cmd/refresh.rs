@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
+use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use indexmap::IndexSet;
 
 use crate::{
@@ -22,11 +22,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("refresh", super::StGitCommand { get_app, run })
+    ("refresh", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    let app = App::new("refresh")
+fn make() -> clap::Command<'static> {
+    let app = clap::Command::new("refresh")
         .about("Incorporate worktree changes into current patch")
         .long_about(
             "Include the latest work tree and index changes in the \
@@ -90,7 +90,7 @@ fn get_app() -> App<'static> {
                 .long("patch")
                 .short('p')
                 .help("Refresh (applied) PATCH instead of the top patch")
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
                 .value_name("PATCH")
                 .value_hint(ValueHint::Other)
                 .validator(PatchName::from_str),
@@ -100,7 +100,7 @@ fn get_app() -> App<'static> {
                 .long("annotate")
                 .short('a')
                 .help("Annotate the patch log entry with NOTE")
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
                 .value_name("NOTE")
                 .value_hint(ValueHint::Other),
         )

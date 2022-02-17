@@ -1,7 +1,6 @@
 use std::io::Write;
 
 use anyhow::{anyhow, Result};
-use clap::App;
 use termcolor::WriteColor;
 
 use crate::stack::{Stack, StackStateAccess};
@@ -9,11 +8,11 @@ use crate::stack::{Stack, StackStateAccess};
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("prev", StGitCommand { get_app, run })
+    ("prev", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("prev")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("prev")
         .about("Print the name of the previous patch")
         .long_about(
             "Print the name of the previous patch.\n\

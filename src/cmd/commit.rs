@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("commit", StGitCommand { get_app, run })
+    ("commit", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("commit")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("commit")
         .about("Finalize patches to the stack base")
         .long_about(
             "Finalize one or more patches into the base of the current stack and \

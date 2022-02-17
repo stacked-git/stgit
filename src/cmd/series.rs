@@ -1,7 +1,7 @@
 use std::io::Write;
 
 use anyhow::Result;
-use clap::{App, Arg, ArgGroup, ArgMatches, ArgSettings, ValueHint};
+use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use git2::Oid;
 use termcolor::WriteColor;
 
@@ -16,11 +16,11 @@ use super::StGitCommand;
 const UNPRINTABLE: &str = "???";
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("series", StGitCommand { get_app, run })
+    ("series", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("series")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("series")
         .about("Print the patch series")
         .long_about(
             "Show all the patches in the series, or just those in the \
@@ -64,7 +64,7 @@ fn get_app() -> App<'static> {
                 .long("missing")
                 .short('m')
                 .help("Show patches in BRANCH not present in current branch")
-                .setting(ArgSettings::TakesValue)
+                .takes_value(true)
                 .value_name("BRANCH")
                 .value_hint(ValueHint::Other),
         )

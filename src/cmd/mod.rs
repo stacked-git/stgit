@@ -47,7 +47,7 @@ pub(crate) mod version;
 pub(crate) type Commands = BTreeMap<&'static str, StGitCommand>;
 
 pub(crate) struct StGitCommand {
-    pub get_app: fn() -> clap::App<'static>,
+    pub make: fn() -> clap::Command<'static>,
     pub run: fn(&clap::ArgMatches) -> anyhow::Result<()>,
 }
 

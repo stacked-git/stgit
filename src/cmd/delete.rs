@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Result};
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("delete", StGitCommand { get_app, run })
+    ("delete", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("delete")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("delete")
         .about("Delete patches")
         .arg(
             Arg::new("spill")

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches, ValueHint};
+use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     revspec::{parse_stgit_revision, Error as RevError},
@@ -9,11 +9,11 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("diff", StGitCommand { get_app, run })
+    ("diff", StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("diff")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("diff")
         .about("Show a diff")
         .long_about(
             "Show the diff (default) or diffstat between the current working copy \

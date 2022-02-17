@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
-use clap::{App, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -11,11 +11,11 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("spill", super::StGitCommand { get_app, run })
+    ("spill", super::StGitCommand { make, run })
 }
 
-fn get_app() -> App<'static> {
-    App::new("spill")
+fn make() -> clap::Command<'static> {
+    clap::Command::new("spill")
         .about("Spill topmost patch content, emptying patch")
         .long_about(
             "Spill topmost patch content. The patch becomes empty, but the patch's \
