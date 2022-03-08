@@ -63,34 +63,37 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 println!("  {}", pn);
             }
             Err(anyhow!("ambiguous patch name `{patchname}`"))
-        } else if patchname.len() >= 4 && git2::Oid::from_str(patchname.as_ref()).is_ok() {
-            let oid_prefix: &str = patchname.as_ref();
-            let oid_prefix: String = oid_prefix.to_ascii_lowercase();
-            let oid_matches: Vec<&PatchName> = stack
-                .all_patches()
-                .filter(|pn| {
-                    stack
-                        .get_patch(pn)
-                        .commit
-                        .id()
-                        .to_string()
-                        .starts_with(&oid_prefix)
-                })
-                .collect();
-
-            match oid_matches.len() {
-                0 => Err(anyhow!("no patch associated with `{patchname}`")),
-                1 => Ok(oid_matches[0].clone()),
-                _ => {
-                    println!("Possible patches:");
-                    for pn in oid_matches {
-                        println!("  {}", pn);
-                    }
-                    Err(anyhow!("ambiguous commit id `{patchname}`"))
-                }
-            }
         } else {
-            Err(anyhow!("patch `{patchname}` does not exist"))
+            let oid_prefix: &str = patchname.as_ref();
+            if oid_prefix.len() >= 4 && oid_prefix.chars().all(|c| c.is_ascii_hexdigit()) {
+                let oid_matches: Vec<&PatchName> = stack
+                    .all_patches()
+                    .filter(|pn| {
+                        stack
+                            .get_patch(pn)
+                            .commit
+                            .id()
+                            .to_string()
+                            .chars()
+                            .zip(oid_prefix.chars())
+                            .all(|(a, b)| a.eq_ignore_ascii_case(&b))
+                    })
+                    .collect();
+
+                match oid_matches.len() {
+                    0 => Err(anyhow!("no patch associated with `{patchname}`")),
+                    1 => Ok(oid_matches[0].clone()),
+                    _ => {
+                        println!("Possible patches:");
+                        for pn in oid_matches {
+                            println!("  {}", pn);
+                        }
+                        Err(anyhow!("ambiguous commit id `{patchname}`"))
+                    }
+                }
+            } else {
+                Err(anyhow!("patch `{patchname}` does not exist"))
+            }
         }
     }?;
 

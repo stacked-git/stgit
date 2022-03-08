@@ -8,7 +8,6 @@ use crate::{
     commit::CommitExtended,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
-    stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -96,12 +95,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patchname_len_limit = PatchName::get_length_limit(&config);
 
     let (commits, patchnames) = if let Some(commitish) = matches.value_of("to") {
-        let object_id = stupid::rev_parse_single(commitish)
+        let target_object = repo
+            .revparse_single(commitish)
             .map_err(|_| anyhow!("invalid commitish `{commitish}`"))?;
-        let mut target_commit = repo
-            .find_commit(object_id)
+        let mut target_commit = target_object
+            .into_commit()
             .map_err(|_| anyhow!("target `{commitish}` is not a commit"))?;
-        let bases = stupid::merge_bases(target_commit.id(), stack.base().id())?;
+        let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
         let exclusive = if !bases.contains(&target_commit.id()) {
             target_commit = repo.find_commit(bases[0])?;

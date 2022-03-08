@@ -23,7 +23,6 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use bstr::{BString, ByteSlice, ByteVec};
-use indexmap::IndexSet;
 
 use crate::signature::TimeExtended;
 
@@ -445,57 +444,6 @@ pub(crate) fn mergetool(index_path: &Path) -> Result<bool> {
     }
 }
 
-/// Gather list of unmerged files using `git ls-files --unmerged`.
-pub(crate) fn ls_files_unmerged(worktree: &Path, index_path: &Path) -> Result<Vec<OsString>> {
-    let output = Command::new("git")
-        .args(["ls-files", "--unmerged", "-z"])
-        .current_dir(worktree)
-        .env("GIT_INDEX_FILE", index_path)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .context(GIT_EXEC_FAIL)?;
-    if output.status.success() {
-        let mut conflicts: IndexSet<OsString> = output
-            .stdout
-            .split_str(b"\0")
-            .filter_map(|line| {
-                line.split_str(b"\t").nth(1).map(|name_bytes| {
-                    name_bytes
-                        .to_os_str()
-                        .expect("git file names must be utf-8 on Windows")
-                        .into()
-                })
-            })
-            .collect();
-        Ok(conflicts.drain(..).collect())
-    } else {
-        Err(make_cmd_err("ls-files --unmerged", &output.stderr))
-    }
-}
-
-/// Get merge bases using `git merge-base`.
-pub(crate) fn merge_bases(commit1_id: git2::Oid, commit2_id: git2::Oid) -> Result<Vec<git2::Oid>> {
-    let output = Command::new("git")
-        .args(["merge-base", "--all"])
-        .args([commit1_id.to_string(), commit2_id.to_string()])
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .context(GIT_EXEC_FAIL)?;
-    if output.status.success() {
-        let mut bases: Vec<git2::Oid> = Vec::new();
-        for line in output.stdout.lines() {
-            bases.push(parse_oid(line)?);
-        }
-        Ok(bases)
-    } else {
-        Err(make_cmd_err("ls-files --unmerged", &output.stderr))
-    }
-}
-
 /// Copy notes from one object to another using `git notes copy`.
 pub(crate) fn notes_copy(from_oid: git2::Oid, to_oid: git2::Oid) -> Result<()> {
     let output = Command::new("git")
@@ -619,23 +567,6 @@ pub(crate) fn rev_parse_cdup() -> Result<OsString> {
             Ok(cdup) => Ok(cdup),
             Err(_) => Err(anyhow!("could not convert cdup to path")),
         }
-    } else {
-        Err(make_cmd_err("rev-parse", &output.stderr))
-    }
-}
-
-/// Parse a single revision specification
-pub(crate) fn rev_parse_single(revspec: &str) -> Result<git2::Oid> {
-    let output = Command::new("git")
-        .args(["rev-parse", "--verify", "--end-of-options"])
-        .arg(revspec)
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .output()
-        .context(GIT_EXEC_FAIL)?;
-    if output.status.success() {
-        parse_oid(&output.stdout)
     } else {
         Err(make_cmd_err("rev-parse", &output.stderr))
     }

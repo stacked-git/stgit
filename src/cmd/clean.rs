@@ -5,7 +5,6 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     stack::{Stack, StackStateAccess},
-    stupid,
 };
 
 use super::StGitCommand;
@@ -61,11 +60,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     // Do not clean the topmost patch if there are outstanding
                     // conflicts. The patch is only empty because the conflicts caused
                     // its contents to be dumped into the index and worktree.
-                    let workdir = repo.workdir().unwrap();
-                    let index = repo.index()?;
-                    let index_path = index.path().unwrap();
-                    let conflicts = stupid::ls_files_unmerged(workdir, index_path)?;
-                    if conflicts.is_empty() {
+                    if !repo.index()?.has_conflicts() {
                         to_delete.push(pn.clone());
                     }
                 } else {

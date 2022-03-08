@@ -1,10 +1,10 @@
 use std::{
-    ffi::OsStr,
     path::{Path, PathBuf},
     str::FromStr,
 };
 
 use anyhow::{anyhow, Result};
+use bstr::ByteSlice;
 use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use indexmap::IndexSet;
 
@@ -508,13 +508,6 @@ pub(crate) fn assemble_refresh_tree(
     Ok(tree_id)
 }
 
-#[cfg(unix)]
-pub fn path_from_bytes(b: &[u8]) -> &Path {
-    use std::os::unix::ffi::OsStrExt;
-    Path::new(OsStr::from_bytes(b))
-}
-
-#[cfg(windows)]
-pub fn path_from_bytes(b: &[u8]) -> &Path {
-    Path::new(std::str::from_utf8(b).expect("paths on Windows must be utf8"))
+fn path_from_bytes(b: &[u8]) -> &Path {
+    b.to_path().expect("paths on Windows must be utf8")
 }
