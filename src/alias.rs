@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use anyhow::{anyhow, Result};
+use bstr::ByteSlice;
 use git2::{Config, ConfigLevel};
 
 pub(crate) type Aliases = BTreeMap<String, Alias>;
@@ -56,8 +57,8 @@ impl Alias {
     }
 }
 
-pub(crate) fn get_aliases(config: Option<&Config>, excluded: Vec<&'static str>) -> Result<Aliases> {
-    let mut aliases: Aliases = BTreeMap::from(
+pub(crate) fn get_default_aliases() -> Aliases {
+    let aliases: Aliases = BTreeMap::from(
         [
             ("add", "!git add"),
             ("mv", "!git mv"),
@@ -67,36 +68,37 @@ pub(crate) fn get_aliases(config: Option<&Config>, excluded: Vec<&'static str>) 
         ]
         .map(|(name, command)| (name.into(), Alias::new(name, command))),
     );
+    aliases
+}
 
-    if let Some(config) = config {
-        if let Ok(entries) = config.entries(Some("stgit.alias.*")) {
-            for entry in entries.flatten() {
-                if let Some(config_key) = entry.name() {
-                    if let Some(name) = config_key.strip_prefix("stgit.alias.") {
-                        if entry.has_value() {
-                            if let Some(command) = entry.value() {
-                                if !excluded.iter().any(|n| *n == name) {
-                                    let key = name.to_string();
-                                    let alias = Alias::new(name, command);
-                                    aliases.insert(key, alias);
-                                }
-                            } else {
-                                return Err(anyhow!(
-                                    "non-UTF-8 alias value for `{name}` in {}",
-                                    config_level_to_str(entry.level()),
-                                ));
-                            }
-                        } else {
-                            aliases.remove(name);
-                        }
-                    }
-                } else {
-                    return Err(anyhow!(
-                        "non-UTF-8 alias name `{}` in {}",
-                        String::from_utf8_lossy(entry.name_bytes()),
-                        config_level_to_str(entry.level()),
-                    ));
+pub(crate) fn get_aliases<F>(config: &Config, exclude: F) -> Result<Aliases>
+where
+    F: Fn(&str) -> bool,
+{
+    let mut aliases = get_default_aliases();
+
+    for entry in config.entries(None)?.flatten() {
+        if let Some(name) = entry.name_bytes().strip_prefix(b"stgit.alias.") {
+            let name = name.to_str().map_err(|_| {
+                anyhow!(
+                    "non-UTF-8 alias name `{}` in {}",
+                    name.to_str_lossy(),
+                    config_level_to_str(entry.level()),
+                )
+            })?;
+            if entry.has_value() {
+                if !exclude(name) {
+                    let command = entry.value().ok_or_else(|| {
+                        anyhow!(
+                            "non-UTF-8 alias value for `{name}` in {}",
+                            config_level_to_str(entry.level()),
+                        )
+                    })?;
+                    let alias = Alias::new(name, command);
+                    aliases.insert(name.to_string(), alias);
                 }
+            } else {
+                aliases.remove(name);
             }
         }
     }

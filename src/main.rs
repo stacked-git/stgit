@@ -361,14 +361,18 @@ fn execute_stgit_alias(
 /// depends on -C options being processed.
 fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2::Repository>)> {
     let maybe_repo = git2::Repository::open_from_env().ok();
-    let maybe_config = if let Some(ref repo) = maybe_repo {
-        repo.config()
-    } else {
-        git2::Config::open_default()
-    }
-    .ok();
-    let excluded = commands.keys().chain(&["help"]).copied().collect();
-    alias::get_aliases(maybe_config.as_ref(), excluded).map(|aliases| (aliases, maybe_repo))
+    maybe_repo
+        .as_ref()
+        .map_or_else(git2::Config::open_default, |repo| repo.config())
+        .map_or_else(
+            |_| Ok(alias::get_default_aliases()),
+            |config| {
+                alias::get_aliases(&config, |name| {
+                    commands.contains_key(name) || name == "help"
+                })
+            },
+        )
+        .map(|aliases| (aliases, maybe_repo))
 }
 
 fn punt_to_python() -> Result<()> {
