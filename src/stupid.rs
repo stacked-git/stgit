@@ -353,6 +353,18 @@ pub(crate) fn diff_unmerged_names() -> Result<Vec<OsString>> {
     }
 }
 
+pub(crate) fn diffstat(diff: &[u8]) -> Result<Vec<u8>> {
+    let child = Command::new("git")
+        .args(["apply", "--stat", "--summary", "--allow-empty"])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .context(GIT_EXEC_FAIL)?;
+    let output = in_and_out(child, diff)?;
+    Ok(output.stdout)
+}
+
 /// Add trailers to commit message with `git interpret-trailers`.
 pub(crate) fn interpret_trailers<'a>(
     message: &[u8],

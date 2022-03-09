@@ -384,6 +384,52 @@ fn punt_to_python() -> Result<()> {
     std::process::exit(status.code().unwrap_or(-1));
 }
 
+pub(crate) fn print_warning_message(msg: &str) {
+    let color_choice = if atty::is(atty::Stream::Stderr) {
+        termcolor::ColorChoice::Auto
+    } else {
+        termcolor::ColorChoice::Never
+    };
+    let mut stderr = termcolor::StandardStream::stderr(color_choice);
+    let mut color = termcolor::ColorSpec::new();
+    stderr
+        .set_color(color.set_fg(Some(termcolor::Color::Yellow)).set_bold(true))
+        .unwrap();
+    write!(stderr, "warning: ").unwrap();
+    stderr
+        .set_color(color.set_fg(None).set_bold(false))
+        .unwrap();
+    let mut remainder: &str = msg;
+    loop {
+        let parts: Vec<&str> = remainder.splitn(3, '`').collect();
+        match parts.len() {
+            0 => {
+                writeln!(stderr).unwrap();
+                break;
+            }
+            1 => {
+                writeln!(stderr, "{}", parts[0]).unwrap();
+                break;
+            }
+            2 => {
+                writeln!(stderr, "{}`{}", parts[0], parts[1]).unwrap();
+                break;
+            }
+            3 => {
+                write!(stderr, "{}`", parts[0]).unwrap();
+                stderr
+                    .set_color(color.set_fg(Some(termcolor::Color::Yellow)))
+                    .unwrap();
+                write!(stderr, "{}", parts[1]).unwrap();
+                stderr.set_color(color.set_fg(None)).unwrap();
+                write!(stderr, "`").unwrap();
+                remainder = parts[2];
+            }
+            _ => panic!("unhandled split len"),
+        }
+    }
+}
+
 fn print_error_message(err: &anyhow::Error) {
     let color_choice = if atty::is(atty::Stream::Stderr) {
         termcolor::ColorChoice::Auto
