@@ -698,7 +698,6 @@ impl<'repo> StackTransaction<'repo> {
     where
         P: AsRef<PatchName>,
     {
-        let default_index = self.stack.repo.index()?;
         self.stack.repo.with_temp_index_file(|temp_index| {
             let mut temp_index_tree_id: Option<git2::Oid> = None;
 
@@ -719,7 +718,6 @@ impl<'repo> StackTransaction<'repo> {
                     patchname,
                     already_merged,
                     is_last,
-                    &default_index,
                     temp_index,
                     &mut temp_index_tree_id,
                 )?;
@@ -733,7 +731,6 @@ impl<'repo> StackTransaction<'repo> {
         patchname: &PatchName,
         already_merged: bool,
         is_last: bool,
-        default_index: &git2::Index,
         temp_index: &mut git2::Index,
         temp_index_tree_id: &mut Option<git2::Oid>,
     ) -> Result<()> {
@@ -777,7 +774,7 @@ impl<'repo> StackTransaction<'repo> {
                 repo.workdir().unwrap(),
                 temp_index_path,
             )? {
-                stupid::write_tree(temp_index_path).ok()
+                stupid::write_tree(Some(temp_index_path)).ok()
             } else {
                 None
             };
@@ -800,23 +797,16 @@ impl<'repo> StackTransaction<'repo> {
                 }
                 self.current_tree_id = ours;
 
-                let default_index_path = default_index.path().unwrap();
                 let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
-                match stupid::merge_recursive_or_mergetool(
-                    base,
-                    ours,
-                    theirs,
-                    default_index_path,
-                    use_mergetool,
-                ) {
+                match stupid::merge_recursive_or_mergetool(base, ours, theirs, None, use_mergetool)
+                {
                     Ok(true) => {
                         // Success, no conflicts
-                        let tree_id = stupid::write_tree(default_index_path).map_err(|_| {
-                            Error::TransactionHalt {
+                        let tree_id =
+                            stupid::write_tree(None).map_err(|_| Error::TransactionHalt {
                                 msg: "conflicting merge".to_string(),
                                 conflicts: false,
-                            }
-                        })?;
+                            })?;
                         self.current_tree_id = tree_id;
                         push_status = PushStatus::Modified;
                         tree_id

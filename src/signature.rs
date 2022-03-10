@@ -1,7 +1,5 @@
-use std::borrow::Cow;
-
 use anyhow::{anyhow, Context, Result};
-use chrono::{DateTime, FixedOffset, TimeZone};
+use chrono::{DateTime, FixedOffset, NaiveDateTime, TimeZone};
 
 pub(crate) trait SignatureExtended {
     fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>>;
@@ -35,21 +33,20 @@ impl SignatureExtended for git2::Signature<'_> {
     ) -> Result<Option<git2::Signature<'static>>> {
         let when = if let Some(when) = when {
             when
-        } else if let Some(authdate) = get_from_arg("authdate", matches)? {
-            parse_time(&authdate).context("authdate")?
+        } else if let Some(authdate) = matches.value_of("authdate") {
+            parse_time(authdate).context("authdate")?
         } else {
             return Ok(None);
         };
 
-        if let Some(name_email) = get_from_arg("author", matches)? {
-            let (name, email) = parse_name_email(&name_email)?;
+        if let Some(name_email) = matches.value_of("author") {
+            let (name, email) = parse_name_email(name_email)?;
             let author = git2::Signature::new(name, email, &when)?;
             Ok(Some(author))
-        } else if let (Some(name), Some(email)) = (
-            get_from_arg("authname", matches)?,
-            get_from_arg("authemail", matches)?,
-        ) {
-            let author = git2::Signature::new(&name, &email, &when)?;
+        } else if let (Some(name), Some(email)) =
+            (matches.value_of("authname"), matches.value_of("authemail"))
+        {
+            let author = git2::Signature::new(name, email, &when)?;
             Ok(Some(author))
         } else {
             Ok(None)
@@ -57,29 +54,29 @@ impl SignatureExtended for git2::Signature<'_> {
     }
 
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>> {
-        let when = if let Some(authdate) = get_from_arg("authdate", matches)? {
-            parse_time(&authdate).context("authdate")?
+        let when = if let Some(authdate) = matches.value_of("authdate") {
+            parse_time(authdate).context("authdate")?
         } else {
             self.when()
         };
 
-        if let Some(name_email) = get_from_arg("author", matches)? {
-            let (name, email) = parse_name_email(&name_email)?;
+        if let Some(name_email) = matches.value_of("author") {
+            let (name, email) = parse_name_email(name_email)?;
             Ok(git2::Signature::new(name, email, &when)?)
         } else {
-            let name = if let Some(authname) = get_from_arg("authname", matches)? {
+            let name = if let Some(authname) = matches.value_of("authname") {
                 authname
             } else {
-                Cow::Borrowed(self.name().expect("author signature must be utf-8"))
+                self.name().expect("author signature must be utf-8")
             };
 
-            let email = if let Some(authemail) = get_from_arg("authemail", matches)? {
+            let email = if let Some(authemail) = matches.value_of("authemail") {
                 authemail
             } else {
-                Cow::Borrowed(self.email().expect("author signature must be utf-8"))
+                self.email().expect("author signature must be utf-8")
             };
 
-            Ok(git2::Signature::new(&name, &email, &when)?)
+            Ok(git2::Signature::new(name, email, &when)?)
         }
     }
 
@@ -269,30 +266,35 @@ fn get_from_env(key: &str) -> Result<Option<String>> {
     }
 }
 
-fn get_from_arg<'a>(arg: &str, matches: &'a clap::ArgMatches) -> Result<Option<Cow<'a, str>>> {
-    if let Some(value_os) = matches.value_of_os(arg) {
-        let value_str: &str = value_os
-            .to_str()
-            .ok_or_else(|| anyhow!("non-UTF-8 {arg} `{}`", value_os.to_string_lossy()))?;
-        Ok(Some(Cow::Borrowed(value_str)))
-    } else {
-        Ok(None)
-    }
-}
-
 pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
-    let name_email = name_email.trim();
-    let delimiters = [('<', '>'), ('(', ')')];
-    for (start_delim, end_delim) in &delimiters {
-        if let Some((name, rem)) = name_email.split_once(*start_delim) {
-            if let Some((email, rem)) = rem.split_once(*end_delim) {
-                if rem.is_empty() && !email.contains('<') && !email.contains('>') {
-                    return Ok((name.trim(), email.trim()));
-                }
+    if let Some((name, rem)) = name_email.split_once('<') {
+        if let Some((email, rem)) = rem.split_once('>') {
+            let name = name.trim();
+            let email = email.trim();
+            check_name(name)?;
+            check_email(email)?;
+            if rem.trim().is_empty() {
+                return Ok((name, email));
             }
         }
     }
     Err(anyhow!("invalid name and email `{name_email}`"))
+}
+
+pub(crate) fn check_name(name: &str) -> Result<()> {
+    if name.contains('<') || name.contains('>') {
+        Err(anyhow!("name may not contain `<` or `>`"))
+    } else {
+        Ok(())
+    }
+}
+
+pub(crate) fn check_email(email: &str) -> Result<()> {
+    if email.contains('<') || email.contains('>') {
+        Err(anyhow!("email may not contain `<` or `>`"))
+    } else {
+        Ok(())
+    }
 }
 
 /// Attempt to parse a time string of one of several well-known formats.
@@ -328,6 +330,20 @@ pub(crate) fn parse_time(time_str: &str) -> Result<git2::Time> {
         }
     }
 
+    // Datetime strings without timezone offset
+    for format_str in [
+        "%a %b %e %T %Y",  // default
+        "%a, %e %b %Y %T", // rfc2822
+        "%F %T",           // iso8601
+        "%FT%T",           // iso8601 without tz offset
+        "%s",              // raw
+    ] {
+        if let Ok(dt) = NaiveDateTime::parse_from_str(time_str, format_str) {
+            let time = git2::Time::new(dt.timestamp(), 0);
+            return Ok(time);
+        }
+    }
+
     Err(anyhow!("invalid date `{time_str}`"))
 }
 
@@ -354,6 +370,13 @@ mod tests {
         ] {
             assert_eq!(time, parse_time(s).unwrap());
         }
+    }
+
+    #[test]
+    fn parse_8601_without_tz() {
+        let time_str = "2005-04-07T22:13:09";
+        let time = parse_time(time_str).unwrap();
+        assert_eq!(&time.datetime().format("%FT%T").to_string(), time_str);
     }
 
     #[test]
@@ -387,11 +410,6 @@ mod tests {
         assert_eq!(
             parse_name_email("  Hello World < hello@example.com >").unwrap(),
             ("Hello World", "hello@example.com")
-        );
-
-        assert_eq!(
-            parse_name_email("Hello (example.com)").unwrap(),
-            ("Hello", "example.com")
         );
     }
 

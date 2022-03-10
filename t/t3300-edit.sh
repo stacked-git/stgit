@@ -292,10 +292,17 @@ test_expect_success 'Set author' '
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Fail to set broken author' '
     command_error stg edit p2 --author "No Mail Address" &&
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
 '
+else
+test_expect_success 'Fail to set broken author' '
+    general_error stg edit p2 --author "No Mail Address" &&
+    test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
+'
+fi
 
 test_expect_success 'Set author name' '
     stg edit p2 --authname "Jane Austen" &&
@@ -317,10 +324,17 @@ test_expect_success 'Set author date (ISO 8601 format)' '
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Fail to set invalid author date' '
     command_error stg edit p2 --authdate "28 Jan 1813" &&
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
+else
+test_expect_success 'Fail to set invalid author date' '
+    general_error stg edit p2 --authdate "28 Jan 1813" &&
+    test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
+'
+fi
 
 test_expect_success 'Set author date to "now"' '
     before=$(date "+%F %T %z") &&

@@ -223,13 +223,23 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             ),
         );
 
+        let diff_opts = diff_opts
+            .map(|opts| {
+                if opts.split_ascii_whitespace().any(|opt| opt == "--binary") {
+                    opts.to_string()
+                } else {
+                    format!("{opts} --binary")
+                }
+            })
+            .or_else(|| Some("--binary".to_string()));
+
         let diff = stupid::diff_tree_patch(
             parent_commit.tree_id(),
             patch_commit.tree_id(),
             <Option<Vec<OsString>>>::None,
             false,
             false,
-            diff_opts,
+            diff_opts.as_deref(),
         )?;
 
         if need_diffstat {

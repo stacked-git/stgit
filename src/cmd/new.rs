@@ -114,7 +114,7 @@ fn make() -> clap::Command<'static> {
                 .requires("refresh"),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
-    patchedit::add_args(app, true)
+    patchedit::add_args(app, true, true)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

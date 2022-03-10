@@ -31,7 +31,7 @@ impl PatchName {
         self.0.len()
     }
 
-    pub(crate) fn make(raw: &str, len_limit: Option<usize>) -> Self {
+    pub(crate) fn make(raw: &str, lower: bool, len_limit: Option<usize>) -> Self {
         let default_name = "patch";
 
         let base = raw
@@ -85,7 +85,9 @@ impl PatchName {
             }
         }
 
-        name = name.to_lowercase();
+        if lower {
+            name = name.to_lowercase();
+        }
 
         let mut candidate = name.as_str();
         loop {
@@ -337,7 +339,7 @@ mod tests {
         ];
 
         for (raw, expected, len_limit) in cases.iter() {
-            let made = PatchName::make(raw, *len_limit);
+            let made = PatchName::make(raw, true, *len_limit);
             assert_eq!(&made.0, expected);
         }
     }
@@ -353,8 +355,8 @@ mod tests {
         ];
 
         for (raw, expected, len_limit) in cases.iter() {
-            let unique =
-                PatchName::make(raw, *len_limit).uniquify(allow.as_slice(), disallow.as_slice());
+            let unique = PatchName::make(raw, true, *len_limit)
+                .uniquify(allow.as_slice(), disallow.as_slice());
             assert_eq!(&unique.0, expected);
         }
     }

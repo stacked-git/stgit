@@ -29,11 +29,18 @@ use crate::signature::TimeExtended;
 const GIT_EXEC_FAIL: &str = "could not execute `git`";
 
 /// Apply a patch (diff) to the specified index using `git apply --cached`.
-pub(crate) fn apply_to_index(diff: &[u8], worktree: &Path, index_path: &Path) -> Result<()> {
-    let child = Command::new("git")
-        .args(["apply", "--cached"])
-        // TODO: use --recount?
-        .env("GIT_INDEX_FILE", index_path)
+pub(crate) fn apply_to_index(
+    diff: &[u8],
+    worktree: &Path,
+    index_path: Option<&Path>,
+) -> Result<()> {
+    let mut command = Command::new("git");
+    // TODO: use --recount?
+    command.args(["apply", "--cached"]);
+    if let Some(index_path) = index_path {
+        command.env("GIT_INDEX_FILE", index_path);
+    }
+    let child = command
         .current_dir(worktree)
         .stdin(Stdio::piped())
         .stdout(Stdio::null())
@@ -41,6 +48,44 @@ pub(crate) fn apply_to_index(diff: &[u8], worktree: &Path, index_path: &Path) ->
         .spawn()
         .context(GIT_EXEC_FAIL)?;
     let output = in_and_out(child, diff)?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(make_cmd_err("apply", &output.stderr))
+    }
+}
+
+pub(crate) fn apply_to_worktree_and_index(
+    diff: &[u8],
+    worktree: &Path,
+    index_path: Option<&Path>,
+    reject: bool,
+    strip_level: Option<usize>,
+    context_lines: Option<usize>,
+) -> Result<()> {
+    let mut command = Command::new("git");
+    command.args(["apply", "--index", "--allow-empty"]);
+    if reject {
+        command.arg("--reject");
+    }
+    if let Some(strip_level) = strip_level {
+        command.arg(format!("-p{strip_level}"));
+    }
+    if let Some(context_lines) = context_lines {
+        command.arg(format!("-C{context_lines}"));
+    }
+    if let Some(index_path) = index_path {
+        command.env("GIT_INDEX_FILE", index_path);
+    }
+    let mut child = command
+        .current_dir(worktree)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .context(GIT_EXEC_FAIL)?;
+    child.stdin.as_mut().unwrap().write_all(diff)?;
+    let output = child.wait_with_output()?;
     if output.status.success() {
         Ok(())
     } else {
@@ -386,6 +431,123 @@ pub(crate) fn interpret_trailers<'a>(
     Ok(output.stdout)
 }
 
+pub(crate) fn mailinfo(
+    input: Option<std::fs::File>,
+    copy_message_id: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    let mut command = Command::new("git");
+    command.args(["mailinfo", "--scissors", "--encoding=UTF-8"]);
+    if copy_message_id {
+        command.arg("--message-id");
+    }
+    let dir = tempfile::tempdir()?;
+    let message_path = dir.path().join("message.txt");
+    let patch_path = dir.path().join("patch.diff");
+    command.args([message_path.as_path(), patch_path.as_path()]);
+    if let Some(input) = input {
+        command.stdin(input);
+    } else {
+        command.stdin(Stdio::inherit());
+    }
+    let output = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+    if output.status.success() {
+        let mailinfo = output.stdout;
+        let message = std::fs::read(message_path)?;
+        let diff = std::fs::read(patch_path)?;
+        Ok((mailinfo, message, diff))
+    } else {
+        Err(make_cmd_err("mailinfo", &output.stderr))
+    }
+}
+
+pub(crate) fn mailinfo_stream(
+    mut input: impl std::io::Read + Send + 'static,
+    copy_message_id: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    let mut command = Command::new("git");
+    command.args(["mailinfo", "--scissors", "--encoding=UTF-8"]);
+    if copy_message_id {
+        command.arg("--message-id");
+    }
+    let dir = tempfile::tempdir()?;
+    let message_path = dir.path().join("message.txt");
+    let patch_path = dir.path().join("patch.diff");
+    command.args([message_path.as_path(), patch_path.as_path()]);
+    let mut child = command
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .context(GIT_EXEC_FAIL)?;
+
+    let mut stdin = child.stdin.take().unwrap();
+
+    std::thread::spawn(move || -> Result<()> {
+        let mut buf = [0; 8192];
+        loop {
+            let n = input.read(&mut buf[..])?;
+            if n > 0 {
+                stdin.write_all(&buf[..n])?;
+            } else {
+                break Ok(());
+            }
+        }
+    });
+
+    let output = child.wait_with_output()?;
+
+    if output.status.success() {
+        let headers = output.stdout;
+        let message = std::fs::read(message_path)?;
+        let diff = std::fs::read(patch_path)?;
+        Ok((headers, message, diff))
+    } else {
+        Err(make_cmd_err("mailinfo", &output.stderr))
+    }
+}
+
+pub(crate) fn mailsplit(
+    source_path: Option<&Path>,
+    out_dir: &Path,
+    keep_cr: bool,
+    missing_from_ok: bool,
+) -> Result<usize> {
+    let mut command = Command::new("git");
+    command.arg("mailsplit");
+    if keep_cr {
+        command.arg("--keep-cr");
+    }
+    if missing_from_ok {
+        command.arg("-b");
+    }
+    let mut out_opt = OsString::from("-o");
+    out_opt.push(out_dir.as_os_str());
+    command.arg(out_opt);
+    if let Some(source_path) = source_path {
+        command.arg("--");
+        command.arg(source_path);
+    } else {
+        command.stdin(Stdio::inherit());
+    }
+    let output = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .context(GIT_EXEC_FAIL)?;
+
+    if output.status.success() {
+        let s = output.stdout.to_str().context("parsing mailsplit output")?;
+        let num_patches = s.trim_end().parse::<usize>()?;
+        Ok(num_patches)
+    } else {
+        Err(make_cmd_err("mailsplit", &output.stderr))
+    }
+}
+
 /// Perform three-way merge with `git merge-recursive`.
 ///
 /// Returns `true` if the merge was successful, `false` otherwise.
@@ -393,18 +555,22 @@ pub(crate) fn merge_recursive(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
-    index_path: &Path, // TODO: does this matter?
+    index_path: Option<&Path>, // TODO: does this matter?
 ) -> Result<bool> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    command
         .arg("merge-recursive")
         .arg(base_tree_id.to_string())
         .arg("--")
         .arg(our_tree_id.to_string())
-        .arg(their_tree_id.to_string())
-        .env("GIT_INDEX_FILE", index_path)
-        .env(format!("GITHEAD_{}", base_tree_id), "ancestor")
-        .env(format!("GITHEAD_{}", our_tree_id), "current")
-        .env(format!("GITHEAD_{}", their_tree_id), "patched")
+        .arg(their_tree_id.to_string());
+    if let Some(index_path) = index_path {
+        command.env("GIT_INDEX_FILE", index_path);
+    }
+    let output = command
+        .env(format!("GITHEAD_{base_tree_id}"), "ancestor")
+        .env(format!("GITHEAD_{our_tree_id}"), "current")
+        .env(format!("GITHEAD_{their_tree_id}"), "patched")
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -425,7 +591,7 @@ pub(crate) fn merge_recursive_or_mergetool(
     base_tree_id: git2::Oid,
     our_tree_id: git2::Oid,
     their_tree_id: git2::Oid,
-    index_path: &Path, // TODO: does this matter?
+    index_path: Option<&Path>, // TODO: does this matter?
     use_mergetool: bool,
 ) -> Result<bool> {
     if merge_recursive(base_tree_id, our_tree_id, their_tree_id, index_path)? {
@@ -438,10 +604,13 @@ pub(crate) fn merge_recursive_or_mergetool(
 }
 
 /// Attempt to resolve outstanding merge conflicts with `git merge-tool`.
-pub(crate) fn mergetool(index_path: &Path) -> Result<bool> {
-    let output = Command::new("git")
-        .arg("merge-tool")
-        .env("GIT_INDEX_FILE", index_path)
+pub(crate) fn mergetool(index_path: Option<&Path>) -> Result<bool> {
+    let mut command = Command::new("git");
+    command.arg("merge-tool");
+    if let Some(index_path) = index_path {
+        command.env("GIT_INDEX_FILE", index_path);
+    }
+    let output = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -703,10 +872,13 @@ pub(crate) fn version() -> Result<String> {
 }
 
 /// Write tree object from content of specified index using `git write-tree`.
-pub(crate) fn write_tree(index_path: &Path) -> Result<git2::Oid> {
-    let output = Command::new("git")
-        .arg("write-tree")
-        .env("GIT_INDEX_FILE", index_path)
+pub(crate) fn write_tree(index_path: Option<&Path>) -> Result<git2::Oid> {
+    let mut command = Command::new("git");
+    command.arg("write-tree");
+    if let Some(index_path) = index_path {
+        command.env("GIT_INDEX_FILE", index_path);
+    }
+    let output = command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

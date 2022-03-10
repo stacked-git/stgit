@@ -42,7 +42,7 @@ fn make() -> clap::Command<'static> {
                 .validator(PatchName::from_str)
                 .value_hint(ValueHint::Other),
         );
-    patchedit::add_args(app, true).arg(
+    patchedit::add_args(app, true, true).arg(
         Arg::new("set-tree")
             .long("set-tree")
             .help("Set patch's tree to treeish")

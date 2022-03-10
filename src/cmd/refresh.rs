@@ -131,7 +131,7 @@ fn make() -> clap::Command<'static> {
                 .allow_invalid_utf8(true),
         );
 
-    patchedit::add_args(app, false)
+    patchedit::add_args(app, true, false)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -185,7 +185,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let len_limit = None;
         let allow = vec![];
         let disallow: Vec<&PatchName> = stack.all_patches().collect();
-        PatchName::make("refresh-temp", len_limit).uniquify(&allow, &disallow)
+        PatchName::make("refresh-temp", true, len_limit).uniquify(&allow, &disallow)
     };
 
     let stack = stack
@@ -276,7 +276,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     let workdir = repo.workdir().unwrap();
                     stupid::read_tree(ours, temp_index_path)?;
                     if stupid::apply_treediff_to_index(base, theirs, workdir, temp_index_path)? {
-                        let tree_id = stupid::write_tree(temp_index_path)?;
+                        let tree_id = stupid::write_tree(Some(temp_index_path))?;
                         Ok(Some(tree_id))
                     } else {
                         Ok(None)

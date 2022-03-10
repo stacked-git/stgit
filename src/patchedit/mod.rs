@@ -15,7 +15,7 @@ use crate::{
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
     index::TemporaryIndex,
     patchname::PatchName,
-    signature::SignatureExtended,
+    signature::{self, SignatureExtended},
     stack::StackStateAccess,
     stupid,
 };
@@ -23,7 +23,11 @@ use crate::{
 use description::{DiffBuffer, PatchDescription};
 use interactive::edit_interactive;
 
-pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Command {
+pub(crate) fn add_args(
+    app: clap::Command,
+    add_message_opts: bool,
+    add_save_template: bool,
+) -> clap::Command {
     let app = app
         .next_help_heading("PATCH EDIT OPTIONS")
         .arg(
@@ -37,8 +41,9 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 .long("diff")
                 .short('d')
                 .help("Show diff when editing patch description"),
-        )
-        .arg(
+        );
+    let app = if add_message_opts {
+        app.arg(
             Arg::new("message")
                 .long("message")
                 .short('m')
@@ -66,6 +71,30 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 .allow_invalid_utf8(true)
                 .value_hint(ValueHint::FilePath),
         )
+    } else {
+        app.arg(
+            Arg::new("message")
+                .long("message")
+                .help("Not a valid option for this command")
+                .hide(true)
+                .value_name("message")
+                .validator(|_| -> std::result::Result<(), String> {
+                    Err("--message is not a valid option for this command".to_string())
+                }),
+        )
+        .arg(
+            Arg::new("file")
+                .long("file")
+                .help("Not a valid option for this command")
+                .hide(true)
+                .value_name("path")
+                .takes_value(true)
+                .validator(|_| -> std::result::Result<(), String> {
+                    Err("--file is not a valid option for this command".to_string())
+                }),
+        )
+    };
+    let app = app
         .arg(
             Arg::new("no-verify")
                 .long("no-verify")
@@ -162,7 +191,7 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 .help("Set the author \"name <email>\"")
                 .value_name("name-and-email")
                 .takes_value(true)
-                .allow_invalid_utf8(true)
+                .validator(|s| signature::parse_name_email(s).map(|_| ()))
                 .value_hint(ValueHint::Other),
         )
         .arg(
@@ -171,8 +200,8 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 .help("Set the author name")
                 .value_name("name")
                 .takes_value(true)
-                .allow_invalid_utf8(true)
                 .value_hint(ValueHint::Other)
+                .validator(signature::check_name)
                 .conflicts_with("author"),
         )
         .arg(
@@ -181,8 +210,8 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 .help("Set the author email")
                 .value_name("email")
                 .takes_value(true)
-                .allow_invalid_utf8(true)
                 .value_hint(ValueHint::EmailAddress)
+                .validator(signature::check_email)
                 .conflicts_with("author"),
         )
         .arg(
@@ -196,7 +225,7 @@ pub(crate) fn add_args(app: clap::Command, add_save_template: bool) -> clap::Com
                 )
                 .value_name("date")
                 .takes_value(true)
-                .allow_invalid_utf8(true)
+                .validator(signature::parse_time)
                 .value_hint(ValueHint::Other),
         );
     if add_save_template {
@@ -281,7 +310,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         self
     }
 
-    pub(crate) fn _default_message(mut self, message: String) -> Self {
+    pub(crate) fn default_message(mut self, message: String) -> Self {
         self.overlay.message = Some(message);
         self
     }
@@ -418,7 +447,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             Some(original_patchname.clone())
         } else if !message.is_empty() {
             Some(
-                PatchName::make(&message.decode()?, patchname_len_limit)
+                PatchName::make(&message.decode()?, true, patchname_len_limit)
                     .uniquify(&allowed_patchnames, &disallow_patchnames),
             )
         } else {
@@ -557,8 +586,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 let temp_index_path = temp_index.path().unwrap();
                 let workdir = repo.workdir().unwrap();
                 stupid::read_tree(parent_id, temp_index_path)?;
-                stupid::apply_to_index(&diff, workdir, temp_index_path)?;
-                stupid::write_tree(temp_index_path)
+                stupid::apply_to_index(&diff, workdir, Some(temp_index_path))?;
+                stupid::write_tree(Some(temp_index_path))
             }) {
                 Ok(tree_id) => tree_id,
                 Err(e) => {
@@ -597,7 +626,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let patchname = if let Some(patchname) = patchname {
             patchname.uniquify(&allowed_patchnames, &disallow_patchnames)
         } else {
-            PatchName::make(&message.decode()?, patchname_len_limit)
+            PatchName::make(&message.decode()?, true, patchname_len_limit)
                 .uniquify(&allowed_patchnames, &disallow_patchnames)
         };
 

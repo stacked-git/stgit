@@ -225,6 +225,7 @@ fn make_patchnames(
     for commit in commits.iter().rev() {
         let patchname = PatchName::make(
             &commit.message_ex().decode().unwrap_or_default(),
+            true,
             patchname_len_limit,
         )
         .uniquify(&[], &taken_names);
