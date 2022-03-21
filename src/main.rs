@@ -25,6 +25,7 @@ use std::{
 
 use anyhow::{anyhow, Context, Result};
 use clap::{crate_version, AppSettings, ArgMatches, ValueHint};
+use stupid::StupidContext;
 use termcolor::WriteColor;
 
 const GENERAL_ERROR: i32 = 1;
@@ -478,8 +479,11 @@ fn print_error_message(err: &anyhow::Error) {
 }
 
 fn print_merge_conflicts() {
-    let cdup: OsString = stupid::rev_parse_cdup().unwrap_or_else(|_| OsString::from(""));
-    let conflicts: Vec<OsString> = stupid::diff_unmerged_names().unwrap_or_else(|_| Vec::new());
+    let stupid = StupidContext::default();
+    let cdup: OsString = stupid
+        .rev_parse_cdup()
+        .unwrap_or_else(|_| OsString::from(""));
+    let conflicts: Vec<OsString> = stupid.diff_unmerged_names().unwrap_or_else(|_| Vec::new());
     let pathspecs = if cdup.is_empty() {
         conflicts
     } else {
@@ -491,5 +495,5 @@ fn print_merge_conflicts() {
         }
         pathspecs
     };
-    stupid::status_short(Some(pathspecs)).unwrap_or_default();
+    stupid.status_short(Some(pathspecs)).unwrap_or_default();
 }

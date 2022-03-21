@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::ArgMatches;
 
-use crate::stupid;
+use crate::stupid::StupidContext;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("version", super::StGitCommand { make, run })
@@ -13,6 +13,6 @@ fn make() -> clap::Command<'static> {
 
 fn run(_: &ArgMatches) -> Result<()> {
     println!("Stacked Git {}", env!("CARGO_PKG_VERSION"));
-    println!("{}", stupid::version()?);
+    println!("{}", StupidContext::default().version()?);
     Ok(())
 }

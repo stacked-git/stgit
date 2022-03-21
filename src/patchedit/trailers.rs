@@ -1,9 +1,11 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
+use git2::Repository;
 
-use crate::{commit::CommitMessage, stupid};
+use crate::{commit::CommitMessage, stupid::Stupid};
 
 pub(crate) fn add_trailers<'a>(
+    repo: &Repository,
     message: CommitMessage<'a>,
     matches: &ArgMatches,
     signature: &git2::Signature,
@@ -48,7 +50,7 @@ pub(crate) fn add_trailers<'a>(
         trailers.sort_by_key(|(index, _, _)| *index);
 
         let message_str = message.decode()?;
-        let message_bytes = stupid::interpret_trailers(
+        let message_bytes = repo.stupid().interpret_trailers(
             message_str.as_bytes(),
             trailers.iter().map(|(_index, trailer, value)| {
                 if value.is_empty() {

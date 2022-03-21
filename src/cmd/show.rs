@@ -4,7 +4,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     revspec::Error as RevError,
     stack::{Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -148,7 +148,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         oids.push(stack.branch_head.id());
     }
 
-    stupid::show(
+    repo.stupid().show(
         oids,
         matches.values_of_os("path_limits"),
         opt_stat,

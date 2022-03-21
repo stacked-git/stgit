@@ -14,7 +14,7 @@ use crate::{
     patchname::PatchName,
     signature::{self, SignatureExtended},
     stack::{Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -190,7 +190,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack.check_worktree_clean()?;
     stack.check_index_clean()?;
     stack.check_head_top_mismatch()?;
-    stupid::update_index_refresh()?;
+    repo.stupid().update_index_refresh()?;
 
     if matches.is_present("url") {
         import_url(stack, matches)
@@ -358,12 +358,13 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
     let keep_cr = matches.is_present("keep-cr");
     let config = stack.repo.config()?;
     let message_id = use_message_id(matches, &config);
-    let num_patches = stupid::mailsplit(source_path, out_dir.path(), keep_cr, missing_from_ok)?;
+    let stupid = stack.repo.stupid();
+    let num_patches = stupid.mailsplit(source_path, out_dir.path(), keep_cr, missing_from_ok)?;
     let mut stack = stack;
     for i in 1..num_patches + 1 {
         let patch_path = out_dir.path().join(format!("{i:04}"));
         let patch_file = std::fs::File::open(&patch_path)?;
-        let (mailinfo, message, diff) = stupid::mailinfo(Some(patch_file), message_id)?;
+        let (mailinfo, message, diff) = stupid.mailinfo(Some(patch_file), message_id)?;
         let headers = Headers::parse_mailinfo(&mailinfo).unwrap_or_default();
         stack = create_patch(stack, matches, None, headers, &message, &diff, None)?;
     }
@@ -378,22 +379,23 @@ fn import_file<'repo>(
 ) -> Result<Stack<'repo>> {
     let config = stack.repo.config()?;
     let message_id = use_message_id(matches, &config);
+    let stupid = stack.repo.stupid();
 
     let (mailinfo, message, diff) = if let Some(source_path) = source_path {
         let source_file = std::fs::File::open(source_path)?;
         match source_path.extension().and_then(|s| s.to_str()) {
             Some("gz") => {
                 let stream = flate2::read::GzDecoder::new(source_file);
-                stupid::mailinfo_stream(stream, message_id)
+                stupid.mailinfo_stream(stream, message_id)
             }
             Some("bz2") => {
                 let stream = bzip2::read::BzDecoder::new(source_file);
-                stupid::mailinfo_stream(stream, message_id)
+                stupid.mailinfo_stream(stream, message_id)
             }
-            _ => stupid::mailinfo(Some(source_file), message_id),
+            _ => stupid.mailinfo(Some(source_file), message_id),
         }
     } else {
-        stupid::mailinfo(None, message_id)
+        stupid.mailinfo(None, message_id)
     }
     .or_else(|e| {
         if e.chain()
@@ -510,10 +512,9 @@ fn create_patch<'repo>(
             .map(|s| s.parse::<usize>().expect("clap already validated"))
     });
 
-    stupid::apply_to_worktree_and_index(
+    let stupid = stack.repo.stupid();
+    stupid.apply_to_worktree_and_index(
         diff,
-        stack.repo.workdir().unwrap(),
-        None,
         matches.is_present("reject"),
         strip_level,
         matches
@@ -521,7 +522,7 @@ fn create_patch<'repo>(
             .map(|s| s.parse::<usize>().unwrap()),
     )?;
 
-    let tree_id = stupid::write_tree(None)?;
+    let tree_id = stupid.write_tree()?;
 
     let (new_patchname, commit_id) = match crate::patchedit::EditBuilder::default()
         .original_patchname(Some(&patchname))

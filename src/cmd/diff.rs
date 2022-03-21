@@ -3,7 +3,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     revspec::{parse_stgit_revision, Error as RevError},
-    stupid,
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -75,7 +75,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         "HEAD".to_string()
     };
 
-    stupid::diff(
+    repo.stupid().diff(
         &revspec,
         matches.values_of_os("pathspecs"),
         matches.is_present("stat"),

@@ -4,7 +4,7 @@ use anyhow::Result;
 use bstr::ByteSlice;
 use clap::{Arg, ArgMatches};
 
-use crate::{revspec::parse_stgit_revision, stupid};
+use crate::{revspec::parse_stgit_revision, stupid::Stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("files", super::StGitCommand { make, run })
@@ -43,7 +43,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let commit_id = parse_stgit_revision(&repo, opt_spec, None)?;
     let commit = repo.find_commit(commit_id)?;
     let parent = commit.parent(0)?;
-    let mut output = stupid::diff_tree_files(
+    let mut output = repo.stupid().diff_tree_files(
         parent.tree_id(),
         commit.tree_id(),
         matches.is_present("stat"),

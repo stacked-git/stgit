@@ -18,7 +18,7 @@ use crate::{
     pathspec,
     signature::SignatureExtended,
     stack::{Error, Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -272,11 +272,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 let theirs = temp_commit.tree_id();
 
                 if let Some(tree_id) = repo.with_temp_index_file(|temp_index| {
-                    let temp_index_path = temp_index.path().unwrap();
-                    let workdir = repo.workdir().unwrap();
-                    stupid::read_tree(ours, temp_index_path)?;
-                    if stupid::apply_treediff_to_index(base, theirs, workdir, temp_index_path)? {
-                        let tree_id = stupid::write_tree(Some(temp_index_path))?;
+                    let stupid = repo.stupid();
+                    let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+                    stupid_temp.read_tree(ours)?;
+                    if stupid_temp.apply_treediff_to_index(base, theirs)? {
+                        let tree_id = stupid_temp.write_tree()?;
                         Ok(Some(tree_id))
                     } else {
                         Ok(None)

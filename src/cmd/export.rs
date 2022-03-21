@@ -7,7 +7,7 @@ use crate::{
     commit::CommitExtended,
     signature::TimeExtended,
     stack::{Error, Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -107,6 +107,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stupid = repo.stupid();
 
     if opt_branch.is_none() && stack.check_worktree_clean().is_err() {
         crate::print_warning_message(
@@ -233,7 +234,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             })
             .or_else(|| Some("--binary".to_string()));
 
-        let diff = stupid::diff_tree_patch(
+        let diff = stupid.diff_tree_patch(
             parent_commit.tree_id(),
             patch_commit.tree_id(),
             <Option<Vec<OsString>>>::None,
@@ -243,7 +244,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         )?;
 
         if need_diffstat {
-            replacements.insert("diffstat", Cow::Owned(stupid::diffstat(&diff)?));
+            replacements.insert("diffstat", Cow::Owned(stupid.diffstat(&diff)?));
         }
 
         let specialized = crate::templates::specialize_template(&template, &replacements)?;

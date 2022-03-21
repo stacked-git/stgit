@@ -7,7 +7,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     stack::{Error, Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -51,6 +51,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     }
 
+    let stupid = repo.stupid();
+
     let pathsbuf;
     let pathspecs: Vec<&OsStr> = if let Some(pathspecs) = matches.values_of_os("pathspecs") {
         pathspecs.collect()
@@ -62,7 +64,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .context("determining Git prefix")?;
 
         let mut paths: Vec<&OsStr> = Vec::new();
-        pathsbuf = stupid::diff_index_names(stack.branch_head.tree_id(), Some(prefix))
+        pathsbuf = stupid
+            .diff_index_names(stack.branch_head.tree_id(), Some(prefix))
             .context("getting modified files")?;
 
         for path_bytes in pathsbuf.split_str(b"\0") {
@@ -80,7 +83,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(anyhow!("no local changes and no paths specified"));
     }
 
-    let revs = stupid::rev_list(stack.base().id(), stack.top().id(), None, Some(&pathspecs))?;
+    let revs = stupid.rev_list(stack.base().id(), stack.top().id(), Some(&pathspecs))?;
 
     if opt_diff {
         // TODO: pager?
@@ -104,7 +107,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 )?;
                 stdout.write_all(patch_commit.message_raw_bytes())?;
                 write!(stdout, "\n---\n")?;
-                let diff = stupid::diff_tree_patch(
+                let diff = stupid.diff_tree_patch(
                     parent_commit.tree_id(),
                     patch_commit.tree_id(),
                     Some(&pathspecs),

@@ -13,7 +13,7 @@ use crate::{
     patchname::PatchName,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
-    stupid,
+    stupid::Stupid,
 };
 
 use super::error::{repo_state_to_str, Error};
@@ -346,7 +346,11 @@ impl<'repo> StackTransaction<'repo> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
         // Failure to copy is okay. The old commit may not have a note to copy.
-        stupid::notes_copy(old_commit.id(), commit_id).ok();
+        self.stack
+            .repo
+            .stupid()
+            .notes_copy(old_commit.id(), commit_id)
+            .ok();
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
         self.print_updated(patchname)?;
@@ -375,7 +379,8 @@ impl<'repo> StackTransaction<'repo> {
 
     pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<()> {
         let patch_commit = self.get_patch_commit(patchname);
-        let config = self.stack.repo.config()?;
+        let repo = self.stack.repo;
+        let config = repo.config()?;
         let parent = patch_commit.parent(0)?;
         let is_empty = parent.tree_id() == patch_commit.tree_id();
 
@@ -383,7 +388,7 @@ impl<'repo> StackTransaction<'repo> {
             let default_committer = git2::Signature::default_committer(Some(&config))?;
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
-            let new_commit_id = self.stack.repo.commit_ex(
+            let new_commit_id = repo.commit_ex(
                 &patch_commit.author_strict()?,
                 &default_committer,
                 &message,
@@ -391,8 +396,10 @@ impl<'repo> StackTransaction<'repo> {
                 parent_ids,
             )?;
 
-            let commit = self.stack.repo.find_commit(new_commit_id)?;
-            stupid::notes_copy(patch_commit.id(), new_commit_id).ok();
+            let commit = repo.find_commit(new_commit_id)?;
+            repo.stupid()
+                .notes_copy(patch_commit.id(), new_commit_id)
+                .ok();
             self.patch_updates
                 .insert(patchname.clone(), Some(PatchState { commit }));
 
@@ -736,6 +743,7 @@ impl<'repo> StackTransaction<'repo> {
     ) -> Result<()> {
         let repo = self.stack.repo;
         let config = repo.config()?;
+        let stupid = repo.stupid();
         let default_committer = git2::Signature::default_committer(Some(&config))?;
         let patch_commit = self.get_patch_commit(patchname).clone();
         let old_parent = patch_commit.parent(0)?;
@@ -762,19 +770,15 @@ impl<'repo> StackTransaction<'repo> {
             // let ours = new_parent.tree_id();
             // let theirs = patch_commit.tree_id();
 
-            let temp_index_path = temp_index.path().unwrap();
+            let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+
             if temp_index_tree_id != &Some(ours) {
-                stupid::read_tree(ours, temp_index_path)?;
+                stupid_temp.read_tree(ours)?;
                 *temp_index_tree_id = Some(ours);
             }
 
-            let maybe_tree_id = if stupid::apply_treediff_to_index(
-                base,
-                theirs,
-                repo.workdir().unwrap(),
-                temp_index_path,
-            )? {
-                stupid::write_tree(Some(temp_index_path)).ok()
+            let maybe_tree_id = if stupid_temp.apply_treediff_to_index(base, theirs)? {
+                stupid_temp.write_tree().ok()
             } else {
                 None
             };
@@ -788,7 +792,10 @@ impl<'repo> StackTransaction<'repo> {
                 }
                 .into());
             } else {
-                if stupid::read_tree_checkout(self.current_tree_id, ours).is_err() {
+                if stupid
+                    .read_tree_checkout(self.current_tree_id, ours)
+                    .is_err()
+                {
                     return Err(Error::TransactionHalt {
                         msg: "index/worktree dirty".to_string(),
                         conflicts: false,
@@ -798,15 +805,13 @@ impl<'repo> StackTransaction<'repo> {
                 self.current_tree_id = ours;
 
                 let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
-                match stupid::merge_recursive_or_mergetool(base, ours, theirs, None, use_mergetool)
-                {
+                match stupid.merge_recursive_or_mergetool(base, ours, theirs, use_mergetool) {
                     Ok(true) => {
                         // Success, no conflicts
-                        let tree_id =
-                            stupid::write_tree(None).map_err(|_| Error::TransactionHalt {
-                                msg: "conflicting merge".to_string(),
-                                conflicts: false,
-                            })?;
+                        let tree_id = stupid.write_tree().map_err(|_| Error::TransactionHalt {
+                            msg: "conflicting merge".to_string(),
+                            conflicts: false,
+                        })?;
                         self.current_tree_id = tree_id;
                         push_status = PushStatus::Modified;
                         tree_id
@@ -835,7 +840,7 @@ impl<'repo> StackTransaction<'repo> {
                 [new_parent.id()],
             )?;
             let commit = repo.find_commit(commit_id)?;
-            stupid::notes_copy(patch_commit.id(), commit_id).ok();
+            stupid.notes_copy(patch_commit.id(), commit_id).ok();
             if push_status == PushStatus::Conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
@@ -886,12 +891,13 @@ impl<'repo> StackTransaction<'repo> {
         P: AsRef<PatchName>,
     {
         let repo = self.stack.repo;
-        let mut merged: Vec<&PatchName> = vec![];
-        let temp_index_path = temp_index.path().unwrap();
+        let stupid = repo.stupid();
+        let stupid = stupid.with_index_path(temp_index.path().unwrap());
         let head_tree_id = self.stack.branch_head.tree_id();
+        let mut merged: Vec<&PatchName> = vec![];
 
         if temp_index_tree_id != &Some(head_tree_id) {
-            stupid::read_tree(head_tree_id, temp_index_path)?;
+            stupid.read_tree(head_tree_id)?;
             *temp_index_tree_id = Some(head_tree_id);
         }
 
@@ -905,12 +911,7 @@ impl<'repo> StackTransaction<'repo> {
                 continue; // No change
             }
 
-            if stupid::apply_treediff_to_index(
-                patch_commit.tree_id(),
-                parent_commit.tree_id(),
-                repo.workdir().unwrap(),
-                temp_index_path,
-            )? {
+            if stupid.apply_treediff_to_index(patch_commit.tree_id(), parent_commit.tree_id())? {
                 merged.push(patchname);
                 *temp_index_tree_id = None;
             }

@@ -17,7 +17,7 @@ use crate::{
     patchname::PatchName,
     signature::{self, SignatureExtended},
     stack::StackStateAccess,
-    stupid,
+    stupid::Stupid,
 };
 
 use description::{DiffBuffer, PatchDescription};
@@ -459,7 +459,13 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             // N.B. add_trailers needs to operate on utf-8 data. The user providing
             // trailer-altering options (e.g. --review) will force the message to be
             // decoded. In such cases the returned message will wrap a utf-8 String.
-            trailers::add_trailers(message, matches, &default_committer, autosign.as_deref())?
+            trailers::add_trailers(
+                repo,
+                message,
+                matches,
+                &default_committer,
+                autosign.as_deref(),
+            )?
         };
 
         let tree_id = overlay_tree_id.unwrap_or_else(|| {
@@ -483,8 +489,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
+            let stupid = repo.stupid();
             let diff_buf = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
-                stupid::diff_tree_patch(
+                stupid.diff_tree_patch(
                     old_tree.id(),
                     new_tree.id(),
                     <Option<Vec<OsString>>>::None,
@@ -502,8 +509,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 // --edit and --diff), it would be better to not have this special case
                 // since in all other contexts, the patch description's diff shows the
                 // changes actually being recorded to the patch.
-                stupid::update_index_refresh()?;
-                stupid::diff_index(old_tree.id())?
+                stupid.update_index_refresh()?;
+                stupid.diff_index(old_tree.id())?
             };
             let computed_diff = DiffBuffer(diff_buf);
             (Some(computed_diff.clone()), Some(computed_diff))
@@ -583,11 +590,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             let diff = diff.unwrap().0;
 
             match repo.with_temp_index_file(|temp_index| {
-                let temp_index_path = temp_index.path().unwrap();
-                let workdir = repo.workdir().unwrap();
-                stupid::read_tree(parent_id, temp_index_path)?;
-                stupid::apply_to_index(&diff, workdir, Some(temp_index_path))?;
-                stupid::write_tree(Some(temp_index_path))
+                let stupid = repo.stupid();
+                let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+                stupid_temp.read_tree(parent_id)?;
+                stupid_temp.apply_to_index(&diff)?;
+                stupid_temp.write_tree()
             }) {
                 Ok(tree_id) => tree_id,
                 Err(e) => {

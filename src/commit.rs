@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use anyhow::{anyhow, Result};
 
-use crate::stupid;
+use crate::stupid::Stupid;
 
 pub(crate) enum CommitMessage<'a> {
     Str(&'a str),
@@ -398,8 +398,7 @@ impl RepositoryCommitExtended for git2::Repository {
             || (commit_encoding.is_some() && commit_encoding != Some(encoding_rs::UTF_8))
         {
             // Use git for any commit that needs to be signed
-            stupid::commit_tree(
-                self.path(),
+            self.stupid().commit_tree(
                 author,
                 committer,
                 &message.encode_with(commit_encoding)?,
