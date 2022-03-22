@@ -16,7 +16,10 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::error::{repo_state_to_str, Error};
+use super::{
+    error::{repo_state_to_str, Error},
+    state::StackState,
+};
 
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,
@@ -25,6 +28,7 @@ pub(crate) struct TransactionBuilder<'repo> {
     discard_changes: bool,
     use_index_and_worktree: bool,
     set_head: bool,
+    allow_bad_head: bool,
 }
 
 pub(crate) struct StackTransaction<'repo> {
@@ -34,6 +38,7 @@ pub(crate) struct StackTransaction<'repo> {
     discard_changes: bool,
     use_index_and_worktree: bool,
     set_head: bool,
+    allow_bad_head: bool,
 
     patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
@@ -80,7 +85,14 @@ impl<'repo> TransactionBuilder<'repo> {
             discard_changes: false,
             use_index_and_worktree: false,
             set_head: true,
+            allow_bad_head: false,
         }
+    }
+
+    #[must_use]
+    pub(crate) fn allow_bad_head(mut self, allow: bool) -> Self {
+        self.allow_bad_head = allow;
+        self
     }
 
     #[must_use]
@@ -100,6 +112,12 @@ impl<'repo> TransactionBuilder<'repo> {
         } else {
             ConflictMode::Disallow
         };
+        self
+    }
+
+    #[must_use]
+    pub(crate) fn discard_changes(mut self, discard: bool) -> Self {
+        self.discard_changes = discard;
         self
     }
 
@@ -133,6 +151,7 @@ impl<'repo> TransactionBuilder<'repo> {
             discard_changes,
             use_index_and_worktree,
             set_head,
+            allow_bad_head,
         } = self;
 
         let output = output.expect("with_output_stream() must be called");
@@ -150,6 +169,7 @@ impl<'repo> TransactionBuilder<'repo> {
             discard_changes,
             use_index_and_worktree,
             set_head,
+            allow_bad_head,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
@@ -200,16 +220,15 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        let allow_bad_head = false; // TODO: argument
         if transaction.set_head {
             let trans_head = transaction.head().clone();
 
             if transaction.use_index_and_worktree {
                 let stack_head = transaction.stack.branch_head.clone();
-                let result = transaction.checkout(&trans_head, allow_bad_head);
+                let result = transaction.checkout(&trans_head);
                 if let Err(err) = result {
-                    let allow_bad_head = true;
-                    transaction.checkout(&stack_head, allow_bad_head)?;
+                    transaction.allow_bad_head = true;
+                    transaction.checkout(&stack_head)?;
                     return Err(Error::TransactionAborted(err.to_string()).into());
                 }
             }
@@ -226,10 +245,10 @@ impl<'repo> ExecuteContext<'repo> {
 
         let conflict_msg;
         let reflog_msg = if has_conflicts {
-            reflog_msg
-        } else {
             conflict_msg = format!("{} (CONFLICT)", reflog_msg);
             &conflict_msg
+        } else {
+            reflog_msg
         };
 
         // Update patch refs and stack state refs
@@ -298,9 +317,9 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 impl<'repo> StackTransaction<'repo> {
-    fn checkout(&mut self, commit: &Commit<'_>, allow_bad_head: bool) -> Result<()> {
+    fn checkout(&mut self, commit: &Commit<'_>) -> Result<()> {
         let repo = self.stack.repo;
-        if !allow_bad_head {
+        if !self.allow_bad_head {
             self.stack.check_head_top_mismatch()?;
         }
 
@@ -339,6 +358,109 @@ impl<'repo> StackTransaction<'repo> {
                 }
             })?;
         self.current_tree_id = commit.tree_id();
+        Ok(())
+    }
+
+    pub(crate) fn repo(&self) -> &'repo git2::Repository {
+        self.stack.repo
+    }
+
+    pub(crate) fn reset_to_state(&mut self, state: StackState<'repo>) -> Result<()> {
+        for pn in self.all_patches().cloned().collect::<Vec<_>>() {
+            self.patch_updates.insert(pn, None);
+        }
+        let StackState {
+            prev: _prev,
+            head,
+            applied,
+            unapplied,
+            hidden,
+            patches,
+        } = state;
+        self.updated_base = Some(if let Some(pn) = applied.first() {
+            patches[pn].commit.parent(0)?
+        } else {
+            head.clone()
+        });
+        self.updated_head = Some(head);
+        for (pn, patch_state) in patches {
+            self.patch_updates.insert(pn, Some(patch_state));
+        }
+        self.applied = applied;
+        self.unapplied = unapplied;
+        self.hidden = hidden;
+        Ok(())
+    }
+
+    pub(crate) fn reset_to_state_partially<P>(
+        &mut self,
+        state: StackState<'repo>,
+        patchnames: &[P],
+    ) -> Result<()>
+    where
+        P: AsRef<PatchName>,
+    {
+        let only_patches: IndexSet<_> = patchnames.iter().map(|pn| pn.as_ref()).collect();
+        let state_patches: IndexSet<_> = state.all_patches().collect();
+        let to_reset_patches: IndexSet<_> =
+            state_patches.intersection(&only_patches).copied().collect();
+        let existing_patches: IndexSet<_> = self.all_patches().cloned().collect();
+        let existing_patches: IndexSet<_> = existing_patches.iter().collect();
+        let original_applied_order = self.applied.clone();
+        let to_delete_patches: IndexSet<_> = existing_patches
+            .difference(&to_reset_patches)
+            .copied()
+            .collect::<IndexSet<_>>()
+            .intersection(&only_patches)
+            .copied()
+            .collect();
+
+        let matching_patches: IndexSet<_> = state
+            .patches
+            .iter()
+            .filter_map(|(pn, patch_state)| {
+                if self.has_patch(pn) && self.get_patch_commit(pn).id() == patch_state.commit.id() {
+                    Some(pn)
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        self.pop_patches(|pn| {
+            if !only_patches.contains(pn) {
+                false
+            } else if !to_delete_patches.contains(pn) {
+                true
+            } else {
+                !matching_patches.contains(pn)
+            }
+        })?;
+
+        self.delete_patches(|pn| to_delete_patches.contains(pn))?;
+
+        for pn in to_reset_patches {
+            if existing_patches.contains(pn) {
+                if matching_patches.contains(pn) {
+                    continue;
+                }
+            } else if state.hidden.contains(pn) {
+                self.hidden.push(pn.clone());
+            } else {
+                self.unapplied.push(pn.clone());
+            }
+            self.patch_updates
+                .insert(pn.clone(), Some(state.patches[pn].clone()));
+            self.print_updated(pn)?;
+        }
+
+        let to_push_patches: Vec<_> = original_applied_order
+            .iter()
+            .filter(|pn| self.unapplied.contains(pn) || self.hidden.contains(pn))
+            .collect();
+
+        self.push_patches(&to_push_patches, false)?;
+
         Ok(())
     }
 

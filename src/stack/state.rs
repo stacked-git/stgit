@@ -81,6 +81,10 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    pub(crate) fn from_commit(repo: &'repo git2::Repository, commit: &Commit) -> Result<Self> {
+        Self::from_tree(repo, &commit.tree()?)
+    }
+
     pub(super) fn from_tree(repo: &'repo git2::Repository, tree: &Tree) -> Result<Self> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {

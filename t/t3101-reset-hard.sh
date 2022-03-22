@@ -24,11 +24,19 @@ test_expect_success 'Initialize StGit stack with three patches' '
     stg uncommit -n 3
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid arguments' '
     command_error stg reset 2>err &&
     grep -e "Wrong options" err &&
     rm err
 '
+else
+test_expect_success 'Invalid arguments' '
+    general_error stg reset 2>err &&
+    grep -e "required arguments were not provided" err &&
+    rm err
+'
+fi
 
 cat > expected.txt <<EOF
 UU a

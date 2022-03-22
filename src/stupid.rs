@@ -673,6 +673,17 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
+    /// Hard checkout tree to working tree using `git read-tree`.
+    pub(crate) fn read_tree_checkout_hard(&self, tree_id: git2::Oid) -> Result<()> {
+        self.git()
+            .args(["read-tree", "--reset", "-u"])
+            .arg(tree_id.to_string())
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("read-tree --reset -u")?;
+        Ok(())
+    }
+
     /// Get list of revisions using `git rev-list`.
     pub(crate) fn rev_list<I, S>(
         &self,
