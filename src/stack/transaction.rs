@@ -361,6 +361,9 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    pub(crate) fn stack(&self) -> &Stack<'repo> {
+        &self.stack
+    }
     pub(crate) fn repo(&self) -> &'repo git2::Repository {
         self.stack.repo
     }

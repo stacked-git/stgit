@@ -23,10 +23,17 @@ test_expect_success 'Initialize StGit stack with three patches' '
     stg uncommit -n 3
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Invalid number of patches to redo' '
     command_error stg redo -n0 2>err &&
     grep -e "Bad number of undos to redo" err
 '
+else
+test_expect_success 'Invalid number of patches to redo' '
+    general_error stg redo -n0 2>err &&
+    grep -e "Bad number of commands to redo" err
+'
+fi
 
 cat > expected.txt <<EOF
 000
