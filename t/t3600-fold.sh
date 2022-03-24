@@ -24,17 +24,33 @@ test_expect_success 'Initialize StGit repository' '
     git checkout foo.txt
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt fold more than one patch' '
     command_error stg fold fold1.diff fold2.diff 2>err &&
     grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success 'Attempt fold more than one patch' '
+    general_error stg fold fold1.diff fold2.diff 2>err &&
+    grep -e "Found argument .fold2\.diff. which wasn.t expected" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt fold with local changes' '
     echo "hello dirty" > foo.txt &&
     test_when_finished "stg reset --hard" &&
     command_error stg fold fold1.diff 2>err &&
     grep -e "local changes in the tree" err
 '
+else
+test_expect_success 'Attempt fold with local changes' '
+    echo "hello dirty" > foo.txt &&
+    test_when_finished "stg reset --hard" &&
+    command_error stg fold fold1.diff 2>err &&
+    grep -e "Worktree not clean" err
+'
+fi
 
 test_expect_success 'Attempt fold with non-existant patch file' '
     command_error stg fold non-existant.diff 2>err &&
@@ -81,6 +97,7 @@ test_expect_success 'Attempt to fold conflicting patch' '
     test ! -e foo.txt.rej
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt to fold conflicting patch with rejects' '
     stg new -m p2 &&
     echo "hello" > foo.txt &&
@@ -92,6 +109,19 @@ test_expect_success 'Attempt to fold conflicting patch with rejects' '
     test -e foo.txt.rej &&
     rm foo.txt.rej
 '
+else
+test_expect_success 'Attempt to fold conflicting patch with rejects' '
+    stg new -m p2 &&
+    echo "hello" > foo.txt &&
+    echo "from p2" >> foo.txt &&
+    stg refresh &&
+    command_error stg fold --reject fold1.diff 2>err &&
+    grep "patch failed" err &&
+    test -z "$(echo $(stg status --porcelain foo.txt))" &&
+    test -e foo.txt.rej &&
+    rm foo.txt.rej
+'
+fi
 
 test_expect_success 'Attempt to fold conflicting patch with -C0' '
     stg fold -C0 --reject fold1.diff &&
