@@ -451,6 +451,35 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(paths)
     }
 
+    /// Show log in gitk
+    pub(crate) fn gitk<I, S>(&self, commit_id: git2::Oid, pathspecs: Option<I>) -> Result<()>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let mut command = Command::new("gitk");
+        self.git_dir.map(|p| command.env("GIT_DIR", p));
+        self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
+        self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+        command.arg(commit_id.to_string());
+        if let Some(pathspecs) = pathspecs {
+            command.arg("--");
+            command.args(pathspecs);
+        }
+
+        let output = command
+            .stdout(Stdio::inherit())
+            .output()
+            .context("could not execute `gitk`")?;
+        if output.status.success() {
+            Ok(())
+        } else {
+            let err_str = output.stderr.to_str_lossy();
+            let err_str = err_str.trim_end();
+            Err(anyhow!(err_str.to_string()).context("`gitk`"))
+        }
+    }
+
     /// Add trailers to commit message with `git interpret-trailers`.
     pub(crate) fn interpret_trailers<'a>(
         &self,
@@ -469,6 +498,41 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .in_and_out(message)?
             .require_success("interpret-trailers")?;
         Ok(output.stdout)
+    }
+
+    /// Interactively show log
+    pub(crate) fn log<I, S>(
+        &self,
+        commit_id: git2::Oid,
+        pathspecs: Option<I>,
+        num_commits: Option<usize>,
+        full_index: bool,
+        show_diff: bool,
+    ) -> Result<()>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let mut command = self.git_in_work_root();
+        command.arg("log");
+        if let Some(n) = num_commits {
+            command.arg(format!("-{n}"));
+        }
+        if show_diff {
+            command.arg("-p");
+        } else if !full_index {
+            command.arg("--pretty=tformat:%h   %aD   %s");
+        }
+        command.arg(commit_id.to_string());
+        if let Some(pathspecs) = pathspecs {
+            command.arg("--");
+            command.args(pathspecs);
+        }
+        command
+            .stdout(Stdio::inherit())
+            .output_git()?
+            .require_success("log")?;
+        Ok(())
     }
 
     pub(crate) fn mailinfo(

@@ -4,10 +4,17 @@ test_description='Test the log command.'
 
 . ./test-lib.sh
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>err >/dev/null &&
     grep -e "branch not initialized" err
 '
+else
+test_expect_success 'Attempt log on uninitialized branch' '
+    command_error stg log 2>err >/dev/null &&
+    grep -e "branch \`master\` not initialized" err
+'
+fi
 
 test_expect_success 'Initialize the StGit repository' '
     stg init
@@ -40,6 +47,7 @@ test_expect_success 'Test log of all patches' '
     stg log | head -n 1 | grep -e "uncommit"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Test invalid opts with clear' '
     command_error stg log --diff --clear 2>err >/dev/null &&
     grep -e "cannot combine --clear with other options" err &&
@@ -56,6 +64,24 @@ test_expect_success 'Test invalid opts with graphical' '
     command_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
     grep -e "cannot combine --graphical and --number" err
 '
+else
+test_expect_success 'Test invalid opts with clear' '
+    general_error stg log --diff --clear 2>err >/dev/null &&
+    grep -e "The argument .--diff. cannot be used with .--clear." err &&
+    stg log | head -n 1 | grep -e "uncommit"
+'
+
+test_expect_success 'Test invalid args with clear' '
+    general_error stg log --clear p0 p1 2>err >/dev/null &&
+    grep -e "The argument .--clear. cannot be used with .<patchname>\.\.\.." err &&
+    stg log | head -n 1 | grep -e "uncommit"
+'
+
+test_expect_success 'Test invalid opts with graphical' '
+    general_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
+    grep -e "The argument .--graphical. cannot be used with .--number <N>." err
+'
+fi
 
 test_expect_success 'Test log full' '
     stg log --full > log.txt &&

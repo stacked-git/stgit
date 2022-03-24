@@ -181,7 +181,7 @@ impl<'repo> Stack<'repo> {
         self.branch_head = commit;
     }
 
-    pub(super) fn state_mut(&mut self) -> &mut StackState<'repo> {
+    pub(crate) fn state_mut(&mut self) -> &mut StackState<'repo> {
         &mut self.state
     }
 
