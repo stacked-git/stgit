@@ -5,6 +5,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
+    repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
 };
 
@@ -77,12 +78,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     let conflicts_okay = false;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
     // TODO: compat: these are not checked in Python version. How well is
     //       this handled here?
-    // stack.check_index_clean()?;
-    // stack.check_worktree_clean()?;
+    // repo.check_index_clean()?;
+    // repo.check_worktree_clean()?;
 
     stack
         .setup_transaction()

@@ -12,6 +12,7 @@ use crate::{
     color::get_color_stdout,
     patchedit,
     patchname::PatchName,
+    repo::RepositoryExtended,
     signature::{self, SignatureExtended},
     stack::{Stack, StackStateAccess},
     stupid::Stupid,
@@ -187,8 +188,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     std::env::set_current_dir(repo.workdir().unwrap())?;
 
-    stack.check_worktree_clean()?;
-    stack.check_index_clean()?;
+    repo.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
     repo.stupid().update_index_refresh()?;
 

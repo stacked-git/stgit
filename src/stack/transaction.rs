@@ -11,15 +11,13 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     index::TemporaryIndex,
     patchname::PatchName,
+    repo::repo_state_to_str,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
-use super::{
-    error::{repo_state_to_str, Error},
-    state::StackState,
-};
+use super::{error::Error, state::StackState};
 
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,

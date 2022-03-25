@@ -3,6 +3,7 @@ use std::io::Read;
 use anyhow::Result;
 use clap::{Arg, ArgGroup};
 
+use crate::repo::RepositoryExtended;
 use crate::revspec::parse_stgit_revision;
 use crate::stack::{Error, Stack, StackStateAccess};
 use crate::stupid::Stupid;
@@ -76,8 +77,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    stack.check_worktree_clean()?;
-    stack.check_index_clean()?;
+    repo.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
     if stack.applied().is_empty() {

@@ -7,6 +7,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
+    repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
 
@@ -62,7 +63,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_series: Option<&Path> = matches.value_of_os("series").map(Path::new);
 
     let conflicts_okay = false;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
 
     let patches: Vec<PatchName> = if let Some(series_path) = opt_series {
@@ -83,8 +84,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.is_applied(pn))) {
-        stack.check_index_clean()?;
-        stack.check_worktree_clean()?;
+        repo.check_index_and_worktree_clean()?;
     }
 
     let (applied, unapplied) = if opt_noapply {

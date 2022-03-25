@@ -6,6 +6,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
+    repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
 
@@ -38,11 +39,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_merged = matches.is_present("merged");
 
     let conflicts_okay = false;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
     if !opt_keep {
-        stack.check_index_clean()?;
-        stack.check_worktree_clean()?;
+        repo.check_index_and_worktree_clean()?;
     }
 
     let patchname = if stack.has_patch(&patchname) {

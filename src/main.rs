@@ -12,6 +12,7 @@ mod patchedit;
 mod patchname;
 mod patchrange;
 mod pathspec;
+mod repo;
 mod revspec;
 mod signature;
 mod stack;

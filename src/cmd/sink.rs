@@ -7,6 +7,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     patchrange::parse_patch_ranges,
+    repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
 };
 
@@ -81,11 +82,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_keep = matches.is_present("keep");
 
     let conflicts_okay = false;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
     if !opt_keep {
-        stack.check_index_clean()?;
-        stack.check_worktree_clean()?;
+        repo.check_index_and_worktree_clean()?;
     }
 
     if let Some(target_patch) = &opt_target {

@@ -4,6 +4,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
+    repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
 
@@ -40,7 +41,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
     let conflicts_okay = true;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
 
     let (clean_applied, clean_unapplied) = match (
         matches.is_present("applied"),

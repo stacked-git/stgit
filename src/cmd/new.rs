@@ -7,6 +7,7 @@ use crate::{
     color::get_color_stdout,
     patchedit,
     patchname::PatchName,
+    repo::RepositoryExtended,
     signature::SignatureExtended,
     stack::{Stack, StackStateAccess},
 };
@@ -123,7 +124,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, branch_name)?;
 
     let conflicts_okay = false;
-    stack.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state(conflicts_okay)?;
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(name) = matches.value_of("patchname") {
