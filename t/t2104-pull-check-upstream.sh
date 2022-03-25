@@ -24,6 +24,7 @@ test_expect_success \
     )
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Test that pull without upstream setup produces friendly error' \
     '
@@ -33,5 +34,17 @@ test_expect_success \
       grep "There is no tracking information for the current branch" out.txt
     )
     '
+else
+test_expect_success \
+    'Test that pull without upstream setup produces friendly error' \
+    '
+    (cd clone &&
+      stg branch --create without-upstream &&
+      git config --unset branch.without-upstream.remote &&
+      command_error stg pull 2>out.txt &&
+      grep "There is no tracking information for the current branch" out.txt
+    )
+    '
+fi
 
 test_done

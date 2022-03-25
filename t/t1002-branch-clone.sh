@@ -32,6 +32,7 @@ test_expect_success \
     test "$(stg series --applied -c)" -eq 1
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Clone the current StGit branch' \
     '
@@ -41,6 +42,17 @@ test_expect_success \
     stg new p2 -m "p2" &&
     test "$(stg series --applied -c)" -eq 2
     '
+else
+test_expect_success \
+    'Clone the current StGit branch' \
+    '
+    stg branch --clone bar &&
+    test "$(stg series --applied -c)" -eq 1 &&
+    test "$(git config --get branch.bar.description)" = "clone of foo" &&
+    stg new p2 -m "p2" &&
+    test "$(stg series --applied -c)" -eq 2
+    '
+fi
 
 test_expect_success \
     'Anonymous clone' \
@@ -50,10 +62,18 @@ test_expect_success \
     grep -E "^bar-[0-9]+-[0-9]+"
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid clone args' \
     '
     command_error stg branch --clone bname extra
     '
+else
+test_expect_success \
+    'Invalid clone args' \
+    '
+    general_error stg branch --clone bname extra
+    '
+fi
 
 test_done

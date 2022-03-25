@@ -11,7 +11,7 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     index::TemporaryIndex,
     patchname::PatchName,
-    repo::repo_state_to_str,
+    repo::{repo_state_to_str, RepositoryExtended},
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::Stupid,
@@ -346,15 +346,7 @@ impl<'repo> StackTransaction<'repo> {
         if self.discard_changes {
             checkout_builder.force();
         }
-        repo.checkout_tree(commit.as_object(), Some(&mut checkout_builder))
-            .map_err(|e| -> anyhow::Error {
-                if e.class() == git2::ErrorClass::Checkout && e.code() == git2::ErrorCode::Conflict
-                {
-                    Error::CheckoutConflicts(e.message().to_string()).into()
-                } else {
-                    e.into()
-                }
-            })?;
+        repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
         self.current_tree_id = commit.tree_id();
         Ok(())
     }

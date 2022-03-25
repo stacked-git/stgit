@@ -226,6 +226,61 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(apply_output.status.success())
     }
 
+    /// Copy branch
+    ///
+    /// Copies branch ref, reflog, and 'branch.<name>' config sections.
+    pub(crate) fn branch_copy(
+        &self,
+        old_branchname: Option<&str>,
+        new_branchname: &str,
+    ) -> Result<()> {
+        let mut command = self.git();
+        command.args(["branch", "--copy"]);
+        if let Some(old_branchname) = old_branchname {
+            command.arg(old_branchname);
+        }
+        command.arg(new_branchname);
+        command
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("branch --copy")?;
+        Ok(())
+    }
+
+    /// Move branch
+    ///
+    /// Moves branch ref, moves reflog, updates HEAD, and
+    /// renames 'branch.<name>' config sections.
+    pub(crate) fn branch_move(
+        &self,
+        old_branchname: Option<&str>,
+        new_branchname: &str,
+    ) -> Result<()> {
+        let mut command = self.git();
+        command.args(["branch", "--move"]);
+        if let Some(old_branchname) = old_branchname {
+            command.arg(old_branchname);
+        }
+        command.arg(new_branchname);
+        command
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("branch --move")?;
+        Ok(())
+    }
+
+    /// Checkout a branch.
+    pub(crate) fn _checkout(&self, branch_name: &str) -> Result<()> {
+        self.git()
+            .arg("checkout")
+            .arg(branch_name)
+            .arg("--")
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("checkout")?;
+        Ok(())
+    }
+
     /// Create a commit for the specified tree id using `git commit-tree`.
     ///
     /// The newly created commit id is returned.

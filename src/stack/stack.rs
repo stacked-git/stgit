@@ -53,6 +53,37 @@ impl<'repo> Stack<'repo> {
         })
     }
 
+    pub(crate) fn deinitialize(self) -> Result<()> {
+        let Self {
+            repo,
+            branch_name,
+            refname,
+            ..
+        } = self;
+        let mut config = repo.config()?;
+        let mut state_ref = repo.find_reference(&refname)?;
+        let patch_ref_glob = get_patch_refname(&branch_name, "*");
+        for patch_reference in repo.references_glob(&patch_ref_glob)? {
+            let mut patch_reference = patch_reference?;
+            patch_reference.delete()?;
+        }
+        state_ref.delete()?;
+        let mut config_to_delete: Vec<_> = Vec::new();
+        for entry in config
+            .entries(Some(&format!("branch.{branch_name}.stgit")))?
+            .into_iter()
+        {
+            let entry = entry?;
+            if let Some(name) = entry.name() {
+                config_to_delete.push(name.to_string());
+            }
+        }
+        for name_to_delete in config_to_delete {
+            config.remove(&name_to_delete)?;
+        }
+        Ok(())
+    }
+
     pub fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
@@ -81,6 +112,32 @@ impl<'repo> Stack<'repo> {
             base,
             state,
         })
+    }
+
+    pub fn is_protected(&self, config: &git2::Config) -> bool {
+        let name = &self.branch_name;
+        let key = format!("branch.{name}.stgit.protect");
+        config.get_bool(&key).unwrap_or(false)
+    }
+
+    pub fn set_protected(&self, config: &mut git2::Config, protect: bool) -> Result<()> {
+        let name = &self.branch_name;
+        let key = format!("branch.{name}.stgit.protect");
+        if protect {
+            config.set_bool(&key, true)?;
+            Ok(())
+        } else {
+            match config.remove(&key) {
+                Ok(()) => Ok(()),
+                Err(e)
+                    if e.class() == git2::ErrorClass::Config
+                        && e.code() == git2::ErrorCode::NotFound =>
+                {
+                    Ok(())
+                }
+                Err(e) => Err(e.into()),
+            }
+        }
     }
 
     pub fn is_head_top(&self) -> bool {
@@ -184,15 +241,15 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
     }
 }
 
-fn state_refname_from_branch_name(branch_shorthand: &str) -> String {
-    format!("refs/stacks/{branch_shorthand}")
+pub(crate) fn state_refname_from_branch_name(branch_name: &str) -> String {
+    format!("refs/stacks/{branch_name}")
 }
 
 fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
     format!("refs/patches/{branch_name}/{patch_spec}")
 }
 
-fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
+pub(crate) fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| {

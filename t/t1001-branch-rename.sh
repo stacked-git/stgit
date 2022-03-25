@@ -37,6 +37,7 @@ test_expect_success \
 
     stg branch -c foo &&
     _assert_current_branch_name "foo" &&
+    _assert_branch_exists foo &&
 
     stg new p0 -m "p0" && # create a patch that will be popped
     touch "p0.txt" && stg refresh &&
@@ -113,10 +114,18 @@ test_expect_success \
     _assert_current_branch_name "xxx"
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid num args to rename' '
     command_error stg branch --rename bar biz bop 2>err &&
     grep "incorrect number of arguments" err
     '
+else
+test_expect_success \
+    'Invalid num args to rename' '
+    general_error stg branch --rename bar biz bop 2>err &&
+    grep "The value .bop. was provided to .* but it wasn.t expecting any more values" err
+    '
+fi
 
 test_done

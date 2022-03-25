@@ -53,6 +53,7 @@ pub(crate) struct StGitCommand {
 
 pub(crate) fn get_commands() -> Commands {
     BTreeMap::from([
+        branch::get_command(),
         clean::get_command(),
         commit::get_command(),
         delete::get_command(),
@@ -91,5 +92,5 @@ pub(crate) fn get_commands() -> Commands {
 }
 
 pub(crate) const PYTHON_COMMANDS: &[&str] = &[
-    "branch", "clone", "mail", "pick", "pull", "rebase", "repair", "squash", "sync",
+    "clone", "mail", "pick", "pull", "rebase", "repair", "squash", "sync",
 ];

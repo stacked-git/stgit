@@ -8,6 +8,11 @@ pub(crate) trait RepositoryExtended {
     fn check_index_and_worktree_clean(&self) -> Result<()>;
     fn check_repository_state(&self, conflicts_okay: bool) -> Result<()>;
     fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>>;
+    fn checkout_tree_ex(
+        &self,
+        treeish: &git2::Object<'_>,
+        opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
+    ) -> Result<()>;
 }
 
 impl RepositoryExtended for git2::Repository {
@@ -136,6 +141,22 @@ impl RepositoryExtended for git2::Repository {
                 ))
             }
         }
+    }
+
+    fn checkout_tree_ex(
+        &self,
+        treeish: &git2::Object<'_>,
+        opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
+    ) -> Result<()> {
+        self.checkout_tree(treeish, opts)
+            .map_err(|e| -> anyhow::Error {
+                if e.class() == git2::ErrorClass::Checkout && e.code() == git2::ErrorCode::Conflict
+                {
+                    Error::CheckoutConflicts(e.message().to_string()).into()
+                } else {
+                    e.into()
+                }
+            })
     }
 }
 

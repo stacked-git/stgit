@@ -43,10 +43,17 @@ test_expect_success \
     test "$(git rev-parse HEAD)" = "$(git rev-parse new)"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Too many args to --create' '
     command_error stg branch --create aname acommit anextra
 '
+else
+test_expect_success \
+    'Too many args to --create' '
+    general_error stg branch --create aname acommit anextra
+'
+fi
 
 test_expect_success \
     'Create branch with worktree changes' '
@@ -75,17 +82,33 @@ test_expect_success \
     grep "is already the current branch" err
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Attempt no branch command' '
     command_error stg branch foo bar 2>err &&
     grep "incorrect number of arguments" err
 '
+else
+test_expect_success \
+    'Attempt no branch command' '
+    general_error stg branch foo bar 2>err &&
+    grep "Found argument .bar. which wasn.t expected" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Invalid num arguments to branch list' '
     command_error stg branch --list new 2>err &&
     grep "incorrect number of arguments" err
 '
+else
+test_expect_success \
+    'Invalid num arguments to branch list' '
+    general_error stg branch --list new 2>err &&
+    grep "Found argument .new. which wasn.t expected" err
+'
+fi
 
 test_expect_success \
     'Create a git branch' '
@@ -105,7 +128,7 @@ test_expect_success \
         | grep -v ^\\.git/logs/refs/heads/foo2$ \
         | wc -l) -eq 0 &&
     test $(git show-ref | grep foo2 | wc -l) -eq 1 &&
-    test_must_fail git config --get-regexp branch\.foo3 &&
+    test_must_fail git config --get-regexp branch\.foo2 &&
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
@@ -141,10 +164,17 @@ test_expect_success \
     touch file2
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
     command_error stg branch --create foo4 master^
 '
+else
+test_expect_success \
+    'Create branch down the stack, behind the conflict caused by the generated file' '
+    conflict stg branch --create foo4 master^
+'
+fi
 
 test_expect_success \
     'Check the branch was not created' '
