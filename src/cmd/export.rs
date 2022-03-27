@@ -112,6 +112,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     if opt_branch.is_none() && repo.check_worktree_clean().is_err() {
         crate::print_warning_message(
+            matches,
             "Local changes in the tree; you might want to commit them first",
         )
     }

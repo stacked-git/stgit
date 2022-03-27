@@ -386,18 +386,13 @@ fn punt_to_python() -> Result<()> {
     std::process::exit(status.code().unwrap_or(-1));
 }
 
-pub(crate) fn print_warning_message(msg: &str) {
-    let color_choice = if atty::is(atty::Stream::Stderr) {
-        termcolor::ColorChoice::Auto
-    } else {
-        termcolor::ColorChoice::Never
-    };
-    let mut stderr = termcolor::StandardStream::stderr(color_choice);
+fn print_message(label: &str, label_color: termcolor::Color, matches: &ArgMatches, msg: &str) {
+    let mut stderr = color::get_color_stderr(matches);
     let mut color = termcolor::ColorSpec::new();
     stderr
-        .set_color(color.set_fg(Some(termcolor::Color::Yellow)).set_bold(true))
+        .set_color(color.set_fg(Some(label_color)).set_bold(true))
         .unwrap();
-    write!(stderr, "warning: ").unwrap();
+    write!(stderr, "{label}: ").unwrap();
     stderr
         .set_color(color.set_fg(None).set_bold(false))
         .unwrap();
@@ -430,6 +425,14 @@ pub(crate) fn print_warning_message(msg: &str) {
             _ => panic!("unhandled split len"),
         }
     }
+}
+
+pub(crate) fn print_info_message(matches: &ArgMatches, msg: &str) {
+    print_message("info", termcolor::Color::Blue, matches, msg)
+}
+
+pub(crate) fn print_warning_message(matches: &ArgMatches, msg: &str) {
+    print_message("warning", termcolor::Color::Yellow, matches, msg)
 }
 
 fn print_error_message(err: &anyhow::Error) {
