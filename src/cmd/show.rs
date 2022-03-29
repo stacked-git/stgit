@@ -122,7 +122,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                                     anyhow!("patch or revision `{spec}` not found")
                                 }
                                 _ => rev_err,
-                            })?;
+                            })?
+                            .id();
                     oids.push(oid);
                 }
                 Err(crate::patchrange::Error::PatchName(_)) => {
@@ -136,7 +137,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                                     anyhow!("invalid patch or revision `{spec}` not found",)
                                 }
                                 _ => rev_err,
-                            })?;
+                            })?
+                            .id();
                     oids.push(oid);
                 }
                 Err(e) => {

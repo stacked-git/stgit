@@ -1,5 +1,4 @@
 use anyhow::Result;
-use git2::Oid;
 
 use crate::stack::{Stack, StackStateAccess};
 
@@ -16,7 +15,7 @@ pub(crate) fn parse_stgit_revision<'repo>(
     repo: &'repo git2::Repository,
     spec: Option<&str>,
     branch: Option<&str>,
-) -> Result<Oid> {
+) -> Result<git2::Object<'repo>> {
     let (branch, spec) = if let Some(spec) = spec {
         if let Some((branch, spec)) = spec.split_once(':') {
             // The branch from the spec string overrides the branch argument.
@@ -44,11 +43,15 @@ pub(crate) fn parse_stgit_revision<'repo>(
     } else if let Some(branch) = branch {
         revparse_single(repo, branch)
     } else {
-        Ok(repo.head()?.peel(git2::ObjectType::Any)?.id())
+        let object = repo.head()?.peel(git2::ObjectType::Any)?;
+        Ok(object)
     }
 }
 
-fn revparse_single(repo: &git2::Repository, spec: &str) -> Result<Oid> {
+fn revparse_single<'repo>(
+    repo: &'repo git2::Repository,
+    spec: &str,
+) -> Result<git2::Object<'repo>> {
     let object = repo.revparse_single(spec).map_err(|e| -> anyhow::Error {
         match e.code() {
             git2::ErrorCode::InvalidSpec => Error::InvalidRevision(spec.to_string()).into(),
@@ -56,5 +59,5 @@ fn revparse_single(repo: &git2::Repository, spec: &str) -> Result<Oid> {
             _ => e.into(),
         }
     })?;
-    Ok(object.id())
+    Ok(object)
 }

@@ -110,8 +110,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let base_commit = if matches.is_present("three-way") {
         Some(stack.top().parent(0)?)
     } else if let Some(base_spec) = matches.value_of("base") {
-        let commit_id = parse_stgit_revision(&repo, Some(base_spec), None)?;
-        Some(repo.find_commit(commit_id)?)
+        Some(parse_stgit_revision(&repo, Some(base_spec), None)?.peel_to_commit()?)
     } else {
         None
     };

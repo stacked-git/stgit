@@ -40,8 +40,7 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_spec = matches.value_of("revision");
-    let commit_id = parse_stgit_revision(&repo, opt_spec, None)?;
-    let commit = repo.find_commit(commit_id)?;
+    let commit = parse_stgit_revision(&repo, opt_spec, None)?.peel_to_commit()?;
     let parent = commit.parent(0)?;
     let mut output = repo.stupid().diff_tree_files(
         parent.tree_id(),

@@ -62,14 +62,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
             }
             let rev1 = parse_stgit_revision(&repo, Some(rev1), None)?;
             if rev2.is_empty() {
-                format!("{}..", rev1)
+                format!("{}..", rev1.id())
             } else {
                 let rev2 = parse_stgit_revision(&repo, Some(rev2), None)?;
-                format!("{}..{}", rev1, rev2)
+                format!("{}..{}", rev1.id(), rev2.id())
             }
         } else {
             let rev1 = parse_stgit_revision(&repo, Some(range_str), None)?;
-            rev1.to_string()
+            rev1.id().to_string()
         }
     } else {
         "HEAD".to_string()

@@ -28,7 +28,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_spec = matches.value_of("revision");
 
     let repo = git2::Repository::open_from_env()?;
-    let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?;
-    println!("{}", oid);
+    let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();
+    println!("{oid}");
     Ok(())
 }
