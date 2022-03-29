@@ -136,6 +136,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 simplified_parent_id,
                 Some(pathspecs),
                 num_commits,
+                matches.value_of("color"),
                 matches.is_present("full"),
                 matches.is_present("diff"),
             )

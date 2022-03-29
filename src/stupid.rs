@@ -561,6 +561,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         commit_id: git2::Oid,
         pathspecs: Option<I>,
         num_commits: Option<usize>,
+        color_opt: Option<&str>,
         full_index: bool,
         show_diff: bool,
     ) -> Result<()>
@@ -573,10 +574,13 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if let Some(n) = num_commits {
             command.arg(format!("-{n}"));
         }
+        if let Some(color_opt) = map_color_opt(color_opt) {
+            command.arg(format!("--color={color_opt}"));
+        }
         if show_diff {
             command.arg("-p");
         } else if !full_index {
-            command.arg("--pretty=tformat:%h   %aD   %s");
+            command.arg("--pretty=tformat:%C(auto)%h   %C(auto,blue)%aD   %C(auto)%s");
         }
         command.arg(commit_id.to_string());
         if let Some(pathspecs) = pathspecs {
