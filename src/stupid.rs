@@ -587,10 +587,17 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.arg("--");
             command.args(pathspecs);
         }
-        command
-            .stdout(Stdio::inherit())
-            .output_git()?
-            .require_success("log")?;
+        let output = command.stdout(Stdio::inherit()).output_git()?;
+        if cfg!(unix) {
+            use std::os::unix::process::ExitStatusExt;
+            if output.status.signal() == Some(13) {
+                // `git log` process was killed by SIGPIPE, probably due to pager exiting before
+                // all log output could be written. This is normal, but `git log` does not print an
+                // error message to stderr, so we inject our own error string.
+                return Err(git_command_error("log", b"broken pipe"));
+            }
+        }
+        output.require_success("log")?;
         Ok(())
     }
 
