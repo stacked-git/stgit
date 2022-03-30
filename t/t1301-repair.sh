@@ -15,10 +15,17 @@ test_expect_success 'Repair in a repository without patches' '
     stg repair
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Repair with invalid arguments' '
     command_error stg repair xxx 2>err &&
     grep -e "incorrect number of arguments" err
 '
+else
+test_expect_success 'Repair with invalid arguments' '
+    general_error stg repair xxx 2>err &&
+    grep -e "Found argument .xxx. which wasn.t expected" err
+'
+fi
 
 test_expect_success 'Create a patch' '
     stg new foo -m foo &&

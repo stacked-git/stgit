@@ -542,6 +542,32 @@ impl<'repo> StackTransaction<'repo> {
         self.print_pushed(patchname, push_status, is_last)
     }
 
+    pub(crate) fn repair_appliedness(
+        &mut self,
+        applied: Vec<PatchName>,
+        unapplied: Vec<PatchName>,
+        hidden: Vec<PatchName>,
+    ) -> Result<()> {
+        let mut old: IndexSet<PatchName> = IndexSet::from_iter(
+            self.applied
+                .drain(..)
+                .chain(self.unapplied.drain(..).chain(self.hidden.drain(..))),
+        );
+        self.applied = applied;
+        self.unapplied = unapplied;
+        self.hidden = hidden;
+
+        for pn in self.all_patches() {
+            old.take(pn)
+                .expect("new patchname must be an old patchname");
+        }
+        assert!(
+            old.is_empty(),
+            "all old patchnames must be in the new applied/unapplied/hidden: {old:?}"
+        );
+        Ok(())
+    }
+
     pub(crate) fn reorder_patches(
         &mut self,
         applied: Option<&[PatchName]>,
