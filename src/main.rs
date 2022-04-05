@@ -169,6 +169,7 @@ fn main() {
                     CONFLICT_ERROR
                 }
                 Some(stack::Error::CheckoutConflicts(_)) => CONFLICT_ERROR,
+                Some(stack::Error::FoldConflicts(_)) => CONFLICT_ERROR,
                 _ => COMMAND_ERROR,
             };
             code

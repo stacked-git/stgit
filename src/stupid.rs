@@ -226,6 +226,53 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(apply_output.status.success())
     }
 
+    /// Apply diff between two trees to worktree and index.
+    ///
+    /// Pipes `git diff-tree | git apply --index`.
+    ///
+    /// Returns `true` if the patch application is successful, `false` otherwise.
+    pub(crate) fn apply_treediff_to_worktree_and_index<I, S>(
+        &self,
+        tree1: git2::Oid,
+        tree2: git2::Oid,
+        pathspecs: Option<I>,
+    ) -> Result<bool>
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<OsStr>,
+    {
+        let mut diff_tree_command = self.git();
+        diff_tree_command
+            .args(["diff-tree", "--full-index", "--binary", "--patch"])
+            .arg(tree1.to_string())
+            .arg(tree2.to_string())
+            .arg("--");
+        if let Some(pathspecs) = pathspecs {
+            diff_tree_command.args(pathspecs);
+        }
+
+        let mut diff_tree_child = diff_tree_command
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .spawn_git()?;
+
+        let apply_output = self
+            .git_in_work_root()
+            .args(["apply", "--index", "--allow-empty", "--3way"])
+            .stdin(diff_tree_child.stdout.take().unwrap())
+            .stdout(Stdio::null())
+            .output_git()?;
+
+        diff_tree_child.require_success("diff-tree")?;
+        if apply_output.status.success() {
+            Ok(true)
+        } else if apply_output.status.code() == Some(1) {
+            Ok(false)
+        } else {
+            Err(git_command_error("apply", &apply_output.stderr))
+        }
+    }
+
     /// Copy branch
     ///
     /// Copies branch ref, reflog, and 'branch.<name>' config sections.
@@ -907,6 +954,18 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .output_git()?
             .require_success("show")?;
         Ok(())
+    }
+
+    /// Show object with custom pretty format.
+    pub(crate) fn show_pretty(&self, oid: git2::Oid, pretty_format: &str) -> Result<Vec<u8>> {
+        let output = self
+            .git()
+            .args(["show", "--no-patch"])
+            .arg(format!("--pretty={pretty_format}"))
+            .arg(oid.to_string())
+            .output_git()?
+            .require_success("show")?;
+        Ok(output.stdout)
     }
 
     /// Show short status using `git status`.

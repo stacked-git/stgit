@@ -3,12 +3,21 @@ test_description='Test the pick command'
 
 . ./test-lib.sh
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
 	command_error stg pick foo 2>err &&
 	grep "master: branch not initialized" err
 	'
+else
+test_expect_success \
+	'Attempt pick with uninitialized stack' \
+	'
+	command_error stg pick foo 2>err &&
+	grep "branch \`master\` not initialized" err
+	'
+fi
 
 test_expect_success \
 	'Initialize the StGit repository' \
@@ -45,12 +54,21 @@ test_expect_success \
 	stg branch master
 	'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'No pick args' \
 	'
 	command_error stg pick 2>err &&
 	grep "incorrect number of arguments" err
 	'
+else
+test_expect_success \
+	'No pick args' \
+	'
+	general_error stg pick 2>err &&
+	grep "The following required arguments were not provided" err
+	'
+fi
 
 test_expect_success \
 	'Pick --name with multiple patches' \
@@ -67,6 +85,7 @@ test_expect_success \
 	stg delete --top
 	'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick fancy patch name conflict' \
 	'
@@ -75,6 +94,16 @@ test_expect_success \
 	test "$(echo $(stg series --applied --noprefix))" = "A B Fancy@name Fancy-name" &&
 	stg delete Fancy@name Fancy-name
 	'
+else
+test_expect_success \
+	'Pick fancy patch name conflict' \
+	'
+	stg new -m "also fancy name" Fancy@name &&
+	stg pick -B foo Fancy@name &&
+	test "$(echo $(stg series --applied --noprefix))" = "A B Fancy@name Fancy@name-1" &&
+	stg delete Fancy@name Fancy@name-1
+	'
+fi
 
 test_expect_success \
 	'Pick remote patch' \
@@ -108,6 +137,7 @@ test_expect_success \
 	test "$(echo $(stg series --unapplied --noprefix))" = "D"
 	'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick --file without --fold' \
 	'
@@ -115,6 +145,15 @@ test_expect_success \
 	grep "file can only be specified with --fold" err &&
 	rm err
 	'
+else
+test_expect_success \
+	'Pick --file without --fold' \
+	'
+	general_error stg pick --file d D 2>err &&
+	grep "The following required arguments were not provided" err &&
+	rm err
+	'
+fi
 
 test_expect_success \
 	'Pick local unapplied patch' \
@@ -224,6 +263,7 @@ test_expect_success \
 	test_cmp C2-expected.txt C2-message.txt
 	'
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick too many commits' \
 	'
@@ -231,7 +271,18 @@ test_expect_success \
 	grep "Unknown patch name" err &&
 	rm err
 	'
+else
+test_expect_success \
+	'Pick too many commits' \
+	'
+	stg pick --ref-branch foo $(cat C-id) D-foo &&
+	test "$(echo $(stg series --applied --noprefix))" = "C2 c d" &&
+	test "$(echo $(stg series --unapplied --noprefix))" = "A B C D" &&
+    stg delete c d
+	'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick with conflict' \
 	'
@@ -246,7 +297,24 @@ test_expect_success \
 	stg reset --hard &&
 	stg undo
 	'
+else
+test_expect_success \
+	'Pick with conflict' \
+	'
+	rm C-id &&
+	stg push A &&
+	conflict stg pick foo:AAA 2>err &&
+	grep "merge conflicts" err &&
+	rm err &&
+	test "$(stg top)" = "AAA" &&
+	test "$(echo $(stg series -A --noprefix))" = "C2 A AAA" &&
+	test "$(echo $(stg status))" = "UU a" &&
+	stg reset --hard &&
+	stg undo
+	'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick --fold with conflict' \
 	'
@@ -254,7 +322,17 @@ test_expect_success \
 	grep "Merge conflict in a" err &&
 	stg reset --hard
 	'
+else
+test_expect_success \
+	'Pick --fold with conflict' \
+	'
+	conflict stg pick --fold --ref-branch=foo AAA 2>err &&
+	grep "\`AAA\` does not apply cleanly" err &&
+	stg reset --hard
+	'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick --fold --file with conflict' \
 	'
@@ -262,7 +340,17 @@ test_expect_success \
 	grep "AAA does not apply cleanly" err &&
 	stg reset --hard
 	'
+else
+test_expect_success \
+	'Pick --fold --file with conflict' \
+	'
+	conflict stg pick --fold --file a -Bfoo AAA 2>err &&
+	grep "\`AAA\` does not apply cleanly" err &&
+	stg reset --hard
+	'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'Pick --update with conflict' \
 	'
@@ -270,5 +358,14 @@ test_expect_success \
 	grep "AAA does not apply cleanly" err &&
 	stg reset --hard
 	'
+else
+test_expect_success \
+	'Pick --update with conflict' \
+	'
+	conflict stg pick --update foo:AAA 2>err &&
+	grep "\`AAA\` does not apply cleanly" err &&
+	stg reset --hard
+	'
+fi
 
 test_done

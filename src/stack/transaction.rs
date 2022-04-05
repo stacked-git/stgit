@@ -481,6 +481,20 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    pub(crate) fn new_unapplied(
+        &mut self,
+        patchname: &PatchName,
+        commit_id: Oid,
+        insert_pos: usize,
+    ) -> Result<()> {
+        let commit = self.stack.repo.find_commit(commit_id)?;
+        self.unapplied.insert(insert_pos, patchname.clone());
+        self.patch_updates
+            .insert(patchname.clone(), Some(PatchState { commit }));
+        self.print_popped(&[patchname.clone()])?;
+        Ok(())
+    }
+
     pub(crate) fn push_tree_patches<P>(&mut self, patchnames: &[P]) -> Result<()>
     where
         P: AsRef<PatchName>,

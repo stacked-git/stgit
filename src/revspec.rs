@@ -11,12 +11,11 @@ pub(crate) enum Error {
     RevisionNotFound(String),
 }
 
-pub(crate) fn parse_stgit_revision<'repo>(
-    repo: &'repo git2::Repository,
-    spec: Option<&str>,
-    branch: Option<&str>,
-) -> Result<git2::Object<'repo>> {
-    let (branch, spec) = if let Some(spec) = spec {
+pub(crate) fn parse_branch_and_spec<'a>(
+    branch: Option<&'a str>,
+    spec: Option<&'a str>,
+) -> (Option<&'a str>, Option<&'a str>) {
+    if let Some(spec) = spec {
         if let Some((branch, spec)) = spec.split_once(':') {
             // The branch from the spec string overrides the branch argument.
             if spec.is_empty() {
@@ -29,7 +28,15 @@ pub(crate) fn parse_stgit_revision<'repo>(
         }
     } else {
         (branch, None)
-    };
+    }
+}
+
+pub(crate) fn parse_stgit_revision<'repo>(
+    repo: &'repo git2::Repository,
+    spec: Option<&str>,
+    branch: Option<&str>,
+) -> Result<git2::Object<'repo>> {
+    let (branch, spec) = parse_branch_and_spec(branch, spec);
 
     if let Some(spec) = spec {
         let stack = Stack::from_branch(repo, branch)?;
