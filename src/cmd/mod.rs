@@ -85,6 +85,7 @@ pub(crate) fn get_commands() -> Commands {
         show::get_command(),
         sink::get_command(),
         spill::get_command(),
+        sync::get_command(),
         top::get_command(),
         uncommit::get_command(),
         undo::get_command(),
@@ -93,4 +94,4 @@ pub(crate) fn get_commands() -> Commands {
     ])
 }
 
-pub(crate) const PYTHON_COMMANDS: &[&str] = &["clone", "mail", "pull", "rebase", "squash", "sync"];
+pub(crate) const PYTHON_COMMANDS: &[&str] = &["clone", "mail", "pull", "rebase", "squash"];

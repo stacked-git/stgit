@@ -49,15 +49,24 @@ test_expect_success \
     'Attempt sync with current branch' \
     '
     command_error stg sync -B foo 2>err &&
-    grep -e "Cannot synchronise with the current branch" err
+    grep -e "Cannot synchroni[sz]e with the current branch" err
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Attempt sync without remote branch or series' \
     '
     command_error stg sync -a 2>err &&
     grep -e "No remote branch or series specified" err
     '
+else
+test_expect_success \
+    'Attempt sync without remote branch or series' \
+    '
+    general_error stg sync -a 2>err &&
+    grep -e "The following required arguments were not provided" err
+    '
+fi
 
 test_expect_success \
     'Attempt apply top patch without any applied' \
@@ -65,9 +74,10 @@ test_expect_success \
     test_when_finished "stg goto p3" &&
     stg pop -a &&
     command_error stg sync -B master 2>err &&
-    grep -e "no patches applied" err
+    grep -e "[Nn]o patches applied" err
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Attempt to sync patch not in ref branch' \
     '
@@ -76,6 +86,16 @@ test_expect_success \
     command_error stg sync -B master 2>err &&
     grep -e "No common patches to be synchronised" err
     '
+else
+test_expect_success \
+    'Attempt to sync patch not in ref branch' \
+    '
+    stg new -m p4 &&
+    test_when_finished "stg delete p4" &&
+    command_error stg sync -B master 2>err &&
+    grep -e "No common patches to synchronize" err
+    '
+fi
 
 test_expect_success \
     'Synchronise second patch with the master branch' \

@@ -27,6 +27,7 @@ pub(crate) struct TransactionBuilder<'repo> {
     use_index_and_worktree: bool,
     set_head: bool,
     allow_bad_head: bool,
+    use_readtree_checkout: bool,
 }
 
 pub(crate) struct StackTransaction<'repo> {
@@ -37,6 +38,7 @@ pub(crate) struct StackTransaction<'repo> {
     use_index_and_worktree: bool,
     set_head: bool,
     allow_bad_head: bool,
+    use_readtree_checkout: bool,
 
     patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
@@ -84,6 +86,7 @@ impl<'repo> TransactionBuilder<'repo> {
             use_index_and_worktree: false,
             set_head: true,
             allow_bad_head: false,
+            use_readtree_checkout: false,
         }
     }
 
@@ -126,6 +129,12 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     #[must_use]
+    pub(crate) fn use_readtree_checkout(mut self, use_readtree: bool) -> Self {
+        self.use_readtree_checkout = use_readtree;
+        self
+    }
+
+    #[must_use]
     pub(crate) fn with_output_stream(mut self, output: termcolor::StandardStream) -> Self {
         self.output = Some(output);
         self
@@ -150,6 +159,7 @@ impl<'repo> TransactionBuilder<'repo> {
             use_index_and_worktree,
             set_head,
             allow_bad_head,
+            use_readtree_checkout,
         } = self;
 
         let output = output.expect("with_output_stream() must be called");
@@ -168,6 +178,7 @@ impl<'repo> TransactionBuilder<'repo> {
             use_index_and_worktree,
             set_head,
             allow_bad_head,
+            use_readtree_checkout,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
@@ -342,11 +353,18 @@ impl<'repo> StackTransaction<'repo> {
             };
         }
 
-        let mut checkout_builder = git2::build::CheckoutBuilder::new();
-        if self.discard_changes {
-            checkout_builder.force();
+        if self.use_readtree_checkout {
+            self.repo()
+                .stupid()
+                .read_tree_checkout(self.current_tree_id, commit.tree_id())
+                .map_err(|e| Error::CheckoutConflicts(e.to_string()))?;
+        } else {
+            let mut checkout_builder = git2::build::CheckoutBuilder::new();
+            if self.discard_changes {
+                checkout_builder.force();
+            }
+            repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
         }
-        repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
         self.current_tree_id = commit.tree_id();
         Ok(())
     }
@@ -354,6 +372,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn stack(&self) -> &Stack<'repo> {
         &self.stack
     }
+
     pub(crate) fn repo(&self) -> &'repo git2::Repository {
         self.stack.repo
     }

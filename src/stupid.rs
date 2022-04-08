@@ -446,6 +446,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(output.stdout)
     }
 
+    /// Get file names that differ between tree and index.
     pub(crate) fn diff_index_names(
         &self,
         tree_id: git2::Oid,
