@@ -1,3 +1,29 @@
+//! Modify the StGit stack state atomically.
+//!
+//! Modifying the StGit stack typically involves performing a sequence of fallible
+//! operations, where each operation depends on the previous. The stack transaction
+//! mechanism found in this module allows these operations to be performed in an
+//! all-or-nothing fashion such that the stack, working tree, and index will either
+//! successfully transition to their new state or fallback to their starting state.
+//!
+//! The entry point to stack transactions is via the `Stack::setup_transaction()`
+//! method. The transaction operations are defined in a closure passed to the (required)
+//! `transact()` method. And the transaction is finalized via the `execute()` method.
+//!
+//! # Example
+//!
+//! ```no_run
+//! let new_stack = stack
+//!     .setup_transaction()
+//!     .with_output_stream(...)
+//!     ...  // Transaction option method calls
+//!     .transact(|trans| {
+//!         // Call StackTransaction methods
+//!         ...
+//!     })
+//!     .execute("<reflog message>")?;
+//! ```
+
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -19,26 +45,41 @@ use crate::{
 
 use super::{error::Error, state::StackState};
 
+/// Options for fine-tuning stack transaction behaviors.
+struct TransactionOptions {
+    pub(self) conflict_mode: ConflictMode,
+    pub(self) discard_changes: bool,
+    pub(self) use_index_and_worktree: bool,
+    pub(self) set_head: bool,
+    pub(self) allow_bad_head: bool,
+    pub(self) use_readtree_checkout: bool,
+}
+
+impl Default for TransactionOptions {
+    fn default() -> Self {
+        Self {
+            conflict_mode: ConflictMode::Disallow,
+            discard_changes: false,
+            use_index_and_worktree: false,
+            set_head: true,
+            allow_bad_head: false,
+            use_readtree_checkout: false,
+        }
+    }
+}
+
+/// Builder used to setup a stack transaction.
 pub(crate) struct TransactionBuilder<'repo> {
     stack: Stack<'repo>,
     output: Option<termcolor::StandardStream>,
-    conflict_mode: ConflictMode,
-    discard_changes: bool,
-    use_index_and_worktree: bool,
-    set_head: bool,
-    allow_bad_head: bool,
-    use_readtree_checkout: bool,
+    options: TransactionOptions,
 }
 
+/// Stack transaction state.
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
     output: RefCell<termcolor::StandardStream>,
-    conflict_mode: ConflictMode,
-    discard_changes: bool,
-    use_index_and_worktree: bool,
-    set_head: bool,
-    allow_bad_head: bool,
-    use_readtree_checkout: bool,
+    options: TransactionOptions,
 
     patch_updates: BTreeMap<PatchName, Option<PatchState<'repo>>>,
     applied: Vec<PatchName>,
@@ -51,11 +92,19 @@ pub(crate) struct StackTransaction<'repo> {
     printed_top: bool,
 }
 
-pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
-
+/// Policies for whether a transaction may execute when conflicts emerge from the
+/// transactions operations.
 pub(crate) enum ConflictMode {
+    /// Transaction execution will fail if there are conflicts recorded in the index.
+    ///
+    /// This is the default.
     Disallow,
+
+    /// Transaction execution will succeed even if there are outstanding conflicts.
     Allow,
+
+    /// Transaction execution will succeed with conflicts, but only if the topmost patch
+    /// is unchanged by the transaction.
     AllowIfSameTop,
 }
 
@@ -65,40 +114,60 @@ impl Default for ConflictMode {
     }
 }
 
+/// Status of a pushed patch.
+///
+/// Pushing a patch successfully may result in one of several states. This status is
+/// used for control flow in the event of conflicts as well as to fine-tune the
+/// user-facing output of push operations.
 #[derive(Debug, PartialEq, Clone, Copy)]
 enum PushStatus {
+    /// The pushed patch is newly added to the stack.
     New,
+
+    /// The pushed patch's changes have been determined to have already been merged into
+    /// the stack's base tree.
     AlreadyMerged,
+
+    /// The push resulted in merge conflicts.
     Conflict,
+
+    /// The push resulted in the patch's diff becoming empty.
     Empty,
+
+    /// The push resulted in the patch's diff being modified.
     Modified,
+
+    /// The push resulted in the patch's diff remaining the same.
     Unmodified,
 }
 
+/// Builder for setting up transaction state and options.
 impl<'repo> TransactionBuilder<'repo> {
+    /// Create a new `TransactionBuilder` instance with default options.
     #[must_use]
     pub(crate) fn new(stack: Stack<'repo>) -> Self {
         Self {
             stack,
             output: None,
-            conflict_mode: ConflictMode::Disallow,
-            discard_changes: false,
-            use_index_and_worktree: false,
-            set_head: true,
-            allow_bad_head: false,
-            use_readtree_checkout: false,
+            options: TransactionOptions::default(),
         }
     }
 
+    /// Allow the transaction to execute if the stack's actual head (branch head commit)
+    /// does not match the head recorded in stack state. By default, the transaction
+    /// will not execute if the stack head does not match the branch head.
     #[must_use]
     pub(crate) fn allow_bad_head(mut self, allow: bool) -> Self {
-        self.allow_bad_head = allow;
+        self.options.allow_bad_head = allow;
         self
     }
 
+    /// Allow the transaction to execute even if the transaction operations result in
+    /// outstanding merge conflicts. By default, the transaction will not execute if
+    /// there are outstanding conflicts.
     #[must_use]
     pub(crate) fn allow_conflicts(mut self, allow: bool) -> Self {
-        self.conflict_mode = if allow {
+        self.options.conflict_mode = if allow {
             ConflictMode::Allow
         } else {
             ConflictMode::Disallow
@@ -106,9 +175,13 @@ impl<'repo> TransactionBuilder<'repo> {
         self
     }
 
+    /// Allow the transaction to execute even if the transaction operations result in
+    /// outstanding merge conflicts, but only if the transaction does not change the
+    /// topmost patch. By default, the transaction will not execute if there are
+    /// outstanding conflicts.
     #[must_use]
     pub(crate) fn allow_conflicts_if_same_top(mut self, allow: bool) -> Self {
-        self.conflict_mode = if allow {
+        self.options.conflict_mode = if allow {
             ConflictMode::AllowIfSameTop
         } else {
             ConflictMode::Disallow
@@ -116,36 +189,60 @@ impl<'repo> TransactionBuilder<'repo> {
         self
     }
 
+    /// Discard any modifications to files in the working tree when the transaction
+    /// executes. By default, the transaction will not execute if there are any
+    /// modified files in the working tree.
     #[must_use]
     pub(crate) fn discard_changes(mut self, discard: bool) -> Self {
-        self.discard_changes = discard;
+        self.options.discard_changes = discard;
         self
     }
 
+    /// Allow the stack transaction operations modify index and/or work tree state. This
+    /// primarily affects operations that cause patches to be pushed. When use of the
+    /// index and worktree is disallowed (the default), all pushes must apply cleanly
+    /// because any conflicts cannot be written the index and worktree.
     #[must_use]
     pub(crate) fn use_index_and_worktree(mut self, allow: bool) -> Self {
-        self.use_index_and_worktree = allow;
+        self.options.use_index_and_worktree = allow;
         self
     }
 
+    /// This is a special option only used by `stg sync`. It causes the execution-time
+    /// checkout to use `git read-tree -u` for its merge capability instead of using the
+    /// simpler/faster default checkout mechanism.
     #[must_use]
     pub(crate) fn use_readtree_checkout(mut self, use_readtree: bool) -> Self {
-        self.use_readtree_checkout = use_readtree;
+        self.options.use_readtree_checkout = use_readtree;
         self
     }
 
+    /// Set the output stream for the transaction. This method must be called.
     #[must_use]
     pub(crate) fn with_output_stream(mut self, output: termcolor::StandardStream) -> Self {
         self.output = Some(output);
         self
     }
 
+    /// Determines whether the branch and stack metadata refs should be updated when the
+    /// transaction executes succesfully. This is the default. Disabling this is only useful
+    /// in very special circumstances (e.g. for `stg uncommit`).
     #[must_use]
     pub(crate) fn set_head(mut self, yes: bool) -> Self {
-        self.set_head = yes;
+        self.options.set_head = yes;
         self
     }
 
+    /// Perform stack transaction operations.
+    ///
+    /// The closure provided to this method may call various methods on the provided
+    /// [`StackTransaction`] instance. The closure returns `Err`, any changes to the stack,
+    /// index, or work tree will be rolled-back during the subsequent execution phase.
+    ///
+    /// N.B. [`Error::TransactionHalt`] errors do not trigger rollback.
+    ///
+    /// This method must be called. It returns an [`ExecuteContext`] which must then be used
+    /// to execute the transaction by calling [`ExecuteContext::execute()`].
     #[must_use]
     pub(crate) fn transact<F>(self, f: F) -> ExecuteContext<'repo>
     where
@@ -154,12 +251,7 @@ impl<'repo> TransactionBuilder<'repo> {
         let Self {
             stack,
             output,
-            conflict_mode,
-            discard_changes,
-            use_index_and_worktree,
-            set_head,
-            allow_bad_head,
-            use_readtree_checkout,
+            options,
         } = self;
 
         let output = output.expect("with_output_stream() must be called");
@@ -173,12 +265,7 @@ impl<'repo> TransactionBuilder<'repo> {
         let mut transaction = StackTransaction {
             stack,
             output,
-            conflict_mode,
-            discard_changes,
-            use_index_and_worktree,
-            set_head,
-            allow_bad_head,
-            use_readtree_checkout,
+            options,
             patch_updates: BTreeMap::new(),
             applied,
             unapplied,
@@ -196,7 +283,19 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 }
 
+/// Context for executing a [`StackTransaction`].
+///
+/// Wraps [`StackTransaction`] to ensure [`ExecuteContext::execute()`] is called after
+/// [`TransactionBuilder::transact()`].
+pub(crate) struct ExecuteContext<'repo>(StackTransaction<'repo>);
+
 impl<'repo> ExecuteContext<'repo> {
+    /// Execute the transaction.
+    ///
+    /// If any of the transaction operations (i.e. from `transact()`) fail, the
+    /// stack, index, and worktree state will be rolled back.
+    ///
+    /// A new `Stack` instance is returned.
     pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>> {
         let mut transaction = self.0;
 
@@ -229,14 +328,14 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = transaction.stack.repo;
 
-        if transaction.set_head {
+        if transaction.options.set_head {
             let trans_head = transaction.head().clone();
 
-            if transaction.use_index_and_worktree {
+            if transaction.options.use_index_and_worktree {
                 let stack_head = transaction.stack.branch_head.clone();
                 let result = transaction.checkout(&trans_head);
                 if let Err(err) = result {
-                    transaction.allow_bad_head = true;
+                    transaction.options.allow_bad_head = true;
                     transaction.checkout(&stack_head)?;
                     return Err(Error::TransactionAborted(err.to_string()).into());
                 }
@@ -328,39 +427,41 @@ impl<'repo> ExecuteContext<'repo> {
 impl<'repo> StackTransaction<'repo> {
     fn checkout(&mut self, commit: &Commit<'_>) -> Result<()> {
         let repo = self.stack.repo;
-        if !self.allow_bad_head {
+        if !self.options.allow_bad_head {
             self.stack.check_head_top_mismatch()?;
         }
 
-        if self.current_tree_id == commit.tree_id() && !self.discard_changes {
+        if self.current_tree_id == commit.tree_id() && !self.options.discard_changes {
             return match repo.state() {
                 RepositoryState::Clean => Ok(()),
-                RepositoryState::Merge | RepositoryState::RebaseMerge => match self.conflict_mode {
-                    ConflictMode::Disallow => Err(Error::OutstandingConflicts.into()),
-                    ConflictMode::Allow => Ok(()),
-                    ConflictMode::AllowIfSameTop => {
-                        let top = self.applied.last();
-                        if top.is_some() && top == self.stack.applied().last() {
-                            Ok(())
-                        } else {
-                            Err(Error::OutstandingConflicts.into())
+                RepositoryState::Merge | RepositoryState::RebaseMerge => {
+                    match self.options.conflict_mode {
+                        ConflictMode::Disallow => Err(Error::OutstandingConflicts.into()),
+                        ConflictMode::Allow => Ok(()),
+                        ConflictMode::AllowIfSameTop => {
+                            let top = self.applied.last();
+                            if top.is_some() && top == self.stack.applied().last() {
+                                Ok(())
+                            } else {
+                                Err(Error::OutstandingConflicts.into())
+                            }
                         }
                     }
-                },
+                }
                 state => {
                     Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into())
                 }
             };
         }
 
-        if self.use_readtree_checkout {
+        if self.options.use_readtree_checkout {
             self.repo()
                 .stupid()
                 .read_tree_checkout(self.current_tree_id, commit.tree_id())
                 .map_err(|e| Error::CheckoutConflicts(e.to_string()))?;
         } else {
             let mut checkout_builder = git2::build::CheckoutBuilder::new();
-            if self.discard_changes {
+            if self.options.discard_changes {
                 checkout_builder.force();
             }
             repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
@@ -369,14 +470,17 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Get an immutable reference to the original stack.
     pub(crate) fn stack(&self) -> &Stack<'repo> {
         &self.stack
     }
 
+    /// Get a reference to the repo.
     pub(crate) fn repo(&self) -> &'repo git2::Repository {
         self.stack.repo
     }
 
+    /// Reset stack to a previous stack state.
     pub(crate) fn reset_to_state(&mut self, state: StackState<'repo>) -> Result<()> {
         for pn in self.all_patches().cloned().collect::<Vec<_>>() {
             self.patch_updates.insert(pn, None);
@@ -404,6 +508,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Reset stack to previous stack state, but only for the specified patch names.
     pub(crate) fn reset_to_state_partially<P>(
         &mut self,
         state: StackState<'repo>,
@@ -476,6 +581,10 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Update a patch with a different commit object.
+    ///
+    /// Any notes associated with the patch's previous commit are copied to the new
+    /// commit.
     pub(crate) fn update_patch(&mut self, patchname: &PatchName, commit_id: Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
@@ -491,8 +600,13 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Add new patch to the top of the stack.
+    ///
+    /// The commit for the new patch must be parented by the former top commit of the
+    /// stack.
     pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
+        assert_eq!(commit.parent_id(0).unwrap(), self.top().id());
         self.applied.push(patchname.clone());
         self.patch_updates
             .insert(patchname.clone(), Some(PatchState { commit }));
@@ -500,6 +614,9 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Add new unapplied patch to the stack.
+    ///
+    /// The new patch may be pushed to any position in the unapplied list.
     pub(crate) fn new_unapplied(
         &mut self,
         patchname: &PatchName,
@@ -514,6 +631,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Push patches, but keep their existing trees.
     pub(crate) fn push_tree_patches<P>(&mut self, patchnames: &[P]) -> Result<()>
     where
         P: AsRef<PatchName>,
@@ -525,6 +643,12 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Push patch keeping its existing tree.
+    ///
+    /// For a normal patch push, the patch's diff is applied to the topmost patch's tree
+    /// which typically results in a new tree being associated with the pushed patch's
+    /// commit. For this operation, instead of applying the pushed patch's diff to the
+    /// topmost patch's tree, the pushed patch's tree is preserved as-is.
     pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<()> {
         let patch_commit = self.get_patch_commit(patchname);
         let repo = self.stack.repo;
@@ -575,6 +699,12 @@ impl<'repo> StackTransaction<'repo> {
         self.print_pushed(patchname, push_status, is_last)
     }
 
+    /// Update patches' applied, unapplied, and hidden dispositions.
+    ///
+    /// This is used by `stg repair` to account for changes to the repository made by
+    /// StGit-unaware git tooling. All existing patchnames must be present in the
+    /// updated lists and no new patchnames may be introduced to the updated lists. I.e.
+    /// this is strictly a rearrangement of existing patches.
     pub(crate) fn repair_appliedness(
         &mut self,
         applied: Vec<PatchName>,
@@ -601,6 +731,9 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Perform push and pop operations to achieve a new stack ordering.
+    ///
+    /// The current ordering is maintained for any patch list that is not provided.
     pub(crate) fn reorder_patches(
         &mut self,
         applied: Option<&[PatchName]>,
@@ -641,6 +774,15 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    // Finalize patches to be regular Git commits.
+    //
+    // Committed patches are no longer managed by StGit, but their commit objects remain
+    // part of the regular git commit history. Committed patches are/become the base for
+    // the remaining StGit stack.
+    //
+    // If the chosen `to_commit` patches are not currently the bottommost patches in the
+    // stack, pops and pushes will be performed to move them to the bottom of the stack.
+    // This may result in merge conflicts.
     pub(crate) fn commit_patches(&mut self, to_commit: &[PatchName]) -> Result<()> {
         let num_common = self
             .applied()
@@ -673,7 +815,7 @@ impl<'repo> StackTransaction<'repo> {
         self.push_patches(&to_push, false)
     }
 
-    /// Uncommit patches from the base of the stack.
+    /// Transform regular git commits from the base of the stack into StGit patches.
     ///
     /// The (patchname, commit_id) pairs must be in application order. I.e. the furthest
     /// ancestor of the current base first and the current base last.
@@ -693,6 +835,10 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
+    /// Hide patches that are currently applied or unapplied.
+    ///
+    /// Hidden patches are not shown by default by `stg series` and are excluded from
+    /// several other operations.
     pub(crate) fn hide_patches(&mut self, to_hide: &[PatchName]) -> Result<()> {
         let applied: Vec<PatchName> = self
             .applied
@@ -715,6 +861,7 @@ impl<'repo> StackTransaction<'repo> {
         self.print_hidden(to_hide)
     }
 
+    /// Move hidden patches to the unapplied list.
     pub(crate) fn unhide_patches(&mut self, to_unhide: &[PatchName]) -> Result<()> {
         let unapplied: Vec<PatchName> = self
             .unapplied
@@ -735,6 +882,10 @@ impl<'repo> StackTransaction<'repo> {
         self.print_unhidden(to_unhide)
     }
 
+    /// Rename a patch.
+    ///
+    /// An error will be returned if either the old patchname does not exist or if the
+    /// new patchname conflicts with an existing patch.
     pub(crate) fn rename_patch(
         &mut self,
         old_patchname: &PatchName,
@@ -774,6 +925,10 @@ impl<'repo> StackTransaction<'repo> {
         self.print_rename(old_patchname, new_patchname)
     }
 
+    /// Delete one or more patches from the stack.
+    ///
+    /// Deleted patches' commits become disconnected from the regular git history and
+    /// are thus subject to eventual garbage collection.
     pub(crate) fn delete_patches<F>(&mut self, should_delete: F) -> Result<Vec<PatchName>>
     where
         F: Fn(&PatchName) -> bool,
@@ -840,6 +995,10 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
+    /// Pop applied patches, making them unapplied.
+    ///
+    /// The `should_pop` closure should return true for each patch name to be popped and
+    /// false for patches that are to remain applied.
     pub(crate) fn pop_patches<F>(&mut self, should_pop: F) -> Result<Vec<PatchName>>
     where
         F: Fn(&PatchName) -> bool,
@@ -875,6 +1034,18 @@ impl<'repo> StackTransaction<'repo> {
         Ok(incidental)
     }
 
+    /// Push unapplied patches to become applied.
+    ///
+    /// Pushing a patch may result in a merge conflict. When this occurs, a
+    /// `Error::TransactionHalt` will be returned which will cause the current
+    /// transaction to halt. This condition is not an error, per-se, so the stack state
+    /// is *not* rolled back. Instead, the conflicts will be left in the working tree
+    /// and index for the user to resolve.
+    ///
+    /// The `check_merged` option, when true, performs an extra check to determine
+    /// whether the patches' changes have already been merged into the stack's base
+    /// tree. Patches that are determined to have already been merged will still be
+    /// pushed successfully, but their diff will be empty.
     pub(crate) fn push_patches<P>(&mut self, patchnames: &[P], check_merged: bool) -> Result<()>
     where
         P: AsRef<PatchName>,
@@ -959,7 +1130,7 @@ impl<'repo> StackTransaction<'repo> {
 
             if let Some(tree_id) = maybe_tree_id {
                 tree_id
-            } else if !self.use_index_and_worktree {
+            } else if !self.options.use_index_and_worktree {
                 return Err(Error::TransactionHalt {
                     msg: format!("{} does not apply cleanly", patchname),
                     conflicts: false,
@@ -1032,7 +1203,7 @@ impl<'repo> StackTransaction<'repo> {
 
         if push_status == PushStatus::Conflict {
             // The final checkout at execute-time must allow these push conflicts.
-            self.conflict_mode = ConflictMode::Allow;
+            self.options.conflict_mode = ConflictMode::Allow;
         }
 
         if let Some(pos) = self.unapplied.iter().position(|pn| pn == patchname) {
@@ -1055,6 +1226,11 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
+    /// Find patches that have already been merged into the stack base's tree.
+    ///
+    /// The diffs for each provided patchname are applied to the stack's base tree (in
+    /// the context of the provided temp index) to determine whether the patches'
+    /// changes are already manifest in the base tree.
     fn check_merged<'a, P>(
         &self,
         patchnames: &'a [P],
