@@ -176,7 +176,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack
         .setup_transaction()
         .with_output_stream(get_color_stdout(matches))
-        .transact(|trans| trans.push_new(&patchname, commit_id))
+        .transact(|trans| trans.new_applied(&patchname, commit_id))
         .execute(&format!("new: {}", &patchname))?;
     Ok(())
 }

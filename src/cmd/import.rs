@@ -551,7 +551,7 @@ fn create_patch<'repo>(
             if opt_replace && trans.unapplied().contains(&new_patchname) {
                 trans.delete_patches(|pn| pn == &new_patchname)?;
             }
-            trans.push_new(&new_patchname, commit_id)
+            trans.new_applied(&new_patchname, commit_id)
         })
         .execute(&format!("import: {new_patchname}"))
 }

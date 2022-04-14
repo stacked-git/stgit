@@ -199,7 +199,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                     let disallow: Vec<_> = trans.all_patches().collect();
                     let patchname = PatchName::make(&message, true, patchname_len_limit)
                         .uniquify(allow, &disallow);
-                    trans.push_new(&patchname, commit.id())?;
+                    trans.new_applied(&patchname, commit.id())?;
                 }
             }
             Ok(())

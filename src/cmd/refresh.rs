@@ -191,7 +191,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = stack
         .setup_transaction()
         .with_output_stream(get_color_stdout(matches))
-        .transact(|trans| trans.push_new(&temp_patchname, temp_commit_id))
+        .transact(|trans| trans.new_applied(&temp_patchname, temp_commit_id))
         .execute(&format!(
             "refresh {} (create temporary patch)",
             &temp_patchname

@@ -491,7 +491,7 @@ impl<'repo> StackTransaction<'repo> {
         Ok(())
     }
 
-    pub(crate) fn push_new(&mut self, patchname: &PatchName, oid: Oid) -> Result<()> {
+    pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
         self.applied.push(patchname.clone());
         self.patch_updates
