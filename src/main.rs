@@ -1,3 +1,10 @@
+//! The Stacked Git (StGit) executable, `stg`.
+//!
+//! StGit is a tool for maintaining a stack of patches on top of a regular Git branch.
+//! Patches may be created (`stg new`), pushed (`stg push`), popped (`stg pop`), updated
+//! (`stg refresh`, `stg edit`), etc. before transforming them into regular git commits
+//! (using `stg commit`).
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -29,10 +36,23 @@ use clap::{crate_version, AppSettings, ArgMatches, ValueHint};
 use stupid::StupidContext;
 use termcolor::WriteColor;
 
+/// Process exit code for command line parsing errors.
 const GENERAL_ERROR: i32 = 1;
+
+/// Process exit code for errors occurring when (sub)command is executing.
 const COMMAND_ERROR: i32 = 2;
+
+/// Process exit code for when a command halts due to merge conflicts.
 const CONFLICT_ERROR: i32 = 3;
 
+/// Create base [`clap::Command`] instance.
+///
+/// The base [`clap::Command`] returned by this function is intended to be supplemented
+/// with additional setup.
+///
+/// The general strategy employed here is to only compose as much of the
+/// [`clap::Command`] graph as needed to execute the target subcommand; avoiding the
+/// cost of instantiating [`clap::Command`] instances for every StGit subcommand.
 fn get_base_app() -> clap::Command<'static> {
     clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
@@ -52,7 +72,12 @@ fn get_base_app() -> clap::Command<'static> {
         .arg(color::get_color_arg().global(true))
 }
 
-/// Just enough of an Command instance to find candidate subcommands
+/// Create [`clap::Command`] instance sufficient for finding subcommand candidates.
+///
+/// By using [`clap::Command::allow_external_subcommands()`], the command line arguments
+/// can be quickly parsed just enough to determine whether the user has providied a valid
+/// subcommand or alias, but without the cost of instantiating [`clap::Command`]
+/// instances for any of subcommands or aliases.
 fn get_bootstrap_app() -> clap::Command<'static> {
     get_base_app()
         .allow_external_subcommands(true)
@@ -68,6 +93,11 @@ fn get_bootstrap_app() -> clap::Command<'static> {
 }
 
 /// Builds on the minimal Command to compose a complete top-level Command instance.
+///
+/// This fully formed [`clap::Command`] contains sub-[`clap::Command`] instances for
+/// every StGit subcommand and alias. This flavor of [`clap::Command`] instance is
+/// useful in contexts where the global help needs to be presented to the user; i.e.
+/// when `--help` is provided or when the user specifies an invalid subcommand or alias.
 fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> clap::Command<'static> {
     get_base_app()
         .version(crate_version!())
@@ -85,6 +115,10 @@ fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> clap::Comma
         )
 }
 
+/// Main entry point for `stg` executable.
+///
+/// The name of the game is to dispatch to the appropriate subcommand or alias as
+/// quickly as possible.
 fn main() {
     let argv: Vec<OsString> = std::env::args_os().collect();
     let commands = cmd::get_commands();
@@ -179,6 +213,7 @@ fn main() {
 }
 
 /// Change the current directory based on any -C options from the top-level Command matches.
+///
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
 fn change_directories(matches: &ArgMatches) -> Result<()> {
     if let Some(paths) = matches.values_of_os("change_dir") {
@@ -190,9 +225,11 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-/// Process argv using full top-level Command instance with the expectation that argv is
-/// somehow invalid. The full Command can then output a help message with a complete view of
-/// all commands and aliases, and then terminate to process.
+/// Display the help for the fully-instantiated top-level [`clap::Command`].
+///
+/// Process argv using full top-level [`clap::Command`] instance with the expectation
+/// that argv is somehow invalid. The full command can then output a help message with a
+/// complete view of all subcommands and aliases, and then terminate to process.
 fn full_app_help(
     argv: Vec<OsString>,
     commands: cmd::Commands,
@@ -217,8 +254,11 @@ fn full_app_help(
     std::process::exit(if err.use_stderr() { GENERAL_ERROR } else { 0 })
 }
 
-/// Execute regular StGit subcommand. The particular command must have previously been
-/// matched in argv such that it is guaranteed to be matched again here.
+/// Execute regular StGit subcommand.
+///
+/// The particular command must have previously been matched in argv such that it is
+/// guaranteed to be matched again here.
+///
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (`argv[0]`).
 fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<()> {
@@ -238,8 +278,10 @@ fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<(
     }
 }
 
-/// Execute shell alias subprocess. If the child process fails, the parent process will
-/// be terminated, returning the child's return code.
+/// Execute shell alias subprocess.
+///
+/// If the child process fails, the parent process will be terminated, returning the
+/// child's return code.
 fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: &[&OsStr],
@@ -357,9 +399,12 @@ fn execute_stgit_alias(
     }
 }
 
-/// Get aliases mapping. Since aliases are defined in git config files, an attempt is
-/// made to open a repo so that its local config can be inspected along with the user
-/// global and system configs.
+/// Get aliases mapping.
+///
+/// Since aliases are defined in git config files, an attempt is made to open a repo so
+/// that its local config can be inspected along with the user global and system
+/// configs.
+///
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options being processed.
 fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2::Repository>)> {
@@ -387,6 +432,7 @@ fn punt_to_python() -> Result<()> {
     std::process::exit(status.code().unwrap_or(-1));
 }
 
+/// Print user-facing message to stderr.
 fn print_message(label: &str, label_color: termcolor::Color, matches: &ArgMatches, msg: &str) {
     let mut stderr = color::get_color_stderr(matches);
     let mut color = termcolor::ColorSpec::new();
@@ -428,14 +474,17 @@ fn print_message(label: &str, label_color: termcolor::Color, matches: &ArgMatche
     }
 }
 
+/// Print user-facing informational message to stderr.
 pub(crate) fn print_info_message(matches: &ArgMatches, msg: &str) {
     print_message("info", termcolor::Color::Blue, matches, msg)
 }
 
+/// Print user-facing warning message to stderr.
 pub(crate) fn print_warning_message(matches: &ArgMatches, msg: &str) {
     print_message("warning", termcolor::Color::Yellow, matches, msg)
 }
 
+/// Print user-facing error message to stderr.
 fn print_error_message(err: &anyhow::Error) {
     let color_choice = if atty::is(atty::Stream::Stderr) {
         termcolor::ColorChoice::Auto
@@ -483,6 +532,8 @@ fn print_error_message(err: &anyhow::Error) {
     }
 }
 
+/// Print file names with merge conflicts to stdout.
+// TODO: this should print to stderr instead.
 fn print_merge_conflicts() {
     let stupid = StupidContext::default();
     let cdup: OsString = stupid

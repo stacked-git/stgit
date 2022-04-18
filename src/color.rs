@@ -1,3 +1,5 @@
+//! Functions for handling `--color` option.
+
 use clap::{Arg, ArgMatches};
 use termcolor::{ColorChoice, StandardStream};
 
