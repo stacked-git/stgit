@@ -196,6 +196,66 @@ test_expect_success 'Spill uptree pathspec' '
     test_cmp expected-files.txt files.txt &&
     stg undo --hard
 '
+
+cat > expected-status.txt <<EOF
+ M dir0/a.txt
+M  dir0/dir1/e.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+M dir0/dir2/i.txt
+EOF
+test_expect_success 'Spill with modified worktree' '
+    echo "modification" >> dir0/a.txt &&
+    stg spill dir0/dir1 &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    stg undo --hard
+'
+
+cat > expected-status.txt <<EOF
+ M dir0/a.txt
+ M dir0/dir1/e.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+M dir0/dir2/i.txt
+EOF
+test_expect_success 'Spill and reset with modified worktree' '
+    echo "modification" >> dir0/a.txt &&
+    stg spill --reset dir0/dir1 &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    stg undo --hard
+'
+
+cat > expected-status.txt <<EOF
+ M dir0/a.txt
+MM dir0/dir1/e.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+M dir0/dir2/i.txt
+EOF
+test_expect_success 'Spill with modified spillable file' '
+    echo "modification" >> dir0/a.txt &&
+    echo "modification" >> dir0/dir1/e.txt &&
+    stg spill "dir0/dir1/e*" &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    grep "modification" dir0/dir1/e.txt &&
+    stg undo --hard
+'
+
 fi
 
 test_done
