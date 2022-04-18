@@ -1,8 +1,11 @@
+//! Patch name iterators.
+
 use std::iter::Chain;
 use std::slice::Iter;
 
 use crate::patchname::PatchName;
 
+/// Iterator over all patches (applied, unapplied, and hidden).
 pub(crate) struct AllPatches<'s>(
     Chain<Chain<Iter<'s, PatchName>, Iter<'s, PatchName>>, Iter<'s, PatchName>>,
 );
@@ -25,6 +28,8 @@ impl<'s> Iterator for AllPatches<'s> {
     }
 }
 
+/// Chained iterator over two patch lists, applied and unapplied, or unapplied and
+/// hidden.
 pub(crate) struct BothPatches<'s>(Chain<Iter<'s, PatchName>, Iter<'s, PatchName>>);
 
 impl<'s> BothPatches<'s> {

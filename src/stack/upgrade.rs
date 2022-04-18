@@ -1,3 +1,10 @@
+//! Methods for upgrading old stack state representations to the current version.
+//!
+//! The current stack state format is version 5, introduced in StGit v1.2.
+//!
+//! This module is capable of upgrading stack state version 4 to version 5. Stack state
+//! version 4 was introduced in StGit v1.0.
+
 use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Context, Result};
@@ -5,6 +12,7 @@ use anyhow::{anyhow, Context, Result};
 use super::serde::{RawPatchState, RawStackState};
 use crate::{patchname::PatchName, stack::state::StackState};
 
+/// Upgrade stack state metadata to most recent version.
 pub fn stack_upgrade(repo: &git2::Repository, branch_name: &str) -> Result<()> {
     let refname_v4 = state_refname_from_branch_name_v4(branch_name);
 
@@ -123,6 +131,7 @@ pub fn stack_upgrade(repo: &git2::Repository, branch_name: &str) -> Result<()> {
     Ok(())
 }
 
+/// Get stack state version 4 stack state reference.
 fn state_refname_from_branch_name_v4(branch_name: &str) -> String {
     format!("refs/heads/{branch_name}.stgit")
 }

@@ -85,11 +85,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut stack = Stack::from_branch(&repo, opt_branch)?;
 
     if matches.is_present("clear") {
-        let state_refname = stack.refname.clone();
-        let state = stack.state_mut();
-        state.prev = None;
-        state.commit(&repo, Some(&state_refname), "clear log")?;
-        Ok(())
+        stack.clear_state_log("clear log")
     } else {
         let pathspecs = if let Some(names) = matches.values_of("patchname") {
             let mut pathspecs = Vec::with_capacity(names.len());

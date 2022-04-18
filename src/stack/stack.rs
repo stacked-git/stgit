@@ -1,3 +1,5 @@
+//! High-level StGit stack representation.
+
 use std::collections::BTreeMap;
 use std::str::FromStr;
 
@@ -12,6 +14,10 @@ use super::{
 };
 use crate::{patchname::PatchName, repo::RepositoryExtended};
 
+/// StGit stack
+///
+/// This struct contains the underlying stack state as recorded in the git repo along
+/// with other relevant branch state.
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
@@ -23,6 +29,9 @@ pub(crate) struct Stack<'repo> {
 }
 
 impl<'repo> Stack<'repo> {
+    /// Initialize a new StGit stack on an existing Git branch.
+    ///
+    /// The branch name is optional and defaults to the current branch.
     pub(crate) fn initialize(
         repo: &'repo git2::Repository,
         branch_name: Option<&str>,
@@ -53,6 +62,14 @@ impl<'repo> Stack<'repo> {
         })
     }
 
+    /// Remove StGit stack state from the repository.
+    ///
+    /// This removes the reference to the stack state, i.e. `refs/stacks/<name>`, and
+    /// references to the stacks patches found in `refs/patches/<name>/`. StGit specific
+    /// configuration associated with the stack is also removed from the config.
+    ///
+    /// N.B. stack and patch commits that become unreferenced are subject to git's
+    /// normal periodic garbage collection.
     pub(crate) fn deinitialize(self) -> Result<()> {
         let Self {
             repo,
@@ -84,6 +101,11 @@ impl<'repo> Stack<'repo> {
         Ok(())
     }
 
+    /// Get a stack from an existing branch.
+    ///
+    /// The current branch is used if the optional branch name is not provided.
+    ///
+    /// An error will be returned if there is no StGit stack associated with the branch.
     pub fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
@@ -114,12 +136,14 @@ impl<'repo> Stack<'repo> {
         })
     }
 
+    /// Check whether the stack is marked as protected in the config.
     pub fn is_protected(&self, config: &git2::Config) -> bool {
         let name = &self.branch_name;
         let key = format!("branch.{name}.stgit.protect");
         config.get_bool(&key).unwrap_or(false)
     }
 
+    /// Set the stack's protected state in the config.
     pub fn set_protected(&self, config: &mut git2::Config, protect: bool) -> Result<()> {
         let name = &self.branch_name;
         let key = format!("branch.{name}.stgit.protect");
@@ -140,10 +164,12 @@ impl<'repo> Stack<'repo> {
         }
     }
 
+    /// Check whether the stack's recorded head matches the branch's head.
     pub fn is_head_top(&self) -> bool {
         self.state.applied.is_empty() || self.state.head.id() == self.branch_head.id()
     }
 
+    /// Return an error if the stack's recorded head differs from the branch's head.
     pub fn check_head_top_mismatch(&self) -> Result<()> {
         if self.is_head_top() {
             Ok(())
@@ -156,6 +182,7 @@ impl<'repo> Stack<'repo> {
         }
     }
 
+    /// Re-commit stack state with updated branch head.
     pub fn log_external_mods(self) -> Result<Self> {
         let state_ref = self.repo.find_reference(&self.refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
@@ -181,23 +208,38 @@ impl<'repo> Stack<'repo> {
         Ok(Self { state, ..self })
     }
 
+    /// Start a transaction to modify the stack.
     pub(crate) fn setup_transaction(self) -> TransactionBuilder<'repo> {
         TransactionBuilder::new(self)
     }
 
-    pub(crate) fn update_head(&mut self, branch: git2::Branch<'repo>, commit: git2::Commit<'repo>) {
+    /// Clear the stack state history.
+    pub(crate) fn clear_state_log(&mut self, reflog_msg: &str) -> Result<()> {
+        self.state.prev = None;
+        self.state
+            .commit(self.repo, Some(&self.refname), reflog_msg)?;
+        Ok(())
+    }
+
+    /// Update the branch and branch head commit.
+    pub(super) fn update_head(&mut self, branch: git2::Branch<'repo>, commit: git2::Commit<'repo>) {
         self.branch = branch;
         self.branch_head = commit;
     }
 
-    pub(crate) fn state_mut(&mut self) -> &mut StackState<'repo> {
+    /// Get mutable reference to the stack state.
+    pub(super) fn state_mut(&mut self) -> &mut StackState<'repo> {
         &mut self.state
     }
 
-    pub(crate) fn patch_refname(&self, patchname: &PatchName) -> String {
-        get_patch_refname(&self.branch_name, patchname.as_ref())
+    /// Get reference name for a patch.
+    pub(super) fn patch_refname(&self, patchname: &PatchName) -> String {
+        self.patch_revspec(patchname.as_ref())
     }
 
+    /// Get revision specification relative to this stack's patch reference root.
+    ///
+    /// I.e. `refs/patches/<branch>/<patch_spec>`.
     pub(crate) fn patch_revspec(&self, patch_spec: &str) -> String {
         get_patch_refname(&self.branch_name, patch_spec)
     }
@@ -241,14 +283,17 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
     }
 }
 
+/// Get reference name for StGit stack state for the given branch name.
 pub(crate) fn state_refname_from_branch_name(branch_name: &str) -> String {
     format!("refs/stacks/{branch_name}")
 }
 
+/// Get reference name for a patch in the given branch.
 fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
     format!("refs/patches/{branch_name}/{patch_spec}")
 }
 
+/// Get name of branch with custom error mapping for non-UTF8 branch names.
 pub(crate) fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
@@ -261,6 +306,13 @@ pub(crate) fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
         .to_string())
 }
 
+/// Fix-up stack's patch references.
+///
+/// Ensures that each patch in the stack has a valid patch reference and that there are
+/// no references for non-existing patches in this stack's patch ref namespace.
+///
+/// This is done when instantiating a [`Stack`] to guard against external modifications
+/// to the stack's patch refs.
 fn ensure_patch_refs<'repo>(
     repo: &'repo git2::Repository,
     branch_name: &str,

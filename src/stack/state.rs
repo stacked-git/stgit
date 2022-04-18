@@ -1,3 +1,8 @@
+//! Low-level representation of StGit Stack.
+//!
+//! This stack state representation is serialized to/from the `stack.json` blob in the
+//! stack state tree.
+
 use std::collections::BTreeMap;
 use std::io::Write;
 use std::str;
@@ -14,62 +19,116 @@ use crate::{
 
 use super::iter::{AllPatches, BothPatches};
 
+/// Stack state as recorded in the git repository.
+///
+/// This is the core state recorded-to and read-from the git repository that describes
+/// the state of a StGit stack.
 pub(crate) struct StackState<'repo> {
+    /// Commit of the previous stack state.
+    ///
+    /// Will be None for a newly initialized stack or when the stack history is cleared
+    /// (i.e. with `stg log --clear`).
     pub prev: Option<Commit<'repo>>,
+
+    /// Head commit of the stack.
+    ///
+    /// Either the topmost patch if patches are applied, or the stack base if no patches
+    /// are applied.
     pub head: Commit<'repo>,
+
+    /// List of applied patches.
     pub applied: Vec<PatchName>,
+
+    /// List of unapplied patches.
     pub unapplied: Vec<PatchName>,
+
+    /// List of hidden patches.
     pub hidden: Vec<PatchName>,
+
+    /// Mapping of patch names to their state.
     pub patches: BTreeMap<PatchName, PatchState<'repo>>,
 }
 
+/// State associated with a patch.
+///
+/// Currently the only state is a commit object.
 #[derive(Clone, Debug)]
 pub(crate) struct PatchState<'repo> {
     pub commit: Commit<'repo>,
 }
 
+/// Trait for accessing stack state.
+///
+/// Both `Stack` and `StackTransaction` implement this interface.
 pub(crate) trait StackStateAccess<'repo> {
+    /// Get slice of applied patch names.
     fn applied(&self) -> &[PatchName];
+
+    /// Get slice of unapplied patch names.
     fn unapplied(&self) -> &[PatchName];
+
+    /// Get slice of hidden patch names.
     fn hidden(&self) -> &[PatchName];
+
+    /// Get patch state for given patch name.
     fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo>;
+
+    /// Test whether given patch name exists in the stack.
     fn has_patch(&self, patchname: &PatchName) -> bool;
+
+    /// Get stack's top commit, or base if no applied patches.
     fn top(&self) -> &Commit<'repo>;
+
+    /// Get recorded head of the stack.
+    ///
+    /// N.B. this is probably not what you want. See also [`crate::stack::Stack::branch_head`].
     fn head(&self) -> &Commit<'repo>;
+
+    /// Get stack's base commit.
     fn base(&self) -> &Commit<'repo>;
 
+    /// Get the commit for the given patch name.
     fn get_patch_commit(&self, patchname: &PatchName) -> &Commit<'repo> {
         &self.get_patch(patchname).commit
     }
 
+    /// Test whether given patch name is applied.
     fn is_applied(&self, patchname: &PatchName) -> bool {
         self.applied().contains(patchname)
     }
 
+    /// Test whether given patch name is unapplied.
     fn is_unapplied(&self, patchname: &PatchName) -> bool {
         self.unapplied().contains(patchname)
     }
 
+    /// Test whether given patch name is hidden.
     fn is_hidden(&self, patchname: &PatchName) -> bool {
         self.hidden().contains(patchname)
     }
 
+    /// Iterator over all patch names: applied, unapplied, and hidden.
     fn all_patches(&self) -> AllPatches<'_> {
         AllPatches::new(self.applied(), self.unapplied(), self.hidden())
     }
 
+    /// Iterator over applied and unapplied patch names.
     fn applied_and_unapplied(&self) -> BothPatches<'_> {
         BothPatches::new(self.applied(), self.unapplied())
     }
 
+    /// Iterator over unapplied and hidden patch names.
     fn unapplied_and_hidden(&self) -> BothPatches<'_> {
         BothPatches::new(self.unapplied(), self.hidden())
     }
 }
 
+/// Maximum number of parents a stack state commit is allowed before parent commit
+/// bundles are created.
 const MAX_PARENTS: usize = 16;
 
 impl<'repo> StackState<'repo> {
+    /// Instantiate new, empty stack state.
     pub(super) fn new(head: Commit<'repo>) -> Self {
         Self {
             prev: None,
@@ -81,10 +140,12 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    /// Read and parse stack state from given state state commit.
     pub(crate) fn from_commit(repo: &'repo git2::Repository, commit: &Commit) -> Result<Self> {
         Self::from_tree(repo, &commit.tree()?)
     }
 
+    /// Read and parse stack state from given stack state tree.
     pub(super) fn from_tree(repo: &'repo git2::Repository, tree: &Tree) -> Result<Self> {
         let stack_json = tree.get_name("stack.json");
         if let Some(stack_json) = stack_json {
@@ -96,6 +157,10 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    /// Convert [`RawStackState`] to [`StackState`].
+    ///
+    /// Commit objects are looked-up from commit ids in the raw state. This may fail if
+    /// the raw state references commit ids not present in the repository.
     pub(super) fn from_raw_state(
         repo: &'repo git2::Repository,
         raw_state: RawStackState,
@@ -119,10 +184,12 @@ impl<'repo> StackState<'repo> {
         })
     }
 
+    /// Iterator over all patches.
     pub fn all_patches(&self) -> AllPatches<'_> {
         AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
+    /// Return commit of topmost patch, or stack base if no patches applied.
     pub fn top(&self) -> &Commit<'repo> {
         if let Some(patchname) = self.applied.last() {
             &self.patches[patchname].commit
@@ -131,6 +198,7 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    /// Create updated state with new head and prev commits.
     pub fn advance_head(self, new_head: Commit<'repo>, prev_state: Commit<'repo>) -> Self {
         Self {
             prev: Some(prev_state),
@@ -139,6 +207,13 @@ impl<'repo> StackState<'repo> {
         }
     }
 
+    /// Commit stack state to repository.
+    ///
+    /// The stack state content exists in a tree that is unrelated to the associated
+    /// branch's content. However, in order to ensure that unapplied and hidden patches
+    /// are not subject to garbage collection, stack state commit objects have parent
+    /// commits with tree content of the associated branch in addition to a "regular"
+    /// parent commit from the stack state branch.
     pub fn commit(
         &self,
         repo: &'repo git2::Repository,
@@ -236,6 +311,21 @@ impl<'repo> StackState<'repo> {
         Ok(commit_oid)
     }
 
+    /// Make stack state tree.
+    ///
+    /// The stack state tree contains a `stack.json` blob at the top level along with a
+    /// `patches` sub-tree which contains a blob for each patch. The `stack.json` blob
+    /// contains the operable stack state whereas the per-patch metadata blobs are
+    /// treated as write-only by StGit and most useful when running `stg log
+    /// <patchname>`.
+    ///
+    /// ```
+    /// stack.json
+    /// patches/
+    ///    <patchname1>
+    ///    <patchname2>
+    ///    ...
+    /// ```
     fn make_tree(
         &self,
         repo: &'repo git2::Repository,
@@ -271,6 +361,7 @@ impl<'repo> StackState<'repo> {
         Ok(builder.write()?)
     }
 
+    /// Make the `patches` subtree.
     fn make_patches_tree(
         &self,
         repo: &git2::Repository,
@@ -288,6 +379,11 @@ impl<'repo> StackState<'repo> {
         Ok(builder.write()?)
     }
 
+    /// Make patch metadata blob.
+    ///
+    /// The patch metadata blobs are for human consumption. The per-patch log, viewed
+    /// with `stg log <patchname>`, shows the evolution of the patch's metadata,
+    /// including its commit message.
     fn make_patch_meta(
         &self,
         repo: &git2::Repository,

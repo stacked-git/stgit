@@ -1,3 +1,5 @@
+//! Serialize and deserialize stack state to/from JSON representation.
+
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
@@ -17,11 +19,14 @@ pub(crate) struct RawStackState {
     pub patches: BTreeMap<PatchName, RawPatchState>,
 }
 
+/// Raw patch state representation.
 pub(crate) struct RawPatchState {
+    /// The commit id of the patch.
     pub oid: Oid,
 }
 
 impl RawStackState {
+    /// Deserialize stack state blob into [`RawStackState`] instance.
     pub(crate) fn from_stack_json(data: &[u8]) -> Result<Self> {
         serde_json::from_slice(data).context("derserializing stack state")
     }
