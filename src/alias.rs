@@ -1,17 +1,25 @@
+//! Support for built-in and user-defined command aliases.
+
 use std::collections::BTreeMap;
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use git2::{Config, ConfigLevel};
 
+/// Mapping of alias names to [`Alias`] structs.
 pub(crate) type Aliases = BTreeMap<String, Alias>;
 
+/// Kind of command alias: `Shell` or `StGit`.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum AliasKind {
+    /// Shell aliases are executed with the system shell (typically `bash`).
     Shell,
+
+    /// StGit aliases name/invoke builtin StGit subcommands.
     StGit,
 }
 
+/// Command alias
 #[derive(Debug)]
 pub(crate) struct Alias {
     pub kind: AliasKind,
@@ -20,6 +28,10 @@ pub(crate) struct Alias {
 }
 
 impl Alias {
+    /// Create new command alias.
+    ///
+    /// If the command string begins with '!', it will be treated as a shell alias,
+    /// otherwise it will be an alias for a StGit command.
     pub(crate) fn new(name: &str, command: &str) -> Self {
         let (kind, command) = if let Some(command) = command.strip_prefix('!') {
             (AliasKind::Shell, command.to_string())
@@ -33,6 +45,7 @@ impl Alias {
         }
     }
 
+    /// Make [`clap::Command`] for the alias.
     pub(crate) fn make(&self) -> clap::Command<'static> {
         let about = match self.kind {
             AliasKind::StGit => format!("Alias for `stg {0}`", &self.command),
@@ -52,11 +65,13 @@ impl Alias {
             )
     }
 
+    /// Split the alias' command line into words vector.
     pub(crate) fn split(&self) -> Result<Vec<String>, String> {
         split_command_line(&self.command)
     }
 }
 
+/// Generate mapping of built-in aliases.
 pub(crate) fn get_default_aliases() -> Aliases {
     let aliases: Aliases = BTreeMap::from(
         [
@@ -71,6 +86,10 @@ pub(crate) fn get_default_aliases() -> Aliases {
     aliases
 }
 
+/// Get user-defined aliases from the git configuration.
+///
+/// The `exclude` closure is intended to prevent names of builtin StGit subcommands from
+/// being shadowed by aliases.
 pub(crate) fn get_aliases<F>(config: &Config, exclude: F) -> Result<Aliases>
 where
     F: Fn(&str) -> bool,
@@ -106,6 +125,9 @@ where
     Ok(aliases)
 }
 
+/// Split command line string into words.
+///
+/// Single- and double-quoted substrings are preserved.
 fn split_command_line(line: &str) -> Result<Vec<String>, String> {
     let mut argv = Vec::new();
     let mut quote: char = '\0';
@@ -151,6 +173,7 @@ fn split_command_line(line: &str) -> Result<Vec<String>, String> {
     }
 }
 
+/// Map [`git2::ConfigLevel`] to user-facing strings.
 fn config_level_to_str(level: ConfigLevel) -> &'static str {
     match level {
         git2::ConfigLevel::ProgramData => "program data config",
