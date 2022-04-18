@@ -1,3 +1,5 @@
+//! `stg push` implementation.
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 

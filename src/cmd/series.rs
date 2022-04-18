@@ -1,3 +1,5 @@
+//! `stg series` implementation.
+
 use std::io::Write;
 
 use anyhow::Result;

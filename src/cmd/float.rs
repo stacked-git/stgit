@@ -1,3 +1,5 @@
+//! `stg float` implementation.
+
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};

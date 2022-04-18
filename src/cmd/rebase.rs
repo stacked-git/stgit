@@ -1,1 +1,1 @@
-
+//! `stg rebase` implementation.

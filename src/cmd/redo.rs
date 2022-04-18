@@ -1,3 +1,5 @@
+//! `stg redo` implementation.
+
 use anyhow::Result;
 use clap::Arg;
 

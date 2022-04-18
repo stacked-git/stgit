@@ -1,3 +1,5 @@
+//! `stg pop` implementation.
+
 use std::iter::FromIterator;
 
 use anyhow::{anyhow, Result};

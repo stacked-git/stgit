@@ -1,3 +1,5 @@
+//! `stg diff` implementation.
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches, ValueHint};
 

@@ -1,3 +1,5 @@
+//! `stg hide` implementation.
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 

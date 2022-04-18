@@ -1,1 +1,1 @@
-
+//! `stg pull` implementation.

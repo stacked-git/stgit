@@ -1,3 +1,5 @@
+//! `stg repair` implementation.
+
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use git2::Commit;

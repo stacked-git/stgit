@@ -1,3 +1,5 @@
+//! `stg clean` implementation.
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 

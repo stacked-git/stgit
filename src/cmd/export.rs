@@ -1,3 +1,5 @@
+//! `stg export` implementation.
+
 use std::{borrow::Cow, collections::HashMap, ffi::OsString, io::Write, path::Path};
 
 use anyhow::{Context, Result};

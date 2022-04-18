@@ -1,3 +1,5 @@
+//! `stg uncommit` implementation.
+
 use std::{collections::HashSet, str::FromStr};
 
 use anyhow::{anyhow, Result};

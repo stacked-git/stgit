@@ -1,3 +1,5 @@
+//! `stg new` implementation.
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 

@@ -1,3 +1,5 @@
+//! `stg branch` implementation.
+
 use std::io::Write;
 
 use anyhow::{anyhow, Context, Result};

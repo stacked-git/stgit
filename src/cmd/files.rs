@@ -1,3 +1,5 @@
+//! `stg files` implementation.
+
 use std::io::Write;
 
 use anyhow::Result;

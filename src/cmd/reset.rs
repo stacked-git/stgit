@@ -1,3 +1,5 @@
+//! `stg reset` implementation.
+
 use anyhow::{anyhow, Result};
 use clap::Arg;
 

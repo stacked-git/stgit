@@ -1,3 +1,5 @@
+//! `stg spill` implementation.
+
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;

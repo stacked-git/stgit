@@ -1,3 +1,5 @@
+//! `stg fold` implementation.
+
 use std::io::Read;
 
 use anyhow::Result;

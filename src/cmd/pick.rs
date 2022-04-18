@@ -1,3 +1,5 @@
+//! `stg pick` implementation.
+
 use std::{path::PathBuf, str::FromStr};
 
 use anyhow::{anyhow, Context, Result};

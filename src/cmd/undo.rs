@@ -1,3 +1,5 @@
+//! `stg undo` implementation.
+
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use clap::Arg;

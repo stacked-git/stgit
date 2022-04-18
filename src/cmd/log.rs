@@ -1,3 +1,5 @@
+//! `stg log` implementation.
+
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};

@@ -1,3 +1,5 @@
+//! `stg sync` implementation.
+
 use std::{ffi::OsStr, path::Path, str::FromStr};
 
 use anyhow::{anyhow, Context, Result};

@@ -1,3 +1,5 @@
+//! `stg refresh` implementation.
+
 use std::{
     path::{Path, PathBuf},
     str::FromStr,

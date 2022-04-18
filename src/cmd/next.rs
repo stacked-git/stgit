@@ -1,3 +1,5 @@
+//! `stg next` implementation.
+
 use std::io::Write;
 
 use anyhow::{anyhow, Result};

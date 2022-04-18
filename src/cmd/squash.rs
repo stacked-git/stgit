@@ -1,1 +1,1 @@
-
+//! `stg squash` implementation.

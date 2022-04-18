@@ -1,3 +1,5 @@
+//! `stg import` implementation.
+
 use std::{
     ffi::OsStr,
     io::{Read, Write},

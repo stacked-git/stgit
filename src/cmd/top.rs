@@ -1,3 +1,5 @@
+//! `stg top` implementation.
+
 use std::io::Write;
 
 use anyhow::Result;

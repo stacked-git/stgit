@@ -1,3 +1,8 @@
+//! StGit subcommand implementations.
+//!
+//! Each subcommand is in its own module. The [`get_commands()`] function generates a
+//! mapping of the subcommand names to their [`StGitCommand`] struct.
+
 use std::collections::BTreeMap;
 
 pub(crate) mod branch;
@@ -44,13 +49,22 @@ pub(crate) mod undo;
 pub(crate) mod unhide;
 pub(crate) mod version;
 
+/// Mapping of StGit subcommand name to [`StGitCommand`] struct.
 pub(crate) type Commands = BTreeMap<&'static str, StGitCommand>;
 
+/// Entry point for a StGit subcommand.
 pub(crate) struct StGitCommand {
+    /// Function pointer for making the [`clap::Command`] for the StGit subcommand.
     pub make: fn() -> clap::Command<'static>,
+
+    /// Function pointer for running the StGit subcommand.
     pub run: fn(&clap::ArgMatches) -> anyhow::Result<()>,
 }
 
+/// Generate mapping of subcommand name to [`StGitCommand`].
+///
+/// This is used in [`crate::main`] for command line argument parsing and
+/// eventual dispatch of a subcommand.
 pub(crate) fn get_commands() -> Commands {
     BTreeMap::from([
         branch::get_command(),

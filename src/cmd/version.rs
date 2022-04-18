@@ -1,3 +1,5 @@
+//! `stg version` implementation.
+
 use anyhow::Result;
 use clap::ArgMatches;
 

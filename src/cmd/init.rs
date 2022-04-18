@@ -1,3 +1,5 @@
+//! `stg init` implementation.
+
 use anyhow::Result;
 use clap::ArgMatches;
 

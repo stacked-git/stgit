@@ -1,3 +1,5 @@
+//! `stg edit` implementation.
+
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
