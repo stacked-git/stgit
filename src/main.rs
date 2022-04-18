@@ -53,8 +53,8 @@ const CONFLICT_ERROR: i32 = 3;
 /// The general strategy employed here is to only compose as much of the
 /// [`clap::Command`] graph as needed to execute the target subcommand; avoiding the
 /// cost of instantiating [`clap::Command`] instances for every StGit subcommand.
-fn get_base_app() -> clap::Command<'static> {
-    clap::Command::new("stg")
+fn get_base_app(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
+    let command = clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .global_setting(AppSettings::DeriveDisplayOrder)
         .help_expected(true)
@@ -69,7 +69,12 @@ fn get_base_app() -> clap::Command<'static> {
                 .value_name("PATH")
                 .value_hint(ValueHint::AnyPath),
         )
-        .arg(color::get_color_arg().global(true))
+        .arg(color::get_color_arg().global(true));
+    if let Some(color_choice) = color_choice {
+        command.color(color::termcolor_choice_to_clap(color_choice))
+    } else {
+        command
+    }
 }
 
 /// Create [`clap::Command`] instance sufficient for finding subcommand candidates.
@@ -78,8 +83,8 @@ fn get_base_app() -> clap::Command<'static> {
 /// can be quickly parsed just enough to determine whether the user has providied a valid
 /// subcommand or alias, but without the cost of instantiating [`clap::Command`]
 /// instances for any of subcommands or aliases.
-fn get_bootstrap_app() -> clap::Command<'static> {
-    get_base_app()
+fn get_bootstrap_app(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
+    get_base_app(color_choice)
         .allow_external_subcommands(true)
         .disable_help_flag(true)
         .disable_help_subcommand(true)
@@ -98,8 +103,12 @@ fn get_bootstrap_app() -> clap::Command<'static> {
 /// every StGit subcommand and alias. This flavor of [`clap::Command`] instance is
 /// useful in contexts where the global help needs to be presented to the user; i.e.
 /// when `--help` is provided or when the user specifies an invalid subcommand or alias.
-fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> clap::Command<'static> {
-    get_base_app()
+fn get_full_app(
+    commands: cmd::Commands,
+    aliases: alias::Aliases,
+    color_choice: Option<termcolor::ColorChoice>,
+) -> clap::Command<'static> {
+    get_base_app(color_choice)
         .version(crate_version!())
         .global_setting(AppSettings::DeriveDisplayOrder)
         .subcommand_required(true)
@@ -119,30 +128,38 @@ fn get_full_app(commands: cmd::Commands, aliases: alias::Aliases) -> clap::Comma
 ///
 /// The name of the game is to dispatch to the appropriate subcommand or alias as
 /// quickly as possible.
-fn main() {
+fn main() -> ! {
     let argv: Vec<OsString> = std::env::args_os().collect();
     let commands = cmd::get_commands();
+
+    // Chicken and egg: the --color option must be parsed from argv in order to setup
+    // clap with the desired color choice. So a simple pre-parse is performed just to
+    // get the color choice.
+    let color_choice = color::parse_color_choice(&argv);
 
     // Avoid the expense of constructing a full-blown clap::Command with all the dozens of
     // subcommands except in the few cases where that is warranted. In most cases, only
     // the Command instance of a single StGit subcommand is required.
-    let app = get_bootstrap_app();
+    let app = get_bootstrap_app(color_choice);
 
     // First, using a minimal top-level Command instance, let clap find anything that looks
     // like a subcommand name (i.e. by using AppSettings::AllowExternalSubcommands).
-    let result = if let Ok(matches) = app.try_get_matches_from(&argv) {
+    let maybe_matches = app.try_get_matches_from(&argv).ok();
+    let maybe_matches = maybe_matches.as_ref();
+
+    if let Some(matches) = maybe_matches {
         // N.B. changing directories here, early, affects which aliases will
         // ultimately be found.
-        if let Err(e) = change_directories(&matches) {
-            Err(e)
+        if let Err(e) = change_directories(matches) {
+            exit_with_result(Err(e), color_choice)
         } else if matches.is_present("help-option") {
-            full_app_help(argv, commands, None)
+            full_app_help(argv, commands, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known commands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
             // and constructing all commands' Command instances are avoided.
             if let Some(command) = commands.get(sub_name) {
-                execute_command(command, argv)
+                execute_command(command, argv, color_choice)
             } else if cmd::PYTHON_COMMANDS.contains(&sub_name) {
                 punt_to_python()
             } else {
@@ -162,11 +179,19 @@ fn main() {
                                 };
 
                             match alias.kind {
-                                alias::AliasKind::Shell => {
-                                    execute_shell_alias(alias, &user_args, maybe_repo.as_ref())
-                                }
+                                alias::AliasKind::Shell => execute_shell_alias(
+                                    alias,
+                                    &user_args,
+                                    color_choice,
+                                    maybe_repo.as_ref(),
+                                ),
                                 alias::AliasKind::StGit => execute_stgit_alias(
-                                    alias, &argv[0], &user_args, &commands, &aliases,
+                                    alias,
+                                    &argv[0],
+                                    &user_args,
+                                    color_choice,
+                                    &commands,
+                                    &aliases,
                                 ),
                             }
                         } else {
@@ -176,26 +201,28 @@ fn main() {
                             // command and alias. The command line is then re-processed
                             // by this full-blown Command instance which is expected to
                             // terminate with an appropriate help message.
-                            full_app_help(argv, commands, Some(aliases))
+                            full_app_help(argv, commands, Some(aliases), color_choice)
                         }
                     }
-                    Err(e) => Err(e),
+                    Err(e) => exit_with_result(Err(e), color_choice),
                 }
             }
         } else {
-            full_app_help(argv, commands, None)
+            full_app_help(argv, commands, None, color_choice)
         }
     } else {
         // -C options not processed in this branch. This is okay because clap's error
         // message will not include aliases (which depend on -C) anyway.
-        full_app_help(argv, commands, None)
-    };
+        full_app_help(argv, commands, None, color_choice)
+    }
+}
 
+fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorChoice>) -> ! {
     let code = match result {
         Ok(()) => 0,
         Err(e) => {
-            print_error_message(&e);
-            let code = match e.downcast_ref::<stack::Error>() {
+            print_error_message(color_choice, &e);
+            match e.downcast_ref::<stack::Error>() {
                 Some(stack::Error::TransactionHalt { conflicts, .. }) => {
                     if *conflicts {
                         print_merge_conflicts();
@@ -205,11 +232,10 @@ fn main() {
                 Some(stack::Error::CheckoutConflicts(_)) => CONFLICT_ERROR,
                 Some(stack::Error::FoldConflicts(_)) => CONFLICT_ERROR,
                 _ => COMMAND_ERROR,
-            };
-            code
+            }
         }
     };
-    std::process::exit(code);
+    std::process::exit(code)
 }
 
 /// Change the current directory based on any -C options from the top-level Command matches.
@@ -234,20 +260,21 @@ fn full_app_help(
     argv: Vec<OsString>,
     commands: cmd::Commands,
     aliases: Option<alias::Aliases>,
-) -> Result<()> {
+    color_choice: Option<termcolor::ColorChoice>,
+) -> ! {
     let aliases = if let Some(aliases) = aliases {
         aliases
     } else {
         match get_aliases(&commands) {
             Ok((aliases, _)) => aliases,
-            Err(e) => return Err(e),
+            Err(e) => exit_with_result(Err(e), color_choice),
         }
     };
 
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    let err = get_full_app(commands, aliases)
+    let err = get_full_app(commands, aliases, color_choice)
         .try_get_matches_from(&argv)
         .expect_err("command line should not have viable matches");
     err.print().expect("failed to print clap error");
@@ -261,14 +288,18 @@ fn full_app_help(
 ///
 /// N.B. a new top-level app instance is created to ensure that help messages are
 /// formatted using the correct executable path (`argv[0]`).
-fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<()> {
-    let top_app = get_base_app().subcommand((command.make)());
+fn execute_command(
+    command: &cmd::StGitCommand,
+    argv: Vec<OsString>,
+    color_choice: Option<termcolor::ColorChoice>,
+) -> ! {
+    let top_app = get_base_app(color_choice).subcommand((command.make)());
     match top_app.try_get_matches_from(argv) {
         Ok(top_matches) => {
             let (_, cmd_matches) = top_matches
                 .subcommand()
                 .expect("this command is ensured to be the only subcommand");
-            (command.run)(cmd_matches)
+            exit_with_result((command.run)(cmd_matches), color_choice)
         }
 
         Err(err) => {
@@ -285,8 +316,9 @@ fn execute_command(command: &cmd::StGitCommand, argv: Vec<OsString>) -> Result<(
 fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: &[&OsStr],
+    color_choice: Option<termcolor::ColorChoice>,
     repo: Option<&git2::Repository>,
-) -> Result<()> {
+) -> ! {
     if let Some(first_arg) = user_args.get(0) {
         if ["-h", "--help"].contains(&first_arg.to_str().unwrap_or("")) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
@@ -343,16 +375,14 @@ fn execute_shell_alias(
         }
     }
 
-    let status = command.status().with_context(|| {
+    match command.status().with_context(|| {
         format!(
             "while expanding shell alias `{}`: `{}`",
             alias.name, alias.command
         )
-    })?;
-    if status.success() {
-        Ok(())
-    } else {
-        std::process::exit(status.code().unwrap_or(-1));
+    }) {
+        Ok(status) => std::process::exit(status.code().unwrap_or(-1)),
+        Err(e) => exit_with_result(Err(e), color_choice),
     }
 }
 
@@ -361,10 +391,11 @@ fn execute_stgit_alias(
     alias: &alias::Alias,
     exec_path: &OsString,
     user_args: &[&OsStr],
+    color_choice: Option<termcolor::ColorChoice>,
     commands: &cmd::Commands,
     aliases: &alias::Aliases,
-) -> Result<()> {
-    match alias.split() {
+) -> ! {
+    let result = match alias.split() {
         Ok(alias_args) => {
             let mut new_argv: Vec<OsString> =
                 Vec::with_capacity(1 + alias_args.len() + user_args.len());
@@ -384,7 +415,7 @@ fn execute_stgit_alias(
             }
 
             if let Some(command) = commands.get(resolved_cmd_name) {
-                execute_command(command, new_argv)
+                execute_command(command, new_argv, color_choice)
             } else if aliases.contains_key(resolved_cmd_name) {
                 Err(anyhow!("recursive alias `{}`", alias.name))
             } else {
@@ -396,7 +427,9 @@ fn execute_stgit_alias(
             }
         }
         Err(reason) => Err(anyhow!("bad alias for `{}`: {}", alias.name, reason)),
-    }
+    };
+
+    exit_with_result(result, color_choice)
 }
 
 /// Get aliases mapping.
@@ -423,18 +456,25 @@ fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2:
         .map(|aliases| (aliases, maybe_repo))
 }
 
-fn punt_to_python() -> Result<()> {
-    let status = std::process::Command::new("python")
+fn punt_to_python() -> ! {
+    match std::process::Command::new("python")
         .args(["-m", "stgit"])
         .args(std::env::args_os().skip(1))
         .status()
-        .context("failed to run python")?;
-    std::process::exit(status.code().unwrap_or(-1));
+        .context("failed to run python")
+    {
+        Ok(status) => std::process::exit(status.code().unwrap_or(-1)),
+        Err(e) => exit_with_result(Err(e), None),
+    }
 }
 
 /// Print user-facing message to stderr.
-fn print_message(label: &str, label_color: termcolor::Color, matches: &ArgMatches, msg: &str) {
-    let mut stderr = color::get_color_stderr(matches);
+fn print_message(
+    label: &str,
+    label_color: termcolor::Color,
+    stderr: &mut termcolor::StandardStream,
+    msg: &str,
+) {
     let mut color = termcolor::ColorSpec::new();
     stderr
         .set_color(color.set_fg(Some(label_color)).set_bold(true))
@@ -476,60 +516,28 @@ fn print_message(label: &str, label_color: termcolor::Color, matches: &ArgMatche
 
 /// Print user-facing informational message to stderr.
 pub(crate) fn print_info_message(matches: &ArgMatches, msg: &str) {
-    print_message("info", termcolor::Color::Blue, matches, msg)
+    let mut stderr = color::get_color_stderr(matches);
+    print_message("info", termcolor::Color::Blue, &mut stderr, msg)
 }
 
 /// Print user-facing warning message to stderr.
 pub(crate) fn print_warning_message(matches: &ArgMatches, msg: &str) {
-    print_message("warning", termcolor::Color::Yellow, matches, msg)
+    let mut stderr = color::get_color_stderr(matches);
+    print_message("warning", termcolor::Color::Yellow, &mut stderr, msg)
 }
 
 /// Print user-facing error message to stderr.
-fn print_error_message(err: &anyhow::Error) {
-    let color_choice = if atty::is(atty::Stream::Stderr) {
-        termcolor::ColorChoice::Auto
-    } else {
-        termcolor::ColorChoice::Never
-    };
-    let mut stderr = termcolor::StandardStream::stderr(color_choice);
-    let mut color = termcolor::ColorSpec::new();
-    stderr
-        .set_color(color.set_fg(Some(termcolor::Color::Red)).set_bold(true))
-        .unwrap();
-    write!(stderr, "error: ").unwrap();
-    stderr
-        .set_color(color.set_fg(None).set_bold(false))
-        .unwrap();
-    let err_string = format!("{:#}", err);
-    let mut remainder: &str = &err_string;
-    loop {
-        let parts: Vec<&str> = remainder.splitn(3, '`').collect();
-        match parts.len() {
-            0 => {
-                writeln!(stderr).unwrap();
-                break;
-            }
-            1 => {
-                writeln!(stderr, "{}", parts[0]).unwrap();
-                break;
-            }
-            2 => {
-                writeln!(stderr, "{}`{}", parts[0], parts[1]).unwrap();
-                break;
-            }
-            3 => {
-                write!(stderr, "{}`", parts[0]).unwrap();
-                stderr
-                    .set_color(color.set_fg(Some(termcolor::Color::Yellow)))
-                    .unwrap();
-                write!(stderr, "{}", parts[1]).unwrap();
-                stderr.set_color(color.set_fg(None)).unwrap();
-                write!(stderr, "`").unwrap();
-                remainder = parts[2];
-            }
-            _ => panic!("unhandled split len"),
+fn print_error_message(color_choice: Option<termcolor::ColorChoice>, err: &anyhow::Error) {
+    let color_choice = color_choice.unwrap_or_else(|| {
+        if atty::is(atty::Stream::Stderr) {
+            termcolor::ColorChoice::Auto
+        } else {
+            termcolor::ColorChoice::Never
         }
-    }
+    });
+    let mut stderr = termcolor::StandardStream::stderr(color_choice);
+    let err_string = format!("{:#}", err);
+    print_message("error", termcolor::Color::Red, &mut stderr, &err_string)
 }
 
 /// Print file names with merge conflicts to stdout.
