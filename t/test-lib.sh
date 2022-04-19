@@ -1324,6 +1324,8 @@ case $uname_s in
 	;;
 esac
 
+test -z "$NO_PERL" && test_set_prereq PERL
+
 test_lazy_prereq QUILT '
 	# test whether quilt is installed
 	quilt --version 2>/dev/null >/dev/null
