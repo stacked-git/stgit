@@ -1,3 +1,9 @@
+//! Uniform patch editing for various StGit commands.
+//!
+//! This module defines a uniform set of command line options for patch editing that are
+//! common to several StGit commands. The [`EditBuilder`] struct is the common interface
+//! for executing patch edits based on the user-provided patch editing options.
+
 mod description;
 mod interactive;
 mod trailers;
@@ -23,12 +29,13 @@ use crate::{
 use description::{DiffBuffer, PatchDescription};
 use interactive::edit_interactive;
 
+/// Add patch editing options to a StGit command.
 pub(crate) fn add_args(
-    app: clap::Command,
+    command: clap::Command,
     add_message_opts: bool,
     add_save_template: bool,
 ) -> clap::Command {
-    let app = app
+    let command = command
         .next_help_heading("PATCH EDIT OPTIONS")
         .arg(
             Arg::new("edit")
@@ -42,59 +49,65 @@ pub(crate) fn add_args(
                 .short('d')
                 .help("Show diff when editing patch description"),
         );
-    let app = if add_message_opts {
-        app.arg(
-            Arg::new("message")
-                .long("message")
-                .short('m')
-                .help("Use message for patch")
-                .long_help("Use message instead of invoking the editor")
-                .value_name("message")
-                .takes_value(true)
-                .allow_invalid_utf8(false)
-                .forbid_empty_values(false)
-                .value_hint(ValueHint::Other)
-                .conflicts_with("file"),
-        )
-        .arg(
-            Arg::new("file")
-                .long("file")
-                .short('f')
-                .help("Get message from file")
-                .long_help(
-                    "Use the contents of file instead of invoking the editor. \
+    let command = if add_message_opts {
+        command
+            .arg(
+                Arg::new("message")
+                    .long("message")
+                    .short('m')
+                    .help("Use message for patch")
+                    .long_help("Use message instead of invoking the editor")
+                    .value_name("message")
+                    .takes_value(true)
+                    .allow_invalid_utf8(false)
+                    .forbid_empty_values(false)
+                    .value_hint(ValueHint::Other)
+                    .conflicts_with("file"),
+            )
+            .arg(
+                Arg::new("file")
+                    .long("file")
+                    .short('f')
+                    .help("Get message from file")
+                    .long_help(
+                        "Use the contents of file instead of invoking the editor. \
                      Use \"-\" to read from stdin.",
-                )
-                .value_name("path")
-                .takes_value(true)
-                .forbid_empty_values(true)
-                .allow_invalid_utf8(true)
-                .value_hint(ValueHint::FilePath),
-        )
+                    )
+                    .value_name("path")
+                    .takes_value(true)
+                    .forbid_empty_values(true)
+                    .allow_invalid_utf8(true)
+                    .value_hint(ValueHint::FilePath),
+            )
     } else {
-        app.arg(
-            Arg::new("message")
-                .long("message")
-                .help("Not a valid option for this command")
-                .hide(true)
-                .value_name("message")
-                .validator(|_| -> std::result::Result<(), String> {
-                    Err("--message is not a valid option for this command".to_string())
-                }),
-        )
-        .arg(
-            Arg::new("file")
-                .long("file")
-                .help("Not a valid option for this command")
-                .hide(true)
-                .value_name("path")
-                .takes_value(true)
-                .validator(|_| -> std::result::Result<(), String> {
-                    Err("--file is not a valid option for this command".to_string())
-                }),
-        )
+        // These dummy/hidden --message and --file arguments are added to allow the
+        // ArgMatches to be dynamically interrogated. If these args weren't defined,
+        // then testing their presence, e.g. with ArgMatches.value_of() or
+        // ArgMatches.is_present(), would cause a panic.
+        command
+            .arg(
+                Arg::new("message")
+                    .long("message")
+                    .help("Not a valid option for this command")
+                    .hide(true)
+                    .value_name("message")
+                    .validator(|_| -> std::result::Result<(), String> {
+                        Err("--message is not a valid option for this command".to_string())
+                    }),
+            )
+            .arg(
+                Arg::new("file")
+                    .long("file")
+                    .help("Not a valid option for this command")
+                    .hide(true)
+                    .value_name("path")
+                    .takes_value(true)
+                    .validator(|_| -> std::result::Result<(), String> {
+                        Err("--file is not a valid option for this command".to_string())
+                    }),
+            )
     };
-    let app = app
+    let command = command
         .arg(
             Arg::new("no-verify")
                 .long("no-verify")
@@ -229,7 +242,7 @@ pub(crate) fn add_args(
                 .value_hint(ValueHint::Other),
         );
     if add_save_template {
-        app.arg(
+        command.arg(
             Arg::new("save-template")
                 .long("save-template")
                 .help("Save the patch description to FILE and exit")
@@ -249,18 +262,28 @@ pub(crate) fn add_args(
                 .conflicts_with_all(&["message", "file"]),
         )
     } else {
-        app
+        command
     }
 }
 
+/// Outcome from an interactive edit initiated with [`EditBuilder::edit()`].
 pub(crate) enum EditOutcome {
+    /// Variant indicating that the patch edit template was saved.
     TemplateSaved(OsString),
+
+    /// Variant indicating the patch was successfully edited.
     Committed {
+        /// Name of the edited patch.
+        ///
+        /// This could be a new name if the user changed it during interactive edit.
         patchname: PatchName,
+
+        /// New commit id of the edited patch.
         commit_id: git2::Oid,
     },
 }
 
+/// Overlay of patch metadata on top of existing/original metadata.
 #[derive(Default)]
 struct Overlay {
     pub(crate) author: Option<git2::Signature<'static>>,
@@ -269,6 +292,10 @@ struct Overlay {
     pub(crate) parent_id: Option<git2::Oid>,
 }
 
+/// Setup and execute a patch edit session.
+///
+/// A number of methods allow command-specific tuning of the edit behavior. The
+/// [`EditBuilder::edit()`] method performs the actual edit.
 #[derive(Default)]
 pub(crate) struct EditBuilder<'a, 'repo> {
     original_patchname: Option<PatchName>,
@@ -280,51 +307,101 @@ pub(crate) struct EditBuilder<'a, 'repo> {
 }
 
 impl<'a, 'repo> EditBuilder<'a, 'repo> {
+    /// Set whether the user is allowed/instructed to edit the diff content.
+    ///
+    /// When true, if the user makes any modifications to the diff content in an
+    /// interactive patch edit, the updated diff is attempted to be applied and,
+    /// if successful, the patch commit is updated accordingly.
+    ///
+    /// When this is false, any modifications the user makes to the diff content in an
+    /// interactive patch edit are ignored.
     pub(crate) fn allow_diff_edit(mut self, allow: bool) -> Self {
         self.allow_diff_edit = allow;
         self
     }
 
+    /// Set whether interactive patch edit may be triggered implicitly.
+    ///
+    /// When set to true, implicit interactive edit is triggered by the *absence* of any
+    /// specific patch modification options. This is useful for `stg edit` and `stg new`
+    /// where those commands imply the patch metadata needs to be edited unless the user
+    /// provides patch metadata details via command line options.
     pub(crate) fn allow_implicit_edit(mut self, allow: bool) -> Self {
         self.allow_implicit_edit = allow;
         self
     }
 
+    /// Set whether the patch edit template save feature may be used.
+    ///
+    /// This option *must match* the `add_save_template` argument passed to
+    /// [`add_args()`], otherwise a panic will occur.
     pub(crate) fn allow_template_save(mut self, allow: bool) -> Self {
         self.allow_template_save = allow;
         self
     }
 
+    /// Set the original patch name, if applicable.
+    ///
+    /// The original patchname will be presented to the user in the patch edit template
+    /// when doing interactive edit.
     pub(crate) fn original_patchname(mut self, patchname: Option<&PatchName>) -> Self {
         self.original_patchname = patchname.cloned();
         self
     }
 
+    /// The commit of the existing patch, if applicable.
     pub(crate) fn existing_patch_commit(mut self, commit: &'a git2::Commit<'repo>) -> Self {
         self.patch_commit = Some(commit);
         self
     }
 
+    /// Set the default patch author.
+    ///
+    /// Setting the default author is applicable for new patches. For existing patches,
+    /// the existing patch's author is used/preserved.
     pub(crate) fn default_author(mut self, author: git2::Signature<'static>) -> Self {
         self.overlay.author = Some(author);
         self
     }
 
+    /// Set the default message for the patch.
+    ///
+    /// This is useful for `stg import` where the imported patch may have a message from
+    /// the source email or patch file.
     pub(crate) fn default_message(mut self, message: String) -> Self {
         self.overlay.message = Some(message);
         self
     }
 
+    /// Set a tree id to override the tree id from the existing patch commit.
+    ///
+    /// This is needed for commands that modify a patch's tree in addition to exposing
+    /// patch edit options to the user.
     pub(crate) fn override_tree_id(mut self, tree_id: git2::Oid) -> Self {
         self.overlay.tree_id = Some(tree_id);
         self
     }
 
+    /// Set the parent commit id for the patch.
+    ///
+    /// This is needed for newly created patches that do not have an existing patch
+    /// commit.
     pub(crate) fn override_parent_id(mut self, parent_id: git2::Oid) -> Self {
         self.overlay.parent_id = Some(parent_id);
         self
     }
 
+    /// Perform the patch edits.
+    ///
+    /// The provided `matches` must come from a [`clap::Command`] that was setup with
+    /// [`add_args()`].
+    ///
+    /// An interactive edit session may or may not be triggered depending on the
+    /// user-provided options and command-specific setup.
+    ///
+    /// A successful [`EditOutcome`] means that either the `--save-template` option was used
+    /// and the template was saved, or that the patch was edited successfully in which case
+    /// potentially new patch commit and patch name are returned.
     pub(crate) fn edit(
         self,
         stack_state: &impl StackStateAccess<'repo>,
@@ -381,7 +458,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             //
             // The approach here is to try to get the author signature from
             // whereever possible *before* even trying to inspect/decode the author
-            // from the existing patch commit. I.e. it will be an error of the
+            // from the existing patch commit. I.e. it will be an error if the
             // existing patch commit's author is broken, but only if the author
             // signature has to be derived from that commit.
             let patch_commit = patch_commit.expect("existing patch or author overlay is required");

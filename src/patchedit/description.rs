@@ -1,3 +1,5 @@
+//! Interactively editable patch description format.
+
 use std::io::Write;
 
 use anyhow::{anyhow, Context, Result};
@@ -16,17 +18,49 @@ impl AsRef<[u8]> for DiffBuffer {
     }
 }
 
+/// Patch details presented to user when interactively editing a patch.
+///
+/// After the user edits the patch description file, the details are also read back into
+/// this struct.
 #[derive(Default)]
 pub(crate) struct PatchDescription {
+    /// Patch name.
+    ///
+    /// Should be the original or default patch name when setting up an interactive
+    /// edit, but may be `None` after interative edit (i.e. if the user removes the name
+    /// or the entire `Patch:` header).
     pub patchname: Option<PatchName>,
+
+    /// Patch author.
+    ///
+    /// Should be setup with the existing or default author. May be `None` after
+    /// interactive edit if the user removes the `Author:` header.
     pub author: Option<git2::Signature<'static>>,
+
+    /// Patch commit message.
+    ///
+    /// May be blank/empty before and/or after edit.
     pub message: String,
+
+    /// Instruction string presented to the user in the editable patch description file.
+    ///
+    /// Will be `None` when the description is read-back after user edits.
     pub instruction: Option<&'static str>,
+
+    /// Instructions for user regarding what can/cannot be done with the diff.
+    ///
+    /// This instruction is only needed/presented when the optional diff is provided.
+    /// This field will be `None` when the description is read-back after user edits.
     pub diff_instruction: Option<&'static str>,
+
+    /// Optional diff to present to the user in the editable patch description.
+    ///
+    /// Unlike all the other fields, the diff *does not* have to be valid UTF-8.
     pub diff: Option<DiffBuffer>,
 }
 
 impl PatchDescription {
+    /// Write user-editable patch description to the provided stream.
     pub(crate) fn write<S: Write>(&self, stream: &mut S) -> Result<()> {
         let patchname = if let Some(patchname) = &self.patchname {
             patchname.as_ref()
@@ -66,6 +100,20 @@ impl PatchDescription {
 impl TryFrom<&[u8]> for PatchDescription {
     type Error = anyhow::Error;
 
+    /// Attempt to parse user-edited patch description.
+    ///
+    /// Any lines starting with '#' are treated as comments and discarded.
+    ///
+    /// The string "---" present on a line by itself separates the headers and message
+    /// from the diff content.
+    ///
+    /// The "Patch", "Author", and "Date" headers, if present, must be the first three
+    /// lines of the message. This rigidity is done to allow the message, which follows
+    /// these headers, to potentially contain strings such as "Patch:".
+    ///
+    /// If all headers are absent and the trimmed message is empty, an error is
+    /// returned. Blanking-out the headers and message is thus a mechanism for the user
+    /// to abort the interactive edit.
     fn try_from(buf: &[u8]) -> Result<Self, Self::Error> {
         let mut raw_patchname: Option<String> = None;
         let mut raw_author: Option<String> = None;

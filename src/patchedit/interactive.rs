@@ -1,3 +1,5 @@
+//! Functions for conducting interactive patch edit session.
+
 use std::ffi::OsString;
 use std::fs::File;
 use std::io::{BufWriter, Write};
@@ -23,8 +25,13 @@ pub(crate) static EDIT_INSTRUCTION_READ_ONLY_DIFF: &str =
 
 pub(crate) static EDIT_INSTRUCTION_EDITABLE_DIFF: &str = "# The diff below may be edited.\n";
 
+/// Default file name for interactively editable patch description.
 static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
 
+/// Conduct interactive patch edit session.
+///
+/// The patch description is written to a file, the user's editor of choice is invoked,
+/// and the modified description is read-back and parsed.
 pub(crate) fn edit_interactive(
     patch_desc: &PatchDescription,
     config: &git2::Config,
@@ -49,6 +56,9 @@ pub(crate) fn edit_interactive(
 //     Ok(())
 // }
 
+/// Make determination about whether terminal is dumb.
+///
+/// Dumb terminals do not allow moving the cursor backwards.
 fn is_terminal_dumb() -> bool {
     if let Some(value) = std::env::var_os("TERM") {
         value == *"dumb"
@@ -57,6 +67,9 @@ fn is_terminal_dumb() -> bool {
     }
 }
 
+/// Run the user's editor to edit the file at `path`.
+///
+/// Upon successfully reading back the file's content, the file is deleted.
 fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>> {
     let editor = get_editor(config);
 
@@ -105,12 +118,12 @@ fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>
         }
     }
 
-    // TODO call editor.
     let buf = std::fs::read(&path)?;
     std::fs::remove_file(&path)?;
     Ok(buf)
 }
 
+/// Determine user's editor of choice based on config and environment.
 fn get_editor(config: &git2::Config) -> OsString {
     if let Some(editor) = std::env::var_os("GIT_EDITOR") {
         editor

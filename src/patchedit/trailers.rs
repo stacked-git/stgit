@@ -1,9 +1,15 @@
+//! Add trailers to a commit message.
+
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
 use git2::Repository;
 
 use crate::{commit::CommitMessage, stupid::Stupid};
 
+/// Add trailers to commit message based on user-provided command line options.
+///
+/// The `matches` provided to this function must be from a [`clap::Command`] that was
+/// setup with [`super::add_args`].
 pub(crate) fn add_trailers<'a>(
     repo: &Repository,
     message: CommitMessage<'a>,
