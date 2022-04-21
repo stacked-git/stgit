@@ -1,9 +1,34 @@
+//! Extended capabilities for commits beyond those provided by [`git2`].
+
 use std::borrow::Cow;
 
 use anyhow::{anyhow, Result};
 
 use crate::stupid::Stupid;
 
+/// Enum for handling commit messages in various forms.
+///
+/// Git does not enforce commit message encodings. Although commit messages are
+/// typically UTF-8 encoded, git permits any "extended ASCII" encoding. Furthermore,
+/// while commit objects may have an optional encoding header that specifies the commit
+/// message encoding, that header is not always present or correct in commits found in
+/// the wild. And yet another layer of complication emerges due to [`git2`] (and the
+/// underlying `libgit2`) not having any capability of its own to decode, encode, or
+/// reencode commit messages. With [`git2`], it entirely up to the application to make
+/// sense of the raw commit message bytes when any non-UTF-8 encoding comes into play.
+///
+/// StGit aims to always create commit objects will correct/correctly-identified
+/// encodings. In the easy cases, UTF-8 encoded commit messages map cleanly to/from Rust
+/// `str`s and `String`s. But there remain several edge and otherwise not so easy cases
+/// to accommodate, including:
+///
+/// - Decoding commit messages with explicit non-UTF-8 encodings.
+/// - Decoding commit messages that are neither valid UTF-8 nor have an explicit
+///   encoding.
+/// - Encoding commit messages based on the user's `i18n.commitEncoding` configuration.
+///
+/// This enum's `&str`, [`String`], and raw byte slice (`&[u8]`) variants are meant to
+/// cover all relevant commit message forms to handle both easy and not-so-easy cases.
 pub(crate) enum CommitMessage<'a> {
     Str(&'a str),
     String(String),
@@ -14,6 +39,10 @@ pub(crate) enum CommitMessage<'a> {
 }
 
 impl<'a> CommitMessage<'a> {
+    /// Determine whether the commit message has any content.
+    ///
+    /// For the [`CommitMessage::Raw`] variant, emptiness is determined simply by
+    /// the presence or absensce of bytes, independent of the nominal encoding.
     pub(crate) fn is_empty(&self) -> bool {
         match self {
             CommitMessage::Str(s) => s.is_empty(),
@@ -22,6 +51,7 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
+    /// Get the commit message's [`encoding_rs::Encoding`].
     pub(crate) fn encoding(&self) -> Result<&'static encoding_rs::Encoding> {
         match self {
             Self::Str(_) => Ok(encoding_rs::UTF_8),
@@ -49,6 +79,7 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
+    /// Decode commit message to Rust-native UTF-8 [`str`].
     pub(crate) fn decode(&'a self) -> Result<Cow<'a, str>> {
         match self {
             Self::Str(s) => Ok(Cow::Borrowed(s)),
@@ -69,6 +100,17 @@ impl<'a> CommitMessage<'a> {
         }
     }
 
+    /// Encode commit message with target encoding.
+    ///
+    /// If the provided `target_encoding` is `None`, UTF-8 is used.
+    ///
+    /// In cases where the current encoding matches the target encoding, no decoding or
+    /// encoding is actually performed. This both saves compute cycles and, perhaps more
+    /// importantly, may allow commit objects with mal-encoded messages to be handled by
+    /// StGit as long as no modifications to the message are required. In other words,
+    /// by deferring/avoiding decoding/recoding commit messages, StGit may be able to
+    /// get its job done without realizing underlying encoding errors in commits it has
+    /// to deal with.
     pub(crate) fn encode_with(
         &'a self,
         target_encoding: Option<&'static encoding_rs::Encoding>,
@@ -185,6 +227,7 @@ impl<'a> CommitMessage<'a> {
     //     self.encode_with(target_encoding)
     // }
 
+    /// Get commit message as raw byte slice in the message's nominal encoding.
     pub(crate) fn raw_bytes(&self) -> &[u8] {
         match self {
             Self::Str(s) => s.as_bytes(),
@@ -218,13 +261,8 @@ impl<'a> PartialEq for CommitMessage<'a> {
     }
 }
 
+/// Extension trait for [`git2::Commit`].
 pub(crate) trait CommitExtended<'a> {
-    fn author_strict(&self) -> Result<git2::Signature<'static>>;
-    fn committer_strict(&self) -> Result<git2::Signature<'static>>;
-    fn message_ex(&self) -> CommitMessage;
-}
-
-impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     /// Get author signature, strictly.
     ///
     /// The author signature, in an arbitrary git commit object, may (should? must?) be
@@ -237,6 +275,18 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     /// This method takes into account the commit's encoding and attempts to decode the
     /// author name and email into UTF-8. The signature returned by this method is
     /// guaranteed to have valid UTF-8 name and email strs.
+    fn author_strict(&self) -> Result<git2::Signature<'static>>;
+
+    /// Get committer signature, strictly.
+    ///
+    /// See [`CommitExtended::author_strict()`].
+    fn committer_strict(&self) -> Result<git2::Signature<'static>>;
+
+    /// Get commit message with extended capabilities.
+    fn message_ex(&self) -> CommitMessage;
+}
+
+impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     fn author_strict(&self) -> Result<git2::Signature<'static>> {
         let sig = self.author();
         let encoding = if let Some(encoding_name) = self.message_encoding() {
@@ -274,7 +324,6 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
         }
     }
 
-    /// Get committer signature, strictly.
     fn committer_strict(&self) -> Result<git2::Signature<'static>> {
         let sig = self.committer();
         let encoding = if let Some(encoding_name) = self.message_encoding() {
@@ -324,12 +373,23 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
     }
 }
 
+/// Options for creating a git commit object.
 pub(crate) struct CommitOptions<'a> {
+    /// The target encoding for the commit message.
     pub(crate) commit_encoding: Option<&'a str>,
+
+    /// Determine whether the commit object should be signed with GPG.
     pub(crate) gpgsign: bool,
 }
 
+/// Extended commit making beyond what [`git2::Repository::commit()`] provides.
 pub(crate) trait RepositoryCommitExtended {
+    /// Create a new commit object in the repository, with extended features.
+    ///
+    /// The extended features versus [`git2::Repository::commit()`] include:
+    ///
+    /// - Respecting `i18n.commitEncoding` for commit messages.
+    /// - Respecting `commit.gpgSign` and creating signed commits when enabled.
     fn commit_ex(
         &self,
         author: &git2::Signature,
@@ -339,6 +399,10 @@ pub(crate) trait RepositoryCommitExtended {
         parent_ids: impl IntoIterator<Item = git2::Oid>,
     ) -> Result<git2::Oid>;
 
+    /// Create a new commit object in the repository.
+    ///
+    /// The provided [`CommitOptions`] gives finer-grained control versus
+    /// [`RepositoryCommitExtended::commit_ex()`].
     fn commit_with_options(
         &self,
         author: &git2::Signature,
