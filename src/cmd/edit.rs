@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
@@ -98,8 +98,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patch_commit = stack.get_patch_commit(&patchname);
 
     let tree_id = if let Some(treeish) = matches.value_of("set-tree") {
-        // TODO: map errors?
-        let object = repo.revparse_single(treeish)?;
+        let object = crate::revspec::parse_stgit_revision(&repo, Some(treeish), None)
+            .context("parsing `--set-tree` value")?;
         let tree = object.peel_to_tree()?;
         tree.id()
     } else {
