@@ -1,7 +1,10 @@
+//! Parse user-provided patch ranges.
+
 use std::str::FromStr;
 
 use crate::patchname::PatchName;
 
+/// Patch range parsing error variants.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
     #[error(transparent)]
@@ -32,6 +35,24 @@ pub(crate) enum Error {
     },
 }
 
+/// Parse user-provided patch range strings.
+///
+/// A patch range names one or more patches. A patch range may be one of the following
+/// forms:
+///
+/// - A single (valid) patch name.
+/// - An open ended patch range, e.g. `patch..`.
+/// - An open beginning patch range, e.g. `..patch`
+/// - Or a closed range, e.g. `patch0..patchN`
+///
+/// Each `str` from `range_args` is validated and checked against the provided
+/// `allowed_patches` and `known_patches` iterators.
+///
+/// It is an error for the same patch to be duplicated in any of the `range_args`.
+///
+/// The ordering of patches as found in `range_args` does not have to match the ordering
+/// found in `allowed_patches`. See [`parse_contiguous_patch_range()`] for a similar
+/// function which does impose this ordering constraint.
 pub(crate) fn parse_patch_ranges<'a>(
     range_args: impl IntoIterator<Item = &'a str>,
     allowed_patches: impl IntoIterator<Item = &'a PatchName>,
@@ -163,6 +184,10 @@ pub(crate) fn parse_patch_ranges<'a>(
     Ok(patch_range)
 }
 
+/// Parse user-provided patch range strings.
+///
+/// This is like [`parse_patch_ranges`], but the patches as determined from `range_args`
+/// must be a contiguous, in-order subset of `allowed_patches`.
 pub(crate) fn parse_contiguous_patch_range<'a>(
     range_args: impl IntoIterator<Item = &'a str>,
     allowed_patches: impl IntoIterator<Item = &'a PatchName>,

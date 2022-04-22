@@ -1,8 +1,11 @@
+//! Support for StGit patch templates.
+
 use std::{borrow::Cow, collections::HashMap};
 
 use anyhow::{anyhow, Result};
 use bstr::{BString, ByteVec};
 
+/// Get named patch template from template file.
 pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option<String>> {
     let template_path = repo.path().join(name);
     if let Ok(template_bytes) = std::fs::read(&template_path) {
@@ -19,6 +22,18 @@ pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option
     }
 }
 
+/// Specialize a patch template with provided replacements mapping.
+///
+/// For compatibility with the older Python implementation of StGit, the template uses
+/// the [`Python-like specifier syntax`], but the *only* valid specifier is `%(name)s`.
+/// I.e. only the `s` string conversion type with no additional flags is allowed.
+///
+/// [`Python-like specifier syntax`]:
+/// https://docs.python.org/3/library/stdtypes.html#printf-style-string-formatting
+///
+/// N.B. the replacement values and the returned specialized template are bytes in order
+/// to support diff content, which is not guaranteed to be UTF-8. All other (non-diff)
+/// replacements should be UTF-8 encoded.
 pub(crate) fn specialize_template(
     template: &str,
     replacements: &HashMap<&str, Cow<'_, [u8]>>,
@@ -89,11 +104,13 @@ pub(crate) fn specialize_template(
     Ok(special.into())
 }
 
+/// Default patch export template.
 pub(crate) const PATCHEXPORT_TMPL: &str = "\
-    %(shortdescr)s\n\
-    \n\
-    From: %(authname)s <%(authemail)s>\n\
-    \n\
-    %(longdescr)s\n\
-    ---\n\
-    %(diffstat)s\n";
+%(shortdescr)s
+
+From: %(authname)s <%(authemail)s>
+
+%(longdescr)s
+---
+%(diffstat)s
+";

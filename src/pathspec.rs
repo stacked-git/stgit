@@ -1,3 +1,5 @@
+//! Path specification helpers.
+
 use std::path::{Component, Path, PathBuf};
 
 #[derive(thiserror::Error, Debug)]
@@ -6,6 +8,14 @@ pub(crate) enum Error {
     OutsideWorktree { workdir: PathBuf, pathspec: PathBuf },
 }
 
+/// Normalize path specification to be relative to work tree root.
+///
+/// The provided `pathspec`, if relative, is treated as relative to the current
+/// directory (`curdir`). Whether absolute or relative, the provided `pathspec`
+/// is made relative to the git work tree root (`workdir`) and normalized to
+/// remove superfluous parent dir componnents (i.e. `..`).
+///
+/// An error is returned if the provided `pathspec` is outside `workdir`.
 pub(crate) fn normalize_pathspec<P>(workdir: P, curdir: P, pathspec: P) -> Result<PathBuf, Error>
 where
     P: AsRef<Path>,

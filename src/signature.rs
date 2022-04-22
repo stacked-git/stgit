@@ -1,20 +1,50 @@
+//! Extension trait for [`git2::Signature`].
+
 use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, FixedOffset, NaiveDateTime, TimeZone};
 
+/// Extend [`git2::Signature`] with additional methods.
 pub(crate) trait SignatureExtended {
+    /// Determine default author signature based on config and environment.
     fn default_author(config: Option<&git2::Config>) -> Result<git2::Signature<'static>>;
+
+    /// Determine default committer signature based on config and environment.
     fn default_committer(config: Option<&git2::Config>) -> Result<git2::Signature<'static>>;
+
+    /// Make an author signature based on config, environment, and command line options.
+    ///
+    /// The provided `matches` must come from a [`clap::Command`] setup with
+    /// [`crate::patchedit::add_args()`].
     fn make_author(
         config: Option<&git2::Config>,
         matches: &clap::ArgMatches,
     ) -> Result<git2::Signature<'static>> {
         Self::default_author(config)?.override_author(matches)
     }
+
+    /// Attempt to create author signature based on command line options.
+    ///
+    /// The optional `when` value will be used for the author time unless `--authdate`
+    /// was used on the command line.
+    ///
+    /// The provided `matches` must come from a [`clap::Command`] setup with
+    /// [`crate::patchedit::add_args()`].
+    ///
+    /// Returns `None` if author information was not provided the command line.
     fn author_from_args(
         matches: &clap::ArgMatches,
         when: Option<git2::Time>,
     ) -> Result<Option<git2::Signature<'static>>>;
+
+    /// Override signature with author information from the command line.
+    ///
+    /// A new signature is created with some, all, or none of the author name, email, and time
+    /// replaced based on command line options.
+    ///
+    /// The provided `matches` must come from a [`clap::Command`] setup with
+    /// [`crate::patchedit::add_args()`].
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>>;
+
     fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>>;
 }
 
@@ -110,12 +140,14 @@ impl SignatureExtended for git2::Signature<'_> {
     }
 }
 
+/// Role of the signature, either author or committer.
 #[derive(Clone, Copy)]
 enum SignatureRole {
     Author,
     Committer,
 }
 
+/// Signatures have three components: name, email, and date/time.
 #[derive(Clone, Copy)]
 enum SignatureComponent {
     Name,
@@ -123,6 +155,7 @@ enum SignatureComponent {
     Date,
 }
 
+/// Make a default signature for the specified `role` based on config and environment.
 fn make_default(
     config: Option<&git2::Config>,
     role: SignatureRole,
@@ -177,8 +210,12 @@ fn make_default(
     Ok(signature)
 }
 
+/// Extend [`git2::Time`] with additional methods.
 pub(crate) trait TimeExtended {
+    /// Convert to [`chrono::DateTime<FixedOffset>`].
     fn datetime(&self) -> DateTime<FixedOffset>;
+
+    /// Convert to epoch and offset string used internally by git.
     fn epoch_time_string(&self) -> String;
 }
 
@@ -220,6 +257,7 @@ pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -
     same_person(a, b) && a.when() == b.when()
 }
 
+/// Get string from config with error mapping.
 fn get_from_config(config: &git2::Config, key: &str) -> Result<Option<String>> {
     match config.get_string(key) {
         Ok(value) => Ok(Some(value)),
@@ -233,6 +271,7 @@ fn get_from_config(config: &git2::Config, key: &str) -> Result<Option<String>> {
     }
 }
 
+/// Get signature component from environment variables.
 fn get_env_key(role: SignatureRole, component: SignatureComponent) -> &'static str {
     match (role, component) {
         (SignatureRole::Author, SignatureComponent::Name) => "GIT_AUTHOR_NAME",
@@ -244,6 +283,7 @@ fn get_env_key(role: SignatureRole, component: SignatureComponent) -> &'static s
     }
 }
 
+/// Get signature component from git configuration.
 fn get_config_key(role: SignatureRole, component: SignatureComponent) -> &'static str {
     match (role, component) {
         (SignatureRole::Author, SignatureComponent::Name) => "author.name",
@@ -256,6 +296,7 @@ fn get_config_key(role: SignatureRole, component: SignatureComponent) -> &'stati
     }
 }
 
+/// Get environment variable with custom error mapping.
 fn get_from_env(key: &str) -> Result<Option<String>> {
     match std::env::var(key) {
         Ok(s) => Ok(Some(s)),
@@ -266,6 +307,10 @@ fn get_from_env(key: &str) -> Result<Option<String>> {
     }
 }
 
+/// Parse name and email from string.
+///
+/// The incoming string is expected to be of the form `name <email>`. It is an
+/// error if either the name or email contain extra '<' or '>' characters.
 pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
     if let Some((name, rem)) = name_email.split_once('<') {
         if let Some((email, rem)) = rem.split_once('>') {
@@ -281,6 +326,7 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
     Err(anyhow!("invalid name and email `{name_email}`"))
 }
 
+/// Check name string for '<' or '>' characters.
 pub(crate) fn check_name(name: &str) -> Result<()> {
     if name.contains('<') || name.contains('>') {
         Err(anyhow!("name may not contain `<` or `>`"))
@@ -289,6 +335,7 @@ pub(crate) fn check_name(name: &str) -> Result<()> {
     }
 }
 
+/// Check emails string for '<' or '>' characters.
 pub(crate) fn check_email(email: &str) -> Result<()> {
     if email.contains('<') || email.contains('>') {
         Err(anyhow!("email may not contain `<` or `>`"))

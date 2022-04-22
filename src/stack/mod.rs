@@ -1,3 +1,4 @@
+//! The StGit stack data structure.
 mod error;
 mod iter;
 mod serde;

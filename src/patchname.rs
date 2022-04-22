@@ -1,3 +1,5 @@
+//! Patch name string support.
+
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
@@ -17,6 +19,9 @@ impl Error {
     }
 }
 
+/// A [`String`] that follows the patch naming rules.
+///
+/// A valid patch name must meet all the rules of a git reference name.
 #[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub(crate) struct PatchName(String);
 
@@ -27,10 +32,18 @@ impl std::fmt::Debug for PatchName {
 }
 
 impl PatchName {
+    /// Length of patch name string, in bytes.
     pub(crate) fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Make a valid patch name given a raw string.
+    ///
+    /// The first non-empty line of the raw string is used as the basis for the patch
+    /// name. Invalid characters (most non-alphanumeric characters) are replaced with
+    /// '-'. If `lower` is true, all alpha characters are lowercased. And if `len_limit`
+    /// is provided, the validated name is truncated at a word boundary to be less than
+    /// or equal to `len_limit`.
     pub(crate) fn make(raw: &str, lower: bool, len_limit: Option<usize>) -> Self {
         let default_name = "patch";
 
@@ -137,6 +150,7 @@ impl PatchName {
         }
     }
 
+    /// Get the configured patch name length limit.
     pub(crate) fn get_length_limit(config: &git2::Config) -> Option<usize> {
         config
             .get_i32("stgit.namelength")
@@ -145,6 +159,13 @@ impl PatchName {
             .or(Some(30))
     }
 
+    /// Make patch name unique relative to provided list of disallowed names.
+    ///
+    /// If the patch name conflicts with a name in the `disallow` slice, it will be
+    /// suffixed with a unique integer. E.g. "patch-1".
+    ///
+    /// If the patch name matches with the `allow` slice, the patch name will be used
+    /// without modification.
     pub(crate) fn uniquify<P>(self, allow: &[P], disallow: &[P]) -> Self
     where
         P: AsRef<PatchName>,
@@ -170,6 +191,7 @@ impl PatchName {
         }
     }
 
+    /// Validate a patch name `str`.
     fn validate(name: &str) -> Result<(), Error> {
         if name.is_empty() {
             return Err(Error::invalid(name, "patch name may not be empty"));

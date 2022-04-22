@@ -1,10 +1,21 @@
+//! Extension trait for [`git2::Index`].
+
 use anyhow::Result;
 
+/// Extend [`git2::Index`] with methods to use temporary indexes.
 pub(crate) trait TemporaryIndex {
+    /// Perform actions with an in-memory temporary index.
+    ///
+    /// All actions on the temporary index must be performed within the provided
+    /// closure. The temporary index will not be written to the filesystem by default,
+    /// but the caller may do so using [`git2::Index::write()`].
     fn with_temp_index<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&mut git2::Index) -> Result<T>;
 
+    /// Perform actions with a temporary index file.
+    ///
+    /// The temporary index file is automatically deleted when this call returns.
     fn with_temp_index_file<F, T>(&self, f: F) -> Result<T>
     where
         F: FnOnce(&mut git2::Index) -> Result<T>;

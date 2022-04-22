@@ -1,20 +1,46 @@
+//! Extension trait for [`git2::Repository`].
+
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 
 use crate::stack::Error;
 
+/// Extends [`git2::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
+    /// Determine whether the repository's default index is clean.
+    ///
+    /// A clean index is one that does not record and differences from the `HEAD` tree.
     fn check_index_clean(&self) -> Result<()>;
+
+    /// Determine whether the work tree is clean.
+    ///
+    /// A clean work tree does not have any git-managed files changed relative to the
+    /// `HEAD` tree.
     fn check_worktree_clean(&self) -> Result<()>;
+
+    /// Determine whether both the default index and current work tree are clean.
     fn check_index_and_worktree_clean(&self) -> Result<()>;
+
+    /// Determine whether the repository is in a clean state.
+    ///
+    /// A clean repository is not in the middle of any of a variety of stateful operations such
+    /// as merge, rebase, cherrypick, etc.; see [`git2::RepositoryState`].
     fn check_repository_state(&self, conflicts_okay: bool) -> Result<()>;
+
+    /// Get [`git2::Branch`], with StGit-specific error messaging.
+    ///
+    /// Gets the current branch if the provided `branch_name` is `None`,
     fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>>;
+
+    /// [`git2::Repository::checkout_tree()`] with StGit-specfic error mapping.
     fn checkout_tree_ex(
         &self,
         treeish: &git2::Object<'_>,
         opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
     ) -> Result<()>;
+
+    /// Get list of paths changed between `commit` and its parent.
     fn diff_tree_files(&self, commit: &git2::Commit) -> Result<Vec<PathBuf>>;
 }
 
