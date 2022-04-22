@@ -44,8 +44,6 @@ pub(crate) trait SignatureExtended {
     /// The provided `matches` must come from a [`clap::Command`] setup with
     /// [`crate::patchedit::add_args()`].
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>>;
-
-    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>>;
 }
 
 impl SignatureExtended for git2::Signature<'_> {
@@ -107,35 +105,6 @@ impl SignatureExtended for git2::Signature<'_> {
             };
 
             Ok(git2::Signature::new(name, email, &when)?)
-        }
-    }
-
-    fn decode(&self, encoding_name: Option<&str>) -> Result<git2::Signature<'static>> {
-        let encoding = if let Some(encoding_name) = encoding_name {
-            encoding_rs::Encoding::for_label(encoding_name.as_bytes())
-                .ok_or_else(|| anyhow!("Unhandled commit encoding `{encoding_name}`"))?
-        } else {
-            encoding_rs::UTF_8
-        };
-
-        if let Some(name) =
-            encoding.decode_without_bom_handling_and_without_replacement(self.name_bytes())
-        {
-            if let Some(email) =
-                encoding.decode_without_bom_handling_and_without_replacement(self.email_bytes())
-            {
-                Ok(git2::Signature::new(&name, &email, &self.when())?)
-            } else {
-                Err(anyhow!(
-                    "could not decode signature email as `{}`",
-                    encoding.name(),
-                ))
-            }
-        } else {
-            Err(anyhow!(
-                "could not decode signature name as `{}`",
-                encoding.name(),
-            ))
         }
     }
 }
@@ -245,16 +214,6 @@ impl TimeExtended for git2::Signature<'_> {
     fn epoch_time_string(&self) -> String {
         self.when().epoch_time_string()
     }
-}
-
-#[allow(dead_code)]
-pub(crate) fn same_person(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
-    a.name_bytes() == b.name_bytes() && a.email_bytes() == b.email_bytes()
-}
-
-#[allow(dead_code)]
-pub(crate) fn same_signature(a: &git2::Signature<'_>, b: &git2::Signature<'_>) -> bool {
-    same_person(a, b) && a.when() == b.when()
 }
 
 /// Get string from config with error mapping.
