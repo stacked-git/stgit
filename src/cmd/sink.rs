@@ -83,8 +83,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_nopush = matches.is_present("nopush");
     let opt_keep = matches.is_present("keep");
 
-    let conflicts_okay = false;
-    repo.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     if !opt_keep {
         repo.check_index_and_worktree_clean()?;

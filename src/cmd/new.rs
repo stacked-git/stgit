@@ -125,8 +125,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;
 
-    let conflicts_okay = false;
-    repo.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(name) = matches.value_of("patchname") {

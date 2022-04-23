@@ -40,8 +40,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_keep = matches.is_present("keep");
     let opt_merged = matches.is_present("merged");
 
-    let conflicts_okay = false;
-    repo.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     if !opt_keep {
         repo.check_index_and_worktree_clean()?;

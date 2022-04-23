@@ -8,6 +8,9 @@ use crate::stack::Error;
 
 /// Extends [`git2::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
+    /// Check whether there are any files with conflicts in the index.
+    fn check_conflicts(&self) -> Result<()>;
+
     /// Determine whether the repository's default index is clean.
     ///
     /// A clean index is one that does not record and differences from the `HEAD` tree.
@@ -26,7 +29,7 @@ pub(crate) trait RepositoryExtended {
     ///
     /// A clean repository is not in the middle of any of a variety of stateful operations such
     /// as merge, rebase, cherrypick, etc.; see [`git2::RepositoryState`].
-    fn check_repository_state(&self, conflicts_okay: bool) -> Result<()>;
+    fn check_repository_state(&self) -> Result<()>;
 
     /// Get [`git2::Branch`], with StGit-specific error messaging.
     ///
@@ -45,6 +48,18 @@ pub(crate) trait RepositoryExtended {
 }
 
 impl RepositoryExtended for git2::Repository {
+    fn check_conflicts(&self) -> Result<()> {
+        if self
+            .index()
+            .context("checking for conflicts")?
+            .has_conflicts()
+        {
+            Err(Error::OutstandingConflicts.into())
+        } else {
+            Ok(())
+        }
+    }
+
     fn check_index_clean(&self) -> Result<()> {
         let mut status_options = git2::StatusOptions::new();
         status_options.show(git2::StatusShow::Index);
@@ -110,27 +125,10 @@ impl RepositoryExtended for git2::Repository {
         }
     }
 
-    fn check_repository_state(&self, conflicts_okay: bool) -> Result<()> {
-        if self.index()?.has_conflicts() {
-            if conflicts_okay {
-                Ok(())
-            } else {
-                Err(Error::OutstandingConflicts.into())
-            }
-        } else {
-            match self.state() {
-                git2::RepositoryState::Clean => Ok(()),
-                git2::RepositoryState::Merge => {
-                    if conflicts_okay {
-                        Ok(())
-                    } else {
-                        Err(Error::OutstandingConflicts.into())
-                    }
-                }
-                state => {
-                    Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into())
-                }
-            }
+    fn check_repository_state(&self) -> Result<()> {
+        match self.state() {
+            git2::RepositoryState::Clean => Ok(()),
+            state => Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into()),
         }
     }
 

@@ -42,8 +42,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
-    let conflicts_okay = true;
-    repo.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state()?;
 
     let (clean_applied, clean_unapplied) = match (
         matches.is_present("applied"),

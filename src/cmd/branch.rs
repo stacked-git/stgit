@@ -409,7 +409,8 @@ fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = matches.value_of("new-branch").expect("required argument");
 
-    repo.check_repository_state(false)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
 
     let parent_branch = if let Some(committish) = matches.value_of("committish") {
         repo.check_worktree_clean()?;
@@ -507,7 +508,8 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     };
 
     repo.check_worktree_clean()?;
-    repo.check_repository_state(false)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
 
     if let Ok(stack) = Stack::from_branch(&repo, None) {
         stack.check_head_top_mismatch()?;

@@ -79,8 +79,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(anyhow!("can only spill topmost applied patches"));
     }
 
-    let conflicts_okay = false;
-    repo.check_repository_state(conflicts_okay)?;
+    repo.check_repository_state()?;
+    repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     // TODO: compat: these are not checked in Python version. How well is
     //       this handled here?
