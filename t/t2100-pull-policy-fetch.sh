@@ -17,8 +17,9 @@ test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
     (cd upstream && stg init) &&
-    stg clone upstream clone &&
+    git clone upstream clone &&
     (cd clone &&
+     stg init &&
      git config branch.master.stgit.pull-policy fetch-rebase &&
      git config --list &&
      stg new c1 -m c1 &&

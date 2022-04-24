@@ -1,1 +1,0 @@
-//! `stg clone` implementation.

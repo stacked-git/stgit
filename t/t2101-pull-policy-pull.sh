@@ -15,8 +15,9 @@ test_expect_success \
     '
     test_create_repo upstream &&
     (cd upstream && stg init) &&
-    stg clone upstream clone &&
+    git clone upstream clone &&
     (cd clone &&
+     stg init &&
      git config pull.rebase false &&
      git config branch.master.stgit.pull-policy pull &&
      git config --list &&

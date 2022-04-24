@@ -7,7 +7,6 @@ use std::collections::BTreeMap;
 
 pub(crate) mod branch;
 pub(crate) mod clean;
-pub(crate) mod clone;
 pub(crate) mod commit;
 pub(crate) mod delete;
 pub(crate) mod diff;
@@ -108,4 +107,4 @@ pub(crate) fn get_commands() -> Commands {
     ])
 }
 
-pub(crate) const PYTHON_COMMANDS: &[&str] = &["clone", "mail", "pull", "rebase", "squash"];
+pub(crate) const PYTHON_COMMANDS: &[&str] = &["mail", "pull", "rebase", "squash"];

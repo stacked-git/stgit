@@ -17,12 +17,19 @@ test_create_repo foo
 
 test_expect_success \
     'Setup and clone tree, and setup changes' \
-    "(cd foo &&
-      printf 'a\nb\n' > file && stg add file && git commit -m .
+    "(
+         cd foo &&
+         printf 'a\nb\n' > file &&
+         stg add file &&
+         git commit -m .
      ) &&
-     stg clone foo bar &&
-     (cd bar && stg new p1 -m p1
-      printf 'c\n' >> file && stg refresh
+     git clone foo bar &&
+     (
+         cd bar &&
+         stg init &&
+         stg new p1 -m p1 &&
+         printf 'c\n' >> file &&
+         stg refresh
      )
 "
 

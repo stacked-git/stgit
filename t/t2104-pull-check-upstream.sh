@@ -11,8 +11,8 @@ test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
     (cd upstream && stg init) &&
-    stg clone upstream clone &&
-    (cd clone && git config pull.rebase false)
+    git clone upstream clone &&
+    (cd clone && stg init && git config pull.rebase false)
     '
 
 test_expect_success \

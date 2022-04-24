@@ -20,9 +20,10 @@ test_create_repo foo
 
 test_expect_success \
     'Clone tree and setup changes' '
-    stg clone foo bar &&
+    git clone foo bar &&
     (
         cd bar &&
+        stg init &&
         stg new -m p1 &&
         git notes add -m note1 &&
         printf "a\nc\n" > file &&
@@ -89,7 +90,7 @@ test_expect_success \
     'pop then push a patch with a change to a submodule should not produce a conflict' '
     (
         cd bar &&
-        stg clone ../foo baz &&
+        git clone ../foo baz &&
         stg new p3 -m p3 &&
         git submodule add ../foo baz &&
         stg refresh &&

@@ -20,6 +20,7 @@ This test must be run before any tests making use of clone.
 # Need a repo to clone
 test_create_repo foo
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'stg clone right inside a git tree' \
     "stg clone foo bar"
@@ -44,5 +45,10 @@ test_expect_success \
     command_error stg clone foo bar 2>err &&
     grep -e "\"bar\" exists. Remove it first" err
     '
+else
+test_expect_success \
+    'clone right inside a git tree' \
+    "git clone foo bar"
+fi
 
 test_done

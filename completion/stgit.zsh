@@ -62,15 +62,6 @@ _stg-clean() {
     _arguments -s -S $subcmd_args
 }
 
-_stg-clone() {
-    __stg_add_args_help
-    subcmd_args+=(
-        ':repository:'
-        ': :_directories'
-    )
-    _arguments -s $subcmd_args
-}
-
 _stg-commit() {
     __stg_add_args_help
     subcmd_args+=(
