@@ -181,7 +181,7 @@ impl TryFrom<&[u8]> for PatchDescription {
             && raw_authdate.is_none()
             && message.trim().is_empty()
         {
-            return Err(anyhow!("Aborting edit due to empty patch description"));
+            return Err(anyhow!("Aborting due to empty patch description"));
         }
 
         let patchname = if let Some(patchname) = raw_patchname {

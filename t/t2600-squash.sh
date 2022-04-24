@@ -18,15 +18,29 @@ test_expect_success 'Too few arguments' '
     grep -e "Need at least two patches" err
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt duplicate patch name' '
     command_error stg squash -n p3 -- p0 p1 2>err &&
     grep -e "Patch name \"p3\" already taken" err
 '
+else
+test_expect_success 'Attempt duplicate patch name' '
+    command_error stg squash -n p3 -- p0 p1 2>err &&
+    grep -e "Patch name \`p3\` already taken" err
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Attempt invalid patch name' '
     command_error stg squash -n invalid..name -- p0 p1 2>err &&
     grep -e "Patch name \"invalid..name\" is invalid" err
 '
+else
+test_expect_success 'Attempt invalid patch name' '
+    general_error stg squash -n invalid..name -- p0 p1 2>err &&
+    grep -e "Invalid value \"invalid..name\" for .--name <NAME>.: invalid patch name" err
+'
+fi
 
 test_expect_success 'Attempt out of order' '
     conflict stg squash --name=q4 p5 p4 &&
@@ -77,6 +91,8 @@ test_expect_success 'Setup fake editor' '
 	echo "" >"$1"
 	eof
 '
+
+if test -z "$STG_RUST"; then
 test_expect_success 'Empty commit message aborts the squash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
@@ -84,6 +100,15 @@ test_expect_success 'Empty commit message aborts the squash' '
     grep -e "Aborting squash due to empty commit message" err &&
     test "$(echo $(stg series))" = "+ p0 > q1"
 '
+else
+test_expect_success 'Empty commit message aborts the squash' '
+    test_set_editor "$(pwd)/fake-editor" &&
+    test_when_finished test_set_editor false &&
+    command_error stg squash --name=p0 p0 q1 2>err &&
+    grep -e "Aborting due to empty patch description" err &&
+    test "$(echo $(stg series))" = "+ p0 > q1"
+'
+fi
 
 cat > editor <<EOF
 #!/bin/sh

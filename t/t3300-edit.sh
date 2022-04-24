@@ -34,10 +34,17 @@ adate () { git log -n 1 --pretty=format:%ai $1 ; }
 write_script diffedit <<EOF
 echo "" > "\$1"
 EOF
+if test -z "$STG_RUST"; then
 test_expect_success 'Empty editor aborts edit' '
     EDITOR=./diffedit command_error stg edit 2>err &&
     grep -e "Aborting edit due to empty patch description" err
 '
+else
+test_expect_success 'Empty editor aborts edit' '
+    EDITOR=./diffedit command_error stg edit 2>err &&
+    grep -e "Aborting due to empty patch description" err
+'
+fi
 rm -f diffedit
 
 write_script diffedit <<EOF

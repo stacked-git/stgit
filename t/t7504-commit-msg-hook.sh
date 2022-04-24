@@ -201,7 +201,8 @@ fi
 
 test_expect_success 'squash --no-verify with succeeding hook (editor)' '
     echo "even more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg squash --no-verify -n mo e-m e-m-m
+    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg squash --no-verify -n mo e-m e-m-m &&
+    top_is mo
 '
 
 # now a hook that fails

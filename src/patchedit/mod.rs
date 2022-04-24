@@ -299,6 +299,8 @@ struct Overlay {
 #[derive(Default)]
 pub(crate) struct EditBuilder<'a, 'repo> {
     original_patchname: Option<PatchName>,
+    template_patchname: Option<Option<PatchName>>,
+    allowed_patchnames: Vec<PatchName>,
     patch_commit: Option<&'a git2::Commit<'repo>>,
     allow_diff_edit: bool,
     allow_implicit_edit: bool,
@@ -346,6 +348,31 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     /// when doing interactive edit.
     pub(crate) fn original_patchname(mut self, patchname: Option<&PatchName>) -> Self {
         self.original_patchname = patchname.cloned();
+        if let Some(patchname) = patchname {
+            self.allowed_patchnames.push(patchname.clone());
+        }
+        self
+    }
+
+    /// Set the patch name to use in the interacte edit template.
+    ///
+    /// This takes precedence over [`EditBuilder::original_patchname()`], when set.
+    /// Setting to `None` will cause the edit template to have an empty `Patch:` field.
+    pub(crate) fn template_patchname(mut self, patchname: Option<&PatchName>) -> Self {
+        self.template_patchname = Some(patchname.cloned());
+        self
+    }
+
+    /// Specify additional patch names that should be allowed.
+    ///
+    /// The edited patch may use any of provided `patchnames` even if they conflict with
+    /// existing patch names.
+    ///
+    /// By default, the edited patch may not duplicate any of the stack's existing patch
+    /// names with the exception of the patch's original name (as specified with
+    /// [`EditBuilder::original_patchname()`]).
+    pub(crate) fn extra_allowed_patchnames(mut self, patchnames: &[PatchName]) -> Self {
+        self.allowed_patchnames.extend(patchnames.iter().cloned());
         self
     }
 
@@ -410,6 +437,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ) -> Result<EditOutcome> {
         let EditBuilder {
             original_patchname,
+            template_patchname,
+            allowed_patchnames,
             patch_commit,
             allow_diff_edit,
             allow_implicit_edit,
@@ -511,14 +540,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let patchname_len_limit = PatchName::get_length_limit(&config);
         let disallow_patchnames: Vec<&PatchName> = stack_state.all_patches().collect();
-        let allowed_patchnames: Vec<&PatchName> =
-            if let Some(original_patchname) = original_patchname.as_ref() {
-                vec![original_patchname]
-            } else {
-                vec![]
-            };
+        let allowed_patchnames: Vec<&PatchName> = allowed_patchnames.iter().collect();
 
-        let patchname = if let Some(file_patchname) = file_patchname {
+        let patchname = if let Some(template_patchname) = template_patchname.as_ref() {
+            template_patchname.clone()
+        } else if let Some(file_patchname) = file_patchname {
             Some(file_patchname.uniquify(&allowed_patchnames, &disallow_patchnames))
         } else if let Some(original_patchname) = original_patchname.as_ref() {
             Some(original_patchname.clone())
@@ -709,6 +735,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let patchname = if let Some(patchname) = patchname {
             patchname.uniquify(&allowed_patchnames, &disallow_patchnames)
+        } else if let Some(Some(template_patchname)) = template_patchname {
+            template_patchname.uniquify(&allowed_patchnames, &disallow_patchnames)
         } else {
             PatchName::make(&message.decode()?, true, patchname_len_limit)
                 .uniquify(&allowed_patchnames, &disallow_patchnames)
