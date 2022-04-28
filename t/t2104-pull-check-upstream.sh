@@ -42,7 +42,7 @@ test_expect_success \
       stg branch --create without-upstream &&
       git config --unset branch.without-upstream.remote &&
       command_error stg pull 2>out.txt &&
-      grep "There is no tracking information for the current branch" out.txt
+      grep "No tracking information for the current branch" out.txt
     )
     '
 fi

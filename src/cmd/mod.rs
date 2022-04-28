@@ -88,6 +88,7 @@ pub(crate) fn get_commands() -> Commands {
         pick::get_command(),
         pop::get_command(),
         prev::get_command(),
+        pull::get_command(),
         push::get_command(),
         redo::get_command(),
         refresh::get_command(),
@@ -108,4 +109,4 @@ pub(crate) fn get_commands() -> Commands {
     ])
 }
 
-pub(crate) const PYTHON_COMMANDS: &[&str] = &["mail", "pull", "rebase"];
+pub(crate) const PYTHON_COMMANDS: &[&str] = &["mail", "rebase"];

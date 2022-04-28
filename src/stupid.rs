@@ -862,6 +862,16 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
+    /// Pack unpacked objects
+    pub(crate) fn repack(&self) -> Result<()> {
+        self.git()
+            .args(["repack", "-a", "-d", "-f"])
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("repack -a -d -f")?;
+        Ok(())
+    }
+
     /// Get list of revisions using `git rev-list`.
     pub(crate) fn rev_list<I, S>(
         &self,
@@ -995,6 +1005,98 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .output_git()?
             .require_success("update-index")?;
         Ok(())
+    }
+
+    /// Run user-provided fetch command.
+    pub(crate) fn user_fetch(&self, user_cmd_str: &str, remote_name: &str) -> Result<()> {
+        let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
+        if let Some(command_name) = args.next() {
+            let mut command = Command::new(command_name);
+            self.git_dir.map(|p| command.env("GIT_DIR", p));
+            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
+            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            let status = command
+                .args(args)
+                .arg(remote_name)
+                .stdin(Stdio::null())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .status()
+                .with_context(|| format!("could not execute `{user_cmd_str}`"))?;
+
+            if status.success() {
+                Ok(())
+            } else if let Some(code) = status.code() {
+                Err(anyhow!("`{user_cmd_str}` exited with code {code}"))
+            } else {
+                Err(anyhow!("`{user_cmd_str}` failed"))
+            }
+        } else {
+            Err(anyhow!("user-provided fetchcmd is empty"))
+        }
+    }
+
+    /// Run user-provided pull command.
+    ///
+    /// Returns true if command returns 0, false if command returns 1, or Err otherwise.
+    /// This assumes that 1 indicates the pull resulted in merge conflicts.
+    pub(crate) fn user_pull(&self, user_cmd_str: &str, remote_name: &str) -> Result<bool> {
+        let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
+        if let Some(command_name) = args.next() {
+            let mut command = Command::new(command_name);
+            self.git_dir.map(|p| command.env("GIT_DIR", p));
+            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
+            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            let status = command
+                .args(args)
+                .arg(remote_name)
+                .stdin(Stdio::null())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .status()
+                .with_context(|| format!("could not execute `{user_cmd_str}`"))?;
+
+            if status.success() {
+                Ok(true)
+            } else if Some(1) == status.code() {
+                Ok(false)
+            } else if let Some(code) = status.code() {
+                Err(anyhow!("`{user_cmd_str}` exited with code {code}"))
+            } else {
+                Err(anyhow!("`{user_cmd_str}` failed"))
+            }
+        } else {
+            Err(anyhow!("user-provided pullcmd is empty"))
+        }
+    }
+
+    /// Run user-provided rebase command.
+    pub(crate) fn user_rebase(&self, user_cmd_str: &str, target: git2::Oid) -> Result<()> {
+        let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
+        if let Some(command_name) = args.next() {
+            let mut command = Command::new(command_name);
+            self.git_dir.map(|p| command.env("GIT_DIR", p));
+            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
+            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            let status = command
+                .args(args)
+                .arg(target.to_string())
+                .stdin(Stdio::null())
+                .stdout(Stdio::inherit())
+                .stderr(Stdio::inherit())
+                .status()
+                .with_context(|| format!("could not execute `{user_cmd_str}`"))?;
+
+            if status.success() {
+                Ok(())
+            } else if let Some(code) = status.code() {
+                Err(anyhow!("`{user_cmd_str}` exited with code {code}"))
+            } else {
+                Err(anyhow!("`{user_cmd_str}` failed"))
+            }
+        } else {
+            Err(anyhow!("user-provided rebasecmd is empty"))
+        }
     }
 
     /// Get git version with `git version`.

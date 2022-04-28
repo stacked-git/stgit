@@ -19,19 +19,37 @@ test_expect_success \
     echo a > file && stg add file && stg refresh
     '
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Test invalid remote argument' \
     '
     command_error stg pull origin 2>err &&
     grep "specifying a repository is meaningless for policy=\"rebase\"" err
     '
+else
+test_expect_success \
+    'Test invalid remote argument' \
+    '
+    command_error stg pull origin 2>err &&
+    grep "specifying a repository is meaningless for \`rebase\` pull-policy" err
+    '
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success \
     'Test invalid arguments' \
     '
     command_error stg pull origin master 2>err &&
     grep "incorrect number of arguments" err
     '
+else
+test_expect_success \
+    'Test invalid arguments' \
+    '
+    general_error stg pull origin master 2>err &&
+    grep "Found argument .master. which wasn.t expected" err
+    '
+fi
 
 test_expect_success \
     'Add non-rewinding commit in parent and pull the stack' \
