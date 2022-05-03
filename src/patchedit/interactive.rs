@@ -61,7 +61,7 @@ fn is_terminal_dumb() -> bool {
 /// Run the user's editor to edit the file at `path`.
 ///
 /// Upon successfully reading back the file's content, the file is deleted.
-fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>> {
+pub(crate) fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>> {
     let editor = get_editor(config);
 
     if editor != *":" {

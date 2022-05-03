@@ -132,50 +132,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .use_index_and_worktree(true)
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
-                let (new_patchname, commit_id, to_push) = if let Some((new_patchname, commit_id)) =
-                    squash(
-                        trans,
-                        &config,
-                        matches,
-                        &squash_patchnames,
-                        patchname.as_ref(),
-                    )? {
-                    // Squashed commit could be created with simple merges, so the
-                    // constituent patches can just be deleted.
-                    let to_push = trans.delete_patches(|pn| squash_patchnames.contains(pn))?;
-                    (new_patchname, commit_id, to_push)
-                } else {
-                    // Simple approach failed, need to do pops and pushes...
-                    let to_push = trans.pop_patches(|pn| squash_patchnames.contains(pn))?;
-                    trans.push_patches(&squash_patchnames, false)?;
-                    if let Some((new_patchname, commit_id)) = squash(
-                        trans,
-                        &config,
-                        matches,
-                        &squash_patchnames,
-                        patchname.as_ref(),
-                    )? {
-                        let popped_extra =
-                            trans.delete_patches(|pn| squash_patchnames.contains(pn))?;
-                        assert!(popped_extra.is_empty());
-                        (new_patchname, commit_id, to_push)
-                    } else {
-                        return Err(crate::stack::Error::FoldConflicts(
-                            "conflicts while squashing".to_string(),
-                        )
-                        .into());
-                    }
-                };
-
-                trans.new_unapplied(&new_patchname, commit_id, 0)?;
-
-                let mut to_push = to_push;
-
-                if should_push_squashed {
-                    to_push.insert(0, new_patchname);
-                }
-
-                trans.push_patches(&to_push, false)?;
+                squash(
+                    trans,
+                    &config,
+                    matches,
+                    &squash_patchnames,
+                    patchname.as_ref(),
+                    should_push_squashed,
+                )?;
                 Ok(())
             })
             .execute("squash")?;
@@ -204,7 +168,53 @@ fn prepare_message<'repo>(
     Ok(squash_message)
 }
 
-fn squash(
+pub(super) fn squash(
+    trans: &mut StackTransaction,
+    config: &git2::Config,
+    matches: &ArgMatches,
+    patchnames: &[PatchName],
+    patchname: Option<&PatchName>,
+    should_push_squashed: bool,
+) -> Result<PatchName> {
+    let (new_patchname, commit_id, to_push) = if let Some((new_patchname, commit_id)) =
+        try_squash(trans, config, matches, patchnames, patchname)?
+    {
+        // Squashed commit could be created with simple merges, so the
+        // constituent patches can just be deleted.
+        let to_push = trans.delete_patches(|pn| patchnames.contains(pn))?;
+        (new_patchname, commit_id, to_push)
+    } else {
+        // Simple approach failed, need to do pops and pushes...
+        let to_push = trans.pop_patches(|pn| patchnames.contains(pn))?;
+        trans.push_patches(patchnames, false)?;
+        if let Some((new_patchname, commit_id)) =
+            try_squash(trans, config, matches, patchnames, patchname)?
+        {
+            let popped_extra = trans.delete_patches(|pn| patchnames.contains(pn))?;
+            assert!(popped_extra.is_empty());
+            (new_patchname, commit_id, to_push)
+        } else {
+            return Err(crate::stack::Error::FoldConflicts(
+                "conflicts while squashing".to_string(),
+            )
+            .into());
+        }
+    };
+
+    trans.new_unapplied(&new_patchname, commit_id, 0)?;
+
+    let mut to_push = to_push;
+
+    if should_push_squashed {
+        to_push.insert(0, new_patchname.clone());
+    }
+
+    trans.push_patches(&to_push, false)?;
+
+    Ok(new_patchname)
+}
+
+fn try_squash(
     trans: &StackTransaction,
     config: &git2::Config,
     matches: &ArgMatches,
@@ -219,7 +229,9 @@ fn squash(
         stupid.read_tree(base_commit.tree_id())?;
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
             let parent = commit.parent(0)?;
-            if !stupid.apply_treediff_to_index(parent.tree_id(), commit.tree_id())? {
+            if parent.tree_id() != commit.tree_id()
+                && !stupid.apply_treediff_to_index(parent.tree_id(), commit.tree_id())?
+            {
                 return Ok(None);
             }
         }
@@ -235,7 +247,7 @@ fn squash(
             .override_tree_id(tree_id)
             .allow_implicit_edit(true)
             .allow_diff_edit(false)
-            .allow_template_save(true)
+            .allow_template_save(false)
             .template_patchname(patchname)
             .extra_allowed_patchnames(patchnames)
             .default_author(git2::Signature::make_author(Some(config), matches)?)

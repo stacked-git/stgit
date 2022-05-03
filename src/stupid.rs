@@ -217,7 +217,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let apply_output = self
             .git_in_work_root()
-            .args(["apply", "--cached"]) // --3way
+            .args(["apply", "--cached", "--allow-empty"]) // --3way
             .stdin(diff_tree_child.stdout.take().unwrap())
             .stdout(Stdio::null())
             .output_git()?;
@@ -977,6 +977,36 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .output_git()?
             .require_success("show")?;
         Ok(output.stdout)
+    }
+
+    /// Pop stashed changes back into working tree and index.
+    ///
+    /// Returns Ok(true) if stash application is successful, Ok(false) if stash
+    /// application results in conflicts, or Err otherwise.
+    pub(crate) fn stash_pop(&self) -> Result<bool> {
+        let output = self
+            .git()
+            .args(["stash", "pop"])
+            .stdout(Stdio::inherit())
+            .output_git()?;
+
+        if output.status.success() {
+            Ok(true)
+        } else if output.status.code() == Some(1) {
+            Ok(false)
+        } else {
+            Err(git_command_error("stash pop", &output.stderr))
+        }
+    }
+
+    /// Stash changes from working tree and index.
+    pub(crate) fn stash_push(&self) -> Result<()> {
+        self.git()
+            .args(["stash", "push"])
+            .stdout(Stdio::inherit())
+            .output_git()?
+            .require_success("stash push")?;
+        Ok(())
     }
 
     /// Show short status using `git status`.

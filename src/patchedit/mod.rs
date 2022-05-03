@@ -27,6 +27,7 @@ use crate::{
 };
 
 use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
+pub(crate) use interactive::call_editor;
 use interactive::edit_interactive;
 
 /// Add patch editing options to a StGit command.

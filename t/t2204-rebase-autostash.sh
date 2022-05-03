@@ -52,6 +52,8 @@ test_expect_success \
 	echo "" >"$1"
 	EOF
 '
+
+if test -z "$STG_RUST"; then
 test_expect_success \
 	'rebase --autostash throws helpful error message in conflict' \
 	'
@@ -63,5 +65,18 @@ test_expect_success \
 	command_error stg rebase master~1 --interactive --autostash 2>err &&
 	grep -e "Merge conflict raised when popping stash after rebase" err
 	'
+else
+test_expect_success \
+	'rebase --autostash throws helpful error message in conflict' \
+	'
+	test_set_editor "$(pwd)/fake-editor" &&
+	test_when_finished test_set_editor false &&
+	git checkout --force &&
+	stg rebase master
+	echo baz > file2 &&
+	conflict stg rebase master~1 --interactive --autostash 2>err &&
+	grep -e "stash pop resulted in conflicts" err
+	'
+fi
 
 test_done

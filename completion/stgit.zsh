@@ -411,6 +411,8 @@ _stg-rebase() {
     __stg_add_args_merged
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after rebasing]'
+        '(-i --interactive)'{-i,--interactive}'[interactively manipulate patches in editor]'
+        '--autostash[Stash changes before rebase and reapply them after]'
         ':new-base-id:__stg_heads'
     )
     _arguments -s -S $subcmd_args
