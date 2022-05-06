@@ -567,8 +567,11 @@ _stg-spill() {
 
 _stg-squash() {
     __stg_add_args_help
+    __stg_add_args_author
+    __stg_add_args_edit
     __stg_add_args_hook
     __stg_add_args_savetemplate
+    __stg_add_args_trailers
     subcmd_args+=(
         '(-n --name)'{-n,--name=}'[name for squashed patch]: :__stg_patches_all'
         '*:patches:__stg_patches_all_allow_dups'

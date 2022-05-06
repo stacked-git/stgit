@@ -7,7 +7,7 @@ use std::path::Path;
 
 use anyhow::{anyhow, Result};
 
-use super::description::PatchDescription;
+use super::description::{EditablePatchDescription, EditedPatchDescription};
 
 // static EDIT_INSTRUCTION: &'static str = "\
 //     # Everything here is editable! You can modify the patch name,\n\
@@ -32,29 +32,20 @@ static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
 ///
 /// The patch description is written to a file, the user's editor of choice is invoked,
 /// and the modified description is read-back and parsed.
-pub(crate) fn edit_interactive(
-    patch_desc: &PatchDescription,
+pub(super) fn edit_interactive(
+    patch_desc: &EditablePatchDescription,
     config: &git2::Config,
-) -> Result<PatchDescription> {
+) -> Result<EditedPatchDescription> {
     {
-        // TODO: file naming.
-        // TODO: put file at worktree root?
         let file = File::create(EDIT_FILE_NAME)?;
         let mut stream = BufWriter::new(file);
         patch_desc.write(&mut stream)?;
     }
 
     let buf = call_editor(EDIT_FILE_NAME, config)?;
-    let patch_desc = PatchDescription::try_from(buf.as_slice())?;
-    Ok(patch_desc)
+    let edited_desc = EditedPatchDescription::try_from(buf.as_slice())?;
+    Ok(edited_desc)
 }
-
-// fn show_stat(diff: &Diff) -> Result<()> {
-//     let stats = diff.stats()?;
-//     let buf = stats.to_buf(DiffStatsFormat::FULL, 80)?;
-//     io::stdout().write_all(&*buf)?;
-//     Ok(())
-// }
 
 /// Make determination about whether terminal is dumb.
 ///

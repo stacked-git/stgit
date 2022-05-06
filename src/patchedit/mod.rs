@@ -26,7 +26,7 @@ use crate::{
     stupid::Stupid,
 };
 
-use description::{DiffBuffer, PatchDescription};
+use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
 use interactive::edit_interactive;
 
 /// Add patch editing options to a StGit command.
@@ -286,10 +286,10 @@ pub(crate) enum EditOutcome {
 /// Overlay of patch metadata on top of existing/original metadata.
 #[derive(Default)]
 struct Overlay {
-    pub(crate) author: Option<git2::Signature<'static>>,
-    pub(crate) message: Option<String>,
-    pub(crate) tree_id: Option<git2::Oid>,
-    pub(crate) parent_id: Option<git2::Oid>,
+    pub(self) author: Option<git2::Signature<'static>>,
+    pub(self) message: Option<String>,
+    pub(self) tree_id: Option<git2::Oid>,
+    pub(self) parent_id: Option<git2::Oid>,
 }
 
 /// Setup and execute a patch edit session.
@@ -458,26 +458,25 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             .map(|commit| commit.committer().to_owned())
             .unwrap_or_else(|| default_committer.clone());
 
-        let PatchDescription {
+        let EditedPatchDescription {
             patchname: file_patchname,
             author: file_author,
             message: file_message,
             diff: file_diff,
-            ..
         } = if let Some(file_os) = matches.value_of_os("file") {
             if file_os.to_str() == Some("-") {
                 let mut buf: Vec<u8> = Vec::with_capacity(8192);
                 std::io::stdin().read_to_end(&mut buf)?;
-                PatchDescription::try_from(buf.as_slice())?
+                EditedPatchDescription::try_from(buf.as_slice())?
             } else {
-                PatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
+                EditedPatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
             }
         } else {
             Default::default() // i.e. all Nones
         };
 
-        let author = if file_author.is_some() {
-            file_author
+        let author = if let Some(Some(author)) = file_author {
+            Some(author)
         } else if let Some(overlay_author) = overlay_author {
             Some(overlay_author.override_author(matches)?)
         } else {
@@ -544,8 +543,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let patchname = if let Some(template_patchname) = template_patchname.as_ref() {
             template_patchname.clone()
-        } else if let Some(file_patchname) = file_patchname {
-            Some(file_patchname.uniquify(&allowed_patchnames, &disallow_patchnames))
+        } else if let Some(Some(patchname)) = file_patchname {
+            Some(patchname.uniquify(&allowed_patchnames, &disallow_patchnames))
         } else if let Some(original_patchname) = original_patchname.as_ref() {
             Some(original_patchname.clone())
         } else if !message.is_empty() {
@@ -639,7 +638,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         if allow_template_save && matches.is_present("save-template") {
             let message = message.decode()?.to_string();
-            let patch_description = PatchDescription {
+            let patch_description = EditablePatchDescription {
                 patchname,
                 author,
                 message,
@@ -659,7 +658,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         }
 
         let (patchname, author, message, diff) = if need_interactive_edit {
-            let mut patch_description = PatchDescription {
+            let mut patch_description = EditablePatchDescription {
                 patchname,
                 author,
                 message: message.decode()?.to_string(),
@@ -668,17 +667,37 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 diff,
             };
 
-            let PatchDescription {
+            let EditedPatchDescription {
                 patchname: edited_patchname,
                 author: edited_author,
                 message: edited_message,
                 diff: edited_diff,
-                ..
             } = edit_interactive(&patch_description, &config)?;
 
+            let patchname = match edited_patchname {
+                Some(Some(patchname)) => Some(patchname),
+
+                // "Patch:" header present, but with empty value. This indicates
+                // that the patchname should be generated from the message.
+                Some(None) => None,
+
+                // "Patch:" header absent. Use original patchname, if available.
+                None => patch_description.patchname.take(),
+            };
+
+            let author = match edited_author {
+                Some(Some(author)) => Some(author),
+                Some(None) => Some(if let Some(commit) = patch_commit {
+                    commit.author_strict()?
+                } else {
+                    git2::Signature::default_author(Some(&config))?
+                }),
+                None => patch_description.author.take(),
+            };
+
             (
-                edited_patchname,
-                edited_author.or_else(|| patch_description.author.take()),
+                patchname,
+                author,
                 CommitMessage::from(edited_message),
                 edited_diff,
             )
@@ -704,7 +723,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     let diff = Some(DiffBuffer(diff));
                     let failed_description_path = ".stgit-failed.patch";
                     let mut stream = BufWriter::new(File::create(&failed_description_path)?);
-                    let failed_patch_description = PatchDescription {
+                    let failed_patch_description = EditablePatchDescription {
                         patchname,
                         author,
                         message: message.decode()?.to_string(),
