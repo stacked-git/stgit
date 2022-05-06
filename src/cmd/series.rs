@@ -277,7 +277,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let commit = repo.find_commit(oid)?;
 
         if opt_empty {
-            if commit.parent_count() == 1 && commit.tree_id() == commit.parent(0)?.tree_id() {
+            if commit.is_no_change()? {
                 stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
                 write!(stdout, "0")?;
                 stdout.set_color(color_spec.set_fg(None))?;

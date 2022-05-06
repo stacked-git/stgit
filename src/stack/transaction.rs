@@ -1254,12 +1254,12 @@ impl<'repo> StackTransaction<'repo> {
         for patchname in patchnames.iter().rev() {
             let patchname = patchname.as_ref();
             let patch_commit = self.get_patch_commit(patchname);
-            let parent_commit = patch_commit.parent(0)?;
 
-            if patch_commit.parent_count() == 1 && patch_commit.tree_id() == parent_commit.tree_id()
-            {
+            if patch_commit.is_no_change()? {
                 continue; // No change
             }
+
+            let parent_commit = patch_commit.parent(0)?;
 
             if stupid.apply_treediff_to_index(patch_commit.tree_id(), parent_commit.tree_id())? {
                 merged.push(patchname);

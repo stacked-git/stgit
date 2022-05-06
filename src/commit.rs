@@ -284,6 +284,9 @@ pub(crate) trait CommitExtended<'a> {
 
     /// Get commit message with extended capabilities.
     fn message_ex(&self) -> CommitMessage;
+
+    /// Determine whether the commit has the same tree as its parent.
+    fn is_no_change(&self) -> Result<bool>;
 }
 
 impl<'a> CommitExtended<'a> for git2::Commit<'a> {
@@ -370,6 +373,11 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
                 encoding: self.message_encoding(),
             }
         }
+    }
+
+    fn is_no_change(&self) -> Result<bool> {
+        let no_change = self.parent_count() == 1 && self.parent(0)?.tree_id() == self.tree_id();
+        Ok(no_change)
     }
 }
 

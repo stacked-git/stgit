@@ -5,6 +5,7 @@ use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
+    commit::CommitExtended,
     patchname::PatchName,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
@@ -57,7 +58,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if clean_applied {
         let applied = stack.applied();
         for (i, pn) in applied.iter().enumerate() {
-            if is_empty(&stack, pn)? {
+            if stack.get_patch_commit(pn).is_no_change()? {
                 if i + 1 == applied.len() {
                     // Do not clean the topmost patch if there are outstanding
                     // conflicts. The patch is only empty because the conflicts caused
@@ -74,7 +75,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if clean_unapplied {
         for pn in stack.unapplied() {
-            if is_empty(&stack, pn)? {
+            if stack.get_patch_commit(pn).is_no_change()? {
                 to_delete.push(pn.clone());
             }
         }
@@ -93,14 +94,4 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .execute("delete")?;
 
     Ok(())
-}
-
-fn is_empty(stack: &Stack, patchname: &PatchName) -> Result<bool> {
-    let patch_commit = stack.get_patch_commit(patchname);
-    Ok(patch_commit.parent_count() == 1
-        && patch_commit.tree_id()
-            == stack
-                .repo
-                .find_commit(patch_commit.parent_id(0).unwrap())?
-                .tree_id())
 }
