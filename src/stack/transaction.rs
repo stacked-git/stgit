@@ -29,7 +29,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 
 use anyhow::{anyhow, Result};
-use git2::{Commit, Oid, RepositoryState};
+use git2::{Commit, Oid};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
@@ -37,7 +37,7 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     index::TemporaryIndex,
     patchname::PatchName,
-    repo::{repo_state_to_str, RepositoryExtended},
+    repo::RepositoryExtended,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::Stupid,
@@ -432,25 +432,17 @@ impl<'repo> StackTransaction<'repo> {
         }
 
         if self.current_tree_id == commit.tree_id() && !self.options.discard_changes {
-            return match repo.state() {
-                RepositoryState::Clean => Ok(()),
-                RepositoryState::Merge | RepositoryState::RebaseMerge => {
-                    match self.options.conflict_mode {
-                        ConflictMode::Disallow => Err(Error::OutstandingConflicts.into()),
-                        ConflictMode::Allow => Ok(()),
-                        ConflictMode::AllowIfSameTop => {
-                            let top = self.applied.last();
-                            if top.is_some() && top == self.stack.applied().last() {
-                                Ok(())
-                            } else {
-                                Err(Error::OutstandingConflicts.into())
-                            }
-                        }
+            return match self.options.conflict_mode {
+                ConflictMode::Allow => Ok(()),
+                ConflictMode::AllowIfSameTop => {
+                    let top = self.applied.last();
+                    if top.is_some() && top == self.stack.applied().last() {
+                        Ok(())
+                    } else {
+                        repo.check_conflicts()
                     }
                 }
-                state => {
-                    Err(Error::ActiveRepositoryState(repo_state_to_str(state).to_string()).into())
-                }
+                ConflictMode::Disallow => repo.check_conflicts(),
             };
         }
 
