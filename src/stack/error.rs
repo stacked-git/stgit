@@ -13,9 +13,6 @@ pub(crate) enum Error {
     #[error("No patches applied")]
     NoAppliedPatches,
 
-    #[error("{0}\nCommand aborted (all changes rolled back)")]
-    TransactionAborted(String),
-
     #[error("{msg}")]
     TransactionHalt { msg: String, conflicts: bool },
 }

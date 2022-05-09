@@ -337,7 +337,10 @@ impl<'repo> ExecuteContext<'repo> {
                 if let Err(err) = result {
                     transaction.options.allow_bad_head = true;
                     transaction.checkout(&stack_head)?;
-                    return Err(Error::TransactionAborted(err.to_string()).into());
+                    return Err(anyhow!(
+                        "{err}\n\
+                         Command aborted (all changes rolled back)"
+                    ));
                 }
             }
 
