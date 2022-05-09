@@ -229,7 +229,7 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
                     CONFLICT_ERROR
                 }
                 Some(stack::Error::CheckoutConflicts(_)) => CONFLICT_ERROR,
-                Some(stack::Error::FoldConflicts(_)) => CONFLICT_ERROR,
+                Some(stack::Error::CausedConflicts(_)) => CONFLICT_ERROR,
                 _ => COMMAND_ERROR,
             }
         }

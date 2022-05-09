@@ -232,7 +232,7 @@ fn branch_merge_patch(
     stupid.read_tree_checkout(trans.stack().branch_head.tree_id(), commit.tree_id())?;
     stupid.update_index_refresh()?;
     if !stupid.merge_recursive(ref_parent.tree_id(), commit.tree_id(), ref_commit.tree_id())? {
-        return Err(crate::stack::Error::FoldConflicts(format!(
+        return Err(crate::stack::Error::CausedConflicts(format!(
             "Merge conflicts syncing `{patchname}`"
         ))
         .into());
@@ -299,7 +299,7 @@ fn series_merge_patch(
         trans.stack().branch_head.tree_id(),
         tree_id,
     )? {
-        return Err(crate::stack::Error::FoldConflicts(format!(
+        return Err(crate::stack::Error::CausedConflicts(format!(
             "Merge conflicts syncing `{patchname}`"
         ))
         .into());

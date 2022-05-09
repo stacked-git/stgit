@@ -245,7 +245,7 @@ fn fold_picks(
 
         if conflicts {
             return Err(
-                crate::stack::Error::FoldConflicts(if let Some(patchname) = patchname {
+                crate::stack::Error::CausedConflicts(if let Some(patchname) = patchname {
                     format!("`{patchname}` does not apply cleanly")
                 } else {
                     format!("`{}` does not apply cleanly", commit.id())

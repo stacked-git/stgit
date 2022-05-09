@@ -167,7 +167,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Ok(())
         } else {
             Err(
-                crate::stack::Error::FoldConflicts("stash pop resulted in conflicts".to_string())
+                crate::stack::Error::CausedConflicts("stash pop resulted in conflicts".to_string())
                     .into(),
             )
         }

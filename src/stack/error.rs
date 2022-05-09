@@ -4,7 +4,7 @@ pub(crate) enum Error {
     CheckoutConflicts(String),
 
     #[error("{0}")]
-    FoldConflicts(String),
+    CausedConflicts(String),
 
     #[error("resolve outstanding conflicts first")]
     OutstandingConflicts,

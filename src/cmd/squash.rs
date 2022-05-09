@@ -194,7 +194,7 @@ pub(super) fn squash(
             assert!(popped_extra.is_empty());
             (new_patchname, commit_id, to_push)
         } else {
-            return Err(crate::stack::Error::FoldConflicts(
+            return Err(crate::stack::Error::CausedConflicts(
                 "conflicts while squashing".to_string(),
             )
             .into());
