@@ -1,8 +1,5 @@
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
-    #[error("complete the in-progress `{0}` before trying again")]
-    ActiveRepositoryState(String),
-
     #[error("{0}")]
     CheckoutConflicts(String),
 
