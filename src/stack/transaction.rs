@@ -894,9 +894,9 @@ impl<'repo> StackTransaction<'repo> {
                 .get(new_patchname)
                 .map_or(true, |maybe_patch| maybe_patch.is_some())
         {
-            return Err(anyhow!("patch `{new_patchname}` already exists"));
+            return Err(anyhow!("Patch `{new_patchname}` already exists"));
         } else if !self.stack.has_patch(old_patchname) {
-            return Err(anyhow!("patch `{old_patchname}` does not exist"));
+            return Err(anyhow!("Patch `{old_patchname}` does not exist"));
         }
 
         if let Some(pos) = self.applied.iter().position(|pn| pn == old_patchname) {
@@ -1137,7 +1137,7 @@ impl<'repo> StackTransaction<'repo> {
                     .is_err()
                 {
                     return Err(Error::TransactionHalt {
-                        msg: "index/worktree dirty".to_string(),
+                        msg: "Index/worktree dirty".to_string(),
                         conflicts: false,
                     }
                     .into());
@@ -1149,7 +1149,7 @@ impl<'repo> StackTransaction<'repo> {
                     Ok(true) => {
                         // Success, no conflicts
                         let tree_id = stupid.write_tree().map_err(|_| Error::TransactionHalt {
-                            msg: "conflicting merge".to_string(),
+                            msg: "Conflicting merge".to_string(),
                             conflicts: false,
                         })?;
                         self.current_tree_id = tree_id;
@@ -1162,7 +1162,7 @@ impl<'repo> StackTransaction<'repo> {
                     }
                     Err(_) => {
                         return Err(Error::TransactionHalt {
-                            msg: "index/worktree dirty".to_string(),
+                            msg: "Index/worktree dirty".to_string(),
                             conflicts: false,
                         }
                         .into())
@@ -1212,7 +1212,7 @@ impl<'repo> StackTransaction<'repo> {
 
         if push_status == PushStatus::Conflict {
             Err(Error::TransactionHalt {
-                msg: "merge conflicts".to_string(),
+                msg: "Merge conflicts".to_string(),
                 conflicts: true,
             }
             .into())

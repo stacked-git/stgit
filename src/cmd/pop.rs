@@ -120,12 +120,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                         if stack.is_unapplied(&patchname) =>
                     {
-                        anyhow!("patch `{patchname}` from `{range}` is already unapplied")
+                        anyhow!("Patch `{patchname}` from `{range}` is already unapplied")
                     }
                     crate::patchrange::Error::PatchNotAllowed { patchname }
                         if stack.is_unapplied(&patchname) =>
                     {
-                        anyhow!("patch `{patchname}` is already unapplied")
+                        anyhow!("Patch `{patchname}` is already unapplied")
                     }
                     _ => e.into(),
                 },
@@ -167,7 +167,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .cloned()
             .collect();
         if new_unapplied != topmost_applied {
-            return Err(anyhow!("only topmost patches may be spilled"));
+            return Err(anyhow!("Only topmost patches may be spilled"));
         }
     }
 

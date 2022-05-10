@@ -60,7 +60,7 @@ test_expect_success 'Rename to existing name' '
 else
 test_expect_success 'Rename to existing name' '
    command_error stg rename foo baz 2>err &&
-   grep -e "patch \`baz\` already exists" err
+   grep -e "Patch \`baz\` already exists" err
 '
 fi
 
@@ -72,7 +72,7 @@ test_expect_success 'Rename to same name' '
 else
 test_expect_success 'Rename to same name' '
    command_error stg rename foo foo 2>err &&
-   grep -e "patch \`foo\` already exists" err
+   grep -e "Patch \`foo\` already exists" err
 '
 fi
 
@@ -88,8 +88,7 @@ test_expect_success 'Rename to invalid patch name: space' '
 else
 test_expect_success 'Rename to invalid patch name: space' '
    general_error stg rename bar "bar fo" 2>err &&
-cat err &&
-   grep -e "invalid patch name \`bar fo\`" err
+   grep -e "Invalid patch name \`bar fo\`" err
 '
 fi
 
@@ -101,7 +100,7 @@ test_expect_success 'Rename to invalid patch name: colon' '
 else
 test_expect_success 'Rename to invalid patch name: colon' '
    general_error stg rename bar "bar:fo" 2>err &&
-   grep -e "invalid patch name \`bar:fo\`" err
+   grep -e "Invalid patch name \`bar:fo\`" err
 '
 fi
 

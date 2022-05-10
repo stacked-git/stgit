@@ -10,25 +10,25 @@ pub(crate) enum Error {
     #[error(transparent)]
     PatchName(#[from] crate::patchname::Error),
 
-    #[error("patch `{patchname}` is used more than once")]
+    #[error("Patch `{patchname}` is used more than once")]
     Duplicate { patchname: PatchName },
 
-    #[error("patch `{patchname}` in `{range}` is not allowed")]
+    #[error("Patch `{patchname}` in `{range}` is not allowed")]
     BoundaryNotAllowed { patchname: PatchName, range: String },
 
-    #[error("patch `{patchname}` in `{range}` does not exist")]
+    #[error("Patch `{patchname}` in `{range}` does not exist")]
     BoundaryNotKnown { patchname: PatchName, range: String },
 
-    #[error("patch `{patchname}` is not allowed")]
+    #[error("Patch `{patchname}` is not allowed")]
     PatchNotAllowed { patchname: PatchName },
 
-    #[error("patch `{patchname}` does not exist")]
+    #[error("Patch `{patchname}` does not exist")]
     PatchNotKnown { patchname: PatchName },
 
     #[error("`{range}` not contiguous with preceding range `{prev_range}`")]
     NotContiguous { range: String, prev_range: String },
 
-    #[error("end patch `{end_patchname}` is out of order with `{begin_patchname}`")]
+    #[error("End patch `{end_patchname}` is out of order with `{begin_patchname}`")]
     BoundaryOrder {
         begin_patchname: PatchName,
         end_patchname: PatchName,

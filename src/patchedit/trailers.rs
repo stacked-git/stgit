@@ -46,7 +46,7 @@ pub(crate) fn add_trailers<'a>(
         {
             format!("{} <{}>", name, email)
         } else {
-            return Err(anyhow!("trailer requires utf-8 signature"));
+            return Err(anyhow!("Trailer requires UTF-8 signature"));
         };
 
         if let Some(autosign) = autosign {

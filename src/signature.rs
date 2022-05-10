@@ -143,10 +143,8 @@ fn make_default(
             return Err(anyhow!("`user.name` not configured"));
         }
     } else {
-        return Err(anyhow!(
-            "no config available and no `{}`",
-            get_env_key(role, SignatureComponent::Name),
-        ));
+        let key = get_env_key(role, SignatureComponent::Name);
+        return Err(anyhow!("No config available and no `{key}`"));
     };
 
     let email = if let Some(email) = get_from_env(get_env_key(role, SignatureComponent::Email))? {
@@ -162,10 +160,8 @@ fn make_default(
             return Err(anyhow!("`user.email` not configured"));
         }
     } else {
-        return Err(anyhow!(
-            "no config available and no `{}`",
-            get_env_key(role, SignatureComponent::Email),
-        ));
+        let key = get_env_key(role, SignatureComponent::Email);
+        return Err(anyhow!("No config available and no `{key}`",));
     };
 
     let date_key = get_env_key(role, SignatureComponent::Date);
@@ -282,13 +278,13 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
             }
         }
     }
-    Err(anyhow!("invalid name and email `{name_email}`"))
+    Err(anyhow!("Invalid name and email `{name_email}`"))
 }
 
 /// Check name string for '<' or '>' characters.
 pub(crate) fn check_name(name: &str) -> Result<()> {
     if name.contains('<') || name.contains('>') {
-        Err(anyhow!("name may not contain `<` or `>`"))
+        Err(anyhow!("Name may not contain `<` or `>`"))
     } else {
         Ok(())
     }
@@ -297,7 +293,7 @@ pub(crate) fn check_name(name: &str) -> Result<()> {
 /// Check emails string for '<' or '>' characters.
 pub(crate) fn check_email(email: &str) -> Result<()> {
     if email.contains('<') || email.contains('>') {
-        Err(anyhow!("email may not contain `<` or `>`"))
+        Err(anyhow!("Email may not contain `<` or `>`"))
     } else {
         Ok(())
     }
@@ -350,7 +346,7 @@ pub(crate) fn parse_time(time_str: &str) -> Result<git2::Time> {
         }
     }
 
-    Err(anyhow!("invalid date `{time_str}`"))
+    Err(anyhow!("Invalid date `{time_str}`"))
 }
 
 #[cfg(test)]

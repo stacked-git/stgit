@@ -42,7 +42,8 @@ else
 test_expect_success \
     'Invalid patch name: space' '
     command_error stg new "bad name" 2>err &&
-    grep -e "error: invalid patch name \`bad name\`" err
+cat err &&
+    grep -e "Invalid patch name \`bad name\`" err
 '
 fi
 
@@ -56,7 +57,7 @@ else
 test_expect_success \
     'Invalid patch name: carat' '
     command_error stg new "bad^name" 2>err &&
-    grep -e "error: invalid patch name \`bad\^name\`" err
+    grep -e "Invalid patch name \`bad\^name\`" err
 '
 fi
 
@@ -70,7 +71,7 @@ else
 test_expect_success \
     'Invalid patch name: empty' '
     command_error stg new "" 2>err &&
-    grep -e "error: invalid patch name \`\`" err
+    grep -e "Invalid patch name \`\`" err
 '
 fi
 
@@ -113,7 +114,7 @@ else
 test_expect_success \
     'Attempt to create patch with duplicate name' '
     command_error stg new foo -m "duplicate foo" 2>err &&
-    grep -e "error: patch \`foo\` already exists" err
+    grep -e "Patch \`foo\` already exists" err
 '
 fi
 
@@ -152,7 +153,7 @@ test_expect_success \
     stg refresh &&
     conflict stg push p1 &&
     command_error stg new -m p3 2>err &&
-    grep -e "error: resolve outstanding conflicts first" err &&
+    grep -e "Resolve outstanding conflicts first" err &&
     stg reset --hard
 '
 fi

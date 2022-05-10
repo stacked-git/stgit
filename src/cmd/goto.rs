@@ -64,7 +64,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             for pn in similar_names {
                 println!("  {}", pn);
             }
-            Err(anyhow!("ambiguous patch name `{patchname}`"))
+            Err(anyhow!("Ambiguous patch name `{patchname}`"))
         } else {
             let oid_prefix: &str = patchname.as_ref();
             if oid_prefix.len() >= 4 && oid_prefix.chars().all(|c| c.is_ascii_hexdigit()) {
@@ -83,18 +83,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .collect();
 
                 match oid_matches.len() {
-                    0 => Err(anyhow!("no patch associated with `{patchname}`")),
+                    0 => Err(anyhow!("No patch associated with `{patchname}`")),
                     1 => Ok(oid_matches[0].clone()),
                     _ => {
                         println!("Possible patches:");
                         for pn in oid_matches {
                             println!("  {}", pn);
                         }
-                        Err(anyhow!("ambiguous commit id `{patchname}`"))
+                        Err(anyhow!("Ambiguous commit id `{patchname}`"))
                     }
                 }
             } else {
-                Err(anyhow!("patch `{patchname}` does not exist"))
+                Err(anyhow!("Patch `{patchname}` does not exist"))
             }
         }
     }?;

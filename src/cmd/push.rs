@@ -142,12 +142,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                     if stack.is_applied(&patchname) =>
                 {
-                    anyhow!("patch `{patchname}` from `{range}` is already applied")
+                    anyhow!("Patch `{patchname}` from `{range}` is already applied")
                 }
                 crate::patchrange::Error::PatchNotAllowed { patchname }
                     if stack.is_applied(&patchname) =>
                 {
-                    anyhow!("patch `{patchname}` is already applied")
+                    anyhow!("Patch `{patchname}` is already applied")
                 }
                 _ => e.into(),
             }

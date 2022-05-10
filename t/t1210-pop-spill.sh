@@ -30,7 +30,7 @@ test_expect_success 'Attempt to spill non-topmost patch' '
 else
 test_expect_success 'Attempt to spill non-topmost patch' '
     command_error stg pop --spill p0 2>err &&
-    grep -e "only topmost patches may be spilled" err
+    grep -e "Only topmost patches may be spilled" err
 '
 fi
 

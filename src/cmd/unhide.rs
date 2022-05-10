@@ -49,10 +49,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         parse_patch_ranges(patch_ranges, stack.hidden(), stack.all_patches()).map_err(
             |e| match e {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
-                    anyhow!("patch `{patchname}` from `{range}` is not hidden")
+                    anyhow!("Patch `{patchname}` from `{range}` is not hidden")
                 }
                 crate::patchrange::Error::PatchNotAllowed { patchname } => {
-                    anyhow!("patch `{patchname}` is not hidden")
+                    anyhow!("Patch `{patchname}` is not hidden")
                 }
                 _ => e.into(),
             },

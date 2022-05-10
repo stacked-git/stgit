@@ -53,9 +53,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let stack = Stack::from_branch(&repo, None)?;
         let commit = repo
             .revparse_single(committish)
-            .map_err(|_| anyhow!("invalid committish `{committish}`"))?
+            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?
             .into_commit()
-            .map_err(|_| anyhow!("target `{committish}` is not a commit"))?;
+            .map_err(|_| anyhow!("Target `{committish}` is not a commit"))?;
         stack
             .setup_transaction()
             .use_index_and_worktree(true)

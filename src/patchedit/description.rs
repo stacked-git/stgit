@@ -172,7 +172,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
             // Every line before the diff must be valid utf8
             let line = std::str::from_utf8(line)
-                .map_err(|_| anyhow!("patch description contains non-UTF-8 data"))?;
+                .map_err(|_| anyhow!("Patch description contains non-UTF-8 data"))?;
             let trimmed = line.trim_end();
 
             if trimmed == "---" {

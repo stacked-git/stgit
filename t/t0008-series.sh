@@ -12,7 +12,7 @@ test_expect_success 'Test uninitialized branch' '
 else
 test_expect_success 'Test uninitialized branch' '
     command_error stg series 2>err &&
-    grep -e "error: branch .master. not initialized" err
+    grep -e "Branch .master. not initialized" err
 '
 fi
 

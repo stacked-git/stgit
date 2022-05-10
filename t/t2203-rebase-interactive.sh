@@ -279,7 +279,7 @@ test_expect_success 'Fix on first patch does not crash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "cannot fixup \`p0\`: no preceding patch" err
+    grep -e "Cannot fixup \`p0\`: no preceding patch" err
 '
 fi
 

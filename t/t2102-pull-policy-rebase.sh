@@ -31,7 +31,7 @@ test_expect_success \
     'Test invalid remote argument' \
     '
     command_error stg pull origin 2>err &&
-    grep "specifying a repository is meaningless for \`rebase\` pull-policy" err
+    grep "Specifying a repository is meaningless for \`rebase\` pull-policy" err
     '
 fi
 

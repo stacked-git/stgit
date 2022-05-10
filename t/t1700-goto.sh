@@ -42,7 +42,7 @@ test_expect_success 'Attempt goto invalid patch' '
 else
 test_expect_success 'Attempt goto invalid patch' '
     command_error stg goto p999 2>err &&
-    grep -e "patch \`p999\` does not exist" err
+    grep -e "Patch \`p999\` does not exist" err
 '
 fi
 
@@ -54,7 +54,7 @@ test_expect_success 'Attempt goto invalid hash' '
 else
 test_expect_success 'Attempt goto invalid hash' '
     command_error stg goto beeff00d 2>err &&
-    grep -e "error: no patch associated with \`beeff00d\`" err
+    grep -e "error: No patch associated with \`beeff00d\`" err
 '
 fi
 
@@ -97,9 +97,9 @@ test_expect_success 'Goto with ambiguous patch substring' '
 else
 test_expect_success 'Goto with ambiguous patch substring' '
     command_error stg goto 1 2>err &&
-    grep "error: patch \`1\` does not exist" err &&
+    grep "error: Patch \`1\` does not exist" err &&
     command_error stg goto p 2>err &&
-    grep "error: ambiguous patch name \`p\`" err
+    grep "error: Ambiguous patch name \`p\`" err
 '
 fi
 

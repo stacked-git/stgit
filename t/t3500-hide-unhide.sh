@@ -41,7 +41,7 @@ test_expect_success 'Attempt unhide non-hidden patch' '
 else
 test_expect_success 'Attempt unhide non-hidden patch' '
     command_error stg unhide p0 2>err &&
-    grep -e "patch \`p0\` is not hidden" err
+    grep -e "Patch \`p0\` is not hidden" err
 '
 fi
 

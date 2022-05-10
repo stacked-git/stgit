@@ -15,7 +15,7 @@ test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
 	command_error stg pick foo 2>err &&
-	grep "branch \`master\` not initialized" err
+	grep "Branch \`master\` not initialized" err
 	'
 fi
 
@@ -304,7 +304,7 @@ test_expect_success \
 	rm C-id &&
 	stg push A &&
 	conflict stg pick foo:AAA 2>err &&
-	grep "merge conflicts" err &&
+	grep "Merge conflicts" err &&
 	rm err &&
 	test "$(stg top)" = "AAA" &&
 	test "$(echo $(stg series -A --noprefix))" = "C2 A AAA" &&

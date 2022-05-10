@@ -53,7 +53,7 @@ test_expect_success 'attempt sink below unapplied' '
 else
 test_expect_success 'attempt sink below unapplied' '
     command_error stg sink --to=p4 2>&1 |
-    grep -e "cannot sink below \`p4\` since it is not applied"
+    grep -e "Cannot sink below \`p4\` since it is not applied"
 '
 fi
 
@@ -99,7 +99,7 @@ test_expect_success 'attempt sink with same to and target' '
 else
 test_expect_success 'attempt sink with same to and target' '
     command_error stg sink --to=p3 p3 2>&1 |
-    grep -e "target patch \`p3\` may not also be a patch to sink"
+    grep -e "Target patch \`p3\` may not also be a patch to sink"
 '
 fi
 

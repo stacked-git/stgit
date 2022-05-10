@@ -105,7 +105,7 @@ test_expect_success 'Protect uninitialized branch' '
 else
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --protect 2>err &&
-    grep -E "branch \`foo\` not initialized" err
+    grep -E "Branch \`foo\` not initialized" err
 '
 fi
 
@@ -117,7 +117,7 @@ test_expect_success 'Protect uninitialized branch' '
 else
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --unprotect 2>err &&
-    grep -E "branch \`foo\` not initialized" err
+    grep -E "Branch \`foo\` not initialized" err
 '
 fi
 

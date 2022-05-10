@@ -82,7 +82,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if pathspecs.is_empty() {
-        return Err(anyhow!("no local changes and no paths specified"));
+        return Err(anyhow!("No local changes and no paths specified"));
     }
 
     let revs = stupid.rev_list(stack.base().id(), stack.top().id(), Some(&pathspecs))?;

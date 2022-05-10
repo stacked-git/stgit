@@ -82,7 +82,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if patches.is_empty() {
-        return Err(anyhow!("no patches to float"));
+        return Err(anyhow!("No patches to float"));
     }
 
     if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.is_applied(pn))) {

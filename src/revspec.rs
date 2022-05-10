@@ -17,10 +17,10 @@ use crate::stack::{Stack, StackStateAccess};
 /// StGit revision specification error variants.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
-    #[error("invalid StGit revision `{0}`")]
+    #[error("Invalid StGit revision `{0}`")]
     InvalidRevision(String),
 
-    #[error("revision not found `{0}`")]
+    #[error("Revision not found `{0}`")]
     RevisionNotFound(String),
 }
 

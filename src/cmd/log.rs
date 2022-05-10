@@ -101,13 +101,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         .filter(|pn| strsim::jaro_winkler(pn.as_ref(), patchname.as_ref()) > 0.75)
                         .collect();
                     if similar_names.is_empty() {
-                        return Err(anyhow!("patch `{patchname}` does not exist"));
+                        return Err(anyhow!("Patch `{patchname}` does not exist"));
                     } else {
                         println!("Possible patches:");
                         for pn in similar_names {
                             println!("  {}", pn);
                         }
-                        return Err(anyhow!("ambiguous patch name `{patchname}`"));
+                        return Err(anyhow!("Ambiguous patch name `{patchname}`"));
                     }
                 }
             }

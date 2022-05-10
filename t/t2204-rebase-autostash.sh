@@ -75,7 +75,7 @@ test_expect_success \
 	stg rebase master
 	echo baz > file2 &&
 	conflict stg rebase master~1 --interactive --autostash 2>err &&
-	grep -e "stash pop resulted in conflicts" err
+	grep -e "Stash pop resulted in conflicts" err
 	'
 fi
 

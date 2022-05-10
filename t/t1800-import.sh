@@ -231,7 +231,7 @@ test_expect_success \
     '
     stg delete --top &&
     general_error stg import --authdate "a long time ago" some.patch 2>err &&
-    grep -e "invalid date \`a long time ago\`" err
+    grep -e "Invalid date \`a long time ago\`" err
     '
 fi
 

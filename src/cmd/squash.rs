@@ -195,7 +195,7 @@ pub(super) fn squash(
             (new_patchname, commit_id, to_push)
         } else {
             return Err(crate::stack::Error::CausedConflicts(
-                "conflicts while squashing".to_string(),
+                "Conflicts while squashing".to_string(),
             )
             .into());
         }

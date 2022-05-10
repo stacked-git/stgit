@@ -97,7 +97,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Res
 
         if !status.success() {
             return Err(anyhow!(
-                "problem with the editor `{}`",
+                "Problem with the editor `{}`",
                 editor.to_string_lossy()
             ));
         }

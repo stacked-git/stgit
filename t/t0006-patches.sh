@@ -30,7 +30,7 @@ test_expect_success 'No modifications and no file args' '
 else
 test_expect_success 'No modifications and no file args' '
     command_error stg patches 2>err &&
-    grep -e "no local changes and no paths specified" err
+    grep -e "No local changes and no paths specified" err
 '
 fi
 

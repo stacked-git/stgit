@@ -145,7 +145,7 @@ impl RepositoryExtended for git2::Repository {
                     git2::RepositoryState::ApplyMailboxOrRebase => "rebase or apply mailbox",
                 };
                 Err(anyhow!(
-                    "complete the in-progress `{state_str}` before trying again",
+                    "Complete the in-progress `{state_str}` before trying again",
                 ))
             }
         }
@@ -159,13 +159,13 @@ impl RepositoryExtended for git2::Repository {
                         if e.class() == git2::ErrorClass::Reference {
                             match e.code() {
                                 git2::ErrorCode::NotFound => {
-                                    anyhow!("branch `{name}` not found")
+                                    anyhow!("Branch `{name}` not found")
                                 }
                                 git2::ErrorCode::InvalidSpec => {
-                                    anyhow!("invalid branch name `{name}`")
+                                    anyhow!("Invalid branch name `{name}`")
                                 }
                                 git2::ErrorCode::UnbornBranch => {
-                                    anyhow!("unborn branch `{name}`")
+                                    anyhow!("Unborn branch `{name}`")
                                 }
                                 _ => e.into(),
                             }
@@ -175,14 +175,14 @@ impl RepositoryExtended for git2::Repository {
                     })?;
             Ok(branch)
         } else if self.head_detached()? {
-            Err(anyhow!("not on branch, HEAD is detached"))
+            Err(anyhow!("Not on branch, HEAD is detached"))
         } else {
             let head = self.head().context("getting HEAD reference")?;
             if head.is_branch() {
                 Ok(git2::Branch::wrap(head))
             } else {
                 Err(anyhow!(
-                    "not on branch, HEAD points at `{}`",
+                    "Not on branch, HEAD points at `{}`",
                     String::from_utf8_lossy(head.name_bytes())
                 ))
             }

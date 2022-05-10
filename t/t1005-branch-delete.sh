@@ -77,7 +77,7 @@ test_expect_success 'Delete a nonexistent branch' '
 else
 test_expect_success 'Delete a nonexistent branch' '
    command_error stg branch --delete bar 2>err &&
-   grep -e "branch \`bar\` not found" err
+   grep -e "Branch \`bar\` not found" err
 '
 fi
 

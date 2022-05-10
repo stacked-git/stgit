@@ -84,9 +84,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 for pn in similar_names {
                     println!("  {}", pn);
                 }
-                Err(anyhow!("ambiguous patch name `{}`", &patchname))
+                Err(anyhow!("Ambiguous patch name `{}`", &patchname))
             } else {
-                Err(anyhow!("patch `{patchname}` does not exist"))
+                Err(anyhow!("Patch `{patchname}` does not exist"))
             };
         }
     } else if let Some(top_patchname) = stack.applied().last() {

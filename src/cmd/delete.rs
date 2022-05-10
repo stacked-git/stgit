@@ -76,7 +76,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(patches.len())
             .any(|pn| !patches.contains(pn))
     {
-        return Err(anyhow!("can only spill topmost applied patches"));
+        return Err(anyhow!("Can only spill topmost applied patches"));
     }
 
     repo.check_repository_state()?;

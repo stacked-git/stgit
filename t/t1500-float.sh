@@ -86,7 +86,7 @@ else
 test_expect_success 'Attempt float with empty series' '
     echo "" |
     command_error stg float -s - 2>&1 |
-    grep -e "error: no patches to float"
+    grep -e "error: No patches to float"
 '
 fi
 
@@ -124,7 +124,7 @@ else
 test_expect_success 'Series with bogus patch name' '
     printf "p1\np2\np3\nBOGUS\np4\np5\np6\np7\n" |
     command_error stg float --series=- 2>&1 |
-    grep -e "error: <stdin>: patch \`BOGUS\` does not exist"
+    grep -e "error: <stdin>: Patch \`BOGUS\` does not exist"
 '
 fi
 

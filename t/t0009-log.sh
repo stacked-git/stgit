@@ -12,7 +12,7 @@ test_expect_success 'Attempt log on uninitialized branch' '
 else
 test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>err >/dev/null &&
-    grep -e "branch \`master\` not initialized" err
+    grep -e "Branch \`master\` not initialized" err
 '
 fi
 

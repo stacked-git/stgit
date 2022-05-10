@@ -15,11 +15,11 @@ test_expect_success \
 else
 test_expect_success \
     'Test behavior on uninitialized repo' '
-    command_error stg prev 2>err && grep -e "error: branch .master. not initialized" err &&
-    command_error stg next 2>err && grep -e "error: branch .master. not initialized" err &&
-    command_error stg top  2>err && grep -e "error: branch .master. not initialized" err &&
-    command_error stg pop  2>err && grep -e "error: branch .master. not initialized" err &&
-    command_error stg push 2>err && grep -e "error: branch .master. not initialized" err
+    command_error stg prev 2>err && grep -e "error: Branch \`master\` not initialized" err &&
+    command_error stg next 2>err && grep -e "error: Branch \`master\` not initialized" err &&
+    command_error stg top  2>err && grep -e "error: Branch \`master\` not initialized" err &&
+    command_error stg pop  2>err && grep -e "error: Branch \`master\` not initialized" err &&
+    command_error stg push 2>err && grep -e "error: Branch \`master\` not initialized" err
 '
 fi
 
@@ -192,9 +192,9 @@ else
 test_expect_success \
     'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err &&
-    grep -e "patch \`p0\` from \`p0\.\.p2\` is already applied" err &&
+    grep -e "Patch \`p0\` from \`p0\.\.p2\` is already applied" err &&
     command_error stg push p99999 2>err &&
-    grep -e "patch \`p99999\` does not exist" err
+    grep -e "Patch \`p99999\` does not exist" err
 '
 fi
 

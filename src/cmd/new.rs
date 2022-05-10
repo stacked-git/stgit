@@ -132,7 +132,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patchname = if let Some(name) = matches.value_of("patchname") {
         let patchname = name.parse::<PatchName>()?;
         if stack.has_patch(&patchname) {
-            return Err(anyhow!("patch `{patchname}` already exists"));
+            return Err(anyhow!("Patch `{patchname}` already exists"));
         } else {
             Some(patchname)
         }

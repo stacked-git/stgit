@@ -123,7 +123,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             }
             let name = line
                 .to_str()
-                .map_err(|_| anyhow!("non-UTF-8 patchname in series `{series_path}`"))?;
+                .map_err(|_| anyhow!("Series `{series_path}` contains non-UTF-8 patchname"))?;
             let patchname = PatchName::from_str(name)?;
             ref_patches.push(patchname);
         }

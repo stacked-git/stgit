@@ -30,7 +30,7 @@ test_expect_success 'Attempt to edit non-existant patch name' '
 else
 test_expect_success 'Attempt to edit non-existant patch name' '
     command_error stg edit not-a-patch 2>err &&
-    grep "error: patch \`not-a-patch\` does not exist" err
+    grep "Patch \`not-a-patch\` does not exist" err
 '
 fi
 

@@ -100,7 +100,7 @@ where
         if let Some(name) = entry.name_bytes().strip_prefix(b"stgit.alias.") {
             let name = name.to_str().map_err(|_| {
                 anyhow!(
-                    "non-UTF-8 alias name `{}` in {}",
+                    "Alias name `{}` in {} is not valid UTF-8",
                     name.to_str_lossy(),
                     config_level_to_str(entry.level()),
                 )
@@ -109,7 +109,7 @@ where
                 if !exclude(name) {
                     let command = entry.value().ok_or_else(|| {
                         anyhow!(
-                            "non-UTF-8 alias value for `{name}` in {}",
+                            "Alias value for `{name}` in {} is not valid UTF-8",
                             config_level_to_str(entry.level()),
                         )
                     })?;

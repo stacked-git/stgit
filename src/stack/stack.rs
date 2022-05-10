@@ -45,7 +45,7 @@ impl<'repo> Stack<'repo> {
         stack_upgrade(repo, &branch_name)?;
 
         if repo.find_reference(&refname).is_ok() {
-            return Err(anyhow!("branch `{branch_name}` already initialized"));
+            return Err(anyhow!("Branch `{branch_name}` already initialized"));
         }
         let state = StackState::new(branch_head.clone());
         state.commit(repo, Some(&refname), "initialize")?;
@@ -116,7 +116,7 @@ impl<'repo> Stack<'repo> {
         let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&refname)
-            .map_err(|_| anyhow!("branch `{branch_name}` not initialized"))?;
+            .map_err(|_| anyhow!("Branch `{branch_name}` not initialized"))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         let base = if let Some(first_patchname) = state.applied.first() {
@@ -299,7 +299,7 @@ pub(crate) fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| {
             anyhow!(
-                "non-UTF-8 branch name `{}`",
+                "Branch name `{}` is not valid UTF-8",
                 String::from_utf8_lossy(name_bytes)
             )
         })?

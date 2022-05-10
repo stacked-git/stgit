@@ -61,7 +61,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if old_patchname == new_patchname {
-        return Err(anyhow!("patch `{new_patchname}` already exists"));
+        return Err(anyhow!("Patch `{new_patchname}` already exists"));
     }
 
     stack

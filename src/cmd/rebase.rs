@@ -167,7 +167,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Ok(())
         } else {
             Err(
-                crate::stack::Error::CausedConflicts("stash pop resulted in conflicts".to_string())
+                crate::stack::Error::CausedConflicts("Stash pop resulted in conflicts".to_string())
                     .into(),
             )
         }
@@ -350,7 +350,7 @@ fn interactive_pushback(
                     patchnames
                 } else {
                     return Err(anyhow!(
-                        "cannot {action_str} `{patchname}`: no preceding patch"
+                        "Cannot {action_str} `{patchname}`: no preceding patch"
                     ));
                 };
 
@@ -365,7 +365,7 @@ fn interactive_pushback(
                     Action::Fixup => {
                         let commit = stack.get_patch_commit(target_patchname);
                         let message = commit.message_raw().ok_or_else(|| {
-                            anyhow!("fixup target patch `{target_patchname}` has non-UTF-8 message")
+                            anyhow!("Fixup target patch `{target_patchname}` has non-UTF-8 message")
                         })?;
                         dummy_squash_command.try_get_matches_from(&[
                             "dummy-squash",

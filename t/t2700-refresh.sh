@@ -167,7 +167,7 @@ else
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >> foo4.txt &&
     command_error stg refresh 2>err &&
-    grep -e "the index is dirty; consider using \`--index\` or \`--force\`" err
+    grep -e "The index is dirty; consider using \`--index\` or \`--force\`" err
 '
 fi
 
@@ -181,7 +181,7 @@ else
 test_expect_success 'Attempt to refresh to invalid patch name' '
     stg add foo4.txt &&
     command_error stg refresh -p bad-patchname 2>err &&
-    grep -e "patch \`bad-patchname\` does not exist" err
+    grep -e "Patch \`bad-patchname\` does not exist" err
 '
 fi
 
@@ -256,7 +256,7 @@ test_expect_success 'Attempt refresh with open conflict' '
     stg refresh &&
     conflict stg push p6 &&
     command_error stg refresh 2>err &&
-    grep -e "resolve outstanding conflicts first" err
+    grep -e "Resolve outstanding conflicts first" err
 '
 fi
 

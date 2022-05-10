@@ -47,7 +47,7 @@ test_expect_success 'Invalid patch name' '
 else
 test_expect_success 'Invalid patch name' '
     command_error stg files bad-patch-name 2>err &&
-    grep -e "error: revision not found \`bad-patch-name\`" err
+    grep -e "Revision not found \`bad-patch-name\`" err
 '
 fi
 

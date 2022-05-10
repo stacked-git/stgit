@@ -318,7 +318,7 @@ fn import_series(
                     Some(0)
                 } else {
                     return Err(anyhow!(
-                        "patch {} has unsupported strip level \"{}\"",
+                        "Patch `{}` has unsupported strip level \"{}\"",
                         raw_patchname.to_string_lossy(),
                         extra.to_str_lossy()
                     ));
@@ -347,7 +347,7 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
             return Ok(entry.path());
         }
     }
-    Err(anyhow!("series file not found"))
+    Err(anyhow!("Series file not found"))
 }
 
 fn use_message_id(matches: &clap::ArgMatches, config: &git2::Config) -> bool {
@@ -639,7 +639,7 @@ impl Headers {
                     headers.patchname = Some(
                         value
                             .to_str()
-                            .map_err(|_| anyhow!("non UTF-8 patch name"))
+                            .map_err(|_| anyhow!("Patch name is not UTF-8"))
                             .context("parsing Patch header")?
                             .to_string(),
                     );
@@ -649,7 +649,7 @@ impl Headers {
                 {
                     let (name, email) = value
                         .to_str()
-                        .map_err(|_| anyhow!("non UTF-8 From/Author"))
+                        .map_err(|_| anyhow!("From/Author is not UTF-8"))
                         .and_then(|s| signature::parse_name_email(s).map_err(|e| e))
                         .context("parsing From/Author header")?;
                     headers.author_name = Some(name.to_string());
@@ -679,7 +679,7 @@ impl Headers {
             // Once the subject is determined, more contiguous headers may be parsed.
             headers.subject = Some(
                 line.to_str()
-                    .map_err(|_| anyhow!("non-UTF-8 message"))
+                    .map_err(|_| anyhow!("Message is not UTF-8"))
                     .context("parsing patch message")?
                     .to_string(),
             );

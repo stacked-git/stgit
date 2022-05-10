@@ -109,7 +109,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         PullPolicy::Rebase => {
             if matches.value_of("repository").is_some() {
                 return Err(anyhow!(
-                    "specifying a repository is meaningless for `{policy}` pull-policy"
+                    "Specifying a repository is meaningless for `{policy}` pull-policy"
                 ));
             } else {
                 None
@@ -161,7 +161,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             print_info_message(matches, &format!("Pulling from `{remote_name}`"));
             if !stupid.user_pull(&pull_cmd, remote_name)? {
                 return Err(crate::stack::Error::CausedConflicts(
-                    "pull resulted in conflicts".to_string(),
+                    "Pull resulted in conflicts".to_string(),
                 )
                 .into());
             }

@@ -98,7 +98,7 @@ test_expect_success \
   'Too many patch names with --number' \
   '
   command_error stg uncommit --number 2 p0 p1 2>err &&
-  grep -e "when using \`--number\`, specify at most one patch name" err
+  grep -e "When using \`--number\`, specify at most one patch name" err
   '
 fi
 
@@ -163,7 +163,7 @@ test_expect_success 'Attempt to reuse patch name' '
   stg uncommit &&
   [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
   command_error stg uncommit bar-patch 2>err &&
-  grep -e "patch \`bar-patch\` already exists" err &&
+  grep -e "Patch \`bar-patch\` already exists" err &&
   stg commit --all
 '
 fi

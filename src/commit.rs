@@ -313,14 +313,14 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
                 Ok(git2::Signature::new(&name, &email, &sig.when())?)
             } else {
                 Err(anyhow!(
-                    "could not decode author email as `{}` for commit `{}`",
+                    "Could not decode author email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id(),
                 ))
             }
         } else {
             Err(anyhow!(
-                "could not decode author name as `{}` for commit `{}`",
+                "Could not decode author name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id(),
             ))
@@ -350,14 +350,14 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
                 Ok(git2::Signature::new(&name, &email, &sig.when())?)
             } else {
                 Err(anyhow!(
-                    "could not decode committer email as `{}` for commit `{}`",
+                    "Could not decode committer email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id(),
                 ))
             }
         } else {
             Err(anyhow!(
-                "could not decode committer name as `{}` for commit `{}`",
+                "Could not decode committer name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id(),
             ))

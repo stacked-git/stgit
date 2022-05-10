@@ -99,10 +99,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let (commits, patchnames) = if let Some(commitish) = matches.value_of("to") {
         let target_object = repo
             .revparse_single(commitish)
-            .map_err(|_| anyhow!("invalid commitish `{commitish}`"))?;
+            .map_err(|_| anyhow!("Invalid commitish `{commitish}`"))?;
         let mut target_commit = target_object
             .into_commit()
-            .map_err(|_| anyhow!("target `{commitish}` is not a commit"))?;
+            .map_err(|_| anyhow!("Target `{commitish}` is not a commit"))?;
         let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
         let exclusive = if !bases.contains(&target_commit.id()) {
@@ -151,7 +151,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             if let Some(mut prefixes) = matches.values_of("patchname") {
                 if prefixes.len() != 1 {
                     return Err(anyhow!(
-                        "when using `--number`, specify at most one patch name"
+                        "When using `--number`, specify at most one patch name"
                     ));
                 }
                 let prefix = prefixes.next().unwrap();
@@ -211,7 +211,7 @@ fn check_commit(commit: &git2::Commit) -> Result<()> {
         Ok(())
     } else {
         Err(anyhow!(
-            "cannot uncommit `{}` which does not have exactly one parent",
+            "Cannot uncommit `{}` which does not have exactly one parent",
             commit.id()
         ))
     }
@@ -242,7 +242,7 @@ fn check_patchnames(stack: &Stack, patchnames: &[PatchName]) -> Result<()> {
     let mut taken_names: HashSet<_> = stack.all_patches().cloned().collect();
     for patchname in patchnames {
         if taken_names.contains(patchname) {
-            return Err(anyhow!("patch `{patchname}` already exists"));
+            return Err(anyhow!("Patch `{patchname}` already exists"));
         } else {
             taken_names.insert(patchname.clone());
         }

@@ -38,7 +38,7 @@ test_expect_success 'Attempt invalid patch name' '
 else
 test_expect_success 'Attempt invalid patch name' '
     general_error stg squash -n invalid..name -- p0 p1 2>err &&
-    grep -e "Invalid value \"invalid..name\" for .--name <NAME>.: invalid patch name" err
+    grep -e "Invalid value \"invalid..name\" for .--name <NAME>.: Invalid patch name" err
 '
 fi
 
