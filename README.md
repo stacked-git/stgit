@@ -1,3 +1,11 @@
+**This is the Rust implementation of StGit. The code for the original
+Python implementation remains in place for the time being and the test
+suite will run against either the Rust or Python implementation.**
+
+**Set `STG_TEST_PYTHON=1` when running tests to use the Python implementation.**
+**Set `STG_TEST_PROFILE=release` to test with a release build instead of the
+default dev build.**
+
 # Stacked Git
 
 Stacked Git, **StGit** for short, is an application for managing Git
@@ -32,11 +40,12 @@ StGit release.
 
 ### Dependencies
 
-StGit is written in pure Python with no third-party Python dependencies.
-StGit supports Python versions >= 3.5.
+StGit is implemented in Rust using a number of third-party, open source
+crates. StGit compiles to a statically linked executable.
 
-StGit works within the context of a Git repository by running `git`
-commands. [Git](https://git-scm.com) 2.2.0 or newer is required.
+StGit works within the context of a Git repository and performs many
+operations by running subordinate `git` commands.
+[Git](https://git-scm.com) 2.2.0 or newer is required.
 
 ### Package Repositories
 
@@ -65,7 +74,7 @@ release][latest] or clone from the [StGit repository on GitHub][repo].
 To install from source, choose a `prefix` and run:
 
 ``` shellsession
-$ make prefix=/usr/local install install-doc
+$ cargo install --locked --path=.
 ```
 
 For more information about installation, see [INSTALL](INSTALL).

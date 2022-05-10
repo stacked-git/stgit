@@ -1,4 +1,14 @@
-For basic installation:
+Installing the Rust implementation of StGit:
+
+    $ cargo install --locked path=.
+
+The above will install the statically linked `stg` executable to
+~/.cargo/bin, by default. The --root option, CARGO_INSTALL_ROOT
+environment variable, or install.root Cargo config value may be
+used to change where StGit is installed.
+
+
+Basic installation of the Python implementation of StGit:
 
 	$ make all doc
 	$ make install install-doc
