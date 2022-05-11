@@ -678,6 +678,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok((mailinfo, message, diff))
     }
 
+    #[cfg(feature = "import-compressed")]
     pub(crate) fn mailinfo_stream(
         &self,
         mut input: impl std::io::Read + Send + 'static,

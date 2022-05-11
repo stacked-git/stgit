@@ -1,8 +1,7 @@
 //! `stg import` implementation.
 
 use std::{
-    ffi::OsStr,
-    io::{Read, Write},
+    io::Read,
     path::{Path, PathBuf},
 };
 
@@ -17,7 +16,7 @@ use crate::{
     repo::RepositoryExtended,
     signature::{self, SignatureExtended},
     stack::{Stack, StackStateAccess},
-    stupid::Stupid,
+    stupid::{Stupid, StupidContext},
 };
 
 use super::StGitCommand;
@@ -49,7 +48,7 @@ fn make() -> clap::Command<'static> {
              \n\
              The patch description must be separated from the diff with a \"---\" line.",
         )
-        .override_usage(
+        .override_usage(if cfg!(feature = "import-url") {
             "stg import [OPTIONS] <diff-path>\n    \
              stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n    \
              stg import [OPTIONS] -M [<mbox-path>]\n    \
@@ -57,8 +56,13 @@ fn make() -> clap::Command<'static> {
              stg import [OPTIONS] -u <diff-url>\n    \
              stg import [OPTIONS] -u -m <mail-url>\n    \
              stg import [OPTIONS] -u -M <mbox-url>\n    \
-             stg import [OPTIONS] -u -s <series-url>",
-        )
+             stg import [OPTIONS] -u -s <series-url>"
+        } else {
+            "stg import [OPTIONS] <diff-path>\n    \
+             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n    \
+             stg import [OPTIONS] -M [<mbox-path>]\n    \
+             stg import [OPTIONS] -s [<series-path>]"
+        })
         .arg(
             Arg::new("source")
                 .help("Source of patches to import")
@@ -89,14 +93,21 @@ fn make() -> clap::Command<'static> {
                 .help("Import patch series")
                 .long_help("Import patch series from a series file are tar archive."),
         )
-        .group(ArgGroup::new("whence").args(&["mail", "mbox", "series"]))
-        .arg(
+        .group(ArgGroup::new("whence").args(&["mail", "mbox", "series"]));
+
+    let app = if cfg!(feature = "import-url") {
+        app.arg(
             Arg::new("url")
                 .long("url")
                 .short('u')
                 .help("Retrieve source from a url instead of local file")
                 .requires("source"),
         )
+    } else {
+        app
+    };
+
+    let app = app
         .next_help_heading("IMPORT OPTIONS")
         .arg(
             Arg::new("name")
@@ -194,7 +205,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     repo.stupid().update_index_refresh()?;
 
-    if matches.is_present("url") {
+    if cfg!(feature = "import-url") && matches.is_present("url") {
         import_url(stack, matches)
     } else if matches.is_present("series") {
         import_series(stack, matches, source_path.as_deref())
@@ -206,7 +217,17 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 }
 
+#[cfg(not(feature = "import-url"))]
+fn import_url(_stack: Stack, _matches: &clap::ArgMatches) -> Result<()> {
+    Err(anyhow!(
+        "StGit not built with support for downloading imports"
+    ))
+}
+
+#[cfg(feature = "import-url")]
 fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
+    use std::io::Write;
+
     let url_str = matches
         .value_of("source")
         .expect("source url must be present");
@@ -250,6 +271,57 @@ fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
     }
 }
 
+#[cfg(feature = "import-compressed")]
+fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
+    let source_file = std::fs::File::open(&source_path)?;
+    let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(source_file));
+    let temp_dir = tempfile::tempdir()?;
+    archive.unpack(temp_dir.path())?;
+    let series_path = find_series_path(temp_dir.path())?;
+    return import_series(stack, matches, Some(series_path.as_path()));
+}
+
+#[cfg(feature = "import-compressed")]
+fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
+    let source_file = std::fs::File::open(&source_path)?;
+    let mut archive = tar::Archive::new(bzip2::read::BzDecoder::new(source_file));
+    let temp_dir = tempfile::tempdir()?;
+    archive.unpack(temp_dir.path())?;
+    let series_path = find_series_path(temp_dir.path())?;
+    return import_series(stack, matches, Some(series_path.as_path()));
+}
+
+#[cfg(feature = "import-compressed")]
+fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
+    let source_file = std::fs::File::open(&source_path)?;
+    let mut archive = tar::Archive::new(source_file);
+    let temp_dir = tempfile::tempdir()?;
+    archive.unpack(temp_dir.path())?;
+    let series_path = find_series_path(temp_dir.path())?;
+    return import_series(stack, matches, Some(series_path.as_path()));
+}
+
+#[cfg(not(feature = "import-compressed"))]
+fn import_tgz_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
+    Err(anyhow!(
+        "StGit not built with support for compressed series"
+    ))
+}
+
+#[cfg(not(feature = "import-compressed"))]
+fn import_tbz2_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
+    Err(anyhow!(
+        "StGit not built with support for compressed series"
+    ))
+}
+
+#[cfg(not(feature = "import-compressed"))]
+fn import_tar_series(_: Stack, _: &clap::ArgMatches, _: &Path) -> Result<()> {
+    Err(anyhow!(
+        "StGit not built with support for compressed series"
+    ))
+}
+
 fn import_series(
     stack: Stack,
     matches: &clap::ArgMatches,
@@ -259,26 +331,11 @@ fn import_series(
         if let Some(filename) = source_path.file_name() {
             let filename = filename.to_string_lossy().to_ascii_lowercase();
             if filename.ends_with(".tar.gz") || filename.ends_with(".tgz") {
-                let source_file = std::fs::File::open(&source_path)?;
-                let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(source_file));
-                let temp_dir = tempfile::tempdir()?;
-                archive.unpack(temp_dir.path())?;
-                let series_path = find_series_path(temp_dir.path())?;
-                return import_series(stack, matches, Some(series_path.as_path()));
+                return import_tgz_series(stack, matches, source_path);
             } else if filename.ends_with(".tar.bz2") {
-                let source_file = std::fs::File::open(&source_path)?;
-                let mut archive = tar::Archive::new(bzip2::read::BzDecoder::new(source_file));
-                let temp_dir = tempfile::tempdir()?;
-                archive.unpack(temp_dir.path())?;
-                let series_path = find_series_path(temp_dir.path())?;
-                return import_series(stack, matches, Some(series_path.as_path()));
+                return import_tbz2_series(stack, matches, source_path);
             } else if filename.ends_with(".tar") {
-                let source_file = std::fs::File::open(&source_path)?;
-                let mut archive = tar::Archive::new(source_file);
-                let temp_dir = tempfile::tempdir()?;
-                archive.unpack(temp_dir.path())?;
-                let series_path = find_series_path(temp_dir.path())?;
-                return import_series(stack, matches, Some(series_path.as_path()));
+                return import_tar_series(stack, matches, source_path);
             }
         }
         std::fs::read(source_path)?
@@ -335,6 +392,7 @@ fn import_series(
     Ok(())
 }
 
+#[cfg(feature = "import-compressed")]
 fn find_series_path(base: &Path) -> Result<PathBuf> {
     for entry in base.read_dir()? {
         let entry = entry?;
@@ -343,7 +401,7 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
             if let Ok(path) = find_series_path(&entry.path()) {
                 return Ok(path);
             }
-        } else if file_type.is_file() && entry.file_name() == OsStr::new("series") {
+        } else if file_type.is_file() && entry.file_name() == std::ffi::OsStr::new("series") {
             return Ok(entry.path());
         }
     }
@@ -373,6 +431,48 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
     Ok(())
 }
 
+#[cfg(feature = "import-compressed")]
+fn get_gz_mailinfo(
+    stupid: &StupidContext,
+    source_file: std::fs::File,
+    message_id: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    let stream = flate2::read::GzDecoder::new(source_file);
+    stupid.mailinfo_stream(stream, message_id)
+}
+
+#[cfg(feature = "import-compressed")]
+fn get_bz2_mailinfo(
+    stupid: &StupidContext,
+    source_file: std::fs::File,
+    message_id: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    let stream = bzip2::read::BzDecoder::new(source_file);
+    stupid.mailinfo_stream(stream, message_id)
+}
+
+#[cfg(not(feature = "import-compressed"))]
+fn get_gz_mailinfo(
+    _: &StupidContext,
+    _: std::fs::File,
+    _: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    Err(anyhow!(
+        "StGit not built with support for compressed patches"
+    ))
+}
+
+#[cfg(not(feature = "import-compressed"))]
+fn get_bz2_mailinfo(
+    _: &StupidContext,
+    _: std::fs::File,
+    _: bool,
+) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    Err(anyhow!(
+        "StGit not built with support for compressed patches"
+    ))
+}
+
 fn import_file<'repo>(
     stack: Stack<'repo>,
     matches: &clap::ArgMatches,
@@ -386,14 +486,8 @@ fn import_file<'repo>(
     let (mailinfo, message, diff) = if let Some(source_path) = source_path {
         let source_file = std::fs::File::open(source_path)?;
         match source_path.extension().and_then(|s| s.to_str()) {
-            Some("gz") => {
-                let stream = flate2::read::GzDecoder::new(source_file);
-                stupid.mailinfo_stream(stream, message_id)
-            }
-            Some("bz2") => {
-                let stream = bzip2::read::BzDecoder::new(source_file);
-                stupid.mailinfo_stream(stream, message_id)
-            }
+            Some("gz") => get_gz_mailinfo(&stupid, source_file, message_id),
+            Some("bz2") => get_bz2_mailinfo(&stupid, source_file, message_id),
             _ => stupid.mailinfo(Some(source_file), message_id),
         }
     } else {

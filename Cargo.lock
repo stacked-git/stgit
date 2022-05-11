@@ -531,7 +531,6 @@ dependencies = [
  "tempfile",
  "termcolor",
  "thiserror",
- "url",
 ]
 
 [[package]]
