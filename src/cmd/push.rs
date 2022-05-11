@@ -55,7 +55,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("NUMBER")
                 .validator(|s| {
                     s.parse::<isize>()
-                        .map_err(|_| format!("'{}' is not an integer", s))
+                        .map_err(|_| format!("'{s}' is not an integer"))
                 }),
         )
         .arg(

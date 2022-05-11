@@ -82,13 +82,13 @@ impl EditablePatchDescription {
         let message = self.message.trim_end_matches('\n');
         write!(stream, "\n{message}\n")?;
         if let Some(instruction) = self.instruction {
-            write!(stream, "\n{}", instruction)?;
+            write!(stream, "\n{instruction}")?;
         } else {
             writeln!(stream)?;
         }
         if let Some(diff) = self.diff.as_ref() {
             if let Some(diff_instruction) = self.diff_instruction {
-                write!(stream, "{}", diff_instruction)?;
+                write!(stream, "{diff_instruction}")?;
             }
             stream.write_all(b"---\n")?;
             stream.write_all(diff.as_ref())?;

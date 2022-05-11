@@ -65,7 +65,7 @@ pub(crate) fn parse_stgit_revision<'repo>(
     if let Some(spec) = spec {
         let stack = Stack::from_branch(repo, branch)?;
         if let Some((_, spec)) = spec.split_once("{base}") {
-            let revspec = format!("{}{}", stack.base().id(), spec);
+            let revspec = format!("{}{spec}", stack.base().id());
             revparse_single(repo, &revspec)
         } else {
             let patch_revspec = stack.patch_revspec(spec);

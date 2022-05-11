@@ -356,7 +356,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         let conflict_msg;
         let reflog_msg = if has_conflicts {
-            conflict_msg = format!("{} (CONFLICT)", reflog_msg);
+            conflict_msg = format!("{reflog_msg} (CONFLICT)");
             &conflict_msg
         } else {
             reflog_msg
@@ -686,7 +686,7 @@ impl<'repo> StackTransaction<'repo> {
         } else if let Some(pos) = self.hidden.iter().position(|pn| pn == patchname) {
             self.hidden.remove(pos);
         } else {
-            panic!("push_tree `{}` was not in unapplied or hidden", patchname);
+            panic!("push_tree `{patchname}` was not in unapplied or hidden");
         }
 
         self.applied.push(patchname.clone());
@@ -906,10 +906,7 @@ impl<'repo> StackTransaction<'repo> {
         } else if let Some(pos) = self.hidden.iter().position(|pn| pn == old_patchname) {
             self.hidden[pos] = new_patchname.clone();
         } else {
-            panic!(
-                "old patchname `{}` not found in applied, unapplied, or hidden",
-                old_patchname
-            );
+            panic!("old `{old_patchname}` not found in applied, unapplied, or hidden");
         }
 
         let patch = self.stack.get_patch(old_patchname).clone();
@@ -1127,7 +1124,7 @@ impl<'repo> StackTransaction<'repo> {
                 tree_id
             } else if !self.options.use_index_and_worktree {
                 return Err(Error::TransactionHalt {
-                    msg: format!("{} does not apply cleanly", patchname),
+                    msg: format!("{patchname} does not apply cleanly"),
                     conflicts: false,
                 }
                 .into());
@@ -1275,7 +1272,7 @@ impl<'repo> StackTransaction<'repo> {
         write!(output, "{}", merged_patches.len())?;
         output.reset()?;
         let plural = if merged_patches.len() == 1 { "" } else { "es" };
-        writeln!(output, " patch{} merged upstream", plural)?;
+        writeln!(output, " patch{plural} merged upstream")?;
         Ok(())
     }
 
@@ -1283,12 +1280,12 @@ impl<'repo> StackTransaction<'repo> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
         output.set_color(color_spec.set_dimmed(true))?;
-        write!(output, "{}", old_patchname)?;
+        write!(output, "{old_patchname}")?;
         color_spec.clear();
         output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
         write!(output, " => ")?;
         output.reset()?;
-        writeln!(output, "{}", new_patchname)?;
+        writeln!(output, "{new_patchname}")?;
         Ok(())
     }
 
@@ -1305,7 +1302,7 @@ impl<'repo> StackTransaction<'repo> {
             write!(output, "..")?;
             output.set_color(color_spec.set_intense(true))?;
             let last = &committed[committed.len() - 1];
-            write!(output, "{}", last)?;
+            write!(output, "{last}")?;
         }
         output.reset()?;
         writeln!(output)?;
@@ -1326,7 +1323,7 @@ impl<'repo> StackTransaction<'repo> {
                 write!(output, "..")?;
                 output.set_color(color_spec.set_dimmed(true))?;
                 let last = &deleted[deleted.len() - 1];
-                write!(output, "{}", last)?;
+                write!(output, "{last}")?;
             }
             output.reset()?;
             writeln!(output)?;
@@ -1342,7 +1339,7 @@ impl<'repo> StackTransaction<'repo> {
             write!(output, "! ")?;
             color_spec.set_fg(None);
             output.set_color(color_spec.set_dimmed(true).set_italic(true))?;
-            writeln!(output, "{}", patchname)?;
+            writeln!(output, "{patchname}")?;
             color_spec.clear();
             output.reset()?;
         }
@@ -1357,7 +1354,7 @@ impl<'repo> StackTransaction<'repo> {
             write!(output, "- ")?;
             color_spec.set_fg(None);
             output.set_color(color_spec.set_dimmed(true))?;
-            writeln!(output, "{}", patchname)?;
+            writeln!(output, "{patchname}")?;
             color_spec.clear();
             output.reset()?;
         }
@@ -1378,7 +1375,7 @@ impl<'repo> StackTransaction<'repo> {
                 write!(output, "..")?;
                 output.set_color(color_spec.set_dimmed(true))?;
                 let last = &popped[popped.len() - 1];
-                write!(output, "{}", last)?;
+                write!(output, "{last}")?;
             }
             output.reset()?;
             writeln!(output)?;
@@ -1404,10 +1401,10 @@ impl<'repo> StackTransaction<'repo> {
                 termcolor::Color::Green
             })),
         )?;
-        write!(output, "{} ", sigil)?;
+        write!(output, "{sigil} ")?;
         color_spec.clear();
         output.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
-        write!(output, "{}", patchname)?;
+        write!(output, "{patchname}")?;
         output.reset()?;
 
         let status_str = match status {
@@ -1419,7 +1416,7 @@ impl<'repo> StackTransaction<'repo> {
             PushStatus::Unmodified => "",
         };
 
-        writeln!(output, "{}", status_str)?;
+        writeln!(output, "{status_str}")?;
         if is_last {
             self.printed_top = true;
         }
@@ -1444,7 +1441,7 @@ impl<'repo> StackTransaction<'repo> {
                 .set_intense(is_applied && !is_top)
                 .set_dimmed(!is_applied),
         )?;
-        writeln!(output, "{}", patchname)?;
+        writeln!(output, "{patchname}")?;
         output.reset()?;
         Ok(())
     }

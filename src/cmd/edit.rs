@@ -82,9 +82,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
             return if !similar_names.is_empty() {
                 println!("Possible patches:");
                 for pn in similar_names {
-                    println!("  {}", pn);
+                    println!("  {pn}");
                 }
-                Err(anyhow!("Ambiguous patch name `{}`", &patchname))
+                Err(anyhow!("Ambiguous patch name `{patchname}`"))
             } else {
                 Err(anyhow!("Patch `{patchname}` does not exist"))
             };
@@ -149,7 +149,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         trans.push_patches(&popped, false)
                     }
                 })
-                .execute(&format!("edit: {}", &patchname))?;
+                .execute(&format!("edit: {patchname}"))?;
             Ok(())
         }
     }

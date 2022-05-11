@@ -35,7 +35,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let mut color_spec = termcolor::ColorSpec::new();
         color_spec.set_bold(true);
         stdout.set_color(&color_spec)?;
-        write!(stdout, "{}", patchname)?;
+        write!(stdout, "{patchname}")?;
         color_spec.clear();
         stdout.set_color(&color_spec)?;
         writeln!(stdout)?;

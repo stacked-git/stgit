@@ -295,7 +295,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 _ => None,
             };
             stdout.set_color(color_spec.set_fg(sigil_color))?;
-            write!(stdout, "{} ", sigil)?;
+            write!(stdout, "{sigil} ")?;
             stdout.set_color(color_spec.set_fg(None))?;
         }
 
@@ -304,39 +304,28 @@ fn run(matches: &ArgMatches) -> Result<()> {
             '>' => color_spec.set_bold(true),
             '-' => color_spec.set_dimmed(true),
             '!' => color_spec.set_dimmed(true).set_italic(true),
-            _ => panic!("unhandled sigil {:?}", sigil),
+            _ => panic!("unhandled sigil {sigil:?}"),
         };
         stdout.set_color(&color_spec)?;
-        write!(
-            stdout,
-            "{0}{1:width$}",
-            branch_prefix,
-            patchname,
-            width = patchname_width
-        )?;
+        write!(stdout, "{branch_prefix}{patchname:patchname_width$}")?;
 
         if opt_author {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
             if let Ok(author) = commit.author_strict() {
-                write!(
-                    stdout,
-                    " # {:width$}",
-                    &author.name().unwrap(),
-                    width = author_width
-                )?;
+                write!(stdout, " # {:author_width$}", &author.name().unwrap(),)?;
             } else {
                 let author = commit.author();
                 let name = String::from_utf8_lossy(author.name_bytes());
-                write!(stdout, " # {:width$}", &name, width = author_width)?;
+                write!(stdout, " # {name:author_width$}")?;
             }
         }
         if opt_description {
             let suffix = match commit.summary() {
-                Some(summary) => format!(" # {}", summary),
+                Some(summary) => format!(" # {summary}"),
                 None => " #".to_string(),
             };
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-            write!(stdout, "{}", suffix)?;
+            write!(stdout, "{suffix}")?;
         }
         color_spec.clear();
         stdout.set_color(&color_spec)?;

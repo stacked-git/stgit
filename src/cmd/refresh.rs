@@ -178,7 +178,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let temp_commit_id = stack.repo.commit_ex(
         &git2::Signature::make_author(Some(&config), matches)?,
         &git2::Signature::default_committer(Some(&config))?,
-        &CommitMessage::from(format!("Refresh of {}", &patchname)),
+        &CommitMessage::from(format!("Refresh of {patchname}")),
         tree_id,
         [stack.branch_head.id()],
     )?;
@@ -195,8 +195,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| trans.new_applied(&temp_patchname, temp_commit_id))
         .execute(&format!(
-            "refresh {} (create temporary patch)",
-            &temp_patchname
+            "refresh {temp_patchname} (create temporary patch)"
         ))?;
 
     let mut absorb_success = false;

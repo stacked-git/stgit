@@ -182,10 +182,10 @@ impl PatchName {
                 let num_digits = inner.len() - base.len();
                 candidate = if num_digits > 0 {
                     let digits_str = &inner[inner.len() - num_digits..];
-                    let n: usize = digits_str.parse().unwrap();
-                    Self(format!("{}{}", base, n + 1))
+                    let n = digits_str.parse::<usize>().unwrap() + 1;
+                    Self(format!("{base}{n}"))
                 } else {
-                    Self(format!("{}-1", base))
+                    Self(format!("{base}-1"))
                 }
             }
         }
@@ -221,7 +221,7 @@ impl PatchName {
             } else if let '~' | '^' | ':' | '/' | '\\' | '?' | '[' | '*' | '\x7f' = c {
                 return Err(Error::invalid(
                     name,
-                    &format!("patch name may not contain '{}'", c),
+                    &format!("patch name may not contain '{c}'"),
                 ));
             }
 

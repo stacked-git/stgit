@@ -105,7 +105,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     } else {
                         println!("Possible patches:");
                         for pn in similar_names {
-                            println!("  {}", pn);
+                            println!("  {pn}");
                         }
                         return Err(anyhow!("Ambiguous patch name `{patchname}`"));
                     }

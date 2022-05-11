@@ -63,7 +63,7 @@ fn make() -> clap::Command<'static> {
                 .allow_hyphen_values(true)
                 .validator(|s| {
                     s.parse::<usize>()
-                        .map_err(|_| format!("'{}' is not a positive integer", s))
+                        .map_err(|_| format!("'{s}' is not a positive integer"))
                 })
                 .conflicts_with("to"),
         )

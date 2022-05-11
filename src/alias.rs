@@ -48,7 +48,7 @@ impl Alias {
     /// Make [`clap::Command`] for the alias.
     pub(crate) fn make(&self) -> clap::Command<'static> {
         let about = match self.kind {
-            AliasKind::StGit => format!("Alias for `stg {0}`", &self.command),
+            AliasKind::StGit => format!("Alias for `stg {}`", &self.command),
             AliasKind::Shell => format!("Alias for shell command `{}`", &self.command),
         };
         // TODO: future versions of clap may allow about argument to be something other

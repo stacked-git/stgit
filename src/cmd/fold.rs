@@ -55,7 +55,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("N")
                 .validator(|s| {
                     s.parse::<usize>()
-                        .map_err(|_| format!("'{}' is not an unsigned integer", s))
+                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
                 }),
         )
         .arg(
@@ -65,7 +65,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("N")
                 .validator(|s| {
                     s.parse::<usize>()
-                        .map_err(|_| format!("'{}' is not an unsigned integer", s))
+                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
                 }),
         )
         .arg(

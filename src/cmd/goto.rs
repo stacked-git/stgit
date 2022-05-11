@@ -62,7 +62,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if !similar_names.is_empty() {
             println!("Possible patches:");
             for pn in similar_names {
-                println!("  {}", pn);
+                println!("  {pn}");
             }
             Err(anyhow!("Ambiguous patch name `{patchname}`"))
         } else {
@@ -88,7 +88,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     _ => {
                         println!("Possible patches:");
                         for pn in oid_matches {
-                            println!("  {}", pn);
+                            println!("  {pn}");
                         }
                         Err(anyhow!("Ambiguous commit id `{patchname}`"))
                     }

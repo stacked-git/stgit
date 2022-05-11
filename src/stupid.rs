@@ -595,7 +595,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .args(
                 trailers
                     .into_iter()
-                    .map(|(trailer, by)| format!("--trailer={}={}", trailer, by)),
+                    .map(|(trailer, by)| format!("--trailer={trailer}={by}")),
             )
             .stdout(Stdio::piped())
             .in_and_out(message)?

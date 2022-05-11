@@ -30,7 +30,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("N")
                 .validator(|s| {
                     s.parse::<isize>()
-                        .map_err(|_| format!("'{}' is not an integer", s))
+                        .map_err(|_| format!("'{s}' is not an integer"))
                         .and_then(|n| {
                             if n >= 1 {
                                 Ok(())
