@@ -65,11 +65,15 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             ));
         }
 
-        let prev: Option<Oid> = match ds.prev {
-            Some(ref oid_str) => {
-                let oid = Oid::from_str(oid_str)
-                    .map_err(|_| D::Error::custom(format!("invalid `prev` oid '{}'", oid_str)))?;
-                Some(oid)
+        let prev: Option<Oid> = match ds.prev.as_ref() {
+            Some(oid_str) => {
+                if oid_str == "None" {
+                    None
+                } else {
+                    let oid = Oid::from_str(oid_str)
+                        .map_err(|_| D::Error::custom(format!("invalid `prev` oid `{oid_str}`")))?;
+                    Some(oid)
+                }
             }
             None => None,
         };
