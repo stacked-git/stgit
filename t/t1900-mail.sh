@@ -3,6 +3,8 @@
 test_description='Test the mail command'
 . ./test-lib.sh
 
+if test -z "$STG_RUST"; then
+
 test_expect_success 'Initialize the StGit repository' '
     git config stgit.sender "A U Thor <author@example.com>" &&
     test_commit_bulk --message="Patch %s" --filename=foo.txt --contents="line %s" 5 &&
@@ -178,5 +180,7 @@ test_expect_success 'Check cover letter diff stats' '
     t2=$(git diff --stat-width=72 --stat --summary HEAD~ HEAD) &&
     test "$t1" = "$t2"
 '
+
+fi
 
 test_done

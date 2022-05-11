@@ -21,7 +21,6 @@ pub(crate) mod id;
 pub(crate) mod import;
 pub(crate) mod init;
 pub(crate) mod log;
-pub(crate) mod mail;
 pub(crate) mod new;
 pub(crate) mod next;
 pub(crate) mod patches;
@@ -109,5 +108,3 @@ pub(crate) fn get_commands() -> Commands {
         version::get_command(),
     ])
 }
-
-pub(crate) const PYTHON_COMMANDS: &[&str] = &["mail"];

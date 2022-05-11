@@ -117,11 +117,6 @@ fn get_full_command(
         .subcommand_value_name("command")
         .subcommands(commands.values().map(|command| (command.make)()))
         .subcommands(aliases.values().map(|alias| alias.make()))
-        .subcommands(
-            cmd::PYTHON_COMMANDS
-                .iter()
-                .map(|name| clap::Command::new(*name).about("Implemented in Python")),
-        )
 }
 
 /// Main entry point for `stg` executable.
@@ -155,8 +150,6 @@ fn main() -> ! {
             // and constructing all subcommands' Command instances are avoided.
             if let Some(command) = commands.get(sub_name) {
                 execute_command(command, argv, color_choice)
-            } else if cmd::PYTHON_COMMANDS.contains(&sub_name) {
-                punt_to_python()
             } else {
                 // If the subcommand name does not match a builtin subcommand, the
                 // aliases are located, which involves finding the Git repo and parsing
@@ -457,18 +450,6 @@ fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2:
             },
         )
         .map(|aliases| (aliases, maybe_repo))
-}
-
-fn punt_to_python() -> ! {
-    match std::process::Command::new("python")
-        .args(["-m", "stgit"])
-        .args(std::env::args_os().skip(1))
-        .status()
-        .context("failed to run python")
-    {
-        Ok(status) => std::process::exit(status.code().unwrap_or(-1)),
-        Err(e) => exit_with_result(Err(e), None),
-    }
 }
 
 /// Print user-facing message to stderr.

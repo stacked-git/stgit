@@ -56,6 +56,7 @@ test_expect_success 'Test stg commit' '
     stg commit UTF-8
 '
 
+if test -z "$STG_RUST"; then
 desc='Test mail export and import'
 body='
     stg mail --all --mbox > export.mbox &&
@@ -71,6 +72,6 @@ if ! (python --version 2>&1 | grep -q -e 'Python 3\.3'); then
 else
     test_expect_failure "$desc" "$body"
 fi
-
+fi
 
 test_done
