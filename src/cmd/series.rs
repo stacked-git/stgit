@@ -225,7 +225,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 patches.drain(0..top_pos - shortnr);
             }
         } else {
-            patches.drain(shortnr..);
+            patches.drain(shortnr.min(patches.len())..);
         }
     }
 
