@@ -851,7 +851,9 @@ impl<'repo> StackTransaction<'repo> {
                 // execute() performs the checkout. Setting the transaction head
                 // here ensures that the real stack top will be checked-out.
                 self.updated_head = Some(commit.clone());
-            } else if new_tree_id == new_parent.tree_id() {
+            } else if push_status != PushStatus::AlreadyMerged
+                && new_tree_id == new_parent.tree_id()
+            {
                 push_status = PushStatus::Empty;
             }
 
