@@ -72,7 +72,6 @@ PYTHON_VERSIONS = [
     'python3.7',
     'python3.6',
     'python3.5',
-    'pypy3',
 ]
 
 BUILD_PACKAGE_NAMES = ['pip', 'wheel', 'setuptools']

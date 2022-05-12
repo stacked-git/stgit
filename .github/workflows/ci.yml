@@ -120,7 +120,6 @@ jobs:
     strategy:
       matrix:
         python-version:
-          - 'pypy-3.7'
           - '3.5'
           - '3.6'
           - '3.7'
