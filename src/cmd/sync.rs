@@ -178,7 +178,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
-        .use_readtree_checkout(true)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             for pn in pushed.iter().chain(popped.iter()) {

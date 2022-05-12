@@ -52,7 +52,6 @@ struct TransactionOptions {
     pub(self) use_index_and_worktree: bool,
     pub(self) set_head: bool,
     pub(self) allow_bad_head: bool,
-    pub(self) use_readtree_checkout: bool,
 }
 
 impl Default for TransactionOptions {
@@ -63,7 +62,6 @@ impl Default for TransactionOptions {
             use_index_and_worktree: false,
             set_head: true,
             allow_bad_head: false,
-            use_readtree_checkout: false,
         }
     }
 }
@@ -205,15 +203,6 @@ impl<'repo> TransactionBuilder<'repo> {
     #[must_use]
     pub(crate) fn use_index_and_worktree(mut self, allow: bool) -> Self {
         self.options.use_index_and_worktree = allow;
-        self
-    }
-
-    /// This is a special option only used by `stg sync`. It causes the execution-time
-    /// checkout to use `git read-tree -u` for its merge capability instead of using the
-    /// simpler/faster default checkout mechanism.
-    #[must_use]
-    pub(crate) fn use_readtree_checkout(mut self, use_readtree: bool) -> Self {
-        self.options.use_readtree_checkout = use_readtree;
         self
     }
 
@@ -449,18 +438,18 @@ impl<'repo> StackTransaction<'repo> {
             };
         }
 
-        if self.options.use_readtree_checkout {
-            self.repo()
-                .stupid()
-                .read_tree_checkout(self.current_tree_id, commit.tree_id())
-                .map_err(|e| Error::CheckoutConflicts(e.to_string()))?;
-        } else {
+        if self.options.discard_changes {
             let mut checkout_builder = git2::build::CheckoutBuilder::new();
-            if self.options.discard_changes {
-                checkout_builder.force();
-            }
+            checkout_builder.force();
             repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
+        } else {
+            let stupid = self.repo().stupid();
+            stupid.update_index_refresh()?;
+            stupid
+                .read_tree_checkout(self.current_tree_id, commit.tree_id())
+                .map_err(|e| Error::CheckoutConflicts(format!("{e:#}")))?;
         }
+
         self.current_tree_id = commit.tree_id();
         Ok(())
     }
