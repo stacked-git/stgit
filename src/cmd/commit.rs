@@ -6,7 +6,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     stack::{Error, Stack, StackStateAccess},
 };
 
@@ -70,10 +70,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let patches: Vec<PatchName> = if let Some(patch_ranges) = matches.values_of("patches") {
         let applied_and_unapplied = stack.applied_and_unapplied().collect::<Vec<&PatchName>>();
-        let mut requested_patches = parse_patch_ranges(
+        let mut requested_patches = patchrange::parse(
             patch_ranges,
-            applied_and_unapplied.iter().copied(),
-            stack.all_patches(),
+            &stack,
+            patchrange::Allow::VisibleWithAppliedBoundary,
         )?;
         requested_patches.sort_unstable_by_key(|pn0| {
             applied_and_unapplied

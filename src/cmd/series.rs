@@ -10,6 +10,7 @@ use termcolor::WriteColor;
 use crate::{
     commit::CommitExtended,
     patchname::PatchName,
+    patchrange,
     stack::{Stack, StackStateAccess},
 };
 
@@ -154,10 +155,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if let Some(patch_ranges) = matches.values_of("patch-range") {
         let top_patchname = stack.applied().last();
-        for patchname in crate::patchrange::parse_contiguous_patch_range(
+        for patchname in patchrange::parse_contiguous(
             patch_ranges,
-            stack.all_patches(),
-            stack.all_patches(),
+            &stack,
+            patchrange::Allow::AllWithAppliedBoundary,
         )? {
             let oid = stack.get_patch(&patchname).commit.id();
             let sigil = if Some(&patchname) == top_patchname {

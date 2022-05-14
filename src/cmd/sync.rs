@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
-    patchrange::parse_contiguous_patch_range,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess, StackTransaction},
     stupid::Stupid,
@@ -80,10 +80,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let patches: Vec<PatchName> = if matches.is_present("all") {
         stack.applied().to_vec()
     } else if let Some(patch_values) = matches.values_of("patch") {
-        parse_contiguous_patch_range(
+        patchrange::parse_contiguous(
             patch_values,
-            stack.applied_and_unapplied(),
-            stack.all_patches(),
+            &stack,
+            patchrange::Allow::VisibleWithAppliedBoundary,
         )?
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]

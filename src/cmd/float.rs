@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
@@ -74,11 +74,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let patch_ranges = matches
             .values_of("patches")
             .expect("clap ensures either patches or series");
-        parse_patch_ranges(
-            patch_ranges,
-            stack.applied_and_unapplied(),
-            stack.all_patches(),
-        )?
+        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Visible)?
     };
 
     if patches.is_empty() {
@@ -154,9 +150,7 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
         .filter(|s| !s.is_empty())
         .collect();
 
-    let allowed_patches = stack.applied_and_unapplied();
-
-    parse_patch_ranges(series, allowed_patches, stack.all_patches()).with_context(|| {
+    patchrange::parse(series, stack, patchrange::Allow::Visible).with_context(|| {
         if use_stdin {
             "<stdin>".to_string()
         } else {

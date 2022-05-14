@@ -3,10 +3,12 @@
 use anyhow::{anyhow, Result};
 use clap::Arg;
 
-use crate::color::get_color_stdout;
-use crate::patchrange::parse_patch_ranges;
-use crate::stack::{Stack, StackState};
-use crate::stupid::Stupid;
+use crate::{
+    color::get_color_stdout,
+    patchrange,
+    stack::{Stack, StackState},
+    stupid::Stupid,
+};
 
 use super::StGitCommand;
 
@@ -65,11 +67,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             .transact(|trans| {
                 let reset_state = StackState::from_commit(trans.repo(), &commit)?;
                 if let Some(names) = matches.values_of("patchname") {
-                    let patchnames = parse_patch_ranges(
-                        names,
-                        reset_state.all_patches(),
-                        reset_state.all_patches(),
-                    )?;
+                    let patchnames =
+                        patchrange::parse(names, &reset_state, patchrange::Allow::All)?;
                     trans.reset_to_state_partially(reset_state, &patchnames)
                 } else {
                     trans.reset_to_state(reset_state)

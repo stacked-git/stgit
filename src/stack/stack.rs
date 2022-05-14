@@ -247,35 +247,31 @@ impl<'repo> Stack<'repo> {
 
 impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
     fn applied(&self) -> &[PatchName] {
-        &self.state.applied
+        self.state.applied()
     }
 
     fn unapplied(&self) -> &[PatchName] {
-        &self.state.unapplied
+        self.state.unapplied()
     }
 
     fn hidden(&self) -> &[PatchName] {
-        &self.state.hidden
+        self.state.hidden()
     }
 
     fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo> {
-        &self.state.patches[patchname]
+        self.state.get_patch(patchname)
     }
 
     fn has_patch(&self, patchname: &PatchName) -> bool {
-        self.state.patches.contains_key(patchname)
+        self.state.has_patch(patchname)
     }
 
     fn top(&self) -> &Commit<'repo> {
-        if let Some(patchname) = self.applied().last() {
-            &self.state.patches[patchname].commit
-        } else {
-            &self.state.head
-        }
+        self.state.top()
     }
 
     fn head(&self) -> &Commit<'repo> {
-        &self.state.head
+        self.state.head()
     }
 
     fn base(&self) -> &Commit<'repo> {

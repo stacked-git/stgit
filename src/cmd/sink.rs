@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
 };
@@ -101,11 +101,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     let patches: Vec<PatchName> = if let Some(patch_ranges) = matches.values_of("patches") {
-        parse_patch_ranges(
-            patch_ranges,
-            stack.applied_and_unapplied(),
-            stack.all_patches(),
-        )?
+        patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]
     } else {

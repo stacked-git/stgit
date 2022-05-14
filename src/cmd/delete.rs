@@ -6,7 +6,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
 };
@@ -65,7 +65,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let patch_ranges = matches
             .values_of("patches")
             .expect("clap will ensure either patches or --top");
-        parse_patch_ranges(patch_ranges, stack.all_patches(), stack.all_patches())?
+        patchrange::parse(
+            patch_ranges,
+            &stack,
+            patchrange::Allow::AllWithAppliedBoundary,
+        )?
     };
 
     if opt_spill

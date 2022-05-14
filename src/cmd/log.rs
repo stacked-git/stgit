@@ -1,15 +1,9 @@
 //! `stg log` implementation.
 
-use std::str::FromStr;
-
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::{
-    patchname::PatchName,
-    stack::{Stack, StackStateAccess},
-    stupid::Stupid,
-};
+use crate::{patchrange, stack::Stack, stupid::Stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     ("log", super::StGitCommand { make, run })
@@ -36,9 +30,8 @@ fn make() -> clap::Command<'static> {
         )
         .arg(
             Arg::new("patchname")
-                .help("Only show history for patchnames")
+                .help("Only show history for specified patchnames")
                 .multiple_values(true)
-                .validator(PatchName::from_str)
                 .forbid_empty_values(true),
         )
         .arg(&*crate::argset::BRANCH_ARG)
@@ -89,32 +82,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if matches.is_present("clear") {
         stack.clear_state_log("clear log")
     } else {
-        let pathspecs = if let Some(names) = matches.values_of("patchname") {
-            let mut pathspecs = Vec::with_capacity(names.len());
-            for patchname in names.map(|name| PatchName::from_str(name).expect("already validated"))
-            {
-                if stack.has_patch(&patchname) {
-                    pathspecs.push(format!("patches/{patchname}"));
-                } else {
-                    let similar_names: Vec<&PatchName> = stack
-                        .all_patches()
-                        .filter(|pn| strsim::jaro_winkler(pn.as_ref(), patchname.as_ref()) > 0.75)
-                        .collect();
-                    if similar_names.is_empty() {
-                        return Err(anyhow!("Patch `{patchname}` does not exist"));
-                    } else {
-                        println!("Possible patches:");
-                        for pn in similar_names {
-                            println!("  {pn}");
-                        }
-                        return Err(anyhow!("Ambiguous patch name `{patchname}`"));
-                    }
-                }
-            }
-            pathspecs
-        } else {
-            Vec::new()
-        };
+        let pathspecs: Option<Vec<String>> =
+            if let Some(patch_ranges) = matches.values_of("patchname") {
+                Some(
+                    patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
+                        .iter()
+                        .map(|pn| format!("patches/{pn}"))
+                        .collect(),
+                )
+            } else {
+                None
+            };
 
         let simplified_parent_id = stack
             .repo
@@ -125,14 +103,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let stupid = repo.stupid();
 
         if matches.is_present("graphical") {
-            stupid.gitk(simplified_parent_id, Some(pathspecs))
+            stupid.gitk(simplified_parent_id, pathspecs)
         } else {
             let num_commits = matches
                 .value_of("number")
                 .map(|num_str| num_str.parse::<usize>().expect("already validated"));
             stupid.log(
                 simplified_parent_id,
-                Some(pathspecs),
+                pathspecs,
                 num_commits,
                 matches.value_of("color"),
                 matches.is_present("full"),

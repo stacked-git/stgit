@@ -12,7 +12,7 @@ use crate::{
     index::TemporaryIndex,
     patchedit,
     patchname::PatchName,
-    print_info_message,
+    patchrange, print_info_message,
     repo::RepositoryExtended,
     signature::SignatureExtended,
     stack::{Stack, StackStateAccess, StackTransaction},
@@ -77,12 +77,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
-    let squash_patchnames: Vec<PatchName> = crate::patchrange::parse_patch_ranges(
+    let squash_patchnames: Vec<PatchName> = patchrange::parse(
         matches
             .values_of("patch")
             .expect("clap ensures two or more patches"),
-        stack.all_patches(),
-        stack.all_patches(),
+        &stack,
+        patchrange::Allow::All,
     )?;
 
     let patchname: Option<PatchName> = matches

@@ -6,7 +6,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     stack::{Stack, StackStateAccess},
 };
 
@@ -45,8 +45,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .values_of("patches")
         .expect("clap ensures at least one range is provided");
 
-    let patches: Vec<PatchName> =
-        parse_patch_ranges(patch_ranges, stack.all_patches(), stack.all_patches())?;
+    let patches: Vec<PatchName> = patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?;
 
     // Already hidden patches are silent no-ops.
     let to_hide: Vec<PatchName> = patches

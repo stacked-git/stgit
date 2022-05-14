@@ -7,6 +7,7 @@ use clap::Arg;
 
 use crate::{
     commit::CommitExtended,
+    patchrange,
     repo::RepositoryExtended,
     signature::TimeExtended,
     stack::{Error, Stack, StackStateAccess},
@@ -120,7 +121,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 
     let patches = if let Some(patch_revs) = matches.values_of("patch_revs") {
-        crate::patchrange::parse_patch_ranges(patch_revs, stack.all_patches(), stack.all_patches())?
+        patchrange::parse(
+            patch_revs,
+            &stack,
+            patchrange::Allow::VisibleWithAppliedBoundary,
+        )?
     } else {
         stack.applied().to_vec()
     };

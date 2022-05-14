@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    patchrange,
     revspec::Error as RevError,
     stack::{Stack, StackStateAccess},
     stupid::Stupid,
@@ -103,17 +104,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
     if let Some(patch_rev) = opt_patch_revs {
         for patch_rev in patch_rev {
-            match crate::patchrange::parse_patch_ranges(
+            match patchrange::parse(
                 [patch_rev],
-                stack.all_patches(),
-                stack.all_patches(),
+                &stack,
+                patchrange::Allow::AllWithAppliedBoundary,
             ) {
                 Ok(patchnames) => {
                     for patchname in &patchnames {
                         oids.push(stack.get_patch(patchname).commit.id())
                     }
                 }
-                Err(crate::patchrange::Error::PatchNotKnown { patchname: _ }) => {
+                Err(patchrange::Error::PatchNotKnown { patchname: _ }) => {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(patch_rev), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
@@ -128,7 +129,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                             .id();
                     oids.push(oid);
                 }
-                Err(crate::patchrange::Error::PatchName(_)) => {
+                Err(patchrange::Error::PatchName(_)) => {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(patch_rev), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {

@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     commit::RepositoryCommitExtended,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
     signature::SignatureExtended,
@@ -143,10 +143,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .expect("required argument")
         .collect();
 
-    let picks: Vec<(Option<PatchName>, git2::Commit)> = match parse_patch_ranges(
+    let picks: Vec<(Option<PatchName>, git2::Commit)> = match patchrange::parse(
         sources.iter().copied(),
-        ref_stack.all_patches(),
-        ref_stack.all_patches(),
+        &ref_stack,
+        patchrange::Allow::VisibleWithAppliedBoundary,
     ) {
         Ok(patchnames) => patchnames
             .iter()
@@ -159,10 +159,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 if let Some(branchname) = branchname {
                     if let Some(patchname) = patchname {
                         let ref_stack = Stack::from_branch(&repo, Some(branchname))?;
-                        let patchnames = parse_patch_ranges(
+                        let patchnames = patchrange::parse(
                             [patchname],
-                            ref_stack.all_patches(),
-                            ref_stack.all_patches(),
+                            &ref_stack,
+                            patchrange::Allow::VisibleWithAppliedBoundary,
                         )?;
                         for pn in &patchnames {
                             picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));

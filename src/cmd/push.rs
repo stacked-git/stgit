@@ -6,7 +6,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
@@ -137,8 +137,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .cloned()
             .collect()
     } else if let Some(patch_ranges) = matches.values_of("patches") {
-        parse_patch_ranges(patch_ranges, stack.unapplied(), stack.all_patches()).map_err(|e| {
-            match e {
+        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Unapplied).map_err(
+            |e| match e {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                     if stack.is_applied(&patchname) =>
                 {
@@ -150,8 +150,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     anyhow!("Patch `{patchname}` is already applied")
                 }
                 _ => e.into(),
-            }
-        })?
+            },
+        )?
     } else {
         stack.unapplied().iter().take(1).cloned().collect()
     };

@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
-    patchrange::parse_patch_ranges,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
 };
@@ -115,14 +115,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .collect()
     } else if let Some(patch_ranges) = matches.values_of("patches") {
         indexmap::IndexSet::from_iter(
-            parse_patch_ranges(patch_ranges, stack.applied(), stack.all_patches()).map_err(
+            patchrange::parse(patch_ranges, &stack, patchrange::Allow::Applied).map_err(
                 |e| match e {
-                    crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
+                    patchrange::Error::BoundaryNotAllowed { patchname, range }
                         if stack.is_unapplied(&patchname) =>
                     {
                         anyhow!("Patch `{patchname}` from `{range}` is already unapplied")
                     }
-                    crate::patchrange::Error::PatchNotAllowed { patchname }
+                    patchrange::Error::PatchNotAllowed { patchname }
                         if stack.is_unapplied(&patchname) =>
                     {
                         anyhow!("Patch `{patchname}` is already unapplied")

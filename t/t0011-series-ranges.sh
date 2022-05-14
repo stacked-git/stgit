@@ -51,9 +51,6 @@ test_expect_success 'Open-ended range' '
     stg series p2.. > series.txt &&
     echo "+ p2" > expected.txt &&
     echo "> p3" >> expected.txt &&
-    echo "- p4" >> expected.txt &&
-    echo "- p5" >> expected.txt &&
-    echo "! p6" >> expected.txt &&
     test_cmp expected.txt series.txt
 '
 

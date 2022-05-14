@@ -3,12 +3,7 @@
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
-use crate::{
-    color::get_color_stdout,
-    patchname::PatchName,
-    patchrange::parse_patch_ranges,
-    stack::{Stack, StackStateAccess},
-};
+use crate::{color::get_color_stdout, patchname::PatchName, patchrange, stack::Stack};
 
 use super::StGitCommand;
 
@@ -46,7 +41,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .expect("clap ensures at least one range is provided");
 
     let patches: Vec<PatchName> =
-        parse_patch_ranges(patch_ranges, stack.hidden(), stack.all_patches()).map_err(
+        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Hidden).map_err(
             |e| match e {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
                     anyhow!("Patch `{patchname}` from `{range}` is not hidden")

@@ -123,6 +123,44 @@ pub(crate) trait StackStateAccess<'repo> {
     }
 }
 
+impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
+    fn applied(&self) -> &[PatchName] {
+        &self.applied
+    }
+
+    fn unapplied(&self) -> &[PatchName] {
+        &self.unapplied
+    }
+
+    fn hidden(&self) -> &[PatchName] {
+        &self.hidden
+    }
+
+    fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo> {
+        &self.patches[patchname]
+    }
+
+    fn has_patch(&self, patchname: &PatchName) -> bool {
+        self.patches.contains_key(patchname)
+    }
+
+    fn top(&self) -> &Commit<'repo> {
+        if let Some(patchname) = self.applied().last() {
+            &self.patches[patchname].commit
+        } else {
+            &self.head
+        }
+    }
+
+    fn head(&self) -> &Commit<'repo> {
+        &self.head
+    }
+
+    fn base(&self) -> &Commit<'repo> {
+        panic!("State does not know its own base")
+    }
+}
+
 /// Maximum number of parents a stack state commit is allowed before parent commit
 /// bundles are created.
 const MAX_PARENTS: usize = 16;
