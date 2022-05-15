@@ -32,6 +32,15 @@ fn make() -> clap::Command<'static> {
              were prior to the float operation.",
         )
         .arg(
+            Arg::new("patchranges")
+                .help("Patches to float")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true)
+                .conflicts_with_all(&["series"])
+                .required_unless_present("series"),
+        )
+        .arg(
             Arg::new("noapply")
                 .long("noapply")
                 .help("Reorder patches without reapplying any patches"),
@@ -47,13 +56,6 @@ fn make() -> clap::Command<'static> {
                 .forbid_empty_values(true),
         )
         .arg(&*crate::argset::KEEP_ARG)
-        .arg(
-            Arg::new("patches")
-                .help("Patches to float")
-                .multiple_values(true)
-                .conflicts_with_all(&["series"])
-                .required_unless_present("series"),
-        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -71,10 +73,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patches: Vec<PatchName> = if let Some(series_path) = opt_series {
         parse_series(series_path, &stack)?
     } else {
-        let patch_ranges = matches
-            .values_of("patches")
+        let patchranges = matches
+            .values_of("patchranges")
             .expect("clap ensures either patches or series");
-        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Visible)?
+        patchrange::parse(patchranges, &stack, patchrange::Allow::Visible)?
     };
 
     if patches.is_empty() {

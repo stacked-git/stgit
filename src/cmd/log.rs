@@ -25,12 +25,13 @@ fn make() -> clap::Command<'static> {
              history cannot be undone.",
         )
         .override_usage(
-            "stg log [OPTIONS] [--] [<patchname>...]\n    \
+            "stg log [OPTIONS] [--] [patch]...\n    \
              stg log --clear",
         )
         .arg(
-            Arg::new("patchname")
-                .help("Only show history for specified patchnames")
+            Arg::new("patchranges")
+                .help("Only show history for these patches")
+                .value_name("patch")
                 .multiple_values(true)
                 .forbid_empty_values(true),
         )
@@ -70,7 +71,7 @@ fn make() -> clap::Command<'static> {
                 .long("clear")
                 .help("Clear the stack history")
                 // .exclusive(true),
-                .conflicts_with_all(&["patchname", "diff", "number", "full", "graphical"]),
+                .conflicts_with_all(&["patchranges", "diff", "number", "full", "graphical"]),
         )
 }
 
@@ -83,7 +84,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stack.clear_state_log("clear log")
     } else {
         let pathspecs: Option<Vec<String>> =
-            if let Some(patch_ranges) = matches.values_of("patchname") {
+            if let Some(patch_ranges) = matches.values_of("patchranges") {
                 Some(
                     patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
                         .iter()

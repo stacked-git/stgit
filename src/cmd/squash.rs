@@ -50,11 +50,12 @@ fn make() -> clap::Command<'static> {
             conflicts may be resolved manually.",
         )
         .arg(
-            Arg::new("patch")
-                .help("Patch to squash")
-                .required(true)
+            Arg::new("patchranges")
+                .help("Patches to squash")
+                .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .forbid_empty_values(true)
+                .required(true),
         )
         .arg(
             Arg::new("name")
@@ -79,7 +80,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let squash_patchnames: Vec<PatchName> = patchrange::parse(
         matches
-            .values_of("patch")
+            .values_of("patchranges")
             .expect("clap ensures two or more patches"),
         &stack,
         patchrange::Allow::All,

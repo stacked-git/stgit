@@ -73,7 +73,7 @@ test_expect_success 'Test invalid opts with clear' '
 
 test_expect_success 'Test invalid args with clear' '
     general_error stg log --clear p0 p1 2>err >/dev/null &&
-    grep -e "The argument .--clear. cannot be used with .<patchname>\.\.\.." err &&
+    grep -e "The argument .--clear. cannot be used with .<patch>\.\.\.." err &&
     stg log | head -n 1 | grep -e "uncommit"
 '
 

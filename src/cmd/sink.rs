@@ -41,6 +41,13 @@ fn make() -> clap::Command<'static> {
              ",
         )
         .arg(
+            Arg::new("patchranges")
+                .help("Patches to sink")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true),
+        )
+        .arg(
             Arg::new("nopush")
                 .long("nopush")
                 .short('n')
@@ -66,11 +73,6 @@ fn make() -> clap::Command<'static> {
                 .forbid_empty_values(true),
         )
         .arg(&*crate::argset::KEEP_ARG)
-        .arg(
-            Arg::new("patches")
-                .help("Patches to sink")
-                .multiple_values(true),
-        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -100,8 +102,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    let patches: Vec<PatchName> = if let Some(patch_ranges) = matches.values_of("patches") {
-        patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
+    let patches: Vec<PatchName> = if let Some(patchranges) = matches.values_of("patchranges") {
+        patchrange::parse(patchranges, &stack, patchrange::Allow::All)?
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]
     } else {

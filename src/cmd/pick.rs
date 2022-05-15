@@ -50,7 +50,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("source")
                 .help("Patch name or committish to import")
                 .required(true)
-                .multiple_values(true),
+                .multiple_values(true)
+                .forbid_empty_values(true),
         )
         .arg(
             Arg::new("ref-branch")

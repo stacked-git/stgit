@@ -32,6 +32,19 @@ fn make() -> clap::Command<'static> {
              the normal Git methods, or alternatively the push may be undone \
              using 'stg undo'.",
         )
+        .override_usage(
+            "stg push [OPTIONS] [patch]...\n    \
+             stg push [OPTIONS] -n <number>\n    \
+             stg push [OPTIONS] --all",
+        )
+        .arg(
+            Arg::new("patchranges")
+                .help("Patches to push")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true)
+                .conflicts_with_all(&["all", "number"]),
+        )
         .arg(
             Arg::new("all")
                 .long("all")
@@ -68,7 +81,7 @@ fn make() -> clap::Command<'static> {
                 .long("noapply")
                 .help("Reorder patches by pushing without applying")
                 .conflicts_with_all(&["all", "number"])
-                .requires("patches")
+                .requires("patchranges")
                 .conflicts_with_all(&["set-tree", "merged"]),
         )
         .arg(
@@ -91,12 +104,6 @@ fn make() -> clap::Command<'static> {
         )
         .arg(&*crate::argset::KEEP_ARG)
         .arg(&*crate::argset::MERGED_ARG)
-        .arg(
-            Arg::new("patches")
-                .help("Patches to push")
-                .multiple_values(true)
-                .conflicts_with_all(&["all", "number"]),
-        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -136,8 +143,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(patch_ranges) = matches.values_of("patches") {
-        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Unapplied).map_err(
+    } else if let Some(patchranges) = matches.values_of("patchranges") {
+        patchrange::parse(patchranges, &stack, patchrange::Allow::Unapplied).map_err(
             |e| match e {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
                     if stack.is_applied(&patchname) =>

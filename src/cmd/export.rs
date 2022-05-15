@@ -45,17 +45,17 @@ fn make() -> clap::Command<'static> {
              \n    %(commemail)s   - committer email",
         )
         .arg(
-            Arg::new("patch_revs")
-                .help("Patch or revision to export")
+            Arg::new("patchranges")
+                .help("Patches to export")
                 .long_help(
-                    "Patch or revisions to show.\n\
+                    "Patches to export.\n\
                      \n\
-                     A patch name, patch range of the form \
-                     '[begin-patch]..[end-patch]', or any valid Git revision \
-                     may be specified.",
+                     A patch name or patch range of the form \
+                     '[begin-patch]..[end-patch]' may be specified.",
                 )
-                .value_name("patch-rev")
-                .multiple_values(true),
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true),
         )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(
@@ -120,9 +120,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         )
     }
 
-    let patches = if let Some(patch_revs) = matches.values_of("patch_revs") {
+    let patches = if let Some(patchranges) = matches.values_of("patchranges") {
         patchrange::parse(
-            patch_revs,
+            patchranges,
             &stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )?

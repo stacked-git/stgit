@@ -33,6 +33,19 @@ fn make() -> clap::Command<'static> {
              of these intermediate push operations to fail due to conflicts if \
              patches are popped out of last-pushed first-popped order.",
         )
+        .override_usage(
+            "stg pop [OPTIONS] [patch]...\n    \
+             stg pop [OPTIONS] --all\n    \
+             stg pop [OPTIONS] -n <number>",
+        )
+        .arg(
+            Arg::new("patchranges")
+                .help("Patches to pop")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true)
+                .conflicts_with_all(&["all", "number"]),
+        )
         .arg(
             Arg::new("all")
                 .long("all")
@@ -66,12 +79,6 @@ fn make() -> clap::Command<'static> {
                 .help("Keep patches' modifications in working tree after popping"),
         )
         .arg(&*crate::argset::KEEP_ARG)
-        .arg(
-            Arg::new("patches")
-                .help("Patches to pop")
-                .multiple_values(true)
-                .conflicts_with_all(&["all", "number"]),
-        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -113,9 +120,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(patch_ranges) = matches.values_of("patches") {
+    } else if let Some(patchranges) = matches.values_of("patchranges") {
         indexmap::IndexSet::from_iter(
-            patchrange::parse(patch_ranges, &stack, patchrange::Allow::Applied).map_err(
+            patchrange::parse(patchranges, &stack, patchrange::Allow::Applied).map_err(
                 |e| match e {
                     patchrange::Error::BoundaryNotAllowed { patchname, range }
                         if stack.is_unapplied(&patchname) =>

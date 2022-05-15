@@ -32,8 +32,9 @@ fn make() -> clap::Command<'static> {
         )
         .override_usage("stg sync <--ref-branch=BRANCH|--series=SERIES> [<patch>...|--all]")
         .arg(
-            Arg::new("patch")
-                .help("Patch to synchronize")
+            Arg::new("patchranges")
+                .help("Patches to synchronize")
+                .value_name("patch")
                 .multiple_values(true)
                 .forbid_empty_values(true),
         )
@@ -45,7 +46,7 @@ fn make() -> clap::Command<'static> {
         )
         .group(
             ArgGroup::new("which-patches")
-                .args(&["patch", "all"])
+                .args(&["patchranges", "all"])
                 .required(false),
         )
         .arg(
@@ -79,9 +80,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let patches: Vec<PatchName> = if matches.is_present("all") {
         stack.applied().to_vec()
-    } else if let Some(patch_values) = matches.values_of("patch") {
+    } else if let Some(patchranges) = matches.values_of("patchranges") {
         patchrange::parse_contiguous(
-            patch_values,
+            patchranges,
             &stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )?

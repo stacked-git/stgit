@@ -20,6 +20,19 @@ pub(super) fn get_command() -> (&'static str, StGitCommand) {
 fn make() -> clap::Command<'static> {
     clap::Command::new("delete")
         .about("Delete patches")
+        .override_usage(
+            "stg delete [OPTIONS] <patch>...\n    \
+             stg delete [OPTIONS] --top",
+        )
+        .arg(
+            Arg::new("patchranges")
+                .help("Patches to delete")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true)
+                .conflicts_with("top")
+                .required_unless_present("top"),
+        )
         .arg(
             Arg::new("spill")
                 .long("spill")
@@ -40,13 +53,6 @@ fn make() -> clap::Command<'static> {
                 .help("Delete topmost patch"),
         )
         .arg(&*crate::argset::BRANCH_ARG)
-        .arg(
-            Arg::new("patches")
-                .help("Patches to delete")
-                .multiple_values(true)
-                .conflicts_with("top")
-                .required_unless_present("top"),
-        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -63,7 +69,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     } else {
         let patch_ranges = matches
-            .values_of("patches")
+            .values_of("patchranges")
             .expect("clap will ensure either patches or --top");
         patchrange::parse(
             patch_ranges,

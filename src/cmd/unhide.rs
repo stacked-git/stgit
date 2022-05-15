@@ -19,14 +19,15 @@ fn make() -> clap::Command<'static> {
              \n\
              Hidden patches are no longer shown in the plain 'series' output.",
         )
-        .arg(&*crate::argset::BRANCH_ARG)
         .arg(
-            Arg::new("patches")
+            Arg::new("patchranges")
                 .help("Patches to unhide")
-                .required(true)
+                .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .forbid_empty_values(true)
+                .required(true),
         )
+        .arg(&*crate::argset::BRANCH_ARG)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -36,22 +37,20 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let patch_ranges = matches
-        .values_of("patches")
+    let patchranges = matches
+        .values_of("patchranges")
         .expect("clap ensures at least one range is provided");
 
-    let patches: Vec<PatchName> =
-        patchrange::parse(patch_ranges, &stack, patchrange::Allow::Hidden).map_err(
-            |e| match e {
-                crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
-                    anyhow!("Patch `{patchname}` from `{range}` is not hidden")
-                }
-                crate::patchrange::Error::PatchNotAllowed { patchname } => {
-                    anyhow!("Patch `{patchname}` is not hidden")
-                }
-                _ => e.into(),
-            },
-        )?;
+    let patches: Vec<PatchName> = patchrange::parse(patchranges, &stack, patchrange::Allow::Hidden)
+        .map_err(|e| match e {
+            crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
+                anyhow!("Patch `{patchname}` from `{range}` is not hidden")
+            }
+            crate::patchrange::Error::PatchNotAllowed { patchname } => {
+                anyhow!("Patch `{patchname}` is not hidden")
+            }
+            _ => e.into(),
+        })?;
 
     stack
         .setup_transaction()

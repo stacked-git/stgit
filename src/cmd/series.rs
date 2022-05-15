@@ -24,7 +24,7 @@ pub(super) fn get_command() -> (&'static str, StGitCommand) {
 
 fn make() -> clap::Command<'static> {
     clap::Command::new("series")
-        .about("Print the patch series")
+        .about("Display the patch series")
         .long_about(
             "Show all the patches in the series, or just those in the \
              given range, ordered from top to bottom.\n\
@@ -35,6 +35,20 @@ fn make() -> clap::Command<'static> {
              a '!'.\n\
              \n\
              Empty patches are prefixed with a '0'.",
+        )
+        .override_usage(
+            "stg series [OPTIONS] [-A] [-U] [-H]\n    \
+             stg series [OPTIONS] --all\n    \
+             stg series [OPTIONS] --short\n    \
+             stg series [OPTIONS] <patch>...",
+        )
+        .arg(
+            Arg::new("patchranges")
+                .help("Patches to display")
+                .value_name("patch")
+                .multiple_values(true)
+                .forbid_empty_values(true)
+                .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
         )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(
@@ -123,12 +137,6 @@ fn make() -> clap::Command<'static> {
                 .short('s')
                 .help("Only show patches around the topmost patch"),
         )
-        .arg(
-            Arg::new("patch-range")
-                .help("Range of patches to show")
-                .multiple_values(true)
-                .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
-        )
         .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
@@ -153,10 +161,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut patches: Vec<(PatchName, Oid, char)> = vec![];
 
-    if let Some(patch_ranges) = matches.values_of("patch-range") {
+    if let Some(patchranges) = matches.values_of("patchranges") {
         let top_patchname = stack.applied().last();
         for patchname in patchrange::parse_contiguous(
-            patch_ranges,
+            patchranges,
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,
         )? {

@@ -24,14 +24,15 @@ fn make() -> clap::Command<'static> {
              \n\
              Hidden patches are no longer shown in the plain 'series' output.",
         )
-        .arg(&*crate::argset::BRANCH_ARG)
         .arg(
-            Arg::new("patches")
+            Arg::new("patchranges")
                 .help("Patches to hide")
-                .required(true)
+                .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .forbid_empty_values(true)
+                .required(true),
         )
+        .arg(&*crate::argset::BRANCH_ARG)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -41,11 +42,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let patch_ranges = matches
-        .values_of("patches")
-        .expect("clap ensures at least one range is provided");
-
-    let patches: Vec<PatchName> = patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?;
+    let patches: Vec<PatchName> = patchrange::parse(
+        matches
+            .values_of("patchranges")
+            .expect("clap ensures at least one range is provided"),
+        &stack,
+        patchrange::Allow::All,
+    )?;
 
     // Already hidden patches are silent no-ops.
     let to_hide: Vec<PatchName> = patches

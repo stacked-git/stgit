@@ -33,10 +33,17 @@ fn make() -> clap::Command<'static> {
              commit (counting from the bottom of the stack). If -a/--all is given, \
              all applied patches are committed.",
         )
+        .override_usage(
+            "stg commit [OPTIONS] [patch]...\n    \
+             stg commit [OPTIONS] -n <number>\n    \
+             stg commit [OPTIONS] --all",
+        )
         .arg(
-            Arg::new("patches")
+            Arg::new("patchranges")
                 .help("Patches to commit")
+                .value_name("patch")
                 .multiple_values(true)
+                .forbid_empty_values(true)
                 .conflicts_with_all(&["all", "number"]),
         )
         .arg(
@@ -68,10 +75,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let patches: Vec<PatchName> = if let Some(patch_ranges) = matches.values_of("patches") {
+    let patches: Vec<PatchName> = if let Some(patchranges) = matches.values_of("patchranges") {
         let applied_and_unapplied = stack.applied_and_unapplied().collect::<Vec<&PatchName>>();
         let mut requested_patches = patchrange::parse(
-            patch_ranges,
+            patchranges,
             &stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )?;
