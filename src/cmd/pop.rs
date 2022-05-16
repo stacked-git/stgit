@@ -129,7 +129,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     {
                         anyhow!("Patch `{patchname}` from `{range}` is already unapplied")
                     }
-                    patchrange::Error::PatchNotAllowed { patchname }
+                    patchrange::Error::PatchNotAllowed { patchname, .. }
                         if stack.is_unapplied(&patchname) =>
                     {
                         anyhow!("Patch `{patchname}` is already unapplied")

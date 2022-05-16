@@ -151,7 +151,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 {
                     anyhow!("Patch `{patchname}` from `{range}` is already applied")
                 }
-                crate::patchrange::Error::PatchNotAllowed { patchname }
+                crate::patchrange::Error::PatchNotAllowed { patchname, .. }
                     if stack.is_applied(&patchname) =>
                 {
                     anyhow!("Patch `{patchname}` is already applied")

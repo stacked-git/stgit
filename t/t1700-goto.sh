@@ -72,6 +72,7 @@ test_expect_success 'Goto by partial sha1' '
     test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'Refuse to go to a hidden patch' '
     stg new h0 -m "hidden patch" &&
     stg hide h0 &&
@@ -81,6 +82,17 @@ test_expect_success 'Refuse to go to a hidden patch' '
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
     test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
 '
+else
+test_expect_success 'Refuse to go to a hidden patch' '
+    stg new h0 -m "hidden patch" &&
+    stg hide h0 &&
+    command_error stg goto h0 2>err &&
+    grep -e "Hidden patch \`h0\` is not allowed" err &&
+    test "$(echo $(stg series --hidden --noprefix))" = "h0" &&
+    test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
+    test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
+'
+fi
 
 test_expect_success 'Goto with merge check' '
     stg goto --merged p5 &&
@@ -99,7 +111,7 @@ test_expect_success 'Goto with ambiguous patch substring' '
     command_error stg goto 1 2>err &&
     grep "error: Patch \`1\` does not exist" err &&
     command_error stg goto p 2>err &&
-    grep "error: Ambiguous patch name \`p\`" err
+    grep "Patch \`p\` does not exist, but is similar to \`p1\`, \`p2\`" err
 '
 fi
 

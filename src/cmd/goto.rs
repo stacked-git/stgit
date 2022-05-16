@@ -8,6 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     patchname::PatchName,
+    patchrange,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
 };
@@ -33,10 +34,10 @@ fn make() -> clap::Command<'static> {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let patchname: PatchName = matches.value_of_t("patch").unwrap();
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
+    let patch_arg = matches.value_of("patch").unwrap();
     let opt_keep = matches.is_present("keep");
     let opt_merged = matches.is_present("merged");
 
@@ -47,26 +48,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         repo.check_index_and_worktree_clean()?;
     }
 
-    let patchname = if stack.has_patch(&patchname) {
-        if stack.is_hidden(&patchname) {
-            Err(anyhow!("Cannot goto a hidden patch"))
-        } else {
-            Ok(patchname)
-        }
-    } else {
-        let similar_names: Vec<&PatchName> = stack
-            .all_patches()
-            .filter(|pn| strsim::jaro_winkler(pn.as_ref(), patchname.as_ref()) > 0.75)
-            .collect();
-
-        if !similar_names.is_empty() {
-            println!("Possible patches:");
-            for pn in similar_names {
-                println!("  {pn}");
-            }
-            Err(anyhow!("Ambiguous patch name `{patchname}`"))
-        } else {
-            let oid_prefix: &str = patchname.as_ref();
+    let patchname = match patchrange::parse_single(patch_arg, &stack, patchrange::Allow::Visible) {
+        Ok(patchname) => Ok(patchname),
+        Err(e @ patchrange::Error::PatchNotKnown { .. }) => {
+            let oid_prefix = patch_arg;
             if oid_prefix.len() >= 4 && oid_prefix.chars().all(|c| c.is_ascii_hexdigit()) {
                 let oid_matches: Vec<&PatchName> = stack
                     .all_patches()
@@ -83,20 +68,21 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .collect();
 
                 match oid_matches.len() {
-                    0 => Err(anyhow!("No patch associated with `{patchname}`")),
+                    0 => Err(anyhow!("No patch associated with `{oid_prefix}`")),
                     1 => Ok(oid_matches[0].clone()),
                     _ => {
                         println!("Possible patches:");
                         for pn in oid_matches {
                             println!("  {pn}");
                         }
-                        Err(anyhow!("Ambiguous commit id `{patchname}`"))
+                        Err(anyhow!("Ambiguous commit id `{oid_prefix}`"))
                     }
                 }
             } else {
-                Err(anyhow!("Patch `{patchname}` does not exist"))
+                Err(e.into())
             }
         }
+        Err(e) => Err(e.into()),
     }?;
 
     stack

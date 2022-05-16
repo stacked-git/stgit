@@ -2,13 +2,14 @@
 
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
     patchedit,
     patchname::PatchName,
+    patchrange,
     stack::{Error, Stack, StackStateAccess},
 };
 
@@ -66,29 +67,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
 
-    let opt_patch = matches
-        .value_of("patch")
-        .map(|s| PatchName::from_str(s).expect("clap already validated patchname"));
-
-    let patchname = if let Some(patchname) = opt_patch {
-        if stack.has_patch(&patchname) {
-            patchname
-        } else {
-            let similar_names: Vec<&PatchName> = stack
-                .all_patches()
-                .filter(|pn| strsim::jaro_winkler(pn.as_ref(), patchname.as_ref()) > 0.75)
-                .collect();
-
-            return if !similar_names.is_empty() {
-                println!("Possible patches:");
-                for pn in similar_names {
-                    println!("  {pn}");
-                }
-                Err(anyhow!("Ambiguous patch name `{patchname}`"))
-            } else {
-                Err(anyhow!("Patch `{patchname}` does not exist"))
-            };
-        }
+    let patchname = if let Some(patch_arg) = matches.value_of("patch") {
+        patchrange::parse_single(patch_arg, &stack, patchrange::Allow::All)?
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {

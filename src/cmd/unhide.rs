@@ -46,7 +46,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
                 anyhow!("Patch `{patchname}` from `{range}` is not hidden")
             }
-            crate::patchrange::Error::PatchNotAllowed { patchname } => {
+            crate::patchrange::Error::PatchNotAllowed { patchname, .. } => {
                 anyhow!("Patch `{patchname}` is not hidden")
             }
             _ => e.into(),

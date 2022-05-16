@@ -29,15 +29,18 @@ pub(crate) enum Error {
         similar_patchnames: String,
     },
 
-    #[error("Patch `{patchname}` is not allowed")]
-    PatchNotAllowed { patchname: PatchName },
+    #[error("{whence} patch `{patchname}` is not allowed")]
+    PatchNotAllowed {
+        whence: &'static str,
+        patchname: PatchName,
+    },
 
     #[error("Patch `{patchname}` does not exist")]
     PatchNotKnown { patchname: PatchName },
 
     #[error(
         "Patch `{patchname}` does not exist, \
-             but is similar to {similar_patchnames}"
+         but is similar to {similar_patchnames}"
     )]
     PatchSimilar {
         patchname: PatchName,
@@ -212,7 +215,10 @@ pub(crate) fn parse<'repo, 'a>(
                 return Err(Error::Duplicate { patchname });
             } else if !allowed_patches.contains(&&patchname) {
                 return Err(if stack_state.has_patch(&patchname) {
-                    Error::PatchNotAllowed { patchname }
+                    Error::PatchNotAllowed {
+                        whence: from_whence(&patchname, stack_state),
+                        patchname,
+                    }
                 } else if let Some(similar_patchnames) =
                     similar_patchnames(&patchname, &allowed_patches)
                 {
@@ -352,6 +358,7 @@ pub(crate) fn parse_contiguous<'repo, 'a>(
                     .ok_or_else(|| {
                         if stack_state.has_patch(&patchname) {
                             Error::PatchNotAllowed {
+                                whence: from_whence(&patchname, stack_state),
                                 patchname: patchname.clone(),
                             }
                         } else if let Some(similar_patchnames) =
@@ -388,6 +395,32 @@ pub(crate) fn parse_contiguous<'repo, 'a>(
     Ok(patches)
 }
 
+/// Parse a single (non-range) patch argument.
+pub(crate) fn parse_single<'repo>(
+    arg: &str,
+    stack_state: &impl StackStateAccess<'repo>,
+    allow: Allow,
+) -> Result<PatchName, Error> {
+    let allowed_patches: Vec<&PatchName> = allow.get_allowed(stack_state);
+    let allowed_patches = allowed_patches.as_slice();
+    let patchname = PatchName::from_str(arg)?;
+    if allowed_patches.contains(&&patchname) {
+        Ok(patchname)
+    } else if stack_state.has_patch(&patchname) {
+        Err(Error::PatchNotAllowed {
+            whence: from_whence(&patchname, stack_state),
+            patchname,
+        })
+    } else if let Some(similar_patchnames) = similar_patchnames(&patchname, allowed_patches) {
+        Err(Error::PatchSimilar {
+            patchname,
+            similar_patchnames,
+        })
+    } else {
+        Err(Error::PatchNotKnown { patchname })
+    }
+}
+
 /// Find similar patch names from a list of allowed patch names.
 fn similar_patchnames(patchname: &PatchName, allowed_patchnames: &[&PatchName]) -> Option<String> {
     let similar: Vec<&PatchName> = allowed_patchnames
@@ -409,5 +442,21 @@ fn similar_patchnames(patchname: &PatchName, allowed_patchnames: &[&PatchName]) 
         }
         similar_str.push_str(&format!("and `{}`", similar[similar.len() - 1]));
         Some(similar_str)
+    }
+}
+
+/// Determine whether a patch is applied, unapplied, or hidden.
+fn from_whence<'repo>(
+    patchname: &PatchName,
+    stack_state: &impl StackStateAccess<'repo>,
+) -> &'static str {
+    if stack_state.hidden().contains(patchname) {
+        "Hidden"
+    } else if stack_state.unapplied().contains(patchname) {
+        "Unapplied"
+    } else if stack_state.applied().contains(patchname) {
+        "Applied"
+    } else {
+        panic!("patch {patchname} must be known")
     }
 }
