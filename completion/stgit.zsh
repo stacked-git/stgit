@@ -907,16 +907,18 @@ __stg_get_branch_opt() {
     short=${1:-'-b'}
     long=${2:-'--branch'}
     i=${words[(I)$short|$long(=*|)]}
-    case ${words[i]} in
-    $short|$long)
-        if (( i < $#words )); then
-            echo "--branch=${words[i + 1]}"
-        fi
-        ;;
-    *)
-        echo "--branch=${words[i]#*=}"
-        ;;
-    esac
+    if (( i > 0 )); then
+        case ${words[i]} in
+        $short|$long)
+            if (( i < $#words )); then
+                echo "--branch=${words[i + 1]}"
+            fi
+            ;;
+        *)
+            echo "--branch=${words[i]#*=}"
+            ;;
+        esac
+    fi
 }
 
 __stg_want_patches() {
