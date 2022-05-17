@@ -14,7 +14,7 @@ test_expect_success 'Create some patches' '
     done
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid -a/-u options' '
     command_error stg show --applied --unapplied 2>err &&
     grep -e "cannot use both --applied and --unapplied" err
@@ -29,7 +29,7 @@ test_expect_success 'Combined -A/-U options' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid arg with -a' '
     command_error stg show --applied patch-aaa 2>err &&
     grep -e "patches may not be given with --applied or --unapplied" err
@@ -41,7 +41,7 @@ test_expect_success 'Invalid arg with -A' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid patch name' '
     command_error stg show bad-patch-name 2>err &&
     grep -e "bad-patch-name: Unknown patch or revision name" err
@@ -117,7 +117,7 @@ test_expect_success 'Run show --stat on patches' '
     test $(grep -c -E "patch-aaa|patch-ddd" show-a-d-stat.txt) = "2"
 '
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Setup for path limiting' '
     stg new -m many-paths &&
     mkdir -p dir0/dir1 &&

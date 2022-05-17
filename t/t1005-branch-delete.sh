@@ -15,7 +15,7 @@ test_expect_success 'Create a branch (and switch to it)' '
     stg branch --clone foo
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to delete branch with patches' '
     command_error stg branch --delete master 2>err &&
     grep -e "series still contains patches" err
@@ -48,7 +48,7 @@ test_expect_success 'Attempt to delete current branch' '
     grep -e "Cannot delete the current branch" err
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid num args to delete' '
     command_error stg branch --delete 2>err &&
     grep -e "incorrect number of arguments" err &&
@@ -69,7 +69,7 @@ test_expect_success 'Create a non-StGit branch and delete it' '
     stg branch --delete bar
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Delete a nonexistent branch' '
    command_error stg branch --delete bar 2>err &&
    grep -e "no such branch" err

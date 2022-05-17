@@ -28,7 +28,7 @@ test_expect_success 'Initialize StGit stack' '
     stg pop -a
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'sink default without applied patches' '
     command_error stg sink 2>err &&
     grep -e "No patches to sink" err
@@ -45,7 +45,7 @@ test_expect_success 'sink and reorder specified without applied patches' '
     test "$(echo $(stg series --applied --noprefix))" = "p2 p1"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'attempt sink below unapplied' '
     command_error stg sink --to=p4 2>err &&
     grep -e "Cannot sink below p4 since it is not applied" err
@@ -90,7 +90,7 @@ test_expect_success 'sink --nopush with multiple patches' '
     stg goto p4
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'attempt sink with same to and target' '
     command_error stg sink --to=p3 p3 2>err &&
     grep -e "Cannot have a sinked patch as target" err &&

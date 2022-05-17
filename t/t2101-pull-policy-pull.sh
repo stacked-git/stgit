@@ -46,7 +46,7 @@ test_expect_success \
      test_path_is_file clone/file
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Test too many arguments' \
     '

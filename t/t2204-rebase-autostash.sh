@@ -53,7 +53,7 @@ test_expect_success \
 	EOF
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'rebase --autostash throws helpful error message in conflict' \
 	'

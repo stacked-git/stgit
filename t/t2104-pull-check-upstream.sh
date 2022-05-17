@@ -24,7 +24,7 @@ test_expect_success \
     )
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Test that pull without upstream setup produces friendly error' \
     '

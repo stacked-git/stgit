@@ -3,7 +3,7 @@
 test_description='Test the push and pop commands'
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Test behavior on uninitialized repo' '
     command_error stg prev 2>err && grep -e "branch not initialized" err &&
@@ -27,7 +27,7 @@ test_expect_success \
     'Initialize the StGit repository' \
     'stg init'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Test behavior on empty repo' '
     command_error stg prev 2>err && grep -e "Not enough applied patches" err &&
@@ -77,7 +77,7 @@ test_expect_success \
     [ "$(echo $(stg prev))" = "p5" ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Check prev, next, and top with invalid arguments' '
     command_error stg prev bogus_arg 2>err && grep -e "incorrect number of arguments" err &&
@@ -109,7 +109,7 @@ test_expect_success \
     command_error stg top
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Push them back' '
     stg push -a &&
@@ -182,7 +182,7 @@ test_expect_success \
     [ "$(git notes show)" = "note7" ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err && grep -e "Patches already applied" err &&

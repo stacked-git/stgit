@@ -20,7 +20,7 @@ This test must be run before any tests making use of clone.
 # Need a repo to clone
 test_create_repo foo
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'stg clone right inside a git tree' \
     "stg clone foo bar"

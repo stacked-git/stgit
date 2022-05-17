@@ -16,7 +16,7 @@ test_expect_success 'Initialize StGit stack' '
     stg pop
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test too many arguments' '
     command_error stg clean p0 2>err &&
     grep -e "incorrect number of arguments" err

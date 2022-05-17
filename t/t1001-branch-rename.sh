@@ -114,7 +114,7 @@ test_expect_success \
     _assert_current_branch_name "xxx"
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid num args to rename' '
     command_error stg branch --rename bar biz bop 2>err &&

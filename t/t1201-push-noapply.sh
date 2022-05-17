@@ -13,7 +13,7 @@ test_expect_success 'Setup patches' '
     test "$(echo $(stg series --unapplied --noprefix))" = "a1 a2 a3 b1 b2 b3"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Check --noapply with --all' '
     command_error stg push --noapply --all 2>err &&
     grep -e "Cannot use --noapply with --all" err
@@ -25,7 +25,7 @@ test_expect_success 'Check --noapply with --all' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Check --noapply with --number' '
     command_error stg push --noapply -n 3 2>err &&
     grep -e "Cannot use --noapply with --number" err
@@ -37,7 +37,7 @@ test_expect_success 'Check --noapply with --number' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Check --noapply without patch names' '
     command_error stg push --noapply 2>err &&
     grep -e "Must supply patch names with --noapply" err
@@ -49,7 +49,7 @@ test_expect_success 'Check --noapply without patch names' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Check --noapply with --set-tree' '
     command_error stg push --noapply --set-tree b1 b2 b3 2>err &&
     grep -e "Cannot use --noapply with --set-tree" err
@@ -61,7 +61,7 @@ test_expect_success 'Check --noapply with --set-tree' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Check --noapply with --merged' '
     command_error stg push --noapply -m b1 b2 b3 2>err &&
     grep -e "Cannot use --noapply with --merged" err
@@ -84,7 +84,7 @@ test_expect_success 'Push reorded patches b1 b2 b3' '
     test "$(echo $(stg series --unapplied --noprefix))" = "a1 a2 a3"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt push --noapply on applied patch' '
     command_error stg push --noapply b1 2>err &&
     grep -e "Patch already applied: b1" err

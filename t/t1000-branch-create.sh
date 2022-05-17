@@ -43,7 +43,7 @@ test_expect_success \
     test "$(git rev-parse HEAD)" = "$(git rev-parse new)"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Too many args to --create' '
     command_error stg branch --create aname acommit anextra
@@ -82,7 +82,7 @@ test_expect_success \
     grep "is already the current branch" err
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt no branch command' '
     command_error stg branch foo bar 2>err &&
@@ -96,7 +96,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid num arguments to branch list' '
     command_error stg branch --list new 2>err &&
@@ -164,7 +164,7 @@ test_expect_success \
     touch file2
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
     command_error stg branch --create foo4 master^

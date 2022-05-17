@@ -16,7 +16,7 @@ test_expect_success \
     stg refresh
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid arguments' \
     '
@@ -41,7 +41,7 @@ test_expect_success \
     stg push
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'No patches specified' \
     '

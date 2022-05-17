@@ -19,7 +19,7 @@ test_expect_success 'Init repo' '
     done
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Too many arguments' '
     command_error stg id patch-1 patch-2 2>err &&
     grep -e "incorrect number of arguments" err

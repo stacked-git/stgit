@@ -7,7 +7,7 @@ test_description='Make sure that we can use old StGit repositories'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
     versions="1.1 1.0 0.19 0.12 0.8"
 else
     versions="1.1 1.0"

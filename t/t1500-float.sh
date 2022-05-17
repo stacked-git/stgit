@@ -76,7 +76,7 @@ test_expect_success 'Float with series from stdin' '
     test "$(echo $(stg series --applied --noprefix))" = "p7 p6 p5 p4 p3 p2 p1"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt float with empty series' '
     echo "" |
     command_error stg float -s - 2>err &&
@@ -90,7 +90,7 @@ test_expect_success 'Attempt float with empty series' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt float with series file and arguments' '
     command_error stg float --series series.txt p1 2>err &&
     grep -e "<patches> cannot be used with --series" err
@@ -102,7 +102,7 @@ test_expect_success 'Attempt float with series file and arguments' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt float with no series file and no arguments' '
     command_error stg float 2>err &&
     grep -e "incorrect number of arguments" err
@@ -114,7 +114,7 @@ test_expect_success 'Attempt float with no series file and no arguments' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Series with bogus patch name' '
     printf "p1\np2\np3\nBOGUS\np4\np5\np6\np7\n" |
     command_error stg float --series=- 2>&1 |

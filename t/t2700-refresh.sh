@@ -133,7 +133,7 @@ test_expect_success 'Refresh moved files' '
     stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt invalid options with --index' '
     echo foo4 > foo4.txt &&
     stg add foo4.txt &&
@@ -157,7 +157,7 @@ test_expect_success 'Attempt invalid options with --index' '
     '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >> foo4.txt &&
     command_error stg refresh 2>err &&
@@ -171,7 +171,7 @@ test_expect_success 'Attempt refresh with changed index and working tree' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to refresh to invalid patch name' '
     stg add foo4.txt &&
     command_error stg refresh -p bad-patchname 2>err &&
@@ -185,7 +185,7 @@ test_expect_success 'Attempt to refresh to invalid patch name' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to refresh with no applied patches' '
     git rm -f foo4.txt &&
     stg pop -a &&
@@ -207,7 +207,7 @@ test_expect_success 'Attempt to refresh with no applied patches' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt update with submodules' '
     stg push -a &&
     echo more >> foo2.txt &&
@@ -228,7 +228,7 @@ test_expect_success 'Test annotate' '
     stg log -f | grep -e "My Annotation"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt refresh with open conflict' '
     stg new -m p6 &&
     echo "foo" > conflicting.txt &&

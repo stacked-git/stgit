@@ -5,7 +5,7 @@ test_description='Test gpg signatures'
 . ./test-lib.sh
 . "$TEST_DIRECTORY/lib-gpg.sh"
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success GPG \
     'Stack metadata is signed' '
     git config commit.gpgsign true

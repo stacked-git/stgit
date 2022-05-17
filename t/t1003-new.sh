@@ -12,7 +12,7 @@ test_expect_success \
     stg init
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Too many arguments' '
     command_error stg new foo extra_arg 2>err &&
@@ -32,7 +32,7 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 1 ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid patch name: space' '
     command_error stg new "bad name" 2>err &&
@@ -47,7 +47,7 @@ cat err &&
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid patch name: carat' '
     command_error stg new "bad^name" 2>err &&
@@ -61,7 +61,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid patch name: empty' '
     command_error stg new "" 2>err &&
@@ -90,7 +90,7 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 2 ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Tricky generated patch name a:.b.:' '
     stg new -m "a:.b.:" &&
@@ -118,7 +118,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt new with conflicts' '
     stg new -m p0 &&
@@ -177,7 +177,7 @@ test_expect_success 'Setup fake editor' '
 	EOF
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'New without verbose flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -197,7 +197,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'New with verbose flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -217,7 +217,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'New with verbose config option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -237,7 +237,7 @@ test_expect_success \
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'New with verbose config boolean option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -264,7 +264,7 @@ test_expect_success \
     git cat-file -p HEAD | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_failure \
     'Patch with slash in name' '
     stg new bar/foo -m "patch bar/foo"

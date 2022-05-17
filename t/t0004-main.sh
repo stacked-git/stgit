@@ -4,7 +4,7 @@ test_description='Test stg.main'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test no command' '
     general_error stg 2>err &&
     grep -e "usage:" err
@@ -22,7 +22,7 @@ test_expect_success 'Test help/--help equivalence' '
     diff h0.txt h1.txt
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test help on invalid command' '
     general_error stg help invalidcmd 2>err &&
     grep -e "Unknown command: invalidcmd" err
@@ -34,7 +34,7 @@ test_expect_success 'Test help on invalid command' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test help on regular command' '
     stg help init | grep -e "Usage: stg init"
 '
@@ -44,7 +44,7 @@ test_expect_success 'Test help on regular command' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test --help on regular command' '
     stg --help refresh | grep -e "Usage: stg refresh"
 '
@@ -52,7 +52,7 @@ else
     : # --help <cmd> is not valid in rust implementation
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test help on ambiguous command' '
     general_error stg help pu 2>err &&
     grep -e "Ambiguous command: pu" err
@@ -66,7 +66,7 @@ test_expect_success 'Test help on ambiguous command' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test version/--version equivalence' '
     stg version > v0.txt &&
     stg --version > v1.txt &&
@@ -88,13 +88,13 @@ test_expect_success 'Test version/-V/--version differences' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test copyright' '
     stg copyright | grep -e "This program is free software"
 '
 fi
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Test exec-path and subcommand relationship' '
     stg series -h > series-help.txt &&
     head -n 1 series-help.txt | grep "stg-series" &&

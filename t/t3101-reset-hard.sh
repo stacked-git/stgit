@@ -24,7 +24,7 @@ test_expect_success 'Initialize StGit stack with three patches' '
     stg uncommit -n 3
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid arguments' '
     command_error stg reset 2>err &&
     grep -e "Wrong options" err &&

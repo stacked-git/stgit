@@ -13,7 +13,7 @@ test_expect_success 'Initialize branch' '
     stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invald num args to protect' '
     command_error stg branch --protect foo bar 2>err &&
     grep "incorrect number of arguments" err
@@ -38,7 +38,7 @@ test_expect_success 'Protect idempotency' '
     stg branch --protect foo
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt cleanup protected' '
     command_error stg branch --cleanup 2>err &&
     grep "This branch is protected" err
@@ -50,7 +50,7 @@ test_expect_success 'Attempt cleanup protected' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt delete protected' '
     stg branch master &&
     command_error stg branch --delete foo 2>err &&
@@ -64,7 +64,7 @@ test_expect_success 'Attempt delete protected' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid num arts to unprotect' '
     command_error stg branch --unprotect foo bar 2>err &&
     grep "incorrect number of arguments" err
@@ -97,7 +97,7 @@ test_expect_success 'Cleanup unprotected' '
     stg branch --cleanup
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --protect 2>err &&
     grep -E "is not controlled by StGit" err
@@ -109,7 +109,7 @@ test_expect_success 'Protect uninitialized branch' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --unprotect 2>err &&
     grep -E "is not controlled by StGit" err

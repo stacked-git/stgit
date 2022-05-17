@@ -11,7 +11,7 @@ test_expect_success 'Initialize the StGit repository' '
     stg pop
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to commit an empty patch' '
     command_error stg commit p2 2>err &&
     grep "Empty patch" err

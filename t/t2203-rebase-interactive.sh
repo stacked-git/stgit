@@ -56,7 +56,7 @@ test_expect_success 'Setup fake editor' '
 	printf "keep\n" >"$1"
 	EOF
 '
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Bad todo line throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
@@ -77,7 +77,7 @@ test_expect_success 'Setup fake editor' '
 	printf "keep invalid_patch_name\n" >"$1"
 	EOF
 '
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Bad patch name throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
@@ -266,7 +266,7 @@ test_expect_success 'Setup fake editor' '
 	printf "fix p0\nfix p1\n" >"$1"
 	EOF
 '
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Fix on first patch does not crash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
@@ -336,7 +336,7 @@ test_expect_success 'Setup fake editor' '
 	printf "keep p0\ndelete p1\nsquash p2\ndelete p3" >"$1"
 	eof
 '
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Delete after squash after delete works correctly' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&

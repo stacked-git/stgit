@@ -4,7 +4,7 @@ test_description='Test the log command.'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>err >/dev/null &&
     grep -e "branch not initialized" err
@@ -21,7 +21,7 @@ test_expect_success 'Initialize the StGit repository' '
 '
 
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Empty log' '
     stg log > log.txt &&
     test_line_count = 1 log.txt &&
@@ -47,7 +47,7 @@ test_expect_success 'Test log of all patches' '
     stg log | head -n 1 | grep -e "uncommit"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test invalid opts with clear' '
     command_error stg log --diff --clear 2>err >/dev/null &&
     grep -e "cannot combine --clear with other options" err &&

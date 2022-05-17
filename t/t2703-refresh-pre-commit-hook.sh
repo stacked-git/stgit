@@ -64,7 +64,7 @@ test_expect_success 'refresh --no-verify with path limiting, failing hook' '
     stg refresh file --no-verify
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'refresh with failing hook' '
     echo "pre-commit-hook-fail" >> file &&
     command_error stg refresh 2>err &&
@@ -80,7 +80,7 @@ test_expect_success 'refresh with failing hook' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'refresh with path limiting, failing hook' '
     echo "pre-commit-hook-path-limiting-fail" >> file &&
     command_error stg refresh file 2>err &&
@@ -141,7 +141,7 @@ test_expect_success 'refresh with path limiting, succeeding hook, does not modif
     [ "$(tail -1 file)" = "pre-commit-hook-path-limiting-no-whitespace" ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'refresh with failing hook that modifies file' '
     echo "pre-commit-hook-remove-whitespace  " >> file &&
     command_error stg refresh 2>err &&

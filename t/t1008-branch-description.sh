@@ -4,7 +4,7 @@ test_description='Test branch descriptions'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Description of non-stgit branch' '
     test "$(stg branch)" = "master" &&

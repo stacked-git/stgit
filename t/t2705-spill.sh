@@ -46,7 +46,7 @@ test_expect_success 'Refresh patch' '
     test_cmp expected-patches.txt patches.txt
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Spill the topmost patch' '
     stg refresh --spill
 '
@@ -81,7 +81,7 @@ test_expect_success 'Refresh after spill' '
     stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Spill with annotation' '
     stg refresh --spill --annotate banana &&
     stg log -f -n1 | grep -e "banana"
@@ -93,7 +93,7 @@ test_expect_success 'Spill with annotation' '
 '
 fi
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 
 cat > expected-status.txt <<EOF
 ?? patch0.txt

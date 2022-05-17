@@ -22,7 +22,7 @@ test_expect_success 'Create some patches' '
     echo "five"  >> dir0/dir1/odd.txt && stg new -m "p4 message" p4 && stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'No modifications and no file args' '
     command_error stg patches 2>err &&
     grep -e "No files specified or no local changes" err
@@ -59,7 +59,7 @@ test_expect_success 'No patches applied' '
     grep -e "No patches applied" err
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Patches relative to dir' '
     stg push -a &&
     (

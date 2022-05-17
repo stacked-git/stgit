@@ -38,7 +38,7 @@ test_expect_success \
 	stg commit --all
 	'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
   'Invalid --to and --number arguments' \
   '
@@ -54,7 +54,7 @@ test_expect_success \
   '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
   'Invalid --to with patch args' \
   '
@@ -70,7 +70,7 @@ test_expect_success \
   '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
   'Invalid --number' \
   '
@@ -86,7 +86,7 @@ test_expect_success \
   '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
   'Too many patch names with --number' \
   '
@@ -150,7 +150,7 @@ test_expect_success \
   stg commit --all
   '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to reuse patch name' '
   stg uncommit &&
   [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
@@ -168,7 +168,7 @@ test_expect_success 'Attempt to reuse patch name' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to use invalid patch name' '
   command_error stg uncommit bad..patchname
 '

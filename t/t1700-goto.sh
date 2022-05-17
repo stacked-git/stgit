@@ -17,7 +17,7 @@ test_expect_success 'Initialize stgit repository' '
     done
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test invalid number of arguments' '
     command_error stg goto 2>err &&
     grep -e "incorrect number of arguments" err
@@ -34,7 +34,7 @@ test_expect_success 'Goto current patch' '
     test "$(echo $(stg top))" = "p5"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt goto invalid patch' '
     command_error stg goto p999 2>err &&
     grep -e "Patch \"p999\" does not exist" err
@@ -46,7 +46,7 @@ test_expect_success 'Attempt goto invalid patch' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt goto invalid hash' '
     command_error stg goto beeff00d 2>err &&
     grep -e "No patch associated with beeff00d" err
@@ -72,7 +72,7 @@ test_expect_success 'Goto by partial sha1' '
     test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Refuse to go to a hidden patch' '
     stg new h0 -m "hidden patch" &&
     stg hide h0 &&
@@ -100,7 +100,7 @@ test_expect_success 'Goto with merge check' '
     test "$(echo $(stg series --unapplied --noprefix))" = ""
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Goto with ambiguous patch substring' '
     stg goto 1 &&
     command_error stg goto p 2>err &&

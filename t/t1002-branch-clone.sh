@@ -32,7 +32,7 @@ test_expect_success \
     test "$(stg series --applied -c)" -eq 1
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Clone the current StGit branch' \
     '
@@ -62,7 +62,7 @@ test_expect_success \
     grep -E "^bar-[0-9]+-[0-9]+"
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Invalid clone args' \
     '

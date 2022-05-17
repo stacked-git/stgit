@@ -19,7 +19,7 @@ test_expect_success 'Create some patches' '
     stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid bare and stat' '
     command_error stg files --bare --stat
 '
@@ -29,7 +29,7 @@ test_expect_success 'Invalid bare and stat' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Too many arguments' '
     command_error stg files patch-a-b patch-b-c
 '
@@ -39,7 +39,7 @@ test_expect_success 'Too many arguments' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid patch name' '
     command_error stg files bad-patch-name 2>err &&
     grep -e "bad-patch-name: Unknown patch" err

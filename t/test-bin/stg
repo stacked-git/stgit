@@ -1,8 +1,14 @@
 #!/bin/sh
 
-if test -n "$STG_RUST"
+if test -z "$STG_TEST_PYTHON"
 then
-    exec "$STG_ROOT/target/$STG_RUST/stg" "$@"
+    if [ "${STG_TEST_PROFILE:=dev}" = "dev" ]
+    then
+        profile_dir="debug"
+    else
+        profile_dir="$STG_TEST_PROFILE"
+    fi
+    exec "$STG_ROOT/target/$profile_dir/stg" "$@"
 elif test -n "$COVERAGE_RCFILE"
 then
     if test -z "$COVERAGE_FILE"

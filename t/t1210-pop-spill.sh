@@ -22,7 +22,7 @@ test_expect_success 'Create a few patches' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to spill non-topmost patch' '
     command_error stg pop --spill p0 2>err &&
     grep -e "Can only spill topmost applied patches" err
@@ -109,7 +109,7 @@ test_expect_success 'Pop more than stack length, keeping modifications in the tr
     [ "$(echo $(cat p.txt))" = "patch0 patch1 patch2" ]
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Pop all but more than stack length, keeping modifications in the tree' '
     # test_when_finished reset_test &&
     test_expect_code 2 stg pop --spill -n -4 &&

@@ -16,7 +16,7 @@ test_expect_success 'Initialize the StGit repository and create a patch and add 
     git add -A
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt refresh --spill -e' '
     command_error stg refresh --spill -e 2>err &&
     grep "Cannot combine --spill with --edit" err

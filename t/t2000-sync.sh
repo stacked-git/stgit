@@ -52,7 +52,7 @@ test_expect_success \
     grep -e "Cannot synchroni[sz]e with the current branch" err
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt sync without remote branch or series' \
     '
@@ -77,7 +77,7 @@ test_expect_success \
     grep -e "[Nn]o patches applied" err
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt to sync patch not in ref branch' \
     '

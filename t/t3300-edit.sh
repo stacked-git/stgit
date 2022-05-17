@@ -34,7 +34,7 @@ adate () { git log -n 1 --pretty=format:%ai $1 ; }
 write_script diffedit <<EOF
 echo "" > "\$1"
 EOF
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Empty editor aborts edit' '
     EDITOR=./diffedit command_error stg edit 2>err &&
     grep -e "Aborting edit due to empty patch description" err
@@ -99,7 +99,7 @@ test_expect_success 'Set patch message with --file -' '
     test "$(msg HEAD)" = "Pride and Prejudice"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 ( printf 'Patch: p2\nFrom: A Ú Thor <author@example.com>\nDate: <omitted>'
   printf '\n\nPride and Prejudice\n'
   printf '\n# Everything here is editable! You can modify the patch name, author,'
@@ -299,7 +299,7 @@ test_expect_success 'Set author' '
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Fail to set broken author' '
     command_error stg edit p2 --author "No Mail Address" &&
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
@@ -331,7 +331,7 @@ test_expect_success 'Set author date (ISO 8601 format)' '
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Fail to set invalid author date' '
     command_error stg edit p2 --authdate "28 Jan 1813" &&
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"

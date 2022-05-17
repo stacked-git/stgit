@@ -12,7 +12,7 @@ Tests some parts of the stg rename command.'
 . ./test-lib.sh
 stg init
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename in empty' '
    command_error stg rename foo 2>err &&
    grep -e "No applied top patch to rename exists" err
@@ -40,7 +40,7 @@ test_expect_success 'Rename with two arguments' '
 '
 # foo,baz
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename with too many arguments' '
    command_error stg rename foo bar baz 2>err &&
    grep -e "incorrect number of arguments" err
@@ -52,7 +52,7 @@ test_expect_success 'Rename with too many arguments' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename to existing name' '
    command_error stg rename foo baz 2>err &&
    grep -e "Patch already exists: \"baz\"" err
@@ -64,7 +64,7 @@ test_expect_success 'Rename to existing name' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename to same name' '
    command_error stg rename foo foo 2>err &&
    grep -e "New patch name same as old: \"foo\"" err
@@ -80,7 +80,7 @@ test_expect_success 'Rename top-most when others exist' '
    stg rename bar
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename to invalid patch name: space' '
    command_error stg rename bar "bar fo" 2>err &&
    grep -e "Invalid patch name: \"bar fo\"" err
@@ -92,7 +92,7 @@ test_expect_success 'Rename to invalid patch name: space' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Rename to invalid patch name: colon' '
    command_error stg rename bar "bar:fo" 2>err &&
    grep -e "Invalid patch name: \"bar:fo\"" err
@@ -104,7 +104,7 @@ test_expect_success 'Rename to invalid patch name: colon' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_failure 'Rename to patch name with slash' '
    stg rename bar bar/fo &&
    stg rename bar/fo bar

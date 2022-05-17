@@ -4,7 +4,7 @@ test_description='Test stg series patch ranges'
 
 . ./test-lib.sh
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Setup new patches for range tests' '
     test_commit_bulk --message="p%s" 6 &&
     stg init &&

@@ -3,7 +3,7 @@ test_description='Test the pick command'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
@@ -54,7 +54,7 @@ test_expect_success \
 	stg branch master
 	'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'No pick args' \
 	'
@@ -85,7 +85,7 @@ test_expect_success \
 	stg delete --top
 	'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick fancy patch name conflict' \
 	'
@@ -137,7 +137,7 @@ test_expect_success \
 	test "$(echo $(stg series --unapplied --noprefix))" = "D"
 	'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick --file without --fold' \
 	'
@@ -263,7 +263,7 @@ test_expect_success \
 	test_cmp C2-expected.txt C2-message.txt
 	'
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick too many commits' \
 	'
@@ -282,7 +282,7 @@ test_expect_success \
 	'
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick with conflict' \
 	'
@@ -314,7 +314,7 @@ test_expect_success \
 	'
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick --fold with conflict' \
 	'
@@ -332,7 +332,7 @@ test_expect_success \
 	'
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick --fold --file with conflict' \
 	'
@@ -350,7 +350,7 @@ test_expect_success \
 	'
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
 	'Pick --update with conflict' \
 	'

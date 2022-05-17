@@ -24,7 +24,7 @@ test_expect_success 'Initialize StGit repository' '
     git checkout foo.txt
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt fold more than one patch' '
     command_error stg fold fold1.diff fold2.diff 2>err &&
     grep -e "incorrect number of arguments" err
@@ -36,7 +36,7 @@ test_expect_success 'Attempt fold more than one patch' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt fold with local changes' '
     echo "hello dirty" > foo.txt &&
     test_when_finished "stg reset --hard" &&
@@ -97,7 +97,7 @@ test_expect_success 'Attempt to fold conflicting patch' '
     test ! -e foo.txt.rej
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt to fold conflicting patch with rejects' '
     stg new -m p2 &&
     echo "hello" > foo.txt &&

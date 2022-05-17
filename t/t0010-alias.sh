@@ -4,7 +4,7 @@ test_description='Test aliases'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test help on builtin alias command' '
     stg help add | grep -e "Alias for \"git add"
 '
@@ -14,7 +14,7 @@ test_expect_success 'Test help on builtin alias command' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test ambiguous alias' '
     test_config stgit.alias.show-stat "git show --stat" &&
     stg show-stat &&
@@ -34,7 +34,7 @@ test_expect_success 'Test ambiguous alias' '
 '
 fi
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Setup top-level and nested aliases' '
     test_create_repo foo/bar/baz &&
     git config --local stgit.alias.top-level-alias "!echo TOP-LEVEL-ALIAS" &&

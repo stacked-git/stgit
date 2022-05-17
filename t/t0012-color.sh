@@ -5,7 +5,7 @@ test_description='Test stg.main'
 . ./test-lib.sh
 . "$TEST_DIRECTORY"/lib-terminal.sh
 
-if test -n "$STG_RUST"; then
+if test -z "$STG_TEST_PYTHON"; then
 
 test_expect_success TTY 'Color help' '
     test_terminal stg -h | test_decode_color >output &&

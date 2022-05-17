@@ -56,7 +56,7 @@ test_expect_success 'Test stg commit' '
     stg commit UTF-8
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 desc='Test mail export and import'
 body='
     stg mail --all --mbox > export.mbox &&

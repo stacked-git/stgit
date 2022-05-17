@@ -15,7 +15,7 @@ test_expect_success 'Repair in a repository without patches' '
     stg repair
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Repair with invalid arguments' '
     command_error stg repair xxx 2>err &&
     grep -e "incorrect number of arguments" err

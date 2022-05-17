@@ -13,7 +13,7 @@ test_expect_success 'Initialize branch' '
     stg refresh
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Cannot cleanup with patches' '
     command_error stg branch --cleanup 2>err &&
     grep "Cannot clean up: the series still contains patches" err
@@ -26,7 +26,7 @@ test_expect_success 'Cannot cleanup with patches' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Cannot cleanup with unapplied patches' '
     stg pop &&
     command_error stg branch --cleanup 2>err &&
@@ -46,7 +46,7 @@ test_expect_success 'Clone branch with patches' '
     test "$(stg series --noprefix --unapplied)" = "p0"
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Force cleanup branch with patches' '
     git config --get-regexp branch\\.foo2\\.stgit &&
     stg branch --cleanup --force &&
@@ -72,7 +72,7 @@ test_expect_success 'Commit patches' '
     stg commit -a
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Invalid num args to cleanup' '
     command_error stg branch --cleanup foo extra 2>err &&
     grep "incorrect number of arguments" err
@@ -84,7 +84,7 @@ test_expect_success 'Invalid num args to cleanup' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Cleanup current branch' '
     stg branch --cleanup &&
     test "$(stg branch)" = "foo" &&

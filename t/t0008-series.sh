@@ -4,7 +4,7 @@ test_description='Test stg series'
 
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test uninitialized branch' '
     command_error stg series 2>err &&
     grep -e "branch not initialized" err
@@ -29,7 +29,7 @@ test_expect_success 'Test empty series' '
     test_line_count = 0 error.txt
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test invalid --all and --short' '
     command_error stg series --all --short
 '

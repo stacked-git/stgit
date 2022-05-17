@@ -131,7 +131,7 @@ test_expect_success \
     '
 
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Apply a bzip2 patch created with "git diff"' \
     '
@@ -152,7 +152,7 @@ test_expect_success \
     stg delete ..
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Apply a gzip patch created with GNU diff' \
     '
@@ -217,7 +217,7 @@ test_expect_success \
     stg delete --top
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Import with bad author_date option' \
     '
@@ -278,7 +278,7 @@ test_expect_success \
     stg delete --top
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Import empty patch with sign-off' \
     '
@@ -312,7 +312,7 @@ test_expect_success \
     stg delete --top
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Attempt url' \
     '
@@ -328,7 +328,7 @@ test_expect_success \
     '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success \
     'Too many arguments' \
     '

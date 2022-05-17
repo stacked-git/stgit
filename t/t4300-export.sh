@@ -44,7 +44,7 @@ test_expect_success 'Export with none applied' '
     stg push -a
     '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Export with dirty working tree' '
     echo "another line" >> foo.txt &&
     stg export -d export4 patch-1 2>err &&

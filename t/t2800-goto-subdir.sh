@@ -36,7 +36,7 @@ test_expect_success 'Prepare conflicting goto' '
     stg delete p2
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 # git gives this result before commit 606475f3 ...
 cat > expected1a.txt <<EOF
 foo1

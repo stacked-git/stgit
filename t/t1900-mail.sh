@@ -3,7 +3,7 @@
 test_description='Test the mail command'
 . ./test-lib.sh
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 
 test_expect_success 'Initialize the StGit repository' '
     git config stgit.sender "A U Thor <author@example.com>" &&

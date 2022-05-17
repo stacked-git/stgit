@@ -18,7 +18,7 @@ test_expect_success 'Too few arguments' '
     grep -e "Need at least two patches" err
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt duplicate patch name' '
     command_error stg squash -n p3 -- p0 p1 2>err &&
     grep -e "Patch name \"p3\" already taken" err
@@ -30,7 +30,7 @@ test_expect_success 'Attempt duplicate patch name' '
 '
 fi
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt invalid patch name' '
     command_error stg squash -n invalid..name -- p0 p1 2>err &&
     grep -e "Patch name \"invalid..name\" is invalid" err
@@ -92,7 +92,7 @@ test_expect_success 'Setup fake editor' '
 	eof
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Empty commit message aborts the squash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&

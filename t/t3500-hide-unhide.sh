@@ -8,7 +8,7 @@ test_expect_success 'Initialize stgit' '
     stg init
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt too few arguments' '
     command_error stg hide   2>err && grep -e "No patches specified" err &&
     command_error stg unhide 2>err && grep -e "No patches specified" err
@@ -33,7 +33,7 @@ test_expect_success 'Hide already hidden patch' '
     stg hide p2
 '
 
-if test -z "$STG_RUST"; then
+if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Attempt unhide non-hidden patch' '
     command_error stg unhide p0 2>err &&
     grep -e "Patch \"p0\" not hidden" err
