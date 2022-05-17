@@ -983,55 +983,31 @@ __stg_ignore_line () {
 }
 
 _stgit() {
-    local update_policy
-    zstyle -s ":completion:*:*:stg:*" cache-policy update_policy
-    if [[ -z "$update_policy" ]]; then
-        zstyle ":completion:*:*:stg:*" cache-policy __stg_caching_policy
-    fi
-
-    if (( ! $+_stg_cmds )); then
-        typeset -a _stg_cmds
-        if _cache_invalid stg-cmds || ! _retrieve_cache stg-cmds; then
-            _stg_cmds=(
-                ${${${(M)${(f)"$(stg help 2> /dev/null)"}## *}#  }/#(#b)([^[:space:]]##)[[:space:]]##(*)/$match[1]:$match[2]}
-            )
-
-            # TODO: get aliases exclusively from config (see below)
-            local -a aliases_to_remove=(
-                'add:git add'
-                'mv:git mv'
-                'resolved:git add'
-                'rm:git rm'
-                'status:git status -s'
-            )
-
-            # TODO: temporary until rust implementation becomes parseable.
-            _stg_cmds+=('spill:spill patch contents')
-
-            if (( $? == 0 )); then
-                _store_cache stg-cmds _stg_cmds
-            else
-                unset _stg_cmds
-            fi
-        fi
-    fi
+    # Each string in _stg_cmds ends up in the form "command:Description of the command".
+    # Using the output of `stg -h`:
+    # - Take everything after the line with the "COMMANDS:" header and split such that
+    #   each line is its own array item using ${(f)x#*COMMANDS:}.
+    # - Then eliminate leading whitespace from each line using ${x## ##}.
+    # - Then replace the whitespace between the command name and its description with a
+    #   colon using ${x/ ##/:}.
+    _stg_cmds=(${${${${(f)"$(stg -h 2>/dev/null)"#*COMMANDS:}## ##}}/ ##/:})
 
     if (( CURRENT > 2 )); then
-        local -a aliases
-        local -A stg_aliases=(
-            [add]='!git add'
-            [mv]='!git mv'
-            [resolved]='!git add'
-            [rm]='!git rm'
-            [status]='!git status -s'
-        )
+        local -A stg_aliases
         local a k v
-        local endopt='!(-)--end-of-options'
-        # TODO: maybe get aliases from `stg help` instead of `git config`?
-        aliases=(${(0)"$(_call_program aliases git config -z --get-regexp '\^stgit\.alias\.')"})
-        for a in ${aliases}; do
-            k="${${a/$'\n'*}/stgit.alias.}"
-            v="${a#*$'\n'}"
+        # Alias commands have the form "command:Alias for ... `cmd arg...`"
+        for a in ${(M)_stg_cmds:#*Alias for*}; do
+            # The key (command name) is what's left after removing the colon and
+            # everything after.
+            k=${a/:*}
+            # Extracting the aliased command is trickier.
+            # First take everything between the backticks with ${(M)a%%\`*\`}.
+            # Then prepend a bang using ${x/''/\!}.
+            # Then clear any '!stg' prefixes with ${x#\!stg}.
+            # This leaves each value in one of two forms:
+            # - "command ..." for aliases to StGit built-in commands.
+            # - "!external ..." for aliases to external/shell commands.
+            v=${${${${(M)a%%\`*\`}//\`}/''/\!}#\!stg }
             stg_aliases[$k]="$v"
         done
 
@@ -1048,7 +1024,7 @@ _stgit() {
             unset tmpwords expalias
         fi
 
-        unset stg_aliases aliases
+        unset stg_aliases
     fi
 
     integer ret=1
