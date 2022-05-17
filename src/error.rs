@@ -27,6 +27,9 @@ pub(crate) enum Error {
     #[error("`git {0}`: {1}")]
     GitCommand(String, String),
 
+    #[error(transparent)]
+    PathSpec(#[from] crate::pathspec::Error),
+
     #[error("patch `{0}` already exists")]
     PatchAlreadyExists(crate::patchname::PatchName),
 
@@ -139,6 +142,7 @@ pub(crate) enum Error {
     #[error("{0}")]
     TransactionHalt(String),
 
+    // TODO: lowercase
     #[error("No patches applied")]
     NoAppliedPatches,
 

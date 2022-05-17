@@ -76,11 +76,23 @@ test_expect_success 'edit with succeeding hook (editor)' '
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit more-more
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with succeeding hook (editor)' '
     echo "more more more" >> file &&
     echo "more more more" > FAKE_MSG &&
-    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e
+    GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e &&
+    git diff-files --quiet &&
+    git diff-index --quiet HEAD
 '
+else
+test_expect_success 'refresh with succeeding hook (editor)' '
+    echo "more more more" >> file &&
+    echo "more more more" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE &&
+    git diff-files --quiet &&
+    git diff-index --quiet HEAD
+'
+fi
 
 test_expect_success 'squash with succeeding hook (editor)' '
     echo "more more" > FAKE_MSG &&
@@ -121,11 +133,19 @@ test_expect_success 'edit --no-verify with succeeding hook (editor)' '
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit --no-verify
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh --no-verify with succeeding hook (editor)' '
     echo "even more more" >> file &&
     echo "even mmore mmore" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e --no-verify
 '
+else
+test_expect_success 'refresh --no-verify with succeeding hook (editor)' '
+    echo "even more more" >> file &&
+    echo "even mmore mmore" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+'
+fi
 
 test_expect_success 'squash --no-verify with succeeding hook (editor)' '
     echo "even more more" > FAKE_MSG &&
@@ -169,12 +189,21 @@ test_expect_success 'edit with failing hook (editor)' '
     GIT_EDITOR="\"\$FAKE_EDITOR\"" command_error stg edit
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with failing hook (editor)' '
     echo "more another" >> file &&
     echo "more another" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" command_error stg refresh -e &&
     stg delete refresh-temp
 '
+else
+test_expect_success 'refresh with failing hook (editor)' '
+    echo "more another" >> file &&
+    echo "more another" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" command_error stg refresh -e -m REPLACE &&
+    stg delete refresh-temp
+'
+fi
 
 test_expect_success 'squash with failing hook (editor)' '
     echo "more another" > FAKE_MSG &&
@@ -215,11 +244,19 @@ test_expect_success 'edit --no-verify with failing hook (editor)' '
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg edit --no-verify m-s
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh --no-verify with failing hook (editor)' '
     echo "more stuff" >> file &&
     echo "mmmore stuff" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e --no-verify
 '
+else
+test_expect_success 'refresh --no-verify with failing hook (editor)' '
+    echo "more stuff" >> file &&
+    echo "mmmore stuff" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+'
+fi
 
 test_expect_success 'squash --no-verify with failing hook (editor)' '
     echo "more stuff" > FAKE_MSG &&
@@ -232,22 +269,38 @@ test_expect_success 'refresh with non-executable hook' '
     stg refresh -m "content"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with non-executable hook (editor)' '
     echo "content again" >> file &&
     echo "content again" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e
 '
+else
+test_expect_success 'refresh with non-executable hook (editor)' '
+    echo "content again" >> file &&
+    echo "content again" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE
+'
+fi
 
 test_expect_success 'refresh --no-verify with non-executable hook' '
     echo "more content" >> file &&
     stg refresh --no-verify -m "more content"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh --no-verify with non-executable hook (editor)' '
     echo "even more content" >> file &&
     echo "even more content" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e --no-verify
 '
+else
+test_expect_success 'refresh --no-verify with non-executable hook (editor)' '
+    echo "even more content" >> file &&
+    echo "even more content" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE
+'
+fi
 
 # now a hook that edits the commit message
 write_script "$HOOK" <<'EOF'
@@ -331,19 +384,37 @@ test_expect_success "refresh hook doesn't edit commit message" '
     commit_msg_is "plus"
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh hook edits commit message (editor)' '
     echo "additional content" >> file &&
     echo "additional content" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e &&
     commit_msg_is "new message"
 '
+else
+test_expect_success 'refresh hook edits commit message (editor)' '
+    echo "additional content" >> file &&
+    echo "additional content" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e -m REPLACE &&
+    commit_msg_is "new message"
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success "refresh hook doesn't edit commit message (editor)" '
     echo "more plus" >> file &&
     echo "more plus" > FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR\"" stg refresh -e --no-verify &&
     commit_msg_is "more plus"
 '
+else
+test_expect_success "refresh hook doesn't edit commit message (editor)" '
+    echo "more plus" >> file &&
+    echo "more plus" > FAKE_MSG &&
+    GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify -m REPLACE &&
+    commit_msg_is "more plus"
+'
+fi
 
 test_expect_success 'squash hook edits commit message' '
     stg squash -m "additional" -n add-plus additional-content more-plus &&
@@ -367,6 +438,7 @@ test_expect_success "squash hook doesn't edit commit message (editor)" '
     commit_msg_is "more plus"
 '
 
+if test -z "$STG_RUST"; then
 write_script diffedit <<EOF
 sed \
     -e 's/old content/new content/' \
@@ -384,5 +456,6 @@ test_expect_success "refresh hook edits message and diff (editor)" '
     test "$(grep "new content" file)" = "new content"
 '
 rm -f diffedit
+fi
 
 test_done

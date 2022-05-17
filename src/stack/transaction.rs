@@ -855,6 +855,28 @@ impl<'repo> StackTransaction<'repo> {
         }
     }
 
+    pub(crate) fn update_top(&mut self, commit_id: Oid) -> Result<(), Error> {
+        let top_patchname = self
+            .applied
+            .last()
+            .expect("may only be called if there is an applied patch");
+        let commit = self.stack.repo.find_commit(commit_id)?;
+        self.patch_updates
+            .insert(top_patchname.clone(), Some(PatchDescriptor { commit }));
+        Ok(())
+    }
+
+    pub(crate) fn update_patch(
+        &mut self,
+        patchname: &PatchName,
+        commit_id: Oid,
+    ) -> Result<(), Error> {
+        let commit = self.stack.repo.find_commit(commit_id)?;
+        self.patch_updates
+            .insert(patchname.clone(), Some(PatchDescriptor { commit }));
+        Ok(())
+    }
+
     pub(crate) fn check_merged<'a>(
         &self,
         patches: &'a [PatchName],

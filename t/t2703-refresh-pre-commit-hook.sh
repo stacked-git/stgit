@@ -64,19 +64,37 @@ test_expect_success 'refresh --no-verify with path limiting, failing hook' '
     stg refresh file --no-verify
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with failing hook' '
     echo "pre-commit-hook-fail" >> file &&
     command_error stg refresh 2>err &&
     grep -e "pre-commit hook failed" err &&
     git reset HEAD
 '
+else
+test_expect_success 'refresh with failing hook' '
+    echo "pre-commit-hook-fail" >> file &&
+    command_error stg refresh 2>err &&
+    grep -e "\`pre-commit\` hook: returned 1" err &&
+    git reset HEAD
+'
+fi
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with path limiting, failing hook' '
     echo "pre-commit-hook-path-limiting-fail" >> file &&
     command_error stg refresh file 2>err &&
     grep -e "pre-commit hook failed" err &&
     git reset HEAD
 '
+else
+test_expect_success 'refresh with path limiting, failing hook' '
+    echo "pre-commit-hook-path-limiting-fail" >> file &&
+    command_error stg refresh file 2>err &&
+    grep -e "\`pre-commit\` hook: returned 1" err &&
+    git reset HEAD
+'
+fi
 
 chmod -x "$HOOK"
 test_expect_success 'refresh --no-verify with non-executable hook' '
@@ -123,6 +141,7 @@ test_expect_success 'refresh with path limiting, succeeding hook, does not modif
     [ "$(tail -1 file)" = "pre-commit-hook-path-limiting-no-whitespace" ]
 '
 
+if test -z "$STG_RUST"; then
 test_expect_success 'refresh with failing hook that modifies file' '
     echo "pre-commit-hook-remove-whitespace  " >> file &&
     command_error stg refresh 2>err &&
@@ -131,6 +150,16 @@ test_expect_success 'refresh with failing hook that modifies file' '
     [ "$(git diff --cached --name-only)" = "file" ] &&
     [ "$(tail -1 file)" = "pre-commit-hook-remove-whitespace" ]
 '
+else
+test_expect_success 'refresh with failing hook that modifies file' '
+    echo "pre-commit-hook-remove-whitespace  " >> file &&
+    command_error stg refresh 2>err &&
+    grep -e "\`pre-commit\` hook: returned 1" err &&
+    [ "$(git diff --name-only)" = "file" ] &&
+    [ "$(git diff --cached --name-only)" = "file" ] &&
+    [ "$(tail -1 file)" = "pre-commit-hook-remove-whitespace" ]
+'
+fi
 
 test_expect_success 'refresh again after adding modified files to index' '
     stg add file
