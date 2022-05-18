@@ -5,34 +5,123 @@ on:
     branches: [ '*' ]
     tags: [ '*' ]
   pull_request:
-    branches: [ master ]
+  schedule:
+  # Every Sunday at 1:30
+  - cron: '30 1 * * 0'
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-and-test:
+    name: Build and Test
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            profile: release
+            toolchain: stable
+          - os: ubuntu-latest
+            profile: dev
+            toolchain: stable
+          - os: ubuntu-latest
+            profile: dev
+            toolchain: nightly
+    runs-on: ${{ matrix.os }}
     steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
       with:
-        python-version: '3.10'
+        toolchain: ${{ matrix.toolchain }}
+        profile: minimal
     - name: Build
       run: |
-        python setup.py sdist
-    - name: Upload dist
-      uses: actions/upload-artifact@v2
-      with:
-        name: dist
-        path: "dist/*"
+        cargo build --all-features --profile ${{ matrix.profile }}
+    - name: Install Test Dependencies (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install quilt gnupg2
+    - name: Test
+      env:
+        STG_PROVE_OPTS: "--jobs=2"
+        STG_TEST_OPTS: "--verbose-log"
+        STG_TEST_PROFILE: ${{ matrix.profile }}
+      run: |
+        timeout 300s make -C t prove
 
-  docs:
+  unit-tests:
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+    - name: Run Unit Tests
+      run: |
+        cargo test
+
+  clippy:
+    name: Clippy Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        components: clippy
+    - name: Clippy Checks
+      run: |
+        cargo clippy -- --deny warnings
+
+  rustfmt:
+    name: Format Lint
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        components: rustfmt
+    - name: Check formatting
+      run: |
+        cargo fmt --all --check
+
+  api-docs:
+    name: API Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+    - name: Build docs
+      run: |
+        cargo rustdoc -- --deny warnings
+
+  docs:
+    name: User Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -53,94 +142,3 @@ jobs:
       with:
         name: html-doc
         path: ${{ github.workspace }}/stgit-html
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      run: |
-        make dev-env
-    - name: lint-black
-      run: make lint-black
-    - name: lint-isort
-      run: make lint-isort
-    - name: lint-flake8
-      run: make lint-flake8
-    - name: lint-t
-      run: make lint-t
-
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      run: |
-        make dev-env
-        python -m pip install coveralls coverage[toml]
-        sudo apt-get update
-        sudo apt-get install quilt gnupg2 asciidoc asciidoctor docbook-xsl-ns xmlto
-    - name: Coverage Test
-      run: |
-        timeout 1000s make -j2 coverage-test
-
-    - name: Coverage Report
-      run: |
-        make coverage-report
-
-    - name: Upload HTML Report
-      uses: actions/upload-artifact@v2
-      with:
-        name: htmlcov
-        path: "htmlcov/"
-
-    - name: Coveralls
-      env:
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-      run: |
-        if [ -n "$COVERALLS_REPO_TOKEN" ]
-        then
-            python -m coveralls
-        else
-            echo "Missing COVERALLS_REPO_TOKEN secret. Not uploading to coveralls.io."
-        fi
-
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-          - '3.5'
-          - '3.6'
-          - '3.7'
-          - '3.8'
-          - '3.9'
-          - '3.10'
-    steps:
-    - uses: actions/checkout@v2
-    - run: git fetch --prune --unshallow origin +refs/tags/*:refs/tags/*
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install quilt gnupg2
-    - name: Test
-      env:
-        DEFAULT_TEST_TARGET: "prove"
-        STG_PROVE_OPTS: "--jobs=2"
-        STG_TEST_OPTS: "--verbose-log"
-      run: |
-        timeout 1000s make test
