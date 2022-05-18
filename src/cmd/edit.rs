@@ -90,7 +90,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .original_patchname(Some(&patchname))
         .existing_patch_commit(patch_commit)
         .allow_diff_edit(true)
-        .allow_implicit_edit(true)
+        .allow_implicit_edit(!matches.is_present("set-tree"))
         .allow_template_save(true)
         .override_tree_id(tree_id)
         .edit(&stack, &repo, matches)?
