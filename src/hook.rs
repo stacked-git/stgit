@@ -43,9 +43,9 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
     }
 
     if cfg!(unix) {
-        use std::os::linux::fs::MetadataExt;
+        use std::os::unix::fs::MetadataExt;
         // Ignore non-executable hooks
-        if hook_meta.st_mode() & 0o111 == 0 {
+        if hook_meta.mode() & 0o111 == 0 {
             return Ok(());
         }
     }
@@ -104,9 +104,9 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     }
 
     if cfg!(unix) {
-        use std::os::linux::fs::MetadataExt;
+        use std::os::unix::fs::MetadataExt;
         // Ignore non-executable hooks
-        if hook_meta.st_mode() & 0o111 == 0 {
+        if hook_meta.mode() & 0o111 == 0 {
             return Ok(message);
         }
     }
