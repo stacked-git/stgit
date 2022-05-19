@@ -25,6 +25,9 @@ jobs:
           - os: ubuntu-latest
             profile: dev
             toolchain: nightly
+          - os: macos-latest
+            profile: dev
+            toolchain: stable
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout Repository
@@ -42,6 +45,14 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install quilt gnupg2
+    - name: Install Test Dependencies (MacOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        # coreutils provides the `timeout` command used to wrap `make` below.
+        # gnu-sed is needed by some tests (e.g. t3400-pick.sh).
+        brew install coreutils gnu-sed
+        echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
+        echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
     - name: Test
       env:
         STG_PROVE_OPTS: "--jobs=2"
