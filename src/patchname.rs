@@ -173,7 +173,7 @@ impl PatchName {
         let mut candidate = self;
         loop {
             if allow.iter().any(|pn| pn.as_ref() == &candidate)
-                || disallow.iter().all(|pn| pn.as_ref() != &candidate)
+                || disallow.iter().all(|pn| !candidate.collides(pn.as_ref()))
             {
                 break candidate;
             } else {
@@ -189,6 +189,15 @@ impl PatchName {
                 }
             }
         }
+    }
+
+    /// Test if another patch name is the same as self, ignoring case.
+    ///
+    /// Having two patch names in the same stack that only differ by case will lead to
+    /// ref collisions in case-insensitive filesystems. E.g. `refs/patches/<branch>/p0`
+    /// would collide with `refs/patches/<branch>/P0`.
+    pub(crate) fn collides(&self, other: &PatchName) -> bool {
+        self.0.eq_ignore_ascii_case(&other.0)
     }
 
     /// Validate a patch name `str`.

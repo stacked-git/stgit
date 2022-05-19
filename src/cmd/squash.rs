@@ -91,8 +91,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .map(|s| PatchName::from_str(s).expect("clap already validated name"));
 
     if let Some(patchname) = patchname.as_ref() {
-        if !squash_patchnames.contains(patchname) && stack.has_patch(patchname) {
-            return Err(anyhow!("Patch name `{patchname}` already taken"));
+        if !squash_patchnames.contains(patchname) {
+            if let Some(colliding_patchname) = stack.collides(patchname) {
+                return Err(anyhow!("Patch name `{colliding_patchname}` already taken"));
+            }
         }
     }
 

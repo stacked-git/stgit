@@ -131,14 +131,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let patchname = if let Some(name) = matches.value_of("patchname") {
         let patchname = name.parse::<PatchName>()?;
-        if stack.has_patch(&patchname) {
-            return Err(anyhow!("Patch `{patchname}` already exists"));
+        if let Some(colliding_patchname) = stack.collides(&patchname) {
+            Err(anyhow!("Patch `{colliding_patchname}` already exists"))
         } else {
-            Some(patchname)
+            Ok(Some(patchname))
         }
     } else {
-        None
-    };
+        Ok(None)
+    }?;
 
     let config = repo.config()?;
 

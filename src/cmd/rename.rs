@@ -60,8 +60,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     };
 
-    if old_patchname == new_patchname {
-        return Err(anyhow!("Patch `{new_patchname}` already exists"));
+    if old_patchname.collides(&new_patchname) {
+        return Err(anyhow!("Patch `{old_patchname}` already exists"));
     }
 
     stack

@@ -1,6 +1,6 @@
 //! `stg uncommit` implementation.
 
-use std::{collections::HashSet, str::FromStr};
+use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
@@ -239,13 +239,20 @@ fn make_patchnames(
 }
 
 fn check_patchnames(stack: &Stack, patchnames: &[PatchName]) -> Result<()> {
-    let mut taken_names: HashSet<_> = stack.all_patches().cloned().collect();
+    let mut taken_names: Vec<&PatchName> = Vec::new();
     for patchname in patchnames {
-        if taken_names.contains(patchname) {
-            return Err(anyhow!("Patch `{patchname}` already exists"));
+        if let Some(colliding_patchname) = stack.collides(patchname) {
+            return Err(anyhow!("Patch `{colliding_patchname}` already exists"));
+        } else if let Some(colliding_patchname) =
+            taken_names.iter().find(|pn| patchname.collides(pn))
+        {
+            return Err(anyhow!(
+                "Patch name `{patchname}` collides with `{colliding_patchname}`"
+            ));
         } else {
-            taken_names.insert(patchname.clone());
+            taken_names.push(patchname);
         }
     }
+
     Ok(())
 }

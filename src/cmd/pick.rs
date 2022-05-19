@@ -270,7 +270,7 @@ fn pick_picks(
     let mut new_patches: Vec<(PatchName, git2::Oid)> = Vec::with_capacity(picks.len());
 
     for (patchname, commit) in picks {
-        let disallow: Vec<&PatchName> = stack.all_patches().collect();
+        let mut disallow: Vec<&PatchName> = stack.all_patches().collect();
 
         let patchname = if let Some(name) = matches.value_of("name") {
             PatchName::from_str(name)?
@@ -334,6 +334,7 @@ fn pick_picks(
                 .repo
                 .commit_ex(&author, &committer, message, top.tree_id(), [bottom.id()])?;
         new_patches.push((patchname, new_commit_id));
+        disallow.push(&new_patches[new_patches.len() - 1].0);
     }
 
     stack

@@ -74,7 +74,18 @@ pub(crate) trait StackStateAccess<'repo> {
     fn get_patch(&self, patchname: &PatchName) -> &PatchState<'repo>;
 
     /// Test whether given patch name exists in the stack.
+    ///
+    /// N.B. use [`StackStateAccess::collides()`] to test for potential patch name
+    /// collisions.
     fn has_patch(&self, patchname: &PatchName) -> bool;
+
+    /// Test whether given patch name collides with an existing patch name.
+    ///
+    /// A patch name collides if it is different from only by case from a patch in the
+    /// stack.
+    fn collides(&self, patchname: &PatchName) -> Option<&PatchName> {
+        self.all_patches().find(|pn| patchname.collides(pn))
+    }
 
     /// Get stack's top commit, or base if no applied patches.
     fn top(&self) -> &Commit<'repo>;
