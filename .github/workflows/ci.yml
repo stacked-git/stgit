@@ -153,3 +153,29 @@ jobs:
       with:
         name: html-doc
         path: ${{ github.workspace }}/stgit-html
+
+  windows-build:
+    name: Windows Build
+    runs-on: windows-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+    - name: Build
+      run: |
+        cargo build --all-features --profile release
+    # - name: Setup MSYS2
+    #   uses: msys2/setup-msys2@v2
+    #   with:
+    #     install: base-devel git
+    # - name: Test
+    #   shell: msys2 {0}
+    #   env:
+    #     STG_TEST_OPTS: "-v -i"
+    #     STG_TEST_PROFILE: "release"
+    #   run: |
+    #     timeout 900s make -C t test
