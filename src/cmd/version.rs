@@ -12,11 +12,30 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 }
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("version").about("Print version information and exit")
+    clap::Command::new("version")
+        .about("Print version information and exit")
+        .arg(
+            clap::Arg::new("short")
+                .long("short")
+                .short('s')
+                .help("Show abbreviated version information"),
+        )
 }
 
-fn run(_: &ArgMatches) -> Result<()> {
-    println!("Stacked Git {}", env!("CARGO_PKG_VERSION"));
-    println!("{}", StupidContext::default().version()?);
+fn run(matches: &ArgMatches) -> Result<()> {
+    if matches.is_present("short") {
+        println!("{} {}", env!("CARGO_BIN_NAME"), env!("CARGO_PKG_VERSION"));
+    } else {
+        println!(
+            "Stacked Git {}\n\
+             Copyright (C) 2005-2022 StGit authors\n\
+             This is free software: you are free to change and redistribute it.\n\
+             There is NO WARRANTY, to the extent permitted by law.\n\
+             SPDX-License-Identifier: {}",
+            env!("CARGO_PKG_VERSION"),
+            env!("CARGO_PKG_LICENSE"),
+        );
+        println!("{}", StupidContext::default().version()?);
+    }
     Ok(())
 }

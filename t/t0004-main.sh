@@ -76,21 +76,27 @@ test_expect_success 'Test version/--version equivalence' '
     grep -e "Python 3\." v0.txt
 '
 else
-test_expect_success 'Test version/-V/--version differences' '
+test_expect_success 'Test version/--version equivalence' '
     stg version > v0.txt &&
     stg --version > v1.txt &&
-    stg -V > v2.txt &&
-    test_cmp v1.txt v2.txt &&
-    !(test_cmp v0.txt v1.txt) &&
+    test_cmp v0.txt v1.txt &&
     grep -e "Stacked Git" v0.txt &&
-    grep -e "git version" v0.txt &&
-    grep -e "stg" v1.txt
+    grep -F "$(git --version)" v0.txt
+'
+
+test_expect_success 'Test short version' '
+    stg version --short > v0.txt &&
+    test_line_count = 1 v0.txt
 '
 fi
 
 if test -n "$STG_TEST_PYTHON"; then
 test_expect_success 'Test copyright' '
     stg copyright | grep -e "This program is free software"
+'
+else
+test_expect_success 'Test copyright' '
+    stg version | grep -e "SPDX-License-Identifier: GPL-2.0-only"
 '
 fi
 

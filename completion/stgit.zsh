@@ -635,6 +635,14 @@ _stg-unhide() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-version() {
+    __stg_add_args_help
+    subcmd_args+=(
+        '(-s --short)'{-s,--short}'[show abbreviated version information]'
+    )
+    _arguments -s -S $subcmd_args
+}
+
 __stg_add_args_author() {
     subcmd_args+=(
         '--author=[set author details]'

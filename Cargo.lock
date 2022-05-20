@@ -107,7 +107,6 @@ dependencies = [
  "bitflags",
  "clap_lex",
  "indexmap",
- "lazy_static",
  "strsim",
  "termcolor",
  "terminal_size",

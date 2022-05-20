@@ -61,6 +61,12 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
         .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .help_expected(true)
         .max_term_width(88)
+        .disable_version_flag(true)
+        .arg(
+            clap::Arg::new("version")
+                .long("version")
+                .help("Print version information"),
+        )
         .arg(
             clap::Arg::new("change_dir")
                 .short('C')
@@ -111,7 +117,6 @@ fn get_full_command(
     color_choice: Option<termcolor::ColorChoice>,
 ) -> clap::Command<'static> {
     get_base_command(color_choice)
-        .version(clap::crate_version!())
         .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -142,7 +147,13 @@ fn main() -> ! {
     if let Ok(matches) = get_bootstrap_command(color_choice).try_get_matches_from(&argv) {
         // N.B. changing directories here, early, affects which aliases will ultimately
         // be found.
-        if let Err(e) = change_directories(&matches) {
+        if matches.is_present("version") {
+            execute_command(
+                commands.get("version").unwrap(),
+                vec![argv[0].clone(), OsString::from("version")],
+                color_choice,
+            )
+        } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
         } else if matches.is_present("help-option") {
             full_app_help(argv, commands, None, color_choice)
