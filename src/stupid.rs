@@ -20,7 +20,7 @@ use std::{
     ffi::{OsStr, OsString},
     io::Write,
     path::Path,
-    process::{Child, Command, Output, ExitStatus, Stdio},
+    process::{Child, Command, ExitStatus, Output, Stdio},
 };
 
 use anyhow::{anyhow, Context, Result};
