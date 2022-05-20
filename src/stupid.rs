@@ -20,7 +20,7 @@ use std::{
     ffi::{OsStr, OsString},
     io::Write,
     path::Path,
-    process::{Child, Command, Output, Stdio},
+    process::{Child, Command, Output, ExitStatus, Stdio},
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -638,14 +638,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.args(pathspecs);
         }
         let output = command.stdout(Stdio::inherit()).output_git()?;
-        if cfg!(unix) {
-            use std::os::unix::process::ExitStatusExt;
-            if output.status.signal() == Some(13) {
-                // `git log` process was killed by SIGPIPE, probably due to pager exiting before
-                // all log output could be written. This is normal, but `git log` does not print an
-                // error message to stderr, so we inject our own error string.
-                return Err(git_command_error("log", b"broken pipe"));
-            }
+        if is_status_signal(&output.status, 13) {
+            // `git log` process was killed by SIGPIPE, probably due to pager exiting before
+            // all log output could be written. This is normal, but `git log` does not print an
+            // error message to stderr, so we inject our own error string.
+            return Err(git_command_error("log", b"broken pipe"));
         }
         output.require_success("log")?;
         Ok(())
@@ -1171,4 +1168,15 @@ fn parse_oid(output: &[u8]) -> Result<git2::Oid> {
 
 fn map_color_opt(opt: Option<&str>) -> Option<&str> {
     opt.map(|o| if o == "ansi" { "always" } else { o })
+}
+
+#[cfg(unix)]
+fn is_status_signal(status: &ExitStatus, signum: i32) -> bool {
+    use std::os::unix::process::ExitStatusExt;
+    status.signal() == Some(signum)
+}
+
+#[cfg(not(unix))]
+fn is_status_signal(_status: &ExitStatus, _signum: i32) -> bool {
+    false
 }

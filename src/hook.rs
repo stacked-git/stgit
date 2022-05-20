@@ -44,12 +44,9 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
         return Ok(());
     }
 
-    if cfg!(unix) {
-        use std::os::unix::fs::MetadataExt;
-        // Ignore non-executable hooks
-        if hook_meta.mode() & 0o111 == 0 {
-            return Ok(());
-        }
+    // Ignore non-executable hooks
+    if !is_executable(&hook_meta) {
+        return Ok(());
     }
 
     let mut hook_command = std::process::Command::new(hook_path);
@@ -105,12 +102,9 @@ pub(crate) fn run_commit_msg_hook<'repo>(
         return Ok(message);
     }
 
-    if cfg!(unix) {
-        use std::os::unix::fs::MetadataExt;
-        // Ignore non-executable hooks
-        if hook_meta.mode() & 0o111 == 0 {
-            return Ok(message);
-        }
+    // Ignore non-executable hooks
+    if !is_executable(&hook_meta) {
+        return Ok(message);
     }
 
     let mut msg_file = tempfile::NamedTempFile::new()?;
@@ -150,4 +144,15 @@ pub(crate) fn run_commit_msg_hook<'repo>(
             status.code().unwrap_or(-1)
         ))
     }
+}
+
+#[cfg(unix)]
+fn is_executable(meta: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::MetadataExt;
+    meta.mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn is_executable(_meta: &std::fs::Metadata) -> bool {
+    true
 }
