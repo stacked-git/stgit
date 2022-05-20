@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Support for using git repository hooks.
 
 use std::{io::Write, path::PathBuf};

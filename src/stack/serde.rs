@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Serialize and deserialize stack state to/from JSON representation.
 
 use std::collections::BTreeMap;

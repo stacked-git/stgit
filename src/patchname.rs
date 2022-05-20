@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Patch name string support.
 
 use std::str::FromStr;

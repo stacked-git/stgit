@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Methods for upgrading old stack state representations to the current version.
 //!
 //! The current stack state format is version 5, introduced in StGit v1.2.

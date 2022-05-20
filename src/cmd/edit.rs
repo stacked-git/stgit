@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg edit` implementation.
 
 use std::str::FromStr;

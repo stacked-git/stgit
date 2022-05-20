@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg sync` implementation.
 
 use std::{ffi::OsStr, path::Path, str::FromStr};

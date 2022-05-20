@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Parse patch-aware revision specifications.
 //!
 //! A StGit revspec is like a git revspec (see gitrevisions(7)), but with a coupld of

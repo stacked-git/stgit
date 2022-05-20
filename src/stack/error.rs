@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
     #[error("{0}")]

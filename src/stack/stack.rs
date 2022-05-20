@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! High-level StGit stack representation.
 
 use std::collections::BTreeMap;

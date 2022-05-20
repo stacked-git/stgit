@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg series` implementation.
 
 use std::io::Write;

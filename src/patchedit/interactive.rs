@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Functions for conducting interactive patch edit session.
 
 use std::ffi::OsString;

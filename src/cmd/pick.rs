@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg pick` implementation.
 
 use std::{path::PathBuf, str::FromStr};

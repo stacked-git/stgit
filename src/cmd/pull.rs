@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg pull` implementation.
 
 use std::{fmt::Display, str::FromStr};

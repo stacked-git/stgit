@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! [`clap::Arg`] definitions common to several StGit commands.
 
 use clap::{Arg, ValueHint};

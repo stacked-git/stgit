@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Support for built-in and user-defined command aliases.
 
 use std::collections::BTreeMap;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Functions for handling `--color` option.
 
 use std::ffi::OsString;

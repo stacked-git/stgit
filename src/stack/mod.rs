@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! The StGit stack data structure.
 mod error;
 mod iter;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Extension trait for [`git2::Repository`].
 
 use std::path::PathBuf;

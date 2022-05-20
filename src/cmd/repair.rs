@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg repair` implementation.
 
 use anyhow::{anyhow, Result};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! StGit subcommand implementations.
 //!
 //! Each subcommand is in its own module. The [`get_commands()`] function generates a

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg rebase` implementation.
 
 use std::{fmt::Write, str::FromStr};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Interactively editable patch description format.
 
 use std::io::Write;

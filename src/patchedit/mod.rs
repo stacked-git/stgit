@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Uniform patch editing for various StGit commands.
 //!
 //! This module defines a uniform set of command line options for patch editing that are

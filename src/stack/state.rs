@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Low-level representation of StGit Stack.
 //!
 //! This stack state representation is serialized to/from the `stack.json` blob in the

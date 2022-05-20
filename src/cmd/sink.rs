@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg sink` implementation.
 
 use std::str::FromStr;

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Path specification helpers.
 
 use std::path::{Component, Path, PathBuf};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Support for StGit patch templates.
 
 use std::{borrow::Cow, collections::HashMap};

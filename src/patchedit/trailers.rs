@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Add trailers to a commit message.
 
 use anyhow::{anyhow, Result};

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Extended capabilities for commits beyond those provided by [`git2`].
 
 use std::borrow::Cow;

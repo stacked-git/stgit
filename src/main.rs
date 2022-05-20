@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! The Stacked Git (StGit) executable, `stg`.
 //!
 //! StGit is a tool for maintaining a stack of patches on top of a regular Git branch.

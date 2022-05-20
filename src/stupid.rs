@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Execute commands with git, the stupid content tracker.
 //!
 //! Each function in this module calls-out to a specific git command that is useful to

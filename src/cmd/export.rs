@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg export` implementation.
 
 use std::{borrow::Cow, collections::HashMap, ffi::OsString, io::Write, path::Path};

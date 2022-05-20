@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Modify the StGit stack state atomically.
 //!
 //! Modifying the StGit stack typically involves performing a sequence of fallible

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg patches` implementation.
 
 use std::ffi::OsStr;

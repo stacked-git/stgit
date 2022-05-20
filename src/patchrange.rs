@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! Parse user-provided patch ranges.
 
 use std::str::FromStr;

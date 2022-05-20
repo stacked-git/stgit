@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
 //! `stg spill` implementation.
 
 use std::path::{Path, PathBuf};
