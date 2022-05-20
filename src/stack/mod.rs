@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
 //! The StGit stack data structure.
+mod access;
 mod error;
 mod iter;
 mod serde;
@@ -10,7 +11,8 @@ mod state;
 mod transaction;
 mod upgrade;
 
+pub(crate) use access::StackStateAccess;
 pub(crate) use error::Error;
 pub(crate) use stack::{get_branch_name, state_refname_from_branch_name, Stack};
-pub(crate) use state::{PatchState, StackState, StackStateAccess};
+pub(crate) use state::{PatchState, StackState};
 pub(crate) use transaction::StackTransaction;

@@ -9,10 +9,8 @@ use anyhow::{anyhow, Result};
 use git2::{Branch, Commit};
 
 use super::{
-    state::{StackState, StackStateAccess},
-    transaction::TransactionBuilder,
-    upgrade::stack_upgrade,
-    PatchState,
+    state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
+    StackStateAccess,
 };
 use crate::{patchname::PatchName, repo::RepositoryExtended};
 
