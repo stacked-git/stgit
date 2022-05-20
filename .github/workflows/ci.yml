@@ -59,7 +59,7 @@ jobs:
         STG_TEST_OPTS: "--verbose-log"
         STG_TEST_PROFILE: ${{ matrix.profile }}
       run: |
-        timeout 300s make -C t prove
+        timeout 900s make -C t prove
 
   unit-tests:
     name: Unit Tests
