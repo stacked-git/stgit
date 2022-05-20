@@ -83,13 +83,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     while commit.parent_count() == 1 {
         let parent = commit.parent(0)?;
-        if let Some(patchname) = stack.all_patches().find_map(|pn| {
-            if stack.get_patch_commit(pn).id() == commit.id() {
-                Some(pn)
-            } else {
-                None
-            }
-        }) {
+        if let Some(patchname) = stack
+            .all_patches()
+            .find(|pn| stack.get_patch_commit(pn).id() == commit.id())
+        {
             applied.push(patchname.clone());
             patchify.append(&mut maybe_patchify);
         } else {
