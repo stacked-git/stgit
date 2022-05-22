@@ -485,6 +485,7 @@ _stg-series() {
     subcmd_args+=(
         '--author[show the author name for each patch]'
         '(-c --count)'{-c,--count}'[print number of patches]'
+        '(-i --commit-id)'{-i,--commit-id}=-'[display commit ids]::length'
         '(-d --description)'{-d,--description}'[show short descriptions]'
         '--no-description[do not show patch descriptions]'
         '(-e --empty)'{-e,--empty}'[identify empty patches]'
