@@ -53,69 +53,86 @@ fn make() -> clap::Command<'static> {
                 .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
         )
         .arg(&*crate::argset::BRANCH_ARG)
+        .next_help_heading("SELECT OPTIONS")
         .arg(
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("Show all patches, including hidden patches")
+                .help("Select all patches, including hidden patches")
                 .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
+        .arg(
+            Arg::new("short")
+                .long("short")
+                .short('s')
+                .help("Select patches around the topmost patch only"),
+        )
+        .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
         .arg(
             Arg::new("applied")
                 .long("applied")
                 .short('A')
-                .help("Show the applied patches only"),
+                .help("Select the applied patches only"),
         )
         .arg(
             Arg::new("unapplied")
                 .long("unapplied")
                 .short('U')
-                .help("Show the unapplied patches only"),
+                .help("Select the unapplied patches only"),
         )
         .arg(
             Arg::new("hidden")
                 .long("hidden")
                 .short('H')
-                .help("Show the hidden patches only"),
+                .help("Select the hidden patches only"),
         )
         .arg(
             Arg::new("missing")
                 .long("missing")
                 .short('m')
-                .help("Show patches in BRANCH not present in current branch")
+                .help("Select patches in BRANCH not present in current branch")
                 .takes_value(true)
                 .value_name("BRANCH")
                 .value_hint(ValueHint::Other),
+        )
+        .next_help_heading("DISPLAY OPTIONS")
+        .arg(
+            Arg::new("author")
+                .long("author")
+                .help("Display author name for each patch"),
         )
         .arg(
             Arg::new("count")
                 .long("count")
                 .short('c')
-                .help("Print the number of patches in the series"),
+                .help("Display the number of selected patches and exit")
+                .conflicts_with_all(&[
+                    "description",
+                    "author",
+                    "empty",
+                    "show-branch",
+                    "no-prefix",
+                ]),
         )
         .arg(
             Arg::new("description")
                 .long("description")
                 .short('d')
-                .help("Show short description for each patch")
+                .help("Display short description for each patch")
                 .overrides_with("no-description"),
         )
         .arg(
             Arg::new("no-description")
                 .long("no-description")
-                .help("Disable description")
+                .help("Do not display the patch description")
                 .overrides_with("description"),
         )
-        .arg(
-            Arg::new("author")
-                .long("author")
-                .help("Show author name for each patch"),
-        )
+        .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
         .arg(
             Arg::new("empty")
                 .long("empty")
                 .short('e')
-                .help("Show whether patches are empty")
+                .help("Display whether patches are empty")
                 .long_help(
                     "Before the '+', '>', '-', and '!' prefixes, print \
                      a column that contains either '0' (for empty \
@@ -123,24 +140,17 @@ fn make() -> clap::Command<'static> {
                 ),
         )
         .arg(
+            Arg::new("no-prefix")
+                .long("no-prefix")
+                .alias("noprefix")
+                .short('P')
+                .help("Do not display the patch status prefix"),
+        )
+        .arg(
             Arg::new("show-branch")
                 .long("showbranch")
-                .help("Prepend the branch name to the listed patches"),
+                .help("Display the branch name with the listed patches"),
         )
-        .arg(
-            Arg::new("no-prefix")
-                .long("noprefix")
-                // TODO: add short option; maybe 'N'
-                .help("Do not show the patch status prefix"),
-        )
-        .arg(
-            Arg::new("short")
-                .long("short")
-                .short('s')
-                .help("Only show patches around the topmost patch"),
-        )
-        .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
-        .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

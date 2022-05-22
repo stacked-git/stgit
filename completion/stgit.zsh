@@ -489,7 +489,7 @@ _stg-series() {
         '--no-description[do not show patch descriptions]'
         '(-e --empty)'{-e,--empty}'[identify empty patches]'
         '(-m --missing)'{-m,--missing=}'[show patches from branch missing in current]: :__stg_branch_stgit'
-        '--noprefix[do not show the patch status prefix]'
+        '(-P --no-prefix)'{-P,--no-prefix}'[do not show the patch status prefix]'
         '(-s --short)'{-s,--short}'[list just patches around the topmost patch]'
         '--showbranch[show branch name of listed patches]'
         - group-ahu
