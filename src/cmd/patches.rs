@@ -115,7 +115,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     Some(&pathspecs),
                     false,
                     use_color,
-                    matches.value_of("diff-opts"),
+                    false,
+                    matches.values_of("diff-opts"),
                 )?;
                 stdout.write_all(&diff)?;
             }

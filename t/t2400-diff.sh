@@ -47,6 +47,10 @@ test_expect_success 'Diff with some local changes' '
     test_cmp add-foo.diff add-foo2.diff
 '
 
+test_expect_success 'Diff with multiple diff-opts' '
+    stg diff --diff-opts=--shortstat -O --name-only | grep -e "foo.txt"
+'
+
 test_expect_success 'Refresh patch' '
     stg refresh
 '

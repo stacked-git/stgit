@@ -22,6 +22,13 @@ test_expect_success 'Export to directory' '
     done
     '
 
+test_expect_success 'Export with multiple diff-opts' '
+    stg export -d export2 -O --minimal -O --no-indent-heuristic &&
+    for i in 1 2 3 4 5; do
+      test_path_is_file export2/patch-$i
+    done
+    '
+
 test_expect_success 'Reimport directory export' '
     stg delete $(stg series --noprefix) &&
     stg import -s export1/series &&

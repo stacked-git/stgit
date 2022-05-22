@@ -168,7 +168,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let need_diffstat = template.contains("%(diffstat)");
 
     let opt_stdout = matches.is_present("stdout");
-    let diff_opts = matches.value_of("diff-opts");
     let mut series = format!(
         "# This series applies on Git commit {}\n",
         stack.base().id()
@@ -233,23 +232,14 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             ),
         );
 
-        let diff_opts = diff_opts
-            .map(|opts| {
-                if opts.split_ascii_whitespace().any(|opt| opt == "--binary") {
-                    opts.to_string()
-                } else {
-                    format!("{opts} --binary")
-                }
-            })
-            .or_else(|| Some("--binary".to_string()));
-
         let diff = stupid.diff_tree_patch(
             parent_commit.tree_id(),
             patch_commit.tree_id(),
             <Option<Vec<OsString>>>::None,
             false,
             false,
-            diff_opts.as_deref(),
+            true,
+            matches.values_of("diff-opts"),
         )?;
 
         if need_diffstat {

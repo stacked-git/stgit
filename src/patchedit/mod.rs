@@ -600,6 +600,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     <Option<Vec<OsString>>>::None,
                     true,
                     false,
+                    false,
                     None,
                 )?
             } else {

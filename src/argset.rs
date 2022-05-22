@@ -29,6 +29,7 @@ lazy_static! {
         .help("Extra options to pass to \"git diff\"")
         .takes_value(true)
         .allow_hyphen_values(true)
+        .multiple_occurrences(true)
         .value_name("OPTIONS")
         .value_hint(ValueHint::Other);
 }

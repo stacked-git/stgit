@@ -63,6 +63,11 @@ test_expect_success 'Bad diff opts' '
     grep -e "unrecognized argument: --this-is-bad" err
 '
 
+test_expect_success 'Multiple diff opts' '
+    stg show --diff-opts=--shortstat --diff-opts --name-only patch-bbb |
+    grep -e "foo.txt"
+'
+
 test_expect_success 'Show patch range' '
     stg show patch-bbb..patch-ddd > show-range.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-range.txt) = "3" &&
