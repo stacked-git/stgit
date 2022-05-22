@@ -396,22 +396,24 @@ fn run(matches: &ArgMatches) -> Result<()> {
         write!(stdout, "{branch_prefix}{patchname:patchname_width$}")?;
 
         if opt_author {
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Black)))?;
+            write!(stdout, " # ")?;
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
             if let Ok(author) = commit.author_strict() {
-                write!(stdout, " # {:author_width$}", &author.name().unwrap(),)?;
+                write!(stdout, "{:author_width$}", &author.name().unwrap(),)?;
             } else {
                 let author = commit.author();
                 let name = String::from_utf8_lossy(author.name_bytes());
-                write!(stdout, " # {name:author_width$}")?;
+                write!(stdout, "{name:author_width$}")?;
             }
         }
         if opt_description {
-            let suffix = match commit.summary() {
-                Some(summary) => format!(" # {summary}"),
-                None => " #".to_string(),
-            };
-            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-            write!(stdout, "{suffix}")?;
+            stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Black)))?;
+            write!(stdout, " #")?;
+            if let Some(summary) = commit.summary() {
+                stdout.set_color(color_spec.set_fg(None))?;
+                write!(stdout, " {summary}")?;
+            }
         }
         color_spec.clear();
         stdout.set_color(&color_spec)?;
