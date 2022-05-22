@@ -82,6 +82,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.values_of_os("pathspecs"),
         matches.is_present("stat"),
         matches.value_of("color"),
-        matches.value_of("diff-opts"),
+        matches.values_of("diff-opts"),
     )
 }
