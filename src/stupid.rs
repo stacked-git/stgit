@@ -391,7 +391,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         pathspecs: Option<I>,
         stat: bool,
         color_opt: Option<&str>,
-        diff_opts: Option<&str>,
+        diff_opts: Option<clap::Values<'_>>,
     ) -> Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -408,9 +408,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
 
         if let Some(diff_opts) = diff_opts {
-            for opt in diff_opts.split_ascii_whitespace() {
-                command.arg(opt);
-            }
+            command.args(diff_opts);
         }
 
         command.arg(revspec);
@@ -510,7 +508,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         pathspecs: Option<I>,
         full_index: bool,
         color: bool,
-        diff_opts: Option<&str>,
+        binary: bool,
+        diff_opts: Option<clap::Values<'_>>,
     ) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = S>,
@@ -524,8 +523,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if color {
             command.arg("--color");
         }
+        if binary {
+            command.arg("--binary");
+        }
         if let Some(diff_opts) = diff_opts {
-            command.args(diff_opts.split_ascii_whitespace());
+            command.args(diff_opts);
         }
         command.args([tree1.to_string(), tree2.to_string()]);
         if let Some(pathspecs) = pathspecs {
@@ -926,7 +928,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         pathspecs: Option<I>,
         stat: bool,
         color_opt: Option<&str>,
-        diff_opts: Option<&str>,
+        diff_opts: Option<clap::Values<'_>>,
     ) -> Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -945,9 +947,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
 
         if let Some(diff_opts) = diff_opts {
-            for opt in diff_opts.split_ascii_whitespace() {
-                command.arg(opt);
-            }
+            command.args(diff_opts);
         }
 
         for oid in oids {
