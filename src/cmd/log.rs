@@ -115,7 +115,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 simplified_parent_id,
                 pathspecs,
                 num_commits,
-                matches.value_of("color"),
+                crate::color::use_color(matches),
                 matches.is_present("full"),
                 matches.is_present("diff"),
             )

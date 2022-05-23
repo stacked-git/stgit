@@ -157,6 +157,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let numbered = matches.is_present("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
+    let diff_opts = crate::argset::get_diff_opts(matches, false, true);
+
     let template = if let Some(template_file) = matches.value_of_os("template") {
         Cow::Owned(std::fs::read_to_string(template_file)?)
     } else {
@@ -239,9 +241,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             patch_commit.tree_id(),
             <Option<Vec<OsString>>>::None,
             false,
-            false,
-            true,
-            matches.values_of("diff-opts"),
+            &diff_opts,
         )?;
 
         if need_diffstat {

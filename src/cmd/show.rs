@@ -157,7 +157,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         oids,
         matches.values_of_os("path_limits"),
         opt_stat,
-        matches.value_of("color"),
-        matches.values_of("diff-opts"),
+        crate::color::use_color(matches),
+        &crate::argset::get_diff_opts(matches, false, false),
     )
 }

@@ -93,12 +93,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         // TODO: pager?
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        let use_color = match crate::color::get_color_choice(Some(matches)) {
-            termcolor::ColorChoice::Always => true,
-            termcolor::ColorChoice::AlwaysAnsi => true,
-            termcolor::ColorChoice::Auto => atty::is(atty::Stream::Stdout),
-            termcolor::ColorChoice::Never => false,
-        };
+        let diff_opts = crate::argset::get_diff_opts(matches, false, false);
         for patchname in stack.applied() {
             let patch_commit = stack.get_patch_commit(patchname);
             let parent_commit = patch_commit.parent(0)?;
@@ -115,10 +110,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     parent_commit.tree_id(),
                     patch_commit.tree_id(),
                     Some(&pathspecs),
-                    false,
-                    use_color,
-                    false,
-                    matches.values_of("diff-opts"),
+                    crate::color::use_color(matches),
+                    &diff_opts,
                 )?;
                 stdout.write_all(&diff)?;
             }

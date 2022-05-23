@@ -82,6 +82,16 @@ pub(crate) fn get_color_choice(maybe_matches: Option<&ArgMatches>) -> termcolor:
     .expect("clap already validated color choice string")
 }
 
+/// Determine if color should be used based on `--color` and if terminal is a tty.
+pub(crate) fn use_color(matches: &ArgMatches) -> bool {
+    match crate::color::get_color_choice(Some(matches)) {
+        termcolor::ColorChoice::Always => true,
+        termcolor::ColorChoice::AlwaysAnsi => true,
+        termcolor::ColorChoice::Auto => atty::is(atty::Stream::Stdout),
+        termcolor::ColorChoice::Never => false,
+    }
+}
+
 /// Parse argv for `--color` option.
 ///
 /// This is done outside of [`clap`] in order to be able to setup the [`clap::Command`]

@@ -35,3 +35,25 @@ lazy_static! {
         .value_name("OPTIONS")
         .value_hint(ValueHint::Other);
 }
+
+pub(crate) fn get_diff_opts(
+    matches: &clap::ArgMatches,
+    force_full_index: bool,
+    force_binary: bool,
+) -> Vec<&str> {
+    let mut opts = Vec::new();
+    if let Some(values) = matches.values_of("diff-opts") {
+        for value in values {
+            for arg in value.split_ascii_whitespace() {
+                opts.push(arg)
+            }
+        }
+    }
+    if force_full_index {
+        opts.push("--full-index")
+    }
+    if force_binary {
+        opts.push("--binary");
+    }
+    opts
+}

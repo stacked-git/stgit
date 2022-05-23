@@ -83,7 +83,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &revspec,
         matches.values_of_os("pathspecs"),
         matches.is_present("stat"),
-        matches.value_of("color"),
-        matches.values_of("diff-opts"),
+        crate::color::use_color(matches),
+        &crate::argset::get_diff_opts(matches, false, false),
     )
 }

@@ -600,10 +600,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     old_tree.id(),
                     new_tree.id(),
                     <Option<Vec<OsString>>>::None,
-                    true,
                     false,
-                    false,
-                    None,
+                    &["--full-index"],
                 )?
             } else {
                 // This is a special case for `stg new` without the `--refresh` option.

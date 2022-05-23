@@ -390,8 +390,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         revspec: &str,
         pathspecs: Option<I>,
         stat: bool,
-        color_opt: Option<&str>,
-        diff_opts: Option<clap::Values<'_>>,
+        use_color: bool,
+        diff_opts: &[&str],
     ) -> Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -403,11 +403,13 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.args(["--stat", "--summary"]);
         }
 
-        if let Some(color_opt) = map_color_opt(color_opt) {
-            command.arg(format!("--color={color_opt}"));
-        }
+        command.arg(if use_color {
+            "--color=always"
+        } else {
+            "--color=never"
+        });
 
-        if let Some(diff_opts) = diff_opts {
+        if !diff_opts.is_empty() {
             command.args(diff_opts);
         }
 
@@ -481,7 +483,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         tree2: git2::Oid,
         stat: bool,
         name_only: bool,
-        color_opt: Option<&str>,
+        use_color: bool,
     ) -> Result<Vec<u8>> {
         let mut command = self.git();
         command.args(["diff-tree", "-r"]);
@@ -492,9 +494,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         } else {
             command.arg("--name-status");
         }
-        if let Some(color_opt) = map_color_opt(color_opt) {
-            command.arg(format!("--color={color_opt}"));
-        }
+        command.arg(if use_color {
+            "--color=always"
+        } else {
+            "--color=never"
+        });
         command.args([tree1.to_string(), tree2.to_string()]);
         let output = command.output_git()?.require_success("diff-tree")?;
         Ok(output.stdout)
@@ -506,10 +510,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         tree1: git2::Oid,
         tree2: git2::Oid,
         pathspecs: Option<I>,
-        full_index: bool,
-        color: bool,
-        binary: bool,
-        diff_opts: Option<clap::Values<'_>>,
+        use_color: bool,
+        diff_opts: &[&str],
     ) -> Result<Vec<u8>>
     where
         I: IntoIterator<Item = S>,
@@ -517,16 +519,12 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     {
         let mut command = self.git();
         command.args(["diff-tree", "-p"]);
-        if full_index {
-            command.arg("--full-index");
-        }
-        if color {
-            command.arg("--color");
-        }
-        if binary {
-            command.arg("--binary");
-        }
-        if let Some(diff_opts) = diff_opts {
+        command.arg(if use_color {
+            "--color=always"
+        } else {
+            "--color=never"
+        });
+        if !diff_opts.is_empty() {
             command.args(diff_opts);
         }
         command.args([tree1.to_string(), tree2.to_string()]);
@@ -613,7 +611,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         commit_id: git2::Oid,
         pathspecs: Option<I>,
         num_commits: Option<usize>,
-        color_opt: Option<&str>,
+        use_color: bool,
         full_index: bool,
         show_diff: bool,
     ) -> Result<()>
@@ -626,9 +624,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if let Some(n) = num_commits {
             command.arg(format!("-{n}"));
         }
-        if let Some(color_opt) = map_color_opt(color_opt) {
-            command.arg(format!("--color={color_opt}"));
-        }
+        command.arg(if use_color {
+            "--color=always"
+        } else {
+            "--color=never"
+        });
         if show_diff {
             command.arg("-p");
         } else if !full_index {
@@ -927,8 +927,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         oids: impl IntoIterator<Item = git2::Oid>,
         pathspecs: Option<I>,
         stat: bool,
-        color_opt: Option<&str>,
-        diff_opts: Option<clap::Values<'_>>,
+        use_color: bool,
+        diff_opts: &[&str],
     ) -> Result<()>
     where
         I: IntoIterator<Item = S>,
@@ -942,11 +942,13 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.arg("--patch");
         }
 
-        if let Some(color_opt) = map_color_opt(color_opt) {
-            command.arg(format!("--color={color_opt}"));
-        }
+        command.arg(if use_color {
+            "--color=always"
+        } else {
+            "--color=never"
+        });
 
-        if let Some(diff_opts) = diff_opts {
+        if !diff_opts.is_empty() {
             command.args(diff_opts);
         }
 
@@ -1164,10 +1166,6 @@ fn git_command_error(command: &str, stderr: &[u8]) -> anyhow::Error {
 fn parse_oid(output: &[u8]) -> Result<git2::Oid> {
     let oid_hex = output.to_str().context("parsing oid")?.trim_end();
     git2::Oid::from_str(oid_hex).with_context(|| format!("converting oid `{oid_hex}`"))
-}
-
-fn map_color_opt(opt: Option<&str>) -> Option<&str> {
-    opt.map(|o| if o == "ansi" { "always" } else { o })
 }
 
 #[cfg(unix)]

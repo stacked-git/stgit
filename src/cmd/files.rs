@@ -51,7 +51,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         commit.tree_id(),
         matches.is_present("stat"),
         matches.is_present("bare"),
-        matches.value_of("color"),
+        crate::color::use_color(matches),
     )?;
 
     let stdout = std::io::stdout();
