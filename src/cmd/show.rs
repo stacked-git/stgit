@@ -85,6 +85,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
+    let config = repo.config()?;
 
     let opt_stat = matches.is_present("stat");
     let opt_applied = matches.is_present("applied");
@@ -158,6 +159,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.values_of_os("path_limits"),
         opt_stat,
         crate::color::use_color(matches),
-        &crate::argset::get_diff_opts(matches, false, false),
+        &crate::argset::get_diff_opts(matches, &config, false, false),
     )
 }

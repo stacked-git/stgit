@@ -91,9 +91,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if opt_diff {
         // TODO: pager?
+        let config = repo.config()?;
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        let diff_opts = crate::argset::get_diff_opts(matches, false, false);
+        let diff_opts = crate::argset::get_diff_opts(matches, &config, false, false);
         for patchname in stack.applied() {
             let patch_commit = stack.get_patch_commit(patchname);
             let parent_commit = patch_commit.parent(0)?;

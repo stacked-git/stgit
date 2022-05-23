@@ -233,15 +233,15 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Pipes `git diff-tree | git apply --index`.
     ///
     /// Returns `true` if the patch application is successful, `false` otherwise.
-    pub(crate) fn apply_treediff_to_worktree_and_index<I, S>(
+    pub(crate) fn apply_treediff_to_worktree_and_index<SpecIter, SpecArg>(
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
     ) -> Result<bool>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
     {
         let mut diff_tree_command = self.git();
         diff_tree_command
@@ -385,17 +385,19 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Interactive diff
-    pub(crate) fn diff<I, S>(
+    pub(crate) fn diff<SpecIter, SpecArg, OptIter, OptArg>(
         &self,
         revspec: &str,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
         stat: bool,
         use_color: bool,
-        diff_opts: &[&str],
+        diff_opts: OptIter,
     ) -> Result<()>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
+        OptIter: IntoIterator<Item = OptArg>,
+        OptArg: AsRef<OsStr>,
     {
         let mut command = self.git();
         command.arg("diff");
@@ -409,10 +411,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             "--color=never"
         });
 
-        if !diff_opts.is_empty() {
-            command.args(diff_opts);
-        }
-
+        command.args(diff_opts);
         command.arg(revspec);
         command.arg("--");
 
@@ -505,17 +504,19 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Generate diff between two trees using `git diff-tree -p`.
-    pub(crate) fn diff_tree_patch<I, S>(
+    pub(crate) fn diff_tree_patch<SpecIter, SpecArg, OptIter, OptArg>(
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
         use_color: bool,
-        diff_opts: &[&str],
+        diff_opts: OptIter,
     ) -> Result<Vec<u8>>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
+        OptIter: IntoIterator<Item = OptArg>,
+        OptArg: AsRef<OsStr>,
     {
         let mut command = self.git();
         command.args(["diff-tree", "-p"]);
@@ -524,9 +525,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         } else {
             "--color=never"
         });
-        if !diff_opts.is_empty() {
-            command.args(diff_opts);
-        }
+        command.args(diff_opts);
         command.args([tree1.to_string(), tree2.to_string()]);
         if let Some(pathspecs) = pathspecs {
             command.arg("--");
@@ -557,10 +556,14 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Show log in gitk
-    pub(crate) fn gitk<I, S>(&self, commit_id: git2::Oid, pathspecs: Option<I>) -> Result<()>
+    pub(crate) fn gitk<SpecIter, SpecArg>(
+        &self,
+        commit_id: git2::Oid,
+        pathspecs: Option<SpecIter>,
+    ) -> Result<()>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
     {
         let mut command = Command::new("gitk");
         self.git_dir.map(|p| command.env("GIT_DIR", p));
@@ -606,18 +609,18 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Interactively show log
-    pub(crate) fn log<I, S>(
+    pub(crate) fn log<SpecIter, SpecArg>(
         &self,
         commit_id: git2::Oid,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
         num_commits: Option<usize>,
         use_color: bool,
         full_index: bool,
         show_diff: bool,
     ) -> Result<()>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
     {
         let mut command = self.git_in_work_root();
         command.arg("log");
@@ -875,15 +878,15 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Get list of revisions using `git rev-list`.
-    pub(crate) fn rev_list<I, S>(
+    pub(crate) fn rev_list<SpecIter, SpecArg>(
         &self,
         base: git2::Oid,
         top: git2::Oid,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
     ) -> Result<Vec<git2::Oid>>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
     {
         let mut command = self.git();
         command.arg("rev-list").arg(format!("{base}..{top}"));
@@ -922,17 +925,19 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Show objects using `git show`.
-    pub(crate) fn show<I, S>(
+    pub(crate) fn show<SpecIter, SpecArg, OptIter, OptArg>(
         &self,
         oids: impl IntoIterator<Item = git2::Oid>,
-        pathspecs: Option<I>,
+        pathspecs: Option<SpecIter>,
         stat: bool,
         use_color: bool,
-        diff_opts: &[&str],
+        diff_opts: OptIter,
     ) -> Result<()>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
+        OptIter: IntoIterator<Item = OptArg>,
+        OptArg: AsRef<OsStr>,
     {
         let mut command = self.git();
         command.arg("show");
@@ -948,14 +953,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             "--color=never"
         });
 
-        if !diff_opts.is_empty() {
-            command.args(diff_opts);
-        }
-
-        for oid in oids {
-            command.arg(oid.to_string());
-        }
-
+        command.args(diff_opts);
+        command.args(oids.into_iter().map(|oid| oid.to_string()));
         command.arg("--");
 
         if let Some(pathspecs) = pathspecs {
@@ -1012,10 +1011,10 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Show short status using `git status`.
-    pub(crate) fn status_short<I, S>(&self, pathspecs: Option<I>) -> Result<()>
+    pub(crate) fn status_short<SpecIter, SpecArg>(&self, pathspecs: Option<SpecIter>) -> Result<()>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<OsStr>,
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
     {
         let mut command = self.git();
         command.args(["status", "-s", "--"]);

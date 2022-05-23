@@ -36,24 +36,47 @@ lazy_static! {
         .value_hint(ValueHint::Other);
 }
 
+/// Compose aggregate set of git diff options from various sources.
+///
+/// These options are meant to be passed to various subordinate `git` commands that take
+/// diff options.
+///
+/// The base set of options come from `stgit.diff-opts` in the config. Additional
+/// options from `--diff-opts`/`-O` command line options are appended. And StGit
+/// command-specific policies for displaying the full object id (`--full-index`) and
+/// including binary diffs (`--binary`) are tacked on at the end.
+///
+/// The returned Vec<String> is appropriate for inserting directly into the command line
+/// of subordinate `git` commands.
 pub(crate) fn get_diff_opts(
     matches: &clap::ArgMatches,
+    config: &git2::Config,
     force_full_index: bool,
     force_binary: bool,
-) -> Vec<&str> {
+) -> Vec<String> {
     let mut opts = Vec::new();
+
+    if let Ok(value) = config.get_string("stgit.diff-opts") {
+        for arg in value.split_ascii_whitespace() {
+            opts.push(String::from(arg))
+        }
+    }
+
     if let Some(values) = matches.values_of("diff-opts") {
         for value in values {
             for arg in value.split_ascii_whitespace() {
-                opts.push(arg)
+                opts.push(String::from(arg))
             }
         }
     }
+
     if force_full_index {
-        opts.push("--full-index")
+        opts.push(String::from("--full-index"))
     }
+
     if force_binary {
-        opts.push("--binary");
+        opts.push(String::from("--binary"));
     }
+
     opts
 }

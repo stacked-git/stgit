@@ -114,6 +114,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let opt_branch = matches.value_of("branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let stupid = repo.stupid();
+    let config = repo.config()?;
 
     if opt_branch.is_none() && repo.check_worktree_clean().is_err() {
         crate::print_warning_message(
@@ -157,7 +158,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let numbered = matches.is_present("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
-    let diff_opts = crate::argset::get_diff_opts(matches, false, true);
+    let diff_opts = crate::argset::get_diff_opts(matches, &config, false, true);
 
     let template = if let Some(template_file) = matches.value_of_os("template") {
         Cow::Owned(std::fs::read_to_string(template_file)?)

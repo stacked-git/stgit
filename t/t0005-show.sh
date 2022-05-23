@@ -68,6 +68,20 @@ test_expect_success 'Multiple diff opts' '
     grep -e "foo.txt"
 '
 
+test_expect_success 'Diff opts from config' '
+    test_config stgit.diff-opts "--src-prefix=APREFIX/ --dst-prefix=BPREFIX/" &&
+    stg show patch-bbb >out &&
+    grep -e "APREFIX/" out &&
+    grep -e "BPREFIX/" out
+'
+
+test_expect_success 'Diff opts from config and command line' '
+    test_config stgit.diff-opts "--src-prefix=APREFIX/ --dst-prefix=BPREFIX/" &&
+    stg show -O --dst-prefix="BBBPREFIX/" patch-bbb >out &&
+    grep -e "APREFIX/" out &&
+    grep -e "BBBPREFIX/" out
+'
+
 test_expect_success 'Show patch range' '
     stg show patch-bbb..patch-ddd > show-range.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-range.txt) = "3" &&

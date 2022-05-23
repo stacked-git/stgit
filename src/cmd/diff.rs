@@ -58,6 +58,7 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
+    let config = repo.config()?;
 
     let revspec = if let Some(range_str) = matches.value_of("range") {
         if let Some((rev1, rev2)) = range_str.split_once("..") {
@@ -84,6 +85,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.values_of_os("pathspecs"),
         matches.is_present("stat"),
         crate::color::use_color(matches),
-        &crate::argset::get_diff_opts(matches, false, false),
+        &crate::argset::get_diff_opts(matches, &config, false, false),
     )
 }
