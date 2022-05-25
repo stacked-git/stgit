@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 pub(crate) mod branch;
 pub(crate) mod clean;
 pub(crate) mod commit;
+pub(crate) mod completion;
 pub(crate) mod delete;
 pub(crate) mod diff;
 pub(crate) mod edit;
@@ -70,6 +71,7 @@ pub(crate) fn get_commands() -> Commands {
         branch::get_command(),
         clean::get_command(),
         commit::get_command(),
+        completion::get_command(),
         delete::get_command(),
         diff::get_command(),
         edit::get_command(),
