@@ -111,8 +111,8 @@ fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::
 /// every StGit subcommand and alias. This flavor of [`clap::Command`] instance is
 /// useful in contexts where the global help needs to be presented to the user; i.e.
 /// when `--help` is provided or when the user specifies an invalid subcommand or alias.
-fn get_full_command(
-    commands: cmd::Commands,
+pub(crate) fn get_full_command(
+    commands: &cmd::Commands,
     aliases: alias::Aliases,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> clap::Command<'static> {
@@ -280,7 +280,7 @@ fn full_app_help(
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    let err = get_full_command(commands, aliases, color_choice)
+    let err = get_full_command(&commands, aliases, color_choice)
         .try_get_matches_from(&argv)
         .expect_err("command line should not have viable matches");
     err.print().expect("failed to print clap error");
@@ -449,7 +449,9 @@ fn execute_stgit_alias(
 ///
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options having been previously processed.
-fn get_aliases(commands: &cmd::Commands) -> Result<(alias::Aliases, Option<git2::Repository>)> {
+pub(crate) fn get_aliases(
+    commands: &cmd::Commands,
+) -> Result<(alias::Aliases, Option<git2::Repository>)> {
     let maybe_repo = git2::Repository::open_from_env().ok();
     maybe_repo
         .as_ref()

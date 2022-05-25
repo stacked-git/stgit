@@ -981,7 +981,9 @@ __stg_remotes() {
 }
 
 __stg_subcommands() {
-    _describe -t commands 'stgit command' _stg_cmds
+    local -a command_list
+    command_list=(${(f)"$(stg completion list commands-and-aliases --style=zsh)"})
+    _describe -t commands 'stgit command' command_list
 }
 
 __stg_caching_policy() {
@@ -994,31 +996,17 @@ __stg_ignore_line () {
 }
 
 _stgit() {
-    # Each string in _stg_cmds ends up in the form "command:Description of the command".
-    # Using the output of `stg -h`:
-    # - Take everything after the line with the "COMMANDS:" header and split such that
-    #   each line is its own array item using ${(f)x#*COMMANDS:}.
-    # - Then eliminate leading whitespace from each line using ${x## ##}.
-    # - Then replace the whitespace between the command name and its description with a
-    #   colon using ${x/ ##/:}.
-    _stg_cmds=(${${${${(f)"$(stg -h 2>/dev/null)"#*COMMANDS:}## ##}}/ ##/:})
-
     if (( CURRENT > 2 )); then
         local -A stg_aliases
         local a k v
         # Alias commands have the form "command:Alias for ... `cmd arg...`"
-        for a in ${(M)_stg_cmds:#*Alias for*}; do
+        for a in ${(f)"$(stg completion list aliases --show-expansion --style=zsh)"}; do
             # The key (command name) is what's left after removing the colon and
             # everything after.
-            k=${a/:*}
-            # Extracting the aliased command is trickier.
-            # First take everything between the backticks with ${(M)a%%\`*\`}.
-            # Then prepend a bang using ${x/''/\!}.
-            # Then clear any '!stg' prefixes with ${x#\!stg}.
-            # This leaves each value in one of two forms:
-            # - "command ..." for aliases to StGit built-in commands.
-            # - "!external ..." for aliases to external/shell commands.
-            v=${${${${(M)a%%\`*\`}//\`}/''/\!}#\!stg }
+            k=${a%%:*}
+            # The value (alias expansion) is what's left after removing everything up to
+            # and including the first colon.
+            v=${a#*:}
             stg_aliases[$k]="$v"
         done
 
