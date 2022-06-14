@@ -14,6 +14,7 @@
 #
 
 _stg-branch() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         - group-list
@@ -54,6 +55,7 @@ _stg-branch() {
 }
 
 _stg-clean() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '(-A --applied)'{-A,--applied}'[delete empty applied patches]'
@@ -63,6 +65,7 @@ _stg-clean() {
 }
 
 _stg-commit() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '--allow-empty[allow committing empty patches]'
@@ -77,6 +80,7 @@ _stg-commit() {
 }
 
 _stg-delete() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
@@ -91,6 +95,7 @@ _stg-delete() {
 }
 
 _stg-diff() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_diffopts
     subcmd_args+=(
@@ -102,6 +107,7 @@ _stg-diff() {
 }
 
 _stg-edit() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_diffopts
@@ -119,6 +125,7 @@ _stg-edit() {
 }
 
 _stg-export() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_diffopts
@@ -136,6 +143,7 @@ _stg-export() {
 }
 
 _stg-files() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_diffopts
     subcmd_args+=(
@@ -147,6 +155,7 @@ _stg-files() {
 }
 
 _stg-float() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
@@ -159,6 +168,7 @@ _stg-float() {
 }
 
 _stg-fold() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '(-b --base)'{-b,--base=}'[apply on base commit instead of HEAD]:commit'
@@ -171,6 +181,7 @@ _stg-fold() {
 }
 
 _stg-goto() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
@@ -186,6 +197,7 @@ _stg-help() {
 }
 
 _stg-hide() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
@@ -196,6 +208,7 @@ _stg-hide() {
 }
 
 _stg-id() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     subcmd_args+=(
@@ -205,6 +218,7 @@ _stg-id() {
 }
 
 _stg-import() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
@@ -231,11 +245,13 @@ _stg-import() {
 }
 
 _stg-init() {
+    local -a subcmd_args
     __stg_add_args_help
     _arguments -s $subcmd_args
 }
 
 _stg-log() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     subcmd_args+=(
@@ -250,6 +266,7 @@ _stg-log() {
 }
 
 _stg-mail() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_diffopts
@@ -288,6 +305,7 @@ _stg-mail() {
 
 _stg-new() {
     local curcontext=$curcontext state line ret=1
+    local -a subcmd_args
     declare -A opt_args
 
     __stg_add_args_help
@@ -318,6 +336,7 @@ _stg-new() {
 }
 
 _stg-next() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
@@ -325,6 +344,7 @@ _stg-next() {
 }
 
 _stg-patches() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_diffopts
@@ -336,6 +356,7 @@ _stg-patches() {
 }
 
 _stg-pick() {
+    local -a subcmd_args
     # TODO: complete --parent commit id
     __stg_add_args_help
     subcmd_args+=(
@@ -355,6 +376,7 @@ _stg-pick() {
 }
 
 _stg-pop() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
@@ -371,6 +393,7 @@ _stg-pop() {
 }
 
 _stg-prev() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
@@ -378,6 +401,7 @@ _stg-prev() {
 }
 
 _stg-pull() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_merged
     subcmd_args+=(
@@ -388,6 +412,7 @@ _stg-pull() {
 }
 
 _stg-push() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
@@ -407,6 +432,7 @@ _stg-push() {
 }
 
 _stg-rebase() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_merged
     subcmd_args+=(
@@ -419,6 +445,7 @@ _stg-rebase() {
 }
 
 _stg-redo() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '--hard[discard changes in index/worktree]'
@@ -428,6 +455,7 @@ _stg-redo() {
 }
 
 _stg-refresh() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_author
@@ -454,6 +482,7 @@ _stg-refresh() {
 }
 
 _stg-rename() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_color
@@ -464,11 +493,13 @@ _stg-rename() {
 }
 
 _stg-repair() {
+    local -a subcmd_args
     __stg_add_args_help
     _arguments -s $subcmd_args
 }
 
 _stg-reset() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '--hard[discard changes in index/worktree]'
@@ -479,6 +510,7 @@ _stg-reset() {
 }
 
 _stg-series() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     __stg_add_args_color
@@ -506,6 +538,7 @@ _stg-series() {
 }
 
 _stg-show() {
+    local -a subcmd_args
     local curcontext=$curcontext state line ret=1
     declare -A opt_args
 
@@ -536,6 +569,7 @@ _stg-show() {
 }
 
 _stg-sink() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
@@ -548,6 +582,7 @@ _stg-sink() {
 }
 
 _stg-spill() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     subcmd_args+=(
@@ -569,6 +604,7 @@ _stg-spill() {
 }
 
 _stg-squash() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
@@ -584,6 +620,7 @@ _stg-squash() {
 }
 
 _stg-sync() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         + '(patches)'
@@ -597,6 +634,7 @@ _stg-sync() {
 }
 
 _stg-top() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
@@ -604,6 +642,7 @@ _stg-top() {
 }
 
 _stg-uncommit() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         - group-number
@@ -619,6 +658,7 @@ _stg-uncommit() {
 }
 
 _stg-undo() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '--hard[discard changes in index/worktree]'
@@ -628,6 +668,7 @@ _stg-undo() {
 }
 
 _stg-unhide() {
+    local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
     subcmd_args+=(
@@ -637,6 +678,7 @@ _stg-unhide() {
 }
 
 _stg-version() {
+    local -a subcmd_args
     __stg_add_args_help
     subcmd_args+=(
         '(-s --short)'{-s,--short}'[show abbreviated version information]'
