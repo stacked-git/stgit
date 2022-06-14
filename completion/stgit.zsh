@@ -79,6 +79,188 @@ _stg-commit() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-completion() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                bash:'generate bash completion script'
+                fish:'generate fish shell completion script'
+                list:'list StGit command information'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'completion command' command_list
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:stg-completion-$words[1]
+            if ! _call_function ret _stg-completion-$words[1]; then
+                _message "unknown subcommand: $words[1]"
+            fi
+    esac
+    return ret
+}
+
+_stg-completion-bash() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+    )
+    _arguments -s -S $subcmd_args
+}
+
+_stg-completion-fish() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+    )
+    _arguments -s -S $subcmd_args
+}
+
+_stg-completion-help() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    subcmd_args+=(
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                bash:'generate bash completion script'
+                fish:'generate fish shell completion script'
+                list:'list StGit command information'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'completion command' command_list
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:stg-completion-$words[1]-help
+            _call_function ret _stg-completion-$words[1]-help
+            ;;
+    esac
+    return ret
+}
+
+_stg-completion-list() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+        '--style=-[output format style]:style:(name-only fish zsh)'
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                aliases:'list aliases'
+                commands:'list StGit commands'
+                commands-and-aliases:'list StGit commands and aliases'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'completion command' command_list
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:stg-completion-list-$words[1]
+            if ! _call_function ret _stg-completion-list-$words[1]; then
+                _message "unknown subcommand: $words[1]"
+            fi
+            ;;
+    esac
+    return ret
+}
+
+_stg-completion-list-help() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    subcmd_args+=(
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                aliases:'list aliases'
+                commands:'list StGit commands'
+                commands-and-aliases:'list StGit commands and aliases'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'completion command' command_list
+            ;;
+        (option-or-argument)
+            ;;
+    esac
+    return ret
+}
+
+_stg-completion-list-aliases() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+        '--style=-[output format style]:style:(name-only fish zsh)'
+        '--show-expansion[show alias expansion]'
+    )
+    _arguments -s -S $subcmd_args
+}
+
+_stg-completion-list-commands() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+        '--style=-[output format style]:style:(name-only fish zsh)'
+    )
+    _arguments -s -S $subcmd_args
+}
+
+_stg-completion-list-commands-and-aliases() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+        '--style=-[output format style]:style:(name-only fish zsh)'
+    )
+    _arguments -s -S $subcmd_args
+}
+
 _stg-delete() {
     local -a subcmd_args
     __stg_add_args_help
@@ -1096,7 +1278,7 @@ _stgit() {
                     elif zstyle -T :completion:$curcontext: use-fallback; then
                         _default && ret=0
                     else
-                        _message "unknown sub-command: $words[1]"
+                        _message "unknown subcommand: $words[1]"
                     fi
                 fi
                 ;;
