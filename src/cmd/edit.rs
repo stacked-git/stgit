@@ -24,21 +24,21 @@ fn make() -> clap::Command<'static> {
         .about("Edit a patch")
         .long_about(
             "Edit a patch. Various aspects of a patch may be edited, including the \
-         message, author, patch name, or even the patch's diff.\n\
-         \n\
-         By default, the topmost patch is edited.\n\
-         \n\
-         With no options or when '--edit' is specified, the patch details are \
-         edited interactively. Alternatively, command line options may be used to \
-         modify the patch non-interactively.\n\
-         \n\
-         The '--diff' option causes the patch's diff to be appended to the patch \
-         description when editing interactively. This diff may be edited \
-         interactively (or just used as a reference when editing the patch's \
-         message). The StGit attempts to apply the modified diff to the patch's \
-         parent tree. If the updated diff does not apply, no changes are made to \
-         the patch and the edited patch is saved to a file which may be corrected \
-         and then fed-back into \"stg edit --file\".",
+             message, author, patch name, or even the patch's diff.\n\
+             \n\
+             By default, the topmost patch is edited.\n\
+             \n\
+             With no options or when '--edit' is specified, the patch details are \
+             edited interactively. Alternatively, command line options may be used to \
+             modify the patch non-interactively.\n\
+             \n\
+             The '--diff' option causes the patch's diff to be appended to the patch \
+             description when editing interactively. This diff may be edited \
+             interactively (or just used as a reference when editing the patch's \
+             message). The StGit attempts to apply the modified diff to the patch's \
+             parent tree. If the updated diff does not apply, no changes are made to \
+             the patch and the edited patch is saved to a file which may be corrected \
+             and then fed-back into \"stg edit --file\".",
         )
         .arg(
             Arg::new("patch")
@@ -50,14 +50,15 @@ fn make() -> clap::Command<'static> {
     patchedit::add_args(app, true, true).arg(
         Arg::new("set-tree")
             .long("set-tree")
+            .short('t')
             .help("Set patch's tree to treeish")
             .long_help(
                 "With --set-tree the patch's git tree is set to the specified \
-                     treeish without changing the tree of any other patches. When used \
-                     on the top patch, the index and work tree will be updated to \
-                     match the new tree. This low-level option is primarily meant to \
-                     be used by tools built on top of StGit, such as the Emacs mode. \
-                     See also the '--set-tree' flag of \"stg push\".",
+                 treeish without changing the tree of any other patches. When used \
+                 on the top patch, the index and work tree will be updated to \
+                 match the new tree. This low-level option is primarily meant to \
+                 be used by tools built on top of StGit, such as the Emacs mode. \
+                 See also the '--set-tree' flag of \"stg push\".",
             )
             .takes_value(true)
             .value_name("treeish"),
