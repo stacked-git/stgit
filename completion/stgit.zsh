@@ -6,7 +6,7 @@
 # For example:
 #
 #     $ mkdir ~/.zsh.d
-#     $ cp completion/stgit.zsh ~/.zsh.d/_stgit
+#     $ stg completion zsh >~/.zsh.d/_stgit
 #     $ $EDITOR ~/.zshrc
 #
 #       fpath=("$HOME/.zsh.d" $fpath)
@@ -99,6 +99,7 @@ _stg-completion() {
             local -a command_list=(
                 bash:'generate bash completion script'
                 fish:'generate fish shell completion script'
+                zsh:'generate zsh completion script'
                 list:'list StGit command information'
                 help:'show help for given subcommand'
             )
@@ -133,6 +134,16 @@ _stg-completion-fish() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-completion-zsh() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_files'
+    )
+    _arguments -s -S $subcmd_args
+}
+
 _stg-completion-help() {
     local -a subcmd_args
     local curcontext="$curcontext" state line
@@ -150,6 +161,7 @@ _stg-completion-help() {
             local -a command_list=(
                 bash:'generate bash completion script'
                 fish:'generate fish shell completion script'
+                zsh:'generate zsh completion script'
                 list:'list StGit command information'
                 help:'show help for given subcommand'
             )

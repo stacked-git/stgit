@@ -6,6 +6,7 @@ mod bash;
 mod fish;
 mod list;
 mod shstream;
+mod zsh;
 
 use anyhow::Result;
 
@@ -19,6 +20,7 @@ fn make() -> clap::Command<'static> {
         .subcommand_required(true)
         .subcommand(bash::command())
         .subcommand(fish::command())
+        .subcommand(zsh::command())
         .subcommand(list::command())
         .arg(
             clap::Arg::new("output")
@@ -36,6 +38,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     match matches.subcommand() {
         Some(("bash", sub_matches)) => bash::dispatch(sub_matches),
         Some(("fish", sub_matches)) => fish::dispatch(sub_matches),
+        Some(("zsh", sub_matches)) => zsh::dispatch(sub_matches),
         Some(("list", sub_matches)) => list::dispatch(sub_matches),
         _ => panic!("valid subcommand is required"),
     }
