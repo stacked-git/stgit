@@ -68,6 +68,12 @@ impl ShStream {
         }
     }
 
+    pub fn end_line(&mut self) {
+        if !self.is_bol() {
+            self.buffer.push('\n');
+        }
+    }
+
     /// Insert slice of lines into the stream.
     ///
     /// Each line is prefixed with the current indentation level.

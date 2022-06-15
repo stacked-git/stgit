@@ -3,6 +3,7 @@
 //! `stg completion` implementation
 
 mod bash;
+mod fish;
 mod list;
 mod shstream;
 
@@ -17,6 +18,7 @@ fn make() -> clap::Command<'static> {
         .about("Support for shell completions")
         .subcommand_required(true)
         .subcommand(bash::command())
+        .subcommand(fish::command())
         .subcommand(list::command())
         .arg(
             clap::Arg::new("output")
@@ -33,6 +35,7 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     match matches.subcommand() {
         Some(("bash", sub_matches)) => bash::dispatch(sub_matches),
+        Some(("fish", sub_matches)) => fish::dispatch(sub_matches),
         Some(("list", sub_matches)) => list::dispatch(sub_matches),
         _ => panic!("valid subcommand is required"),
     }
