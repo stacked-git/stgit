@@ -12,7 +12,7 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 }
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("init").about("Initialize StGit stack on current branch")
+    clap::Command::new("init").about("Initialize a StGit stack on current branch")
 }
 
 fn run(_: &ArgMatches) -> Result<()> {
