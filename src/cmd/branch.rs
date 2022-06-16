@@ -107,7 +107,7 @@ fn make() -> clap::Command<'static> {
                 .override_usage("stg branch {--rename,-r} [old-name] <new-name>")
                 .about("Rename an existing branch")
                 .arg(
-                    Arg::new("name")
+                    Arg::new("branch-any")
                         .help("Optional name of branch to rename and new branch name")
                         .hide_short_help(true)
                         .required(true)
@@ -125,6 +125,7 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("branch")
                         .help("Branch to protect")
+                        .value_name("branch")
                         .forbid_empty_values(true),
                 ),
         )
@@ -136,6 +137,7 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("branch")
                         .help("Branch to unprotect")
+                        .value_name("branch")
                         .forbid_empty_values(true),
                 ),
         )
@@ -152,8 +154,9 @@ fn make() -> clap::Command<'static> {
                      A protected branch may not be deleted; it must be unprotected first.",
                 )
                 .arg(
-                    Arg::new("branch")
+                    Arg::new("branch-any")
                         .help("Branch to delete")
+                        .value_name("branch")
                         .required(true)
                         .forbid_empty_values(true),
                 )
@@ -178,6 +181,7 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("branch")
                         .help("Branch to clean up")
+                        .value_name("branch")
                         .forbid_empty_values(true),
                 )
                 .arg(
@@ -194,8 +198,9 @@ fn make() -> clap::Command<'static> {
                 .about("Set the branch description")
                 .arg(Arg::new("description").help("Description string for branch"))
                 .arg(
-                    Arg::new("branch")
+                    Arg::new("branch-any")
                         .help("Branch to describe")
+                        .value_name("branch")
                         .forbid_empty_values(true),
                 ),
         )
@@ -203,11 +208,12 @@ fn make() -> clap::Command<'static> {
             Arg::new("merge")
                 .long("merge")
                 .help("Merge work tree changes into the other branch")
-                .requires("branch"),
+                .requires("branch-any"),
         )
         .arg(
-            Arg::new("branch")
+            Arg::new("branch-any")
                 .help("Branch to switch to")
+                .value_name("branch")
                 .forbid_empty_values(true),
         )
 }
@@ -230,7 +236,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         let current_branch = repo.get_branch(None)?;
         let current_branchname = get_branch_name(&current_branch)?;
-        if let Some(target_branchname) = matches.value_of("branch") {
+        if let Some(target_branchname) = matches.value_of("branch-any") {
             if target_branchname == current_branchname {
                 Err(anyhow!("{target_branchname} is already the current branch"))
             } else {
@@ -547,7 +553,7 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let names: Vec<_> = matches.values_of("name").unwrap().collect();
+    let names: Vec<_> = matches.values_of("branch-any").unwrap().collect();
     let current_branchname;
     let (old_branchname, new_branchname) = if names.len() == 2 {
         repo.get_branch(Some(names[0]))?;
@@ -595,7 +601,7 @@ fn unprotect(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let target_branchname = matches.value_of("branch").expect("required argument");
+    let target_branchname = matches.value_of("branch-any").expect("required argument");
     let mut target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
     let current_branchname = current_branch.and_then(|branch| get_branch_name(&branch).ok());
@@ -635,7 +641,7 @@ fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn describe(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let branch = repo.get_branch(matches.value_of("branch"))?;
+    let branch = repo.get_branch(matches.value_of("branch-any"))?;
     let description = matches.value_of("description").expect("required argument");
     let branchname = get_branch_name(&branch)?;
     let mut config = repo.config()?;

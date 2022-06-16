@@ -41,7 +41,7 @@ fn make() -> clap::Command<'static> {
              stg pop [OPTIONS] -n <number>",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-applied")
                 .help("Patches to pop")
                 .value_name("patch")
                 .multiple_values(true)
@@ -122,7 +122,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(patchranges) = matches.values_of("patchranges") {
+    } else if let Some(patchranges) = matches.values_of("patchranges-applied") {
         indexmap::IndexSet::from_iter(
             patchrange::parse(patchranges, &stack, patchrange::Allow::Applied).map_err(
                 |e| match e {

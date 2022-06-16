@@ -30,7 +30,7 @@ fn make() -> clap::Command<'static> {
              stg show [OPTIONS] [-A] [-U] [-H] [-- <path>...]",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-all")
                 .help("Patches or revisions to show")
                 .long_help(
                     "Patches or revisions to show.\n\
@@ -45,7 +45,7 @@ fn make() -> clap::Command<'static> {
                 .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
         .arg(
-            Arg::new("path_limits")
+            Arg::new("pathspecs")
                 .help("Limit diff to files matching path")
                 .value_name("path")
                 .last(true)
@@ -109,7 +109,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if let Some(patchranges) = matches.values_of("patchranges") {
+    if let Some(patchranges) = matches.values_of("patchranges-all") {
         for arg in patchranges {
             match patchrange::parse([arg], &stack, patchrange::Allow::AllWithAppliedBoundary) {
                 Ok(patchnames) => {
@@ -156,7 +156,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     repo.stupid().show(
         oids,
-        matches.values_of_os("path_limits"),
+        matches.values_of_os("pathspecs"),
         opt_stat,
         crate::color::use_color(matches),
         &crate::argset::get_diff_opts(matches, &config, false, false),

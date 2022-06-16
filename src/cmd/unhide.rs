@@ -22,7 +22,7 @@ fn make() -> clap::Command<'static> {
              Hidden patches are no longer shown in the plain 'series' output.",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-hidden")
                 .help("Patches to unhide")
                 .value_name("patch")
                 .multiple_values(true)
@@ -40,7 +40,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
 
     let patchranges = matches
-        .values_of("patchranges")
+        .values_of("patchranges-hidden")
         .expect("clap ensures at least one range is provided");
 
     let patches: Vec<PatchName> = patchrange::parse(patchranges, &stack, patchrange::Allow::Hidden)

@@ -4,6 +4,7 @@
 
 mod bash;
 mod list;
+mod shstream;
 
 use anyhow::Result;
 

@@ -49,8 +49,9 @@ fn make() -> clap::Command<'static> {
              stg pick [OPTIONS] --update <source>...",
         )
         .arg(
-            Arg::new("source")
+            Arg::new("stgit-revision")
                 .help("Patch name or committish to import")
+                .value_name("source")
                 .required(true)
                 .multiple_values(true)
                 .forbid_empty_values(true),
@@ -142,7 +143,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 
     let sources: Vec<_> = matches
-        .values_of("source")
+        .values_of("stgit-revision")
         .expect("required argument")
         .collect();
 

@@ -40,7 +40,7 @@ fn make() -> clap::Command<'static> {
              stg push [OPTIONS] --all",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-unapplied")
                 .help("Patches to push")
                 .value_name("patch")
                 .multiple_values(true)
@@ -83,7 +83,7 @@ fn make() -> clap::Command<'static> {
                 .long("noapply")
                 .help("Reorder patches by pushing without applying")
                 .conflicts_with_all(&["all", "number"])
-                .requires("patchranges")
+                .requires("patchranges-unapplied")
                 .conflicts_with_all(&["set-tree", "merged"]),
         )
         .arg(
@@ -145,7 +145,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(patchranges) = matches.values_of("patchranges") {
+    } else if let Some(patchranges) = matches.values_of("patchranges-unapplied") {
         patchrange::parse(patchranges, &stack, patchrange::Allow::Unapplied).map_err(
             |e| match e {
                 crate::patchrange::Error::BoundaryNotAllowed { patchname, range }

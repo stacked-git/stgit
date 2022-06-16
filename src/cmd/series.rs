@@ -44,7 +44,7 @@ fn make() -> clap::Command<'static> {
              stg series [OPTIONS] <patch>...",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-all")
                 .help("Patches to display")
                 .value_name("patch")
                 .multiple_values(true)
@@ -220,7 +220,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut patches: Vec<(PatchName, git2::Oid, char)> = vec![];
 
-    if let Some(patchranges) = matches.values_of("patchranges") {
+    if let Some(patchranges) = matches.values_of("patchranges-all") {
         let top_patchname = stack.applied().last();
         for patchname in patchrange::parse_contiguous(
             patchranges,

@@ -40,7 +40,7 @@ fn make() -> clap::Command<'static> {
                 .required_unless_present("hard"),
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-all")
                 .help("Only reset these patches")
                 .value_name("patch")
                 .multiple_values(true)
@@ -66,11 +66,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             .setup_transaction()
             .use_index_and_worktree(true)
             .discard_changes(matches.is_present("hard"))
-            .allow_bad_head(matches.values_of("patchranges").is_none())
+            .allow_bad_head(matches.values_of("patchranges-all").is_none())
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
                 let reset_state = StackState::from_commit(trans.repo(), &commit)?;
-                if let Some(patchranges) = matches.values_of("patchranges") {
+                if let Some(patchranges) = matches.values_of("patchranges-all") {
                     let patchnames =
                         patchrange::parse(patchranges, &reset_state, patchrange::Allow::All)?;
                     trans.reset_to_state_partially(reset_state, &patchnames)

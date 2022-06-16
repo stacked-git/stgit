@@ -24,12 +24,16 @@ fn make() -> clap::Command<'static> {
              of a patch may be specified with '[<branch>:]<patch>^'.",
         )
         .arg(&*crate::argset::BRANCH_ARG)
-        .arg(Arg::new("revision").help("StGit revision"))
+        .arg(
+            Arg::new("stgit-revision")
+                .value_name("revision")
+                .help("StGit revision"),
+        )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let opt_branch = matches.value_of("branch");
-    let opt_spec = matches.value_of("revision");
+    let opt_spec = matches.value_of("stgit-revision");
 
     let repo = git2::Repository::open_from_env()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();

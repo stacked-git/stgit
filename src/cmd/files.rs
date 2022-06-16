@@ -25,7 +25,11 @@ fn make() -> clap::Command<'static> {
              included in the patch by a 'refresh' command. Use the 'diff' or \
              'status' commands to show these files.",
         )
-        .arg(Arg::new("revision").help("StGit revision"))
+        .arg(
+            Arg::new("stgit-revision")
+                .value_name("revision")
+                .help("StGit revision"),
+        )
         .arg(
             Arg::new("stat")
                 .long("stat")
@@ -43,7 +47,7 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_spec = matches.value_of("revision");
+    let opt_spec = matches.value_of("stgit-revision");
     let commit = parse_stgit_revision(&repo, opt_spec, None)?.peel_to_commit()?;
     let parent = commit.parent(0)?;
     let mut output = repo.stupid().diff_tree_files(

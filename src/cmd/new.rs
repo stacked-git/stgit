@@ -58,7 +58,6 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .allow_invalid_utf8(true)
                 .forbid_empty_values(true)
-                .value_hint(ValueHint::AnyPath)
                 .conflicts_with("save-template"),
         )
         .next_help_heading("REFRESH OPTIONS")

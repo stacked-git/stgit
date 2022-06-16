@@ -31,7 +31,7 @@ fn make() -> clap::Command<'static> {
              stg log --clear",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-all")
                 .help("Only show history for these patches")
                 .value_name("patch")
                 .multiple_values(true)
@@ -73,7 +73,7 @@ fn make() -> clap::Command<'static> {
                 .long("clear")
                 .help("Clear the stack history")
                 // .exclusive(true),
-                .conflicts_with_all(&["patchranges", "diff", "number", "full", "graphical"]),
+                .conflicts_with_all(&["patchranges-all", "diff", "number", "full", "graphical"]),
         )
 }
 
@@ -86,7 +86,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stack.clear_state_log("clear log")
     } else {
         let pathspecs: Option<Vec<String>> =
-            if let Some(patch_ranges) = matches.values_of("patchranges") {
+            if let Some(patch_ranges) = matches.values_of("patchranges-all") {
                 Some(
                     patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
                         .iter()

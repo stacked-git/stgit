@@ -27,7 +27,7 @@ fn make() -> clap::Command<'static> {
              stg delete [OPTIONS] --top",
         )
         .arg(
-            Arg::new("patchranges")
+            Arg::new("patchranges-all")
                 .help("Patches to delete")
                 .value_name("patch")
                 .multiple_values(true)
@@ -70,11 +70,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
             return Err(Error::NoAppliedPatches.into());
         }
     } else {
-        let patch_ranges = matches
-            .values_of("patchranges")
+        let patchranges = matches
+            .values_of("patchranges-all")
             .expect("clap will ensure either patches or --top");
         patchrange::parse(
-            patch_ranges,
+            patchranges,
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,
         )?
