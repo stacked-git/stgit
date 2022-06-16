@@ -14,9 +14,9 @@ lazy_static! {
         .value_name("BRANCH")
         .value_hint(ValueHint::Other);
 
-    /// The `--keep` option.
+    /// The `--keep/-k` option.
     pub(crate) static ref KEEP_ARG: Arg<'static> =
-        Arg::new("keep").long("keep").help("Keep the local changes");
+        Arg::new("keep").long("keep").short('k').help("Keep the local changes");
 
     /// The `--merged` option checking for already-merged patches before pushes.
     pub(crate) static ref MERGED_ARG: Arg<'static> = Arg::new("merged")
