@@ -77,7 +77,7 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
                 .value_name("PATH")
                 .value_hint(clap::ValueHint::AnyPath),
         )
-        .arg(color::get_color_arg().global(true));
+        .arg(color::get_color_arg().global(true).display_order(998));
     if let Some(color_choice) = color_choice {
         command.color(color::termcolor_choice_to_clap(color_choice))
     } else {
