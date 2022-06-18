@@ -61,6 +61,14 @@ fn make() -> clap::Command<'static> {
              rid of the temp patch.",
         )
         .arg(
+            Arg::new("pathspecs")
+                .help("Only refresh files matching path")
+                .value_name("path")
+                .multiple_values(true)
+                .allow_invalid_utf8(true),
+        )
+        .next_help_heading("REFRESH OPTIONS")
+        .arg(
             Arg::new("update")
                 .long("update")
                 .short('u')
@@ -126,13 +134,6 @@ fn make() -> clap::Command<'static> {
                 .long("spill")
                 .help("OBSOLETE: use 'stg spill'")
                 .hide(true),
-        )
-        .arg(
-            Arg::new("pathspecs")
-                .help("Only refresh files matching path")
-                .value_name("path")
-                .multiple_values(true)
-                .allow_invalid_utf8(true),
         );
 
     patchedit::add_args(app, true, false)
