@@ -589,6 +589,23 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(paths)
     }
 
+    /// Run `git format-patch` with arbitrary arguments.
+    pub(crate) fn format_patch<OptIter, OptArg>(&self, args: OptIter) -> Result<()>
+    where
+        OptIter: IntoIterator<Item = OptArg>,
+        OptArg: AsRef<OsStr>,
+    {
+        let mut command = self.git();
+        command.arg("format-patch");
+        command.args(args);
+        command
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .output_git()?
+            .require_success("format-patch")?;
+        Ok(())
+    }
+
     /// Show log in gitk
     pub(crate) fn gitk<SpecIter, SpecArg>(
         &self,
@@ -956,6 +973,32 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             Ok(cdup) => Ok(cdup),
             Err(_) => Err(anyhow!("Could not convert cdup to path")),
         }
+    }
+
+    pub(crate) fn send_email<OptIter, OptArg>(&self, args: OptIter) -> Result<()>
+    where
+        OptIter: IntoIterator<Item = OptArg>,
+        OptArg: AsRef<OsStr>,
+    {
+        let mut command = self.git();
+        command.arg("send-email");
+        command.args(args);
+        command
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::inherit())
+            .output_git()?
+            .require_success("send-email")?;
+        Ok(())
+    }
+
+    pub(crate) fn send_email_dump_aliases(&self) -> Result<()> {
+        let mut command = self.git();
+        command.args(["send-email", "--dump-aliases"]);
+        command
+            .stdout(Stdio::inherit())
+            .output_git()?
+            .require_success("send-email --dump-aliases")?;
+        Ok(())
     }
 
     /// Show objects using `git show`.

@@ -14,6 +14,7 @@ pub(crate) mod completion;
 pub(crate) mod delete;
 pub(crate) mod diff;
 pub(crate) mod edit;
+pub(crate) mod email;
 pub(crate) mod export;
 pub(crate) mod files;
 pub(crate) mod float;
@@ -75,6 +76,7 @@ pub(crate) fn get_commands() -> Commands {
         delete::get_command(),
         diff::get_command(),
         edit::get_command(),
+        email::get_command(),
         export::get_command(),
         files::get_command(),
         float::get_command(),
