@@ -177,7 +177,7 @@ function __fish_stg_mail_aliases
 end
 
 function __fish_stg_diff_opts
-    __fish_stg_git diff-tree --git-completion_helper \
+    __fish_stg_git diff-tree --git-completion-helper \
     | string split ' ' \
     | string match --regex '\--.+'
 end
