@@ -966,7 +966,7 @@ __stg_add_args_trailers() {
 
 __stg_git_diff_opts() {
     local -a diff_opts
-    diff_opts=(${(z)"$(_call_program git-diff-options "git diff-tree --git-completion-helper")"})
+    diff_opts=(${(z)"$(_call_program git-diff-options "git ${__stg_C_args} diff-tree --git-completion-helper")"})
     __stg_git_command_successful $pipestatus || return 1
     _wanted git-diff-options expl "diff option" compadd -a diff_opts
 }
@@ -979,7 +979,7 @@ __stg_heads_local () {
     local f gitdir
     declare -a heads
 
-    heads=(${(f)"$(_call_program headrefs git for-each-ref --format='"%(refname:short)"' refs/heads 2>/dev/null)"})
+    heads=(${(f)"$(_call_program headrefs git ${__stg_C_args} for-each-ref --format='"%(refname:short)"' refs/heads 2>/dev/null)"})
     gitdir=$(_call_program gitdir git rev-parse --git-dir 2>/dev/null)
     if __stg_git_command_successful $pipestatus; then
         for f in HEAD FETCH_HEAD ORIG_HEAD MERGE_HEAD; do
@@ -995,7 +995,7 @@ __stg_heads_local () {
 __stg_heads_remote () {
   declare -a heads
 
-  heads=(${(f)"$(_call_program headrefs git for-each-ref --format='"%(refname:short)"' refs/remotes 2>/dev/null)"})
+  heads=(${(f)"$(_call_program headrefs git ${__stg_C_args} for-each-ref --format='"%(refname:short)"' refs/remotes 2>/dev/null)"})
 
   __stg_git_describe_commit heads heads-remote "remote head" "$@"
 }
@@ -1024,7 +1024,7 @@ __stg_git_describe_branch () {
     local __c
     local -a __commits
     for __c in ${(P)__commits_in}; do
-      __commits+=("${__c}:${$(_call_program describe git rev-list -1 --oneline $__c)//:/\\:}")
+      __commits+=("${__c}:${$(_call_program describe git ${__stg_C_args} rev-list -1 --oneline $__c)//:/\\:}")
     done
     _describe -t $__tag $__desc __commits "$@"
   else
@@ -1036,7 +1036,7 @@ __stg_git_describe_branch () {
 __stg_branch_stgit() {
     declare -a stg_branches
     stg_branches=(
-        ${${(f)"$(_call_program branchrefs git for-each-ref --format='"%(refname)"' refs/stacks 2>/dev/null)"}#refs/stacks/}
+        ${${(f)"$(_call_program branchrefs git ${__stg_C_args} for-each-ref --format='"%(refname)"' refs/stacks 2>/dev/null)"}#refs/stacks/}
     )
     local expl
     _wanted -V branches expl "branch" compadd $stg_branches
@@ -1044,7 +1044,7 @@ __stg_branch_stgit() {
 
 __stg_files_relative() {
     local prefix
-    prefix=$(_call_program gitprefix git rev-parse --show-prefix 2>/dev/null)
+    prefix=$(_call_program gitprefix git ${__stg_C_args} rev-parse --show-prefix 2>/dev/null)
     if (( $#prefix == 0 )); then
         print $1
         return
@@ -1080,10 +1080,10 @@ __stg_files () {
   zparseopts -D -E -a opts -- -cached -deleted -modified -others -ignored -unmerged -killed x+: --exclude+:
   tag=$1 description=$2; shift 2
 
-  gitcdup=$(_call_program gitcdup git rev-parse --show-cdup 2>/dev/null)
+  gitcdup=$(_call_program gitcdup git ${__stg_C_args} rev-parse --show-cdup 2>/dev/null)
   __stg_git_command_successful $pipestatus || return 1
 
-  gitprefix=$(_call_program gitprefix git rev-parse --show-prefix 2>/dev/null)
+  gitprefix=$(_call_program gitprefix git ${__stg_C_args} rev-parse --show-prefix 2>/dev/null)
   __stg_git_command_successful $pipestatus || return 1
 
   # TODO: --directory should probably be added to $opts when --others is given.
@@ -1091,12 +1091,12 @@ __stg_files () {
   local pref=$gitcdup$gitprefix$PREFIX
 
   # First allow ls-files to pattern-match in case of remote repository
-  files=(${(0)"$(_call_program files git ls-files -z --exclude-standard ${(q)opts} -- ${(q)${pref:+$pref\*}:-.} 2>/dev/null)"})
+  files=(${(0)"$(_call_program files git ${__stg_C_args} ls-files -z --exclude-standard ${(q)opts} -- ${(q)${pref:+$pref\*}:-.} 2>/dev/null)"})
   __stg_git_command_successful $pipestatus || return
 
   # If ls-files succeeded but returned nothing, try again with no pattern
   if [[ -z "$files" && -n "$pref" ]]; then
-    files=(${(0)"$(_call_program files git ls-files -z --exclude-standard ${(q)opts} -- 2>/dev/null)"})
+    files=(${(0)"$(_call_program files git ${__stg_C_args} ls-files -z --exclude-standard ${(q)opts} -- 2>/dev/null)"})
     __stg_git_command_successful $pipestatus || return
   fi
 
@@ -1117,7 +1117,7 @@ __stg_diff-index_files () {
   local files expl
 
   # $tree needs to be escaped for _call_program; matters for $tree = "HEAD^"
-  files=$(_call_program files git diff-index -z --name-only --no-color --cached ${(q)tree} 2>/dev/null)
+  files=$(_call_program files git ${__stg_C_args} diff-index -z --name-only --no-color --cached ${(q)tree} 2>/dev/null)
   __stg_git_command_successful $pipestatus || return 1
   files=(${(0)"$(__stg_files_relative $files)"})
   __stg_git_command_successful $pipestatus || return 1
@@ -1132,7 +1132,7 @@ __stg_changed-in-index_files () {
 __stg_changed-in-working-tree_files () {
   local files expl
 
-  files=$(_call_program changed-in-working-tree-files git diff -z --name-only --no-color 2>/dev/null)
+  files=$(_call_program changed-in-working-tree-files git ${__stg_C_args} diff -z --name-only --no-color 2>/dev/null)
   __stg_git_command_successful $pipestatus || return 1
   files=(${(0)"$(__stg_files_relative $files)"})
   __stg_git_command_successful $pipestatus || return 1
@@ -1148,9 +1148,9 @@ __stg_changed_files () {
 
 __stg_patch_files () {
     local files expl top_id
-    top_id=$(stg id 2>/dev/null)
-
-    files=$(_call_program patch-files git diff -z --name-only --no-color $top_id~ $top_id 2>/dev/null)
+    top_id=$(_call_program id stg ${__stg_C_args} id 2>/dev/null)
+    __stg_git_command_successful $pipestatus || return 1
+    files=$(_call_program patch-files git ${__stg_C_args} diff -z --name-only --no-color $top_id~ $top_id 2>/dev/null)
     __stg_git_command_successful $pipestatus || return 1
     files=(${(0)"$(__stg_files_relative $files)"})
     __stg_git_command_successful $pipestatus || return 1
@@ -1181,7 +1181,7 @@ __stg_want_patches() {
     declare -a patches
     local expl
     patches=(
-        ${(f)"$(_call_program want-patches stg series --no-description --noprefix $@ 2>/dev/null)"}
+        ${(f)"$(_call_program want-patches stg ${__stg_C_args} series --no-description --noprefix $@ 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches:|words}
 
@@ -1196,7 +1196,7 @@ __stg_patches_all_allow_dups() {
     local expl branch_opt
     branch_opt=$(__stg_get_branch_opt)
     patches=(
-        ${(f)"$(_call_program all-patches stg series $branch_opt --no-description --noprefix --all 2>/dev/null)"}
+        ${(f)"$(_call_program all-patches stg ${__stg_C_args} series $branch_opt --no-description --noprefix --all 2>/dev/null)"}
     )
     _wanted -V all expl "patch" compadd ${patches}
 }
@@ -1223,13 +1223,13 @@ __stg_patches_refbranch() {
 
 __stg_remotes() {
     local remotes expl
-    remotes=(${(f)"$(_call_program remotes git remote 2>/dev/null)"})
+    remotes=(${(f)"$(_call_program remotes git ${__stg_C_args} remote 2>/dev/null)"})
     _wanted remotes expl remote compadd "$@" -a - remotes
 }
 
 __stg_subcommands() {
     local -a command_list
-    command_list=(${(f)"$(stg completion list commands-and-aliases --style=zsh)"})
+    command_list=(${(f)"$(_call_program commands stg ${__stg_C_args} completion list commands-and-aliases --style=zsh)"})
     _describe -t commands 'stgit command' command_list
 }
 
@@ -1257,7 +1257,7 @@ _stgit() {
             stg_aliases[$k]="$v"
         done
 
-        if (( $+stg_aliases[$words[2]] && !$+_stg_cmds[$words[2]] )); then
+        if (( $+stg_aliases[$words[2]] )); then
             local -a tmpwords expalias
             expalias=(${(z)stg_aliases[$words[2]]})
             tmpwords=(${words[1]} ${expalias})
@@ -1279,10 +1279,10 @@ _stgit() {
         local curcontext="$curcontext" state line
         typeset -A opt_args
 
-        _arguments -C \
+        _arguments -0 -C \
             '(- :)--help[print help information]' \
             '(- :)--version[display version information]' \
-            '-C[run as if stg was started in given path]: :_directories' \
+            '*-C[run as if stg was started in given path]: :_directories' \
             '--color=-[when to colorize output]:when:((
                 auto\:"color when outputting to a TTY"
                 always\:"always use color"
@@ -1290,6 +1290,13 @@ _stgit() {
                 never\:"never use color"))' \
             '(-): :->command' \
             '(-)*:: :->option-or-argument' && ret=0
+
+        local -a __stg_C_args
+        local p
+        for p in ${(0)opt_args[-C]}; do
+            __stg_C_args+=("-C" "$p")
+        done
+        unset p
 
         case $state in
             (command)
