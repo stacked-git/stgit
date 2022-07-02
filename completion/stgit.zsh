@@ -897,7 +897,11 @@ __stg_add_args_branch() {
 
 __stg_add_args_color() {
     subcmd_args+=(
-        '--color=-[when to colorize output]:when:(auto always ansi never)'
+        '--color=-[when to colorize output]:when:((
+            auto\:"color when outputting to a TTY"
+            always\:"always use color"
+            ansi\:"force color with ANSI escape sequences"
+            never\:"never use color"))'
     )
 }
 
@@ -1272,7 +1276,11 @@ _stgit() {
             '(- :)--help[print help information]' \
             '(- :)--version[display version information]' \
             '-C[run as if stg was started in given path]: :_directories' \
-            '--color=-[when to colorize output]:when:(auto always ansi never)' \
+            '--color=-[when to colorize output]:when:((
+                auto\:"color when outputting to a TTY"
+                always\:"always use color"
+                ansi\:"force color with ANSI escape sequences"
+                never\:"never use color"))' \
             '(-): :->command' \
             '(-)*:: :->option-or-argument' && ret=0
 
