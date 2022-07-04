@@ -726,7 +726,7 @@ _stg-series() {
         - group-all
         '(-a --all)'{-a,--all}'[show all patches including hidden]'
         - group-patches
-        ':patches:__stg_patches_all'
+        '*:patches:__stg_patches_all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -742,15 +742,11 @@ _stg-show() {
     subcmd_args+=(
         '(-s --stat)'{-s,--stat}'[show diff stat]'
         '(-)--[start file arguments]: :->cached-files'
+        '(-A --applied *)'{-A,--applied}'[show applied patches]'
+        '(-U --unapplied *)'{-U,--unapplied}'[show unapplied patches]'
+        '(-H --hidden *)'{-H,--hidden}'[show hidden patches]'
+        '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_patches_all'
     )
-    if [[ -n $words[(I)--] ]]; then
-        subcmd_args+=(
-            '(-A --applied *)'{-A,--applied}'[show applied patches]'
-            '(-U --unapplied *)'{-U,--unapplied}'[show unapplied patches]'
-            '(-H --hidden *)'{-H,--hidden}'[show hidden patches]'
-            '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_patches_all'
-        )
-    fi
     _arguments -C -s $subcmd_args && ret=0
 
     case $state in
@@ -1186,14 +1182,21 @@ __stg_get_branch_opt() {
 }
 
 __stg_want_patches() {
-    declare -a patches
     local expl
-    patches=(
-        ${(f)"$(_call_program want-patches stg ${__stg_C_args} series --no-description --noprefix $@ 2>/dev/null)"}
-    )
+    declare -a patchlines patchnames descriptions
+    local desc_flag
+    zstyle -T ":completion:${curcontext}:" verbose && desc_flag="--description"
+    patchlines=(${(f)"$(_call_program patches stg ${__stg_C_args} series $desc_flag $@ 2>/dev/null)"})
     __stg_command_successful $pipestatus || return 1
-    _wanted -V all expl "patch" compadd ${patches:|words}
-
+    local patchline
+    for patchline in $patchlines; do
+        local patchname="${(MS)${patchline[3,-1]%%\#*}##[[:graph:]]*[[:graph:]]}"
+        if ! (( ${words[(Ie)$patchname]} )); then
+            patchnames+=($patchname)
+            descriptions+=($patchline)
+        fi
+    done
+    _wanted patches expl 'patch' compadd -o nosort -l -d descriptions -a patchnames
 }
 
 __stg_patches_all() {
