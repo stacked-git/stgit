@@ -1243,83 +1243,83 @@ __stg_ignore_line () {
 }
 
 _stgit() {
-    if (( CURRENT > 2 )); then
-        local -A stg_aliases
-        local a k v
-        # Alias commands have the form "command:Alias for ... `cmd arg...`"
-        for a in ${(f)"$(stg completion list aliases --show-expansion --style=zsh)"}; do
-            # The key (command name) is what's left after removing the colon and
-            # everything after.
-            k=${a%%:*}
-            # The value (alias expansion) is what's left after removing everything up to
-            # and including the first colon.
-            v=${a#*:}
-            stg_aliases[$k]="$v"
-        done
-
-        if (( $+stg_aliases[$words[2]] )); then
-            local -a tmpwords expalias
-            expalias=(${(z)stg_aliases[$words[2]]})
-            tmpwords=(${words[1]} ${expalias})
-            if [[ -n "${words[3,-1]}" ]] ; then
-                tmpwords+=(${words[3,-1]})
-            fi
-            [[ -n ${words[$CURRENT]} ]] || tmpwords+=('')
-            (( CURRENT += ${#expalias} - 1 ))
-            words=("${tmpwords[@]}")
-            unset tmpwords expalias
-        fi
-
-        unset stg_aliases
-    fi
-
     integer ret=1
 
-    if [[ $service == stg ]]; then
-        local curcontext="$curcontext" state line
-        typeset -A opt_args
+    local curcontext="$curcontext" state line
+    typeset -A opt_args
 
-        _arguments -0 -C \
-            '(- :)--help[print help information]' \
-            '(- :)--version[display version information]' \
-            '*-C[run as if stg was started in given path]: :_directories' \
-            '--color=-[when to colorize output]:when:((
-                auto\:"color when outputting to a TTY"
-                always\:"always use color"
-                ansi\:"force color with ANSI escape sequences"
-                never\:"never use color"))' \
-            '(-): :->command' \
-            '(-)*:: :->option-or-argument' && ret=0
+    _arguments -0 -C \
+        '(- :)--help[print help information]' \
+        '(- :)--version[display version information]' \
+        '*-C[run as if stg was started in given path]: :_directories' \
+        '--color=-[when to colorize output]:when:((
+            auto\:"color when outputting to a TTY"
+            always\:"always use color"
+            ansi\:"force color with ANSI escape sequences"
+            never\:"never use color"))' \
+        '(-): :->command' \
+        '(-)*:: :->option-or-argument' && ret=0
 
-        local -a __stg_C_args
-        local p
-        for p in ${(0)opt_args[-C]}; do
-            __stg_C_args+=("-C" "$p")
-        done
-        unset p
+    local -a __stg_C_args __stg_C_dirs
+    local p
+    for p in ${(0)opt_args[-C]}; do
+        __stg_C_args+=("-C" "$p")
+        __stg_C_dirs+=("$p")
+    done
+    unset p
 
-        case $state in
-            (command)
-                __stg_subcommands && ret=0
-                ;;
-            (option-or-argument)
-                curcontext=${curcontext%:*:*}:stg-$words[1]:
-                local -a subcmd_args
-                if ! _call_function ret _stg-$words[1]; then
+    case $state in
+        (command)
+            __stg_subcommands && ret=0
+            ;;
+        (option-or-argument)
+            local a
+            local -a alias_list
+            alias_list=(${(f)"$(_call_program alias-list stg ${__stg_C_args} completion list aliases --show-expansion --style=zsh)"})
+            __stg_git_command_successful $pipestatus || return 1
+            for a in $alias_list; do
+                if [[ $words[1] = "${a%%:*}" ]]; then
+                    local -a aliasexp tmpwords
+                    aliasexp=(${(z)"${a#*:}"})
+                    tmpwords=($aliasexp)
+                    [[ -z "${words[2,-1]}" ]] || tmpwords+=(${words[2,-1]})
+                    [[ -n ${words[CURRENT]} ]] || tmpwords+=('')
+                    (( CURRENT += ${#aliasexp} - 1 ))
+                    words=("${tmpwords[@]}")
+                    unset aliasexp tmpwords
+
                     if [[ $words[1] = \!* ]]; then
                         words[1]=${words[1]##\!}
+                        local p
+                        integer push_count=0
+                        for p in ${__stg_C_dirs}; do
+                            pushd -q $p && (( push_count++ ))
+                        done
                         _normal && ret=0
-                    elif zstyle -T :completion:$curcontext: use-fallback; then
-                        _default && ret=0
-                    else
-                        _message "unknown subcommand: $words[1]"
+                        while (( push_count )); do
+                            popd -q
+                            (( push_count-- ))
+                        done
+                        unset p push_count
+                        return ret
                     fi
+
+                    break
                 fi
-                ;;
-        esac
-    else
-        _call_function ret _$service
-    fi
+            done
+            unset a alias_list
+
+            curcontext=${curcontext%:*:*}:stg-$words[1]:
+            local -a subcmd_args
+            if ! _call_function ret _stg-$words[1]; then
+                if zstyle -T :completion:$curcontext: use-fallback; then
+                    _default && ret=0
+                else
+                    _message "unknown subcommand: $words[1]"
+                fi
+            fi
+            ;;
+    esac
 
     return ret
 }
