@@ -246,7 +246,14 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         )?;
 
         if need_diffstat {
-            replacements.insert("diffstat", Cow::Owned(stupid.diffstat(&diff)?));
+            replacements.insert(
+                "diffstat",
+                if parent_commit.tree_id() == patch_commit.tree_id() {
+                    Cow::Borrowed(b"")
+                } else {
+                    Cow::Owned(stupid.diffstat(&diff)?)
+                },
+            );
         }
 
         let specialized = crate::templates::specialize_template(&template, &replacements)?;

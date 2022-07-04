@@ -610,17 +610,23 @@ fn create_patch<'repo>(
             .map(|s| s.parse::<usize>().expect("clap already validated"))
     });
 
-    let stupid = stack.repo.stupid();
-    stupid.apply_to_worktree_and_index(
-        diff,
-        matches.is_present("reject"),
-        strip_level,
-        matches
-            .value_of("context-lines")
-            .map(|s| s.parse::<usize>().unwrap()),
-    )?;
+    let trimmed_diff = diff.trim_end();
 
-    let tree_id = stupid.write_tree()?;
+    let tree_id = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
+        stack.branch_head.tree_id()
+    } else {
+        let stupid = stack.repo.stupid();
+        stupid.apply_to_worktree_and_index(
+            diff,
+            matches.is_present("reject"),
+            strip_level,
+            matches
+                .value_of("context-lines")
+                .map(|s| s.parse::<usize>().unwrap()),
+        )?;
+
+        stupid.write_tree()?
+    };
 
     let (new_patchname, commit_id) = match crate::patchedit::EditBuilder::default()
         .original_patchname(Some(&patchname))

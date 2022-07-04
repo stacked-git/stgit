@@ -94,12 +94,23 @@ impl StupidCommand for Command {
 trait StupidOutput {
     /// Ensure that Child or Output is successful, returning Output.
     fn require_success(self, command: &str) -> Result<Output>;
+
+    /// Ensure that Child or Output exits with a code less than the given maximum.
+    ///
+    /// If the child exits without a return code, i.e. due to a signal, or the return
+    /// code is not less than the provided maximum, an error is returned.
+    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output>;
 }
 
 impl StupidOutput for Child {
     fn require_success(self, command: &str) -> Result<Output> {
         let output = self.wait_with_output()?;
         output.require_success(command)
+    }
+
+    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output> {
+        let output = self.wait_with_output()?;
+        output.require_code_less_than(command, max_code)
     }
 }
 
@@ -109,6 +120,13 @@ impl StupidOutput for Output {
             Ok(self)
         } else {
             Err(git_command_error(command, &self.stderr))
+        }
+    }
+
+    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output> {
+        match self.status.code() {
+            Some(code) if code < max_code => Ok(self),
+            _ => Err(git_command_error(command, &self.stderr)),
         }
     }
 }
@@ -180,7 +198,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         context_lines: Option<usize>,
     ) -> Result<()> {
         let mut command = self.git_in_work_root();
-        command.args(["apply", "--index", "--allow-empty"]);
+        command.args(["apply", "--index"]);
         if reject {
             command.arg("--reject");
         }
@@ -207,6 +225,9 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         tree1: git2::Oid,
         tree2: git2::Oid,
     ) -> Result<bool> {
+        if tree1 == tree2 {
+            return Ok(true);
+        }
         let mut diff_tree_child = self
             .git()
             .args(["diff-tree", "--full-index", "--binary", "--patch"])
@@ -219,10 +240,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let apply_output = self
             .git_in_work_root()
-            .args(["apply", "--cached", "--allow-empty"]) // --3way
+            .args(["apply", "--cached"]) // --3way
             .stdin(diff_tree_child.stdout.take().unwrap())
             .stdout(Stdio::null())
-            .output_git()?;
+            .output_git()?
+            .require_code_less_than("apply", 128)?;
 
         diff_tree_child.require_success("diff-tree")?;
         Ok(apply_output.status.success())
@@ -243,6 +265,9 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         SpecIter: IntoIterator<Item = SpecArg>,
         SpecArg: AsRef<OsStr>,
     {
+        if tree1 == tree2 {
+            return Ok(true);
+        }
         let mut diff_tree_command = self.git();
         diff_tree_command
             .args(["diff-tree", "--full-index", "--binary", "--patch"])
@@ -253,19 +278,28 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             diff_tree_command.args(pathspecs);
         }
 
-        let mut diff_tree_child = diff_tree_command
+        // N.B. Using `git apply --allow-empty` would avoid having to buffer the diff
+        // and perform this (weak) emptiness test, but the --allow-empty option only
+        // appeared in git 2.35.0, so the current approach is done to maintain
+        // compatibility with older versions of git.
+        let diff = diff_tree_command
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
-            .spawn_git()?;
+            .output_git()?
+            .require_success("diff-tree")?
+            .stdout;
+
+        if diff.is_empty() {
+            return Ok(true);
+        }
 
         let apply_output = self
             .git_in_work_root()
-            .args(["apply", "--index", "--allow-empty", "--3way"])
-            .stdin(diff_tree_child.stdout.take().unwrap())
+            .args(["apply", "--index", "--3way"])
+            .stdin(Stdio::piped())
             .stdout(Stdio::null())
-            .output_git()?;
+            .in_and_out(&diff)?;
 
-        diff_tree_child.require_success("diff-tree")?;
         if apply_output.status.success() {
             Ok(true)
         } else if apply_output.status.code() == Some(1) {
@@ -429,7 +463,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     pub(crate) fn diffstat(&self, diff: &[u8]) -> Result<Vec<u8>> {
         let output = self
             .git()
-            .args(["apply", "--stat", "--summary", "--allow-empty"])
+            .args(["apply", "--stat", "--summary"])
             .stdout(Stdio::piped())
             .in_and_out(diff)?
             .require_success("apply --stat --summary")?;
