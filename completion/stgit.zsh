@@ -1000,6 +1000,14 @@ __stg_heads_remote () {
   __stg_git_describe_commit heads heads-remote "remote head" "$@"
 }
 
+__stg_command_successful () {
+    if (( ${#*:#0} > 0 )); then
+        _message 'not a StGit branch'
+        return 1
+    fi
+    return 0
+}
+
 __stg_git_command_successful () {
   if (( ${#*:#0} > 0 )); then
     _message 'not a git repository'
@@ -1183,6 +1191,7 @@ __stg_want_patches() {
     patches=(
         ${(f)"$(_call_program want-patches stg ${__stg_C_args} series --no-description --noprefix $@ 2>/dev/null)"}
     )
+    __stg_command_successful $pipestatus || return 1
     _wanted -V all expl "patch" compadd ${patches:|words}
 
 }
@@ -1198,6 +1207,7 @@ __stg_patches_all_allow_dups() {
     patches=(
         ${(f)"$(_call_program all-patches stg ${__stg_C_args} series $branch_opt --no-description --noprefix --all 2>/dev/null)"}
     )
+    __stg_command_successful $pipestatus || return 1
     _wanted -V all expl "patch" compadd ${patches}
 }
 
@@ -1224,17 +1234,15 @@ __stg_patches_refbranch() {
 __stg_remotes() {
     local remotes expl
     remotes=(${(f)"$(_call_program remotes git ${__stg_C_args} remote 2>/dev/null)"})
+    __stg_git_command_successful $pipestatus || return 1
     _wanted remotes expl remote compadd "$@" -a - remotes
 }
 
 __stg_subcommands() {
     local -a command_list
     command_list=(${(f)"$(_call_program commands stg ${__stg_C_args} completion list commands-and-aliases --style=zsh)"})
+    __stg_git_command_successful $pipestatus || return 1
     _describe -t commands 'stgit command' command_list
-}
-
-__stg_caching_policy() {
-    [[ =$service -nt $1 ]]
 }
 
 __stg_ignore_line () {
