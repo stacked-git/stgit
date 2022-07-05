@@ -908,7 +908,7 @@ __stg_add_args_color() {
 __stg_add_args_diffopts() {
     # TODO: complete diff-opts values (with separators?)
     subcmd_args+=(
-        '(-O --diff-opts)'{-O+,--diff-opts=}'[extra options for git diff]:opts'
+        '(-O --diff-opts)'{-O+,--diff-opts=}'[extra options for git diff]:opts:__stg_git_diff_opts'
     )
 }
 
@@ -962,6 +962,13 @@ __stg_add_args_trailers() {
         '--review=-[add Reviewed-by trailer]'
         '--signoff=-[add Signed-off-by trailer]'
     )
+}
+
+__stg_git_diff_opts() {
+    local -a diff_opts
+    diff_opts=(${(z)"$(_call_program git-diff-options "git diff-tree --git-completion-helper")"})
+    __stg_git_command_successful $pipestatus || return 1
+    _wanted git-diff-options expl "diff option" compadd -a diff_opts
 }
 
 __stg_heads () {
