@@ -746,7 +746,7 @@ impl Headers {
                     let (name, email) = value
                         .to_str()
                         .map_err(|_| anyhow!("From/Author is not UTF-8"))
-                        .and_then(|s| signature::parse_name_email(s).map_err(|e| e))
+                        .and_then(signature::parse_name_email)
                         .context("parsing From/Author header")?;
                     headers.author_name = Some(name.to_string());
                     headers.author_email = Some(email.to_string());

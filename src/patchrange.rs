@@ -2,7 +2,7 @@
 
 //! Parse user-provided patch ranges.
 
-use std::str::FromStr;
+use std::{fmt::Write, str::FromStr};
 
 use crate::{patchname::PatchName, stack::StackStateAccess};
 
@@ -440,9 +440,9 @@ fn similar_patchnames(patchname: &PatchName, allowed_patchnames: &[&PatchName]) 
     } else {
         let mut similar_str = String::new();
         for pn in similar[..similar.len() - 1].iter() {
-            similar_str.push_str(&format!("`{pn}`, "));
+            write!(&mut similar_str, "`{pn}`, ").unwrap();
         }
-        similar_str.push_str(&format!("and `{}`", similar[similar.len() - 1]));
+        write!(&mut similar_str, "and `{}`", similar[similar.len() - 1]).unwrap();
         Some(similar_str)
     }
 }
