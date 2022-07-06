@@ -318,6 +318,157 @@ _stg-edit() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-email() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                format:'format patches as email files'
+                send:'send patches as emails'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'email command' command_list
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:stg-email-$words[1]
+            if ! _call_function ret _stg-email-$words[1]; then
+                _message "unknown subcommand: $words[1]"
+            fi
+            ;;
+    esac
+    return ret
+}
+
+_stg-email-format() {
+    local curcontext=$curcontext state line ret=1
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    __stg_add_args_branch
+    subcmd_args+=(
+        '(-o --output-directory)'{-o+,--output-directory=}'[store resulting files in given directory]: :_directories'
+        '(-n --numbered -N --no-numbered -k --keep-subject)'{-n,--numbered}'[name output in \[PATCH n/m\] format]'
+        '(-n --numbered -N --no-numbered -k --keep-subject)'{-N,--no-numbered}'[name output in \[PATCH\] format]'
+        '--start-number=[start numbering patches at given number]: :_numbers -l 1 "patch number"'
+        '--numbered-files[use only number for file name]'
+        '(-n --numbered -N --no-numbered -k --keep-subject --rfc --subject-prefix)'{-k,--keep-subject}"[don't strip/add \[PATCH\] from the first line of the commit message]"
+        '(-s --signoff)'{-s,--signoff}'[add Signed-off-by: trailer to the commit message]'
+        '(         --inline)--attach[create attachments instead of inlining patches]'
+        '(--attach         )--inline[inline patches]'
+        '(--thread            )--no-thread[do not thread messages]'
+        '(         --no-thread)--thread=-[make the second and subsequent mails refer to the first]::style:((shallow\:"all refer to the first"
+                                                                                                            deep\:"each refers to the previous"))'
+        '--in-reply-to=[make the first mail a reply to the given message]:message id'
+        '(-v --reroll-count)'{-v+,--reroll-count=}'[mark the series as the <n>-th iteration of the topic]: :_numbers iteration'
+        '(-k --keep-subject --subject-prefix)--rfc[use \[RFC PATCH\] instead of \[PATCH\]]'
+        '(-k --keep-subject --rfc)--subject-prefix=[use the given prefix instead of \[PATCH\]]:prefix'
+        '(--no-to)*--to=[add To: header to email headers]: :_email_addresses'
+        '--no-to[discard all To: headers added so far]'
+        '(--no-cc)*--cc=[add Cc: header to email headers]: :_email_addresses'
+        '--no-cc[discard all Cc: headers added so far]'
+        '*--add-header=[add an arbitrary header to email headers]:header' \
+        '--cover-letter[generate a cover letter]'
+        '(            --no-signature --signature-file)--signature=[add a signature]:signature'
+        '(--signature                --signature-file)--no-signature[do not add a signature]'
+        '(--signature --no-signature                 )--signature-file=[use contents of file as signature]: :_files'
+        '--base=[add prerequisite tree info to the patch series]:prereq commit:__stg_revisions'
+        '--suffix=[use the given suffix for filenames]:filename suffix'
+        '(-q --quiet)'{-q,--quiet}'[suppress the output of the names of generated files]'
+        '--no-binary[do not output contents of changes in binary files, only note that they differ]'
+        '--zero-commit[output all-zero hash in From header]'
+        '--progress[show progress while generating patches]'
+        '--interdiff=[insert interdiff against previous patch series in cover letter or single patch]:reference to tip of previous series:__stg_revisions'
+        '--range-diff=[insert range-diff against previous patch series in cover letter or single patch]:reference to tip of previous series:__stg_revisions'
+        '--creation-factor=[for range-diff, specify weighting for creation]:weighting (percent)'
+        + '(sources)'
+        '(-a --all)'{-a,--all}'[format all applied patches]: :_files'
+        ': :->patch-or-patch-range'
+    )
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (patch-or-patch-range)
+            __stg_patchrange --suggest-range && ret=0
+            ;;
+    esac
+
+    return ret
+}
+
+_stg-email-send() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-a --all)'{-a,--all}'[send all applied patches]: :_files'
+        '--from=[specify sender]:email address:_email_addresses'
+        '--to=[specify the primary recipient of the emails]: :_email_addresses'
+        '--cc=[starting Cc: value for each email]: :_email_addresses'
+        '--bcc=[Bcc: value for each email]: :_email_addresses'
+        '--subject=[specify the initial subject of the email thread]:subject'
+        '--reply-to=[specify Reply-To address]:email address:_email_addresses'
+        '--in-reply-to=[specify contents of first In-Reply-To header]:message-id'
+        '--compose[edit introductory message for patch series]'
+        '--identity=[specify configuration identity]: :__stg_email_send_identities'
+        '--no-thread[do not set In-Reply-To: and References: headers]'
+        '--confirm[specify type of confirmation required before sending]: :((
+            always\:"always confirm before sending"
+            never\:"never confirm before sending"
+            cc\:"confirm before sending to automatically added Cc-addresses"
+            compose\:"confirm before sending first message when using --compose"
+            auto\:"same as cc together with compose"
+        ))'
+        '--quiet[be less verbose]'
+        '--dry-run[do everything except actually sending the emails]'
+        '(- *)--dump-aliases[dump configured aliases and exit]'
+        '*: : _alternative -O expl
+            "files:file:_files"
+            "patchrange::__stg_patchrange --suggest-range"'
+    )
+    _arguments -s -S $subcmd_args
+}
+
+_stg-email-help() {
+    local -a subcmd_args
+    local curcontext="$curcontext" state line
+    subcmd_args+=(
+        '(-): :->command'
+        '(-)*:: :->option-or-argument'
+    )
+
+    integer ret=1
+
+    _arguments -s -S $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            local -a command_list=(
+                format:'format patches as email files'
+                send:'send patches as emails'
+                help:'show help for given subcommand'
+            )
+            _describe -t commands 'email command' command_list
+            ;;
+        (option-or-argument)
+            curcontext=${curcontext%:*:*}:stg-email-$words[1]-help
+            _call_function ret _stg-email-$words[1]-help
+            ;;
+    esac
+    return ret
+}
+
 _stg-export() {
     local -a subcmd_args
     __stg_add_args_help
@@ -930,6 +1081,33 @@ __stg_git_diff_opts() {
     _wanted git-diff-options expl "diff option" compadd -a diff_opts
 }
 
+__stg_revisions () {
+    _alternative \
+        "heads::__stg_heads" \
+        "commit-tags::__stg_commit_tags" \
+        "patch-refs::__stg_patch_refs"
+}
+
+__stg_commit_tags () {
+    local expl
+    declare -a tags
+
+    tags=(${${(M)${(f)"$(_call_program commit-tag-refs "git ${__stg_C_args} for-each-ref --format='%(*objecttype)%(objecttype) %(refname)' refs/tags 2>/dev/null")"}:#commit(tag|) *}#commit(tag|) refs/tags/})
+    __stg_git_command_successful $pipestatus || return 1
+
+    _wanted commit-tags expl "commit tag" compadd -M 'r:|/=* r:|=*' "$@" -o numeric -a - tags
+}
+
+__stg_patch_refs () {
+    local expl
+    declare -a refs
+
+    refs=(${(f)"$(_call_program patch-refs "git ${__stg_C_args} for-each-ref --format='%(refname:lstrip=2)' refs/patches 2>/dev/null")"})
+    __stg_git_command_successful $pipestatus || return 1
+
+    _wanted commit-tags expl "patch ref" compadd -p refs/patches/ -M 'r:|/=* r:|=*' "$@" -o numeric -a - refs
+}
+
 __stg_heads () {
     _alternative 'heads-local::__stg_heads_local' 'heads-remote::__stg_heads_remote'
 }
@@ -973,6 +1151,22 @@ __stg_git_command_successful () {
     return 1
   fi
   return 0
+}
+
+__stg_config_sections () {
+    local regex tag desc
+    local -a groups
+
+    regex=$1
+    tag=$2
+    desc=$3
+
+    groups=(${${${(0)"$(_call_program $tag "git ${__stg_C_args} config -z --get-regexp -- ${(q)regex}")"}#*.}%%.[^.]##$'\n'*})
+    _describe -t $tag $desc groups
+}
+
+__stg_email_send_identities () {
+    __stg_config_sections '^sendemail\..+\.[^.]+$' identities 'sendemail identity'
 }
 
 __stg_git_describe_commit () {
