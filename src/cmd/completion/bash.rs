@@ -627,14 +627,14 @@ _stg ()
         $command_completion_func && return
     else
         local a
-        for a in $(__stg completion list aliases --show-expansion); do
+        for a in $(__stg completion list aliases --style=zsh --show-expansion); do
             local name expansion
             name=${a%%:*}
             expansion=${a#*:}
             if [[ "$command" == "$name" ]]; then
                 if [[ ${expansion:0:1} == "!" ]]; then
-                    # Shell alias
-                    :
+                    # Shell alias, fallback to simple filename completion
+                    mapfile -t COMPREPLY < <(compgen -o filenames -A file -- "$cur")
                 else
                     # StGit alias
                     command_completion_func="_stg-${expansion%% *}"
