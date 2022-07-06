@@ -459,44 +459,6 @@ _stg-log() {
     _arguments -s -S $subcmd_args
 }
 
-_stg-mail() {
-    local -a subcmd_args
-    __stg_add_args_help
-    __stg_add_args_branch
-    __stg_add_args_diffopts
-    subcmd_args+=(
-        '--to=[add address to To: list]:address'
-        '--cc=[add address to Cc: list]:address'
-        '--bcc=[add address to Bcc: list]:address'
-        '--auto[automatically cc patch signers]'
-        '--no-thread[do not send subsequent messages as replies]'
-        '--unrelated[send patches without sequence numbers]'
-        '(-v --version)'{-v,--version=}'[add version to subject prefix]:version'
-        '--prefix=[add prefix to subject]:prefix'
-        '(-c --cover)'{-c,--cover=}'[cover message file]: :_files'
-        '(-e --edit-cover)'{-e,--edit-cover}'[edit cover message before sending]'
-        '(-E --edit-patches)'{-E,--edit-patches}'[edit patches before sending]'
-        '(-s --sleep)'{-s,--sleep=}'[seconds to sleep between sending emails]:seconds'
-        '--in-reply-to=[reply reference id]:refid'
-        '--domain=[domain to use for message ID]:domain'
-        '(-u --user)'{-u,--user=}'[username for SMTP authentication]:user'
-        '(-p --password)'{-p,--password=}'[password for SMTP authentication]:password'
-        '(-T --smtp-tls)'{-t,--smtp-tls}'[use TLS for SMTP authentication]'
-        + '(send-method)'
-        '--git[use `git send-email`]'
-        '(-m --mbox)'{-m,--mbox}'[generate mbox file instead of sending]'
-        '--smtp-server=[server or command for sending email]'
-        + '(attachment)'
-        '--attach[send patch as attachment]'
-        '--attach-inline[send patch as inline attachment]'
-        '(-t --template)'{-t,--template=}'[message template file]: :_files'
-        + '(patches)'
-        '(-a --all)'{-a,--all}'[email all applied patches]'
-        '*:patches:__stg_dedup_inside_arguments __stg_patches --all'
-    )
-    _arguments -s -S $subcmd_args
-}
-
 _stg-new() {
     local curcontext=$curcontext state line ret=1
     local -a subcmd_args
