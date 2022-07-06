@@ -1,6 +1,6 @@
 [package]
 name = "stgit"
-version = "2.0.0-alpha.1"
+version = "2.0.0-alpha.2"
 edition = "2021"
 authors = [
     "Catalin Marinas <catalin.marinas@gmail.com>",
