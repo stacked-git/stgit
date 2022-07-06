@@ -74,7 +74,7 @@ _stg-commit() {
         - group-number
         '(-n --number)'{-n+,--number=}'[commit specified number of patches]:number'
         - group-patches
-        '*:applied patches:__stg_patches_applied'
+        '*:applied patches:__stg_dedup_inside_arguments __stg_patchrange --suggest-range --applied'
     )
     _arguments -s -S $subcmd_args
 }
@@ -283,7 +283,7 @@ _stg-delete() {
         - group-top
         '(-t --top)'{-t,--top}'[delete top patch]'
         - group-patchnames
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -293,7 +293,7 @@ _stg-diff() {
     __stg_add_args_help
     __stg_add_args_diffopts
     subcmd_args+=(
-        '(-r --range)'{-r,--range=}'[show diff between revisions]: :__stg_patches_all'
+        '(-r --range)'{-r,--range=}'[show diff between revisions]: :__stg_patchrange --suggest-range --all'
         '(-s --stat)'{-s,--stat}'[show stat instead of diff]'
         '*:files:__stg_changed_files'
     )
@@ -312,7 +312,7 @@ _stg-edit() {
     subcmd_args+=(
         '(-d --diff)'{-d,--diff}'[edit patch diff]'
         '(-t --set-tree)'{-t,--set-tree=}'[set git tree of patch]:treeish'
-        ':patch:__stg_patches_all'
+        ':patch:__stg_patch --all'
     )
     __stg_add_args_message
     _arguments -s -S $subcmd_args
@@ -328,7 +328,7 @@ _stg-export() {
         '(-n --numbered)'{-n,--numbered}'[prefix patch names with order numbers]'
         '(-s --stdout)'{-s,--stdout}'[dump patches to standard output]'
         '(-t --template)'{-t,--template=}'[use template file]: :_files'
-        '*:patches:__stg_patches_unhidden'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange'
         + '(suffix)'
         '(-e --extension)'{-e,--extension=}'[extension to append to patch names]:extension'
         '(-p --patch)'{-p,--patch}'[append .patch to patch names]'
@@ -343,7 +343,7 @@ _stg-files() {
     subcmd_args+=(
         '--bare[bare file names]'
         '(-s --stat)'{-s,--stat}'[show diff stat]'
-        ':patches:__stg_patches_all'
+        ':patches:__stg_patch --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -356,7 +356,7 @@ _stg-float() {
     subcmd_args+=(
         '--noapply[Reorder patches by floating without applying]'
         '(-s --series)'{-s,--series=}'[arrange according to series file]: :_files'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -381,7 +381,7 @@ _stg-goto() {
     __stg_add_args_keep
     __stg_add_args_merged
     subcmd_args+=(
-        ':patches:__stg_patches_all'
+        ':patches:__stg_patch --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -396,7 +396,7 @@ _stg-hide() {
     __stg_add_args_color
     __stg_add_args_branch
     subcmd_args+=(
-        ':patches:__stg_patches_unhidden'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange'
     )
     _arguments -s -S $subcmd_args
 }
@@ -406,7 +406,7 @@ _stg-id() {
     __stg_add_args_help
     __stg_add_args_branch
     subcmd_args+=(
-        ':references:__stg_patches_all'
+        ':references:__stg_patch --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -454,7 +454,7 @@ _stg-log() {
         '(-f --full)'{-f,--full}'[show full commit ids]'
         '(-g --graphical)'{-g,--graphical}'[show log in gitk]'
         '(-n --number)'{-n+,--number=}'[limit to number of commits]'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -492,7 +492,7 @@ _stg-mail() {
         '(-t --template)'{-t,--template=}'[message template file]: :_files'
         + '(patches)'
         '(-a --all)'{-a,--all}'[email all applied patches]'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patches --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -522,7 +522,7 @@ _stg-new() {
 
     case $state in
         (modified-file)
-            __stg_ignore_line __stg_modified_files && ret=0
+            __stg_dedup __stg_modified_files && ret=0
             ;;
     esac
 
@@ -561,7 +561,7 @@ _stg-pick() {
         '(-x --expose)'{-x,--expose}'[append imported commit id to patch log]'
         '--noapply[keep patch unapplied]'
         '*'{-f,--file=}'[only fold given file]: :_files'
-        '*:patches:__stg_patches_refbranch'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --use-ref-branch'
         + '(mode)'
         '--fold[fold the commit into current patch]'
         '--update[fold limited to current patch files]'
@@ -581,7 +581,7 @@ _stg-pop() {
         - group-all
         '(-a --all)'{-a,--all}'[push all unapplied patches]'
         - group-patches
-        '*:applied patches:__stg_patches_applied'
+        '*:applied patches:__stg_dedup_inside_arguments __stg_patchrange --applied'
     )
     _arguments -s -S $subcmd_args
 }
@@ -620,7 +620,7 @@ _stg-push() {
         - group-number
         '(-n --number)'{-n+,--number=}'[push specified number of patches]:number'
         - group-patches
-        '*:unapplied patches:__stg_patches_unapplied'
+        '*:unapplied patches:__stg_dedup_inside_arguments __stg_patchrange --unapplied'
     )
     _arguments -s -S $subcmd_args
 }
@@ -662,7 +662,7 @@ _stg-refresh() {
         '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
         '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
         '(-i --index)'{-i,--index}'[refresh from index instead of worktree]'
-        '(-p --patch)'{-p,--patch=}'[refresh patch other than top patch]: :__stg_patches_all'
+        '(-p --patch)'{-p,--patch=}'[refresh patch other than top patch]: :__stg_patch --all'
         '--spill[Spill patch contents to worktree and index, and erase patch content]'
         + '(update-files)'
         '(-u --update)'{-u,--update}'[only update current patch files]'
@@ -681,7 +681,8 @@ _stg-rename() {
     __stg_add_args_branch
     __stg_add_args_color
     subcmd_args+=(
-        ':old-patch:__stg_patches_all'
+        ':old-patch:__stg_patch --all'
+        ':new patch name:'
     )
     _arguments -s -S $subcmd_args
 }
@@ -698,7 +699,7 @@ _stg-reset() {
     subcmd_args+=(
         '--hard[discard changes in index/worktree]'
         ':state:'
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -s -S $subcmd_args
 }
@@ -726,7 +727,7 @@ _stg-series() {
         - group-all
         '(-a --all)'{-a,--all}'[show all patches including hidden]'
         - group-patches
-        '*:patches:__stg_patches_all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --all --suggest-range'
     )
     _arguments -s -S $subcmd_args
 }
@@ -745,13 +746,13 @@ _stg-show() {
         '(-A --applied *)'{-A,--applied}'[show applied patches]'
         '(-U --unapplied *)'{-U,--unapplied}'[show unapplied patches]'
         '(-H --hidden *)'{-H,--hidden}'[show hidden patches]'
-        '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_patches_all'
+        '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -C -s $subcmd_args && ret=0
 
     case $state in
         (cached-files)
-            __stg_ignore_line __stg_cached_files
+            __stg_dedup __stg_cached_files
             ;;
     esac
 
@@ -765,8 +766,8 @@ _stg-sink() {
     __stg_add_args_keep
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after sinking]'
-        '(-t --to)'{-t,--to=}'[sink patches below target patch]: :__stg_patches_applied'
-        '*:patches:__stg_patches_all'
+        '(-t --to)'{-t,--to=}'[sink patches below target patch]: :__stg_patch --applied'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange'
     )
     _arguments -s -S $subcmd_args
 }
@@ -786,7 +787,7 @@ _stg-spill() {
 
     case $state in
         (patch-files)
-            __stg_ignore_line __stg_patch_files
+            __stg_dedup __stg_patch_files
             ;;
     esac
 
@@ -802,8 +803,8 @@ _stg-squash() {
     __stg_add_args_savetemplate
     __stg_add_args_trailers
     subcmd_args+=(
-        '(-n --name)'{-n,--name=}'[name for squashed patch]: :__stg_patches_all'
-        '*:patches:__stg_patches_all_allow_dups'
+        '(-n --name)'{-n,--name=}'[name for squashed patch]: :__stg_patch --all'
+        '*:patches:__stg_dedup_inside_arguments __stg_patch --all'
     )
     __stg_add_args_message
     _arguments -s -S $subcmd_args
@@ -815,7 +816,7 @@ _stg-sync() {
     subcmd_args+=(
         + '(patches)'
         '(-a --all)'{-a,--all}'[synchronize all applied patches]'
-        '*:patches:__stg_patches_refbranch'
+        '*:patches:__stg_dedup_inside_arguments __stg_patchrange --suggest-range --use-ref-branch'
         + '(source)'
         '(-B --ref-branch)'{-B,--ref-branch}'[synchronize patches with branch]: :__stg_branch_stgit'
         '(-s --series)'{-s,--series=}'[synchronize patches with series]: :_files'
@@ -862,7 +863,7 @@ _stg-unhide() {
     __stg_add_args_help
     __stg_add_args_branch
     subcmd_args+=(
-        ':patches:__stg_patches_hidden'
+        ':patches:__stg_dedup_inside_arguments __stg_patchrange --hidden'
     )
     _arguments -s -S $subcmd_args
 }
@@ -1163,9 +1164,15 @@ __stg_patch_files () {
 }
 
 __stg_get_branch_opt() {
-    local short long i
-    short=${1:-'-b'}
-    long=${2:-'--branch'}
+    local use_ref_branch short long i
+    zparseopts -- -use-ref-branch=use_ref_branch
+    if [[ -n "$use_ref_branch" ]]; then
+        short="-B"
+        long="--ref-branch"
+    else
+        short="-b"
+        long="--branch"
+    fi
     i=${words[(I)$short|$long(=*|)]}
     if (( i > 0 )); then
         case ${words[i]} in
@@ -1181,57 +1188,64 @@ __stg_get_branch_opt() {
     fi
 }
 
-__stg_want_patches() {
+__stg_patch() {
+    declare -a compadd_opts
+    zparseopts -D -E -a compadd_opts V+: J+: 1 2 o+: n f x+: X+: M+: P: S: r: R: q F:
+
+    local use_ref_branch branch_opt
+    zparseopts -D -E -- -use-ref-branch=use_ref_branch
+    branch_opt="$(__stg_get_branch_opt $use_ref_branch)"
+
     local expl
-    declare -a patchlines patchnames descriptions
+    declare -a patchlines patchnames
     local desc_flag
     zstyle -T ":completion:${curcontext}:" verbose && desc_flag="--description"
-    patchlines=(${(f)"$(_call_program patches stg ${__stg_C_args} series $desc_flag $@ 2>/dev/null)"})
+    patchlines=(${(f)"$(_call_program patches stg ${__stg_C_args} series $desc_flag $branch_opt $@ 2>/dev/null)"})
     __stg_command_successful $pipestatus || return 1
     local patchline
     for patchline in $patchlines; do
-        local patchname="${(MS)${patchline[3,-1]%%\#*}##[[:graph:]]*[[:graph:]]}"
-        if ! (( ${words[(Ie)$patchname]} )); then
-            patchnames+=($patchname)
-            descriptions+=($patchline)
-        fi
+        patchnames+=("${(MS)${patchline[3,-1]%%\#*}##[[:graph:]]*[[:graph:]]}")
     done
-    _wanted patches expl 'patch' compadd -o nosort -l -d descriptions -a patchnames
+    _wanted patches expl 'patch' compadd $compadd_opts -o nosort -l -d patchlines -a patchnames
 }
 
-__stg_patches_all() {
-    __stg_want_patches $(__stg_get_branch_opt) --all
-}
+__stg_patchrange() {
+    # Remove/capture compadd options
+    declare -a compadd_opts
+    zparseopts -D -E -a compadd_opts V+: J+: 1 2 o+: n f x+: X+: M+: P: S: r: R: q F:
 
-__stg_patches_all_allow_dups() {
-    declare -a patches
-    local expl branch_opt
-    branch_opt=$(__stg_get_branch_opt)
-    patches=(
-        ${(f)"$(_call_program all-patches stg ${__stg_C_args} series $branch_opt --no-description --noprefix --all 2>/dev/null)"}
-    )
+    # Remove/capture patch selection, --suggest-range, and --use-ref-branch options
+    declare -a selection_opt
+    local use_ref_branch suggest_range branch_opt
+    zparseopts -D -E -a selection_opt -- -suggest-range=suggest_range -use-ref-branch=use_ref_branch -applied -unapplied -hidden -all
+    branch_opt="$(__stg_get_branch_opt $use_ref_branch)"
+
+    # Consult zstyle to determine whether to use verbose patch listings
+    local desc_flag
+    zstyle -T ":completion:${curcontext}:" verbose && desc_flag="--description"
+
+    local expl
+    declare -a patchlines patchnames
+    if compset -P '*..'; then
+        if [[ $IPREFIX != ".." ]]; then
+            # If the command line has 'patch..' (but not plain '..'), use that
+            # open-ended range as the selection. N.B. any leading '--option=' is
+            # trimmed. This affects, e.g. `stg diff --range`.
+            selection_opt=("${IPREFIX#--*=}")
+        fi
+        # Otherwise for plain '..', we leave the nominal selection as-is.
+    elif [[ -n "$suggest_range" ]]; then
+        # If --suggest-range is specified, suffix the initial patch with '..' to start a
+        # range.
+        compadd_opts+=(-S ..)
+    fi
+    patchlines=(${(f)"$(_call_program patches stg ${__stg_C_args} series $desc_flag $branch_opt $selection_opt 2>/dev/null)"})
     __stg_command_successful $pipestatus || return 1
-    _wanted -V all expl "patch" compadd ${patches}
-}
-
-__stg_patches_applied() {
-    __stg_want_patches $(__stg_get_branch_opt) --applied
-}
-
-__stg_patches_hidden() {
-    __stg_want_patches $(__stg_get_branch_opt) --hidden
-}
-
-__stg_patches_unapplied() {
-    __stg_want_patches $(__stg_get_branch_opt) --unapplied
-}
-
-__stg_patches_unhidden() {
-    __stg_want_patches $(__stg_get_branch_opt) --applied --unapplied
-}
-
-__stg_patches_refbranch() {
-    __stg_want_patches $(__stg_get_branch_opt -B --ref-branch) --all
+    local patchline
+    for patchline in $patchlines; do
+        patchnames+=("${(MS)${patchline[3,-1]%%\#*}##[[:graph:]]*[[:graph:]]}")
+    done
+    _wanted patches expl 'patch' compadd $compadd_opts -o nosort -l -d patchlines -a patchnames
 }
 
 __stg_remotes() {
@@ -1248,9 +1262,17 @@ __stg_subcommands() {
     _describe -t commands 'stgit command' command_list
 }
 
-__stg_ignore_line () {
-  local -a ignored=(${line:#${words[CURRENT]}})
-  $* -F ignored
+# Used to filter already-used completions.
+__stg_dedup () {
+    local -a ignored=(${line:#${words[CURRENT]}})
+    $* -F ignored
+}
+
+# Like __stg_dedup, but for use inside _arguments specs.
+__stg_dedup_inside_arguments () {
+    declare -a compadd_opts
+    zparseopts -D -E -a compadd_opts V+: J+: 1 2 o+: n f x+: X+: M+: P: S: r: R: q F:
+    __stg_dedup $* $compadd_opts
 }
 
 _stgit() {
