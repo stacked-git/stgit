@@ -13,7 +13,7 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 
 fn make() -> clap::Command<'static> {
     clap::Command::new("id")
-        .about("Print git hash of StGit revision")
+        .about("Print git hash of a StGit revision")
         .long_about(
             "Print the hash (object id) of a StGit revision.\n\
              \n\
