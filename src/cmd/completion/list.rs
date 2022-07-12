@@ -13,7 +13,7 @@ pub(super) fn command() -> clap::Command<'static> {
             clap::Arg::new("style")
                 .long("style")
                 .help("Choose output format style")
-                .possible_values(["name-only", "fish", "zsh"])
+                .possible_values(["name-only", "asciidoc", "fish", "zsh"])
                 .default_value("name-only")
                 .validator(OutputStyle::from_str)
                 .global(true),
@@ -35,6 +35,7 @@ pub(super) fn command() -> clap::Command<'static> {
 #[derive(Clone, Copy, Debug)]
 enum OutputStyle {
     NameOnly,
+    AsciiDoc,
     Fish,
     Zsh,
 }
@@ -45,6 +46,7 @@ impl FromStr for OutputStyle {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "name-only" => Ok(Self::NameOnly),
+            "asciidoc" => Ok(Self::AsciiDoc),
             "fish" => Ok(Self::Fish),
             "zsh" => Ok(Self::Zsh),
             s => Err(anyhow::anyhow!("Invalid output style `{s}`")),
@@ -93,6 +95,7 @@ fn list_aliases(
         };
         match style {
             OutputStyle::NameOnly => writeln!(output, "{name}"),
+            OutputStyle::AsciiDoc => writeln!(output, "{name}::\n    {description}"),
             OutputStyle::Fish => writeln!(output, "{name}\t{description}"),
             OutputStyle::Zsh => writeln!(output, "{name}:{description}"),
         }?;
@@ -113,6 +116,7 @@ fn list_commands(
         let about = cmd.get_about().unwrap_or_default();
         match style {
             OutputStyle::NameOnly => writeln!(output, "{name}"),
+            OutputStyle::AsciiDoc => writeln!(output, "linkstg:{name}[]::\n    {about}"),
             OutputStyle::Fish => writeln!(output, "{name}\t{about}"),
             OutputStyle::Zsh => writeln!(output, "{name}:{about}"),
         }?;

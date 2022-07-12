@@ -101,6 +101,7 @@ _stg-completion() {
                 fish:'generate fish shell completion script'
                 zsh:'generate zsh completion script'
                 list:'list StGit command information'
+                man:'generate asciidoc man pages'
                 help:'show help for given subcommand'
             )
             _describe -t commands 'completion command' command_list
@@ -144,6 +145,16 @@ _stg-completion-zsh() {
     _arguments -s -S $subcmd_args
 }
 
+_stg-completion-man() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '(-o --output)'{-o,--output=}'[output to path]: :_directories'
+    )
+    _arguments -s -S $subcmd_args
+}
+
 _stg-completion-help() {
     local -a subcmd_args
     local curcontext="$curcontext" state line
@@ -182,7 +193,7 @@ _stg-completion-list() {
     __stg_add_args_color
     subcmd_args+=(
         '(-o --output)'{-o,--output=}'[output to path]: :_files'
-        '--style=-[output format style]:style:(name-only fish zsh)'
+        '--style=-[output format style]:style:(name-only fish zsh asciidoc)'
         '(-): :->command'
         '(-)*:: :->option-or-argument'
     )
@@ -245,7 +256,7 @@ _stg-completion-list-aliases() {
     __stg_add_args_color
     subcmd_args+=(
         '(-o --output)'{-o,--output=}'[output to path]: :_files'
-        '--style=-[output format style]:style:(name-only fish zsh)'
+        '--style=-[output format style]:style:(name-only fish zsh asciidoc)'
         '--show-expansion[show alias expansion]'
     )
     _arguments -s -S $subcmd_args
@@ -257,7 +268,7 @@ _stg-completion-list-commands() {
     __stg_add_args_color
     subcmd_args+=(
         '(-o --output)'{-o,--output=}'[output to path]: :_files'
-        '--style=-[output format style]:style:(name-only fish zsh)'
+        '--style=-[output format style]:style:(name-only fish zsh asciidoc)'
     )
     _arguments -s -S $subcmd_args
 }
@@ -268,7 +279,7 @@ _stg-completion-list-commands-and-aliases() {
     __stg_add_args_color
     subcmd_args+=(
         '(-o --output)'{-o,--output=}'[output to path]: :_files'
-        '--style=-[output format style]:style:(name-only fish zsh)'
+        '--style=-[output format style]:style:(name-only fish zsh asciidoc)'
     )
     _arguments -s -S $subcmd_args
 }

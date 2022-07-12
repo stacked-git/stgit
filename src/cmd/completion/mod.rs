@@ -5,6 +5,7 @@
 mod bash;
 mod fish;
 mod list;
+mod man;
 mod shstream;
 mod zsh;
 
@@ -17,11 +18,17 @@ pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
 fn make() -> clap::Command<'static> {
     clap::Command::new("completion")
         .about("Support for shell completions")
+        .long_about(
+            "Support completions for bash, fish, and zsh. Also provides 'stg \
+             completion list' command for dynamically introspecting StGit's \
+             commands and aliases.",
+        )
         .subcommand_required(true)
         .subcommand(bash::command())
         .subcommand(fish::command())
         .subcommand(zsh::command())
         .subcommand(list::command())
+        .subcommand(man::command())
         .arg(
             clap::Arg::new("output")
                 .long("output")
@@ -40,6 +47,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         Some(("fish", sub_matches)) => fish::dispatch(sub_matches),
         Some(("zsh", sub_matches)) => zsh::dispatch(sub_matches),
         Some(("list", sub_matches)) => list::dispatch(sub_matches),
+        Some(("man", sub_matches)) => man::dispatch(sub_matches),
         _ => panic!("valid subcommand is required"),
     }
 }
