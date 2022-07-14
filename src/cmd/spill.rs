@@ -23,7 +23,7 @@ fn make() -> clap::Command<'static> {
     clap::Command::new("spill")
         .about("Spill changes from the topmost patch")
         .long_about(
-            "Spill changes from the topmost patch. Changes are removed from the patch,
+            "Spill changes from the topmost patch. Changes are removed from the patch, \
              but remain in the index and worktree.\n\
              \n\
              Spilling a patch may be useful for reselecting the files/hunks to be \
