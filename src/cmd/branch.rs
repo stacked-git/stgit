@@ -92,7 +92,7 @@ fn make() -> clap::Command<'static> {
                      current branch name with a timestamp.\n\
                      \n\
                      The description of the new branch will indicate it is a clone of the \
-                     current branch. The parent information of the new branch is copied  \
+                     current branch. The parent information of the new branch is copied \
                      from the current branch.",
                 )
                 .arg(
