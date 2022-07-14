@@ -5,6 +5,7 @@
 *.pdf
 stg-*.txt
 doc.dep
+txt-stamp
 command-list.txt
 manpage-base-url.xsl
-*-ASCIIDOCFLAGS
+GIT-ASCIIDOCFLAGS

@@ -1,19 +1,63 @@
+# Import tree-wide shared Makefile behavior and libraries
+# include ../shared.mak
+QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
+QUIET_SUBDIR1  =
+
+ifneq ($(findstring w,$(MAKEFLAGS)),w)
+PRINT_DIR = --no-print-directory
+else # "make -w"
+NO_SUBDIR = :
+endif
+
+ifneq ($(findstring s,$(MAKEFLAGS)),s)
+ifndef V
+## common
+	QUIET_SUBDIR0  = +@subdir=
+	QUIET_SUBDIR1  = ;$(NO_SUBDIR) echo '   ' SUBDIR $$subdir; \
+			 $(MAKE) $(PRINT_DIR) -C $$subdir
+
+	QUIET          = @
+	QUIET_GEN      = @echo '   ' GEN $@;
+
+	QUIET_MKDIR_P_PARENT  = @echo '   ' MKDIR -p $(@D);
+
+## Used in "Documentation/Makefile"
+	QUIET_ASCIIDOC	= @echo '   ' ASCIIDOC $@;
+	QUIET_XMLTO	= @echo '   ' XMLTO $@;
+	QUIET_DB2TEXI	= @echo '   ' DB2TEXI $@;
+	QUIET_MAKEINFO	= @echo '   ' MAKEINFO $@;
+	QUIET_DBLATEX	= @echo '   ' DBLATEX $@;
+	QUIET_XSLTPROC	= @echo '   ' XSLTPROC $@;
+	QUIET_GEN	= @echo '   ' GEN $@;
+	QUIET_STDERR	= 2> /dev/null
+
+	export V
+endif
+endif
+
 # Guard against environment variables
 MAN1_TXT =
 MAN5_TXT =
 MAN7_TXT =
+DOC_DEP_TXT =
 TECH_DOCS =
 ARTICLES =
 SP_ARTICLES =
 OBSOLETE_HTML =
 
-STGIT_ALL_PY = $(shell find ../stgit -name '*.py')
-STG_COMMANDS = $(shell $(PYTHON) ../build.py --commands)
+STG_COMMANDS_SRC = $(shell find ../src/cmd -name '*.rs')
+STG_COMMANDS = $(shell cargo --quiet run completion list commands)
 STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))
-STGIT_VERSION = $(shell $(PYTHON) ../build.py --stgit-version)
+
+# STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
+#                         jq -r '.packages[].version')
+STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
+                        grep -Eo '"version":"[^"]+"' | \
+                        sed -Ee 's/"version":"([^"]+)"/\1/g')
 
 MAN1_TXT += stg.txt
 MAN1_TXT += $(STG_COMMANDS_TXT)
+DOC_DEP_TXT += $(wildcard *.txt)
 
 ifdef MAN_FILTER
 MAN_TXT = $(filter $(MAN_FILTER),$(MAN1_TXT) $(MAN5_TXT) $(MAN7_TXT))
@@ -54,6 +98,7 @@ ASCIIDOC_CONF = -f asciidoc.conf
 ASCIIDOC_COMMON = $(ASCIIDOC) $(ASCIIDOC_EXTRA) $(ASCIIDOC_CONF) \
 		-amanversion=$(STGIT_VERSION) \
 		-amanmanual='StGit Manual' -amansource='StGit'
+ASCIIDOC_DEPS = asciidoc.conf GIT-ASCIIDOCFLAGS
 TXT_TO_HTML = $(ASCIIDOC_COMMON) -b $(ASCIIDOC_HTML)
 TXT_TO_XML = $(ASCIIDOC_COMMON) -b $(ASCIIDOC_DOCBOOK)
 MANPAGE_XSL = manpage-normal.xsl
@@ -103,6 +148,7 @@ ASCIIDOC_DOCBOOK = docbook5
 ASCIIDOC_EXTRA += -acompat-mode -atabsize=8
 ASCIIDOC_EXTRA += -I. -rasciidoctor-extensions
 ASCIIDOC_EXTRA += -alitdd='&\#x2d;&\#x2d;'
+ASCIIDOC_DEPS = asciidoctor-extensions.rb GIT-ASCIIDOCFLAGS
 DBLATEX_COMMON =
 XMLTO_EXTRA += --skip-validation
 XMLTO_EXTRA += -x manpage.xsl
@@ -113,32 +159,6 @@ SHELL_PATH ?= $(SHELL)
 SHELL_PATH_SQ = $(subst ','\'',$(SHELL_PATH))
 # ' <-- help syntax highlighters back into good state
 
-QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
-QUIET_SUBDIR1  =
-
-ifneq ($(findstring $(MAKEFLAGS),w),w)
-PRINT_DIR = --no-print-directory
-else # "make -w"
-NO_SUBDIR = :
-endif
-
-ifneq ($(findstring $(MAKEFLAGS),s),s)
-ifndef V
-	QUIET_ASCIIDOC  = @echo '   ' ASCIIDOC $@;
-	QUIET_XMLTO     = @echo '   ' XMLTO $@;
-	QUIET_DB2TEXI   = @echo '   ' DB2TEXI $@;
-	QUIET_MAKEINFO  = @echo '   ' MAKEINFO $@;
-	QUIET_DBLATEX   = @echo '   ' DBLATEX $@;
-	QUIET_XSLTPROC  = @echo '   ' XSLTPROC $@;
-	QUIET_GEN       = @echo '   ' GEN $@;
-	QUIET_LINT      = @echo '   ' LINT $@;
-	QUIET_STDERR    = 2> /dev/null
-	QUIET_SUBDIR0   = +@subdir=
-	QUIET_SUBDIR1   = ;$(NO_SUBDIR) echo '   ' SUBDIR $$subdir; \
-			  $(MAKE) $(PRINT_DIR) -C $$subdir
-	export V
-endif
-endif
 
 all: html man
 
@@ -175,26 +195,21 @@ $(DOC_HTML) $(DOC_MAN1): asciidoc.conf
 #
 # Determine "include::" file references in asciidoc files.
 #
-doc.dep : $(wildcard *.txt) build-docdep.perl
-	$(QUIET_GEN)$(RM) $@+ $@ && \
-	$(PERL_PATH) ./build-docdep.perl >$@+ $(QUIET_STDERR) && \
-	mv $@+ $@
+doc.dep : $(DOC_DEP_TXT) build-docdep.perl
+	$(QUIET_GEN)$(PERL_PATH) ./build-docdep.perl >$@ $(QUIET_STDERR)
 
+ifneq ($(MAKECMDGOALS),clean)
 -include doc.dep
+endif
 
-HTML-ASCIIDOCFLAGS: FORCE
-	@FLAGS='$(subst ','\'',$(TXT_TO_HTML))'; \
-		if test x"$$FLAGS" != x"`cat HTML-ASCIIDOCFLAGS 2>/dev/null`"; then \
-			echo >&2 "    * new HTML-ASCIIDOCFLAGS"; \
-			echo "$$FLAGS" >HTML-ASCIIDOCFLAGS; \
-		fi
+TRACK_ASCIIDOCFLAGS = $(subst ','\'',$(ASCIIDOC_COMMON):$(ASCIIDOC_HTML):$(ASCIIDOC_DOCBOOK))
 
-XML-ASCIIDOCFLAGS: FORCE
-	@FLAGS='$(subst ','\'',$(TXT_TO_XML))'; \
-		if test x"$$FLAGS" != x"`cat XML-ASCIIDOCFLAGS 2>/dev/null`"; then \
-			echo >&2 "    * new XML-ASCIIDOCFLAGS"; \
-			echo "$$FLAGS" >XML-ASCIIDOCFLAGS; \
-		fi
+GIT-ASCIIDOCFLAGS: FORCE
+	@FLAGS='$(TRACK_ASCIIDOCFLAGS)'; \
+	if test x"$$FLAGS" != x"`cat GIT-ASCIIDOCFLAGS 2>/dev/null`" ; then \
+	    echo >&2 "    * new asciidoc flags"; \
+	    echo "$$FLAGS" >GIT-ASCIIDOCFLAGS; \
+	fi
 
 clean:
 	$(RM) *.xml *.xml+ *.html *.html+ *.1 *.5 *.7
@@ -202,49 +217,40 @@ clean:
 	$(RM) *.pdf
 	$(RM) doc.dep
 	$(RM) manpage-base-url.xsl
-	$(RM) *-ASCIIDOCFLAGS
+	$(RM) GIT-ASCIIDOCFLAGS
 	$(RM) $(STG_COMMANDS_TXT) command-list.txt
+	$(RM) txt-stamp
 
-$(MAN_HTML): %.html : %.txt asciidoc.conf asciidoctor-extensions.rb HTML-ASCIIDOCFLAGS
-	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
-	$(TXT_TO_HTML) -d manpage -o $@+ $< && \
-	mv $@+ $@
+$(MAN_HTML): %.html : %.txt $(ASCIIDOC_DEPS)
+	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) -d manpage -o $@ $<
 
-$(OBSOLETE_HTML): %.html : %.txto asciidoc.conf asciidoctor-extensions.rb HTML-ASCIIDOCFLAGS
-	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
-	$(TXT_TO_HTML) -o $@+ $< && \
-	mv $@+ $@
+$(OBSOLETE_HTML): %.html : %.txto $(ASCIIDOC_DEPS)
+	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) -o $@ $<
 
 manpage-base-url.xsl: manpage-base-url.xsl.in
 	$(QUIET_GEN)sed "s|@@MAN_BASE_URL@@|$(MAN_BASE_URL)|" $< > $@
 
 %.1 %.5 %.7 : %.xml manpage-base-url.xsl $(wildcard manpage*.xsl)
-	$(QUIET_XMLTO)$(RM) $@ && \
-	$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
+	$(QUIET_XMLTO)$(XMLTO) -m $(MANPAGE_XSL) $(XMLTO_EXTRA) man $<
 
-%.xml : %.txt asciidoc.conf asciidoctor-extensions.rb XML-ASCIIDOCFLAGS
-	$(QUIET_ASCIIDOC)$(RM) $@+ $@ && \
-	$(TXT_TO_XML) -d manpage -o $@+ $< && \
-	mv $@+ $@
+%.xml : %.txt $(ASCIIDOC_DEPS)
+	$(QUIET_ASCIIDOC)$(TXT_TO_XML) -d manpage -o $@ $<
 
 stgitman.texi: $(MAN_XML) cat-texi.perl texi.xsl
-	$(QUIET_DB2TEXI)$(RM) $@+ $@ && \
+	$(QUIET_DB2TEXI) \
 	($(foreach xml,$(sort $(MAN_XML)),xsltproc -o $(xml)+ texi.xsl $(xml) && \
 		$(DOCBOOK2X_TEXI) --encoding=UTF-8 --to-stdout $(xml)+ && \
-		rm $(xml)+ &&) true) > $@++ && \
-	$(PERL_PATH) cat-texi.perl $@ <$@++ >$@+ && \
-	rm $@++ && \
-	mv $@+ $@
+		$(RM) $(xml)+ &&) true) > $@+ && \
+	$(PERL_PATH) cat-texi.perl $@ <$@+ >$@ && \
+	$(RM) $@+
 
 stgitman.info: stgitman.texi
-	$(QUIET_MAKEINFO)$(MAKEINFO) --no-split --no-validate $*.texi
+	$(QUIET_MAKEINFO)$(MAKEINFO) --no-split --no-validate $<
 
 $(patsubst %.txt,%.texi,$(MAN_TXT)): %.texi : %.xml
-	$(QUIET_DB2TEXI)$(RM) $@+ $@ && \
-	$(DOCBOOK2X_TEXI) --to-stdout $*.xml >$@+ && \
-	mv $@+ $@
+	$(QUIET_DB2TEXI)$(DOCBOOK2X_TEXI) --to-stdout $*.xml >$@
 
-$(patsubst %,%.html,$(ARTICLES)) : %.html : %.txt HTML-ASCIIDOCFLAGS
+$(patsubst %,%.html,$(ARTICLES)) : %.html : %.txt
 	$(QUIET_ASCIIDOC)$(TXT_TO_HTML) -a toc $*.txt
 
 print-man1:
@@ -252,10 +258,16 @@ print-man1:
 
 .PHONY: FORCE
 
-$(STG_COMMANDS_TXT): $(STGIT_ALL_PY)
-	$(QUIET_GEN)$(PYTHON) ../build.py --asciidoc $(basename $(subst stg-,,$@)) > $@
+$(STG_COMMANDS_TXT): txt-stamp
 
-command-list.txt: $(STGIT_ALL_PY)
-	$(QUIET_GEN)$(PYTHON) ../build.py --cmd-list > $@
+stg.xml: stg.txt command-list.txt
 
-build-txt: command-list.txt FORCE
+command-list.txt: $(STG_COMMANDS_SRC)
+	$(QUIET_GEN)cargo --quiet run completion list commands --style=asciidoc > $@
+
+txt-stamp: $(STG_COMMANDS_SRC)
+	$(QUIET)$(RM) txt-stamp-temp
+	$(QUIET)touch txt-stamp-temp
+	$(QUIET_GEN)cargo --quiet run completion man
+	$(QUIET)mv txt-stamp-temp $@
+

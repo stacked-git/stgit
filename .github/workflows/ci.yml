@@ -129,16 +129,18 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
       with:
-        fetch-depth: 0
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: '3.10'
+        toolchain: stable
+        profile: minimal
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
+    - name: Build
+      run: |
+        cargo build
     - name: Build Docs Asciidoc
       run: |
         make -j2 -C Documentation
