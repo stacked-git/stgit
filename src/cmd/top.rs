@@ -12,7 +12,14 @@ use crate::stack::{Error, Stack, StackStateAccess};
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("top", StGitCommand { make, run })
+    (
+        "top",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

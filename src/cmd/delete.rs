@@ -16,7 +16,14 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("delete", StGitCommand { make, run })
+    (
+        "delete",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

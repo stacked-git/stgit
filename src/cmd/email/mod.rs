@@ -8,7 +8,14 @@ mod send;
 use anyhow::Result;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("email", super::StGitCommand { make, run })
+    (
+        "email",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

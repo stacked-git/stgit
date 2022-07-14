@@ -15,7 +15,14 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("patches", super::StGitCommand { make, run })
+    (
+        "patches",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

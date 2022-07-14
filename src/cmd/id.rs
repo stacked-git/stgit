@@ -8,7 +8,14 @@ use clap::{Arg, ArgMatches};
 use crate::revspec::parse_stgit_revision;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("id", super::StGitCommand { make, run })
+    (
+        "id",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

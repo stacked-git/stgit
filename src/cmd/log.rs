@@ -8,7 +8,14 @@ use clap::{Arg, ArgMatches};
 use crate::{patchrange, stack::Stack, stupid::Stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("log", super::StGitCommand { make, run })
+    (
+        "log",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

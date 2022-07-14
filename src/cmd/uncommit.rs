@@ -15,7 +15,14 @@ use crate::{
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("uncommit", super::StGitCommand { make, run })
+    (
+        "uncommit",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

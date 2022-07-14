@@ -8,7 +8,14 @@ use clap::ArgMatches;
 use crate::stack::Stack;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("init", super::StGitCommand { make, run })
+    (
+        "init",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

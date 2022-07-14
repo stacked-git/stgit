@@ -15,7 +15,14 @@ use crate::stupid::Stupid;
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("fold", StGitCommand { make, run })
+    (
+        "fold",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

@@ -10,7 +10,14 @@ use crate::{color::get_color_stdout, patchname::PatchName, patchrange, stack::St
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("unhide", StGitCommand { make, run })
+    (
+        "unhide",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

@@ -12,7 +12,14 @@ use super::undo::find_undo_state;
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("redo", StGitCommand { make, run })
+    (
+        "redo",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

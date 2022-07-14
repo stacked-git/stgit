@@ -8,7 +8,14 @@ use clap::ArgMatches;
 use crate::stupid::StupidContext;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("version", super::StGitCommand { make, run })
+    (
+        "version",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::Administration,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

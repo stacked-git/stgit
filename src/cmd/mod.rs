@@ -54,6 +54,16 @@ pub(crate) mod version;
 /// Mapping of StGit subcommand name to [`StGitCommand`] struct.
 pub(crate) type Commands = BTreeMap<&'static str, StGitCommand>;
 
+/// Command categories for use in, e.g. man pages.
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum CommandCategory {
+    PatchInspection,
+    PatchManipulation,
+    StackInspection,
+    StackManipulation,
+    Administration,
+}
+
 /// Entry point for a StGit subcommand.
 pub(crate) struct StGitCommand {
     /// Function pointer for making the [`clap::Command`] for the StGit subcommand.
@@ -61,6 +71,9 @@ pub(crate) struct StGitCommand {
 
     /// Function pointer for running the StGit subcommand.
     pub run: fn(&clap::ArgMatches) -> anyhow::Result<()>,
+
+    /// Category the command belongs in.
+    pub category: CommandCategory,
 }
 
 /// Generate mapping of subcommand name to [`StGitCommand`].

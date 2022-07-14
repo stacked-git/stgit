@@ -16,7 +16,14 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("rename", StGitCommand { make, run })
+    (
+        "rename",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchManipulation,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

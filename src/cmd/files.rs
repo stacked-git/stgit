@@ -11,7 +11,14 @@ use clap::{Arg, ArgMatches};
 use crate::{revspec::parse_stgit_revision, stupid::Stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("files", super::StGitCommand { make, run })
+    (
+        "files",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

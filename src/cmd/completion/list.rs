@@ -80,6 +80,15 @@ fn list_aliases(
     show_expansion: bool,
 ) -> Result<()> {
     let (aliases, _) = crate::get_aliases(commands)?;
+
+    if matches!(style, OutputStyle::AsciiDoc) {
+        writeln!(
+            output,
+            "Aliases\n\
+             ~~~~~~~\n"
+        )?;
+    }
+
     for (name, alias) in aliases {
         let description = if show_expansion {
             let expansion = alias.command.as_str();
@@ -108,15 +117,84 @@ fn list_commands(
     output: &mut Box<dyn std::io::Write>,
     style: OutputStyle,
 ) -> Result<()> {
+    use crate::cmd::CommandCategory;
+
     let mut stg_command = crate::get_full_command(commands, crate::alias::Aliases::new(), None);
     stg_command.build();
+
+    if matches!(style, OutputStyle::AsciiDoc) {
+        let mut subcmd_cats: Vec<(CommandCategory, &clap::Command)> = Vec::new();
+        for cmd in stg_command.get_subcommands() {
+            let name = cmd.get_name();
+            if let Some(stgit_cmd) = commands.get(name) {
+                subcmd_cats.push((stgit_cmd.category, cmd));
+            } else if name == "help" {
+                subcmd_cats.push((super::super::CommandCategory::Administration, cmd));
+            } else {
+                panic!("unhandled command '{name}'");
+            }
+        }
+        subcmd_cats.sort_by_key(|(category, cmd)| (*category, cmd.get_name()));
+
+        let mut last_category = None;
+        for (category, cmd) in subcmd_cats {
+            let name = cmd.get_name();
+            let about = cmd.get_about().unwrap_or_default();
+            if Some(category) != last_category {
+                if last_category.is_some() {
+                    writeln!(output)?;
+                }
+                match category {
+                    CommandCategory::PatchInspection => {
+                        writeln!(
+                            output,
+                            "Patch Inspection\n\
+                             ~~~~~~~~~~~~~~~~\n"
+                        )?;
+                    }
+                    CommandCategory::PatchManipulation => {
+                        writeln!(
+                            output,
+                            "Patch Manipulation\n\
+                             ~~~~~~~~~~~~~~~~~~\n"
+                        )?;
+                    }
+                    CommandCategory::StackInspection => {
+                        writeln!(
+                            output,
+                            "Stack Inspection\n\
+                             ~~~~~~~~~~~~~~~~\n"
+                        )?;
+                    }
+                    CommandCategory::StackManipulation => {
+                        writeln!(
+                            output,
+                            "Stack Manipulation\n\
+                             ~~~~~~~~~~~~~~~~~~\n"
+                        )?;
+                    }
+                    CommandCategory::Administration => {
+                        writeln!(
+                            output,
+                            "Administration\n\
+                             ~~~~~~~~~~~~~~\n"
+                        )?;
+                    }
+                }
+                last_category = Some(category);
+            }
+            writeln!(output, "linkstg:{name}[]::\n    {about}")?;
+        }
+        writeln!(output)?;
+        return Ok(());
+    }
 
     for cmd in stg_command.get_subcommands() {
         let name = cmd.get_name();
         let about = cmd.get_about().unwrap_or_default();
         match style {
             OutputStyle::NameOnly => writeln!(output, "{name}"),
-            OutputStyle::AsciiDoc => writeln!(output, "linkstg:{name}[]::\n    {about}"),
+            OutputStyle::AsciiDoc => panic!(),
             OutputStyle::Fish => writeln!(output, "{name}\t{about}"),
             OutputStyle::Zsh => writeln!(output, "{name}:{about}"),
         }?;

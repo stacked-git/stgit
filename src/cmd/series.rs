@@ -20,7 +20,14 @@ use super::StGitCommand;
 const UNPRINTABLE: &str = "???";
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("series", StGitCommand { make, run })
+    (
+        "series",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::StackInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

@@ -13,7 +13,14 @@ use crate::{
 use super::StGitCommand;
 
 pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    ("diff", StGitCommand { make, run })
+    (
+        "diff",
+        StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::PatchInspection,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {

@@ -12,7 +12,14 @@ mod zsh;
 use anyhow::Result;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    ("completion", super::StGitCommand { make, run })
+    (
+        "completion",
+        super::StGitCommand {
+            make,
+            run,
+            category: super::CommandCategory::Administration,
+        },
+    )
 }
 
 fn make() -> clap::Command<'static> {
