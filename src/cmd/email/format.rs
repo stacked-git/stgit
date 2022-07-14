@@ -358,7 +358,7 @@ lazy_static! {
         Arg::new("base")
             .long("base")
             .help("Add prerequisite tree info to the patch series")
-            .long_help("See the BASE TREE INFORMATION section of `git-format-patch(1)`.")
+            .long_help("See the BASE TREE INFORMATION section of git-format-patch(1).")
             .takes_value(true)
             .value_name("committish")
             .forbid_empty_values(true),
@@ -385,7 +385,7 @@ lazy_static! {
             .long("range-diff")
             .help("Show changes against <refspec> in cover letter")
             .long_help(
-                "As a reviewer aid, insert a range-diff (see `git-range-diff(1)`) into \
+                "As a reviewer aid, insert a range-diff (see git-range-diff(1)) into \
                  the cover letter, or as commentary of the lone patch of a \
                  single-patch series, showing the differences between the previous \
                  version of the patch series and the series currently being formatted. \
@@ -411,7 +411,7 @@ lazy_static! {
                 "Used with `--range-diff`, tweak the heuristic which matches up \
                  commits between the previous and current series of patches by \
                  adjusting the creation/deletion cost fudge factor. See \
-                 `git-range-diff(1)`) for details.",
+                 git-range-diff(1)) for details.",
             )
             .takes_value(true)
             .value_name("N")
