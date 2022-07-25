@@ -153,7 +153,12 @@ fn add_usage(usage: &mut String, command: &mut clap::Command, name_stack: &[Stri
 
         for usage_word in usage_line_words {
             usage.push(' ');
-            usage.push_str(usage_word);
+            if let Some(rest) = usage_word.strip_prefix("<-") {
+                usage.push_str("\\<-");
+                usage.push_str(rest);
+            } else {
+                usage.push_str(usage_word);
+            }
         }
         usage.push('\n');
     }

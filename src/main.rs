@@ -58,6 +58,10 @@ const CONFLICT_ERROR: i32 = 3;
 fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
     let command = clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
+        .override_usage(
+            "stg [OPTIONS] <command> [...]\n    \
+             stg [OPTIONS] <--version|-h|--help>",
+        )
         .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .help_expected(true)
         .max_term_width(88)

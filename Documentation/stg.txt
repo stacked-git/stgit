@@ -9,9 +9,8 @@ stg - Manage stacks of patches using the Git content tracker
 SYNOPSIS
 --------
 [verse]
-'stg' [--version | --help]
-'stg' [--help <command> | <command> --help]
-'stg' <command> [COMMAND OPTIONS] [ARGS]
+'stg' [OPTIONS] <command> [...]
+'stg' [OPTIONS] \<--version|-h|--help>
 
 DESCRIPTION
 -----------
