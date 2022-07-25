@@ -12,19 +12,11 @@ test_expect_success \
     stg init
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Too many arguments' '
-    command_error stg new foo extra_arg 2>err &&
-    grep -e "incorrect number of arguments" err
-'
-else
 test_expect_success \
     'Too many arguments' '
     general_error stg new foo extra_arg 2>err &&
     grep -e "error: Found argument .extra_arg. which wasn.t expected" err
 '
-fi
 
 test_expect_success \
     'Create a named patch' '
@@ -32,48 +24,24 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 1 ]
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Invalid patch name: space' '
-    command_error stg new "bad name" 2>err &&
-    grep -e "Invalid patch name: \"bad name\"" err
-'
-else
 test_expect_success \
     'Invalid patch name: space' '
     command_error stg new "bad name" 2>err &&
 cat err &&
     grep -e "Invalid patch name \`bad name\`" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Invalid patch name: carat' '
-    command_error stg new "bad^name" 2>err &&
-    grep -e "Invalid patch name: \"bad\^name\"" err
-'
-else
 test_expect_success \
     'Invalid patch name: carat' '
     command_error stg new "bad^name" 2>err &&
     grep -e "Invalid patch name \`bad\^name\`" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Invalid patch name: empty' '
-    command_error stg new "" 2>err &&
-    grep -e "Invalid patch name: \"\"" err
-'
-else
 test_expect_success \
     'Invalid patch name: empty' '
     command_error stg new "" 2>err &&
     grep -e "Invalid patch name \`\`" err
 '
-fi
 
 test_expect_success \
     'Invalid patch name: trailing periods in shortened name' '
@@ -90,54 +58,12 @@ test_expect_success \
     [ $(stg series --applied -c) -eq 2 ]
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Tricky generated patch name a:.b.:' '
-    stg new -m "a:.b.:" &&
-    test "$(echo $(stg top))" = "a-b" &&
-    stg delete --top
-'
-
-test_expect_success \
-    'Tricky generated patch name .--.' '
-    stg new -m ".--." &&
-    test "$(echo $(stg top))" = "patch" &&
-    stg delete --top
-'
-
-test_expect_success \
-    'Attempt to create patch with duplicate name' '
-    command_error stg new foo -m "duplicate foo" 2>err &&
-    grep -e "foo: patch already exists" err
-'
-else
 test_expect_success \
     'Attempt to create patch with duplicate name' '
     command_error stg new foo -m "duplicate foo" 2>err &&
     grep -e "Patch \`foo\` already exists" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Attempt new with conflicts' '
-    stg new -m p0 &&
-    echo "something" > file.txt &&
-    stg add file.txt &&
-    stg refresh &&
-    stg new -m p1 &&
-    echo "something else" > file.txt &&
-    stg refresh &&
-    stg pop &&
-    stg new -m p2 &&
-    echo "something different" > file.txt &&
-    stg refresh &&
-    conflict stg push p1 &&
-    command_error stg new -m p3 2>err &&
-    grep -e "Cannot create a new patch -- resolve conflicts first" err &&
-    stg reset --hard
-'
-else
 test_expect_success \
     'Attempt new with conflicts' '
     stg new -m p0 &&
@@ -156,7 +82,6 @@ test_expect_success \
     grep -e "Resolve outstanding conflicts first" err &&
     stg reset --hard
 '
-fi
 
 test_expect_success \
     'Save template' '
@@ -177,16 +102,6 @@ test_expect_success 'Setup fake editor' '
 	EOF
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'New without verbose flag' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    echo "something else" > file.txt &&
-    stg new no-verbose-patch &&
-    !(grep "something else" raw_commit_message.txt)
-'
-else
 test_expect_success \
     'New without diff flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -195,18 +110,7 @@ test_expect_success \
     stg new no-verbose-patch &&
     !(grep "something else" raw_commit_message.txt)
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'New with verbose flag' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    stg new --verbose verbose-flag-patch &&
-    stg show | grep "Patch Description Template" &&
-    grep "something else" raw_commit_message.txt
-'
-else
 test_expect_success \
     'New with diff flag' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -215,18 +119,7 @@ test_expect_success \
     stg show | grep "Patch Description Template" &&
     grep "something else" raw_commit_message.txt
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'New with verbose config option' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    test_config stgit.new.verbose "1" &&
-    stg new verbose-config-patch &&
-    grep "something else" raw_commit_message.txt
-'
-else
 test_expect_success \
     'New with verbose config option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -235,18 +128,7 @@ test_expect_success \
     stg new verbose-config-patch &&
     grep "something else" raw_commit_message.txt
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'New with verbose config boolean option' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    test_config stgit.new.verbose "true" &&
-    stg new verbose-config-bool-patch &&
-    grep "something else" raw_commit_message.txt
-'
-else
 test_expect_success \
     'New with verbose config boolean option' '
     test_set_editor "$(pwd)/fake-editor" &&
@@ -255,7 +137,6 @@ test_expect_success \
     stg new verbose-config-bool-patch &&
     grep "something else" raw_commit_message.txt
 '
-fi
 
 test_expect_success \
     'Use stgit.autosign' '
@@ -264,16 +145,9 @@ test_expect_success \
     git cat-file -p HEAD | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_failure \
-    'Patch with slash in name' '
-    stg new bar/foo -m "patch bar/foo"
-'
-else
 test_expect_success \
     'Patch with slash in name' '
     command_error stg new bar/foo -m "patch bar/foo"
 '
-fi
 
 test_done

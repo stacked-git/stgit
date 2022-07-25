@@ -19,17 +19,10 @@ test_expect_success 'Init repo' '
     done
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Too many arguments' '
-    command_error stg id patch-1 patch-2 2>err &&
-    grep -e "incorrect number of arguments" err
-    '
-else
 test_expect_success 'Too many arguments' '
     general_error stg id patch-1 patch-2 2>err &&
     grep -e "Found argument .patch-2. which wasn.t expected" err
     '
-fi
 
 test_expect_success 'Provide patch argument' '
     test "$(echo $(stg id))" = "$(echo $(stg id $(stg top)))"

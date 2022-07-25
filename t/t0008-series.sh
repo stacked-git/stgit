@@ -4,17 +4,10 @@ test_description='Test stg series'
 
 . ./test-lib.sh
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Test uninitialized branch' '
-    command_error stg series 2>err &&
-    grep -e "branch not initialized" err
-'
-else
 test_expect_success 'Test uninitialized branch' '
     command_error stg series 2>err &&
     grep -e "Branch .master. not initialized" err
 '
-fi
 
 test_expect_success 'Initialize series' '
     stg init &&
@@ -29,17 +22,6 @@ test_expect_success 'Test empty series' '
     test_line_count = 0 error.txt
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Test invalid --all and --short' '
-    command_error stg series --all --short
-'
-
-test_expect_success 'Test invalid --all and --applied/--unapplied' '
-    command_error stg series --all --applied &&
-    command_error stg series --all --unapplied
-'
-
-else
 test_expect_success 'Test invalid --all and --short' '
     general_error stg series --all --short
 '
@@ -48,7 +30,6 @@ test_expect_success 'Test invalid --all and --applied/--unapplied' '
     general_error stg series --all --applied &&
     general_error stg series --all --unapplied
 '
-fi
 
 test_expect_success 'Test empty series count' '
     test "$(stg series --count)" = "0"

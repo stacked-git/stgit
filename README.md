@@ -1,8 +1,5 @@
-**This is the Rust implementation of StGit. The code for the original
-Python implementation remains in place for the time being and the test
-suite will run against either the Rust or Python implementation.**
+**This is the Rust implementation of StGit.**
 
-**Set `STG_TEST_PYTHON=1` when running tests to use the Python implementation.**
 **Set `STG_TEST_PROFILE=release` to test with a release build instead of the
 default dev build.**
 

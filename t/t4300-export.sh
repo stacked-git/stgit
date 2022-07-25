@@ -51,16 +51,6 @@ test_expect_success 'Export with none applied' '
     stg push -a
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Export with dirty working tree' '
-    echo "another line" >> foo.txt &&
-    stg export -d export4 patch-1 2>err &&
-    grep -e "Warning: Local changes in the tree" err &&
-    test_path_is_file export4/series &&
-    test_path_is_file export4/patch-1 &&
-    git checkout foo.txt
-    '
-else
 test_expect_success 'Export with dirty working tree' '
     echo "another line" >> foo.txt &&
     stg export -d export4 patch-1 2>err &&
@@ -69,7 +59,6 @@ test_expect_success 'Export with dirty working tree' '
     test_path_is_file export4/patch-1 &&
     git checkout foo.txt
     '
-fi
 
 test_expect_success 'Use custom template' '
     echo "%(authemail)s -- %(shortdescr)s" > template &&

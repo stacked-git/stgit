@@ -3,12 +3,10 @@
 # Copyright (c) 2005 Junio C Hamano
 #
 
-PYTHON ?= python3
 # STG_TEST_OPTS = --verbose-log
 # STG_PROVE_OPTS = --jobs=9
 STG_PROVE_OPTS ?=
 STG_TEST_PROFILE ?=
-STG_TEST_PYTHON ?=
 SHELL_PATH ?= $(SHELL)
 TEST_SHELL_PATH ?= $(SHELL_PATH)
 PERL_PATH ?= /usr/bin/perl
@@ -19,7 +17,6 @@ DEFAULT_TEST_TARGET ?= test
 TEST_LINT ?= test-lint
 
 export STG_TEST_PROFILE
-export STG_TEST_PYTHON
 
 ifdef TEST_OUTPUT_DIRECTORY
 TEST_RESULTS_DIRECTORY = $(TEST_OUTPUT_DIRECTORY)/test-results

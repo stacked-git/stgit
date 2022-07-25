@@ -24,17 +24,6 @@ test_expect_success \
     )
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Test that pull without upstream setup produces friendly error' \
-    '
-    (cd clone &&
-      stg branch --create without-upstream &&
-      command_error stg pull 2>out.txt &&
-      grep "There is no tracking information for the current branch" out.txt
-    )
-    '
-else
 test_expect_success \
     'Test that pull without upstream setup produces friendly error' \
     '
@@ -45,6 +34,5 @@ test_expect_success \
       grep "No tracking information for the current branch" out.txt
     )
     '
-fi
 
 test_done

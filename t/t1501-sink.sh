@@ -28,34 +28,20 @@ test_expect_success 'Initialize StGit stack' '
     stg pop -a
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'sink default without applied patches' '
-    command_error stg sink 2>err &&
-    grep -e "No patches to sink" err
-'
-else
 test_expect_success 'sink default without applied patches' '
     command_error stg sink 2>&1 |
     grep -e "No patches applied"
 '
-fi
 
 test_expect_success 'sink and reorder specified without applied patches' '
     stg sink p2 p1 &&
     test "$(echo $(stg series --applied --noprefix))" = "p2 p1"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'attempt sink below unapplied' '
-    command_error stg sink --to=p4 2>err &&
-    grep -e "Cannot sink below p4 since it is not applied" err
-'
-else
 test_expect_success 'attempt sink below unapplied' '
     command_error stg sink --to=p4 2>&1 |
     grep -e "Cannot sink below \`p4\` since it is not applied"
 '
-fi
 
 test_expect_success 'sink patches to the bottom of the stack' '
     stg sink p4 p3 p2 &&
@@ -90,18 +76,10 @@ test_expect_success 'sink --nopush with multiple patches' '
     stg goto p4
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'attempt sink with same to and target' '
-    command_error stg sink --to=p3 p3 2>err &&
-    grep -e "Cannot have a sinked patch as target" err &&
-    rm err
-'
-else
 test_expect_success 'attempt sink with same to and target' '
     command_error stg sink --to=p3 p3 2>&1 |
     grep -e "Target patch \`p3\` may not also be a patch to sink"
 '
-fi
 
 test_expect_success 'sink with conflict' '
     conflict stg sink --to=p2 p22 &&

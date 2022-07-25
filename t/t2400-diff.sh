@@ -86,41 +86,20 @@ test_expect_success 'Diff revs parent-child' '
     test_cmp foo-bar-stat.diff bar-stat.diff
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Diff invalid rev patch name' '
-    command_error stg diff -r foo..bad-name 2>err &&
-    grep -e "bad-name: Unknown patch or revision name" err
-'
-else
 test_expect_success 'Diff invalid rev patch name' '
     command_error stg diff -r foo..bad-name 2>err &&
     grep -e "Revision not found \`bad-name\`" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Diff invalid rev too many ..' '
-    command_error stg diff -r foo..bar..baz 2>err &&
-    grep -e "incorrect parameters to -r" err
-'
-else
 test_expect_success 'Diff invalid rev too many ..' '
     command_error stg diff -r foo..bar..baz 2>err &&
     grep -e "Invalid StGit revision \`bar\.\.baz\`" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Diff invalid rev no rev1' '
-    command_error stg diff -r ..baz 2>err &&
-    grep -e "incorrect parameters to -r" err
-'
-else
 test_expect_success 'Diff invalid rev no rev1' '
     command_error stg diff -r ..baz 2>err &&
     grep -e "Invalid StGit revision \`\.\.baz\`" err
 '
-fi
 
 cat > expected-bar-head-stat.diff <<EOF
  bar.txt           | 2 ++

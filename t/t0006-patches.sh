@@ -22,17 +22,10 @@ test_expect_success 'Create some patches' '
     echo "five"  >> dir0/dir1/odd.txt && stg new -m "p4 message" p4 && stg refresh
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'No modifications and no file args' '
-    command_error stg patches 2>err &&
-    grep -e "No files specified or no local changes" err
-'
-else
 test_expect_success 'No modifications and no file args' '
     command_error stg patches 2>err &&
     grep -e "No local changes and no paths specified" err
 '
-fi
 
 cat > expected-evens.log <<EOF
 p0
@@ -59,26 +52,6 @@ test_expect_success 'No patches applied' '
     grep -e "No patches applied" err
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Patches relative to dir' '
-    stg push -a &&
-    (
-        cd dir0 &&
-        stg patches dir1/odd.txt > relative-odd.log &&
-        test_cmp relative-odd.log ../expected-odds.log &&
-        echo "seven" > dir1/odd.txt &&
-        stg patches > relative-odd-mod.log &&
-        test_cmp relative-odd-mod.log ../expected-odds.log &&
-        stg patches ../even.txt > relative-even.log &&
-        test_cmp relative-even.log ../expected-evens.log &&
-        git checkout dir1/odd.txt &&
-        echo "six" >> ../even.txt &&
-        stg patches > relative-even-mod.log &&
-        test_cmp relative-even-mod.log ../expected-evens.log &&
-        git checkout ../even.txt
-    )
-'
-else
 test_expect_success 'Patches relative to dir' '
     stg push -a &&
     (
@@ -96,7 +69,6 @@ test_expect_success 'Patches relative to dir' '
         git checkout ../even.txt
     )
 '
-fi
 
 test_expect_success 'With diff output' '
     stg patches --diff even.txt > even-diff.log &&

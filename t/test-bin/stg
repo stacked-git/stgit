@@ -1,28 +1,9 @@
 #!/bin/sh
 
-if test -z "$STG_TEST_PYTHON"
+if [ "${STG_TEST_PROFILE:=dev}" = "dev" ]
 then
-    if [ "${STG_TEST_PROFILE:=dev}" = "dev" ]
-    then
-        profile_dir="debug"
-    else
-        profile_dir="$STG_TEST_PROFILE"
-    fi
-    exec "$STG_ROOT/target/$profile_dir/stg" "$@"
-elif test -n "$COVERAGE_RCFILE"
-then
-    if test -z "$COVERAGE_FILE"
-    then
-        echo "COVERAGE_FILE and COVERAGE_RCFILE must both be defined"
-        exit 1
-    fi
-    if [ "$#" -lt 2 ] || echo "$1" | grep -q -e '^-'
-    then
-        context="stg"
-    else
-        context="stg-$1"
-    fi
-    exec "${PYTHON:-python3}" -m coverage run --context "$context" -m stgit "$@"
+    profile_dir="debug"
 else
-    exec "${PYTHON:-python3}" -m stgit "$@"
+    profile_dir="$STG_TEST_PROFILE"
 fi
+exec "$STG_ROOT/target/$profile_dir/stg" "$@"

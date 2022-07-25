@@ -46,15 +46,9 @@ test_expect_success 'Refresh patch' '
     test_cmp expected-patches.txt patches.txt
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Spill the topmost patch' '
-    stg refresh --spill
-'
-else
 test_expect_success 'Spill the topmost patch' '
     stg spill
 '
-fi
 
 test_expect_success 'Patch description did not change' '
     test "$(echo $(stg top))" = "p0" &&
@@ -81,19 +75,10 @@ test_expect_success 'Refresh after spill' '
     stg refresh
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Spill with annotation' '
-    stg refresh --spill --annotate banana &&
-    stg log -f -n1 | grep -e "banana"
-'
-else
 test_expect_success 'Spill with annotation' '
     stg spill --annotate banana &&
     stg log -f -n1 | grep -e "banana"
 '
-fi
-
-if test -z "$STG_TEST_PYTHON"; then
 
 cat > expected-status.txt <<EOF
 ?? patch0.txt
@@ -255,7 +240,5 @@ test_expect_success 'Spill with modified spillable file' '
     grep "modification" dir0/dir1/e.txt &&
     stg undo --hard
 '
-
-fi
 
 test_done

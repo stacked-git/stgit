@@ -34,17 +34,10 @@ adate () { git log -n 1 --pretty=format:%ai $1 ; }
 write_script diffedit <<EOF
 echo "" > "\$1"
 EOF
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Empty editor aborts edit' '
-    EDITOR=./diffedit command_error stg edit 2>err &&
-    grep -e "Aborting edit due to empty patch description" err
-'
-else
 test_expect_success 'Empty editor aborts edit' '
     EDITOR=./diffedit command_error stg edit 2>err &&
     grep -e "Aborting due to empty patch description" err
 '
-fi
 rm -f diffedit
 
 write_script diffedit <<EOF
@@ -99,16 +92,6 @@ test_expect_success 'Set patch message with --file -' '
     test "$(msg HEAD)" = "Pride and Prejudice"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-( printf 'Patch: p2\nFrom: A Ú Thor <author@example.com>\nDate: <omitted>'
-  printf '\n\nPride and Prejudice\n'
-  printf '\n# Everything here is editable! You can modify the patch name, author,'
-  printf '\n# date, commit message, and the diff (if --diff was given).'
-  printf "\n# Lines starting with '#' will be ignored, and an empty message"
-  printf '\n# aborts the edit.\n'
-) > expected-tmpl
-omit_date () { sed "s/^Date:.*$/Date: <omitted>/" ; }
-else
 ( printf 'Patch:  p2\n'
   printf 'Author: A Ú Thor <author@example.com>\n'
   printf 'Date:   <omitted>\n'
@@ -120,7 +103,6 @@ else
   printf "# The patch name and author information may also be modified.\n"
 ) > expected-tmpl
 omit_date () { sed "s/^Date:.*$/Date:   <omitted>/" ; }
-fi
 
 test_expect_success 'Save template to file' '
     stg edit --save-template saved-tmpl p2 &&
@@ -299,17 +281,10 @@ test_expect_success 'Set author' '
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Fail to set broken author' '
-    command_error stg edit p2 --author "No Mail Address" &&
-    test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
-'
-else
 test_expect_success 'Fail to set broken author' '
     general_error stg edit p2 --author "No Mail Address" &&
     test "$(auth HEAD)" = "Jane Austin, jaustin@example.com"
 '
-fi
 
 test_expect_success 'Set author name' '
     stg edit p2 --authname "Jane Austen" &&
@@ -331,17 +306,10 @@ test_expect_success 'Set author date (ISO 8601 format)' '
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Fail to set invalid author date' '
-    command_error stg edit p2 --authdate "28 Jan 1813" &&
-    test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
-'
-else
 test_expect_success 'Fail to set invalid author date' '
     general_error stg edit p2 --authdate "28 Jan 1813" &&
     test "$(adate HEAD)" = "2013-01-28 22:30:00 -0300"
 '
-fi
 
 test_expect_success 'Set author date to "now"' '
     before=$(date "+%F %T %z") &&

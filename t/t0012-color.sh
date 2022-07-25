@@ -5,8 +5,6 @@ test_description='Test stg.main'
 . ./test-lib.sh
 . "$TEST_DIRECTORY"/lib-terminal.sh
 
-if test -z "$STG_TEST_PYTHON"; then
-
 test_expect_success TTY 'Color help' '
     test_terminal stg -h | test_decode_color >output &&
     head -n1 output | grep "<GREEN>stg<RESET>"
@@ -121,7 +119,5 @@ test_expect_success TTY 'Subcommand failure without color' '
    ) &&
    head -n1 output | grep -v "<RED>"
 '
-
-fi
 
 test_done

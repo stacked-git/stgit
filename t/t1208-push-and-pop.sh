@@ -3,16 +3,6 @@
 test_description='Test the push and pop commands'
 . ./test-lib.sh
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Test behavior on uninitialized repo' '
-    command_error stg prev 2>err && grep -e "branch not initialized" err &&
-    command_error stg next 2>err && grep -e "branch not initialized" err &&
-    command_error stg top 2>err && grep -e "branch not initialized" err &&
-    command_error stg pop 2>err && grep -e "branch not initialized" err &&
-    command_error stg push 2>err && grep -e "branch not initialized" err
-'
-else
 test_expect_success \
     'Test behavior on uninitialized repo' '
     command_error stg prev 2>err && grep -e "error: Branch \`master\` not initialized" err &&
@@ -21,22 +11,11 @@ test_expect_success \
     command_error stg pop  2>err && grep -e "error: Branch \`master\` not initialized" err &&
     command_error stg push 2>err && grep -e "error: Branch \`master\` not initialized" err
 '
-fi
 
 test_expect_success \
     'Initialize the StGit repository' \
     'stg init'
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Test behavior on empty repo' '
-    command_error stg prev 2>err && grep -e "Not enough applied patches" err &&
-    command_error stg next 2>err && grep -e "No unapplied patches" err &&
-    command_error stg top  2>err && grep -e "No patches applied" err &&
-    command_error stg pop  2>err && grep -e "No patches applied" err &&
-    command_error stg push 2>err && grep -e "No patches to push" err
-'
-else
 test_expect_success \
     'Test behavior on empty repo' '
     command_error stg prev 2>err && grep -e "Not enough patches applied" err &&
@@ -45,7 +24,6 @@ test_expect_success \
     command_error stg pop  2>err && grep -e "No patches applied" err &&
     command_error stg push 2>err && grep -e "No unapplied patches" err
 '
-fi
 
 test_expect_success \
     'Create ten patches' '
@@ -77,21 +55,12 @@ test_expect_success \
     [ "$(echo $(stg prev))" = "p5" ]
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Check prev, next, and top with invalid arguments' '
-    command_error stg prev bogus_arg 2>err && grep -e "incorrect number of arguments" err &&
-    command_error stg next bogus_arg 2>err && grep -e "incorrect number of arguments" err &&
-    command_error stg top  bogus_arg 2>err && grep -e "incorrect number of arguments" err
-'
-else
 test_expect_success \
     'Check prev, next, and top with invalid arguments' '
     general_error stg prev bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
     general_error stg next bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
     general_error stg top  bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err
 '
-fi
 
 test_expect_success \
     'Pop the remaining patches' '
@@ -109,16 +78,6 @@ test_expect_success \
     command_error stg top
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Push them back' '
-    stg push -a &&
-    [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p7 p8 p9" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
-    command_error stg push 2>err &&
-    grep -e "No patches to push" err
-'
-else
 test_expect_success \
     'Push them back' '
     stg push -a &&
@@ -127,7 +86,6 @@ test_expect_success \
     command_error stg push 2>err &&
     grep -e "No unapplied patches" err
 '
-fi
 
 test_expect_success \
     'Pop all but seven patches' '
@@ -182,13 +140,6 @@ test_expect_success \
     [ "$(git notes show)" = "note7" ]
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Attempt to push already applied patches' '
-    command_error stg push p0..p2 2>err && grep -e "Patches already applied" err &&
-    command_error stg push p99999 2>err && grep -e "Unknown patch name: p99999" err
-'
-else
 test_expect_success \
     'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err &&
@@ -196,6 +147,5 @@ test_expect_success \
     command_error stg push p99999 2>err &&
     grep -e "Patch \`p99999\` does not exist" err
 '
-fi
 
 test_done

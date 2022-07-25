@@ -56,42 +56,24 @@ test_expect_success 'Setup fake editor' '
 	printf "keep\n" >"$1"
 	EOF
 '
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Bad todo line throws error' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>err &&
-    grep -e "Bad todo line" err
-'
-else
 test_expect_success 'Bad todo line throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
     grep -e "Bad instruction line: \`keep\`" err
 '
-fi
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
 	printf "keep invalid_patch_name\n" >"$1"
 	EOF
 '
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Bad patch name throws error' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    command_error stg rebase --interactive 2>err &&
-    grep -e "Bad patch name" err
-'
-else
 test_expect_success 'Bad patch name throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
     grep -e "Unknown patch name \`invalid_patch_name\`" err
 '
-fi
 
 test_expect_success 'Setup fake editor' '
 	write_script fake-editor <<-\EOF
@@ -266,22 +248,12 @@ test_expect_success 'Setup fake editor' '
 	printf "fix p0\nfix p1\n" >"$1"
 	EOF
 '
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Fix on first patch does not crash' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    stg rebase --interactive &&
-    git diff-index --quiet HEAD &&
-    test "$(stg series -c)" = "1"
-'
-else
 test_expect_success 'Fix on first patch does not crash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
     grep -e "Cannot fixup \`p0\`: no preceding patch" err
 '
-fi
 
 test_expect_success 'Setup stgit stack' '
     stg delete $(stg series --all --noprefix --no-description) &&
@@ -336,15 +308,6 @@ test_expect_success 'Setup fake editor' '
 	printf "keep p0\ndelete p1\nsquash p2\ndelete p3" >"$1"
 	eof
 '
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Delete after squash after delete works correctly' '
-    test_set_editor "$(pwd)/fake-editor" &&
-    test_when_finished test_set_editor false &&
-    stg rebase --interactive &&
-    test "$(echo $(stg series --noprefix))" = "keep-p0 p4" &&
-    git diff-index --quiet HEAD
-'
-else
 test_expect_success 'Delete after squash after delete works correctly' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
@@ -352,7 +315,6 @@ test_expect_success 'Delete after squash after delete works correctly' '
     test "$(echo $(stg series --noprefix))" = "p0 p4" &&
     git diff-index --quiet HEAD
 '
-fi
 
 test_expect_success 'Setup stgit stack' '
     stg delete $(stg series --all --noprefix --no-description) &&

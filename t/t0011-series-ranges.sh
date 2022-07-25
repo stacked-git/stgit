@@ -4,7 +4,6 @@ test_description='Test stg series patch ranges'
 
 . ./test-lib.sh
 
-if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Setup new patches for range tests' '
     test_commit_bulk --message="p%s" 6 &&
     stg init &&
@@ -87,6 +86,5 @@ test_expect_success 'Disjoint ranges' '
     command_error stg series p1..p2 p5.. 2>err &&
     grep -e "error: \`p5\.\.\` not contiguous with preceding range \`p1\.\.p2\`" err
 '
-fi
 
 test_done

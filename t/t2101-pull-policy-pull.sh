@@ -46,17 +46,6 @@ test_expect_success \
      test_path_is_file clone/file
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Test too many arguments' \
-    '
-    (
-        cd clone &&
-        command_error stg pull origin master 2>err &&
-        grep "incorrect number of arguments" err
-    )
-    '
-else
 test_expect_success \
     'Test too many arguments' \
     '
@@ -66,7 +55,6 @@ test_expect_success \
         grep "Found argument .master. which wasn.t expected" err
     )
     '
-fi
 
 test_expect_success \
     'Test invalid pull policy' \

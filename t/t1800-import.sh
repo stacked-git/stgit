@@ -131,17 +131,6 @@ test_expect_success \
     '
 
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Apply a bzip2 patch created with "git diff"' \
-    '
-    bzip2 -c "$TEST_DIRECTORY"/t1800/git-diff > bzip2-git-diff &&
-    stg import bzip2-git-diff &&
-    [ $(git cat-file -p $(stg id) \
-        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    stg delete ..
-    '
-fi
 test_expect_success \
     'Apply a bzip2 patch with a .bz2 suffix' \
     '
@@ -152,17 +141,6 @@ test_expect_success \
     stg delete ..
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Apply a gzip patch created with GNU diff' \
-    '
-    gzip -c "$TEST_DIRECTORY"/t1800/gnu-diff > gzip-gnu-diff &&
-    stg import gzip-gnu-diff &&
-    [ $(git cat-file -p $(stg id) \
-        | grep -c "tree e96b1fba2160890ff600b675d7140d46b022b155") = 1 ] &&
-    stg delete ..
-    '
-fi
 test_expect_success \
     'Apply a gzip patch with a .gz suffix' \
     '
@@ -217,15 +195,6 @@ test_expect_success \
     stg delete --top
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Import with bad author_date option' \
-    '
-    stg delete --top &&
-    command_error stg import --authdate "a long time ago" some.patch 2>err &&
-    grep -e "\"a long time ago\" is not a valid date" err
-    '
-else
 test_expect_success \
     'Import with bad author_date option' \
     '
@@ -233,7 +202,6 @@ test_expect_success \
     general_error stg import --authdate "a long time ago" some.patch 2>err &&
     grep -e "Invalid date \`a long time ago\`" err
     '
-fi
 
 test_expect_success \
     'Import from stdin' \
@@ -278,19 +246,6 @@ test_expect_success \
     stg delete --top
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Import empty patch with sign-off' \
-    '
-    echo "" |
-    stg import -n empty --sign 2>err &&
-    grep -e "No diff found, creating empty patch" err &&
-    stg show | grep -e "Signed-off-by: C Ó Mitter <committer@example.com>" &&
-    stg top | grep -e "empty" &&
-    stg clean &&
-    stg top | grep -v -e "empty"
-    '
-else
 test_expect_success \
     'Import empty patch with sign-off' \
     '
@@ -301,7 +256,6 @@ test_expect_success \
     stg clean &&
     stg top | grep -v -e "empty"
     '
-fi
 
 test_expect_success \
     'Import series from stdin' \
@@ -312,36 +266,18 @@ test_expect_success \
     stg delete --top
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Attempt url' \
-    '
-    command_error stg import --url 2>err &&
-    grep -e "URL argument required" err
-    '
-else
 test_expect_success \
     'Attempt url' \
     '
     general_error stg import --url 2>err &&
     grep -e "required arguments were not provided" err
     '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Too many arguments' \
-    '
-    command_error stg import some.patch some.patch 2>err &&
-    grep -e "incorrect number of arguments" err
-    '
-else
 test_expect_success \
     'Too many arguments' \
     '
     general_error stg import some.patch some.patch 2>err &&
     grep -e "Found argument .some\.patch. which wasn.t expected" err
     '
-fi
 
 test_done

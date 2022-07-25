@@ -11,17 +11,10 @@ test_expect_success 'Initialize the StGit repository' '
     stg pop
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt to commit an empty patch' '
-    command_error stg commit p2 2>err &&
-    grep "Empty patch" err
-'
-else
 test_expect_success 'Attempt to commit an empty patch' '
     command_error stg commit p2 2>err &&
     grep "Attempt to commit empty patch \`p2\`" err
 '
-fi
 
 test_expect_success 'Commit middle patch' '
     stg commit --allow-empty p2 &&

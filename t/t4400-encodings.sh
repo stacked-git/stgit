@@ -56,22 +56,4 @@ test_expect_success 'Test stg commit' '
     stg commit UTF-8
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-desc='Test mail export and import'
-body='
-    stg mail --all --mbox > export.mbox &&
-    stg delete .. &&
-    stg import --mbox export.mbox &&
-    for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
-      iconv -f $e -t UTF-8 $e.txt > glass-from-$e.txt &&
-      diff -q glass.txt glass-from-$e.txt || return 1
-    done
-'
-if ! (python --version 2>&1 | grep -q -e 'Python 3\.3'); then
-    test_expect_success "$desc" "$body"
-else
-    test_expect_failure "$desc" "$body"
-fi
-fi
-
 test_done

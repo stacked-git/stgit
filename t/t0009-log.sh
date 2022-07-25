@@ -4,36 +4,21 @@ test_description='Test the log command.'
 
 . ./test-lib.sh
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt log on uninitialized branch' '
-    command_error stg log 2>err >/dev/null &&
-    grep -e "branch not initialized" err
-'
-else
 test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>err >/dev/null &&
     grep -e "Branch \`master\` not initialized" err
 '
-fi
 
 test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Empty log' '
-    stg log > log.txt &&
-    test_line_count = 1 log.txt &&
-    head -n 1 log.txt | grep -e "initialise"
-'
-else
 test_expect_success 'Empty log' '
     stg log > log.txt &&
     test_line_count = 1 log.txt &&
     head -n 1 log.txt | grep -e "initialize"
 '
-fi
 
 test_expect_success 'Add some patches' '
     test_commit p0 file0.txt foo0 &&
@@ -47,24 +32,6 @@ test_expect_success 'Test log of all patches' '
     stg log | head -n 1 | grep -e "uncommit"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Test invalid opts with clear' '
-    command_error stg log --diff --clear 2>err >/dev/null &&
-    grep -e "cannot combine --clear with other options" err &&
-    stg log | head -n 1 | grep -e "uncommit"
-'
-
-test_expect_success 'Test invalid args with clear' '
-    command_error stg log --clear p0 p1 2>err >/dev/null &&
-    grep -e "cannot combine --clear with patch arguments" err &&
-    stg log | head -n 1 | grep -e "uncommit"
-'
-
-test_expect_success 'Test invalid opts with graphical' '
-    command_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
-    grep -e "cannot combine --graphical and --number" err
-'
-else
 test_expect_success 'Test invalid opts with clear' '
     general_error stg log --diff --clear 2>err >/dev/null &&
     grep -e "The argument .--diff. cannot be used with .--clear." err &&
@@ -81,7 +48,6 @@ test_expect_success 'Test invalid opts with graphical' '
     general_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
     grep -e "The argument .--graphical. cannot be used with .--number <N>." err
 '
-fi
 
 test_expect_success 'Test log full' '
     stg log --full > log.txt &&

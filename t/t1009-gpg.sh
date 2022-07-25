@@ -5,15 +5,6 @@ test_description='Test gpg signatures'
 . ./test-lib.sh
 . "$TEST_DIRECTORY/lib-gpg.sh"
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success GPG \
-    'Stack metadata is signed' '
-    git config commit.gpgsign true
-    git config user.signingkey ${GIT_COMMITTER_EMAIL}
-    stg init &&
-    git verify-commit refs/stacks/master
-'
-else
 test_expect_success GPG \
     'Stack metadata is signed' '
     git config commit.gpgsign true &&
@@ -30,7 +21,6 @@ test_expect_success GPG \
     test_must_fail git verify-commit refs/stacks/master &&
     stg delete p0
 '
-fi
 
 test_expect_success GPG \
     'stg new creates a signed patch' '

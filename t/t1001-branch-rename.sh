@@ -114,18 +114,10 @@ test_expect_success \
     _assert_current_branch_name "xxx"
     '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success \
-    'Invalid num args to rename' '
-    command_error stg branch --rename bar biz bop 2>err &&
-    grep "incorrect number of arguments" err
-    '
-else
 test_expect_success \
     'Invalid num args to rename' '
     general_error stg branch --rename bar biz bop 2>err &&
     grep "The value .bop. was provided to .* but it wasn.t expecting any more values" err
     '
-fi
 
 test_done

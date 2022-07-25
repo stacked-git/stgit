@@ -133,18 +133,6 @@ test_expect_success 'Refresh moved files' '
     stg refresh
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt invalid options with --index' '
-    echo foo4 > foo4.txt &&
-    stg add foo4.txt &&
-    command_error stg refresh -i . 2>err &&
-    grep -e "Only full refresh is available with the --index option" err &&
-    command_error stg refresh -i --force 2>err &&
-    grep -e "You cannot --force a full refresh when using --index mode" err &&
-    command_error stg refresh -i --submodules 2>err &&
-    grep -e "--submodules is meaningless when keeping the current index" err
-    '
-else
 test_expect_success 'Attempt invalid options with --index' '
     echo foo4 > foo4.txt &&
     stg add foo4.txt &&
@@ -155,47 +143,19 @@ test_expect_success 'Attempt invalid options with --index' '
     general_error stg refresh -i --submodules 2>err &&
     grep -e "The argument .--index. cannot be used with .--submodules." err
     '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt refresh with changed index and working tree' '
-    echo "more foo" >> foo4.txt &&
-    command_error stg refresh 2>err &&
-    grep -e "The index is dirty. Did you mean --index?" err
-'
-else
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >> foo4.txt &&
     command_error stg refresh 2>err &&
     grep -e "The index is dirty; consider using \`--index\` or \`--force\`" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt to refresh to invalid patch name' '
-    stg add foo4.txt &&
-    command_error stg refresh -p bad-patchname 2>err &&
-    grep -e "bad-patchname: no such patch" err
-'
-else
 test_expect_success 'Attempt to refresh to invalid patch name' '
     stg add foo4.txt &&
     command_error stg refresh -p bad-patchname 2>err &&
     grep -e "Patch \`bad-patchname\` does not exist" err
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt to refresh with no applied patches' '
-    git rm -f foo4.txt &&
-    stg pop -a &&
-    echo foo5 > foo5.txt &&
-    git add foo5.txt &&
-    command_error stg refresh 2>err &&
-    grep -e "Cannot refresh top patch because no patches are applied" err &&
-    git rm -f foo5.txt
-'
-else
 test_expect_success 'Attempt to refresh with no applied patches' '
     git rm -f foo4.txt &&
     stg pop -a &&
@@ -205,45 +165,19 @@ test_expect_success 'Attempt to refresh with no applied patches' '
     grep -e "No patches applied" err &&
     git rm -f foo5.txt
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt update with submodules' '
-    stg push -a &&
-    echo more >> foo2.txt &&
-    command_error stg refresh --update --submodules 2>err &&
-    grep -e "--submodules is meaningless when only updating modified files" err
-'
-else
 test_expect_success 'Attempt update with submodules' '
     stg push -a &&
     echo more >> foo2.txt &&
     general_error stg refresh --update --submodules 2>err &&
     grep -e "The argument .--update. cannot be used with .--submodules." err
 '
-fi
 
 test_expect_success 'Test annotate' '
     stg refresh --annotate "My Annotation" &&
     stg log -f | grep -e "My Annotation"
 '
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Attempt refresh with open conflict' '
-    stg new -m p6 &&
-    echo "foo" > conflicting.txt &&
-    stg add conflicting.txt &&
-    stg refresh &&
-    stg pop &&
-    stg new -m p7 &&
-    echo "bar" > conflicting.txt &&
-    stg add conflicting.txt &&
-    stg refresh &&
-    conflict stg push p6 &&
-    command_error stg refresh 2>err &&
-    grep -e "resolve conflicts first" err
-'
-else
 test_expect_success 'Attempt refresh with open conflict' '
     stg new -m p6 &&
     echo "foo" > conflicting.txt &&
@@ -258,6 +192,5 @@ test_expect_success 'Attempt refresh with open conflict' '
     command_error stg refresh 2>err &&
     grep -e "Resolve outstanding conflicts first" err
 '
-fi
 
 test_done

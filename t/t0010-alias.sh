@@ -4,26 +4,10 @@ test_description='Test aliases'
 
 . ./test-lib.sh
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Test help on builtin alias command' '
-    stg help add | grep -e "Alias for \"git add"
-'
-else
 test_expect_success 'Test help on builtin alias command' '
     stg help add | grep -e "Alias for shell command \`git add\`"
 '
-fi
 
-if test -n "$STG_TEST_PYTHON"; then
-test_expect_success 'Test ambiguous alias' '
-    test_config stgit.alias.show-stat "git show --stat" &&
-    stg show-stat &&
-    stg init &&
-    stg show &&
-    general_error stg sho 2>err &&
-    grep -e "Ambiguous command: sho" err
-'
-else
 test_expect_success 'Test ambiguous alias' '
     test_config stgit.alias.show-stat "!git show --stat" &&
     stg show-stat &&
@@ -32,9 +16,7 @@ test_expect_success 'Test ambiguous alias' '
     general_error stg sho 2>err &&
     grep -e "Did you mean .show-stat. or .show." err
 '
-fi
 
-if test -z "$STG_TEST_PYTHON"; then
 test_expect_success 'Setup top-level and nested aliases' '
     test_create_repo foo/bar/baz &&
     git config --local stgit.alias.top-level-alias "!echo TOP-LEVEL-ALIAS" &&
@@ -86,6 +68,5 @@ test_expect_success 'Alias expansion with quoted string' '
     stg show >out &&
     grep "Author: Test User <testuser@example.com>" out
 '
-fi
 
 test_done
