@@ -2,26 +2,57 @@
 
 //! Support for StGit patch templates.
 
-use std::{borrow::Cow, collections::HashMap};
+use std::{borrow::Cow, collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Result};
 use bstr::{BString, ByteVec};
 
 /// Get named patch template from template file.
 pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option<String>> {
-    let template_path = repo.path().join(name);
-    if let Ok(template_bytes) = std::fs::read(&template_path) {
-        let template = std::str::from_utf8(&template_bytes).map_err(|_| {
-            anyhow!(
-                "Template file `{}` contains non-UTF-8 data",
-                template_path.to_string_lossy()
-            )
-        })?;
-        Ok(Some(template.into()))
-    } else {
-        // TODO: Find templates in other places
-        Ok(None)
+    let mut template_paths = Vec::with_capacity(4);
+
+    // I.e. .git/<name>
+    template_paths.push(repo.path().join(name));
+
+    if let Some(config_home) = std::env::var_os("XDG_CONFIG_HOME") {
+        if !config_home.is_empty() {
+            // I.e. ~/.config/stgit/templates/<name>
+            template_paths.push(
+                Path::new(&config_home)
+                    .join("stgit")
+                    .join("templates")
+                    .join(name),
+            );
+        }
     }
+
+    if let Some(user_home) = std::env::var_os("HOME") {
+        // I.e. ~/.stgit/templates/<name>
+        template_paths.push(
+            Path::new(&user_home)
+                .join(".stgit")
+                .join("templates")
+                .join(name),
+        );
+    }
+
+    // TODO: add system-wide template paths. E.g. /usr/share/stgit/templates and/or
+    // /etc/stgit/templates.
+
+    for template_path in &template_paths {
+        if let Ok(template_bytes) = std::fs::read(&template_path) {
+            let template = std::str::from_utf8(&template_bytes).map_err(|_| {
+                anyhow!(
+                    "Template file `{}` contains non-UTF-8 data",
+                    template_path.display()
+                )
+            })?;
+
+            return Ok(Some(template.into()));
+        }
+    }
+
+    Ok(None)
 }
 
 /// Specialize a patch template with provided replacements mapping.

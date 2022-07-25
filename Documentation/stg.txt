@@ -156,5 +156,5 @@ useful default texts to be edited by the user. These +<name>.tmpl+
 template files are searched in the following directories:
 
   . +$GITDIR/+ (in practice, the +.git/+ directory in your repository)
+  . +$XDG_CONFIG_HOME/stgit/templates/+
   . +$HOME/.stgit/templates/+
-  . +/usr/share/stgit/templates/+
