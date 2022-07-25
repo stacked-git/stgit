@@ -96,6 +96,16 @@ Some commands allow you to specify a patch in another branch of the
 repository; this is done by prefixing the patch name with the branch
 name and a colon (e.g. +otherbranch:thatpatch+).
 
+Commands that take multiple patch arguments may be supplied with patch
+ranges of the form +patch1..patchN+ as an alternative to specifying
+each patch individually. For example, `stg delete p0..p4` would be
+equivalent to `stg delete p0 p1 p2 p3 p4`. Patch ranges may be open
+on either or both ends. For example, `stg delete ..p2` would delete
+the first applied patch up to and including patch `p2`. Alternatively,
+`stg delete p2..` would delete patch `p2` up to and including the
+topmost applied patch. And `stg delete ..` would delete all applied
+patches.
+
 Specifying commits
 ~~~~~~~~~~~~~~~~~~
 
