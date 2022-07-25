@@ -76,6 +76,16 @@ test_expect_success 'Test StGit alias help' '
     stg patch-count -h 2>/dev/null | head -n 1 |
     grep "stg-series"
 '
+
+test_expect_success 'Alias expansion with quoted string' '
+    test_config stgit.alias.edit-with-author "edit --author \"Test User <testuser@example.com>\"" &&
+    stg new -m p0 &&
+    stg show >out &&
+    grep "Author: A Ú Thor <author@example.com>" out &&
+    stg edit-with-author &&
+    stg show >out &&
+    grep "Author: Test User <testuser@example.com>" out
+'
 fi
 
 test_done
