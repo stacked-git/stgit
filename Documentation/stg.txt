@@ -120,12 +120,32 @@ The following generic option flags are available. Additional options
 are available for (and documented with) the different subcommands.
 
 --version::
-  Prints the StGit version, as well as version of other components
-  used, such as Git and Python.
+  Print version information
 
 --help::
-  Prints the synopsis and a list of all subcommands. If an StGit
-  subcommand is given, prints the synposis for that subcommand.
+  Print help information.
+
+-C::
+  Run as if stg was started in '<path>' instead of the current working
+  directory. When multiple `-C` options are given, each subsequent
+  non-absolute `-C <path>` is interpreted relative to the preceding
+  `-C <path>`.
++
+This option affects arguments that expect path names or path specs in
+that their interpretations of the path names would be made relative to
+the working directory caused by the `-C` option.
+
+--color <when>::
+  Specify when to colorize the output.
++
+`auto` (the default) enables colored output only when outputting to a
+terminal or TTY. The `NO_COLOR` environment variable is respected.
++
+`always` and `never` unconditionlly enable/disable colored output,
+respectively.
++
+`ansi` forces color to be output using ANSI escape sequences, even in
+a Windows console.
 
 STGIT COMMANDS
 --------------

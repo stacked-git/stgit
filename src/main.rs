@@ -72,13 +72,23 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
                 .help("Print version information"),
         )
         .arg(
-            clap::Arg::new("change_dir")
+            clap::Arg::new("change-dir")
                 .short('C')
-                .help("Run as if started in PATH")
+                .help("Run as if started in <path>")
+                .long_help(
+                    "Run as if stg was started in '<path>' instead of the current \
+                     working directory. When multiple `-C` options are given, each \
+                     subsequent non-absolute `-C <path>` is interpreted relative to \
+                     the preceding `-C <path>`.\n\
+                     \n\
+                     This option affects arguments that expect path names or path \
+                     specs in that their interpretations of the path names would be \
+                     made relative to the working directory caused by the `-C` option.",
+                )
                 .allow_invalid_utf8(true)
                 .multiple_occurrences(true)
                 .allow_hyphen_values(true)
-                .value_name("PATH")
+                .value_name("path")
                 .value_hint(clap::ValueHint::AnyPath),
         )
         .arg(color::get_color_arg().global(true).display_order(998));
@@ -251,7 +261,7 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
 ///
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
 fn change_directories(matches: &ArgMatches) -> Result<()> {
-    if let Some(paths) = matches.values_of_os("change_dir") {
+    if let Some(paths) = matches.values_of_os("change-dir") {
         for path in paths.filter(|p| !p.is_empty()) {
             std::env::set_current_dir(path)
                 .with_context(|| format!("cannot change to `{}`", path.to_string_lossy()))?;
