@@ -1,8 +1,3 @@
-**This is the Rust implementation of StGit.**
-
-**Set `STG_TEST_PROFILE=release` to test with a release build instead of the
-default dev build.**
-
 # Stacked Git
 
 Stacked Git, **StGit** for short, is an application for managing Git
@@ -68,13 +63,13 @@ release][latest] or clone from the [StGit repository on GitHub][repo].
 [latest]: https://github.com/stacked-git/stgit/releases/latest
 [repo]: https://github.com/stacked-git/stgit
 
-To install from source, choose a `prefix` and run:
+To install the `stg` executable from source, choose a `prefix` and run:
 
-``` shellsession
-$ cargo install --locked --path=.
+```shellsession
+$ make prefix=$HOME/.local install
 ```
 
-For more information about installation, see [INSTALL](INSTALL).
+For more information about installation, see [INSTALL.md](INSTALL.md).
 
 ## Contributing
 

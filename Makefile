@@ -1,5 +1,5 @@
 prefix	?= $(HOME)/.local
-DESTDIR	?= /
+DESTDIR	?=
 DEFAULT_TEST_TARGET ?= test
 STG_PROVE_OPTS ?=
 CARGO ?= cargo
@@ -13,24 +13,30 @@ all: build
 build:
 	$(CARGO) build
 
-install:
-	$(CARGO) install --path=.
+doc: build
+	$(MAKE) -C Documentation all
+
+.PHONY: all build doc
+
+
+install: install-bin
+
+install-all: install-bin install-completion install-man install-html
+
+install-bin:
+	$(CARGO) install --locked --path=. --root=$(DESTDIR)$(prefix)
 
 install-completion: build
 	$(MAKE) -C completion install
 
-.PHONY: all build dist install install-completion
-
-doc: build
-	$(MAKE) -C Documentation all
-
-install-doc:
-	$(MAKE) -C Documentation install
+install-man:
+	$(MAKE) -C Documentation install-man
 
 install-html:
 	$(MAKE) -C Documentation install-html
 
-.PHONY: doc install-doc install-html
+.PHONY: install install-all install-bin install-completion install-man install-html
+
 
 lint: lint-format lint-clippy lint-t
 
@@ -45,6 +51,7 @@ lint-t:
 
 .PHONY: lint lint-format lint-clippy lint-t
 
+
 format:
 	$(CARGO) fmt
 
@@ -56,10 +63,10 @@ test-patches:
 		$(CARGO) --quiet run goto $$patch && $(MAKE) test || break; \
 	done
 
-.PHONY: format test test-patches
-
 clean:
 	$(MAKE) -C Documentation clean
 	$(MAKE) -C t clean
 	$(MAKE) -C completion clean
 	rm  -r target
+
+.PHONY: format test test-patches clean
