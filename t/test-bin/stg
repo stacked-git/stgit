@@ -1,9 +1,9 @@
 #!/bin/sh
 
-if [ "${STG_TEST_PROFILE:=dev}" = "dev" ]
+if [ "${STG_PROFILE:=dev}" = "dev" ]
 then
     profile_dir="debug"
 else
-    profile_dir="$STG_TEST_PROFILE"
+    profile_dir="$STG_PROFILE"
 fi
 exec "$STG_ROOT/target/$profile_dir/stg" "$@"

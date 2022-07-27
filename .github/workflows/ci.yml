@@ -57,7 +57,7 @@ jobs:
       env:
         STG_PROVE_OPTS: "--jobs=2"
         STG_TEST_OPTS: "--verbose-log"
-        STG_TEST_PROFILE: ${{ matrix.profile }}
+        STG_PROFILE: ${{ matrix.profile }}
       run: |
         timeout 900s make -C t prove
 
@@ -138,18 +138,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
-    - name: Build
-      run: |
-        cargo build
     - name: Build Docs Asciidoc
       run: |
-        make -j2 -C Documentation
+        make -j2 doc
     - name: Build Docs Asciidoctor
       run: |
-        make -j2 -C Documentation USE_ASCIIDOCTOR=1
+        make -j2 USE_ASCIIDOCTOR=1 doc
     - name: Install HTML Docs
       run: |
-        make -j2 -C Documentation USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+        make -j2 USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
     - name: Upload HTML Docs
       uses: actions/upload-artifact@v2
       with:
@@ -178,6 +175,6 @@ jobs:
     #   shell: msys2 {0}
     #   env:
     #     STG_TEST_OPTS: "-v -i"
-    #     STG_TEST_PROFILE: "release"
+    #     STG_PROFILE: "release"
     #   run: |
     #     timeout 900s make -C t test

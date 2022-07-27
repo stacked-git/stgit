@@ -2,16 +2,18 @@ prefix	?= $(HOME)/.local
 DESTDIR	?=
 DEFAULT_TEST_TARGET ?= test
 STG_PROVE_OPTS ?=
+STG_PROFILE ?= release
 CARGO ?= cargo
+CARGO_RUN = $(CARGO) --quiet run --profile=$(STG_PROFILE)
 
-export DESTDIR CARGO
+export DESTDIR CARGO STG_PROFILE
 
 TEST_PATCHES ?= ..
 
 all: build
 
 build:
-	$(CARGO) build
+	$(CARGO) build --profile=$(STG_PROFILE)
 
 doc: build
 	$(MAKE) -C Documentation all
@@ -24,7 +26,7 @@ install: install-bin
 install-all: install-bin install-completion install-man install-html
 
 install-bin:
-	$(CARGO) install --locked --path=. --root=$(DESTDIR)$(prefix)
+	$(CARGO) install --profile=$(STG_PROFILE) --locked --path=. --root=$(DESTDIR)$(prefix)
 
 install-completion: build
 	$(MAKE) -C completion install
@@ -59,8 +61,8 @@ test: build
 	$(MAKE) -C t all
 
 test-patches:
-	for patch in $$($(CARGO) --quiet run series --noprefix $(TEST_PATCHES)); do \
-		$(CARGO) --quiet run goto $$patch && $(MAKE) test || break; \
+	for patch in $$($(CARGO_RUN) series --noprefix $(TEST_PATCHES)); do \
+		$(CARGO_RUN) goto $$patch && $(MAKE) test || break; \
 	done
 
 clean:

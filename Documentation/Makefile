@@ -45,16 +45,19 @@ ARTICLES =
 SP_ARTICLES =
 OBSOLETE_HTML =
 
+STG_PROFILE ?= release
+CARGO ?= cargo
+CARGO_RUN = $(CARGO) --quiet run --profile=$(STG_PROFILE)
 STG_COMMANDS_SRC = $(shell find ../src/cmd -name '*.rs')
-STG_COMMANDS = $(shell cargo --quiet run completion list commands)
+STG_COMMANDS = $(shell $(CARGO_RUN) completion list commands)
 STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))
 
-# STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
+# STGIT_VERSION = $(shell $(CARGO) --quiet metadata --format-version=1 --no-deps | \
 #                         jq -r '.packages[].version')
-# STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
+# STGIT_VERSION = $(shell $(CARGO) --quiet metadata --format-version=1 --no-deps | \
 #                         grep -Eo '"version":"[^"]+"' | \
 #                         sed -Ee 's/"version":"([^"]+)"/\1/g')
-STGIT_VERSION = $(shell cargo --quiet run version --short | sed -e 's/stg //g')
+STGIT_VERSION = $(shell $(CARGO_RUN) version --short | sed -e 's/stg //g')
 
 MAN1_TXT += stg.txt
 MAN1_TXT += $(STG_COMMANDS_TXT)
@@ -264,11 +267,11 @@ $(STG_COMMANDS_TXT): txt-stamp
 stg.xml: stg.txt command-list.txt
 
 command-list.txt: $(STG_COMMANDS_SRC)
-	$(QUIET_GEN)cargo --quiet run completion list commands --style=asciidoc > $@
+	$(QUIET_GEN)$(CARGO_RUN) completion list commands --style=asciidoc > $@
 
 txt-stamp: $(STG_COMMANDS_SRC)
 	$(QUIET)$(RM) txt-stamp-temp
 	$(QUIET)touch txt-stamp-temp
-	$(QUIET_GEN)cargo --quiet run completion man
+	$(QUIET_GEN)$(CARGO_RUN) completion man
 	$(QUIET)mv txt-stamp-temp $@
 

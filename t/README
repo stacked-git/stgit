@@ -283,7 +283,7 @@ whether this mode is active, and e.g. skip some tests that are hard to
 refactor to deal with it. The "SYMLINKS" prerequisite is currently
 excluded as so much relies on it, but this might change in the future.
 
-STG_TEST_PROFILE=<profile> may be used to choose which stg executable is
+STG_PROFILE=<profile> may be used to choose which stg executable is
 used for tests. The default is "dev" which uses the executable found in
 target/debug/stg. Use "release" to use the release build of stg.
 
