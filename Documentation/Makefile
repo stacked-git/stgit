@@ -51,9 +51,10 @@ STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))
 
 # STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
 #                         jq -r '.packages[].version')
-STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
-                        grep -Eo '"version":"[^"]+"' | \
-                        sed -Ee 's/"version":"([^"]+)"/\1/g')
+# STGIT_VERSION = $(shell cargo --quiet metadata --format-version=1 --no-deps | \
+#                         grep -Eo '"version":"[^"]+"' | \
+#                         sed -Ee 's/"version":"([^"]+)"/\1/g')
+STGIT_VERSION = $(shell cargo --quiet run version --short | sed -e 's/stg //g')
 
 MAN1_TXT += stg.txt
 MAN1_TXT += $(STG_COMMANDS_TXT)
