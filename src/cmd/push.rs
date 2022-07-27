@@ -129,48 +129,47 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Ok(());
     }
 
-    if stack.unapplied().is_empty() {
-        return Err(anyhow!("No unapplied patches"));
-    }
-
-    let mut patches: Vec<PatchName> = if matches.is_present("all") {
-        stack.unapplied().to_vec()
-    } else if let Some(number) = opt_number {
-        let num_unapplied = stack.unapplied().len();
-        let num_to_take: usize = {
-            if number >= 0 {
-                std::cmp::min(number as usize, num_unapplied)
-            } else if number.unsigned_abs() < num_unapplied {
-                num_unapplied - number.unsigned_abs()
-            } else {
-                0
-            }
+    let mut patches: Vec<PatchName> =
+        if let Some(patchranges) = matches.values_of("patchranges-unapplied") {
+            patchrange::parse(patchranges, &stack, patchrange::Allow::Unapplied).map_err(|e| {
+                match e {
+                    crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
+                        if stack.is_applied(&patchname) =>
+                    {
+                        anyhow!("Patch `{patchname}` from `{range}` is already applied")
+                    }
+                    crate::patchrange::Error::PatchNotAllowed { patchname, .. }
+                        if stack.is_applied(&patchname) =>
+                    {
+                        anyhow!("Patch `{patchname}` is already applied")
+                    }
+                    _ => e.into(),
+                }
+            })?
+        } else if stack.unapplied().is_empty() {
+            return Err(anyhow!("No unapplied patches"));
+        } else if matches.is_present("all") {
+            stack.unapplied().to_vec()
+        } else if let Some(number) = opt_number {
+            let num_unapplied = stack.unapplied().len();
+            let num_to_take: usize = {
+                if number >= 0 {
+                    std::cmp::min(number as usize, num_unapplied)
+                } else if number.unsigned_abs() < num_unapplied {
+                    num_unapplied - number.unsigned_abs()
+                } else {
+                    0
+                }
+            };
+            stack
+                .unapplied()
+                .iter()
+                .take(num_to_take)
+                .cloned()
+                .collect()
+        } else {
+            stack.unapplied().iter().take(1).cloned().collect()
         };
-        stack
-            .unapplied()
-            .iter()
-            .take(num_to_take)
-            .cloned()
-            .collect()
-    } else if let Some(patchranges) = matches.values_of("patchranges-unapplied") {
-        patchrange::parse(patchranges, &stack, patchrange::Allow::Unapplied).map_err(
-            |e| match e {
-                crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
-                    if stack.is_applied(&patchname) =>
-                {
-                    anyhow!("Patch `{patchname}` from `{range}` is already applied")
-                }
-                crate::patchrange::Error::PatchNotAllowed { patchname, .. }
-                    if stack.is_applied(&patchname) =>
-                {
-                    anyhow!("Patch `{patchname}` is already applied")
-                }
-                _ => e.into(),
-            },
-        )?
-    } else {
-        stack.unapplied().iter().take(1).cloned().collect()
-    };
 
     assert!(!patches.is_empty());
 
