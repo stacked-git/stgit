@@ -1,1 +1,1 @@
-stgit/_version.py export-subst
+.github/ export-ignore
