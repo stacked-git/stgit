@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.0.0-beta.1] 2022-07-28
+
+### Removed
+- Removed Python implementation of StGit.
+
+### Added
+- Man page generation in asciidoc format with `stg completion man`. This
+  was needed for feature parity with the Python implementation.
+- Added documentation for patch range syntax to stg(1) man page.
+- Added `install-all` target to top-level Makefile that installs the
+  executable, man pages, html pages, and shell completions.
+
+### Changed
+- Additional template search paths were added. In addition to looking
+  for template files in .git/, also look in
+  `$XDG_CONFIG_HOME/stgit/templates/` and `$HOME/.stgit/templates`. This
+  search strategy is consistent with how git looks for the global config
+  file.
+- Makefile targets are updated such that they are all applicable to the
+  Rust implementation.
+- Argument value names are now all lowercase in help and man pages.
+- Updated Cargo.lock with latest versions of dependencies.
+- Release checklist is updated for Rust implementation.
+
+### Fixed
+- Minor typo fixes in help strings
+- Improved documentation for top-level `stg` options.
+- Improve error message in edge case of attempting to push a hidden
+  patch by name when there are no unapplied patches.
+
+
 ## [2.0.0-alpha.2] 2022-07-07
 
 ### Added
