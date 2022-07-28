@@ -15,21 +15,19 @@ StGit Release Checklist
    - Change "[Unreleased]" to reflect new release version and date.
    - Commit updated CHANGELOG.md
 
-2. Create new tag
+2. Update version in Cargo.toml
 
-   - `git tag --sign -m 'Release vX.Y' vX.Y`
+   - Update the version field: `version = "X.Y.Z"`
 
-3. Check source distribution
+3. Create new tag
 
-   - Create source distribution with `make dist`.
-   - Find source dist file in `dist/`.
-   - Make sure correct version is in dist filename.
-   - Spot-check dist contents for any extra or missing files.
+   - `git tag --sign -m 'Release vX.Y.Z' vX.Y.Z`
 
-4. Run pkgtest.py
+4. Make source archive
 
-   - Use options to test supported Python versions
-   - Spot-check output
+   - `git archive --format=tar.gz --prefix=stgit-X.Y.Z/ -o stgit-X.Y.Z.tar.gz vX.Y.Z`
+   - Note the trailing slash in the `--prefix` value.
+   - This archive will be uploaded in step 7.
 
 5. Update stacked-git.github.io
 
@@ -45,10 +43,10 @@ StGit Release Checklist
 
 7. Create GitHub release
 
-   - Use "Stacked Git X.Y" for release title.
+   - Use "Stacked Git X.Y.Z" for release title.
    - Write a sentence or two description of release.
    - Paste this versions changes from CHANGELOG.md.
-   - Upload source dist file (`stgit-X.Y.tar.gz`).
+   - Upload source archive file (`stgit-X.Y.Z.tar.gz`) from step 4.
 
 8. Send notifications
 
