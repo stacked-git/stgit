@@ -70,14 +70,14 @@ fn make() -> clap::Command<'static> {
             Arg::new("target")
                 .long("to")
                 .short('t')
-                .help("Sink patches below TARGET patch")
+                .help("Sink patches below <target> patch")
                 .long_help(
-                    "Sink patches below TARET patch.\n\
+                    "Sink patches below <target> patch.\n\
                      \n\
-                     Specified patches are placed below the TARGET instead \
-                     of at the bottom of the stack.",
+                     Specified patches are placed below <target> instead of at the \
+                     bottom of the stack.",
                 )
-                .value_name("TARGET")
+                .value_name("target")
                 .validator(PatchName::from_str)
                 .forbid_empty_values(true),
         )

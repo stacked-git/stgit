@@ -24,8 +24,8 @@ pub(super) fn command() -> clap::Command<'static> {
             clap::Arg::new("output")
                 .long("output")
                 .short('o')
-                .help("Output man pages to DIR")
-                .value_name("DIR")
+                .help("Output man pages to <dir>")
+                .value_name("dir")
                 .value_hint(clap::ValueHint::DirPath)
                 .allow_invalid_utf8(true),
         )

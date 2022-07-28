@@ -72,7 +72,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Extra arguments passed to 'git send-email'")
                 .last(true)
                 .allow_hyphen_values(true)
-                .value_name("GIT-OPTIONS"),
+                .value_name("git-options"),
         )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(
@@ -310,14 +310,14 @@ lazy_static! {
             .conflicts_with("numbered"),
         Arg::new("start-number")
             .long("start-number")
-            .help("Start numbering at N instead of 1")
-            .value_name("N")
+            .help("Start numbering at <n> instead of 1")
+            .value_name("n")
             .takes_value(true),
         Arg::new("reroll-count")
             .long("reroll-count")
             .short('v')
-            .help("Mark the series as the Nth reroll")
-            .value_name("N")
+            .help("Mark the series as the <n>th reroll")
+            .value_name("n")
             .takes_value(true),
         Arg::new("rfc")
             .long("rfc")

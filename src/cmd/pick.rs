@@ -67,8 +67,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("ref-branch")
                 .long("ref-branch")
                 .short('B')
-                .help("Pick patches from BRANCH")
-                .value_name("BRANCH"),
+                .help("Pick patches from <branch>")
+                .value_name("branch"),
         )
         .arg(
             Arg::new("revert")
@@ -94,8 +94,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("name")
                 .long("name")
                 .short('n')
-                .help("Use NAME for the patch name")
-                .value_name("NAME")
+                .help("Use <name> for the patch name")
+                .value_name("name")
                 .validator(PatchName::from_str)
                 .forbid_empty_values(true)
                 .conflicts_with_all(&["fold", "update"]),
@@ -104,8 +104,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("parent")
                 .long("parent")
                 .short('p')
-                .help("Use COMMITTISH as parent")
-                .value_name("COMMITTISH")
+                .help("Use <committish> as parent")
+                .value_name("committish")
                 .forbid_empty_values(true)
                 .conflicts_with_all(&["fold", "update"]),
         )
@@ -127,7 +127,7 @@ fn make() -> clap::Command<'static> {
                 .help("Only fold the given file (may be used multiple times)")
                 .forbid_empty_values(true)
                 .multiple_occurrences(true)
-                .value_name("PATH")
+                .value_name("path")
                 .requires("fold"),
         )
 }

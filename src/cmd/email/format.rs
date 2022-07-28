@@ -67,7 +67,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Extra arguments passed to 'git format-patch'")
                 .last(true)
                 .allow_hyphen_values(true)
-                .value_name("GIT-OPTIONS"),
+                .value_name("git-options"),
         )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(
@@ -116,16 +116,16 @@ lazy_static! {
             .conflicts_with("numbered"),
         Arg::new("start-number")
             .long("start-number")
-            .help("Start numbering at N instead of 1")
-            .value_name("N")
+            .help("Start numbering at <n> instead of 1")
+            .value_name("n")
             .takes_value(true),
         Arg::new("reroll-count")
             .long("reroll-count")
             .short('v')
-            .help("Mark the series as the Nth reroll")
+            .help("Mark the series as the <n>th reroll")
             .long_help(
-                "Mark the series as the <N>-th iteration of the topic. The output \
-                 filenames have \"v<N>\" prepended to them, and the subject prefix \
+                "Mark the series as the <n>-th iteration of the topic. The output \
+                 filenames have \"v<n>\" prepended to them, and the subject prefix \
                  (\"PATCH\" by default, but configurable via the --subject-prefix \
                  option) has ` v<N>` appended to it. E.g. --reroll-count=4 may produce \
                  v4-0001-add-makefile.patch file that has \"Subject: [PATCH v4 1/20] \
@@ -135,7 +135,7 @@ lazy_static! {
                  range-diff/interdiff with the previous version does not state exactly \
                  which version the new interation is compared against.",
             )
-            .value_name("N")
+            .value_name("n")
             .takes_value(true),
         Arg::new("rfc")
             .long("rfc")
@@ -414,7 +414,7 @@ lazy_static! {
                  git-range-diff(1)) for details.",
             )
             .takes_value(true)
-            .value_name("N")
+            .value_name("n")
             .forbid_empty_values(true),
         // NO --from
         // NO --no-add-header

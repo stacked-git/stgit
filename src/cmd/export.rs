@@ -71,8 +71,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("dir")
                 .long("dir")
                 .short('d')
-                .help("Export patches to DIR instead of the default")
-                .value_name("DIR")
+                .help("Export patches to <dir> instead of the default")
+                .value_name("dir")
                 .value_hint(clap::ValueHint::DirPath)
                 .allow_invalid_utf8(true),
         )
@@ -86,10 +86,10 @@ fn make() -> clap::Command<'static> {
             Arg::new("extension")
                 .long("extension")
                 .short('e')
-                .help("Suffix patch file names with \".<EXTENSION>\"")
+                .help("Suffix patch file names with \".<ext>\"")
                 .conflicts_with("patch")
                 .takes_value(true)
-                .value_name("EXTENSION"),
+                .value_name("ext"),
         )
         .arg(
             Arg::new("numbered")
@@ -101,8 +101,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("template")
                 .long("template")
                 .short('t')
-                .help("Use FILE as template")
-                .value_name("FILE")
+                .help("Use <file> as template")
+                .value_name("file")
                 .value_hint(clap::ValueHint::FilePath)
                 .allow_invalid_utf8(true),
         )

@@ -96,9 +96,9 @@ fn make() -> clap::Command<'static> {
             Arg::new("missing")
                 .long("missing")
                 .short('m')
-                .help("Select patches in BRANCH not present in current branch")
+                .help("Select patches in <branch> not present in current branch")
                 .takes_value(true)
-                .value_name("BRANCH")
+                .value_name("branch")
                 .value_hint(ValueHint::Other),
         )
         .next_help_heading("DISPLAY OPTIONS")

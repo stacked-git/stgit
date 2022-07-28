@@ -108,9 +108,9 @@ fn make() -> clap::Command<'static> {
             Arg::new("patch")
                 .long("patch")
                 .short('p')
-                .help("Refresh (applied) PATCH instead of the top patch")
+                .help("Refresh (applied) <patch> instead of the top patch")
                 .takes_value(true)
-                .value_name("PATCH")
+                .value_name("patch")
                 .value_hint(ValueHint::Other)
                 .validator(PatchName::from_str),
         )
@@ -118,9 +118,9 @@ fn make() -> clap::Command<'static> {
             Arg::new("annotate")
                 .long("annotate")
                 .short('a')
-                .help("Annotate the patch log entry with NOTE")
+                .help("Annotate the patch log entry with <note>")
                 .takes_value(true)
-                .value_name("NOTE")
+                .value_name("note")
                 .value_hint(ValueHint::Other),
         )
         .arg(

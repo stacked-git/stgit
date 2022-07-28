@@ -11,8 +11,8 @@ pub(super) fn command() -> clap::Command<'static> {
             clap::Arg::new("output")
                 .long("output")
                 .short('o')
-                .help("Output completion script to PATH")
-                .value_name("PATH")
+                .help("Output completion script to <path>")
+                .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
                 .allow_invalid_utf8(true),
         )

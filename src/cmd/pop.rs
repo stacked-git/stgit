@@ -66,16 +66,16 @@ fn make() -> clap::Command<'static> {
             Arg::new("number")
                 .long("number")
                 .short('n')
-                .help("Pop specified number of patches")
+                .help("Pop specified <number> of patches")
                 .long_help(
-                    "Pop the specified number of patches.\n\
+                    "Pop the specified <number> of patches.\n\
                      \n\
                      A negative number indicates to pop all but that number \
                      of patches",
                 )
                 .takes_value(true)
                 .allow_hyphen_values(true) // i.e. for negative ints
-                .value_name("NUMBER")
+                .value_name("number")
                 .validator(|s| {
                     s.parse::<isize>()
                         .map_err(|_| format!("'{s}' is not an integer"))

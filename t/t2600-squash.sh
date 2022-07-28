@@ -25,7 +25,7 @@ test_expect_success 'Attempt duplicate patch name' '
 
 test_expect_success 'Attempt invalid patch name' '
     general_error stg squash -n invalid..name -- p0 p1 2>err &&
-    grep -e "Invalid value \"invalid..name\" for .--name <NAME>.: Invalid patch name" err
+    grep -e "Invalid value \"invalid..name\" for .--name <name>.: Invalid patch name" err
 '
 
 test_expect_success 'Attempt out of order' '

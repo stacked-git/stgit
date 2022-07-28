@@ -58,8 +58,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("series")
                 .long("series")
                 .short('s')
-                .help("Rearrange according to a series FILE")
-                .value_name("FILE")
+                .help("Rearrange according to a series <file>")
+                .value_name("file")
                 .value_hint(clap::ValueHint::FilePath)
                 .allow_invalid_utf8(true)
                 .forbid_empty_values(true),

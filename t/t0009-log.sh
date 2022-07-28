@@ -46,7 +46,7 @@ test_expect_success 'Test invalid args with clear' '
 
 test_expect_success 'Test invalid opts with graphical' '
     general_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
-    grep -e "The argument .--graphical. cannot be used with .--number <N>." err
+    grep -e "The argument .--graphical. cannot be used with .--number <n>." err
 '
 
 test_expect_success 'Test log full' '

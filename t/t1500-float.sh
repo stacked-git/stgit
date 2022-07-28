@@ -84,7 +84,7 @@ test_expect_success 'Attempt float with empty series' '
 
 test_expect_success 'Attempt float with series file and arguments' '
     general_error stg float --series series.txt p1 2>&1 |
-    grep -e "error: The argument .--series <FILE>. cannot be used with .<patch>\.\.\.."
+    grep -e "error: The argument .--series <file>. cannot be used with .<patch>\.\.\.."
 '
 
 test_expect_success 'Attempt float with no series file and no arguments' '

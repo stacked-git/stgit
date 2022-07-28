@@ -52,16 +52,16 @@ fn make() -> clap::Command<'static> {
             Arg::new("base")
                 .long("base")
                 .short('b')
-                .help("Use BASE instead of HEAD when applying the patch")
-                .value_name("BASE"),
+                .help("Use <committish> instead of HEAD when applying the patch")
+                .value_name("committish"),
         )
         .group(ArgGroup::new("merge-style").args(&["three-way", "base"]))
         .arg(
             Arg::new("strip")
                 .long("strip")
                 .short('p')
-                .help("Remove N leading components from diff paths (default 1)")
-                .value_name("N")
+                .help("Remove <n> leading components from diff paths (default 1)")
+                .value_name("n")
                 .validator(|s| {
                     s.parse::<usize>()
                         .map_err(|_| format!("'{s}' is not an unsigned integer"))
@@ -70,8 +70,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("context-lines")
                 .short('C')
-                .help("Ensure N lines of matching context for each change")
-                .value_name("N")
+                .help("Ensure <n> lines of matching context for each change")
+                .value_name("n")
                 .validator(|s| {
                     s.parse::<usize>()
                         .map_err(|_| format!("'{s}' is not an unsigned integer"))

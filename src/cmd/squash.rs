@@ -70,8 +70,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("name")
                 .long("name")
                 .short('n')
-                .help("Use NAME for the squashed patch")
-                .value_name("NAME")
+                .help("Use <name> for the squashed patch")
+                .value_name("name")
                 .validator(PatchName::from_str)
                 .forbid_empty_values(true),
         );

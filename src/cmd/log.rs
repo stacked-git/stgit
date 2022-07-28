@@ -55,8 +55,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("number")
                 .long("number")
                 .short('n')
-                .help("Limit output to N commits")
-                .value_name("N")
+                .help("Limit output to <n> commits")
+                .value_name("n")
                 .validator(|s| {
                     s.parse::<usize>()
                         .map_err(|_| format!("'{}' is not a positive integer", s))

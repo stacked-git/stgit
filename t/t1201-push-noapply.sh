@@ -20,7 +20,7 @@ test_expect_success 'Check --noapply with --all' '
 
 test_expect_success 'Check --noapply with --number' '
     general_error stg push --noapply -n 3 2>err &&
-    grep -e "error: The argument .--noapply. cannot be used with .--number <NUMBER>." err
+    grep -e "error: The argument .--noapply. cannot be used with .--number <n>." err
 '
 
 test_expect_success 'Check --noapply without patch names' '

@@ -36,8 +36,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("number")
                 .long("number")
                 .short('n')
-                .help("Undo the last N undos")
-                .value_name("N")
+                .help("Undo the last <n> undos")
+                .value_name("n")
                 .validator(|s| {
                     s.parse::<isize>()
                         .map_err(|_| format!("'{s}' is not an integer"))

@@ -40,9 +40,9 @@ fn make() -> clap::Command<'static> {
             clap::Arg::new("output")
                 .long("output")
                 .short('o')
-                .help("Output to PATH")
+                .help("Output to <path>")
                 .global(true)
-                .value_name("PATH")
+                .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
                 .allow_invalid_utf8(true),
         )

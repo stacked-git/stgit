@@ -178,7 +178,7 @@ pub(crate) fn add_args(
                 .hide(true)
                 .takes_value(true)
                 .multiple_occurrences(true)
-                .value_name("VALUE")
+                .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
         .arg(
@@ -188,7 +188,7 @@ pub(crate) fn add_args(
                 .hide(true)
                 .takes_value(true)
                 .multiple_occurrences(true)
-                .value_name("VALUE")
+                .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
         .arg(
@@ -198,7 +198,7 @@ pub(crate) fn add_args(
                 .hide(true)
                 .takes_value(true)
                 .multiple_occurrences(true)
-                .value_name("VALUE")
+                .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
         .arg(
@@ -260,7 +260,7 @@ pub(crate) fn add_args(
                 .takes_value(true)
                 .forbid_empty_values(true)
                 .allow_invalid_utf8(true)
-                .value_name("FILE")
+                .value_name("file")
                 .value_hint(ValueHint::FilePath)
                 .conflicts_with_all(&["message", "file"]),
         )

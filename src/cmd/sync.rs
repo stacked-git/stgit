@@ -62,15 +62,15 @@ fn make() -> clap::Command<'static> {
             Arg::new("ref-branch")
                 .long("ref-branch")
                 .short('B')
-                .help("Synchronize patches with BRANCH")
-                .value_name("BRANCH"),
+                .help("Synchronize patches with <branch>")
+                .value_name("branch"),
         )
         .arg(
             Arg::new("series")
                 .long("series")
                 .short('s')
-                .help("Synchronize patches with SERIES")
-                .value_name("SERIES")
+                .help("Synchronize patches with <series>")
+                .value_name("series")
                 .value_hint(clap::ValueHint::FilePath),
         )
         .group(

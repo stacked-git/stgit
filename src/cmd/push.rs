@@ -74,7 +74,7 @@ fn make() -> clap::Command<'static> {
                 )
                 .takes_value(true)
                 .allow_hyphen_values(true) // i.e. for negative ints
-                .value_name("NUMBER")
+                .value_name("n")
                 .validator(|s| {
                     s.parse::<isize>()
                         .map_err(|_| format!("'{s}' is not an integer"))

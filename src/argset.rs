@@ -11,7 +11,7 @@ lazy_static! {
         .short('b')
         .help("Use BRANCH instead of current branch")
         .takes_value(true)
-        .value_name("BRANCH")
+        .value_name("branch")
         .value_hint(ValueHint::Other);
 
     /// The `--keep/-k` option.
@@ -32,7 +32,7 @@ lazy_static! {
         .takes_value(true)
         .allow_hyphen_values(true)
         .multiple_occurrences(true)
-        .value_name("OPTIONS")
+        .value_name("options")
         .value_hint(ValueHint::Other);
 }
 
