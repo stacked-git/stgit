@@ -279,10 +279,9 @@ fn add_options(
     for (i, arg) in command
         .get_arguments()
         .filter(|arg| {
-            arg.get_name() != "help"
+            !["help", "color"].contains(&arg.get_name())
                 && !arg.is_hide_set()
                 && !arg.is_positional()
-                && !arg.is_global_set()
         })
         .enumerate()
     {
@@ -291,22 +290,58 @@ fn add_options(
         }
         let value_str = if let Some(value_names) = arg.get_value_names() {
             let mut value_str = String::new();
-            for name in value_names.iter() {
-                value_str.push(' ');
+            for (i, name) in value_names.iter().enumerate() {
+                if i > 0 {
+                    value_str.push(' ');
+                }
+                value_str.push('<');
                 value_str.push_str(name);
+                value_str.push('>');
             }
+            value_str
+        } else if let Some(possible_values) = arg.get_possible_values() {
+            let mut value_str = String::new();
+            value_str.push('(');
+            for (i, possible_value) in possible_values
+                .iter()
+                .filter(|&pv| !pv.is_hide_set())
+                .enumerate()
+            {
+                if i > 0 {
+                    value_str.push('|');
+                }
+                value_str.push_str(possible_value.get_name());
+            }
+            value_str.push(')');
             value_str
         } else {
             String::new()
         };
         if let Some(shorts) = arg.get_short_and_visible_aliases() {
             for short in shorts {
-                writeln!(section, "-{short}{value_str}::").unwrap();
+                if value_str.is_empty() {
+                    writeln!(section, "-{short}::").unwrap();
+                } else if arg.is_require_equals_set() {
+                    writeln!(section, "-{short}[={value_str}]::").unwrap();
+                } else {
+                    writeln!(section, "-{short} {value_str}::").unwrap();
+                }
             }
         }
         if let Some(longs) = arg.get_long_and_visible_aliases() {
             for long in longs {
-                writeln!(section, "--{long}{value_str}::").unwrap();
+                if value_str.is_empty() {
+                    writeln!(section, "--{long}::").unwrap();
+                } else if arg.is_require_equals_set() {
+                    // NOTE: this is a bit of a hack because it is a bit circumstantial
+                    // that all args that have an optional value are the only ones that
+                    // set arg.require_equals(true). Unfortunately, we cannot introspect
+                    // a clap::Arg to determine its min_values or default_missing_value
+                    // explicitly.
+                    writeln!(section, "--{long}[={value_str}]::").unwrap();
+                } else {
+                    writeln!(section, "--{long}={value_str}::").unwrap();
+                }
             }
         }
         let help = make_links(arg.get_long_help().or_else(|| arg.get_help()).unwrap());
