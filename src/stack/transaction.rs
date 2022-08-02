@@ -1149,9 +1149,9 @@ impl<'repo> StackTransaction<'repo> {
                         push_status = PushStatus::Conflict;
                         ours
                     }
-                    Err(_) => {
+                    Err(e) => {
                         return Err(Error::TransactionHalt {
-                            msg: "Index/worktree dirty".to_string(),
+                            msg: format!("{e:#}"),
                             conflicts: false,
                         }
                         .into())
