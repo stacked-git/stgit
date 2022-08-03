@@ -44,7 +44,6 @@ test_expect_success \
 test_expect_success \
     'Invalid arguments' '
     general_error stg branch -d "a description" bar foo 2>err &&
-      cat err &&
     grep -e "Found argument .foo. which wasn.t expected" err
 '
 

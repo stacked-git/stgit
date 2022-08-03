@@ -15,7 +15,6 @@ test_expect_success 'Initialize branch' '
 
 test_expect_success 'Cannot cleanup with patches' '
     command_error stg branch --cleanup 2>err &&
-      cat err &&
     grep "Clean up not permitted: the series still contains patches" err
 '
 

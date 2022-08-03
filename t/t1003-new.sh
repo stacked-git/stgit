@@ -27,7 +27,6 @@ test_expect_success \
 test_expect_success \
     'Invalid patch name: space' '
     command_error stg new "bad name" 2>err &&
-cat err &&
     grep -e "Invalid patch name \`bad name\`" err
 '
 
