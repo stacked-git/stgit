@@ -2,17 +2,16 @@
 
 //! `stg spill` implementation.
 
-use std::path::{Path, PathBuf};
-
 use anyhow::Result;
-use bstr::ByteSlice;
 use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
+    index::TemporaryIndex,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -83,30 +82,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut index = repo.index()?;
 
     let tree_id = if let Some(pathspecs) = matches.values_of_os("pathspecs") {
-        let workdir = repo.workdir().expect("not a bare repository");
-        let curdir = std::env::current_dir()?;
-        let mut norm_pathspec: Vec<PathBuf> = Vec::with_capacity(pathspecs.len());
-        for spec in pathspecs {
-            norm_pathspec.push(crate::pathspec::normalize_pathspec(
-                workdir,
-                &curdir,
-                Path::new(spec),
-            )?);
-        }
-        let pathspec = git2::Pathspec::new(&norm_pathspec)?;
-
-        let parent_tree = parent.tree()?;
-        let mut parent_index = git2::Index::new()?;
-        parent_index.read_tree(&parent_tree)?;
-
-        for parent_entry in parent_index.iter() {
-            if let Ok(path) = parent_entry.path.to_path() {
-                if pathspec.matches_path(path, git2::PathspecFlags::DEFAULT) {
-                    index.add(&parent_entry)?;
-                }
-            }
-        }
-        index.write_tree()?
+        stack.repo.with_temp_index_file(|temp_index| {
+            let stupid = repo.stupid();
+            let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+            stupid_temp.read_tree(patch_commit.tree_id())?;
+            stupid_temp.apply_pathlimited_treediff_to_index(
+                patch_commit.tree_id(),
+                parent.tree_id(),
+                pathspecs,
+            )?;
+            stupid_temp.write_tree()
+        })?
     } else {
         parent.tree_id()
     };

@@ -250,6 +250,55 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(apply_output.status.success())
     }
 
+    /// Apply path limited diff between to trees to specified index.
+    pub(crate) fn apply_pathlimited_treediff_to_index<SpecIter, SpecArg>(
+        &self,
+        tree1: git2::Oid,
+        tree2: git2::Oid,
+        pathspecs: SpecIter,
+    ) -> Result<bool>
+    where
+        SpecIter: IntoIterator<Item = SpecArg>,
+        SpecArg: AsRef<OsStr>,
+    {
+        if tree1 == tree2 {
+            return Ok(true);
+        }
+        let mut diff_tree_command = self.git();
+        diff_tree_command
+            .args(["diff-tree", "--full-index", "--binary", "--patch"])
+            .arg(tree1.to_string())
+            .arg(tree2.to_string())
+            .arg("--")
+            .args(pathspecs);
+
+        let diff = diff_tree_command
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .output_git()?
+            .require_success("diff-tree")?
+            .stdout;
+
+        if diff.is_empty() {
+            return Ok(true);
+        }
+
+        let apply_output = self
+            .git_in_work_root()
+            .args(["apply", "--cached"]) // --3way
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .in_and_out(&diff)?;
+
+        if apply_output.status.success() {
+            Ok(true)
+        } else if apply_output.status.code() == Some(1) {
+            Ok(false)
+        } else {
+            Err(git_command_error("apply", &apply_output.stderr))
+        }
+    }
+
     /// Apply diff between two trees to worktree and index.
     ///
     /// Pipes `git diff-tree | git apply --index`.

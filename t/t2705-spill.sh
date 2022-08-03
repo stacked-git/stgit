@@ -241,4 +241,109 @@ test_expect_success 'Spill with modified spillable file' '
     stg undo --hard
 '
 
+cat > expected-status.txt <<EOF
+A  dir0/dir1/new.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+M dir0/dir1/e.txt
+EOF
+test_expect_success 'Spill patch with just-added files' '
+    echo "new file" > dir0/dir1/new.txt &&
+    stg add dir0/dir1/new.txt &&
+    echo "modification" >> dir0/a.txt &&
+    echo "modification" >> dir0/dir1/e.txt &&
+    stg add dir0 &&
+    stg new --refresh -m add-new &&
+    (
+        cd dir0 &&
+        stg spill dir1/new.txt
+    ) &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    grep "modification" dir0/dir1/e.txt &&
+    stg undo --hard &&
+    stg delete --top
+'
+
+cat > expected-status.txt <<EOF
+?? dir0/dir1/new.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+M dir0/dir1/e.txt
+EOF
+test_expect_success 'Spill and reset patch with just-added files' '
+    echo "new file" > dir0/dir1/new.txt &&
+    stg add dir0/dir1/new.txt &&
+    echo "modification" >> dir0/a.txt &&
+    echo "modification" >> dir0/dir1/e.txt &&
+    stg add dir0 &&
+    stg new --refresh -m add-new &&
+    (
+        cd dir0 &&
+        stg spill --reset dir1/new.txt
+    ) &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    grep "modification" dir0/dir1/e.txt &&
+    stg undo --hard &&
+    stg delete --top
+'
+
+cat > expected-status.txt <<EOF
+M  dir0/dir1/e.txt
+A  dir0/dir1/new.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+EOF
+test_expect_success 'Spill patch with just-added files in wildcard dir' '
+    echo "new file" > dir0/dir1/new.txt &&
+    stg add dir0/dir1/new.txt &&
+    echo "modification" >> dir0/a.txt &&
+    echo "modification" >> dir0/dir1/e.txt &&
+    stg add dir0 &&
+    stg new --refresh -m add-new &&
+    (
+        cd dir0 &&
+        stg spill dir1
+    ) &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    grep "modification" dir0/dir1/e.txt &&
+    stg undo --hard &&
+    stg delete --top
+'
+
+cat > expected-status.txt <<EOF
+D  dir0/dir1/e.txt
+EOF
+cat > expected-files.txt <<EOF
+M dir0/a.txt
+EOF
+test_expect_success 'Spill removed file' '
+    echo "modification" >> dir0/a.txt &&
+    stg add dir0/a.txt &&
+    stg rm dir0/dir1/e.txt &&
+    stg new -rm rm-file &&
+    stg spill dir0/dir1 &&
+    stg status > status.txt &&
+    test_cmp expected-status.txt status.txt &&
+    stg files > files.txt &&
+    test_cmp expected-files.txt files.txt &&
+    grep "modification" dir0/a.txt &&
+    stg undo --hard &&
+    stg delete --top
+'
+
 test_done
