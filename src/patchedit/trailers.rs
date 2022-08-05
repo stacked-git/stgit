@@ -99,7 +99,7 @@ mod test {
                     .require_equals(true)
                     .action(clap::ArgAction::Append),
             )
-            .arg(Arg::new("opt").short('o').action(clap::ArgAction::Append))
+            .arg(Arg::new("opt").short('o').action(clap::ArgAction::Count))
             .get_matches_from(vec![
                 "myapp",          // 0
                 "-o",             // 1
