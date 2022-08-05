@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.0.0-beta.2] 2022-08-05
+
+### Changed
+- Improved error when push conflicts with untracked files (#193)
+- Removed a few transitive dependencies by turning-off features in bstr
+  and chrono.
+- Update Cargo.lock with latest dependencies
+- Update to clap 3.2 and only use non-deprecated interfaces
+
+### Fixed
+- Repair `stg spill` when spilling newly added files and using path
+  limits.
+
+
 ## [2.0.0-beta.1] 2022-07-28
 
 ### Removed
