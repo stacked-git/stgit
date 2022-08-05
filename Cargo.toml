@@ -20,7 +20,9 @@ anyhow = "1.0"
 atty = "0.2"
 bstr = "0.2"
 chrono = "0.4"
+clap = { version = "3.1", default-features = false, features = ["color", "std", "suggestions", "wrap_help"] }
 encoding_rs = "0.8"
+git2 = { version = "0.13", default-features = false }
 indexmap = "1.8"
 lazy_static = "~1.4"
 serde = { version = "1.0", features = ["derive"] }
@@ -34,16 +36,6 @@ bzip2 = { version = "0.4", optional = true }
 curl = { version = "0.4", optional = true }
 flate2 = { version = "1", optional = true }
 tar = { version = "0.4", optional = true }
-
-[dependencies.clap]
-version = "3.1"
-default-features = false
-features = ["color", "std", "suggestions", "wrap_help"]
-
-[dependencies.git2]
-version = "0.13"
-default-features = false
-features = []
 
 [features]
 default = ["import-compressed", "import-url"]
