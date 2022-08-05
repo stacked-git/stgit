@@ -40,18 +40,21 @@ install-html:
 .PHONY: install install-all install-bin install-completion install-man install-html
 
 
-lint: lint-format lint-clippy lint-t
+lint: lint-format lint-clippy lint-t unit-test
 
 lint-format:
-	$(CARGO) fmt --all --check
+	$(CARGO) --quiet fmt --all --check
 
 lint-clippy:
-	$(CARGO) clippy -- --deny warnings
+	$(CARGO) --quiet clippy -- --deny warnings
 
 lint-t:
 	$(MAKE) -C t test-lint
 
-.PHONY: lint lint-format lint-clippy lint-t
+unit-test:
+	$(CARGO) --quiet test
+
+.PHONY: lint lint-format lint-clippy lint-t unit-test
 
 
 format:
