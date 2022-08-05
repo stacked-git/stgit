@@ -363,7 +363,7 @@ fn import_series(
             .find_char('#')
             .map(|pos| &line[..pos])
             .unwrap_or(line)
-            .trim();
+            .trim_with(|c| c.is_ascii_whitespace());
         if line.is_empty() {
             continue;
         }
@@ -617,7 +617,7 @@ fn create_patch<'repo>(
             .map(|s| s.parse::<usize>().expect("clap already validated"))
     });
 
-    let trimmed_diff = diff.trim_end();
+    let trimmed_diff = diff.trim_end_with(|c| c.is_ascii_whitespace());
 
     let tree_id = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
         stack.branch_head.tree_id()
@@ -735,7 +735,10 @@ impl Headers {
         let mut split_message = Vec::with_capacity(message.len());
         let mut lines = message.lines_with_terminator();
 
-        while let Some(line) = lines.next().map(|line| line.trim()) {
+        while let Some(line) = lines
+            .next()
+            .map(|line| line.trim_with(|c| c.is_ascii_whitespace()))
+        {
             if line.is_empty() {
                 continue;
             }
@@ -743,7 +746,7 @@ impl Headers {
             let parts: Vec<_> = line.splitn_str(2, b":").collect();
             if parts.len() == 2 {
                 let header = parts[0];
-                let value = parts[1].trim_start();
+                let value = parts[1].trim_start_with(|c| c.is_ascii_whitespace());
                 if header.eq_ignore_ascii_case(b"patch") && !value.is_empty() {
                     headers.patchname = Some(
                         value

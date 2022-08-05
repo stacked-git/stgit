@@ -127,7 +127,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 .find_char('#')
                 .map(|pos| &line[..pos])
                 .unwrap_or(line)
-                .trim();
+                .trim_with(|c| c.is_ascii_whitespace());
             if line.is_empty() {
                 continue;
             }
