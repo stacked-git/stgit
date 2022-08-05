@@ -6,6 +6,7 @@ use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -38,22 +39,22 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to hide")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 
     stack.check_head_top_mismatch()?;
 
-    let patches: Vec<PatchName> = patchrange::parse(
+    let patches: Vec<PatchName> = patchrange::patches_from_specs(
         matches
-            .values_of("patchranges")
+            .get_many::<patchrange::Specification>("patchranges")
             .expect("clap ensures at least one range is provided"),
         &stack,
         patchrange::Allow::All,

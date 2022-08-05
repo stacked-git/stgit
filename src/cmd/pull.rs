@@ -116,7 +116,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let parent_remote;
     let remote_name = match policy {
         PullPolicy::Rebase => {
-            if matches.value_of("repository").is_some() {
+            if matches.get_one::<String>("repository").is_some() {
                 return Err(anyhow!(
                     "Specifying a repository is meaningless for `{policy}` pull-policy"
                 ));
@@ -128,7 +128,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
             parent_remote = config
                 .get_string(&format!("branch.{branch_name}.remote"))
                 .ok();
-            let remote_name = matches.value_of("repository").or(parent_remote.as_deref());
+            let remote_name = matches
+                .get_one::<String>("repository")
+                .cloned()
+                .or_else(|| parent_remote.clone());
             if remote_name.is_none() {
                 return Err(anyhow!(
                     "No tracking information for the current branch.\n\
@@ -168,7 +171,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .unwrap_or_else(|_| "git pull".to_string());
             let remote_name = remote_name.unwrap();
             print_info_message(matches, &format!("Pulling from `{remote_name}`"));
-            if !stupid.user_pull(&pull_cmd, remote_name)? {
+            if !stupid.user_pull(&pull_cmd, &remote_name)? {
                 return Err(crate::stack::Error::CausedConflicts(
                     "Pull resulted in conflicts".to_string(),
                 )
@@ -183,7 +186,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .unwrap_or_else(|_| "git fetch".to_string());
             let remote_name = remote_name.unwrap();
             print_info_message(matches, &format!("Fetching from `{remote_name}`"));
-            stupid.user_fetch(&fetch_cmd, remote_name)?;
+            stupid.user_fetch(&fetch_cmd, &remote_name)?;
             let fetch_head = repo
                 .find_reference("FETCH_HEAD")
                 .context("finding `FETCH_HEAD`")?;
@@ -218,13 +221,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stupid.user_rebase(&rebase_cmd, rebase_target)?;
     }
 
-    if !matches.is_present("nopush") {
+    if !matches.contains_id("nopush") {
         // The above pull and rebase action may have moved the stack's branch reference,
         // so we initialize the stack afresh.
         let stack = Stack::from_branch(&repo, None)?;
 
         stack.check_head_top_mismatch()?;
-        let check_merged = matches.is_present("merged");
+        let check_merged = matches.contains_id("merged");
         stack
             .setup_transaction()
             .use_index_and_worktree(true)

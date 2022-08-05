@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 
-use std::format as f;
+use std::{format as f, path::PathBuf};
 
 use super::shstream::ShStream;
 
@@ -18,7 +18,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Output completion script to <path>")
                 .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 
@@ -142,7 +142,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
     let mut pos_index = 0;
     for arg in command.get_positionals() {
         script.ensure_blank_line();
-        if arg.is_multiple_occurrences_set()
+        if matches!(arg.get_action(), clap::ArgAction::Append)
             || (arg.is_multiple_values_set() && arg.get_value_delimiter() == Some(' '))
         {
             if let Some(num_vals) = arg.get_num_vals() {
@@ -195,7 +195,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
 fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
     assert!(arg.is_takes_value_set());
 
-    if let Some(possible_values) = arg.get_possible_values() {
+    if let Some(possible_values) = arg.get_value_parser().possible_values() {
         let mut possible = ShStream::new();
         for pv in possible_values {
             possible.word(pv.get_name());

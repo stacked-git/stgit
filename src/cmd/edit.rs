@@ -5,7 +5,7 @@
 use std::str::FromStr;
 
 use anyhow::{Context, Result};
-use clap::{Arg, ArgMatches, ValueHint};
+use clap::{builder::ValueParser, Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
@@ -50,8 +50,7 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("patch")
                 .help("Patch to edit")
-                .forbid_empty_values(true)
-                .validator(PatchName::from_str)
+                .value_parser(ValueParser::new(PatchName::from_str))
                 .value_hint(ValueHint::Other),
         );
     patchedit::add_args(app, true, true).arg(
@@ -77,8 +76,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(patch_arg) = matches.value_of("patch") {
-        patchrange::parse_single(patch_arg, &stack, patchrange::Allow::All)?
+    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patch") {
+        patchrange::parse_single(patchname, &stack, patchrange::Allow::All)?
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
@@ -87,7 +86,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let patch_commit = stack.get_patch_commit(&patchname);
 
-    let tree_id = if let Some(treeish) = matches.value_of("set-tree") {
+    let tree_id = if let Some(treeish) = matches.get_one::<String>("set-tree") {
         let object = crate::revspec::parse_stgit_revision(&repo, Some(treeish), None)
             .context("parsing `--set-tree` value")?;
         let tree = object.peel_to_tree()?;
@@ -100,7 +99,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .original_patchname(Some(&patchname))
         .existing_patch_commit(patch_commit)
         .allow_diff_edit(true)
-        .allow_implicit_edit(!matches.is_present("set-tree"))
+        .allow_implicit_edit(!matches.contains_id("set-tree"))
         .allow_template_save(true)
         .override_tree_id(tree_id)
         .edit(&stack, &repo, matches)?
@@ -133,7 +132,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
                     trans.update_patch(&new_patchname, commit_id)?;
 
-                    if matches.is_present("set-tree") {
+                    if matches.contains_id("set-tree") {
                         trans.push_tree_patches(&popped)
                     } else {
                         trans.push_patches(&popped, false)

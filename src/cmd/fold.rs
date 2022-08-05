@@ -2,15 +2,17 @@
 
 //! `stg fold` implementation.
 
-use std::io::Read;
+use std::{io::Read, path::PathBuf};
 
 use anyhow::Result;
 use clap::{Arg, ArgGroup};
 
-use crate::repo::RepositoryExtended;
-use crate::revspec::parse_stgit_revision;
-use crate::stack::{Error, Stack, StackStateAccess};
-use crate::stupid::Stupid;
+use crate::{
+    repo::RepositoryExtended,
+    revspec::parse_stgit_revision,
+    stack::{Error, Stack, StackStateAccess},
+    stupid::Stupid,
+};
 
 use super::StGitCommand;
 
@@ -40,7 +42,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("file")
                 .help("GNU diff file")
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf))
+                .value_hint(clap::ValueHint::FilePath),
         )
         .arg(
             Arg::new("three-way")
@@ -62,20 +65,14 @@ fn make() -> clap::Command<'static> {
                 .short('p')
                 .help("Remove <n> leading components from diff paths (default 1)")
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
-                }),
+                .value_parser(crate::argset::parse_usize),
         )
         .arg(
             Arg::new("context-lines")
                 .short('C')
                 .help("Ensure <n> lines of matching context for each change")
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
-                }),
+                .value_parser(crate::argset::parse_usize),
         )
         .arg(
             Arg::new("reject")
@@ -95,7 +92,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     }
 
-    let diff = if let Some(filename) = matches.value_of_os("file") {
+    let diff = if let Some(filename) = matches.get_one::<PathBuf>("file") {
         std::fs::read(filename)?
     } else {
         let stdin = std::io::stdin();
@@ -105,22 +102,17 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         diff
     };
 
-    let reject = matches.is_present("reject");
-    let strip_level = matches
-        .value_of("strip")
-        .map(|s| s.parse::<usize>().expect("clap already validated"));
-
-    let context_lines = matches
-        .value_of("context-lines")
-        .map(|s| s.parse::<usize>().unwrap());
+    let reject = matches.contains_id("reject");
+    let strip_level = matches.get_one::<usize>("strip").copied();
+    let context_lines = matches.get_one::<usize>("context-lines").copied();
 
     let stupid = repo.stupid();
 
     stupid.update_index_refresh()?;
 
-    let base_commit = if matches.is_present("three-way") {
+    let base_commit = if matches.contains_id("three-way") {
         Some(stack.top().parent(0)?)
-    } else if let Some(base_spec) = matches.value_of("base") {
+    } else if let Some(base_spec) = matches.get_one::<String>("base") {
         Some(parse_stgit_revision(&repo, Some(base_spec), None)?.peel_to_commit()?)
     } else {
         None

@@ -54,7 +54,7 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("committish")
                 .help("New base commit for the stack")
-                .forbid_empty_values(true)
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .required_unless_present("interactive"),
         )
         .arg(
@@ -104,7 +104,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stupid = repo.stupid();
     let branch_name = stack.branch_name.clone();
 
-    let target_commit = if let Some(committish) = matches.value_of("committish") {
+    let target_commit = if let Some(committish) = crate::argset::get_one_str(matches, "committish")
+    {
         parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
     } else {
         stack.base().to_owned()
@@ -119,7 +120,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     let clean_result = repo.check_index_and_worktree_clean();
 
-    let autostash = if matches.is_present("autostash") {
+    let autostash = if matches.contains_id("autostash") {
         true
     } else if let Ok(autostash) = config.get_bool("branch.{branch_name}.stgit.autostash") {
         autostash
@@ -157,12 +158,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
     stupid.user_rebase(&rebase_cmd, target_commit.id())?;
 
-    if matches.is_present("interactive") {
+    if matches.contains_id("interactive") {
         interactive_pushback(&repo, &config, matches, &applied)?;
-    } else if !matches.is_present("nopush") {
+    } else if !matches.contains_id("nopush") {
         let stack = Stack::from_branch(&repo, None)?;
         stack.check_head_top_mismatch()?;
-        let check_merged = matches.is_present("merged");
+        let check_merged = matches.contains_id("merged");
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
@@ -420,7 +421,7 @@ fn interactive_pushback(
             }
         })
         .collect();
-    let check_merged = matches.is_present("merged");
+    let check_merged = matches.contains_id("merged");
 
     stack.check_head_top_mismatch()?;
     stack

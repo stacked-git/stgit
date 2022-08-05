@@ -55,7 +55,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to display")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
         )
         .arg(&*crate::argset::BRANCH_ARG)
@@ -139,7 +139,7 @@ fn make() -> clap::Command<'static> {
                 .number_of_values(1)
                 .default_missing_value("full")
                 .require_equals(true)
-                .validator(CommitIdLength::from_str),
+                .value_parser(clap::value_parser!(CommitIdLength)),
         )
         .arg(
             Arg::new("description")
@@ -180,6 +180,7 @@ fn make() -> clap::Command<'static> {
         )
 }
 
+#[derive(Clone)]
 enum CommitIdLength {
     Full,
     Length(usize),
@@ -209,8 +210,8 @@ impl FromStr for CommitIdLength {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
-    let opt_missing = matches.value_of("missing");
+    let opt_branch = crate::argset::get_one_str(matches, "branch");
+    let opt_missing = crate::argset::get_one_str(matches, "missing");
     let (stack, cmp_stack) = if let Some(ref_branch) = opt_missing {
         (
             Stack::from_branch(&repo, Some(ref_branch))?,
@@ -220,17 +221,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
         (Stack::from_branch(&repo, opt_branch)?, None)
     };
 
-    let opt_all = matches.is_present("all");
-    let opt_applied = matches.is_present("applied");
-    let opt_unapplied = matches.is_present("unapplied");
-    let opt_hidden = matches.is_present("hidden");
+    let opt_all = matches.contains_id("all");
+    let opt_applied = matches.contains_id("applied");
+    let opt_unapplied = matches.contains_id("unapplied");
+    let opt_hidden = matches.contains_id("hidden");
 
     let mut patches: Vec<(PatchName, git2::Oid, char)> = vec![];
 
-    if let Some(patchranges) = matches.values_of("patchranges-all") {
+    if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
         let top_patchname = stack.applied().last();
-        for patchname in patchrange::parse_contiguous(
-            patchranges,
+        for patchname in patchrange::contiguous_patches_from_specs(
+            range_specs,
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,
         )? {
@@ -285,7 +286,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         });
     }
 
-    if matches.is_present("short") {
+    if matches.contains_id("short") {
         let shortnr = repo
             .config()
             .and_then(|config| config.get_i32("stgit.shortnr"))
@@ -304,19 +305,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    if matches.is_present("count") {
+    if matches.contains_id("count") {
         println!("{}", patches.len());
         return Ok(());
     }
 
-    let opt_commit_id = matches
-        .value_of("commit-id")
-        .map(|s| CommitIdLength::from_str(s).expect("clap already validated"));
-    let opt_description = matches.is_present("description");
-    let opt_author = matches.is_present("author");
+    let opt_commit_id = matches.get_one::<CommitIdLength>("commit-id");
+    let opt_description = matches.contains_id("description");
+    let opt_author = matches.contains_id("author");
 
     let branch_prefix = format!("{}:", &stack.branch_name);
-    let branch_prefix = if matches.is_present("show-branch") {
+    let branch_prefix = if matches.contains_id("show-branch") {
         branch_prefix.as_str()
     } else {
         ""
@@ -345,8 +344,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         0
     };
 
-    let opt_no_prefix = matches.is_present("no-prefix");
-    let opt_empty = matches.is_present("empty");
+    let opt_no_prefix = matches.contains_id("no-prefix");
+    let opt_empty = matches.contains_id("empty");
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();

@@ -55,8 +55,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     repo.check_repository_state()?;
 
     let (clean_applied, clean_unapplied) = match (
-        matches.is_present("applied"),
-        matches.is_present("unapplied"),
+        matches.contains_id("applied"),
+        matches.contains_id("unapplied"),
     ) {
         (false, false) => (true, true),
         opts => opts,

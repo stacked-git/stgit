@@ -10,6 +10,7 @@ use clap::{Arg, ArgMatches};
 use termcolor::WriteColor;
 
 use crate::{
+    argset::{self, get_one_str},
     print_info_message, print_warning_message,
     repo::RepositoryExtended,
     stack::{get_branch_name, state_refname_from_branch_name, Stack, StackStateAccess},
@@ -82,12 +83,12 @@ fn make() -> clap::Command<'static> {
                     Arg::new("new-branch")
                         .help("New branch name")
                         .required(true)
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 )
                 .arg(
                     Arg::new("committish")
                         .help("Base commit for new branch")
-                        .forbid_empty_values(true),
+                        .value_parser(clap::builder::NonEmptyStringValueParser::new()),
                 ),
         )
         .subcommand(
@@ -105,7 +106,7 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("new-branch")
                         .help("New branch name")
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 ),
         )
         .subcommand(
@@ -121,7 +122,7 @@ fn make() -> clap::Command<'static> {
                         .multiple_values(true)
                         .min_values(1)
                         .max_values(2)
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 ),
         )
         .subcommand(
@@ -133,7 +134,7 @@ fn make() -> clap::Command<'static> {
                     Arg::new("branch")
                         .help("Branch to protect")
                         .value_name("branch")
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 ),
         )
         .subcommand(
@@ -145,7 +146,7 @@ fn make() -> clap::Command<'static> {
                     Arg::new("branch")
                         .help("Branch to unprotect")
                         .value_name("branch")
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 ),
         )
         .subcommand(
@@ -165,7 +166,7 @@ fn make() -> clap::Command<'static> {
                         .help("Branch to delete")
                         .value_name("branch")
                         .required(true)
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 )
                 .arg(
                     Arg::new("force")
@@ -189,7 +190,7 @@ fn make() -> clap::Command<'static> {
                     Arg::new("branch")
                         .help("Branch to clean up")
                         .value_name("branch")
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 )
                 .arg(
                     Arg::new("force")
@@ -208,7 +209,7 @@ fn make() -> clap::Command<'static> {
                     Arg::new("branch-any")
                         .help("Branch to describe")
                         .value_name("branch")
-                        .forbid_empty_values(true),
+                        .value_parser(argset::parse_branch_name),
                 ),
         )
         .arg(
@@ -221,7 +222,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("branch-any")
                 .help("Branch to switch to")
                 .value_name("branch")
-                .forbid_empty_values(true),
+                .value_parser(argset::parse_branch_name),
         )
 }
 
@@ -243,11 +244,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         let current_branch = repo.get_branch(None)?;
         let current_branchname = get_branch_name(&current_branch)?;
-        if let Some(target_branchname) = matches.value_of("branch-any") {
+        if let Some(target_branchname) = get_one_str(matches, "branch-any") {
             if target_branchname == current_branchname {
                 Err(anyhow!("{target_branchname} is already the current branch"))
             } else {
-                if !matches.is_present("merge") {
+                if !matches.contains_id("merge") {
                     repo.check_worktree_clean()?;
                 }
                 let target_branch = repo.get_branch(Some(target_branchname))?;
@@ -422,12 +423,12 @@ fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let new_branchname = matches.value_of("new-branch").expect("required argument");
+    let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
 
     repo.check_repository_state()?;
     repo.check_conflicts()?;
 
-    let parent_branch = if let Some(committish) = matches.value_of("committish") {
+    let parent_branch = if let Some(committish) = get_one_str(matches, "committish") {
         repo.check_worktree_clean()?;
         let mut parent_branch = None;
         if let Ok(local_parent_branch) = repo.find_branch(committish, git2::BranchType::Local) {
@@ -458,7 +459,7 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let target_commit = if let Some(parent_branch) = parent_branch.as_ref() {
         parent_branch.get().peel_to_commit()?
-    } else if let Some(committish) = matches.value_of("committish") {
+    } else if let Some(committish) = get_one_str(matches, "committish") {
         crate::revspec::parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
     } else {
         repo.head()?.peel_to_commit()?
@@ -515,7 +516,7 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let current_branch = repo.get_branch(None)?;
     let current_branchname = get_branch_name(&current_branch)?;
 
-    let new_branchname = if let Some(new_branchname) = matches.value_of("new-branch") {
+    let new_branchname = if let Some(new_branchname) = get_one_str(matches, "new-branch") {
         new_branchname.to_string()
     } else {
         let suffix = chrono::Local::now().format("%Y%m%d-%H%M%S");
@@ -560,7 +561,11 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let names: Vec<_> = matches.values_of("branch-any").unwrap().collect();
+    let names: Vec<_> = matches
+        .get_many::<String>("branch-any")
+        .unwrap()
+        .map(|s| s.as_str())
+        .collect();
     let current_branchname;
     let (old_branchname, new_branchname) = if names.len() == 2 {
         repo.get_branch(Some(names[0]))?;
@@ -596,19 +601,19 @@ fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn protect(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, matches.value_of("branch"))?;
+    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, true)
 }
 
 fn unprotect(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, matches.value_of("branch"))?;
+    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, false)
 }
 
 fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let target_branchname = matches.value_of("branch-any").expect("required argument");
+    let target_branchname = get_one_str(matches, "branch-any").expect("required argument");
     let mut target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
     let current_branchname = current_branch.and_then(|branch| get_branch_name(&branch).ok());
@@ -621,7 +626,7 @@ fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     if let Ok(stack) = Stack::from_branch(&repo, Some(target_branchname)) {
         if stack.is_protected(&config) {
             return Err(anyhow!("Delete not permitted: this branch is protected"));
-        } else if !matches.is_present("force") && stack.all_patches().count() > 0 {
+        } else if !matches.contains_id("force") && stack.all_patches().count() > 0 {
             return Err(anyhow!(
                 "Delete not permitted: the series still contains patches (override with --force)"
             ));
@@ -634,11 +639,11 @@ fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, matches.value_of("branch"))?;
+    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
     let config = repo.config()?;
     if stack.is_protected(&config) {
         return Err(anyhow!("Clean up not permitted: this branch is protected"));
-    } else if !matches.is_present("force") && stack.all_patches().count() > 0 {
+    } else if !matches.contains_id("force") && stack.all_patches().count() > 0 {
         return Err(anyhow!(
             "Clean up not permitted: the series still contains patches (override with --force)"
         ));
@@ -648,8 +653,8 @@ fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn describe(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let branch = repo.get_branch(matches.value_of("branch-any"))?;
-    let description = matches.value_of("description").expect("required argument");
+    let branch = repo.get_branch(get_one_str(matches, "branch-any"))?;
+    let description = get_one_str(matches, "description").expect("required argument");
     let branchname = get_branch_name(&branch)?;
     let mut config = repo.config()?;
     set_description(&mut config, &branchname, description)

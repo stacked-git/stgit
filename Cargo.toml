@@ -20,7 +20,7 @@ anyhow = "1.0"
 atty = "0.2"
 bstr = { version = "0.2", default-features = false, features = ["std"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
-clap = { version = "3.1", default-features = false, features = ["color", "std", "suggestions", "wrap_help"] }
+clap = { version = "3.2", default-features = false, features = ["color", "std", "suggestions", "wrap_help"] }
 encoding_rs = "0.8"
 git2 = { version = "0.13", default-features = false }
 indexmap = "1.8"

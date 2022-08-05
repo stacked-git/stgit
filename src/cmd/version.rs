@@ -30,7 +30,7 @@ fn make() -> clap::Command<'static> {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    if matches.is_present("short") {
+    if matches.contains_id("short") {
         println!("{} {}", env!("CARGO_BIN_NAME"), env!("CARGO_PKG_VERSION"));
     } else {
         println!(

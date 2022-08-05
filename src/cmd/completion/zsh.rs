@@ -2,6 +2,8 @@
 
 //! `stg completion zsh` implementation
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 
 pub(super) fn command() -> clap::Command<'static> {
@@ -14,7 +16,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Output completion script to <path>")
                 .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 

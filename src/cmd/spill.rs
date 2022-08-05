@@ -2,6 +2,8 @@
 
 //! `stg spill` implementation.
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
@@ -59,7 +61,7 @@ fn make() -> clap::Command<'static> {
                 .help("Only spill files matching path")
                 .value_name("path")
                 .multiple_values(true)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 
@@ -81,7 +83,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let parent = patch_commit.parent(0)?;
     let mut index = repo.index()?;
 
-    let tree_id = if let Some(pathspecs) = matches.values_of_os("pathspecs") {
+    let tree_id = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         stack.repo.with_temp_index_file(|temp_index| {
             let stupid = repo.stupid();
             let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
@@ -105,7 +107,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         patch_commit.parent_ids(),
     )?;
 
-    let reflog_msg = if let Some(annotation) = matches.value_of("annotate") {
+    let reflog_msg = if let Some(annotation) = matches.get_one::<String>("annotate") {
         format!("spill {patchname}\n\n{annotation}")
     } else {
         format!("spill {patchname}")
@@ -118,7 +120,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .transact(|trans| trans.update_patch(&patchname, commit_id))
         .execute(&reflog_msg)?;
 
-    if matches.is_present("reset") {
+    if matches.contains_id("reset") {
         let tree = repo.find_tree(tree_id)?;
         index.read_tree(&tree)?;
         index.write()?;

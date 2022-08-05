@@ -9,6 +9,8 @@ mod man;
 mod shstream;
 mod zsh;
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -44,7 +46,7 @@ fn make() -> clap::Command<'static> {
                 .global(true)
                 .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 
@@ -60,7 +62,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 }
 
 pub(self) fn get_output_stream(matches: &clap::ArgMatches) -> Result<Box<dyn std::io::Write>> {
-    Ok(match matches.value_of_os("output") {
+    Ok(match matches.get_one::<PathBuf>("output") {
         Some(path) => Box::new(
             std::fs::OpenOptions::new()
                 .create(true)

@@ -2,7 +2,10 @@
 
 //! `stg float` implementation.
 
-use std::path::Path;
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{anyhow, Context, Result};
 use clap::{Arg, ArgMatches};
@@ -45,7 +48,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to float")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["series"])
                 .required_unless_present("series"),
         )
@@ -61,8 +64,7 @@ fn make() -> clap::Command<'static> {
                 .help("Rearrange according to a series <file>")
                 .value_name("file")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
         .arg(&*crate::argset::KEEP_ARG)
 }
@@ -71,9 +73,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let opt_noapply = matches.is_present("noapply");
-    let opt_keep = matches.is_present("keep");
-    let opt_series: Option<&Path> = matches.value_of_os("series").map(Path::new);
+    let opt_noapply = matches.contains_id("noapply");
+    let opt_keep = matches.contains_id("keep");
+    let opt_series = matches.get_one::<PathBuf>("series").map(|p| p.as_path());
 
     repo.check_repository_state()?;
     repo.check_conflicts()?;
@@ -83,9 +85,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
         parse_series(series_path, &stack)?
     } else {
         let patchranges = matches
-            .values_of("patchranges")
+            .get_many::<patchrange::Specification>("patchranges")
             .expect("clap ensures either patches or series");
-        patchrange::parse(patchranges, &stack, patchrange::Allow::Visible)?
+        patchrange::patches_from_specs(patchranges, &stack, patchrange::Allow::Visible)?
     };
 
     if patches.is_empty() {
@@ -148,7 +150,8 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
         std::fs::read_to_string(path)?
     };
 
-    let series: Vec<&str> = contents
+    let mut series: Vec<patchrange::Specification> = Vec::new();
+    for s in contents
         .lines()
         .map(|line| {
             if let Some((content, _comment)) = line.split_once('#') {
@@ -159,13 +162,17 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
             .trim()
         })
         .filter(|s| !s.is_empty())
-        .collect();
+    {
+        series.push(patchrange::Specification::from_str(s)?)
+    }
 
-    patchrange::parse(series, stack, patchrange::Allow::Visible).with_context(|| {
-        if use_stdin {
-            "<stdin>".to_string()
-        } else {
-            path.to_string_lossy().to_string()
-        }
-    })
+    patchrange::patches_from_specs(series.iter(), stack, patchrange::Allow::Visible).with_context(
+        || {
+            if use_stdin {
+                "<stdin>".to_string()
+            } else {
+                path.to_string_lossy().to_string()
+            }
+        },
+    )
 }

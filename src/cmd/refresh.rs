@@ -72,7 +72,7 @@ fn make() -> clap::Command<'static> {
                 .help("Only refresh files matching path")
                 .value_name("path")
                 .multiple_values(true)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
         .next_help_heading("REFRESH OPTIONS")
         .arg(
@@ -112,7 +112,7 @@ fn make() -> clap::Command<'static> {
                 .takes_value(true)
                 .value_name("patch")
                 .value_hint(ValueHint::Other)
-                .validator(PatchName::from_str),
+                .value_parser(PatchName::from_str),
         )
         .arg(
             Arg::new("annotate")
@@ -147,7 +147,7 @@ fn make() -> clap::Command<'static> {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    if matches.is_present("spill") {
+    if matches.contains_id("spill") {
         return Err(anyhow!(
             "`stg refresh --spill` is obsolete; use `stg spill` instead"
         ));
@@ -159,12 +159,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(patchname) = matches
-        .value_of("patch")
-        .map(|s| PatchName::from_str(s).expect("clap already validated"))
-    {
-        if stack.has_patch(&patchname) {
-            patchname
+    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patch") {
+        if stack.has_patch(patchname) {
+            patchname.clone()
         } else {
             return Err(anyhow!("Patch `{patchname}` does not exist"));
         }
@@ -178,11 +175,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &stack,
         &config,
         matches,
-        matches.is_present("update").then(|| &patchname),
+        matches.contains_id("update").then(|| &patchname),
     )?;
 
     let mut log_msg = "refresh ".to_string();
-    let opt_annotate = matches.value_of("annotate");
+    let opt_annotate = matches.get_one::<String>("annotate");
 
     // Make temp patch
     let temp_commit_id = stack.repo.commit_ex(
@@ -342,7 +339,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
 fn determine_refresh_paths(
     repo: &git2::Repository,
-    pathspecs: Option<clap::OsValues>,
+    pathspecs: Option<clap::parser::ValuesRef<PathBuf>>,
     patch_commit: Option<&git2::Commit>,
     use_submodules: bool,
     force: bool,
@@ -454,17 +451,17 @@ pub(crate) fn assemble_refresh_tree(
     limit_to_patchname: Option<&PatchName>,
 ) -> Result<git2::Oid> {
     let repo = stack.repo;
-    let opt_submodules = matches.is_present("submodules");
-    let opt_nosubmodules = matches.is_present("no-submodules");
+    let opt_submodules = matches.contains_id("submodules");
+    let opt_nosubmodules = matches.contains_id("no-submodules");
     let use_submodules = if !opt_submodules && !opt_nosubmodules {
         config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
     } else {
         opt_submodules
     };
-    let opt_pathspecs = matches.values_of_os("pathspecs");
+    let opt_pathspecs = matches.get_many::<PathBuf>("pathspecs");
     let is_path_limiting = limit_to_patchname.is_some() || opt_pathspecs.is_some();
 
-    let refresh_paths = if matches.is_present("index") {
+    let refresh_paths = if matches.contains_id("index") {
         // When refreshing from the index, no path limiting may be used.
         assert!(!is_path_limiting);
         IndexSet::new()
@@ -475,7 +472,7 @@ pub(crate) fn assemble_refresh_tree(
             opt_pathspecs,
             maybe_patch_commit,
             use_submodules,
-            matches.is_present("force"),
+            matches.contains_id("force"),
         )?
     };
 
@@ -506,10 +503,10 @@ pub(crate) fn assemble_refresh_tree(
         tree_id_result
     }?;
 
-    let tree_id = if matches.is_present("no-verify") {
+    let tree_id = if matches.contains_id("no-verify") {
         tree_id
     } else {
-        run_pre_commit_hook(repo, matches.is_present("edit"))?;
+        run_pre_commit_hook(repo, matches.contains_id("edit"))?;
         // Re-read index from filesystem because pre-commit hook may have modified it
         let mut index = repo.index()?;
         index.read(false)?;

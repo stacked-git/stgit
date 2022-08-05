@@ -2,12 +2,13 @@
 
 //! `stg email send` implementation.
 
-use std::path::Path;
+use std::{path::Path, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use clap::Arg;
 
 use crate::{
+    argset,
     commit::CommitExtended,
     patchrange,
     stack::{Error, Stack, StackStateAccess},
@@ -63,7 +64,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 )
                 .value_name("source")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .conflicts_with("all")
                 .required_unless_present_any(&["all", "dump-aliases"]),
         )
@@ -74,7 +75,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .allow_hyphen_values(true)
                 .value_name("git-options"),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("all")
                 .long("all")
@@ -107,7 +108,7 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("to")
             .long("to")
@@ -123,8 +124,8 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("cc")
             .long("cc")
@@ -137,8 +138,8 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("bcc")
             .long("bcc")
@@ -151,8 +152,8 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("subject")
             .long("subject")
@@ -164,7 +165,7 @@ lazy_static! {
             )
             .value_name("subject")
             .takes_value(true)
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("reply-to")
             .long("reply-to")
             .help("Specify the \"Reply-To:\" address")
@@ -175,7 +176,7 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("in-reply-to")
             .long("in-reply-to")
@@ -204,7 +205,7 @@ lazy_static! {
             )
             .value_name("id")
             .takes_value(true)
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("compose")
             .long("compose")
             .help("Open an editor for introduction")
@@ -237,7 +238,7 @@ lazy_static! {
             )
             .value_name("id")
             .takes_value(true)
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("no-thread")
             .long("no-thread")
             .help("Do not add In-Reply-To and Reference headers to each email")
@@ -281,7 +282,7 @@ lazy_static! {
             )
             .takes_value(true)
             .value_name("mode")
-            .possible_values(["always", "never", "cc", "compose", "auto"]),
+            .value_parser(["always", "never", "cc", "compose", "auto"]),
         Arg::new("quiet")
             .long("quiet")
             .help("Output one line of info per email")
@@ -333,13 +334,14 @@ lazy_static! {
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
 
-    if matches.is_present("dump-aliases") {
+    if matches.contains_id("dump-aliases") {
         return repo.stupid().send_email_dump_aliases();
     }
 
-    let stack = Stack::from_branch(&repo, matches.value_of("branch"))?;
+    let stack = Stack::from_branch(&repo, argset::get_one_str(matches, "branch"))?;
 
-    let sources = if let Some(patchranges_or_paths) = matches.values_of("patchranges-or-paths") {
+    let source_args = matches.get_many::<String>("patchranges-or-paths");
+    let sources = if let Some(patchranges_or_paths) = source_args {
         let patchranges_or_paths = patchranges_or_paths.collect::<Vec<_>>();
         if patchranges_or_paths.iter().all(|s| Path::new(s).is_dir())
             || patchranges_or_paths.iter().all(|s| Path::new(s).is_file())
@@ -349,8 +351,12 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 .map(|v| v.to_string())
                 .collect::<Vec<_>>()
         } else {
-            let patches = patchrange::parse_contiguous(
-                patchranges_or_paths,
+            let mut specs = Vec::new();
+            for arg in patchranges_or_paths {
+                specs.push(patchrange::Specification::from_str(arg)?);
+            }
+            let patches = patchrange::contiguous_patches_from_specs(
+                &specs,
                 &stack,
                 patchrange::Allow::VisibleWithAppliedBoundary,
             )?;
@@ -371,7 +377,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 vec![format!("{base}..{last}")]
             }
         }
-    } else if matches.is_present("all") {
+    } else if matches.contains_id("all") {
         let applied = stack.applied();
         if applied.is_empty() {
             return Err(Error::NoAppliedPatches.into());
@@ -399,7 +405,10 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     for arg in passthrough_args {
         if let Some(indices) = matches.indices_of(arg.get_id()) {
             let indices = indices.collect::<Vec<_>>();
-            let values = matches.values_of(arg.get_id()).unwrap().collect::<Vec<_>>();
+            let values = matches
+                .get_many::<String>(arg.get_id())
+                .unwrap()
+                .collect::<Vec<_>>();
             let long = arg.get_long().expect("arg has long option");
             if values.is_empty() {
                 for index in indices {
@@ -423,8 +432,8 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = send_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(options) = matches.values_of("git-send-email-opts") {
-        send_args.extend(options.map(|o| o.to_string()));
+    if let Some(options) = matches.get_many::<String>("git-send-email-opts") {
+        send_args.extend(options.cloned());
     }
 
     let mut sources = sources;

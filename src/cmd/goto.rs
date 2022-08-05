@@ -5,7 +5,7 @@
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use clap::{Arg, ArgMatches};
+use clap::{builder::ValueParser, Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
@@ -37,8 +37,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patch")
                 .help("Patch to go to")
                 .required(true)
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true),
+                .value_parser(ValueParser::new(PatchName::from_str)),
         )
 }
 
@@ -46,9 +45,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let patch_arg = matches.value_of("patch").unwrap();
-    let opt_keep = matches.is_present("keep");
-    let opt_merged = matches.is_present("merged");
+    let patch_arg = matches.get_one::<PatchName>("patch").unwrap();
+    let opt_keep = matches.contains_id("keep");
+    let opt_merged = matches.contains_id("merged");
 
     repo.check_repository_state()?;
     repo.check_conflicts()?;
@@ -60,7 +59,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patchname = match patchrange::parse_single(patch_arg, &stack, patchrange::Allow::Visible) {
         Ok(patchname) => Ok(patchname),
         Err(e @ patchrange::Error::PatchNotKnown { .. }) => {
-            let oid_prefix = patch_arg;
+            let oid_prefix: &str = patch_arg.as_ref();
             if oid_prefix.len() >= 4 && oid_prefix.chars().all(|c| c.is_ascii_hexdigit()) {
                 let oid_matches: Vec<&PatchName> = stack
                     .all_patches()

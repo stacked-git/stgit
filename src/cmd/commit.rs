@@ -52,7 +52,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to commit")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["all", "number"]),
         )
         .arg(
@@ -61,10 +61,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Commit the specified number of applied patches")
                 .value_name("number")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not an integer"))
-                })
+                .value_parser(crate::argset::parse_usize)
                 .conflicts_with("all"),
         )
         .arg(
@@ -84,10 +81,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let patches: Vec<PatchName> = if let Some(patchranges) = matches.values_of("patchranges") {
+    let range_specs = matches.get_many::<patchrange::Specification>("patchranges");
+    let patches: Vec<PatchName> = if let Some(range_specs) = range_specs {
         let applied_and_unapplied = stack.applied_and_unapplied().collect::<Vec<&PatchName>>();
-        let mut requested_patches = patchrange::parse(
-            patchranges,
+        let mut requested_patches = patchrange::patches_from_specs(
+            range_specs,
             &stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )?;
@@ -98,11 +96,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .unwrap()
         });
         requested_patches
-    } else if let Some(number) = matches.value_of("number").map(|num_str| {
-        num_str
-            .parse::<usize>()
-            .expect("validator previously parsed this")
-    }) {
+    } else if let Some(number) = matches.get_one::<usize>("number").copied() {
         if number == 0 {
             return Ok(());
         } else if number > stack.applied().len() {
@@ -114,13 +108,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     } else if stack.applied().is_empty() {
         return Err(Error::NoAppliedPatches.into());
-    } else if matches.is_present("all") {
+    } else if matches.contains_id("all") {
         stack.applied().to_vec()
     } else {
         vec![stack.applied()[0].clone()]
     };
 
-    if !matches.is_present("allow-empty") {
+    if !matches.contains_id("allow-empty") {
         let mut empty_patches: Vec<&PatchName> = Vec::new();
         for pn in &patches {
             let patch_commit = stack.get_patch_commit(pn);

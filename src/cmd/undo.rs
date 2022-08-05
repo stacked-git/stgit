@@ -37,12 +37,12 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Undo the last <n> commands")
                 .value_name("n")
-                .validator(|s| {
+                .value_parser(|s: &str| {
                     s.parse::<isize>()
                         .map_err(|_| format!("'{s}' is not an integer"))
                         .and_then(|n| {
                             if n >= 1 {
-                                Ok(())
+                                Ok(n)
                             } else {
                                 Err("Bad number of commands to undo".to_string())
                             }
@@ -59,16 +59,13 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
-    let undo_steps = matches
-        .value_of("number")
-        .map(|num_str| num_str.parse::<isize>().expect("already validated"))
-        .unwrap_or(1);
+    let undo_steps = matches.get_one::<isize>("number").copied().unwrap_or(1);
 
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
         .allow_bad_head(true)
-        .discard_changes(matches.is_present("hard"))
+        .discard_changes(matches.contains_id("hard"))
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             let undo_state = find_undo_state(trans.stack(), undo_steps)?;

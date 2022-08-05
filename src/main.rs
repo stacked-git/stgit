@@ -28,10 +28,7 @@ mod stack;
 mod stupid;
 mod templates;
 
-use std::{
-    ffi::{OsStr, OsString},
-    io::Write,
-};
+use std::{ffi::OsString, io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
@@ -85,8 +82,8 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
                      specs in that their interpretations of the path names would be \
                      made relative to the working directory caused by the `-C` option.",
                 )
-                .allow_invalid_utf8(true)
-                .multiple_occurrences(true)
+                .value_parser(clap::value_parser!(PathBuf))
+                .action(clap::ArgAction::Append)
                 .allow_hyphen_values(true)
                 .value_name("path")
                 .value_hint(clap::ValueHint::AnyPath),
@@ -107,10 +104,10 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
 /// instances for any of subcommands or aliases.
 fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
     get_base_command(color_choice)
+        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .allow_external_subcommands(true)
         .disable_help_flag(true)
         .disable_help_subcommand(true)
-        .allow_invalid_utf8_for_external_subcommands(true)
         .arg(
             clap::Arg::new("help-option")
                 .short('h')
@@ -131,7 +128,6 @@ pub(crate) fn get_full_command(
     color_choice: Option<termcolor::ColorChoice>,
 ) -> clap::Command<'static> {
     get_base_command(color_choice)
-        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .subcommand_required(true)
         .arg_required_else_help(true)
         .subcommand_help_heading("COMMANDS")
@@ -161,7 +157,7 @@ fn main() -> ! {
     if let Ok(matches) = get_bootstrap_command(color_choice).try_get_matches_from(&argv) {
         // N.B. changing directories here, early, affects which aliases will ultimately
         // be found.
-        if matches.is_present("version") {
+        if matches.contains_id("version") {
             execute_command(
                 commands.get("version").unwrap(),
                 vec![argv[0].clone(), OsString::from("version")],
@@ -169,7 +165,7 @@ fn main() -> ! {
             )
         } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
-        } else if matches.is_present("help-option") {
+        } else if matches.contains_id("help-option") {
             full_app_help(argv, commands, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known subcommands, then only the Command for that
@@ -187,12 +183,11 @@ fn main() -> ! {
                     Err(e) => exit_with_result(Err(e), color_choice),
                     Ok((aliases, maybe_repo)) => {
                         if let Some(alias) = aliases.get(sub_name) {
-                            let user_args: Vec<&OsStr> =
-                                if let Some(args) = sub_matches.values_of_os("") {
-                                    args.collect()
-                                } else {
-                                    Vec::new()
-                                };
+                            let user_args: Vec<String> = sub_matches
+                                .get_many::<String>("")
+                                .map_or_else(Vec::new, |vals| vals.cloned().collect());
+                            let user_args =
+                                user_args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
 
                             match alias.kind {
                                 alias::AliasKind::Shell => execute_shell_alias(
@@ -261,8 +256,8 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
 ///
 /// Each -C path is relative to the prior. Empty paths are allowed, but ignored.
 fn change_directories(matches: &ArgMatches) -> Result<()> {
-    if let Some(paths) = matches.values_of_os("change-dir") {
-        for path in paths.filter(|p| !p.is_empty()) {
+    if let Some(paths) = matches.get_many::<PathBuf>("change-dir") {
+        for path in paths.filter(|&p| !p.as_os_str().is_empty()) {
             std::env::set_current_dir(path)
                 .with_context(|| format!("cannot change to `{}`", path.to_string_lossy()))?;
         }
@@ -337,12 +332,12 @@ fn execute_command(
 /// child's return code.
 fn execute_shell_alias(
     alias: &alias::Alias,
-    user_args: &[&OsStr],
+    user_args: &[&str],
     color_choice: Option<termcolor::ColorChoice>,
     repo: Option<&git2::Repository>,
 ) -> ! {
     if let Some(first_arg) = user_args.get(0) {
-        if ["-h", "--help"].contains(&first_arg.to_str().unwrap_or("")) {
+        if ["-h", "--help"].contains(first_arg) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
         }
     }
@@ -384,7 +379,7 @@ fn execute_shell_alias(
                 }
             }
             if let Ok(rel_dir) = repo.path().strip_prefix(workdir) {
-                if rel_dir == std::path::PathBuf::from(".git") {
+                if rel_dir == PathBuf::from(".git") {
                     command.env_remove("GIT_DIR");
                 } else {
                     command.env("GIT_DIR", rel_dir);
@@ -414,7 +409,7 @@ fn execute_shell_alias(
 fn execute_stgit_alias(
     alias: &alias::Alias,
     exec_path: &OsString,
-    user_args: &[&OsStr],
+    user_args: &[&str],
     color_choice: Option<termcolor::ColorChoice>,
     commands: &cmd::Commands,
     aliases: &alias::Aliases,
@@ -433,7 +428,7 @@ fn execute_stgit_alias(
                 .as_str();
 
             if let Some(first_user_arg) = user_args.get(0) {
-                if ["-h", "--help"].contains(&first_user_arg.to_str().unwrap_or("")) {
+                if ["-h", "--help"].contains(first_user_arg) {
                     eprintln!("'{}' is aliased to '{}'", &alias.name, &alias.command);
                 }
             }

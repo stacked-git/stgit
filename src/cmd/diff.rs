@@ -2,6 +2,8 @@
 
 //! `stg diff` implementation.
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches, ValueHint};
 
@@ -37,8 +39,7 @@ fn make() -> clap::Command<'static> {
                 .help("Limit diff to files matching path(s)")
                 .value_name("path")
                 .multiple_values(true)
-                .allow_invalid_utf8(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::AnyPath),
         )
         .arg(
@@ -67,7 +68,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let config = repo.config()?;
 
-    let revspec = if let Some(range_str) = matches.value_of("range") {
+    let revspec = if let Some(range_str) = matches.get_one::<String>("range") {
         if let Some((rev1, rev2)) = range_str.split_once("..") {
             if rev1.is_empty() {
                 return Err(RevError::InvalidRevision(range_str.to_string()).into());
@@ -89,8 +90,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     repo.stupid().diff(
         &revspec,
-        matches.values_of_os("pathspecs"),
-        matches.is_present("stat"),
+        matches.get_many::<PathBuf>("pathspecs"),
+        matches.contains_id("stat"),
         crate::color::use_color(matches),
         &crate::argset::get_diff_opts(matches, &config, false, false),
     )

@@ -5,7 +5,7 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::revspec::parse_stgit_revision;
+use crate::{argset, revspec::parse_stgit_revision};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     (
@@ -30,17 +30,18 @@ fn make() -> clap::Command<'static> {
              specified, the current branch is used by default. The parent \
              of a patch may be specified with '[<branch>:]<patch>^'.",
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("stgit-revision")
                 .value_name("revision")
+                .value_parser(clap::value_parser!(String))
                 .help("StGit revision"),
         )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let opt_branch = matches.value_of("branch");
-    let opt_spec = matches.value_of("stgit-revision");
+    let opt_branch = argset::get_one_str(matches, "branch");
+    let opt_spec = argset::get_one_str(matches, "stgit-revision");
 
     let repo = git2::Repository::open_from_env()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();

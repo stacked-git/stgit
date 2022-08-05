@@ -63,7 +63,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to squash")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )
         .arg(
@@ -72,8 +72,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Use <name> for the squashed patch")
                 .value_name("name")
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true),
+                .value_parser(PatchName::from_str),
         );
     patchedit::add_args(command, true, true)
 }
@@ -87,17 +86,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
     repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
-    let squash_patchnames: Vec<PatchName> = patchrange::parse(
+    let squash_patchnames: Vec<PatchName> = patchrange::patches_from_specs(
         matches
-            .values_of("patchranges")
+            .get_many::<patchrange::Specification>("patchranges")
             .expect("clap ensures two or more patches"),
         &stack,
         patchrange::Allow::All,
     )?;
 
-    let patchname: Option<PatchName> = matches
-        .value_of("name")
-        .map(|s| PatchName::from_str(s).expect("clap already validated name"));
+    let patchname: Option<PatchName> = matches.get_one::<PatchName>("name").cloned();
 
     if let Some(patchname) = patchname.as_ref() {
         if !squash_patchnames.contains(patchname) {
@@ -111,7 +108,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(anyhow!("Need at least two patches"));
     }
 
-    if matches.value_of_os("save-template").is_some() {
+    if matches.contains_id("save-template") {
         let first_patch_commit = stack.get_patch_commit(&squash_patchnames[0]);
         if let patchedit::EditOutcome::TemplateSaved(template_path) =
             patchedit::EditBuilder::default()

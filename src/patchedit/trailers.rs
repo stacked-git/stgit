@@ -32,9 +32,9 @@ pub(crate) fn add_trailers<'a>(
             .chain(matches.indices_of(old_by_opt).unwrap_or_default());
 
         let values_iter = matches
-            .values_of(opt_name)
+            .get_many::<String>(opt_name)
             .unwrap_or_default()
-            .chain(matches.values_of(old_by_opt).unwrap_or_default());
+            .chain(matches.get_many::<String>(old_by_opt).unwrap_or_default());
 
         for (index, value) in indices_iter.zip(values_iter) {
             trailers.push((index, trailer, value))
@@ -88,7 +88,7 @@ mod test {
                     .min_values(0)
                     .default_missing_value("")
                     .require_equals(true)
-                    .multiple_occurrences(true),
+                    .action(clap::ArgAction::Append),
             )
             .arg(
                 Arg::new("ack")
@@ -97,9 +97,9 @@ mod test {
                     .min_values(0)
                     .default_missing_value("")
                     .require_equals(true)
-                    .multiple_occurrences(true),
+                    .action(clap::ArgAction::Append),
             )
-            .arg(Arg::new("opt").short('o').multiple_occurrences(true))
+            .arg(Arg::new("opt").short('o').action(clap::ArgAction::Append))
             .get_matches_from(vec![
                 "myapp",          // 0
                 "-o",             // 1
@@ -110,22 +110,18 @@ mod test {
                 "--ack=BBB",      // 9 10
                 "--sign-off=CCC", // 11 12
             ]);
-        let sign_off_values = m.values_of("sign-off").unwrap();
+        let sign_off_values = m.get_many::<String>("sign-off").unwrap();
         let sign_off_indices = m.indices_of("sign-off").unwrap();
-        let sign_off_occurrences = m.occurrences_of("sign-off");
-        let ack_values = m.values_of("ack").unwrap();
+        let ack_values = m.get_many::<String>("ack").unwrap();
         let ack_indices = m.indices_of("ack").unwrap();
-        let ack_occurrences = m.occurrences_of("ack");
 
         assert_eq!(3, sign_off_values.len());
         assert_eq!(3, sign_off_indices.len());
-        assert_eq!(3, sign_off_occurrences);
         assert_eq!(vec![3, 7, 12], sign_off_indices.collect::<Vec<_>>());
         assert_eq!(vec!["AAA", "", "CCC"], sign_off_values.collect::<Vec<_>>());
 
         assert_eq!(2, ack_values.len());
         assert_eq!(2, ack_indices.len());
-        assert_eq!(2, ack_occurrences);
         assert_eq!(vec![5, 10], ack_indices.collect::<Vec<_>>());
         assert_eq!(vec!["", "BBB"], ack_values.collect::<Vec<_>>());
     }

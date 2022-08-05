@@ -2,7 +2,11 @@
 
 //! `stg sync` implementation.
 
-use std::{ffi::OsStr, path::Path, str::FromStr};
+use std::{
+    ffi::OsStr,
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
@@ -45,7 +49,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to synchronize")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(
             Arg::new("all")
@@ -71,6 +75,7 @@ fn make() -> clap::Command<'static> {
                 .short('s')
                 .help("Synchronize patches with <series>")
                 .value_name("series")
+                .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(clap::ValueHint::FilePath),
         )
         .group(
@@ -87,11 +92,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     repo.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
-    let patches: Vec<PatchName> = if matches.is_present("all") {
+    let patches: Vec<PatchName> = if matches.contains_id("all") {
         stack.applied().to_vec()
-    } else if let Some(patchranges) = matches.values_of("patchranges") {
-        patchrange::parse_contiguous(
-            patchranges,
+    } else if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
+        patchrange::contiguous_patches_from_specs(
+            range_specs,
             &stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )?
@@ -101,26 +106,25 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         return Err(crate::stack::Error::NoAppliedPatches.into());
     };
 
-    let ref_stack = if let Some(ref_branchname) = matches.value_of("ref-branch") {
+    let ref_stack = if let Some(ref_branchname) = crate::argset::get_one_str(matches, "ref-branch")
+    {
         Some(Stack::from_branch(&repo, Some(ref_branchname))?)
     } else {
         None
     };
 
-    let series_dir = matches.value_of("series").map(|series_path| {
-        Path::new(series_path)
-            .parent()
-            .unwrap_or_else(|| Path::new("."))
-    });
+    let series_dir = matches
+        .get_one::<PathBuf>("series")
+        .map(|series_path| series_path.parent().unwrap_or_else(|| Path::new(".")));
 
     let ref_patches: Vec<PatchName> = if let Some(ref_stack) = ref_stack.as_ref() {
         if ref_stack.branch_name == stack.branch_name {
             return Err(anyhow!("Cannot synchronize with the current branch"));
         }
         ref_stack.applied().to_vec()
-    } else if let Some(series_path) = matches.value_of("series") {
+    } else if let Some(series_path) = matches.get_one::<PathBuf>("series") {
         let series = std::fs::read(series_path)
-            .with_context(|| format!("opening series `{series_path}`"))?;
+            .with_context(|| format!("opening series `{}`", series_path.to_string_lossy()))?;
         let mut ref_patches = Vec::new();
         for line in series.lines() {
             let line = line
@@ -131,9 +135,12 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             if line.is_empty() {
                 continue;
             }
-            let name = line
-                .to_str()
-                .map_err(|_| anyhow!("Series `{series_path}` contains non-UTF-8 patchname"))?;
+            let name = line.to_str().map_err(|_| {
+                anyhow!(
+                    "Series `{}` contains non-UTF-8 patchname",
+                    series_path.to_string_lossy()
+                )
+            })?;
             let patchname = PatchName::from_str(name)?;
             ref_patches.push(patchname);
         }

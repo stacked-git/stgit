@@ -2,11 +2,13 @@
 
 //! `stg show` implementation.
 
+use std::path::PathBuf;
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
-    patchrange,
+    argset, patchrange,
     revspec::Error as RevError,
     stack::{Stack, StackStateAccess},
     stupid::Stupid,
@@ -48,7 +50,7 @@ fn make() -> clap::Command<'static> {
                 )
                 .value_name("patch-or-rev")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
         .arg(
@@ -57,16 +59,16 @@ fn make() -> clap::Command<'static> {
                 .value_name("path")
                 .last(true)
                 .multiple_values(true)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("stat")
                 .long("stat")
                 .short('s')
                 .help("Show a diffstat summary instead of the full diff"),
         )
-        .arg(&*crate::argset::DIFF_OPTS_ARG)
+        .arg(&*argset::DIFF_OPTS_ARG)
         .next_help_heading("SELECTION OPTIONS")
         .arg(
             Arg::new("applied")
@@ -90,14 +92,14 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let config = repo.config()?;
 
-    let opt_stat = matches.is_present("stat");
-    let opt_applied = matches.is_present("applied");
-    let opt_unapplied = matches.is_present("unapplied");
-    let opt_hidden = matches.is_present("hidden");
+    let opt_stat = matches.contains_id("stat");
+    let opt_applied = matches.contains_id("applied");
+    let opt_unapplied = matches.contains_id("unapplied");
+    let opt_hidden = matches.contains_id("hidden");
 
     let mut oids: Vec<git2::Oid> = Vec::new();
 
@@ -116,40 +118,48 @@ fn run(matches: &ArgMatches) -> Result<()> {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if let Some(patchranges) = matches.values_of("patchranges-all") {
-        for arg in patchranges {
-            match patchrange::parse([arg], &stack, patchrange::Allow::AllWithAppliedBoundary) {
+    if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
+        for spec in range_specs {
+            match patchrange::patches_from_specs(
+                [spec],
+                &stack,
+                patchrange::Allow::AllWithAppliedBoundary,
+            ) {
                 Ok(patchnames) => {
                     for patchname in &patchnames {
                         oids.push(stack.get_patch(patchname).commit.id())
                     }
                 }
                 Err(patchrange::Error::PatchNotKnown { patchname: _ }) => {
-                    let oid = crate::revspec::parse_stgit_revision(&repo, Some(arg), opt_branch)
-                        .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                            Some(RevError::InvalidRevision(spec)) => {
-                                anyhow!("Invalid revision spec `{spec}`")
-                            }
-                            Some(RevError::RevisionNotFound(spec)) => {
-                                anyhow!("Patch or revision `{spec}` not found")
-                            }
-                            _ => rev_err,
-                        })?
-                        .id();
+                    let spec_str = spec.to_string();
+                    let oid =
+                        crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
+                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
+                                Some(RevError::InvalidRevision(spec)) => {
+                                    anyhow!("Invalid revision spec `{spec}`")
+                                }
+                                Some(RevError::RevisionNotFound(spec)) => {
+                                    anyhow!("Patch or revision `{spec}` not found")
+                                }
+                                _ => rev_err,
+                            })?
+                            .id();
                     oids.push(oid);
                 }
                 Err(patchrange::Error::PatchName(_)) => {
-                    let oid = crate::revspec::parse_stgit_revision(&repo, Some(arg), opt_branch)
-                        .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                            Some(RevError::InvalidRevision(spec)) => {
-                                anyhow!("Invalid patch or revision spec `{spec}`")
-                            }
-                            Some(RevError::RevisionNotFound(spec)) => {
-                                anyhow!("Invalid patch or revision `{spec}` not found",)
-                            }
-                            _ => rev_err,
-                        })?
-                        .id();
+                    let spec_str = spec.to_string();
+                    let oid =
+                        crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
+                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
+                                Some(RevError::InvalidRevision(spec)) => {
+                                    anyhow!("Invalid patch or revision spec `{spec}`")
+                                }
+                                Some(RevError::RevisionNotFound(spec)) => {
+                                    anyhow!("Invalid patch or revision `{spec}` not found",)
+                                }
+                                _ => rev_err,
+                            })?
+                            .id();
                     oids.push(oid);
                 }
                 Err(e) => {
@@ -163,9 +173,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     repo.stupid().show(
         oids,
-        matches.values_of_os("pathspecs"),
+        matches.get_many::<PathBuf>("pathspecs"),
         opt_stat,
         crate::color::use_color(matches),
-        &crate::argset::get_diff_opts(matches, &config, false, false),
+        &argset::get_diff_opts(matches, &config, false, false),
     )
 }

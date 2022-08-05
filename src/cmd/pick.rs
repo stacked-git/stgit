@@ -61,7 +61,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("source")
                 .required(true)
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         )
         .arg(
             Arg::new("ref-branch")
@@ -96,8 +96,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Use <name> for the patch name")
                 .value_name("name")
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true)
+                .value_parser(PatchName::from_str)
                 .conflicts_with_all(&["fold", "update"]),
         )
         .arg(
@@ -106,7 +105,7 @@ fn make() -> clap::Command<'static> {
                 .short('p')
                 .help("Use <committish> as parent")
                 .value_name("committish")
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with_all(&["fold", "update"]),
         )
         .arg(
@@ -125,8 +124,8 @@ fn make() -> clap::Command<'static> {
                 .long("file")
                 .short('f')
                 .help("Only fold the given file (may be used multiple times)")
-                .forbid_empty_values(true)
-                .multiple_occurrences(true)
+                .value_parser(clap::value_parser!(PathBuf))
+                .action(clap::ArgAction::Append)
                 .value_name("path")
                 .requires("fold"),
         )
@@ -135,62 +134,78 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
-    let ref_branchname = matches.value_of("ref-branch");
+    let ref_branchname = crate::argset::get_one_str(matches, "ref-branch");
     let ref_stack = Stack::from_branch(&repo, ref_branchname)?;
-    let fold = matches.is_present("fold");
-    let update = matches.is_present("update");
+    let fold = matches.contains_id("fold");
+    let update = matches.contains_id("update");
 
     if update && stack.applied().is_empty() {
         return Err(crate::stack::Error::NoAppliedPatches.into());
     }
 
-    if !matches.is_present("noapply") {
+    if !matches.contains_id("noapply") {
         repo.check_index_and_worktree_clean()?;
         stack.check_head_top_mismatch()?;
     }
 
-    let sources: Vec<_> = matches
-        .values_of("stgit-revision")
+    let mut patchranges: Vec<patchrange::Specification> = Vec::new();
+    for source in matches
+        .get_many::<String>("stgit-revision")
         .expect("required argument")
-        .collect();
+    {
+        if let Ok(spec) = patchrange::Specification::from_str(source) {
+            patchranges.push(spec);
+        } else {
+            patchranges.clear();
+            break;
+        }
+    }
 
-    let picks: Vec<(Option<PatchName>, git2::Commit)> = match patchrange::parse(
-        sources.iter().copied(),
-        &ref_stack,
-        patchrange::Allow::VisibleWithAppliedBoundary,
-    ) {
-        Ok(patchnames) => patchnames
+    let source_patches = if !patchranges.is_empty() {
+        patchrange::patches_from_specs(
+            patchranges.iter(),
+            &ref_stack,
+            patchrange::Allow::VisibleWithAppliedBoundary,
+        )
+        .ok()
+    } else {
+        None
+    };
+
+    let picks: Vec<(Option<PatchName>, git2::Commit)> = if let Some(patches) = source_patches {
+        patches
             .iter()
             .map(|pn| (Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()))
-            .collect(),
-        Err(_) => {
-            let mut picks = Vec::new();
-            for source in sources {
-                let (branchname, patchname) = parse_branch_and_spec(None, Some(source));
-                if let Some(branchname) = branchname {
-                    if let Some(patchname) = patchname {
-                        let ref_stack = Stack::from_branch(&repo, Some(branchname))?;
-                        let patchnames = patchrange::parse(
-                            [patchname],
-                            &ref_stack,
-                            patchrange::Allow::VisibleWithAppliedBoundary,
-                        )?;
-                        for pn in &patchnames {
-                            picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));
-                        }
-                    } else {
-                        return Err(
-                            crate::revspec::Error::InvalidRevision(source.to_string()).into()
-                        );
+            .collect()
+    } else {
+        let mut picks = Vec::new();
+        for source in matches
+            .get_many::<String>("stgit-revision")
+            .expect("required argument")
+        {
+            let (branchname, spec_str) = parse_branch_and_spec(None, Some(source));
+            if let Some(branchname) = branchname {
+                if let Some(spec_str) = spec_str {
+                    let ref_stack = Stack::from_branch(&repo, Some(branchname))?;
+                    let spec = patchrange::Specification::from_str(spec_str)?;
+                    let patchnames = patchrange::patches_from_specs(
+                        [spec].iter(),
+                        &ref_stack,
+                        patchrange::Allow::VisibleWithAppliedBoundary,
+                    )?;
+                    for pn in &patchnames {
+                        picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));
                     }
                 } else {
-                    let commit = parse_stgit_revision(&repo, Some(source), ref_branchname)?
-                        .peel_to_commit()?;
-                    picks.push((None, commit));
+                    return Err(crate::revspec::Error::InvalidRevision(source.to_string()).into());
                 }
+            } else {
+                let commit =
+                    parse_stgit_revision(&repo, Some(source), ref_branchname)?.peel_to_commit()?;
+                picks.push((None, commit));
             }
-            picks
         }
+        picks
     };
 
     if fold || update {
@@ -199,14 +214,14 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     } else {
         // Pick new patches from sources
         if picks.len() > 1 {
-            if matches.is_present("name") {
+            if matches.contains_id("name") {
                 return Err(anyhow!("--name can only be specified with one patch"));
             }
-            if matches.is_present("parent") {
+            if matches.contains_id("parent") {
                 return Err(anyhow!("--parent can only be specified with one patch"));
             }
         }
-        let opt_parent = if let Some(parent_committish) = matches.value_of("parent") {
+        let opt_parent = if let Some(parent_committish) = matches.get_one::<String>("parent") {
             let commit = parse_stgit_revision(
                 stack.repo,
                 Some(parent_committish),
@@ -229,18 +244,18 @@ fn fold_picks(
     let stupid = stack.repo.stupid();
     for (patchname, commit) in picks {
         let parent = commit.parent(0)?;
-        let (top, bottom) = if matches.is_present("revert") {
+        let (top, bottom) = if matches.contains_id("revert") {
             (&parent, commit)
         } else {
             (commit, &parent)
         };
 
-        let pathspecs: Option<Vec<PathBuf>> = if matches.is_present("fold") {
+        let pathspecs: Option<Vec<PathBuf>> = if matches.contains_id("fold") {
             matches
-                .values_of("file")
-                .map(|values| values.map(PathBuf::from).collect())
+                .get_many::<PathBuf>("file")
+                .map(|pathbufs| pathbufs.cloned().collect())
         } else {
-            assert!(matches.is_present("update"));
+            assert!(matches.contains_id("update"));
             Some(stack.repo.diff_tree_files(&stack.branch_head)?)
         };
 
@@ -282,10 +297,10 @@ fn pick_picks(
     for (patchname, commit) in picks {
         let mut disallow: Vec<&PatchName> = stack.all_patches().collect();
 
-        let patchname = if let Some(name) = matches.value_of("name") {
-            PatchName::from_str(name)?
+        let patchname = if let Some(name) = matches.get_one::<PatchName>("name") {
+            name.clone()
         } else if let Some(patchname) = patchname {
-            if matches.is_present("revert") {
+            if matches.contains_id("revert") {
                 PatchName::from_str(&format!("revert-{patchname}"))?
             } else {
                 patchname.clone()
@@ -300,7 +315,7 @@ fn pick_picks(
         .uniquify(&[], &disallow);
 
         let commit_id_string = commit.id().to_string();
-        let message = if matches.is_present("revert") {
+        let message = if matches.contains_id("revert") {
             let message = commit.message();
             let (subject, body) = if let Some(message) = message {
                 message.split_once('\n').unwrap_or((message, ""))
@@ -314,7 +329,7 @@ fn pick_picks(
                  \n\
                  {body}"
             )
-        } else if matches.is_present("expose") {
+        } else if matches.contains_id("expose") {
             let expose_format = config
                 .get_string("stgit.pick.expose-format")
                 .unwrap_or_else(|_| "format:%B%n(imported from commit %H)%n".to_string());
@@ -334,7 +349,7 @@ fn pick_picks(
             commit.parent(0)?
         };
 
-        let (top, bottom) = if matches.is_present("revert") {
+        let (top, bottom) = if matches.contains_id("revert") {
             (&parent, commit)
         } else {
             (commit, &parent)
@@ -357,7 +372,7 @@ fn pick_picks(
                 trans.new_unapplied(patchname, *commit_id, i)?;
                 to_push.push(patchname);
             }
-            if !matches.is_present("noapply") {
+            if !matches.contains_id("noapply") {
                 trans.push_patches(&to_push, false)?;
             }
             Ok(())

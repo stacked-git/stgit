@@ -80,6 +80,7 @@ fn make() -> clap::Command<'static> {
                      URL if the --url option is provided. The default is to read from \
                      stdin if no source argument is provided.",
                 )
+                .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(clap::ValueHint::AnyPath),
         )
         .next_help_heading("SOURCE OPTIONS")
@@ -123,7 +124,8 @@ fn make() -> clap::Command<'static> {
                 .long("name")
                 .short('n')
                 .help("Use <name> as the patch name")
-                .value_name("name"),
+                .value_name("name")
+                .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(
             Arg::new("strip")
@@ -131,10 +133,7 @@ fn make() -> clap::Command<'static> {
                 .short('p')
                 .help("Remove <n> leading components from diff paths (default 1)")
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
-                }),
+                .value_parser(crate::argset::parse_usize),
         )
         .arg(
             Arg::new("stripname")
@@ -147,10 +146,7 @@ fn make() -> clap::Command<'static> {
                 .short('C')
                 .help("Ensure <n> lines of matching context for each change")
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not an unsigned integer"))
-                }),
+                .value_parser(crate::argset::parse_usize),
         )
         .arg(
             Arg::new("ignore")
@@ -198,10 +194,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let source_path = if matches.is_present("url") {
+    let source_path = if matches.contains_id("url") {
         None
-    } else if let Some(path_str) = matches.value_of("source") {
-        let path = Path::new(path_str);
+    } else if let Some(path) = matches.get_one::<PathBuf>("source") {
         let abs_path = path.canonicalize()?;
         Some(abs_path)
     } else {
@@ -214,11 +209,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     repo.stupid().update_index_refresh()?;
 
-    if cfg!(feature = "import-url") && matches.is_present("url") {
+    if cfg!(feature = "import-url") && matches.contains_id("url") {
         import_url(stack, matches)
-    } else if matches.is_present("series") {
+    } else if matches.contains_id("series") {
         import_series(stack, matches, source_path.as_deref())
-    } else if matches.is_present("mail") || matches.is_present("mbox") {
+    } else if matches.contains_id("mail") || matches.contains_id("mbox") {
         import_mail(stack, matches, source_path.as_deref())
     } else {
         import_file(stack, matches, source_path.as_deref(), None)?;
@@ -237,9 +232,14 @@ fn import_url(_stack: Stack, _matches: &clap::ArgMatches) -> Result<()> {
 fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
     use std::io::Write;
 
-    let url_str = matches
-        .value_of("source")
-        .expect("source url must be present");
+    let url_osstr = matches
+        .get_one::<PathBuf>("source")
+        .expect("source url must be present")
+        .clone()
+        .into_os_string();
+    let url_str = url_osstr
+        .to_str()
+        .ok_or_else(|| anyhow!("source url is not UTF-8 encoded"))?;
     let mut handle = curl::easy::Easy::new();
     handle.url(url_str)?;
     let url_decoded = handle.url_decode(url_str);
@@ -270,9 +270,9 @@ fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
         e @ Err(_) => e?,
     }
 
-    if matches.is_present("series") {
+    if matches.contains_id("series") {
         import_series(stack, matches, Some(download_path.as_path()))
-    } else if matches.is_present("mail") || matches.is_present("mbox") {
+    } else if matches.contains_id("mail") || matches.contains_id("mbox") {
         import_mail(stack, matches, Some(download_path.as_path()))
     } else {
         import_file(stack, matches, Some(download_path.as_path()), None)?;
@@ -418,13 +418,13 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
 }
 
 fn use_message_id(matches: &clap::ArgMatches, config: &git2::Config) -> bool {
-    matches.is_present("message-id") || config.get_bool("stgit.import.message-id").unwrap_or(false)
+    matches.contains_id("message-id") || config.get_bool("stgit.import.message-id").unwrap_or(false)
 }
 
 fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Path>) -> Result<()> {
     let out_dir = tempfile::tempdir()?;
-    let missing_from_ok = matches.is_present("mail");
-    let keep_cr = matches.is_present("keep-cr");
+    let missing_from_ok = matches.contains_id("mail");
+    let keep_cr = matches.contains_id("keep-cr");
     let config = stack.repo.config()?;
     let message_id = use_message_id(matches, &config);
     let stupid = stack.repo.stupid();
@@ -559,15 +559,15 @@ fn create_patch<'repo>(
 
     let patchname = if patchname.is_some() {
         patchname.as_deref()
-    } else if let Some(name) = matches.value_of("name") {
-        Some(name)
+    } else if let Some(name) = matches.get_one::<PatchName>("name") {
+        Some(name.as_ref())
     } else if let Some(source_path) = source_path {
         source_path.file_name().and_then(|name| name.to_str())
     } else {
         None
     };
 
-    let patchname = if matches.is_present("stripname") {
+    let patchname = if matches.contains_id("stripname") {
         patchname.map(stripname)
     } else {
         patchname
@@ -582,8 +582,8 @@ fn create_patch<'repo>(
         PatchName::make(&message, true, name_len_limit)
     };
 
-    let opt_ignore = matches.is_present("ignore");
-    let opt_replace = matches.is_present("replace");
+    let opt_ignore = matches.contains_id("ignore");
+    let opt_replace = matches.contains_id("replace");
 
     let patchname = if !opt_ignore && !opt_replace {
         let disallow_patchnames: Vec<&PatchName> = stack.all_patches().collect();
@@ -611,11 +611,7 @@ fn create_patch<'repo>(
         git2::Signature::default_author(Some(&config))?
     };
 
-    let strip_level = strip_level.or_else(|| {
-        matches
-            .value_of("strip")
-            .map(|s| s.parse::<usize>().expect("clap already validated"))
-    });
+    let strip_level = strip_level.or_else(|| matches.get_one::<usize>("strip").copied());
 
     let trimmed_diff = diff.trim_end_with(|c| c.is_ascii_whitespace());
 
@@ -625,11 +621,9 @@ fn create_patch<'repo>(
         let stupid = stack.repo.stupid();
         stupid.apply_to_worktree_and_index(
             diff,
-            matches.is_present("reject"),
+            matches.contains_id("reject"),
             strip_level,
-            matches
-                .value_of("context-lines")
-                .map(|s| s.parse::<usize>().unwrap()),
+            matches.get_one::<usize>("context-lines").copied(),
         )?;
 
         stupid.write_tree()?

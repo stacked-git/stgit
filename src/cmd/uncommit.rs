@@ -2,12 +2,11 @@
 
 //! `stg uncommit` implementation.
 
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     commit::CommitExtended,
     patchname::PatchName,
@@ -60,8 +59,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patchname")
                 .help("Patch names for the uncommited commits")
                 .multiple_values(true)
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(
             Arg::new("number")
@@ -70,10 +68,7 @@ fn make() -> clap::Command<'static> {
                 .help("Uncommit the specified number of commits")
                 .value_name("number")
                 .allow_hyphen_values(true)
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{s}' is not a positive integer"))
-                })
+                .value_parser(argset::parse_usize)
                 .conflicts_with("to"),
         )
         .arg(
@@ -97,15 +92,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     let config = repo.config()?;
 
-    let opt_number: Option<usize> = matches.value_of("number").map(|num_str| {
-        num_str
-            .parse::<usize>()
-            .expect("validator previously parsed this")
-    });
+    let opt_number = matches.get_one::<usize>("number").copied();
 
     let patchname_len_limit = PatchName::get_length_limit(&config);
 
-    let (commits, patchnames) = if let Some(commitish) = matches.value_of("to") {
+    let (commits, patchnames) = if let Some(commitish) = matches.get_one::<String>("to") {
         let target_object = repo
             .revparse_single(commitish)
             .map_err(|_| anyhow!("Invalid commitish `{commitish}`"))?;
@@ -118,7 +109,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             target_commit = repo.find_commit(bases[0])?;
             true
         } else {
-            matches.is_present("exclusive")
+            matches.contains_id("exclusive")
         };
 
         if exclusive {
@@ -157,7 +148,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 commits.push(std::mem::replace(&mut next_commit, parent));
             }
 
-            if let Some(mut prefixes) = matches.values_of("patchname") {
+            if let Some(mut prefixes) = matches.get_many::<PatchName>("patchname") {
                 if prefixes.len() != 1 {
                     return Err(anyhow!(
                         "When using `--number`, specify at most one patch name"
@@ -173,12 +164,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             } else {
                 make_patchnames(&stack, &commits, patchname_len_limit)
             }
-        } else if let Some(user_patchnames) = matches.values_of("patchname") {
-            let mut patchnames = Vec::with_capacity(user_patchnames.len());
-            for patchname in user_patchnames {
-                let patchname = PatchName::from_str(patchname)?;
-                patchnames.push(patchname);
-            }
+        } else if let Some(user_patchnames) = matches.get_many::<PatchName>("patchname") {
+            let patchnames = user_patchnames.cloned().collect::<Vec<_>>();
             check_patchnames(&stack, &patchnames)?;
             for _ in 0..patchnames.len() {
                 check_commit(&next_commit)?;

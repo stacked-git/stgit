@@ -2,7 +2,13 @@
 
 //! `stg export` implementation.
 
-use std::{borrow::Cow, collections::HashMap, ffi::OsString, io::Write, path::Path};
+use std::{
+    borrow::Cow,
+    collections::HashMap,
+    ffi::OsString,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{Context, Result};
 use clap::Arg;
@@ -64,7 +70,7 @@ fn make() -> clap::Command<'static> {
                 )
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(&*crate::argset::BRANCH_ARG)
         .arg(
@@ -74,7 +80,7 @@ fn make() -> clap::Command<'static> {
                 .help("Export patches to <dir> instead of the default")
                 .value_name("dir")
                 .value_hint(clap::ValueHint::DirPath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("patch")
@@ -104,7 +110,7 @@ fn make() -> clap::Command<'static> {
                 .help("Use <file> as template")
                 .value_name("file")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
         .arg(
             Arg::new("stdout")
@@ -118,7 +124,7 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = crate::argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let stupid = repo.stupid();
     let config = repo.config()?;
@@ -130,44 +136,45 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         )
     }
 
-    let patches = if let Some(patchranges) = matches.values_of("patchranges") {
-        patchrange::parse(
-            patchranges,
-            &stack,
-            patchrange::Allow::VisibleWithAppliedBoundary,
-        )?
-    } else {
-        stack.applied().to_vec()
-    };
+    let patches =
+        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
+            patchrange::patches_from_specs(
+                range_specs,
+                &stack,
+                patchrange::Allow::VisibleWithAppliedBoundary,
+            )?
+        } else {
+            stack.applied().to_vec()
+        };
 
     if patches.is_empty() {
         return Err(Error::NoAppliedPatches.into());
     }
 
     let default_output_dir;
-    let output_dir = if let Some(dir) = matches.value_of_os("dir") {
-        Path::new(dir)
+    let output_dir = if let Some(dir) = matches.get_one::<PathBuf>("dir").map(|p| p.as_path()) {
+        dir
     } else {
         default_output_dir = format!("patches-{}", stack.branch_name);
         Path::new(default_output_dir.as_str())
     };
 
     let custom_extension;
-    let extension = if let Some(custom_ext) = matches.value_of("extension") {
+    let extension = if let Some(custom_ext) = matches.get_one::<String>("extension") {
         custom_extension = format!(".{custom_ext}");
         custom_extension.as_str()
-    } else if matches.is_present("patch") {
+    } else if matches.contains_id("patch") {
         ".patch"
     } else {
         ""
     };
 
-    let numbered = matches.is_present("numbered");
+    let numbered = matches.contains_id("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
     let diff_opts = crate::argset::get_diff_opts(matches, &config, false, true);
 
-    let template = if let Some(template_file) = matches.value_of_os("template") {
+    let template = if let Some(template_file) = matches.get_one::<PathBuf>("template") {
         Cow::Owned(std::fs::read_to_string(template_file)?)
     } else {
         match crate::templates::get_template(&repo, "patchexport.tmpl") {
@@ -179,7 +186,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let need_diffstat = template.contains("%(diffstat)");
 
-    let opt_stdout = matches.is_present("stdout");
+    let opt_stdout = matches.contains_id("stdout");
     let mut series = format!(
         "# This series applies on Git commit {}\n",
         stack.base().id()

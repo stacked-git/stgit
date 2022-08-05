@@ -63,19 +63,19 @@ impl SignatureExtended for git2::Signature<'_> {
     ) -> Result<Option<git2::Signature<'static>>> {
         let when = if let Some(when) = when {
             when
-        } else if let Some(authdate) = matches.value_of("authdate") {
-            parse_time(authdate).context("authdate")?
+        } else if let Some(authdate) = matches.get_one::<git2::Time>("authdate").cloned() {
+            authdate
         } else {
             return Ok(None);
         };
 
-        if let Some(name_email) = matches.value_of("author") {
-            let (name, email) = parse_name_email(name_email)?;
+        if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
             let author = git2::Signature::new(name, email, &when)?;
             Ok(Some(author))
-        } else if let (Some(name), Some(email)) =
-            (matches.value_of("authname"), matches.value_of("authemail"))
-        {
+        } else if let (Some(name), Some(email)) = (
+            matches.get_one::<String>("authname"),
+            matches.get_one::<String>("authemail"),
+        ) {
             let author = git2::Signature::new(name, email, &when)?;
             Ok(Some(author))
         } else {
@@ -84,23 +84,22 @@ impl SignatureExtended for git2::Signature<'_> {
     }
 
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>> {
-        let when = if let Some(authdate) = matches.value_of("authdate") {
-            parse_time(authdate).context("authdate")?
+        let when = if let Some(authdate) = matches.get_one::<git2::Time>("authdate").cloned() {
+            authdate
         } else {
             self.when()
         };
 
-        if let Some(name_email) = matches.value_of("author") {
-            let (name, email) = parse_name_email(name_email)?;
+        if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
             Ok(git2::Signature::new(name, email, &when)?)
         } else {
-            let name = if let Some(authname) = matches.value_of("authname") {
+            let name = if let Some(authname) = matches.get_one::<String>("authname") {
                 authname
             } else {
                 self.name().expect("author signature must be utf-8")
             };
 
-            let email = if let Some(authemail) = matches.value_of("authemail") {
+            let email = if let Some(authemail) = matches.get_one::<String>("authemail") {
                 authemail
             } else {
                 self.email().expect("author signature must be utf-8")
@@ -283,6 +282,10 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
     Err(anyhow!("Invalid name and email `{name_email}`"))
 }
 
+pub(crate) fn parse_name_email2(name_email: &str) -> Result<(String, String)> {
+    parse_name_email(name_email).map(|(name, email)| (name.to_string(), email.to_string()))
+}
+
 /// Check name string for '<' or '>' characters.
 pub(crate) fn check_name(name: &str) -> Result<()> {
     if name.contains('<') || name.contains('>') {
@@ -292,6 +295,11 @@ pub(crate) fn check_name(name: &str) -> Result<()> {
     }
 }
 
+pub(crate) fn parse_name(name: &str) -> Result<String> {
+    check_name(name)?;
+    Ok(name.to_string())
+}
+
 /// Check emails string for '<' or '>' characters.
 pub(crate) fn check_email(email: &str) -> Result<()> {
     if email.contains('<') || email.contains('>') {
@@ -299,6 +307,11 @@ pub(crate) fn check_email(email: &str) -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+pub(crate) fn parse_email(email: &str) -> Result<String> {
+    check_email(email)?;
+    Ok(email.to_string())
 }
 
 /// Attempt to parse a time string of one of several well-known formats.

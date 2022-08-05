@@ -13,9 +13,8 @@ pub(super) fn command() -> clap::Command<'static> {
             clap::Arg::new("style")
                 .long("style")
                 .help("Choose output format style")
-                .possible_values(["name-only", "asciidoc", "fish", "zsh"])
+                .value_parser(["name-only", "asciidoc", "fish", "zsh"])
                 .default_value("name-only")
-                .validator(OutputStyle::from_str)
                 .global(true),
         )
         .subcommand_required(true)
@@ -57,11 +56,16 @@ impl FromStr for OutputStyle {
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let mut output = super::get_output_stream(matches)?;
     let commands = super::super::get_commands();
-    let style = matches.value_of_t::<OutputStyle>("style").unwrap();
+    let style = OutputStyle::from_str(
+        matches
+            .get_one::<String>("style")
+            .expect("has a default value defined"),
+    )
+    .expect("possible values are all value OutputStyle");
 
     match matches.subcommand() {
         Some(("aliases", sub_matches)) => {
-            let show_expansion = sub_matches.is_present("show-expansion");
+            let show_expansion = sub_matches.contains_id("show-expansion");
             list_aliases(&commands, &mut output, style, show_expansion)
         }
         Some(("commands", _)) => list_commands(&commands, &mut output, style),

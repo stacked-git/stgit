@@ -33,7 +33,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to unhide")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )
         .arg(&*crate::argset::BRANCH_ARG)
@@ -41,24 +41,26 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = crate::argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 
     stack.check_head_top_mismatch()?;
 
-    let patchranges = matches
-        .values_of("patchranges-hidden")
+    let specs = matches
+        .get_many::<patchrange::Specification>("patchranges-hidden")
         .expect("clap ensures at least one range is provided");
 
-    let patches: Vec<PatchName> = patchrange::parse(patchranges, &stack, patchrange::Allow::Hidden)
-        .map_err(|e| match e {
-            crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
-                anyhow!("Patch `{patchname}` from `{range}` is not hidden")
+    let patches: Vec<PatchName> =
+        patchrange::patches_from_specs(specs, &stack, patchrange::Allow::Hidden).map_err(|e| {
+            match e {
+                crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
+                    anyhow!("Patch `{patchname}` from `{range}` is not hidden")
+                }
+                crate::patchrange::Error::PatchNotAllowed { patchname, .. } => {
+                    anyhow!("Patch `{patchname}` is not hidden")
+                }
+                _ => e.into(),
             }
-            crate::patchrange::Error::PatchNotAllowed { patchname, .. } => {
-                anyhow!("Patch `{patchname}` is not hidden")
-            }
-            _ => e.into(),
         })?;
 
     stack

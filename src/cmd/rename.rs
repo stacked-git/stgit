@@ -2,12 +2,11 @@
 
 //! `stg rename` implementation.
 
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     stack::{Error, Stack, StackStateAccess},
@@ -34,7 +33,7 @@ fn make() -> clap::Command<'static> {
              the topmost patch will be renamed.",
         )
         .override_usage("stg rename [OPTIONS] [old-patch] <new-patch>")
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("patches")
                 .help("Optional old patch and the new patch name")
@@ -42,20 +41,19 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .min_values(1)
                 .max_values(2)
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(PatchName)),
         )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 
     let mut patches: Vec<PatchName> = matches
-        .values_of("patches")
+        .get_many::<PatchName>("patches")
         .expect("clap ensures one or two names are provided")
-        .map(|s| PatchName::from_str(s).expect("clap already validated"))
+        .cloned()
         .collect();
 
     let (old_patchname, new_patchname) = if patches.len() == 2 {

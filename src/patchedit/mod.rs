@@ -14,10 +14,14 @@ use std::{
     ffi::OsString,
     fs::File,
     io::{BufWriter, Read},
+    path::PathBuf,
 };
 
 use anyhow::{anyhow, Result};
-use clap::{Arg, ArgMatches, ValueHint};
+use clap::{
+    builder::{self, ValueParser},
+    Arg, ArgMatches, ValueHint,
+};
 
 use crate::{
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
@@ -62,8 +66,7 @@ pub(crate) fn add_args(
                     .long_help("Use message instead of invoking the editor")
                     .value_name("message")
                     .takes_value(true)
-                    .allow_invalid_utf8(false)
-                    .forbid_empty_values(false)
+                    .value_parser(builder::NonEmptyStringValueParser::new())
                     .value_hint(ValueHint::Other)
                     .conflicts_with("file"),
             )
@@ -74,19 +77,27 @@ pub(crate) fn add_args(
                     .help("Get message from file")
                     .long_help(
                         "Use the contents of file instead of invoking the editor. \
-                     Use \"-\" to read from stdin.",
+                         Use \"-\" to read from stdin.",
                     )
                     .value_name("path")
                     .takes_value(true)
-                    .forbid_empty_values(true)
-                    .allow_invalid_utf8(true)
+                    .value_parser(clap::value_parser!(PathBuf))
                     .value_hint(ValueHint::FilePath),
             )
     } else {
         // These dummy/hidden --message and --file arguments are added to allow the
         // ArgMatches to be dynamically interrogated. If these args weren't defined,
         // then testing their presence, e.g. with ArgMatches.value_of() or
-        // ArgMatches.is_present(), would cause a panic.
+        // ArgMatches.contains_id(), would cause a panic.
+
+        fn no_message(_: &str) -> std::result::Result<(), String> {
+            Err("--message is not a valid option for this command".to_string())
+        }
+
+        fn no_file(_: &str) -> std::result::Result<(), String> {
+            Err("--file is not a valid option for this command".to_string())
+        }
+
         command
             .arg(
                 Arg::new("message")
@@ -94,9 +105,7 @@ pub(crate) fn add_args(
                     .help("Not a valid option for this command")
                     .hide(true)
                     .value_name("message")
-                    .validator(|_| -> std::result::Result<(), String> {
-                        Err("--message is not a valid option for this command".to_string())
-                    }),
+                    .value_parser(ValueParser::new(no_message)),
             )
             .arg(
                 Arg::new("file")
@@ -105,9 +114,7 @@ pub(crate) fn add_args(
                     .hide(true)
                     .value_name("path")
                     .takes_value(true)
-                    .validator(|_| -> std::result::Result<(), String> {
-                        Err("--file is not a valid option for this command".to_string())
-                    }),
+                    .value_parser(no_file),
             )
     };
     let command = command
@@ -133,7 +140,7 @@ pub(crate) fn add_args(
                 .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
-                .multiple_occurrences(true),
+                .action(clap::ArgAction::Append),
         )
         .arg(
             Arg::new("ack")
@@ -151,7 +158,7 @@ pub(crate) fn add_args(
                 .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
-                .multiple_occurrences(true),
+                .action(clap::ArgAction::Append),
         )
         .arg(
             Arg::new("review")
@@ -169,7 +176,7 @@ pub(crate) fn add_args(
                 .number_of_values(1)
                 .default_missing_value("")
                 .require_equals(true)
-                .multiple_occurrences(true),
+                .action(clap::ArgAction::Append),
         )
         .arg(
             Arg::new("sign-by")
@@ -177,7 +184,7 @@ pub(crate) fn add_args(
                 .help("DEPRECATED: use --sign=value")
                 .hide(true)
                 .takes_value(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -187,7 +194,7 @@ pub(crate) fn add_args(
                 .help("DEPRECATED: use --ack=value")
                 .hide(true)
                 .takes_value(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -197,7 +204,7 @@ pub(crate) fn add_args(
                 .help("DEPRECATED: use --review=value")
                 .hide(true)
                 .takes_value(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
         )
@@ -207,7 +214,7 @@ pub(crate) fn add_args(
                 .help("Set the author \"name <email>\"")
                 .value_name("name-and-email")
                 .takes_value(true)
-                .validator(|s| signature::parse_name_email(s).map(|_| ()))
+                .value_parser(ValueParser::new(signature::parse_name_email2))
                 .value_hint(ValueHint::Other),
         )
         .arg(
@@ -217,7 +224,7 @@ pub(crate) fn add_args(
                 .value_name("name")
                 .takes_value(true)
                 .value_hint(ValueHint::Other)
-                .validator(signature::check_name)
+                .value_parser(ValueParser::new(signature::parse_name))
                 .conflicts_with("author"),
         )
         .arg(
@@ -227,7 +234,7 @@ pub(crate) fn add_args(
                 .value_name("email")
                 .takes_value(true)
                 .value_hint(ValueHint::EmailAddress)
-                .validator(signature::check_email)
+                .value_parser(ValueParser::new(signature::parse_email))
                 .conflicts_with("author"),
         )
         .arg(
@@ -241,7 +248,7 @@ pub(crate) fn add_args(
                 )
                 .value_name("date")
                 .takes_value(true)
-                .validator(signature::parse_time)
+                .value_parser(ValueParser::new(signature::parse_time))
                 .value_hint(ValueHint::Other),
         );
     if add_save_template {
@@ -258,10 +265,9 @@ pub(crate) fn add_args(
                      edit the message, and then call the same command with '--file'.",
                 )
                 .takes_value(true)
-                .forbid_empty_values(true)
-                .allow_invalid_utf8(true)
                 .value_name("file")
                 .value_hint(ValueHint::FilePath)
+                .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with_all(&["message", "file"]),
         )
     } else {
@@ -272,7 +278,7 @@ pub(crate) fn add_args(
 /// Outcome from an interactive edit initiated with [`EditBuilder::edit()`].
 pub(crate) enum EditOutcome {
     /// Variant indicating that the patch edit template was saved.
-    TemplateSaved(OsString),
+    TemplateSaved(PathBuf),
 
     /// Variant indicating the patch was successfully edited.
     Committed {
@@ -466,7 +472,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             author: file_author,
             message: file_message,
             diff: file_diff,
-        } = if let Some(file_os) = matches.value_of_os("file") {
+        } = if let Some(file_os) = matches.get_one::<PathBuf>("file") {
             if file_os.to_str() == Some("-") {
                 let mut buf: Vec<u8> = Vec::with_capacity(8192);
                 std::io::stdin().read_to_end(&mut buf)?;
@@ -502,8 +508,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             }
         };
 
-        let mut need_interactive_edit = matches.is_present("edit")
-            || (allow_diff_edit && matches.is_present("diff"))
+        let mut need_interactive_edit = matches.contains_id("edit")
+            || (allow_diff_edit && matches.contains_id("diff"))
             || (allow_implicit_edit
                 && ![
                     "message",
@@ -520,11 +526,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     "authdate",
                 ]
                 .iter()
-                .any(|&arg| matches.is_present(arg)));
+                .any(|&arg| matches.contains_id(arg)));
 
-        let message = if matches.is_present("file") {
+        let message = if matches.contains_id("file") {
             CommitMessage::from(file_message)
-        } else if let Some(args_message) = matches.value_of("message") {
+        } else if let Some(args_message) = matches.get_one::<String>("message") {
             CommitMessage::from(git2::message_prettify(args_message, None)?)
         } else if let Some(overlay_message) = overlay_message {
             CommitMessage::from(overlay_message)
@@ -589,7 +595,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let (diff, computed_diff) = if file_diff.is_some() {
             (file_diff, None)
         } else if need_interactive_edit
-            && (matches.is_present("diff")
+            && (matches.contains_id("diff")
                 || config.get_bool("stgit.edit.verbose").unwrap_or(false))
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
@@ -629,7 +635,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let need_commit_msg_hook =
-            !matches.is_present("no-verify") && (need_interactive_edit || is_message_modified());
+            !matches.contains_id("no-verify") && (need_interactive_edit || is_message_modified());
 
         let instruction = Some(interactive::EDIT_INSTRUCTION);
         let diff_instruction = Some(if allow_diff_edit {
@@ -638,7 +644,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             interactive::EDIT_INSTRUCTION_READ_ONLY_DIFF
         });
 
-        if allow_template_save && matches.is_present("save-template") {
+        if allow_template_save && matches.contains_id("save-template") {
             let message = message.decode()?.to_string();
             let patch_description = EditablePatchDescription {
                 patchname,
@@ -648,7 +654,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 diff_instruction,
                 diff,
             };
-            let path = matches.value_of_os("save-template").unwrap().to_owned();
+            let path = matches
+                .get_one::<PathBuf>("save-template")
+                .unwrap()
+                .to_owned();
             if path.to_str() == Some("-") {
                 let mut stream = BufWriter::new(std::io::stdout());
                 patch_description.write(&mut stream)?;

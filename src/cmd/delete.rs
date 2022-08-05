@@ -38,7 +38,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to delete")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with("top")
                 .required_unless_present("top"),
         )
@@ -66,11 +66,11 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = crate::argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
-    let opt_spill = matches.is_present("spill");
+    let opt_spill = matches.contains_id("spill");
 
-    let patches: Vec<PatchName> = if matches.is_present("top") {
+    let patches: Vec<PatchName> = if matches.contains_id("top") {
         if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {
@@ -78,9 +78,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     } else {
         let patchranges = matches
-            .values_of("patchranges-all")
+            .get_many::<patchrange::Specification>("patchranges-all")
             .expect("clap will ensure either patches or --top");
-        patchrange::parse(
+        patchrange::patches_from_specs(
             patchranges,
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,

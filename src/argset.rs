@@ -2,7 +2,7 @@
 
 //! [`clap::Arg`] definitions common to several StGit commands.
 
-use clap::{Arg, ValueHint};
+use clap::Arg;
 
 lazy_static! {
     /// The `--branch`/`-b` option for selecting an alternative branch.
@@ -12,7 +12,8 @@ lazy_static! {
         .help("Use BRANCH instead of current branch")
         .takes_value(true)
         .value_name("branch")
-        .value_hint(ValueHint::Other);
+        .value_hint(clap::ValueHint::Other)
+        .value_parser(parse_branch_name);
 
     /// The `--keep/-k` option.
     pub(crate) static ref KEEP_ARG: Arg<'static> =
@@ -31,9 +32,36 @@ lazy_static! {
         .help("Extra options to pass to \"git diff\"")
         .takes_value(true)
         .allow_hyphen_values(true)
-        .multiple_occurrences(true)
+        .action(clap::ArgAction::Append)
         .value_name("options")
-        .value_hint(ValueHint::Other);
+        .value_hint(clap::ValueHint::Other);
+}
+
+/// For use with `clap::Arg::value_parser()` to ensure a branch name is valid.
+pub(crate) fn parse_branch_name(name: &str) -> anyhow::Result<String> {
+    if git2::Branch::name_is_valid(name)? {
+        Ok(name.to_string())
+    } else {
+        Err(anyhow::anyhow!("invalid branch name `{name}`"))
+    }
+}
+
+/// Get a `&str` from a `clap::ArgMatches` instance for the given `id`.
+///
+/// This function may be cleaner than calling `ArgMatches::get_one::<String>()` directly
+/// since that function returns `Option<&String>` which often needs to be mapped to
+/// `Option<&str>`.
+pub(crate) fn get_one_str<'a>(matches: &'a clap::ArgMatches, id: &str) -> Option<&'a str> {
+    matches.get_one::<String>(id).map(|s| s.as_str())
+}
+
+/// For use with `clap::Arg::value_parser()` to parse a usize argument.
+///
+/// This function has a custom error message that is preferable to the messages reported
+/// by `str::parse::<usize>()`.
+pub(crate) fn parse_usize(s: &str) -> anyhow::Result<usize> {
+    s.parse::<usize>()
+        .map_err(|_| anyhow::anyhow!("'{s}' is not a positive integer"))
 }
 
 /// Compose aggregate set of git diff options from various sources.
@@ -62,7 +90,7 @@ pub(crate) fn get_diff_opts(
         }
     }
 
-    if let Some(values) = matches.values_of("diff-opts") {
+    if let Some(values) = matches.get_many::<String>("diff-opts") {
         for value in values {
             for arg in value.split_ascii_whitespace() {
                 opts.push(String::from(arg))

@@ -2,8 +2,10 @@
 
 //! `stg new` implementation.
 
+use std::path::PathBuf;
+
 use anyhow::{anyhow, Result};
-use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
+use clap::{Arg, ArgGroup, ArgMatches};
 
 use super::refresh;
 
@@ -50,7 +52,7 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("patchname")
                 .help("Name for new patch")
-                .value_hint(ValueHint::Other),
+                .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(
             Arg::new("pathspecs")
@@ -63,8 +65,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("path")
                 .last(true)
                 .multiple_values(true)
-                .allow_invalid_utf8(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with("save-template"),
         )
         .next_help_heading("REFRESH OPTIONS")
@@ -137,8 +138,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(name) = matches.value_of("patchname") {
-        let patchname = name.parse::<PatchName>()?;
+    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patchname").cloned() {
         if let Some(colliding_patchname) = stack.collides(&patchname) {
             Err(anyhow!("Patch `{colliding_patchname}` already exists"))
         } else {
@@ -150,7 +150,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let config = repo.config()?;
 
-    let is_refreshing = matches.is_present("refresh") || matches.is_present("pathspecs");
+    let is_refreshing = matches.contains_id("refresh") || matches.contains_id("pathspecs");
 
     let tree_id = if is_refreshing {
         refresh::assemble_refresh_tree(&stack, &config, matches, None)?
@@ -177,7 +177,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         } => (patchname, commit_id),
     };
 
-    if let Some(template_path) = matches.value_of_os("save-template") {
+    if let Some(template_path) = matches.get_one::<PathBuf>("save-template") {
         let patch_commit = repo.find_commit(commit_id)?;
         std::fs::write(template_path, patch_commit.message_raw_bytes())?;
         return Ok(());

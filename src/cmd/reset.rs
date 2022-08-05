@@ -51,7 +51,7 @@ fn make() -> clap::Command<'static> {
                 .help("Only reset these patches")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(
             Arg::new("hard")
@@ -62,7 +62,7 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    if let Some(committish) = matches.value_of("committish") {
+    if let Some(committish) = crate::argset::get_one_str(matches, "committish") {
         let stack = Stack::from_branch(&repo, None)?;
         let commit = repo
             .revparse_single(committish)
@@ -72,14 +72,23 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
-            .discard_changes(matches.is_present("hard"))
-            .allow_bad_head(matches.values_of("patchranges-all").is_none())
+            .discard_changes(matches.contains_id("hard"))
+            .allow_bad_head(
+                matches
+                    .get_many::<patchrange::Specification>("patchranges-all")
+                    .is_none(),
+            )
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
                 let reset_state = StackState::from_commit(trans.repo(), &commit)?;
-                if let Some(patchranges) = matches.values_of("patchranges-all") {
-                    let patchnames =
-                        patchrange::parse(patchranges, &reset_state, patchrange::Allow::All)?;
+                if let Some(range_specs) =
+                    matches.get_many::<patchrange::Specification>("patchranges-all")
+                {
+                    let patchnames = patchrange::patches_from_specs(
+                        range_specs,
+                        &reset_state,
+                        patchrange::Allow::All,
+                    )?;
                     trans.reset_to_state_partially(reset_state, &patchnames)
                 } else {
                     trans.reset_to_state(reset_state)
@@ -87,7 +96,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             })
             .execute("reset")?;
         Ok(())
-    } else if matches.is_present("hard") {
+    } else if matches.contains_id("hard") {
         let head_tree = repo.head()?.peel_to_tree()?;
         repo.stupid().read_tree_checkout_hard(head_tree.id())
     } else {

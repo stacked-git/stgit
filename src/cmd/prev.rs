@@ -7,7 +7,10 @@ use std::io::Write;
 use anyhow::{anyhow, Result};
 use termcolor::WriteColor;
 
-use crate::stack::{Stack, StackStateAccess};
+use crate::{
+    argset,
+    stack::{Stack, StackStateAccess},
+};
 
 use super::StGitCommand;
 
@@ -32,12 +35,12 @@ fn make() -> clap::Command<'static> {
              topmost patch. An error message will be printed if not enough \
              patches are applied.",
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
 
     if let Some(patchname) = stack.applied().iter().nth_back(1) {

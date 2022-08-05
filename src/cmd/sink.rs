@@ -2,8 +2,6 @@
 
 //! `stg sink` implementation.
 
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
@@ -54,7 +52,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to sink")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(
             Arg::new("nopush")
@@ -78,8 +76,7 @@ fn make() -> clap::Command<'static> {
                      bottom of the stack.",
                 )
                 .value_name("target")
-                .validator(PatchName::from_str)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(&*crate::argset::KEEP_ARG)
 }
@@ -88,11 +85,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let opt_target: Option<PatchName> = matches.value_of("target").map(|s| {
-        PatchName::from_str(s).expect("clap already validated that this patchname is valid")
-    });
-    let opt_nopush = matches.is_present("nopush");
-    let opt_keep = matches.is_present("keep");
+    let opt_target: Option<PatchName> = matches.get_one::<PatchName>("target").cloned();
+    let opt_nopush = matches.contains_id("nopush");
+    let opt_keep = matches.contains_id("keep");
 
     repo.check_repository_state()?;
     repo.check_conflicts()?;
@@ -111,13 +106,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    let patches: Vec<PatchName> = if let Some(patchranges) = matches.values_of("patchranges") {
-        patchrange::parse(patchranges, &stack, patchrange::Allow::All)?
-    } else if let Some(patchname) = stack.applied().last() {
-        vec![patchname.clone()]
-    } else {
-        return Err(Error::NoAppliedPatches.into());
-    };
+    let patches: Vec<PatchName> =
+        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
+            patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::All)?
+        } else if let Some(patchname) = stack.applied().last() {
+            vec![patchname.clone()]
+        } else {
+            return Err(Error::NoAppliedPatches.into());
+        };
 
     if let Some(target_patch) = &opt_target {
         if patches.contains(target_patch) {

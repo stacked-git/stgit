@@ -51,7 +51,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to push")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["all", "number"]),
         )
         .arg(
@@ -75,10 +75,7 @@ fn make() -> clap::Command<'static> {
                 .takes_value(true)
                 .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<isize>()
-                        .map_err(|_| format!("'{s}' is not an integer"))
-                }),
+                .value_parser(clap::value_parser!(isize)),
         )
         .arg(
             Arg::new("reverse")
@@ -119,65 +116,62 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let opt_number: Option<isize> = matches.value_of("number").map(|num_str| {
-        num_str
-            .parse::<isize>()
-            .expect("validator previously parsed this")
-    });
+    let opt_number = matches.get_one::<isize>("number").copied();
 
     if Some(0) == opt_number {
         return Ok(());
     }
 
-    let mut patches: Vec<PatchName> =
-        if let Some(patchranges) = matches.values_of("patchranges-unapplied") {
-            patchrange::parse(patchranges, &stack, patchrange::Allow::Unapplied).map_err(|e| {
-                match e {
-                    crate::patchrange::Error::BoundaryNotAllowed { patchname, range }
-                        if stack.is_applied(&patchname) =>
-                    {
-                        anyhow!("Patch `{patchname}` from `{range}` is already applied")
-                    }
-                    crate::patchrange::Error::PatchNotAllowed { patchname, .. }
-                        if stack.is_applied(&patchname) =>
-                    {
-                        anyhow!("Patch `{patchname}` is already applied")
-                    }
-                    _ => e.into(),
+    let mut patches: Vec<PatchName> = if let Some(range_specs) =
+        matches.get_many::<patchrange::Specification>("patchranges-unapplied")
+    {
+        patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::Unapplied).map_err(
+            |e| match e {
+                patchrange::Error::BoundaryNotAllowed { patchname, range }
+                    if stack.is_applied(&patchname) =>
+                {
+                    anyhow!("Patch `{patchname}` from `{range}` is already applied")
                 }
-            })?
-        } else if stack.unapplied().is_empty() {
-            return Err(anyhow!("No unapplied patches"));
-        } else if matches.is_present("all") {
-            stack.unapplied().to_vec()
-        } else if let Some(number) = opt_number {
-            let num_unapplied = stack.unapplied().len();
-            let num_to_take: usize = {
-                if number >= 0 {
-                    std::cmp::min(number as usize, num_unapplied)
-                } else if number.unsigned_abs() < num_unapplied {
-                    num_unapplied - number.unsigned_abs()
-                } else {
-                    0
+                patchrange::Error::PatchNotAllowed { patchname, .. }
+                    if stack.is_applied(&patchname) =>
+                {
+                    anyhow!("Patch `{patchname}` is already applied")
                 }
-            };
-            stack
-                .unapplied()
-                .iter()
-                .take(num_to_take)
-                .cloned()
-                .collect()
-        } else {
-            stack.unapplied().iter().take(1).cloned().collect()
+                _ => e.into(),
+            },
+        )?
+    } else if stack.unapplied().is_empty() {
+        return Err(anyhow!("No unapplied patches"));
+    } else if matches.contains_id("all") {
+        stack.unapplied().to_vec()
+    } else if let Some(number) = opt_number {
+        let num_unapplied = stack.unapplied().len();
+        let num_to_take: usize = {
+            if number >= 0 {
+                std::cmp::min(number as usize, num_unapplied)
+            } else if number.unsigned_abs() < num_unapplied {
+                num_unapplied - number.unsigned_abs()
+            } else {
+                0
+            }
         };
+        stack
+            .unapplied()
+            .iter()
+            .take(num_to_take)
+            .cloned()
+            .collect()
+    } else {
+        stack.unapplied().iter().take(1).cloned().collect()
+    };
 
     assert!(!patches.is_empty());
 
-    let opt_reverse = matches.is_present("reverse");
-    let opt_noapply = matches.is_present("noapply");
-    let opt_settree = matches.is_present("set-tree");
-    let opt_merged = matches.is_present("merged");
-    let opt_keep = matches.is_present("keep");
+    let opt_reverse = matches.contains_id("reverse");
+    let opt_noapply = matches.contains_id("noapply");
+    let opt_settree = matches.contains_id("set-tree");
+    let opt_merged = matches.contains_id("merged");
+    let opt_keep = matches.contains_id("keep");
 
     repo.check_repository_state()?;
     repo.check_conflicts()?;

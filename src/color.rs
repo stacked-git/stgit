@@ -26,7 +26,7 @@ pub(crate) fn get_color_arg() -> Arg<'static> {
         .hide_default_value(true)
         .hide_possible_values(true)
         .value_name("when")
-        .possible_values(&["auto", "always", "ansi", "never"])
+        .value_parser(["auto", "always", "ansi", "never"])
         .takes_value(true)
         .default_value("auto")
         .overrides_with("color")
@@ -75,7 +75,8 @@ pub(crate) fn get_color_stderr(matches: &ArgMatches) -> StandardStream {
 pub(crate) fn get_color_choice(maybe_matches: Option<&ArgMatches>) -> termcolor::ColorChoice {
     str_choice_to_termcolor(
         maybe_matches
-            .and_then(|matches| matches.value_of("color"))
+            .and_then(|matches| matches.get_one::<String>("color"))
+            .map(|s| s.as_str())
             .unwrap_or("auto"),
     )
     .expect("clap already validated color choice string")

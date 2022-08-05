@@ -6,6 +6,7 @@ use anyhow::{anyhow, Result};
 use clap::Arg;
 
 use crate::{
+    argset,
     commit::CommitExtended,
     patchrange,
     stack::{Error, Stack, StackStateAccess},
@@ -58,7 +59,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Patches to format")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with("all")
                 .required_unless_present_any(&["all"]),
         )
@@ -69,7 +70,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .allow_hyphen_values(true)
                 .value_name("git-options"),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("all")
                 .long("all")
@@ -96,7 +97,7 @@ lazy_static! {
             .takes_value(true)
             .value_name("dir")
             .value_hint(clap::ValueHint::DirPath)
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("cover-letter")
             .long("cover-letter")
             .help("Generate a cover letter")
@@ -184,7 +185,7 @@ lazy_static! {
             )
             .value_name("suffix")
             .takes_value(true)
-            .forbid_empty_values(false),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("keep-subject")
             .long("keep-subject")
             .short('k')
@@ -226,8 +227,8 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("no-to")
             .long("no-to")
@@ -235,7 +236,7 @@ lazy_static! {
             .long_help(
                 "Discard all `To:` addresses added so far from config or command line.",
             )
-            .multiple_occurrences(true),
+            .action(clap::ArgAction::Append), // TODO: ArgAction::SetTrue?
         Arg::new("cc")
             .long("cc")
             .help("Specify a Cc: address for each email")
@@ -247,8 +248,8 @@ lazy_static! {
             )
             .value_name("address")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true)
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("no-cc")
             .long("no-cc")
@@ -256,7 +257,7 @@ lazy_static! {
             .long_help(
                 "Discard all `Cc:` addresses added so far from config or command line.",
             )
-            .multiple_occurrences(true),
+            .action(clap::ArgAction::Append),
         Arg::new("in-reply-to")
             .long("in-reply-to")
             .help("Make first mail a reply to <message-id>")
@@ -267,7 +268,7 @@ lazy_static! {
             )
             .value_name("message-id")
             .takes_value(true)
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("add-header")
             .long("add-header")
             .help("Add an arbitrary email header")
@@ -280,8 +281,8 @@ lazy_static! {
             )
             .value_name("header")
             .takes_value(true)
-            .forbid_empty_values(true)
-            .multiple_occurrences(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new())
+            .action(clap::ArgAction::Append),
         // N.B. not supporting the optional mime-boundary value
         Arg::new("attach")
             .long("attach")
@@ -326,7 +327,7 @@ lazy_static! {
             .value_name("style")
             .takes_value(true)
             .hide_possible_values(true)
-            .possible_values(["shallow", "deep", ""])
+            .value_parser(["shallow", "deep", ""])
             .min_values(0)
             .number_of_values(1)
             .default_missing_value("")
@@ -344,7 +345,7 @@ lazy_static! {
             )
             .takes_value(true)
             .value_name("signature")
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("no-signature")
             .long("no-signature")
             .help("Do not add a signature to each email"),
@@ -361,7 +362,7 @@ lazy_static! {
             .long_help("See the BASE TREE INFORMATION section of git-format-patch(1).")
             .takes_value(true)
             .value_name("committish")
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("progress")
             .long("progress")
             .help("Show progress while generating patches")
@@ -380,7 +381,7 @@ lazy_static! {
             )
             .takes_value(true)
             .value_name("rev")
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("range-diff")
             .long("range-diff")
             .help("Show changes against <refspec> in cover letter")
@@ -403,7 +404,7 @@ lazy_static! {
             )
             .takes_value(true)
             .value_name("refspec")
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("creation-factor")
             .long("creation-factor")
             .help("Percentage by which creation is weighed")
@@ -415,7 +416,7 @@ lazy_static! {
             )
             .takes_value(true)
             .value_name("n")
-            .forbid_empty_values(true),
+            .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         // NO --from
         // NO --no-add-header
     ];
@@ -423,27 +424,28 @@ lazy_static! {
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, matches.value_of("branch"))?;
+    let stack = Stack::from_branch(&repo, argset::get_one_str(matches, "branch"))?;
 
-    let patches = if let Some(patchranges) = matches.values_of("patchranges") {
-        let patches = patchrange::parse_contiguous(
-            patchranges,
-            &stack,
-            patchrange::Allow::VisibleWithAppliedBoundary,
-        )?;
-        if patches.is_empty() {
-            return Err(anyhow!("No patches to send"));
-        }
-        patches
-    } else if matches.is_present("all") {
-        let applied = stack.applied();
-        if applied.is_empty() {
-            return Err(Error::NoAppliedPatches.into());
-        }
-        applied.to_vec()
-    } else {
-        panic!("expect either patchranges or -a/--all")
-    };
+    let patches =
+        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
+            let patches = patchrange::contiguous_patches_from_specs(
+                range_specs,
+                &stack,
+                patchrange::Allow::VisibleWithAppliedBoundary,
+            )?;
+            if patches.is_empty() {
+                return Err(anyhow!("No patches to send"));
+            }
+            patches
+        } else if matches.contains_id("all") {
+            let applied = stack.applied();
+            if applied.is_empty() {
+                return Err(Error::NoAppliedPatches.into());
+            }
+            applied.to_vec()
+        } else {
+            panic!("expect either patchranges or -a/--all")
+        };
 
     for patchname in &patches {
         if stack.get_patch_commit(patchname).is_no_change()? {
@@ -456,7 +458,10 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     for arg in FORMAT_OPTIONS.iter().chain(MESSAGE_OPTIONS.iter()) {
         if let Some(indices) = matches.indices_of(arg.get_id()) {
             let indices = indices.collect::<Vec<_>>();
-            let values = matches.values_of(arg.get_id()).unwrap().collect::<Vec<_>>();
+            let values = matches
+                .get_many::<String>(arg.get_id())
+                .unwrap()
+                .collect::<Vec<_>>();
             let long = arg.get_long().expect("arg has long option");
             if values.is_empty() {
                 for index in indices {
@@ -484,8 +489,8 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args = format_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(options) = matches.values_of("git-format-patch-opts") {
-        format_args.extend(options.map(|o| o.to_string()));
+    if let Some(options) = matches.get_many::<String>("git-format-patch-opts") {
+        format_args.extend(options.cloned());
     }
 
     {

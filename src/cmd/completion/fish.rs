@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 
-use std::format as f;
+use std::{format as f, path::PathBuf};
 
 use super::shstream::ShStream;
 
@@ -18,7 +18,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Output completion script to <path>")
                 .value_name("path")
                 .value_hint(clap::ValueHint::FilePath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 
@@ -334,7 +334,7 @@ fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
 
     let mut params = ShStream::new();
 
-    if let Some(possible_values) = arg.get_possible_values() {
+    if let Some(possible_values) = arg.get_value_parser().possible_values() {
         let mut possibles = ShStream::new();
         for pv in possible_values {
             possibles.word(pv.get_name());

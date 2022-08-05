@@ -5,7 +5,7 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::{patchrange, stack::Stack, stupid::Stupid};
+use crate::{argset, patchrange, stack::Stack, stupid::Stupid};
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
     (
@@ -42,9 +42,9 @@ fn make() -> clap::Command<'static> {
                 .help("Only show history for these patches")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true),
+                .value_parser(clap::value_parser!(patchrange::Specification)),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(&*argset::BRANCH_ARG)
         .arg(
             Arg::new("diff")
                 .long("diff")
@@ -57,10 +57,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Limit output to <n> commits")
                 .value_name("n")
-                .validator(|s| {
-                    s.parse::<usize>()
-                        .map_err(|_| format!("'{}' is not a positive integer", s))
-                }),
+                .value_parser(crate::argset::parse_usize),
         )
         .arg(
             Arg::new("full")
@@ -86,23 +83,24 @@ fn make() -> clap::Command<'static> {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = matches.value_of("branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let mut stack = Stack::from_branch(&repo, opt_branch)?;
 
-    if matches.is_present("clear") {
+    if matches.contains_id("clear") {
         stack.clear_state_log("clear log")
     } else {
-        let pathspecs: Option<Vec<String>> =
-            if let Some(patch_ranges) = matches.values_of("patchranges-all") {
-                Some(
-                    patchrange::parse(patch_ranges, &stack, patchrange::Allow::All)?
-                        .iter()
-                        .map(|pn| format!("patches/{pn}"))
-                        .collect(),
-                )
-            } else {
-                None
-            };
+        let pathspecs: Option<Vec<String>> = if let Some(range_specs) =
+            matches.get_many::<patchrange::Specification>("patchranges-all")
+        {
+            Some(
+                patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::All)?
+                    .iter()
+                    .map(|pn| format!("patches/{pn}"))
+                    .collect(),
+            )
+        } else {
+            None
+        };
 
         let simplified_parent_id = stack
             .repo
@@ -112,19 +110,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let stupid = repo.stupid();
 
-        if matches.is_present("graphical") {
+        if matches.contains_id("graphical") {
             stupid.gitk(simplified_parent_id, pathspecs)
         } else {
-            let num_commits = matches
-                .value_of("number")
-                .map(|num_str| num_str.parse::<usize>().expect("already validated"));
+            let num_commits = matches.get_one::<usize>("number").copied();
             stupid.log(
                 simplified_parent_id,
                 pathspecs,
                 num_commits,
                 crate::color::use_color(matches),
-                matches.is_present("full"),
-                matches.is_present("diff"),
+                matches.contains_id("full"),
+                matches.contains_id("diff"),
             )
         }
     }

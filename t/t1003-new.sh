@@ -26,19 +26,19 @@ test_expect_success \
 
 test_expect_success \
     'Invalid patch name: space' '
-    command_error stg new "bad name" 2>err &&
+    general_error stg new "bad name" 2>err &&
     grep -e "Invalid patch name \`bad name\`" err
 '
 
 test_expect_success \
     'Invalid patch name: carat' '
-    command_error stg new "bad^name" 2>err &&
+    general_error stg new "bad^name" 2>err &&
     grep -e "Invalid patch name \`bad\^name\`" err
 '
 
 test_expect_success \
     'Invalid patch name: empty' '
-    command_error stg new "" 2>err &&
+    general_error stg new "" 2>err &&
     grep -e "Invalid patch name \`\`" err
 '
 
@@ -146,7 +146,7 @@ test_expect_success \
 
 test_expect_success \
     'Patch with slash in name' '
-    command_error stg new bar/foo -m "patch bar/foo"
+    general_error stg new bar/foo -m "patch bar/foo"
 '
 
 test_done

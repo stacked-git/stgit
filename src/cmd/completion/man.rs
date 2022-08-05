@@ -2,7 +2,10 @@
 
 //! `stg completion man` implementation
 
-use std::{fmt::Write, path::Path};
+use std::{
+    fmt::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Result;
 
@@ -27,13 +30,13 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Output man pages to <dir>")
                 .value_name("dir")
                 .value_hint(clap::ValueHint::DirPath)
-                .allow_invalid_utf8(true),
+                .value_parser(clap::value_parser!(PathBuf)),
         )
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let output_dir = if let Some(path) = matches.value_of_os("output") {
-        Path::new(path)
+    let output_dir = if let Some(path) = matches.get_one::<PathBuf>("output").map(|p| p.as_path()) {
+        path
     } else {
         Path::new("")
     };
@@ -279,9 +282,7 @@ fn add_options(
     for (i, arg) in command
         .get_arguments()
         .filter(|arg| {
-            !["help", "color"].contains(&arg.get_name())
-                && !arg.is_hide_set()
-                && !arg.is_positional()
+            !["help", "color"].contains(&arg.get_id()) && !arg.is_hide_set() && !arg.is_positional()
         })
         .enumerate()
     {
@@ -299,14 +300,10 @@ fn add_options(
                 value_str.push('>');
             }
             value_str
-        } else if let Some(possible_values) = arg.get_possible_values() {
+        } else if let Some(possible_values) = arg.get_value_parser().possible_values() {
             let mut value_str = String::new();
             value_str.push('(');
-            for (i, possible_value) in possible_values
-                .iter()
-                .filter(|&pv| !pv.is_hide_set())
-                .enumerate()
-            {
+            for (i, possible_value) in possible_values.filter(|pv| !pv.is_hide_set()).enumerate() {
                 if i > 0 {
                     value_str.push('|');
                 }

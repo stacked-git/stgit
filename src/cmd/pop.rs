@@ -52,7 +52,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patches to pop")
                 .value_name("patch")
                 .multiple_values(true)
-                .forbid_empty_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["all", "number"]),
         )
         .arg(
@@ -76,10 +76,7 @@ fn make() -> clap::Command<'static> {
                 .takes_value(true)
                 .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("number")
-                .validator(|s| {
-                    s.parse::<isize>()
-                        .map_err(|_| format!("'{s}' is not an integer"))
-                }),
+                .value_parser(clap::value_parser!(isize)),
         )
         .arg(
             Arg::new("spill")
@@ -94,11 +91,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
 
-    let opt_number: Option<isize> = matches.value_of("number").map(|num_str| {
-        num_str
-            .parse::<isize>()
-            .expect("validator previously parsed this")
-    });
+    let opt_number = matches.get_one::<isize>("number").copied();
 
     if Some(0) == opt_number {
         return Ok(());
@@ -108,7 +101,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     }
 
-    let mut patches: indexmap::IndexSet<PatchName> = if matches.is_present("all") {
+    let mut patches: indexmap::IndexSet<PatchName> = if matches.contains_id("all") {
         stack.applied().iter().cloned().collect()
     } else if let Some(number) = opt_number {
         let num_applied = stack.applied().len();
@@ -129,10 +122,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(patchranges) = matches.values_of("patchranges-applied") {
+    } else if let Some(range_specs) =
+        matches.get_many::<patchrange::Specification>("patchranges-applied")
+    {
         indexmap::IndexSet::from_iter(
-            patchrange::parse(patchranges, &stack, patchrange::Allow::Applied).map_err(
-                |e| match e {
+            patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::Applied)
+                .map_err(|e| match e {
                     patchrange::Error::BoundaryNotAllowed { patchname, range }
                         if stack.is_unapplied(&patchname) =>
                     {
@@ -144,8 +139,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         anyhow!("Patch `{patchname}` is already unapplied")
                     }
                     _ => e.into(),
-                },
-            )?,
+                })?,
         )
     } else {
         stack.applied().iter().rev().take(1).cloned().collect()
@@ -153,8 +147,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     assert!(!patches.is_empty());
 
-    let opt_keep = matches.is_present("keep");
-    let opt_spill = matches.is_present("spill");
+    let opt_keep = matches.contains_id("keep");
+    let opt_spill = matches.contains_id("spill");
     repo.check_repository_state()?;
     repo.check_conflicts()?;
     stack.check_head_top_mismatch()?;
