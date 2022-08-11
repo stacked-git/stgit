@@ -30,6 +30,9 @@ pub(crate) static EDIT_INSTRUCTION_EDITABLE_DIFF: &str = "# The diff below may b
 /// Default file name for interactively editable patch description.
 static EDIT_FILE_NAME: &str = ".stgit-edit.txt";
 
+/// Default file name for interactively editable patch description with diff.
+static EDIT_FILE_NAME_DIFF: &str = ".stgit-edit.patch";
+
 /// Conduct interactive patch edit session.
 ///
 /// The patch description is written to a file, the user's editor of choice is invoked,
@@ -38,13 +41,19 @@ pub(super) fn edit_interactive(
     patch_desc: &EditablePatchDescription,
     config: &git2::Config,
 ) -> Result<EditedPatchDescription> {
+    let filename = if patch_desc.diff.is_some() {
+        EDIT_FILE_NAME_DIFF
+    } else {
+        EDIT_FILE_NAME
+    };
+
     {
-        let file = File::create(EDIT_FILE_NAME)?;
+        let file = File::create(filename)?;
         let mut stream = BufWriter::new(file);
         patch_desc.write(&mut stream)?;
     }
 
-    let buf = call_editor(EDIT_FILE_NAME, config)?;
+    let buf = call_editor(filename, config)?;
     let edited_desc = EditedPatchDescription::try_from(buf.as_slice())?;
     Ok(edited_desc)
 }
