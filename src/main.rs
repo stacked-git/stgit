@@ -336,7 +336,7 @@ fn execute_shell_alias(
     color_choice: Option<termcolor::ColorChoice>,
     repo: Option<&git2::Repository>,
 ) -> ! {
-    if let Some(first_arg) = user_args.get(0) {
+    if let Some(first_arg) = user_args.first() {
         if ["-h", "--help"].contains(first_arg) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
         }
@@ -427,7 +427,7 @@ fn execute_stgit_alias(
                 .expect("empty aliases are filtered in get_aliases()")
                 .as_str();
 
-            if let Some(first_user_arg) = user_args.get(0) {
+            if let Some(first_user_arg) = user_args.first() {
                 if ["-h", "--help"].contains(first_user_arg) {
                     eprintln!("'{}' is aliased to '{}'", &alias.name, &alias.command);
                 }
