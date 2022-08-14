@@ -11,20 +11,26 @@ export DESTDIR CARGO STG_PROFILE
 
 TEST_PATCHES ?= ..
 
-all: build
-
 build:
 	$(CARGO) build --profile=$(STG_PROFILE)
+
+all: build doc completion contrib
+
+completion: build
+	$(MAKE) -C completion all
+
+contrib:
+	$(MAKE) -C contrib all
 
 doc: build
 	$(MAKE) -C Documentation all
 
-.PHONY: all build doc
+.PHONY: all build completion contrib doc
 
 
 install: install-bin
 
-install-all: install-bin install-completion install-man install-html
+install-all: install-bin install-completion install-contrib install-man install-html
 
 install-bin: build
 	$(CARGO_OFFLINE) install --profile=$(STG_PROFILE) --path=. --root=$(DESTDIR)$(prefix) --no-track --force
@@ -38,7 +44,10 @@ install-man:
 install-html:
 	$(MAKE) -C Documentation install-html
 
-.PHONY: install install-all install-bin install-completion install-man install-html
+install-contrib:
+	$(MAKE) -C contrib install
+
+.PHONY: install install-all install-bin install-completion install-contrib install-man install-html
 
 
 lint: lint-format lint-clippy lint-t unit-test
@@ -73,6 +82,7 @@ clean:
 	$(MAKE) -C Documentation clean
 	$(MAKE) -C t clean
 	$(MAKE) -C completion clean
+	$(MAKE) -C contrib clean
 	rm  -r target
 
 .PHONY: format test test-patches clean

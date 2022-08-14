@@ -1,19 +1,20 @@
-EMACS = emacs
-
-ELC = stgit.elc
-INSTALL ?= install
-INSTALL_ELC = $(INSTALL) -m 644
 prefix ?= $(HOME)/.local
-emacsdir = $(prefix)/share/emacs/site-lisp
-RM ?= rm -f
+DESTDIR	?=
+INSTALL ?= install
 
-all: $(ELC)
+all:
+	$(MAKE) -C vim all
 
-install: all
-	$(INSTALL) -d $(DESTDIR)$(emacsdir)
-	$(INSTALL_ELC) $(ELC:.elc=.el) $(ELC) $(DESTDIR)$(emacsdir)
+install: install-emacs install-vim
 
-%.elc: %.el
-	$(EMACS) -batch -f batch-byte-compile $<
+install-emacs: stgit.el
+	$(INSTALL) -d $(DESTDIR)$(prefix)/share/emacs/site-lisp
+	$(INSTALL) -m 0644 $< $(DESTDIR)$(prefix)/share/emacs/site-lisp
 
-clean:; $(RM) $(ELC)
+install-vim:
+	$(MAKE) -C vim install
+
+clean:
+	$(MAKE) -C vim clean
+
+.PHONY: all clean install install-emacs install-vim
