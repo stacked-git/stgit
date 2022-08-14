@@ -3,8 +3,9 @@ DESTDIR	?=
 DEFAULT_TEST_TARGET ?= test
 STG_PROVE_OPTS ?=
 STG_PROFILE ?= release
-CARGO ?= cargo
-CARGO_RUN = $(CARGO) --quiet run --profile=$(STG_PROFILE)
+CARGO ?= cargo --locked
+CARGO_OFFLINE = $(CARGO) --offline
+CARGO_RUN = $(CARGO_OFFLINE) --quiet run --profile=$(STG_PROFILE)
 
 export DESTDIR CARGO STG_PROFILE
 
@@ -25,8 +26,8 @@ install: install-bin
 
 install-all: install-bin install-completion install-man install-html
 
-install-bin:
-	$(CARGO) install --profile=$(STG_PROFILE) --locked --path=. --root=$(DESTDIR)$(prefix)
+install-bin: build
+	$(CARGO_OFFLINE) install --profile=$(STG_PROFILE) --path=. --root=$(DESTDIR)$(prefix)
 
 install-completion: build
 	$(MAKE) -C completion install
@@ -43,22 +44,22 @@ install-html:
 lint: lint-format lint-clippy lint-t unit-test
 
 lint-format:
-	$(CARGO) --quiet fmt --all --check
+	$(CARGO_OFFLINE) --quiet fmt --all --check
 
 lint-clippy:
-	$(CARGO) --quiet clippy -- --deny warnings
+	$(CARGO_OFFLINE) --quiet clippy -- --deny warnings
 
 lint-t:
 	$(MAKE) -C t test-lint
 
 unit-test:
-	$(CARGO) --quiet test
+	$(CARGO_OFFLINE) --quiet test
 
 .PHONY: lint lint-format lint-clippy lint-t unit-test
 
 
 format:
-	$(CARGO) fmt
+	$(CARGO_OFFLINE) fmt
 
 test: build
 	$(MAKE) -C t all

@@ -46,8 +46,9 @@ SP_ARTICLES =
 OBSOLETE_HTML =
 
 STG_PROFILE ?= release
-CARGO ?= cargo
-CARGO_RUN = $(CARGO) --quiet run --profile=$(STG_PROFILE)
+CARGO ?= cargo --locked
+CARGO_OFFLINE = $(CARGO) --offline
+CARGO_RUN = $(CARGO_OFFLINE) --quiet run --profile=$(STG_PROFILE)
 STG_COMMANDS_SRC = $(shell find ../src/cmd -name '*.rs')
 STG_COMMANDS = $(shell $(CARGO_RUN) completion list commands)
 STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))

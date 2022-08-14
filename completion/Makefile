@@ -1,6 +1,7 @@
-CARGO ?= cargo
 STG_PROFILE ?= release
-CARGO_RUN = $(CARGO) --quiet run --profile=$(STG_PROFILE)
+CARGO ?= cargo --locked
+CARGO_OFFLINE = $(CARGO) --offline
+CARGO_RUN = $(CARGO_OFFLINE) --quiet run --profile=$(STG_PROFILE)
 INSTALL ?= install
 
 prefix ?= $(HOME)/.local
