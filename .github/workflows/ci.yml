@@ -39,7 +39,7 @@ jobs:
         profile: minimal
     - name: Build
       run: |
-        cargo build --all-features --profile ${{ matrix.profile }}
+        cargo --locked build --all-features --profile ${{ matrix.profile }}
     - name: Install Test Dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -74,7 +74,7 @@ jobs:
         profile: minimal
     - name: Run Unit Tests
       run: |
-        cargo test
+        cargo --locked test
 
   clippy:
     name: Clippy Lint
@@ -90,7 +90,7 @@ jobs:
         components: clippy
     - name: Clippy Checks
       run: |
-        cargo clippy -- --deny warnings
+        cargo --locked clippy -- --deny warnings
 
   rustfmt:
     name: Format Lint
@@ -106,7 +106,7 @@ jobs:
         components: rustfmt
     - name: Check formatting
       run: |
-        cargo fmt --all --check
+        cargo --locked fmt --all --check
 
   api-docs:
     name: API Documentation
@@ -166,7 +166,7 @@ jobs:
         profile: minimal
     - name: Build
       run: |
-        cargo build --all-features --profile release
+        cargo --locked build --all-features --profile release
     # - name: Setup MSYS2
     #   uses: msys2/setup-msys2@v2
     #   with:
