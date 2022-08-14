@@ -27,7 +27,7 @@ install: install-bin
 install-all: install-bin install-completion install-man install-html
 
 install-bin: build
-	$(CARGO_OFFLINE) install --profile=$(STG_PROFILE) --path=. --root=$(DESTDIR)$(prefix)
+	$(CARGO_OFFLINE) install --profile=$(STG_PROFILE) --path=. --root=$(DESTDIR)$(prefix) --no-track --force
 
 install-completion: build
 	$(MAKE) -C completion install
