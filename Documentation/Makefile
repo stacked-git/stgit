@@ -101,7 +101,7 @@ ASCIIDOC_HTML ?= xhtml11
 ASCIIDOC_DOCBOOK = docbook
 ASCIIDOC_CONF = -f asciidoc.conf
 ASCIIDOC_COMMON = $(ASCIIDOC) $(ASCIIDOC_EXTRA) $(ASCIIDOC_CONF) \
-		-amanversion=$(STGIT_VERSION) \
+		-amanversion="$(STGIT_VERSION)" \
 		-amanmanual='StGit Manual' -amansource='StGit'
 ASCIIDOC_DEPS = asciidoc.conf GIT-ASCIIDOCFLAGS
 TXT_TO_HTML = $(ASCIIDOC_COMMON) -b $(ASCIIDOC_HTML)
