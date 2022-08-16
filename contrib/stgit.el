@@ -2425,7 +2425,6 @@ which stage to diff against in the case of unmerged files."
                (let ((args (append '("show" "-O" "--patch-with-stat")
                                    `("-O" ,(stgit-find-copies-harder-diff-arg))
                                    (and space-arg (list "-O" space-arg))
-                                   '("--")
                                    (list (stgit-patch-name-at-point)))))
                  (apply 'stgit-run args))))))
         (with-current-buffer standard-output
