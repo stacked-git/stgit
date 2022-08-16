@@ -31,7 +31,6 @@ use std::collections::BTreeMap;
 use std::io::Write;
 
 use anyhow::{anyhow, Result};
-use git2::{Commit, Oid};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
 
@@ -85,9 +84,9 @@ pub(crate) struct StackTransaction<'repo> {
     applied: Vec<PatchName>,
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
-    updated_head: Option<Commit<'repo>>,
-    updated_base: Option<Commit<'repo>>,
-    current_tree_id: Oid,
+    updated_head: Option<git2::Commit<'repo>>,
+    updated_base: Option<git2::Commit<'repo>>,
+    current_tree_id: git2::Oid,
     error: Option<anyhow::Error>,
     printed_top: bool,
 }
@@ -419,7 +418,7 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 impl<'repo> StackTransaction<'repo> {
-    fn checkout(&mut self, commit: &Commit<'_>) -> Result<()> {
+    fn checkout(&mut self, commit: &git2::Commit<'_>) -> Result<()> {
         let repo = self.stack.repo;
         if !self.options.allow_bad_head {
             self.stack.check_head_top_mismatch()?;
@@ -571,7 +570,11 @@ impl<'repo> StackTransaction<'repo> {
     ///
     /// Any notes associated with the patch's previous commit are copied to the new
     /// commit.
-    pub(crate) fn update_patch(&mut self, patchname: &PatchName, commit_id: Oid) -> Result<()> {
+    pub(crate) fn update_patch(
+        &mut self,
+        patchname: &PatchName,
+        commit_id: git2::Oid,
+    ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
         // Failure to copy is okay. The old commit may not have a note to copy.
@@ -590,7 +593,7 @@ impl<'repo> StackTransaction<'repo> {
     ///
     /// The commit for the new patch must be parented by the former top commit of the
     /// stack.
-    pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: Oid) -> Result<()> {
+    pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: git2::Oid) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
         assert_eq!(commit.parent_id(0).unwrap(), self.top().id());
         self.applied.push(patchname.clone());
@@ -606,7 +609,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn new_unapplied(
         &mut self,
         patchname: &PatchName,
-        commit_id: Oid,
+        commit_id: git2::Oid,
         insert_pos: usize,
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
@@ -1470,7 +1473,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn top(&self) -> &Commit<'repo> {
+    fn top(&self) -> &git2::Commit<'repo> {
         if let Some(patchname) = self.applied.last() {
             self.get_patch_commit(patchname)
         } else {
@@ -1478,7 +1481,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn head(&self) -> &Commit<'repo> {
+    fn head(&self) -> &git2::Commit<'repo> {
         if let Some(commit) = self.updated_head.as_ref() {
             commit
         } else {
@@ -1486,7 +1489,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn base(&self) -> &Commit<'repo> {
+    fn base(&self) -> &git2::Commit<'repo> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
