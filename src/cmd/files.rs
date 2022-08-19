@@ -57,7 +57,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_spec = crate::argset::get_one_str(matches, "stgit-revision");
     let commit = parse_stgit_revision(&repo, opt_spec, None)?.peel_to_commit()?;
     let parent = commit.parent(0)?;
-    let mut output = repo.stupid().diff_tree_files(
+    let mut output = repo.stupid().diff_tree_files_status(
         parent.tree_id(),
         commit.tree_id(),
         matches.contains_id("stat"),

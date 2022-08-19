@@ -559,7 +559,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Interative diff-tree (for 'stg files').
-    pub(crate) fn diff_tree_files(
+    pub(crate) fn diff_tree_files_status(
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
