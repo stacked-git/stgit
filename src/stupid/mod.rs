@@ -16,128 +16,28 @@
 //!
 //! [`does not always apply patches correctly`]: https://github.com/libgit2/libgit2/issues/5717
 
+mod command;
+pub(crate) mod diff;
+mod oid;
+pub(crate) mod status;
+
 use std::{
     ffi::{OsStr, OsString},
     io::Write,
-    path::Path,
-    process::{Child, Command, ExitStatus, Output, Stdio},
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
 };
 
 use anyhow::{anyhow, Context, Result};
 use bstr::{BString, ByteSlice, ByteVec};
 
+use self::{
+    command::{git_command_error, StupidCommand, StupidExitStatus, StupidOutput},
+    diff::DiffFiles,
+    oid::parse_oid,
+    status::{StatusOptions, Statuses},
+};
 use crate::signature::TimeExtended;
-
-const GIT_EXEC_FAIL: &str = "could not execute `git`";
-
-trait StupidCommand {
-    /// Spawn command with git error context.
-    ///
-    /// By default, stdin and stdout are inherited and stderr is piped.
-    fn spawn_git(&mut self) -> Result<Child>;
-
-    /// Run git command, wait for completion, and collect output streams.
-    ///
-    /// By default, stdout and stderr are piped and stdin is null.
-    fn output_git(&mut self) -> Result<Output>;
-
-    /// Write input to child process and gather its output.
-    ///
-    /// The input data is written from a separate thread to avoid potential
-    /// deadlock that can occur if the child process's input buffer is filled
-    /// without concurrently reading from the child's stdout and stderr.
-    ///
-    /// By default, stdout is inherited. Stdin and stderr are piped.
-    fn in_and_out(&mut self, input: &[u8]) -> Result<Output>;
-}
-
-impl StupidCommand for Command {
-    fn spawn_git(&mut self) -> Result<Child> {
-        self.stderr(Stdio::piped()).spawn().context(GIT_EXEC_FAIL)
-    }
-
-    fn output_git(&mut self) -> Result<Output> {
-        self.output().context(GIT_EXEC_FAIL)
-    }
-
-    fn in_and_out(&mut self, input: &[u8]) -> Result<Output> {
-        struct SendSlice(*const u8, usize);
-        impl SendSlice {
-            fn from(slice: &[u8]) -> Self {
-                Self(slice.as_ptr(), slice.len())
-            }
-
-            unsafe fn take<'a>(self) -> &'a [u8] {
-                let SendSlice(ptr, len) = self;
-                std::slice::from_raw_parts(ptr, len)
-            }
-        }
-        unsafe impl Send for SendSlice {}
-        unsafe impl Sync for SendSlice {}
-
-        let mut child = self.stdin(Stdio::piped()).spawn_git()?;
-
-        let send_input = SendSlice::from(input);
-        let mut stdin = child.stdin.take().unwrap();
-        let handle = std::thread::spawn(move || {
-            // Safety: the input slice will not outlive the thread because
-            // the thread is joined before this function returns.
-            let input = unsafe { send_input.take() };
-            stdin.write_all(input).unwrap();
-        });
-        let output_result = child.wait_with_output();
-        handle.join().unwrap();
-        Ok(output_result?)
-    }
-}
-
-trait StupidOutput {
-    /// Ensure that Child or Output is successful, returning Output.
-    fn require_success(self, command: &str) -> Result<Output>;
-
-    /// Ensure that Child or Output exits with a code less than the given maximum.
-    ///
-    /// If the child exits without a return code, i.e. due to a signal, or the return
-    /// code is not less than the provided maximum, an error is returned.
-    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output>;
-}
-
-impl StupidOutput for Child {
-    fn require_success(self, command: &str) -> Result<Output> {
-        let output = self.wait_with_output()?;
-        output.require_success(command)
-    }
-
-    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output> {
-        let output = self.wait_with_output()?;
-        output.require_code_less_than(command, max_code)
-    }
-}
-
-impl StupidOutput for Output {
-    fn require_success(self, command: &str) -> Result<Output> {
-        if self.status.success() {
-            Ok(self)
-        } else {
-            Err(git_command_error(command, &self.stderr))
-        }
-    }
-
-    fn require_code_less_than(self, command: &str, max_code: i32) -> Result<Output> {
-        match self.status.code() {
-            Some(code) if code < max_code => Ok(self),
-            _ => Err(git_command_error(command, &self.stderr)),
-        }
-    }
-}
-
-/// Context for running stupid commands.
-#[derive(Clone, Debug, Default)]
-pub(crate) struct StupidContext<'repo, 'index> {
-    pub git_dir: Option<&'repo Path>,
-    pub index_path: Option<&'index Path>,
-    pub work_dir: Option<&'repo Path>,
-}
 
 pub(crate) trait Stupid<'repo, 'index> {
     /// Get StupidContext for running stupid commands.
@@ -154,12 +54,53 @@ impl<'repo, 'index> Stupid<'repo, 'index> for git2::Repository {
     }
 }
 
+/// Context for running stupid commands.
+#[derive(Clone, Debug, Default)]
+pub(crate) struct StupidContext<'repo, 'index> {
+    pub git_dir: Option<&'repo Path>,
+    pub index_path: Option<&'index Path>,
+    pub work_dir: Option<&'repo Path>,
+}
+
+pub(crate) struct StupidTempIndexContext<'repo> {
+    git_dir: Option<&'repo Path>,
+    temp_index_path: PathBuf,
+    work_dir: Option<&'repo Path>,
+}
+
+impl<'repo> StupidTempIndexContext<'repo> {
+    pub(crate) fn context(&self) -> StupidContext<'repo, '_> {
+        StupidContext {
+            git_dir: self.git_dir,
+            index_path: Some(self.temp_index_path.as_path()),
+            work_dir: self.work_dir,
+        }
+    }
+}
+
 impl<'repo, 'index> StupidContext<'repo, 'index> {
     pub(crate) fn with_index_path(&self, index_path: &'index Path) -> StupidContext {
         StupidContext {
             git_dir: self.git_dir,
-            work_dir: self.work_dir,
             index_path: Some(index_path),
+            work_dir: self.work_dir,
+        }
+    }
+
+    pub(crate) fn get_temp_index_context(&self) -> StupidTempIndexContext {
+        let temp_index_root = if let Some(git_dir) = self.git_dir {
+            git_dir
+        } else {
+            self.index_path
+                .expect("StupidContext has either a git_dir or an index_path")
+                .parent()
+                .expect("git index path has parent")
+        };
+
+        StupidTempIndexContext {
+            git_dir: self.git_dir,
+            temp_index_path: temp_index_root.join("index-temp-stgit"),
+            work_dir: self.work_dir,
         }
     }
 
@@ -558,6 +499,29 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(output.stdout)
     }
 
+    /// Diff tree with index returning a bool indicating whether they match.
+    pub(crate) fn diff_index_quiet(&self, tree_id: git2::Oid) -> Result<bool> {
+        Ok(self
+            .git()
+            .args(["diff-index", "--quiet", "--cached"])
+            .arg(tree_id.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .output_git()?
+            .status
+            .success())
+    }
+
+    /// Get names of files that differ between two trees.
+    pub(crate) fn diff_tree_files(&self, tree1: git2::Oid, tree2: git2::Oid) -> Result<DiffFiles> {
+        self.git()
+            .args(["diff-tree", "-r", "--name-only", "-z"])
+            .args([tree1.to_string(), tree2.to_string()])
+            .output_git()?
+            .require_success("diff-tree")
+            .map(|output| DiffFiles::new(output.stdout))
+    }
+
     /// Interative diff-tree (for 'stg files').
     pub(crate) fn diff_tree_files_status(
         &self,
@@ -743,7 +707,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.args(pathspecs);
         }
         let output = command.stdout(Stdio::inherit()).output_git()?;
-        if is_status_signal(&output.status, 13) {
+        if output.status.is_signal(13) {
             // `git log` process was killed by SIGPIPE, probably due to pager exiting before
             // all log output could be written. This is normal, but `git log` does not print an
             // error message to stderr, so we inject our own error string.
@@ -1136,6 +1100,56 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
+    /// Get index and worktree change statuses relative to HEAD.
+    pub(crate) fn statuses(&self, options: Option<&StatusOptions>) -> Result<Statuses> {
+        let default_options;
+        let options = if let Some(options) = options {
+            options
+        } else {
+            default_options = StatusOptions::default();
+            &default_options
+        };
+        let mut command = self.git();
+        command.args([
+            "status",
+            "--porcelain=v2",
+            "--null",
+            if options.include_submodules {
+                "--ignore-submodules=none"
+            } else {
+                "--ignore-submodules=all"
+            },
+            if options.include_untracked {
+                if options.recurse_untracked_dirs {
+                    "--untracked-files=all"
+                } else {
+                    "--untracked-files=normal"
+                }
+            } else {
+                "--untracked-files=no"
+            },
+            if options.include_ignored {
+                "--ignored=traditional"
+            } else {
+                "--ignored=no"
+            },
+        ]);
+        if options.include_branch_headers {
+            command.arg("--branch");
+        }
+        if options.include_stash_headers {
+            command.arg("--show-stash");
+        }
+        command.arg("--").args(&options.pathspecs);
+
+        let status_data = command
+            .output_git()?
+            .require_success("status --porcelain=v2")?
+            .stdout;
+
+        Ok(Statuses::from_data(status_data))
+    }
+
     /// Show short status using `git status`.
     pub(crate) fn status_short<SpecIter, SpecArg>(&self, pathspecs: Option<SpecIter>) -> Result<()>
     where
@@ -1151,6 +1165,53 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .stdout(Stdio::inherit())
             .output_git()?
             .require_success("status -s")?;
+        Ok(())
+    }
+
+    /// Update index with changes from work tree.
+    ///
+    /// Path limits must be relative to the repository root.
+    pub(crate) fn update_index<SpecIter, SpecArg>(&self, pathspecs: Option<SpecIter>) -> Result<()>
+    where
+        SpecIter: IntoIterator<Item = SpecArg> + Send,
+        SpecArg: AsRef<OsStr> + Send,
+    {
+        let mut child = self
+            .git_in_work_root()
+            .args([
+                "update-index",
+                "--remove",
+                "--add",
+                "--ignore-skip-worktree-entries",
+                "-z",
+                "--stdin",
+            ])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::null())
+            .spawn_git()?;
+
+        {
+            let mut stdin = child.stdin.take().unwrap();
+
+            if let Some(pathspecs) = pathspecs {
+                let write_result: Result<()> = std::thread::scope(|scope| {
+                    let handle = scope.spawn(|| {
+                        for spec in pathspecs {
+                            if let Some(spec_bytes) = <[u8]>::from_os_str(spec.as_ref()) {
+                                stdin.write_all(spec_bytes)?;
+                                stdin.write_all(&[0])?;
+                            }
+                        }
+                        Ok(())
+                    });
+                    handle
+                        .join()
+                        .map_err(|_| anyhow!("failed writing pathspecs to stdin"))?
+                });
+                write_result?;
+            }
+        }
+        child.wait_with_output()?.require_success("update-index")?;
         Ok(())
     }
 
@@ -1280,26 +1341,4 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .require_success("write-tree")?;
         parse_oid(&output.stdout)
     }
-}
-
-fn git_command_error(command: &str, stderr: &[u8]) -> anyhow::Error {
-    let err_str = stderr.to_str_lossy();
-    let err_str = err_str.trim_end();
-    anyhow!(err_str.to_string()).context(format!("`git {command}`"))
-}
-
-fn parse_oid(output: &[u8]) -> Result<git2::Oid> {
-    let oid_hex = output.to_str().context("parsing oid")?.trim_end();
-    git2::Oid::from_str(oid_hex).with_context(|| format!("converting oid `{oid_hex}`"))
-}
-
-#[cfg(unix)]
-fn is_status_signal(status: &ExitStatus, signum: i32) -> bool {
-    use std::os::unix::process::ExitStatusExt;
-    status.signal() == Some(signum)
-}
-
-#[cfg(not(unix))]
-fn is_status_signal(_status: &ExitStatus, _signum: i32) -> bool {
-    false
 }

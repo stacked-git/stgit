@@ -30,23 +30,24 @@ fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
 /// The `use_editor` flag determines whether the hook should be allowed to invoke an
 /// interactive editor.
 ///
-/// Returns successfully if the hook script does not exist, is not a file, or is not
-/// executable.
-pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> Result<()> {
+/// Returns `Ok(true)` if the hook ran and completed successfully, `Err()` if the hook ran but failed,
+/// and `Ok(false)` if the hook did not run due to the script not existing, not being a file, or not
+/// being executable.
+pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> Result<bool> {
     let hook_name = "pre-commit";
     let hook_path = get_hook_path(repo, hook_name);
     let hook_meta = match std::fs::metadata(&hook_path) {
         Ok(meta) => meta,
-        Err(_) => return Ok(()), // ignore missing hook
+        Err(_) => return Ok(false), // ignore missing hook
     };
 
     if !hook_meta.is_file() {
-        return Ok(());
+        return Ok(false);
     }
 
     // Ignore non-executable hooks
     if !is_executable(&hook_meta) {
-        return Ok(());
+        return Ok(false);
     }
 
     let mut hook_command = std::process::Command::new(hook_path);
@@ -67,7 +68,7 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
         .with_context(|| format!("`{hook_name}` hook"))?;
 
     if status.success() {
-        Ok(())
+        Ok(true)
     } else {
         Err(anyhow!(
             "`{hook_name}` hook returned {}",

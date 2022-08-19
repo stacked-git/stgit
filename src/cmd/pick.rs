@@ -2,7 +2,10 @@
 
 //! `stg pick` implementation.
 
-use std::{path::PathBuf, str::FromStr};
+use std::{
+    path::{Path, PathBuf},
+    str::FromStr,
+};
 
 use anyhow::{anyhow, Context, Result};
 use bstr::ByteSlice;
@@ -250,13 +253,19 @@ fn fold_picks(
             (commit, &parent)
         };
 
-        let pathspecs: Option<Vec<PathBuf>> = if matches.contains_id("fold") {
+        let diff_files;
+
+        let pathspecs: Option<Vec<&Path>> = if matches.contains_id("fold") {
             matches
                 .get_many::<PathBuf>("file")
-                .map(|pathbufs| pathbufs.cloned().collect())
+                .map(|pathbufs| pathbufs.map(|pathbuf| pathbuf.as_path()).collect())
         } else {
             assert!(matches.contains_id("update"));
-            Some(stack.repo.diff_tree_files(&stack.branch_head)?)
+            diff_files = stupid.diff_tree_files(
+                stack.branch_head.parent(0)?.tree_id(),
+                stack.branch_head.tree_id(),
+            )?;
+            Some(diff_files.iter().collect())
         };
 
         let conflicts = !stupid

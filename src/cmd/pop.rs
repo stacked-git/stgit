@@ -13,6 +13,7 @@ use crate::{
     patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -150,10 +151,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_keep = matches.contains_id("keep");
     let opt_spill = matches.contains_id("spill");
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+
+    let stupid = repo.stupid();
+    let statuses = stupid.statuses(None)?;
+
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     if !opt_keep && !opt_spill {
-        repo.check_index_and_worktree_clean()?;
+        statuses.check_index_and_worktree_clean()?;
     }
 
     let mut new_unapplied: Vec<PatchName> = vec![];

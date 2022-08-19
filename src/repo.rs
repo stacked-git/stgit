@@ -2,8 +2,6 @@
 
 //! Extension trait for [`git2::Repository`].
 
-use std::path::PathBuf;
-
 use anyhow::{anyhow, Context, Result};
 
 use crate::stack::Error;
@@ -44,9 +42,6 @@ pub(crate) trait RepositoryExtended {
         treeish: &git2::Object<'_>,
         opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
     ) -> Result<()>;
-
-    /// Get list of paths changed between `commit` and its parent.
-    fn diff_tree_files(&self, commit: &git2::Commit) -> Result<Vec<PathBuf>>;
 }
 
 impl RepositoryExtended for git2::Repository {
@@ -205,30 +200,5 @@ impl RepositoryExtended for git2::Repository {
                     e.into()
                 }
             })
-    }
-
-    fn diff_tree_files(&self, commit: &git2::Commit) -> Result<Vec<PathBuf>> {
-        let mut diff_opts = git2::DiffOptions::new();
-        diff_opts.ignore_submodules(true);
-        diff_opts.force_binary(true); // Less expensive(?)
-        let mut paths: Vec<PathBuf> = Vec::new();
-        let parent_tree = commit.parent(0)?.tree()?;
-        let tree = commit.tree()?;
-        self.diff_tree_to_tree(Some(&parent_tree), Some(&tree), Some(&mut diff_opts))?
-            .foreach(
-                &mut |delta, _| {
-                    if let Some(old_path) = delta.old_file().path() {
-                        paths.push(old_path.to_owned());
-                    }
-                    if let Some(new_path) = delta.new_file().path() {
-                        paths.push(new_path.to_owned());
-                    }
-                    true
-                },
-                None,
-                None,
-                None,
-            )?;
-        Ok(paths)
     }
 }
