@@ -143,4 +143,14 @@ test_expect_success 'Uncommit when top != head' '
     test "$(echo $(stg series))" = "+ bar > foo"
 '
 
+test_expect_success 'Uncommit to something that does not resolve to a commit' '
+  general_error stg uncommit --to HEAD^{tree} 2>err &&
+  grep -e "error: Target `HEAD^{tree}` cannot be evaluated as a commit" err
+'
+
+test_expect_success 'Uncommit to an annotated tag' '
+    git tag -a -m "Test tag" testtag HEAD^ &&
+    stg uncommit --to testtag
+'
+
 test_done
