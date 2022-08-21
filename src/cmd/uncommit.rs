@@ -100,9 +100,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let target_object = repo
             .revparse_single(commitish)
             .map_err(|_| anyhow!("Invalid commitish `{commitish}`"))?;
+
         let mut target_commit = target_object
-            .into_commit()
-            .map_err(|_| anyhow!("Target `{commitish}` is not a commit"))?;
+            .peel(git2::ObjectType::Commit).ok()
+            .and_then(|c| c.into_commit().ok())
+            .ok_or_else(|| anyhow!("Target `{commitish}` cannot be evaluated as a commit"))?;
+
         let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
         let exclusive = if !bases.contains(&target_commit.id()) {
