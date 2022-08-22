@@ -11,10 +11,20 @@ fn main() {
 
     // Tell cargo to rebuild if the head or any relevant refs change.
     if let Some(git_dir) = git_dir {
-        println!("cargo:rerun-if-changed={git_dir}/HEAD");
-        println!("cargo:rerun-if-changed={git_dir}/refs/heads");
-        println!("cargo:rerun-if-changed={git_dir}/refs/tags");
-        println!("cargo:rerun-if-changed={git_dir}/packed-refs");
+        let git_path = std::path::Path::new(git_dir);
+        let refs_path = git_path.join("refs");
+        if git_path.join("HEAD").exists() {
+            println!("cargo:rerun-if-changed={git_dir}/HEAD");
+        }
+        if git_path.join("packed-refs").exists() {
+            println!("cargo:rerun-if-changed={git_dir}/packed-refs");
+        }
+        if refs_path.join("heads").exists() {
+            println!("cargo:rerun-if-changed={git_dir}/refs/heads");
+        }
+        if refs_path.join("tags").exists() {
+            println!("cargo:rerun-if-changed={git_dir}/refs/tags");
+        }
     }
 
     let git_output = std::process::Command::new("git")
