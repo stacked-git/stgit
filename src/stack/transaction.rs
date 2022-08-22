@@ -38,7 +38,6 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     index::TemporaryIndex,
     patchname::PatchName,
-    repo::RepositoryExtended,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::Stupid,
@@ -441,9 +440,7 @@ impl<'repo> StackTransaction<'repo> {
         }
 
         if self.options.discard_changes {
-            let mut checkout_builder = git2::build::CheckoutBuilder::new();
-            checkout_builder.force();
-            repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
+            stupid.read_tree_checkout_hard(commit.tree_id())?;
         } else {
             stupid.update_index_refresh()?;
             stupid

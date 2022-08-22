@@ -343,7 +343,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Checkout a branch.
-    pub(crate) fn _checkout(&self, branch_name: &str) -> Result<()> {
+    pub(crate) fn checkout(&self, branch_name: &str) -> Result<()> {
         self.git()
             .arg("checkout")
             .arg(branch_name)

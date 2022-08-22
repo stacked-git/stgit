@@ -4,8 +4,6 @@
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::stack::Error;
-
 /// Extends [`git2::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
     /// Determine whether the repository is in a clean state.
@@ -18,13 +16,6 @@ pub(crate) trait RepositoryExtended {
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
     fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>>;
-
-    /// [`git2::Repository::checkout_tree()`] with StGit-specfic error mapping.
-    fn checkout_tree_ex(
-        &self,
-        treeish: &git2::Object<'_>,
-        opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
-    ) -> Result<()>;
 }
 
 impl RepositoryExtended for git2::Repository {
@@ -90,21 +81,5 @@ impl RepositoryExtended for git2::Repository {
                 ))
             }
         }
-    }
-
-    fn checkout_tree_ex(
-        &self,
-        treeish: &git2::Object<'_>,
-        opts: Option<&mut git2::build::CheckoutBuilder<'_>>,
-    ) -> Result<()> {
-        self.checkout_tree(treeish, opts)
-            .map_err(|e| -> anyhow::Error {
-                if e.class() == git2::ErrorClass::Checkout && e.code() == git2::ErrorCode::Conflict
-                {
-                    Error::CheckoutConflicts(e.message().to_string()).into()
-                } else {
-                    e.into()
-                }
-            })
     }
 }

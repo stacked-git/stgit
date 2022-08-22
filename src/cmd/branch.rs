@@ -4,14 +4,14 @@
 
 use std::io::Write;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use clap::{Arg, ArgMatches};
 use termcolor::WriteColor;
 
 use crate::{
     argset::{self, get_one_str},
-    print_info_message, print_warning_message,
+    print_info_message,
     repo::RepositoryExtended,
     stack::{get_branch_name, state_refname_from_branch_name, Stack, StackStateAccess},
     stupid::Stupid,
@@ -248,12 +248,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
             if target_branchname == current_branchname {
                 Err(anyhow!("{target_branchname} is already the current branch"))
             } else {
+                let stupid = repo.stupid();
+                let statuses = stupid.statuses(None)?;
                 if !matches.contains_id("merge") {
-                    let statuses = repo.stupid().statuses(None)?;
                     statuses.check_worktree_clean()?;
                 }
+                statuses.check_conflicts()?;
                 let target_branch = repo.get_branch(Some(target_branchname))?;
-                switch_to(matches, &repo, &target_branch)
+                stupid.checkout(target_branch.name().unwrap().unwrap())
             }
         } else {
             println!("{current_branchname}");
@@ -311,31 +313,6 @@ fn set_stgit_parent(
             Err(e) => Err(e.into()),
         }
     }
-}
-
-fn switch_to(matches: &ArgMatches, repo: &git2::Repository, branch: &git2::Branch) -> Result<()> {
-    let target_commit = branch.get().peel_to_commit()?;
-    let branch_refname = branch.get().name().expect("new branch has UTF-8 name");
-    let mut opts = git2::build::CheckoutBuilder::new();
-    opts.notify_on(
-        git2::CheckoutNotificationType::CONFLICT | git2::CheckoutNotificationType::DIRTY,
-    );
-    opts.notify(|notification_type, path, _diff0, _diff1, _diff2| {
-        if let Some(path) = path {
-            let path_string = path.to_string_lossy();
-            print_warning_message(matches, &format!("{notification_type:?} {path_string}"));
-        } else {
-            print_warning_message(matches, &format!("{notification_type:?}"));
-        }
-        true
-    });
-    repo.checkout_tree_ex(target_commit.as_object(), Some(&mut opts))?;
-    repo.set_head(branch_refname)
-        .with_context(|| format!("switching to `{branch_refname}`"))?;
-    Ok(())
-
-    // let branchname = get_branch_name(branch)?;
-    // repo.stupid().checkout(&branchname)
 }
 
 fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
@@ -503,7 +480,7 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    match switch_to(matches, &repo, &new_branch) {
+    match stupid.checkout(new_branch.name().unwrap().unwrap()) {
         Ok(()) => Ok(()),
         Err(e) => {
             new_branch.delete()?;
@@ -561,8 +538,7 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     )?;
 
     let new_branch = repo.get_branch(Some(&new_branchname))?;
-
-    switch_to(matches, &repo, &new_branch)
+    stupid.checkout(new_branch.name().unwrap().unwrap())
 }
 
 fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {

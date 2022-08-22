@@ -143,7 +143,7 @@ test_expect_success \
 
 test_expect_success \
     'Create branch down the stack, behind the conflict caused by the generated file' '
-    conflict stg branch --create foo4 master^
+    command_error stg branch --create foo4 master^
 '
 
 test_expect_success \
