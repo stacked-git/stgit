@@ -2407,7 +2407,6 @@ which stage to diff against in the case of unmerged files."
                                 (and (eq (stgit-file->status patched-file)
                                          'copy)
                                      '("--diff-filter=C"))
-                                '("--")
                                 (if (stgit-file->copy-or-rename patched-file)
                                     (list (stgit-file->cr-from patched-file)
                                           (stgit-file->cr-to patched-file))
