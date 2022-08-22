@@ -15,7 +15,6 @@ use crate::{
     color::get_color_stdout,
     patchedit,
     patchname::PatchName,
-    repo::RepositoryExtended,
     signature::{self, SignatureExtended},
     stack::{Stack, StackStateAccess},
     stupid::{Stupid, StupidContext},
@@ -193,6 +192,7 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
     let source_path = if matches.contains_id("url") {
         None
@@ -205,9 +205,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     std::env::set_current_dir(repo.workdir().unwrap())?;
 
-    repo.check_index_and_worktree_clean()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
-    repo.stupid().update_index_refresh()?;
+    //stupid.update_index_refresh()?;
 
     if cfg!(feature = "import-url") && matches.contains_id("url") {
         import_url(stack, matches)

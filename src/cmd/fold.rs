@@ -8,7 +8,6 @@ use anyhow::Result;
 use clap::{Arg, ArgGroup};
 
 use crate::{
-    repo::RepositoryExtended,
     revspec::parse_stgit_revision,
     stack::{Error, Stack, StackStateAccess},
     stupid::Stupid,
@@ -84,8 +83,10 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
-    repo.check_index_and_worktree_clean()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
     if stack.applied().is_empty() {

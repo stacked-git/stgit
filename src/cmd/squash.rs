@@ -81,9 +81,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
     let config = repo.config()?;
+    let stupid = repo.stupid();
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
     let squash_patchnames: Vec<PatchName> = patchrange::patches_from_specs(

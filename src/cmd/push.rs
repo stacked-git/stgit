@@ -11,6 +11,7 @@ use crate::{
     patchrange,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -115,6 +116,7 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
     let opt_number = matches.get_one::<isize>("number").copied();
 
@@ -174,10 +176,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_keep = matches.contains_id("keep");
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     if !opt_keep && !opt_noapply {
-        repo.check_index_and_worktree_clean()?;
+        statuses.check_index_and_worktree_clean()?;
     }
 
     if opt_reverse {

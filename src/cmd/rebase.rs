@@ -13,7 +13,6 @@ use crate::{
     patchedit::{self, call_editor},
     patchname::PatchName,
     print_info_message,
-    repo::RepositoryExtended,
     revspec::parse_stgit_revision,
     stack::{Stack, StackStateAccess},
     stupid::Stupid,
@@ -118,7 +117,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     stack.check_head_top_mismatch()?;
-    let clean_result = repo.check_index_and_worktree_clean();
+    let clean_result = stupid.statuses(None)?.check_index_and_worktree_clean();
 
     let autostash = if matches.contains_id("autostash") {
         true

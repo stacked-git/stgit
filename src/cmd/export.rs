@@ -16,7 +16,6 @@ use clap::Arg;
 use crate::{
     commit::CommitExtended,
     patchrange,
-    repo::RepositoryExtended,
     signature::TimeExtended,
     stack::{Error, Stack, StackStateAccess},
     stupid::Stupid,
@@ -129,7 +128,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let stupid = repo.stupid();
     let config = repo.config()?;
 
-    if opt_branch.is_none() && repo.check_worktree_clean().is_err() {
+    if opt_branch.is_none()
+        && repo
+            .stupid()
+            .statuses(None)?
+            .check_worktree_clean()
+            .is_err()
+    {
         crate::print_warning_message(
             matches,
             "Local changes in the tree; you might want to commit them first",

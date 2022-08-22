@@ -420,6 +420,7 @@ impl<'repo> ExecuteContext<'repo> {
 impl<'repo> StackTransaction<'repo> {
     fn checkout(&mut self, commit: &git2::Commit<'_>) -> Result<()> {
         let repo = self.stack.repo;
+        let stupid = repo.stupid();
         if !self.options.allow_bad_head {
             self.stack.check_head_top_mismatch()?;
         }
@@ -432,10 +433,10 @@ impl<'repo> StackTransaction<'repo> {
                     if top.is_some() && top == self.stack.applied().last() {
                         Ok(())
                     } else {
-                        repo.check_conflicts()
+                        stupid.statuses(None)?.check_conflicts()
                     }
                 }
-                ConflictMode::Disallow => repo.check_conflicts(),
+                ConflictMode::Disallow => stupid.statuses(None)?.check_conflicts(),
             };
         }
 
@@ -444,7 +445,6 @@ impl<'repo> StackTransaction<'repo> {
             checkout_builder.force();
             repo.checkout_tree_ex(commit.as_object(), Some(&mut checkout_builder))?;
         } else {
-            let stupid = self.repo().stupid();
             stupid.update_index_refresh()?;
             stupid
                 .read_tree_checkout(self.current_tree_id, commit.tree_id())

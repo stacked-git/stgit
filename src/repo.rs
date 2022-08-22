@@ -8,23 +8,6 @@ use crate::stack::Error;
 
 /// Extends [`git2::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
-    /// Check whether there are any files with conflicts in the index.
-    fn check_conflicts(&self) -> Result<()>;
-
-    /// Determine whether the repository's default index is clean.
-    ///
-    /// A clean index is one that does not record and differences from the `HEAD` tree.
-    fn check_index_clean(&self) -> Result<()>;
-
-    /// Determine whether the work tree is clean.
-    ///
-    /// A clean work tree does not have any git-managed files changed relative to the
-    /// `HEAD` tree.
-    fn check_worktree_clean(&self) -> Result<()>;
-
-    /// Determine whether both the default index and current work tree are clean.
-    fn check_index_and_worktree_clean(&self) -> Result<()>;
-
     /// Determine whether the repository is in a clean state.
     ///
     /// A clean repository is not in the middle of any of a variety of stateful operations such
@@ -45,83 +28,6 @@ pub(crate) trait RepositoryExtended {
 }
 
 impl RepositoryExtended for git2::Repository {
-    fn check_conflicts(&self) -> Result<()> {
-        if self
-            .index()
-            .context("checking for conflicts")?
-            .has_conflicts()
-        {
-            Err(Error::OutstandingConflicts.into())
-        } else {
-            Ok(())
-        }
-    }
-
-    fn check_index_clean(&self) -> Result<()> {
-        let mut status_options = git2::StatusOptions::new();
-        status_options.show(git2::StatusShow::Index);
-        if self.statuses(Some(&mut status_options))?.is_empty() {
-            Ok(())
-        } else {
-            Err(anyhow!("Index not clean. Use `refresh` or `reset --hard`"))
-        }
-    }
-
-    fn check_worktree_clean(&self) -> Result<()> {
-        let mut status_options = git2::StatusOptions::new();
-        status_options.show(git2::StatusShow::Workdir);
-        status_options.exclude_submodules(true);
-        if self.statuses(Some(&mut status_options))?.is_empty() {
-            Ok(())
-        } else {
-            Err(anyhow!(
-                "Worktree not clean. Use `refresh` or `reset --hard`"
-            ))
-        }
-    }
-
-    fn check_index_and_worktree_clean(&self) -> Result<()> {
-        let mut options = git2::StatusOptions::new();
-        options.show(git2::StatusShow::IndexAndWorkdir);
-        options.exclude_submodules(true);
-        let statuses = self.statuses(Some(&mut options))?;
-        if statuses.is_empty() {
-            Ok(())
-        } else {
-            let index_dirty_bits = git2::Status::INDEX_NEW.bits()
-                | git2::Status::INDEX_DELETED.bits()
-                | git2::Status::INDEX_RENAMED.bits()
-                | git2::Status::INDEX_MODIFIED.bits()
-                | git2::Status::INDEX_TYPECHANGE.bits()
-                | git2::Status::CONFLICTED.bits();
-            let wt_dirty_bits = git2::Status::WT_NEW.bits()
-                | git2::Status::WT_DELETED.bits()
-                | git2::Status::WT_RENAMED.bits()
-                | git2::Status::WT_MODIFIED.bits()
-                | git2::Status::WT_TYPECHANGE.bits();
-            let index_dirty = statuses
-                .iter()
-                .any(|entry| entry.status().bits() & index_dirty_bits != 0);
-            let wt_dirty = statuses
-                .iter()
-                .any(|entry| entry.status().bits() & wt_dirty_bits != 0);
-
-            if index_dirty && wt_dirty {
-                Err(anyhow!(
-                    "Index and worktree not clean. Use `refresh` or `reset --hard`"
-                ))
-            } else if index_dirty {
-                Err(anyhow!("Index not clean. Use `refresh` or `reset --hard`"))
-            } else if wt_dirty {
-                Err(anyhow!(
-                    "Worktree not clean. Use `refresh` or `reset --hard`"
-                ))
-            } else {
-                panic!("expected either/both worktree or index to be dirty")
-            }
-        }
-    }
-
     fn check_repository_state(&self) -> Result<()> {
         match self.state() {
             git2::RepositoryState::Clean => Ok(()),

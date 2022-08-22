@@ -249,7 +249,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 Err(anyhow!("{target_branchname} is already the current branch"))
             } else {
                 if !matches.contains_id("merge") {
-                    repo.check_worktree_clean()?;
+                    let statuses = repo.stupid().statuses(None)?;
+                    statuses.check_worktree_clean()?;
                 }
                 let target_branch = repo.get_branch(Some(target_branchname))?;
                 switch_to(matches, &repo, &target_branch)
@@ -426,10 +427,12 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let stupid = repo.stupid();
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
 
     let parent_branch = if let Some(committish) = get_one_str(matches, "committish") {
-        repo.check_worktree_clean()?;
+        statuses.check_worktree_clean()?;
         let mut parent_branch = None;
         if let Ok(local_parent_branch) = repo.find_branch(committish, git2::BranchType::Local) {
             parent_branch = Some(local_parent_branch);
@@ -523,9 +526,11 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
         format!("{current_branchname}-{suffix}")
     };
 
-    repo.check_worktree_clean()?;
+    let stupid = repo.stupid();
+    let statuses = stupid.statuses(None)?;
+    statuses.check_worktree_clean()?;
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    statuses.check_conflicts()?;
 
     if let Ok(stack) = Stack::from_branch(&repo, None) {
         stack.check_head_top_mismatch()?;
@@ -539,9 +544,9 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
             false,
             &format!("clone from {current_branchname}"),
         )?;
-        repo.stupid().branch_copy(None, &new_branchname)?;
+        stupid.branch_copy(None, &new_branchname)?;
     } else {
-        repo.stupid().branch_copy(None, &new_branchname)?;
+        stupid.branch_copy(None, &new_branchname)?;
         Stack::initialize(&repo, Some(&new_branchname))?;
     };
 

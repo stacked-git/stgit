@@ -68,10 +68,12 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
-    repo.check_index_clean()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
+    statuses.check_index_clean()?;
     stack.check_head_top_mismatch()?;
 
     let patchname = stack
@@ -85,7 +87,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let tree_id = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         stack.repo.with_temp_index_file(|temp_index| {
-            let stupid = repo.stupid();
             let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
             stupid_temp.read_tree(patch_commit.tree_id())?;
             stupid_temp.apply_pathlimited_treediff_to_index(

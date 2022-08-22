@@ -17,7 +17,6 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
     patchrange,
-    repo::RepositoryExtended,
     stack::{Stack, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };
@@ -88,8 +87,9 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
-    repo.check_index_and_worktree_clean()?;
+    stupid.statuses(None)?.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
     let patches: Vec<PatchName> = if matches.contains_id("all") {

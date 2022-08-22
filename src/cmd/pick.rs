@@ -16,7 +16,6 @@ use crate::{
     commit::RepositoryCommitExtended,
     patchname::PatchName,
     patchrange,
-    repo::RepositoryExtended,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
     signature::SignatureExtended,
     stack::{Stack, StackStateAccess},
@@ -147,7 +146,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 
     if !matches.contains_id("noapply") {
-        repo.check_index_and_worktree_clean()?;
+        repo.stupid()
+            .statuses(None)?
+            .check_index_and_worktree_clean()?;
         stack.check_head_top_mismatch()?;
     }
 

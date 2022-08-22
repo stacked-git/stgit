@@ -16,6 +16,7 @@ use crate::{
     repo::RepositoryExtended,
     signature::SignatureExtended,
     stack::{Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
@@ -133,9 +134,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let branch_name: Option<&str> = None;
     let stack = Stack::from_branch(&repo, branch_name)?;
+    let stupid = repo.stupid();
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patchname").cloned() {

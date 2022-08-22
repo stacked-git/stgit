@@ -11,6 +11,7 @@ use crate::{
     patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -99,7 +100,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let statuses = repo.stupid().statuses(None)?;
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     // TODO: compat: these are not checked in Python version. How well is
     //       this handled here?

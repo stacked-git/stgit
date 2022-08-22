@@ -10,7 +10,6 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     print_info_message,
-    repo::RepositoryExtended,
     revspec::parse_stgit_revision,
     stack::{Stack, StackStateAccess},
     stupid::Stupid,
@@ -148,7 +147,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         ));
     }
 
-    repo.check_index_and_worktree_clean()?;
+    stupid.statuses(None)?.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
     let applied = stack.applied().to_vec();

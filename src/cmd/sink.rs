@@ -11,6 +11,7 @@ use crate::{
     patchrange,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -84,16 +85,18 @@ fn make() -> clap::Command<'static> {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
+    let stupid = repo.stupid();
 
     let opt_target: Option<PatchName> = matches.get_one::<PatchName>("target").cloned();
     let opt_nopush = matches.contains_id("nopush");
     let opt_keep = matches.contains_id("keep");
 
     repo.check_repository_state()?;
-    repo.check_conflicts()?;
+    let statuses = stupid.statuses(None)?;
+    statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
     if !opt_keep {
-        repo.check_index_and_worktree_clean()?;
+        statuses.check_index_and_worktree_clean()?;
     }
 
     if let Some(target_patch) = &opt_target {
