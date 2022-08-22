@@ -144,8 +144,8 @@ test_expect_success 'Uncommit when top != head' '
 '
 
 test_expect_success 'Uncommit to something that does not resolve to a commit' '
-  general_error stg uncommit --to HEAD^{tree} 2>err &&
-  grep -e "error: Target `HEAD^{tree}` cannot be evaluated as a commit" err
+    command_error stg uncommit --to HEAD^{tree} 2>err &&
+    grep -e "error: Target \`HEAD^{tree}\` cannot be evaluated as a commit" err
 '
 
 test_expect_success 'Uncommit to an annotated tag' '
