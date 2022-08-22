@@ -42,14 +42,14 @@ test_expect_success \
   'Invalid --to and --number arguments' \
   '
   general_error stg uncommit --to HEAD^ --number 1 2>err &&
-  grep -e "error: The argument .--to <commitish>. cannot be used with .--number <number>." err
+  grep -e "error: The argument .--to <committish>. cannot be used with .--number <number>." err
   '
 
 test_expect_success \
   'Invalid --to with patch args' \
   '
   general_error stg uncommit --to HEAD^ p0 2>err &&
-  grep -e "error: The argument .--to <commitish>. cannot be used with .<patchname>\.\.\.." err
+  grep -e "error: The argument .--to <committish>. cannot be used with .<patchname>\.\.\.." err
   '
 
 test_expect_success \

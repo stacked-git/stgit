@@ -494,7 +494,7 @@
 - All stgit commands now use "new" git library infrastructure
 
 ### Fixed
-- `stg branch --create` inherits remote correctly from parent commitish
+- `stg branch --create` inherits remote correctly from parent committish
 - Patch names are checked earlier to avoid inconsistent stack states
 - Improved commit data parsing and handling of non-UTF8 encodings
 - Repair git error messages when checking stgit version from outside a

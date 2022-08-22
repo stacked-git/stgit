@@ -53,7 +53,7 @@ fn make() -> clap::Command<'static> {
         .override_usage(
             "stg uncommit <patchname-1> [<patchname-2> ...]\n\
              stg uncommit -n number [<patchname-prefix>]\n\
-             stg uncommit -t <commitish> [-x]",
+             stg uncommit -t <committish> [-x]",
         )
         .arg(
             Arg::new("patchname")
@@ -76,7 +76,7 @@ fn make() -> clap::Command<'static> {
                 .long("to")
                 .short('t')
                 .help("Uncommit to the specified committish")
-                .value_name("commitish")
+                .value_name("committish")
                 .conflicts_with("patchname"),
         )
         .arg(
@@ -96,15 +96,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let patchname_len_limit = PatchName::get_length_limit(&config);
 
-    let (commits, patchnames) = if let Some(commitish) = matches.get_one::<String>("to") {
+    let (commits, patchnames) = if let Some(committish) = matches.get_one::<String>("to") {
         let target_object = repo
-            .revparse_single(commitish)
-            .map_err(|_| anyhow!("Invalid commitish `{commitish}`"))?;
+            .revparse_single(committish)
+            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?;
 
         let mut target_commit = target_object
             .peel(git2::ObjectType::Commit).ok()
             .and_then(|c| c.into_commit().ok())
-            .ok_or_else(|| anyhow!("Target `{commitish}` cannot be evaluated as a commit"))?;
+            .ok_or_else(|| anyhow!("Target `{committish}` cannot be evaluated as a commit"))?;
 
         let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
