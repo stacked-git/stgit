@@ -102,9 +102,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .map_err(|_| anyhow!("Invalid committish `{committish}`"))?;
 
         let mut target_commit = target_object
-            .peel(git2::ObjectType::Commit).ok()
-            .and_then(|c| c.into_commit().ok())
-            .ok_or_else(|| anyhow!("Target `{committish}` cannot be evaluated as a commit"))?;
+            .peel_to_commit()
+            .map_err(|_| anyhow!("Target `{committish}` does not resolve to a commit"))?;
 
         let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
