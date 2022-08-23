@@ -11,6 +11,7 @@ use crate::{
     patchname::PatchName,
     repo::RepositoryExtended,
     stack::{Stack, StackStateAccess},
+    stupid::Stupid,
 };
 
 use super::StGitCommand;
@@ -72,7 +73,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     // Do not clean the topmost patch if there are outstanding
                     // conflicts. The patch is only empty because the conflicts caused
                     // its contents to be dumped into the index and worktree.
-                    if !repo.index()?.has_conflicts() {
+                    if repo.stupid().statuses(None)?.check_conflicts().is_ok() {
                         to_delete.push(pn.clone());
                     }
                 } else {

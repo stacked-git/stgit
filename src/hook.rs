@@ -54,16 +54,13 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
     let workdir = repo
         .workdir()
         .expect("should not get this far with a bare repo");
-    hook_command.current_dir(workdir);
     if !use_editor {
         hook_command.env("GIT_EDITOR", ":");
     }
-    let index = repo.index().expect("gotta have an index");
-    let index_path = index.path().expect("index must be a file");
-    hook_command.env("GIT_INDEX_FILE", index_path);
-    hook_command.stdin(std::process::Stdio::null());
 
     let status = hook_command
+        .current_dir(workdir)
+        .stdin(std::process::Stdio::null())
         .status()
         .with_context(|| format!("`{hook_name}` hook"))?;
 

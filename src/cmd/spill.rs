@@ -82,7 +82,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .clone();
     let patch_commit = stack.get_patch_commit(&patchname);
     let parent = patch_commit.parent(0)?;
-    let mut index = repo.index()?;
 
     let tree_id = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         stupid.with_temp_index(|stupid_temp| {
@@ -120,9 +119,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .execute(&reflog_msg)?;
 
     if matches.contains_id("reset") {
-        let tree = repo.find_tree(tree_id)?;
-        index.read_tree(&tree)?;
-        index.write()?;
+        stupid.read_tree(tree_id)?;
     }
 
     Ok(())

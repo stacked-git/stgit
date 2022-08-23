@@ -303,11 +303,8 @@ fn series_merge_patch(
         }
     }
 
-    let mut index = trans.repo().index()?;
-    index.read(true)?;
-    index.update_all(changed_paths, None)?;
-    index.write()?;
-    let tree_id = index.write_tree()?;
+    stupid.update_index(Some(changed_paths))?;
+    let tree_id = stupid.write_tree()?;
 
     stupid.read_tree_checkout(tree_id, trans.stack().branch_head.tree_id())?;
     if !stupid.merge_recursive(
