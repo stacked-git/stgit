@@ -11,7 +11,6 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     commit::CommitExtended,
-    index::TemporaryIndex,
     patchedit,
     patchname::PatchName,
     patchrange, print_info_message,
@@ -234,20 +233,18 @@ fn try_squash(
 ) -> Result<Option<(PatchName, git2::Oid)>> {
     let repo = trans.repo();
     let base_commit = trans.get_patch_commit(&patchnames[0]);
-    if let Some(tree_id) = repo.with_temp_index_file(|temp_index| {
-        let stupid = repo.stupid();
-        let stupid = stupid.with_index_path(temp_index.path().unwrap());
-        stupid.read_tree(base_commit.tree_id())?;
+    if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
+        stupid_temp.read_tree(base_commit.tree_id())?;
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
             let parent = commit.parent(0)?;
             if parent.tree_id() != commit.tree_id()
-                && !stupid.apply_treediff_to_index(parent.tree_id(), commit.tree_id())?
+                && !stupid_temp.apply_treediff_to_index(parent.tree_id(), commit.tree_id())?
             {
                 return Ok(None);
             }
         }
 
-        let tree_id = stupid.write_tree()?;
+        let tree_id = stupid_temp.write_tree()?;
         Ok(Some(tree_id))
     })? {
         if let patchedit::EditOutcome::Committed {

@@ -10,7 +10,6 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
-    index::TemporaryIndex,
     repo::RepositoryExtended,
     stack::{Error, Stack, StackStateAccess},
     stupid::Stupid,
@@ -86,8 +85,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut index = repo.index()?;
 
     let tree_id = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
-        stack.repo.with_temp_index_file(|temp_index| {
-            let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+        stupid.with_temp_index(|stupid_temp| {
             stupid_temp.read_tree(patch_commit.tree_id())?;
             stupid_temp.apply_pathlimited_treediff_to_index(
                 patch_commit.tree_id(),

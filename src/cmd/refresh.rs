@@ -15,7 +15,6 @@ use crate::{
     color::get_color_stdout,
     commit::{CommitMessage, RepositoryCommitExtended},
     hook::run_pre_commit_hook,
-    index::TemporaryIndex,
     patchedit,
     patchname::PatchName,
     signature::SignatureExtended,
@@ -280,9 +279,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 let ours = patch_commit.tree_id();
                 let theirs = temp_commit.tree_id();
 
-                if let Some(tree_id) = repo.with_temp_index_file(|temp_index| {
-                    let stupid = repo.stupid();
-                    let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+                if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
                     stupid_temp.read_tree(ours)?;
                     if stupid_temp.apply_treediff_to_index(base, theirs)? {
                         let tree_id = stupid_temp.write_tree()?;
@@ -412,13 +409,11 @@ fn write_tree(
     // may be formed into a coherent tree while leaving the default index as-is.
     let stupid = stack.repo.stupid();
     if is_path_limiting {
-        let stupid_temp = stupid.get_temp_index_context();
-        let stupid_temp = stupid_temp.context();
-        let tree_id_result = {
+        let tree_id_result = stupid.with_temp_index(|stupid_temp| {
             stupid_temp.read_tree(stack.branch_head.tree_id())?;
             stupid_temp.update_index(Some(refresh_paths))?;
             stupid_temp.write_tree()
-        };
+        });
         stupid.update_index(Some(refresh_paths))?;
         tree_id_result
     } else {

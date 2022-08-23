@@ -25,7 +25,6 @@ use clap::{
 
 use crate::{
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
-    index::TemporaryIndex,
     patchname::PatchName,
     signature::{self, SignatureExtended},
     stack::StackStateAccess,
@@ -461,6 +460,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 },
         } = self;
 
+        let stupid = repo.stupid();
         let config = repo.config()?;
         let default_committer = git2::Signature::default_committer(Some(&config))?;
         let committer = patch_commit
@@ -600,7 +600,6 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
-            let stupid = repo.stupid();
             let diff_buf = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
                 stupid.diff_tree_patch(
                     old_tree.id(),
@@ -722,9 +721,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let tree_id = if need_to_apply_diff {
             let diff = diff.unwrap().0;
 
-            match repo.with_temp_index_file(|temp_index| {
-                let stupid = repo.stupid();
-                let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
+            match stupid.with_temp_index(|stupid_temp| {
                 stupid_temp.read_tree(parent_id)?;
                 stupid_temp.apply_to_index(&diff)?;
                 stupid_temp.write_tree()

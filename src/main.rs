@@ -16,7 +16,6 @@ mod cmd;
 mod color;
 mod commit;
 mod hook;
-mod index;
 mod patchedit;
 mod patchname;
 mod patchrange;

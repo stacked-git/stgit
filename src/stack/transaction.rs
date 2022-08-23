@@ -36,11 +36,10 @@ use termcolor::WriteColor;
 
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
-    index::TemporaryIndex,
     patchname::PatchName,
     signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
-    stupid::Stupid,
+    stupid::{Stupid, StupidContext},
 };
 
 use super::{error::Error, state::StackState};
@@ -1034,11 +1033,12 @@ impl<'repo> StackTransaction<'repo> {
     where
         P: AsRef<PatchName>,
     {
-        self.stack.repo.with_temp_index_file(|temp_index| {
+        let stupid = self.stack.repo.stupid();
+        stupid.with_temp_index(|stupid_temp| {
             let mut temp_index_tree_id: Option<git2::Oid> = None;
 
             let merged = if check_merged {
-                Some(self.check_merged(patchnames, temp_index, &mut temp_index_tree_id)?)
+                Some(self.check_merged(patchnames, stupid_temp, &mut temp_index_tree_id)?)
             } else {
                 None
             };
@@ -1054,10 +1054,11 @@ impl<'repo> StackTransaction<'repo> {
                     patchname,
                     already_merged,
                     is_last,
-                    temp_index,
+                    stupid_temp,
                     &mut temp_index_tree_id,
                 )?;
             }
+
             Ok(())
         })
     }
@@ -1067,7 +1068,7 @@ impl<'repo> StackTransaction<'repo> {
         patchname: &PatchName,
         already_merged: bool,
         is_last: bool,
-        temp_index: &mut git2::Index,
+        stupid_temp: &StupidContext,
         temp_index_tree_id: &mut Option<git2::Oid>,
     ) -> Result<()> {
         let repo = self.stack.repo;
@@ -1096,10 +1097,6 @@ impl<'repo> StackTransaction<'repo> {
                 (new_parent.tree_id(), patch_commit.tree_id())
             };
             let base = old_parent.tree_id();
-            // let ours = new_parent.tree_id();
-            // let theirs = patch_commit.tree_id();
-
-            let stupid_temp = stupid.with_index_path(temp_index.path().unwrap());
 
             if temp_index_tree_id != &Some(ours) {
                 stupid_temp.read_tree(ours)?;
@@ -1218,20 +1215,17 @@ impl<'repo> StackTransaction<'repo> {
     fn check_merged<'a, P>(
         &self,
         patchnames: &'a [P],
-        temp_index: &mut git2::Index,
+        stupid_temp: &StupidContext,
         temp_index_tree_id: &mut Option<git2::Oid>,
     ) -> Result<Vec<&'a PatchName>>
     where
         P: AsRef<PatchName>,
     {
-        let repo = self.stack.repo;
-        let stupid = repo.stupid();
-        let stupid = stupid.with_index_path(temp_index.path().unwrap());
         let head_tree_id = self.stack.branch_head.tree_id();
         let mut merged: Vec<&PatchName> = vec![];
 
         if temp_index_tree_id != &Some(head_tree_id) {
-            stupid.read_tree(head_tree_id)?;
+            stupid_temp.read_tree(head_tree_id)?;
             *temp_index_tree_id = Some(head_tree_id);
         }
 
@@ -1245,7 +1239,9 @@ impl<'repo> StackTransaction<'repo> {
 
             let parent_commit = patch_commit.parent(0)?;
 
-            if stupid.apply_treediff_to_index(patch_commit.tree_id(), parent_commit.tree_id())? {
+            if stupid_temp
+                .apply_treediff_to_index(patch_commit.tree_id(), parent_commit.tree_id())?
+            {
                 merged.push(patchname);
                 *temp_index_tree_id = None;
             }

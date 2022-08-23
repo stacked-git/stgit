@@ -24,7 +24,7 @@ pub(crate) mod status;
 use std::{
     ffi::{OsStr, OsString},
     io::Write,
-    path::{Path, PathBuf},
+    path::Path,
     process::{Command, Stdio},
 };
 
@@ -62,32 +62,14 @@ pub(crate) struct StupidContext<'repo, 'index> {
     pub work_dir: Option<&'repo Path>,
 }
 
-pub(crate) struct StupidTempIndexContext<'repo> {
-    git_dir: Option<&'repo Path>,
-    temp_index_path: PathBuf,
-    work_dir: Option<&'repo Path>,
-}
-
-impl<'repo> StupidTempIndexContext<'repo> {
-    pub(crate) fn context(&self) -> StupidContext<'repo, '_> {
-        StupidContext {
-            git_dir: self.git_dir,
-            index_path: Some(self.temp_index_path.as_path()),
-            work_dir: self.work_dir,
-        }
-    }
-}
-
 impl<'repo, 'index> StupidContext<'repo, 'index> {
-    pub(crate) fn with_index_path(&self, index_path: &'index Path) -> StupidContext {
-        StupidContext {
-            git_dir: self.git_dir,
-            index_path: Some(index_path),
-            work_dir: self.work_dir,
-        }
-    }
-
-    pub(crate) fn get_temp_index_context(&self) -> StupidTempIndexContext {
+    /// Perform actions with a temporary index file.
+    ///
+    /// The temporary index file is automatically deleted when this call returns.
+    pub(crate) fn with_temp_index<F, T>(&self, f: F) -> Result<T>
+    where
+        F: FnOnce(&StupidContext) -> Result<T>,
+    {
         let temp_index_root = if let Some(git_dir) = self.git_dir {
             git_dir
         } else {
@@ -96,12 +78,16 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 .parent()
                 .expect("git index path has parent")
         };
-
-        StupidTempIndexContext {
+        let index_tempfile = tempfile::Builder::new()
+            .prefix("index-temp-stg")
+            .tempfile_in(temp_index_root)?;
+        let stupid_temp = StupidContext {
             git_dir: self.git_dir,
-            temp_index_path: temp_index_root.join("index-temp-stgit"),
+            index_path: Some(index_tempfile.path()),
             work_dir: self.work_dir,
-        }
+        };
+
+        f(&stupid_temp)
     }
 
     fn git(&self) -> Command {
