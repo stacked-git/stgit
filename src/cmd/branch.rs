@@ -204,7 +204,11 @@ fn make() -> clap::Command<'static> {
                 .override_usage("stg branch {--describe,-d} <description> [branch]")
                 .alias("--description")
                 .about("Set the branch description")
-                .arg(Arg::new("description").help("Description string for branch"))
+                .arg(
+                    Arg::new("description")
+                        .help("Description string for branch")
+                        .required(true),
+                )
                 .arg(
                     Arg::new("branch-any")
                         .help("Branch to describe")

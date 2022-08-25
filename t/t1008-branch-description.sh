@@ -5,6 +5,12 @@ test_description='Test branch descriptions'
 . ./test-lib.sh
 
 test_expect_success \
+    'Missing description argument' '
+    general_error stg branch --describe 2>err &&
+    grep -e "required arguments were not provided" err
+'
+
+test_expect_success \
     'Description of non-stgit branch' '
     test "$(stg branch)" = "master" &&
     test_must_fail git config --get branch.master.description &&
