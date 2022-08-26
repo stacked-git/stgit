@@ -15,43 +15,161 @@
 
 _stg-branch() {
     local -a subcmd_args
+    local curcontext="$curcontext" state line
+    integer ret=1
+
     __stg_add_args_help
+    __stg_add_args_color
     subcmd_args+=(
-        - group-list
-        '--list[list branches]'
-        - group-switch
-        '--merge[merge worktree changes into other branch]'
-        ':branch:__stg_branch_stgit'
-        - group-create
-        '--create[create and switch to new branch]'
-        ':new-branch:'
-        ':committish:'
-        - group-clone
-        '--clone[clone current branch to new branch]'
-        ':new-branch:'
-        - group-rename
-        '(-r --rename)'{-r,--rename}'[rename existing branch]'
-        ':branch:__stg_branch_stgit'
-        ':new-branch:'
-        - group-protect
-        '(-p --protect)'{-p,--protect}'[prevent stg from modifying branch]'
-        ':branch:__stg_branch_stgit'
-        - group-unprotect
-        '(-u --unprotect)'{-u,--unprotect}'[allow stg to modify branch]'
-        ':branch:__stg_branch_stgit'
-        - group-delete
-        '--delete[delete branch]'
-        '--force[force delete when series is non-empty]'
-        ':branch:__stg_branch_stgit'
-        - group-cleanup
-        '--cleanup[cleanup stg metadata for branch]'
+        ': :->command'
+        '*:: :->option-or-argument'
+    )
+
+    _arguments -C $subcmd_args && ret=0
+
+    case $state in
+        (command)
+            declare -a commands switch_options
+            commands=(
+                {-l,--list}':list branches'
+                {-c,--create}':create and switch to new branch'
+                '--clone:clone current branch to new branch'
+                {-r,--rename}':rename existing branch'
+                {-p,--protect}':prevent stg from modifying branch'
+                {-u,--unprotect}':allow stg to modify branch'
+                '--delete:delete branch'
+                '--cleanup:cleanup stg metadata for branch'
+                {-d,--describe}':set branch description'
+            )
+            switch_options=(
+                '--merge:merge worktree changes into other branch'
+            )
+            _alternative \
+                'command: : _describe -t commands command commands' \
+                'switch-option: : _describe -t switch-options switch-option switch_options' \
+                'branch: : __stg_git_branch_names' && ret=0
+            ;;
+
+        (option-or-argument)
+            curcontext=${curcontext%:*}-$line[1]
+            case $line[1] in
+                (--cleanup)
+                    _call_function ret _stg-branch-cleanup ;;
+                (--clone)
+                    _call_function ret _stg-branch-clone ;;
+                (-c|--create)
+                    _call_function ret _stg-branch-create ;;
+                (--delete)
+                    _call_function ret _stg-branch-delete ;;
+                (-d|--describe|--description)
+                    _call_function ret _stg-branch-describe ;;
+                (-l|--list)
+                    _call_function ret _stg-branch-list ;;
+                (-p|--protect)
+                    _call_function ret _stg-branch-protect ;;
+                (-r|--rename)
+                    _call_function ret _stg-branch-rename ;;
+                (-u|--unprotect)
+                    _call_function ret _stg-branch-unprotect ;;
+
+                # Options and arguments for the default command (switch branch).
+                (--merge)
+                    _call_function ret _stg-branch-switch has-merge ;;
+                (*)
+                    _call_function ret _stg-branch-switch has-branch ;;
+            esac
+            ;;
+    esac
+
+    return ret
+}
+
+_stg-branch-switch() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    if [ "$1" != "has-merge" ]; then
+        subcmd_args+=('--merge[merge worktree changes into other branch]')
+    fi
+    if [ "$1" != "has-branch" ]; then
+        subcmd_args+=(':branch:__stg_git_branch_names')
+    fi
+    _arguments -S $subcmd_args
+}
+
+_stg-branch-cleanup() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
         '--force[force cleanup when series is non-empty]'
-        ':branch:__stg_branch_stgit'
-        - group-description
-        '(-d --description)'{-d,--description}'[set branch description]:description'
-        ':branch:__stg_branch_stgit'
+        ':stgit branch:__stg_stgit_branch_names'
+    )
+    _arguments -S $subcmd_args
+}
+
+_stg-branch-clone() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments $subcmd_args ':new-branch:'
+}
+
+_stg-branch-create() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments -s -S $subcmd_args ':new-branch:' ':committish:'
+}
+
+_stg-branch-delete() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        '--force[force cleanup when series is non-empty]'
+        ':branch:__stg_git_branch_names'
     )
     _arguments -s -S $subcmd_args
+}
+
+_stg-branch-describe() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments -s -S $subcmd_args ':description:' ':branch:__stg_git_branch_names'
+}
+
+_stg-branch-list() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments $subcmd_args
+}
+
+_stg-branch-protect() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments $subcmd_args ':branch:__stg_stgit_branch_names'
+}
+
+_stg-branch-rename() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    subcmd_args+=(
+        ':old or new branch name:__stg_git_branch_names'
+        '::new branch name:__stg_git_branch_names'
+    )
+    _arguments $subcmd_args
+}
+
+_stg-branch-unprotect() {
+    local -a subcmd_args
+    __stg_add_args_help
+    __stg_add_args_color
+    _arguments $subcmd_args ':branch:__stg_stgit_branch_names'
 }
 
 _stg-clean() {
@@ -679,7 +797,7 @@ _stg-pick() {
     __stg_add_args_help
     subcmd_args+=(
         '(-n --name)'{-n,--name=}'[name for picked patch]:name'
-        '(-B --ref-branch)'{-B,--ref-branch=}'[pick patches from branch]: :__stg_branch_stgit'
+        '(-B --ref-branch)'{-B,--ref-branch=}'[pick patches from branch]: :__stg_stgit_branch_names'
         '(-r --revert)'{-r,--revert}'[revert given commit object]'
         '(-p --parent=)'{-p,--parent}'[use commit id as parent]:commit'
         '(-x --expose)'{-x,--expose}'[append imported commit id to patch log]'
@@ -840,7 +958,7 @@ _stg-series() {
         '(-d --description)'{-d,--description}'[show short descriptions]'
         '--no-description[do not show patch descriptions]'
         '(-e --empty)'{-e,--empty}'[identify empty patches]'
-        '(-m --missing)'{-m,--missing=}'[show patches from branch missing in current]: :__stg_branch_stgit'
+        '(-m --missing)'{-m,--missing=}'[show patches from branch missing in current]: :__stg_stgit_branch_names'
         '(-P --no-prefix)'{-P,--no-prefix}'[do not show the patch status prefix]'
         '(-s --short)'{-s,--short}'[list just patches around the topmost patch]'
         '--showbranch[show branch name of listed patches]'
@@ -942,7 +1060,7 @@ _stg-sync() {
         '(-a --all)'{-a,--all}'[synchronize all applied patches]'
         '*:patches:__stg_dedup_inside_arguments __stg_patchrange --suggest-range --use-ref-branch'
         + '(source)'
-        '(-B --ref-branch)'{-B,--ref-branch}'[synchronize patches with branch]: :__stg_branch_stgit'
+        '(-B --ref-branch)'{-B,--ref-branch}'[synchronize patches with branch]: :__stg_stgit_branch_names'
         '(-s --series)'{-s,--series=}'[synchronize patches with series]: :_files'
     )
     _arguments -s -S $subcmd_args
@@ -1012,7 +1130,7 @@ __stg_add_args_author() {
 
 __stg_add_args_branch() {
     subcmd_args+=(
-        '(-b --branch)'{-b,--branch=}'[specify another branch]: :__stg_branch_stgit'
+        '(-b --branch)'{-b,--branch=}'[specify another branch]: :__stg_stgit_branch_names'
     )
 }
 
@@ -1205,13 +1323,26 @@ __stg_git_describe_branch () {
   fi
 }
 
-__stg_branch_stgit() {
-    declare -a stg_branches
-    stg_branches=(
+__stg_stgit_branch_names () {
+    local expl
+    declare -a branch_names
+
+    stgit_branches=(
         ${${(f)"$(_call_program branchrefs git ${__stg_C_args} for-each-ref --format='"%(refname)"' refs/stacks 2>/dev/null)"}#refs/stacks/}
     )
-    local expl
-    _wanted -V branches expl "branch" compadd $stg_branches
+    __stg_git_command_successful $pipestatus || return 1
+
+    __stg_git_describe_commit stgit_branches branch-names 'stgit branch name' "$@"
+}
+
+__stg_git_branch_names () {
+  local expl
+  declare -a branch_names
+
+  branch_names=(${${(f)"$(_call_program branchrefs git for-each-ref --format='"%(refname)"' refs/heads 2>/dev/null)"}#refs/heads/})
+  __stg_git_command_successful $pipestatus || return 1
+
+  __stg_git_describe_commit branch_names branch-names 'branch name' "$@"
 }
 
 __stg_files_relative() {
