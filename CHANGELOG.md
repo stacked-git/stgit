@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.0.0-beta.3] 2022-08-28
+
+### Added
+- Add install targets for `contrib/` directory.
+
+### Changed
+- Use `git` executable instead of `libgit2` for all status and index
+  operations to improve compatibility with sparse index checkouts
+  (#195).
+- Show commit hash in `stg version` output when not built from tag.
+- Use `cargo --locked` consistently in Makefiles.
+- Use "patch" extension in temp file name when editing a patch with a
+  diff.
+- Updated transient dependencies in Cargo.lock.
+
+### Fixed
+- Repair `stg branch --describe` panic when run without arguments
+- Repair zsh completions for `git branch`
+- Repair `stgit.el` to use compatible `stg show` commands (#202).
+- Repair `stg uncommit --to` to work with annotated tags (#203).
+- Repair `make install` to not install cargo tracking files.
+
+
 ## [2.0.0-beta.2] 2022-08-05
 
 ### Changed
