@@ -21,19 +21,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "sync",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "sync",
+    category: super::CommandCategory::PatchManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("sync")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Synchronize patches with a branch or a series")
         .long_about(
             "For each of the specified patches, perform a three-way merge with the \

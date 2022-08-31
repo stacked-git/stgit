@@ -18,19 +18,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "rebase",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "rebase",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("rebase")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Move the stack base to another point in history")
         .long_about(
             "Pop all patches from the current stack, move the stack base to the given \

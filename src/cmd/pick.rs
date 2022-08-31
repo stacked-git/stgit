@@ -22,19 +22,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "pick",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "pick",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("pick")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Import a patch from another branch or a commit object")
         .long_about(
             "Import one or more patches from another branch or commit object into the \

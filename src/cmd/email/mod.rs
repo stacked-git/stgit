@@ -7,19 +7,15 @@ mod send;
 
 use anyhow::Result;
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "email",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "email",
+    category: super::CommandCategory::StackInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("email")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Format and send patches as email")
         .long_about(
             "Format and send patches as email.\n\

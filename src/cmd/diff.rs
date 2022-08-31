@@ -13,21 +13,15 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "diff",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "diff",
+    category: super::CommandCategory::PatchInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("diff")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Show a diff")
         .long_about(
             "Show the diff (default) or diffstat between the current working copy \

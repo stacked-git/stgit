@@ -12,21 +12,15 @@ use crate::{
     stack::{Error, Stack, StackStateAccess},
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "rename",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "rename",
+    category: super::CommandCategory::PatchManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("rename")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Rename a patch")
         .long_about(
             "Rename [oldpatch] to <newpatch>. If [oldpatch] is not given, \

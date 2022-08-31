@@ -16,23 +16,17 @@ use crate::{
     stack::{Stack, StackStateAccess},
 };
 
-use super::StGitCommand;
-
 const UNPRINTABLE: &str = "???";
 
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "series",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "series",
+    category: super::CommandCategory::StackInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("series")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Display the patch series")
         .long_about(
             "Show all the patches in the series, or just those in the \

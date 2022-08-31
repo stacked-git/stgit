@@ -22,21 +22,15 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "export",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "export",
+    category: super::CommandCategory::StackInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("export")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Export patches to a directory")
         .long_about(
             "Export a range of patches to a given directory in unified diff format.\

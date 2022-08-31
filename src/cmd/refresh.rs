@@ -25,16 +25,12 @@ use crate::{
     },
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "refresh",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "refresh",
+    category: super::CommandCategory::PatchManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
     let app = clap::Command::new("refresh")

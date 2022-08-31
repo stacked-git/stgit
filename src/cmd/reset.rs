@@ -12,21 +12,15 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "reset",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "reset",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("reset")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Reset the patch stack to an earlier state")
         .long_about(
             "Reset the patch stack to an earlier state. If no state is specified, reset only the \

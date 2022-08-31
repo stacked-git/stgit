@@ -15,16 +15,12 @@ use crate::{
     stack::{Error, Stack, StackStateAccess},
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "edit",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "edit",
+    category: super::CommandCategory::PatchManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
     let app = clap::Command::new("edit")

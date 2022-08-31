@@ -13,21 +13,15 @@ use crate::{
     stack::{Stack, StackStateAccess},
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "hide",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "hide",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("hide")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Hide patches in the series")
         .long_about(
             "Hide patches in the series.\n\

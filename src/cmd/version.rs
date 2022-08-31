@@ -7,19 +7,15 @@ use clap::ArgMatches;
 
 use crate::stupid::StupidContext;
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "version",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::Administration,
-        },
-    )
-}
+pub(crate) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "version",
+    category: super::CommandCategory::Administration,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("version")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Print version information and exit")
         .arg(
             clap::Arg::new("short")

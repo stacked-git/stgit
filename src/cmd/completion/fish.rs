@@ -29,9 +29,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     script.raw(HEADER);
 
-    let commands = crate::cmd::get_commands();
-
-    let mut stg = crate::get_full_command(&commands, crate::alias::Aliases::new(), None);
+    let mut stg = crate::get_full_command(crate::alias::Aliases::new(), None);
     stg.build();
 
     for command in stg.get_subcommands() {

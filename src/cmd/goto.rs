@@ -17,21 +17,15 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "goto",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "goto",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("goto")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Go to patch by pushing or popping as necessary")
         .arg(argset::keep_arg())
         .arg(argset::merged_arg())

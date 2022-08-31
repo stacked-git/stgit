@@ -20,21 +20,15 @@ use crate::{
     stupid::Stupid,
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "float",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "float",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("float")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Push patches to the top, even if applied")
         .long_about(
             "Push patches to the top, even if applied.\n\

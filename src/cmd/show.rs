@@ -14,19 +14,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "show",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "show",
+    category: super::CommandCategory::PatchInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("show")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Show patch commits")
         .long_about(
             "Show the commit log and diff corresponding to the given patches. \

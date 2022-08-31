@@ -9,21 +9,16 @@ use crate::color::get_color_stdout;
 use crate::stack::Stack;
 
 use super::undo::find_undo_state;
-use super::StGitCommand;
 
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "redo",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "redo",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("redo")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Undo the last undo operation")
         .long_about(
             "If the last command was an undo, the patch stack state will be reset to its state \

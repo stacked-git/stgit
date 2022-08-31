@@ -12,21 +12,15 @@ use crate::{
     stack::{Stack, StackStateAccess},
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "prev",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "prev",
+    category: super::CommandCategory::StackInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("prev")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Print the name of the previous patch")
         .long_about(
             "Print the name of the previous patch.\n\

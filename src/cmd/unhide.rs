@@ -7,21 +7,15 @@ use clap::{Arg, ArgMatches};
 
 use crate::{argset, color::get_color_stdout, patchname::PatchName, patchrange, stack::Stack};
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "unhide",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "unhide",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("unhide")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Unhide hidden patches")
         .long_about(
             "Unhide hidden patches in the series.\n\

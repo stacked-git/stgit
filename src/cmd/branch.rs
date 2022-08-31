@@ -17,19 +17,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "branch",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "branch",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("branch")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Branch operations: switch, list, create, rename, delete, ...")
         .long_about(
             "Create, clone, switch, rename, or delete StGit-enabled branches.\n\

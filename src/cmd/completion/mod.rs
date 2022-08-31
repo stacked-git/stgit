@@ -13,19 +13,15 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "completion",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::Administration,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "completion",
+    category: super::CommandCategory::Administration,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("completion")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Support for shell completions")
         .long_about(
             "Support completions for bash, fish, and zsh. Also provides 'stg \

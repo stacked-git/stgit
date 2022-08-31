@@ -7,19 +7,15 @@ use clap::{Arg, ArgMatches};
 
 use crate::{argset, patchrange, stack::Stack, stupid::Stupid};
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "log",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "log",
+    category: super::CommandCategory::PatchInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("log")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Display or optionally clear the stack changelog")
         .long_about(
             "Show the history of changes to the stack. If one or more patch names are given, \

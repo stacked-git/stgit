@@ -10,19 +10,15 @@ use clap::{Arg, ArgMatches};
 
 use crate::{revspec::parse_stgit_revision, stupid::Stupid};
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "files",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "files",
+    category: super::CommandCategory::PatchInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("files")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Show files modified by a patch")
         .long_about(
             "Show the files modified by a patch. The files of the topmost \

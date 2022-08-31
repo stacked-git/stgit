@@ -7,19 +7,15 @@ use clap::ArgMatches;
 
 use crate::stack::Stack;
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "init",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "init",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("init").about("Initialize a StGit stack on current branch")
+    clap::Command::new(STGIT_COMMAND.name).about("Initialize a StGit stack on current branch")
 }
 
 fn run(_: &ArgMatches) -> Result<()> {

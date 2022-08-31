@@ -6,6 +6,8 @@ use std::str::FromStr;
 
 use anyhow::Result;
 
+use crate::cmd::STGIT_COMMANDS;
+
 pub(super) fn command() -> clap::Command<'static> {
     clap::Command::new("list")
         .about("List StGit command information")
@@ -55,7 +57,6 @@ impl FromStr for OutputStyle {
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let mut output = super::get_output_stream(matches)?;
-    let commands = super::super::get_commands();
     let style = OutputStyle::from_str(
         matches
             .get_one::<String>("style")
@@ -66,24 +67,23 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     match matches.subcommand() {
         Some(("aliases", sub_matches)) => {
             let show_expansion = sub_matches.contains_id("show-expansion");
-            list_aliases(&commands, &mut output, style, show_expansion)
+            list_aliases(&mut output, style, show_expansion)
         }
-        Some(("commands", _)) => list_commands(&commands, &mut output, style),
+        Some(("commands", _)) => list_commands(&mut output, style),
         Some(("commands-and-aliases", _)) => {
-            list_commands(&commands, &mut output, style)?;
-            list_aliases(&commands, &mut output, style, false)
+            list_commands(&mut output, style)?;
+            list_aliases(&mut output, style, false)
         }
         _ => panic!("valid subcommand is required"),
     }
 }
 
 fn list_aliases(
-    commands: &super::super::Commands,
     output: &mut Box<dyn std::io::Write>,
     style: OutputStyle,
     show_expansion: bool,
 ) -> Result<()> {
-    let (aliases, _) = crate::get_aliases(commands)?;
+    let (aliases, _) = crate::get_aliases()?;
 
     if matches!(style, OutputStyle::AsciiDoc) {
         writeln!(
@@ -116,21 +116,17 @@ fn list_aliases(
     Ok(())
 }
 
-fn list_commands(
-    commands: &super::super::Commands,
-    output: &mut Box<dyn std::io::Write>,
-    style: OutputStyle,
-) -> Result<()> {
+fn list_commands(output: &mut Box<dyn std::io::Write>, style: OutputStyle) -> Result<()> {
     use crate::cmd::CommandCategory;
 
-    let mut stg_command = crate::get_full_command(commands, crate::alias::Aliases::new(), None);
+    let mut stg_command = crate::get_full_command(crate::alias::Aliases::new(), None);
     stg_command.build();
 
     if matches!(style, OutputStyle::AsciiDoc) {
         let mut subcmd_cats: Vec<(CommandCategory, &clap::Command)> = Vec::new();
         for cmd in stg_command.get_subcommands() {
             let name = cmd.get_name();
-            if let Some(stgit_cmd) = commands.get(name) {
+            if let Some(stgit_cmd) = STGIT_COMMANDS.iter().find(|command| command.name == name) {
                 subcmd_cats.push((stgit_cmd.category, cmd));
             } else if name == "help" {
                 subcmd_cats.push((super::super::CommandCategory::Administration, cmd));

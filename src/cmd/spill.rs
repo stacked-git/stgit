@@ -15,19 +15,15 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "spill",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "spill",
+    category: super::CommandCategory::PatchManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("spill")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Spill changes from the topmost patch")
         .long_about(
             "Spill changes from the topmost patch. Changes are removed from the patch, \

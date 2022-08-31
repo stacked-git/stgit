@@ -12,21 +12,15 @@ use crate::{
     stack::{Error, Stack, StackStateAccess},
 };
 
-use super::StGitCommand;
-
-pub(super) fn get_command() -> (&'static str, StGitCommand) {
-    (
-        "commit",
-        StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "commit",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("commit")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Finalize patches to the stack base")
         .long_about(
             "Finalize one or more patches into the base of the current stack and \

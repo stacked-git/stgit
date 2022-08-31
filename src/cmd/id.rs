@@ -7,19 +7,15 @@ use clap::{Arg, ArgMatches};
 
 use crate::{argset, revspec::parse_stgit_revision};
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "id",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::PatchInspection,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "id",
+    category: super::CommandCategory::PatchInspection,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("id")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Print git hash of a StGit revision")
         .long_about(
             "Print the hash (object id) of a StGit revision.\n\

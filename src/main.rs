@@ -30,6 +30,8 @@ use clap::ArgMatches;
 use stupid::StupidContext;
 use termcolor::WriteColor;
 
+use self::cmd::STGIT_COMMANDS;
+
 /// Process exit code for command line parsing errors.
 const GENERAL_ERROR: i32 = 1;
 
@@ -118,7 +120,6 @@ fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::
 /// useful in contexts where the global help needs to be presented to the user; i.e.
 /// when `--help` is provided or when the user specifies an invalid subcommand or alias.
 pub(crate) fn get_full_command(
-    commands: &cmd::Commands,
     aliases: alias::Aliases,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> clap::Command<'static> {
@@ -127,7 +128,7 @@ pub(crate) fn get_full_command(
         .arg_required_else_help(true)
         .subcommand_help_heading("COMMANDS")
         .subcommand_value_name("command")
-        .subcommands(commands.values().map(|command| (command.make)()))
+        .subcommands(STGIT_COMMANDS.iter().map(|command| (command.make)()))
         .subcommands(aliases.values().map(|alias| alias.make()))
 }
 
@@ -137,7 +138,6 @@ pub(crate) fn get_full_command(
 /// quickly as possible.
 fn main() -> ! {
     let argv: Vec<OsString> = std::env::args_os().collect();
-    let commands = cmd::get_commands();
 
     // Chicken and egg: the --color option must be parsed from argv in order to setup
     // clap with the desired color choice. So a simple pre-parse is performed just to
@@ -154,19 +154,22 @@ fn main() -> ! {
         // be found.
         if matches.contains_id("version") {
             execute_command(
-                commands.get("version").unwrap(),
+                &self::cmd::version::STGIT_COMMAND,
                 vec![argv[0].clone(), OsString::from("version")],
                 color_choice,
             )
         } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
         } else if matches.contains_id("help-option") {
-            full_app_help(argv, commands, None, color_choice)
+            full_app_help(argv, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known subcommands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
             // and constructing all subcommands' Command instances are avoided.
-            if let Some(command) = commands.get(sub_name) {
+            if let Some(command) = STGIT_COMMANDS
+                .iter()
+                .find(|command| command.name == sub_name)
+            {
                 execute_command(command, argv, color_choice)
             } else {
                 // If the subcommand name does not match a builtin subcommand, the
@@ -174,7 +177,7 @@ fn main() -> ! {
                 // the various levels of config files. If the subcommand name matches an
                 // alias, it is executed and the cost of constructing all subcommands'
                 // Command instances is still avoided.
-                match get_aliases(&commands) {
+                match get_aliases() {
                     Err(e) => exit_with_result(Err(e), color_choice),
                     Ok((aliases, maybe_repo)) => {
                         if let Some(alias) = aliases.get(sub_name) {
@@ -196,7 +199,6 @@ fn main() -> ! {
                                     &argv[0],
                                     &user_args,
                                     color_choice,
-                                    &commands,
                                     &aliases,
                                 ),
                             }
@@ -207,18 +209,18 @@ fn main() -> ! {
                             // each subcommand and alias. The command line is then
                             // re-processed by this full-blown Command instance which is
                             // expected to terminate with an appropriate help message.
-                            full_app_help(argv, commands, Some(aliases), color_choice)
+                            full_app_help(argv, Some(aliases), color_choice)
                         }
                     }
                 }
             }
         } else {
-            full_app_help(argv, commands, None, color_choice)
+            full_app_help(argv, None, color_choice)
         }
     } else {
         // -C options are not processed in this branch. This is okay because clap's
         // error message will not include aliases (which depend on -C).
-        full_app_help(argv, commands, None, color_choice)
+        full_app_help(argv, None, color_choice)
     }
 }
 
@@ -268,14 +270,13 @@ fn change_directories(matches: &ArgMatches) -> Result<()> {
 /// terminate to process.
 fn full_app_help(
     argv: Vec<OsString>,
-    commands: cmd::Commands,
     aliases: Option<alias::Aliases>,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> ! {
     let aliases = if let Some(aliases) = aliases {
         aliases
     } else {
-        match get_aliases(&commands) {
+        match get_aliases() {
             Ok((aliases, _)) => aliases,
             Err(e) => exit_with_result(Err(e), color_choice),
         }
@@ -284,7 +285,7 @@ fn full_app_help(
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    let err = get_full_command(&commands, aliases, color_choice)
+    let err = get_full_command(aliases, color_choice)
         .try_get_matches_from(&argv)
         .expect_err("command line should not have viable matches");
     err.print().expect("failed to print clap error");
@@ -406,7 +407,6 @@ fn execute_stgit_alias(
     exec_path: &OsString,
     user_args: &[&str],
     color_choice: Option<termcolor::ColorChoice>,
-    commands: &cmd::Commands,
     aliases: &alias::Aliases,
 ) -> ! {
     let result = match alias.split() {
@@ -428,7 +428,10 @@ fn execute_stgit_alias(
                 }
             }
 
-            if let Some(command) = commands.get(resolved_cmd_name) {
+            if let Some(command) = STGIT_COMMANDS
+                .iter()
+                .find(|command| command.name == resolved_cmd_name)
+            {
                 execute_command(command, argv, color_choice)
             } else if aliases.contains_key(resolved_cmd_name) {
                 Err(anyhow!("Recursive alias `{}`", alias.name))
@@ -453,9 +456,7 @@ fn execute_stgit_alias(
 ///
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options having been previously processed.
-pub(crate) fn get_aliases(
-    commands: &cmd::Commands,
-) -> Result<(alias::Aliases, Option<git2::Repository>)> {
+pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<git2::Repository>)> {
     let maybe_repo = git2::Repository::open_from_env().ok();
     maybe_repo
         .as_ref()
@@ -464,7 +465,7 @@ pub(crate) fn get_aliases(
             |_| Ok(alias::get_default_aliases()),
             |config| {
                 alias::get_aliases(&config, |name| {
-                    commands.contains_key(name) || name == "help"
+                    STGIT_COMMANDS.iter().any(|command| command.name == name) || name == "help"
                 })
             },
         )

@@ -13,19 +13,15 @@ use crate::{
     stack::{Stack, StackStateAccess},
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "repair",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "repair",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("repair")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Repair stack after branch is modified with git commands")
         .long_about(
             "If a branch with a StGit stack is modified with certain git commands such \

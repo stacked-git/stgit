@@ -13,19 +13,15 @@ use crate::{
     stack::{Stack, StackStateAccess},
 };
 
-pub(super) fn get_command() -> (&'static str, super::StGitCommand) {
-    (
-        "uncommit",
-        super::StGitCommand {
-            make,
-            run,
-            category: super::CommandCategory::StackManipulation,
-        },
-    )
-}
+pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
+    name: "uncommit",
+    category: super::CommandCategory::StackManipulation,
+    make,
+    run,
+};
 
 fn make() -> clap::Command<'static> {
-    clap::Command::new("uncommit")
+    clap::Command::new(STGIT_COMMAND.name)
         .about("Convert regular Git commits into StGit patches")
         .long_about(
             "Convert one or more Git commits from the base of the current stack into \
