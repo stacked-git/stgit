@@ -5,7 +5,6 @@
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
-use git2::Oid;
 
 use crate::patchname::PatchName;
 
@@ -13,8 +12,8 @@ use crate::patchname::PatchName;
 ///
 /// PatchNames and Oids are checked, but Oids are not converted to Commits.
 pub(crate) struct RawStackState {
-    pub prev: Option<Oid>,
-    pub head: Oid,
+    pub prev: Option<git2::Oid>,
+    pub head: git2::Oid,
     pub applied: Vec<PatchName>,
     pub unapplied: Vec<PatchName>,
     pub hidden: Vec<PatchName>,
@@ -24,7 +23,7 @@ pub(crate) struct RawStackState {
 /// Raw patch state representation.
 pub(crate) struct RawPatchState {
     /// The commit id of the patch.
-    pub oid: Oid,
+    pub oid: git2::Oid,
 }
 
 impl RawStackState {
@@ -67,12 +66,12 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             ));
         }
 
-        let prev: Option<Oid> = match ds.prev.as_ref() {
+        let prev: Option<git2::Oid> = match ds.prev.as_ref() {
             Some(oid_str) => {
                 if oid_str == "None" {
                     None
                 } else {
-                    let oid = Oid::from_str(oid_str)
+                    let oid = git2::Oid::from_str(oid_str)
                         .map_err(|_| D::Error::custom(format!("invalid `prev` oid `{oid_str}`")))?;
                     Some(oid)
                 }
@@ -80,12 +79,12 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             None => None,
         };
 
-        let head: Oid = Oid::from_str(&ds.head)
+        let head = git2::Oid::from_str(&ds.head)
             .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &ds.head)))?;
 
         let mut patches = BTreeMap::new();
         for (patchname, raw_patch) in ds.patches {
-            let oid = Oid::from_str(&raw_patch.oid).map_err(|_| {
+            let oid = git2::Oid::from_str(&raw_patch.oid).map_err(|_| {
                 D::Error::custom(format!(
                     "invalid oid for patch `{}`: '{}'",
                     patchname, &raw_patch.oid

@@ -4,7 +4,6 @@
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
-use git2::Commit;
 use indexmap::{indexset, IndexSet};
 
 use crate::{
@@ -81,10 +80,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     // Find commits that are not patches as well as applied patches.
 
     // Commits to definitely patchify
-    let mut patchify: Vec<Commit> = Vec::new();
+    let mut patchify: Vec<git2::Commit> = Vec::new();
 
     // Commits to patchify if a patch is found below
-    let mut maybe_patchify: Vec<Commit> = Vec::new();
+    let mut maybe_patchify: Vec<git2::Commit> = Vec::new();
 
     let mut applied: Vec<PatchName> = Vec::new();
 

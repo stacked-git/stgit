@@ -4,7 +4,6 @@
 
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
-use git2::Repository;
 
 use crate::{commit::CommitMessage, stupid::Stupid};
 
@@ -13,7 +12,7 @@ use crate::{commit::CommitMessage, stupid::Stupid};
 /// The `matches` provided to this function must be from a [`clap::Command`] that was
 /// setup with [`super::add_args`].
 pub(crate) fn add_trailers<'a>(
-    repo: &Repository,
+    repo: &git2::Repository,
     message: CommitMessage<'a>,
     matches: &ArgMatches,
     signature: &git2::Signature,

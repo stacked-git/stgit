@@ -6,7 +6,6 @@ use std::collections::BTreeMap;
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
-use git2::{Config, ConfigLevel};
 
 /// Mapping of alias names to [`Alias`] structs.
 pub(crate) type Aliases = BTreeMap<String, Alias>;
@@ -92,7 +91,7 @@ pub(crate) fn get_default_aliases() -> Aliases {
 ///
 /// The `exclude` closure is intended to prevent names of builtin StGit subcommands from
 /// being shadowed by aliases.
-pub(crate) fn get_aliases<F>(config: &Config, exclude: F) -> Result<Aliases>
+pub(crate) fn get_aliases<F>(config: &git2::Config, exclude: F) -> Result<Aliases>
 where
     F: Fn(&str) -> bool,
 {
@@ -177,7 +176,7 @@ fn split_command_line(line: &str) -> Result<Vec<String>, String> {
 }
 
 /// Map [`git2::ConfigLevel`] to user-facing strings.
-fn config_level_to_str(level: ConfigLevel) -> &'static str {
+fn config_level_to_str(level: git2::ConfigLevel) -> &'static str {
     match level {
         git2::ConfigLevel::ProgramData => "program data config",
         git2::ConfigLevel::System => "system config",

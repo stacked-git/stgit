@@ -6,7 +6,6 @@ use std::collections::BTreeMap;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Result};
-use git2::{Branch, Commit};
 
 use super::{
     state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
@@ -21,10 +20,10 @@ use crate::{patchname::PatchName, repo::RepositoryExtended};
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
     pub(crate) branch_name: String,
-    pub(crate) branch: Branch<'repo>,
-    pub(crate) branch_head: Commit<'repo>,
+    pub(crate) branch: git2::Branch<'repo>,
+    pub(crate) branch_head: git2::Commit<'repo>,
     pub(crate) refname: String,
-    base: Commit<'repo>,
+    base: git2::Commit<'repo>,
     state: StackState<'repo>,
 }
 
@@ -268,15 +267,15 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
         self.state.has_patch(patchname)
     }
 
-    fn top(&self) -> &Commit<'repo> {
+    fn top(&self) -> &git2::Commit<'repo> {
         self.state.top()
     }
 
-    fn head(&self) -> &Commit<'repo> {
+    fn head(&self) -> &git2::Commit<'repo> {
         self.state.head()
     }
 
-    fn base(&self) -> &Commit<'repo> {
+    fn base(&self) -> &git2::Commit<'repo> {
         &self.base
     }
 }
@@ -292,7 +291,7 @@ fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
 }
 
 /// Get name of branch with custom error mapping for non-UTF8 branch names.
-pub(crate) fn get_branch_name(branch: &Branch<'_>) -> Result<String> {
+pub(crate) fn get_branch_name(branch: &git2::Branch<'_>) -> Result<String> {
     let name_bytes = branch.name_bytes()?;
     Ok(std::str::from_utf8(name_bytes)
         .map_err(|_| {
