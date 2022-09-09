@@ -97,8 +97,9 @@ where
     F: Fn(&str) -> bool,
 {
     let mut aliases = get_default_aliases();
-
-    for entry in config.entries(None)?.flatten() {
+    let mut iter = config.entries(None)?;
+    while let Some(entry) = iter.next() {
+        let entry = entry?;
         if let Some(name) = entry.name_bytes().strip_prefix(b"stgit.alias.") {
             let name = name.to_str().map_err(|_| {
                 anyhow!(
