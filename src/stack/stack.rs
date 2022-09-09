@@ -86,15 +86,17 @@ impl<'repo> Stack<'repo> {
         }
         state_ref.delete()?;
         let mut config_to_delete: Vec<_> = Vec::new();
-        for entry in config
-            .entries(Some(&format!("branch.{branch_name}.stgit")))?
-            .into_iter()
+
         {
-            let entry = entry?;
-            if let Some(name) = entry.name() {
-                config_to_delete.push(name.to_string());
+            let mut entries = config.entries(Some(&format!("branch.{branch_name}.stgit")))?;
+            while let Some(entry) = entries.next() {
+                let entry = entry?;
+                if let Some(name) = entry.name() {
+                    config_to_delete.push(name.to_string());
+                }
             }
         }
+
         for name_to_delete in config_to_delete {
             config.remove(&name_to_delete)?;
         }
