@@ -44,14 +44,14 @@ fn make() -> clap::Command<'static> {
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::AnyPath),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("diff")
                 .long("diff")
                 .short('d')
                 .help("Show the diff for the given paths"),
         )
-        .arg(&*argset::DIFF_OPTS_ARG)
+        .arg(argset::diff_opts_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

@@ -11,6 +11,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -67,7 +68,7 @@ fn make() -> clap::Command<'static> {
                 .value_hint(clap::ValueHint::FilePath)
                 .value_parser(clap::value_parser!(PathBuf)),
         )
-        .arg(&*crate::argset::KEEP_ARG)
+        .arg(argset::keep_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

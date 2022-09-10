@@ -30,7 +30,7 @@ fn make() -> clap::Command<'static> {
              specified, the current branch is used by default. The parent \
              of a patch may be specified with '[<branch>:]<patch>^'.",
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("stgit-revision")
                 .value_name("revision")

@@ -14,6 +14,7 @@ use anyhow::{Context, Result};
 use clap::Arg;
 
 use crate::{
+    argset,
     commit::CommitExtended,
     patchrange,
     signature::TimeExtended,
@@ -71,7 +72,7 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("dir")
                 .long("dir")
@@ -118,12 +119,12 @@ fn make() -> clap::Command<'static> {
                 .help("Export to stdout instead of directory")
                 .conflicts_with("dir"),
         )
-        .arg(&*crate::argset::DIFF_OPTS_ARG)
+        .arg(argset::diff_opts_arg())
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = crate::argset::get_one_str(matches, "branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let stupid = repo.stupid();
     let config = repo.config()?;
@@ -177,7 +178,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let numbered = matches.contains_id("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
-    let diff_opts = crate::argset::get_diff_opts(matches, &config, false, true);
+    let diff_opts = argset::get_diff_opts(matches, &config, false, true);
 
     let template = if let Some(template_file) = matches.get_one::<PathBuf>("template") {
         Cow::Owned(std::fs::read_to_string(template_file)?)

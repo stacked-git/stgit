@@ -75,7 +75,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .allow_hyphen_values(true)
                 .value_name("git-options"),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("all")
                 .long("all")
@@ -83,18 +83,18 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Send all applied patches"),
         )
         .next_help_heading("COMPOSE OPTIONS")
-        .args(COMPOSE_OPTIONS.iter())
+        .args(compose_options())
         .next_help_heading("SEND OPTIONS")
         .next_help_heading("AUTOMATE OPTIONS")
-        .args(AUTOMATE_OPTIONS.iter())
+        .args(automate_options())
         .next_help_heading("ADMINISTER OPTIONS")
-        .args(ADMINISTER_OPTIONS.iter())
+        .args(administer_options())
         .next_help_heading("FORMAT OPTIONS")
-        .args(FORMAT_OPTIONS.iter())
+        .args(format_options())
 }
 
-lazy_static! {
-    static ref COMPOSE_OPTIONS: Vec<Arg<'static>> = vec![
+fn compose_options() -> [Arg<'static>; 8] {
+    [
         Arg::new("from")
             .long("from")
             .help("Specify the \"From:\" address for each email")
@@ -225,8 +225,11 @@ lazy_static! {
                  See the CONFIGURATION section of git-send-email(1) for \
                  sendemail.multiEdit.",
             ),
-    ];
-    static ref AUTOMATE_OPTIONS: Vec<Arg<'static>> = vec![
+    ]
+}
+
+fn automate_options() -> [Arg<'static>; 2] {
+    [
         Arg::new("identity")
             .long("identity")
             .help("Use the sendmail.<id> options")
@@ -260,8 +263,11 @@ lazy_static! {
                  Failure to do so may not produce the expected result in the \
                  recipient’s MUA.",
             ),
-    ];
-    static ref ADMINISTER_OPTIONS: Vec<Arg<'static>> = vec![
+    ]
+}
+
+fn administer_options() -> [Arg<'static>; 4] {
+    [
         Arg::new("confirm")
             .long("confirm")
             .help("Confirm recipients before sending")
@@ -298,8 +304,11 @@ lazy_static! {
             .long("dump-aliases")
             .help("Dump configured aliases and exit")
             .conflicts_with_all(&["patchranges-or-paths", "all"]),
-    ];
-    static ref FORMAT_OPTIONS: Vec<Arg<'static>> = vec![
+    ]
+}
+
+fn format_options() -> [Arg<'static>; 6] {
+    [
         Arg::new("numbered")
             .long("numbered")
             .short('n')
@@ -328,7 +337,7 @@ lazy_static! {
             .help("Use [<prefix>] instead of [PATCH]")
             .value_name("prefix")
             .takes_value(true),
-    ];
+    ]
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
@@ -396,11 +405,16 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = Vec::new();
 
-    let passthrough_args = COMPOSE_OPTIONS.iter().chain(
-        AUTOMATE_OPTIONS
-            .iter()
-            .chain(ADMINISTER_OPTIONS.iter().chain(FORMAT_OPTIONS.iter())),
-    );
+    let compose_options = compose_options();
+    let compose_options = compose_options.iter();
+    let automate_options = automate_options();
+    let automate_options = automate_options.iter();
+    let administer_options = administer_options();
+    let administer_options = administer_options.iter();
+    let format_options = format_options();
+    let format_options = format_options.iter();
+    let passthrough_args =
+        compose_options.chain(automate_options.chain(administer_options.chain(format_options)));
 
     for arg in passthrough_args {
         if let Some(indices) = matches.indices_of(arg.get_id()) {

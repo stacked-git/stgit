@@ -8,6 +8,7 @@ use anyhow::{anyhow, Result};
 use clap::{builder::ValueParser, Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -32,8 +33,8 @@ pub(super) fn get_command() -> (&'static str, StGitCommand) {
 fn make() -> clap::Command<'static> {
     clap::Command::new("goto")
         .about("Go to patch by pushing or popping as necessary")
-        .arg(&*crate::argset::KEEP_ARG)
-        .arg(&*crate::argset::MERGED_ARG)
+        .arg(argset::keep_arg())
+        .arg(argset::merged_arg())
         .arg(
             Arg::new("patch")
                 .help("Patch to go to")

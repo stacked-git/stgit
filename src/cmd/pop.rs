@@ -8,6 +8,7 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -85,7 +86,7 @@ fn make() -> clap::Command<'static> {
                 .short('s')
                 .help("Keep patches' modifications in working tree after popping"),
         )
-        .arg(&*crate::argset::KEEP_ARG)
+        .arg(argset::keep_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

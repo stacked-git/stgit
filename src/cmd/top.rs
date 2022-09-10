@@ -34,7 +34,7 @@ fn make() -> clap::Command<'static> {
              The topmost patch is the currently applied patch. An error \
              message will be printed if no patches are applied.",
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {

@@ -70,7 +70,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .allow_hyphen_values(true)
                 .value_name("git-options"),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("all")
                 .long("all")
@@ -78,14 +78,14 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Format all applied patches"),
         )
         .next_help_heading("FORMAT OPTIONS")
-        .args(FORMAT_OPTIONS.iter())
+        .args(format_options())
         .next_help_heading("MESSAGE OPTIONS")
-        .args(MESSAGE_OPTIONS.iter())
+        .args(message_options())
     // DIFF OPTIONS ???
 }
 
-lazy_static! {
-    static ref FORMAT_OPTIONS: Vec<Arg<'static>> = vec![
+fn format_options() -> [Arg<'static>; 15] {
+    [
         Arg::new("output-directory")
             .long("output-directory")
             .short('o')
@@ -213,9 +213,11 @@ lazy_static! {
         // NO --filename-max-length
         // NO --cover-from-description
         // NO --ignore-if-in-upstream
-    ];
+    ]
+}
 
-    static ref MESSAGE_OPTIONS: Vec<Arg<'static>> = vec![
+fn message_options() -> [Arg<'static>; 18] {
+    [
         Arg::new("to")
             .long("to")
             .help("Specify a To: address for each email")
@@ -233,9 +235,7 @@ lazy_static! {
         Arg::new("no-to")
             .long("no-to")
             .help("Discard all To: headers added so far")
-            .long_help(
-                "Discard all `To:` addresses added so far from config or command line.",
-            )
+            .long_help("Discard all `To:` addresses added so far from config or command line.")
             .action(clap::ArgAction::Append), // TODO: ArgAction::SetTrue?
         Arg::new("cc")
             .long("cc")
@@ -254,9 +254,7 @@ lazy_static! {
         Arg::new("no-cc")
             .long("no-cc")
             .help("Discard all Cc: addresses added so far")
-            .long_help(
-                "Discard all `Cc:` addresses added so far from config or command line.",
-            )
+            .long_help("Discard all `Cc:` addresses added so far from config or command line.")
             .action(clap::ArgAction::Append),
         Arg::new("in-reply-to")
             .long("in-reply-to")
@@ -419,7 +417,7 @@ lazy_static! {
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         // NO --from
         // NO --no-add-header
-    ];
+    ]
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
@@ -455,7 +453,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args: Vec<(usize, String)> = Vec::new();
 
-    for arg in FORMAT_OPTIONS.iter().chain(MESSAGE_OPTIONS.iter()) {
+    for arg in format_options().iter().chain(message_options().iter()) {
         if let Some(indices) = matches.indices_of(arg.get_id()) {
             let indices = indices.collect::<Vec<_>>();
             let values = matches

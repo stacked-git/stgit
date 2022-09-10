@@ -9,6 +9,7 @@ use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use termcolor::WriteColor;
 
 use crate::{
+    argset,
     commit::CommitExtended,
     patchname::PatchName,
     patchrange,
@@ -58,7 +59,7 @@ fn make() -> clap::Command<'static> {
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .next_help_heading("SELECT OPTIONS")
         .arg(
             Arg::new("all")
@@ -210,8 +211,8 @@ impl FromStr for CommitIdLength {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = crate::argset::get_one_str(matches, "branch");
-    let opt_missing = crate::argset::get_one_str(matches, "missing");
+    let opt_branch = argset::get_one_str(matches, "branch");
+    let opt_missing = argset::get_one_str(matches, "missing");
     let (stack, cmp_stack) = if let Some(ref_branch) = opt_missing {
         (
             Stack::from_branch(&repo, Some(ref_branch))?,

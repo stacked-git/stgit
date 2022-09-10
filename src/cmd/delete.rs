@@ -6,6 +6,7 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -62,12 +63,12 @@ fn make() -> clap::Command<'static> {
                 .short('t')
                 .help("Delete topmost patch"),
         )
-        .arg(&*crate::argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = crate::argset::get_one_str(matches, "branch");
+    let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let opt_spill = matches.contains_id("spill");
 

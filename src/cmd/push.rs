@@ -6,6 +6,7 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
@@ -109,8 +110,8 @@ fn make() -> clap::Command<'static> {
                      be in the patch.",
                 ),
         )
-        .arg(&*crate::argset::KEEP_ARG)
-        .arg(&*crate::argset::MERGED_ARG)
+        .arg(argset::keep_arg())
+        .arg(argset::merged_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

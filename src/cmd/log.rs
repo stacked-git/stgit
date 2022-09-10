@@ -44,7 +44,7 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("diff")
                 .long("diff")
@@ -57,7 +57,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Limit output to <n> commits")
                 .value_name("n")
-                .value_parser(crate::argset::parse_usize),
+                .value_parser(argset::parse_usize),
         )
         .arg(
             Arg::new("full")

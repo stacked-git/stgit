@@ -33,7 +33,7 @@ fn make() -> clap::Command<'static> {
              the topmost patch will be renamed.",
         )
         .override_usage("stg rename [OPTIONS] [old-patch] <new-patch>")
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("patches")
                 .help("Optional old patch and the new patch name")

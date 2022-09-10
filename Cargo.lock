@@ -554,7 +554,6 @@ dependencies = [
  "flate2",
  "git2",
  "indexmap",
- "lazy_static",
  "serde",
  "serde_json",
  "strsim",

@@ -42,7 +42,7 @@ fn make() -> clap::Command<'static> {
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {

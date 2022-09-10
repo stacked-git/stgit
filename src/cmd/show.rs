@@ -61,14 +61,14 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(PathBuf)),
         )
-        .arg(&*argset::BRANCH_ARG)
+        .arg(argset::branch_arg())
         .arg(
             Arg::new("stat")
                 .long("stat")
                 .short('s')
                 .help("Show a diffstat summary instead of the full diff"),
         )
-        .arg(&*argset::DIFF_OPTS_ARG)
+        .arg(argset::diff_opts_arg())
         .next_help_heading("SELECTION OPTIONS")
         .arg(
             Arg::new("applied")

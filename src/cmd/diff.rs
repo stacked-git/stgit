@@ -8,6 +8,7 @@ use anyhow::Result;
 use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
+    argset,
     revspec::{parse_stgit_revision, Error as RevError},
     stupid::Stupid,
 };
@@ -61,7 +62,7 @@ fn make() -> clap::Command<'static> {
                 .short('s')
                 .help("Show the stat instead of the diff"),
         )
-        .arg(&*crate::argset::DIFF_OPTS_ARG)
+        .arg(argset::diff_opts_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -93,6 +94,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.get_many::<PathBuf>("pathspecs"),
         matches.contains_id("stat"),
         crate::color::use_color(matches),
-        &crate::argset::get_diff_opts(matches, &config, false, false),
+        &argset::get_diff_opts(matches, &config, false, false),
     )
 }

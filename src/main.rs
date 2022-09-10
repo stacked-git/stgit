@@ -7,9 +7,6 @@
 //! (`stg refresh`, `stg edit`), etc. before transforming them into regular git commits
 //! (using `stg commit`).
 
-#[macro_use]
-extern crate lazy_static;
-
 mod alias;
 mod argset;
 mod cmd;
