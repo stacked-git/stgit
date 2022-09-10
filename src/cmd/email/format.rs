@@ -84,8 +84,8 @@ pub(super) fn command() -> clap::Command<'static> {
     // DIFF OPTIONS ???
 }
 
-fn format_options() -> [Arg<'static>; 15] {
-    [
+fn format_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("output-directory")
             .long("output-directory")
             .short('o')
@@ -216,8 +216,8 @@ fn format_options() -> [Arg<'static>; 15] {
     ]
 }
 
-fn message_options() -> [Arg<'static>; 18] {
-    [
+fn message_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("to")
             .long("to")
             .help("Specify a To: address for each email")
@@ -453,7 +453,9 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args: Vec<(usize, String)> = Vec::new();
 
-    for arg in format_options().iter().chain(message_options().iter()) {
+    let passthrough_args = vec![format_options(), message_options()];
+
+    for arg in passthrough_args.into_iter().flatten() {
         if let Some(indices) = matches.indices_of(arg.get_id()) {
             let indices = indices.collect::<Vec<_>>();
             let values = matches

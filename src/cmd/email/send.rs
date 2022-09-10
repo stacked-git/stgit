@@ -93,8 +93,8 @@ pub(super) fn command() -> clap::Command<'static> {
         .args(format_options())
 }
 
-fn compose_options() -> [Arg<'static>; 8] {
-    [
+fn compose_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("from")
             .long("from")
             .help("Specify the \"From:\" address for each email")
@@ -228,8 +228,8 @@ fn compose_options() -> [Arg<'static>; 8] {
     ]
 }
 
-fn automate_options() -> [Arg<'static>; 2] {
-    [
+fn automate_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("identity")
             .long("identity")
             .help("Use the sendmail.<id> options")
@@ -266,8 +266,8 @@ fn automate_options() -> [Arg<'static>; 2] {
     ]
 }
 
-fn administer_options() -> [Arg<'static>; 4] {
-    [
+fn administer_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("confirm")
             .long("confirm")
             .help("Confirm recipients before sending")
@@ -307,8 +307,8 @@ fn administer_options() -> [Arg<'static>; 4] {
     ]
 }
 
-fn format_options() -> [Arg<'static>; 6] {
-    [
+fn format_options() -> Vec<Arg<'static>> {
+    vec![
         Arg::new("numbered")
             .long("numbered")
             .short('n')
@@ -405,18 +405,14 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = Vec::new();
 
-    let compose_options = compose_options();
-    let compose_options = compose_options.iter();
-    let automate_options = automate_options();
-    let automate_options = automate_options.iter();
-    let administer_options = administer_options();
-    let administer_options = administer_options.iter();
-    let format_options = format_options();
-    let format_options = format_options.iter();
-    let passthrough_args =
-        compose_options.chain(automate_options.chain(administer_options.chain(format_options)));
+    let passthrough_args = vec![
+        compose_options(),
+        automate_options(),
+        administer_options(),
+        format_options(),
+    ];
 
-    for arg in passthrough_args {
+    for arg in passthrough_args.into_iter().flatten() {
         if let Some(indices) = matches.indices_of(arg.get_id()) {
             let indices = indices.collect::<Vec<_>>();
             let values = matches
