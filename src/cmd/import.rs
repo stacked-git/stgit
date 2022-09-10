@@ -369,7 +369,7 @@ fn import_series(
             continue;
         }
 
-        let mut fields = line.fields();
+        let mut fields = line.fields_with(|c| c.is_ascii_whitespace());
         let raw_patchname = fields
             .next()
             .expect("non-empty line must have first field")

@@ -18,7 +18,7 @@ name = "stg"
 [dependencies]
 anyhow = "1.0"
 atty = "0.2"
-bstr = { version = "0.2", default-features = false, features = ["std"] }
+bstr = { version = "1.0", default-features = false, features = ["std"] }
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "3.2", default-features = false, features = ["color", "std", "suggestions", "wrap_help"] }
 encoding_rs = "0.8"
