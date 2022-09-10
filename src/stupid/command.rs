@@ -43,33 +43,17 @@ impl StupidCommand for Command {
     }
 
     fn in_and_out(&mut self, input: &[u8]) -> Result<Output> {
-        struct SendSlice(*const u8, usize);
-        impl SendSlice {
-            fn from(slice: &[u8]) -> Self {
-                Self(slice.as_ptr(), slice.len())
-            }
-
-            unsafe fn take<'a>(self) -> &'a [u8] {
-                let SendSlice(ptr, len) = self;
-                std::slice::from_raw_parts(ptr, len)
-            }
-        }
-        unsafe impl Send for SendSlice {}
-        unsafe impl Sync for SendSlice {}
-
         let mut child = self.stdin(Stdio::piped()).spawn_git()?;
-
-        let send_input = SendSlice::from(input);
         let mut stdin = child.stdin.take().unwrap();
-        let handle = std::thread::spawn(move || {
-            // Safety: the input slice will not outlive the thread because
-            // the thread is joined before this function returns.
-            let input = unsafe { send_input.take() };
-            stdin.write_all(input).unwrap();
+        let output_result: Result<Output> = std::thread::scope(|scope| {
+            let handle = scope.spawn(move || -> Result<()> { Ok(stdin.write_all(input)?) });
+            let output_result = child.wait_with_output();
+            handle
+                .join()
+                .map_err(|_| anyhow!("panic while writing to stdin"))??;
+            Ok(output_result?)
         });
-        let output_result = child.wait_with_output();
-        handle.join().unwrap();
-        Ok(output_result?)
+        output_result
     }
 }
 
