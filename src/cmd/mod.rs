@@ -2,8 +2,8 @@
 
 //! StGit subcommand implementations.
 //!
-//! Each subcommand is in its own module. The [`get_commands()`] function generates a
-//! mapping of the subcommand names to their [`StGitCommand`] struct.
+//! Each subcommand is in its own module. The [`STGIT_COMMANDS`] slice constant contains
+//! a [`StGitCommand`] instance for each subcommand.
 
 pub(crate) mod branch;
 pub(crate) mod clean;
