@@ -50,7 +50,7 @@ install-contrib:
 .PHONY: install install-all install-bin install-completion install-contrib install-man install-html
 
 
-lint: lint-format lint-clippy lint-t unit-test
+lint: lint-format lint-clippy lint-api-doc lint-t unit-test
 
 lint-format:
 	$(CARGO_OFFLINE) --quiet fmt --all --check
@@ -58,13 +58,16 @@ lint-format:
 lint-clippy:
 	$(CARGO_OFFLINE) --quiet clippy -- --deny warnings
 
+lint-api-doc:
+	$(CARGO_OFFLINE) --quiet doc --no-deps
+
 lint-t:
 	$(MAKE) -C t test-lint
 
 unit-test:
 	$(CARGO_OFFLINE) --quiet test
 
-.PHONY: lint lint-format lint-clippy lint-t unit-test
+.PHONY: lint lint-format lint-clippy lint-api-doc lint-t unit-test
 
 
 format:
