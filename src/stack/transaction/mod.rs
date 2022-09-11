@@ -28,17 +28,16 @@
 
 mod builder;
 mod options;
+mod ui;
 
-use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::io::Write;
 
 use anyhow::{anyhow, Result};
 use indexmap::IndexSet;
-use termcolor::WriteColor;
 
 pub(crate) use self::builder::TransactionBuilder;
 use self::options::{ConflictMode, TransactionOptions};
+use self::ui::TransactionUserInterface;
 
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
@@ -53,7 +52,7 @@ use super::{error::Error, state::StackState};
 /// Stack transaction state.
 pub(crate) struct StackTransaction<'repo> {
     stack: Stack<'repo>,
-    output: RefCell<termcolor::StandardStream>,
+    ui: TransactionUserInterface,
     options: TransactionOptions,
 
     applied: Vec<PatchName>,
@@ -65,7 +64,6 @@ pub(crate) struct StackTransaction<'repo> {
 
     current_tree_id: git2::Oid,
     error: Option<anyhow::Error>,
-    printed_top: bool,
 }
 
 /// Status of a pushed patch.
@@ -204,9 +202,11 @@ impl<'repo> ExecuteContext<'repo> {
         let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
         let new_top_patchname = transaction.applied.last().cloned();
 
-        if !transaction.printed_top {
+        if !transaction.ui.printed_top() {
             if let Some(top_patchname) = new_top_patchname.as_ref() {
-                transaction.print_pushed(top_patchname, PushStatus::Unmodified, true)?;
+                transaction
+                    .ui
+                    .print_pushed(top_patchname, PushStatus::Unmodified, true)?;
             }
         }
 
@@ -373,7 +373,7 @@ impl<'repo> StackTransaction<'repo> {
             }
             self.updated_patches
                 .insert(pn.clone(), Some(state.patches[pn].clone()));
-            self.print_updated(pn)?;
+            self.ui.print_updated(pn, self.applied())?;
         }
 
         let to_push_patches: Vec<_> = original_applied_order
@@ -405,7 +405,7 @@ impl<'repo> StackTransaction<'repo> {
             .ok();
         self.updated_patches
             .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_updated(patchname)?;
+        self.ui.print_updated(patchname, self.applied())?;
         Ok(())
     }
 
@@ -419,7 +419,7 @@ impl<'repo> StackTransaction<'repo> {
         self.applied.push(patchname.clone());
         self.updated_patches
             .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_pushed(patchname, PushStatus::New, true)?;
+        self.ui.print_pushed(patchname, PushStatus::New, true)?;
         Ok(())
     }
 
@@ -436,7 +436,7 @@ impl<'repo> StackTransaction<'repo> {
         self.unapplied.insert(insert_pos, patchname.clone());
         self.updated_patches
             .insert(patchname.clone(), Some(PatchState { commit }));
-        self.print_popped(&[patchname.clone()])?;
+        self.ui.print_popped(&[patchname.clone()])?;
         Ok(())
     }
 
@@ -505,7 +505,7 @@ impl<'repo> StackTransaction<'repo> {
 
         self.applied.push(patchname.clone());
 
-        self.print_pushed(patchname, push_status, is_last)
+        self.ui.print_pushed(patchname, push_status, is_last)
     }
 
     /// Update patches' applied, unapplied, and hidden dispositions.
@@ -567,7 +567,7 @@ impl<'repo> StackTransaction<'repo> {
 
             if to_push.is_empty() {
                 if let Some(last) = applied.last() {
-                    self.print_pushed(last, PushStatus::Unmodified, true)?;
+                    self.ui.print_pushed(last, PushStatus::Unmodified, true)?;
                 }
             }
         }
@@ -614,7 +614,7 @@ impl<'repo> StackTransaction<'repo> {
             vec![]
         };
 
-        self.print_committed(to_commit)?;
+        self.ui.print_committed(to_commit)?;
 
         self.updated_base = Some(self.get_patch_commit(to_commit.last().unwrap()).clone());
         for patchname in to_commit {
@@ -667,7 +667,7 @@ impl<'repo> StackTransaction<'repo> {
 
         self.reorder_patches(Some(&applied), Some(&unapplied), Some(&hidden))?;
 
-        self.print_hidden(to_hide)
+        self.ui.print_hidden(to_hide)
     }
 
     /// Move hidden patches to the unapplied list.
@@ -688,7 +688,7 @@ impl<'repo> StackTransaction<'repo> {
 
         self.reorder_patches(None, Some(&unapplied), Some(&hidden))?;
 
-        self.print_unhidden(to_unhide)
+        self.ui.print_unhidden(to_unhide)
     }
 
     /// Rename a patch.
@@ -729,7 +729,7 @@ impl<'repo> StackTransaction<'repo> {
         self.updated_patches
             .insert(new_patchname.clone(), Some(patch));
 
-        self.print_rename(old_patchname, new_patchname)
+        self.ui.print_rename(old_patchname, new_patchname)
     }
 
     /// Delete one or more patches from the stack.
@@ -756,7 +756,7 @@ impl<'repo> StackTransaction<'repo> {
         let unapplied = std::mem::replace(&mut self.unapplied, Vec::with_capacity(unapplied_size));
         self.unapplied.append(&mut incidental.clone());
 
-        self.print_popped(&all_popped)?;
+        self.ui.print_popped(&all_popped)?;
 
         // Gather contiguous groups of deleted patchnames for printing.
         let mut deleted_group: Vec<PatchName> = Vec::with_capacity(all_popped.len());
@@ -766,7 +766,7 @@ impl<'repo> StackTransaction<'repo> {
                 deleted_group.push(patchname.clone());
                 self.updated_patches.insert(patchname, None);
             } else if !deleted_group.is_empty() {
-                self.print_deleted(&deleted_group)?;
+                self.ui.print_deleted(&deleted_group)?;
                 deleted_group.clear();
             }
         }
@@ -776,7 +776,7 @@ impl<'repo> StackTransaction<'repo> {
                 deleted_group.push(patchname.clone());
                 self.updated_patches.insert(patchname, None);
             } else {
-                self.print_deleted(&deleted_group)?;
+                self.ui.print_deleted(&deleted_group)?;
                 deleted_group.clear();
                 self.unapplied.push(patchname);
             }
@@ -790,13 +790,13 @@ impl<'repo> StackTransaction<'repo> {
                 self.updated_patches.insert(patchname, None);
             } else {
                 i += 1;
-                self.print_deleted(&deleted_group)?;
+                self.ui.print_deleted(&deleted_group)?;
                 deleted_group.clear();
             }
         }
 
         if !deleted_group.is_empty() {
-            self.print_deleted(&deleted_group)?;
+            self.ui.print_deleted(&deleted_group)?;
         }
 
         Ok(incidental)
@@ -836,7 +836,7 @@ impl<'repo> StackTransaction<'repo> {
         self.unapplied.append(&mut requested);
         self.unapplied.append(&mut unapplied);
 
-        self.print_popped(&all_popped)?;
+        self.ui.print_popped(&all_popped)?;
 
         Ok(incidental)
     }
@@ -1018,7 +1018,7 @@ impl<'repo> StackTransaction<'repo> {
         }
         self.applied.push(patchname.clone());
 
-        self.print_pushed(patchname, push_status, is_last)?;
+        self.ui.print_pushed(patchname, push_status, is_last)?;
 
         if push_status == PushStatus::Conflict {
             Err(Error::TransactionHalt {
@@ -1071,191 +1071,9 @@ impl<'repo> StackTransaction<'repo> {
             }
         }
 
-        self.print_merged(&merged)?;
+        self.ui.print_merged(&merged)?;
 
         Ok(merged)
-    }
-
-    fn print_merged(&self, merged_patches: &[&PatchName]) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        write!(output, "Found ")?;
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-        write!(output, "{}", merged_patches.len())?;
-        output.reset()?;
-        let plural = if merged_patches.len() == 1 { "" } else { "es" };
-        writeln!(output, " patch{plural} merged upstream")?;
-        Ok(())
-    }
-
-    fn print_rename(&self, old_patchname: &PatchName, new_patchname: &PatchName) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_dimmed(true))?;
-        write!(output, "{old_patchname}")?;
-        color_spec.clear();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
-        write!(output, " => ")?;
-        output.reset()?;
-        writeln!(output, "{new_patchname}")?;
-        Ok(())
-    }
-
-    fn print_committed(&self, committed: &[PatchName]) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::White)))?;
-        write!(output, "$ ")?;
-        color_spec.set_fg(None);
-        output.set_color(color_spec.set_intense(true))?;
-        write!(output, "{}", committed[0])?;
-        if committed.len() > 1 {
-            output.set_color(color_spec.set_intense(false))?;
-            write!(output, "..")?;
-            output.set_color(color_spec.set_intense(true))?;
-            let last = &committed[committed.len() - 1];
-            write!(output, "{last}")?;
-        }
-        output.reset()?;
-        writeln!(output)?;
-        Ok(())
-    }
-
-    fn print_deleted(&self, deleted: &[PatchName]) -> Result<()> {
-        if !deleted.is_empty() {
-            let mut output = self.output.borrow_mut();
-            let mut color_spec = termcolor::ColorSpec::new();
-            output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
-            write!(output, "# ")?;
-            color_spec.set_fg(None);
-            output.set_color(color_spec.set_dimmed(true))?;
-            write!(output, "{}", deleted[0])?;
-            if deleted.len() > 1 {
-                output.set_color(color_spec.set_dimmed(false))?;
-                write!(output, "..")?;
-                output.set_color(color_spec.set_dimmed(true))?;
-                let last = &deleted[deleted.len() - 1];
-                write!(output, "{last}")?;
-            }
-            output.reset()?;
-            writeln!(output)?;
-        }
-        Ok(())
-    }
-
-    fn print_hidden(&self, hidden: &[PatchName]) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let mut color_spec = termcolor::ColorSpec::new();
-        for patchname in hidden {
-            output.set_color(color_spec.set_fg(Some(termcolor::Color::Red)))?;
-            write!(output, "! ")?;
-            color_spec.set_fg(None);
-            output.set_color(color_spec.set_dimmed(true).set_italic(true))?;
-            writeln!(output, "{patchname}")?;
-            color_spec.clear();
-            output.reset()?;
-        }
-        Ok(())
-    }
-
-    fn print_unhidden(&self, unhidden: &[PatchName]) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let mut color_spec = termcolor::ColorSpec::new();
-        for patchname in unhidden {
-            output.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(output, "- ")?;
-            color_spec.set_fg(None);
-            output.set_color(color_spec.set_dimmed(true))?;
-            writeln!(output, "{patchname}")?;
-            color_spec.clear();
-            output.reset()?;
-        }
-        Ok(())
-    }
-
-    fn print_popped(&self, popped: &[PatchName]) -> Result<()> {
-        if !popped.is_empty() {
-            let mut output = self.output.borrow_mut();
-            let mut color_spec = termcolor::ColorSpec::new();
-            output.set_color(color_spec.set_fg(Some(termcolor::Color::Magenta)))?;
-            write!(output, "- ")?;
-            color_spec.set_fg(None);
-            output.set_color(color_spec.set_dimmed(true))?;
-            write!(output, "{}", popped[0])?;
-            if popped.len() > 1 {
-                output.set_color(color_spec.set_dimmed(false))?;
-                write!(output, "..")?;
-                output.set_color(color_spec.set_dimmed(true))?;
-                let last = &popped[popped.len() - 1];
-                write!(output, "{last}")?;
-            }
-            output.reset()?;
-            writeln!(output)?;
-        }
-        Ok(())
-    }
-
-    fn print_pushed(
-        &mut self,
-        patchname: &PatchName,
-        status: PushStatus,
-        is_last: bool,
-    ) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let sigil = if is_last { '>' } else { '+' };
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(
-            color_spec.set_fg(Some(if let PushStatus::Conflict = status {
-                termcolor::Color::Red
-            } else if is_last {
-                termcolor::Color::Blue
-            } else {
-                termcolor::Color::Green
-            })),
-        )?;
-        write!(output, "{sigil} ")?;
-        color_spec.clear();
-        output.set_color(color_spec.set_bold(is_last).set_intense(!is_last))?;
-        write!(output, "{patchname}")?;
-        output.reset()?;
-
-        let status_str = match status {
-            PushStatus::New => " (new)",
-            PushStatus::AlreadyMerged => " (merged)",
-            PushStatus::Conflict => " (conflict)",
-            PushStatus::Empty => " (empty)",
-            PushStatus::Modified => " (modified)",
-            PushStatus::Unmodified => "",
-        };
-
-        writeln!(output, "{status_str}")?;
-        if is_last {
-            self.printed_top = true;
-        }
-        Ok(())
-    }
-
-    fn print_updated(&self, patchname: &PatchName) -> Result<()> {
-        let mut output = self.output.borrow_mut();
-        let (is_applied, is_top) =
-            if let Some(pos) = self.applied().iter().position(|pn| pn == patchname) {
-                (true, pos + 1 == self.applied.len())
-            } else {
-                (false, false)
-            };
-        let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
-        write!(output, "& ")?;
-        color_spec.clear();
-        output.set_color(
-            color_spec
-                .set_bold(is_top)
-                .set_intense(is_applied && !is_top)
-                .set_dimmed(!is_applied),
-        )?;
-        writeln!(output, "{patchname}")?;
-        output.reset()?;
-        Ok(())
     }
 }
 

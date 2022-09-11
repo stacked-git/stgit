@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use std::{cell::RefCell, collections::BTreeMap};
+use std::collections::BTreeMap;
 
 use anyhow::Result;
 
@@ -8,6 +8,7 @@ use crate::stack::{Stack, StackStateAccess};
 
 use super::{
     options::{ConflictMode, TransactionOptions},
+    ui::TransactionUserInterface,
     ExecuteContext, StackTransaction,
 };
 
@@ -122,8 +123,8 @@ impl<'repo> TransactionBuilder<'repo> {
             options,
         } = self;
 
-        let output = output.expect("with_output_stream() must be called");
-        let output = RefCell::new(output);
+        let ui =
+            TransactionUserInterface::new(output.expect("with_output_stream() must be called"));
 
         let current_tree_id = stack.branch_head.tree_id();
         let applied = stack.applied().to_vec();
@@ -132,7 +133,7 @@ impl<'repo> TransactionBuilder<'repo> {
 
         let mut transaction = StackTransaction {
             stack,
-            output,
+            ui,
             options,
             applied,
             unapplied,
@@ -142,7 +143,6 @@ impl<'repo> TransactionBuilder<'repo> {
             updated_base: None,
             current_tree_id,
             error: None,
-            printed_top: false,
         };
 
         transaction.error = f(&mut transaction).err();
