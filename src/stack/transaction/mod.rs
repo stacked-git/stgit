@@ -26,6 +26,8 @@
 //!     .execute("<reflog message>")?;
 //! ```
 
+mod options;
+
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 use std::io::Write;
@@ -33,6 +35,8 @@ use std::io::Write;
 use anyhow::{anyhow, Result};
 use indexmap::IndexSet;
 use termcolor::WriteColor;
+
+use self::options::{ConflictMode, TransactionOptions};
 
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
@@ -43,27 +47,6 @@ use crate::{
 };
 
 use super::{error::Error, state::StackState};
-
-/// Options for fine-tuning stack transaction behaviors.
-struct TransactionOptions {
-    pub(self) conflict_mode: ConflictMode,
-    pub(self) discard_changes: bool,
-    pub(self) use_index_and_worktree: bool,
-    pub(self) set_head: bool,
-    pub(self) allow_bad_head: bool,
-}
-
-impl Default for TransactionOptions {
-    fn default() -> Self {
-        Self {
-            conflict_mode: ConflictMode::Disallow,
-            discard_changes: false,
-            use_index_and_worktree: false,
-            set_head: true,
-            allow_bad_head: false,
-        }
-    }
-}
 
 /// Builder used to setup a stack transaction.
 pub(crate) struct TransactionBuilder<'repo> {
@@ -88,28 +71,6 @@ pub(crate) struct StackTransaction<'repo> {
     current_tree_id: git2::Oid,
     error: Option<anyhow::Error>,
     printed_top: bool,
-}
-
-/// Policies for whether a transaction may execute when conflicts emerge from the
-/// transactions operations.
-pub(crate) enum ConflictMode {
-    /// Transaction execution will fail if there are conflicts recorded in the index.
-    ///
-    /// This is the default.
-    Disallow,
-
-    /// Transaction execution will succeed even if there are outstanding conflicts.
-    Allow,
-
-    /// Transaction execution will succeed with conflicts, but only if the topmost patch
-    /// is unchanged by the transaction.
-    AllowIfSameTop,
-}
-
-impl Default for ConflictMode {
-    fn default() -> Self {
-        Self::Disallow
-    }
 }
 
 /// Status of a pushed patch.
