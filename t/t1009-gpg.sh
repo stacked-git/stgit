@@ -29,6 +29,21 @@ test_expect_success GPG \
 '
 
 test_expect_success GPG \
+    'changes rolled back when gpg fails' '
+    test_config stgit.gpgsign true &&
+    test_config gpg.program false &&
+    command_error stg pop 2>err &&
+    stg status --untracked-files=no > status.txt &&
+    test_must_be_empty status.txt &&
+    test "$(echo $(stg series))" = "> p0" &&
+    git config --unset gpg.program &&
+    stg pop &&
+    stg push &&
+    grep "gpg failed to sign the data" err &&
+    grep "all changes rolled back" err
+'
+
+test_expect_success GPG \
     'stg refresh creates a signed patch' '
     echo "hello world" > a.txt &&
     stg add a.txt &&
