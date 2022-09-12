@@ -107,17 +107,7 @@ impl<'repo> ExecuteContext<'repo> {
     ///
     /// A new `Stack` instance is returned.
     pub(crate) fn execute(self, reflog_msg: &str) -> Result<Stack<'repo>> {
-        let mut transaction = self.0;
-
-        // Only proceed for halt errors
-        let has_conflicts = if let Some(err) = &transaction.error {
-            match err.downcast_ref::<Error>() {
-                Some(Error::TransactionHalt { conflicts, .. }) => *conflicts,
-                _ => return Err(transaction.error.unwrap()),
-            }
-        } else {
-            false
-        };
+        let transaction = self.0;
 
         // Check consistency
         for (patchname, oid) in transaction.updated_patches.iter() {
@@ -128,40 +118,70 @@ impl<'repo> ExecuteContext<'repo> {
             }
         }
 
-        // Log external modifications
-        transaction.stack = if transaction.stack.is_head_top() {
-            transaction.stack
+        let trans_head = transaction.head().clone();
+
+        let StackTransaction {
+            stack,
+            mut ui,
+            mut options,
+            applied,
+            unapplied,
+            hidden,
+            updated_patches,
+            current_tree_id,
+            error,
+            ..
+        } = transaction;
+
+        // Only proceed for halt errors
+        let has_conflicts = if let Some(err) = &error {
+            match err.downcast_ref::<Error>() {
+                Some(Error::TransactionHalt { conflicts, .. }) => *conflicts,
+                _ => return Err(error.unwrap()),
+            }
         } else {
-            // TODO: why update the stack state ref unconditional of transaction.error?
-            transaction.stack.log_external_mods()?
+            false
         };
 
-        let repo = transaction.stack.repo;
+        // Log external modifications
+        let mut stack = if stack.is_head_top() {
+            stack
+        } else {
+            // TODO: why update the stack state ref unconditional of transaction.error?
+            stack.log_external_mods()?
+        };
 
-        if transaction.options.set_head {
-            let trans_head = transaction.head().clone();
-
-            if transaction.options.use_index_and_worktree {
-                let stack_head = transaction.stack.branch_head.clone();
-                let result = transaction.checkout(&trans_head);
-                if let Err(err) = result {
-                    transaction.options.allow_bad_head = true;
-                    transaction.checkout(&stack_head)?;
-                    return Err(anyhow!(
+        if options.set_head {
+            if options.use_index_and_worktree {
+                let stack_head = stack.branch_head.clone();
+                checkout(
+                    &stack,
+                    &options,
+                    current_tree_id,
+                    applied.last(),
+                    &trans_head,
+                )
+                .or_else(|err| {
+                    options.allow_bad_head = true;
+                    checkout(
+                        &stack,
+                        &options,
+                        current_tree_id,
+                        applied.last(),
+                        &stack_head,
+                    )?;
+                    Err(anyhow!(
                         "{err}\n\
                          Command aborted (all changes rolled back)"
-                    ));
-                }
+                    ))
+                })?;
             }
 
-            let updated_ref = transaction
-                .stack
+            let updated_ref = stack
                 .branch
                 .get_mut()
                 .set_target(trans_head.id(), reflog_msg)?;
-            transaction
-                .stack
-                .update_head(git2::Branch::wrap(updated_ref), trans_head);
+            stack.update_head(git2::Branch::wrap(updated_ref), trans_head.clone());
         }
 
         let conflict_msg;
@@ -173,14 +193,15 @@ impl<'repo> ExecuteContext<'repo> {
         };
 
         // Update patch refs and stack state refs
+        let repo = stack.repo;
         let mut git_trans = repo.transaction()?;
         let reflog_signature = None; // Use default signature
 
-        git_trans.lock_ref(&transaction.stack.refname)?;
+        git_trans.lock_ref(&stack.refname)?;
 
-        for (patchname, maybe_patch) in &transaction.updated_patches {
-            let patch_refname = transaction.stack.patch_refname(patchname);
-            let state = transaction.stack.state_mut();
+        for (patchname, maybe_patch) in &updated_patches {
+            let patch_refname = stack.patch_refname(patchname);
+            let state = stack.state_mut();
             git_trans.lock_ref(&patch_refname)?;
 
             if let Some(patch) = maybe_patch {
@@ -197,33 +218,26 @@ impl<'repo> ExecuteContext<'repo> {
             }
         }
 
-        // For printing applied patch name...
-        let _old_applied_pn = transaction.stack.applied().last().map(|pn| pn.to_string());
-        let _new_applied_pn = transaction.applied.last().map(|pn| pn.to_string());
-        let new_top_patchname = transaction.applied.last().cloned();
-
-        if !transaction.ui.printed_top() {
+        if !ui.printed_top() {
+            let new_top_patchname = applied.last().cloned();
             if let Some(top_patchname) = new_top_patchname.as_ref() {
-                transaction
-                    .ui
-                    .print_pushed(top_patchname, PushStatus::Unmodified, true)?;
+                ui.print_pushed(top_patchname, PushStatus::Unmodified, true)?;
             }
         }
 
-        let stack_ref = repo.find_reference(&transaction.stack.refname)?;
+        let stack_ref = repo.find_reference(&stack.refname)?;
         let prev_state_commit = stack_ref.peel_to_commit()?;
-        let head = transaction.head().clone();
 
-        let state = transaction.stack.state_mut();
+        let state = stack.state_mut();
         state.prev = Some(prev_state_commit);
-        state.head = head;
-        state.applied = transaction.applied;
-        state.unapplied = transaction.unapplied;
-        state.hidden = transaction.hidden;
+        state.head = trans_head;
+        state.applied = applied;
+        state.unapplied = unapplied;
+        state.hidden = hidden;
 
         let state_commit_id = state.commit(repo, None, reflog_msg)?;
         git_trans.set_target(
-            &transaction.stack.refname,
+            &stack.refname,
             state_commit_id,
             reflog_signature,
             reflog_msg,
@@ -231,50 +245,50 @@ impl<'repo> ExecuteContext<'repo> {
 
         git_trans.commit()?;
 
-        if let Some(err) = transaction.error {
+        if let Some(err) = error {
             Err(err)
         } else {
-            Ok(transaction.stack)
+            Ok(stack)
         }
     }
 }
 
-impl<'repo> StackTransaction<'repo> {
-    fn checkout(&mut self, commit: &git2::Commit<'_>) -> Result<()> {
-        let repo = self.stack.repo;
-        let stupid = repo.stupid();
-        if !self.options.allow_bad_head {
-            self.stack.check_head_top_mismatch()?;
-        }
-
-        if self.current_tree_id == commit.tree_id() && !self.options.discard_changes {
-            return match self.options.conflict_mode {
-                ConflictMode::Allow => Ok(()),
-                ConflictMode::AllowIfSameTop => {
-                    let top = self.applied.last();
-                    if top.is_some() && top == self.stack.applied().last() {
-                        Ok(())
-                    } else {
-                        stupid.statuses(None)?.check_conflicts()
-                    }
-                }
-                ConflictMode::Disallow => stupid.statuses(None)?.check_conflicts(),
-            };
-        }
-
-        if self.options.discard_changes {
-            stupid.read_tree_checkout_hard(commit.tree_id())?;
-        } else {
-            stupid.update_index_refresh()?;
-            stupid
-                .read_tree_checkout(self.current_tree_id, commit.tree_id())
-                .map_err(|e| Error::CheckoutConflicts(format!("{e:#}")))?;
-        }
-
-        self.current_tree_id = commit.tree_id();
-        Ok(())
+fn checkout(
+    stack: &Stack,
+    options: &TransactionOptions,
+    current_tree_id: git2::Oid,
+    trans_top: Option<&PatchName>,
+    commit: &git2::Commit<'_>,
+) -> Result<()> {
+    if !options.allow_bad_head {
+        stack.check_head_top_mismatch()?;
     }
 
+    let stupid = stack.repo.stupid();
+
+    if current_tree_id == commit.tree_id() && !options.discard_changes {
+        match options.conflict_mode {
+            ConflictMode::Allow => {}
+            ConflictMode::AllowIfSameTop => {
+                if trans_top.is_none() || trans_top != stack.applied().last() {
+                    stupid.statuses(None)?.check_conflicts()?;
+                }
+            }
+            ConflictMode::Disallow => stupid.statuses(None)?.check_conflicts()?,
+        };
+    } else if options.discard_changes {
+        stupid.read_tree_checkout_hard(commit.tree_id())?;
+    } else {
+        stupid.update_index_refresh()?;
+        stupid
+            .read_tree_checkout(current_tree_id, commit.tree_id())
+            .map_err(|e| Error::CheckoutConflicts(format!("{e:#}")))?;
+    }
+
+    Ok(())
+}
+
+impl<'repo> StackTransaction<'repo> {
     /// Get an immutable reference to the original stack.
     pub(crate) fn stack(&self) -> &Stack<'repo> {
         &self.stack
