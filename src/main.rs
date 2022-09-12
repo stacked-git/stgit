@@ -18,6 +18,7 @@ mod patchname;
 mod patchrange;
 mod repo;
 mod revspec;
+mod signal;
 mod signature;
 mod stack;
 mod stupid;
@@ -143,6 +144,10 @@ fn main() -> ! {
     // clap with the desired color choice. So a simple pre-parse is performed just to
     // get the color choice.
     let color_choice = color::parse_color_choice(&argv);
+
+    if let Err(e) = self::signal::setup() {
+        exit_with_result(Err(e), color_choice)
+    }
 
     // Avoid the expense of constructing a full-blown clap::Command with all the dozens of
     // subcommands except in the few cases where that is warranted. In most cases, only

@@ -194,7 +194,7 @@ impl<'repo> ExecuteContext<'repo> {
             .map_err(|e| rollback(current_tree_id, e))?;
         }
 
-        (|| {
+        crate::signal::critical(|| {
             // Commit updated stack state
             let conflict_msg;
             let state_reflog_msg = if has_conflicts {
@@ -265,7 +265,7 @@ impl<'repo> ExecuteContext<'repo> {
             }
 
             Ok(())
-        })()
+        })
         .map_err(|e| rollback(trans_head.tree_id(), e))?;
 
         if let Some(err) = error {

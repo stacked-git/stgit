@@ -43,6 +43,26 @@ test_expect_success GPG \
     grep "all changes rolled back" err
 '
 
+write_script kill-grandparent <<EOF
+# Kill the grandparent of this faux gpg process, i.e.
+# the stg process (stg -> git -> gpg)
+kill -INT \$(ps -o ppid= -p \$PPID)
+EOF
+test_expect_success GPG \
+    'changes rolled back when gpg killed' '
+    test_config stgit.gpgsign true &&
+    test_config gpg.program "$PWD/kill-grandparent" &&
+    command_error stg pop 2>err &&
+    stg status --untracked-files=no > status.txt &&
+    test_must_be_empty status.txt &&
+    test "$(echo $(stg series))" = "> p0" &&
+    git config --unset gpg.program &&
+    stg pop &&
+    stg push &&
+    grep "all changes rolled back" err &&
+    grep "interrupted by user" err
+'
+
 test_expect_success GPG \
     'stg refresh creates a signed patch' '
     echo "hello world" > a.txt &&
