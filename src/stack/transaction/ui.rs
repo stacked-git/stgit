@@ -190,6 +190,35 @@ impl TransactionUserInterface {
         Ok(())
     }
 
+    pub(super) fn print_top(&self, patchname: &PatchName) -> Result<()> {
+        let mut output = self.output.borrow_mut();
+        let mut color_spec = termcolor::ColorSpec::new();
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(output, "> ")?;
+        color_spec.clear();
+        output.set_color(color_spec.set_bold(true).set_intense(false))?;
+        writeln!(output, "{patchname}")?;
+        output.reset()?;
+        Ok(())
+    }
+
+    pub(super) fn print_rolled_back(&self, patchname: Option<&PatchName>) -> Result<()> {
+        let mut output = self.output.borrow_mut();
+        let mut color_spec = termcolor::ColorSpec::new();
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
+        write!(output, "@ ")?;
+        color_spec.clear();
+        output.set_color(color_spec.set_bold(true).set_intense(false))?;
+        if let Some(patchname) = patchname {
+            write!(output, "{patchname}")?;
+        } else {
+            write!(output, "{{base}}")?;
+        }
+        output.reset()?;
+        writeln!(output, " (rolled back)")?;
+        Ok(())
+    }
+
     pub(super) fn print_updated(&self, patchname: &PatchName, applied: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let (is_applied, is_top) = if let Some(pos) = applied.iter().position(|pn| pn == patchname)
