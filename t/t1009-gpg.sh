@@ -52,15 +52,25 @@ test_expect_success GPG \
     'changes rolled back when gpg killed' '
     test_config stgit.gpgsign true &&
     test_config gpg.program "$PWD/kill-grandparent" &&
-    command_error stg pop 2>err &&
+    stg pop 2>err
+    exit_code=$? &&
+    if test $exit_code = 2
+    then
+        grep "interrupted by user" err &&
+        grep "all changes rolled back" err
+    elif test $exit_code = 130
+    then
+        test_must_be_empty err
+    else
+        echo "Invalid exit code: $exit_code" &&
+        false
+    fi &&
     stg status --untracked-files=no > status.txt &&
     test_must_be_empty status.txt &&
     test "$(echo $(stg series))" = "> p0" &&
     git config --unset gpg.program &&
     stg pop &&
-    stg push &&
-    grep "all changes rolled back" err &&
-    grep "interrupted by user" err
+    stg push
 '
 
 test_expect_success GPG \
