@@ -59,7 +59,7 @@ impl TransactionUserInterface {
     pub(super) fn print_committed(&self, committed: &[PatchName]) -> Result<()> {
         let mut output = self.output.borrow_mut();
         let mut color_spec = termcolor::ColorSpec::new();
-        output.set_color(color_spec.set_fg(Some(termcolor::Color::White)))?;
+        output.set_color(color_spec.set_fg(Some(termcolor::Color::Yellow)))?;
         write!(output, "$ ")?;
         color_spec.set_fg(None);
         output.set_color(color_spec.set_intense(true))?;
