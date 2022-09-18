@@ -47,8 +47,8 @@ fn make() -> clap::Command<'static> {
              merge commits may not be uncommitted.",
         )
         .override_usage(
-            "stg uncommit <patchname-1> [<patchname-2> ...]\n\
-             stg uncommit -n number [<patchname-prefix>]\n\
+            "stg uncommit <patchname-1> [<patchname-2> ...]\n    \
+             stg uncommit -n number [<patchname-prefix>]\n    \
              stg uncommit -t <committish> [-x]",
         )
         .arg(
