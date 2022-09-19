@@ -34,10 +34,14 @@ fn make() -> clap::Command<'static> {
             "Push patches to the top, even if applied.\n\
              \n\
              Float one or more patches to be the topmost applied patches. The patches \
-             to be floated may currently be either applied or unapplied. The \
-             necessary pop and push operations will be performed to float the named \
-             patches. Patches not specified will remain applied or unapplied as they \
-             were prior to the float operation.",
+             to be floated may currently be either applied or unapplied. The necessary \
+             pop and push operations will be performed to float the named patches. \
+             Patches not specified will remain applied or unapplied as they were prior \
+             to the float operation.",
+        )
+        .override_usage(
+            "stg float [OPTIONS] <patch>...\n    \
+             stg float [OPTIONS] <-s|--series> <file>"
         )
         .arg(
             Arg::new("patchranges")
