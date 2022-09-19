@@ -41,7 +41,7 @@ fn make() -> clap::Command<'static> {
         )
         .override_usage(
             "stg float [OPTIONS] <patch>...\n    \
-             stg float [OPTIONS] <-s|--series> <file>"
+             stg float [OPTIONS] <-s|--series> <file>",
         )
         .arg(
             Arg::new("patchranges")
