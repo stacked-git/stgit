@@ -618,7 +618,6 @@ _stg-export() {
 _stg-files() {
     local -a subcmd_args
     __stg_add_args_help
-    __stg_add_args_diffopts
     subcmd_args+=(
         '--bare[bare file names]'
         '(-s --stat)'{-s,--stat}'[show diff stat]'
