@@ -225,6 +225,13 @@ fn compose_options() -> Vec<Arg<'static>> {
                  See the CONFIGURATION section of git-send-email(1) for \
                  sendemail.multiEdit.",
             ),
+        Arg::new("annotate")
+            .long("annotate")
+            .help("Review each patch that will be sent in an editor")
+            .long_help(
+                "Review and edit each patch you are about to send. Default is the \
+                 value of sendemail.annotate.",
+            ),
     ]
 }
 
