@@ -433,7 +433,6 @@ _stg-edit() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_author
-    __stg_add_args_diffopts
     __stg_add_args_edit
     __stg_add_args_hook
     __stg_add_args_savetemplate
