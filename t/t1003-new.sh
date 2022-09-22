@@ -149,4 +149,10 @@ test_expect_success \
     general_error stg new bar/foo -m "patch bar/foo"
 '
 
+test_expect_success \
+    'Patch with escaped leading hyphen' '
+    stg new -m "leading hypen" "\\-patch-" &&
+    [ "$(echo $(stg top))" = "-patch-" ]
+'
+
 test_done

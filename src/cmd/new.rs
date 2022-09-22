@@ -30,21 +30,27 @@ fn make() -> clap::Command<'static> {
     let app = clap::Command::new("new")
         .about("Create a new patch at top of the stack")
         .long_about(
-            "Create a new, empty patch on the current stack. The new \
-             patch is created on top of the currently applied patches, \
-             and is made the new top of the stack. Uncommitted changes \
-             in the work tree are not included in the patch -- that is \
-             handled by stg-refresh.\n\
+            "Create a new, empty patch on the current stack. The new patch is created \
+             on top of the currently applied patches, and is made the new top of the \
+             stack. Uncommitted changes in the work tree are not included in the patch \
+             -- that is handled by stg-refresh.\n\
              \n\
-             The given name must be unique in the stack, and may only \
-             contain alphanumeric characters, dashes and underscores. \
-             If no name is given, one is generated from the first line \
-             of the patch's commit message.\n\
+             The given patch name must be unique in the stack. If no name is given, \
+             one is generated from the first line of the patch's commit message.\n\
              \n\
-             An editor will be launched to edit the commit message to \
-             be used for the patch, unless the '--message' flag \
-             already specified one. The 'patchdescr.tmpl' template \
-             file (if available) is used to pre-fill the editor.",
+             Patch names follow the rules for Git references with the additional \
+             constraint that patch names may not contain the '/' character. See \
+             git-check-ref-format(1) for details.\n\
+             \n\
+             Patch names may start with a leading '-'. When specifying such a patch \
+             name on the command line, the leading '-' may be escaped with a single \
+             backslash as in '\\-patch-name' to disambiguate the patch name from \
+             command line options.\n\
+             \n\
+             An editor will be launched to edit the commit message to be used for the \
+             patch, unless the '--message' flag already specified one. The \
+             'patchdescr.tmpl' template file (if available) is used to pre-fill the \
+             editor.",
         )
         .arg(
             Arg::new("patchname")

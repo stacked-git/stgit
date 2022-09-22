@@ -273,6 +273,11 @@ impl FromStr for PatchName {
     type Err = Error;
 
     fn from_str(name: &str) -> Result<Self, Self::Err> {
+        let name = if name.starts_with("\\-") {
+            name.strip_prefix('\\').unwrap()
+        } else {
+            name
+        };
         Self::validate(name).map(|_| Self(name.into()))
     }
 }
@@ -281,6 +286,10 @@ impl TryFrom<String> for PatchName {
     type Error = Error;
 
     fn try_from(name: String) -> Result<Self, Self::Error> {
+        let mut name = name;
+        if name.starts_with("\\-") {
+            name.remove(0);
+        }
         Self::validate(name.as_str()).map(|_| Self(name))
     }
 }
@@ -299,6 +308,7 @@ mod tests {
             "321_bar",
             "a#patch$",
             "-😼-!",
+            "\\-patch",
             "{@}",
             "@bar.foo",
             "mid.lock.end",
@@ -331,6 +341,7 @@ mod tests {
             "co:lon",
             "not-okay?",
             "abc.",
+            "\\\\-patch",
         ];
         for name in bad_names.iter() {
             assert!(name.parse::<PatchName>().is_err());
