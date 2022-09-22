@@ -2,10 +2,8 @@
 
 //! `stg goto` implementation.
 
-use std::str::FromStr;
-
 use anyhow::{anyhow, Result};
-use clap::{builder::ValueParser, Arg, ArgMatches};
+use clap::{Arg, ArgMatches};
 
 use crate::{
     argset,
@@ -33,7 +31,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patch")
                 .help("Patch to go to")
                 .required(true)
-                .value_parser(ValueParser::new(PatchName::from_str)),
+                .value_parser(clap::value_parser!(PatchName)),
         )
 }
 

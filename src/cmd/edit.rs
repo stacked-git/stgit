@@ -2,10 +2,8 @@
 
 //! `stg edit` implementation.
 
-use std::str::FromStr;
-
 use anyhow::{Context, Result};
-use clap::{builder::ValueParser, Arg, ArgMatches, ValueHint};
+use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
@@ -46,7 +44,7 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("patch")
                 .help("Patch to edit")
-                .value_parser(ValueParser::new(PatchName::from_str))
+                .value_parser(clap::value_parser!(PatchName))
                 .value_hint(ValueHint::Other),
         );
     patchedit::add_args(app, true, true).arg(
