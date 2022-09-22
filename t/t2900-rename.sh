@@ -62,11 +62,6 @@ test_expect_success 'Rename to invalid patch name: colon' '
    grep -e "Invalid patch name \`bar:fo\`" err
 '
 
-test_expect_success 'Rename to name starting with hyphen' '
-   general_error stg rename -- -a-patch 2>err &&
-   grep -e "Invalid patch name \`-a-patch\`" err
-'
-
 test_expect_success 'Rename hidden' '
     stg pop &&
     stg hide bar &&

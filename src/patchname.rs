@@ -217,8 +217,6 @@ impl PatchName {
                 } else if prev == '.' {
                     return Err(Error::invalid(name, "patch name may not contain '..'"));
                 }
-            } else if c == '-' && i == 0 {
-                return Err(Error::invalid(name, "patch name may not start with '-'"));
             } else if prev == '@' && c == '{' {
                 return Err(Error::invalid(name, "patch name may not contain '@{'"));
             } else if c.is_ascii_whitespace() {
@@ -300,7 +298,7 @@ mod tests {
             "123-foo",
             "321_bar",
             "a#patch$",
-            "😼-!",
+            "-😼-!",
             "{@}",
             "@bar.foo",
             "mid.lock.end",
@@ -333,7 +331,6 @@ mod tests {
             "co:lon",
             "not-okay?",
             "abc.",
-            "-😼-!",
         ];
         for name in bad_names.iter() {
             assert!(name.parse::<PatchName>().is_err());
