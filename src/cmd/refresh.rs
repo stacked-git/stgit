@@ -171,7 +171,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &stack,
         &config,
         matches,
-        matches.contains_id("update").then(|| &patchname),
+        matches.contains_id("update").then_some(&patchname),
     )?;
 
     let mut log_msg = "refresh ".to_string();
