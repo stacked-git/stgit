@@ -51,8 +51,19 @@ pub(super) fn command() -> clap::Command<'static> {
              a `--` separator. See the git-format-patch(1) man page.",
         )
         .override_usage(
-            "stg email format [OPTIONS] <patch>... [-- <GIT-OPTIONS>]\n    \
+            "stg email format [OPTIONS] ((-p <patch>)...|<patch>...) [-- <GIT-OPTIONS>]\n    \
              stg email format [OPTIONS] --all [-- <GIT-OPTIONS>]",
+        )
+        .arg(
+            Arg::new("patchranges-opt")
+                .long("patch")
+                .short('p')
+                .help("Patches to format")
+                .value_name("patch")
+                .multiple_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
+                .conflicts_with_all(&["patchranges", "all"])
+                .required_unless_present_any(&["patchranges", "all"]),
         )
         .arg(
             Arg::new("patchranges")
@@ -60,8 +71,8 @@ pub(super) fn command() -> clap::Command<'static> {
                 .value_name("patch")
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with("all")
-                .required_unless_present_any(&["all"]),
+                .conflicts_with_all(&["patchranges-opt", "all"])
+                .required_unless_present_any(&["patchranges-opt", "all"]),
         )
         .arg(
             Arg::new("git-format-patch-opts")
@@ -424,26 +435,28 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, argset::get_one_str(matches, "branch"))?;
 
-    let patches =
-        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
-            let patches = patchrange::contiguous_patches_from_specs(
-                range_specs,
-                &stack,
-                patchrange::Allow::VisibleWithAppliedBoundary,
-            )?;
-            if patches.is_empty() {
-                return Err(anyhow!("No patches to send"));
-            }
-            patches
-        } else if matches.contains_id("all") {
-            let applied = stack.applied();
-            if applied.is_empty() {
-                return Err(Error::NoAppliedPatches.into());
-            }
-            applied.to_vec()
-        } else {
-            panic!("expect either patchranges or -a/--all")
-        };
+    let patches = if let Some(range_specs) = matches
+        .get_many::<patchrange::Specification>("patchranges-opt")
+        .or_else(|| matches.get_many::<patchrange::Specification>("patchranges"))
+    {
+        let patches = patchrange::contiguous_patches_from_specs(
+            range_specs,
+            &stack,
+            patchrange::Allow::VisibleWithAppliedBoundary,
+        )?;
+        if patches.is_empty() {
+            return Err(anyhow!("No patches to send"));
+        }
+        patches
+    } else if matches.contains_id("all") {
+        let applied = stack.applied();
+        if applied.is_empty() {
+            return Err(Error::NoAppliedPatches.into());
+        }
+        applied.to_vec()
+    } else {
+        panic!("expect either patchranges or -a/--all")
+    };
 
     for patchname in &patches {
         if stack.get_patch_commit(patchname).is_no_change()? {

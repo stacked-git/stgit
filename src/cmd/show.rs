@@ -31,8 +31,25 @@ fn make() -> clap::Command<'static> {
              The output is similar to 'git show'.",
         )
         .override_usage(
-            "stg show [OPTIONS] [patch-or-rev]... [-- <path>...]\n    \
+            "stg show [OPTIONS] ([-p patch-or-rev]...|[patch-or-rev]...) [-- <path>...]\n    \
              stg show [OPTIONS] [-A] [-U] [-H] [-- <path>...]",
+        )
+        .arg(
+            Arg::new("patchranges-all-opt")
+                .long("patch")
+                .short('p')
+                .help("Patches or revisions to show")
+                .long_help(
+                    "Patches or revisions to show.\n\
+                     \n\
+                     A patch name, patch range of the form \
+                     '[begin-patch]..[end-patch]', or any valid Git revision \
+                     may be specified.",
+                )
+                .value_name("patch-or-rev")
+                .multiple_values(true)
+                .value_parser(clap::value_parser!(patchrange::Specification))
+                .conflicts_with_all(&["patchranges-all", "applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("patchranges-all")
@@ -47,7 +64,7 @@ fn make() -> clap::Command<'static> {
                 .value_name("patch-or-rev")
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["applied", "unapplied", "hidden"]),
+                .conflicts_with_all(&["patchranges-all-opt", "applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("pathspecs")
@@ -114,7 +131,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
+    if let Some(range_specs) = matches
+        .get_many::<patchrange::Specification>("patchranges-all-opt")
+        .or_else(|| matches.get_many::<patchrange::Specification>("patchranges-all"))
+    {
         for spec in range_specs {
             match patchrange::patches_from_specs(
                 [spec],
