@@ -188,7 +188,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if opt_settree {
-                for (i, patchname) in (&patches).iter().enumerate() {
+                for (i, patchname) in patches.iter().enumerate() {
                     let is_last = i + 1 == patches.len();
                     trans.push_tree(patchname, is_last)?;
                 }
