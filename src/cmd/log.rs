@@ -45,7 +45,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("diff")
                 .long("diff")
                 .short('d')
-                .help("Show stack state diffs"),
+                .help("Show stack state diffs")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("number")
@@ -59,13 +60,15 @@ fn make() -> clap::Command<'static> {
             Arg::new("full")
                 .long("full")
                 .short('f')
-                .help("Show using full commit log format"),
+                .help("Show using full commit log format")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("graphical")
                 .long("graphical")
                 .short('g')
                 .help("Run gitk instead of printing to stdout")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["diff", "number", "full"]),
         )
         .arg(
@@ -73,6 +76,7 @@ fn make() -> clap::Command<'static> {
                 .long("clear")
                 .help("Clear the stack history")
                 // .exclusive(true),
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["patchranges-all", "diff", "number", "full", "graphical"]),
         )
 }
@@ -82,7 +86,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_branch = argset::get_one_str(matches, "branch");
     let mut stack = Stack::from_branch(&repo, opt_branch)?;
 
-    if matches.contains_id("clear") {
+    if matches.get_flag("clear") {
         stack.clear_state_log("clear log")
     } else {
         let pathspecs: Option<Vec<String>> = if let Some(range_specs) =
@@ -106,7 +110,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let stupid = repo.stupid();
 
-        if matches.contains_id("graphical") {
+        if matches.get_flag("graphical") {
             stupid.gitk(simplified_parent_id, pathspecs)
         } else {
             let num_commits = matches.get_one::<usize>("number").copied();
@@ -115,8 +119,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 pathspecs,
                 num_commits,
                 crate::color::use_color(matches),
-                matches.contains_id("full"),
-                matches.contains_id("diff"),
+                matches.get_flag("full"),
+                matches.get_flag("diff"),
             )
         }
     }

@@ -65,7 +65,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .value_name("source")
                 .multiple_values(true)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .conflicts_with("all")
+                .conflicts_with_all(&["all", "dump-aliases"])
                 .required_unless_present_any(&["all", "dump-aliases"]),
         )
         .arg(
@@ -80,7 +80,9 @@ pub(super) fn command() -> clap::Command<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("Send all applied patches"),
+                .help("Send all applied patches")
+                .action(clap::ArgAction::SetTrue)
+                .conflicts_with_all(&["patchranges-or-paths", "dump-aliases"]),
         )
         .next_help_heading("COMPOSE OPTIONS")
         .args(compose_options())
@@ -223,14 +225,16 @@ fn compose_options() -> Vec<Arg<'static>> {
                  \n\
                  See the CONFIGURATION section of git-send-email(1) for \
                  sendemail.multiEdit.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("annotate")
             .long("annotate")
             .help("Review each patch that will be sent in an editor")
             .long_help(
                 "Review and edit each patch you are about to send. Default is the \
                  value of sendemail.annotate.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
     ]
 }
 
@@ -268,7 +272,8 @@ fn automate_options() -> Vec<Arg<'static>> {
                  `git format-patch` can be configured to do the threading itself). \
                  Failure to do so may not produce the expected result in the \
                  recipient’s MUA.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
     ]
 }
 
@@ -303,15 +308,17 @@ fn administer_options() -> Vec<Arg<'static>> {
             .long_help(
                 "Make git-send-email less verbose. One line per email should be all \
                  that is output.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("dry-run")
             .long("dry-run")
             .help("Do not actually send the emails")
-            .long_help("Do everything except actually send the emails."),
+            .long_help("Do everything except actually send the emails.")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("dump-aliases")
             .long("dump-aliases")
             .help("Dump configured aliases and exit")
-            .conflicts_with_all(&["patchranges-or-paths", "all"]),
+            .action(clap::ArgAction::SetTrue),
     ]
 }
 
@@ -320,11 +327,13 @@ fn format_options() -> Vec<Arg<'static>> {
         Arg::new("numbered")
             .long("numbered")
             .short('n')
-            .help("Use [PATCH n/m] even with a single patch"),
+            .help("Use [PATCH n/m] even with a single patch")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("no-numbered")
             .long("no-numbered")
             .short('N')
             .help("Use [PATCH] even with multiple patches")
+            .action(clap::ArgAction::SetTrue)
             .conflicts_with("numbered"),
         Arg::new("start-number")
             .long("start-number")
@@ -339,7 +348,8 @@ fn format_options() -> Vec<Arg<'static>> {
             .takes_value(true),
         Arg::new("rfc")
             .long("rfc")
-            .help("Use [RFC PATCH] instead of [PATCH]"),
+            .help("Use [RFC PATCH] instead of [PATCH]")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("subject-prefix")
             .long("subject-prefix")
             .help("Use [<prefix>] instead of [PATCH]")
@@ -351,7 +361,7 @@ fn format_options() -> Vec<Arg<'static>> {
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
 
-    if matches.contains_id("dump-aliases") {
+    if matches.get_flag("dump-aliases") {
         return repo.stupid().send_email_dump_aliases();
     }
 
@@ -394,7 +404,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 vec![format!("{base}..{last}")]
             }
         }
-    } else if matches.contains_id("all") {
+    } else if matches.get_flag("all") {
         let applied = stack.applied();
         if applied.is_empty() {
             return Err(Error::NoAppliedPatches.into());
@@ -413,35 +423,32 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = Vec::new();
 
-    let passthrough_args = vec![
-        compose_options(),
-        automate_options(),
-        administer_options(),
-        format_options(),
-    ];
+    let mut dummy_command = clap::Command::new("dummy")
+        .args(compose_options())
+        .args(automate_options())
+        .args(administer_options())
+        .args(format_options());
+    dummy_command.build();
 
-    for arg in passthrough_args.into_iter().flatten() {
-        if let Some(indices) = matches.indices_of(arg.get_id()) {
-            let indices = indices.collect::<Vec<_>>();
-            let values = matches
-                .get_many::<String>(arg.get_id())
-                .unwrap()
-                .collect::<Vec<_>>();
-            let long = arg.get_long().expect("arg has long option");
-            if values.is_empty() {
-                for index in indices {
-                    send_args.push((index, format!("--{long}")));
-                }
-            } else if indices.len() == values.len() {
-                for (&index, &value) in indices.iter().zip(values.iter()) {
+    for arg in dummy_command.get_arguments() {
+        let arg_id = arg.get_id();
+        if matches!(
+            matches.value_source(arg_id),
+            Some(clap::parser::ValueSource::CommandLine)
+        ) {
+            let num_args =
+                arg.get_num_vals()
+                    .unwrap_or_else(|| if arg.is_takes_value_set() { 1 } else { 0 });
+            let long = arg.get_long().expect("passthrough arg has long option");
+            let indices = matches.indices_of(arg_id).expect("value source is cmdline");
+            if num_args > 0 {
+                let values = matches.get_many::<String>(arg_id).unwrap();
+                assert!(indices.len() == values.len());
+                indices.into_iter().zip(values).for_each(|(index, value)| {
                     send_args.push((index, format!("--{long}={value}")));
-                }
+                });
             } else {
-                panic!(
-                    "indices and values length mismatch: {} != {}",
-                    indices.len(),
-                    values.len()
-                );
+                indices.for_each(|index| send_args.push((index, format!("--{long}"))));
             }
         }
     }

@@ -75,7 +75,8 @@ pub(super) fn command() -> clap::Command<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("Format all applied patches"),
+                .help("Format all applied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .next_help_heading("FORMAT OPTIONS")
         .args(format_options())
@@ -105,16 +106,19 @@ fn format_options() -> Vec<Arg<'static>> {
                 "In addition to the patches, generate a cover letter file containing \
                  the branch description, shortlog and the overall diffstat. You can \
                  fill in a description in the file before sending it out.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("numbered")
             .long("numbered")
             .short('n')
-            .help("Use [PATCH n/m] even with a single patch"),
+            .help("Use [PATCH n/m] even with a single patch")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("no-numbered")
             .long("no-numbered")
             .short('N')
             .help("Use [PATCH] even with multiple patches")
-            .conflicts_with("numbered"),
+            .conflicts_with("numbered")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("start-number")
             .long("start-number")
             .help("Start numbering at <n> instead of 1")
@@ -145,7 +149,8 @@ fn format_options() -> Vec<Arg<'static>> {
                 "Alias for --subject-prefix=\"RFC PATCH\". RFC means \"Request For \
                  Comments\"; use this when sending an experimental patch for \
                  discussion rather than application.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("subject-prefix")
             .long("subject-prefix")
             .help("Use [<prefix>] instead of [PATCH]")
@@ -158,7 +163,8 @@ fn format_options() -> Vec<Arg<'static>> {
             .takes_value(true),
         Arg::new("quiet")
             .long("quiet")
-            .help("Do not print the names of the generated files"),
+            .help("Do not print the names of the generated files")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("signoff")
             .long("signoff")
             .short('s')
@@ -167,14 +173,16 @@ fn format_options() -> Vec<Arg<'static>> {
                 "Add a Signed-off-by trailer to the commit message, using the \
                  committer identity of yourself. See the signoff option in \
                  git-commit(1) for more information.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("numbered-files")
             .long("numbered-files")
             .help("Use simple number sequence for output file names")
             .long_help(
                 "Output file names will be a simple number sequence without the \
                  default first line of the commit appended.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("suffix")
             .long("suffix")
             .help("Use <suffix> instead of '.patch'")
@@ -193,7 +201,8 @@ fn format_options() -> Vec<Arg<'static>> {
             .long_help(
                 "Do not strip/add `[PATCH]` from the first line of the commit log \
                  message.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("no-binary")
             .long("no-binary")
             .help("Do not output binary diffs")
@@ -202,14 +211,16 @@ fn format_options() -> Vec<Arg<'static>> {
                  notice that those files changed. Patches generated using this option \
                  cannot be applied properly, but they are still useful for code \
                  review.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("zero-commit")
             .long("zero-commit")
             .help("Output all-zero hash in From header")
             .long_help(
                 "Output an all-zero hash in each patch’s `From` header instead of the \
                  hash of the commit.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         // NO --filename-max-length
         // NO --cover-from-description
         // NO --ignore-if-in-upstream
@@ -236,7 +247,7 @@ fn message_options() -> Vec<Arg<'static>> {
             .long("no-to")
             .help("Discard all To: headers added so far")
             .long_help("Discard all `To:` addresses added so far from config or command line.")
-            .action(clap::ArgAction::Append), // TODO: ArgAction::SetTrue?
+            .action(clap::ArgAction::SetTrue),
         Arg::new("cc")
             .long("cc")
             .help("Specify a Cc: address for each email")
@@ -255,7 +266,7 @@ fn message_options() -> Vec<Arg<'static>> {
             .long("no-cc")
             .help("Discard all Cc: addresses added so far")
             .long_help("Discard all `Cc:` addresses added so far from config or command line.")
-            .action(clap::ArgAction::Append),
+            .action(clap::ArgAction::SetTrue),
         Arg::new("in-reply-to")
             .long("in-reply-to")
             .help("Make first mail a reply to <message-id>")
@@ -289,7 +300,8 @@ fn message_options() -> Vec<Arg<'static>> {
                 "Create multipart/mixed attachment, the first part of which is the \
                  commit message and the patch itself in the second part, with \
                  `Content-Disposition:` attachment.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         // N.B. not supporting the optional mime-boundary value
         Arg::new("inline")
             .long("inline")
@@ -298,7 +310,8 @@ fn message_options() -> Vec<Arg<'static>> {
                 "Create multipart/mixed attachment, the first part of which is the \
                  commit message and the patch itself in the second part, with \
                  `Content-Disposition: inline`.",
-            ),
+            )
+            .action(clap::ArgAction::SetTrue),
         Arg::new("thread")
             .long("thread")
             .help("Enable message threading, styles: shallow or deep")
@@ -332,7 +345,8 @@ fn message_options() -> Vec<Arg<'static>> {
             .require_equals(true),
         Arg::new("no-thread")
             .long("no-thread")
-            .help("Disable message threading"),
+            .help("Disable message threading")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("signature")
             .long("signature")
             .help("Add a signature to each email")
@@ -346,7 +360,8 @@ fn message_options() -> Vec<Arg<'static>> {
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("no-signature")
             .long("no-signature")
-            .help("Do not add a signature to each email"),
+            .help("Do not add a signature to each email")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("signature-file")
             .long("signature-file")
             .help("Add a signature from a file")
@@ -364,7 +379,8 @@ fn message_options() -> Vec<Arg<'static>> {
         Arg::new("progress")
             .long("progress")
             .help("Show progress while generating patches")
-            .long_help("Show progress reports on stderr as patches are generated."),
+            .long_help("Show progress reports on stderr as patches are generated.")
+            .action(clap::ArgAction::SetTrue),
         Arg::new("interdiff")
             .long("interdiff")
             .help("Show changes against <rev> in cover letter")
@@ -435,7 +451,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 return Err(anyhow!("No patches to send"));
             }
             patches
-        } else if matches.contains_id("all") {
+        } else if matches.get_flag("all") {
             let applied = stack.applied();
             if applied.is_empty() {
                 return Err(Error::NoAppliedPatches.into());
@@ -453,34 +469,36 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args: Vec<(usize, String)> = Vec::new();
 
-    let passthrough_args = vec![format_options(), message_options()];
+    // This dummy command is constructed with just the Args that are to be
+    // passed-through directly to `git format-patch`.
+    let mut dummy_command = clap::Command::new("dummy")
+        .args(format_options())
+        .args(message_options());
+    dummy_command.build();
 
-    for arg in passthrough_args.into_iter().flatten() {
-        if let Some(indices) = matches.indices_of(arg.get_id()) {
-            let indices = indices.collect::<Vec<_>>();
-            let values = matches
-                .get_many::<String>(arg.get_id())
-                .unwrap()
-                .collect::<Vec<_>>();
-            let long = arg.get_long().expect("arg has long option");
-            if values.is_empty() {
-                for index in indices {
-                    format_args.push((index, format!("--{long}")));
-                }
-            } else if indices.len() == values.len() {
-                for (&index, &value) in indices.iter().zip(values.iter()) {
-                    if arg.get_id() == "thread" && value.is_empty() {
+    for arg in dummy_command.get_arguments() {
+        let arg_id = arg.get_id();
+        if matches!(
+            matches.value_source(arg_id),
+            Some(clap::parser::ValueSource::CommandLine)
+        ) {
+            let num_args =
+                arg.get_num_vals()
+                    .unwrap_or_else(|| if arg.is_takes_value_set() { 1 } else { 0 });
+            let long = arg.get_long().expect("passthrough arg has long option");
+            let indices = matches.indices_of(arg_id).expect("value source is cmdline");
+            if num_args > 0 {
+                let values = matches.get_many::<String>(arg_id).unwrap();
+                assert!(indices.len() == values.len());
+                indices.into_iter().zip(values).for_each(|(index, value)| {
+                    if arg_id == "thread" && value.is_empty() {
                         format_args.push((index, format!("--{long}")));
                     } else {
                         format_args.push((index, format!("--{long}={value}")));
                     }
-                }
+                });
             } else {
-                panic!(
-                    "indices and values length mismatch: {} != {}",
-                    indices.len(),
-                    values.len()
-                );
+                indices.for_each(|index| format_args.push((index, format!("--{long}"))));
             }
         }
     }

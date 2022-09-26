@@ -56,6 +56,7 @@ fn make() -> clap::Command<'static> {
                 .long("all")
                 .short('a')
                 .help("Pop all applied patches")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("number"),
         )
         .arg(
@@ -78,7 +79,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("spill")
                 .long("spill")
                 .short('s')
-                .help("Keep patches' modifications in working tree after popping"),
+                .help("Keep patches' modifications in working tree after popping")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::keep_arg())
 }
@@ -97,7 +99,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     }
 
-    let mut patches: indexmap::IndexSet<PatchName> = if matches.contains_id("all") {
+    let mut patches: indexmap::IndexSet<PatchName> = if matches.get_flag("all") {
         stack.applied().iter().cloned().collect()
     } else if let Some(number) = opt_number {
         let num_applied = stack.applied().len();
@@ -143,8 +145,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     assert!(!patches.is_empty());
 
-    let opt_keep = matches.contains_id("keep");
-    let opt_spill = matches.contains_id("spill");
+    let keep_flag = matches.get_flag("keep");
+    let spill_flag = matches.get_flag("spill");
     repo.check_repository_state()?;
 
     let stupid = repo.stupid();
@@ -152,7 +154,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
-    if !opt_keep && !opt_spill {
+    if !keep_flag && !spill_flag {
         statuses.check_index_and_worktree_clean()?;
     }
 
@@ -167,7 +169,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    if opt_spill {
+    if spill_flag {
         let topmost_applied: Vec<PatchName> = stack
             .applied()
             .iter()
@@ -189,7 +191,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack
         .setup_transaction()
-        .use_index_and_worktree(!opt_spill)
+        .use_index_and_worktree(!spill_flag)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             trans.reorder_patches(Some(&new_applied), Some(&new_unapplied), None)?;

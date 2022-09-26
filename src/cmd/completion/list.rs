@@ -24,7 +24,8 @@ pub(super) fn command() -> clap::Command<'static> {
             clap::Command::new("aliases").about("List aliases").arg(
                 clap::Arg::new("show-expansion")
                     .long("show-expansion")
-                    .help("Show alias expansion"),
+                    .help("Show alias expansion")
+                    .action(clap::ArgAction::SetTrue),
             ),
         )
         .subcommand(clap::Command::new("commands").about("List StGit commands"))
@@ -66,7 +67,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     match matches.subcommand() {
         Some(("aliases", sub_matches)) => {
-            let show_expansion = sub_matches.contains_id("show-expansion");
+            let show_expansion = sub_matches.get_flag("show-expansion");
             list_aliases(&mut output, style, show_expansion)
         }
         Some(("commands", _)) => list_commands(&mut output, style),

@@ -55,6 +55,7 @@ fn make() -> clap::Command<'static> {
                 .long("all")
                 .short('a')
                 .help("Push all unapplied patches")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("number"),
         )
         .arg(
@@ -76,7 +77,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("reverse")
                 .long("reverse")
-                .help("Push the patches in reverse order"),
+                .help("Push the patches in reverse order")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("noapply")
@@ -84,6 +86,7 @@ fn make() -> clap::Command<'static> {
                 .help("Reorder patches by pushing without applying")
                 .conflicts_with_all(&["all", "number"])
                 .requires("patchranges-unapplied")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["set-tree", "merged"]),
         )
         .arg(
@@ -102,7 +105,8 @@ fn make() -> clap::Command<'static> {
                      the changes. Pushing the original patch with '--set-tree' \
                      will avoid conflicts and only the remaining changes will \
                      be in the patch.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::keep_arg())
         .arg(argset::merged_arg())
@@ -139,7 +143,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         )?
     } else if stack.unapplied().is_empty() {
         return Err(anyhow!("No unapplied patches"));
-    } else if matches.contains_id("all") {
+    } else if matches.get_flag("all") {
         stack.unapplied().to_vec()
     } else if let Some(number) = opt_number {
         let num_unapplied = stack.unapplied().len();
@@ -164,21 +168,21 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     assert!(!patches.is_empty());
 
-    let opt_reverse = matches.contains_id("reverse");
-    let opt_noapply = matches.contains_id("noapply");
-    let opt_settree = matches.contains_id("set-tree");
-    let opt_merged = matches.contains_id("merged");
-    let opt_keep = matches.contains_id("keep");
+    let reverse_flag = matches.get_flag("reverse");
+    let noapply_flag = matches.get_flag("noapply");
+    let settree_flag = matches.get_flag("set-tree");
+    let merged_flag = matches.get_flag("merged");
+    let keep_flag = matches.get_flag("keep");
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
-    if !opt_keep && !opt_noapply {
+    if !keep_flag && !noapply_flag {
         statuses.check_index_and_worktree_clean()?;
     }
 
-    if opt_reverse {
+    if reverse_flag {
         patches.reverse();
     }
 
@@ -187,13 +191,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .use_index_and_worktree(true)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
-            if opt_settree {
+            if settree_flag {
                 for (i, patchname) in patches.iter().enumerate() {
                     let is_last = i + 1 == patches.len();
                     trans.push_tree(patchname, is_last)?;
                 }
                 Ok(())
-            } else if opt_noapply {
+            } else if noapply_flag {
                 let mut unapplied = patches.clone();
                 unapplied.extend(
                     trans
@@ -204,7 +208,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 );
                 trans.reorder_patches(None, Some(&unapplied), None)
             } else {
-                trans.push_patches(&patches, opt_merged)
+                trans.push_patches(&patches, merged_flag)
             }
         })
         .execute("push")?;

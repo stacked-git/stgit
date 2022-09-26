@@ -55,7 +55,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("noapply")
                 .long("noapply")
-                .help("Reorder patches without reapplying any patches"),
+                .help("Reorder patches without reapplying any patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("series")
@@ -74,8 +75,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     let stupid = repo.stupid();
 
-    let opt_noapply = matches.contains_id("noapply");
-    let opt_keep = matches.contains_id("keep");
+    let noapply_flag = matches.get_flag("noapply");
+    let keep_flag = matches.get_flag("keep");
     let opt_series = matches.get_one::<PathBuf>("series").map(|p| p.as_path());
 
     repo.check_repository_state()?;
@@ -96,11 +97,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(anyhow!("No patches to float"));
     }
 
-    if !opt_keep && (!opt_noapply || patches.iter().any(|pn| stack.is_applied(pn))) {
+    if !keep_flag && (!noapply_flag || patches.iter().any(|pn| stack.is_applied(pn))) {
         statuses.check_index_and_worktree_clean()?;
     }
 
-    let (applied, unapplied) = if opt_noapply {
+    let (applied, unapplied) = if noapply_flag {
         let applied: Vec<PatchName> = stack
             .applied()
             .iter()

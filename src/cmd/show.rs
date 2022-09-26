@@ -62,7 +62,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("stat")
                 .long("stat")
                 .short('s')
-                .help("Show a diffstat summary instead of the full diff"),
+                .help("Show a diffstat summary instead of the full diff")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::diff_opts_arg())
         .next_help_heading("SELECTION OPTIONS")
@@ -70,19 +71,22 @@ fn make() -> clap::Command<'static> {
             Arg::new("applied")
                 .long("applied")
                 .short('A')
-                .help("Show the applied patches"),
+                .help("Show the applied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("unapplied")
                 .long("unapplied")
                 .short('U')
-                .help("Show the unapplied patches"),
+                .help("Show the unapplied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("hidden")
                 .long("hidden")
                 .short('H')
-                .help("Show the hidden patches"),
+                .help("Show the hidden patches")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -92,24 +96,24 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, opt_branch)?;
     let config = repo.config()?;
 
-    let opt_stat = matches.contains_id("stat");
-    let opt_applied = matches.contains_id("applied");
-    let opt_unapplied = matches.contains_id("unapplied");
-    let opt_hidden = matches.contains_id("hidden");
+    let stat_flag = matches.get_flag("stat");
+    let applied_flag = matches.get_flag("applied");
+    let unapplied_flag = matches.get_flag("unapplied");
+    let hidden_flag = matches.get_flag("hidden");
 
     let mut oids: Vec<git2::Oid> = Vec::new();
 
-    if opt_applied {
+    if applied_flag {
         for patchname in stack.applied() {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if opt_unapplied {
+    if unapplied_flag {
         for patchname in stack.unapplied() {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if opt_hidden {
+    if hidden_flag {
         for patchname in stack.hidden() {
             oids.push(stack.get_patch(patchname).commit.id());
         }
@@ -163,14 +167,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 }
             }
         }
-    } else if !opt_applied && !opt_unapplied && !opt_hidden {
+    } else if !applied_flag && !unapplied_flag && !hidden_flag {
         oids.push(stack.branch_head.id());
     }
 
     repo.stupid().show(
         oids,
         matches.get_many::<PathBuf>("pathspecs"),
-        opt_stat,
+        stat_flag,
         crate::color::use_color(matches),
         &argset::get_diff_opts(matches, &config, false, false),
     )

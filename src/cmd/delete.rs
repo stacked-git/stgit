@@ -49,13 +49,15 @@ fn make() -> clap::Command<'static> {
                      index and worktree.\n\
                      \n\
                      This can be useful for splitting a patch into smaller pieces.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("top")
                 .long("top")
                 .short('t')
-                .help("Delete topmost patch"),
+                .help("Delete topmost patch")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::branch_arg())
 }
@@ -64,9 +66,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
-    let opt_spill = matches.contains_id("spill");
+    let spill_flag = matches.get_flag("spill");
 
-    let patches: Vec<PatchName> = if matches.contains_id("top") {
+    let patches: Vec<PatchName> = if matches.get_flag("top") {
         if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {
@@ -83,7 +85,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         )?
     };
 
-    if opt_spill
+    if spill_flag
         && stack
             .applied()
             .iter()
@@ -105,7 +107,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack
         .setup_transaction()
-        .use_index_and_worktree(opt_branch.is_none() && !opt_spill)
+        .use_index_and_worktree(opt_branch.is_none() && !spill_flag)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             let to_push = trans.delete_patches(|pn| patches.contains(pn))?;

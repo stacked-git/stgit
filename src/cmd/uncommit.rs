@@ -79,7 +79,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("exclusive")
                 .long("exclusive")
                 .short('x')
-                .help("Exclude the commit specified by the --to option"),
+                .help("Exclude the commit specified by the --to option")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -107,7 +108,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             target_commit = repo.find_commit(bases[0])?;
             true
         } else {
-            matches.contains_id("exclusive")
+            matches.get_flag("exclusive")
         };
 
         if exclusive {

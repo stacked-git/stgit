@@ -84,6 +84,7 @@ fn make() -> clap::Command<'static> {
                      tree as if \"stg refresh\" was run. \
                      Use \"--index\" to refresh from the index instead of the work tree.",
                 )
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("save-template"),
         )
         .arg(
@@ -97,6 +98,7 @@ fn make() -> clap::Command<'static> {
                      of the index.",
                 )
                 .requires("refresh")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["pathspecs", "submodules", "force"]),
         )
         .arg(
@@ -113,6 +115,7 @@ fn make() -> clap::Command<'static> {
                      unstaged changes.",
                 )
                 .requires("refresh")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("index"),
         )
         .arg(
@@ -120,12 +123,14 @@ fn make() -> clap::Command<'static> {
                 .long("submodules")
                 .short('s')
                 .help("Include submodules in patch content")
+                .action(clap::ArgAction::SetTrue)
                 .requires("refresh"),
         )
         .arg(
             Arg::new("no-submodules")
                 .long("no-submodules")
                 .help("Exclude submodules in patch content")
+                .action(clap::ArgAction::SetTrue)
                 .requires("refresh"),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
@@ -155,7 +160,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let config = repo.config()?;
 
-    let is_refreshing = matches.contains_id("refresh") || matches.contains_id("pathspecs");
+    let is_refreshing = matches.get_flag("refresh") || matches.contains_id("pathspecs");
 
     let tree_id = if is_refreshing {
         refresh::assemble_refresh_tree(&stack, &config, matches, None)?

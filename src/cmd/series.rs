@@ -60,32 +60,37 @@ fn make() -> clap::Command<'static> {
                 .long("all")
                 .short('a')
                 .help("Select all patches, including hidden patches")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("short")
                 .long("short")
                 .short('s')
-                .help("Select patches around the topmost patch only"),
+                .help("Select patches around the topmost patch only")
+                .action(clap::ArgAction::SetTrue),
         )
         .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
         .arg(
             Arg::new("applied")
                 .long("applied")
                 .short('A')
-                .help("Select the applied patches only"),
+                .help("Select the applied patches only")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("unapplied")
                 .long("unapplied")
                 .short('U')
-                .help("Select the unapplied patches only"),
+                .help("Select the unapplied patches only")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("hidden")
                 .long("hidden")
                 .short('H')
-                .help("Select the hidden patches only"),
+                .help("Select the hidden patches only")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("missing")
@@ -100,13 +105,15 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("author")
                 .long("author")
-                .help("Display author name for each patch"),
+                .help("Display author name for each patch")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("count")
                 .long("count")
                 .short('c')
                 .help("Display the number of selected patches and exit")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&[
                     "description",
                     "author",
@@ -141,12 +148,14 @@ fn make() -> clap::Command<'static> {
                 .long("description")
                 .short('d')
                 .help("Display short description for each patch")
+                .action(clap::ArgAction::SetTrue)
                 .overrides_with("no-description"),
         )
         .arg(
             Arg::new("no-description")
                 .long("no-description")
                 .help("Do not display the patch description")
+                .action(clap::ArgAction::SetTrue)
                 .overrides_with("description"),
         )
         .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
@@ -159,19 +168,22 @@ fn make() -> clap::Command<'static> {
                     "Before the '+', '>', '-', and '!' prefixes, print \
                      a column that contains either '0' (for empty \
                      patches) or a space (for non-empty patches).",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("no-prefix")
                 .long("no-prefix")
                 .alias("noprefix")
                 .short('P')
-                .help("Do not display the patch status prefix"),
+                .help("Do not display the patch status prefix")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("show-branch")
                 .long("showbranch")
-                .help("Display the branch name with the listed patches"),
+                .help("Display the branch name with the listed patches")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -216,10 +228,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         (Stack::from_branch(&repo, opt_branch)?, None)
     };
 
-    let opt_all = matches.contains_id("all");
-    let opt_applied = matches.contains_id("applied");
-    let opt_unapplied = matches.contains_id("unapplied");
-    let opt_hidden = matches.contains_id("hidden");
+    let all_flag = matches.get_flag("all");
+    let applied_flag = matches.get_flag("applied");
+    let unapplied_flag = matches.get_flag("unapplied");
+    let hidden_flag = matches.get_flag("hidden");
 
     let mut patches: Vec<(PatchName, git2::Oid, char)> = vec![];
 
@@ -243,9 +255,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
             patches.push((patchname, commit_id, sigil));
         }
     } else {
-        let show_applied = opt_applied || opt_all || !(opt_unapplied || opt_hidden);
-        let show_unapplied = opt_unapplied || opt_all || !(opt_applied || opt_hidden);
-        let show_hidden = opt_hidden || opt_all;
+        let show_applied = applied_flag || all_flag || !(unapplied_flag || hidden_flag);
+        let show_unapplied = unapplied_flag || all_flag || !(applied_flag || hidden_flag);
+        let show_hidden = hidden_flag || all_flag;
 
         if show_applied {
             if let Some((last_patchname, rest)) = stack.applied().split_last() {
@@ -281,7 +293,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         });
     }
 
-    if matches.contains_id("short") {
+    if matches.get_flag("short") {
         let shortnr = repo
             .config()
             .and_then(|config| config.get_i32("stgit.shortnr"))
@@ -300,29 +312,29 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    if matches.contains_id("count") {
+    if matches.get_flag("count") {
         println!("{}", patches.len());
         return Ok(());
     }
 
     let opt_commit_id = matches.get_one::<CommitIdLength>("commit-id");
-    let opt_description = matches.contains_id("description");
-    let opt_author = matches.contains_id("author");
+    let description_flag = matches.get_flag("description");
+    let author_flag = matches.get_flag("author");
 
     let branch_prefix = format!("{}:", &stack.branch_name);
-    let branch_prefix = if matches.contains_id("show-branch") {
+    let branch_prefix = if matches.get_flag("show-branch") {
         branch_prefix.as_str()
     } else {
         ""
     };
 
-    let patchname_width = if opt_commit_id.is_some() || opt_description || opt_author {
+    let patchname_width = if opt_commit_id.is_some() || description_flag || author_flag {
         patches.iter().map(|(pn, _, _)| pn.len()).max().unwrap_or(0)
     } else {
         0
     };
 
-    let author_width: usize = if opt_author && opt_description {
+    let author_width: usize = if author_flag && description_flag {
         patches
             .iter()
             .map(|(_, commit_id, _)| -> usize {
@@ -339,8 +351,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         0
     };
 
-    let opt_no_prefix = matches.contains_id("no-prefix");
-    let opt_empty = matches.contains_id("empty");
+    let no_prefix_flag = matches.get_flag("no-prefix");
+    let empty_flag = matches.get_flag("empty");
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
@@ -348,7 +360,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     for (patchname, commit_id, sigil) in patches {
         let commit = repo.find_commit(commit_id)?;
 
-        if opt_empty {
+        if empty_flag {
             if commit.is_no_change()? {
                 stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
                 write!(stdout, "0")?;
@@ -358,7 +370,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             }
         }
 
-        if !opt_no_prefix {
+        if !no_prefix_flag {
             let sigil_color = match sigil {
                 '+' => Some(termcolor::Color::Green),
                 '>' => Some(termcolor::Color::Blue),
@@ -396,7 +408,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         write!(stdout, "{branch_prefix}{patchname:patchname_width$}")?;
 
-        if opt_author {
+        if author_flag {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Black)))?;
             write!(stdout, " # ")?;
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
@@ -408,7 +420,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 write!(stdout, "{name:author_width$}")?;
             }
         }
-        if opt_description {
+        if description_flag {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Black)))?;
             write!(stdout, " #")?;
             if let Some(summary) = commit.summary() {

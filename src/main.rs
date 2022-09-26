@@ -64,7 +64,8 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
         .arg(
             clap::Arg::new("version")
                 .long("version")
-                .help("Print version information"),
+                .help("Print version information")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             clap::Arg::new("change-dir")
@@ -110,7 +111,8 @@ fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::
             clap::Arg::new("help-option")
                 .short('h')
                 .long("help")
-                .help("Print help information"),
+                .help("Print help information")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -157,7 +159,7 @@ fn main() -> ! {
     if let Ok(matches) = get_bootstrap_command(color_choice).try_get_matches_from(&argv) {
         // N.B. changing directories here, early, affects which aliases will ultimately
         // be found.
-        if matches.contains_id("version") {
+        if matches.get_flag("version") {
             execute_command(
                 &self::cmd::version::STGIT_COMMAND,
                 vec![argv[0].clone(), OsString::from("version")],
@@ -165,7 +167,7 @@ fn main() -> ! {
             )
         } else if let Err(e) = change_directories(&matches) {
             exit_with_result(Err(e), color_choice)
-        } else if matches.contains_id("help-option") {
+        } else if matches.get_flag("help-option") {
             full_app_help(argv, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
             // If the name matches any known subcommands, then only the Command for that

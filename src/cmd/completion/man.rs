@@ -293,28 +293,36 @@ fn add_options(
         if i == 0 {
             write_underlined(section, header_name, header_underline);
         }
-        let value_str = if let Some(value_names) = arg.get_value_names() {
-            let mut value_str = String::new();
-            for (i, name) in value_names.iter().enumerate() {
-                if i > 0 {
-                    value_str.push(' ');
+        let value_str = if arg.get_action().takes_values() {
+            if let Some(value_names) = arg.get_value_names() {
+                let mut value_str = String::new();
+                for (i, name) in value_names.iter().enumerate() {
+                    if i > 0 {
+                        value_str.push(' ');
+                    }
+                    value_str.push('<');
+                    value_str.push_str(name);
+                    value_str.push('>');
                 }
-                value_str.push('<');
-                value_str.push_str(name);
-                value_str.push('>');
-            }
-            value_str
-        } else if let Some(possible_values) = arg.get_value_parser().possible_values() {
-            let mut value_str = String::new();
-            value_str.push('(');
-            for (i, possible_value) in possible_values.filter(|pv| !pv.is_hide_set()).enumerate() {
-                if i > 0 {
-                    value_str.push('|');
+                value_str
+            } else {
+                let possible_values = arg
+                    .get_value_parser()
+                    .possible_values()
+                    .expect("arg that takes value has either value names or possible values");
+                let mut value_str = String::new();
+                value_str.push('(');
+                for (i, possible_value) in
+                    possible_values.filter(|pv| !pv.is_hide_set()).enumerate()
+                {
+                    if i > 0 {
+                        value_str.push('|');
+                    }
+                    value_str.push_str(possible_value.get_name());
                 }
-                value_str.push_str(possible_value.get_name());
+                value_str.push(')');
+                value_str
             }
-            value_str.push(')');
-            value_str
         } else {
             String::new()
         };

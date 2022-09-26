@@ -54,7 +54,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("stat")
                 .long("stat")
                 .short('s')
-                .help("Show the stat instead of the diff"),
+                .help("Show the stat instead of the diff")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::diff_opts_arg())
 }
@@ -86,7 +87,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     repo.stupid().diff(
         &revspec,
         matches.get_many::<PathBuf>("pathspecs"),
-        matches.contains_id("stat"),
+        matches.get_flag("stat"),
         crate::color::use_color(matches),
         &argset::get_diff_opts(matches, &config, false, false),
     )

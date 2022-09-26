@@ -22,6 +22,7 @@ pub(crate) fn keep_arg() -> Arg<'static> {
         .long("keep")
         .short('k')
         .help("Keep the local changes")
+        .action(clap::ArgAction::SetTrue)
 }
 
 /// The `--merged` option checking for already-merged patches before pushes.
@@ -30,6 +31,7 @@ pub(crate) fn merged_arg() -> Arg<'static> {
         .long("merged")
         .short('m')
         .help("Check for patches merged upstream")
+        .action(clap::ArgAction::SetTrue)
 }
 
 /// The `--diff-opts`/`-O` option for pass-through to subordinate `git` processes.

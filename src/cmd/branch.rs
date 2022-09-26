@@ -167,7 +167,8 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("force")
                         .long("force")
-                        .help("Force deletion even if branch has patches"),
+                        .help("Force deletion even if branch has patches")
+                        .action(clap::ArgAction::SetTrue),
                 ),
         )
         .subcommand(
@@ -191,7 +192,8 @@ fn make() -> clap::Command<'static> {
                 .arg(
                     Arg::new("force")
                         .long("force")
-                        .help("Force clean up even if branch has patches"),
+                        .help("Force clean up even if branch has patches")
+                        .action(clap::ArgAction::SetTrue),
                 ),
         )
         .subcommand(
@@ -216,6 +218,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("merge")
                 .long("merge")
                 .help("Merge work tree changes into the other branch")
+                .action(clap::ArgAction::SetTrue)
                 .requires("branch-any"),
         )
         .arg(
@@ -250,7 +253,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             } else {
                 let stupid = repo.stupid();
                 let statuses = stupid.statuses(None)?;
-                if !matches.contains_id("merge") {
+                if !matches.get_flag("merge") {
                     statuses.check_worktree_clean()?;
                 }
                 statuses.check_conflicts()?;
@@ -607,7 +610,7 @@ fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     if let Ok(stack) = Stack::from_branch(&repo, Some(target_branchname)) {
         if stack.is_protected(&config) {
             return Err(anyhow!("Delete not permitted: this branch is protected"));
-        } else if !matches.contains_id("force") && stack.all_patches().count() > 0 {
+        } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
             return Err(anyhow!(
                 "Delete not permitted: the series still contains patches (override with --force)"
             ));
@@ -624,7 +627,7 @@ fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let config = repo.config()?;
     if stack.is_protected(&config) {
         return Err(anyhow!("Clean up not permitted: this branch is protected"));
-    } else if !matches.contains_id("force") && stack.all_patches().count() > 0 {
+    } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
         return Err(anyhow!(
             "Clean up not permitted: the series still contains patches (override with --force)"
         ));

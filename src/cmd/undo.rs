@@ -46,7 +46,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("hard")
                 .long("hard")
-                .help("Discard changes in the index and worktree"),
+                .help("Discard changes in the index and worktree")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -59,7 +60,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .setup_transaction()
         .use_index_and_worktree(true)
         .allow_bad_head(true)
-        .discard_changes(matches.contains_id("hard"))
+        .discard_changes(matches.get_flag("hard"))
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             let undo_state = find_undo_state(trans.stack(), undo_steps)?;

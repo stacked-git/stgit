@@ -50,7 +50,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("Synchronize all applied patches"),
+                .help("Synchronize all applied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .group(
             ArgGroup::new("which-patches")
@@ -88,7 +89,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
 
-    let patches: Vec<PatchName> = if matches.contains_id("all") {
+    let patches: Vec<PatchName> = if matches.get_flag("all") {
         stack.applied().to_vec()
     } else if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
         patchrange::contiguous_patches_from_specs(

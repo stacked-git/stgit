@@ -75,7 +75,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("update")
                 .long("update")
                 .short('u')
-                .help("Only update the current patch files"),
+                .help("Only update the current patch files")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("index")
@@ -87,6 +88,7 @@ fn make() -> clap::Command<'static> {
                      contents of the worktree, set it to the current \
                      contents of the index.",
                 )
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["pathspecs", "update", "submodules", "force"]),
         )
         .arg(
@@ -98,7 +100,8 @@ fn make() -> clap::Command<'static> {
                     "Instead of warning the user when some work has \
                      already been staged (such as with git add \
                      interactive mode) force a full refresh.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("patch")
@@ -124,26 +127,29 @@ fn make() -> clap::Command<'static> {
                 .long("submodules")
                 .short('s')
                 .help("Include submodules in patch content")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["update"]),
         )
         .arg(
             Arg::new("no-submodules")
                 .long("no-submodules")
-                .help("Exclude submodules in patch content"),
+                .help("Exclude submodules in patch content")
+                .action(clap::ArgAction::SetTrue),
         )
         .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]))
         .arg(
             Arg::new("spill")
                 .long("spill")
                 .help("OBSOLETE: use 'stg spill'")
-                .hide(true),
+                .hide(true)
+                .action(clap::ArgAction::SetTrue),
         );
 
     patchedit::add_args(app, true, false)
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    if matches.contains_id("spill") {
+    if matches.get_flag("spill") {
         return Err(anyhow!(
             "`stg refresh --spill` is obsolete; use `stg spill` instead"
         ));
@@ -171,7 +177,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &stack,
         &config,
         matches,
-        matches.contains_id("update").then_some(&patchname),
+        matches.get_flag("update").then_some(&patchname),
     )?;
 
     let mut log_msg = "refresh ".to_string();
@@ -431,18 +437,18 @@ pub(crate) fn assemble_refresh_tree(
     let is_path_limiting = limit_to_patchname.is_some() || opt_pathspecs.is_some();
     let statuses;
 
-    let refresh_paths = if matches.contains_id("index") {
+    let refresh_paths = if matches.get_flag("index") {
         // When refreshing from the index, no path limiting may be used.
         assert!(!is_path_limiting);
         IndexSet::new()
     } else {
         let maybe_patch_commit = limit_to_patchname.map(|pn| stack.get_patch_commit(pn));
-        let opt_submodules = matches.contains_id("submodules");
-        let opt_nosubmodules = matches.contains_id("no-submodules");
-        let use_submodules = if !opt_submodules && !opt_nosubmodules {
+        let submodules_flag = matches.get_flag("submodules");
+        let nosubmodules_flag = matches.get_flag("no-submodules");
+        let use_submodules = if !submodules_flag && !nosubmodules_flag {
             config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
         } else {
-            opt_submodules
+            submodules_flag
         };
         let mut status_opts = StatusOptions::default();
         status_opts.include_submodules(use_submodules);
@@ -455,14 +461,14 @@ pub(crate) fn assemble_refresh_tree(
             &stupid,
             &statuses,
             maybe_patch_commit,
-            matches.contains_id("force"),
+            matches.get_flag("force"),
         )?
     };
 
     let tree_id = write_tree(stack, &refresh_paths, is_path_limiting)?;
 
-    let tree_id = if matches.contains_id("no-verify")
-        || !run_pre_commit_hook(stack.repo, matches.contains_id("edit"))?
+    let tree_id = if matches.get_flag("no-verify")
+        || !run_pre_commit_hook(stack.repo, matches.get_flag("edit"))?
         || stupid.diff_index_quiet(tree_id)?
     {
         tree_id

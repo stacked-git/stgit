@@ -73,6 +73,7 @@ fn make() -> clap::Command<'static> {
                 .long("revert")
                 .short('r')
                 .help("Revert the given commit object")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("expose"),
         )
         .arg(
@@ -80,12 +81,14 @@ fn make() -> clap::Command<'static> {
                 .long("expose")
                 .short('x')
                 .help("Append the imported commit id to the patch log")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["fold", "update"]),
         )
         .arg(
             Arg::new("noapply")
                 .long("noapply")
                 .help("Keep the imported patch unapplied")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["fold", "update"]),
         )
         .arg(
@@ -109,12 +112,14 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("fold")
                 .long("fold")
-                .help("Fold the commit object into the current patch"),
+                .help("Fold the commit object into the current patch")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("update")
                 .long("update")
                 .help("Like fold but only update the current patch's files")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("fold"),
         )
         .arg(
@@ -134,14 +139,12 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     let ref_branchname = crate::argset::get_one_str(matches, "ref-branch");
     let ref_stack = Stack::from_branch(&repo, ref_branchname)?;
-    let fold = matches.contains_id("fold");
-    let update = matches.contains_id("update");
 
-    if update && stack.applied().is_empty() {
+    if matches.get_flag("update") && stack.applied().is_empty() {
         return Err(crate::stack::Error::NoAppliedPatches.into());
     }
 
-    if !matches.contains_id("noapply") {
+    if !matches.get_flag("noapply") {
         repo.stupid()
             .statuses(None)?
             .check_index_and_worktree_clean()?;
@@ -208,7 +211,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         picks
     };
 
-    if fold || update {
+    if matches.get_flag("fold") || matches.get_flag("update") {
         // Fold into current patch
         fold_picks(&stack, matches, &picks)
     } else {
@@ -244,7 +247,7 @@ fn fold_picks(
     let stupid = stack.repo.stupid();
     for (patchname, commit) in picks {
         let parent = commit.parent(0)?;
-        let (top, bottom) = if matches.contains_id("revert") {
+        let (top, bottom) = if matches.get_flag("revert") {
             (&parent, commit)
         } else {
             (commit, &parent)
@@ -252,12 +255,12 @@ fn fold_picks(
 
         let diff_files;
 
-        let pathspecs: Option<Vec<&Path>> = if matches.contains_id("fold") {
+        let pathspecs: Option<Vec<&Path>> = if matches.get_flag("fold") {
             matches
                 .get_many::<PathBuf>("file")
                 .map(|pathbufs| pathbufs.map(|pathbuf| pathbuf.as_path()).collect())
         } else {
-            assert!(matches.contains_id("update"));
+            assert!(matches.get_flag("update"));
             diff_files = stupid.diff_tree_files(
                 stack.branch_head.parent(0)?.tree_id(),
                 stack.branch_head.tree_id(),
@@ -306,7 +309,7 @@ fn pick_picks(
         let patchname = if let Some(name) = matches.get_one::<PatchName>("name") {
             name.clone()
         } else if let Some(patchname) = patchname {
-            if matches.contains_id("revert") {
+            if matches.get_flag("revert") {
                 PatchName::from_str(&format!("revert-{patchname}"))?
             } else {
                 patchname.clone()
@@ -321,7 +324,7 @@ fn pick_picks(
         .uniquify(&[], &disallow);
 
         let commit_id_string = commit.id().to_string();
-        let message = if matches.contains_id("revert") {
+        let message = if matches.get_flag("revert") {
             let message = commit.message();
             let (subject, body) = if let Some(message) = message {
                 message.split_once('\n').unwrap_or((message, ""))
@@ -335,7 +338,7 @@ fn pick_picks(
                  \n\
                  {body}"
             )
-        } else if matches.contains_id("expose") {
+        } else if matches.get_flag("expose") {
             let expose_format = config
                 .get_string("stgit.pick.expose-format")
                 .unwrap_or_else(|_| "format:%B%n(imported from commit %H)%n".to_string());
@@ -355,7 +358,7 @@ fn pick_picks(
             commit.parent(0)?
         };
 
-        let (top, bottom) = if matches.contains_id("revert") {
+        let (top, bottom) = if matches.get_flag("revert") {
             (&parent, commit)
         } else {
             (commit, &parent)
@@ -378,7 +381,7 @@ fn pick_picks(
                 trans.new_unapplied(patchname, *commit_id, i)?;
                 to_push.push(patchname);
             }
-            if !matches.contains_id("noapply") {
+            if !matches.get_flag("noapply") {
                 trans.push_patches(&to_push, false)?;
             }
             Ok(())

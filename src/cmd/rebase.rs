@@ -56,13 +56,15 @@ fn make() -> clap::Command<'static> {
             Arg::new("interactive")
                 .long("interactive")
                 .short('i')
-                .help("Interactively manipulate patches in editor"),
+                .help("Interactively manipulate patches in editor")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("nopush")
                 .long("nopush")
                 .short('n')
                 .help("Do not push back patches after rebasing")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
         .arg(
@@ -77,7 +79,8 @@ fn make() -> clap::Command<'static> {
                      changes already exist in the new stack base. If a patch's changes \
                      are detected to have been merged, the patch will still exist in \
                      the stack, but become empty after the rebase operation.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("autostash")
@@ -88,7 +91,8 @@ fn make() -> clap::Command<'static> {
                      begins, and apply it after the operation completes. This allows a \
                      rebase to be performed on a dirty work tree. Note however that \
                      the final stash application may result in non-trivial conflicts.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -115,7 +119,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     let clean_result = stupid.statuses(None)?.check_index_and_worktree_clean();
 
-    let autostash = if matches.contains_id("autostash") {
+    let autostash = if matches.get_flag("autostash") {
         true
     } else if let Ok(autostash) = config.get_bool("branch.{branch_name}.stgit.autostash") {
         autostash
@@ -153,12 +157,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
     stupid.user_rebase(&rebase_cmd, target_commit.id())?;
 
-    if matches.contains_id("interactive") {
+    if matches.get_flag("interactive") {
         interactive_pushback(&repo, &config, matches, &applied)?;
-    } else if !matches.contains_id("nopush") {
+    } else if !matches.get_flag("nopush") {
         let stack = Stack::from_branch(&repo, None)?;
         stack.check_head_top_mismatch()?;
-        let check_merged = matches.contains_id("merged");
+        let check_merged = matches.get_flag("merged");
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
@@ -416,7 +420,7 @@ fn interactive_pushback(
             }
         })
         .collect();
-    let check_merged = matches.contains_id("merged");
+    let check_merged = matches.get_flag("merged");
 
     stack.check_head_top_mismatch()?;
     stack

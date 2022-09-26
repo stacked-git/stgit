@@ -21,7 +21,8 @@ fn make() -> clap::Command<'static> {
             clap::Arg::new("short")
                 .long("short")
                 .short('s')
-                .help("Show abbreviated version information"),
+                .help("Show abbreviated version information")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -30,7 +31,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let hash_suffix = option_env!("STGIT_BUILD_GIT_HASH")
         .and_then(|rev_hash| Some(format!(" ({rev_hash})")))
         .unwrap_or_default();
-    if matches.contains_id("short") {
+    if matches.get_flag("short") {
         let bin_name = env!("CARGO_BIN_NAME");
         println!("{bin_name} {pkg_version}{hash_suffix}");
     } else {

@@ -47,13 +47,15 @@ pub(crate) fn add_args(
             Arg::new("edit")
                 .long("edit")
                 .short('e')
-                .help("Invoke editor for patch description"),
+                .help("Invoke editor for patch description")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("diff")
                 .long("diff")
                 .short('d')
-                .help("Show diff when editing patch description"),
+                .help("Show diff when editing patch description")
+                .action(clap::ArgAction::SetTrue),
         );
     let command = if add_message_opts {
         command
@@ -86,8 +88,8 @@ pub(crate) fn add_args(
     } else {
         // These dummy/hidden --message and --file arguments are added to allow the
         // ArgMatches to be dynamically interrogated. If these args weren't defined,
-        // then testing their presence, e.g. with ArgMatches.value_of() or
-        // ArgMatches.contains_id(), would cause a panic.
+        // then testing their presence, e.g. with ArgMatches.get_one() or
+        // ArgMatches.get_flag(), would cause a panic.
 
         fn no_message(_: &str) -> std::result::Result<(), String> {
             Err("--message is not a valid option for this command".to_string())
@@ -120,7 +122,8 @@ pub(crate) fn add_args(
         .arg(
             Arg::new("no-verify")
                 .long("no-verify")
-                .help("Disable commit-msg hook"),
+                .help("Disable commit-msg hook")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("signoff")
@@ -508,8 +511,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             }
         };
 
-        let mut need_interactive_edit = matches.contains_id("edit")
-            || (allow_diff_edit && matches.contains_id("diff"))
+        let mut need_interactive_edit = matches.get_flag("edit")
+            || (allow_diff_edit && matches.get_flag("diff"))
             || (allow_implicit_edit
                 && ![
                     "message",
@@ -595,8 +598,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let (diff, computed_diff) = if file_diff.is_some() {
             (file_diff, None)
         } else if need_interactive_edit
-            && (matches.contains_id("diff")
-                || config.get_bool("stgit.edit.verbose").unwrap_or(false))
+            && (matches.get_flag("diff") || config.get_bool("stgit.edit.verbose").unwrap_or(false))
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
@@ -634,7 +636,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let need_commit_msg_hook =
-            !matches.contains_id("no-verify") && (need_interactive_edit || is_message_modified());
+            !matches.get_flag("no-verify") && (need_interactive_edit || is_message_modified());
 
         let instruction = Some(interactive::EDIT_INSTRUCTION);
         let diff_instruction = Some(if allow_diff_edit {

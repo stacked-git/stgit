@@ -33,13 +33,15 @@ fn make() -> clap::Command<'static> {
             Arg::new("applied")
                 .long("applied")
                 .short('A')
-                .help("Delete empty applied patches"),
+                .help("Delete empty applied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("unapplied")
                 .long("unapplied")
                 .short('U')
-                .help("Delete empty unapplied patches"),
+                .help("Delete empty unapplied patches")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -49,13 +51,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     repo.check_repository_state()?;
 
-    let (clean_applied, clean_unapplied) = match (
-        matches.contains_id("applied"),
-        matches.contains_id("unapplied"),
-    ) {
-        (false, false) => (true, true),
-        opts => opts,
-    };
+    let (clean_applied, clean_unapplied) =
+        match (matches.get_flag("applied"), matches.get_flag("unapplied")) {
+            (false, false) => (true, true),
+            opts => opts,
+        };
 
     let mut to_delete: Vec<PatchName> = Vec::new();
 

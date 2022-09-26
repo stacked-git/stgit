@@ -80,7 +80,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("patch")
                 .long("patch")
                 .short('p')
-                .help("Suffix patch file names with \".patch\""),
+                .help("Suffix patch file names with \".patch\"")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("extension")
@@ -95,7 +96,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("numbered")
                 .long("numbered")
                 .short('n')
-                .help("Prefix patch file names with order numbers."),
+                .help("Prefix patch file names with order numbers.")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("template")
@@ -111,7 +113,8 @@ fn make() -> clap::Command<'static> {
                 .long("stdout")
                 .short('s')
                 .help("Export to stdout instead of directory")
-                .conflicts_with("dir"),
+                .conflicts_with("dir")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::diff_opts_arg())
 }
@@ -163,13 +166,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let extension = if let Some(custom_ext) = matches.get_one::<String>("extension") {
         custom_extension = format!(".{custom_ext}");
         custom_extension.as_str()
-    } else if matches.contains_id("patch") {
+    } else if matches.get_flag("patch") {
         ".patch"
     } else {
         ""
     };
 
-    let numbered = matches.contains_id("numbered");
+    let numbered_flag = matches.get_flag("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
     let diff_opts = argset::get_diff_opts(matches, &config, false, true);
@@ -186,18 +189,18 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let need_diffstat = template.contains("%(diffstat)");
 
-    let opt_stdout = matches.contains_id("stdout");
+    let stdout_flag = matches.get_flag("stdout");
     let mut series = format!(
         "# This series applies on Git commit {}\n",
         stack.base().id()
     );
 
-    if !opt_stdout {
+    if !stdout_flag {
         std::fs::create_dir_all(output_dir).with_context(|| format!("creating {output_dir:?}"))?;
     }
 
     for (i, patchname) in patches.iter().enumerate() {
-        let patchfile_name = if numbered {
+        let patchfile_name = if numbered_flag {
             let patch_number = i + 1;
             format!("{patch_number:0num_width$}-{patchname}{extension}")
         } else {
@@ -272,7 +275,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
         let specialized = crate::templates::specialize_template(&template, &replacements)?;
 
-        if opt_stdout {
+        if stdout_flag {
             let stdout = std::io::stdout();
             let mut stdout = stdout.lock();
             if patches.len() > 1 {
@@ -297,7 +300,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         }
     }
 
-    if !opt_stdout {
+    if !stdout_flag {
         let series_path = output_dir.join("series");
         std::fs::write(&series_path, series.as_str())
             .with_context(|| format!("writing {series_path:?}"))?;

@@ -50,7 +50,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("hard")
                 .long("hard")
-                .help("Discard changes in the index and worktree"),
+                .help("Discard changes in the index and worktree")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -66,7 +67,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
-            .discard_changes(matches.contains_id("hard"))
+            .discard_changes(matches.get_flag("hard"))
             .allow_bad_head(
                 matches
                     .get_many::<patchrange::Specification>("patchranges-all")
@@ -90,7 +91,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             })
             .execute("reset")?;
         Ok(())
-    } else if matches.contains_id("hard") {
+    } else if matches.get_flag("hard") {
         let head_tree = repo.head()?.peel_to_tree()?;
         repo.stupid().read_tree_checkout_hard(head_tree.id())
     } else {

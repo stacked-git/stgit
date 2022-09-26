@@ -37,13 +37,15 @@ fn make() -> clap::Command<'static> {
             Arg::new("stat")
                 .long("stat")
                 .short('s')
-                .help("Show patch's diffstat"),
+                .help("Show patch's diffstat")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("bare")
                 .long("bare")
                 .help("Print bare file names")
                 .long_help("Print bare file names. This is useful for scripting.")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("stat"),
         )
 }
@@ -56,8 +58,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let mut output = repo.stupid().diff_tree_files_status(
         parent.tree_id(),
         commit.tree_id(),
-        matches.contains_id("stat"),
-        matches.contains_id("bare"),
+        matches.get_flag("stat"),
+        matches.get_flag("bare"),
         crate::color::use_color(matches),
     )?;
 

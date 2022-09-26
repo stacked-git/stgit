@@ -41,14 +41,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stupid = repo.stupid();
 
     let patch_arg = matches.get_one::<PatchName>("patch").unwrap();
-    let opt_keep = matches.contains_id("keep");
-    let opt_merged = matches.contains_id("merged");
+    let keep_flag = matches.get_flag("keep");
+    let merged_flag = matches.get_flag("merged");
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
-    if !opt_keep {
+    if !keep_flag {
         statuses.check_index_and_worktree_clean()?;
     }
 
@@ -107,7 +107,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .expect("already determined patch exists and not hidden or applied");
 
                 let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
-                trans.push_patches(&to_apply, opt_merged)?;
+                trans.push_patches(&to_apply, merged_flag)?;
                 Ok(())
             }
         })

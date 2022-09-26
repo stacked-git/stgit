@@ -45,7 +45,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("diff")
                 .long("diff")
                 .short('d')
-                .help("Show the diff for the given paths"),
+                .help("Show the diff for the given paths")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::diff_opts_arg())
 }
@@ -54,7 +55,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch)?;
-    let opt_diff = matches.contains_id("diff");
+    let diff_flag = matches.get_flag("diff");
 
     if stack.applied().is_empty() {
         return Err(Error::NoAppliedPatches.into());
@@ -96,7 +97,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let revs = stupid.rev_list(stack.base().id(), stack.top().id(), Some(&pathspecs))?;
 
-    if opt_diff {
+    if diff_flag {
         // TODO: pager?
         let config = repo.config()?;
         let stdout = std::io::stdout();

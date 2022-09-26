@@ -62,12 +62,14 @@ fn make() -> clap::Command<'static> {
             Arg::new("all")
                 .long("all")
                 .short('a')
-                .help("Commit all applied patches"),
+                .help("Commit all applied patches")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("allow-empty")
                 .long("allow-empty")
-                .help("Allow empty patches to be committed"),
+                .help("Allow empty patches to be committed")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -102,13 +104,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     } else if stack.applied().is_empty() {
         return Err(Error::NoAppliedPatches.into());
-    } else if matches.contains_id("all") {
+    } else if matches.get_flag("all") {
         stack.applied().to_vec()
     } else {
         vec![stack.applied()[0].clone()]
     };
 
-    if !matches.contains_id("allow-empty") {
+    if !matches.get_flag("allow-empty") {
         let mut empty_patches: Vec<&PatchName> = Vec::new();
         for pn in &patches {
             let patch_commit = stack.get_patch_commit(pn);

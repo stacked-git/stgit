@@ -47,6 +47,7 @@ fn make() -> clap::Command<'static> {
                 .long("nopush")
                 .short('n')
                 .help("Do not push back patches after pulling")
+                .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
         .arg(
@@ -62,7 +63,8 @@ fn make() -> clap::Command<'static> {
                      patch's changes have already been merged upstream, the patch will \
                      still exist in the stack, but become empty after the pull \
                      operation.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -216,13 +218,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stupid.user_rebase(&rebase_cmd, rebase_target)?;
     }
 
-    if !matches.contains_id("nopush") {
+    if !matches.get_flag("nopush") {
         // The above pull and rebase action may have moved the stack's branch reference,
         // so we initialize the stack afresh.
         let stack = Stack::from_branch(&repo, None)?;
 
         stack.check_head_top_mismatch()?;
-        let check_merged = matches.contains_id("merged");
+        let check_merged = matches.get_flag("merged");
         stack
             .setup_transaction()
             .use_index_and_worktree(true)

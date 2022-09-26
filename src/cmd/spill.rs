@@ -49,7 +49,8 @@ fn make() -> clap::Command<'static> {
                     "Also reset the index such that the patch's changes only remain \
                      in the worktree. Without this option, the patch's changes will \
                      be in both the index and worktree.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("pathspecs")
@@ -114,7 +115,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .transact(|trans| trans.update_patch(&patchname, commit_id))
         .execute(&reflog_msg)?;
 
-    if matches.contains_id("reset") {
+    if matches.get_flag("reset") {
         stupid.read_tree(tree_id)?;
     }
 

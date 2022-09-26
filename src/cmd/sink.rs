@@ -58,7 +58,8 @@ fn make() -> clap::Command<'static> {
                 .long_help(
                     "Do not push any formerly applied patches after sinking. \
                      Only the patches to sink are pushed.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("target")
@@ -83,14 +84,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stupid = repo.stupid();
 
     let opt_target: Option<PatchName> = matches.get_one::<PatchName>("target").cloned();
-    let opt_nopush = matches.contains_id("nopush");
-    let opt_keep = matches.contains_id("keep");
+    let nopush_flag = matches.get_flag("nopush");
+    let keep_flag = matches.contains_id("keep");
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
-    if !opt_keep {
+    if !keep_flag {
         statuses.check_index_and_worktree_clean()?;
     }
 
@@ -146,7 +147,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut patches = patches;
 
-    let (applied, unapplied) = if opt_nopush {
+    let (applied, unapplied) = if nopush_flag {
         let mut applied: Vec<PatchName> = Vec::with_capacity(target_pos + patches.len());
         applied.extend(remaining_applied.drain(0..target_pos));
         applied.append(&mut patches);

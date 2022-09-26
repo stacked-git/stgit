@@ -81,20 +81,23 @@ fn make() -> clap::Command<'static> {
             Arg::new("mail")
                 .long("mail")
                 .short('m')
-                .help("Import patch from an email file"),
+                .help("Import patch from an email file")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("mbox")
                 .long("mbox")
                 .short('M')
-                .help("Import patch series from an mbox file"),
+                .help("Import patch series from an mbox file")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("series")
                 .long("series")
                 .short('s')
                 .help("Import patch series")
-                .long_help("Import patch series from a series file are tar archive."),
+                .long_help("Import patch series from a series file are tar archive.")
+                .action(clap::ArgAction::SetTrue),
         )
         .group(ArgGroup::new("whence").args(&["mail", "mbox", "series"]));
 
@@ -104,6 +107,7 @@ fn make() -> clap::Command<'static> {
                 .long("url")
                 .short('u')
                 .help("Retrieve source from a url instead of local file")
+                .action(clap::ArgAction::SetTrue)
                 .requires("source"),
         )
     } else {
@@ -132,7 +136,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("stripname")
                 .long("stripname")
                 .short('t')
-                .help("Strip number and extension from patch name"),
+                .help("Strip number and extension from patch name")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("context-lines")
@@ -145,12 +150,14 @@ fn make() -> clap::Command<'static> {
             Arg::new("ignore")
                 .long("ignore")
                 .short('i')
-                .help("Ignore the applied patches in the series"),
+                .help("Ignore the applied patches in the series")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("replace")
                 .long("replace")
-                .help("Replace the unapplied patches in the series"),
+                .help("Replace the unapplied patches in the series")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("base")
@@ -162,12 +169,14 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("reject")
                 .long("reject")
-                .help("Leave rejected hunks in \".rej\" files"),
+                .help("Leave rejected hunks in \".rej\" files")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("keep-cr")
                 .long("keep-cr")
-                .help("Do not remove \"\\r\" from email lines ending with \"\\r\\n\""),
+                .help("Do not remove \"\\r\" from email lines ending with \"\\r\\n\"")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("message-id")
@@ -178,7 +187,8 @@ fn make() -> clap::Command<'static> {
                     Message-ID email header. This option is applicable when importing \
                     with --mail or --mbox. This behavior may also be enabled via the \
                     \"stgit.import.message-id\" configuration option.",
-                ),
+                )
+                .action(clap::ArgAction::SetTrue),
         );
     patchedit::add_args(app, false, false)
 }
@@ -188,7 +198,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     let stupid = repo.stupid();
 
-    let source_path = if matches.contains_id("url") {
+    let source_path = if matches.get_flag("url") {
         None
     } else if let Some(path) = matches.get_one::<PathBuf>("source") {
         let abs_path = path.canonicalize()?;
@@ -204,11 +214,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
     //stupid.update_index_refresh()?;
 
-    if cfg!(feature = "import-url") && matches.contains_id("url") {
+    if cfg!(feature = "import-url") && matches.get_flag("url") {
         import_url(stack, matches)
-    } else if matches.contains_id("series") {
+    } else if matches.get_flag("series") {
         import_series(stack, matches, source_path.as_deref())
-    } else if matches.contains_id("mail") || matches.contains_id("mbox") {
+    } else if matches.get_flag("mail") || matches.get_flag("mbox") {
         import_mail(stack, matches, source_path.as_deref())
     } else {
         import_file(stack, matches, source_path.as_deref(), None)?;
@@ -265,9 +275,9 @@ fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
         e @ Err(_) => e?,
     }
 
-    if matches.contains_id("series") {
+    if matches.get_flag("series") {
         import_series(stack, matches, Some(download_path.as_path()))
-    } else if matches.contains_id("mail") || matches.contains_id("mbox") {
+    } else if matches.get_flag("mail") || matches.get_flag("mbox") {
         import_mail(stack, matches, Some(download_path.as_path()))
     } else {
         import_file(stack, matches, Some(download_path.as_path()), None)?;
@@ -413,13 +423,13 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
 }
 
 fn use_message_id(matches: &clap::ArgMatches, config: &git2::Config) -> bool {
-    matches.contains_id("message-id") || config.get_bool("stgit.import.message-id").unwrap_or(false)
+    matches.get_flag("message-id") || config.get_bool("stgit.import.message-id").unwrap_or(false)
 }
 
 fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Path>) -> Result<()> {
     let out_dir = tempfile::tempdir()?;
-    let missing_from_ok = matches.contains_id("mail");
-    let keep_cr = matches.contains_id("keep-cr");
+    let missing_from_ok = matches.get_flag("mail");
+    let keep_cr = matches.get_flag("keep-cr");
     let config = stack.repo.config()?;
     let message_id = use_message_id(matches, &config);
     let stupid = stack.repo.stupid();
@@ -562,7 +572,7 @@ fn create_patch<'repo>(
         None
     };
 
-    let patchname = if matches.contains_id("stripname") {
+    let patchname = if matches.get_flag("stripname") {
         patchname.map(stripname)
     } else {
         patchname
@@ -577,13 +587,13 @@ fn create_patch<'repo>(
         PatchName::make(&message, true, name_len_limit)
     };
 
-    let opt_ignore = matches.contains_id("ignore");
-    let opt_replace = matches.contains_id("replace");
+    let ignore_flag = matches.get_flag("ignore");
+    let replace_flag = matches.get_flag("replace");
 
-    let patchname = if !opt_ignore && !opt_replace {
+    let patchname = if !ignore_flag && !replace_flag {
         let disallow_patchnames: Vec<&PatchName> = stack.all_patches().collect();
         patchname.uniquify(&[], &disallow_patchnames)
-    } else if opt_ignore && stack.applied().contains(&patchname) {
+    } else if ignore_flag && stack.applied().contains(&patchname) {
         eprintln!("info: ignoring already applied patch `{patchname}`");
         return Ok(stack);
     } else {
@@ -616,7 +626,7 @@ fn create_patch<'repo>(
         let stupid = stack.repo.stupid();
         stupid.apply_to_worktree_and_index(
             diff,
-            matches.contains_id("reject"),
+            matches.get_flag("reject"),
             strip_level,
             matches.get_one::<usize>("context-lines").copied(),
         )?;
@@ -648,7 +658,7 @@ fn create_patch<'repo>(
         .use_index_and_worktree(false)
         .allow_conflicts(false)
         .transact(|trans| {
-            if opt_replace && trans.unapplied().contains(&new_patchname) {
+            if replace_flag && trans.unapplied().contains(&new_patchname) {
                 trans.delete_patches(|pn| pn == &new_patchname)?;
             }
             trans.new_applied(&new_patchname, commit_id)

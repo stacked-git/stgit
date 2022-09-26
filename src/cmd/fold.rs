@@ -42,7 +42,8 @@ fn make() -> clap::Command<'static> {
             Arg::new("three-way")
                 .long("threeway")
                 .short('t')
-                .help("Perform a three-way merge with the current patch"),
+                .help("Perform a three-way merge with the current patch")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("base")
@@ -70,7 +71,8 @@ fn make() -> clap::Command<'static> {
         .arg(
             Arg::new("reject")
                 .long("reject")
-                .help("Leave rejected hunks in \".rej\" files"),
+                .help("Leave rejected hunks in \".rej\" files")
+                .action(clap::ArgAction::SetTrue),
         )
 }
 
@@ -97,7 +99,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         diff
     };
 
-    let reject = matches.contains_id("reject");
+    let reject_flag = matches.get_flag("reject");
     let strip_level = matches.get_one::<usize>("strip").copied();
     let context_lines = matches.get_one::<usize>("context-lines").copied();
 
@@ -105,7 +107,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     stupid.update_index_refresh()?;
 
-    let base_commit = if matches.contains_id("three-way") {
+    let base_commit = if matches.get_flag("three-way") {
         Some(stack.top().parent(0)?)
     } else if let Some(base_spec) = matches.get_one::<String>("base") {
         Some(parse_stgit_revision(&repo, Some(base_spec), None)?.peel_to_commit()?)
@@ -118,7 +120,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let base_tree_id = base_commit.tree_id();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
         if let Err(e) =
-            stupid.apply_to_worktree_and_index(&diff, reject, strip_level, context_lines)
+            stupid.apply_to_worktree_and_index(&diff, reject_flag, strip_level, context_lines)
         {
             stupid.read_tree_checkout_hard(orig_head_tree_id)?;
             return Err(e);
@@ -131,6 +133,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Err(crate::stack::Error::CausedConflicts("Merge conflicts".to_string()).into())
         }
     } else {
-        stupid.apply_to_worktree_and_index(&diff, reject, strip_level, context_lines)
+        stupid.apply_to_worktree_and_index(&diff, reject_flag, strip_level, context_lines)
     }
 }
