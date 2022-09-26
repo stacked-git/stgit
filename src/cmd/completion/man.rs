@@ -82,9 +82,14 @@ fn generate_asciidoc(command: &mut clap::Command) -> String {
             .unwrap(),
     );
     for para in paragraphs(&about) {
-        for line in wrap(para, WIDTH) {
-            page.push_str(line);
+        if para.starts_with(' ') {
+            page.push_str(para);
             page.push('\n');
+        } else {
+            for line in wrap(para, WIDTH) {
+                page.push_str(line);
+                page.push('\n');
+            }
         }
         page.push('\n');
     }
@@ -428,7 +433,7 @@ impl<'a> Iterator for Paragraphs<'a> {
         if self.text.is_empty() {
             None
         } else if let Some((para, rest)) = self.text.split_once("\n\n") {
-            self.text = rest.trim_start();
+            self.text = rest;
             Some(para)
         } else {
             let rest = self.text;

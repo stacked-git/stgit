@@ -33,7 +33,7 @@ fn make() -> clap::Command<'static> {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Export patches to a directory")
         .long_about(
-            "Export a range of patches to a given directory in unified diff format.\
+            "Export a range of patches to a given directory in unified diff format. \
              All applied patches are exported by default.\n\
              \n\
              Patches are exported to 'patches-<branch>' by default. The --dir option \

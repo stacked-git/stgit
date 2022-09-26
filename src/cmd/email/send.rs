@@ -191,15 +191,14 @@ fn compose_options() -> Vec<Arg<'static>> {
                  the second and subsequent patches will be replies to the first one \
                  like in the illustration below where [PATCH v2 0/3] is in reply to \
                  [PATCH 0/2]:\n\
-                 \n    \
-                 [PATCH 0/2] Here is what I did...\n      \
-                 [PATCH 1/2] Clean up and tests\n      \
-                 [PATCH 2/2] Implementation\n      \
-                 [PATCH v2 0/3] Here is a reroll\n        \
-                 [PATCH v2 1/3] Clean up\n        \
-                 [PATCH v2 2/3] New tests\n        \
-                 [PATCH v2 3/3] Implementation\n\
-                 \n\
+                 \n    [PATCH 0/2] Here is what I did...\
+                 \n      [PATCH 1/2] Clean up and tests\
+                 \n      [PATCH 2/2] Implementation\
+                 \n      [PATCH v2 0/3] Here is a reroll\
+                 \n        [PATCH v2 1/3] Clean up\
+                 \n        [PATCH v2 2/3] New tests\
+                 \n        [PATCH v2 3/3] Implementation\
+                 \n\n\
                  Only necessary if --compose is also set. If --compose is not set, \
                  this will be prompted for.",
             )
@@ -279,20 +278,22 @@ fn administer_options() -> Vec<Arg<'static>> {
             .long("confirm")
             .help("Confirm recipients before sending")
             .long_help(
-                "Confirm just before sending:\n\
-                 \n\
-                 •   'always' will always confirm before sending\n\
-                 •   'never' will never confirm before sending\n\
-                 •   'cc' will confirm before sending when send-email has \n    \
-                 automatically added addresses from the patch to the Cc list\n\
-                 •   'compose' will confirm before sending the first message \n    \
-                 when using --compose\n\
-                 •   'auto' is equivalent to cc + compose\n\
+                "Confirm just before sending.\n\
                  \n\
                  Default is the value of sendemail.confirm configuration value; if \
                  that is unspecified, default to auto unless any of the suppress \
-                 options have been specified, in which case default to compose.",
+                 options have been specified, in which case default to compose.\n\
+                 \n\
+                 Confirmation modes:\n\
+                 \n  - 'always' will always confirm before sending\
+                 \n  - 'never' will never confirm before sending\
+                 \n  - 'cc' will confirm before sending when send-email has\
+                 \n    automatically added addresses from the patch to the Cc list\
+                 \n  - 'compose' will confirm before sending the first message\
+                 \n    when using --compose\
+                 \n  - 'auto' is equivalent to cc + compose",
             )
+            .hide_possible_values(true)
             .takes_value(true)
             .value_name("mode")
             .value_parser(["always", "never", "cc", "compose", "auto"]),
