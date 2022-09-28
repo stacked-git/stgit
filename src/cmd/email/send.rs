@@ -43,10 +43,10 @@ pub(super) fn command() -> clap::Command<'static> {
              line after a `--` separator. See the git-send-email(1) man page.",
         )
         .override_usage(
-            "stg email send [OPTIONS] <file|directory>... [-- <GIT-OPTIONS>]\n    \
-             stg email send [OPTIONS] <patch>... [-- <GIT-OPTIONS>]\n    \
-             stg email send [OPTIONS] --all [-- <GIT-OPTIONS>]\n    \
-             stg email send [OPTIONS] --dump-aliases",
+            "stg email send [OPTIONS] <file|directory>...\n    \
+             stg email send [OPTIONS] <patch>...\n    \
+             stg email send [OPTIONS] --all\n    \
+             stg email send --dump-aliases",
         )
         .arg(
             Arg::new("patchranges-or-paths")
@@ -68,13 +68,6 @@ pub(super) fn command() -> clap::Command<'static> {
                 .conflicts_with_all(&["all", "dump-aliases"])
                 .required_unless_present_any(&["all", "dump-aliases"]),
         )
-        .arg(
-            Arg::new("git-send-email-opts")
-                .help("Extra arguments passed to 'git send-email'")
-                .last(true)
-                .allow_hyphen_values(true)
-                .value_name("git-options"),
-        )
         .arg(argset::branch_arg())
         .arg(
             Arg::new("all")
@@ -83,6 +76,15 @@ pub(super) fn command() -> clap::Command<'static> {
                 .help("Send all applied patches")
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with_all(&["patchranges-or-paths", "dump-aliases"]),
+        )
+        .arg(
+            Arg::new("git-send-email-opts")
+                .long("git-opts")
+                .short('G')
+                .help("Extra options to pass to \"git send-email\"")
+                .allow_hyphen_values(true)
+                .action(clap::ArgAction::Append)
+                .value_name("git-options"),
         )
         .next_help_heading("COMPOSE OPTIONS")
         .args(compose_options())
@@ -457,8 +459,12 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = send_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(options) = matches.get_many::<String>("git-send-email-opts") {
-        send_args.extend(options.cloned());
+    if let Some(values) = matches.get_many::<String>("git-send-email-opts") {
+        for value in values {
+            for arg in value.split_ascii_whitespace() {
+                send_args.push(String::from(arg))
+            }
+        }
     }
 
     let mut sources = sources;

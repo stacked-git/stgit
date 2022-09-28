@@ -51,8 +51,8 @@ pub(super) fn command() -> clap::Command<'static> {
              a `--` separator. See the git-format-patch(1) man page.",
         )
         .override_usage(
-            "stg email format [OPTIONS] <patch>... [-- <GIT-OPTIONS>]\n    \
-             stg email format [OPTIONS] --all [-- <GIT-OPTIONS>]",
+            "stg email format [OPTIONS] <patch>...\n    \
+             stg email format [OPTIONS] --all",
         )
         .arg(
             Arg::new("patchranges")
@@ -63,13 +63,6 @@ pub(super) fn command() -> clap::Command<'static> {
                 .conflicts_with("all")
                 .required_unless_present_any(&["all"]),
         )
-        .arg(
-            Arg::new("git-format-patch-opts")
-                .help("Extra arguments passed to 'git format-patch'")
-                .last(true)
-                .allow_hyphen_values(true)
-                .value_name("git-options"),
-        )
         .arg(argset::branch_arg())
         .arg(
             Arg::new("all")
@@ -77,6 +70,15 @@ pub(super) fn command() -> clap::Command<'static> {
                 .short('a')
                 .help("Format all applied patches")
                 .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("git-format-patch-opts")
+                .long("git-opts")
+                .short('G')
+                .help("Extra options to pass to \"git format-patch\"")
+                .allow_hyphen_values(true)
+                .action(clap::ArgAction::Append)
+                .value_name("git-options"),
         )
         .next_help_heading("FORMAT OPTIONS")
         .args(format_options())
@@ -507,8 +509,12 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args = format_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(options) = matches.get_many::<String>("git-format-patch-opts") {
-        format_args.extend(options.cloned());
+    if let Some(values) = matches.get_many::<String>("git-format-patch-opts") {
+        for value in values {
+            for arg in value.split_ascii_whitespace() {
+                format_args.push(String::from(arg))
+            }
+        }
     }
 
     {

@@ -486,6 +486,7 @@ _stg-email-format() {
     __stg_add_args_color
     __stg_add_args_branch
     subcmd_args+=(
+        '*'{-G+,--git-opts=}'[extra options for git-format-patch]:opts:__stg_git_format_patch_opts'
         '(-o --output-directory)'{-o+,--output-directory=}'[store resulting files in given directory]: :_directories'
         '(-n --numbered -N --no-numbered -k --keep-subject)'{-n,--numbered}'[name output in \[PATCH n/m\] format]'
         '(-n --numbered -N --no-numbered -k --keep-subject)'{-N,--no-numbered}'[name output in \[PATCH\] format]'
@@ -521,7 +522,7 @@ _stg-email-format() {
         '--range-diff=[insert range-diff against previous patch series in cover letter or single patch]:reference to tip of previous series:__stg_revisions'
         '--creation-factor=[for range-diff, specify weighting for creation]:weighting (percent)'
         + '(sources)'
-        '(-a --all)'{-a,--all}'[format all applied patches]: :_files'
+        '(-a --all)'{-a,--all}'[format all applied patches]'
         ': :->patch-or-patch-range'
     )
     _arguments -s -S $subcmd_args && ret=0
@@ -540,7 +541,7 @@ _stg-email-send() {
     __stg_add_args_help
     __stg_add_args_color
     subcmd_args+=(
-        '(-a --all)'{-a,--all}'[send all applied patches]: :_files'
+        '*'{-G+,--git-opts=}'[extra options for git-send-email]:opts:__stg_git_send_email_opts'
         '--from=[specify sender]:email address:_email_addresses'
         '--to=[specify the primary recipient of the emails]: :_email_addresses'
         '--cc=[starting Cc: value for each email]: :_email_addresses'
@@ -560,6 +561,8 @@ _stg-email-send() {
         ))'
         '--quiet[be less verbose]'
         '--dry-run[do everything except actually sending the emails]'
+        + '(sources)'
+        '(-a --all)'{-a,--all}'[send all applied patches]'
         '(- *)--dump-aliases[dump configured aliases and exit]'
         '*: : _alternative -O expl
             "files:file:_files"
@@ -1206,6 +1209,20 @@ __stg_git_diff_opts() {
     diff_opts=(${(z)"$(_call_program git-diff-options "git ${__stg_C_args} diff-tree --git-completion-helper")"})
     __stg_git_command_successful $pipestatus || return 1
     _wanted git-diff-options expl "diff option" compadd -a diff_opts
+}
+
+__stg_git_format_patch_opts() {
+    local -a format_patch_opts
+    format_patch_opts=(${(z)"$(_call_program git-format-patch-options "git ${__stg_C_args} format-patch --git-completion-helper")"})
+    __stg_git_command_successful $pipestatus || return 1
+    _wanted git-format-patch-options expl "format-patch option" compadd -a format_patch_opts
+}
+
+__stg_git_send_email_opts() {
+    local -a send_email_opts
+    send_email_opts=(${(z)"$(_call_program git-send-email-options "git ${__stg_C_args} send-email --git-completion-helper")"})
+    __stg_git_command_successful $pipestatus || return 1
+    _wanted git-send-email-options expl "send-email option" compadd -a send_email_opts
 }
 
 __stg_revisions () {
