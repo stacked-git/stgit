@@ -174,8 +174,20 @@ function __fish_stg_mail_aliases
     | cut -d. -f 3
 end
 
-function __fish_stg_diff_opts
+function __fish_stg_git_diff_opts
     __fish_stg_git diff-tree --git-completion-helper \
+    | string split ' ' \
+    | string match --regex '\--.+'
+end
+
+function __fish_stg_git_format_patch_opts
+    __fish_stg_git format-patch --git-completion-helper \
+    | string split ' ' \
+    | string match --regex '\--.+'
+end
+
+function __fish_stg_git_send_email_opts
+    __fish_stg_git send-email --git-completion-helper \
     | string split ' ' \
     | string match --regex '\--.+'
 end
@@ -346,7 +358,9 @@ fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
             "branch" | "ref-branch" => params.word("-xa '(__fish_stg_stg_branches)'"),
             "branch-any" => params.word("-xa '(__fish_stg_all_branches)'"),
             "committish" => params.word("-xa '(__fish_stg_commit)'"),
-            "diff-opts" => params.word("-xa '(__fish_stg_diff_opts)'"),
+            "diff-opts" => params.word("-xa '(__fish_stg_git_diff_opts)'"),
+            "git-format-patch-opts" => params.word("-xa '(__fish_stg_git_format_patch_opts)'"),
+            "git-send-email-opts" => params.word("-xa '(__fish_stg_git_send_email_opts)'"),
             "patch" | "patchranges" => params.word("-kxa '(__fish_stg_patches -A -U)'"),
             "patchranges-all" | "set-tree" | "stgit-revision" => {
                 params.word("-kxa '(__fish_stg_patches --all)'")

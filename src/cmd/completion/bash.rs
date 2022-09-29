@@ -219,6 +219,10 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
             "diff-opts" => {
                 script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_diff_opts)\" -- \"$cur\")")
             }
+            "git-format-patch-opts" => script
+                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_format_patch_opts)\" -- \"$cur\")"),
+            "git-send-email-opts" => script
+                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_send_email_opts)\" -- \"$cur\")"),
             "patch" => script
                 .line("mapfile -t COMPREPLY < <(compgen -W \"$(_visible_patches)\" -- \"$cur\")"),
             "patchranges" => script.line("_patch_range \"$(_visible_patches)\""),
@@ -563,6 +567,16 @@ _known_files ()
 _diff_opts ()
 {
     __git diff-tree --git-completion-helper
+}
+
+_format_patch_opts ()
+{
+    __git format-patch --git-completion-helper
+}
+
+_send_email_opts()
+{
+    __git send-email --git-completion-helper
 }
 
 "#;
