@@ -48,7 +48,8 @@ fn make() -> clap::Command<'static> {
                      The revisions may be standard Git revision specifiers or \
                      patches.",
                 )
-                .value_name("revspec"),
+                .value_name("revspec")
+                .allow_hyphen_values(true),
         )
         .arg(
             Arg::new("stat")
