@@ -752,12 +752,13 @@ _stg-new() {
     __stg_add_args_hook
     __stg_add_args_savetemplate
     subcmd_args+=(
+        '(-n --name)'{-n,--name=}'[name for new patch]:patchname'
         '(-r --refresh)'{-r,--refresh}'[refresh new patch]'
         '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
         '(-i --index)'{-i,--index}'[refresh from index instead of worktree]'
         '(-)--[start file arguments]: :->modified-file'
     )
-    if [[ -n $words[(I)--] ]]; then
+    if [[ $words[(I)--] = "0" && ${words[(I)-n|--name(=*|)]} = "0" ]]; then
         subcmd_args+=(':: :_guard "([^-]?#|)" patchname')
     fi
     __stg_add_args_message

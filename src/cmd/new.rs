@@ -52,6 +52,10 @@ fn make() -> clap::Command<'static> {
              'patchdescr.tmpl' template file (if available) is used to pre-fill the \
              editor.",
         )
+        .override_usage(
+            "stg new [OPTIONS] [patchname] [-- <path>...]\n    \
+             stg new [OPTIONS] [--name <patchname>] [-- <path>...]",
+        )
         .arg(
             Arg::new("patchname")
                 .help("Name for new patch")
@@ -70,6 +74,21 @@ fn make() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with("save-template"),
+        )
+        .arg(
+            Arg::new("name")
+                .long("name")
+                .short('n')
+                .help("Name for new patch")
+                .long_help(
+                    "Alternative to the [patchname] argument for specifying the name \
+                     of the new patch. This option allows the patch name to start with \
+                     an unescaped leading '-'.",
+                )
+                .value_name("name")
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchName))
+                .conflicts_with("patchname"),
         )
         .next_help_heading("REFRESH OPTIONS")
         .arg(
@@ -148,7 +167,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patchname").cloned() {
+    let patchname = if let Some(patchname) = matches
+        .get_one::<PatchName>("patchname")
+        .or_else(|| matches.get_one::<PatchName>("name"))
+        .cloned()
+    {
         if let Some(colliding_patchname) = stack.collides(&patchname) {
             Err(anyhow!("Patch `{colliding_patchname}` already exists"))
         } else {
