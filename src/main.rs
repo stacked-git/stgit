@@ -55,7 +55,8 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
         .about("Maintain a stack of patches on top of a Git branch.")
         .override_usage(
             "stg [OPTIONS] <command> [...]\n    \
-             stg [OPTIONS] <--version|-h|--help>",
+             stg [OPTIONS] <-h|--help>\n    \
+             stg --version",
         )
         .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .help_expected(true)
