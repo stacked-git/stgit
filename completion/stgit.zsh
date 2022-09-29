@@ -985,12 +985,13 @@ _stg-show() {
     __stg_add_args_branch
     __stg_add_args_diffopts
     subcmd_args+=(
+        '(*)'{-p,--patch=}'[patch or revision to show]: :__stg_dedup_inside_arguments __stg_patchrange --all'
         '(-s --stat)'{-s,--stat}'[show diff stat]'
         '(-)--[start file arguments]: :->cached-files'
         '(-A --applied *)'{-A,--applied}'[show applied patches]'
         '(-U --unapplied *)'{-U,--unapplied}'[show unapplied patches]'
         '(-H --hidden *)'{-H,--hidden}'[show hidden patches]'
-        '(-A --applied -U --unapplied -H --hidden)*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
+        '(-A --applied -U --unapplied -H --hidden -p --patch)*:patches:__stg_dedup_inside_arguments __stg_patchrange --all'
     )
     _arguments -C -s $subcmd_args && ret=0
 

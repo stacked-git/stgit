@@ -32,6 +32,7 @@ fn make() -> clap::Command<'static> {
         )
         .override_usage(
             "stg show [OPTIONS] [patch-or-rev]... [-- <path>...]\n    \
+             stg show [OPTIONS] [--patch <patch-or-rev>]... [-- <path>...]\n    \
              stg show [OPTIONS] [-A] [-U] [-H] [-- <path>...]",
         )
         .arg(
@@ -56,6 +57,17 @@ fn make() -> clap::Command<'static> {
                 .last(true)
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(PathBuf)),
+        )
+        .arg(
+            Arg::new("patchranges")
+                .long("patch")
+                .short('p')
+                .help("Patch or revision to show")
+                .action(clap::ArgAction::Append)
+                .value_name("patch-or-rev")
+                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .conflicts_with("patchranges-all"),
         )
         .arg(argset::branch_arg())
         .arg(
@@ -118,7 +130,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
             oids.push(stack.get_patch(patchname).commit.id());
         }
     }
-    if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
+    if let Some(range_specs) = matches
+        .get_many::<patchrange::Specification>("patchranges-all")
+        .or_else(|| matches.get_many::<patchrange::Specification>("patchranges"))
+    {
         for spec in range_specs {
             match patchrange::patches_from_specs(
                 [spec],
