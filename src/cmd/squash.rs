@@ -67,6 +67,7 @@ fn make() -> clap::Command<'static> {
                 .short('n')
                 .help("Use <name> for the squashed patch")
                 .value_name("name")
+                .allow_hyphen_values(true)
                 .value_parser(PatchName::from_str),
         );
     patchedit::add_args(command, true, true)
