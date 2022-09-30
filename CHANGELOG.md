@@ -1,5 +1,47 @@
 # Changelog
 
+## [2.0.0-rc.1] 2022-09-30
+
+### Added
+- Added `--annotate` flag to `stg email send`.
+- Added `-p`/`--patch` option to `stg show` as alternative way to select patch
+  ranges (#216).
+- Added `-n`/`--name` option to `stg new` as alternative way to specify new
+  patch name (#216).
+
+### Changed
+- Update `git2` to 0.15.0, which may further help compatibility with
+  sparse checkouts and multiple worktrees (#195).
+- Update to `clap` 4.0, which changes the help formatting and coloring.
+- Update other dependencies to latest versions in Cargo.lock.
+- No longer depend on `lazy_static` crate.
+- Use `std::thread::scope` instead of custom mechanism. This brings the
+  total number of uses of `unsafe` in StGit to zero.
+- Minimum rustc requirement is set to 1.63.0.
+- The '$' sigil used for committed patches is now yellow instead of
+  white.
+- Patch names beginning with a hyphen '-' may be disambiguated from command
+  line options by escaping the leading '-' with a backslash.
+- `stg email format` and `stg email send` now use `-G`/`--git-opts` to pass
+  additional options to `git format-patch` and `git send-email`.
+- Patch name arguments to `stg email format` and `stg email-send` can now be
+  placed after a `--` separator (#216).
+- Update top-level usage help for `stg`.
+
+### Fixed
+- Various errors that may occur when executing a stack transaction are
+  now handled more robustly such that the changes from the transaction
+  are rolled-back so that the stack, repository, and worktree are all in
+  a consistent state (#205).
+- The `stg uncommit -h` usage indentation is repaired.
+- The `stg float` usage now shows the two distinct usage modes.
+- `stg squash --name` allows patch names with leading '-'.
+- `stg diff --range` allows patch names and ranges with leading '-'.
+- Fix some pre-indented paragraphs in help/about strings.
+- Zsh completion for `stg edit` incorrectly included -O/--diff-opts.
+- Zsh completion for `stg files` incorrectly included -O/--diff-opts.
+
+
 ## [2.0.0-beta.3] 2022-08-28
 
 ### Added
