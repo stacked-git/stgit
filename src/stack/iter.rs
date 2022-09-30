@@ -2,8 +2,7 @@
 
 //! Patch name iterators.
 
-use std::iter::Chain;
-use std::slice::Iter;
+use std::{iter::Chain, slice::Iter};
 
 use crate::patchname::PatchName;
 

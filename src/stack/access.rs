@@ -3,12 +3,11 @@
 //! The [`StackStateAccess`] trait allows uniform access to stack information for
 //! stack-like objects.
 
-use crate::patchname::PatchName;
-
 use super::{
     iter::{AllPatches, BothPatches},
     state::PatchState,
 };
+use crate::patchname::PatchName;
 
 /// Trait for accessing stack state.
 ///

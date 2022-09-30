@@ -22,6 +22,9 @@ use clap::{
     builder::{self, ValueParser},
     Arg, ArgMatches, ValueHint,
 };
+use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
+pub(crate) use interactive::call_editor;
+use interactive::edit_interactive;
 
 use crate::{
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
@@ -30,10 +33,6 @@ use crate::{
     stack::StackStateAccess,
     stupid::Stupid,
 };
-
-use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
-pub(crate) use interactive::call_editor;
-use interactive::edit_interactive;
 
 /// Add patch editing options to a StGit command.
 pub(crate) fn add_args(

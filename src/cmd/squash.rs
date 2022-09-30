@@ -2,8 +2,7 @@
 
 //! `stg squash` implementation.
 
-use std::fmt::Write;
-use std::str::FromStr;
+use std::{fmt::Write, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};

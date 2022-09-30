@@ -2,10 +2,12 @@
 
 //! Functions for conducting interactive patch edit session.
 
-use std::ffi::OsString;
-use std::fs::File;
-use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::{
+    ffi::OsString,
+    fs::File,
+    io::{BufWriter, Write},
+    path::Path,
+};
 
 use anyhow::{anyhow, Result};
 

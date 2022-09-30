@@ -5,10 +5,8 @@
 use anyhow::Result;
 use clap::Arg;
 
-use crate::color::get_color_stdout;
-use crate::stack::Stack;
-
 use super::undo::find_undo_state;
+use crate::{color::get_color_stdout, stack::Stack};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "redo",

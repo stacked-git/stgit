@@ -2,8 +2,7 @@
 
 //! High-level StGit stack representation.
 
-use std::collections::BTreeMap;
-use std::str::FromStr;
+use std::{collections::BTreeMap, str::FromStr};
 
 use anyhow::{anyhow, Result};
 

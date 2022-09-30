@@ -36,9 +36,11 @@ use anyhow::{anyhow, Result};
 use indexmap::IndexSet;
 
 pub(crate) use self::builder::TransactionBuilder;
-use self::options::{ConflictMode, TransactionOptions};
-use self::ui::TransactionUserInterface;
-
+use self::{
+    options::{ConflictMode, TransactionOptions},
+    ui::TransactionUserInterface,
+};
+use super::{error::Error, state::StackState};
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
@@ -46,8 +48,6 @@ use crate::{
     stack::{PatchState, Stack, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };
-
-use super::{error::Error, state::StackState};
 
 /// Stack transaction state.
 pub(crate) struct StackTransaction<'repo> {

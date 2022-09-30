@@ -5,19 +5,16 @@
 //! This stack state representation is serialized to/from the `stack.json` blob in the
 //! stack state tree.
 
-use std::collections::BTreeMap;
-use std::io::Write;
-use std::str;
+use std::{collections::BTreeMap, io::Write, str};
 
 use anyhow::{anyhow, Result};
 
+use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
     commit::{CommitMessage, CommitOptions, RepositoryCommitExtended},
     patchname::PatchName,
     signature::{SignatureExtended, TimeExtended},
 };
-
-use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 
 /// Stack state as recorded in the git repository.
 ///

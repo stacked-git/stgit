@@ -5,9 +5,8 @@ use std::{cell::RefCell, io::Write};
 use anyhow::Result;
 use termcolor::WriteColor;
 
-use crate::patchname::PatchName;
-
 use super::PushStatus;
+use crate::patchname::PatchName;
 
 /// User output for stack transactions.
 pub(super) struct TransactionUserInterface {

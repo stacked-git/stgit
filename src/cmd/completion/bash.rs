@@ -2,9 +2,9 @@
 
 //! `stg completion bash` implementation.
 
-use anyhow::Result;
-
 use std::{format as f, path::PathBuf};
+
+use anyhow::Result;
 
 use super::shstream::ShStream;
 

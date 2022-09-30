@@ -8,7 +8,6 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgGroup, ArgMatches};
 
 use super::refresh;
-
 use crate::{
     color::get_color_stdout,
     patchedit,

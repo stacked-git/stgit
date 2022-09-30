@@ -4,13 +4,12 @@ use std::collections::BTreeMap;
 
 use anyhow::Result;
 
-use crate::stack::{Stack, StackStateAccess};
-
 use super::{
     options::{ConflictMode, TransactionOptions},
     ui::TransactionUserInterface,
     ExecuteContext, StackTransaction,
 };
+use crate::stack::{Stack, StackStateAccess};
 
 /// Builder used to setup a stack transaction.
 pub(crate) struct TransactionBuilder<'repo> {
