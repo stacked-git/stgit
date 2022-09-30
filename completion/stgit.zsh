@@ -550,6 +550,7 @@ _stg-email-send() {
         '--reply-to=[specify Reply-To address]:email address:_email_addresses'
         '--in-reply-to=[specify contents of first In-Reply-To header]:message-id'
         '--compose[edit introductory message for patch series]'
+        '--annotate[review each patch in an editor]'
         '--identity=[specify configuration identity]: :__stg_email_send_identities'
         '--no-thread[do not set In-Reply-To: and References: headers]'
         '--confirm[specify type of confirmation required before sending]: :((
