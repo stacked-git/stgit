@@ -61,7 +61,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with("all")
-                .required_unless_present_any(&["all"]),
+                .required_unless_present_any(["all"]),
         )
         .arg(argset::branch_arg())
         .arg(

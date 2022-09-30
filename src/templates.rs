@@ -40,7 +40,7 @@ pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option
     // /etc/stgit/templates.
 
     for template_path in &template_paths {
-        if let Ok(template_bytes) = std::fs::read(&template_path) {
+        if let Ok(template_bytes) = std::fs::read(template_path) {
             let template = std::str::from_utf8(&template_bytes).map_err(|_| {
                 anyhow!(
                     "Template file `{}` contains non-UTF-8 data",

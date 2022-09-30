@@ -304,7 +304,7 @@ fn interactive_pushback(
                 let dummy_edit_command = clap::Command::new("dummy-edit");
                 let dummy_edit_command = patchedit::add_args(dummy_edit_command, false, false);
                 let edit_matches = dummy_edit_command
-                    .try_get_matches_from(&["dummy-edit", "--edit", "--diff"])
+                    .try_get_matches_from(["dummy-edit", "--edit", "--diff"])
                     .expect("dummy command has valid arguments");
                 match patchedit::EditBuilder::default()
                     .original_patchname(Some(patchname))
@@ -369,14 +369,14 @@ fn interactive_pushback(
                 let dummy_squash_command = patchedit::add_args(dummy_squash_command, true, false);
                 let squash_matches = match instruction.action {
                     Action::Squash => {
-                        dummy_squash_command.try_get_matches_from(&["dummy-squash", "--edit"])
+                        dummy_squash_command.try_get_matches_from(["dummy-squash", "--edit"])
                     }
                     Action::Fixup => {
                         let commit = stack.get_patch_commit(target_patchname);
                         let message = commit.message_raw().ok_or_else(|| {
                             anyhow!("Fixup target patch `{target_patchname}` has non-UTF-8 message")
                         })?;
-                        dummy_squash_command.try_get_matches_from(&[
+                        dummy_squash_command.try_get_matches_from([
                             "dummy-squash",
                             "--message",
                             message,

@@ -66,7 +66,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .multiple_values(true)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
                 .conflicts_with_all(&["all", "dump-aliases"])
-                .required_unless_present_any(&["all", "dump-aliases"]),
+                .required_unless_present_any(["all", "dump-aliases"]),
         )
         .arg(argset::branch_arg())
         .arg(

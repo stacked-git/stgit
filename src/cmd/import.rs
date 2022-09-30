@@ -287,7 +287,7 @@ fn import_url(stack: Stack, matches: &clap::ArgMatches) -> Result<()> {
 
 #[cfg(feature = "import-compressed")]
 fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
-    let source_file = std::fs::File::open(&source_path)?;
+    let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(flate2::read::GzDecoder::new(source_file));
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
@@ -297,7 +297,7 @@ fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
 
 #[cfg(feature = "import-compressed")]
 fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
-    let source_file = std::fs::File::open(&source_path)?;
+    let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(bzip2::read::BzDecoder::new(source_file));
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
@@ -307,7 +307,7 @@ fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pa
 
 #[cfg(feature = "import-compressed")]
 fn import_tar_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
-    let source_file = std::fs::File::open(&source_path)?;
+    let source_file = std::fs::File::open(source_path)?;
     let mut archive = tar::Archive::new(source_file);
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;

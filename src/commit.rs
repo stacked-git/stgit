@@ -234,7 +234,7 @@ impl<'a> CommitMessage<'a> {
         match self {
             Self::Str(s) => s.as_bytes(),
             Self::String(s) => s.as_bytes(),
-            Self::Raw { bytes, encoding: _ } => *bytes,
+            Self::Raw { bytes, encoding: _ } => bytes,
         }
     }
 }

@@ -608,7 +608,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     new_tree.id(),
                     <Option<Vec<OsString>>>::None,
                     false,
-                    &["--full-index"],
+                    ["--full-index"],
                 )?
             } else {
                 // This is a special case for `stg new` without the `--refresh` option.
@@ -732,7 +732,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 Err(e) => {
                     let diff = Some(DiffBuffer(diff));
                     let failed_description_path = ".stgit-failed.patch";
-                    let mut stream = BufWriter::new(File::create(&failed_description_path)?);
+                    let mut stream = BufWriter::new(File::create(failed_description_path)?);
                     let failed_patch_description = EditablePatchDescription {
                         patchname,
                         author,
