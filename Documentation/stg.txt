@@ -10,7 +10,8 @@ SYNOPSIS
 --------
 [verse]
 'stg' [OPTIONS] <command> [...]
-'stg' [OPTIONS] \<--version|-h|--help>
+'stg' [OPTIONS] \<-h|--help>
+'stg' --version
 
 DESCRIPTION
 -----------
