@@ -19,7 +19,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Reset the patch stack to an earlier state")
         .long_about(
@@ -31,7 +31,7 @@ fn make() -> clap::Command<'static> {
              are reset.",
         )
         .override_usage(
-            "stg reset [--hard] [<committish> [<patchname>...]]\n    \
+            "stg reset [--hard] [<committish> [<patchname>...]]\n       \
              stg reset --hard",
         )
         .trailing_var_arg(true)
@@ -44,7 +44,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patchranges-all")
                 .help("Only reset these patches")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(

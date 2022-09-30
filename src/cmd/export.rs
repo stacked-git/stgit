@@ -29,7 +29,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Export patches to a directory")
         .long_about(
@@ -63,7 +63,7 @@ fn make() -> clap::Command<'static> {
                      '[begin-patch]..[end-patch]' may be specified.",
                 )
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(argset::branch_arg())
@@ -89,7 +89,7 @@ fn make() -> clap::Command<'static> {
                 .short('e')
                 .help("Suffix patch file names with \".<ext>\"")
                 .conflicts_with("patch")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("ext"),
         )
         .arg(

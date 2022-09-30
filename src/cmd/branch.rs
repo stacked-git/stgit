@@ -24,7 +24,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Branch operations: switch, list, create, rename, delete, ...")
         .long_about(
@@ -36,17 +36,17 @@ fn make() -> clap::Command<'static> {
         )
         .disable_help_subcommand(true)
         .override_usage(
-            "stg branch\n    \
-             stg branch [--merge] <branch>\n    \
-             stg branch {--list,-l}\n    \
-             stg branch {--create,-c} <new-branch> [committish]\n    \
-             stg branch --clone [new-branch]\n    \
-             stg branch {--rename,-r} [old-name] <new-name>\n    \
-             stg branch {--protect,-p} [branch]\n    \
-             stg branch {--unprotect,-u} [branch]\n    \
-             stg branch --delete [--force] <branch>\n    \
-             stg branch --cleanup [--force] [branch]\n    \
-             stg branch {--describe,-d} <description> [branch]",
+            "stg branch\
+             \n       stg branch [--merge] <branch>\
+             \n       stg branch {--list,-l}\
+             \n       stg branch {--create,-c} <new-branch> [committish]\
+             \n       stg branch --clone [new-branch]\
+             \n       stg branch {--rename,-r} [old-name] <new-name>\
+             \n       stg branch {--protect,-p} [branch]\
+             \n       stg branch {--unprotect,-u} [branch]\
+             \n       stg branch --delete [--force] <branch>\
+             \n       stg branch --cleanup [--force] [branch]\
+             \n       stg branch {--describe,-d} <description> [branch]",
         )
         .subcommand(
             clap::Command::new("--list")
@@ -115,9 +115,7 @@ fn make() -> clap::Command<'static> {
                         .help("Optional name of branch to rename and new branch name")
                         .hide_short_help(true)
                         .required(true)
-                        .multiple_values(true)
-                        .min_values(1)
-                        .max_values(2)
+                        .num_args(1..=2)
                         .value_parser(argset::parse_branch_name),
                 ),
         )

@@ -20,7 +20,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Fold diff file into the current patch")
         .long_about(
@@ -52,7 +52,7 @@ fn make() -> clap::Command<'static> {
                 .help("Use <committish> instead of HEAD when applying the patch")
                 .value_name("committish"),
         )
-        .group(ArgGroup::new("merge-style").args(&["three-way", "base"]))
+        .group(ArgGroup::new("merge-style").args(["three-way", "base"]))
         .arg(
             Arg::new("strip")
                 .long("strip")

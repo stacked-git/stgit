@@ -20,7 +20,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Repair stack after branch is modified with git commands")
         .long_about(

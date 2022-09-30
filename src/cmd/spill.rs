@@ -22,7 +22,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Spill changes from the topmost patch")
         .long_about(
@@ -37,7 +37,7 @@ fn make() -> clap::Command<'static> {
                 .long("annotate")
                 .short('a')
                 .help("Annotate the patch log entry with note")
-                .takes_value(true)
+                .num_args(1..)
                 .value_name("note"),
         )
         .arg(
@@ -56,7 +56,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("pathspecs")
                 .help("Only spill files matching path")
                 .value_name("path")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PathBuf)),
         )
 }

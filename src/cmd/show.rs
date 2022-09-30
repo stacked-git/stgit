@@ -21,7 +21,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Show patch commits")
         .long_about(
@@ -31,8 +31,8 @@ fn make() -> clap::Command<'static> {
              The output is similar to 'git show'.",
         )
         .override_usage(
-            "stg show [OPTIONS] [patch-or-rev]... [-- <path>...]\n    \
-             stg show [OPTIONS] [--patch <patch-or-rev>]... [-- <path>...]\n    \
+            "stg show [OPTIONS] [patch-or-rev]... [-- <path>...]\n       \
+             stg show [OPTIONS] [--patch <patch-or-rev>]... [-- <path>...]\n       \
              stg show [OPTIONS] [-A] [-U] [-H] [-- <path>...]",
         )
         .arg(
@@ -46,16 +46,16 @@ fn make() -> clap::Command<'static> {
                      may be specified.",
                 )
                 .value_name("patch-or-rev")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["applied", "unapplied", "hidden"]),
+                .conflicts_with_all(["applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("pathspecs")
                 .help("Limit diff to files matching path")
                 .value_name("path")
                 .last(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PathBuf)),
         )
         .arg(
@@ -78,7 +78,7 @@ fn make() -> clap::Command<'static> {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(argset::diff_opts_arg())
-        .next_help_heading("SELECTION OPTIONS")
+        .next_help_heading("Selection Options")
         .arg(
             Arg::new("applied")
                 .long("applied")

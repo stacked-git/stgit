@@ -15,11 +15,11 @@ test_expect_success 'Setup new patches for range tests' '
 
 test_expect_success 'Patch range args conflict with opts' '
     general_error stg series -a p2.. 2>err &&
-    grep -e "error: The argument .--all. cannot be used with .<patch>\.\.\.." err &&
+    grep -e "error: The argument .--all. cannot be used with .\[patch\]\.\.\.." err &&
     general_error stg series -A p2.. 2>err &&
-    grep -e "error: The argument .--applied. cannot be used with .<patch>\.\.\.." err &&
+    grep -e "error: The argument .--applied. cannot be used with .\[patch\]\.\.\.." err &&
     general_error stg series --unapplied p2.. 2>err &&
-    grep -e "error: The argument .--unapplied. cannot be used with .<patch>\.\.\.." err
+    grep -e "error: The argument .--unapplied. cannot be used with .\[patch\]\.\.\.." err
 '
 
 test_expect_success 'Range with single patch' '

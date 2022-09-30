@@ -26,7 +26,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     let app = clap::Command::new("new")
         .about("Create a new patch at top of the stack")
         .long_about(
@@ -53,7 +53,7 @@ fn make() -> clap::Command<'static> {
              editor.",
         )
         .override_usage(
-            "stg new [OPTIONS] [patchname] [-- <path>...]\n    \
+            "stg new [OPTIONS] [patchname] [-- <path>...]\n       \
              stg new [OPTIONS] [--name <patchname>] [-- <path>...]",
         )
         .arg(
@@ -71,7 +71,7 @@ fn make() -> clap::Command<'static> {
                 )
                 .value_name("path")
                 .last(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with("save-template"),
         )
@@ -90,7 +90,7 @@ fn make() -> clap::Command<'static> {
                 .value_parser(clap::value_parser!(PatchName))
                 .conflicts_with("patchname"),
         )
-        .next_help_heading("REFRESH OPTIONS")
+        .next_help_heading("Refresh Options")
         .arg(
             Arg::new("refresh")
                 .long("refresh")
@@ -118,7 +118,7 @@ fn make() -> clap::Command<'static> {
                 )
                 .requires("refresh")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["pathspecs", "submodules", "force"]),
+                .conflicts_with_all(["pathspecs", "submodules", "force"]),
         )
         .arg(
             Arg::new("force")
@@ -152,7 +152,7 @@ fn make() -> clap::Command<'static> {
                 .action(clap::ArgAction::SetTrue)
                 .requires("refresh"),
         )
-        .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]));
+        .group(ArgGroup::new("submodule-group").args(["submodules", "no-submodules"]));
     patchedit::add_args(app, true, true)
 }
 

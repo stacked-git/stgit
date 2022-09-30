@@ -28,7 +28,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Synchronize patches with a branch or a series")
         .long_about(
@@ -43,7 +43,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patchranges")
                 .help("Patches to synchronize")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(
@@ -55,7 +55,7 @@ fn make() -> clap::Command<'static> {
         )
         .group(
             ArgGroup::new("which-patches")
-                .args(&["patchranges", "all"])
+                .args(["patchranges", "all"])
                 .required(false),
         )
         .arg(
@@ -76,7 +76,7 @@ fn make() -> clap::Command<'static> {
         )
         .group(
             ArgGroup::new("target")
-                .args(&["ref-branch", "series"])
+                .args(["ref-branch", "series"])
                 .required(true),
         )
 }

@@ -42,7 +42,7 @@ pub(crate) fn add_args(
     add_save_template: bool,
 ) -> clap::Command {
     let command = command
-        .next_help_heading("PATCH EDIT OPTIONS")
+        .next_help_heading("Patch Edit Options")
         .arg(
             Arg::new("edit")
                 .long("edit")
@@ -66,7 +66,7 @@ pub(crate) fn add_args(
                     .help("Use message for patch")
                     .long_help("Use message instead of invoking the editor")
                     .value_name("message")
-                    .takes_value(true)
+                    .num_args(1)
                     .value_parser(builder::NonEmptyStringValueParser::new())
                     .value_hint(ValueHint::Other)
                     .conflicts_with("file"),
@@ -81,7 +81,7 @@ pub(crate) fn add_args(
                          Use \"-\" to read from stdin.",
                     )
                     .value_name("path")
-                    .takes_value(true)
+                    .num_args(1)
                     .value_parser(clap::value_parser!(PathBuf))
                     .value_hint(ValueHint::FilePath),
             )
@@ -114,7 +114,7 @@ pub(crate) fn add_args(
                     .help("Not a valid option for this command")
                     .hide(true)
                     .value_name("path")
-                    .takes_value(true)
+                    .num_args(1)
                     .value_parser(no_file),
             )
     };
@@ -137,9 +137,7 @@ pub(crate) fn add_args(
                      This option may be provided multiple times.",
                 )
                 .value_name("value")
-                .takes_value(true)
-                .min_values(0)
-                .number_of_values(1)
+                .num_args(0..=1)
                 .default_missing_value("")
                 .require_equals(true)
                 .action(clap::ArgAction::Append),
@@ -155,9 +153,7 @@ pub(crate) fn add_args(
                      This option may be provided multiple times.",
                 )
                 .value_name("value")
-                .takes_value(true)
-                .min_values(0)
-                .number_of_values(1)
+                .num_args(0..=1)
                 .default_missing_value("")
                 .require_equals(true)
                 .action(clap::ArgAction::Append),
@@ -173,9 +169,7 @@ pub(crate) fn add_args(
                      This option may be provided multiple times.",
                 )
                 .value_name("value")
-                .takes_value(true)
-                .min_values(0)
-                .number_of_values(1)
+                .num_args(0..=1)
                 .default_missing_value("")
                 .require_equals(true)
                 .action(clap::ArgAction::Append),
@@ -185,7 +179,7 @@ pub(crate) fn add_args(
                 .long("sign-by")
                 .help("DEPRECATED: use --sign=value")
                 .hide(true)
-                .takes_value(true)
+                .num_args(1)
                 .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
@@ -195,7 +189,7 @@ pub(crate) fn add_args(
                 .long("ack-by")
                 .help("DEPRECATED: use --ack=value")
                 .hide(true)
-                .takes_value(true)
+                .num_args(1)
                 .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
@@ -205,7 +199,7 @@ pub(crate) fn add_args(
                 .long("review-by")
                 .help("DEPRECATED: use --review=value")
                 .hide(true)
-                .takes_value(true)
+                .num_args(1)
                 .action(clap::ArgAction::Append)
                 .value_name("value")
                 .value_hint(ValueHint::EmailAddress),
@@ -215,7 +209,7 @@ pub(crate) fn add_args(
                 .long("author")
                 .help("Set the author \"name <email>\"")
                 .value_name("name-and-email")
-                .takes_value(true)
+                .num_args(1)
                 .value_parser(ValueParser::new(signature::parse_name_email2))
                 .value_hint(ValueHint::Other),
         )
@@ -224,7 +218,7 @@ pub(crate) fn add_args(
                 .long("authname")
                 .help("Set the author name")
                 .value_name("name")
-                .takes_value(true)
+                .num_args(1)
                 .value_hint(ValueHint::Other)
                 .value_parser(ValueParser::new(signature::parse_name))
                 .conflicts_with("author"),
@@ -234,7 +228,7 @@ pub(crate) fn add_args(
                 .long("authemail")
                 .help("Set the author email")
                 .value_name("email")
-                .takes_value(true)
+                .num_args(1)
                 .value_hint(ValueHint::EmailAddress)
                 .value_parser(ValueParser::new(signature::parse_email))
                 .conflicts_with("author"),
@@ -249,7 +243,7 @@ pub(crate) fn add_args(
                      Use \"now\" to use the current time and date.",
                 )
                 .value_name("date")
-                .takes_value(true)
+                .num_args(1)
                 .value_parser(ValueParser::new(signature::parse_time))
                 .value_hint(ValueHint::Other),
         );
@@ -266,11 +260,11 @@ pub(crate) fn add_args(
                      first call a command with '--save-template', then let the user \
                      edit the message, and then call the same command with '--file'.",
                 )
-                .takes_value(true)
+                .num_args(1)
                 .value_name("file")
                 .value_hint(ValueHint::FilePath)
                 .value_parser(clap::value_parser!(PathBuf))
-                .conflicts_with_all(&["message", "file"]),
+                .conflicts_with_all(["message", "file"]),
         )
     } else {
         command

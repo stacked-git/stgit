@@ -22,7 +22,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Push (apply) one or more unapplied patches")
         .long_about(
@@ -38,17 +38,17 @@ fn make() -> clap::Command<'static> {
              using 'stg undo'.",
         )
         .override_usage(
-            "stg push [OPTIONS] [patch]...\n    \
-             stg push [OPTIONS] -n <number>\n    \
+            "stg push [OPTIONS] [patch]...\n       \
+             stg push [OPTIONS] -n <number>\n       \
              stg push [OPTIONS] --all",
         )
         .arg(
             Arg::new("patchranges-unapplied")
                 .help("Patches to push")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["all", "number"]),
+                .conflicts_with_all(["all", "number"]),
         )
         .arg(
             Arg::new("all")
@@ -69,7 +69,7 @@ fn make() -> clap::Command<'static> {
                      A negative number indicates to push all but that number \
                      of patches",
                 )
-                .takes_value(true)
+                .num_args(1)
                 .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("n")
                 .value_parser(clap::value_parser!(isize)),
@@ -84,10 +84,10 @@ fn make() -> clap::Command<'static> {
             Arg::new("noapply")
                 .long("noapply")
                 .help("Reorder patches by pushing without applying")
-                .conflicts_with_all(&["all", "number"])
+                .conflicts_with_all(["all", "number"])
                 .requires("patchranges-unapplied")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["set-tree", "merged"]),
+                .conflicts_with_all(["set-tree", "merged"]),
         )
         .arg(
             Arg::new("set-tree")

@@ -68,7 +68,7 @@ pub(crate) struct StGitCommand {
     pub category: CommandCategory,
 
     /// Function pointer for making the [`clap::Command`] for the StGit subcommand.
-    pub make: fn() -> clap::Command<'static>,
+    pub make: fn() -> clap::Command,
 
     /// Function pointer for running the StGit subcommand.
     pub run: fn(&clap::ArgMatches) -> anyhow::Result<()>,

@@ -55,8 +55,8 @@ test_expect_success 'Test StGit alias help' '
     test "$(stg patch-count)" = "0" &&
     stg patch-count -h 2>&1 >/dev/null |
     grep ".patch-count. is aliased to .series --all --count." &&
-    stg patch-count -h 2>/dev/null | head -n 1 |
-    grep "stg-series"
+    stg patch-count -h 2>/dev/null |
+    grep -i "Usage: stg series"
 '
 
 test_expect_success 'Alias expansion with quoted string' '

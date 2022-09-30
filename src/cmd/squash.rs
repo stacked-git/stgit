@@ -27,7 +27,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     let command = clap::Command::new("squash")
         .about("Squash two or more patches into one")
         .long_about(
@@ -57,7 +57,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patchranges")
                 .help("Patches to squash")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )

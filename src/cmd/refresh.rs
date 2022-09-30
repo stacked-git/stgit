@@ -32,7 +32,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     let app = clap::Command::new("refresh")
         .about("Incorporate worktree changes into current patch")
         .long_about(
@@ -67,10 +67,10 @@ fn make() -> clap::Command<'static> {
             Arg::new("pathspecs")
                 .help("Only refresh files matching path")
                 .value_name("path")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PathBuf)),
         )
-        .next_help_heading("REFRESH OPTIONS")
+        .next_help_heading("Refresh Options")
         .arg(
             Arg::new("update")
                 .long("update")
@@ -89,7 +89,7 @@ fn make() -> clap::Command<'static> {
                      contents of the index.",
                 )
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["pathspecs", "update", "submodules", "force"]),
+                .conflicts_with_all(["pathspecs", "update", "submodules", "force"]),
         )
         .arg(
             Arg::new("force")
@@ -108,7 +108,7 @@ fn make() -> clap::Command<'static> {
                 .long("patch")
                 .short('p')
                 .help("Refresh (applied) <patch> instead of the top patch")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("patch")
                 .value_hint(ValueHint::Other)
                 .value_parser(PatchName::from_str),
@@ -118,7 +118,7 @@ fn make() -> clap::Command<'static> {
                 .long("annotate")
                 .short('a')
                 .help("Annotate the patch log entry with <note>")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("note")
                 .value_hint(ValueHint::Other),
         )
@@ -128,7 +128,7 @@ fn make() -> clap::Command<'static> {
                 .short('s')
                 .help("Include submodules in patch content")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["update"]),
+                .conflicts_with("update"),
         )
         .arg(
             Arg::new("no-submodules")
@@ -136,7 +136,7 @@ fn make() -> clap::Command<'static> {
                 .help("Exclude submodules in patch content")
                 .action(clap::ArgAction::SetTrue),
         )
-        .group(ArgGroup::new("submodule-group").args(&["submodules", "no-submodules"]))
+        .group(ArgGroup::new("submodule-group").args(["submodules", "no-submodules"]))
         .arg(
             Arg::new("spill")
                 .long("spill")

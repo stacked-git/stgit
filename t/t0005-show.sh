@@ -24,7 +24,7 @@ test_expect_success 'Combined -A/-U options' '
 
 test_expect_success 'Invalid arg with -A' '
     general_error stg show --applied patch-aaa 2>err &&
-    grep -e "The argument .--applied. cannot be used with .<patch-or-rev>\.\.\.." err
+    grep -e "The argument .--applied. cannot be used with .\[patch-or-rev\]\.\.\.." err
 '
 
 test_expect_success 'Invalid patch name' '

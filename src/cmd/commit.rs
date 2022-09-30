@@ -19,7 +19,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Finalize patches to the stack base")
         .long_about(
@@ -37,17 +37,17 @@ fn make() -> clap::Command<'static> {
              all applied patches are committed.",
         )
         .override_usage(
-            "stg commit [OPTIONS] [patch]...\n    \
-             stg commit [OPTIONS] -n <number>\n    \
+            "stg commit [OPTIONS] [patch]...\n       \
+             stg commit [OPTIONS] -n <number>\n       \
              stg commit [OPTIONS] --all",
         )
         .arg(
             Arg::new("patchranges")
                 .help("Patches to commit")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["all", "number"]),
+                .conflicts_with_all(["all", "number"]),
         )
         .arg(
             Arg::new("number")

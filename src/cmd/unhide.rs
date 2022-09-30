@@ -14,7 +14,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Unhide hidden patches")
         .long_about(
@@ -26,7 +26,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patchranges-hidden")
                 .help("Patches to unhide")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .required(true),
         )

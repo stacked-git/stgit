@@ -13,7 +13,7 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("format")
         .about("Format patches as email files")
         .long_about(
@@ -51,14 +51,14 @@ pub(super) fn command() -> clap::Command<'static> {
              a `--` separator. See the git-format-patch(1) man page.",
         )
         .override_usage(
-            "stg email format [OPTIONS] <patch>...\n    \
+            "stg email format [OPTIONS] <patch>...\n       \
              stg email format [OPTIONS] --all",
         )
         .arg(
             Arg::new("patchranges")
                 .help("Patches to format")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with("all")
                 .required_unless_present_any(["all"]),
@@ -80,14 +80,14 @@ pub(super) fn command() -> clap::Command<'static> {
                 .action(clap::ArgAction::Append)
                 .value_name("git-options"),
         )
-        .next_help_heading("FORMAT OPTIONS")
+        .next_help_heading("Format Options")
         .args(format_options())
-        .next_help_heading("MESSAGE OPTIONS")
+        .next_help_heading("Message Options")
         .args(message_options())
     // DIFF OPTIONS ???
 }
 
-fn format_options() -> Vec<Arg<'static>> {
+fn format_options() -> Vec<Arg> {
     vec![
         Arg::new("output-directory")
             .long("output-directory")
@@ -97,7 +97,7 @@ fn format_options() -> Vec<Arg<'static>> {
                 "Use <dir> to store the output files instead of the \
                  current working directory.",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("dir")
             .value_hint(clap::ValueHint::DirPath)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
@@ -125,7 +125,7 @@ fn format_options() -> Vec<Arg<'static>> {
             .long("start-number")
             .help("Start numbering at <n> instead of 1")
             .value_name("n")
-            .takes_value(true),
+            .num_args(1),
         Arg::new("reroll-count")
             .long("reroll-count")
             .short('v')
@@ -143,7 +143,7 @@ fn format_options() -> Vec<Arg<'static>> {
                  which version the new interation is compared against.",
             )
             .value_name("n")
-            .takes_value(true),
+            .num_args(1),
         Arg::new("rfc")
             .long("rfc")
             .help("Use [RFC PATCH] instead of [PATCH]")
@@ -162,7 +162,7 @@ fn format_options() -> Vec<Arg<'static>> {
                  and can be combined with the `--numbered` option.",
             )
             .value_name("prefix")
-            .takes_value(true),
+            .num_args(1),
         Arg::new("quiet")
             .long("quiet")
             .help("Do not print the names of the generated files")
@@ -194,7 +194,7 @@ fn format_options() -> Vec<Arg<'static>> {
                  this empty will remove the `.patch` suffix.",
             )
             .value_name("suffix")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("keep-subject")
             .long("keep-subject")
@@ -229,7 +229,7 @@ fn format_options() -> Vec<Arg<'static>> {
     ]
 }
 
-fn message_options() -> Vec<Arg<'static>> {
+fn message_options() -> Vec<Arg> {
     vec![
         Arg::new("to")
             .long("to")
@@ -241,7 +241,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  command line).",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
@@ -260,7 +260,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  command line).",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
@@ -278,7 +278,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  provide a new patch series.",
             )
             .value_name("message-id")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("add-header")
             .long("add-header")
@@ -291,7 +291,7 @@ fn message_options() -> Vec<Arg<'static>> {
                 //  and custom)  headers added so far from config or command line."
             )
             .value_name("header")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append),
         // N.B. not supporting the optional mime-boundary value
@@ -338,11 +338,9 @@ fn message_options() -> Vec<Arg<'static>> {
                  will want to ensure that threading is disabled for `git send-email`.",
             )
             .value_name("style")
-            .takes_value(true)
             .hide_possible_values(true)
             .value_parser(["shallow", "deep", ""])
-            .min_values(0)
-            .number_of_values(1)
+            .num_args(0..=1)
             .default_missing_value("")
             .require_equals(true),
         Arg::new("no-thread")
@@ -357,7 +355,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  git version number, or the `format.signature` configuration value, if \
                  specified. The signature may be disabled with `--no-signature`",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("signature")
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("no-signature")
@@ -368,14 +366,14 @@ fn message_options() -> Vec<Arg<'static>> {
             .long("signature-file")
             .help("Add a signature from a file")
             .long_help("Like `--signature` except the signature is read from a file.")
-            .takes_value(true)
+            .num_args(1)
             .value_name("file")
             .value_hint(clap::ValueHint::FilePath),
         Arg::new("base")
             .long("base")
             .help("Add prerequisite tree info to the patch series")
             .long_help("See the BASE TREE INFORMATION section of git-format-patch(1).")
-            .takes_value(true)
+            .num_args(1)
             .value_name("committish")
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("progress")
@@ -395,7 +393,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  series being formatted (for example `git format-patch --cover-letter \
                  --interdiff=feature/v1 -3 feature/v2`).",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("rev")
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("range-diff")
@@ -418,7 +416,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  the underlying `range-diff` machinery used to generate the \
                  cover-letter material (this may change in the future).",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("refspec")
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("creation-factor")
@@ -430,7 +428,7 @@ fn message_options() -> Vec<Arg<'static>> {
                  adjusting the creation/deletion cost fudge factor. See \
                  git-range-diff(1)) for details.",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("n")
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         // NO --from
@@ -479,17 +477,15 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     dummy_command.build();
 
     for arg in dummy_command.get_arguments() {
-        let arg_id = arg.get_id();
+        let arg_id = arg.get_id().as_str();
         if matches!(
             matches.value_source(arg_id),
             Some(clap::parser::ValueSource::CommandLine)
         ) {
-            let num_args =
-                arg.get_num_vals()
-                    .unwrap_or_else(|| if arg.is_takes_value_set() { 1 } else { 0 });
+            let num_args = arg.get_num_args().expect("built Arg's num_args is Some");
             let long = arg.get_long().expect("passthrough arg has long option");
             let indices = matches.indices_of(arg_id).expect("value source is cmdline");
-            if num_args > 0 {
+            if num_args.takes_values() {
                 let values = matches.get_many::<String>(arg_id).unwrap();
                 assert!(indices.len() == values.len());
                 indices.into_iter().zip(values).for_each(|(index, value)| {

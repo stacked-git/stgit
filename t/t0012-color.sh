@@ -7,12 +7,12 @@ test_description='Test stg.main'
 
 test_expect_success TTY 'Color help' '
     test_terminal stg -h | test_decode_color >output &&
-    head -n1 output | grep "<GREEN>stg<RESET>"
+    cat output | grep "<BOLD>-h<RESET>"
 '
 
 test_expect_success TTY 'Help with --color=never' '
     test_terminal stg -h --color=never | test_decode_color >output &&
-    head -n1 output | grep -v "<GREEN>"
+    head -n1 output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Help with NO_COLOR' '
@@ -21,7 +21,7 @@ test_expect_success TTY 'Help with NO_COLOR' '
         export NO_COLOR &&
         test_terminal stg -h | test_decode_color >output
     ) &&
-    head -n1 output | grep -v "<GREEN>"
+    head -n1 output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Help with NO_COLOR and --color' '
@@ -30,7 +30,7 @@ test_expect_success TTY 'Help with NO_COLOR and --color' '
         export NO_COLOR &&
         test_terminal stg -h --color=always | test_decode_color >output
     ) &&
-    head -n1 output | grep "<GREEN>"
+    head -n1 output | grep "<RESET>"
 '
 
 test_expect_success TTY 'Command line parsing failure color' '
@@ -52,20 +52,20 @@ test_expect_success TTY 'Parsing failure with NO_COLOR' '
 
 test_expect_success TTY 'Subcommand color help' '
     test_terminal stg branch -h | test_decode_color >output &&
-    head -n1 output | grep "<GREEN>stg-branch<RESET>"
+    head -n1 output | grep "<RESET>"
 '
 
 test_expect_success TTY 'Subcommand help without color' '
     test_terminal stg --color=never branch -h | test_decode_color >output &&
-    head -n1 output | grep -v "<GREEN>" &&
+    head -n1 output | grep -v "<RESET>" &&
     test_terminal stg branch -h --color=never | test_decode_color >output &&
-    head -n1 output | grep -v "<GREEN>" &&
+    head -n1 output | grep -v "<RESET>" &&
     (
         NO_COLOR="" &&
         export NO_COLOR &&
         test_terminal stg branch -h | test_decode_color >output
     ) &&
-    head -n1 output | grep -v "<GREEN>"
+    head -n1 output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Subcommand parsing error color' '
@@ -89,17 +89,17 @@ test_expect_success TTY 'Subcommand color' '
 
 test_expect_success TTY 'Subcommand without color' '
     test_terminal stg branch -l --color never | test_decode_color >output &&
-    cat output | grep -v "<GREEN>" &&
+    cat output | grep -v "<RESET>" &&
     test_terminal stg branch --color never -l | test_decode_color >output &&
-    cat output | grep -v "<GREEN>" &&
+    cat output | grep -v "<RESET>" &&
     test_terminal stg --color never branch -l | test_decode_color >output &&
-    cat output | grep -v "<GREEN>" &&
+    cat output | grep -v "<RESET>" &&
     (
         NO_COLOR= &&
         export NO_COLOR &&
         test_terminal stg branch -l | test_decode_color >output
     ) &&
-    cat output | grep -v "<GREEN>"
+    cat output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Subcommand failure color' '

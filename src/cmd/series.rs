@@ -25,7 +25,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Display the patch series")
         .long_about(
@@ -40,28 +40,28 @@ fn make() -> clap::Command<'static> {
              Empty patches are prefixed with a '0'.",
         )
         .override_usage(
-            "stg series [OPTIONS] [-A] [-U] [-H]\n    \
-             stg series [OPTIONS] --all\n    \
-             stg series [OPTIONS] --short\n    \
-             stg series [OPTIONS] <patch>...",
+            "stg series [OPTIONS] [-A] [-U] [-H]\n       \
+             stg series [OPTIONS] --all\n       \
+             stg series [OPTIONS] --short\n       \
+             stg series [OPTIONS] [patch]...",
         )
         .arg(
             Arg::new("patchranges-all")
                 .help("Patches to display")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["all", "applied", "unapplied", "hidden", "short"]),
+                .conflicts_with_all(["all", "applied", "unapplied", "hidden", "short"]),
         )
         .arg(argset::branch_arg())
-        .next_help_heading("SELECT OPTIONS")
+        .next_help_heading("Select Options")
         .arg(
             Arg::new("all")
                 .long("all")
                 .short('a')
                 .help("Select all patches, including hidden patches")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["applied", "unapplied", "hidden"]),
+                .conflicts_with_all(["applied", "unapplied", "hidden"]),
         )
         .arg(
             Arg::new("short")
@@ -70,7 +70,7 @@ fn make() -> clap::Command<'static> {
                 .help("Select patches around the topmost patch only")
                 .action(clap::ArgAction::SetTrue),
         )
-        .group(ArgGroup::new("all-short-group").args(&["all", "short"]))
+        .group(ArgGroup::new("all-short-group").args(["all", "short"]))
         .arg(
             Arg::new("applied")
                 .long("applied")
@@ -97,11 +97,11 @@ fn make() -> clap::Command<'static> {
                 .long("missing")
                 .short('m')
                 .help("Select patches in <branch> not present in current branch")
-                .takes_value(true)
+                .num_args(1)
                 .value_name("branch")
                 .value_hint(ValueHint::Other),
         )
-        .next_help_heading("DISPLAY OPTIONS")
+        .next_help_heading("Display Options")
         .arg(
             Arg::new("author")
                 .long("author")
@@ -114,13 +114,7 @@ fn make() -> clap::Command<'static> {
                 .short('c')
                 .help("Display the number of selected patches and exit")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&[
-                    "description",
-                    "author",
-                    "empty",
-                    "show-branch",
-                    "no-prefix",
-                ]),
+                .conflicts_with_all(["description", "author", "empty", "show-branch", "no-prefix"]),
         )
         .arg(
             Arg::new("commit-id")
@@ -136,9 +130,7 @@ fn make() -> clap::Command<'static> {
                      integer greater than or equal to 4.",
                 )
                 .value_name("length")
-                .takes_value(true)
-                .min_values(0)
-                .number_of_values(1)
+                .num_args(0..=1)
                 .default_missing_value("full")
                 .require_equals(true)
                 .value_parser(clap::value_parser!(CommitIdLength)),
@@ -158,7 +150,7 @@ fn make() -> clap::Command<'static> {
                 .action(clap::ArgAction::SetTrue)
                 .overrides_with("description"),
         )
-        .group(ArgGroup::new("description-group").args(&["description", "no-description"]))
+        .group(ArgGroup::new("description-group").args(["description", "no-description"]))
         .arg(
             Arg::new("empty")
                 .long("empty")

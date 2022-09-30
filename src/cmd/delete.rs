@@ -22,18 +22,18 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Delete patches")
         .override_usage(
-            "stg delete [OPTIONS] <patch>...\n    \
+            "stg delete [OPTIONS] <patch>...\n       \
              stg delete [OPTIONS] --top",
         )
         .arg(
             Arg::new("patchranges-all")
                 .help("Patches to delete")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
                 .conflicts_with("top")
                 .required_unless_present("top"),

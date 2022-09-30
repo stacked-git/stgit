@@ -7,7 +7,7 @@ use std::ffi::OsString;
 use clap::{Arg, ArgMatches};
 use termcolor::StandardStream;
 
-pub(crate) fn get_color_arg() -> Arg<'static> {
+pub(crate) fn get_color_arg() -> Arg {
     Arg::new("color")
         .long("color")
         .help("When to colorize output: auto, always, ansi, never")
@@ -27,9 +27,8 @@ pub(crate) fn get_color_arg() -> Arg<'static> {
         .hide_possible_values(true)
         .value_name("when")
         .value_parser(["auto", "always", "ansi", "never"])
-        .takes_value(true)
+        .num_args(1)
         .default_value("auto")
-        .overrides_with("color")
 }
 
 /// Map color choice string from command line to [`termcolor::ColorChoice`].

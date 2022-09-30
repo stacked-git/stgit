@@ -24,7 +24,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Pop (unapply) one or more applied patches")
         .long_about(
@@ -39,17 +39,17 @@ fn make() -> clap::Command<'static> {
              patches are popped out of last-pushed first-popped order.",
         )
         .override_usage(
-            "stg pop [OPTIONS] [patch]...\n    \
-             stg pop [OPTIONS] --all\n    \
+            "stg pop [OPTIONS] [patch]...\n       \
+             stg pop [OPTIONS] --all\n       \
              stg pop [OPTIONS] -n <number>",
         )
         .arg(
             Arg::new("patchranges-applied")
                 .help("Patches to pop")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["all", "number"]),
+                .conflicts_with_all(["all", "number"]),
         )
         .arg(
             Arg::new("all")
@@ -70,7 +70,7 @@ fn make() -> clap::Command<'static> {
                      A negative number indicates to pop all but that number \
                      of patches",
                 )
-                .takes_value(true)
+                .num_args(1)
                 .allow_hyphen_values(true) // i.e. for negative ints
                 .value_name("number")
                 .value_parser(clap::value_parser!(isize)),

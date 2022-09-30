@@ -14,7 +14,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Display or optionally clear the stack changelog")
         .long_about(
@@ -30,14 +30,14 @@ fn make() -> clap::Command<'static> {
              history cannot be undone.",
         )
         .override_usage(
-            "stg log [OPTIONS] [--] [patch]...\n    \
+            "stg log [OPTIONS] [--] [patch]...\n       \
              stg log --clear",
         )
         .arg(
             Arg::new("patchranges-all")
                 .help("Only show history for these patches")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification)),
         )
         .arg(argset::branch_arg())
@@ -69,7 +69,7 @@ fn make() -> clap::Command<'static> {
                 .short('g')
                 .help("Run gitk instead of printing to stdout")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["diff", "number", "full"]),
+                .conflicts_with_all(["diff", "number", "full"]),
         )
         .arg(
             Arg::new("clear")
@@ -77,7 +77,7 @@ fn make() -> clap::Command<'static> {
                 .help("Clear the stack history")
                 // .exclusive(true),
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["patchranges-all", "diff", "number", "full", "graphical"]),
+                .conflicts_with_all(["patchranges-all", "diff", "number", "full", "graphical"]),
         )
 }
 

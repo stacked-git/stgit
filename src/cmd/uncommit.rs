@@ -20,7 +20,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Convert regular Git commits into StGit patches")
         .long_about(
@@ -47,14 +47,14 @@ fn make() -> clap::Command<'static> {
              merge commits may not be uncommitted.",
         )
         .override_usage(
-            "stg uncommit <patchname-1> [<patchname-2> ...]\n    \
-             stg uncommit -n number [<patchname-prefix>]\n    \
+            "stg uncommit <patchname-1> [<patchname-2> ...]\n       \
+             stg uncommit -n number [<patchname-prefix>]\n       \
              stg uncommit -t <committish> [-x]",
         )
         .arg(
             Arg::new("patchname")
                 .help("Patch names for the uncommited commits")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(

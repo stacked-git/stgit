@@ -8,7 +8,7 @@ use std::{format as f, path::PathBuf};
 
 use super::shstream::ShStream;
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("bash")
         .about("Generate bash completion script")
         .arg(
@@ -139,11 +139,14 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
 
     let mut pos_index = 0;
     for arg in command.get_positionals() {
+        let value_range = arg.get_num_args().expect("num_args is some for built arg");
+        let num_vals = (value_range.max_values() > 1 && value_range.max_values() < usize::MAX)
+            .then_some(value_range.max_values());
         script.ensure_blank_line();
         if matches!(arg.get_action(), clap::ArgAction::Append)
-            || (arg.is_multiple_values_set() && arg.get_value_delimiter() == Some(' '))
+            || (num_vals.is_some() && arg.get_value_delimiter() == Some(' '))
         {
-            if let Some(num_vals) = arg.get_num_vals() {
+            if let Some(num_vals) = num_vals {
                 script.line(&f!(
                     "if (( pos_index >= {pos_index} && pos_index < {})); then",
                     pos_index + num_vals
@@ -167,7 +170,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
         }
         script.dedent();
 
-        pos_index += 1 + arg.get_num_vals().unwrap_or(0);
+        pos_index += 1 + num_vals.unwrap_or(0);
 
         script.line("fi");
     }
@@ -191,7 +194,7 @@ fn write_command_func(script: &mut ShStream, fname: &str, command: &clap::Comman
 
 /// Insert COMPREPLY line into script for given arg.
 fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
-    assert!(arg.is_takes_value_set());
+    assert!(arg.get_num_args().unwrap().takes_values());
 
     if let Some(possible_values) = arg.get_value_parser().possible_values() {
         let mut possible = ShStream::new();
@@ -205,7 +208,7 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
         arg.get_value_hint(),
         clap::ValueHint::Unknown | clap::ValueHint::Other
     ) {
-        match arg.get_id() {
+        match arg.get_id().as_str() {
             "branch" | "ref-branch" => {
                 script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_stg_branches)\" -- \"$cur\")")
             }
@@ -301,7 +304,11 @@ fn get_flags(command: &clap::Command) -> (ShStream, ShStream) {
         }
         if let Some(longs) = arg.get_long_and_visible_aliases() {
             for name in longs {
-                if arg.is_takes_value_set() {
+                if arg
+                    .get_num_args()
+                    .map(|value_range| value_range.takes_values())
+                    .unwrap_or(false)
+                {
                     long_flags.word(&f!("--{name}="));
                 } else {
                     long_flags.word(&f!("'--{name} '"));
@@ -400,10 +407,13 @@ fn get_options_pattern(command: &clap::Command) -> ShStream {
 fn get_cmd_flags_pattern(command: &clap::Command) -> ShStream {
     let mut flags = ShStream::new();
     flags.word_sep('|');
-    for arg in command
-        .get_arguments()
-        .filter(|arg| !arg.is_positional() && !arg.is_takes_value_set())
-    {
+    for arg in command.get_arguments().filter(|arg| {
+        !arg.is_positional()
+            && !arg
+                .get_num_args()
+                .expect("num_args is some for built arg")
+                .takes_values()
+    }) {
         flags.word(get_arg_flags_pattern(arg).as_ref());
     }
     flags

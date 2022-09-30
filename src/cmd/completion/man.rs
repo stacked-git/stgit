@@ -11,7 +11,7 @@ use anyhow::Result;
 
 const WIDTH: usize = 80;
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("man")
         .about("Generate asciidoc man pages")
         .long_about(
@@ -79,7 +79,9 @@ fn generate_asciidoc(command: &mut clap::Command) -> String {
         command
             .get_long_about()
             .or_else(|| command.get_about())
-            .unwrap(),
+            .unwrap()
+            .to_string()
+            .as_str(),
     );
     for para in paragraphs(&about) {
         if para.starts_with(' ') {
@@ -120,18 +122,19 @@ fn get_usage(command: &mut clap::Command) -> String {
 }
 
 fn add_usage(usage: &mut String, command: &mut clap::Command, name_stack: &[String]) {
-    let name = command.get_name().to_string();
-    let usage_lines = command
-        .render_usage()
+    let usage_string = command.render_usage().to_string();
+    let usage_lines = usage_string
+        .strip_prefix("Usage: ")
+        .expect("Usage starts with 'Usage: '")
         .lines()
-        .filter(|&line| line != "USAGE:")
-        .map(|line| line.trim_start().to_string())
+        .map(|line| line.trim_start())
+        .filter(|line| !line.is_empty())
         .collect::<Vec<_>>();
 
     if usage_lines.len() == 1 {
         let mut has_subcommands = false;
         let mut sub_name_stack = name_stack.to_vec();
-        sub_name_stack.push(name);
+        sub_name_stack.push(command.get_name().to_string());
         for subcmd in command.get_subcommands_mut() {
             has_subcommands = true;
             add_usage(usage, subcmd, &sub_name_stack);
@@ -212,7 +215,9 @@ fn add_command_stanza(section: &mut String, command: &clap::Command, stack: &[&s
             command
                 .get_long_about()
                 .or_else(|| command.get_about())
-                .unwrap(),
+                .unwrap()
+                .to_string()
+                .as_str(),
         );
 
         for (i, para) in paragraphs(&about).enumerate() {
@@ -286,7 +291,9 @@ fn add_options(
     for (i, arg) in command
         .get_arguments()
         .filter(|arg| {
-            !["help", "color"].contains(&arg.get_id()) && !arg.is_hide_set() && !arg.is_positional()
+            !["help", "color"].contains(&arg.get_id().as_str())
+                && !arg.is_hide_set()
+                && !arg.is_positional()
         })
         .enumerate()
     {
@@ -353,7 +360,13 @@ fn add_options(
                 }
             }
         }
-        let help = make_links(arg.get_long_help().or_else(|| arg.get_help()).unwrap());
+        let help = make_links(
+            arg.get_long_help()
+                .or_else(|| arg.get_help())
+                .unwrap()
+                .to_string()
+                .as_str(),
+        );
         for (i, para) in paragraphs(&help).enumerate() {
             if i > 0 {
                 section.push_str("+\n");

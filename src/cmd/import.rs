@@ -27,7 +27,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     let app = clap::Command::new("import")
         .about("Import patches to stack")
         .long_about(
@@ -51,18 +51,18 @@ fn make() -> clap::Command<'static> {
              The patch description must be separated from the diff with a \"---\" line.",
         )
         .override_usage(if cfg!(feature = "import-url") {
-            "stg import [OPTIONS] <diff-path>\n    \
-             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n    \
-             stg import [OPTIONS] -M [<mbox-path>]\n    \
-             stg import [OPTIONS] -s [<series-path>]\n    \
-             stg import [OPTIONS] -u <diff-url>\n    \
-             stg import [OPTIONS] -u -m <mail-url>\n    \
-             stg import [OPTIONS] -u -M <mbox-url>\n    \
+            "stg import [OPTIONS] <diff-path>\n       \
+             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
+             stg import [OPTIONS] -M [<mbox-path>]\n       \
+             stg import [OPTIONS] -s [<series-path>]\n       \
+             stg import [OPTIONS] -u <diff-url>\n       \
+             stg import [OPTIONS] -u -m <mail-url>\n       \
+             stg import [OPTIONS] -u -M <mbox-url>\n       \
              stg import [OPTIONS] -u -s <series-url>"
         } else {
-            "stg import [OPTIONS] <diff-path>\n    \
-             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n    \
-             stg import [OPTIONS] -M [<mbox-path>]\n    \
+            "stg import [OPTIONS] <diff-path>\n       \
+             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
+             stg import [OPTIONS] -M [<mbox-path>]\n       \
              stg import [OPTIONS] -s [<series-path>]"
         })
         .arg(
@@ -76,7 +76,7 @@ fn make() -> clap::Command<'static> {
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(clap::ValueHint::AnyPath),
         )
-        .next_help_heading("SOURCE OPTIONS")
+        .next_help_heading("Source Options")
         .arg(
             Arg::new("mail")
                 .long("mail")
@@ -99,7 +99,7 @@ fn make() -> clap::Command<'static> {
                 .long_help("Import patch series from a series file are tar archive.")
                 .action(clap::ArgAction::SetTrue),
         )
-        .group(ArgGroup::new("whence").args(&["mail", "mbox", "series"]));
+        .group(ArgGroup::new("whence").args(["mail", "mbox", "series"]));
 
     let app = if cfg!(feature = "import-url") {
         app.arg(
@@ -115,7 +115,7 @@ fn make() -> clap::Command<'static> {
     };
 
     let app = app
-        .next_help_heading("IMPORT OPTIONS")
+        .next_help_heading("Import Options")
         .arg(
             Arg::new("name")
                 .long("name")

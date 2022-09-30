@@ -15,7 +15,7 @@ use crate::{
     stupid::Stupid,
 };
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("send")
         .about("Send patches as emails")
         .long_about(
@@ -43,9 +43,9 @@ pub(super) fn command() -> clap::Command<'static> {
              line after a `--` separator. See the git-send-email(1) man page.",
         )
         .override_usage(
-            "stg email send [OPTIONS] <file|directory>...\n    \
-             stg email send [OPTIONS] <patch>...\n    \
-             stg email send [OPTIONS] --all\n    \
+            "stg email send [OPTIONS] <file|directory>...\n       \
+             stg email send [OPTIONS] <patch>...\n       \
+             stg email send [OPTIONS] --all\n       \
              stg email send --dump-aliases",
         )
         .arg(
@@ -63,9 +63,9 @@ pub(super) fn command() -> clap::Command<'static> {
                      file or directory names will be used.",
                 )
                 .value_name("source")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new())
-                .conflicts_with_all(&["all", "dump-aliases"])
+                .conflicts_with_all(["all", "dump-aliases"])
                 .required_unless_present_any(["all", "dump-aliases"]),
         )
         .arg(argset::branch_arg())
@@ -75,7 +75,7 @@ pub(super) fn command() -> clap::Command<'static> {
                 .short('a')
                 .help("Send all applied patches")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["patchranges-or-paths", "dump-aliases"]),
+                .conflicts_with_all(["patchranges-or-paths", "dump-aliases"]),
         )
         .arg(
             Arg::new("git-send-email-opts")
@@ -86,18 +86,18 @@ pub(super) fn command() -> clap::Command<'static> {
                 .action(clap::ArgAction::Append)
                 .value_name("git-options"),
         )
-        .next_help_heading("COMPOSE OPTIONS")
+        .next_help_heading("Compose Options")
         .args(compose_options())
-        .next_help_heading("SEND OPTIONS")
-        .next_help_heading("AUTOMATE OPTIONS")
+        .next_help_heading("Send Options")
+        .next_help_heading("Automate Options")
         .args(automate_options())
-        .next_help_heading("ADMINISTER OPTIONS")
+        .next_help_heading("Administer Options")
         .args(administer_options())
-        .next_help_heading("FORMAT OPTIONS")
+        .next_help_heading("Format Options")
         .args(format_options())
 }
 
-fn compose_options() -> Vec<Arg<'static>> {
+fn compose_options() -> Vec<Arg> {
     vec![
         Arg::new("from")
             .long("from")
@@ -111,7 +111,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  is not set, as returned by \"git var -l\".",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("to")
@@ -127,7 +127,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  This option may be specified multiple times.",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
@@ -141,7 +141,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  This option may be specified multiple times.",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
@@ -155,7 +155,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  This option may be specified multiple times.",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .action(clap::ArgAction::Append)
             .value_hint(clap::ValueHint::EmailAddress),
@@ -168,7 +168,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  for.",
             )
             .value_name("subject")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("reply-to")
             .long("reply-to")
@@ -179,7 +179,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  specified with the --from parameter.",
             )
             .value_name("address")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new())
             .value_hint(clap::ValueHint::EmailAddress),
         Arg::new("in-reply-to")
@@ -207,7 +207,7 @@ fn compose_options() -> Vec<Arg<'static>> {
                  this will be prompted for.",
             )
             .value_name("id")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("compose")
             .long("compose")
@@ -240,7 +240,7 @@ fn compose_options() -> Vec<Arg<'static>> {
     ]
 }
 
-fn automate_options() -> Vec<Arg<'static>> {
+fn automate_options() -> Vec<Arg> {
     vec![
         Arg::new("identity")
             .long("identity")
@@ -252,7 +252,7 @@ fn automate_options() -> Vec<Arg<'static>> {
                  sendemail.identity.",
             )
             .value_name("id")
-            .takes_value(true)
+            .num_args(1)
             .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         Arg::new("no-thread")
             .long("no-thread")
@@ -279,7 +279,7 @@ fn automate_options() -> Vec<Arg<'static>> {
     ]
 }
 
-fn administer_options() -> Vec<Arg<'static>> {
+fn administer_options() -> Vec<Arg> {
     vec![
         Arg::new("confirm")
             .long("confirm")
@@ -301,7 +301,7 @@ fn administer_options() -> Vec<Arg<'static>> {
                  \n  - 'auto' is equivalent to cc + compose",
             )
             .hide_possible_values(true)
-            .takes_value(true)
+            .num_args(1)
             .value_name("mode")
             .value_parser(["always", "never", "cc", "compose", "auto"]),
         Arg::new("quiet")
@@ -324,7 +324,7 @@ fn administer_options() -> Vec<Arg<'static>> {
     ]
 }
 
-fn format_options() -> Vec<Arg<'static>> {
+fn format_options() -> Vec<Arg> {
     vec![
         Arg::new("numbered")
             .long("numbered")
@@ -341,13 +341,13 @@ fn format_options() -> Vec<Arg<'static>> {
             .long("start-number")
             .help("Start numbering at <n> instead of 1")
             .value_name("n")
-            .takes_value(true),
+            .num_args(1),
         Arg::new("reroll-count")
             .long("reroll-count")
             .short('v')
             .help("Mark the series as the <n>th reroll")
             .value_name("n")
-            .takes_value(true),
+            .num_args(1),
         Arg::new("rfc")
             .long("rfc")
             .help("Use [RFC PATCH] instead of [PATCH]")
@@ -356,7 +356,7 @@ fn format_options() -> Vec<Arg<'static>> {
             .long("subject-prefix")
             .help("Use [<prefix>] instead of [PATCH]")
             .value_name("prefix")
-            .takes_value(true),
+            .num_args(1),
     ]
 }
 
@@ -433,17 +433,15 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     dummy_command.build();
 
     for arg in dummy_command.get_arguments() {
-        let arg_id = arg.get_id();
+        let arg_id = arg.get_id().as_str();
         if matches!(
             matches.value_source(arg_id),
             Some(clap::parser::ValueSource::CommandLine)
         ) {
-            let num_args =
-                arg.get_num_vals()
-                    .unwrap_or_else(|| if arg.is_takes_value_set() { 1 } else { 0 });
+            let num_args = arg.get_num_args().expect("built Arg's num_args is Some");
             let long = arg.get_long().expect("passthrough arg has long option");
             let indices = matches.indices_of(arg_id).expect("value source is cmdline");
-            if num_args > 0 {
+            if num_args.takes_values() {
                 let values = matches.get_many::<String>(arg_id).unwrap();
                 assert!(indices.len() == values.len());
                 indices.into_iter().zip(values).for_each(|(index, value)| {

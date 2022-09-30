@@ -5,19 +5,19 @@
 use clap::Arg;
 
 /// The `--branch`/`-b` option for selecting an alternative branch.
-pub(crate) fn branch_arg() -> Arg<'static> {
+pub(crate) fn branch_arg() -> Arg {
     Arg::new("branch")
         .long("branch")
         .short('b')
         .help("Use BRANCH instead of current branch")
-        .takes_value(true)
+        .num_args(1)
         .value_name("branch")
         .value_hint(clap::ValueHint::Other)
         .value_parser(parse_branch_name)
 }
 
 /// The `--keep/-k` option.
-pub(crate) fn keep_arg() -> Arg<'static> {
+pub(crate) fn keep_arg() -> Arg {
     Arg::new("keep")
         .long("keep")
         .short('k')
@@ -26,7 +26,7 @@ pub(crate) fn keep_arg() -> Arg<'static> {
 }
 
 /// The `--merged` option checking for already-merged patches before pushes.
-pub(crate) fn merged_arg() -> Arg<'static> {
+pub(crate) fn merged_arg() -> Arg {
     Arg::new("merged")
         .long("merged")
         .short('m')
@@ -35,12 +35,12 @@ pub(crate) fn merged_arg() -> Arg<'static> {
 }
 
 /// The `--diff-opts`/`-O` option for pass-through to subordinate `git` processes.
-pub(crate) fn diff_opts_arg() -> Arg<'static> {
+pub(crate) fn diff_opts_arg() -> Arg {
     Arg::new("diff-opts")
         .long("diff-opts")
         .short('O')
         .help("Extra options to pass to \"git diff\"")
-        .takes_value(true)
+        .num_args(1)
         .allow_hyphen_values(true)
         .action(clap::ArgAction::Append)
         .value_name("options")

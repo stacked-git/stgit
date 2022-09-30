@@ -50,15 +50,14 @@ const CONFLICT_ERROR: i32 = 3;
 /// The general strategy employed here is to only compose as much of the
 /// [`clap::Command`] graph as needed to execute the target subcommand; avoiding the
 /// cost of instantiating [`clap::Command`] instances for every StGit subcommand.
-fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
+fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
     let command = clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .override_usage(
-            "stg [OPTIONS] <command> [...]\n    \
-             stg [OPTIONS] <-h|--help>\n    \
+            "stg [OPTIONS] <command> [...]\n       \
+             stg [OPTIONS] <-h|--help>\n       \
              stg --version",
         )
-        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .help_expected(true)
         .max_term_width(88)
         .disable_version_flag(true)
@@ -102,9 +101,8 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
 /// can be quickly parsed just enough to determine whether the user has providied a valid
 /// subcommand or alias, but without the cost of instantiating [`clap::Command`]
 /// instances for any of subcommands or aliases.
-fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command<'static> {
+fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
     get_base_command(color_choice)
-        .global_setting(clap::AppSettings::DeriveDisplayOrder)
         .allow_external_subcommands(true)
         .disable_help_flag(true)
         .disable_help_subcommand(true)
@@ -126,11 +124,10 @@ fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::
 pub(crate) fn get_full_command(
     aliases: alias::Aliases,
     color_choice: Option<termcolor::ColorChoice>,
-) -> clap::Command<'static> {
+) -> clap::Command {
     get_base_command(color_choice)
         .subcommand_required(true)
         .arg_required_else_help(true)
-        .subcommand_help_heading("COMMANDS")
         .subcommand_value_name("command")
         .subcommands(STGIT_COMMANDS.iter().map(|command| (command.make)()))
         .subcommands(aliases.values().map(|alias| alias.make()))
@@ -189,23 +186,21 @@ fn main() -> ! {
                     Err(e) => exit_with_result(Err(e), color_choice),
                     Ok((aliases, maybe_repo)) => {
                         if let Some(alias) = aliases.get(sub_name) {
-                            let user_args: Vec<String> = sub_matches
-                                .get_many::<String>("")
+                            let user_args: Vec<OsString> = sub_matches
+                                .get_many::<OsString>("")
                                 .map_or_else(Vec::new, |vals| vals.cloned().collect());
-                            let user_args =
-                                user_args.iter().map(|s| s.as_str()).collect::<Vec<_>>();
 
                             match alias.kind {
                                 alias::AliasKind::Shell => execute_shell_alias(
                                     alias,
-                                    &user_args,
+                                    user_args,
                                     color_choice,
                                     maybe_repo.as_ref(),
                                 ),
                                 alias::AliasKind::StGit => execute_stgit_alias(
                                     alias,
                                     &argv[0],
-                                    &user_args,
+                                    user_args,
                                     color_choice,
                                     &aliases,
                                 ),
@@ -336,12 +331,12 @@ fn execute_command(
 /// child's return code.
 fn execute_shell_alias(
     alias: &alias::Alias,
-    user_args: &[&str],
+    user_args: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
     repo: Option<&git2::Repository>,
 ) -> ! {
     if let Some(first_arg) = user_args.first() {
-        if ["-h", "--help"].contains(first_arg) {
+        if [OsString::from("-h"), OsString::from("--help")].contains(first_arg) {
             eprintln!("'{}' is aliased to '!{}'", &alias.name, &alias.command);
         }
     }
@@ -413,28 +408,29 @@ fn execute_shell_alias(
 fn execute_stgit_alias(
     alias: &alias::Alias,
     exec_path: &OsString,
-    user_args: &[&str],
+    user_args: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
     aliases: &alias::Aliases,
 ) -> ! {
     let result = match alias.split() {
         Ok(alias_args) => {
+            if let Some(first_user_arg) = user_args.first() {
+                if [OsString::from("-h"), OsString::from("--help")].contains(first_user_arg) {
+                    eprintln!("'{}' is aliased to '{}'", &alias.name, &alias.command);
+                }
+            }
+
+            let mut user_args = user_args;
             let mut argv: Vec<OsString> =
                 Vec::with_capacity(1 + alias_args.len() + user_args.len());
             argv.push(exec_path.clone());
             argv.extend(alias_args.iter().map(OsString::from));
-            argv.extend(user_args.iter().map(OsString::from));
+            argv.append(&mut user_args);
 
             let resolved_cmd_name = alias_args
                 .first()
                 .expect("empty aliases are filtered in get_aliases()")
                 .as_str();
-
-            if let Some(first_user_arg) = user_args.first() {
-                if ["-h", "--help"].contains(first_user_arg) {
-                    eprintln!("'{}' is aliased to '{}'", &alias.name, &alias.command);
-                }
-            }
 
             if let Some(command) = STGIT_COMMANDS
                 .iter()

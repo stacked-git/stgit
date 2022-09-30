@@ -6,7 +6,7 @@ test_description='Test stg.main'
 
 test_expect_success 'Test no command' '
     general_error stg 2>err &&
-    grep -e "USAGE:" err
+    grep -i -e "Usage:" err
 '
 
 test_expect_success 'Test help/--help equivalence' '
@@ -21,7 +21,7 @@ test_expect_success 'Test help on invalid command' '
 '
 
 test_expect_success 'Test help on regular command' '
-    stg help init | grep -e "stg-init"
+    stg help init | grep -e "stg init"
 '
 
 test_expect_success 'Test help on ambiguous command' '
@@ -49,9 +49,8 @@ test_expect_success 'Test copyright' '
 '
 
 test_expect_success 'Test exec-path and subcommand relationship' '
-    stg series -h > series-help.txt &&
-    head -n 1 series-help.txt | grep "stg-series" &&
-    cat series-help.txt | grep -A1 "USAGE:" | grep "stg series "
+    stg id -h > id-help.txt &&
+    cat id-help.txt | grep -i -A1 "Usage:" | grep "stg id "
 '
 
 test_done

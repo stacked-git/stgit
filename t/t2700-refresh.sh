@@ -137,7 +137,7 @@ test_expect_success 'Attempt invalid options with --index' '
     echo foo4 > foo4.txt &&
     stg add foo4.txt &&
     general_error stg refresh -i . 2>err &&
-    grep -e "The argument .--index. cannot be used with .<path>\.\.\.." err &&
+    grep -e "The argument .--index. cannot be used with .\[path\]\.\.\.." err &&
     general_error stg refresh -i --force 2>err &&
     grep -e "The argument .--index. cannot be used with .--force." err &&
     general_error stg refresh -i --submodules 2>err &&

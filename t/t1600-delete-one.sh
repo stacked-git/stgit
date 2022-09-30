@@ -20,7 +20,7 @@ test_expect_success \
     'Invalid arguments' \
     '
     general_error stg delete --top foo 2>err &&
-    grep -e "error: The argument .--top. cannot be used with .<patch>\.\.\.." err
+    grep -e "error: The argument .--top. cannot be used with .\[patch\]\.\.\.." err
     '
 
 test_expect_success \

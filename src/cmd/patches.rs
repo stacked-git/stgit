@@ -24,7 +24,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Show patches that modify files")
         .long_about(
@@ -36,7 +36,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("pathspecs")
                 .help("Show patches that modify these paths")
                 .value_name("path")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(ValueHint::AnyPath),
         )

@@ -8,7 +8,7 @@ use anyhow::Result;
 
 use crate::cmd::STGIT_COMMANDS;
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("list")
         .about("List StGit command information")
         .arg(
@@ -101,11 +101,11 @@ fn list_aliases(
                 crate::alias::AliasKind::Shell => "!",
                 crate::alias::AliasKind::StGit => "",
             };
-            std::borrow::Cow::Owned(format!("{prefix}{expansion}"))
+            format!("{prefix}{expansion}")
         } else {
             let mut cmd = alias.make();
             cmd.build();
-            std::borrow::Cow::Borrowed(cmd.get_about().unwrap_or_default())
+            cmd.get_about().unwrap_or_default().to_string()
         };
         match style {
             OutputStyle::NameOnly => writeln!(output, "{name}"),

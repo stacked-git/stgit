@@ -29,7 +29,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Import a patch from another branch or a commit object")
         .long_about(
@@ -48,9 +48,9 @@ fn make() -> clap::Command<'static> {
              message.",
         )
         .override_usage(
-            "stg pick [OPTIONS] <source>...\n    \
-             stg pick [OPTIONS] [--name NAME] [--parent COMMITTISH] <source>\n    \
-             stg pick [OPTIONS] --fold [--file PATH]... <source>...\n    \
+            "stg pick [OPTIONS] <source>...\n       \
+             stg pick [OPTIONS] [--name NAME] [--parent COMMITTISH] <source>\n       \
+             stg pick [OPTIONS] --fold [--file PATH]... <source>...\n       \
              stg pick [OPTIONS] --update <source>...",
         )
         .arg(
@@ -58,7 +58,7 @@ fn make() -> clap::Command<'static> {
                 .help("Patch name or committish to import")
                 .value_name("source")
                 .required(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         )
         .arg(
@@ -82,14 +82,14 @@ fn make() -> clap::Command<'static> {
                 .short('x')
                 .help("Append the imported commit id to the patch log")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["fold", "update"]),
+                .conflicts_with_all(["fold", "update"]),
         )
         .arg(
             Arg::new("noapply")
                 .long("noapply")
                 .help("Keep the imported patch unapplied")
                 .action(clap::ArgAction::SetTrue)
-                .conflicts_with_all(&["fold", "update"]),
+                .conflicts_with_all(["fold", "update"]),
         )
         .arg(
             Arg::new("name")
@@ -98,7 +98,7 @@ fn make() -> clap::Command<'static> {
                 .help("Use <name> for the patch name")
                 .value_name("name")
                 .value_parser(PatchName::from_str)
-                .conflicts_with_all(&["fold", "update"]),
+                .conflicts_with_all(["fold", "update"]),
         )
         .arg(
             Arg::new("parent")
@@ -107,7 +107,7 @@ fn make() -> clap::Command<'static> {
                 .help("Use <committish> as parent")
                 .value_name("committish")
                 .value_parser(clap::value_parser!(PathBuf))
-                .conflicts_with_all(&["fold", "update"]),
+                .conflicts_with_all(["fold", "update"]),
         )
         .arg(
             Arg::new("fold")

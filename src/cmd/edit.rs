@@ -20,7 +20,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     let app = clap::Command::new("edit")
         .about("Edit a patch")
         .long_about(
@@ -60,7 +60,7 @@ fn make() -> clap::Command<'static> {
                  be used by tools built on top of StGit, such as the Emacs mode. \
                  See also the '--set-tree' flag of \"stg push\".",
             )
-            .takes_value(true)
+            .num_args(1)
             .value_name("treeish"),
     )
 }

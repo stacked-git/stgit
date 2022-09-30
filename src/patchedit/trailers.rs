@@ -83,8 +83,7 @@ mod test {
             .arg(
                 Arg::new("sign-off")
                     .long("sign-off")
-                    .takes_value(true)
-                    .min_values(0)
+                    .num_args(0..=1)
                     .default_missing_value("")
                     .require_equals(true)
                     .action(clap::ArgAction::Append),
@@ -92,8 +91,7 @@ mod test {
             .arg(
                 Arg::new("ack")
                     .long("ack")
-                    .takes_value(true)
-                    .min_values(0)
+                    .num_args(0..=1)
                     .default_missing_value("")
                     .require_equals(true)
                     .action(clap::ArgAction::Append),

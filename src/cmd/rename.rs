@@ -19,7 +19,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Rename a patch")
         .long_about(
@@ -32,9 +32,7 @@ fn make() -> clap::Command<'static> {
             Arg::new("patches")
                 .help("Optional old patch and the new patch name")
                 .required(true)
-                .multiple_values(true)
-                .min_values(1)
-                .max_values(2)
+                .num_args(1..=2)
                 .value_parser(clap::value_parser!(PatchName)),
         )
 }

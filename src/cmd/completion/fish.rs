@@ -8,7 +8,7 @@ use std::{format as f, path::PathBuf};
 
 use super::shstream::ShStream;
 
-pub(super) fn command() -> clap::Command<'static> {
+pub(super) fn command() -> clap::Command {
     clap::Command::new("fish")
         .about("Generate fish shell completion script")
         .arg(
@@ -260,10 +260,15 @@ fn write_command_completions(
         script.end_line();
     }
 
-    for arg in command
-        .get_arguments()
-        .filter(|arg| !arg.is_positional() && !arg.is_takes_value_set() && !arg.is_hide_set())
-    {
+    // Flags
+    for arg in command.get_arguments().filter(|arg| {
+        !arg.is_positional()
+            && !arg
+                .get_num_args()
+                .expect("num_args is some for built arg")
+                .takes_values()
+            && !arg.is_hide_set()
+    }) {
         script.word(complete_common.as_ref());
         script.word(get_arg_flags_params(arg).as_ref());
         script.word(get_arg_help_param(arg).as_ref());
@@ -340,7 +345,7 @@ fn get_arg_flags_params(arg: &clap::Arg) -> ShStream {
 }
 
 fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
-    assert!(arg.is_takes_value_set());
+    assert!(arg.get_num_args().unwrap().takes_values());
 
     let mut params = ShStream::new();
 
@@ -354,7 +359,7 @@ fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
         arg.get_value_hint(),
         clap::ValueHint::Unknown | clap::ValueHint::Other
     ) {
-        match arg.get_id() {
+        match arg.get_id().as_str() {
             "branch" | "ref-branch" => params.word("-xa '(__fish_stg_stg_branches)'"),
             "branch-any" => params.word("-xa '(__fish_stg_all_branches)'"),
             "committish" => params.word("-xa '(__fish_stg_commit)'"),
@@ -397,6 +402,7 @@ fn get_arg_help_param(arg: &clap::Arg) -> ShStream {
     let help = arg
         .get_help()
         .unwrap_or_default()
+        .to_string()
         .replace('\\', "\\\\")
         .replace('\'', "\\'");
     params.word(&f!("-d '{help}'"));

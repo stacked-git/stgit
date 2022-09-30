@@ -27,7 +27,7 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     run,
 };
 
-fn make() -> clap::Command<'static> {
+fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Push patches to the top, even if applied")
         .long_about(
@@ -40,16 +40,16 @@ fn make() -> clap::Command<'static> {
              to the float operation.",
         )
         .override_usage(
-            "stg float [OPTIONS] <patch>...\n    \
+            "stg float [OPTIONS] <patch>...\n       \
              stg float [OPTIONS] <-s|--series> <file>",
         )
         .arg(
             Arg::new("patchranges")
                 .help("Patches to float")
                 .value_name("patch")
-                .multiple_values(true)
+                .num_args(1..)
                 .value_parser(clap::value_parser!(patchrange::Specification))
-                .conflicts_with_all(&["series"])
+                .conflicts_with("series")
                 .required_unless_present("series"),
         )
         .arg(
