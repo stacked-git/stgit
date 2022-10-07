@@ -1208,24 +1208,45 @@ __stg_add_args_trailers() {
 }
 
 __stg_git_diff_opts() {
-    local -a diff_opts
-    diff_opts=(${(z)"$(_call_program git-diff-options "git ${__stg_C_args} diff-tree --git-completion-helper")"})
-    __stg_git_command_successful $pipestatus || return 1
-    _wanted git-diff-options expl "diff option" compadd -a diff_opts
+    words=('git' ${(@)__stg_C_args} 'diff-tree')
+    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
+    #
+    # words+=(${(0)opt_args[-O]} ${(0)opt_args[--diff-opts]})
+    words+=("$PREFIX$SUFFIX")
+    (( CURRENT = $#words ))
+
+    local _comp_command1 _comp_command2 _comp_command
+    _set_command
+    _message -e git-diff-option 'diff option' && \
+        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
 }
 
 __stg_git_format_patch_opts() {
-    local -a format_patch_opts
-    format_patch_opts=(${(z)"$(_call_program git-format-patch-options "git ${__stg_C_args} format-patch --git-completion-helper")"})
-    __stg_git_command_successful $pipestatus || return 1
-    _wanted git-format-patch-options expl "format-patch option" compadd -a format_patch_opts
+    words=('git' ${(@)__stg_C_args} 'format-patch')
+    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
+    #
+    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opts]})
+    words+=("$PREFIX$SUFFIX")
+    (( CURRENT = $#words ))
+
+    local _comp_command1 _comp_command2 _comp_command
+    _set_command
+    _message -e git-format-patch-option 'format-patch option' && \
+        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
 }
 
 __stg_git_send_email_opts() {
-    local -a send_email_opts
-    send_email_opts=(${(z)"$(_call_program git-send-email-options "git ${__stg_C_args} send-email --git-completion-helper")"})
-    __stg_git_command_successful $pipestatus || return 1
-    _wanted git-send-email-options expl "send-email option" compadd -a send_email_opts
+    words=('git' ${(@)__stg_C_args} 'send-email')
+    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
+    #
+    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opts]})
+    words+=("$PREFIX$SUFFIX")
+    (( CURRENT = $#words ))
+
+    local _comp_command1 _comp_command2 _comp_command
+    _set_command
+    _message -e git-send-email-option 'send-email option' && \
+        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
 }
 
 __stg_revisions () {
