@@ -44,11 +44,7 @@ pub(super) fn command() -> clap::Command {
              \n\
              Many aspects of the format behavior may be controlled via `format.*` \
              configuration values. Refer to the git-config(1) and git-format-patch(1) \
-             man pages for more details.\n\
-             \n\
-             `stg email format` is a wrapper for `git format-patch`. Additional \
-             options for `git format-patch` may be specified on the command line after \
-             a `--` separator. See the git-format-patch(1) man page.",
+             man pages for more details.",
         )
         .override_usage(
             "stg email format [OPTIONS] <patch>...\n       \
@@ -76,6 +72,10 @@ pub(super) fn command() -> clap::Command {
                 .long("git-opts")
                 .short('G')
                 .help("Extra options to pass to \"git format-patch\"")
+                .long_help(
+                    "Pass additional options <git-options> to `git format-patch`. \
+                     See the git-format-patch(1) man page.",
+                )
                 .allow_hyphen_values(true)
                 .action(clap::ArgAction::Append)
                 .value_name("git-options"),
@@ -506,11 +506,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let mut format_args = format_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
     if let Some(values) = matches.get_many::<String>("git-format-patch-opts") {
-        for value in values {
-            for arg in value.split_ascii_whitespace() {
-                format_args.push(String::from(arg))
-            }
-        }
+        format_args.extend(values.cloned());
     }
 
     {

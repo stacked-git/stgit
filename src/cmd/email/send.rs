@@ -37,10 +37,7 @@ pub(super) fn command() -> clap::Command {
              configuration options. In particular, it is recommended to statically \
              configure SMTP details such as `sendemail.smtpServer`, \
              `sendemail.smtpUser`, etc. Refer to git-config(1) and git-send-email(1) \
-             man pages for more detail on all the available configuration options.\n\
-             \n\
-             Additional options for `git send-email` may be specified on the command \
-             line after a `--` separator. See the git-send-email(1) man page.",
+             man pages for more detail on all the available configuration options.",
         )
         .override_usage(
             "stg email send [OPTIONS] <file|directory>...\n       \
@@ -82,6 +79,10 @@ pub(super) fn command() -> clap::Command {
                 .long("git-opts")
                 .short('G')
                 .help("Extra options to pass to \"git send-email\"")
+                .long_help(
+                    "Pass additional options <git-options> to `git send-email`. \
+                     See the git-send-email(1) man page.",
+                )
                 .allow_hyphen_values(true)
                 .action(clap::ArgAction::Append)
                 .value_name("git-options"),
@@ -458,11 +459,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let mut send_args = send_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
     if let Some(values) = matches.get_many::<String>("git-send-email-opts") {
-        for value in values {
-            for arg in value.split_ascii_whitespace() {
-                send_args.push(String::from(arg))
-            }
-        }
+        send_args.extend(values.cloned());
     }
 
     let mut sources = sources;
