@@ -219,13 +219,13 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
             "committish" => script.line(
                 "mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches) $(_tags) $(_remotes)\")",
             ),
-            "diff-opts" => {
-                script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_diff_opts)\" -- \"$cur\")")
+            "git-diff-opts" => {
+                script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_diff_opts)\" -- \"$cur\")")
             }
             "git-format-patch-opts" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_format_patch_opts)\" -- \"$cur\")"),
+                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_format_patch_opts)\" -- \"$cur\")"),
             "git-send-email-opts" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_send_email_opts)\" -- \"$cur\")"),
+                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_send_email_opts)\" -- \"$cur\")"),
             "patch" => script
                 .line("mapfile -t COMPREPLY < <(compgen -W \"$(_visible_patches)\" -- \"$cur\")"),
             "patchranges" => script.line("_patch_range \"$(_visible_patches)\""),
@@ -574,17 +574,17 @@ _known_files ()
     test "$g" && __git ls-files "${cur}*"
 }
 
-_diff_opts ()
+_git_diff_opts ()
 {
     __git diff-tree --git-completion-helper
 }
 
-_format_patch_opts ()
+_git_format_patch_opts ()
 {
     __git format-patch --git-completion-helper
 }
 
-_send_email_opts()
+_git_send_email_opts()
 {
     __git send-email --git-completion-helper
 }
