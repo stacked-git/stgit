@@ -36,14 +36,18 @@ pub(crate) fn merged_arg() -> Arg {
 
 /// The `--diff-opts`/`-O` option for pass-through to subordinate `git` processes.
 pub(crate) fn diff_opts_arg() -> Arg {
-    Arg::new("diff-opts")
+    Arg::new("git-diff-opts")
         .long("diff-opts")
         .short('O')
         .help("Extra options to pass to \"git diff\"")
+        .long_help(
+            "Pass additional options <git-diff-options> to `git diff`. \
+             See the git-diff(1) man page.",
+        )
         .num_args(1)
         .allow_hyphen_values(true)
         .action(clap::ArgAction::Append)
-        .value_name("options")
+        .value_name("git-diff-options")
         .value_hint(clap::ValueHint::Other)
 }
 
@@ -100,12 +104,8 @@ pub(crate) fn get_diff_opts(
         }
     }
 
-    if let Some(values) = matches.get_many::<String>("diff-opts") {
-        for value in values {
-            for arg in value.split_ascii_whitespace() {
-                opts.push(String::from(arg))
-            }
-        }
+    if let Some(values) = matches.get_many::<String>("git-diff-opts") {
+        opts.extend(values.cloned());
     }
 
     if force_full_index {
