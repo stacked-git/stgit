@@ -43,7 +43,7 @@ test_expect_success 'Bad diff opts' '
 '
 
 test_expect_success 'Multiple diff opts' '
-    stg show --diff-opts=--shortstat --diff-opts="--name-only -X" patch-bbb |
+    stg show --diff-opts=--shortstat --diff-opts="--name-only" patch-bbb |
     grep -e "foo.txt"
 '
 
