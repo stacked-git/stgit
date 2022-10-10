@@ -219,13 +219,14 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
             "committish" => script.line(
                 "mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches) $(_tags) $(_remotes)\")",
             ),
-            "git-diff-opts" => {
-                script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_diff_opts)\" -- \"$cur\")")
-            }
-            "git-format-patch-opts" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_format_patch_opts)\" -- \"$cur\")"),
-            "git-send-email-opts" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_send_email_opts)\" -- \"$cur\")"),
+            "git-diff-opts" => script
+                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_diff_opts)\" -- \"$cur\")"),
+            "git-format-patch-opts" => script.line(
+                "mapfile -t COMPREPLY < <(compgen -W \"$(_git_format_patch_opts)\" -- \"$cur\")",
+            ),
+            "git-send-email-opts" => script.line(
+                "mapfile -t COMPREPLY < <(compgen -W \"$(_git_send_email_opts)\" -- \"$cur\")",
+            ),
             "patch" => script
                 .line("mapfile -t COMPREPLY < <(compgen -W \"$(_visible_patches)\" -- \"$cur\")"),
             "patchranges" => script.line("_patch_range \"$(_visible_patches)\""),
