@@ -79,7 +79,7 @@
 	#namelength = 30
 
 	# Extra options to pass to "git diff" (extend/override with
-	# -O/--diff-opts). For example, -M turns on rename detection.
+	# -O/--diff-opt). For example, -M turns on rename detection.
 	#diff-opts = -M
 
 	# Behave as if the --keep option is always passed

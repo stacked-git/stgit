@@ -68,17 +68,19 @@ pub(super) fn command() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("git-format-patch-opts")
-                .long("git-opts")
+            Arg::new("git-format-patch-opt")
+                .long("git-opt")
                 .short('G')
-                .help("Extra options to pass to \"git format-patch\"")
+                .help("Pass additional <option> to \"git format-patch\"")
                 .long_help(
-                    "Pass additional options <git-options> to `git format-patch`. \
-                     See the git-format-patch(1) man page.",
+                    "Pass additional <option> to \"git format-patch\".\n\
+                     \n\
+                     See the git-format-patch(1) man page. This option may be \
+                     specified multiple times.",
                 )
                 .allow_hyphen_values(true)
                 .action(clap::ArgAction::Append)
-                .value_name("git-options"),
+                .value_name("option"),
         )
         .next_help_heading("Format Options")
         .args(format_options())
@@ -505,7 +507,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut format_args = format_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(values) = matches.get_many::<String>("git-format-patch-opts") {
+    if let Some(values) = matches.get_many::<String>("git-format-patch-opt") {
         format_args.extend(values.cloned());
     }
 

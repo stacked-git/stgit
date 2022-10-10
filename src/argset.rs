@@ -34,20 +34,23 @@ pub(crate) fn merged_arg() -> Arg {
         .action(clap::ArgAction::SetTrue)
 }
 
-/// The `--diff-opts`/`-O` option for pass-through to subordinate `git` processes.
+/// The `--diff-opt`/`-O` option for pass-through to subordinate `git` processes.
 pub(crate) fn diff_opts_arg() -> Arg {
-    Arg::new("git-diff-opts")
-        .long("diff-opts")
+    Arg::new("git-diff-opt")
+        .long("diff-opt")
+        .alias("diff-opts")
         .short('O')
-        .help("Extra options to pass to \"git diff\"")
+        .help("Pass additional <option> to \"git diff\"")
         .long_help(
-            "Pass additional options <git-diff-options> to `git diff`. \
-             See the git-diff(1) man page.",
+            "Pass additional <option> to \"git diff\".\n\
+             \n\
+             See the git-diff(1) man page. This option may be specified multiple \
+             times.",
         )
         .num_args(1)
         .allow_hyphen_values(true)
         .action(clap::ArgAction::Append)
-        .value_name("git-diff-options")
+        .value_name("option")
         .value_hint(clap::ValueHint::Other)
 }
 
@@ -84,7 +87,7 @@ pub(crate) fn parse_usize(s: &str) -> anyhow::Result<usize> {
 /// diff options.
 ///
 /// The base set of options come from `stgit.diff-opts` in the config. Additional
-/// options from `--diff-opts`/`-O` command line options are appended. And StGit
+/// options from `--diff-opt`/`-O` command line options are appended. And StGit
 /// command-specific policies for displaying the full object id (`--full-index`) and
 /// including binary diffs (`--binary`) are tacked on at the end.
 ///
@@ -104,7 +107,7 @@ pub(crate) fn get_diff_opts(
         }
     }
 
-    if let Some(values) = matches.get_many::<String>("git-diff-opts") {
+    if let Some(values) = matches.get_many::<String>("git-diff-opt") {
         opts.extend(values.cloned());
     }
 

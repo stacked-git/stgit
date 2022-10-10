@@ -38,13 +38,13 @@ test_expect_success 'Show patch' '
 '
 
 test_expect_success 'Bad diff opts' '
-    command_error stg show --diff-opts=--this-is-bad 2>err &&
+    command_error stg show --diff-opt=--this-is-bad 2>err &&
     grep -e "unrecognized argument: --this-is-bad" err
 '
 
 test_expect_success 'Multiple diff opts' '
-    stg show --diff-opts=--shortstat --diff-opts="--name-only" patch-bbb |
-    grep -e "foo.txt"
+    stg show --diff-opt=--line-prefix="A B C " --diff-opt="--name-only" patch-bbb >out &&
+    grep -e "A B C foo.txt" out
 '
 
 test_expect_success 'Diff opts from config' '

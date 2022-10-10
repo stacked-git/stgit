@@ -420,7 +420,7 @@ _stg-delete() {
 _stg-diff() {
     local -a subcmd_args
     __stg_add_args_help
-    __stg_add_args_diffopts
+    __stg_add_args_diffopt
     subcmd_args+=(
         '(-r --range)'{-r,--range=}'[show diff between revisions]: :__stg_patchrange --suggest-range --all'
         '(-s --stat)'{-s,--stat}'[show stat instead of diff]'
@@ -486,7 +486,7 @@ _stg-email-format() {
     __stg_add_args_color
     __stg_add_args_branch
     subcmd_args+=(
-        '*'{-G+,--git-opts=}'[extra options for git-format-patch]:opts:__stg_git_format_patch_opts'
+        '*'{-G+,--git-opt=}'[extra option for git-format-patch]:opt:__stg_git_format_patch_opts'
         '(-o --output-directory)'{-o+,--output-directory=}'[store resulting files in given directory]: :_directories'
         '(-n --numbered -N --no-numbered -k --keep-subject)'{-n,--numbered}'[name output in \[PATCH n/m\] format]'
         '(-n --numbered -N --no-numbered -k --keep-subject)'{-N,--no-numbered}'[name output in \[PATCH\] format]'
@@ -541,7 +541,7 @@ _stg-email-send() {
     __stg_add_args_help
     __stg_add_args_color
     subcmd_args+=(
-        '*'{-G+,--git-opts=}'[extra options for git-send-email]:opts:__stg_git_send_email_opts'
+        '*'{-G+,--git-opt=}'[extra option for git-send-email]:opt:__stg_git_send_email_opts'
         '--from=[specify sender]:email address:_email_addresses'
         '--to=[specify the primary recipient of the emails]: :_email_addresses'
         '--cc=[starting Cc: value for each email]: :_email_addresses'
@@ -605,7 +605,7 @@ _stg-export() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
-    __stg_add_args_diffopts
+    __stg_add_args_diffopt
     subcmd_args+=(
         '(-d --dir)'{-d,--dir}'[export patches to directory]: :_directories'
         '(-n --numbered)'{-n,--numbered}'[prefix patch names with order numbers]'
@@ -786,7 +786,7 @@ _stg-patches() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_branch
-    __stg_add_args_diffopts
+    __stg_add_args_diffopt
     subcmd_args+=(
         '(-d --diff)'{-d,--diff}'[show diffs of given files]'
         '*:files:__stg_cached_files'
@@ -901,7 +901,7 @@ _stg-refresh() {
     __stg_add_args_edit
     __stg_add_args_hook
     __stg_add_args_trailers
-    __stg_add_args_diffopts
+    __stg_add_args_diffopt
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate=}'[annotate patch log entry]:note'
         '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
@@ -984,7 +984,7 @@ _stg-show() {
 
     __stg_add_args_help
     __stg_add_args_branch
-    __stg_add_args_diffopts
+    __stg_add_args_diffopt
     subcmd_args+=(
         '(*)'{-p,--patch=}'[patch or revision to show]: :__stg_dedup_inside_arguments __stg_patchrange --all'
         '(-s --stat)'{-s,--stat}'[show diff stat]'
@@ -1148,10 +1148,9 @@ __stg_add_args_color() {
     )
 }
 
-__stg_add_args_diffopts() {
-    # TODO: complete diff-opts values (with separators?)
+__stg_add_args_diffopt() {
     subcmd_args+=(
-        '(-O --diff-opts)'{-O+,--diff-opts=}'[extra options for git diff]:opts:__stg_git_diff_opts'
+        '*'{-O+,--diff-opt=}'[extra option for git diff]:opt:__stg_git_diff_opts'
     )
 }
 
@@ -1211,7 +1210,7 @@ __stg_git_diff_opts() {
     words=('git' ${(@)__stg_C_args} 'diff-tree')
     # Needs a way to know word indices for opt_args values to only provide through CURRENT.
     #
-    # words+=(${(0)opt_args[-O]} ${(0)opt_args[--diff-opts]})
+    # words+=(${(0)opt_args[-O]} ${(0)opt_args[--diff-opt]})
     words+=("$PREFIX$SUFFIX")
     (( CURRENT = $#words ))
 
@@ -1225,7 +1224,7 @@ __stg_git_format_patch_opts() {
     words=('git' ${(@)__stg_C_args} 'format-patch')
     # Needs a way to know word indices for opt_args values to only provide through CURRENT.
     #
-    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opts]})
+    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opt]})
     words+=("$PREFIX$SUFFIX")
     (( CURRENT = $#words ))
 
@@ -1239,7 +1238,7 @@ __stg_git_send_email_opts() {
     words=('git' ${(@)__stg_C_args} 'send-email')
     # Needs a way to know word indices for opt_args values to only provide through CURRENT.
     #
-    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opts]})
+    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opt]})
     words+=("$PREFIX$SUFFIX")
     (( CURRENT = $#words ))
 

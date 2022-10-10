@@ -33,8 +33,8 @@ test_expect_success 'Diff stat with some local changes' '
     test_cmp add-foo-stat.diff expected-add-foo-stat.diff
 '
 
-test_expect_success 'Diff with bad diff-opts' '
-    command_error stg diff --diff-opts=--bad-diff-opt
+test_expect_success 'Diff with bad diff-opt' '
+    command_error stg diff --diff-opt=--bad-diff-opt
 '
 
 test_expect_success 'Initialize StGit stuff' '
@@ -47,8 +47,9 @@ test_expect_success 'Diff with some local changes' '
     test_cmp add-foo.diff add-foo2.diff
 '
 
-test_expect_success 'Diff with multiple diff-opts' '
-    stg diff --diff-opts=--shortstat -O --name-only | grep -e "foo.txt"
+test_expect_success 'Diff with multiple diff-opt' '
+    stg diff --diff-opt=--line-prefix="A B C " -O --name-only >out &&
+    grep -e "A B C foo.txt" out
 '
 
 test_expect_success 'Refresh patch' '
@@ -179,7 +180,7 @@ test_expect_success 'Binary diff range' '
 '
 
 test_expect_success 'Binary diff range with --binary' '
-    stg diff -r p5..p6 --diff-opts=--binary > num-binary2.diff &&
+    stg diff -r p5..p6 --diff-opt=--binary > num-binary2.diff &&
     test_cmp num-binary.diff num-binary2.diff
 '
 

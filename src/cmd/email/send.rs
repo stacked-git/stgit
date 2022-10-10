@@ -75,17 +75,19 @@ pub(super) fn command() -> clap::Command {
                 .conflicts_with_all(["patchranges-or-paths", "dump-aliases"]),
         )
         .arg(
-            Arg::new("git-send-email-opts")
-                .long("git-opts")
+            Arg::new("git-send-email-opt")
+                .long("git-opt")
                 .short('G')
-                .help("Extra options to pass to \"git send-email\"")
+                .help("Pass additional <option> to \"git send-email\"")
                 .long_help(
-                    "Pass additional options <git-options> to `git send-email`. \
-                     See the git-send-email(1) man page.",
+                    "Pass additional <option> to \"git send-email\".\n\
+                     \n\
+                     See the git-send-email(1) man page. This option may be specified \
+                     multiple times.",
                 )
                 .allow_hyphen_values(true)
                 .action(clap::ArgAction::Append)
-                .value_name("git-options"),
+                .value_name("option"),
         )
         .next_help_heading("Compose Options")
         .args(compose_options())
@@ -458,7 +460,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut send_args = send_args.drain(..).map(|(_, s)| s).collect::<Vec<_>>();
 
-    if let Some(values) = matches.get_many::<String>("git-send-email-opts") {
+    if let Some(values) = matches.get_many::<String>("git-send-email-opt") {
         send_args.extend(values.cloned());
     }
 
