@@ -1206,46 +1206,52 @@ __stg_add_args_trailers() {
     )
 }
 
-__stg_git_diff_opts() {
-    words=('git' ${(@)__stg_C_args} 'diff-tree')
-    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
-    #
-    # words+=(${(0)opt_args[-O]} ${(0)opt_args[--diff-opt]})
-    words+=("$PREFIX$SUFFIX")
+__stg_complete_git_opts() {
+    local gitcmd short long
+    gitcmd=$1
+    short=$2
+    long=$3
+
+    # Parse short and long options (e.g. -O and --diff-opt) from $words.
+    declare -a gitopts
+    function {
+        zparseopts -E -D ${short}+:=gitopts -${long}+:=gitopts 2>/dev/null
+    } $words
+
+    # Compose git command line
+    words=('git' ${(@)__stg_C_args} ${gitcmd})
+
+    # The option values are at the even indexes in the gitopts array.
+    # The last option is skipped because it is the partially specified one being
+    # completed.
+    for i in $(seq 2 2 $(($#gitopts - 2))); do
+        # Need to strip any leading '=' because zparseopts will parse, for example,
+        # `--diff-opt=foo` as ('--diff-opt' '=foo').
+        words+=${gitopts[i]#=}
+    done
+
+    # If the user has not started typing the value, prime it with '-' to force
+    # completing only the options (and not arguments) to the git command.
+    if [ -z "$PREFIX" -a -z "$SUFFIX" ]; then
+        PREFIX='-'
+    fi
+    words+="$PREFIX$SUFFIX"
     (( CURRENT = $#words ))
 
-    local _comp_command1 _comp_command2 _comp_command
-    _set_command
-    _message -e git-diff-option 'diff option' && \
-        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
+    _message -e "git-$gitcmd-option" "git $gitcmd" &&
+        _dispatch git git $commands[git]
+}
+
+__stg_git_diff_opts() {
+    __stg_complete_git_opts diff-tree O diff-opt
 }
 
 __stg_git_format_patch_opts() {
-    words=('git' ${(@)__stg_C_args} 'format-patch')
-    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
-    #
-    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opt]})
-    words+=("$PREFIX$SUFFIX")
-    (( CURRENT = $#words ))
-
-    local _comp_command1 _comp_command2 _comp_command
-    _set_command
-    _message -e git-format-patch-option 'format-patch option' && \
-        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
+    __stg_complete_git_opts format-patch G git-opt
 }
 
 __stg_git_send_email_opts() {
-    words=('git' ${(@)__stg_C_args} 'send-email')
-    # Needs a way to know word indices for opt_args values to only provide through CURRENT.
-    #
-    # words+=(${(0)opt_args[-G]} ${(0)opt_args[--git-opt]})
-    words+=("$PREFIX$SUFFIX")
-    (( CURRENT = $#words ))
-
-    local _comp_command1 _comp_command2 _comp_command
-    _set_command
-    _message -e git-send-email-option 'send-email option' && \
-        _dispatch "$_comp_command" "$_comp_command1" "$_comp_command2" -default-
+    __stg_complete_git_opts send-email G git-opt
 }
 
 __stg_revisions () {
