@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.0.0-rc.2] 2022-10-23
+
+### Changed
+- The `--diff-opts` option is renamed to `--diff-opt`. `--diff-opts`
+  remains available as an alias.
+- The `--diff-opt` option no longer allows multiple git options per
+  occurrence. This allows git diff options with spaces in their values.
+- The `--git-opts` option for `stg email format` and `stg email send` is
+  renamed `--git-opt`.
+- The `--git-opt` option no longer allows multiple git options per
+  occurrence. This allows git options with spaces in their values.
+- Zsh completion for `--diff-opt` and `--git-opt` leverage the
+  full-featured git completion capability.
+
+### Fixed
+- Repair check for modifications to stack by external tools.
+- `stg pull` and `stg rebase` record updated stack state instead of
+  deferring until the next stack-modifying command to do so.
+- Improve patch appliction with `git apply --3way` when pushing` (#225)
+- Zsh completion for `--diff-opt` accommodates multiple occurrences
+
+
 ## [2.0.0-rc.1] 2022-09-30
 
 ### Added
