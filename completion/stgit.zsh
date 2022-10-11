@@ -1207,38 +1207,42 @@ __stg_add_args_trailers() {
 }
 
 __stg_complete_git_opts() {
-    local gitcmd short long
-    gitcmd=$1
+    local git_cmd short long i
+    git_cmd=$1
     short=$2
     long=$3
 
     # Parse short and long options (e.g. -O and --diff-opt) from $words.
-    declare -a gitopts
-    function {
-        zparseopts -E -D ${short}+:=gitopts -${long}+:=gitopts 2>/dev/null
-    } $words
+    declare -a git_opts git_opts_after
+    zmodload -F 'zsh/zutil' 'b:zparseopts'
+    () { zparseopts -E -D -a git_opts ${short}+: -${long}+: 2>/dev/null; } \
+        ${(@)words[1,CURRENT]}
+    () { zparseopts -E -D -a git_opts_after ${short}+: -${long}+: 2>/dev/null; } \
+        ${(@)words[CURRENT+1,-1]}
 
     # Compose git command line
-    words=('git' ${(@)__stg_C_args} ${gitcmd})
+    words=('git' ${(@)__stg_C_args} ${git_cmd})
 
-    # The option values are at the even indexes in the gitopts array.
+    # The option values are at the even indexes in the git_opts array.
     # The last option is skipped because it is the partially specified one being
     # completed.
-    for i in $(seq 2 2 $(($#gitopts - 2))); do
+    for i in {2..2..$(($#git_opts - 2))}; do
         # Need to strip any leading '=' because zparseopts will parse, for example,
         # `--diff-opt=foo` as ('--diff-opt' '=foo').
-        words+=${gitopts[i]#=}
+        words+=(${git_opts[i]#=})
     done
 
     # If the user has not started typing the value, prime it with '-' to force
     # completing only the options (and not arguments) to the git command.
-    if [ -z "$PREFIX" -a -z "$SUFFIX" ]; then
-        PREFIX='-'
-    fi
-    words+="$PREFIX$SUFFIX"
+    : ${SUFFIX:-${PREFIX:=-}}
+    words+=("$PREFIX$SUFFIX")
     (( CURRENT = $#words ))
 
-    _message -e "git-$gitcmd-option" "git $gitcmd" &&
+    for i in {2..2..$#git_opts_after}; do
+        words+=(${git_opts_after[i]#=})
+    done
+
+    _message -e "git-$git_cmd-option" "git $git_cmd" &&
         _dispatch git git $commands[git]
 }
 
