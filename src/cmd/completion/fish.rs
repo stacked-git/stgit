@@ -364,8 +364,8 @@ fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
             "branch-any" => params.word("-xa '(__fish_stg_all_branches)'"),
             "committish" => params.word("-xa '(__fish_stg_commit)'"),
             "git-diff-opt" => params.word("-xa '(__fish_stg_git_diff_opts)'"),
-            "git-format-patch-opts" => params.word("-xa '(__fish_stg_git_format_patch_opts)'"),
-            "git-send-email-opts" => params.word("-xa '(__fish_stg_git_send_email_opts)'"),
+            "git-format-patch-opt" => params.word("-xa '(__fish_stg_git_format_patch_opts)'"),
+            "git-send-email-opt" => params.word("-xa '(__fish_stg_git_send_email_opts)'"),
             "patch" | "patchranges" => params.word("-kxa '(__fish_stg_patches -A -U)'"),
             "patchranges-all" | "set-tree" | "stgit-revision" => {
                 params.word("-kxa '(__fish_stg_patches --all)'")
