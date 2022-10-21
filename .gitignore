@@ -1,9 +1,3 @@
-/.cov-files/
-/.coverage
-/build/
 /completion/stg.fish
 /completion/stgit.bash
-/dist/
-/htmlcov/
-/stgit.egg-info/
 /target
