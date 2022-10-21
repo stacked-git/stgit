@@ -324,7 +324,6 @@ pub(crate) fn parse_email(email: &str) -> Result<String> {
 /// | `iso8601-strict`  | `2022-01-06T09:32:07-05:00`      |
 /// | `raw`             | `1641479527 -0500`               |
 /// | `now`             | `now`                            |
-///
 pub(crate) fn parse_time(time_str: &str) -> Result<git2::Time> {
     let time_str = time_str.trim();
 
