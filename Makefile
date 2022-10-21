@@ -6,6 +6,13 @@ STG_PROFILE ?= release
 CARGO ?= cargo --locked
 CARGO_OFFLINE = $(CARGO) --offline
 CARGO_RUN = $(CARGO_OFFLINE) --quiet run --profile=$(STG_PROFILE)
+RM ?= rm -f
+
+ifeq ($(STG_PROFILE),dev)
+TARGET_DIR = target/debug
+else
+TARGET_DIR = target/$(STG_PROFILE)
+endif
 
 export DESTDIR CARGO STG_PROFILE
 
@@ -70,6 +77,46 @@ unit-test:
 .PHONY: lint lint-format lint-clippy lint-api-doc lint-t unit-test
 
 
+coverage:
+	$(MAKE) coverage-test
+	$(MAKE) coverage-html
+	$(MAKE) coverage-report
+
+coverage-bin:
+	RUSTFLAGS="-C instrument-coverage" $(CARGO) build --profile=$(STG_PROFILE)
+
+coverage-html: $(TARGET_DIR)/stg.profdata
+	llvm-cov show \
+	  --instr-profile=$< \
+	  --object=$(TARGET_DIR)/stg \
+	  -ignore-filename-regex='/.cargo/registry' \
+	  -ignore-filename-regex='rustc/' \
+	  -Xdemangler=rustfilt \
+	  -format=html \
+	  -output-dir=htmlcov
+
+coverage-report: $(TARGET_DIR)/stg.profdata
+	llvm-cov report \
+	  --instr-profile=$< \
+	  --object=$(TARGET_DIR)/stg \
+	  -ignore-filename-regex='/.cargo/registry' \
+	  -ignore-filename-regex='rustc/'
+
+coverage-test: coverage-bin
+	$(RM) $(TARGET_DIR)/stg.profdata
+	$(MAKE) $(TARGET_DIR)/stg.profdata
+
+$(TARGET_DIR)/stg.profdata:
+	-$(RM) -r $(TARGET_DIR)/.profraw
+	-mkdir $(TARGET_DIR)/.profraw
+	LLVM_PROFILE_FILE=$(CURDIR)/$(TARGET_DIR)/.profraw/stg-%m-%p.profraw \
+	$(MAKE) -C t all
+	llvm-profdata merge -sparse -o $@ $(TARGET_DIR)/.profraw/*.profraw
+	$(RM) -r $(TARGET_DIR)/.profraw
+
+.PHONY: coverage coverage-bin coverage-html coverage-report coverage-test
+
+
 format:
 	$(CARGO_OFFLINE) fmt
 
@@ -86,6 +133,7 @@ clean:
 	$(MAKE) -C t clean
 	$(MAKE) -C completion clean
 	$(MAKE) -C contrib clean
-	rm  -r target
+	$(RM) -r target
+	$(RM) -r htmlcov
 
 .PHONY: format test test-patches clean
