@@ -26,8 +26,8 @@ that triggered the bug needed to debug the problem.
 
 Please include the following in StGit issue reports:
 
-1. StGit version. Run `stg --version`. The output includes StGit, Git
-   and Python versions--all three are important.
+1. The output from `stg --version`, which includes StGit and Git
+   versions.
 
 2. What StGit command(s) triggered the problem.
 
