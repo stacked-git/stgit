@@ -115,12 +115,3 @@ By making a contribution to this project, I certify that:
 - Tests are added/modified that cover the bug fix or feature being
   added.
 - `make test` passes.
-
-### Code Coverage
-
-[![Coverage Status](https://coveralls.io/repos/github/stacked-git/stgit/badge.svg?branch=master)](https://coveralls.io/github/stacked-git/stgit?branch=master)
-
-We use [Coverage.py](https://coverage.readthedocs.io/en/coverage-5.5) to
-calculate code coverage on the repo. Run it with `make coverage`. There's a
-fancy GUI version tracking master at
-https://coveralls.io/github/stacked-git/stgit?branch=master.
