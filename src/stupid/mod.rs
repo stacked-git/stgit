@@ -167,7 +167,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let apply_output = self
             .git_in_work_root()
-            .args(["apply", "--cached"]) // --3way
+            .args(["apply", "--cached", "--3way"])
             .stdin(diff_tree_child.stdout.take().unwrap())
             .stdout(Stdio::null())
             .output_git()?
@@ -212,7 +212,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let apply_output = self
             .git_in_work_root()
-            .args(["apply", "--cached"]) // --3way
+            .args(["apply", "--cached", "--3way"])
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .in_and_out(&diff)?;
