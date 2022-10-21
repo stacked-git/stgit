@@ -58,13 +58,12 @@ Code changes for bug fixes and features should be submitted as [pull
 requests][PR] to the [stgit repository][stgit-repo] on GitHub, with the
 following guidelines:
 
-[PR]: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests
-[stgit-repo]: https://github.com/stacked-git/stgit
-
 - Test cases! Please add test cases to the test suite in the `t`
   directory to verify any new or changed StGit behaviors. And run `make
   test` to ensure the test suite passes.
   
+- Use [Conventional Commit][conventional-commit] style commit messages.
+
 - Add a `Signed-off-by:` trailer to each commit message to indicate that
   certifies that you wrote or otherwise have the right to contribute the
   patch as open-source, according to the [Developers Certificate of
@@ -74,6 +73,10 @@ following guidelines:
 - Lint. Run `make lint` to ensure that the code meets the project's
   syntactic standards and passes static checks.
   
+[PR]: https://help.github.com/en/github/collaborating-with-issues-and-pull-requests
+[stgit-repo]: https://github.com/stacked-git/stgit
+[conventional-commit]: https://www.conventionalcommits.org/
+
 ### Developer's Certificate of Origin 1.1
 
 By making a contribution to this project, I certify that:
@@ -106,7 +109,8 @@ By making a contribution to this project, I certify that:
 - Each commit (patch) addresses a coherent topic.
 - `make lint` passes.
 - No commented-out code or unneeded files in commits.
-- Each commit has a meaningful commit message.
+- Each commit has a meaningful commit message using the [Conventional
+  Commit][conventional-commit] style.
 - Each commit has a `Signed-off-by: Your Name <you@example.com` trailer.
 - Tests are added/modified that cover the bug fix or feature being
   added.
