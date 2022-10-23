@@ -166,12 +166,12 @@ impl<'repo> Stack<'repo> {
 
     /// Check whether the stack's recorded head matches the branch's head.
     pub fn is_head_top(&self) -> bool {
-        self.state.applied.is_empty() || self.state.head.id() == self.branch_head.id()
+        self.state.head.id() == self.branch_head.id()
     }
 
     /// Return an error if the stack's recorded head differs from the branch's head.
     pub fn check_head_top_mismatch(&self) -> Result<()> {
-        if self.is_head_top() {
+        if self.state.applied.is_empty() || self.is_head_top() {
             Ok(())
         } else {
             Err(anyhow!(
