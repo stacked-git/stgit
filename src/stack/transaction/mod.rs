@@ -153,7 +153,7 @@ impl<'repo> ExecuteContext<'repo> {
         let mut stack = if stack.is_head_top() {
             stack
         } else {
-            stack.log_external_mods()?
+            stack.log_external_mods(None)?
         };
 
         // Roll back by checking out the stack top tree prior to any changes from this

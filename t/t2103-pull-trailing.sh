@@ -39,6 +39,19 @@ test_expect_success 'Port those patches to orig tree' '
     )
 '
 
+test_expect_success 'Undo pull operation' '
+    (
+        cd bar &&
+        stg id {base} >before-pull &&
+        stg pull --nopush &&
+        stg log -n1 | grep -e "pull$" &&
+        test_cmp_rev ! $(cat before-pull) $(stg id) &&
+        stg undo &&
+        stg id >after-undo &&
+        test_cmp before-pull after-undo
+    )
+'
+
 test_expect_success 'Pull those patches applied upstream, without pushing' '
     (
         cd bar &&

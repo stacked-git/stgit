@@ -218,11 +218,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stupid.user_rebase(&rebase_cmd, rebase_target)?;
     }
 
-    if !matches.get_flag("nopush") {
-        // The above pull and rebase action may have moved the stack's branch reference,
-        // so we initialize the stack afresh.
-        let stack = Stack::from_branch(&repo, None)?;
+    // The above pull and rebase action may have moved the stack's branch reference,
+    // so we initialize the stack afresh.
+    let stack = Stack::from_branch(&repo, None)?;
+    let stack = if stack.is_head_top() {
+        stack
+    } else {
+        // Record a new stack state with updated head since the pull moved the head.
+        stack.log_external_mods(Some("pull"))?
+    };
 
+    if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
         stack

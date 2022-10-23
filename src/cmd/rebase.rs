@@ -157,10 +157,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
     stupid.user_rebase(&rebase_cmd, target_commit.id())?;
 
+    let stack = Stack::from_branch(&repo, None)?;
+    let stack = if stack.is_head_top() {
+        stack
+    } else {
+        // Record a new stack state with updated head since the head moved.
+        stack.log_external_mods(Some("rebase"))?
+    };
+
     if matches.get_flag("interactive") {
-        interactive_pushback(&repo, &config, matches, &applied)?;
+        interactive_pushback(stack, &repo, &config, matches, &applied)?;
     } else if !matches.get_flag("nopush") {
-        let stack = Stack::from_branch(&repo, None)?;
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
         stack
@@ -219,12 +226,13 @@ enum Action {
 }
 
 fn interactive_pushback(
+    stack: Stack,
     repo: &git2::Repository,
     config: &git2::Config,
     matches: &ArgMatches,
     previously_applied: &[PatchName],
 ) -> Result<()> {
-    let mut stack = Stack::from_branch(repo, None)?;
+    let mut stack = stack;
 
     if stack.all_patches().next().is_none() {
         return Ok(());

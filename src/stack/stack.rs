@@ -183,7 +183,7 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Re-commit stack state with updated branch head.
-    pub fn log_external_mods(self) -> Result<Self> {
+    pub fn log_external_mods(self, message: Option<&str>) -> Result<Self> {
         let state_ref = self.repo.find_reference(&self.refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
@@ -191,9 +191,11 @@ impl<'repo> Stack<'repo> {
             .state
             .advance_head(self.branch_head.clone(), prev_state_commit);
 
-        let message = "external modifications\n\
-                       \n\
-                       Modifications by tools other than StGit (e.g. git).\n";
+        let message = message.unwrap_or(
+            "external modifications\n\
+             \n\
+             Modifications by tools other than StGit (e.g. git).\n",
+        );
         let reflog_msg = "external modifications";
 
         let state_commit_id = state.commit(self.repo, None, message)?;
