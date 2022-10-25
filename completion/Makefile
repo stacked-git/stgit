@@ -25,7 +25,7 @@ install-fish: stg.fish
 
 install-zsh:
 	$(INSTALL) -d -m 755 $(DESTDIR)$(zshdir)
-	$(INSTALL) -T -m 644 stgit.zsh $(DESTDIR)$(zshdir)/_stg
+	$(INSTALL) -T -m 644 stgit.zsh $(DESTDIR)$(zshdir)/_stgit
 
 .PHONY: install install-bash install-fish install-zsh
 
