@@ -1226,11 +1226,13 @@ __stg_complete_git_opts() {
     # The option values are at the even indexes in the git_opts array.
     # The last option is skipped because it is the partially specified one being
     # completed.
-    for i in {2..2..$(($#git_opts - 2))}; do
-        # Need to strip any leading '=' because zparseopts will parse, for example,
-        # `--diff-opt=foo` as ('--diff-opt' '=foo').
-        words+=(${git_opts[i]#=})
-    done
+    if (( $#git_opts > 2 )); then
+        for i in {1..$(($#git_opts - 2))..2}; do
+            # Need to strip any leading '=' because zparseopts will parse, for example,
+            # `--diff-opt=foo` as ('--diff-opt' '=foo').
+            words+=(${git_opts[i+1]#=})
+        done
+    fi
 
     # If the user has not started typing the value, prime it with '-' to force
     # completing only the options (and not arguments) to the git command.
@@ -1238,9 +1240,11 @@ __stg_complete_git_opts() {
     words+=("$PREFIX$SUFFIX")
     (( CURRENT = $#words ))
 
-    for i in {2..2..$#git_opts_after}; do
-        words+=(${git_opts_after[i]#=})
-    done
+    if (( $#git_opts_after > 2 )); then
+        for i in {1..$(($#git_opts_after - 2))..2}; do
+            words+=(${git_opts_after[i+1]#=})
+        done
+    fi
 
     _message -e "git-$git_cmd-option" "git $git_cmd" &&
         _dispatch git git $commands[git]
