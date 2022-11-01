@@ -540,6 +540,7 @@ _stg-email-send() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
+    __stg_add_args_branch
     subcmd_args+=(
         '*'{-G+,--git-opt=}'[extra option for git-send-email]:opt:__stg_git_send_email_opts'
         '--from=[specify sender]:email address:_email_addresses'
