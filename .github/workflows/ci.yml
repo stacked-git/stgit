@@ -60,6 +60,10 @@ jobs:
         STG_PROFILE: ${{ matrix.profile }}
       run: |
         timeout 900s make -C t prove
+    - name: Show Failures
+      if: ${{ failure() }}
+      run: |
+        make -C t show-failure-results
 
   unit-tests:
     name: Unit Tests

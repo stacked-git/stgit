@@ -60,6 +60,13 @@ clean-except-prove-cache:
 clean: clean-except-prove-cache
 	$(RM) .prove
 
+show-failure-results:
+	for t in '$(TEST_RESULTS_DIRECTORY_SQ)'/*.exit; do \
+		if [ "$$(cat $$t)" != "0" ]; then \
+			cat "$$(echo $$t | sed -e 's/exit$$/out/g')"; \
+		fi \
+	done
+
 test-lint: test-lint-duplicates test-lint-executable test-lint-shell-syntax \
 	test-lint-filenames
 
@@ -93,4 +100,4 @@ aggregate-results:
 		echo "$$f"; \
 	done | '$(SHELL_PATH_SQ)' ./aggregate-results.sh
 
-.PHONY: pre-clean $(T) aggregate-results clean
+.PHONY: pre-clean $(T) aggregate-results clean show-failure-results
