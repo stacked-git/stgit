@@ -145,6 +145,16 @@ test_expect_success \
 '
 
 test_expect_success \
+    'Ensure autosign does not duplicate sign-off' '
+    test_config stgit.autosign "Signed-off-by" &&
+    stg edit --ack &&
+    echo "more stuff" >> file.txt &&
+    stg refresh &&
+    git cat-file -p HEAD | grep -e "Signed-off-by:" >out &&
+    test_line_count = 1 out
+'
+
+test_expect_success \
     'Patch with slash in name' '
     general_error stg new bar/foo -m "patch bar/foo"
 '

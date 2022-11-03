@@ -193,6 +193,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let parent_id = stack.branch_head.id();
 
     let (patchname, commit_id) = match patchedit::EditBuilder::default()
+        .allow_autosign(true)
         .allow_diff_edit(false)
         .allow_implicit_edit(true)
         .allow_template_save(!is_refreshing)

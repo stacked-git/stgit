@@ -306,6 +306,7 @@ pub(crate) struct EditBuilder<'a, 'repo> {
     template_patchname: Option<Option<PatchName>>,
     allowed_patchnames: Vec<PatchName>,
     patch_commit: Option<&'a git2::Commit<'repo>>,
+    allow_autosign: bool,
     allow_diff_edit: bool,
     allow_implicit_edit: bool,
     allow_template_save: bool,
@@ -313,6 +314,15 @@ pub(crate) struct EditBuilder<'a, 'repo> {
 }
 
 impl<'a, 'repo> EditBuilder<'a, 'repo> {
+    /// Set whether the autosign configuration should be used.
+    ///
+    /// When true, the `stgit.autosign` configuration will be used to determine whether
+    /// the configured trailer is automatically added to the message.
+    pub(crate) fn allow_autosign(mut self, allow: bool) -> Self {
+        self.allow_autosign = allow;
+        self
+    }
+
     /// Set whether the user is allowed/instructed to edit the diff content.
     ///
     /// When true, if the user makes any modifications to the diff content in an
@@ -444,6 +454,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             template_patchname,
             allowed_patchnames,
             patch_commit,
+            allow_autosign,
             allow_diff_edit,
             allow_implicit_edit,
             allow_template_save,
@@ -562,7 +573,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let message = {
-            let autosign = config.get_string("stgit.autosign").ok();
+            let autosign = if allow_autosign {
+                config.get_string("stgit.autosign").ok()
+            } else {
+                None
+            };
             // N.B. add_trailers needs to operate on utf-8 data. The user providing
             // trailer-altering options (e.g. --review) will force the message to be
             // decoded. In such cases the returned message will wrap a utf-8 String.

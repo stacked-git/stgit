@@ -640,6 +640,7 @@ fn create_patch<'repo>(
         .override_parent_id(stack.branch_head.id())
         .default_author(author)
         .default_message(message)
+        .allow_autosign(true)
         .allow_implicit_edit(false)
         .allow_diff_edit(true)
         .allow_template_save(false)
