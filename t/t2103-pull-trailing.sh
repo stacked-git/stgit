@@ -78,4 +78,15 @@ test_expect_success 'Check that all went well' '
     test_cmp foo/file bar/file
 '
 
+test_expect_success 'Ensure that new patches are not clobbered' '
+    (
+        cd bar &&
+        echo "new content" >> file &&
+        cp file expected &&
+        stg refresh &&
+        stg pull --merged &&
+        test_cmp expected file
+    )
+'
+
 test_done
