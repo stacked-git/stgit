@@ -283,7 +283,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
                 if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
                     stupid_temp.read_tree(ours)?;
-                    if stupid_temp.apply_treediff_to_index(base, theirs)? {
+                    if stupid_temp.apply_treediff_to_index(base, theirs, true)? {
                         let tree_id = stupid_temp.write_tree()?;
                         Ok(Some(tree_id))
                     } else {

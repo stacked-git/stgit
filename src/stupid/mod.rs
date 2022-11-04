@@ -151,6 +151,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
+        do_3way: bool,
     ) -> Result<bool> {
         if tree1 == tree2 {
             return Ok(true);
@@ -165,9 +166,12 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .stdout(Stdio::piped())
             .spawn_git()?;
 
-        let apply_output = self
-            .git_in_work_root()
-            .args(["apply", "--cached", "--3way"])
+        let mut apply_cmd = self.git_in_work_root();
+        apply_cmd.args(["apply", "--cached"]);
+        if do_3way {
+            apply_cmd.arg("--3way");
+        }
+        let apply_output = apply_cmd
             .stdin(diff_tree_child.stdout.take().unwrap())
             .stdout(Stdio::null())
             .output_git()?
@@ -182,6 +186,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
+        do_3way: bool,
         pathspecs: SpecIter,
     ) -> Result<bool>
     where
@@ -210,9 +215,12 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             return Ok(true);
         }
 
-        let apply_output = self
-            .git_in_work_root()
-            .args(["apply", "--cached", "--3way"])
+        let mut apply_cmd = self.git_in_work_root();
+        apply_cmd.args(["apply", "--cached"]);
+        if do_3way {
+            apply_cmd.arg("--3way");
+        }
+        let apply_output = apply_cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
             .in_and_out(&diff)?;

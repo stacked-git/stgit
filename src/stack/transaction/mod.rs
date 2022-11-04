@@ -967,7 +967,7 @@ impl<'repo> StackTransaction<'repo> {
                 *temp_index_tree_id = Some(ours);
             }
 
-            let maybe_tree_id = if stupid_temp.apply_treediff_to_index(base, theirs)? {
+            let maybe_tree_id = if stupid_temp.apply_treediff_to_index(base, theirs, true)? {
                 stupid_temp.write_tree().ok()
             } else {
                 None
@@ -1103,9 +1103,11 @@ impl<'repo> StackTransaction<'repo> {
 
             let parent_commit = patch_commit.parent(0)?;
 
-            if stupid_temp
-                .apply_treediff_to_index(patch_commit.tree_id(), parent_commit.tree_id())?
-            {
+            if stupid_temp.apply_treediff_to_index(
+                patch_commit.tree_id(),
+                parent_commit.tree_id(),
+                false,
+            )? {
                 merged.push(patchname);
                 *temp_index_tree_id = None;
             }

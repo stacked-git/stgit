@@ -86,6 +86,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             stupid_temp.apply_pathlimited_treediff_to_index(
                 patch_commit.tree_id(),
                 parent.tree_id(),
+                true,
                 pathspecs,
             )?;
             stupid_temp.write_tree()

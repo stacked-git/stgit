@@ -234,7 +234,7 @@ fn try_squash(
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
             let parent = commit.parent(0)?;
             if parent.tree_id() != commit.tree_id()
-                && !stupid_temp.apply_treediff_to_index(parent.tree_id(), commit.tree_id())?
+                && !stupid_temp.apply_treediff_to_index(parent.tree_id(), commit.tree_id(), true)?
             {
                 return Ok(None);
             }
