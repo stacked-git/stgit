@@ -20,8 +20,10 @@ mod command;
 pub(crate) mod diff;
 mod oid;
 pub(crate) mod status;
+mod version;
 
 use std::{
+    cell::RefCell,
     ffi::{OsStr, OsString},
     io::Write,
     path::Path,
@@ -36,6 +38,7 @@ use self::{
     diff::DiffFiles,
     oid::parse_oid,
     status::{StatusOptions, Statuses},
+    version::StupidVersion,
 };
 use crate::signature::TimeExtended;
 
@@ -50,6 +53,7 @@ impl<'repo, 'index> Stupid<'repo, 'index> for git2::Repository {
             git_dir: Some(self.path()),
             work_dir: self.workdir(),
             index_path: None,
+            git_version: RefCell::new(None::<StupidVersion>),
         }
     }
 }
@@ -60,6 +64,7 @@ pub(crate) struct StupidContext<'repo, 'index> {
     pub git_dir: Option<&'repo Path>,
     pub index_path: Option<&'index Path>,
     pub work_dir: Option<&'repo Path>,
+    git_version: RefCell<Option<StupidVersion>>,
 }
 
 impl<'repo, 'index> StupidContext<'repo, 'index> {
@@ -85,6 +90,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             git_dir: self.git_dir,
             index_path: Some(index_tempfile.path()),
             work_dir: self.work_dir,
+            git_version: RefCell::new(None),
         };
 
         f(&stupid_temp)
@@ -105,6 +111,18 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 .expect("work_dir is required for this command"),
         );
         command
+    }
+
+    fn at_least_version(&self, version: &StupidVersion) -> Result<bool> {
+        let mut git_version = self.git_version.borrow_mut();
+        if let Some(git_version) = git_version.as_ref() {
+            Ok(git_version >= version)
+        } else {
+            let interrogated_version = self.version()?.parse::<StupidVersion>()?;
+            let is_at_least = &interrogated_version >= version;
+            git_version.replace(interrogated_version);
+            Ok(is_at_least)
+        }
     }
 
     /// Apply a patch (diff) to the specified index using `git apply --cached`.
@@ -151,7 +169,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
-        do_3way: bool,
+        want_3way: bool,
     ) -> Result<bool> {
         if tree1 == tree2 {
             return Ok(true);
@@ -168,7 +186,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let mut apply_cmd = self.git_in_work_root();
         apply_cmd.args(["apply", "--cached"]);
-        if do_3way {
+        if want_3way && self.at_least_version(&StupidVersion::new(2, 32, 0))? {
             apply_cmd.arg("--3way");
         }
         let apply_output = apply_cmd
@@ -186,7 +204,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         tree1: git2::Oid,
         tree2: git2::Oid,
-        do_3way: bool,
+        want_3way: bool,
         pathspecs: SpecIter,
     ) -> Result<bool>
     where
@@ -217,7 +235,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
         let mut apply_cmd = self.git_in_work_root();
         apply_cmd.args(["apply", "--cached"]);
-        if do_3way {
+        if want_3way && self.at_least_version(&StupidVersion::new(2, 32, 0))? {
             apply_cmd.arg("--3way");
         }
         let apply_output = apply_cmd
