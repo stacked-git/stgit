@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.1] 2022-11-07
+
+### Changed
+- chore: Update to clap 4.0.22
+
+### Fixed
+- docs(readme): Clarify static versus dynamic linking (#230)
+- build: Improve Documentation build performance (#229)
+
+
 ## [2.0.0] 2022-11-06
 
 ### Removed
