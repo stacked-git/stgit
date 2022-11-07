@@ -33,7 +33,14 @@ StGit release.
 ### Dependencies
 
 StGit is implemented in Rust using a number of third-party, open source
-crates. StGit compiles to a statically linked executable.
+crates. StGit statically links with its pure-Rust dependencies, but
+dynamically links to libc and other non-Rust libraries when they are
+available at build-time. Dynamic link dependencies include these
+libraries along with their transient link dependencies:
+
+- libgit2
+- libcurl (optional)
+- libbz2 (optional)
 
 StGit works within the context of a Git repository and performs many
 operations by running subordinate `git` commands.
