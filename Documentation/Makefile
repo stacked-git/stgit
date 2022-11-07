@@ -50,15 +50,12 @@ CARGO ?= cargo --locked
 CARGO_OFFLINE = $(CARGO) --offline
 CARGO_RUN = $(CARGO_OFFLINE) --quiet run --profile=$(STG_PROFILE)
 STG_COMMANDS_SRC = $(shell find ../src/cmd -name '*.rs')
-STG_COMMANDS = $(shell $(CARGO_RUN) completion list commands)
-STG_COMMANDS_TXT = $(patsubst %,stg-%.txt,$(STG_COMMANDS))
+STG_COMMANDS_TXT = $(wildcard stg-*.txt)
 
-# STGIT_VERSION = $(shell $(CARGO) --quiet metadata --format-version=1 --no-deps | \
-#                         jq -r '.packages[].version')
-# STGIT_VERSION = $(shell $(CARGO) --quiet metadata --format-version=1 --no-deps | \
-#                         grep -Eo '"version":"[^"]+"' | \
-#                         sed -Ee 's/"version":"([^"]+)"/\1/g')
-STGIT_VERSION = $(shell $(CARGO_RUN) version --short | sed -e 's/stg //g')
+STGIT_VERSION := $(shell $(CARGO) metadata --format-version=1 --no-deps | \
+                         grep -Eo '"version":"[^"]+"' | \
+                         sed -Ee 's/"version":"([^"]+)"/\1/g')
+# STGIT_VERSION := $(shell $(CARGO_RUN) version --short | sed -e 's/stg //g')
 
 MAN1_TXT += stg.txt
 MAN1_TXT += $(STG_COMMANDS_TXT)
@@ -200,7 +197,7 @@ $(DOC_HTML) $(DOC_MAN1): asciidoc.conf
 #
 # Determine "include::" file references in asciidoc files.
 #
-doc.dep : $(DOC_DEP_TXT) build-docdep.perl
+doc.dep : txt-stamp $(DOC_DEP_TXT) build-docdep.perl
 	$(QUIET_GEN)$(PERL_PATH) ./build-docdep.perl >$@ $(QUIET_STDERR)
 
 ifneq ($(MAKECMDGOALS),clean)
@@ -223,7 +220,8 @@ clean:
 	$(RM) doc.dep
 	$(RM) manpage-base-url.xsl
 	$(RM) GIT-ASCIIDOCFLAGS
-	$(RM) $(STG_COMMANDS_TXT) command-list.txt
+	$(RM) stg-*.txt
+	$(RM) command-list.txt
 	$(RM) txt-stamp
 
 $(MAN_HTML): %.html : %.txt $(ASCIIDOC_DEPS)
