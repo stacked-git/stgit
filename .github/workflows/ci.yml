@@ -152,7 +152,7 @@ jobs:
       run: |
         make -j2 USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
     - name: Upload HTML Docs
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: html-doc
         path: ${{ github.workspace }}/stgit-html
