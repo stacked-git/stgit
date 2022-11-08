@@ -145,7 +145,7 @@ fn split_command_line(line: &str) -> Result<Vec<String>, String> {
                     argv.push(completed_word);
                     skip_spaces = true;
                 } else {
-                    word.push(c)
+                    word.push(c);
                 }
             }
         } else {

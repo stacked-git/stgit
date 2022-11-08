@@ -69,7 +69,7 @@ pub(crate) fn parse_branch_name(name: &str) -> anyhow::Result<String> {
 /// since that function returns `Option<&String>` which often needs to be mapped to
 /// `Option<&str>`.
 pub(crate) fn get_one_str<'a>(matches: &'a clap::ArgMatches, id: &str) -> Option<&'a str> {
-    matches.get_one::<String>(id).map(|s| s.as_str())
+    matches.get_one::<String>(id).map(String::as_str)
 }
 
 /// For use with `clap::Arg::value_parser()` to parse a usize argument.
@@ -103,7 +103,7 @@ pub(crate) fn get_diff_opts(
 
     if let Ok(value) = config.get_string("stgit.diff-opts") {
         for arg in value.split_ascii_whitespace() {
-            opts.push(String::from(arg))
+            opts.push(String::from(arg));
         }
     }
 
@@ -112,7 +112,7 @@ pub(crate) fn get_diff_opts(
     }
 
     if force_full_index {
-        opts.push(String::from("--full-index"))
+        opts.push(String::from("--full-index"));
     }
 
     if force_binary {

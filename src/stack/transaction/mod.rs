@@ -110,7 +110,7 @@ impl<'repo> ExecuteContext<'repo> {
         let transaction = self.0;
 
         // Check consistency
-        for (patchname, oid) in transaction.updated_patches.iter() {
+        for (patchname, oid) in &transaction.updated_patches {
             if oid.is_none() {
                 assert!(transaction.stack.has_patch(patchname));
             } else {
@@ -356,13 +356,13 @@ impl<'repo> StackTransaction<'repo> {
     /// Reset stack to previous stack state, but only for the specified patch names.
     pub(crate) fn reset_to_state_partially<P>(
         &mut self,
-        state: StackState<'repo>,
+        state: &StackState<'repo>,
         patchnames: &[P],
     ) -> Result<()>
     where
         P: AsRef<PatchName>,
     {
-        let only_patches: IndexSet<_> = patchnames.iter().map(|pn| pn.as_ref()).collect();
+        let only_patches: IndexSet<_> = patchnames.iter().map(AsRef::as_ref).collect();
         let state_patches: IndexSet<_> = state.all_patches().collect();
         let to_reset_patches: IndexSet<_> =
             state_patches.intersection(&only_patches).copied().collect();
@@ -505,7 +505,9 @@ impl<'repo> StackTransaction<'repo> {
         let parent = patch_commit.parent(0)?;
         let is_empty = parent.tree_id() == patch_commit.tree_id();
 
-        let push_status = if patch_commit.parent_id(0)? != self.top().id() {
+        let push_status = if patch_commit.parent_id(0)? == self.top().id() {
+            PushStatus::Unmodified
+        } else {
             let default_committer = git2::Signature::default_committer(Some(&config))?;
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
@@ -525,8 +527,6 @@ impl<'repo> StackTransaction<'repo> {
                 .insert(patchname.clone(), Some(PatchState { commit }));
 
             PushStatus::Modified
-        } else {
-            PushStatus::Unmodified
         };
 
         let push_status = if is_empty {
@@ -559,12 +559,12 @@ impl<'repo> StackTransaction<'repo> {
         applied: Vec<PatchName>,
         unapplied: Vec<PatchName>,
         hidden: Vec<PatchName>,
-    ) -> Result<()> {
-        let mut old: IndexSet<PatchName> = IndexSet::from_iter(
-            self.applied
-                .drain(..)
-                .chain(self.unapplied.drain(..).chain(self.hidden.drain(..))),
-        );
+    ) {
+        let mut old: IndexSet<PatchName> = self
+            .applied
+            .drain(..)
+            .chain(self.unapplied.drain(..).chain(self.hidden.drain(..)))
+            .collect();
         self.applied = applied;
         self.unapplied = unapplied;
         self.hidden = hidden;
@@ -577,7 +577,6 @@ impl<'repo> StackTransaction<'repo> {
             old.is_empty(),
             "all old patchnames must be in the new applied/unapplied/hidden: {old:?}"
         );
-        Ok(())
     }
 
     /// Perform push and pop operations to achieve a new stack ordering.
@@ -746,7 +745,7 @@ impl<'repo> StackTransaction<'repo> {
             if self
                 .updated_patches
                 .get(colliding_patchname)
-                .map_or(true, |maybe_patch| maybe_patch.is_some())
+                .map_or(true, Option::is_some)
             {
                 return Err(anyhow!("Patch `{colliding_patchname}` already exists"));
             }
@@ -912,8 +911,7 @@ impl<'repo> StackTransaction<'repo> {
                 let is_last = i + 1 == patchnames.len();
                 let already_merged = merged
                     .as_ref()
-                    .map(|merged| merged.contains(&patchname))
-                    .unwrap_or(false);
+                    .map_or(false, |merged| merged.contains(&patchname));
                 self.push_patch(
                     patchname,
                     already_merged,

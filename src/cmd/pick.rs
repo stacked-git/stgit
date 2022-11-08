@@ -164,15 +164,15 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         }
     }
 
-    let source_patches = if !patchranges.is_empty() {
+    let source_patches = if patchranges.is_empty() {
+        None
+    } else {
         patchrange::patches_from_specs(
             patchranges.iter(),
             &ref_stack,
             patchrange::Allow::VisibleWithAppliedBoundary,
         )
         .ok()
-    } else {
-        None
     };
 
     let picks: Vec<(Option<PatchName>, git2::Commit)> = if let Some(patches) = source_patches {
@@ -235,7 +235,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         } else {
             None
         };
-        pick_picks(stack, matches, opt_parent, &picks)
+        pick_picks(stack, matches, &opt_parent, &picks)
     }
 }
 
@@ -258,7 +258,7 @@ fn fold_picks(
         let pathspecs: Option<Vec<&Path>> = if matches.get_flag("fold") {
             matches
                 .get_many::<PathBuf>("file")
-                .map(|pathbufs| pathbufs.map(|pathbuf| pathbuf.as_path()).collect())
+                .map(|pathbufs| pathbufs.map(PathBuf::as_path).collect())
         } else {
             assert!(matches.get_flag("update"));
             diff_files = stupid.diff_tree_files(
@@ -295,7 +295,7 @@ fn fold_picks(
 fn pick_picks(
     stack: Stack,
     matches: &clap::ArgMatches,
-    opt_parent: Option<git2::Commit>,
+    opt_parent: &Option<git2::Commit>,
     picks: &[(Option<PatchName>, git2::Commit)],
 ) -> Result<()> {
     let stupid = stack.repo.stupid();

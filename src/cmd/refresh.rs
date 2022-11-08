@@ -252,11 +252,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 trans.delete_patches(|pn| pn == &temp_patchname)?;
                 assert_eq!(Some(&patchname), trans.applied().last());
                 trans.update_patch(&patchname, commit_id)?;
-                if new_patchname != patchname {
+                if new_patchname == patchname {
+                    log_msg.push_str(patchname.as_ref());
+                } else {
                     trans.rename_patch(&patchname, &new_patchname)?;
                     log_msg.push_str(new_patchname.as_ref());
-                } else {
-                    log_msg.push_str(patchname.as_ref());
                 }
                 if let Some(annotation) = opt_annotate {
                     log_msg.push_str("\n\n");
@@ -308,11 +308,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     };
 
                     trans.update_patch(&patchname, commit_id)?;
-                    if new_patchname != patchname {
+                    if new_patchname == patchname {
+                        log_msg.push_str(patchname.as_ref());
+                    } else {
                         trans.rename_patch(&patchname, &new_patchname)?;
                         log_msg.push_str(new_patchname.as_ref());
-                    } else {
-                        log_msg.push_str(patchname.as_ref());
                     }
                     if let Some(annotation) = opt_annotate {
                         log_msg.push_str("\n\n");

@@ -120,7 +120,7 @@ fn list_aliases(
 fn list_commands(output: &mut Box<dyn std::io::Write>, style: OutputStyle) -> Result<()> {
     use crate::cmd::CommandCategory;
 
-    let mut stg_command = crate::get_full_command(crate::alias::Aliases::new(), None);
+    let mut stg_command = crate::get_full_command(&crate::alias::Aliases::new(), None);
     stg_command.build();
 
     if matches!(style, OutputStyle::AsciiDoc) {

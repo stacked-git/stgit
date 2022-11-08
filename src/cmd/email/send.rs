@@ -380,7 +380,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
         {
             patchranges_or_paths
                 .iter()
-                .map(|v| v.to_string())
+                .map(ToString::to_string)
                 .collect::<Vec<_>>()
         } else {
             let mut specs = Vec::new();

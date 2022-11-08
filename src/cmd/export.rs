@@ -136,7 +136,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         crate::print_warning_message(
             matches,
             "Local changes in the tree; you might want to commit them first",
-        )
+        );
     }
 
     let patches =
@@ -155,7 +155,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     }
 
     let default_output_dir;
-    let output_dir = if let Some(dir) = matches.get_one::<PathBuf>("dir").map(|p| p.as_path()) {
+    let output_dir = if let Some(dir) = matches.get_one::<PathBuf>("dir").map(PathBuf::as_path) {
         dir
     } else {
         default_output_dir = format!("patches-{}", stack.branch_name);
@@ -273,7 +273,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             );
         }
 
-        let specialized = crate::templates::specialize_template(&template, &replacements)?;
+        let specialized = crate::templates::specialize_template(&template, &replacements);
 
         if stdout_flag {
             let stdout = std::io::stdout();

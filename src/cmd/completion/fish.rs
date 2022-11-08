@@ -29,7 +29,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     script.raw(HEADER);
 
-    let mut stg = crate::get_full_command(crate::alias::Aliases::new(), None);
+    let mut stg = crate::get_full_command(&crate::alias::Aliases::new(), None);
     stg.build();
 
     for command in stg.get_subcommands() {
@@ -368,14 +368,14 @@ fn get_arg_completion_params(arg: &clap::Arg) -> ShStream {
             "git-send-email-opt" => params.word("-xa '(__fish_stg_git_send_email_opts)'"),
             "patch" | "patchranges" => params.word("-kxa '(__fish_stg_patches -A -U)'"),
             "patchranges-all" | "set-tree" | "stgit-revision" => {
-                params.word("-kxa '(__fish_stg_patches --all)'")
+                params.word("-kxa '(__fish_stg_patches --all)'");
             }
             "patchranges-applied" => params.word("-kxa '(__fish_stg_patches --applied)'"),
             "patchranges-hidden" => params.word("-kxa '(__fish_stg_patches --hidden)'"),
             "patchranges-unapplied" => params.word("-kxa '(__fish_stg_patches --unapplied)'"),
             "pathspecs" => params.word("-F"),
             "subcommand" => {
-                params.word("-xa '(stg completion list commands-and-aliases --style=fish)'")
+                params.word("-xa '(stg completion list commands-and-aliases --style=fish)'");
             }
             _ => params.word("-x"),
         };

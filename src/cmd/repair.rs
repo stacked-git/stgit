@@ -122,10 +122,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let todo_commit_id = todo.pop().unwrap();
             seen.insert(todo_commit_id);
             let commit = stack.repo.find_commit(todo_commit_id)?;
-            let parents: IndexSet<git2::Oid> = IndexSet::from_iter(commit.parent_ids());
-            let unseen_parents: IndexSet<git2::Oid> =
-                IndexSet::from_iter(parents.difference(&seen).cloned());
-            todo = IndexSet::from_iter(todo.union(&unseen_parents).cloned());
+            let parents: IndexSet<git2::Oid> = commit.parent_ids().collect();
+            let unseen_parents: IndexSet<git2::Oid> = parents.difference(&seen).copied().collect();
+            todo = todo.union(&unseen_parents).copied().collect();
 
             if stack
                 .all_patches()
@@ -143,7 +142,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                      and will be considered unapplied",
                     if unreachable == 1 { " is" } else { "es are" },
                 ),
-            )
+            );
         }
     }
 
@@ -183,7 +182,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .use_index_and_worktree(false)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
-            trans.repair_appliedness(applied, unapplied, hidden)?;
+            trans.repair_appliedness(applied, unapplied, hidden);
 
             // Make patches of any linear sequence of commits on top of a patch.
             if !patchify.is_empty() {

@@ -34,7 +34,7 @@ impl StatusOptions {
     {
         for pathspec in pathspecs {
             let pathspec = pathspec.as_ref();
-            self.pathspecs.push(PathBuf::from(pathspec))
+            self.pathspecs.push(PathBuf::from(pathspec));
         }
         self
     }

@@ -63,7 +63,7 @@ impl SignatureExtended for git2::Signature<'_> {
     ) -> Result<Option<git2::Signature<'static>>> {
         let when = if let Some(when) = when {
             when
-        } else if let Some(authdate) = matches.get_one::<git2::Time>("authdate").cloned() {
+        } else if let Some(authdate) = matches.get_one::<git2::Time>("authdate").copied() {
             authdate
         } else {
             return Ok(None);
@@ -84,7 +84,7 @@ impl SignatureExtended for git2::Signature<'_> {
     }
 
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>> {
-        let when = if let Some(authdate) = matches.get_one::<git2::Time>("authdate").cloned() {
+        let when = if let Some(authdate) = matches.get_one::<git2::Time>("authdate").copied() {
             authdate
         } else {
             self.when()

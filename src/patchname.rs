@@ -51,7 +51,7 @@ impl PatchName {
 
         let base = raw
             .lines()
-            .filter_map(|line| {
+            .find_map(|line| {
                 let trimmed = line.trim();
                 if trimmed.is_empty() {
                     None
@@ -59,7 +59,6 @@ impl PatchName {
                     Some(trimmed)
                 }
             })
-            .next()
             .unwrap_or(default_name);
 
         let mut name = String::with_capacity(base.len());
@@ -118,10 +117,7 @@ impl PatchName {
             candidate = default_name;
         }
 
-        if len_limit
-            .map(|limit| limit > 0 && candidate.len() > limit)
-            .unwrap_or(false)
-        {
+        if len_limit.map_or(false, |limit| limit > 0 && candidate.len() > limit) {
             let len_limit = len_limit.unwrap();
             let mut word_iter = candidate.split('-').filter_map(|w| {
                 let w = w.trim_matches('.');

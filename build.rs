@@ -39,7 +39,7 @@ fn main() {
         .ok();
     let git_hash = git_output
         .as_ref()
-        .and_then(|output| std::str::from_utf8(&output.stdout).ok().map(|s| s.trim()))
+        .and_then(|output| std::str::from_utf8(&output.stdout).ok().map(str::trim))
         // E.g. "v2.0.0-beta.2-7-g12ab34cd56*"
         //       ttttttttttttt N hhhhhhhhhhhD
         //  t => last matching annotated tag

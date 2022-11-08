@@ -126,8 +126,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         for line in series.lines() {
             let line = line
                 .find_char('#')
-                .map(|pos| &line[..pos])
-                .unwrap_or(line)
+                .map_or(line, |pos| &line[..pos])
                 .trim_with(|c| c.is_ascii_whitespace());
             if line.is_empty() {
                 continue;
@@ -257,11 +256,11 @@ fn branch_merge_patch(
     let diff = trans
         .repo()
         .diff_tree_to_index(Some(&commit_tree), None, Some(&mut diff_opts))?;
-    if !diff.deltas().any(|_| true) {
-        Ok(None)
-    } else {
+    if diff.deltas().any(|_| true) {
         let tree_id = stupid.write_tree()?;
         Ok(Some(tree_id))
+    } else {
+        Ok(None)
     }
 }
 
@@ -322,9 +321,9 @@ fn series_merge_patch(
     let diff = trans
         .repo()
         .diff_tree_to_index(Some(&commit_tree), None, Some(&mut diff_opts))?;
-    if !diff.deltas().any(|_| true) {
-        Ok(None)
-    } else {
+    if diff.deltas().any(|_| true) {
         Ok(Some(tree_id))
+    } else {
+        Ok(None)
     }
 }

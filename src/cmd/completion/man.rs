@@ -35,7 +35,8 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let output_dir = if let Some(path) = matches.get_one::<PathBuf>("output").map(|p| p.as_path()) {
+    let output_dir = if let Some(path) = matches.get_one::<PathBuf>("output").map(PathBuf::as_path)
+    {
         path
     } else {
         Path::new("")
@@ -43,7 +44,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     std::fs::create_dir_all(output_dir)?;
 
-    let mut stg = crate::get_full_command(crate::alias::Aliases::new(), None);
+    let mut stg = crate::get_full_command(&crate::alias::Aliases::new(), None);
     stg.build();
 
     for command in stg.get_subcommands_mut() {
@@ -127,7 +128,7 @@ fn add_usage(usage: &mut String, command: &mut clap::Command, name_stack: &[Stri
         .strip_prefix("Usage: ")
         .expect("Usage starts with 'Usage: '")
         .lines()
-        .map(|line| line.trim_start())
+        .map(str::trim_start)
         .filter(|line| !line.is_empty())
         .collect::<Vec<_>>();
 
@@ -400,7 +401,7 @@ fn make_links(text: &str) -> String {
                 output.push_str(&link);
                 output.push_str(trailing_ws);
             } else {
-                output.push_str(word)
+                output.push_str(word);
             }
         } else if word.starts_with("'git") {
             if let Some(next_word) = words.next() {

@@ -514,7 +514,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     {
         let base = stack.get_patch_commit(&patches[0]).parent_id(0)?;
         let last = stack.get_patch_commit(patches.last().unwrap()).id();
-        format_args.push(format!("{base}..{last}"))
+        format_args.push(format!("{base}..{last}"));
     }
 
     repo.stupid().format_patch(format_args)

@@ -104,11 +104,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
 
-        let exclusive = if !bases.contains(&target_commit.id()) {
+        let exclusive = if bases.contains(&target_commit.id()) {
+            matches.get_flag("exclusive")
+        } else {
             target_commit = repo.find_commit(bases[0])?;
             true
-        } else {
-            matches.get_flag("exclusive")
         };
 
         if exclusive {
@@ -155,7 +155,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 }
                 let prefix = prefixes.next().unwrap();
                 let mut patchnames = Vec::with_capacity(number);
-                for i in (1..number + 1).rev() {
+                for i in (1..=number).rev() {
                     patchnames.push(PatchName::try_from(format!("{prefix}{i}"))?);
                 }
                 check_patchnames(&stack, &patchnames)?;
@@ -192,7 +192,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             trans.uncommit_patches(
                 patchnames
                     .iter()
-                    .zip(commits.iter().map(|commit| commit.id()))
+                    .zip(commits.iter().map(git2::Commit::id))
                     .rev(),
             )
         })

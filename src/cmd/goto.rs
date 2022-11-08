@@ -106,7 +106,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .position(|pn| pn == &patchname)
                     .expect("already determined patch exists and not hidden or applied");
 
-                let to_apply: Vec<PatchName> = trans.unapplied()[0..pos + 1].to_vec();
+                let to_apply: Vec<PatchName> = trans.unapplied()[0..=pos].to_vec();
                 trans.push_patches(&to_apply, merged_flag)?;
                 Ok(())
             }

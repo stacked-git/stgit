@@ -366,8 +366,7 @@ fn import_series(
     for line in series.lines() {
         let line = line
             .find_char('#')
-            .map(|pos| &line[..pos])
-            .unwrap_or(line)
+            .map_or(line, |pos| &line[..pos])
             .trim_with(|c| c.is_ascii_whitespace());
         if line.is_empty() {
             continue;
@@ -379,9 +378,10 @@ fn import_series(
             .expect("non-empty line must have first field")
             .to_os_str()
             .context("converting patch name from series to file name")?;
-        let patch_path = source_path
-            .map(|p| p.with_file_name(raw_patchname))
-            .unwrap_or_else(|| PathBuf::from(raw_patchname));
+        let patch_path = source_path.map_or_else(
+            || PathBuf::from(raw_patchname),
+            |p| p.with_file_name(raw_patchname),
+        );
 
         let strip_level = if let Some(extra) = fields.next() {
             if extra.starts_with_str("-p") {
@@ -435,9 +435,9 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
     let stupid = stack.repo.stupid();
     let num_patches = stupid.mailsplit(source_path, out_dir.path(), keep_cr, missing_from_ok)?;
     let mut stack = stack;
-    for i in 1..num_patches + 1 {
+    for i in 1..=num_patches {
         let patch_path = out_dir.path().join(format!("{i:04}"));
-        let patch_file = std::fs::File::open(&patch_path)?;
+        let patch_file = std::fs::File::open(patch_path)?;
         let (mailinfo, message, diff) = stupid.mailinfo(Some(patch_file), message_id)?;
         let headers = Headers::parse_mailinfo(&mailinfo).unwrap_or_default();
         stack = create_patch(stack, matches, None, headers, &message, &diff, None)?;
@@ -499,7 +499,7 @@ fn import_file<'repo>(
 
     let (mailinfo, message, diff) = if let Some(source_path) = source_path {
         let source_file = std::fs::File::open(source_path)?;
-        match source_path.extension().and_then(|s| s.to_str()) {
+        match source_path.extension().and_then(std::ffi::OsStr::to_str) {
             Some("gz") => get_gz_mailinfo(&stupid, source_file, message_id),
             Some("bz2") => get_bz2_mailinfo(&stupid, source_file, message_id),
             _ => stupid.mailinfo(Some(source_file), message_id),
@@ -567,7 +567,7 @@ fn create_patch<'repo>(
     } else if let Some(name) = matches.get_one::<PatchName>("name") {
         Some(name.as_ref())
     } else if let Some(source_path) = source_path {
-        source_path.file_name().and_then(|name| name.to_str())
+        source_path.file_name().and_then(std::ffi::OsStr::to_str)
     } else {
         None
     };
@@ -768,7 +768,7 @@ impl Headers {
                     headers.author_email = Some(email.to_string());
                     continue;
                 } else if header.eq_ignore_ascii_case(b"date") {
-                    headers.author_date = value.to_str().map(|s| s.to_string()).ok();
+                    headers.author_date = value.to_str().map(ToString::to_string).ok();
                     continue;
                 }
             }
@@ -779,8 +779,7 @@ impl Headers {
 
             if line
                 .strip_prefix(b"commit ")
-                .map(|rest| rest.iter().all(|c| c.is_ascii_hexdigit()))
-                .unwrap_or(false)
+                .map_or(false, |rest| rest.iter().all(u8::is_ascii_hexdigit))
             {
                 // Looks like this patch came from `git show`. Remaining message lines
                 // need to be stripped of indentation.

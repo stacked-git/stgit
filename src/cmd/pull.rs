@@ -117,9 +117,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 return Err(anyhow!(
                     "Specifying a repository is meaningless for `{policy}` pull-policy"
                 ));
-            } else {
-                None
             }
+            None
         }
         PullPolicy::Pull | PullPolicy::FetchRebase => {
             parent_remote = config

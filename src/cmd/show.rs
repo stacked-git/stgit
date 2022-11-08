@@ -142,7 +142,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             ) {
                 Ok(patchnames) => {
                     for patchname in &patchnames {
-                        oids.push(stack.get_patch(patchname).commit.id())
+                        oids.push(stack.get_patch(patchname).commit.id());
                     }
                 }
                 Err(patchrange::Error::PatchNotKnown { patchname: _ }) => {
@@ -191,6 +191,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.get_many::<PathBuf>("pathspecs"),
         stat_flag,
         crate::color::use_color(matches),
-        &argset::get_diff_opts(matches, &config, false, false),
+        argset::get_diff_opts(matches, &config, false, false),
     )
 }

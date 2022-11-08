@@ -221,11 +221,11 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
                 }
 
                 // Swallow a single blank line after the headers
-                if !trimmed.is_empty() {
+                if trimmed.is_empty() {
+                    consecutive_empty += 1;
+                } else {
                     message.push_str(trimmed);
                     message.push('\n');
-                } else {
-                    consecutive_empty += 1;
                 }
                 consuming_message = true;
             }
@@ -276,7 +276,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
         let diff = if consume_diff {
             let diff_slice = &buf[pos..];
-            if diff_slice.iter().all(|b| b.is_ascii_whitespace()) {
+            if diff_slice.iter().all(u8::is_ascii_whitespace) {
                 None
             } else {
                 Some(DiffBuffer(diff_slice.to_vec()))

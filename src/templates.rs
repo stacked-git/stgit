@@ -70,14 +70,14 @@ pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option
 pub(crate) fn specialize_template(
     template: &str,
     replacements: &HashMap<&str, Cow<'_, [u8]>>,
-) -> Result<Vec<u8>> {
-    let mut special = BString::from(Vec::with_capacity(template.len()));
+) -> Vec<u8> {
     enum State {
         Start,
         Percent,
         OpenedParen,
         ClosedParen,
     }
+    let mut special = BString::from(Vec::with_capacity(template.len()));
     let mut state = State::Start;
     let mut name = String::new();
     for c in template.chars() {
@@ -134,7 +134,7 @@ pub(crate) fn specialize_template(
         }
     }
 
-    Ok(special.into())
+    special.into()
 }
 
 /// Default patch export template.

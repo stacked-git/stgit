@@ -45,8 +45,9 @@ fn str_choice_to_termcolor(color_choice: &str) -> Option<termcolor::ColorChoice>
 /// Map [`termcolor::ColorChoice`] to [`clap::ColorChoice`].
 pub(crate) fn termcolor_choice_to_clap(color_choice: termcolor::ColorChoice) -> clap::ColorChoice {
     match color_choice {
-        termcolor::ColorChoice::Always => clap::ColorChoice::Always,
-        termcolor::ColorChoice::AlwaysAnsi => clap::ColorChoice::Always,
+        termcolor::ColorChoice::Always | termcolor::ColorChoice::AlwaysAnsi => {
+            clap::ColorChoice::Always
+        }
         termcolor::ColorChoice::Auto => clap::ColorChoice::Auto,
         termcolor::ColorChoice::Never => clap::ColorChoice::Never,
     }
@@ -75,8 +76,7 @@ pub(crate) fn get_color_choice(maybe_matches: Option<&ArgMatches>) -> termcolor:
     str_choice_to_termcolor(
         maybe_matches
             .and_then(|matches| matches.get_one::<String>("color"))
-            .map(|s| s.as_str())
-            .unwrap_or("auto"),
+            .map_or("auto", String::as_str),
     )
     .expect("clap already validated color choice string")
 }
@@ -84,8 +84,7 @@ pub(crate) fn get_color_choice(maybe_matches: Option<&ArgMatches>) -> termcolor:
 /// Determine if color should be used based on `--color` and if terminal is a tty.
 pub(crate) fn use_color(matches: &ArgMatches) -> bool {
     match crate::color::get_color_choice(Some(matches)) {
-        termcolor::ColorChoice::Always => true,
-        termcolor::ColorChoice::AlwaysAnsi => true,
+        termcolor::ColorChoice::Always | termcolor::ColorChoice::AlwaysAnsi => true,
         termcolor::ColorChoice::Auto => atty::is(atty::Stream::Stdout),
         termcolor::ColorChoice::Never => false,
     }

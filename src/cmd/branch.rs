@@ -231,15 +231,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     if let Some((subname, submatches)) = matches.subcommand() {
         match subname {
-            "--list" => list(repo, submatches),
-            "--create" => create(repo, submatches),
-            "--clone" => clone(repo, submatches),
-            "--rename" => rename(repo, submatches),
-            "--protect" => protect(repo, submatches),
-            "--unprotect" => unprotect(repo, submatches),
-            "--delete" => delete(repo, submatches),
-            "--cleanup" => cleanup(repo, submatches),
-            "--describe" => describe(repo, submatches),
+            "--list" => list(&repo, submatches),
+            "--create" => create(&repo, submatches),
+            "--clone" => clone(&repo, submatches),
+            "--rename" => rename(&repo, submatches),
+            "--protect" => protect(&repo, submatches),
+            "--unprotect" => unprotect(&repo, submatches),
+            "--delete" => delete(&repo, submatches),
+            "--cleanup" => cleanup(&repo, submatches),
+            "--describe" => describe(&repo, submatches),
             s => panic!("unhandled branch subcommand {s}"),
         }
     } else {
@@ -316,7 +316,7 @@ fn set_stgit_parent(
     }
 }
 
-fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn list(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let mut branchnames = Vec::new();
     for branch_result in repo.branches(Some(git2::BranchType::Local))? {
         let (branch, _branch_type) = branch_result?;
@@ -328,13 +328,13 @@ fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     }
 
     branchnames.sort();
-    let branchname_width = branchnames.iter().map(|s| s.len()).max();
+    let branchname_width = branchnames.iter().map(String::len).max();
 
     let current_branchname = repo.get_branch(None).ok().and_then(|branch| {
         branch
             .name()
             .ok()
-            .and_then(|name| name.map(|s| s.to_string()))
+            .and_then(|name| name.map(ToString::to_string))
     });
 
     let config = repo.config()?;
@@ -354,7 +354,7 @@ fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
             write!(stdout, "  ")?;
         };
 
-        if let Ok(stack) = Stack::from_branch(&repo, Some(branchname)) {
+        if let Ok(stack) = Stack::from_branch(repo, Some(branchname)) {
             color_spec.set_fg(Some(termcolor::Color::Cyan));
             stdout.set_color(&color_spec)?;
             write!(stdout, "s")?;
@@ -401,7 +401,7 @@ fn list(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
 
     repo.check_repository_state()?;
@@ -441,7 +441,7 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let target_commit = if let Some(parent_branch) = parent_branch.as_ref() {
         parent_branch.get().peel_to_commit()?
     } else if let Some(committish) = get_one_str(matches, "committish") {
-        crate::revspec::parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
+        crate::revspec::parse_stgit_revision(repo, Some(committish), None)?.peel_to_commit()?
     } else {
         repo.head()?.peel_to_commit()?
     };
@@ -454,7 +454,7 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let mut config = repo.config()?;
     let mut new_branch = repo.branch(new_branchname, &target_commit, false)?;
-    let stack = match Stack::initialize(&repo, Some(new_branchname)) {
+    let stack = match Stack::initialize(repo, Some(new_branchname)) {
         Ok(stack) => stack,
         Err(e) => {
             new_branch.delete()?;
@@ -493,7 +493,7 @@ fn create(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     }
 }
 
-fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let current_branch = repo.get_branch(None)?;
     let current_branchname = get_branch_name(&current_branch)?;
 
@@ -510,7 +510,7 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     repo.check_repository_state()?;
     statuses.check_conflicts()?;
 
-    if let Ok(stack) = Stack::from_branch(&repo, None) {
+    if let Ok(stack) = Stack::from_branch(repo, None) {
         stack.check_head_top_mismatch()?;
         let state_ref = repo
             .find_reference(&stack.refname)
@@ -525,7 +525,7 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
         stupid.branch_copy(None, &new_branchname)?;
     } else {
         stupid.branch_copy(None, &new_branchname)?;
-        Stack::initialize(&repo, Some(&new_branchname))?;
+        Stack::initialize(repo, Some(&new_branchname))?;
     };
 
     let mut config = repo.config()?;
@@ -542,11 +542,11 @@ fn clone(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     stupid.checkout(new_branch.name().unwrap().unwrap())
 }
 
-fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let names: Vec<_> = matches
         .get_many::<String>("branch-any")
         .unwrap()
-        .map(|s| s.as_str())
+        .map(String::as_str)
         .collect();
     let current_branchname;
     let (old_branchname, new_branchname) = if names.len() == 2 {
@@ -562,7 +562,7 @@ fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     let mut config = repo.config()?;
     let parent_branchname = get_stgit_parent(&config, old_branchname);
 
-    if let Ok(stack) = Stack::from_branch(&repo, Some(old_branchname)) {
+    if let Ok(stack) = Stack::from_branch(repo, Some(old_branchname)) {
         let state_commit = repo
             .find_reference(&stack.refname)
             .expect("just found this stack state reference")
@@ -582,19 +582,19 @@ fn rename(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn protect(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
+fn protect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, true)
 }
 
-fn unprotect(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
+fn unprotect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, false)
 }
 
-fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn delete(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let target_branchname = get_one_str(matches, "branch-any").expect("required argument");
     let mut target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
@@ -605,7 +605,7 @@ fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let config = repo.config()?;
 
-    if let Ok(stack) = Stack::from_branch(&repo, Some(target_branchname)) {
+    if let Ok(stack) = Stack::from_branch(repo, Some(target_branchname)) {
         if stack.is_protected(&config) {
             return Err(anyhow!("Delete not permitted: this branch is protected"));
         } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
@@ -620,8 +620,8 @@ fn delete(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(&repo, get_one_str(matches, "branch"))?;
+fn cleanup(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
     let config = repo.config()?;
     if stack.is_protected(&config) {
         return Err(anyhow!("Clean up not permitted: this branch is protected"));
@@ -634,7 +634,7 @@ fn cleanup(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn describe(repo: git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn describe(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let branch = repo.get_branch(get_one_str(matches, "branch-any"))?;
     let description = get_one_str(matches, "description").expect("required argument");
     let branchname = get_branch_name(&branch)?;

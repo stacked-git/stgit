@@ -77,7 +77,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let noapply_flag = matches.get_flag("noapply");
     let keep_flag = matches.get_flag("keep");
-    let opt_series = matches.get_one::<PathBuf>("series").map(|p| p.as_path());
+    let opt_series = matches.get_one::<PathBuf>("series").map(PathBuf::as_path);
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
@@ -166,7 +166,7 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
         })
         .filter(|s| !s.is_empty())
     {
-        series.push(patchrange::Specification::from_str(s)?)
+        series.push(patchrange::Specification::from_str(s)?);
     }
 
     patchrange::patches_from_specs(series.iter(), stack, patchrange::Allow::Visible).with_context(

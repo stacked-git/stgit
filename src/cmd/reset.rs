@@ -84,7 +84,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                         &reset_state,
                         patchrange::Allow::All,
                     )?;
-                    trans.reset_to_state_partially(reset_state, &patchnames)
+                    trans.reset_to_state_partially(&reset_state, &patchnames)
                 } else {
                     trans.reset_to_state(reset_state)
                 }

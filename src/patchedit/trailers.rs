@@ -36,7 +36,7 @@ pub(crate) fn add_trailers<'a>(
             .chain(matches.get_many::<String>(old_by_opt).unwrap_or_default());
 
         for (index, value) in indices_iter.zip(values_iter) {
-            trailers.push((index, trailer, value))
+            trailers.push((index, trailer, value));
         }
     }
 
@@ -45,7 +45,7 @@ pub(crate) fn add_trailers<'a>(
     } else {
         let default_value = if let (Some(name), Some(email)) = (signature.name(), signature.email())
         {
-            format!("{} <{}>", name, email)
+            format!("{name} <{email}>")
         } else {
             return Err(anyhow!("Trailer requires UTF-8 signature"));
         };

@@ -76,7 +76,7 @@ pub(crate) enum Allow {
 }
 
 impl Allow {
-    fn use_applied_boundary(&self) -> bool {
+    fn use_applied_boundary(self) -> bool {
         matches!(
             self,
             Allow::AllWithAppliedBoundary | Allow::VisibleWithAppliedBoundary
@@ -84,7 +84,7 @@ impl Allow {
     }
 
     fn get_allowed<'repo, 'a>(
-        &self,
+        self,
         stack_state: &'a impl StackStateAccess<'repo>,
     ) -> Vec<&'a PatchName> {
         match self {

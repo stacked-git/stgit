@@ -122,7 +122,7 @@ fn get_bootstrap_command(color_choice: Option<termcolor::ColorChoice>) -> clap::
 /// useful in contexts where the global help needs to be presented to the user; i.e.
 /// when `--help` is provided or when the user specifies an invalid subcommand or alias.
 pub(crate) fn get_full_command(
-    aliases: alias::Aliases,
+    aliases: &alias::Aliases,
     color_choice: Option<termcolor::ColorChoice>,
 ) -> clap::Command {
     get_base_command(color_choice)
@@ -130,7 +130,7 @@ pub(crate) fn get_full_command(
         .arg_required_else_help(true)
         .subcommand_value_name("command")
         .subcommands(STGIT_COMMANDS.iter().map(|command| (command.make)()))
-        .subcommands(aliases.values().map(|alias| alias.make()))
+        .subcommands(aliases.values().map(alias::Alias::make))
 }
 
 /// Main entry point for `stg` executable.
@@ -243,8 +243,8 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
                     }
                     CONFLICT_ERROR
                 }
-                Some(stack::Error::CheckoutConflicts(_)) => CONFLICT_ERROR,
-                Some(stack::Error::CausedConflicts(_)) => CONFLICT_ERROR,
+                Some(stack::Error::CheckoutConflicts(_))
+                | Some(stack::Error::CausedConflicts(_)) => CONFLICT_ERROR,
                 _ => COMMAND_ERROR,
             }
         }
@@ -288,8 +288,8 @@ fn full_app_help(
     // full_app_help should only be called once it has been determined that the command
     // line does not have a viable subcommand or alias. Thus this get_matches_from()
     // call should print an appropriate help message and terminate the process.
-    let err = get_full_command(aliases, color_choice)
-        .try_get_matches_from(&argv)
+    let err = get_full_command(&aliases, color_choice)
+        .try_get_matches_from(argv)
         .expect_err("command line should not have viable matches");
     err.print().expect("failed to print clap error");
     std::process::exit(if err.use_stderr() { GENERAL_ERROR } else { 0 })
@@ -464,7 +464,7 @@ pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<git2::Repository>)
     let maybe_repo = git2::Repository::open_from_env().ok();
     maybe_repo
         .as_ref()
-        .map_or_else(git2::Config::open_default, |repo| repo.config())
+        .map_or_else(git2::Config::open_default, git2::Repository::config)
         .map_or_else(
             |_| Ok(alias::get_default_aliases()),
             |config| {
@@ -527,13 +527,13 @@ fn print_message(
 /// Print user-facing informational message to stderr.
 pub(crate) fn print_info_message(matches: &ArgMatches, msg: &str) {
     let mut stderr = color::get_color_stderr(matches);
-    print_message("info", termcolor::Color::Blue, &mut stderr, msg)
+    print_message("info", termcolor::Color::Blue, &mut stderr, msg);
 }
 
 /// Print user-facing warning message to stderr.
 pub(crate) fn print_warning_message(matches: &ArgMatches, msg: &str) {
     let mut stderr = color::get_color_stderr(matches);
-    print_message("warning", termcolor::Color::Yellow, &mut stderr, msg)
+    print_message("warning", termcolor::Color::Yellow, &mut stderr, msg);
 }
 
 /// Print user-facing error message to stderr.
@@ -546,8 +546,8 @@ fn print_error_message(color_choice: Option<termcolor::ColorChoice>, err: &anyho
         }
     });
     let mut stderr = termcolor::StandardStream::stderr(color_choice);
-    let err_string = format!("{:#}", err);
-    print_message("error", termcolor::Color::Red, &mut stderr, &err_string)
+    let err_string = format!("{err:#}");
+    print_message("error", termcolor::Color::Red, &mut stderr, &err_string);
 }
 
 /// Print file names with merge conflicts to stdout.

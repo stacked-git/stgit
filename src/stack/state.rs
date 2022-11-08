@@ -322,7 +322,7 @@ impl<'repo> StackState<'repo> {
                     entry
                         .to_object(repo)
                         .ok()
-                        .and_then(|object| object.as_tree().map(|tree| tree.to_owned()))
+                        .and_then(|object| object.as_tree().cloned())
                 });
                 (Some(prev_state), prev_patches_tree)
             } else {
@@ -331,7 +331,7 @@ impl<'repo> StackState<'repo> {
 
         builder.insert(
             patches_tree_name,
-            self.make_patches_tree(repo, prev_state, prev_patches_tree)?,
+            self.make_patches_tree(repo, prev_state, &prev_patches_tree)?,
             i32::from(git2::FileMode::Tree),
         )?;
         Ok(builder.write()?)
@@ -342,7 +342,7 @@ impl<'repo> StackState<'repo> {
         &self,
         repo: &git2::Repository,
         prev_state: Option<&StackState>,
-        prev_patches_tree: Option<git2::Tree>,
+        prev_patches_tree: &Option<git2::Tree>,
     ) -> Result<git2::Oid> {
         let mut builder = repo.treebuilder(None)?;
         for patchname in self.all_patches() {

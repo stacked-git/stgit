@@ -107,7 +107,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     {
         parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
     } else {
-        stack.base().to_owned()
+        stack.base().clone()
     };
 
     if stack.is_protected(&config) {
@@ -442,7 +442,7 @@ fn interactive_pushback(
 }
 
 fn make_instructions_template(stack: &Stack, previously_applied: &[PatchName]) -> String {
-    let name_width = stack.all_patches().map(|pn| pn.len()).max().unwrap();
+    let name_width = stack.all_patches().map(PatchName::len).max().unwrap();
     let mut template = String::with_capacity(4096);
     let mut found_apply_boundary = false;
     for patchname in stack.all_patches() {

@@ -29,7 +29,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     script.raw(HEADER);
 
-    let mut stg = crate::get_full_command(crate::alias::Aliases::new(), None);
+    let mut stg = crate::get_full_command(&crate::alias::Aliases::new(), None);
     stg.build();
 
     for command in stg.get_subcommands() {
@@ -210,34 +210,55 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
     ) {
         match arg.get_id().as_str() {
             "branch" | "ref-branch" => {
-                script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_stg_branches)\" -- \"$cur\")")
+                script
+                    .line("mapfile -t COMPREPLY < <(compgen -W \"$(_stg_branches)\" -- \"$cur\")");
             }
 
             "branch-any" => {
-                script.line("mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches)\" -- \"$cur\")")
+                script
+                    .line("mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches)\" -- \"$cur\")");
             }
-            "committish" => script.line(
+            "committish" => {
+                script.line(
                 "mapfile -t COMPREPLY < <(compgen -W \"$(_all_branches) $(_tags) $(_remotes)\")",
-            ),
-            "git-diff-opt" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_diff_opts)\" -- \"$cur\")"),
-            "git-format-patch-opt" => script.line(
-                "mapfile -t COMPREPLY < <(compgen -W \"$(_git_format_patch_opts)\" -- \"$cur\")",
-            ),
-            "git-send-email-opt" => script.line(
-                "mapfile -t COMPREPLY < <(compgen -W \"$(_git_send_email_opts)\" -- \"$cur\")",
-            ),
-            "patch" => script
-                .line("mapfile -t COMPREPLY < <(compgen -W \"$(_visible_patches)\" -- \"$cur\")"),
-            "patchranges" => script.line("_patch_range \"$(_visible_patches)\""),
-            "patchranges-all" | "set-tree" | "stgit-revision" => {
-                script.line("_patch_range \"$(_all_patches)\"")
+            );
             }
-            "patchranges-applied" => script.line("_patch_range \"$(_applied_patches)\""),
-            "patchranges-hidden" => script.line("_patch_range \"$(_hidden_patches)\""),
-            "patchranges-unapplied" => script.line("_patch_range \"$(_unapplied_patches)\""),
+            "git-diff-opt" => {
+                script
+                    .line("mapfile -t COMPREPLY < <(compgen -W \"$(_git_diff_opts)\" -- \"$cur\")");
+            }
+            "git-format-patch-opt" => {
+                script.line(
+                "mapfile -t COMPREPLY < <(compgen -W \"$(_git_format_patch_opts)\" -- \"$cur\")",
+            );
+            }
+            "git-send-email-opt" => {
+                script.line(
+                    "mapfile -t COMPREPLY < <(compgen -W \"$(_git_send_email_opts)\" -- \"$cur\")",
+                );
+            }
+            "patch" => {
+                script.line(
+                    "mapfile -t COMPREPLY < <(compgen -W \"$(_visible_patches)\" -- \"$cur\")",
+                );
+            }
+            "patchranges" => {
+                script.line("_patch_range \"$(_visible_patches)\"");
+            }
+            "patchranges-all" | "set-tree" | "stgit-revision" => {
+                script.line("_patch_range \"$(_all_patches)\"");
+            }
+            "patchranges-applied" => {
+                script.line("_patch_range \"$(_applied_patches)\"");
+            }
+            "patchranges-hidden" => {
+                script.line("_patch_range \"$(_hidden_patches)\"");
+            }
+            "patchranges-unapplied" => {
+                script.line("_patch_range \"$(_unapplied_patches)\"");
+            }
             "pathspecs" => {
-                script.line("mapfile -t COMPREPLY < <(compgen -o filenames -A file -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -o filenames -A file -- \"$cur\")");
             }
             "subcommand" => {
                 // N.B. the `$__subcommands` here refers to a variable in the *calling
@@ -260,28 +281,35 @@ fn insert_compreply(script: &mut ShStream, arg: &clap::Arg) {
                 script.dedent();
                 script.line("fi");
             }
-            _ => script.line(":"),
+            _ => {
+                script.line(":");
+            }
         };
     } else {
         match arg.get_value_hint() {
             clap::ValueHint::Unknown | clap::ValueHint::Other => panic!(),
             clap::ValueHint::AnyPath => {
-                script.line("mapfile -t COMPREPLY < <(compgen -o default -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -o default -- \"$cur\")");
             }
             clap::ValueHint::FilePath => {
-                script.line("mapfile -t COMPREPLY < <(compgen -o filenames -A file -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -o filenames -A file -- \"$cur\")");
             }
-            clap::ValueHint::DirPath => script
-                .line("mapfile -t COMPREPLY < <(compgen -o directory -A directory -- \"$cur\")"),
-            clap::ValueHint::EmailAddress => script.line(":"),
+            clap::ValueHint::DirPath => {
+                script.line(
+                    "mapfile -t COMPREPLY < <(compgen -o directory -A directory -- \"$cur\")",
+                );
+            }
+            clap::ValueHint::EmailAddress => {
+                script.line(":");
+            }
             clap::ValueHint::CommandName => {
-                script.line("mapfile -t COMPREPLY < <(compgen -A command -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -A command -- \"$cur\")");
             }
             clap::ValueHint::Username => {
-                script.line("mapfile -t COMPREPLY < <(compgen -A user -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -A user -- \"$cur\")");
             }
             clap::ValueHint::Hostname => {
-                script.line("mapfile -t COMPREPLY < <(compgen -A hostname -- \"$cur\")")
+                script.line("mapfile -t COMPREPLY < <(compgen -A hostname -- \"$cur\")");
             }
             clap::ValueHint::ExecutablePath => todo!(),
             clap::ValueHint::CommandString => todo!(),
@@ -307,8 +335,7 @@ fn get_flags(command: &clap::Command) -> (ShStream, ShStream) {
             for name in longs {
                 if arg
                     .get_num_args()
-                    .map(|value_range| value_range.takes_values())
-                    .unwrap_or(false)
+                    .map_or(false, |value_range| value_range.takes_values())
                 {
                     long_flags.word(&f!("--{name}="));
                 } else {
@@ -341,7 +368,7 @@ fn get_flags(command: &clap::Command) -> (ShStream, ShStream) {
         }
     }
 
-    if command.get_positionals().any(|arg| arg.is_last_set()) {
+    if command.get_positionals().any(clap::Arg::is_last_set) {
         long_flags.word("'-- '");
     }
 

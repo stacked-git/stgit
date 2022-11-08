@@ -470,9 +470,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let stupid = repo.stupid();
         let config = repo.config()?;
         let default_committer = git2::Signature::default_committer(Some(&config))?;
-        let committer = patch_commit
-            .map(|commit| commit.committer().to_owned())
-            .unwrap_or_else(|| default_committer.clone());
+        let committer = patch_commit.map_or_else(
+            || default_committer.clone(),
+            |commit| commit.committer().to_owned(),
+        );
 
         let EditedPatchDescription {
             patchname: file_patchname,
@@ -488,7 +489,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 EditedPatchDescription::try_from(std::fs::read(file_os)?.as_slice())?
             }
         } else {
-            Default::default() // i.e. all Nones
+            EditedPatchDescription::default() // i.e. all Nones
         };
 
         let author = if let Some(Some(author)) = file_author {
@@ -638,9 +639,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let is_message_modified = || {
-            patch_commit
-                .map(|commit| commit.message_raw_bytes() != message.raw_bytes())
-                .unwrap_or(true)
+            patch_commit.map_or(true, |commit| {
+                commit.message_raw_bytes() != message.raw_bytes()
+            })
         };
 
         let need_commit_msg_hook =
@@ -663,10 +664,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 diff_instruction,
                 diff,
             };
-            let path = matches
-                .get_one::<PathBuf>("save-template")
-                .unwrap()
-                .to_owned();
+            let path = matches.get_one::<PathBuf>("save-template").unwrap().clone();
             if path.to_str() == Some("-") {
                 let mut stream = BufWriter::new(std::io::stdout());
                 patch_description.write(&mut stream)?;

@@ -90,6 +90,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.get_many::<PathBuf>("pathspecs"),
         matches.get_flag("stat"),
         crate::color::use_color(matches),
-        &argset::get_diff_opts(matches, &config, false, false),
+        argset::get_diff_opts(matches, &config, false, false),
     )
 }

@@ -65,7 +65,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let pathsbuf;
     let pathspecs: Vec<&Path> = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
-        pathspecs.map(|p| p.as_path()).collect()
+        pathspecs.map(PathBuf::as_path).collect()
     } else {
         let curdir = std::env::current_dir()?;
         let workdir = repo.workdir().expect("not a bare repository");

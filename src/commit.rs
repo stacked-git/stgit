@@ -56,8 +56,7 @@ impl<'a> CommitMessage<'a> {
     /// Get the commit message's [`encoding_rs::Encoding`].
     pub(crate) fn encoding(&self) -> Result<&'static encoding_rs::Encoding> {
         match self {
-            Self::Str(_) => Ok(encoding_rs::UTF_8),
-            Self::String(_) => Ok(encoding_rs::UTF_8),
+            Self::Str(_) | Self::String(_) => Ok(encoding_rs::UTF_8),
             Self::Raw { bytes: _, encoding } => {
                 if let Some(encoding_str) = encoding {
                     let encoding = encoding_rs::Encoding::for_label(encoding_str.as_bytes())
