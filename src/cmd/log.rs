@@ -18,16 +18,16 @@ fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Display or optionally clear the stack changelog")
         .long_about(
-            "Show the history of changes to the stack. If one or more patch names are given, \
-             only the changes affecting those patches are shown.\n\
+            "Show the history of changes to the stack. If one or more patch names are \
+             given, only the changes affecting those patches are shown.\n\
              \n\
              The 'stg undo' and 'stg redo' commands may be used to step back and forth \
-             through historical stack states. The 'stg reset' command may be used to reset \
-             the stack directly to a historic state.\n\
+             through historical stack states. The 'stg reset' command may be used to \
+             reset the stack directly to a historic state.\n\
              \n\
-             The --clear option may be used to delete the stack's change history. Undo and redo \
-             are unavailable on a stack without change history. Clearing the stack state \
-             history cannot be undone.",
+             The '--clear' option may be used to delete the stack's change history. \
+             Undo and redo are unavailable on a stack without change history. Clearing \
+             the stack state history cannot be undone.",
         )
         .override_usage(
             "stg log [OPTIONS] [--] [patch]...\n       \

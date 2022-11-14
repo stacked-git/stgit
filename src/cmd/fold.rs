@@ -24,13 +24,13 @@ fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Fold diff file into the current patch")
         .long_about(
-            "Fold diff file into the current patch. The given GNU diff file (or standard input) \
-             is applied onto the current patch.\n\
+            "Fold diff file into the current patch. The given GNU diff file (or \
+             standard input) is applied onto the current patch.\n\
              \n\
-             With the --threeway option, the diff is applied onto the bottom of the current patch \
-             and a three-way merge is performed with the current top. With the --base option, the \
-             diff is applied onto the specified base and a three-way merge is performed with the \
-             current top.",
+             With the '--threeway' option, the diff is applied onto the bottom of the \
+             current patch and a three-way merge is performed with the current top. \
+             With the '--base' option, the diff is applied onto the specified base and \
+             a three-way merge is performed with the current top.",
         )
         .arg(
             Arg::new("file")

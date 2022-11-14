@@ -20,7 +20,7 @@ pub(super) fn command() -> clap::Command {
              other output formats.\n\
              \n\
              One file is generated for each `stg` command. The output directory \
-             defaults to the current directory, but may be specified with `--output`. \
+             defaults to the current directory, but may be specified with '--output'. \
              The output files are named `stg-<command>.txt`.",
         )
         .arg(

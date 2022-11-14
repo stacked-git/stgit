@@ -37,12 +37,12 @@ fn make() -> clap::Command {
              current series.\n\
              \n\
              By default, the imported patch's name is reused, but may be overridden \
-             with the --name option. A commit object can be reverted with the --revert \
-             option.\n\
+             with the '--name' option. A commit object can be reverted with the \
+             '--revert' option.\n\
              \n\
-             When using the --expose option, the format of the commit message is \
+             When using the '--expose' option, the format of the commit message is \
              determinded by the 'stgit.pick.expose-format' configuration option. This \
-             option is a format string as may be supplied to the --pretty option of \
+             option is a format string as may be supplied to the '--pretty' option of \
              'git show'. The default is \"format:%B%n(imported from commit %H)\", \
              which appends the commit hash of the picked commit to the patch's commit \
              message.",

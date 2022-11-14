@@ -23,12 +23,12 @@ fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Reset the patch stack to an earlier state")
         .long_about(
-            "Reset the patch stack to an earlier state. If no state is specified, reset only the \
-             changes in the worktree.\n\
+            "Reset the patch stack to an earlier state. If no state is specified, reset \
+             only the changes in the worktree.\n\
              \n\
-             The state is specified with a commit id from the stack log, which may be viewed with \
-             \"stg log\". Patch name arguments may optionally be provided to limit which patches \
-             are reset.",
+             The state is specified with a commit id from the stack log, which may be \
+             viewed with 'stg log'. Patch name arguments may optionally be provided to \
+             limit which patches are reset.",
         )
         .override_usage(
             "stg reset [--hard] [<committish> [<patchname>...]]\n       \

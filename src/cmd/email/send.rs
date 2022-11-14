@@ -124,7 +124,7 @@ fn compose_options() -> Vec<Arg> {
                 "Specify the primary recipient of the emails generated. Generally, \
                  this will be the upstream maintainer of the project involved. Default \
                  is the value of the sendemail.to configuration value; if that is \
-                 unspecified, and --to-cmd is not specified, this will be prompted \
+                 unspecified, and '--to-cmd' is not specified, this will be prompted \
                  for.\n\
                  \n\
                  This option may be specified multiple times.",
@@ -167,8 +167,8 @@ fn compose_options() -> Vec<Arg> {
             .help("Specify email \"Subject:\"")
             .long_help(
                 "Specify the initial subject of the email thread. Only necessary if \
-                 --compose is also set. If --compose is not set, this will be prompted \
-                 for.",
+                 '--compose' is also set. If '--compose' is not set, this will be \
+                 prompted for.",
             )
             .value_name("subject")
             .num_args(1)
@@ -179,7 +179,7 @@ fn compose_options() -> Vec<Arg> {
             .long_help(
                 "Specify the address where replies from recipients should go to. Use \
                  this if replies to messages should go to another address than what is \
-                 specified with the --from parameter.",
+                 specified with the '--from' parameter.",
             )
             .value_name("address")
             .num_args(1)
@@ -189,15 +189,15 @@ fn compose_options() -> Vec<Arg> {
             .long("in-reply-to")
             .help("Specify the \"In-Reply-To:\" identifier")
             .long_help(
-                "Make the first mail (or all the mails with --no-thread) appear as a \
+                "Make the first mail (or all the mails with '--no-thread') appear as a \
                  reply to the given Message-Id, which avoids breaking threads to \
                  provide a new patch series. The second and subsequent emails will be \
-                 sent as replies according to the --[no-]chain-reply-to setting.\n\
+                 sent as replies according to the '--[no-]chain-reply-to' setting.\n\
                  \n\
-                 So for example when --thread and --no-chain-reply-to are specified, \
-                 the second and subsequent patches will be replies to the first one \
-                 like in the illustration below where [PATCH v2 0/3] is in reply to \
-                 [PATCH 0/2]:\n\
+                 So for example when '--thread' and '--no-chain-reply-to' are \
+                 specified, the second and subsequent patches will be replies to the \
+                 first one like in the illustration below where [PATCH v2 0/3] is in \
+                 reply to [PATCH 0/2]:\n\
                  \n    [PATCH 0/2] Here is what I did...\
                  \n      [PATCH 1/2] Clean up and tests\
                  \n      [PATCH 2/2] Implementation\
@@ -206,7 +206,7 @@ fn compose_options() -> Vec<Arg> {
                  \n        [PATCH v2 2/3] New tests\
                  \n        [PATCH v2 3/3] Implementation\
                  \n\n\
-                 Only necessary if --compose is also set. If --compose is not set, \
+                 Only necessary if '--compose' is also set. If '--compose' is not set, \
                  this will be prompted for.",
             )
             .value_name("id")
@@ -219,7 +219,7 @@ fn compose_options() -> Vec<Arg> {
                 "Invoke a text editor (see GIT_EDITOR in git-var(1)) to edit an \
                  introductory message for the patch series.\n\
                  \n\
-                 When --compose is used, git send-email will use the From, Subject, \
+                 When '--compose' is used, git send-email will use the From, Subject, \
                  and In-Reply-To headers specified in the message. If the body of the \
                  message (what you type after the headers and a blank line) only \
                  contains blank (or Git: prefixed) lines, the summary will not be \
@@ -265,12 +265,12 @@ fn automate_options() -> Vec<Arg> {
                  be added to each email sent. Whether each mail refers to the previous \
                  email (deep threading per `git format-patch` wording) or to the first \
                  email (shallow threading) is governed by \
-                 \"--[no-]chain-reply-to\".\n\
+                 '--[no-]chain-reply-to'.\n\
                  \n\
-                 If disabled with \"--no-thread\", those headers will not be added \
-                 (unless specified with --in-reply-to). Default is the value of the \
+                 If disabled with '--no-thread', those headers will not be added \
+                 (unless specified with '--in-reply-to'). Default is the value of the \
                  sendemail.thread configuration value; if that is unspecified, default \
-                 to --thread.\n\
+                 to '--thread'.\n\
                  \n\
                  It is up to the user to ensure that no In-Reply-To header already \
                  exists when `git send-email` is asked to add it (especially note that \

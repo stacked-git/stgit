@@ -35,8 +35,8 @@ fn make() -> clap::Command {
              \n\
              The simplest usage is to import a diff/patch file into the stack from a \
              local file. By default, the file name is used as the patch name, but this \
-             can be overridden with --name. The patch can either be a normal file with \
-             the description at the top, or it can have standard mail format. The \
+             can be overridden with '--name'. The patch can either be a normal file \
+             with the description at the top, or it can have standard mail format. The \
              \"Subject\", \"From\", and \"Date\" headers will be used for the imported \
              patch's author details.\n\
              \n\
@@ -70,8 +70,8 @@ fn make() -> clap::Command {
                 .help("Source of patches to import")
                 .long_help(
                     "Source of patches to import. May be a path to a local file or a \
-                     URL if the --url option is provided. The default is to read from \
-                     stdin if no source argument is provided.",
+                     URL if the '--url' option is provided. The default is to read \
+                     from stdin if no source argument is provided.",
                 )
                 .value_parser(clap::value_parser!(PathBuf))
                 .value_hint(clap::ValueHint::AnyPath),
@@ -185,8 +185,8 @@ fn make() -> clap::Command {
                 .long_help(
                     "Create Message-Id trailer in patch description based on the \
                     Message-ID email header. This option is applicable when importing \
-                    with --mail or --mbox. This behavior may also be enabled via the \
-                    \"stgit.import.message-id\" configuration option.",
+                    with '--mail' or '--mbox'. This behavior may also be enabled via \
+                    the \"stgit.import.message-id\" configuration option.",
                 )
                 .action(clap::ArgAction::SetTrue),
         );

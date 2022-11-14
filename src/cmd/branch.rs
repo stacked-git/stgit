@@ -150,8 +150,8 @@ fn make() -> clap::Command {
                 .long_about(
                     "Delete a branch.\n\
                      \n\
-                     The branch will not be deleted if there are any patches remaining unless \
-                     the --force option is provided.\n\
+                     The branch will not be deleted if there are any patches remaining \
+                     unless the '--force' option is provided.\n\
                      \n\
                      A protected branch may not be deleted; it must be unprotected first.",
                 )
@@ -175,7 +175,7 @@ fn make() -> clap::Command {
                 .about("Remove StGit patch stack from branch")
                 .long_about(
                     "Remove StGit patch stack from branch. The operation will be refused if \
-                     any patches remain, unless the --force option is provided.\n\
+                     any patches remain, unless the '--force' option is provided.\n\
                      \n\
                      A protected branch will not be cleaned up; it must be unprotected first.\n\
                      \n\

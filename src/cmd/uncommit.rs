@@ -79,7 +79,7 @@ fn make() -> clap::Command {
             Arg::new("exclusive")
                 .long("exclusive")
                 .short('x')
-                .help("Exclude the commit specified by the --to option")
+                .help("Exclude the commit specified by the '--to' option")
                 .action(clap::ArgAction::SetTrue),
         )
 }

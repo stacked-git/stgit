@@ -36,7 +36,7 @@ fn make() -> clap::Command {
             "Export a range of patches to a given directory in unified diff format. \
              All applied patches are exported by default.\n\
              \n\
-             Patches are exported to 'patches-<branch>' by default. The --dir option \
+             Patches are exported to 'patches-<branch>' by default. The '--dir' option \
              may be used to specify a different output directory.\n\
              \n\
              The patch file output may be customized via a template file found at \
