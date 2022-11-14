@@ -71,9 +71,9 @@ pub(super) fn command() -> clap::Command {
             Arg::new("git-format-patch-opt")
                 .long("git-opt")
                 .short('G')
-                .help("Pass additional <option> to \"git format-patch\"")
+                .help("Pass additional <option> to `git format-patch`")
                 .long_help(
-                    "Pass additional <option> to \"git format-patch\".\n\
+                    "Pass additional <option> to `git format-patch`.\n\
                      \n\
                      See the git-format-patch(1) man page. This option may be \
                      specified multiple times.",

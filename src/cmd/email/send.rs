@@ -78,9 +78,9 @@ pub(super) fn command() -> clap::Command {
             Arg::new("git-send-email-opt")
                 .long("git-opt")
                 .short('G')
-                .help("Pass additional <option> to \"git send-email\"")
+                .help("Pass additional <option> to `git send-email`")
                 .long_help(
-                    "Pass additional <option> to \"git send-email\".\n\
+                    "Pass additional <option> to `git send-email`.\n\
                      \n\
                      See the git-send-email(1) man page. This option may be specified \
                      multiple times.",
@@ -111,7 +111,7 @@ fn compose_options() -> Vec<Arg> {
                  If neither the command-line option nor sendemail.from are set, then \
                  the user will be prompted for the value. The default for the prompt \
                  will be the value of GIT_AUTHOR_IDENT, or GIT_COMMITTER_IDENT if that \
-                 is not set, as returned by \"git var -l\".",
+                 is not set, as returned by `git var -l`.",
             )
             .value_name("address")
             .num_args(1)

@@ -40,9 +40,9 @@ pub(crate) fn diff_opts_arg() -> Arg {
         .long("diff-opt")
         .alias("diff-opts")
         .short('O')
-        .help("Pass additional <option> to \"git diff\"")
+        .help("Pass additional <option> to `git diff`")
         .long_help(
-            "Pass additional <option> to \"git diff\".\n\
+            "Pass additional <option> to `git diff`.\n\
              \n\
              See the git-diff(1) man page. This option may be specified multiple \
              times.",
