@@ -21,7 +21,7 @@ fn make() -> clap::Command {
         .long_about(
             "If the last command was an undo, the patch stack state will be reset to its state \
              before the undo. Consecutive redos will undo the effects of consecutive invocations \
-             of \"stg undo\".\n\
+             of 'stg undo'.\n\
              \n\
              It is an error to redo if the last stack-modifying command was not an undo.",
         )

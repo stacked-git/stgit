@@ -25,38 +25,37 @@ fn make() -> clap::Command {
         .about("Repair stack after branch is modified with git commands")
         .long_about(
             "If a branch with a StGit stack is modified with certain git commands such \
-             as commit, pull, merge, or rebase, the StGit stack metadata will become \
-             inconsistent with the branch state. There are a few options for resolving \
-             this kind of situation:\n\
+             as git-commit(1), git-pull(1), git-merge(1), or git-rebase(1), the StGit \
+             stack metadata will become inconsistent with the branch state. There are \
+             a few options for resolving this kind of situation:\n\
              \n\
-             1. Use \"stg undo\" to undo the effect of the git commands. Or similarly \
-             use \"stg reset\" to reset the stack/branch to any previous stack state.\n\
+             1. Use 'stg undo' to undo the effect of the git commands. Or similarly \
+             use 'stg reset' to reset the stack/branch to any previous stack state.\n\
              \n\
-             2. Use \"stg repair\". This will repair the StGit stack metadata to \
+             2. Use `stg repair`. This will repair the StGit stack metadata to \
              accommodate the modifications to the branch made by the git commands. \
              Specifically, it will do the following:\n\
              \n\
              - If regular git commits were made on top of the stack of StGit patches \
-             (i.e. by using plain \"git commit\"), \"stg repair\" will convert those \
+             (i.e. by using plain `git commit`), `stg repair` will convert those \
              commits to StGit patches, preserving their content.\n\
              \n\
              - However, merge commits cannot become patches. So if a merge was \
-             committed on top of the stack, \"stg repair\" will mark all patches below \
+             committed on top of the stack, `stg repair` will mark all patches below \
              the merge commit as unapplied, since they are no longer reachable. An \
-             alternative when this is not the desired behavior is to use \"stg undo\" \
-             to first get rid of the offending merge and then run \"stg repair\" \
-             again.\n\
+             alternative when this is not the desired behavior is to use `stg undo` to \
+             first get rid of the offending merge and then run `stg repair` again.\n\
              \n\
              - The applied patches are supposed to be precisely those that are \
-             reachable from the branch head. If, for example, \"git reset\" was used \
-             to move the head, some applied patches may no longer be reachable and \
-             some unapplied patches may have become reachable. In this case, \"stg \
-             repair\" will correct the applied/unapplied state of such patches.\n\
+             reachable from the branch head. If, for example, git-reset(1) was used to \
+             move the head, some applied patches may no longer be reachable and some \
+             unapplied patches may have become reachable. In this case, `stg repair` \
+             will correct the applied/unapplied state of such patches.\n\
              \n\
-             \"stg repair\" will repair these inconsistencies reliably, so there are \
-             valid workflows where git commands are used followed by \"stg repair\". \
-             For example, new patches can be created by first making commits with a \
-             graphical commit tool and then running \"stg repair\" to convert those \
+             `stg repair` will repair these inconsistencies reliably, so there are \
+             valid workflows where git commands are used followed by `stg repair`. For \
+             example, new patches can be created by first making commits with a \
+             graphical commit tool and then running `stg repair` to convert those \
              commits into patches.",
         )
 }

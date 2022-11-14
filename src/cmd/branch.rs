@@ -71,9 +71,9 @@ fn make() -> clap::Command {
                      unless an optional committish provided for the base.\n\
                      \n\
                      StGit attempts to detect the branch from which the new branch forked, as \
-                     well as the remote repository of that parent branch such that \"stg pull\" \
+                     well as the remote repository of that parent branch such that 'stg pull' \
                      will pull from the correct remote branch. A warning will be printed if the \
-                     parrent branch cannot be determined.",
+                     parent branch cannot be determined.",
                 )
                 .arg(
                     Arg::new("new-branch")
@@ -179,7 +179,7 @@ fn make() -> clap::Command {
                      \n\
                      A protected branch will not be cleaned up; it must be unprotected first.\n\
                      \n\
-                     A cleaned up branch may be reinitialized using \"stg init\".",
+                     A cleaned up branch may be reinitialized using 'stg init'.",
                 )
                 .arg(
                     Arg::new("branch")

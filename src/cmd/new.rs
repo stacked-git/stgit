@@ -99,7 +99,7 @@ fn make() -> clap::Command {
                     "Refresh the new patch with changes from work tree. \
                      New patches are empty by default, but with this option \
                      the new patch will capture outstanding changes in the work \
-                     tree as if \"stg refresh\" was run. \
+                     tree as if 'stg refresh' was run. \
                      Use \"--index\" to refresh from the index instead of the work tree.",
                 )
                 .action(clap::ArgAction::SetTrue)

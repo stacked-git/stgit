@@ -21,8 +21,8 @@ fn make() -> clap::Command {
             "Show the history of changes to the stack. If one or more patch names are given, \
              only the changes affecting those patches are shown.\n\
              \n\
-             The \"stg undo\" and \"stg redo\" commands may be used to step back and forth \
-             through historical stack states. The \"stg reset\" command may be used to reset \
+             The 'stg undo' and 'stg redo' commands may be used to step back and forth \
+             through historical stack states. The 'stg reset' command may be used to reset \
              the stack directly to a historic state.\n\
              \n\
              The --clear option may be used to delete the stack's change history. Undo and redo \
