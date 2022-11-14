@@ -392,14 +392,14 @@ fn make_links(text: &str) -> String {
     let mut words = text.split_inclusive(|c| c == ' ' || c == '\n');
 
     while let Some(word) = words.next() {
-        if word.starts_with("git-") && word.trim_end().ends_with(')') {
-            let (stuff, trailing_ws) = word.rsplit_once(')').unwrap();
-            if let Some((command, man_section)) =
-                stuff.strip_prefix("git-").unwrap().split_once('(')
-            {
-                let link = format!("linkgit:git-{command}[{man_section}]");
-                output.push_str(&link);
-                output.push_str(trailing_ws);
+        if let Some(remainder) = word.strip_prefix("git-") {
+            if let Some((command_and_section, trailings)) = remainder.rsplit_once(')') {
+                if let Some((command, man_section)) = command_and_section.split_once('(') {
+                    output.push_str(&format!("linkgit:git-{command}[{man_section}]"));
+                    output.push_str(trailings);
+                } else {
+                    output.push_str(word);
+                }
             } else {
                 output.push_str(word);
             }
