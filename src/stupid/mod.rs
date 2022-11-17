@@ -420,6 +420,26 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         parse_oid(&output.stdout)
     }
 
+    pub(crate) fn config_remove_section(&self, section_name: &str) -> Result<()> {
+        self.git()
+            .args(["config", "--local", "--remove-section"])
+            .arg(section_name)
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("config --remove-section")?;
+        Ok(())
+    }
+
+    pub(crate) fn config_rename_section(&self, old_name: &str, new_name: &str) -> Result<()> {
+        self.git()
+            .args(["config", "--local", "--rename-section"])
+            .args([old_name, new_name])
+            .stdout(Stdio::null())
+            .output_git()?
+            .require_success("config --rename-section")?;
+        Ok(())
+    }
+
     /// Interactive diff
     pub(crate) fn diff<SpecIter, SpecArg, OptIter, OptArg>(
         &self,

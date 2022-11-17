@@ -10,7 +10,7 @@ use super::{
     state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
     StackStateAccess,
 };
-use crate::{patchname::PatchName, repo::RepositoryExtended};
+use crate::{patchname::PatchName, repo::RepositoryExtended, stupid::Stupid};
 
 /// StGit stack
 ///
@@ -75,7 +75,6 @@ impl<'repo> Stack<'repo> {
             refname,
             ..
         } = self;
-        let mut config = repo.config()?;
         let mut state_ref = repo.find_reference(&refname)?;
         let patch_ref_glob = get_patch_refname(&branch_name, "*");
         for patch_reference in repo.references_glob(&patch_ref_glob)? {
@@ -83,21 +82,12 @@ impl<'repo> Stack<'repo> {
             patch_reference.delete()?;
         }
         state_ref.delete()?;
-        let mut config_to_delete: Vec<_> = Vec::new();
 
-        {
-            let mut entries = config.entries(Some(&format!("branch.{branch_name}.stgit")))?;
-            while let Some(entry) = entries.next() {
-                let entry = entry?;
-                if let Some(name) = entry.name() {
-                    config_to_delete.push(name.to_string());
-                }
-            }
-        }
+        // It is ok if the StGit-specific config section does not exist.
+        repo.stupid()
+            .config_remove_section(&format!("branch.{branch_name}.stgit"))
+            .ok();
 
-        for name_to_delete in config_to_delete {
-            config.remove(&name_to_delete)?;
-        }
         Ok(())
     }
 

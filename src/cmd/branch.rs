@@ -573,8 +573,14 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
             false,
             &format!("rename {old_branchname} to {new_branchname}"),
         )?;
-        stack.deinitialize()?;
+        stupid
+            .config_rename_section(
+                &format!("branch.{old_branchname}.stgit"),
+                &format!("branch.{new_branchname}.stgit"),
+            )
+            .ok();
         stupid.branch_move(Some(old_branchname), new_branchname)?;
+        stack.deinitialize()?;
     } else {
         stupid.branch_move(Some(old_branchname), new_branchname)?;
     }
