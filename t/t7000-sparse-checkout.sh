@@ -194,4 +194,20 @@ test_expect_success 'Delete a patch' '
     clean_status
 '
 
+cat > series-expected <<EOF
++ patch1
+> patch2
+- patch0
+EOF
+test_expect_success 'Repository format version 1' '
+    test "$(git config --get core.repositoryformatversion)" = "0" &&
+    test "$(git config --get extensions.worktreeconfig)" = "true" &&
+    test_config core.repositoryformatversion 1 &&
+    stg series >series-out &&
+    test_cmp series-expected series-out &&
+    echo "more content" >> a/bar.txt &&
+    stg refresh &&
+    stg show
+'
+
 test_done
