@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.2] 2022-11-17
+
+## Changed
+- chore: Update Cargo.lock with latest dependencies.
+- docs(init): Add long help for `stg init`.
+
+## Added
+- feat: Enable basic support for `extensions.worktreeconfig` to unblock
+  sparse checkout with partial clone (#195).
+
+## Fixed
+- docs: More inter-command links
+- docs: Normalize quoting
+
+
 ## [2.0.1] 2022-11-07
 
 ### Changed
