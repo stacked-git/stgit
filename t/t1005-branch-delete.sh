@@ -4,11 +4,12 @@ test_description='Attempt to delete branches'
 
 . ./test-lib.sh
 
-test_expect_success 'Initialize repo' '
+test_expect_success 'Initialize master branch' '
     stg init &&
     test_commit p0 &&
     test_commit p1 &&
-    stg uncommit -n 2
+    stg uncommit -n 2 &&
+    git config branch.master.stgit.autostash true
 '
 
 test_expect_success 'Create a branch (and switch to it)' '
@@ -29,7 +30,9 @@ test_expect_success 'Make sure the branch ref was deleted' '
     '
 
 test_expect_success 'Make sure the branch config was deleted' '
-    [ -z "$(git config -l | grep branch\\.master | tee /dev/stderr)" ]
+    [ -z "$(git config -l | grep branch\\.master | tee /dev/stderr)" ] &&
+    [ -z "$(git config -l | grep branch\\.master\\.stgit | tee /dev/stderr)" ] &&
+    test_expect_code 128 git config --remove-section branch.master.stgit
     '
 
 test_expect_success 'Make sure the branch files were deleted' '

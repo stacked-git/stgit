@@ -36,7 +36,8 @@ test_expect_success 'Force cleanup branch with patches' '
     test "$(stg series --noprefix --all)" = "" &&
     command_error stg new -m p1 2>err &&
     grep "Branch \`foo2\` not initialized" err &&
-    test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit
+    test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit &&
+    test_expect_code 128 git config --remove-section branch.foo2.stgit
 '
 
 test_expect_success 'Commit patches' '

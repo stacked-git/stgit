@@ -120,4 +120,14 @@ test_expect_success \
     grep "The value .bop. was provided to .* but it wasn.t expecting any more values" err
     '
 
+test_expect_success \
+    'Config section is renamed' '
+    _assert_current_branch_name "xxx"
+    git config --local branch.xxx.stgit.autostash true &&
+    stg branch --rename yyy &&
+    _assert_branch_exists yyy &&
+    git config branch.yyy.stgit.autostash &&
+    ! git config --get-regexp "branch\\.xxx\\."
+'
+
 test_done
