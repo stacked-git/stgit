@@ -42,31 +42,6 @@ const COMMAND_ERROR: i32 = 2;
 /// Process exit code for when a command halts due to merge conflicts.
 const CONFLICT_ERROR: i32 = 3;
 
-/// Initialize [`git2`] library.
-///
-/// [`git2`] library by default fails any operation if it encounters any extensions configured in a repo.
-/// StackedGit is using [`git2`] library as an interface to object database and for looking alias lookup from git configuration.
-///
-/// As a workaround until `worktreeconfig` extension is supported upstream, add it to whitelisted extensions.
-///
-/// # Safety
-/// * Modifying whitelisted extensions in [`git2`] is like modifying a static mut variable (unsafe).
-/// * This function must be called at initialization time (before git2 library usage) and should be called only once.
-unsafe fn init_libgit2() -> Result<()> {
-    git2::opts::set_extensions(&["worktreeconfig"])
-        .context("Failed to set worktreeconfig extension")
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_me() {
-        unsafe { init_libgit2() }.expect("success");
-    }
-}
-
 /// Create base [`clap::Command`] instance.
 ///
 /// The base [`clap::Command`] returned by this function is intended to be supplemented
@@ -193,10 +168,10 @@ fn main() -> ! {
         } else if matches.get_flag("help-option") {
             full_app_help(argv, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
-            // Initialize git2 library only in case a subcommand is matched.
-            // The operation to initialize LibGit2 with extension is quite fast but still
-            // takes a non-negligible amount of time.
-            unsafe { init_libgit2() }.expect("Failed libgit2 init");
+            // Initialize git2 library only in case a subcommand is matched. This limits
+            // the cost of libgit2 initialization to code paths that will actually use
+            // libgit2.
+            unsafe { init_libgit2_extensions() }.expect("can set libgit2 extensions");
 
             // If the name matches any known subcommands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
@@ -254,6 +229,34 @@ fn main() -> ! {
         // -C options are not processed in this branch. This is okay because clap's
         // error message will not include aliases (which depend on -C).
         full_app_help(argv, None, color_choice)
+    }
+}
+
+/// Initialize [`git2`] library extensions.
+///
+/// By default, [`git2`] fails any operation if it encounters any unknown extensions
+/// configured in a repo. StGit is uses [`git2`] library as an interface to the git
+/// object database and for interrogating the git configuration.
+///
+/// As a workaround until `worktreeconfig` extension is supported upstream, add it to
+/// whitelisted extensions.
+///
+/// # Safety
+/// * Modifying whitelisted extensions in [`git2`] is like modifying a static mut
+///   variable (unsafe).
+/// * This function must be called at initialization time (before git2 library usage)
+///   and should be called only once.
+unsafe fn init_libgit2_extensions() -> Result<()> {
+    git2::opts::set_extensions(&["worktreeconfig"]).context("set `worktreeconfig` extension")
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_libgit2_extensions() {
+        unsafe { init_libgit2_extensions() }.unwrap();
     }
 }
 
