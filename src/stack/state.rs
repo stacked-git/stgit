@@ -157,12 +157,12 @@ impl<'repo> StackState<'repo> {
     }
 
     /// Iterator over all patches.
-    pub fn all_patches(&self) -> AllPatches<'_> {
+    pub(crate) fn all_patches(&self) -> AllPatches<'_> {
         AllPatches::new(&self.applied, &self.unapplied, &self.hidden)
     }
 
     /// Return commit of topmost patch, or stack base if no patches applied.
-    pub fn top(&self) -> &git2::Commit<'repo> {
+    pub(crate) fn top(&self) -> &git2::Commit<'repo> {
         if let Some(patchname) = self.applied.last() {
             &self.patches[patchname].commit
         } else {
@@ -171,7 +171,7 @@ impl<'repo> StackState<'repo> {
     }
 
     /// Create updated state with new head and prev commits.
-    pub fn advance_head(
+    pub(crate) fn advance_head(
         self,
         new_head: git2::Commit<'repo>,
         prev_state: git2::Commit<'repo>,
@@ -190,7 +190,7 @@ impl<'repo> StackState<'repo> {
     /// are not subject to garbage collection, stack state commit objects have parent
     /// commits with tree content of the associated branch in addition to a "regular"
     /// parent commit from the stack state branch.
-    pub fn commit(
+    pub(crate) fn commit(
         &self,
         repo: &'repo git2::Repository,
         update_ref: Option<&str>,

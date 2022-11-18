@@ -16,7 +16,7 @@ pub(crate) struct ShStream {
 
 impl ShStream {
     /// Create a new [`ShStream`] instance.
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self {
             buffer: String::new(),
             indent_level: 0,
@@ -25,7 +25,7 @@ impl ShStream {
     }
 
     /// Insert a raw string into the stream.
-    pub fn raw(&mut self, s: &str) {
+    pub(crate) fn raw(&mut self, s: &str) {
         if !self.is_bol() {
             self.buffer.push('\n');
         }
@@ -33,12 +33,12 @@ impl ShStream {
     }
 
     /// Increase the indentation level used for subsequent lines.
-    pub fn indent(&mut self) {
+    pub(crate) fn indent(&mut self) {
         self.indent_level += 1;
     }
 
     /// Decrease the indentation level used for subsequent lines.
-    pub fn dedent(&mut self) {
+    pub(crate) fn dedent(&mut self) {
         assert!(self.indent_level > 0);
         self.indent_level -= 1;
     }
@@ -46,7 +46,7 @@ impl ShStream {
     /// Insert a line into the stream.
     ///
     /// The line is prefixed with indentation and suffixed with a newline character.
-    pub fn line(&mut self, line: &str) {
+    pub(crate) fn line(&mut self, line: &str) {
         if !self.is_bol() {
             self.buffer.push('\n');
         }
@@ -58,7 +58,7 @@ impl ShStream {
     }
 
     /// Ensure a blank line precedes subsequent lines.
-    pub fn ensure_blank_line(&mut self) {
+    pub(crate) fn ensure_blank_line(&mut self) {
         if !self.buffer.is_empty() && !self.buffer.ends_with("\n\n") {
             if self.buffer.ends_with('\n') {
                 self.buffer.push('\n');
@@ -68,7 +68,7 @@ impl ShStream {
         }
     }
 
-    pub fn end_line(&mut self) {
+    pub(crate) fn end_line(&mut self) {
         if !self.is_bol() {
             self.buffer.push('\n');
         }
@@ -77,7 +77,7 @@ impl ShStream {
     /// Insert slice of lines into the stream.
     ///
     /// Each line is prefixed with the current indentation level.
-    pub fn lines(&mut self, lines: &[&str]) {
+    pub(crate) fn lines(&mut self, lines: &[&str]) {
         for line in lines {
             self.line(line);
         }
@@ -88,7 +88,7 @@ impl ShStream {
     /// If the word starts a line, it will be indented to the current indentation level.
     /// Otherwise, a single space will be used to separate this word from any preceding
     /// word.
-    pub fn word(&mut self, word: &str) {
+    pub(crate) fn word(&mut self, word: &str) {
         if self.is_bol() {
             self.push_indent();
         } else if !self.buffer.ends_with(self.word_sep) {
@@ -98,12 +98,12 @@ impl ShStream {
     }
 
     /// Set the inter-word separator character.
-    pub fn word_sep(&mut self, separator: char) {
+    pub(crate) fn word_sep(&mut self, separator: char) {
         self.word_sep = separator;
     }
 
     /// Return byte slice of the stream's contents.
-    pub fn as_bytes(&self) -> &[u8] {
+    pub(crate) fn as_bytes(&self) -> &[u8] {
         self.buffer.as_bytes()
     }
 

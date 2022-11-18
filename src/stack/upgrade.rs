@@ -15,7 +15,7 @@ use super::serde::{RawPatchState, RawStackState};
 use crate::{patchname::PatchName, stack::state::StackState};
 
 /// Upgrade stack state metadata to most recent version.
-pub fn stack_upgrade(repo: &git2::Repository, branch_name: &str) -> Result<()> {
+pub(crate) fn stack_upgrade(repo: &git2::Repository, branch_name: &str) -> Result<()> {
     let refname_v4 = state_refname_from_branch_name_v4(branch_name);
 
     if let Ok(mut stack_ref_v4) = repo.find_reference(&refname_v4) {

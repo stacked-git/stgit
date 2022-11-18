@@ -96,7 +96,7 @@ impl<'repo> Stack<'repo> {
     /// The current branch is used if the optional branch name is not provided.
     ///
     /// An error will be returned if there is no StGit stack associated with the branch.
-    pub fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
+    pub(crate) fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
@@ -127,14 +127,14 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Check whether the stack is marked as protected in the config.
-    pub fn is_protected(&self, config: &git2::Config) -> bool {
+    pub(crate) fn is_protected(&self, config: &git2::Config) -> bool {
         let name = &self.branch_name;
         let key = format!("branch.{name}.stgit.protect");
         config.get_bool(&key).unwrap_or(false)
     }
 
     /// Set the stack's protected state in the config.
-    pub fn set_protected(&self, config: &mut git2::Config, protect: bool) -> Result<()> {
+    pub(crate) fn set_protected(&self, config: &mut git2::Config, protect: bool) -> Result<()> {
         let name = &self.branch_name;
         let key = format!("branch.{name}.stgit.protect");
         if protect {
@@ -155,12 +155,12 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Check whether the stack's recorded head matches the branch's head.
-    pub fn is_head_top(&self) -> bool {
+    pub(crate) fn is_head_top(&self) -> bool {
         self.state.head.id() == self.branch_head.id()
     }
 
     /// Return an error if the stack's recorded head differs from the branch's head.
-    pub fn check_head_top_mismatch(&self) -> Result<()> {
+    pub(crate) fn check_head_top_mismatch(&self) -> Result<()> {
         if self.state.applied.is_empty() || self.is_head_top() {
             Ok(())
         } else {
@@ -173,7 +173,7 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Re-commit stack state with updated branch head.
-    pub fn log_external_mods(self, message: Option<&str>) -> Result<Self> {
+    pub(crate) fn log_external_mods(self, message: Option<&str>) -> Result<Self> {
         let state_ref = self.repo.find_reference(&self.refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
