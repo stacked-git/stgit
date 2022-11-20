@@ -25,9 +25,13 @@ impl FromStr for StupidVersion {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let ver_str = s
+        let mut ver_str = s
             .strip_prefix("git version ")
             .ok_or_else(|| anyhow!("failed to parse git version"))?;
+
+        if let Some((triplet, _extra)) = ver_str.split_once(' ') {
+            ver_str = triplet;
+        };
 
         let (dotted, extra) = if let Some((dotted, extra)) = ver_str.split_once('-') {
             (dotted, Some(extra.to_string()))
@@ -81,9 +85,24 @@ mod tests {
                 },
                 "2.17.123-rc0",
             ),
+            (StupidVersion::new(2, 37, 1), "2.37.1 (Apple Git-137.1)"),
+            (
+                StupidVersion {
+                    major: 2,
+                    minor: 37,
+                    micro: 123,
+                    extra: Some("rc0".to_string()),
+                },
+                "2.37.123-rc0 (Apple Git-137.1)",
+            ),
         ] {
             let version_str = format!("git version {version_str}");
-            assert_eq!(version, version_str.parse::<StupidVersion>().unwrap());
+            assert_eq!(
+                version,
+                version_str
+                    .parse::<StupidVersion>()
+                    .unwrap_or_else(|_| panic!("{}", version_str))
+            );
         }
     }
 
