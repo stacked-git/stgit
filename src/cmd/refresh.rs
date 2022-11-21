@@ -43,7 +43,7 @@ fn make() -> clap::Command {
              Refresh will warn if the index is dirty, and require use of \
              either the '--index' or '--force' options to override this \
              check. This is to prevent accidental full refresh when only \
-             some changes were staged using git add interative mode.\n\
+             some changes were staged using git add interactive mode.\n\
              \n\
              You may optionally list one or more files or directories \
              relative to the current working directory; if you do, only \

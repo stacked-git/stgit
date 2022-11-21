@@ -52,7 +52,7 @@
 	#rebasecmd = git reset
 
 	# "stg pull" policy.  This is the repository default, which can be
-	# overriden on a per-branch basis using branch.*.stgit.pull-policy
+	# overridden on a per-branch basis using branch.*.stgit.pull-policy
 	# By default:
 	#pull-policy = pull
 	# To support remote rewinding parent branches:

@@ -91,7 +91,7 @@ elif grep -q -- --argscmd "$(command -v gitk)"; then
         gitk --argscmd="$0 --refs $branches" "$@"
     fi
 else
-    # This gitk does not support --argscmd, just compute refs onces
+    # This gitk does not support --argscmd, just compute refs once
     # shellcheck disable=SC2046
     gitk $(printrefs) "$@"
 fi

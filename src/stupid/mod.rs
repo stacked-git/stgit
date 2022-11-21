@@ -408,7 +408,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .env("GIT_AUTHOR_EMAIL", author_email)
             .env("GIT_COMMITTER_NAME", committer_name)
             .env("GIT_COMMITTER_EMAIL", committer_email)
-            // TODO: reencode dates?
+            // TODO: re-encode dates?
             .env("GIT_AUTHOR_DATE", author.epoch_time_string())
             .env("GIT_COMMITTER_DATE", committer.epoch_time_string())
             .stdin(Stdio::piped())
@@ -554,7 +554,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .map(|output| DiffFiles::new(output.stdout))
     }
 
-    /// Interative diff-tree (for 'stg files').
+    /// Interactive diff-tree (for 'stg files').
     pub(crate) fn diff_tree_files_status(
         &self,
         tree1: git2::Oid,
@@ -879,7 +879,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
     }
 
-    /// Perfom three-way merge, with optional auto-resolution of conflicts with `git merge-tool`.
+    /// Perform three-way merge, with optional auto-resolution of conflicts with `git merge-tool`.
     pub(crate) fn merge_recursive_or_mergetool(
         &self,
         base_tree_id: git2::Oid,

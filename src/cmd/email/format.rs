@@ -142,7 +142,7 @@ fn format_options() -> Vec<Arg> {
                  '--reroll-count=4.4', or '--reroll-count=4rev2' are allowed), but the \
                  downside of using such a reroll-count is that the \
                  range-diff/interdiff with the previous version does not state exactly \
-                 which version the new interation is compared against.",
+                 which version the new iteration is compared against.",
             )
             .value_name("n")
             .num_args(1),

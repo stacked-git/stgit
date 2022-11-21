@@ -16,7 +16,7 @@ use crate::stupid::Stupid;
 /// message encoding, that header is not always present or correct in commits found in
 /// the wild. And yet another layer of complication emerges due to [`git2`] (and the
 /// underlying `libgit2`) not having any capability of its own to decode, encode, or
-/// reencode commit messages. With [`git2`], it entirely up to the application to make
+/// re-encode commit messages. With [`git2`], it entirely up to the application to make
 /// sense of the raw commit message bytes when any non-UTF-8 encoding comes into play.
 ///
 /// StGit aims to always create commit objects will correct/correctly-identified
@@ -165,7 +165,7 @@ impl<'a> CommitMessage<'a> {
                                 target_encoding.encode(&message);
                             if any_replacements {
                                 Err(anyhow!(
-                                    "Failed to reencode commit message from `{}` to `{}`",
+                                    "Failed to re-encode commit message from `{}` to `{}`",
                                     current_encoding.name(),
                                     target_encoding.name(),
                                 ))

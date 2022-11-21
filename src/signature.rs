@@ -188,7 +188,7 @@ pub(crate) trait TimeExtended {
 impl TimeExtended for git2::Time {
     fn datetime(&self) -> DateTime<FixedOffset> {
         FixedOffset::east_opt(self.offset_minutes() * 60)
-            .expect("tz offset minues is in bounds")
+            .expect("tz offset minutes is in bounds")
             .timestamp_opt(self.seconds(), 0)
             .unwrap()
     }

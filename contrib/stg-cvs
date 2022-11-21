@@ -29,7 +29,7 @@ set -e
 # LIMITATIONS
 # - this is only a proof-of-concept prototype
 # - lacks an "init" command (see above)
-# - "commit" does not ensure the base is uptodate before trying to
+# - "commit" does not ensure the base is up-to-date before trying to
 #   commit (but hey, it's CVS ;): better "stg-cvs pull" first
 # - "commit" can only commit a single patch
 # - not much robustness here
