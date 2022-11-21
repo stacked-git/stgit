@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.3] 2022-11-21
+
+## Changed
+- chore: Update Cargo.lock with latest dependencies.
+
+## Fixed
+- fix: improved git version parsing on MacOS
+- fix: StGit-specific branch config handling
+- docs: fixed many typos
+
+
 ## [2.0.2] 2022-11-17
 
 ## Changed
