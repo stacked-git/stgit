@@ -96,7 +96,10 @@ impl<'repo> Stack<'repo> {
     /// The current branch is used if the optional branch name is not provided.
     ///
     /// An error will be returned if there is no StGit stack associated with the branch.
-    pub(crate) fn from_branch(repo: &'repo git2::Repository, branch_name: Option<&str>) -> Result<Self> {
+    pub(crate) fn from_branch(
+        repo: &'repo git2::Repository,
+        branch_name: Option<&str>,
+    ) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
