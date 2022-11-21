@@ -368,7 +368,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         self
     }
 
-    /// Set the patch name to use in the interacte edit template.
+    /// Set the patch name to use in the interactive edit template.
     ///
     /// This takes precedence over [`EditBuilder::original_patchname()`], when set.
     /// Setting to `None` will cause the edit template to have an empty `Patch:` field.
@@ -502,7 +502,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             // nominal i18n.commitEncoding and/or it is not valid UTF-8.
             //
             // The approach here is to try to get the author signature from
-            // whereever possible *before* even trying to inspect/decode the author
+            // wherever possible *before* even trying to inspect/decode the author
             // from the existing patch commit. I.e. it will be an error if the
             // existing patch commit's author is broken, but only if the author
             // signature has to be derived from that commit.

@@ -41,7 +41,7 @@ fn make() -> clap::Command {
              '--revert' option.\n\
              \n\
              When using the '--expose' option, the format of the commit message is \
-             determinded by the 'stgit.pick.expose-format' configuration option. This \
+             determined by the 'stgit.pick.expose-format' configuration option. This \
              option is a format string as may be supplied to the '--pretty' option of \
              'git show'. The default is \"format:%B%n(imported from commit %H)\", \
              which appends the commit hash of the picked commit to the patch's commit \

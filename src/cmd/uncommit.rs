@@ -53,7 +53,7 @@ fn make() -> clap::Command {
         )
         .arg(
             Arg::new("patchname")
-                .help("Patch names for the uncommited commits")
+                .help("Patch names for the uncommitted commits")
                 .num_args(1..)
                 .value_parser(clap::value_parser!(PatchName)),
         )

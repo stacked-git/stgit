@@ -29,7 +29,7 @@ pub(super) struct EditablePatchDescription {
     /// Patch name.
     ///
     /// Should be the original or default patch name when setting up an interactive
-    /// edit, but may be `None` after interative edit (i.e. if the user removes the name
+    /// edit, but may be `None` after interactive edit (i.e. if the user removes the name
     /// or the entire `Patch:` header).
     pub patchname: Option<PatchName>,
 

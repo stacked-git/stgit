@@ -93,7 +93,7 @@ impl<'repo> TransactionBuilder<'repo> {
     }
 
     /// Determines whether the branch and stack metadata refs should be updated when the
-    /// transaction executes succesfully. This is the default. Disabling this is only useful
+    /// transaction executes successfully. This is the default. Disabling this is only useful
     /// in very special circumstances (e.g. for `stg uncommit`).
     #[must_use]
     pub(crate) fn set_head(mut self, yes: bool) -> Self {
