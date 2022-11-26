@@ -564,7 +564,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             Some(patchname.uniquify(&allowed_patchnames, &disallow_patchnames))
         } else if let Some(original_patchname) = original_patchname.as_ref() {
             Some(original_patchname.clone())
-        } else if !message.is_empty() {
+        } else if !message.is_empty() && !need_interactive_edit {
             Some(
                 PatchName::make(&message.decode()?, true, patchname_len_limit)
                     .uniquify(&allowed_patchnames, &disallow_patchnames),
