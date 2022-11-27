@@ -33,7 +33,7 @@ test_expect_success 'refresh includes non-submodule changes' '
   (
     cd dir2 &&
     stg refresh &&
-    [ "$(stg status)" = " M ../submodules/foo" ]
+    [ "$(stg status)" = " M submodules/foo" ]
   ) &&
   [ "$(stg status)" = " M submodules/foo" ]
 '
