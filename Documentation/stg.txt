@@ -175,8 +175,141 @@ include::command-list.txt[]
 CONFIGURATION MECHANISM
 -----------------------
 
-StGit uses the same configuration mechanism as Git. See linkgit:git[7]
+StGit uses the same configuration mechanism as Git. See linkgit:git-config[1]
 for more details.
+
+Variables
+~~~~~~~~~
+
+branch.<name>.stgit.autostash::
+branch.<name>.stgit.fetchcmd::
+branch.<name>.stgit.pull-policy::
+branch.<name>.stgit.pullcmd::
+branch.<name>.stgit.rebasecmd::
+  Branch-specific configuration values. These take precedence over the corresponding
+  non-branch specific configuration values (see below).
+
+branch.<name>.stgit.parentbranch::
+  Specifies the parent branch of a branch with a StGit stack. This value is set by
+  linkstg:branch[] when creating or cloning branches, and not typically set by the user.
+  The parent branch is used by linkstg:pull[] when 'stgit.pull-policy' is either
+  'rebase' or 'fetch-rebase' to determine the target of the rebase.
+
+stgit.alias.*::
+  Command aliases for 'stg'. For example, after defining `stgit.alias.list = series -d`,
+  running `stg list` is equivalent to `stg series -d`. Arguments are split by spaces and
+  the usual shell quoting and escaping is supported. A quote pair or backslash may be
+  used to quote them.
++
+If the alias expansion is prefixed with an exclamation point (`!`), it will be treated
+as a shell command. For example, defining `stgit.alias.outgoing = !git log @{u}`,
+running `stg outgoing` is equivalent to running the shell command `git log @{u}`. Note
+that shell commands will be executed from the top-level directory of the working tree,
+which may not necessarily be the current directory. `GIT_PREFIX` is set as returned by
+running `git rev-parse --show-prefix` from the original current directory. See
+linkgit:git-rev-parse[1].
++
+Aliases that would hide existing StGit commands are ignored.
+
+stgit.autoimerge::
+  When set to 'true', if conflicts occur when pushing a patch, linkgit:git-mergetool[1]
+  is automatically run to attempt to resolve the conflicts.
+
+stgit.autosign::
+  Automatically add "Signed-off-by:" trailer to commit messages for new patches created
+  with linkstg:new[] or lingstg:import[].
+
+stgit.autostash::
+  When running linkstg:rebase[], if any modified files are found in the working tree, a
+  temporary stash is created with linkgit:git-stash[1] before the operation begins and
+  is applied after the operation completes.
+
+stgit.diff-opts::
+  Options to pass-through to `git diff-tree` for linkstg:diff[], linkstg:export[],
+  linkstg:patches[], and linkstg:show[]. Multiple space-separated options may be
+  specified. See linkgit:git-diff-tree[1] for information about the various available
+  options.
+
+stgit.edit.verbose::
+  When set to 'true', the patch's diff will be shown when interactively editing a patch
+  description with, for example, linkstg:edit[].
+
+stgit.editor::
+  Commands such as linkstg:edit[] and linkstg:new[] open an editor to edit the patch
+  description and commit message. The editor set by this variable is launched when the
+  'GIT_EDITOR' environment variable is not set. This variable takes precedence over the
+  `core.editor` configuration variable as well as the 'VISUAL' and 'EDITOR' environment
+  variables.
+
+stgit.fetchcmd::
+  The command specified by this variable will be run by linkstg:pull[] to fetch from the
+  remote repository when 'stgit.pull-policy' is 'fetch-rebase'. When not set, the
+  default command is `git fetch`.
+
+stgit.gpgsign::
+  A boolean to specify whether StGit stack metadata commits should be GPG signed. When
+  not set, the value of 'commit.gpgsign' is used. If neither 'stgit.gpgsign' or
+  'commit.gpgsign' are set, then stack metadata commits will not be signed.
++
+N.B. Set 'commit.gpgsign' to determine whether patches themselves are GPG signed. See
+linkgit:git-config[1] for more information about 'commit.gpgsign'.
+
+stgit.import.message-id::
+  When set to 'true', create 'Message-Id:' trailer in the patch description of patches
+  imported from email using linkstg:import[].
+
+stgit.keepoptimized::
+  When set to 'true', after pulling changes with linkstg:pull[], the repository's object
+  database will be optimized by running linkgit:git-repack[1].
+
+stgit.namelength::
+  An integer used to determine the maximum length, in characters, of automatically
+  generated patch names. The default value is '30'. This option does not affect
+  user-specified patch names. Setting to a value less than or equal to '0' will allow
+  automatically generated patch names of unlimited length.
++
+Automatically generated patch names are truncated at word boundaries less than or equal
+to the value of 'stgit.namelength'. As a result, patch names will typically not be
+truncated at exactly this number of characters. It is also possible for automatically
+generated patch names to be longer than this value if a work boundary cannot be found
+within this bound, or if additional characters need to be added to the patch name to
+make it unique.
+
+stgit.pick.expose-format::
+  Format of the commit message for patches picked using the '--expose' option with
+  linkstg:pick[]. The value of this option is as may be specified to the '--pretty'
+  option of linkgit:git-show[1]. The default is 'format:%B%n(imported from commit %H)'.
+
+stgit.pull-policy::
+  Policy used by linkstg:pull[] for pulling changes from a remote repository. Valid
+  values include:
++
+* `pull`, the default, uses linkgit:git-pull[1] or 'stgit.pullcmd', if set, to pull
+  changes from the remote repository.
+* `rebase` uses linkgit:git-reset[1] or 'stgit.rebasecmd', if set, to rebase the patch
+  stack before reapplying patches.
+* `fetch-rebase` first fetches commits from the remote repository using
+  linkgit:git-fetch[1] or 'stgit.fetchcmd', if set, before performing the rebase as
+  described above.
+
+stgit.pullcmd::
+  The command to be run by linkstg:pull[] to pull changes from the remote repository
+  when 'stgit.pull-policy' is 'pull' (the default). The default value is `git pull`.
+
+stgit.rebasecmd::
+  The command to be run by linkstg:pull[] to set the new stack base when
+  'stgit.pull-policy' is either 'rebase' or 'fetch-rebase'. The default is `git reset
+  --hard`.
+
+stgit.refreshsubmodules::
+  A boolean to specify whether linkstg:refresh[] includes submodules in patch content.
+  This value may be overridden by the '--submodules' or '--no-submodules' option to
+  linkstg:refresh[]. By default, submodule content is not included in patch content.
+
+stgit.shortnr::
+  The number of patches listed by linkstg:series[] when the '-s'/'--short' option is
+  specified. Defaults to '5'.
+
 
 TEMPLATES
 ---------
