@@ -5,7 +5,8 @@ test_description='Test aliases'
 . ./test-lib.sh
 
 test_expect_success 'Test help on builtin alias command' '
-    stg help add | grep -e "Alias for shell command \`git add\`"
+    stg help add >out &&
+    grep -e "Alias for shell command \`git -C \"\$GIT_PREFIX\" add\`" out
 '
 
 test_expect_success 'Test ambiguous alias' '

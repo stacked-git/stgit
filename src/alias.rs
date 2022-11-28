@@ -73,10 +73,10 @@ impl Alias {
 pub(crate) fn get_default_aliases() -> Aliases {
     let aliases: Aliases = BTreeMap::from(
         [
-            ("add", "!git add"),
-            ("mv", "!git mv"),
-            ("resolved", "!git add"),
-            ("rm", "!git rm"),
+            ("add", "!git -C \"$GIT_PREFIX\" add"),
+            ("mv", "!git -C \"$GIT_PREFIX\" mv"),
+            ("resolved", "!git -C \"$GIT_PREFIX\" add"),
+            ("rm", "!git -C \"$GIT_PREFIX\" rm"),
             ("status", "!git status -s"),
         ]
         .map(|(name, command)| (name.into(), Alias::new(name, command))),
