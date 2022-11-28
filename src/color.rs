@@ -5,6 +5,7 @@
 use std::ffi::OsString;
 
 use clap::{Arg, ArgMatches};
+use is_terminal::IsTerminal;
 use termcolor::StandardStream;
 
 pub(crate) fn get_color_arg() -> Arg {
@@ -56,7 +57,7 @@ pub(crate) fn termcolor_choice_to_clap(color_choice: termcolor::ColorChoice) -> 
 /// Get [`termcolor::StandardStream`] for stdout based on `--color` option.
 pub(crate) fn get_color_stdout(matches: &ArgMatches) -> StandardStream {
     let mut choice = get_color_choice(Some(matches));
-    if choice == termcolor::ColorChoice::Auto && atty::isnt(atty::Stream::Stdout) {
+    if choice == termcolor::ColorChoice::Auto && !std::io::stdout().is_terminal() {
         choice = termcolor::ColorChoice::Never;
     }
     StandardStream::stdout(choice)
@@ -65,7 +66,7 @@ pub(crate) fn get_color_stdout(matches: &ArgMatches) -> StandardStream {
 /// Get [`termcolor::StandardStream`] for stderr based on `--color` option.
 pub(crate) fn get_color_stderr(matches: &ArgMatches) -> StandardStream {
     let mut choice = get_color_choice(Some(matches));
-    if choice == termcolor::ColorChoice::Auto && atty::isnt(atty::Stream::Stderr) {
+    if choice == termcolor::ColorChoice::Auto && !std::io::stderr().is_terminal() {
         choice = termcolor::ColorChoice::Never;
     }
     StandardStream::stderr(choice)
@@ -85,7 +86,7 @@ pub(crate) fn get_color_choice(maybe_matches: Option<&ArgMatches>) -> termcolor:
 pub(crate) fn use_color(matches: &ArgMatches) -> bool {
     match crate::color::get_color_choice(Some(matches)) {
         termcolor::ColorChoice::Always | termcolor::ColorChoice::AlwaysAnsi => true,
-        termcolor::ColorChoice::Auto => atty::is(atty::Stream::Stdout),
+        termcolor::ColorChoice::Auto => std::io::stdout().is_terminal(),
         termcolor::ColorChoice::Never => false,
     }
 }

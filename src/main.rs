@@ -572,8 +572,9 @@ pub(crate) fn print_warning_message(matches: &ArgMatches, msg: &str) {
 
 /// Print user-facing error message to stderr.
 fn print_error_message(color_choice: Option<termcolor::ColorChoice>, err: &anyhow::Error) {
+    use is_terminal::IsTerminal;
     let color_choice = color_choice.unwrap_or_else(|| {
-        if atty::is(atty::Stream::Stderr) {
+        if std::io::stderr().is_terminal() {
             termcolor::ColorChoice::Auto
         } else {
             termcolor::ColorChoice::Never
