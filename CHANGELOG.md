@@ -1,11 +1,24 @@
 # Changelog
 
-## [2.0.3] 2022-11-21
+## [2.0.4] 2022-11-30
 
-## Changed
+### Changed
+- docs: Document configuration variables
+- refactor: Use is-terminal instead of atty
 - chore: Update Cargo.lock with latest dependencies.
 
-## Fixed
+### Fixed
+- fix: Don't generate new patch name until after edit (#239)
+- fix: Run shell aliases from top-level of work tree
+- fix: Use GIT_PREFIX in built-in aliases
+
+
+## [2.0.3] 2022-11-21
+
+### Changed
+- chore: Update Cargo.lock with latest dependencies.
+
+### Fixed
 - fix: improved git version parsing on MacOS
 - fix: StGit-specific branch config handling
 - docs: fixed many typos
@@ -13,15 +26,15 @@
 
 ## [2.0.2] 2022-11-17
 
-## Changed
+### Changed
 - chore: Update Cargo.lock with latest dependencies.
 - docs(init): Add long help for `stg init`.
 
-## Added
+### Added
 - feat: Enable basic support for `extensions.worktreeconfig` to unblock
   sparse checkout with partial clone (#195).
 
-## Fixed
+### Fixed
 - docs: More inter-command links
 - docs: Normalize quoting
 
