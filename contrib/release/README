@@ -45,7 +45,7 @@ StGit Release Checklist
 
    - Use "Stacked Git X.Y.Z" for release title.
    - Write a sentence or two description of release.
-   - Paste this versions changes from CHANGELOG.md.
+   - Paste this version's changes from CHANGELOG.md.
    - Upload source archive file (`stgit-X.Y.Z.tar.gz`) from step 4.
 
 8. Send notifications
