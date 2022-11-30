@@ -123,6 +123,9 @@ format:
 test: build
 	$(MAKE) -C t all
 
+prove: build
+	$(MAKE) -C t prove
+
 test-patches:
 	for patch in $$($(CARGO_RUN) series --noprefix $(TEST_PATCHES)); do \
 		$(CARGO_RUN) goto $$patch && $(MAKE) test || break; \
@@ -136,4 +139,4 @@ clean:
 	$(RM) -r target
 	$(RM) -r htmlcov
 
-.PHONY: format test test-patches clean
+.PHONY: format prove test test-patches clean
