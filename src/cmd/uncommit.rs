@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     commit::CommitExtended,
     patchname::PatchName,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {

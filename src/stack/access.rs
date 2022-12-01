@@ -9,6 +9,35 @@ use super::{
 };
 use crate::patchname::PatchName;
 
+/// Trait for accessing information about a stack, including its parent branch.
+///
+/// This is a supertrait of [`StackStateAccess`].
+pub(crate) trait StackAccess<'repo>: StackStateAccess<'repo> {
+    /// Get branch name.
+    ///
+    /// This is the branch's short name, e.g. "main".
+    fn get_branch_name(&self) -> &str;
+
+    /// Get full reference name of branch.
+    ///
+    /// E.g. "refs/heads/main".
+    fn get_branch_refname(&self) -> &str;
+
+    /// Get reference name of the stack metadata.
+    ///
+    /// E.g. "refs/stacks/main".
+    fn get_stack_refname(&self) -> &str;
+
+    /// Get branch's head commit.
+    ///
+    /// May be different than the stack's base commit if the stack state is out of sync
+    /// with the branch due to use of external tools (i.e. `git`).
+    fn get_branch_head(&self) -> &git2::Commit<'repo>;
+
+    /// Get stack's base commit.
+    fn base(&self) -> &git2::Commit<'repo>;
+}
+
 /// Trait for accessing stack state.
 ///
 /// Both `Stack` and `StackTransaction` implement this interface.
@@ -46,9 +75,6 @@ pub(crate) trait StackStateAccess<'repo> {
     ///
     /// N.B. this is probably not what you want. See also [`crate::stack::Stack::branch_head`].
     fn head(&self) -> &git2::Commit<'repo>;
-
-    /// Get stack's base commit.
-    fn base(&self) -> &git2::Commit<'repo>;
 
     /// Get the commit for the given patch name.
     fn get_patch_commit(&self, patchname: &PatchName) -> &git2::Commit<'repo> {

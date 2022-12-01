@@ -13,7 +13,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     argset,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -75,7 +75,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let mut paths: Vec<&Path> = Vec::new();
         pathsbuf = stupid
-            .diff_index_names(stack.branch_head.tree_id(), Some(prefix))
+            .diff_index_names(stack.get_branch_head().tree_id(), Some(prefix))
             .context("getting modified files")?;
 
         for path_bytes in pathsbuf.split_str(b"\0") {

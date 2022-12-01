@@ -14,7 +14,7 @@
 
 use anyhow::Result;
 
-use crate::stack::{Stack, StackStateAccess};
+use crate::stack::{Stack, StackAccess};
 
 /// StGit revision specification error variants.
 #[derive(thiserror::Error, Debug)]

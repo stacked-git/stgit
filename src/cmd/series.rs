@@ -13,7 +13,7 @@ use crate::{
     commit::CommitExtended,
     patchname::PatchName,
     patchrange,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
 };
 
 const UNPRINTABLE: &str = "???";
@@ -313,7 +313,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let description_flag = matches.get_flag("description");
     let author_flag = matches.get_flag("author");
 
-    let branch_prefix = format!("{}:", &stack.branch_name);
+    let branch_prefix = format!("{}:", &stack.get_branch_name());
     let branch_prefix = if matches.get_flag("show-branch") {
         branch_prefix.as_str()
     } else {

@@ -11,7 +11,7 @@ use crate::{
     argset,
     commit::CommitExtended,
     patchrange,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 

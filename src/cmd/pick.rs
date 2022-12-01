@@ -18,7 +18,7 @@ use crate::{
     patchrange,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
     signature::SignatureExtended,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -228,7 +228,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let commit = parse_stgit_revision(
                 stack.repo,
                 Some(parent_committish),
-                Some(&ref_stack.branch_name),
+                Some(ref_stack.get_branch_name()),
             )?
             .peel_to_commit()?;
             Some(commit)
@@ -261,10 +261,9 @@ fn fold_picks(
                 .map(|pathbufs| pathbufs.map(PathBuf::as_path).collect())
         } else {
             assert!(matches.get_flag("update"));
-            diff_files = stupid.diff_tree_files(
-                stack.branch_head.parent(0)?.tree_id(),
-                stack.branch_head.tree_id(),
-            )?;
+            let branch_head = stack.get_branch_head();
+            diff_files =
+                stupid.diff_tree_files(branch_head.parent(0)?.tree_id(), branch_head.tree_id())?;
             Some(diff_files.iter().collect())
         };
 

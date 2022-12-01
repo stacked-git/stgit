@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset, patchrange,
     revspec::Error as RevError,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -183,7 +183,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             }
         }
     } else if !applied_flag && !unapplied_flag && !hidden_flag {
-        oids.push(stack.branch_head.id());
+        oids.push(stack.get_branch_head().id());
     }
 
     repo.stupid().show(

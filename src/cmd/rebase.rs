@@ -14,7 +14,7 @@ use crate::{
     patchname::PatchName,
     print_info_message,
     revspec::parse_stgit_revision,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -101,7 +101,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None)?;
     let config = repo.config()?;
     let stupid = repo.stupid();
-    let branch_name = stack.branch_name.clone();
+    let branch_name = stack.get_branch_name().to_string();
 
     let target_commit = if let Some(committish) = crate::argset::get_one_str(matches, "committish")
     {

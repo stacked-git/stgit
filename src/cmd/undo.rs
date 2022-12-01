@@ -8,7 +8,7 @@ use clap::Arg;
 
 use crate::{
     color::get_color_stdout,
-    stack::{Stack, StackState},
+    stack::{Stack, StackAccess, StackState},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -78,7 +78,7 @@ pub(super) fn find_undo_state<'repo>(
     let mut undo_steps = undo_steps;
     let mut state_commit = stack
         .repo
-        .find_reference(&stack.refname)?
+        .find_reference(stack.get_stack_refname())?
         .peel_to_commit()?;
     loop {
         let state = StackState::from_commit(stack.repo, &state_commit)?;

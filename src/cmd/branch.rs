@@ -13,7 +13,9 @@ use crate::{
     argset::{self, get_one_str},
     print_info_message,
     repo::RepositoryExtended,
-    stack::{get_branch_name, state_refname_from_branch_name, Stack, StackStateAccess},
+    stack::{
+        get_branch_name, state_refname_from_branch_name, Stack, StackAccess, StackStateAccess,
+    },
     stupid::Stupid,
 };
 
@@ -485,7 +487,7 @@ fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         Ok(()) => Ok(()),
         Err(e) => {
             new_branch.delete()?;
-            repo.find_reference(&stack.refname)
+            repo.find_reference(stack.get_stack_refname())
                 .and_then(|mut reference| reference.delete())
                 .ok();
             Err(e)
@@ -513,7 +515,7 @@ fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     if let Ok(stack) = Stack::from_branch(repo, None) {
         stack.check_head_top_mismatch()?;
         let state_ref = repo
-            .find_reference(&stack.refname)
+            .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference");
         let state_commit = state_ref.peel_to_commit()?;
         repo.reference(
@@ -564,7 +566,7 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     if let Ok(stack) = Stack::from_branch(repo, Some(old_branchname)) {
         let state_commit = repo
-            .find_reference(&stack.refname)
+            .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference")
             .peel_to_commit()?;
         repo.reference(

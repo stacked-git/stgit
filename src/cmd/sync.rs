@@ -17,7 +17,7 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
     patchrange,
-    stack::{Stack, StackStateAccess, StackTransaction},
+    stack::{Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };
 
@@ -115,7 +115,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .map(|series_path| series_path.parent().unwrap_or_else(|| Path::new(".")));
 
     let ref_patches: Vec<PatchName> = if let Some(ref_stack) = ref_stack.as_ref() {
-        if ref_stack.branch_name == stack.branch_name {
+        if ref_stack.get_branch_name() == stack.get_branch_name() {
             return Err(anyhow!("Cannot synchronize with the current branch"));
         }
         ref_stack.applied().to_vec()
@@ -241,7 +241,7 @@ fn branch_merge_patch(
     let ref_commit = ref_stack.get_patch_commit(patchname);
     let ref_parent = ref_commit.parent(0)?;
     let stupid = trans.repo().stupid();
-    stupid.read_tree_checkout(trans.stack().branch_head.tree_id(), commit.tree_id())?;
+    stupid.read_tree_checkout(trans.get_branch_head().tree_id(), commit.tree_id())?;
     stupid.update_index_refresh()?;
     if !stupid.merge_recursive(ref_parent.tree_id(), commit.tree_id(), ref_commit.tree_id())? {
         return Err(crate::stack::Error::CausedConflicts(format!(
@@ -280,7 +280,7 @@ fn series_merge_patch(
     let stupid = trans.repo().stupid();
 
     stupid.update_index_refresh()?;
-    stupid.read_tree_checkout(trans.stack().branch_head.tree_id(), parent.tree_id())?;
+    stupid.read_tree_checkout(trans.get_branch_head().tree_id(), parent.tree_id())?;
     stupid
         .apply_to_worktree_and_index(&diff, false, None, None)
         .with_context(|| format!("applying {patchname} from series"))?;
@@ -302,12 +302,8 @@ fn series_merge_patch(
     stupid.update_index(Some(changed_paths))?;
     let tree_id = stupid.write_tree()?;
 
-    stupid.read_tree_checkout(tree_id, trans.stack().branch_head.tree_id())?;
-    if !stupid.merge_recursive(
-        parent.tree_id(),
-        trans.stack().branch_head.tree_id(),
-        tree_id,
-    )? {
+    stupid.read_tree_checkout(tree_id, trans.get_branch_head().tree_id())?;
+    if !stupid.merge_recursive(parent.tree_id(), trans.get_branch_head().tree_id(), tree_id)? {
         return Err(crate::stack::Error::CausedConflicts(format!(
             "Merge conflicts syncing `{patchname}`"
         ))

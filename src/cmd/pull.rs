@@ -11,7 +11,7 @@ use crate::{
     color::get_color_stdout,
     print_info_message,
     revspec::parse_stgit_revision,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -101,7 +101,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None)?;
     let stupid = repo.stupid();
-    let branch_name = stack.branch_name.clone();
+    let branch_name = stack.get_branch_name().to_string();
     let config = repo.config()?;
     let policy = PullPolicy::from_str(
         &config

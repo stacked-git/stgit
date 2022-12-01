@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 
 use super::{
     state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
-    StackStateAccess,
+    StackAccess, StackStateAccess,
 };
 use crate::{patchname::PatchName, repo::RepositoryExtended, stupid::Stupid};
 
@@ -18,10 +18,10 @@ use crate::{patchname::PatchName, repo::RepositoryExtended, stupid::Stupid};
 /// with other relevant branch state.
 pub(crate) struct Stack<'repo> {
     pub(crate) repo: &'repo git2::Repository,
-    pub(crate) branch_name: String,
-    pub(crate) branch: git2::Branch<'repo>,
-    pub(crate) branch_head: git2::Commit<'repo>,
-    pub(crate) refname: String,
+    branch_name: String,
+    branch: git2::Branch<'repo>,
+    branch_head: git2::Commit<'repo>,
+    stack_refname: String,
     base: git2::Commit<'repo>,
     state: StackState<'repo>,
 }
@@ -38,17 +38,17 @@ impl<'repo> Stack<'repo> {
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
         let base = branch_head.clone();
-        let refname = state_refname_from_branch_name(&branch_name);
+        let stack_refname = state_refname_from_branch_name(&branch_name);
 
         stack_upgrade(repo, &branch_name)?;
 
-        if repo.find_reference(&refname).is_ok() {
+        if repo.find_reference(&stack_refname).is_ok() {
             return Err(anyhow!(
                 "StGit stack already initialized for branch `{branch_name}`"
             ));
         }
         let state = StackState::new(branch_head.clone());
-        state.commit(repo, Some(&refname), "initialize")?;
+        state.commit(repo, Some(&stack_refname), "initialize")?;
         ensure_patch_refs(repo, &branch_name, &state)?;
 
         Ok(Self {
@@ -56,7 +56,7 @@ impl<'repo> Stack<'repo> {
             branch_name,
             branch,
             branch_head,
-            refname,
+            stack_refname,
             base,
             state,
         })
@@ -74,10 +74,10 @@ impl<'repo> Stack<'repo> {
         let Self {
             repo,
             branch_name,
-            refname,
+            stack_refname,
             ..
         } = self;
-        let mut state_ref = repo.find_reference(&refname)?;
+        let mut state_ref = repo.find_reference(&stack_refname)?;
         let patch_ref_glob = get_patch_refname(&branch_name, "*");
         for patch_reference in repo.references_glob(&patch_ref_glob)? {
             let mut patch_reference = patch_reference?;
@@ -108,9 +108,9 @@ impl<'repo> Stack<'repo> {
 
         stack_upgrade(repo, &branch_name)?;
 
-        let refname = state_refname_from_branch_name(&branch_name);
+        let stack_refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
-            .find_reference(&refname)
+            .find_reference(&stack_refname)
             .map_err(|_| anyhow!("StGit stack not initialized for branch `{branch_name}`"))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
@@ -125,7 +125,7 @@ impl<'repo> Stack<'repo> {
             branch_name,
             branch,
             branch_head,
-            refname,
+            stack_refname,
             base,
             state,
         })
@@ -179,7 +179,7 @@ impl<'repo> Stack<'repo> {
 
     /// Re-commit stack state with updated branch head.
     pub(crate) fn log_external_mods(self, message: Option<&str>) -> Result<Self> {
-        let state_ref = self.repo.find_reference(&self.refname)?;
+        let state_ref = self.repo.find_reference(&self.stack_refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
         let state = self
@@ -195,7 +195,7 @@ impl<'repo> Stack<'repo> {
 
         let state_commit_id = state.commit(self.repo, None, message)?;
         self.repo.reference_matching(
-            &self.refname,
+            &self.stack_refname,
             state_commit_id,
             true,
             prev_state_commit_id,
@@ -214,7 +214,7 @@ impl<'repo> Stack<'repo> {
     pub(crate) fn clear_state_log(&mut self, reflog_msg: &str) -> Result<()> {
         self.state.prev = None;
         self.state
-            .commit(self.repo, Some(&self.refname), reflog_msg)?;
+            .commit(self.repo, Some(&self.stack_refname), reflog_msg)?;
         Ok(())
     }
 
@@ -239,6 +239,31 @@ impl<'repo> Stack<'repo> {
     /// I.e. `refs/patches/<branch>/<patch_spec>`.
     pub(crate) fn patch_revspec(&self, patch_spec: &str) -> String {
         get_patch_refname(&self.branch_name, patch_spec)
+    }
+}
+
+impl<'repo> StackAccess<'repo> for Stack<'repo> {
+    fn get_branch_name(&self) -> &str {
+        &self.branch_name
+    }
+
+    fn get_branch_refname(&self) -> &str {
+        self.branch
+            .get()
+            .name()
+            .expect("branch rename is valid UTF-8")
+    }
+
+    fn get_stack_refname(&self) -> &str {
+        &self.stack_refname
+    }
+
+    fn get_branch_head(&self) -> &git2::Commit<'repo> {
+        &self.branch_head
+    }
+
+    fn base(&self) -> &git2::Commit<'repo> {
+        &self.base
     }
 }
 
@@ -269,10 +294,6 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
 
     fn head(&self) -> &git2::Commit<'repo> {
         self.state.head()
-    }
-
-    fn base(&self) -> &git2::Commit<'repo> {
-        &self.base
     }
 }
 

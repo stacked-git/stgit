@@ -18,7 +18,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     signature::SignatureExtended,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},
         Stupid, StupidContext,
@@ -189,7 +189,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &git2::Signature::default_committer(Some(&config))?,
         &CommitMessage::from(format!("Refresh of {patchname}")),
         tree_id,
-        [stack.branch_head.id()],
+        [stack.get_branch_head().id()],
     )?;
 
     let temp_patchname = {
@@ -412,7 +412,7 @@ fn write_tree(
     let stupid = stack.repo.stupid();
     if is_path_limiting {
         let tree_id_result = stupid.with_temp_index(|stupid_temp| {
-            stupid_temp.read_tree(stack.branch_head.tree_id())?;
+            stupid_temp.read_tree(stack.get_branch_head().tree_id())?;
             stupid_temp.update_index(Some(refresh_paths))?;
             stupid_temp.write_tree()
         });

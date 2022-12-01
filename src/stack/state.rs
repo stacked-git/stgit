@@ -86,10 +86,6 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
     fn head(&self) -> &git2::Commit<'repo> {
         &self.head
     }
-
-    fn base(&self) -> &git2::Commit<'repo> {
-        panic!("State does not know its own base")
-    }
 }
 
 /// Maximum number of parents a stack state commit is allowed before parent commit

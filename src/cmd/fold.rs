@@ -9,7 +9,7 @@ use clap::{Arg, ArgGroup};
 
 use crate::{
     revspec::parse_stgit_revision,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -116,7 +116,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     };
 
     if let Some(base_commit) = base_commit {
-        let orig_head_tree_id = stack.branch_head.tree_id();
+        let orig_head_tree_id = stack.get_branch_head().tree_id();
         let base_tree_id = base_commit.tree_id();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
         if let Err(e) =

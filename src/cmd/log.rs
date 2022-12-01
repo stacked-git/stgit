@@ -5,7 +5,11 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::{argset, patchrange, stack::Stack, stupid::Stupid};
+use crate::{
+    argset, patchrange,
+    stack::{Stack, StackAccess},
+    stupid::Stupid,
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "log",
@@ -104,7 +108,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
         let simplified_parent_id = stack
             .repo
-            .find_reference(&stack.refname)?
+            .find_reference(stack.get_stack_refname())?
             .peel_to_commit()?
             .parent_id(0)?;
 

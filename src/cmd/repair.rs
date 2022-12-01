@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     print_info_message, print_warning_message,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -82,7 +82,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let mut applied: Vec<PatchName> = Vec::new();
 
-    let mut commit = stack.branch_head.clone();
+    let mut commit = stack.get_branch_head().clone();
 
     while commit.parent_count() == 1 {
         let parent = commit.parent(0)?;

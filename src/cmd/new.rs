@@ -14,7 +14,7 @@ use crate::{
     patchname::PatchName,
     repo::RepositoryExtended,
     signature::SignatureExtended,
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -187,10 +187,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let tree_id = if is_refreshing {
         refresh::assemble_refresh_tree(&stack, &config, matches, None)?
     } else {
-        stack.branch_head.tree_id()
+        stack.get_branch_head().tree_id()
     };
 
-    let parent_id = stack.branch_head.id();
+    let parent_id = stack.get_branch_head().id();
 
     let (patchname, commit_id) = match patchedit::EditBuilder::default()
         .allow_autosign(true)

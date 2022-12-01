@@ -40,7 +40,7 @@ use self::{
     options::{ConflictMode, TransactionOptions},
     ui::TransactionUserInterface,
 };
-use super::{error::Error, state::StackState};
+use super::{error::Error, state::StackState, StackAccess};
 use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
@@ -137,7 +137,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = stack.repo;
         let stack_top_patchname = stack.applied().last().cloned();
-        let rollback_tree_id = stack.branch_head.tree_id();
+        let rollback_tree_id = stack.get_branch_head().tree_id();
 
         // Only proceed for halt errors
         let has_conflicts = if let Some(err) = &error {
@@ -203,7 +203,7 @@ impl<'repo> ExecuteContext<'repo> {
             } else {
                 reflog_msg
             };
-            let stack_ref = repo.find_reference(&stack.refname)?;
+            let stack_ref = repo.find_reference(stack.get_stack_refname())?;
             let prev_state_commit = stack_ref.peel_to_commit()?;
             let state = stack.state_mut();
             for (patchname, maybe_patch) in &updated_patches {
@@ -220,7 +220,7 @@ impl<'repo> ExecuteContext<'repo> {
             state.hidden = hidden;
             let state_commit_id = state.commit(repo, None, state_reflog_msg)?;
 
-            let branch_ref_name = stack.branch.get().name().expect("valid branch ref name");
+            let branch_ref_name = stack.get_branch_refname();
 
             // Update various refs as a single transaction. This reference transaction is
             // not quite atomic--it is possible for some, but not all references to be
@@ -230,7 +230,7 @@ impl<'repo> ExecuteContext<'repo> {
             if options.set_head {
                 ref_trans.lock_ref(branch_ref_name)?;
             }
-            ref_trans.lock_ref(&stack.refname)?;
+            ref_trans.lock_ref(stack.get_stack_refname())?;
             for patchname in updated_patches.keys() {
                 ref_trans.lock_ref(&stack.patch_refname(patchname))?;
             }
@@ -249,7 +249,12 @@ impl<'repo> ExecuteContext<'repo> {
                 }
             }
 
-            ref_trans.set_target(&stack.refname, state_commit_id, None, state_reflog_msg)?;
+            ref_trans.set_target(
+                stack.get_stack_refname(),
+                state_commit_id,
+                None,
+                state_reflog_msg,
+            )?;
 
             if options.set_head {
                 ref_trans.set_target(branch_ref_name, trans_head.id(), None, reflog_msg)?;
@@ -1083,7 +1088,7 @@ impl<'repo> StackTransaction<'repo> {
     where
         P: AsRef<PatchName>,
     {
-        let head_tree_id = self.stack.branch_head.tree_id();
+        let head_tree_id = self.stack.get_branch_head().tree_id();
         let mut merged: Vec<&PatchName> = vec![];
 
         if temp_index_tree_id != &Some(head_tree_id) {
@@ -1114,6 +1119,32 @@ impl<'repo> StackTransaction<'repo> {
         self.ui.print_merged(&merged)?;
 
         Ok(merged)
+    }
+}
+
+impl<'repo> StackAccess<'repo> for StackTransaction<'repo> {
+    fn get_branch_name(&self) -> &str {
+        self.stack.get_branch_name()
+    }
+
+    fn get_branch_refname(&self) -> &str {
+        self.stack.get_branch_refname()
+    }
+
+    fn get_stack_refname(&self) -> &str {
+        self.stack.get_stack_refname()
+    }
+
+    fn get_branch_head(&self) -> &git2::Commit<'repo> {
+        self.stack.get_branch_head()
+    }
+
+    fn base(&self) -> &git2::Commit<'repo> {
+        if let Some(commit) = self.updated_base.as_ref() {
+            commit
+        } else {
+            self.stack.base()
+        }
     }
 }
 
@@ -1161,14 +1192,6 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
             commit
         } else {
             self.top()
-        }
-    }
-
-    fn base(&self) -> &git2::Commit<'repo> {
-        if let Some(commit) = self.updated_base.as_ref() {
-            commit
-        } else {
-            self.stack.base()
         }
     }
 }

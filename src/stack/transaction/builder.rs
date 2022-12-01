@@ -9,7 +9,7 @@ use super::{
     ui::TransactionUserInterface,
     ExecuteContext, StackTransaction,
 };
-use crate::stack::{Stack, StackStateAccess};
+use crate::stack::{Stack, StackAccess, StackStateAccess};
 
 /// Builder used to setup a stack transaction.
 pub(crate) struct TransactionBuilder<'repo> {
@@ -125,7 +125,7 @@ impl<'repo> TransactionBuilder<'repo> {
         let ui =
             TransactionUserInterface::new(output.expect("with_output_stream() must be called"));
 
-        let current_tree_id = stack.branch_head.tree_id();
+        let current_tree_id = stack.get_branch_head().tree_id();
         let applied = stack.applied().to_vec();
         let unapplied = stack.unapplied().to_vec();
         let hidden = stack.hidden().to_vec();

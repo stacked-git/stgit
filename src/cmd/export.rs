@@ -18,7 +18,7 @@ use crate::{
     commit::CommitExtended,
     patchrange,
     signature::TimeExtended,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -158,7 +158,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let output_dir = if let Some(dir) = matches.get_one::<PathBuf>("dir").map(PathBuf::as_path) {
         dir
     } else {
-        default_output_dir = format!("patches-{}", stack.branch_name);
+        default_output_dir = format!("patches-{}", stack.get_branch_name());
         Path::new(default_output_dir.as_str())
     };
 

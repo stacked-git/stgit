@@ -16,7 +16,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     signature::{self, SignatureExtended},
-    stack::{Stack, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };
 
@@ -621,7 +621,7 @@ fn create_patch<'repo>(
     let trimmed_diff = diff.trim_end_with(|c| c.is_ascii_whitespace());
 
     let tree_id = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
-        stack.branch_head.tree_id()
+        stack.get_branch_head().tree_id()
     } else {
         let stupid = stack.repo.stupid();
         stupid.apply_to_worktree_and_index(
@@ -637,7 +637,7 @@ fn create_patch<'repo>(
     let (new_patchname, commit_id) = match crate::patchedit::EditBuilder::default()
         .original_patchname(Some(&patchname))
         .override_tree_id(tree_id)
-        .override_parent_id(stack.branch_head.id())
+        .override_parent_id(stack.get_branch_head().id())
         .default_author(author)
         .default_message(message)
         .allow_autosign(true)
