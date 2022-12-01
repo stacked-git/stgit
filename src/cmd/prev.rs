@@ -47,6 +47,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         stdout.set_color(&color_spec)?;
         writeln!(stdout)?;
         Ok(())
+    } else if stack.applied().is_empty() {
+        Err(crate::stack::Error::NoAppliedPatches.into())
     } else {
         Err(anyhow!("Not enough patches applied"))
     }

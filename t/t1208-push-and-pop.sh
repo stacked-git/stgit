@@ -18,7 +18,7 @@ test_expect_success \
 
 test_expect_success \
     'Test behavior on empty repo' '
-    command_error stg prev 2>err && grep -e "Not enough patches applied" err &&
+    command_error stg prev 2>err && grep -e "No patches applied" err &&
     command_error stg next 2>err && grep -e "No unapplied patches" err &&
     command_error stg top  2>err && grep -e "No patches applied" err &&
     command_error stg pop  2>err && grep -e "No patches applied" err &&
