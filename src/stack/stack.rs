@@ -304,8 +304,8 @@ pub(crate) fn get_branch_name(branch: &git2::Branch<'_>) -> Result<String> {
 ///
 /// This is done when instantiating a [`Stack`] to guard against external modifications
 /// to the stack's patch refs.
-fn ensure_patch_refs<'repo>(
-    repo: &'repo git2::Repository,
+fn ensure_patch_refs(
+    repo: &git2::Repository,
     branch_name: &str,
     state: &StackState,
 ) -> Result<()> {
