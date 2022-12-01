@@ -47,27 +47,27 @@ impl RepositoryExtended for git2::Repository {
 
     fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>> {
         if let Some(name) = branch_name {
-            let branch =
-                self.find_branch(name, git2::BranchType::Local)
-                    .map_err(|e| -> anyhow::Error {
-                        if e.class() == git2::ErrorClass::Reference {
-                            match e.code() {
-                                git2::ErrorCode::NotFound => {
-                                    anyhow!("Branch `{name}` not found")
-                                }
-                                git2::ErrorCode::InvalidSpec => {
-                                    anyhow!("Invalid branch name `{name}`")
-                                }
-                                git2::ErrorCode::UnbornBranch => {
-                                    anyhow!("Unborn branch `{name}`")
-                                }
-                                _ => e.into(),
+            self.find_branch(name, git2::BranchType::Local)
+                .or_else(|e| match (e.class(), e.code()) {
+                    (git2::ErrorClass::Reference, git2::ErrorCode::NotFound) => {
+                        if let Ok(reference) = self.find_reference(name) {
+                            if reference.is_branch() {
+                                Ok(git2::Branch::wrap(reference))
+                            } else {
+                                Err(anyhow!("Reference `{name}` is not a branch"))
                             }
                         } else {
-                            e.into()
+                            Err(anyhow!("Branch `{name}` not found"))
                         }
-                    })?;
-            Ok(branch)
+                    }
+                    (git2::ErrorClass::Reference, git2::ErrorCode::InvalidSpec) => {
+                        Err(anyhow!("Invalid branch name `{name}`"))
+                    }
+                    (git2::ErrorClass::Reference, git2::ErrorCode::UnbornBranch) => {
+                        Err(anyhow!("Unborn branch `{name}`"))
+                    }
+                    _ => Err(e.into()),
+                })
         } else if self.head_detached()? {
             Err(anyhow!("Not on branch, HEAD is detached"))
         } else {
