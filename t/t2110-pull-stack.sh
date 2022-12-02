@@ -9,7 +9,6 @@ test_create_repo upstream
 test_expect_success 'Setup upstream with patches' '
     (cd upstream &&
      test_commit_bulk --message="patch %s" --filename=foo.txt --contents="line %s" 3 &&
-     stg init &&
      stg uncommit -n 3
     )
 '

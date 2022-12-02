@@ -1,7 +1,8 @@
 #!/bin/sh
+
 test_description='Test the push command from a subdirectory'
+
 . ./test-lib.sh
-stg init
 
 test_expect_success 'Create some patches' '
     mkdir foo

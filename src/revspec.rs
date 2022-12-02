@@ -14,7 +14,7 @@
 
 use anyhow::Result;
 
-use crate::stack::{Stack, StackAccess};
+use crate::stack::{InitializationPolicy, Stack, StackAccess};
 
 /// StGit revision specification error variants.
 #[derive(thiserror::Error, Debug)]
@@ -65,7 +65,7 @@ pub(crate) fn parse_stgit_revision<'repo>(
     let (branch, spec) = parse_branch_and_spec(branch, spec);
 
     if let Some(spec) = spec {
-        let stack = Stack::from_branch(repo, branch)?;
+        let stack = Stack::from_branch(repo, branch, InitializationPolicy::AllowUninitialized)?;
         if let Some((_, spec)) = spec.split_once("{base}") {
             let revspec = format!("{}{spec}", stack.base().id());
             revparse_single(repo, &revspec)

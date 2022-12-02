@@ -11,7 +11,7 @@ use crate::{
     patchname::PatchName,
     patchrange,
     repo::RepositoryExtended,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -80,7 +80,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     let opt_target: Option<PatchName> = matches.get_one::<PatchName>("target").cloned();

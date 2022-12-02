@@ -6,7 +6,6 @@ test_description="Test 'stg email send'"
 
 test_expect_success 'Setup StGit stack' '
     test_commit_bulk --message="p%s" 7 &&
-    stg init &&
     stg uncommit -n 7 &&
     stg goto p4
 '

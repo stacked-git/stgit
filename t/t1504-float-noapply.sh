@@ -6,7 +6,6 @@ test_description='Test float --noapply'
 
 test_expect_success 'Initialize the StGit repository' '
     test_commit_bulk --message="p%s" 4 &&
-    stg init &&
     stg uncommit -n 4 &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4"
 '

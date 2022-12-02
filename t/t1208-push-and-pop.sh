@@ -5,11 +5,11 @@ test_description='Test the push and pop commands'
 
 test_expect_success \
     'Test behavior on uninitialized repo' '
-    command_error stg prev 2>err && grep -e "error: StGit stack not initialized for branch \`master\`" err &&
-    command_error stg next 2>err && grep -e "error: StGit stack not initialized for branch \`master\`" err &&
-    command_error stg top  2>err && grep -e "error: StGit stack not initialized for branch \`master\`" err &&
-    command_error stg pop  2>err && grep -e "error: StGit stack not initialized for branch \`master\`" err &&
-    command_error stg push 2>err && grep -e "error: StGit stack not initialized for branch \`master\`" err
+    command_error stg prev 2>err && grep -e "error: No patches applied" err &&
+    command_error stg next 2>err && grep -e "error: No unapplied patches" err &&
+    command_error stg top  2>err && grep -e "error: No patches applied" err &&
+    command_error stg pop  2>err && grep -e "error: No patches applied" err &&
+    command_error stg push 2>err && grep -e "error: No unapplied patches" err
 '
 
 test_expect_success \

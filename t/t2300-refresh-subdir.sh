@@ -1,7 +1,8 @@
 #!/bin/sh
+
 test_description='Test the refresh command from a subdirectory'
+
 . ./test-lib.sh
-stg init
 
 test_expect_success 'Refresh from a subdirectory' '
     stg new p0 -m p0 &&

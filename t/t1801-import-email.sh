@@ -9,8 +9,7 @@ test_expect_success \
     '
     cp "$TEST_DIRECTORY"/t1800/foo.txt . &&
     stg add foo.txt &&
-    git commit -a -m "initial version" &&
-    stg init
+    git commit -a -m "initial version"
     '
 
 test_expect_success \

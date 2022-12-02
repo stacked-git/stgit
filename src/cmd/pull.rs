@@ -11,7 +11,7 @@ use crate::{
     color::get_color_stdout,
     print_info_message,
     revspec::parse_stgit_revision,
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -99,7 +99,7 @@ impl Display for PullPolicy {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
     let config = repo.config()?;
@@ -219,7 +219,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // The above pull and rebase action may have moved the stack's branch reference,
     // so we initialize the stack afresh.
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let stack = if stack.is_head_top() {
         stack
     } else {

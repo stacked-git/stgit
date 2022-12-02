@@ -6,7 +6,6 @@ test_description='Test stg files'
 
 test_expect_success 'Create some patches' '
     echo "*.log" >> .git/info/exclude
-    stg init &&
     echo aaa > a.txt &&
     echo bbb > b.txt &&
     stg add a.txt b.txt &&

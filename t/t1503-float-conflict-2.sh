@@ -3,7 +3,6 @@ test_description='Test that "stg float" can handle conflicts'
 . ./test-lib.sh
 
 test_expect_success 'Test setup' '
-    stg init &&
     echo expected.txt >> .git/info/exclude &&
     echo first line > foo.txt &&
     git add foo.txt &&

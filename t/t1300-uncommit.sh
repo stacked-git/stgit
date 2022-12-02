@@ -3,16 +3,23 @@
 # Copyright (c) 2006 Catalin Marinas
 #
 
-test_description='Test the uncommit command.
-
-'
+test_description='Test the uncommit command.'
 
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGit repository' \
-	'stg init
-'
+  'Create some commits' \
+  '
+  test_commit_bulk 3
+  '
+
+test_expect_success \
+  'Uncommit on uninitialized stack' \
+  '
+  stg uncommit -n2 &&
+  [ "$(echo $(stg series --applied --noprefix))" = "commit-2 commit-3" ] &&
+  stg delete ..
+  '
 
 test_expect_success \
 	'Create the first patch' \

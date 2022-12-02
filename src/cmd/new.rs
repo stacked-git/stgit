@@ -14,7 +14,7 @@ use crate::{
     patchname::PatchName,
     repo::RepositoryExtended,
     signature::SignatureExtended,
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -157,8 +157,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let branch_name: Option<&str> = None;
-    let stack = Stack::from_branch(&repo, branch_name)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
     repo.check_repository_state()?;

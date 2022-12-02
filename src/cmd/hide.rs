@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
-    stack::{Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -41,8 +41,11 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     stack.check_head_top_mismatch()?;
 

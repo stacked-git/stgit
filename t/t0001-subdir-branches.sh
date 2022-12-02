@@ -12,8 +12,7 @@ containing slashes (that is, branches living in a subdirectory of
 . ./test-lib.sh
 
 test_expect_success 'Create a patch' \
-  'stg init &&
-   echo "foo" > foo.txt &&
+  'echo "foo" > foo.txt &&
    stg add foo.txt &&
    stg new foo -m "Add foo.txt" &&
    stg refresh'

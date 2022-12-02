@@ -11,7 +11,7 @@ use crate::{
     patchname::PatchName,
     patchrange,
     repo::RepositoryExtended,
-    stack::{Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -114,7 +114,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     let opt_number = matches.get_one::<isize>("number").copied();

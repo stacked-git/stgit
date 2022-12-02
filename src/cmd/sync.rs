@@ -17,7 +17,7 @@ use crate::{
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
     patchrange,
-    stack::{Stack, StackAccess, StackStateAccess, StackTransaction},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };
 
@@ -83,7 +83,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
@@ -105,7 +105,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let ref_stack = if let Some(ref_branchname) = crate::argset::get_one_str(matches, "ref-branch")
     {
-        Some(Stack::from_branch(&repo, Some(ref_branchname))?)
+        Some(Stack::from_branch(
+            &repo,
+            Some(ref_branchname),
+            InitializationPolicy::AllowUninitialized,
+        )?)
     } else {
         None
     };

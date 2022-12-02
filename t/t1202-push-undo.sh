@@ -12,11 +12,6 @@ missing file. The "stg undo" command has to be able to revert it.
 . ./test-lib.sh
 
 test_expect_success \
-	'Initialize the StGit repository' \
-	'stg init
-'
-
-test_expect_success \
 	'Create the first patch' \
 	'
 	stg new foo -m foo &&

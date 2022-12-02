@@ -3,6 +3,13 @@ test_description='Test "stg edit"'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt edit on uninitialized branch' '
+    command_error stg edit 2>err &&
+    grep "error: No patches applied" err &&
+    command_error stg edit foo 2>err &&
+    grep "error: Patch \`foo\` does not exist" err
+'
+
 test_expect_success 'Setup' '
     printf "000\n111\n222\n333\n" >> foo &&
     stg add foo &&
@@ -19,7 +26,6 @@ test_expect_success 'Setup' '
     sed "s/333/333zz/" foo > foo.tmp && mv foo.tmp foo &&
     git commit -a -m "Fourth change" &&
     git notes add -m note4 &&
-    stg init &&
     stg uncommit -n 4 p &&
     stg pop -n 2 &&
     stg hide p4 &&

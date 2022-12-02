@@ -3,11 +3,16 @@
 test_description="Test 'stg export'"
 . ./test-lib.sh
 
+test_expect_success 'Attempt export on uninitialized branch' '
+    command_error stg export 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
+    '
+
 test_expect_success 'Initialize repo with patches' '
     echo "foo" > foo.txt &&
     git add foo.txt &&
     git commit -m "initial" &&
-    stg init &&
     for i in 1 2 3 4 5; do
       echo "line $i" >> foo.txt &&
       stg new -m "patch-$i" &&

@@ -4,8 +4,6 @@ test_description='Test "stg pop --spill"'
 
 . ./test-lib.sh
 
-stg init
-
 reset_test () {
     stg reset --hard
     stg push -a

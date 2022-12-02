@@ -27,8 +27,7 @@ EOF
 test_expect_success \
     'Setup master branch' '
     git add file &&
-    git commit -m "Add file" &&
-    stg init
+    git commit -m "Add file"
 '
 
 test_expect_success \

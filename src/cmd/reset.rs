@@ -8,7 +8,7 @@ use clap::Arg;
 use crate::{
     color::get_color_stdout,
     patchrange,
-    stack::{Stack, StackState},
+    stack::{InitializationPolicy, Stack, StackState},
     stupid::Stupid,
 };
 
@@ -58,7 +58,7 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     if let Some(committish) = crate::argset::get_one_str(matches, "committish") {
-        let stack = Stack::from_branch(&repo, None)?;
+        let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
         let commit = repo
             .revparse_single(committish)
             .map_err(|_| anyhow!("Invalid committish `{committish}`"))?

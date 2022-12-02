@@ -11,7 +11,7 @@ use crate::{
     argset,
     commit::CommitExtended,
     patchrange,
-    stack::{Error, Stack, StackAccess, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -370,7 +370,11 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
         return repo.stupid().send_email_dump_aliases();
     }
 
-    let stack = Stack::from_branch(&repo, argset::get_one_str(matches, "branch"))?;
+    let stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     let source_args = matches.get_many::<String>("patchranges-or-paths");
     let sources = if let Some(patchranges_or_paths) = source_args {

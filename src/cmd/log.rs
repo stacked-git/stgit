@@ -7,7 +7,7 @@ use clap::{Arg, ArgMatches};
 
 use crate::{
     argset, patchrange,
-    stack::{Stack, StackAccess},
+    stack::{InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
 };
 
@@ -87,8 +87,11 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let mut stack = Stack::from_branch(&repo, opt_branch)?;
+    let mut stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        InitializationPolicy::RequireInitialized,
+    )?;
 
     if matches.get_flag("clear") {
         stack.clear_state_log("clear log")

@@ -7,8 +7,13 @@ test_description='Test "stg goto"'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt goto with uninitialized stack' '
+    command_error stg goto foo 2>err &&
+    grep "error: Patch \`foo\` does not exist" err &&
+    rm err
+'
+
 test_expect_success 'Initialize stgit repository' '
-    stg init &&
     for i in 1 2 3 4 5; do
         stg new p$i -m "patch $i" &&
         echo $i > file$i &&

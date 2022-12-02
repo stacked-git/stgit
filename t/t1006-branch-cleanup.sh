@@ -34,7 +34,7 @@ test_expect_success 'Force cleanup branch with patches' '
     git config --get-regexp branch\\.foo2\\.stgit &&
     stg branch --cleanup --force &&
     test "$(stg series --noprefix --all)" = "" &&
-    command_error stg new -m p1 2>err &&
+    command_error stg branch --cleanup 2>err &&
     grep "StGit stack not initialized for branch \`foo2\`" err &&
     test_expect_code 1 git config --get-regexp branch\\.foo2\\.stgit &&
     test_expect_code 128 git config --remove-section branch.foo2.stgit
@@ -54,7 +54,7 @@ test_expect_success 'Invalid num args to cleanup' '
 test_expect_success 'Cleanup current branch' '
     stg branch --cleanup &&
     test "$(stg branch)" = "foo" &&
-    command_error stg new -m p1 2>err &&
+    command_error stg branch --cleanup 2>err &&
     grep "StGit stack not initialized for branch \`foo\`" err
 '
 

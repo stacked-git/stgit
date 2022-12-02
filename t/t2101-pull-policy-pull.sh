@@ -17,7 +17,6 @@ test_expect_success \
     (cd upstream && stg init) &&
     git clone upstream clone &&
     (cd clone &&
-     stg init &&
      git config pull.rebase false &&
      git config branch.master.stgit.pull-policy pull &&
      git config --list &&

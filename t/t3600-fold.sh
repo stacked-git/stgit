@@ -4,8 +4,13 @@ test_description='Test the fold command.'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt fold on uninitialized stack' '
+    command_error stg fold 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
+'
+
 test_expect_success 'Initialize StGit repository' '
-    stg init &&
     echo hello > foo.txt &&
     git add foo.txt &&
     git commit -m "add foo.txt" &&

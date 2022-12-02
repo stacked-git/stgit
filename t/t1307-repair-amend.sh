@@ -3,7 +3,6 @@ test_description='Test "stg repair" of amended commits'
 . ./test-lib.sh
 
 test_expect_success 'Initialize the StGit patch' '
-    stg init &&
     echo "hello" > foo.txt &&
     stg add foo.txt &&
     stg new -m p0 &&

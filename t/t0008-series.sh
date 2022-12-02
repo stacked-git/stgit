@@ -5,8 +5,8 @@ test_description='Test stg series'
 . ./test-lib.sh
 
 test_expect_success 'Test uninitialized branch' '
-    command_error stg series 2>err &&
-    grep -e "StGit stack not initialized for branch \`master\`" err
+    stg series >out &&
+    test_must_be_empty out
 '
 
 test_expect_success 'Initialize series' '

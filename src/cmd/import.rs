@@ -16,7 +16,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     signature::{self, SignatureExtended},
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };
 
@@ -195,7 +195,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
     let source_path = if matches.get_flag("url") {

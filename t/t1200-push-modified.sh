@@ -23,7 +23,6 @@ test_expect_success \
     git clone foo bar &&
     (
         cd bar &&
-        stg init &&
         stg new -m p1 &&
         git notes add -m note1 &&
         printf "a\nc\n" > file &&

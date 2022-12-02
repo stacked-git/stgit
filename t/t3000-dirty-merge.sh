@@ -5,7 +5,6 @@ test_description='Try a push that requires merging a file that is dirty'
 . ./test-lib.sh
 
 test_expect_success 'Initialize StGit stack with two patches' '
-    stg init &&
     touch a &&
     stg add a &&
     git commit -m a &&

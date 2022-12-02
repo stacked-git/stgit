@@ -9,7 +9,6 @@ test_description='Exercise pushing patches with --set-tree.'
 
 test_expect_success \
     'Create initial patches' '
-    stg init &&
     stg new A -m A &&
     echo hello world > a &&
     stg add a &&

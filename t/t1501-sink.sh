@@ -4,6 +4,12 @@ test_description='Test "stg sink"'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt sink with uninitialized stack' '
+    command_error stg sink 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
+'
+
 test_expect_success 'Initialize StGit stack' '
     echo 0 >> f0 &&
     stg add f0 &&
@@ -23,7 +29,6 @@ test_expect_success 'Initialize StGit stack' '
     echo 22 >> f2 &&
     stg add f2 &&
     git commit -m p22 &&
-    stg init &&
     stg uncommit p22 p4 p3 p2 p1 &&
     stg pop -a
 '

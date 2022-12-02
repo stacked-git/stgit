@@ -5,7 +5,6 @@ test_description='pre-commit hook'
 . ./test-lib.sh
 
 test_expect_success 'Initialise StGit' '
-    stg init &&
     stg new -m "pre-commit-patch"
     echo "new file" >> file &&
     git add file

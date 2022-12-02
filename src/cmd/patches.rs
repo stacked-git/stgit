@@ -53,8 +53,11 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        crate::stack::InitializationPolicy::AllowUninitialized,
+    )?;
     let diff_flag = matches.get_flag("diff");
 
     if stack.applied().is_empty() {

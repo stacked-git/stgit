@@ -18,7 +18,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     signature::SignatureExtended,
-    stack::{Error, Stack, StackAccess, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},
         Stupid, StupidContext,
@@ -156,7 +156,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let config = repo.config()?;
 
     stack.check_head_top_mismatch()?;

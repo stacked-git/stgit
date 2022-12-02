@@ -11,7 +11,6 @@ test_expect_success 'setup submodule'  '
   test_create_repo submodules/foo &&
   git submodule add ./submodules/foo submodules/foo &&
   git commit -m "submodule" &&
-  stg init &&
   (
     cd submodules/foo &&
     touch file1 &&

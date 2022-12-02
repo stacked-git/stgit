@@ -10,10 +10,6 @@ test_expect_success 'Create some git-only history' '
     test_commit_bulk --message="foo%s" --filename=foo.txt --contents="foo%s" 5
 '
 
-test_expect_success 'Initialize the StGit repository' '
-    stg init
-'
-
 test_expect_success 'Create five patches' '
     for i in 0 1 2 3 4; do
         stg new p$i -m p$i;

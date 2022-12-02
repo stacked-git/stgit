@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset, patchrange,
     revspec::Error as RevError,
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -105,7 +105,7 @@ fn make() -> clap::Command {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let config = repo.config()?;
 
     let stat_flag = matches.get_flag("stat");

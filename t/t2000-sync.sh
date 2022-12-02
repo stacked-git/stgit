@@ -8,12 +8,6 @@ test_description='Test the sync command.'
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGit repository' \
-    '
-    stg init
-    '
-
-test_expect_success \
     'Create some patches' \
     '
     stg new p1 -m p1 &&

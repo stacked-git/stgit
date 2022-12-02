@@ -4,8 +4,13 @@ test_description='Run "stg refresh"'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt refresh on uninitialized stack' '
+    command_error stg refresh 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
+'
+
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     echo expected*.txt >> .git/info/exclude &&
     echo patches.txt >> .git/info/exclude &&
     echo show.txt >> .git/info/exclude &&

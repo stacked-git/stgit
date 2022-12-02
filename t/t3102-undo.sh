@@ -10,7 +10,6 @@ cat >> .git/info/exclude <<EOF
 EOF
 
 test_expect_success 'Initialize StGit stack with three patches' '
-    stg init &&
     echo 000 >> a &&
     stg add a &&
     git commit -m a &&

@@ -18,7 +18,7 @@ use crate::{
     commit::CommitExtended,
     patchrange,
     signature::TimeExtended,
-    stack::{Error, Stack, StackAccess, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -122,7 +122,7 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
     let config = repo.config()?;
 

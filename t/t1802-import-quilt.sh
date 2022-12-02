@@ -52,14 +52,11 @@ test_expect_success QUILT \
 test_expect_success QUILT \
     'Prepare test environment' \
     '# Initialize git tree
-     mkdir s
-     echo 0 > t
-     echo 0 > s/u
-     git add t s/u
+     mkdir s &&
+     echo 0 > t &&
+     echo 0 > s/u &&
+     git add t s/u &&
      git commit -a -m initial
-
-     # Initialize patch stacking tool
-     stg init
     '
 
 test_expect_success QUILT \

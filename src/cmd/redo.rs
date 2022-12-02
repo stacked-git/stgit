@@ -6,7 +6,10 @@ use anyhow::Result;
 use clap::Arg;
 
 use super::undo::find_undo_state;
-use crate::{color::get_color_stdout, stack::Stack};
+use crate::{
+    color::get_color_stdout,
+    stack::{InitializationPolicy, Stack},
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "redo",
@@ -53,7 +56,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let redo_steps = matches.get_one::<isize>("number").copied().unwrap_or(1);
 
     stack

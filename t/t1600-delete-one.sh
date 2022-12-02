@@ -1,11 +1,16 @@
 #!/bin/sh
 # Copyright (c) 2006 Karl Hasselström
+
 test_description='Test the delete command (deleting one patch at a time).'
+
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGit repository' \
-    'stg init'
+    'Delete on uninitialized stack' \
+    '
+    stg delete .. >out &&
+    test_must_be_empty out
+    '
 
 test_expect_success \
     'Create a patch' \

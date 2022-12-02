@@ -11,7 +11,7 @@ use crate::{
     patchname::PatchName,
     patchrange,
     repo::RepositoryExtended,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -65,7 +65,7 @@ fn make() -> clap::Command {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let spill_flag = matches.get_flag("spill");
 
     let patches: Vec<PatchName> = if matches.get_flag("top") {
@@ -104,6 +104,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     //       this handled here?
     // repo.check_index_clean()?;
     // repo.check_worktree_clean()?;
+
+    if patches.is_empty() {
+        return Ok(());
+    }
 
     stack
         .setup_transaction()

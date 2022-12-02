@@ -6,8 +6,7 @@ test_expect_success 'Initialize empty repo' '
     git config stgit.sender "A U Thor <author@example.com>" &&
     touch glass.txt &&
     git add glass.txt &&
-    git commit -m "Add glass.txt" &&
-    stg init
+    git commit -m "Add glass.txt"
 '
 
 test_expect_success 'Add utf-8 encoded text' '

@@ -2,10 +2,6 @@
 test_description='Test "stg delete --spill"'
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGit repository' '
-    stg init
-'
-
 test_expect_success 'Create five applied and three unapplied patches' '
     for i in 0 1 2 3 4 5 6 7; do
         echo $i >> foo &&

@@ -11,7 +11,6 @@ cat >> .git/info/exclude <<EOF
 EOF
 
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     echo 000 >> a &&
     stg add a &&
     git commit -m p0 &&

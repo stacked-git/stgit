@@ -5,7 +5,6 @@ test_description='Run "stg goto" in a subdirectory'
 . ./test-lib.sh
 
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     echo expected1.txt >> .git/info/exclude &&
     echo expected2.txt >> .git/info/exclude &&
     echo actual.txt >> .git/info/exclude &&

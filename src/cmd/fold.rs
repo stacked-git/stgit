@@ -9,7 +9,7 @@ use clap::{Arg, ArgGroup};
 
 use crate::{
     revspec::parse_stgit_revision,
-    stack::{Error, Stack, StackAccess, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -78,7 +78,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     let statuses = stupid.statuses(None)?;

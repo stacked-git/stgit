@@ -13,7 +13,7 @@ use crate::{
     commit::CommitExtended,
     patchname::PatchName,
     patchrange,
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
 };
 
 const UNPRINTABLE: &str = "???";
@@ -211,13 +211,25 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let opt_missing = argset::get_one_str(matches, "missing");
-    let (stack, cmp_stack) = if let Some(ref_branch) = opt_missing {
+
+    let (stack, ref_stack) = if let Some(ref_branch) = opt_missing {
         (
-            Stack::from_branch(&repo, Some(ref_branch))?,
-            Some(Stack::from_branch(&repo, opt_branch)?),
+            Stack::from_branch(
+                &repo,
+                Some(ref_branch),
+                InitializationPolicy::AllowUninitialized,
+            )?,
+            Some(Stack::from_branch(
+                &repo,
+                opt_branch,
+                InitializationPolicy::RequireInitialized,
+            )?),
         )
     } else {
-        (Stack::from_branch(&repo, opt_branch)?, None)
+        (
+            Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?,
+            None,
+        )
     };
 
     let all_flag = matches.get_flag("all");
@@ -277,11 +289,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    if let Some(cmp_stack) = cmp_stack {
+    if let Some(ref_stack) = ref_stack {
         patches.retain(|(patchname, _, _)| {
-            cmp_stack
+            ref_stack
                 .all_patches()
-                .all(|cmp_patchname| patchname != cmp_patchname)
+                .all(|ref_patchname| patchname != ref_patchname)
         });
     }
 

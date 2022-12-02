@@ -4,9 +4,14 @@ test_description='Test stg patches'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt patches on uninitialized branch' '
+    command_error stg patches 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
+'
+
 test_expect_success 'Create some patches' '
     echo "*.log" >> .git/info/exclude &&
-    stg init &&
     mkdir -p dir0/dir1 &&
     touch even.txt &&
     touch dir0/dir1/odd.txt &&

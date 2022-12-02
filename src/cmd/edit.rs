@@ -10,7 +10,7 @@ use crate::{
     patchedit,
     patchname::PatchName,
     patchrange,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -67,7 +67,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patch") {

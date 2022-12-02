@@ -10,7 +10,7 @@ use crate::{
     commit::CommitExtended,
     patchname::PatchName,
     repo::RepositoryExtended,
-    stack::{Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -47,7 +47,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     stack.check_head_top_mismatch()?;
     repo.check_repository_state()?;
 
@@ -85,17 +85,19 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
 
-    stack
-        .setup_transaction()
-        .allow_conflicts(true)
-        .use_index_and_worktree(false)
-        .with_output_stream(get_color_stdout(matches))
-        .transact(|trans| {
-            let to_push = trans.delete_patches(|pn| to_delete.contains(pn))?;
-            trans.push_patches(&to_push, false)?;
-            Ok(())
-        })
-        .execute("delete")?;
+    if !to_delete.is_empty() {
+        stack
+            .setup_transaction()
+            .allow_conflicts(true)
+            .use_index_and_worktree(false)
+            .with_output_stream(get_color_stdout(matches))
+            .transact(|trans| {
+                let to_push = trans.delete_patches(|pn| to_delete.contains(pn))?;
+                trans.push_patches(&to_push, false)?;
+                Ok(())
+            })
+            .execute("delete")?;
+    }
 
     Ok(())
 }

@@ -8,11 +8,6 @@ test_description='Test "stg new".'
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGit repository' '
-    stg init
-'
-
-test_expect_success \
     'Too many arguments' '
     general_error stg new foo extra_arg 2>err &&
     grep -e "error: Found argument .extra_arg. which wasn.t expected" err

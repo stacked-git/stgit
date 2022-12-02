@@ -4,8 +4,12 @@ test_description='Run "stg clean"'
 
 . ./test-lib.sh
 
+test_expect_success 'Clean uninitialized branch' '
+    stg clean >out &&
+    test_must_be_empty out
+'
+
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     stg new e0 -m e0 &&
     stg new p0 -m p0 &&
     echo foo > foo.txt &&

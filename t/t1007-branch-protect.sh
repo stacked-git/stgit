@@ -5,7 +5,6 @@ test_description='Test branch protection'
 . ./test-lib.sh
 
 test_expect_success 'Initialize branch' '
-    stg init &&
     stg branch --create foo &&
     echo "hello" > bar &&
     stg add bar &&

@@ -3,15 +3,18 @@
 # Copyright (c) 2006 Robin Rosenberg
 #
 
-test_description='Test floating a number of patches to the top of the stack
-
-'
+test_description='Test floating a number of patches to the top of the stack'
 
 . ./test-lib.sh
 
+test_expect_success 'Attempt float on uninitialized stack' '
+    command_error stg float foo 2>err &&
+    grep "error: Patch \`foo\` does not exist" err &&
+    rm err
+'
+
 test_expect_success 'Initialize the StGit repository' '
     test_commit_bulk --message="p%s" 7 &&
-    stg init &&
     stg uncommit -n 7 &&
     stg pop &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4 p5 p6" &&

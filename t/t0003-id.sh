@@ -11,7 +11,6 @@ test_expect_success 'Init repo' '
     echo "foo" > foo.txt &&
     git add foo.txt &&
     git commit -m "initial" &&
-    stg init &&
     for i in 1 2; do
       echo "line $i" >> foo.txt &&
       stg new -m "patch-$i" &&

@@ -6,7 +6,6 @@
 test_description='Test that StGit can handle packed refs'
 
 . ./test-lib.sh
-stg init
 
 test_expect_success \
     'Pack refs and make sure that we can still see them' '

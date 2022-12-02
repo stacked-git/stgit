@@ -13,14 +13,11 @@ Tests some parts of the stg rename command.'
 
 test_expect_success 'Attempt rename without stack' '
     command_error stg rename foo 2>err &&
-    grep -e "StGit stack not initialized for branch \`master\`" err
-'
-
-test_expect_success 'Initialize stack' '
-    stg init
+    grep -e "error: No patches applied" err
 '
 
 test_expect_success 'Rename in empty' '
+   stg init &&
    command_error stg rename foo 2>err &&
    grep -e "No patches applied" err
 '

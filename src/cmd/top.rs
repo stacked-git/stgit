@@ -9,7 +9,7 @@ use termcolor::WriteColor;
 
 use crate::{
     argset,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -33,8 +33,11 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch)?;
+    let stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     if let Some(patchname) = stack.applied().last() {
         let mut stdout = crate::color::get_color_stdout(matches);

@@ -7,7 +7,6 @@ test_description='Exercise pushing with the --noapply option'
 test_expect_success 'Setup patches' '
     test_commit_bulk --message="a%s" --filename=a.txt --contents="line %s" 3 &&
     test_commit_bulk --message="b%s" --filename=b.txt --contents="line %s" 3 &&
-    stg init &&
     stg uncommit -n 6 &&
     stg pop -a &&
     test "$(echo $(stg series --unapplied --noprefix))" = "a1 a2 a3 b1 b2 b3"

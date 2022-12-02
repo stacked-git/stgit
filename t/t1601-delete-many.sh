@@ -4,10 +4,6 @@ test_description='Test the delete command (deleting many patches at once).'
 . ./test-lib.sh
 
 test_expect_success \
-    'Initialize the StGit repository' \
-    'stg init'
-
-test_expect_success \
     'Create five applied and five unapplied patches' \
     '
     stg new p0 -m p0 &&

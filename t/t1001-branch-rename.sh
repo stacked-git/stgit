@@ -29,8 +29,6 @@ _assert_current_branch_name() {
 
 test_expect_success \
     'Create an stgit branch from scratch' '
-    stg init &&
-
     echo expected*.txt >> .git/info/exclude &&
     echo patches.txt >> .git/info/exclude &&
     echo ids.txt >> .git/info/exclude &&

@@ -9,7 +9,7 @@ use crate::{
     color::get_color_stdout,
     patchname::PatchName,
     patchrange,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -75,7 +75,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
 
     let range_specs = matches.get_many::<patchrange::Specification>("patchranges");
     let patches: Vec<PatchName> = if let Some(range_specs) = range_specs {

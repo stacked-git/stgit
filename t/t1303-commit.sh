@@ -2,8 +2,12 @@
 test_description='Test stg commit'
 . ./test-lib.sh
 
+test_expect_success 'Attempt commit on uninitialized branch' '
+    command_error stg commit --all 2>err &&
+    grep "error: No patches applied" err
+'
+
 test_expect_success 'Initialize the StGit repository' '
-    stg init &&
     stg new -m p1 &&
     stg new -m p2 &&
     stg new -m p3 &&

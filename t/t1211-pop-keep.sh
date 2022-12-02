@@ -1,8 +1,8 @@
 #!/bin/sh
 
 test_description='Test "stg pop --keep"'
+
 . ./test-lib.sh
-stg init
 
 test_expect_success 'Create a few patches' '
     for i in 0 1 2; do

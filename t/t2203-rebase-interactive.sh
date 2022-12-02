@@ -6,7 +6,6 @@ test_description='test rebase --interactive'
 
 
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     stg new p0 -m p0 &&
     stg new p1 -m p1 &&
     stg new p2 -m p2 &&

@@ -12,7 +12,6 @@ status*.txt
 EOF
 
 test_expect_success 'Initialize StGit stack' '
-    stg init &&
     echo x > x.txt &&
     echo y > y.txt &&
     stg add x.txt y.txt &&

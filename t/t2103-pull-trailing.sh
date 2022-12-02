@@ -24,7 +24,6 @@ test_expect_success 'Setup and clone tree, and setup changes' '
     git clone foo bar &&
     (
         cd bar &&
-        stg init &&
         stg new p1 -m p1 &&
         echo c >> file &&
         stg refresh

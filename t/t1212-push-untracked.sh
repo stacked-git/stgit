@@ -4,10 +4,6 @@ test_description='Test push conflicting with untracked files'
 
 . ./test-lib.sh
 
-test_expect_success 'Initialize the StGit repository' '
-    stg init
-'
-
 test_expect_success 'Use pop --spill' '
     echo aaa > a.txt &&
     echo bbb > b.txt &&

@@ -24,44 +24,28 @@ pub(crate) struct Stack<'repo> {
     stack_refname: String,
     base: git2::Commit<'repo>,
     state: StackState<'repo>,
+    is_initialized: bool,
+}
+
+/// Policy for stack initialization when opening/discovering a stack for a branch.
+pub(crate) enum InitializationPolicy {
+    /// The stack will be initialized if it is not yet initialized.
+    AutoInitialize,
+
+    /// The stack must be initialized and thus must *not* already be initialized.
+    MustInitialize,
+
+    /// The stack must already be initialized.
+    RequireInitialized,
+
+    /// An uninitialized stack is allowed in which case an empty [`Stack`] will be
+    /// provided.
+    ///
+    /// Stack transactions are prohibited on such [`Stack`] instances.
+    AllowUninitialized,
 }
 
 impl<'repo> Stack<'repo> {
-    /// Initialize a new StGit stack on an existing Git branch.
-    ///
-    /// The branch name is optional and defaults to the current branch.
-    pub(crate) fn initialize(
-        repo: &'repo git2::Repository,
-        branch_name: Option<&str>,
-    ) -> Result<Self> {
-        let branch = repo.get_branch(branch_name)?;
-        let branch_name = get_branch_name(&branch)?;
-        let branch_head = branch.get().peel_to_commit()?;
-        let base = branch_head.clone();
-        let stack_refname = state_refname_from_branch_name(&branch_name);
-
-        stack_upgrade(repo, &branch_name)?;
-
-        if repo.find_reference(&stack_refname).is_ok() {
-            return Err(anyhow!(
-                "StGit stack already initialized for branch `{branch_name}`"
-            ));
-        }
-        let state = StackState::new(branch_head.clone());
-        state.commit(repo, Some(&stack_refname), "initialize")?;
-        ensure_patch_refs(repo, &branch_name, &state)?;
-
-        Ok(Self {
-            repo,
-            branch_name,
-            branch,
-            branch_head,
-            stack_refname,
-            base,
-            state,
-        })
-    }
-
     /// Remove StGit stack state from the repository.
     ///
     /// This removes the reference to the stack state, i.e. `refs/stacks/<name>`, and
@@ -101,24 +85,54 @@ impl<'repo> Stack<'repo> {
     pub(crate) fn from_branch(
         repo: &'repo git2::Repository,
         branch_name: Option<&str>,
+        init_policy: InitializationPolicy,
     ) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
         let branch_name = get_branch_name(&branch)?;
         let branch_head = branch.get().peel_to_commit()?;
+        let stack_refname = state_refname_from_branch_name(&branch_name);
+        let is_initialized;
 
         stack_upgrade(repo, &branch_name)?;
 
-        let stack_refname = state_refname_from_branch_name(&branch_name);
-        let state_ref = repo
-            .find_reference(&stack_refname)
-            .map_err(|_| anyhow!("StGit stack not initialized for branch `{branch_name}`"))?;
-        let stack_tree = state_ref.peel_to_tree()?;
-        let state = StackState::from_tree(repo, &stack_tree)?;
-        let base = if let Some(first_patchname) = state.applied.first() {
-            state.patches[first_patchname].commit.parent(0)?
+        let (state, base) = if let Ok(state_ref) = repo.find_reference(&stack_refname) {
+            if matches!(init_policy, InitializationPolicy::MustInitialize) {
+                return Err(anyhow!(
+                    "StGit stack already initialized for branch `{branch_name}`"
+                ));
+            }
+            is_initialized = true;
+            let stack_tree = state_ref.peel_to_tree()?;
+            let state = StackState::from_tree(repo, &stack_tree)?;
+            let base = if let Some(first_patchname) = state.applied.first() {
+                state.patches[first_patchname].commit.parent(0)?
+            } else {
+                branch_head.clone()
+            };
+            (state, base)
+        } else if matches!(init_policy, InitializationPolicy::RequireInitialized) {
+            return Err(anyhow!(
+                "StGit stack not initialized for branch `{branch_name}`"
+            ));
         } else {
-            branch_head.clone()
+            let state = StackState::new(branch_head.clone());
+            let base = branch_head.clone();
+            if matches!(
+                init_policy,
+                InitializationPolicy::AutoInitialize | InitializationPolicy::MustInitialize
+            ) {
+                state.commit(repo, Some(&stack_refname), "initialize")?;
+                is_initialized = true;
+            } else {
+                debug_assert!(matches!(
+                    init_policy,
+                    InitializationPolicy::AllowUninitialized
+                ));
+                is_initialized = false;
+            }
+            (state, base)
         };
+
         ensure_patch_refs(repo, &branch_name, &state)?;
         Ok(Self {
             repo,
@@ -128,6 +142,7 @@ impl<'repo> Stack<'repo> {
             stack_refname,
             base,
             state,
+            is_initialized,
         })
     }
 
@@ -179,6 +194,10 @@ impl<'repo> Stack<'repo> {
 
     /// Re-commit stack state with updated branch head.
     pub(crate) fn log_external_mods(self, message: Option<&str>) -> Result<Self> {
+        assert!(
+            self.is_initialized,
+            "Attempt to log stack state when uninitialized"
+        );
         let state_ref = self.repo.find_reference(&self.stack_refname)?;
         let prev_state_commit = state_ref.peel_to_commit()?;
         let prev_state_commit_id = prev_state_commit.id();
@@ -207,6 +226,10 @@ impl<'repo> Stack<'repo> {
 
     /// Start a transaction to modify the stack.
     pub(crate) fn setup_transaction(self) -> TransactionBuilder<'repo> {
+        assert!(
+            self.is_initialized,
+            "Attempt transaction with uninitialized stack state"
+        );
         TransactionBuilder::new(self)
     }
 

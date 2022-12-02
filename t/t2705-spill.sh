@@ -6,12 +6,17 @@ test_description='Test "stg spill"'
 . ./test-lib.sh
 
 test_expect_success 'Initialize the StGit repository' '
-    stg init &&
     echo "expected-*.txt" >> .git/info/exclude &&
     echo files.txt        >> .git/info/exclude &&
     echo patches.txt      >> .git/info/exclude &&
     echo status.txt       >> .git/info/exclude &&
     echo message.txt      >> .git/info/exclude
+'
+
+test_expect_success 'Attempt spill on uninitialized stack' '
+    command_error stg spill 2>err &&
+    grep "error: No patches applied" err &&
+    rm err
 '
 
 test_expect_success 'Create a patch' '

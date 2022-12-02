@@ -5,7 +5,6 @@ test_description='Test "stg edit" command line arguments'
 
 test_expect_success 'Initialize repo' '
     test_commit_bulk --message="p%s" 3 &&
-    stg init &&
     stg uncommit -n 3 &&
     stg pop -a
 '

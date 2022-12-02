@@ -7,7 +7,6 @@ msg () { git cat-file -p $1 | sed '1,/^$/d' | tr '\n' / | sed 's,/*$,,' ; }
 
 test_expect_success 'Initialize repo' '
     test_commit_bulk --message="p%s" 6 &&
-    stg init &&
     stg uncommit -n 6
 '
 

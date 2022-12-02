@@ -4,8 +4,6 @@ test_description='commit-msg hook'
 
 . ./test-lib.sh
 
-stg init
-
 commit_msg_is () {
     test "$(git log --pretty=format:%s%b -1)" = "$1"
 }

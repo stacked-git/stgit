@@ -4,6 +4,11 @@ test_description='Test stg show'
 
 . ./test-lib.sh
 
+test_expect_success 'Show on uninitialized stack' '
+    stg show >out &&
+    grep "empty start" out
+'
+
 test_expect_success 'Create some patches' '
     stg init &&
     for x in aaa bbb ccc ddd; do

@@ -4,16 +4,8 @@ test_description='Test the pick command'
 . ./test-lib.sh
 
 test_expect_success \
-	'Attempt pick with uninitialized stack' \
-	'
-	command_error stg pick foo 2>err &&
-	grep "StGit stack not initialized for branch \`master\`" err
-	'
-
-test_expect_success \
 	'Initialize the StGit repository' \
 	'
-	stg init &&
 	stg new A -m "a" &&
 	echo A > a &&
 	stg add a &&
@@ -270,6 +262,14 @@ test_expect_success \
 	conflict stg pick --update foo:AAA 2>err &&
 	grep "\`AAA\` does not apply cleanly" err &&
 	stg reset --hard
+	'
+
+test_expect_success \
+	'Attempt pick with auto-initialized stack' \
+	'
+	git checkout -b bar &&
+	stg pick -B master A &&
+	test "$(echo $(stg series -A --noprefix))" = "A"
 	'
 
 test_done

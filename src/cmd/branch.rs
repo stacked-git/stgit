@@ -14,7 +14,8 @@ use crate::{
     print_info_message,
     repo::RepositoryExtended,
     stack::{
-        get_branch_name, state_refname_from_branch_name, Stack, StackAccess, StackStateAccess,
+        get_branch_name, state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess,
+        StackStateAccess,
     },
     stupid::Stupid,
 };
@@ -356,7 +357,11 @@ fn list(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
             write!(stdout, "  ")?;
         };
 
-        if let Ok(stack) = Stack::from_branch(repo, Some(branchname)) {
+        if let Ok(stack) = Stack::from_branch(
+            repo,
+            Some(branchname),
+            InitializationPolicy::RequireInitialized,
+        ) {
             color_spec.set_fg(Some(termcolor::Color::Cyan));
             stdout.set_color(&color_spec)?;
             write!(stdout, "s")?;
@@ -456,7 +461,11 @@ fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let mut config = repo.config()?;
     let mut new_branch = repo.branch(new_branchname, &target_commit, false)?;
-    let stack = match Stack::initialize(repo, Some(new_branchname)) {
+    let stack = match Stack::from_branch(
+        repo,
+        Some(new_branchname),
+        InitializationPolicy::MustInitialize,
+    ) {
         Ok(stack) => stack,
         Err(e) => {
             new_branch.delete()?;
@@ -512,7 +521,7 @@ fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     repo.check_repository_state()?;
     statuses.check_conflicts()?;
 
-    if let Ok(stack) = Stack::from_branch(repo, None) {
+    if let Ok(stack) = Stack::from_branch(repo, None, InitializationPolicy::RequireInitialized) {
         stack.check_head_top_mismatch()?;
         let state_ref = repo
             .find_reference(stack.get_stack_refname())
@@ -527,7 +536,11 @@ fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         stupid.branch_copy(None, &new_branchname)?;
     } else {
         stupid.branch_copy(None, &new_branchname)?;
-        Stack::initialize(repo, Some(&new_branchname))?;
+        Stack::from_branch(
+            repo,
+            Some(&new_branchname),
+            InitializationPolicy::MustInitialize,
+        )?;
     };
 
     let mut config = repo.config()?;
@@ -564,7 +577,11 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     let mut config = repo.config()?;
     let parent_branchname = get_stgit_parent(&config, old_branchname);
 
-    if let Ok(stack) = Stack::from_branch(repo, Some(old_branchname)) {
+    if let Ok(stack) = Stack::from_branch(
+        repo,
+        Some(old_branchname),
+        InitializationPolicy::RequireInitialized,
+    ) {
         let state_commit = repo
             .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference")
@@ -591,13 +608,21 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn protect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
+    let stack = Stack::from_branch(
+        repo,
+        get_one_str(matches, "branch"),
+        InitializationPolicy::RequireInitialized,
+    )?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, true)
 }
 
 fn unprotect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
+    let stack = Stack::from_branch(
+        repo,
+        get_one_str(matches, "branch"),
+        InitializationPolicy::RequireInitialized,
+    )?;
     let mut config = repo.config()?;
     stack.set_protected(&mut config, false)
 }
@@ -613,7 +638,11 @@ fn delete(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let config = repo.config()?;
 
-    if let Ok(stack) = Stack::from_branch(repo, Some(target_branchname)) {
+    if let Ok(stack) = Stack::from_branch(
+        repo,
+        Some(target_branchname),
+        InitializationPolicy::RequireInitialized,
+    ) {
         if stack.is_protected(&config) {
             return Err(anyhow!("Delete not permitted: this branch is protected"));
         } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
@@ -629,7 +658,11 @@ fn delete(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 }
 
 fn cleanup(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(repo, get_one_str(matches, "branch"))?;
+    let stack = Stack::from_branch(
+        repo,
+        get_one_str(matches, "branch"),
+        InitializationPolicy::RequireInitialized,
+    )?;
     let config = repo.config()?;
     if stack.is_protected(&config) {
         return Err(anyhow!("Clean up not permitted: this branch is protected"));

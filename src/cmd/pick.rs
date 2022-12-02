@@ -18,7 +18,7 @@ use crate::{
     patchrange,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
     signature::SignatureExtended,
-    stack::{Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -136,9 +136,13 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, None)?;
+    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let ref_branchname = crate::argset::get_one_str(matches, "ref-branch");
-    let ref_stack = Stack::from_branch(&repo, ref_branchname)?;
+    let ref_stack = Stack::from_branch(
+        &repo,
+        ref_branchname,
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     if matches.get_flag("update") && stack.applied().is_empty() {
         return Err(crate::stack::Error::NoAppliedPatches.into());
@@ -189,7 +193,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let (branchname, spec_str) = parse_branch_and_spec(None, Some(source));
             if let Some(branchname) = branchname {
                 if let Some(spec_str) = spec_str {
-                    let ref_stack = Stack::from_branch(&repo, Some(branchname))?;
+                    let ref_stack = Stack::from_branch(
+                        &repo,
+                        Some(branchname),
+                        InitializationPolicy::AllowUninitialized,
+                    )?;
                     let spec = patchrange::Specification::from_str(spec_str)?;
                     let patchnames = patchrange::patches_from_specs(
                         [spec].iter(),

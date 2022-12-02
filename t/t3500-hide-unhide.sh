@@ -4,8 +4,11 @@ test_description='Test "stg hide" and "stg unhide"'
 
 . ./test-lib.sh
 
-test_expect_success 'Initialize stgit' '
-    stg init
+test_expect_success 'Attempt hide on uninitialized stack' '
+    command_error stg hide foo 2>err &&
+    grep "error: Patch \`foo\` does not exist" err &&
+    command_error stg unhide foo 2>err &&
+    grep "error: Patch \`foo\` does not exist" err
 '
 
 test_expect_success 'Attempt too few arguments' '

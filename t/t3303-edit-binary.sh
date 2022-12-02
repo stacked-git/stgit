@@ -5,7 +5,6 @@ test_description='Test "stg edit" with binary files'
 
 test_expect_success 'Initialize repo' '
     test_commit_bulk --message="p%s" 3 &&
-    stg init &&
     stg uncommit -n 3 &&
     printf "\000\001\002" > foo.bin &&
     cp foo.bin foo.bin.orig &&

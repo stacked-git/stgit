@@ -6,7 +6,6 @@ test_description='Run "stg squash"'
 
 test_expect_success 'Initialize StGit stack' '
     test_commit_bulk --start=0 --filename=foo.txt --contents="foo %s" --message="p%s" 6 &&
-    stg init &&
     stg uncommit -n 6 &&
     for i in 0 1 2 3 4 5; do
         git notes add -m "note$i" $(stg id p$i)

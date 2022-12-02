@@ -9,7 +9,7 @@ use crate::{
     argset,
     commit::CommitExtended,
     patchrange,
-    stack::{Error, Stack, StackStateAccess},
+    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -440,7 +440,11 @@ fn message_options() -> Vec<Arg> {
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
-    let stack = Stack::from_branch(&repo, argset::get_one_str(matches, "branch"))?;
+    let stack = Stack::from_branch(
+        &repo,
+        argset::get_one_str(matches, "branch"),
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     let patches =
         if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {

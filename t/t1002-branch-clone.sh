@@ -19,12 +19,6 @@ test_expect_success \
     '
 
 test_expect_success \
-    'Try to create a patch in a Git branch' \
-    '
-    command_error stg new p0 -m "p0"
-    '
-
-test_expect_success \
     'Clone the current Git branch' \
     '
     stg branch --clone foo &&
