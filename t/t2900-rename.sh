@@ -10,7 +10,15 @@ test_description='stg rename test
 Tests some parts of the stg rename command.'
 
 . ./test-lib.sh
-stg init
+
+test_expect_success 'Attempt rename without stack' '
+    command_error stg rename foo 2>err &&
+    grep -e "StGit stack not initialized for branch \`master\`" err
+'
+
+test_expect_success 'Initialize stack' '
+    stg init
+'
 
 test_expect_success 'Rename in empty' '
    command_error stg rename foo 2>err &&

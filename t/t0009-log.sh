@@ -6,7 +6,7 @@ test_description='Test the log command.'
 
 test_expect_success 'Attempt log on uninitialized branch' '
     command_error stg log 2>err >/dev/null &&
-    grep -e "Branch \`master\` not initialized" err
+    grep -e "StGit stack not initialized for branch \`master\`" err
 '
 
 test_expect_success 'Initialize the StGit repository' '

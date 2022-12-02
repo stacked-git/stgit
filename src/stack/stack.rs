@@ -109,7 +109,7 @@ impl<'repo> Stack<'repo> {
         let refname = state_refname_from_branch_name(&branch_name);
         let state_ref = repo
             .find_reference(&refname)
-            .map_err(|_| anyhow!("Branch `{branch_name}` not initialized"))?;
+            .map_err(|_| anyhow!("StGit stack not initialized for branch `{branch_name}`"))?;
         let stack_tree = state_ref.peel_to_tree()?;
         let state = StackState::from_tree(repo, &stack_tree)?;
         let base = if let Some(first_patchname) = state.applied.first() {

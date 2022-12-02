@@ -70,12 +70,12 @@ test_expect_success 'Cleanup unprotected' '
 
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --protect 2>err &&
-    grep -E "Branch \`foo\` not initialized" err
+    grep -E "StGit stack not initialized for branch \`foo\`" err
 '
 
 test_expect_success 'Protect uninitialized branch' '
     command_error stg branch --unprotect 2>err &&
-    grep -E "Branch \`foo\` not initialized" err
+    grep -E "StGit stack not initialized for branch \`foo\`" err
 '
 
 test_expect_success 'Delete unprotected' '

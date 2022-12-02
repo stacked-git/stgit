@@ -4,7 +4,8 @@ test_description='Test the repair command.'
 . ./test-lib.sh
 
 test_expect_success 'Repair in a non-initialized repository' '
-    command_error stg repair
+    command_error stg repair 2>err &&
+    grep -e "StGit stack not initialized for branch \`master\`" err
 '
 
 test_expect_success 'Initialize the StGit repository' '

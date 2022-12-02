@@ -6,7 +6,7 @@ test_description='Test stg series'
 
 test_expect_success 'Test uninitialized branch' '
     command_error stg series 2>err &&
-    grep -e "Branch .master. not initialized" err
+    grep -e "StGit stack not initialized for branch \`master\`" err
 '
 
 test_expect_success 'Initialize series' '

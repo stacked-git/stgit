@@ -7,7 +7,7 @@ test_expect_success \
 	'Attempt pick with uninitialized stack' \
 	'
 	command_error stg pick foo 2>err &&
-	grep "Branch \`master\` not initialized" err
+	grep "StGit stack not initialized for branch \`master\`" err
 	'
 
 test_expect_success \
