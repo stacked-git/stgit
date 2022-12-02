@@ -43,7 +43,9 @@ impl<'repo> Stack<'repo> {
         stack_upgrade(repo, &branch_name)?;
 
         if repo.find_reference(&refname).is_ok() {
-            return Err(anyhow!("Branch `{branch_name}` already initialized"));
+            return Err(anyhow!(
+                "StGit stack already initialized for branch `{branch_name}`"
+            ));
         }
         let state = StackState::new(branch_head.clone());
         state.commit(repo, Some(&refname), "initialize")?;
