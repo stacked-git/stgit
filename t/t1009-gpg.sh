@@ -16,6 +16,7 @@ test_expect_success GPG \
 
 test_expect_success GPG \
     'Stack metadata signing disabled' '
+    git config commit.gpgsign true &&
     git config stgit.gpgsign false &&
     stg new -m p0 &&
     test_must_fail git verify-commit refs/stacks/master &&

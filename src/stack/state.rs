@@ -213,10 +213,7 @@ impl<'repo> StackState<'repo> {
 
         let commit_opts = CommitOptions {
             commit_encoding: None,
-            gpgsign: config
-                .get_bool("stgit.gpgsign")
-                .or_else(|_| config.get_bool("commit.gpgsign"))
-                .unwrap_or(false),
+            gpgsign: config.get_bool("stgit.gpgsign").unwrap_or(false),
         };
 
         let simplified_parent_id = repo.commit_with_options(

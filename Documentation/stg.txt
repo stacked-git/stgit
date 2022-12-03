@@ -247,12 +247,10 @@ stgit.fetchcmd::
   default command is `git fetch`.
 
 stgit.gpgsign::
-  A boolean to specify whether StGit stack metadata commits should be GPG signed. When
-  not set, the value of 'commit.gpgsign' is used. If neither 'stgit.gpgsign' or
-  'commit.gpgsign' are set, then stack metadata commits will not be signed.
+  A boolean to specify whether StGit stack metadata commits should be GPG signed.
 +
-N.B. Set 'commit.gpgsign' to determine whether patches themselves are GPG signed. See
-linkgit:git-config[1] for more information about 'commit.gpgsign'.
+N.B. Set 'commit.gpgsign' to determine whether patch commits themselves are GPG signed.
+See linkgit:git-config[1] for more information about 'commit.gpgsign'.
 
 stgit.import.message-id::
   When set to 'true', create 'Message-Id:' trailer in the patch description of patches
