@@ -66,6 +66,14 @@ impl<'repo> TransactionBuilder<'repo> {
         self
     }
 
+    /// Allow pushing of a patch that results in conflicts. Will use the value of
+    /// "stgit.push.allow-conflicts" if not set explicitly.
+    #[must_use]
+    pub(crate) fn allow_push_conflicts(mut self, allow: bool) -> Self {
+        self.options.allow_push_conflicts = Some(allow);
+        self
+    }
+
     /// Discard any modifications to files in the working tree when the transaction
     /// executes. By default, the transaction will not execute if there are any
     /// modified files in the working tree.

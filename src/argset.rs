@@ -34,6 +34,35 @@ pub(crate) fn merged_arg() -> Arg {
         .action(clap::ArgAction::SetTrue)
 }
 
+/// The --conflicts option determining how push-time conflicts are handled.
+pub(crate) fn push_conflicts_arg() -> clap::Arg {
+    clap::Arg::new("conflicts")
+        .long("conflicts")
+        .help("\"allow\" or \"disallow\" pushing a patch with conflicts")
+        .long_help(
+            "Either \"allow\" or \"disallow\" pushing a patch with conflicts.\n\
+             \n\
+             Using `--conflicts=allow` (or just `--conflicts`) allows pushing a patch \
+             that may result in unresolved merge conflicts. The patch will be pushed \
+             and files with conflicts will be left with conflict markers to be \
+             resolved manually; or the operation undone with `stg undo --hard`. This \
+             is the default behavior and also corresponds to the \
+             \"stgit.push.allow-conflicts\" variable being set to \"true\".\n\
+             \n\
+             Using `--conflicts=disallow` disallows pushing any patch that would \
+             result in merge conflicts. The operation will stop on the last patch that \
+             can be pushed without conflicts. This behavior can be configured by \
+             setting \"stgit.push.allow-conflicts\" to \"false\".",
+        )
+        .hide_possible_values(true)
+        .value_name("policy")
+        .value_parser(["allow", "disallow"])
+        .num_args(0..=1)
+        .require_equals(true)
+        .default_missing_value("allow")
+        .action(clap::ArgAction::Set)
+}
+
 /// The `--diff-opt`/`-O` option for pass-through to subordinate `git` processes.
 pub(crate) fn diff_opts_arg() -> Arg {
     Arg::new("git-diff-opt")
@@ -120,4 +149,17 @@ pub(crate) fn get_diff_opts(
     }
 
     opts
+}
+
+pub(crate) fn resolve_allow_push_conflicts(
+    config: &git2::Config,
+    matches: &clap::ArgMatches,
+) -> bool {
+    get_one_str(matches, "conflicts")
+        .map(|s| s == "allow")
+        .unwrap_or_else(|| {
+            config
+                .get_bool("stgit.push.allow-conflicts")
+                .unwrap_or(true)
+        })
 }

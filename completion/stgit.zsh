@@ -407,6 +407,7 @@ _stg-delete() {
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_branch
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         '--spill[spill patch contents to worktree and index]'
         - group-top
@@ -663,6 +664,7 @@ _stg-goto() {
     __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         ':patches:__stg_patch --all'
     )
@@ -844,6 +846,7 @@ _stg-pull() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_merged
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after rebasing]'
         ':repository:__stg_remotes'
@@ -857,6 +860,7 @@ _stg-push() {
     __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         '--reverse[push patches in reverse order]'
         '--noapply[push without applying]'
@@ -875,6 +879,7 @@ _stg-rebase() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_merged
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after rebasing]'
         '(-i --interactive)'{-i,--interactive}'[interactively manipulate patches in editor]'
@@ -903,6 +908,7 @@ _stg-refresh() {
     __stg_add_args_hook
     __stg_add_args_trailers
     __stg_add_args_diffopt
+    __stg_add_args_push_conflicts
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate=}'[annotate patch log entry]:note'
         '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
@@ -1182,6 +1188,14 @@ __stg_add_args_keep() {
 __stg_add_args_merged() {
     subcmd_args+=(
         '(-m --merged)'{-m,--merged}'[check for patches merged upstream]'
+    )
+}
+
+__stg_add_args_push_conflicts() {
+    subcmd_args+=(
+        '--conflicts=-[allow pushing patches that may result in merge conflicts]:policy:((
+            allow\:"allow pushing patches with conflicts"
+            disallow\:"disallow pushing patches with conflicts"))'
     )
 }
 

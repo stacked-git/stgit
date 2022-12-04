@@ -984,6 +984,19 @@ impl<'repo> StackTransaction<'repo> {
                     conflicts: false,
                 }
                 .into());
+            } else if !self.options.allow_push_conflicts.unwrap_or_else(|| {
+                config
+                    .get_bool("stgit.push.allow-conflicts")
+                    .unwrap_or(true)
+            }) {
+                return Err(Error::TransactionHalt {
+                    msg: format!(
+                        "Pushing patch `{patchname}` would result in conflicts \
+                         and push conflicts are disallowed"
+                    ),
+                    conflicts: false,
+                }
+                .into());
             } else {
                 if stupid
                     .read_tree_checkout(self.current_tree_id, ours)

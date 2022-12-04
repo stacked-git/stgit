@@ -8,6 +8,7 @@ use anyhow::{anyhow, Context, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     print_info_message,
     revspec::parse_stgit_revision,
@@ -50,7 +51,7 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
-        .arg(crate::argset::merged_arg().long_help(
+        .arg(argset::merged_arg().long_help(
             "Check for patches that may have been merged upstream.\n\
              \n\
              When pushing-back patches, each patch is checked to see if its changes \
@@ -58,6 +59,7 @@ fn make() -> clap::Command {
              have already been merged upstream, the patch will still exist in the \
              stack, but become empty after the pull operation.",
         ))
+        .arg(argset::push_conflicts_arg())
 }
 
 enum PullPolicy {
@@ -101,6 +103,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .or_else(|_| config.get_string("stgit.pull-policy"))
             .unwrap_or_else(|_| "pull".to_string()),
     )?;
+
+    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
     let parent_remote;
     let remote_name = match policy {
@@ -225,6 +229,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
+            .allow_push_conflicts(allow_push_conflicts)
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| trans.push_patches(&applied, check_merged))
             .execute("pull (reapply)")?;

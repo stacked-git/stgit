@@ -110,14 +110,17 @@ fn make() -> clap::Command {
         )
         .arg(argset::keep_arg())
         .arg(argset::merged_arg())
+        .arg(argset::push_conflicts_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
+    let config = repo.config()?;
 
     let opt_number = matches.get_one::<isize>("number").copied();
+    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
     if Some(0) == opt_number {
         return Ok(());
@@ -189,6 +192,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .allow_push_conflicts(allow_push_conflicts)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if settree_flag {

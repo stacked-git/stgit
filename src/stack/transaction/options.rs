@@ -3,6 +3,7 @@
 /// Options for fine-tuning stack transaction behaviors.
 pub(super) struct TransactionOptions {
     pub(super) conflict_mode: ConflictMode,
+    pub(super) allow_push_conflicts: Option<bool>,
     pub(super) discard_changes: bool,
     pub(super) use_index_and_worktree: bool,
     pub(super) set_head: bool,
@@ -13,6 +14,7 @@ impl Default for TransactionOptions {
     fn default() -> Self {
         Self {
             conflict_mode: ConflictMode::Disallow,
+            allow_push_conflicts: None,
             discard_changes: false,
             use_index_and_worktree: false,
             set_head: true,

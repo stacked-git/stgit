@@ -12,6 +12,7 @@ use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use indexmap::IndexSet;
 
 use crate::{
+    argset,
     color::get_color_stdout,
     commit::{CommitMessage, RepositoryCommitExtended},
     hook::run_pre_commit_hook,
@@ -103,6 +104,7 @@ fn make() -> clap::Command {
                 )
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(argset::push_conflicts_arg())
         .arg(
             Arg::new("patch")
                 .long("patch")
@@ -158,6 +160,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let config = repo.config()?;
+    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
     stack.check_head_top_mismatch()?;
 
@@ -212,6 +215,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .setup_transaction()
         .use_index_and_worktree(true)
         .with_output_stream(get_color_stdout(matches))
+        .allow_push_conflicts(allow_push_conflicts)
         .transact(|trans| {
             if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
                 // Absorb temp patch into already applied patch

@@ -9,6 +9,7 @@ use bstr::ByteSlice;
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     patchedit::{self, call_editor},
     patchname::PatchName,
@@ -67,7 +68,7 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
-        .arg(crate::argset::merged_arg().long_help(
+        .arg(argset::merged_arg().long_help(
             "Check for patches that may have been merged upstream.\n\
              \n\
              When pushing-back patches, each patch is checked to see if its changes \
@@ -87,6 +88,7 @@ fn make() -> clap::Command {
                 )
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(argset::push_conflicts_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -95,9 +97,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let config = repo.config()?;
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
+    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
-    let target_commit = if let Some(committish) = crate::argset::get_one_str(matches, "committish")
-    {
+    let target_commit = if let Some(committish) = argset::get_one_str(matches, "committish") {
         parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
     } else {
         stack.base().clone()
@@ -159,13 +161,21 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if matches.get_flag("interactive") {
-        interactive_pushback(stack, &repo, &config, matches, &applied)?;
+        interactive_pushback(
+            stack,
+            &repo,
+            &config,
+            matches,
+            &applied,
+            allow_push_conflicts,
+        )?;
     } else if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
         let check_merged = matches.get_flag("merged");
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
+            .allow_push_conflicts(allow_push_conflicts)
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| trans.push_patches(&applied, check_merged))
             .execute("rebase (reapply)")?;
@@ -224,6 +234,7 @@ fn interactive_pushback(
     config: &git2::Config,
     matches: &ArgMatches,
     previously_applied: &[PatchName],
+    allow_push_conflicts: bool,
 ) -> Result<()> {
     let mut stack = stack;
 
@@ -427,6 +438,7 @@ fn interactive_pushback(
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .allow_push_conflicts(allow_push_conflicts)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| trans.push_patches(&to_push, check_merged))
         .execute("rebase (reapply)")?;

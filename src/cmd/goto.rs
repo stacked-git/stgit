@@ -27,6 +27,7 @@ fn make() -> clap::Command {
         .about("Go to patch by pushing or popping as necessary")
         .arg(argset::keep_arg())
         .arg(argset::merged_arg())
+        .arg(argset::push_conflicts_arg())
         .arg(
             Arg::new("patch")
                 .help("Patch to go to")
@@ -39,10 +40,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
+    let config = repo.config()?;
 
     let patch_arg = matches.get_one::<PatchName>("patch").unwrap();
     let keep_flag = matches.get_flag("keep");
     let merged_flag = matches.get_flag("merged");
+    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
@@ -92,6 +95,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .allow_push_conflicts(allow_push_conflicts)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {

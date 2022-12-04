@@ -294,6 +294,21 @@ stgit.pullcmd::
   The command to be run by linkstg:pull[] to pull changes from the remote repository
   when 'stgit.pull-policy' is 'pull' (the default). The default value is `git pull`.
 
+stgit.push.allow-conflicts::
+  A boolean to specify whether linkstg:push[] and other commands that push patches will
+  push patches that may result in merge conflicts. The default is 'true', which means
+  that a patch with conflicts will be pushed and if the conflicts cannot be
+  automatically resolved, the operation will stop and with the conflicts left to be
+  resolved manually.
++
+When set to 'false', a patch that would have merge conflicts will not be pushed, thus
+leaving the stack on the last patch that could be pushed without conflicts.
++
+This configuration variable may be overridden on the command line with either
+`--conflicts[=allow]` or `--conflicts=disallow`.
++
+N.B.: 'stgit.autoimerge' only has an affect when push conflicts are allowed.
+
 stgit.rebasecmd::
   The command to be run by linkstg:pull[] to set the new stack base when
   'stgit.pull-policy' is either 'rebase' or 'fetch-rebase'. The default is `git reset
