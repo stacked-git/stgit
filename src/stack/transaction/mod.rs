@@ -1065,7 +1065,10 @@ impl<'repo> StackTransaction<'repo> {
 
         if push_status == PushStatus::Conflict {
             Err(Error::TransactionHalt {
-                msg: "Merge conflicts".to_string(),
+                msg: "Merge conflicts. \
+                      Resolve conflicts manually then refresh or \
+                      undo the operation with `stg undo --hard`."
+                    .to_string(),
                 conflicts: true,
             }
             .into())
