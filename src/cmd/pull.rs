@@ -50,22 +50,14 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
-        .arg(
-            Arg::new("merged")
-                .long("merged")
-                .short('m')
-                .help("Check for patches merged upstream")
-                .long_help(
-                    "Check for patches that may have been merged upstream.\n\
-                     \n\
-                     When pushing-back patches, each patch is checked to see if its \
-                     changes already exist in the just-pulled upstream changes. If a \
-                     patch's changes have already been merged upstream, the patch will \
-                     still exist in the stack, but become empty after the pull \
-                     operation.",
-                )
-                .action(clap::ArgAction::SetTrue),
-        )
+        .arg(crate::argset::merged_arg().long_help(
+            "Check for patches that may have been merged upstream.\n\
+             \n\
+             When pushing-back patches, each patch is checked to see if its changes \
+             already exist in the just-pulled upstream changes. If a patch's changes \
+             have already been merged upstream, the patch will still exist in the \
+             stack, but become empty after the pull operation.",
+        ))
 }
 
 enum PullPolicy {

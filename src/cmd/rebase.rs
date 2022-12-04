@@ -67,21 +67,14 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue)
                 .conflicts_with("merged"),
         )
-        .arg(
-            Arg::new("merged")
-                .long("merged")
-                .short('m')
-                .help("Check for patches merged upstream")
-                .long_help(
-                    "Check for patches that may have been merged upstream.\n\
-                     \n\
-                     When pushing-back patches, each patch is checked to see if its \
-                     changes already exist in the new stack base. If a patch's changes \
-                     are detected to have been merged, the patch will still exist in \
-                     the stack, but become empty after the rebase operation.",
-                )
-                .action(clap::ArgAction::SetTrue),
-        )
+        .arg(crate::argset::merged_arg().long_help(
+            "Check for patches that may have been merged upstream.\n\
+             \n\
+             When pushing-back patches, each patch is checked to see if its changes \
+             already exist in the new stack base. If a patch's changes are detected to \
+             have been merged, the patch will still exist in the stack, but become \
+             empty after the rebase operation.",
+        ))
         .arg(
             Arg::new("autostash")
                 .long("autostash")
