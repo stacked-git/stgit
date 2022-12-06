@@ -55,9 +55,10 @@ pre-clean:
 	$(RM) -r '$(TEST_RESULTS_DIRECTORY_SQ)'
 
 clean-except-prove-cache:
-	$(RM) -r 'trash directory'.* '$(TEST_RESULTS_DIRECTORY_SQ)'
+	$(RM) -r 'trash directory'.*
 
 clean: clean-except-prove-cache
+	$(RM) -r '$(TEST_RESULTS_DIRECTORY_SQ)'
 	$(RM) .prove
 
 show-failure-results:
@@ -100,4 +101,4 @@ aggregate-results:
 		echo "$$f"; \
 	done | '$(SHELL_PATH_SQ)' ./aggregate-results.sh
 
-.PHONY: pre-clean $(T) aggregate-results clean show-failure-results
+.PHONY: pre-clean $(T) aggregate-results clean

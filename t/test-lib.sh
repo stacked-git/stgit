@@ -20,13 +20,20 @@
 # t/ subdirectory and are run in 'trash directory' subdirectory.
 if test -z "$TEST_DIRECTORY"
 then
-	# We allow tests to override this, in case they want to run tests
-	# outside of t/, e.g. for running tests on the test library
-	# itself.
-	TEST_DIRECTORY=$(pwd)
-else
 	# ensure that TEST_DIRECTORY is an absolute path so that it
 	# is valid even if the current working directory is changed
+	TEST_DIRECTORY=$(pwd)
+else
+	# The TEST_DIRECTORY will always be the path to the "t"
+	# directory in the git.git checkout. This is overridden by
+	# e.g. t/lib-subtest.sh, but only because its $(pwd) is
+	# different. Those tests still set "$TEST_DIRECTORY" to the
+	# same path.
+	#
+	# See use of "$GIT_BUILD_DIR" and "$TEST_DIRECTORY" below for
+	# hard assumptions about "$GIT_BUILD_DIR/t" existing and being
+	# the "$TEST_DIRECTORY", and e.g. "$TEST_DIRECTORY/helper"
+	# needing to exist.
 	TEST_DIRECTORY=$(cd "$TEST_DIRECTORY" && pwd) || exit 1
 fi
 if test -z "$TEST_OUTPUT_DIRECTORY"
@@ -35,7 +42,12 @@ then
 	# elsewhere
 	TEST_OUTPUT_DIRECTORY=$TEST_DIRECTORY
 fi
-STG_ROOT=$(cd "$TEST_DIRECTORY"/.. && pwd) || exit 1
+STG_ROOT="${TEST_DIRECTORY%/t}"
+if test "$TEST_DIRECTORY" = "$STG_ROOT"
+then
+	echo "PANIC: Running in a $TEST_DIRECTORY that doesn't end in '/t'?" >&2
+	exit 1
+fi
 export STG_ROOT
 
 PERL_PATH=${PERL:-perl}
@@ -71,6 +83,12 @@ mark_option_requires_arg () {
 	opt_required_arg=$1
 	store_arg_to=$2
 }
+
+# These functions can be overridden e.g. to output JUnit XML
+start_test_output () { :; }
+start_test_case_output () { :; }
+finalize_test_case_output () { :; }
+finalize_test_output () { :; }
 
 parse_option () {
 	local opt="$1"
@@ -111,7 +129,10 @@ parse_option () {
 		tee=t
 		;;
 	--write-junit-xml)
-		write_junit_xml=t
+		. "$TEST_DIRECTORY/test-lib-junit.sh"
+		;;
+	--github-workflow-markup)
+		. "$TEST_DIRECTORY/test-lib-github-workflow-markup.sh"
 		;;
 	--stress)
 		stress=t ;;
@@ -389,15 +410,18 @@ TEST_AUTHOR_LOCALNAME=author
 TEST_AUTHOR_DOMAIN=example.com
 GIT_AUTHOR_EMAIL=${TEST_AUTHOR_LOCALNAME}@${TEST_AUTHOR_DOMAIN}
 GIT_AUTHOR_NAME='A Ú Thor'
+GIT_AUTHOR_DATE='1112354055 +0200'
 TEST_COMMITTER_LOCALNAME=committer
 TEST_COMMITTER_DOMAIN=example.com
 GIT_COMMITTER_EMAIL=${TEST_COMMITTER_LOCALNAME}@${TEST_COMMITTER_DOMAIN}
 GIT_COMMITTER_NAME='C Ó Mitter'
+GIT_COMMITTER_DATE='1112354055 +0200'
 GIT_MERGE_VERBOSITY=5
 GIT_MERGE_AUTOEDIT=no
 export GIT_MERGE_VERBOSITY GIT_MERGE_AUTOEDIT
 export GIT_AUTHOR_EMAIL GIT_AUTHOR_NAME
 export GIT_COMMITTER_EMAIL GIT_COMMITTER_NAME
+export GIT_COMMITTER_DATE GIT_AUTHOR_DATE
 export EDITOR
 
 GIT_DEFAULT_HASH="${GIT_TEST_DEFAULT_HASH:-sha1}"
@@ -501,8 +525,17 @@ USER_TERM="$TERM"
 TERM=dumb
 export TERM USER_TERM
 
+# What is written by tests to stdout and stderr is sent to different places
+# depending on the test mode (e.g. /dev/null in non-verbose mode, piped to tee
+# with --tee option, etc.). We save the original stdin to FD #6 and stdout and
+# stderr to #5 and #7, so that the test framework can use them (e.g. for
+# printing errors within the test framework) independently of the test mode.
+exec 5>&1
+exec 6<&0
+exec 7>&2
+
 _error_exit () {
-	finalize_junit_xml
+	finalize_test_output
 	GIT_EXIT_OK=t
 	exit 1
 }
@@ -524,7 +557,7 @@ BAIL_OUT () {
 	local bail_out="Bail out! "
 	local message="$1"
 
-	say_color error $bail_out "$message"
+	say_color >&5 error $bail_out "$message"
 	_error_exit
 }
 
@@ -549,9 +582,6 @@ then
 	exit 0
 fi
 
-exec 5>&1
-exec 6<&0
-exec 7>&2
 if test "$verbose_log" = "t"
 then
 	exec 3>>"$GIT_TEST_TEE_OUTPUT_FILE" 4>&3
@@ -580,6 +610,8 @@ test_count=0
 test_fixed=0
 test_broken=0
 test_success=0
+
+test_missing_prereq=
 
 test_external_has_tap=0
 
@@ -613,58 +645,36 @@ trap '{ code=$?; set +x; } 2>/dev/null; exit $code' INT TERM HUP
 # the test_expect_* functions instead.
 
 test_ok_ () {
-	if test -n "$write_junit_xml"
-	then
-		write_junit_xml_testcase "$*"
-	fi
 	test_success=$(($test_success + 1))
 	say_color "" "ok $test_count - $@"
+	finalize_test_case_output ok "$@"
 }
 
 test_failure_ () {
-	if test -n "$write_junit_xml"
-	then
-		junit_insert="<failure message=\"not ok $test_count -"
-		junit_insert="$junit_insert $(xml_attr_encode "$1")\">"
-		junit_insert="$junit_insert $(xml_attr_encode \
-			"$(if test -n "$GIT_TEST_TEE_OUTPUT_FILE"
-			   then
-				test-tool path-utils skip-n-bytes \
-					"$GIT_TEST_TEE_OUTPUT_FILE" $GIT_TEST_TEE_OFFSET
-			   else
-				printf '%s\n' "$@" | sed 1d
-			   fi)")"
-		junit_insert="$junit_insert</failure>"
-		if test -n "$GIT_TEST_TEE_OUTPUT_FILE"
-		then
-			junit_insert="$junit_insert<system-err>$(xml_attr_encode \
-				"$(cat "$GIT_TEST_TEE_OUTPUT_FILE")")</system-err>"
-		fi
-		write_junit_xml_testcase "$1" "      $junit_insert"
-	fi
+	failure_label=$1
 	test_failure=$(($test_failure + 1))
-	say_color error "not ok $test_count - $1"
+	local pfx=""
+	say_color error "not ok $test_count - ${pfx:+$pfx }$1"
 	shift
 	printf '%s\n' "$*" | sed -e 's/^/#	/'
-	test "$immediate" = "" || _error_exit
+	if test -n "$immediate"
+	then
+		say_color error "1..$test_count"
+		_error_exit
+	fi
+	finalize_test_case_output failure "$failure_label" "$@"
 }
 
 test_known_broken_ok_ () {
-	if test -n "$write_junit_xml"
-	then
-		write_junit_xml_testcase "$* (breakage fixed)"
-	fi
 	test_fixed=$(($test_fixed+1))
-	say_color error "ok $test_count - $@ # TODO known breakage vanished"
+	say_color error "ok $test_count - $1 # TODO known breakage vanished"
+	finalize_test_case_output fixed "$1"
 }
 
 test_known_broken_failure_ () {
-	if test -n "$write_junit_xml"
-	then
-		write_junit_xml_testcase "$* (known breakage)"
-	fi
 	test_broken=$(($test_broken+1))
-	say_color warn "not ok $test_count - $@ # TODO known breakage"
+	say_color warn "not ok $test_count - $1 # TODO known breakage"
+	finalize_test_case_output broken "$1"
 }
 
 test_debug () {
@@ -897,10 +907,7 @@ test_run_ () {
 test_start_ () {
 	test_count=$(($test_count+1))
 	maybe_setup_verbose
-	if test -n "$write_junit_xml"
-	then
-		junit_start=$(test-tool date getnanos)
-	fi
+	start_test_case_output "$@"
 }
 
 test_finish_ () {
@@ -908,7 +915,7 @@ test_finish_ () {
 	maybe_teardown_verbose
 	if test -n "$GIT_TEST_TEE_OFFSET"
 	then
-		GIT_TEST_TEE_OFFSET=$(test-tool path-utils file-size \
+		GIT_TEST_TEE_OFFSET=$(fake_tool path-utils file-size \
 			"$GIT_TEST_TEE_OUTPUT_FILE")
 	fi
 }
@@ -938,19 +945,22 @@ test_skip () {
 			of_prereq=" of $test_prereq"
 		fi
 		skipped_reason="missing $missing_prereq${of_prereq}"
+
+		# Keep a list of all the missing prereq for result aggregation
+		if test -z "$missing_prereq"
+		then
+			test_missing_prereq=$missing_prereq
+		else
+			test_missing_prereq="$test_missing_prereq,$missing_prereq"
+		fi
 	fi
 
 	case "$to_skip" in
 	t)
-		if test -n "$write_junit_xml"
-		then
-			message="$(xml_attr_encode "$skipped_reason")"
-			write_junit_xml_testcase "$1" \
-				"      <skipped message=\"$message\" />"
-		fi
 
 		say_color skip "ok $test_count # skip $1 ($skipped_reason)"
 		: true
+		finalize_test_case_output skip "$@"
 		;;
 	*)
 		false
@@ -961,53 +971,6 @@ test_skip () {
 # stub; perf-lib overrides it
 test_at_end_hook_ () {
 	:
-}
-
-write_junit_xml () {
-	case "$1" in
-	--truncate)
-		>"$junit_xml_path"
-		junit_have_testcase=
-		shift
-		;;
-	esac
-	printf '%s\n' "$@" >>"$junit_xml_path"
-}
-
-xml_attr_encode () {
-	printf '%s\n' "$@" | test-tool xml-encode
-}
-
-write_junit_xml_testcase () {
-	junit_attrs="name=\"$(xml_attr_encode "$this_test.$test_count $1")\""
-	shift
-	junit_attrs="$junit_attrs classname=\"$this_test\""
-	junit_attrs="$junit_attrs time=\"$(test-tool \
-		date getnanos $junit_start)\""
-	write_junit_xml "$(printf '%s\n' \
-		"    <testcase $junit_attrs>" "$@" "    </testcase>")"
-	junit_have_testcase=t
-}
-
-finalize_junit_xml () {
-	if test -n "$write_junit_xml" && test -n "$junit_xml_path"
-	then
-		test -n "$junit_have_testcase" || {
-			junit_start=$(test-tool date getnanos)
-			write_junit_xml_testcase "all tests skipped"
-		}
-
-		# adjust the overall time
-		junit_time=$(test-tool date getnanos $junit_suite_start)
-		sed -e "s/\(<testsuite.*\) time=\"[^\"]*\"/\1/" \
-			-e "s/<testsuite [^>]*/& time=\"$junit_time\"/" \
-			-e '/^ *<\/testsuite/d' \
-			<"$junit_xml_path" >"$junit_xml_path.new"
-		mv "$junit_xml_path.new" "$junit_xml_path"
-
-		write_junit_xml "  </testsuite>" "</testsuites>"
-		write_junit_xml=
-	fi
 }
 
 test_atexit_cleanup=:
@@ -1024,13 +987,12 @@ test_atexit_handler () {
 }
 
 test_done () {
-	GIT_EXIT_OK=t
 
 	# Run the atexit commands _before_ the trash directory is
 	# removed, so the commands can access pidfiles and socket files.
 	test_atexit_handler
 
-	finalize_junit_xml
+	finalize_test_output
 
 	if test -z "$HARNESS_ACTIVE"
 	then
@@ -1042,6 +1004,7 @@ test_done () {
 		fixed $test_fixed
 		broken $test_broken
 		failed $test_failure
+		missing_prereq $test_missing_prereq
 
 		EOF
 	fi
@@ -1064,26 +1027,23 @@ test_done () {
 	fi
 	case "$test_failure" in
 	0)
-		if test $test_external_has_tap -eq 0
+		if test $test_remaining -gt 0
 		then
-			if test $test_remaining -gt 0
-			then
-				say_color pass "# passed all $msg"
-			fi
-
-			# Maybe print SKIP message
-			test -z "$skip_all" || skip_all="# SKIP $skip_all"
-			case "$test_count" in
-			0)
-				say "1..$test_count${skip_all:+ $skip_all}"
-				;;
-			*)
-				test -z "$skip_all" ||
-				say_color warn "$skip_all"
-				say "1..$test_count"
-				;;
-			esac
+			say_color pass "# passed all $msg"
 		fi
+
+		# Maybe print SKIP message
+		test -z "$skip_all" || skip_all="# SKIP $skip_all"
+		case "$test_count" in
+		0)
+			say "1..$test_count${skip_all:+ $skip_all}"
+			;;
+		*)
+			test -z "$skip_all" ||
+			say_color warn "$skip_all"
+			say "1..$test_count"
+			;;
+		esac
 
 		if test -z "$debug" && test -n "$remove_trash"
 		then
@@ -1100,15 +1060,14 @@ test_done () {
 		fi
 		test_at_end_hook_
 
+		GIT_EXIT_OK=t
 		exit 0 ;;
 
 	*)
-		if test $test_external_has_tap -eq 0
-		then
-			say_color error "# failed $test_failure among $msg"
-			say "1..$test_count"
-		fi
+		say_color error "# failed $test_failure among $msg"
+		say "1..$test_count"
 
+		GIT_EXIT_OK=t
 		exit 1 ;;
 
 	esac
@@ -1149,25 +1108,6 @@ then
 	test_done
 fi
 
-# skip non-whitelisted tests when compiled with SANITIZE=leak
-if test -n "$SANITIZE_LEAK"
-then
-	if test_bool_env GIT_TEST_PASSING_SANITIZE_LEAK false
-	then
-		# We need to see it in "git env--helper" (via
-		# test_bool_env)
-		export TEST_PASSES_SANITIZE_LEAK
-
-		if ! test_bool_env TEST_PASSES_SANITIZE_LEAK false
-		then
-			skip_all="skipping $this_test under GIT_TEST_PASSING_SANITIZE_LEAK=true"
-			test_done
-		fi
-	fi
-elif test_bool_env GIT_TEST_PASSING_SANITIZE_LEAK false
-then
-	BAIL_OUT "GIT_TEST_PASSING_SANITIZE_LEAK=true has no effect except when compiled with SANITIZE=leak"
-fi
 
 # Last-minute variable setup
 USER_HOME="$HOME"
@@ -1189,39 +1129,27 @@ remove_trash_directory () {
 
 # Test repository
 remove_trash_directory "$TRASH_DIRECTORY" || {
-	GIT_EXIT_OK=t
-	echo >&5 "FATAL: Cannot prepare test area"
-	exit 1
+	BAIL_OUT 'cannot prepare test area'
 }
 
 remove_trash=t
 if test -z "$TEST_NO_CREATE_REPO"
 then
-	test_create_repo "$TRASH_DIRECTORY"
+	git init \
+	    "$TRASH_DIRECTORY" >&3 2>&4 ||
+	error "cannot run git init"
+	# StGit tests don't like starting with an unborn branch, so birth it.
+	git -C "$TRASH_DIRECTORY" commit --allow-empty --message="empty start" >&3 2>&4 ||
+	error "cannot run git commit"
 else
 	mkdir -p "$TRASH_DIRECTORY"
 fi
 
 # Use -P to resolve symlinks in our working directory so that the cwd
 # in subprocesses like git equals our $PWD (for pathname comparisons).
-cd -P "$TRASH_DIRECTORY" || exit 1
+cd -P "$TRASH_DIRECTORY" || BAIL_OUT "cannot cd -P to \"$TRASH_DIRECTORY\""
 
-if test -n "$write_junit_xml"
-then
-	junit_xml_dir="$TEST_OUTPUT_DIRECTORY/out"
-	mkdir -p "$junit_xml_dir"
-	junit_xml_base=${0##*/}
-	junit_xml_path="$junit_xml_dir/TEST-${junit_xml_base%.sh}.xml"
-	junit_attrs="name=\"${junit_xml_base%.sh}\""
-	junit_attrs="$junit_attrs timestamp=\"$(TZ=UTC \
-		date +%Y-%m-%dT%H:%M:%S)\""
-	write_junit_xml --truncate "<testsuites>" "  <testsuite $junit_attrs>"
-	junit_suite_start=$(test-tool date getnanos)
-	if test -n "$GIT_TEST_TEE_OUTPUT_FILE"
-	then
-		GIT_TEST_TEE_OFFSET=0
-	fi
-fi
+start_test_output "$0"
 
 # Convenience
 # A regexp to match 5 and 35 hexdigits

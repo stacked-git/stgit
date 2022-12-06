@@ -10,12 +10,10 @@ test_description='Excercise pull-policy "fetch-rebase".'
 # don't need this repo, but better not drop it, see t1100
 #rm -rf .git
 
-# Need a repo to clone
-test_create_repo upstream
-
 test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
+    test_create_repo upstream &&
     (cd upstream && stg init) &&
     git clone upstream clone &&
     (cd clone &&

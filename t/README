@@ -1,6 +1,6 @@
 The mechanism that powers this testsuite is directly imported from the
 Core Git Tests, in directory t/ of the git repository.  Files are base
-on git version v2.34.1-182-ge773545c7f.
+on git version v2.39.0-rc2.
 
 Core Git Tests
 ==============
@@ -369,6 +369,61 @@ This test harness library does the following things:
    consistently when command line arguments --verbose (or -v),
    --debug (or -d), and --immediate (or -i) is given.
 
+Recommended style
+-----------------
+Here are some recommented styles when writing test case.
+
+ - Keep test title the same line with test helper function itself.
+
+   Take test_expect_success helper for example, write it like:
+
+  test_expect_success 'test title' '
+      ... test body ...
+  '
+
+   Instead of:
+
+  test_expect_success \
+      'test title' \
+      '... test body ...'
+
+
+ - End the line with a single quote.
+
+ - Indent the body of here-document, and use "<<-" instead of "<<"
+   to strip leading TABs used for indentation:
+
+  test_expect_success 'test something' '
+      cat >expect <<-\EOF &&
+      one
+      two
+      three
+      EOF
+      test_something > actual &&
+      test_cmp expect actual
+  '
+
+   Instead of:
+
+  test_expect_success 'test something' '
+      cat >expect <<\EOF &&
+  one
+  two
+  three
+  EOF
+      test_something > actual &&
+      test_cmp expect actual
+  '
+
+ - Quote or escape the EOF delimiter that begins a here-document if
+   there is no parameter and other expansion in it, to signal readers
+   that they can skim it more casually:
+
+  cmd <<-\EOF
+  literal here-document text without any expansion
+  EOF
+
+
 Do's & don'ts
 -------------
 
@@ -702,32 +757,6 @@ see test-lib-functions.sh for the full list and their options.
 	    test_done
 	fi
 
- - test_external [<prereq>] <message> <external> <script>
-
-   Execute a <script> with an <external> interpreter (like perl). This
-   was added for tests like t9700-perl-git.sh which do most of their
-   work in an external test script.
-
-	test_external \
-	    'GitwebCache::*FileCache*' \
-	    perl "$TEST_DIRECTORY"/t9503/test_cache_interface.pl
-
-   If the test is outputting its own TAP you should set the
-   test_external_has_tap variable somewhere before calling the first
-   test_external* function. See t9700-perl-git.sh for an example.
-
-	# The external test will outputs its own plan
-	test_external_has_tap=1
-
- - test_external_without_stderr [<prereq>] <message> <external> <script>
-
-   Like test_external but fail if there's any output on stderr,
-   instead of checking the exit code.
-
-	test_external_without_stderr \
-	    'Perl API' \
-	    perl "$TEST_DIRECTORY"/t9700/test.pl
-
  - test_expect_code <exit-code> <command>
 
    Run a command and ensure that it exits with the given exit code.
@@ -957,10 +986,10 @@ directory):
 
     make coverage
 
-That will run the test suite with each stg invocation capturing
-coverage information. Coverage information from each stg invocation
-is combined into a .coverage file which is used to generate
-coverage reports.
+That will run the test suite with each stg invocation capturing coverage
+information. Coverage information from each stg invocation is combined into a
+target/${STG_PROFILE}/stg.profdata file which is used to generate coverage
+reports.
 
 A detailed HTML coverage report is generated in the "htmlcov"
 directory, which you can then copy to a webserver, or inspect locally

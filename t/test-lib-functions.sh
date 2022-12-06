@@ -273,13 +273,13 @@ debug () {
 # <file>, <contents>, and <tag> all default to <message>.
 
 test_commit () {
-	notick= &&
-	echo=echo &&
-	append= &&
-	author= &&
-	signoff= &&
-	indir= &&
-	tag=light &&
+	local notick= &&
+	local echo=echo &&
+	local append= &&
+	local author= &&
+	local signoff= &&
+	local indir= &&
+	local tag=light &&
 	while test $# != 0
 	do
 		case "$1" in
@@ -322,14 +322,14 @@ test_commit () {
 		shift
 	done &&
 	indir=${indir:+"$indir"/} &&
-	file=${2:-"$1.t"} &&
+	local file=${2:-"$1.t"} &&
 	if test -n "$append"
 	then
 		$echo "${3-$1}" >>"$indir$file"
 	else
 		$echo "${3-$1}" >"$indir$file"
 	fi &&
-	git ${indir:+ -C "$indir"} add "$file" &&
+	git ${indir:+ -C "$indir"} add -- "$file" &&
 	if test -z "$notick"
 	then
 		test_tick
@@ -551,13 +551,89 @@ write_script () {
 	chmod +x "$1"
 }
 
+# Usage: test_hook [options] <hook-name> <<-\EOF
+#
+#   -C <dir>:
+#	Run all git commands in directory <dir>
+#   --setup
+#	Setup a hook for subsequent tests, i.e. don't remove it in a
+#	"test_when_finished"
+#   --clobber
+#	Overwrite an existing <hook-name>, if it exists. Implies
+#	--setup (i.e. the "test_when_finished" is assumed to have been
+#	set up already).
+#    --disable
+#	Disable (chmod -x) an existing <hook-name>, which must exist.
+#    --remove
+#	Remove (rm -f) an existing <hook-name>, which must exist.
+test_hook () {
+	setup= &&
+	clobber= &&
+	disable= &&
+	remove= &&
+	indir= &&
+	while test $# != 0
+	do
+		case "$1" in
+		-C)
+			indir="$2" &&
+			shift
+			;;
+		--setup)
+			setup=t
+			;;
+		--clobber)
+			clobber=t
+			;;
+		--disable)
+			disable=t
+			;;
+		--remove)
+			remove=t
+			;;
+		-*)
+			BUG "invalid argument: $1"
+			;;
+		*)
+			break
+			;;
+		esac &&
+		shift
+	done &&
+
+	git_dir=$(git -C "$indir" rev-parse --absolute-git-dir) &&
+	hook_dir="$git_dir/hooks" &&
+	hook_file="$hook_dir/$1" &&
+	if test -n "$disable$remove"
+	then
+		test_path_is_file "$hook_file" &&
+		if test -n "$disable"
+		then
+			chmod -x "$hook_file"
+		elif test -n "$remove"
+		then
+			rm -f "$hook_file"
+		fi &&
+		return 0
+	fi &&
+	if test -z "$clobber"
+	then
+		test_path_is_missing "$hook_file"
+	fi &&
+	if test -z "$setup$clobber"
+	then
+		test_when_finished "rm \"$hook_file\""
+	fi &&
+	write_script "$hook_file"
+}
+
 # Use test_set_prereq to tell that a particular prerequisite is available.
 # The prerequisite can later be checked for in two ways:
 #
 # - Explicitly using test_have_prereq.
 #
 # - Implicitly by specifying the prerequisite tag in the calls to
-#   test_expect_{success,failure} and test_external{,_without_stderr}.
+#   test_expect_{success,failure}
 #
 # The single parameter is the prerequisite tag (a simple word, in all
 # capital letters by convention).
@@ -575,8 +651,7 @@ test_set_prereq () {
 		# test_unset_prereq()
 		!*)
 			;;
-		# (Temporary?) whitelist of things we can't easily
-		# pretend not to support
+		# List of things we can't easily pretend to not support
 		SYMLINKS)
 			;;
 		# Inspecting whether GIT_TEST_FAIL_PREREQS is on
@@ -680,6 +755,17 @@ test_have_prereq () {
 			# Keep a list of missing prerequisites; restore
 			# the negative marker if necessary.
 			prerequisite=${negative_prereq:+!}$prerequisite
+
+			# Abort if this prereq was marked as required
+			if test -n "$GIT_TEST_REQUIRE_PREREQ"
+			then
+				case " $GIT_TEST_REQUIRE_PREREQ " in
+				*" $prerequisite "*)
+					BAIL_OUT "required prereq $prerequisite failed"
+					;;
+				esac
+			fi
+
 			if test -z "$missing_prereq"
 			then
 				missing_prereq=$prerequisite
@@ -708,7 +794,7 @@ test_verify_prereq () {
 }
 
 test_expect_failure () {
-	test_start_
+	test_start_ "$@"
 	test "$#" = 3 && { test_prereq=$1; shift; } || test_prereq=
 	test "$#" = 2 ||
 	BUG "not 2 or 3 parameters to test-expect-failure"
@@ -716,6 +802,7 @@ test_expect_failure () {
 	export test_prereq
 	if ! test_skip "$@"
 	then
+		test -n "$test_skip_test_preamble" ||
 		say >&3 "checking known breakage of $TEST_NUMBER.$test_count '$1': $2"
 		if test_run_ "$2" expecting_failure
 		then
@@ -728,7 +815,7 @@ test_expect_failure () {
 }
 
 test_expect_success () {
-	test_start_
+	test_start_ "$@"
 	test "$#" = 3 && { test_prereq=$1; shift; } || test_prereq=
 	test "$#" = 2 ||
 	BUG "not 2 or 3 parameters to test-expect-success"
@@ -736,6 +823,7 @@ test_expect_success () {
 	export test_prereq
 	if ! test_skip "$@"
 	then
+		test -n "$test_skip_test_preamble" ||
 		say >&3 "expecting success of $TEST_NUMBER.$test_count '$1': $2"
 		if test_run_ "$2"
 		then
@@ -745,93 +833,6 @@ test_expect_success () {
 		fi
 	fi
 	test_finish_
-}
-
-# test_external runs external test scripts that provide continuous
-# test output about their progress, and succeeds/fails on
-# zero/non-zero exit code.  It outputs the test output on stdout even
-# in non-verbose mode, and announces the external script with "# run
-# <n>: ..." before running it.  When providing relative paths, keep in
-# mind that all scripts run in "trash directory".
-# Usage: test_external description command arguments...
-# Example: test_external 'Perl API' perl ../path/to/test.pl
-test_external () {
-	test "$#" = 4 && { test_prereq=$1; shift; } || test_prereq=
-	test "$#" = 3 ||
-	BUG "not 3 or 4 parameters to test_external"
-	descr="$1"
-	shift
-	test_verify_prereq
-	export test_prereq
-	if ! test_skip "$descr" "$@"
-	then
-		# Announce the script to reduce confusion about the
-		# test output that follows.
-		say_color "" "# run $test_count: $descr ($*)"
-		# Export TEST_DIRECTORY, TRASH_DIRECTORY and GIT_TEST_LONG
-		# to be able to use them in script
-		export TEST_DIRECTORY TRASH_DIRECTORY GIT_TEST_LONG
-		# Run command; redirect its stderr to &4 as in
-		# test_run_, but keep its stdout on our stdout even in
-		# non-verbose mode.
-		"$@" 2>&4
-		if test "$?" = 0
-		then
-			if test $test_external_has_tap -eq 0; then
-				test_ok_ "$descr"
-			else
-				say_color "" "# test_external test $descr was ok"
-				test_success=$(($test_success + 1))
-			fi
-		else
-			if test $test_external_has_tap -eq 0; then
-				test_failure_ "$descr" "$@"
-			else
-				say_color error "# test_external test $descr failed: $@"
-				test_failure=$(($test_failure + 1))
-			fi
-		fi
-	fi
-}
-
-# Like test_external, but in addition tests that the command generated
-# no output on stderr.
-test_external_without_stderr () {
-	# The temporary file has no (and must have no) security
-	# implications.
-	tmp=${TMPDIR:-/tmp}
-	stderr="$tmp/git-external-stderr.$$.tmp"
-	test_external "$@" 4> "$stderr"
-	test -f "$stderr" || error "Internal error: $stderr disappeared."
-	descr="no stderr: $1"
-	shift
-	say >&3 "# expecting no stderr from previous command"
-	if test ! -s "$stderr"
-	then
-		rm "$stderr"
-
-		if test $test_external_has_tap -eq 0; then
-			test_ok_ "$descr"
-		else
-			say_color "" "# test_external_without_stderr test $descr was ok"
-			test_success=$(($test_success + 1))
-		fi
-	else
-		if test "$verbose" = t
-		then
-			output=$(echo; echo "# Stderr is:"; cat "$stderr")
-		else
-			output=
-		fi
-		# rm first in case test_failure exits.
-		rm "$stderr"
-		if test $test_external_has_tap -eq 0; then
-			test_failure_ "$descr" "$@" "$output"
-		else
-			say_color error "# test_external_without_stderr test $descr failed: $@: $output"
-			test_failure=$(($test_failure + 1))
-		fi
-	fi
 }
 
 # debugging-friendly alternatives to "test [-f|-d|-e]"
@@ -845,6 +846,16 @@ test_path_is_file () {
 	fi
 }
 
+test_path_is_file_not_symlink () {
+	test "$#" -ne 1 && BUG "1 param"
+	test_path_is_file "$1" &&
+	if test -h "$1"
+	then
+		echo "$1 shouldn't be a symbolic link"
+		false
+	fi
+}
+
 test_path_is_dir () {
 	test "$#" -ne 1 && BUG "1 param"
 	if ! test -d "$1"
@@ -854,11 +865,30 @@ test_path_is_dir () {
 	fi
 }
 
+test_path_is_dir_not_symlink () {
+	test "$#" -ne 1 && BUG "1 param"
+	test_path_is_dir "$1" &&
+	if test -h "$1"
+	then
+		echo "$1 shouldn't be a symbolic link"
+		false
+	fi
+}
+
 test_path_exists () {
 	test "$#" -ne 1 && BUG "1 param"
 	if ! test -e "$1"
 	then
 		echo "Path $1 doesn't exist"
+		false
+	fi
+}
+
+test_path_is_symlink () {
+	test "$#" -ne 1 && BUG "1 param"
+	if ! test -h "$1"
+	then
+		echo "Symbolic link $1 doesn't exist"
 		false
 	fi
 }
@@ -891,10 +921,6 @@ test_path_is_missing () {
 	then
 		echo "Path exists:"
 		ls -ld "$1"
-		if test $# -ge 1
-		then
-			echo "$*"
-		fi
 		false
 	fi
 }
@@ -947,11 +973,11 @@ test_stdout_line_count () {
 	test_line_count "$ops" "$val" "$trashdir/output"
 }
 
-
 test_file_size () {
 	test "$#" -ne 1 && BUG "1 param"
-	test-tool path-utils file-size "$1"
+	fake_tool path-utils file-size "$1"
 }
+
 
 # Returns success if a comma separated string of keywords ($1) contains a
 # given keyword ($2).
@@ -990,7 +1016,7 @@ test_must_fail_acceptable () {
 	fi
 
 	case "$1" in
-	git|__git*|test-tool|test_terminal)
+	git|__git*|test-tool|fake_tool|test_terminal)
 		return 0
 		;;
 	*)
@@ -1361,7 +1387,6 @@ test_create_repo () {
 		    git commit-tree $(git write-tree) >.git/refs/heads/master 2>&4 ||
 		    error "cannot run git commit"
 		mv .git/hooks .git/hooks-disabled
-		echo ".coverage.*" >> .git/info/exclude
 	) || exit
 }
 
@@ -1569,26 +1594,6 @@ nongit () {
 	)
 } 7>&2 2>&4
 
-# These functions are historical wrappers around "test-tool pkt-line"
-# for older tests. Use "test-tool pkt-line" itself in new tests.
-packetize () {
-	if test $# -gt 0
-	then
-		packet="$*"
-		printf '%04x%s' "$((4 + ${#packet}))" "$packet"
-	else
-		test-tool pkt-line pack
-	fi
-}
-
-packetize_raw () {
-	test-tool pkt-line pack-raw-stdin
-}
-
-depacketize () {
-	test-tool pkt-line unpack
-}
-
 # Converts base-16 data into base-8. The output is given as a sequence of
 # escaped octals, suitable for consumption by 'printf'.
 hex2oct () {
@@ -1677,6 +1682,16 @@ test_oid () {
 test_oid_to_path () {
 	local basename=${1#??}
 	echo "${1%$basename}/$basename"
+}
+
+# Parse oids from git ls-files --staged output
+test_parse_ls_files_stage_oids () {
+	awk '{print $2}' -
+}
+
+# Parse oids from git ls-tree output
+test_parse_ls_tree_oids () {
+	awk '{print $3}' -
 }
 
 # Choose a port number based on the test script's number and store it in
@@ -1809,8 +1824,62 @@ test_readlink () {
 	perl -le 'print readlink($_) for @ARGV' "$@"
 }
 
+# Given two filenames, parse both using 'git config --list --file'
+# and compare the sorted output of those commands. Useful when
+# wanting to ignore whitespace differences and sorting concerns.
+test_cmp_config_output () {
+	git config --list --file="$1" >config-expect &&
+	git config --list --file="$2" >config-actual &&
+	sort config-expect >sorted-expect &&
+	sort config-actual >sorted-actual &&
+	test_cmp sorted-expect sorted-actual
+}
+
 # When running an StGit command that should exit with an error, use
 # these instead of testing for any non-zero exit code with !.
 general_error () { test_expect_code 1 "$@" ; }
 command_error () { test_expect_code 2 "$@" ; }
 conflict () { test_expect_code 3 "$@" ; }
+
+# Fake implementation of the "test-tool" helper tool from Git's test infrastructure.
+# Only the bare minimum of subcommands are implemented.
+fake_tool () {
+	case "$1" in
+	"date")
+		case "$2" in
+		"getnanos")
+			nanos=$(date '+%s.%6N')
+			if [ -n "$3" ]; then
+				python -c "print('%.6f' % ($nanos - $3),)"
+			else
+				echo "$nanos"
+			fi
+			;;
+		*)
+			error "not handled: $*"
+			;;
+		esac
+		;;
+	"path-utils")
+		case "$2" in
+		"file-size")
+			du -b "$3" | cut -f1
+			;;
+		"skip-n-bytes")
+			tail "+${4:-0}" "$3"
+			;;
+		*)
+			error "not handled: $*"
+			;;
+		esac
+		;;
+	"xml-encode")
+		python -c "import sys; \
+			from xml.sax.saxutils import escape; \
+			sys.stdout.write(escape(sys.stdin.read()))"
+		;;
+	*)
+		error "not handled: $*"
+		;;
+	esac
+}

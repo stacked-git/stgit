@@ -15,11 +15,9 @@ specify --merged, then rollback and retry with the correct flag.'
 # don't need this repo, but better not drop it, see t1100
 #rm -rf .git
 
-# Need a repo to clone
-test_create_repo foo
-
 test_expect_success \
     'Clone tree and setup changes' '
+    test_create_repo foo &&
     git clone foo bar &&
     (
         cd bar &&

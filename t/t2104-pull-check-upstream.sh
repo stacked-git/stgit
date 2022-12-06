@@ -4,12 +4,10 @@ test_description='Check that pulling works when no upstream is configured'
 
 . ./test-lib.sh
 
-# Need a repo to clone
-test_create_repo upstream
-
 test_expect_success \
     'Setup upstream repo, clone it, and add patches to the clone' \
     '
+    test_create_repo upstream &&
     (cd upstream && stg init) &&
     git clone upstream clone &&
     (cd clone && stg init && git config pull.rebase false)

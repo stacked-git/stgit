@@ -10,10 +10,8 @@ test_description='Test pull behaviors'
 # don't need this repo, but better not drop it, see t1100
 #rm -rf .git
 
-# Need a repo to clone
-test_create_repo foo
-
 test_expect_success 'Setup and clone tree, and setup changes' '
+    test_create_repo foo &&
     (
         cd foo &&
         echo a >file &&

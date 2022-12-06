@@ -18,10 +18,9 @@ This test must be run before any tests making use of clone.
 # Do not get rid of it, or a bug may bite out stgit repo hard
 
 # Need a repo to clone
-test_create_repo foo
-
-test_expect_success \
-    'clone right inside a git tree' \
-    "git clone foo bar"
+test_expect_success 'clone right inside a git tree' '
+    test_create_repo foo &&
+    git clone foo bar
+'
 
 test_done
