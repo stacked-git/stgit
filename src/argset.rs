@@ -63,6 +63,18 @@ pub(crate) fn push_conflicts_arg() -> clap::Arg {
         .action(clap::ArgAction::Set)
 }
 
+pub(crate) fn committer_date_is_author_date_arg() -> clap::Arg {
+    Arg::new("committer-date-is-author-date")
+        .long("committer-date-is-author-date")
+        .alias("cdiad")
+        .help("Use author date as committer date")
+        .long_help(
+            "Instead of using the current time as the committer date, use the author \
+             date of the commit as the committer date.",
+        )
+        .action(clap::ArgAction::SetTrue)
+}
+
 /// The `--diff-opt`/`-O` option for pass-through to subordinate `git` processes.
 pub(crate) fn diff_opts_arg() -> Arg {
     Arg::new("git-diff-opt")

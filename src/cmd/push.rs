@@ -110,6 +110,7 @@ fn make() -> clap::Command {
         )
         .arg(argset::keep_arg())
         .arg(argset::merged_arg())
+        .arg(argset::committer_date_is_author_date_arg())
         .arg(argset::push_conflicts_arg())
 }
 
@@ -193,6 +194,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .setup_transaction()
         .use_index_and_worktree(true)
         .allow_push_conflicts(allow_push_conflicts)
+        .committer_date_is_author_date(matches.get_flag("committer-date-is-author-date"))
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             if settree_flag {

@@ -513,12 +513,18 @@ impl<'repo> StackTransaction<'repo> {
         let push_status = if patch_commit.parent_id(0)? == self.top().id() {
             PushStatus::Unmodified
         } else {
+            let author = patch_commit.author_strict()?;
             let default_committer = git2::Signature::default_committer(Some(&config))?;
+            let committer = if self.options.committer_date_is_author_date {
+                default_committer.override_when(&author.when())
+            } else {
+                default_committer
+            };
             let message = patch_commit.message_ex();
             let parent_ids = [self.top().id()];
             let new_commit_id = repo.commit_ex(
-                &patch_commit.author_strict()?,
-                &default_committer,
+                &author,
+                &committer,
                 &message,
                 patch_commit.tree_id(),
                 parent_ids,
@@ -1038,9 +1044,15 @@ impl<'repo> StackTransaction<'repo> {
         };
 
         if new_tree_id != patch_commit.tree_id() || new_parent.id() != old_parent.id() {
+            let author = patch_commit.author_strict()?;
+            let committer = if self.options.committer_date_is_author_date {
+                default_committer.override_when(&author.when())
+            } else {
+                default_committer
+            };
             let commit_id = repo.commit_ex(
-                &patch_commit.author_strict()?,
-                &default_committer,
+                &author,
+                &committer,
                 &patch_commit.message_ex(),
                 new_tree_id,
                 [new_parent.id()],

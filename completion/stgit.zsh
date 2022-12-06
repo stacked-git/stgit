@@ -435,6 +435,7 @@ _stg-edit() {
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_hook
     __stg_add_args_savetemplate
     __stg_add_args_trailers
@@ -637,6 +638,7 @@ _stg-float() {
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
+    __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '--noapply[Reorder patches by floating without applying]'
         '(-s --series)'{-s,--series=}'[arrange according to series file]: :_files'
@@ -664,6 +666,7 @@ _stg-goto() {
     __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_push_conflicts
     subcmd_args+=(
         ':patches:__stg_patch --all'
@@ -701,6 +704,7 @@ _stg-import() {
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_trailers
     subcmd_args+=(
         '(-n --name)'{-n,--name}'[name for imported patch]'
@@ -803,6 +807,7 @@ _stg-pick() {
     local -a subcmd_args
     # TODO: complete --parent commit id
     __stg_add_args_help
+    __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '(-n --name)'{-n,--name=}'[name for picked patch]:name'
         '(-B --ref-branch)'{-B,--ref-branch=}'[pick patches from branch]: :__stg_stgit_branch_names'
@@ -862,6 +867,7 @@ _stg-push() {
     __stg_add_args_color
     __stg_add_args_keep
     __stg_add_args_merged
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_push_conflicts
     subcmd_args+=(
         '--reverse[push patches in reverse order]'
@@ -881,6 +887,7 @@ _stg-rebase() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_merged
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_push_conflicts
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after rebasing]'
@@ -907,6 +914,7 @@ _stg-refresh() {
     __stg_add_args_color
     __stg_add_args_author
     __stg_add_args_edit
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_hook
     __stg_add_args_trailers
     __stg_add_args_diffopt
@@ -1019,6 +1027,7 @@ _stg-sink() {
     __stg_add_args_help
     __stg_add_args_color
     __stg_add_args_keep
+    __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '(-n --nopush)'{-n,--nopush}'[do not push patches after sinking]'
         '(-t --to)'{-t,--to=}'[sink patches below target patch]: :__stg_patch --applied'
@@ -1031,6 +1040,7 @@ _stg-spill() {
     local -a subcmd_args
     __stg_add_args_help
     __stg_add_args_color
+    __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         '(-a --annotate)'{-a,--annotate}'[annotate patch log entry]:annotation'
         '(-r --reset)'{-r,--reset}'[also reset the index]'
@@ -1054,6 +1064,7 @@ _stg-squash() {
     __stg_add_args_help
     __stg_add_args_author
     __stg_add_args_edit
+    __stg_add_args_committer_date_is_author_date
     __stg_add_args_hook
     __stg_add_args_savetemplate
     __stg_add_args_trailers
@@ -1068,6 +1079,7 @@ _stg-squash() {
 _stg-sync() {
     local -a subcmd_args
     __stg_add_args_help
+    __stg_add_args_committer_date_is_author_date
     subcmd_args+=(
         + '(patches)'
         '(-a --all)'{-a,--all}'[synchronize all applied patches]'
@@ -1220,6 +1232,13 @@ __stg_add_args_trailers() {
         '--ack=-[add Acked-by trailer]'
         '--review=-[add Reviewed-by trailer]'
         '--signoff=-[add Signed-off-by trailer]'
+    )
+}
+
+__stg_add_args_committer_date_is_author_date() {
+    subcmd_args+=(
+        '--committer-date-is-author-date[use author date as committer date]'
+        '--cdiad[use author date as committer date]'
     )
 }
 

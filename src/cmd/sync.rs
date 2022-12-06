@@ -13,10 +13,12 @@ use bstr::ByteSlice;
 use clap::{Arg, ArgGroup};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
     patchname::PatchName,
     patchrange,
+    signature::SignatureExtended,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };
@@ -79,12 +81,14 @@ fn make() -> clap::Command {
                 .args(["ref-branch", "series"])
                 .required(true),
         )
+        .arg(argset::committer_date_is_author_date_arg())
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
+    let config = repo.config()?;
 
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
@@ -219,9 +223,16 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 };
 
                 if let Some(tree_id) = maybe_tree_id {
+                    let author = commit.author_strict()?;
+                    let default_committer = git2::Signature::default_committer(Some(&config))?;
+                    let committer = if matches.get_flag("committer-date-is-author-date") {
+                        default_committer.override_when(&author.when())
+                    } else {
+                        default_committer
+                    };
                     let commit_id = trans.repo().commit_ex(
-                        &commit.author(),
-                        &commit.committer(),
+                        &author,
+                        &committer,
                         &commit.message_ex(),
                         tree_id,
                         [parent_id],

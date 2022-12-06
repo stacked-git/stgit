@@ -76,6 +76,7 @@ fn make() -> clap::Command {
              have been merged, the patch will still exist in the stack, but become \
              empty after the rebase operation.",
         ))
+        .arg(argset::committer_date_is_author_date_arg())
         .arg(
             Arg::new("autostash")
                 .long("autostash")
@@ -98,6 +99,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
+    let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
     let target_commit = if let Some(committish) = argset::get_one_str(matches, "committish") {
         parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
@@ -168,6 +170,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             matches,
             &applied,
             allow_push_conflicts,
+            committer_date_is_author_date,
         )?;
     } else if !matches.get_flag("nopush") {
         stack.check_head_top_mismatch()?;
@@ -176,6 +179,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .setup_transaction()
             .use_index_and_worktree(true)
             .allow_push_conflicts(allow_push_conflicts)
+            .committer_date_is_author_date(committer_date_is_author_date)
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| trans.push_patches(&applied, check_merged))
             .execute("rebase (reapply)")?;
@@ -235,6 +239,7 @@ fn interactive_pushback(
     matches: &ArgMatches,
     previously_applied: &[PatchName],
     allow_push_conflicts: bool,
+    committer_date_is_author_date: bool,
 ) -> Result<()> {
     let mut stack = stack;
 
@@ -332,6 +337,7 @@ fn interactive_pushback(
                         if new_patchname.is_some() || new_commit_id.is_some() {
                             stack = stack
                                 .setup_transaction()
+                                .committer_date_is_author_date(committer_date_is_author_date)
                                 .with_output_stream(get_color_stdout(matches))
                                 .transact(|trans| {
                                     let patchname =
@@ -447,6 +453,7 @@ fn interactive_pushback(
         .setup_transaction()
         .use_index_and_worktree(true)
         .allow_push_conflicts(allow_push_conflicts)
+        .committer_date_is_author_date(committer_date_is_author_date)
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| trans.push_patches(&to_push, check_merged))
         .execute("rebase (reapply)")?;

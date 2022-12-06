@@ -68,6 +68,7 @@ fn make() -> clap::Command {
                 .value_parser(clap::value_parser!(PathBuf)),
         )
         .arg(argset::keep_arg())
+        .arg(argset::committer_date_is_author_date_arg())
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
@@ -134,6 +135,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack
         .setup_transaction()
         .use_index_and_worktree(true)
+        .committer_date_is_author_date(matches.get_flag("committer-date-is-author-date"))
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| trans.reorder_patches(Some(&applied), Some(&unapplied), None))
         .execute("float")?;

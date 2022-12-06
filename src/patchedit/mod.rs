@@ -27,6 +27,7 @@ pub(crate) use interactive::call_editor;
 use interactive::edit_interactive;
 
 use crate::{
+    argset,
     commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
     patchname::PatchName,
     signature::{self, SignatureExtended},
@@ -245,7 +246,8 @@ pub(crate) fn add_args(
                 .num_args(1)
                 .value_parser(ValueParser::new(signature::parse_time))
                 .value_hint(ValueHint::Other),
-        );
+        )
+        .arg(argset::committer_date_is_author_date_arg());
     if add_save_template {
         command.arg(
             Arg::new("save-template")
@@ -474,10 +476,6 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let stupid = repo.stupid();
         let config = repo.config()?;
         let default_committer = git2::Signature::default_committer(Some(&config))?;
-        let committer = patch_commit.map_or_else(
-            || default_committer.clone(),
-            |commit| commit.committer().to_owned(),
-        );
 
         let EditedPatchDescription {
             patchname: file_patchname,
@@ -779,6 +777,12 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         } else {
             PatchName::make(&message.decode()?, true, patchname_len_limit)
                 .uniquify(&allowed_patchnames, &disallow_patchnames)
+        };
+
+        let committer = if matches.get_flag("committer-date-is-author-date") {
+            default_committer.override_when(&author.when())
+        } else {
+            default_committer
         };
 
         let new_commit_id = if patch_commit.map_or(false, |patch_commit| {

@@ -109,6 +109,14 @@ impl<'repo> TransactionBuilder<'repo> {
         self
     }
 
+    /// Determines whether the committer date will be set to be the same as the author
+    /// date when pushing patches.
+    #[must_use]
+    pub(crate) fn committer_date_is_author_date(mut self, yes: bool) -> Self {
+        self.options.committer_date_is_author_date = yes;
+        self
+    }
+
     /// Perform stack transaction operations.
     ///
     /// The closure provided to this method may call various methods on the provided

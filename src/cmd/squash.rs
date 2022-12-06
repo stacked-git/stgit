@@ -136,6 +136,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .setup_transaction()
             .allow_conflicts(true)
             .use_index_and_worktree(true)
+            .committer_date_is_author_date(matches.get_flag("committer-date-is-author-date"))
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
                 squash(

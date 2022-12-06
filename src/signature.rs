@@ -46,6 +46,8 @@ pub(crate) trait SignatureExtended {
     /// The provided `matches` must come from a [`clap::Command`] setup with
     /// [`crate::patchedit::add_args()`].
     fn override_author(&self, matches: &clap::ArgMatches) -> Result<git2::Signature<'static>>;
+
+    fn override_when(&self, when: &git2::Time) -> git2::Signature<'static>;
 }
 
 impl SignatureExtended for git2::Signature<'_> {
@@ -107,6 +109,15 @@ impl SignatureExtended for git2::Signature<'_> {
 
             Ok(git2::Signature::new(name, email, &when)?)
         }
+    }
+
+    fn override_when(&self, when: &git2::Time) -> git2::Signature<'static> {
+        git2::Signature::new(
+            self.name().expect("name is valid UTF-8"),
+            self.email().expect("email is valid UTF-8"),
+            when,
+        )
+        .expect("name and email were and remain valid")
     }
 }
 

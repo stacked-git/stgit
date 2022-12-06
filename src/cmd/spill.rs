@@ -8,9 +8,11 @@ use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
 use crate::{
+    argset,
     color::get_color_stdout,
     commit::{CommitExtended, RepositoryCommitExtended},
     repo::RepositoryExtended,
+    signature::SignatureExtended,
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -52,6 +54,7 @@ fn make() -> clap::Command {
                 )
                 .action(clap::ArgAction::SetTrue),
         )
+        .arg(argset::committer_date_is_author_date_arg())
         .arg(
             Arg::new("pathspecs")
                 .help("Only spill files matching path")
@@ -65,6 +68,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
+    let config = repo.config()?;
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
@@ -95,9 +99,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
         parent.tree_id()
     };
 
+    let author = patch_commit.author_strict()?;
+    let default_committer = git2::Signature::default_committer(Some(&config))?;
+    let committer = if matches.get_flag("committer-date-is-author-date") {
+        default_committer.override_when(&author.when())
+    } else {
+        default_committer
+    };
+
     let commit_id = repo.commit_ex(
-        &patch_commit.author_strict()?,
-        &patch_commit.committer_strict()?,
+        &author,
+        &committer,
         &patch_commit.message_ex(),
         tree_id,
         patch_commit.parent_ids(),

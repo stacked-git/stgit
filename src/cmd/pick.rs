@@ -12,6 +12,7 @@ use bstr::ByteSlice;
 use clap::Arg;
 
 use crate::{
+    argset,
     color::get_color_stdout,
     commit::RepositoryCommitExtended,
     patchname::PatchName,
@@ -109,6 +110,7 @@ fn make() -> clap::Command {
                 .value_parser(clap::value_parser!(PathBuf))
                 .conflicts_with_all(["fold", "update"]),
         )
+        .arg(argset::committer_date_is_author_date_arg())
         .arg(
             Arg::new("fold")
                 .long("fold")
@@ -137,7 +139,7 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git2::Repository::open_from_env()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
-    let ref_branchname = crate::argset::get_one_str(matches, "ref-branch");
+    let ref_branchname = argset::get_one_str(matches, "ref-branch");
     let ref_stack = Stack::from_branch(
         &repo,
         ref_branchname,
@@ -358,7 +360,12 @@ fn pick_picks(
         };
         let message = &crate::commit::CommitMessage::String(message);
         let author = commit.author();
-        let committer = git2::Signature::default_committer(Some(&config))?;
+        let default_committer = git2::Signature::default_committer(Some(&config))?;
+        let committer = if matches.get_flag("committer-date-is-author-date") {
+            default_committer.override_when(&author.when())
+        } else {
+            default_committer
+        };
         let parent = if let Some(parent) = opt_parent.as_ref() {
             parent.clone()
         } else {
