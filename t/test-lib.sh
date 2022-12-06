@@ -43,8 +43,6 @@ SHELL_PATH=${SHELL_PATH:-/bin/sh}
 TEST_SHELL_PATH=${TEST_SHELL_PATH:-$SHELL_PATH}
 export PERL_PATH SHELL_PATH
 
-STGIT_DEBUG_LEVEL=0
-
 # In t0000, we need to override test directories of nested testcases. In case
 # the developer has TEST_OUTPUT_DIRECTORY part of his build options, then we'd
 # reset this value to instead contain what the developer has specified. We thus
@@ -92,7 +90,6 @@ parse_option () {
 	-h|--h|--he|--hel|--help)
 		help=t ;;
 	-v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
-		STGIT_DEBUG_LEVEL=1
 		verbose=t ;;
 	--verbose-only=*)
 		verbose_only=${opt#--*=}
@@ -191,7 +188,6 @@ fi
 
 if test -n "$stress"
 then
-	STGIT_DEBUG_LEVEL=1
 	verbose=t
 	trace=t
 	immediate=t
@@ -346,7 +342,6 @@ then
 fi
 if test -n "$trace" && test -z "$verbose_log"
 then
-	STGIT_DEBUG_LEVEL=1
 	verbose=t
 fi
 
@@ -355,8 +350,6 @@ fi
 # completes, even for non-interactive shells.
 # Disable that since we are aiming for repeatability.
 test -n "$BASH_VERSION" && shopt -u checkwinsize 2>/dev/null
-
-export STGIT_DEBUG_LEVEL
 
 # For repeatability, reset the environment to known value.
 # TERM is sanitized below, after saving color control sequences.
