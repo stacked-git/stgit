@@ -23,60 +23,68 @@ test_expect_success 'Patch range args conflict with opts' '
 '
 
 test_expect_success 'Range with single patch' '
-    stg series p1 > series.txt &&
-    echo "+ p1" > expected.txt &&
+    stg series p1 >series.txt &&
+    echo "+ p1" >expected.txt &&
     test_cmp expected.txt series.txt &&
-    stg series p3 > series.txt &&
-    echo "> p3" > expected.txt &&
+    stg series p3 >series.txt &&
+    echo "> p3" >expected.txt &&
     test_cmp expected.txt series.txt &&
-    stg series p4 > series.txt &&
-    echo "- p4" > expected.txt &&
+    stg series p4 >series.txt &&
+    echo "- p4" >expected.txt &&
     test_cmp expected.txt series.txt &&
-    stg series p6 > series.txt &&
-    echo "! p6" > expected.txt &&
+    stg series p6 >series.txt &&
+    echo "! p6" >expected.txt &&
     test_cmp expected.txt series.txt
 '
 
 test_expect_success 'Multi-patch range' '
-    stg series p2..p5 > series.txt &&
-    echo "+ p2" > expected.txt &&
-    echo "> p3" >> expected.txt &&
-    echo "- p4" >> expected.txt &&
-    echo "- p5" >> expected.txt &&
+    stg series p2..p5 >series.txt &&
+    cat >expected.txt <<-\EOF &&
+	+ p2
+	> p3
+	- p4
+	- p5
+	EOF
     test_cmp expected.txt series.txt
 '
 
 test_expect_success 'Open-ended range' '
-    stg series p2.. > series.txt &&
-    echo "+ p2" > expected.txt &&
-    echo "> p3" >> expected.txt &&
+    stg series p2.. >series.txt &&
+    cat >expected.txt <<-\EOF &&
+	+ p2
+	> p3
+	EOF
     test_cmp expected.txt series.txt
 '
 
 test_expect_success 'Open-started range' '
-    stg series ..p5 > series.txt &&
-    echo "+ p1" > expected.txt &&
-    echo "+ p2" >> expected.txt &&
-    echo "> p3" >> expected.txt &&
-    echo "- p4" >> expected.txt &&
-    echo "- p5" >> expected.txt &&
+    stg series ..p5 >series.txt &&
+    cat >expected.txt <<-\EOF &&
+	+ p1
+	+ p2
+	> p3
+	- p4
+	- p5
+	EOF
     test_cmp expected.txt series.txt
 '
 
 test_expect_success 'Same start and end' '
-    stg series p3..p3 > series.txt &&
-    echo "> p3" > expected.txt &&
+    stg series p3..p3 >series.txt &&
+    echo "> p3" >expected.txt &&
     test_cmp expected.txt series.txt
 '
 
 test_expect_success 'Multiple ranges' '
-    stg series p1 p2..p2 p3..p5 p6 > series.txt &&
-    echo "+ p1" > expected.txt &&
-    echo "+ p2" >> expected.txt &&
-    echo "> p3" >> expected.txt &&
-    echo "- p4" >> expected.txt &&
-    echo "- p5" >> expected.txt &&
-    echo "! p6" >> expected.txt &&
+    stg series p1 p2..p2 p3..p5 p6 >series.txt &&
+    cat >expected.txt <<-\EOF &&
+	+ p1
+	+ p2
+	> p3
+	- p4
+	- p5
+	! p6
+	EOF
     test_cmp expected.txt series.txt
 '
 

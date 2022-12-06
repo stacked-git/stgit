@@ -1,4 +1,5 @@
 #!/bin/sh
+
 test_description='Test "stg edit" command line arguments'
 
 . ./test-lib.sh
@@ -9,17 +10,17 @@ test_expect_success 'Initialize repo' '
     stg pop -a
 '
 
-write_script diffedit <<EOF
-sed 's/^\+content 2/-content 2/' "\$1" > "\$1.tmp" && mv "\$1.tmp" "\$1"
-EOF
 test_expect_success 'Edit diff such that it will not apply' '
+    write_script diffedit <<-\EOF &&
+	sed "s/^\\+content 2/-content 2/" "$1" >"$1.tmp" && mv "$1.tmp" "$1"
+	EOF
     EDITOR=./diffedit command_error stg edit -d p2
 '
 
-write_script diffedit <<EOF
-sed 's/^\+content 2/+content 22/' "\$1" > "\$1.tmp" && mv "\$1.tmp" "\$1"
-EOF
 test_expect_success 'Edit diff such that it will apply' '
+    write_script diffedit <<-\EOF &&
+	sed "s/^\\+content 2/+content 22/" "$1" >"$1.tmp" && mv "$1.tmp" "$1"
+	EOF
     EDITOR=./diffedit stg edit -d p2 &&
     stg goto p2 &&
     grep "content 22" 2.t

@@ -1,7 +1,6 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Robin Rosenberg
-#
 
 test_description='Test floating a number of patches to the top of the stack'
 
@@ -51,30 +50,30 @@ test_expect_success 'Float p7 p6 to top' '
     test "$(echo $(stg series --applied --noprefix))" = "p4 p2 p3 p1 p5 p7 p6"
 '
 
-cat > series.txt <<EOF
-p1
-p2
-p3
-p4
-p5
-p6
-p7
-EOF
 test_expect_success 'Float with series file' '
+    cat >series.txt <<-\EOF &&
+	p1
+	p2
+	p3
+	p4
+	p5
+	p6
+	p7
+	EOF
     stg float --series series.txt &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3 p4 p5 p6 p7"
 '
 
-cat > rev-series.txt <<EOF
-p7
-p6
-p5
-p4
-p3
-p2
-p1
-EOF
 test_expect_success 'Float with series from stdin' '
+    cat >rev-series.txt <<-\EOF &&
+	p7
+	p6
+	p5
+	p4
+	p3
+	p2
+	p1
+	EOF
     cat rev-series.txt | stg float -s - &&
     test "$(echo $(stg series --applied --noprefix))" = "p7 p6 p5 p4 p3 p2 p1"
 '

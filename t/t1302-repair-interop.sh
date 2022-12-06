@@ -1,9 +1,11 @@
 #!/bin/sh
+
 test_description='Test git/StGit interoperability with "stg repair"'
+
 . ./test-lib.sh
 
 test_expect_success 'Create some git-only history' '
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     git add foo.txt &&
     git commit -m foo &&
     git tag foo-tag &&

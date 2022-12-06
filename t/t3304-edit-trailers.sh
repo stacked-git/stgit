@@ -1,4 +1,5 @@
 #!/bin/sh
+
 test_description='Test adding trailers with "stg edit"'
 
 . ./test-lib.sh

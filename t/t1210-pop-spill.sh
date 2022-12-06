@@ -12,7 +12,7 @@ reset_test () {
 test_expect_success 'Create a few patches' '
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo "patch$i" >> p.txt &&
+        echo "patch$i" >>p.txt &&
         stg add p.txt &&
         stg refresh
     done &&
@@ -112,7 +112,7 @@ test_expect_success 'Create a few patches that touch separate files' '
     stg delete .. &&
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo "patch$i" >> p$i.txt &&
+        echo "patch$i" >>p$i.txt &&
         stg add p$i.txt &&
         stg refresh
     done &&
@@ -140,7 +140,7 @@ test_expect_success 'Create a few patches that touch the same lines in a file' '
     stg delete .. &&
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo "patch$i" > p.txt &&
+        echo "patch$i" >p.txt &&
         stg add p.txt &&
         stg refresh
     done &&
@@ -166,7 +166,7 @@ test_expect_success 'Pop patches that all touch the same lines in a file' '
 
 test_expect_success 'Pop an empty patch' '
     stg delete .. &&
-    echo "spillemptypatch" > p.txt &&
+    echo "spillemptypatch" >p.txt &&
     git add p.txt &&
     git commit -m spillempty p.txt &&
     stg new spillempty -m spillempty &&
@@ -190,13 +190,13 @@ test_expect_success 'Create a few patches & make some non-conflicting local chan
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo "patch$i" >> patch$i.txt &&
+        echo "patch$i" >>patch$i.txt &&
         stg add patch$i.txt &&
         stg refresh
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
-    echo "local" >> patch0.txt
+    echo "local" >>patch0.txt
 '
 
 test_expect_success 'Pop two patches, keeping local changes' '
@@ -221,7 +221,7 @@ test_expect_success 'Reset repository' '
     git reset --hard &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2" ] &&
-    [ "$(echo $(ls patch?.txt 2> /dev/null))" = "" ]
+    [ "$(echo $(ls patch?.txt 2>/dev/null))" = "" ]
 '
 
 test_expect_success 'Push patches again' '

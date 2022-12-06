@@ -5,10 +5,10 @@ test_description='Test "stg repair" with non-utf-8 commit data encodings'
 . ./test-lib.sh
 
 test_expect_success 'Create git commit with ISO8859-1 message and author' '
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     git add foo.txt &&
     git commit -a -m foo &&
-    echo "0" >> foo.txt &&
+    echo "0" >>foo.txt &&
     test_config i18n.commitencoding ISO8859-1 &&
     (
         . "$TEST_DIRECTORY"/t1305/author-8859-1.txt &&
@@ -38,19 +38,19 @@ test_expect_success 'Check show is utf-8' '
 '
 
 test_expect_success 'Check underlying commit is ISO8859-1' '
-    git cat-file -p HEAD > "$HOME"/commit-data.txt &&
+    git cat-file -p HEAD >"$HOME"/commit-data.txt &&
     cat "$HOME"/commit-data.txt |
     grep -e "^encoding ISO8859-1" &&
     cat "$HOME"/commit-data.txt |
     grep -e "^author" |
-    cut -d" " -f 2-4 > "$HOME"/auth-8859-1.txt &&
+    cut -d" " -f 2-4 >"$HOME"/auth-8859-1.txt &&
     cat "$HOME"/auth-8859-1.txt |
-    iconv -f ISO8859-1 -t UTF-8 > "$HOME"/auth-utf8.txt &&
+    iconv -f ISO8859-1 -t UTF-8 >"$HOME"/auth-utf8.txt &&
     test "Áéí óú <author@example.com>" = "$(cat "$HOME"/auth-utf8.txt)"
 '
 
 test_expect_success 'Encoding after edit' '
-    stg edit --sign 2> "$HOME"/warnings.txt &&
+    stg edit --sign 2>"$HOME"/warnings.txt &&
     test_must_be_empty "$HOME"/warnings.txt &&
     git cat-file -p HEAD | grep -e "ÄËÑÏÖ" &&
     git cat-file -p HEAD | grep -e "Ábçdèfg" &&

@@ -1,5 +1,5 @@
 #!/bin/sh
-#
+
 test_description="Test 'stg email'"
 
 . ./test-lib.sh

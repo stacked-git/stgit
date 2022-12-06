@@ -12,7 +12,7 @@ test_expect_success 'Clean uninitialized branch' '
 test_expect_success 'Initialize StGit stack' '
     stg new e0 -m e0 &&
     stg new p0 -m p0 &&
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     stg add foo.txt &&
     stg refresh &&
     stg new e1 -m e1 &&
@@ -61,11 +61,11 @@ test_expect_success 'Ensure hidden patches are not cleaned' '
 
 test_expect_success 'Create a conflict' '
     stg new p1 -m p1 &&
-    echo bar > foo.txt &&
+    echo bar >foo.txt &&
     stg refresh &&
     stg pop &&
     stg new p2 -m p2
-    echo quux > foo.txt &&
+    echo quux >foo.txt &&
     stg refresh &&
     conflict stg push
 '

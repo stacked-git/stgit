@@ -13,7 +13,7 @@ test_expect_success 'Create some patches' '
     stg init &&
     for x in aaa bbb ccc ddd; do
         stg new -m patch-$x &&
-        echo "$x" >> foo.txt &&
+        echo "$x" >>foo.txt &&
         stg add foo.txt &&
         stg refresh
     done
@@ -67,14 +67,14 @@ test_expect_success 'Diff opts from config and command line' '
 '
 
 test_expect_success 'Show patch range' '
-    stg show patch-bbb..patch-ddd > show-range.txt &&
+    stg show patch-bbb..patch-ddd >show-range.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-range.txt) = "3" &&
     test $(grep -c -E "\+aaa" show-range.txt) = "0"
 '
 
 test_expect_success 'Show unapplied' '
     stg goto patch-bbb &&
-    stg show --unapplied > show-unapplied.txt &&
+    stg show --unapplied >show-unapplied.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-unapplied.txt) = "2" &&
     test $(grep -c -E "\+(aaa|bbb)" show-unapplied.txt) = "0" &&
     for pn in $(stg series --unapplied --noprefix); do
@@ -83,7 +83,7 @@ test_expect_success 'Show unapplied' '
 '
 
 test_expect_success 'Show applied' '
-    stg show --applied > show-applied.txt &&
+    stg show --applied >show-applied.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-applied.txt) = "2" &&
     test $(grep -c -E "\+(ccc|ddd)" show-applied.txt) = "0"
     for pn in $(stg series --applied --noprefix); do
@@ -92,13 +92,13 @@ test_expect_success 'Show applied' '
 '
 
 test_expect_success 'Show head' '
-    stg show > show-head.txt
+    stg show >show-head.txt &&
     test "$(cat show-head.txt)" = "$(stg show $(stg top))" &&
     test "$(cat show-head.txt)" = "$(stg show $(stg id $(stg top)))"
 '
 
 test_expect_success 'Show by name' '
-    stg show patch-aaa patch-ddd > show-a-d.txt &&
+    stg show patch-aaa patch-ddd >show-a-d.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-a-d.txt) = "2" &&
     test $(grep -c -E "\+(bbb|ccc)" show-a-d.txt) = "0"
 '
@@ -106,7 +106,7 @@ test_expect_success 'Show by name' '
 test_expect_success 'Run show on empty patch' '
     stg pop -a &&
     stg new -m "empty message" empty &&
-    stg show empty > show-empty.txt &&
+    stg show empty >show-empty.txt &&
     grep "empty message" show-empty.txt
 '
 
@@ -115,7 +115,7 @@ test_expect_success 'Run show --stat on empty patch' '
 '
 
 test_expect_success 'Run show --stat on patches' '
-    stg show --stat patch-aaa patch-ddd > show-a-d-stat.txt &&
+    stg show --stat patch-aaa patch-ddd >show-a-d-stat.txt &&
     test $(grep -c -e " foo.txt | 1 \+" show-a-d-stat.txt) = "2" &&
     test $(grep -c -E "patch-aaa|patch-ddd" show-a-d-stat.txt) = "2"
 '

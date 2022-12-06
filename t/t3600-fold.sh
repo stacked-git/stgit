@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test_description='Test the fold command.'
+test_description='Test the fold command'
 
 . ./test-lib.sh
 
@@ -11,21 +11,21 @@ test_expect_success 'Attempt fold on uninitialized stack' '
 '
 
 test_expect_success 'Initialize StGit repository' '
-    echo hello > foo.txt &&
+    echo hello >foo.txt &&
     git add foo.txt &&
     git commit -m "add foo.txt" &&
-    echo "preface" > foo.txt &&
-    echo "hello" >> foo.txt &&
-    git diff > threeway.diff &&
+    echo "preface" >foo.txt &&
+    echo "hello" >>foo.txt &&
+    git diff >threeway.diff &&
     git checkout foo.txt &&
     stg new -m p1 &&
-    echo "hello" > foo.txt &&
-    echo "from p1" >> foo.txt &&
+    echo "hello" >foo.txt &&
+    echo "from p1" >>foo.txt &&
     stg refresh &&
-    echo "hello" > foo.txt &&
-    echo "from p1" >> foo.txt &&
-    echo "and fold1" >> foo.txt &&
-    git diff > fold1.diff &&
+    echo "hello" >foo.txt &&
+    echo "from p1" >>foo.txt &&
+    echo "and fold1" >>foo.txt &&
+    git diff >fold1.diff &&
     git checkout foo.txt
 '
 
@@ -35,7 +35,7 @@ test_expect_success 'Attempt fold more than one patch' '
 '
 
 test_expect_success 'Attempt fold with local changes' '
-    echo "hello dirty" > foo.txt &&
+    echo "hello dirty" >foo.txt &&
     test_when_finished "stg reset --hard" &&
     command_error stg fold fold1.diff 2>err &&
     grep -e "Worktree not clean" err
@@ -77,8 +77,8 @@ test_expect_success 'Threeway fold' '
 test_expect_success 'Attempt to fold conflicting patch' '
     stg new -m p2 &&
     test_when_finished "stg delete p2" &&
-    echo "hello" > foo.txt &&
-    echo "from p2" >> foo.txt &&
+    echo "hello" >foo.txt &&
+    echo "from p2" >>foo.txt &&
     stg refresh &&
     command_error stg fold fold1.diff 2>err &&
     grep "Patch does not apply cleanly" err &&
@@ -88,8 +88,8 @@ test_expect_success 'Attempt to fold conflicting patch' '
 
 test_expect_success 'Attempt to fold conflicting patch with rejects' '
     stg new -m p2 &&
-    echo "hello" > foo.txt &&
-    echo "from p2" >> foo.txt &&
+    echo "hello" >foo.txt &&
+    echo "from p2" >>foo.txt &&
     stg refresh &&
     command_error stg fold --reject fold1.diff 2>err &&
     grep "patch failed" err &&

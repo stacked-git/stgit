@@ -1,7 +1,9 @@
 #!/bin/sh
+
 # Copyright (c) 2010 Juergen Wieferink
 
 test_description='Test repair with hidden patches'
+
 . ./test-lib.sh
 
 test_expect_success 'Initialize the StGit repository' '

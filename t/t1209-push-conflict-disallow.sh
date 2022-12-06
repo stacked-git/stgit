@@ -5,15 +5,15 @@ test_description='Test stgit.push.allow-conflicts=false'
 . ./test-lib.sh
 
 test_expect_success 'Setup patches' '
-    printf "hello\n" > foo.txt &&
+    printf "hello\n" >foo.txt &&
     stg add foo.txt &&
     stg new -rm hello &&
-    printf "hello\n\n\ngoodbye" > foo.txt &&
+    printf "hello\n\n\ngoodbye" >foo.txt &&
     stg new -rm goodbye &&
-    printf "hello\naaa\n\ngoodbye" > foo.txt &&
+    printf "hello\naaa\n\ngoodbye" >foo.txt &&
     stg new -rm a-patch &&
     stg pop &&
-    printf "hello\nbbb\n\ngoodbye" > foo.txt &&
+    printf "hello\nbbb\n\ngoodbye" >foo.txt &&
     stg new -rm b-patch &&
     stg pop
 '

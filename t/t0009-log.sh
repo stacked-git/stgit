@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test_description='Test the log command.'
+test_description='Test the log command'
 
 . ./test-lib.sh
 
@@ -13,9 +13,8 @@ test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
-
 test_expect_success 'Empty log' '
-    stg log > log.txt &&
+    stg log >log.txt &&
     test_line_count = 1 log.txt &&
     head -n 1 log.txt | grep -e "initialize"
 '
@@ -50,7 +49,7 @@ test_expect_success 'Test invalid opts with graphical' '
 '
 
 test_expect_success 'Test log full' '
-    stg log --full > log.txt &&
+    stg log --full >log.txt &&
     test_line_count = 5 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "commit"
     head -n 2 log.txt | tail -n 1 | grep -e "Author: A Ú Thor"
@@ -61,30 +60,30 @@ test_expect_success 'Test log full' '
 
 test_expect_success 'Make changes to patches' '
     stg goto p1 &&
-    echo "bar1" > file1.txt &&
+    echo "bar1" >file1.txt &&
     stg refresh &&
-    echo "baz1" > file1.txt &&
+    echo "baz1" >file1.txt &&
     stg refresh &&
     stg goto p2 &&
-    echo "bar2" > file2.txt &&
+    echo "bar2" >file2.txt &&
     stg refresh &&
     stg goto p3 &&
     stg edit --sign
 '
 
 test_expect_success 'Verify log for p0' '
-    stg log p0 > log.txt &&
+    stg log p0 >log.txt &&
     test_line_count = 1 log.txt &&
     grep -e "uncommit" log.txt
 '
 
 test_expect_success 'Log with diff' '
-    stg log --diff p0 > log.txt &&
+    stg log --diff p0 >log.txt &&
     grep -e "diff --git a/patches/p0 b/patches/p0" log.txt
 '
 
 test_expect_success 'Verify log for p1' '
-    stg log p1 > log.txt &&
+    stg log p1 >log.txt &&
     test_line_count = 3 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "refresh" &&
     head -n 2 log.txt | tail -n 1 | grep -e "refresh" &&
@@ -92,7 +91,7 @@ test_expect_success 'Verify log for p1' '
 '
 
 test_expect_success 'Verify log for p2' '
-    stg log p2 > log.txt &&
+    stg log p2 >log.txt &&
     test_line_count = 3 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "refresh" &&
     head -n 2 log.txt | tail -n 1 | grep -e "goto" &&
@@ -100,7 +99,7 @@ test_expect_success 'Verify log for p2' '
 '
 
 test_expect_success 'Verify log for p3' '
-    stg log p3 > log.txt &&
+    stg log p3 >log.txt &&
     test_line_count = 3 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "edit" &&
     head -n 2 log.txt | tail -n 1 | grep -e "goto" &&
@@ -110,7 +109,7 @@ test_expect_success 'Verify log for p3' '
 test_expect_success 'Verify log with patch limit from subdir' '
     mkdir subdir &&
     (cd subdir &&
-     stg log p3 > ../log.txt
+     stg log p3 >../log.txt
     ) &&
     rmdir subdir &&
     test_line_count = 3 log.txt &&
@@ -120,7 +119,7 @@ test_expect_success 'Verify log with patch limit from subdir' '
 '
 
 test_expect_success 'Verify log for p2 and p3' '
-    stg log p2 p3 > log.txt &&
+    stg log p2 p3 >log.txt &&
     test_line_count = 5 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "edit" &&
     head -n 2 log.txt | tail -n 1 | grep -e "goto" &&
@@ -130,7 +129,7 @@ test_expect_success 'Verify log for p2 and p3' '
 '
 
 test_expect_success 'Log with number' '
-    stg log -n3 p2 p3 > log.txt &&
+    stg log -n3 p2 p3 >log.txt &&
     test_line_count = 3 log.txt &&
     head -n 1 log.txt | tail -n 1 | grep -e "edit" &&
     head -n 2 log.txt | tail -n 1 | grep -e "goto" &&
@@ -140,7 +139,7 @@ test_expect_success 'Log with number' '
 test_expect_success 'Clear the log' '
     stg log --clear &&
     test "$(echo $(stg series --noprefix))" = "p0 p1 p2 p3" &&
-    stg log > log.txt &&
+    stg log >log.txt &&
     test_line_count = 1 log.txt &&
     head -n 1 log.txt | grep -e "clear log"
 '

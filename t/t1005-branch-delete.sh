@@ -27,17 +27,17 @@ test_expect_success 'Force delete branch with patches' '
 
 test_expect_success 'Make sure the branch ref was deleted' '
     [ -z "$(git show-ref | grep master | tee /dev/stderr)" ]
-    '
+'
 
 test_expect_success 'Make sure the branch config was deleted' '
     [ -z "$(git config -l | grep branch\\.master | tee /dev/stderr)" ] &&
     [ -z "$(git config -l | grep branch\\.master\\.stgit | tee /dev/stderr)" ] &&
     test_expect_code 128 git config --remove-section branch.master.stgit
-    '
+'
 
 test_expect_success 'Make sure the branch files were deleted' '
     [ -z "$(find .git -type f | grep master | tee /dev/stderr)" ]
-    '
+'
 
 test_expect_success 'Attempt to delete current branch' '
     command_error stg branch --delete $(stg branch) 2>err &&

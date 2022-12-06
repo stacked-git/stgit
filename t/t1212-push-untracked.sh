@@ -5,8 +5,8 @@ test_description='Test push conflicting with untracked files'
 . ./test-lib.sh
 
 test_expect_success 'Use pop --spill' '
-    echo aaa > a.txt &&
-    echo bbb > b.txt &&
+    echo aaa >a.txt &&
+    echo bbb >b.txt &&
     stg add a.txt b.txt &&
     stg new -rm patch
     stg pop --spill &&
@@ -21,7 +21,7 @@ test_expect_success 'Use pop --spill' '
 '
 
 test_expect_success 'Use pop and manually create untracked file' '
-    echo aaa > a.txt &&
+    echo aaa >a.txt &&
     command_error stg push 2>err &&
     grep "Untracked working tree file .a\.txt. would be overwritten by merge" err
 '

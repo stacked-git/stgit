@@ -33,7 +33,7 @@ test_expect_success 'Attempt out of order' '
 '
 
 test_expect_success 'Squash out of order no conflict' '
-    echo hello > bar.txt &&
+    echo hello >bar.txt &&
     stg add bar.txt &&
     stg new -m bar-patch &&
     stg refresh &&
@@ -42,7 +42,7 @@ test_expect_success 'Squash out of order no conflict' '
 '
 
 test_expect_success 'Squash out of order no conflict no name' '
-    echo hello > baz.txt &&
+    echo hello >baz.txt &&
     stg add baz.txt &&
     stg new -m baz-patch &&
     stg refresh &&
@@ -54,7 +54,7 @@ test_expect_success 'Save template' '
     stg squash --save-template mytemplate p1 p2 &&
     test_path_is_file mytemplate &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 q6" ] &&
-    echo "squashed patch" > mytemplate &&
+    echo "squashed patch" >mytemplate &&
     stg squash --file=mytemplate p1 p2 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 squashed-patch p3 p4 q6" ]
 '
@@ -71,13 +71,10 @@ test_expect_success 'Squash at stack top' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '
 
-test_expect_success 'Setup fake editor' '
-	write_script fake-editor <<-\eof
-	echo "" >"$1"
-	eof
-'
-
 test_expect_success 'Empty commit message aborts the squash' '
+    write_script fake-editor <<-\EOF
+	echo "" >"$1"
+	EOF
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg squash --name=p0 p0 q1 2>err &&
@@ -85,15 +82,14 @@ test_expect_success 'Empty commit message aborts the squash' '
     test "$(echo $(stg series))" = "+ p0 > q1"
 '
 
-cat > editor <<EOF
-#!/bin/sh
-echo "Editor was invoked" | tee editor-invoked
-EOF
-chmod a+x editor
 test_expect_success 'Squash with top != head' '
-    echo blahonga >> foo.txt &&
+    write_script fake-editor <<-\EOF &&
+	#!/bin/sh
+	echo "Editor was invoked" | tee editor-invoked
+	EOF
+    echo blahonga >>foo.txt &&
     git commit -a -m "a new commit" &&
-    EDITOR=./editor command_error stg squash --name=r0 p0 q1 &&
+    EDITOR=./fake-editor command_error stg squash --name=r0 p0 q1 &&
     test "$(echo $(stg series))" = "+ p0 > q1" &&
     test_path_is_missing editor-invoked
 '

@@ -1,7 +1,6 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Yann Dirson
-#
 
 test_description='Test pull behaviors'
 
@@ -23,7 +22,7 @@ test_expect_success 'Setup and clone tree, and setup changes' '
     (
         cd bar &&
         stg new p1 -m p1 &&
-        echo c >> file &&
+        echo c >>file &&
         stg refresh
     )
 '
@@ -78,7 +77,7 @@ test_expect_success 'Check that all went well' '
 test_expect_success 'Ensure that new patches are not clobbered' '
     (
         cd bar &&
-        echo "new content" >> file &&
+        echo "new content" >>file &&
         cp file expected &&
         stg refresh &&
         stg pull --merged &&

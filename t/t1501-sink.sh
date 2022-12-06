@@ -11,22 +11,22 @@ test_expect_success 'Attempt sink with uninitialized stack' '
 '
 
 test_expect_success 'Initialize StGit stack' '
-    echo 0 >> f0 &&
+    echo 0 >>f0 &&
     stg add f0 &&
     git commit -m initial &&
-    echo 1 >> f1 &&
+    echo 1 >>f1 &&
     stg add f1 &&
     git commit -m p1 &&
-    echo 2 >> f2 &&
+    echo 2 >>f2 &&
     stg add f2 &&
     git commit -m p2 &&
-    echo 3 >> f3 &&
+    echo 3 >>f3 &&
     stg add f3 &&
     git commit -m p3 &&
-    echo 4 >> f4 &&
+    echo 4 >>f4 &&
     stg add f4 &&
     git commit -m p4 &&
-    echo 22 >> f2 &&
+    echo 22 >>f2 &&
     stg add f2 &&
     git commit -m p22 &&
     stg uncommit p22 p4 p3 p2 p1 &&

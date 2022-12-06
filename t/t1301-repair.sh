@@ -1,6 +1,9 @@
 #!/bin/sh
+
 # Copyright (c) 2006 Karl Hasselström
-test_description='Test the repair command.'
+
+test_description='Test the repair command'
+
 . ./test-lib.sh
 
 test_expect_success 'Repair in a non-initialized repository' '
@@ -23,7 +26,7 @@ test_expect_success 'Repair with invalid arguments' '
 
 test_expect_success 'Create a patch' '
     stg new foo -m foo &&
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     stg add foo.txt &&
     stg refresh
 '
@@ -40,7 +43,7 @@ test_expect_success 'Repair when there is nothing to do' '
 '
 
 test_expect_success 'Create a Git commit' '
-    echo bar > bar.txt &&
+    echo bar >bar.txt &&
     git add bar.txt &&
     git commit -a -m bar
 '
@@ -53,12 +56,12 @@ test_expect_success 'Turn one Git commit into a patch' '
 '
 
 test_expect_success 'Create three more Git commits' '
-    echo one > numbers.txt &&
+    echo one >numbers.txt &&
     git add numbers.txt &&
     git commit -a -m one &&
-    echo two >> numbers.txt &&
+    echo two >>numbers.txt &&
     git commit -a -m two &&
-    echo three >> numbers.txt &&
+    echo three >>numbers.txt &&
     git commit -a -m three
 '
 
@@ -72,7 +75,7 @@ test_expect_success 'Turn three Git commits into patches' '
 test_expect_success 'Create a merge commit' '
     git config pull.rebase false &&
     git checkout -b br master^^ &&
-    echo woof > woof.txt &&
+    echo woof >woof.txt &&
     stg add woof.txt &&
     git commit -a -m woof &&
     git checkout master &&

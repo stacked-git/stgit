@@ -1,7 +1,6 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Yann Dirson
-#
 
 test_description='Check cloning in a repo subdir
 
@@ -9,8 +8,7 @@ Check that "stg clone" works in a subdir of a git tree.
 This ensures (to some point) that a clone within a tree does
 not corrupt the enclosing repo.
 
-This test must be run before any tests making use of clone.
-'
+This test must be run before any tests making use of clone.'
 
 . ./test-lib.sh
 

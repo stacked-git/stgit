@@ -64,7 +64,7 @@ test_expect_success 'Observe latent conflict with regular push' '
     test "$(echo $(stg series --applied --noprefix))" = "b1 b2 b3 a1" &&
     test "$(echo $(stg series --unapplied --noprefix))" = "a3 a2" &&
     conflict stg push &&
-    echo "line 3" > a.txt &&
+    echo "line 3" >a.txt &&
     stg add a.txt &&
     stg refresh &&
     test "$(echo $(stg series --applied --noprefix))" = "b1 b2 b3 a1 a3" &&
@@ -73,7 +73,7 @@ test_expect_success 'Observe latent conflict with regular push' '
 
 test_expect_success 'Push allowed with dirty worktree' '
     stg pop -n 2 &&
-    echo "foobar" > b.txt &&
+    echo "foobar" >b.txt &&
     test_when_finished git checkout b.txt &&
     test "$(stg status b.txt)" = " M b.txt" &&
     stg push --noapply a1 a2 a3 &&

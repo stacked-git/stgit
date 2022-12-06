@@ -1,17 +1,14 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Yann Dirson
-#
 
 test_description='Branch operations.
 
-Exercises the "stg branch" commands.
-'
+Exercises the "stg branch" commands.'
 
 . ./test-lib.sh
 
-test_expect_success \
-    'Create upstream repo' '
+test_expect_success 'Create upstream repo' '
     test_create_repo upstream &&
     (
         cd upstream &&
@@ -23,16 +20,14 @@ test_expect_success \
     test "$(git config --get branch.master.remote)" = "origin"
 '
 
-test_expect_success \
-    'Create a branch when the current one is not an StGit stack' '
+test_expect_success 'Create a branch when the current one is not an StGit stack' '
     git branch regular-branch &&
     git branch --set-upstream-to=origin/master regular-branch &&
     stg branch --create new regular-branch &&
     test "$(stg branch)" = "new"
 '
 
-test_expect_success \
-    'Check for various bits of new branch' '
+test_expect_success 'Check for various bits of new branch' '
     git show-ref --verify --quiet refs/heads/new &&
     git show-ref --verify --quiet refs/stacks/new &&
     test_path_is_missing .git/patches/new &&
@@ -43,18 +38,16 @@ test_expect_success \
     test "$(git rev-parse HEAD)" = "$(git rev-parse new)"
 '
 
-test_expect_success \
-    'Too many args to --create' '
+test_expect_success 'Too many args to --create' '
     general_error stg branch --create aname acommit anextra
 '
 
-test_expect_success \
-    'Create branch with worktree changes' '
+test_expect_success 'Create branch with worktree changes' '
     stg new -m p0 &&
-    echo hello > file.txt &&
+    echo hello >file.txt &&
     stg add file.txt &&
     stg refresh &&
-    echo bye > file.txt &&
+    echo bye >file.txt &&
     stg branch --create branch-with-change &&
     test "$(stg branch)" = "branch-with-change" &&
     test "$(stg status file.txt)" = " M file.txt" &&
@@ -63,42 +56,35 @@ test_expect_success \
     git checkout file.txt
 '
 
-test_expect_success \
-    'Initialize master branch' '
+test_expect_success 'Initialize master branch' '
     stg branch master &&
     stg init
 '
 
-test_expect_success \
-    'Attempt switching to current branch' '
+test_expect_success 'Attempt switching to current branch' '
     command_error stg branch $(stg branch) 2>err &&
     grep "is already the current branch" err
 '
 
-test_expect_success \
-    'Attempt no branch command' '
+test_expect_success 'Attempt no branch command' '
     general_error stg branch foo bar 2>err &&
     grep "Found argument .bar. which wasn.t expected" err
 '
 
-test_expect_success \
-    'Invalid num arguments to branch list' '
+test_expect_success 'Invalid num arguments to branch list' '
     general_error stg branch --list new 2>err &&
     grep "Found argument .new. which wasn.t expected" err
 '
 
-test_expect_success \
-    'Create a git branch' '
+test_expect_success 'Create a git branch' '
     git update-ref refs/heads/foo2 refs/heads/master
 '
 
-test_expect_success \
-    'Try to create an stgit branch with an existing git branch by that name' '
+test_expect_success 'Try to create an stgit branch with an existing git branch by that name' '
     command_error stg branch -c foo2
 '
 
-test_expect_success \
-    'Check that no part of the branch was created' '
+test_expect_success 'Check that no part of the branch was created' '
     test $(find .git -name foo2 \
         | tee /dev/stderr \
         | grep -v ^\\.git/refs/heads/foo2$ \
@@ -109,15 +95,13 @@ test_expect_success \
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
-test_expect_success \
-    'Create an invalid refs/heads/ entry' '
+test_expect_success 'Create an invalid refs/heads/ entry' '
     touch .git/refs/heads/foo3 &&
     test_when_finished rm .git/refs/heads/foo3 &&
     command_error stg branch -c foo3
 '
 
-test_expect_success \
-    'Check that no part of the branch was created' '
+test_expect_success 'Check that no part of the branch was created' '
     # Workaround for the test failure to make the rest of the subtests
     # succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
     # we need to reset it.)
@@ -131,8 +115,7 @@ test_expect_success \
     test "$(git symbolic-ref HEAD)" = "refs/heads/master"
 '
 
-test_expect_success \
-    'Setup two commits including removal of generated files' '
+test_expect_success 'Setup two commits including removal of generated files' '
     touch file1 file2 &&
     stg add file1 file2 &&
     git commit -m 1 &&
@@ -141,13 +124,11 @@ test_expect_success \
     touch file2
 '
 
-test_expect_success \
-    'Create branch down the stack, behind the conflict caused by the generated file' '
+test_expect_success 'Create branch down the stack, behind the conflict caused by the generated file' '
     command_error stg branch --create foo4 master^
 '
 
-test_expect_success \
-    'Check the branch was not created' '
+test_expect_success 'Check the branch was not created' '
     test_path_is_missing file1 &&
     test $(find .git -name foo4 | tee /dev/stderr | wc -l) -eq 0 &&
     test $(git show-ref | grep foo4 | wc -l) -eq 0 &&
@@ -156,21 +137,18 @@ test_expect_success \
     rm file2
 '
 
-test_expect_success \
-    'Branch list from detached head' '
+test_expect_success 'Branch list from detached head' '
     git checkout HEAD~ &&
-    stg branch --list > list.txt &&
+    stg branch --list >list.txt &&
     test_when_finished rm list.txt &&
     test "$(cat list.txt | grep -c -e ">")" = "0"
 '
 
-test_expect_success \
-    'Branch create from detached head' '
+test_expect_success 'Branch create from detached head' '
     stg branch --create from-detached
 '
 
-test_expect_success \
-    'Switch branch from detached head' '
+test_expect_success 'Switch branch from detached head' '
     stg branch new
 '
 

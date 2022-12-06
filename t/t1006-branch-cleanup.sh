@@ -7,7 +7,7 @@ test_description='Branch cleanup'
 test_expect_success 'Initialize branch' '
     stg init &&
     stg branch --create foo &&
-    echo "hello" > bar &&
+    echo "hello" >bar &&
     stg add bar &&
     stg new -m p0 &&
     stg refresh

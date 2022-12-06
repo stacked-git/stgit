@@ -1,149 +1,120 @@
 #!/bin/sh
+
 # Copyright (c) 2006 Karl Hasselström
 
-test_description='Test the delete command (deleting one patch at a time).'
+test_description='Test the delete command (deleting one patch at a time)'
 
 . ./test-lib.sh
 
-test_expect_success \
-    'Delete on uninitialized stack' \
-    '
+test_expect_success 'Delete on uninitialized stack' '
     stg delete .. >out &&
     test_must_be_empty out
-    '
+'
 
-test_expect_success \
-    'Create a patch' \
-    '
+test_expect_success 'Create a patch' '
     stg new foo -m foo &&
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     stg add foo.txt &&
     stg refresh
-    '
+'
 
-test_expect_success \
-    'Invalid arguments' \
-    '
+test_expect_success 'Invalid arguments' '
     general_error stg delete --top foo 2>err &&
     grep -e "error: The argument .--top. cannot be used with .\[patch\]\.\.\.." err
-    '
+'
 
-test_expect_success \
-    'Attempt delete --top with none applied' \
-    '
+test_expect_success 'Attempt delete --top with none applied' '
     stg pop &&
     command_error stg delete --top 2>err &&
     grep -e "No patches applied" err &&
     stg push
-    '
+'
 
-test_expect_success \
-    'No patches specified' \
-    '
+test_expect_success 'No patches specified' '
     general_error stg delete 2>err &&
     grep -e "The following required arguments were not provided" err
-    '
+'
 
-test_expect_success \
-    'Try to delete a non-existing patch' \
-    '
+test_expect_success 'Try to delete a non-existing patch' '
     [ $(stg series --applied -c) -eq 1 ] &&
     command_error stg delete bar &&
     [ $(stg series --applied -c) -eq 1 ]
-    '
+'
 
-test_expect_success \
-    'Try to delete the topmost patch while dirty' \
-    '
-    echo dirty >> foo.txt &&
+test_expect_success 'Try to delete the topmost patch while dirty' '
+    echo dirty >>foo.txt &&
     [ $(stg series --applied -c) -eq 1 ] &&
     command_error stg delete foo &&
     [ $(stg series --applied -c) -eq 1 ] &&
     git reset --hard
-    '
+'
 
-test_expect_success \
-    'Delete the topmost patch' \
-    '
+test_expect_success 'Delete the topmost patch' '
     [ $(stg series --applied -c) -eq 1 ] &&
     stg delete foo &&
     [ $(stg series --applied -c) -eq 0 ]
-    '
+'
 
-test_expect_success \
-    'Create an unapplied patch' \
-    '
+test_expect_success 'Create an unapplied patch' '
     stg new foo -m foo &&
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     stg add foo.txt &&
     stg refresh &&
     stg pop
-    '
+'
 
-test_expect_success \
-    'Delete an unapplied patch' \
-    '
+test_expect_success 'Delete an unapplied patch' '
     [ $(stg series --unapplied -c) -eq 1 ] &&
     stg delete foo &&
     [ $(stg series --unapplied -c) -eq 0 ]
-    '
+'
 
-test_expect_success \
-    'Create three patches' \
-    '
+test_expect_success 'Create three patches' '
     stg new foo -m foo &&
-    echo foo > foo.txt &&
+    echo foo >foo.txt &&
     stg add foo.txt &&
     stg refresh &&
     stg new bar -m bar &&
-    echo bar > bar.txt &&
+    echo bar >bar.txt &&
     stg add bar.txt &&
     stg refresh &&
     stg new baz -m baz &&
-    echo baz > baz.txt &&
+    echo baz >baz.txt &&
     stg add baz.txt &&
     stg refresh
-    '
+'
 
-test_expect_success \
-    'Try to delete a topmost patch with --top option' \
-    '
+test_expect_success 'Try to delete a topmost patch with --top option' '
     [ $(stg series --applied -c) -eq 3 ] &&
     stg delete --top &&
     [ $(stg series --applied -c) -eq 2 ]
-    '
+'
 
-test_expect_success \
-    'Try to delete a non-topmost applied patch' \
-    '
+test_expect_success 'Try to delete a non-topmost applied patch' '
     [ $(stg series --applied -c) -eq 2 ] &&
     stg delete foo &&
     [ $(stg series --applied -c) -eq 1 ]
-    '
+'
 
-test_expect_success \
-    'Create another branch, and put one patch in each branch' \
-    '
+test_expect_success 'Create another branch, and put one patch in each branch' '
     stg branch --create br &&
     stg new baz -m baz &&
-    echo baz > baz.txt &&
+    echo baz >baz.txt &&
     stg add baz.txt &&
     stg refresh &&
     stg branch master &&
     stg new baz -m baz &&
-    echo baz > baz.txt &&
+    echo baz >baz.txt &&
     stg add baz.txt &&
     stg refresh
-    '
+'
 
-test_expect_success \
-    'Delete a patch in another branch' \
-    '
+test_expect_success 'Delete a patch in another branch' '
     [ $(stg series --applied -c) -eq 2 ] &&
     [ $(stg series --applied -b br -c) -eq 1 ] &&
     stg delete -b br baz &&
     [ $(stg series --applied -c) -eq 2 ] &&
     [ $(stg series --applied -b br -c) -eq 0 ]
-    '
+'
 
 test_done

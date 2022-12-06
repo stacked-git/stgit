@@ -6,10 +6,10 @@ test_description='Run "stg help"'
 
 test_expect_success 'Run "stg help"' '
     stg help
-    '
+'
 
 test_expect_success 'Run "stg --help"' '
     stg --help
-    '
+'
 
 test_done

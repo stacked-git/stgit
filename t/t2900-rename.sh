@@ -1,9 +1,7 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2008 Onno Kortmann
-# Parts taken from the other test scripts
-# in this directory.
-#
+# Parts taken from the other test scripts in this directory.
 
 test_description='stg rename test
 

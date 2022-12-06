@@ -1,7 +1,6 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Yann Dirson
-#
 
 test_description='Exercise pushing patches applied upstream.
 
@@ -15,28 +14,26 @@ specify --merged, then rollback and retry with the correct flag.'
 # don't need this repo, but better not drop it, see t1100
 #rm -rf .git
 
-test_expect_success \
-    'Clone tree and setup changes' '
+test_expect_success 'Clone tree and setup changes' '
     test_create_repo foo &&
     git clone foo bar &&
     (
         cd bar &&
         stg new -m p1 &&
         git notes add -m note1 &&
-        printf "a\nc\n" > file &&
+        printf "a\nc\n" >file &&
         stg add file &&
         stg refresh &&
         stg new -m p2 &&
         git notes add -m note2 &&
-        printf "a\nb\nc\n" > file &&
+        printf "a\nb\nc\n" >file &&
         stg refresh &&
         [ "$(echo $(stg series --applied --noprefix))" = "p1 p2" ] &&
         [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
     )
 '
 
-test_expect_success \
-    'Port those patches to orig tree' '
+test_expect_success 'Port those patches to orig tree' '
     (
         cd foo &&
         GIT_DIR=../bar/.git git format-patch --stdout \
@@ -44,8 +41,7 @@ test_expect_success \
     )
 '
 
-test_expect_success \
-    'Pull to sync with parent, preparing for the problem' '
+test_expect_success 'Pull to sync with parent, preparing for the problem' '
     (
         cd bar &&
         stg pop --all &&
@@ -53,16 +49,14 @@ test_expect_success \
     )
 '
 
-test_expect_success \
-    'Attempt to push the first of those patches without --merged' '
+test_expect_success 'Attempt to push the first of those patches without --merged' '
     (
         cd bar &&
         conflict stg push
     )
 '
 
-test_expect_success \
-    'Rollback the push' '
+test_expect_success 'Rollback the push' '
     (
         cd bar &&
         stg undo --hard &&
@@ -71,8 +65,7 @@ test_expect_success \
     )
 '
 
-test_expect_success \
-    'Push those patches while checking they were merged upstream' '
+test_expect_success 'Push those patches while checking they were merged upstream' '
     (
         cd bar &&
         stg push --merged --all &&
@@ -83,8 +76,7 @@ test_expect_success \
     )
 '
 
-test_expect_success \
-    'pop then push a patch with a change to a submodule should not produce a conflict' '
+test_expect_success 'pop then push a patch with a change to a submodule should not produce a conflict' '
     (
         cd bar &&
         git clone ../foo baz &&

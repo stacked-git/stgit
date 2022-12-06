@@ -14,7 +14,7 @@ test_expect_success 'init branch with nbsp in name' '
 '
 
 test_expect_success 'new patch with nbsp in name' '
-    echo "hello" > foo.txt &&
+    echo "hello" >foo.txt &&
     git add foo.txt &&
     stg new "a${nbsp}patch" &&
     stg refresh &&

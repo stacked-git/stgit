@@ -44,7 +44,7 @@ test_expect_success 'Float series' '
 test_expect_success 'Unclean worktree and floating only unapplied' '
     stg push &&
     test "$(echo $(stg series --unapplied --noprefix))" = "p3 p2 p1" &&
-    echo "foobar" > 4.t &&
+    echo "foobar" >4.t &&
     test_when_finished git checkout 4.t &&
     test "$(stg status 4.t)" = " M 4.t" &&
     stg float --noapply p1 p2 p3 &&
@@ -55,7 +55,7 @@ test_expect_success 'Unclean worktree and floating applied patches' '
     stg push &&
     test "$(echo $(stg series --applied --noprefix))" = "p4 p1" &&
     test "$(echo $(stg series --unapplied --noprefix))" = "p2 p3" &&
-    echo "foobar" > 4.t &&
+    echo "foobar" >4.t &&
     test_when_finished git checkout 4.t &&
     test "$(stg status 4.t)" = " M 4.t" &&
     command_error stg float --noapply p4 2>err &&

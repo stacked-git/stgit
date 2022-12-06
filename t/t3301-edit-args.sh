@@ -1,4 +1,5 @@
 #!/bin/sh
+
 test_description='Test "stg edit" command line arguments'
 
 . ./test-lib.sh

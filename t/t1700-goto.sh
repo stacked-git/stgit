@@ -1,7 +1,6 @@
 #!/bin/sh
-#
+
 # Copyright (c) 2006 Ilpo Järvinen
-#
 
 test_description='Test "stg goto"'
 
@@ -16,7 +15,7 @@ test_expect_success 'Attempt goto with uninitialized stack' '
 test_expect_success 'Initialize stgit repository' '
     for i in 1 2 3 4 5; do
         stg new p$i -m "patch $i" &&
-        echo $i > file$i &&
+        echo $i >file$i &&
         stg add file$i &&
         stg refresh
     done

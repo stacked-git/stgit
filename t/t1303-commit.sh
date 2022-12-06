@@ -1,5 +1,7 @@
 #!/bin/sh
+
 test_description='Test stg commit'
+
 . ./test-lib.sh
 
 test_expect_success 'Attempt commit on uninitialized branch' '

@@ -8,8 +8,8 @@ test_expect_success 'Create some patches' '
     mkdir foo
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo x$i >> x.txt &&
-        echo y$i >> foo/y.txt &&
+        echo x$i >>x.txt &&
+        echo y$i >>foo/y.txt &&
         stg add x.txt foo/y.txt &&
         stg refresh
     done &&
@@ -33,7 +33,7 @@ test_expect_success 'Modifying push from a subdir' '
     [ "$(echo $(cat x.txt))" = "x0 x1" ] &&
     [ "$(echo $(cat foo/y.txt))" = "y0 y1" ] &&
     stg new extra -m extra &&
-    echo extra >> extra.txt &&
+    echo extra >>extra.txt &&
     stg add extra.txt &&
     stg refresh &&
     cd foo &&
@@ -57,12 +57,12 @@ test_expect_success 'Conflicting add/unknown file in subdir' '
     stg reset --hard &&
     stg new foo -m foo &&
     mkdir d &&
-    echo foo > d/test &&
+    echo foo >d/test &&
     stg add d/test &&
     stg refresh &&
     stg pop &&
     mkdir -p d &&
-    echo bar > d/test &&
+    echo bar >d/test &&
     command_error stg push foo &&
     [ "$(stg top)" != "foo" ]
 '

@@ -6,9 +6,9 @@ test_description='Test the refresh command from a subdirectory'
 
 test_expect_success 'Refresh from a subdirectory' '
     stg new p0 -m p0 &&
-    echo foo >> foo.txt &&
+    echo foo >>foo.txt &&
     mkdir bar &&
-    echo bar >> bar/bar.txt &&
+    echo bar >>bar/bar.txt &&
     stg add foo.txt bar/bar.txt &&
     cd bar &&
     stg refresh &&
@@ -17,8 +17,8 @@ test_expect_success 'Refresh from a subdirectory' '
 '
 
 test_expect_success 'Refresh again' '
-    echo foo2 >> foo.txt &&
-    echo bar2 >> bar/bar.txt &&
+    echo foo2 >>foo.txt &&
+    echo bar2 >>bar/bar.txt &&
     cd bar &&
     stg refresh &&
     cd .. &&
@@ -26,8 +26,8 @@ test_expect_success 'Refresh again' '
 '
 
 test_expect_success 'Refresh file in subdirectory' '
-    echo foo3 >> foo.txt &&
-    echo bar3 >> bar/bar.txt &&
+    echo foo3 >>foo.txt &&
+    echo bar3 >>bar/bar.txt &&
     cd bar &&
     stg refresh bar.txt &&
     cd .. &&
@@ -35,25 +35,25 @@ test_expect_success 'Refresh file in subdirectory' '
 '
 
 test_expect_success 'Refresh whole subdirectory' '
-    echo bar4 >> bar/bar.txt &&
+    echo bar4 >>bar/bar.txt &&
     stg refresh bar &&
     [ "$(stg status)" = " M foo.txt" ]
 '
 
 test_expect_success 'Refresh subdirectories recursively' '
-    echo bar5 >> bar/bar.txt &&
+    echo bar5 >>bar/bar.txt &&
     stg refresh . &&
     [ "$(stg status)" = "" ]
 '
 
 test_expect_success 'refresh -u' '
-    echo baz >> bar/baz.txt &&
+    echo baz >>bar/baz.txt &&
     stg new p1 -m p1 &&
     stg add bar/baz.txt &&
     stg refresh --index &&
-    echo xyzzy >> foo.txt &&
-    echo xyzzy >> bar/bar.txt &&
-    echo xyzzy >> bar/baz.txt &&
+    echo xyzzy >>foo.txt &&
+    echo xyzzy >>bar/bar.txt &&
+    echo xyzzy >>bar/baz.txt &&
     stg refresh -u &&
     test "$(echo $(stg status))" = "M bar/bar.txt M foo.txt" &&
     test "$(echo $(stg files p0))" = "A bar/bar.txt A foo.txt" &&
@@ -61,7 +61,7 @@ test_expect_success 'refresh -u' '
 '
 
 test_expect_success 'refresh -u -p <subdir>' '
-    echo xyzzy >> bar/baz.txt &&
+    echo xyzzy >>bar/baz.txt &&
     stg refresh -p p0 -u bar &&
     test "$(echo $(stg status))" = "M bar/baz.txt M foo.txt" &&
     test "$(echo $(stg files p0))" = "A bar/bar.txt A foo.txt" &&

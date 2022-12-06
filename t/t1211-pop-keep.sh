@@ -7,7 +7,7 @@ test_description='Test "stg pop --keep"'
 test_expect_success 'Create a few patches' '
     for i in 0 1 2; do
         stg new p$i -m p$i &&
-        echo "patch$i" >> patch$i.txt &&
+        echo "patch$i" >>patch$i.txt &&
         stg add patch$i.txt &&
         stg refresh
     done &&
@@ -16,7 +16,7 @@ test_expect_success 'Create a few patches' '
 '
 
 test_expect_success 'Make some non-conflicting local changes' '
-    echo "local" >> patch0.txt
+    echo "local" >>patch0.txt
 '
 
 test_expect_success 'Pop two patches, keeping local changes' '
