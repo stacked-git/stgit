@@ -13,12 +13,6 @@ use anyhow::{anyhow, Result};
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
 
-// static EDIT_INSTRUCTION: &'static str = "\
-//     # Everything here is editable! You can modify the patch name,\n\
-//     # author, date, commit message, and the diff (if --diff was given).\n\
-//     # Lines starting with '#' will be ignored, and an empty message\n\
-//     # aborts the edit.\n";
-
 pub(crate) static EDIT_INSTRUCTION: &str = "\
     # Please enter the message for your patch. Lines starting with\n\
     # '#' will be ignored. An empty message aborts the new patch.\n\

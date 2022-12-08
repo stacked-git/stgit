@@ -61,6 +61,8 @@ pub(super) struct EditablePatchDescription {
     pub diff: Option<DiffBuffer>,
 }
 
+const CUT_LINE: &str = "# ------------------------ >8 ------------------------\n";
+
 impl EditablePatchDescription {
     /// Write user-editable patch description to the provided stream.
     pub(super) fn write<S: Write>(&self, stream: &mut S) -> Result<()> {
@@ -92,7 +94,8 @@ impl EditablePatchDescription {
             if let Some(diff_instruction) = self.diff_instruction {
                 write!(stream, "{diff_instruction}")?;
             }
-            stream.write_all(b"---\n")?;
+            stream.write_all(CUT_LINE.as_bytes())?;
+            writeln!(stream, "# Do not modify or remove the line above.")?;
             stream.write_all(diff.as_ref())?;
         }
         Ok(())
@@ -144,10 +147,8 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
     /// Attempt to parse user-edited patch description.
     ///
-    /// Any lines starting with '#' are treated as comments and discarded.
-    ///
-    /// The string "---" present on a line by itself separates the headers and message
-    /// from the diff content.
+    /// Any lines starting with '#' are treated as comments and discarded, except for
+    /// the cut line which separates the headers and message from the diff content.
     ///
     /// The "Patch", "Author", and "Date" headers, if present, must be the first three
     /// lines of the message. This rigidity is done to allow the message, which follows
@@ -168,7 +169,10 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
         for (line_num, line) in buf.split_inclusive(|&b| b == b'\n').enumerate() {
             pos += line.len();
-            if line.starts_with(b"#") {
+            if line.starts_with(CUT_LINE.as_bytes()) {
+                consume_diff = true;
+                break;
+            } else if line.starts_with(b"#") {
                 continue;
             }
 
@@ -176,11 +180,6 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             let line = std::str::from_utf8(line)
                 .map_err(|_| anyhow!("Patch description contains non-UTF-8 data"))?;
             let trimmed = line.trim_end();
-
-            if trimmed == "---" {
-                consume_diff = true;
-                break;
-            }
 
             if consuming_message {
                 if trimmed.is_empty() {
@@ -275,6 +274,15 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
         }
 
         let diff = if consume_diff {
+            // Skip any comment lines after the cut line.
+            for line in buf[pos..].split_inclusive(|&b| b == b'\n') {
+                if line.starts_with(b"#") {
+                    pos += line.len();
+                } else {
+                    break;
+                }
+            }
+
             let diff_slice = &buf[pos..];
             if diff_slice.iter().all(u8::is_ascii_whitespace) {
                 None
@@ -551,7 +559,8 @@ mod tests {
              \n\
              # Instruction\n\
              # Diff instruction\n\
-             ---\n\
+             # ------------------------ >8 ------------------------\n\
+             # Do not modify or remove the line above.\n\
              \n\
              Some stuff before first diff --git\n\
              \n\
@@ -854,12 +863,14 @@ mod tests {
     #[test]
     fn empty_diff() {
         for description in [
-            b"---".as_slice(),
-            b"---\n",
-            b"---    ",
-            b"---  \n",
-            b"---\n  \n",
-            b"---\n  \n",
+            b"# ------------------------ >8 ------------------------\n\
+              # Do not modify or remove the line above.\n"
+                .as_slice(),
+            b"# ------------------------ >8 ------------------------\n",
+            b"# ------------------------ >8 ------------------------",
+            b"# ------------------------ >8 ------------------------    ",
+            b"# ------------------------ >8 ------------------------  \n",
+            b"# ------------------------ >8 ------------------------\n  \n",
         ] {
             let result = EditedPatchDescription::try_from(description);
             assert!(result.is_err());
@@ -899,6 +910,62 @@ mod tests {
         assert!(edited_desc.patchname.unwrap().is_none());
         assert!(edited_desc.author.unwrap().is_none());
         assert_eq!(edited_desc.message.as_str(), "Subject\n\nBody1.\nBody2.\n");
+        assert!(edited_desc.diff.is_none());
+    }
+
+    #[test]
+    fn message_with_dashed_separator_no_headers() {
+        let edited = b"\
+        Subject\n\
+        \n\
+        Body1.\n\
+        Body2.\n\
+        ---\n\
+        Extra.\n";
+
+        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+
+        assert!(edited_desc.patchname.is_none());
+        assert!(edited_desc.author.is_none());
+        assert_eq!(
+            edited_desc.message.as_str(),
+            "Subject\n\
+             \n\
+             Body1.\n\
+             Body2.\n\
+             ---\n\
+             Extra.\n"
+        );
+        assert!(edited_desc.diff.is_none());
+    }
+
+    #[test]
+    fn message_with_dashed_separator_empty_headers() {
+        let edited = b"\
+        Patch:     \n\
+        Author:    \n\
+        Date:      \n\
+        \n\
+        Subject\n\
+        \n\
+        Body1.\n\
+        Body2.\n\
+        ---\n\
+        Extra.\n";
+
+        let edited_desc = EditedPatchDescription::try_from(edited.as_slice()).unwrap();
+
+        assert!(edited_desc.patchname.unwrap().is_none());
+        assert!(edited_desc.author.unwrap().is_none());
+        assert_eq!(
+            edited_desc.message.as_str(),
+            "Subject\n\
+             \n\
+             Body1.\n\
+             Body2.\n\
+             ---\n\
+             Extra.\n"
+        );
         assert!(edited_desc.diff.is_none());
     }
 }

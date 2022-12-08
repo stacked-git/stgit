@@ -26,7 +26,7 @@ syn match    stgeditSummary     "^.\{0,50\}" contained containedin=stgeditFirstL
 syn match    stgeditOverflow    ".*" contained contains=@Spell
 syn match    stgeditBlank       "^.\+" contained contains=@Spell
 syn match    stgeditComment     "^#.*"
-syn region   stgeditDiffs       start="^---" end="%$" contains=@stgDiff fold
+syn region   stgeditDiffs       start="^# ---\+ >8 ---\+" end="%$" contains=@stgDiff fold
 syn region   stgeditDiff        start="^\%(diff --git \)\@=" end="^\%(diff --git \|$\)\@=" contained containedin=stgeditDiffs contains=@stgDiff fold
 
 hi def link  stgeditHeaderKey   Type
