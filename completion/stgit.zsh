@@ -751,11 +751,13 @@ _stg-new() {
 
     __stg_add_args_help
     __stg_add_args_color
+    __stg_add_args_edit
     __stg_add_args_author
     __stg_add_args_trailers
     __stg_add_args_hook
     __stg_add_args_savetemplate
     subcmd_args+=(
+        '(-d --diff)'{-d,--diff}'[show diff when editing patch message]'
         '(-n --name)'{-n,--name=}'[name for new patch]:patchname'
         '(-r --refresh)'{-r,--refresh}'[refresh new patch]'
         '(-F --force)'{-F,--force}'[force refresh even if index is dirty]'
