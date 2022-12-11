@@ -325,25 +325,33 @@ fn interactive_pushback(
                     .edit(&stack, repo, &edit_matches)?
                 {
                     patchedit::EditOutcome::TemplateSaved(_) => panic!("template save not enabled"),
-                    patchedit::EditOutcome::Committed {
-                        patchname: new_patchname,
-                        commit_id,
+                    patchedit::EditOutcome::Edited {
+                        new_patchname,
+                        new_commit_id,
                     } => {
-                        stack = stack
-                            .setup_transaction()
-                            .with_output_stream(get_color_stdout(matches))
-                            .transact(|trans| {
-                                if &new_patchname != patchname {
-                                    trans.rename_patch(patchname, &new_patchname)?;
-                                }
-                                trans.update_patch(&new_patchname, commit_id)?;
-                                Ok(())
-                            })
-                            .execute(&format!("edit: {patchname}"))?;
+                        if new_patchname.is_some() || new_commit_id.is_some() {
+                            stack = stack
+                                .setup_transaction()
+                                .with_output_stream(get_color_stdout(matches))
+                                .transact(|trans| {
+                                    let patchname =
+                                        if let Some(new_patchname) = new_patchname.as_ref() {
+                                            trans.rename_patch(patchname, new_patchname)?;
+                                            new_patchname
+                                        } else {
+                                            patchname
+                                        };
+                                    if let Some(commit_id) = new_commit_id {
+                                        trans.update_patch(patchname, commit_id)?;
+                                    }
+                                    Ok(())
+                                })
+                                .execute(&format!("edit: {patchname}"))?;
+                        }
 
                         instructions[index] = Instruction {
                             action: Action::Keep,
-                            patchname: new_patchname,
+                            patchname: new_patchname.unwrap_or_else(|| patchname.clone()),
                             apply: instruction.apply,
                         };
 

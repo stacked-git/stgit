@@ -235,7 +235,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 let top_name = to_pop.pop();
                 assert_eq!(top_name.as_ref(), Some(&temp_patchname));
 
-                let (new_patchname, commit_id) = match patchedit::EditBuilder::default()
+                let (new_patchname, new_commit_id) = match patchedit::EditBuilder::default()
                     .original_patchname(Some(&patchname))
                     .existing_patch_commit(trans.get_patch_commit(&patchname))
                     .override_tree_id(temp_commit.tree_id())
@@ -244,10 +244,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .allow_template_save(false)
                     .edit(trans, &repo, matches)?
                 {
-                    patchedit::EditOutcome::Committed {
-                        patchname: new_patchname,
-                        commit_id,
-                    } => (new_patchname, commit_id),
+                    patchedit::EditOutcome::Edited {
+                        new_patchname,
+                        new_commit_id,
+                    } => (new_patchname, new_commit_id),
                     patchedit::EditOutcome::TemplateSaved(_) => {
                         panic!("not allowed for refresh")
                     }
@@ -255,12 +255,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
                 trans.delete_patches(|pn| pn == &temp_patchname)?;
                 assert_eq!(Some(&patchname), trans.applied().last());
-                trans.update_patch(&patchname, commit_id)?;
-                if new_patchname == patchname {
-                    log_msg.push_str(patchname.as_ref());
-                } else {
+                if let Some(commit_id) = new_commit_id {
+                    trans.update_patch(&patchname, commit_id)?;
+                }
+                if let Some(new_patchname) = new_patchname {
                     trans.rename_patch(&patchname, &new_patchname)?;
-                    log_msg.push_str(new_patchname.as_ref());
+                } else {
+                    log_msg.push_str(patchname.as_ref());
                 }
                 if let Some(annotation) = opt_annotate {
                     log_msg.push_str("\n\n");
@@ -294,7 +295,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         Ok(None)
                     }
                 })? {
-                    let (new_patchname, commit_id) = match patchedit::EditBuilder::default()
+                    let (new_patchname, new_commit_id) = match patchedit::EditBuilder::default()
                         .original_patchname(Some(&patchname))
                         .existing_patch_commit(trans.get_patch_commit(&patchname))
                         .override_tree_id(tree_id)
@@ -302,21 +303,23 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         .allow_template_save(false)
                         .edit(trans, &repo, matches)?
                     {
-                        patchedit::EditOutcome::Committed {
-                            patchname: new_patchname,
-                            commit_id,
-                        } => (new_patchname, commit_id),
+                        patchedit::EditOutcome::Edited {
+                            new_patchname,
+                            new_commit_id,
+                        } => (new_patchname, new_commit_id),
                         patchedit::EditOutcome::TemplateSaved(_) => {
                             panic!("not allowed for refresh")
                         }
                     };
 
-                    trans.update_patch(&patchname, commit_id)?;
-                    if new_patchname == patchname {
-                        log_msg.push_str(patchname.as_ref());
-                    } else {
+                    if let Some(commit_id) = new_commit_id {
+                        trans.update_patch(&patchname, commit_id)?;
+                    }
+                    if let Some(new_patchname) = new_patchname {
                         trans.rename_patch(&patchname, &new_patchname)?;
                         log_msg.push_str(new_patchname.as_ref());
+                    } else {
+                        log_msg.push_str(patchname.as_ref());
                     }
                     if let Some(annotation) = opt_annotate {
                         log_msg.push_str("\n\n");

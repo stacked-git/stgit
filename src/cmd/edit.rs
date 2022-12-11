@@ -99,18 +99,20 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .edit(&stack, &repo, matches)?
     {
         patchedit::EditOutcome::TemplateSaved(_) => Ok(()),
-        patchedit::EditOutcome::Committed {
-            patchname: new_patchname,
-            commit_id,
+        patchedit::EditOutcome::Edited {
+            new_patchname,
+            new_commit_id,
         } => {
-            stack
-                .setup_transaction()
-                .allow_conflicts(true)
-                .use_index_and_worktree(true)
-                .with_output_stream(get_color_stdout(matches))
-                .transact(|trans| {
-                    let popped =
-                        if let Some(pos) = trans.applied().iter().position(|pn| pn == &patchname) {
+            if new_patchname.is_some() || new_commit_id.is_some() {
+                stack
+                    .setup_transaction()
+                    .allow_conflicts(true)
+                    .use_index_and_worktree(true)
+                    .with_output_stream(get_color_stdout(matches))
+                    .transact(|trans| {
+                        let popped = if let Some(pos) =
+                            trans.applied().iter().position(|pn| pn == &patchname)
+                        {
                             let to_pop = trans.applied()[pos + 1..].to_vec();
                             let popped_extra = trans.pop_patches(|pn| to_pop.contains(pn))?;
                             assert!(popped_extra.is_empty());
@@ -119,20 +121,26 @@ fn run(matches: &ArgMatches) -> Result<()> {
                             vec![]
                         };
 
-                    if new_patchname != patchname {
-                        trans.rename_patch(&patchname, &new_patchname)?;
-                        // TODO: log stack state here?
-                    }
+                        let patchname = if let Some(new_patchname) = new_patchname.as_ref() {
+                            trans.rename_patch(&patchname, new_patchname)?;
+                            // TODO: log stack state here?
+                            new_patchname
+                        } else {
+                            &patchname
+                        };
 
-                    trans.update_patch(&new_patchname, commit_id)?;
+                        if let Some(commit_id) = new_commit_id {
+                            trans.update_patch(patchname, commit_id)?;
+                        }
 
-                    if matches.contains_id("set-tree") {
-                        trans.push_tree_patches(&popped)
-                    } else {
-                        trans.push_patches(&popped, false)
-                    }
-                })
-                .execute(&format!("edit: {patchname}"))?;
+                        if matches.contains_id("set-tree") {
+                            trans.push_tree_patches(&popped)
+                        } else {
+                            trans.push_patches(&popped, false)
+                        }
+                    })
+                    .execute(&format!("edit: {patchname}"))?;
+            }
             Ok(())
         }
     }

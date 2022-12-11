@@ -203,10 +203,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .edit(&stack, &repo, matches)?
     {
         patchedit::EditOutcome::TemplateSaved(_) => return Ok(()),
-        patchedit::EditOutcome::Committed {
-            patchname,
-            commit_id,
-        } => (patchname, commit_id),
+        patchedit::EditOutcome::Edited {
+            new_patchname,
+            new_commit_id,
+        } => (
+            new_patchname
+                .or(patchname)
+                .expect("either have original or new patchname"),
+            new_commit_id.expect("must have new commit id because no original patch commit"),
+        ),
     };
 
     if let Some(template_path) = matches.get_one::<PathBuf>("save-template") {

@@ -276,14 +276,18 @@ pub(crate) enum EditOutcome {
     TemplateSaved(PathBuf),
 
     /// Variant indicating the patch was successfully edited.
-    Committed {
-        /// Name of the edited patch.
+    ///
+    /// It is possible that no changes occurred.
+    Edited {
+        /// New name of the edited patch.
         ///
-        /// This could be a new name if the user changed it during interactive edit.
-        patchname: PatchName,
+        /// This is None if the patch name is not changed by the edit.
+        new_patchname: Option<PatchName>,
 
         /// New commit id of the edited patch.
-        commit_id: git2::Oid,
+        ///
+        /// This is None if nothing changed during the edit.
+        new_commit_id: Option<git2::Oid>,
     },
 }
 
@@ -777,11 +781,31 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 .uniquify(&allowed_patchnames, &disallow_patchnames)
         };
 
-        let commit_id = repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?;
+        let new_commit_id = if patch_commit.map_or(false, |patch_commit| {
+            patch_commit.committer().name_bytes() == committer.name_bytes()
+                && patch_commit.committer().email_bytes() == committer.email_bytes()
+                // N.B.: intentionally not comparing commiter.when()
+                && patch_commit.author().name_bytes() == author.name_bytes()
+                && patch_commit.author().email_bytes() == author.email_bytes()
+                && patch_commit.author().when() == author.when()
+                && patch_commit.message_raw_bytes() == message.raw_bytes()
+                && patch_commit.tree_id() == tree_id
+                && patch_commit.parent_id(0) == Ok(parent_id)
+        }) {
+            None
+        } else {
+            Some(repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?)
+        };
 
-        Ok(EditOutcome::Committed {
-            patchname,
-            commit_id,
+        let new_patchname = if original_patchname.as_ref() == Some(&patchname) {
+            None
+        } else {
+            Some(patchname)
+        };
+
+        Ok(EditOutcome::Edited {
+            new_patchname,
+            new_commit_id,
         })
     }
 }

@@ -243,9 +243,9 @@ fn try_squash(
         let tree_id = stupid_temp.write_tree()?;
         Ok(Some(tree_id))
     })? {
-        if let patchedit::EditOutcome::Committed {
-            patchname,
-            commit_id,
+        if let patchedit::EditOutcome::Edited {
+            new_patchname,
+            new_commit_id,
         } = patchedit::EditBuilder::default()
             .override_parent_id(base_commit.parent_id(0).expect("first patch has a parent"))
             .override_tree_id(tree_id)
@@ -258,7 +258,10 @@ fn try_squash(
             .default_message(prepare_message(trans, patchnames)?)
             .edit(trans, repo, matches)?
         {
-            Ok(Some((patchname, commit_id)))
+            Ok(Some((
+                new_patchname.expect("must have new patch name because no original name"),
+                new_commit_id.expect("must have new commit id because no original patch commit"),
+            )))
         } else {
             panic!("expected edit to commit, not save template")
         }

@@ -647,10 +647,13 @@ fn create_patch<'repo>(
         .edit(&stack, stack.repo, matches)?
     {
         patchedit::EditOutcome::TemplateSaved(_) => unreachable!(),
-        patchedit::EditOutcome::Committed {
-            patchname,
-            commit_id,
-        } => (patchname, commit_id),
+        patchedit::EditOutcome::Edited {
+            new_patchname,
+            new_commit_id,
+        } => (
+            new_patchname.unwrap_or(patchname),
+            new_commit_id.expect("must have new commit id because no original patch commit"),
+        ),
     };
 
     stack
