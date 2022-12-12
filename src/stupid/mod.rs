@@ -141,6 +141,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         reject: bool,
         threeway: bool,
         strip_level: Option<usize>,
+        directory: Option<&Path>,
         context_lines: Option<usize>,
     ) -> Result<()> {
         let mut command = self.git_in_work_root();
@@ -153,6 +154,10 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
         if let Some(strip_level) = strip_level {
             command.arg(format!("-p{strip_level}"));
+        }
+        if let Some(directory) = directory {
+            command.arg("--directory");
+            command.arg(directory);
         }
         if let Some(context_lines) = context_lines {
             command.arg(format!("-C{context_lines}"));

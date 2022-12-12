@@ -297,7 +297,7 @@ fn series_merge_patch(
     stupid.update_index_refresh()?;
     stupid.read_tree_checkout(trans.get_branch_head().tree_id(), parent.tree_id())?;
     stupid
-        .apply_to_worktree_and_index(&diff, false, false, None, None)
+        .apply_to_worktree_and_index(&diff, false, false, None, None, None)
         .with_context(|| format!("applying {patchname} from series"))?;
     stupid.update_index_refresh()?;
 

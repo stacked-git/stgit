@@ -124,6 +124,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             reject_flag,
             false,
             strip_level,
+            None,
             context_lines,
         ) {
             stupid.read_tree_checkout_hard(orig_head_tree_id)?;
@@ -137,6 +138,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Err(crate::stack::Error::CausedConflicts("Merge conflicts".to_string()).into())
         }
     } else {
-        stupid.apply_to_worktree_and_index(&diff, reject_flag, false, strip_level, context_lines)
+        stupid.apply_to_worktree_and_index(
+            &diff,
+            reject_flag,
+            false,
+            strip_level,
+            None,
+            context_lines,
+        )
     }
 }

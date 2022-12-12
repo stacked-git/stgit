@@ -133,6 +133,18 @@ fn make() -> clap::Command {
                 .value_parser(crate::argset::parse_usize),
         )
         .arg(
+            Arg::new("directory")
+                .long("directory")
+                .help("Prepend <root> to all filenames")
+                .long_help(
+                    "Prepend <root> to all filenames. If a \"-p\" argument is also \
+                    passed, it is applied before prepending the new root.",
+                )
+                .value_name("root")
+                .value_parser(clap::value_parser!(PathBuf))
+                .value_hint(clap::ValueHint::DirPath),
+        )
+        .arg(
             Arg::new("stripname")
                 .long("stripname")
                 .short('t')
@@ -640,6 +652,9 @@ fn create_patch<'repo>(
             matches.get_flag("reject"),
             matches.get_flag("3way"),
             strip_level,
+            matches
+                .get_one::<PathBuf>("directory")
+                .map(|path_buf| path_buf.as_path()),
             matches.get_one::<usize>("context-lines").copied(),
         )?;
 

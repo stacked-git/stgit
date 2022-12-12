@@ -709,6 +709,7 @@ _stg-import() {
     subcmd_args+=(
         '(-n --name)'{-n,--name}'[name for imported patch]'
         '(-p --strip)'{-p+,--strip=}'[remove N leading directories from diff paths]:num'
+        '--directory[prepend root to all filenames]:root:_directories'
         '(-t --stripname)'{-t,--stripname}'[strip number and extension from patch name]'
         '-C=[ensure N lines of surrounding context for each change]:num'
         '(-3 --3way)'{-3,--3way}'[attempt three-way merge]'
