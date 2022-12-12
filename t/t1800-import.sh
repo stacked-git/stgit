@@ -213,6 +213,21 @@ test_expect_success 'Import empty patch with sign-off' '
     stg top | grep -v -e "empty"
 '
 
+test_expect_success 'Import with root directory' '
+    mkdir -p dir0/dir1/dir2 &&
+    echo "hello" >dir0/dir1/dir2/file.txt &&
+    stg add dir0/dir1/dir2/file.txt &&
+    stg new -rm "dirs" &&
+    echo "bye" >>dir0/dir1/dir2/file.txt &&
+    git diff --relative=dir0/dir1 >relative.diff &&
+    stg reset --hard &&
+    command_error stg import --directory=dir0/dir1/dir2 <relative.diff 2>err &&
+    grep "error: dir0/dir1/dir2/dir2/file.txt: does not exist in index" err &&
+    stg import --name from-relative --3way --directory=dir0/dir1 <relative.diff &&
+    stg show from-relative | grep "bye" &&
+    stg delete dirs from-relative
+'
+
 test_expect_success 'Import series from stdin' '
     echo "some.patch" |
     stg import --series &&
