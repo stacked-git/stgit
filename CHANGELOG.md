@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.1.0] 2022-12-12
+
+### Added
+- feat: Configurable push conflict policy (#60)
+- feat: Add --committer-date-is-author-date option (#47)
+- feat(import): Add --3way option (#36)
+- feat(import): Add --directory option (#36)
+
+### Changed
+- feat!: Relaxed stack initialization (#238)
+- feat!: Only sign stack based on stgit.gpgsign (#238)
+- fix!: Allow "---" separator in messages (#243)
+- feat: More descriptive push conflict message (#60)
+- feat: Avoid post-edit commits when no change
+- chore: Update dependencies to latest versions
+
+### Fixed
+- fix: Improved error message for uninitialized stack
+- fix: Improve error for re-initialization attempt
+- fix(prev): Different error message for empty stack
+- fix: Accept full ref name for branches
+- fix(zsh): Complete --edit and --diff for stg new
+
+
 ## [2.0.4] 2022-11-30
 
 ### Changed
