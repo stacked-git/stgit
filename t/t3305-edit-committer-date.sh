@@ -15,45 +15,46 @@ committer_time () {
 test_expect_success 'Setup patches' '
     touch foo.txt &&
     stg add foo.txt &&
-    stg new -rm "p0" &&
+    stg new -rm "foo" &&
     author_time >atime &&
     committer_time >ctime &&
-    (( $(cat atime) == $(cat ctime) ))
+    test "$(cat atime)" -eq "$(cat ctime)"
 '
 
 test_expect_success 'Check new committer time after edit' '
     test_tick &&
-    stg edit -m "p0 message 2" &&
-    (( $(cat atime) == $(author_time) )) &&
-    (( $(cat ctime) < $(committer_time) )) &&
-    (( $test_tick == $(committer_time) ))
+    stg edit -m "foo message 2" &&
+    test "$(cat atime)" -eq "$(author_time)" &&
+    test "$(cat ctime)" -ne "$(committer_time)" &&
+    test "$(cat ctime)" -lt "$(committer_time)" &&
+    test "$test_tick" -eq "$(committer_time)"
 '
 
 test_expect_success 'Use --committer-date-is-author-date' '
-    stg edit -m "p0 message 3" --committer-date-is-author-date &&
-    (( $(cat atime) == $(author_time) )) &&
-    (( $(cat atime) == $(committer_time) ))
+    stg edit -m "foo message 3" --committer-date-is-author-date &&
+    test "$(cat atime)" -eq "$(author_time)" &&
+    test "$(cat atime)" -eq "$(committer_time)"
 '
 
 test_expect_success 'No time changes for no-op edit' '
     test_tick &&
-    stg edit -m "p0 message 3" &&
-    (( $(cat atime) == $(author_time) )) &&
-    (( $(cat atime) == $(committer_time) ))
+    stg edit -m "foo message 3" &&
+    test "$(cat atime)" -eq "$(author_time)" &&
+    test "$(cat atime)" -eq "$(committer_time)"
 '
 
 test_expect_success 'No time changes for pop' '
     test_tick &&
-    stg pop p0 &&
-    (( $(cat atime) == $(author_time p0) )) &&
-    (( $(cat atime) == $(committer_time p0) ))
+    stg pop foo &&
+    test "$(cat atime)" -eq "$(author_time foo)" &&
+    test "$(cat atime)" -eq "$(committer_time foo)"
 '
 
 test_expect_success 'Committer time unchanged for non-merge push' '
     test_tick &&
     stg push &&
-    (( $(cat atime) == $(author_time) )) &&
-    (( $(cat atime) == $(committer_time) ))
+    test "$(cat atime)" -eq "$(author_time)" &&
+    test "$(cat atime)" -eq "$(committer_time)"
 '
 
 test_expect_success 'Committer time updated for merge push' '
@@ -63,11 +64,11 @@ test_expect_success 'Committer time updated for merge push' '
     test_tick &&
     stg new -rm bar &&
     test_tick &&
-    stg push p0 &&
-    (( $(cat atime) == $(author_time) )) &&
-    (( $(cat atime) < $(committer_time) )) &&
-    (( $test_tick == $(committer_time) )) &&
-    (( $(committer_time bar) < $(committer_time p0) ))
+    stg push foo &&
+    test "$(cat atime)" -eq "$(author_time)" &&
+    test "$(cat atime)" -lt "$(committer_time)" &&
+    test "$test_tick" -eq "$(committer_time)" &&
+    test "$(committer_time bar)" -lt "$(committer_time foo)"
 '
 
 test_expect_success 'Committer time updated for float' '
@@ -75,25 +76,25 @@ test_expect_success 'Committer time updated for float' '
     committer_time bar > bar_ctime &&
     test_tick &&
     stg float bar &&
-    (( $(cat bar_atime) == $(author_time) )) &&
-    (( $(cat bar_ctime) < $(committer_time) )) &&
-    (( $test_tick == $(committer_time) ))
+    test "$(cat bar_atime)" -eq "$(author_time)" &&
+    test "$(cat bar_ctime)" -lt "$(committer_time)" &&
+    test "$test_tick" -eq "$(committer_time)"
 '
 
 test_expect_success 'Sink with --committer-date-is-author-date' '
     test_tick &&
     stg sink --committer-date-is-author-date bar &&
-    (( $(author_time bar) == $(committer_time bar) )) &&
-    (( $(author_time p0) == $(committer_time p0) ))
+    test "$(author_time bar)" -eq "$(committer_time bar)" &&
+    test "$(author_time foo)" -eq "$(committer_time foo)"
 '
 
 test_expect_success 'Sink without --committer-date-is-author-date' '
     test_tick &&
-    stg sink p0 &&
-    (( $(author_time bar) < $(committer_time bar) )) &&
-    (( $test_tick == $(committer_time bar) )) &&
-    (( $(author_time p0) < $(committer_time p0) )) &&
-    (( $test_tick == $(committer_time p0) ))
+    stg sink foo &&
+    test "$(author_time bar)" -lt "$(committer_time bar)"  &&
+    test "$test_tick" -eq "$(committer_time bar)" &&
+    test "$(author_time foo)" -lt "$(committer_time foo)" &&
+    test "$test_tick" -eq "$(committer_time foo)"
 '
 
 test_done
