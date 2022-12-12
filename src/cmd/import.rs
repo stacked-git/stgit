@@ -147,6 +147,17 @@ fn make() -> clap::Command {
                 .value_parser(crate::argset::parse_usize),
         )
         .arg(
+            Arg::new("3way")
+                .long("3way")
+                .short('3')
+                .help("Attempt three-way merge")
+                .long_help(
+                    "Attempt 3-way merge if the patch records the identity of blobs it \
+                    is supposed to apply to and those blobs are available locally.",
+                )
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("ignore")
                 .long("ignore")
                 .short('i')
@@ -627,6 +638,7 @@ fn create_patch<'repo>(
         stupid.apply_to_worktree_and_index(
             diff,
             matches.get_flag("reject"),
+            matches.get_flag("3way"),
             strip_level,
             matches.get_one::<usize>("context-lines").copied(),
         )?;

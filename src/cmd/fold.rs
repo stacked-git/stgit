@@ -119,9 +119,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let orig_head_tree_id = stack.get_branch_head().tree_id();
         let base_tree_id = base_commit.tree_id();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
-        if let Err(e) =
-            stupid.apply_to_worktree_and_index(&diff, reject_flag, strip_level, context_lines)
-        {
+        if let Err(e) = stupid.apply_to_worktree_and_index(
+            &diff,
+            reject_flag,
+            false,
+            strip_level,
+            context_lines,
+        ) {
             stupid.read_tree_checkout_hard(orig_head_tree_id)?;
             return Err(e);
         }
@@ -133,6 +137,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Err(crate::stack::Error::CausedConflicts("Merge conflicts".to_string()).into())
         }
     } else {
-        stupid.apply_to_worktree_and_index(&diff, reject_flag, strip_level, context_lines)
+        stupid.apply_to_worktree_and_index(&diff, reject_flag, false, strip_level, context_lines)
     }
 }

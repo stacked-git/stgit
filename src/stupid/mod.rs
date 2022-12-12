@@ -139,6 +139,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         diff: &[u8],
         reject: bool,
+        threeway: bool,
         strip_level: Option<usize>,
         context_lines: Option<usize>,
     ) -> Result<()> {
@@ -146,6 +147,9 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         command.args(["apply", "--index"]);
         if reject {
             command.arg("--reject");
+        }
+        if threeway {
+            command.arg("--3way");
         }
         if let Some(strip_level) = strip_level {
             command.arg(format!("-p{strip_level}"));

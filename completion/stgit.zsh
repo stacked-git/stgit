@@ -711,6 +711,7 @@ _stg-import() {
         '(-p --strip)'{-p+,--strip=}'[remove N leading directories from diff paths]:num'
         '(-t --stripname)'{-t,--stripname}'[strip number and extension from patch name]'
         '-C=[ensure N lines of surrounding context for each change]:num'
+        '(-3 --3way)'{-3,--3way}'[attempt three-way merge]'
         '(-i --ignore)'{-i,--ignore}'[ignore applied patches in series]'
         '--replace[replace unapplied patches in series]'
         '--reject[leave rejected hunks in .rej files]'
