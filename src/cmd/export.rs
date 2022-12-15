@@ -259,7 +259,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             patch_commit.tree_id(),
             <Option<Vec<OsString>>>::None,
             false,
-            &diff_opts,
+            diff_opts.iter(),
         )?;
 
         if need_diffstat {

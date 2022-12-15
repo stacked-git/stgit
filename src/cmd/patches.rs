@@ -123,7 +123,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     patch_commit.tree_id(),
                     Some(&pathspecs),
                     crate::color::use_color(matches),
-                    &diff_opts,
+                    diff_opts.iter(),
                 )?;
                 stdout.write_all(&diff)?;
             }
