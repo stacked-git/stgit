@@ -128,6 +128,7 @@ pub(crate) fn add_args(
         .arg(
             Arg::new("signoff")
                 .long("signoff")
+                .short('s')
                 .alias("sign")
                 .help("Add Signed-off-by message trailer")
                 .long_help(
