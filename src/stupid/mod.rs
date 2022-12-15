@@ -322,7 +322,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     /// Copy branch
     ///
-    /// Copies branch ref, reflog, and 'branch.<name>' config sections.
+    /// Copies branch ref, reflog, and `branch.<name>` config sections.
     pub(crate) fn branch_copy(
         &self,
         old_branchname: Option<&str>,
@@ -344,7 +344,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Move branch
     ///
     /// Moves branch ref, moves reflog, updates HEAD, and
-    /// renames 'branch.<name>' config sections.
+    /// renames `branch.<name>` config sections.
     pub(crate) fn branch_move(
         &self,
         old_branchname: Option<&str>,

@@ -132,8 +132,8 @@ pub(crate) fn parse_usize(s: &str) -> anyhow::Result<usize> {
 /// command-specific policies for displaying the full object id (`--full-index`) and
 /// including binary diffs (`--binary`) are tacked on at the end.
 ///
-/// The returned Vec<String> is appropriate for inserting directly into the command line
-/// of subordinate `git` commands.
+/// The returned `Vec<String>` is appropriate for inserting directly into the command
+/// line of subordinate `git` commands.
 pub(crate) fn get_diff_opts(
     matches: &clap::ArgMatches,
     config: &git2::Config,
