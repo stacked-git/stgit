@@ -33,7 +33,7 @@ test_expect_success 'Show the, now empty, first patch' '
 '
 
 test_expect_success 'Check that the index has the non-conflict updates' '
-    git diff --cached --stat | grep -q -e "^ test2 | *1 "
+    git diff --cached --stat -- test2 | grep -q -e "^ test2 | *1 "
 '
 
 test_expect_success 'Check that pop will fail while there are unmerged conflicts' '
