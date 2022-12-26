@@ -541,7 +541,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let message = if matches.contains_id("file") {
             CommitMessage::from(file_message)
         } else if let Some(args_message) = matches.get_one::<String>("message") {
-            CommitMessage::from(git2::message_prettify(args_message, None)?)
+            CommitMessage::from(prettify(args_message.as_str()))
         } else if let Some(overlay_message) = overlay_message {
             CommitMessage::from(overlay_message)
         } else if let Some(patch_commit) = patch_commit {
@@ -811,5 +811,67 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             new_patchname,
             new_commit_id,
         })
+    }
+}
+
+fn prettify(message: &str) -> String {
+    let mut pretty = String::with_capacity(message.len() + 1);
+    let mut consecutive_empty = false;
+    for line in message.split_inclusive('\n') {
+        let trimmed = line.trim_end();
+        if trimmed.is_empty() {
+            if !consecutive_empty {
+                pretty.push('\n');
+                consecutive_empty = true;
+            }
+        } else {
+            consecutive_empty = false;
+            pretty.push_str(trimmed);
+            pretty.push('\n');
+        }
+    }
+    if consecutive_empty {
+        pretty.pop();
+    }
+    pretty
+}
+
+#[cfg(test)]
+mod tests {
+    use super::prettify;
+
+    #[test]
+    fn prettiness() {
+        for (message, expected) in [
+            ("the subject", "the subject\n"),
+            ("the subject  ", "the subject\n"),
+            ("the subject\n", "the subject\n"),
+            ("the subject\n  ", "the subject\n"),
+            (
+                "the subject  \n  \n\
+                 A body line\n\
+                 \n\
+                 \n\
+                 Another body line.",
+                "the subject\n\
+                 \n\
+                 A body line\n\
+                 \n\
+                 Another body line.\n",
+            ),
+            (
+                "the subject\n\n\
+                 Body 1\n\n\n\n\
+                 Body 2\n\n\n\n\n\n",
+                "the subject\n\
+                 \n\
+                 Body 1\n\
+                 \n\
+                 Body 2\n",
+            ),
+        ] {
+            // assert_eq!(expected, git2::message_prettify(message, None).unwrap(),);
+            assert_eq!(expected, prettify(message));
+        }
     }
 }
