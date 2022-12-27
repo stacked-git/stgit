@@ -11,7 +11,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
-    patchedit::{self, call_editor},
+    patchedit,
     patchname::PatchName,
     print_info_message,
     revspec::parse_stgit_revision,
@@ -253,7 +253,7 @@ fn interactive_pushback(
         make_instructions_template(&stack, previously_applied),
     )?;
 
-    let buf = call_editor(filename, config)?;
+    let buf = patchedit::call_editor(filename, config)?;
     let buf = buf
         .to_str()
         .map_err(|_| anyhow!("`{filename}` is not valid UTF-8"))?;
