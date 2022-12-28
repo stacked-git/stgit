@@ -5,7 +5,7 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
 
-use crate::{commit::CommitMessage, stupid::Stupid};
+use crate::{commit::Message, stupid::Stupid};
 
 /// Add trailers to commit message based on user-provided command line options.
 ///
@@ -13,11 +13,11 @@ use crate::{commit::CommitMessage, stupid::Stupid};
 /// setup with [`super::add_args`].
 pub(crate) fn add_trailers<'a>(
     repo: &git2::Repository,
-    message: CommitMessage<'a>,
+    message: Message<'a>,
     matches: &ArgMatches,
     signature: &git2::Signature,
     autosign: Option<&str>,
-) -> Result<CommitMessage<'a>> {
+) -> Result<Message<'a>> {
     let mut trailers: Vec<(usize, &str, &str)> = vec![];
 
     for (opt_name, old_by_opt, trailer) in &[
@@ -69,7 +69,7 @@ pub(crate) fn add_trailers<'a>(
         )?;
         let message = String::from_utf8(message_bytes)
             .map_err(|_| anyhow!("Could not decode message after adding trailers"))?;
-        Ok(CommitMessage::from(message))
+        Ok(Message::from(message))
     }
 }
 

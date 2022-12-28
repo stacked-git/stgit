@@ -31,7 +31,7 @@ use crate::stupid::Stupid;
 ///
 /// This enum's `&str`, [`String`], and raw byte slice (`&[u8]`) variants are meant to
 /// cover all relevant commit message forms to handle both easy and not-so-easy cases.
-pub(crate) enum CommitMessage<'a> {
+pub(crate) enum Message<'a> {
     Str(&'a str),
     String(String),
     Raw {
@@ -40,16 +40,16 @@ pub(crate) enum CommitMessage<'a> {
     },
 }
 
-impl<'a> CommitMessage<'a> {
+impl<'a> Message<'a> {
     /// Determine whether the commit message has any content.
     ///
-    /// For the [`CommitMessage::Raw`] variant, emptiness is determined simply by
+    /// For the [`Message::Raw`] variant, emptiness is determined simply by
     /// the presence or absensce of bytes, independent of the nominal encoding.
     pub(crate) fn is_empty(&self) -> bool {
         match self {
-            CommitMessage::Str(s) => s.is_empty(),
-            CommitMessage::String(s) => s.is_empty(),
-            CommitMessage::Raw { bytes, encoding: _ } => bytes.is_empty(),
+            Message::Str(s) => s.is_empty(),
+            Message::String(s) => s.is_empty(),
+            Message::Raw { bytes, encoding: _ } => bytes.is_empty(),
         }
     }
 
@@ -119,7 +119,7 @@ impl<'a> CommitMessage<'a> {
         let is_encoding_specified = target_encoding.is_some();
         let target_encoding = target_encoding.unwrap_or(encoding_rs::UTF_8);
         match self {
-            CommitMessage::Str(s) => {
+            Message::Str(s) => {
                 if target_encoding == encoding_rs::UTF_8 {
                     Ok(Cow::Borrowed(s.as_bytes()))
                 } else {
@@ -135,7 +135,7 @@ impl<'a> CommitMessage<'a> {
                     }
                 }
             }
-            CommitMessage::String(s) => {
+            Message::String(s) => {
                 if target_encoding == encoding_rs::UTF_8 {
                     Ok(Cow::Borrowed(s.as_bytes()))
                 } else {
@@ -151,7 +151,7 @@ impl<'a> CommitMessage<'a> {
                     }
                 }
             }
-            CommitMessage::Raw { bytes, encoding } => {
+            Message::Raw { bytes, encoding } => {
                 if let Some(encoding_str) = encoding {
                     if let Some(current_encoding) =
                         encoding_rs::Encoding::for_label(encoding_str.as_bytes())
@@ -189,8 +189,8 @@ impl<'a> CommitMessage<'a> {
                     // No target encoding either. Assume current mystery encoding is
                     // same as target mystery encoding.
                     //
-                    // This CommitMessage comes from a commit that both (a) did not have
-                    // an explicit "encoding" header; and (b) did not cleanly decode as
+                    // This Message comes from a commit that both (a) did not have an
+                    // explicit "encoding" header; and (b) did not cleanly decode as
                     // utf-8.
                     Ok(Cow::Borrowed(bytes))
                 } else {
@@ -238,25 +238,25 @@ impl<'a> CommitMessage<'a> {
     }
 }
 
-impl<'a> From<&'a str> for CommitMessage<'a> {
+impl<'a> From<&'a str> for Message<'a> {
     fn from(s: &'a str) -> Self {
         Self::Str(s)
     }
 }
 
-impl<'a> From<String> for CommitMessage<'a> {
+impl<'a> From<String> for Message<'a> {
     fn from(s: String) -> Self {
         Self::String(s)
     }
 }
 
-impl<'a> Default for CommitMessage<'a> {
+impl<'a> Default for Message<'a> {
     fn default() -> Self {
         Self::Str("")
     }
 }
 
-impl<'a> PartialEq for CommitMessage<'a> {
+impl<'a> PartialEq for Message<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.raw_bytes() == other.raw_bytes()
     }
@@ -284,7 +284,7 @@ pub(crate) trait CommitExtended<'a> {
     fn committer_strict(&self) -> Result<git2::Signature<'static>>;
 
     /// Get commit message with extended capabilities.
-    fn message_ex(&self) -> CommitMessage;
+    fn message_ex(&self) -> Message;
 
     /// Determine whether the commit has the same tree as its parent.
     fn is_no_change(&self) -> Result<bool>;
@@ -365,11 +365,11 @@ impl<'a> CommitExtended<'a> for git2::Commit<'a> {
         }
     }
 
-    fn message_ex(&self) -> CommitMessage {
+    fn message_ex(&self) -> Message {
         if let Some(message) = self.message_raw() {
-            CommitMessage::Str(message)
+            Message::Str(message)
         } else {
-            CommitMessage::Raw {
+            Message::Raw {
                 bytes: self.message_raw_bytes(),
                 encoding: self.message_encoding(),
             }
@@ -403,7 +403,7 @@ pub(crate) trait RepositoryCommitExtended {
         &self,
         author: &git2::Signature,
         committer: &git2::Signature,
-        message: &CommitMessage,
+        message: &Message,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
     ) -> Result<git2::Oid>;
@@ -416,7 +416,7 @@ pub(crate) trait RepositoryCommitExtended {
         &self,
         author: &git2::Signature,
         committer: &git2::Signature,
-        message: &CommitMessage,
+        message: &Message,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
         options: &CommitOptions,
@@ -428,7 +428,7 @@ impl RepositoryCommitExtended for git2::Repository {
         &self,
         author: &git2::Signature,
         committer: &git2::Signature,
-        message: &CommitMessage,
+        message: &Message,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
     ) -> Result<git2::Oid> {
@@ -453,7 +453,7 @@ impl RepositoryCommitExtended for git2::Repository {
         &self,
         author: &git2::Signature,
         committer: &git2::Signature,
-        message: &CommitMessage,
+        message: &Message,
         tree_id: git2::Oid,
         parent_ids: impl IntoIterator<Item = git2::Oid>,
         options: &CommitOptions<'_>,

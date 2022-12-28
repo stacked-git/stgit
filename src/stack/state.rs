@@ -11,7 +11,7 @@ use anyhow::{anyhow, Result};
 
 use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
-    commit::{CommitMessage, CommitOptions, RepositoryCommitExtended},
+    commit::{Message, CommitOptions, RepositoryCommitExtended},
     patchname::PatchName,
     signature::{SignatureExtended, TimeExtended},
 };
@@ -209,7 +209,7 @@ impl<'repo> StackState<'repo> {
             None => vec![],
         };
 
-        let message = CommitMessage::from(message);
+        let message = Message::from(message);
 
         let commit_opts = CommitOptions {
             commit_encoding: None,
@@ -254,7 +254,7 @@ impl<'repo> StackState<'repo> {
             let group_oid = repo.commit_with_options(
                 &sig,
                 &sig,
-                &CommitMessage::from("parent grouping"),
+                &Message::from("parent grouping"),
                 state_tree_id,
                 parent_group_oids,
                 &commit_opts,

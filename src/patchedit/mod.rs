@@ -28,7 +28,7 @@ use interactive::edit_interactive;
 
 use crate::{
     argset,
-    commit::{CommitExtended, CommitMessage, RepositoryCommitExtended},
+    commit::{CommitExtended, Message, RepositoryCommitExtended},
     patchname::PatchName,
     signature::{self, SignatureExtended},
     stack::StackStateAccess,
@@ -539,21 +539,21 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 .any(|&arg| matches.contains_id(arg)));
 
         let message = if matches.contains_id("file") {
-            CommitMessage::from(file_message)
+            Message::from(file_message)
         } else if let Some(args_message) = matches.get_one::<String>("message") {
-            CommitMessage::from(prettify(args_message.as_str()))
+            Message::from(prettify(args_message.as_str()))
         } else if let Some(overlay_message) = overlay_message {
-            CommitMessage::from(overlay_message)
+            Message::from(overlay_message)
         } else if let Some(patch_commit) = patch_commit {
             patch_commit.message_ex()
         } else if let Some(message_template) =
             crate::templates::get_template(repo, "patchdescr.tmpl")?
         {
             need_interactive_edit = true;
-            CommitMessage::from(message_template)
+            Message::from(message_template)
         } else {
             need_interactive_edit = true;
-            CommitMessage::default()
+            Message::default()
         };
 
         let patchname_len_limit = PatchName::get_length_limit(&config);
@@ -718,7 +718,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             (
                 patchname,
                 author,
-                CommitMessage::from(edited_message),
+                Message::from(edited_message),
                 edited_diff,
             )
         } else {

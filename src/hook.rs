@@ -6,7 +6,7 @@ use std::{io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::commit::CommitMessage;
+use crate::commit::Message;
 
 /// Find path to hook script given a hook name.
 fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {
@@ -86,9 +86,9 @@ pub(crate) fn run_pre_commit_hook(repo: &git2::Repository, use_editor: bool) -> 
 /// executable.
 pub(crate) fn run_commit_msg_hook<'repo>(
     repo: &git2::Repository,
-    message: CommitMessage<'repo>,
+    message: Message<'repo>,
     use_editor: bool,
-) -> Result<CommitMessage<'repo>> {
+) -> Result<Message<'repo>> {
     let hook_name = "commit-msg";
     let hook_path = get_hook_path(repo, hook_name);
     let hook_meta = match std::fs::metadata(&hook_path) {
@@ -135,7 +135,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
                 anyhow!("Message could not be decoded with `{}`", encoding.name())
                     .context("`{hook_name}` hook")
             })?;
-        Ok(CommitMessage::from(message.to_string()))
+        Ok(Message::from(message.to_string()))
     } else {
         Err(anyhow!(
             "`{hook_name}` hook returned {}",

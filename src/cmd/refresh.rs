@@ -14,7 +14,7 @@ use indexmap::IndexSet;
 use crate::{
     argset,
     color::get_color_stdout,
-    commit::{CommitMessage, RepositoryCommitExtended},
+    commit::{Message, RepositoryCommitExtended},
     hook::run_pre_commit_hook,
     patchedit,
     patchname::PatchName,
@@ -190,7 +190,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let temp_commit_id = stack.repo.commit_ex(
         &git2::Signature::make_author(Some(&config), matches)?,
         &git2::Signature::default_committer(Some(&config))?,
-        &CommitMessage::from(format!("Refresh of {patchname}")),
+        &Message::from(format!("Refresh of {patchname}")),
         tree_id,
         [stack.get_branch_head().id()],
     )?;

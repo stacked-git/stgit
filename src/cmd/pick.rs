@@ -358,7 +358,7 @@ fn pick_picks(
         } else {
             commit.message_raw_bytes().to_str_lossy().to_string()
         };
-        let message = &crate::commit::CommitMessage::String(message);
+        let message = &crate::commit::Message::String(message);
         let author = commit.author();
         let default_committer = git2::Signature::default_committer(Some(&config))?;
         let committer = if matches.get_flag("committer-date-is-author-date") {
