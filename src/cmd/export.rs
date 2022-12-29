@@ -15,9 +15,8 @@ use clap::Arg;
 
 use crate::{
     argset,
-    commit::CommitExtended,
+    ext::{CommitExtended, TimeExtended},
     patchrange,
-    signature::TimeExtended,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -234,6 +233,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "authdate",
             Cow::Owned(
                 author
+                    .when()
                     .datetime()
                     .format("%F %T %z")
                     .to_string()
@@ -247,6 +247,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "commdate",
             Cow::Owned(
                 committer
+                    .when()
                     .datetime()
                     .format("%F %T %z")
                     .to_string()

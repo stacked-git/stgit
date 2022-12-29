@@ -6,7 +6,7 @@ use std::{io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::commit::Message;
+use crate::wrap::Message;
 
 /// Find path to hook script given a hook name.
 fn get_hook_path(repo: &git2::Repository, hook_name: &str) -> PathBuf {

@@ -5,7 +5,7 @@
 use anyhow::{anyhow, Result};
 use clap::ArgMatches;
 
-use crate::{commit::Message, stupid::Stupid};
+use crate::{stupid::Stupid, wrap::Message};
 
 /// Add trailers to commit message based on user-provided command line options.
 ///

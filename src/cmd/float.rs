@@ -13,9 +13,9 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
+    ext::RepositoryExtended,
     patchname::PatchName,
     patchrange,
-    repo::RepositoryExtended,
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };

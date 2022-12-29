@@ -10,9 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
-    commit::{CommitExtended, RepositoryCommitExtended},
-    repo::RepositoryExtended,
-    signature::SignatureExtended,
+    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };

@@ -11,8 +11,8 @@ use termcolor::WriteColor;
 
 use crate::{
     argset::{self, get_one_str},
+    ext::RepositoryExtended,
     print_info_message,
-    repo::RepositoryExtended,
     stack::{
         get_branch_name, state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess,
         StackStateAccess,

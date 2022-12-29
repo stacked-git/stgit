@@ -6,10 +6,9 @@ use std::io::Write;
 
 use anyhow::{anyhow, Context, Result};
 
-use crate::{
-    patchname::PatchName,
-    signature::{self, TimeExtended},
-};
+use crate::{ext::TimeExtended, patchname::PatchName};
+
+use super::parse::parse_name_email;
 
 #[derive(Clone, PartialEq, Eq)]
 pub(super) struct DiffBuffer(pub(super) Vec<u8>);
@@ -73,7 +72,7 @@ impl EditablePatchDescription {
         };
         writeln!(stream, "Patch:  {patchname}")?;
         if let Some(author) = self.author.as_ref() {
-            let authdate = author.datetime().format("%Y-%m-%d %H:%M:%S %z");
+            let authdate = author.when().datetime().format("%Y-%m-%d %H:%M:%S %z");
             write!(stream, "Author: ")?;
             stream.write_all(author.name_bytes())?;
             write!(stream, " <")?;
@@ -250,10 +249,10 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
         let author = if let Some(maybe_author) = raw_author {
             Some(if let Some(name_email) = maybe_author {
-                let (name, email) = signature::parse_name_email(&name_email)?;
+                let (name, email) = parse_name_email(&name_email)?;
                 if let Some(Some(date_str)) = raw_authdate {
                     let when =
-                        signature::parse_time(&date_str).context("patch description date")?;
+                        git2::Time::parse_time(&date_str).context("patch description date")?;
                     Some(git2::Signature::new(name, email, &when)?)
                 } else {
                     Some(git2::Signature::now(name, email)?)

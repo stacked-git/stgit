@@ -11,18 +11,17 @@ mod alias;
 mod argset;
 mod cmd;
 mod color;
-mod commit;
+mod ext;
 mod hook;
 mod patchedit;
 mod patchname;
 mod patchrange;
-mod repo;
 mod revspec;
 mod signal;
-mod signature;
 mod stack;
 mod stupid;
 mod templates;
+mod wrap;
 
 use std::{ffi::OsString, io::Write, path::PathBuf};
 

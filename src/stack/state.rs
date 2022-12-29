@@ -11,9 +11,9 @@ use anyhow::{anyhow, Result};
 
 use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
-    commit::{Message, CommitOptions, RepositoryCommitExtended},
+    ext::{CommitOptions, RepositoryExtended, SignatureExtended, TimeExtended},
     patchname::PatchName,
-    signature::{SignatureExtended, TimeExtended},
+    wrap::Message,
 };
 
 /// Stack state as recorded in the git repository.

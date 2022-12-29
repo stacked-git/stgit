@@ -10,7 +10,7 @@ use termcolor::WriteColor;
 
 use crate::{
     argset,
-    commit::CommitExtended,
+    ext::CommitExtended,
     patchname::PatchName,
     patchrange,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},

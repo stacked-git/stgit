@@ -14,16 +14,16 @@ use indexmap::IndexSet;
 use crate::{
     argset,
     color::get_color_stdout,
-    commit::{Message, RepositoryCommitExtended},
+    ext::{RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
     patchedit,
     patchname::PatchName,
-    signature::SignatureExtended,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},
         Stupid, StupidContext,
     },
+    wrap::Message,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {

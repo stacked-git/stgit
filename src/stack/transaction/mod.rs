@@ -42,9 +42,8 @@ use self::{
 };
 use super::{error::Error, state::StackState, StackAccess};
 use crate::{
-    commit::{CommitExtended, RepositoryCommitExtended},
+    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     patchname::PatchName,
-    signature::SignatureExtended,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };

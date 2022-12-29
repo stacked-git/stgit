@@ -10,10 +10,9 @@ use clap::{Arg, ArgGroup, ArgMatches};
 use super::refresh;
 use crate::{
     color::get_color_stdout,
+    ext::{RepositoryExtended, SignatureExtended},
     patchedit,
     patchname::PatchName,
-    repo::RepositoryExtended,
-    signature::SignatureExtended,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };

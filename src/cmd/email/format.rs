@@ -7,7 +7,7 @@ use clap::Arg;
 
 use crate::{
     argset,
-    commit::CommitExtended,
+    ext::CommitExtended,
     patchrange,
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,

@@ -13,9 +13,9 @@ use clap::{Arg, ArgGroup};
 
 use crate::{
     color::get_color_stdout,
+    ext::{SignatureExtended, TimeExtended},
     patchedit,
     patchname::PatchName,
-    signature::{self, SignatureExtended},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };
@@ -623,7 +623,7 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let author_date = author_date.and_then(|date| crate::signature::parse_time(&date).ok());
+    let author_date = author_date.and_then(|date| git2::Time::parse_time(&date).ok());
     let author = if let (Some(name), Some(email), Some(time)) =
         (author_name.as_ref(), author_email.as_ref(), author_date)
     {
@@ -792,7 +792,7 @@ impl Headers {
                     let (name, email) = value
                         .to_str()
                         .map_err(|_| anyhow!("From/Author is not UTF-8"))
-                        .and_then(signature::parse_name_email)
+                        .and_then(patchedit::parse_name_email)
                         .context("parsing From/Author header")?;
                     headers.author_name = Some(name.to_string());
                     headers.author_email = Some(email.to_string());

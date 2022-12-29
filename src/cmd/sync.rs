@@ -15,10 +15,9 @@ use clap::{Arg, ArgGroup};
 use crate::{
     argset,
     color::get_color_stdout,
-    commit::{CommitExtended, RepositoryCommitExtended},
+    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     patchname::PatchName,
     patchrange,
-    signature::SignatureExtended,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };

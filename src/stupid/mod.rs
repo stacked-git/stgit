@@ -40,7 +40,7 @@ use self::{
     status::{StatusOptions, Statuses},
     version::StupidVersion,
 };
-use crate::signature::TimeExtended;
+use crate::ext::TimeExtended;
 
 pub(crate) trait Stupid<'repo, 'index> {
     /// Get StupidContext for running stupid commands.
@@ -418,8 +418,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .env("GIT_COMMITTER_NAME", committer_name)
             .env("GIT_COMMITTER_EMAIL", committer_email)
             // TODO: re-encode dates?
-            .env("GIT_AUTHOR_DATE", author.epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.epoch_time_string())
+            .env("GIT_AUTHOR_DATE", author.when().epoch_time_string())
+            .env("GIT_COMMITTER_DATE", committer.when().epoch_time_string())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

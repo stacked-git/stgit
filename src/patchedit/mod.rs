@@ -8,6 +8,7 @@
 
 mod description;
 mod interactive;
+mod parse;
 mod trailers;
 
 use std::{
@@ -25,15 +26,18 @@ use clap::{
 use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
 pub(crate) use interactive::call_editor;
 use interactive::edit_interactive;
+pub(crate) use parse::parse_name_email;
 
 use crate::{
     argset,
-    commit::{CommitExtended, Message, RepositoryCommitExtended},
+    ext::{CommitExtended, RepositoryExtended, SignatureExtended, TimeExtended},
     patchname::PatchName,
-    signature::{self, SignatureExtended},
     stack::StackStateAccess,
     stupid::Stupid,
+    wrap::Message,
 };
+
+use self::parse::{parse_email, parse_name, parse_name_email2};
 
 /// Add patch editing options to a StGit command.
 pub(crate) fn add_args(
@@ -210,7 +214,7 @@ pub(crate) fn add_args(
                 .help("Set the author \"name <email>\"")
                 .value_name("name-and-email")
                 .num_args(1)
-                .value_parser(ValueParser::new(signature::parse_name_email2))
+                .value_parser(ValueParser::new(parse_name_email2))
                 .value_hint(ValueHint::Other),
         )
         .arg(
@@ -220,7 +224,7 @@ pub(crate) fn add_args(
                 .value_name("name")
                 .num_args(1)
                 .value_hint(ValueHint::Other)
-                .value_parser(ValueParser::new(signature::parse_name))
+                .value_parser(ValueParser::new(parse_name))
                 .conflicts_with("author"),
         )
         .arg(
@@ -230,7 +234,7 @@ pub(crate) fn add_args(
                 .value_name("email")
                 .num_args(1)
                 .value_hint(ValueHint::EmailAddress)
-                .value_parser(ValueParser::new(signature::parse_email))
+                .value_parser(ValueParser::new(parse_email))
                 .conflicts_with("author"),
         )
         .arg(
@@ -244,7 +248,7 @@ pub(crate) fn add_args(
                 )
                 .value_name("date")
                 .num_args(1)
-                .value_parser(ValueParser::new(signature::parse_time))
+                .value_parser(ValueParser::new(git2::Time::parse_time))
                 .value_hint(ValueHint::Other),
         )
         .arg(argset::committer_date_is_author_date_arg());
@@ -510,7 +514,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             // signature has to be derived from that commit.
             let patch_commit = patch_commit.expect("existing patch or author overlay is required");
             if let Some(args_author) =
-                git2::Signature::author_from_args(matches, Some(patch_commit.author().when()))?
+                author_from_args(matches, Some(patch_commit.author().when()))?
             {
                 Some(args_author)
             } else {
@@ -811,6 +815,41 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             new_patchname,
             new_commit_id,
         })
+    }
+}
+
+/// Attempt to create author signature based on command line options.
+///
+/// The optional `when` value will be used for the author time unless `--authdate`
+/// was used on the command line.
+///
+/// The provided `matches` must come from a [`clap::Command`] setup with
+/// [`crate::patchedit::add_args()`].
+///
+/// Returns `None` if author information was not provided the command line.
+fn author_from_args(
+    matches: &clap::ArgMatches,
+    when: Option<git2::Time>,
+) -> Result<Option<git2::Signature<'static>>> {
+    let when = if let Some(when) = when {
+        when
+    } else if let Some(authdate) = matches.get_one::<git2::Time>("authdate").copied() {
+        authdate
+    } else {
+        return Ok(None);
+    };
+
+    if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
+        let author = git2::Signature::new(name, email, &when)?;
+        Ok(Some(author))
+    } else if let (Some(name), Some(email)) = (
+        matches.get_one::<String>("authname"),
+        matches.get_one::<String>("authemail"),
+    ) {
+        let author = git2::Signature::new(name, email, &when)?;
+        Ok(Some(author))
+    } else {
+        Ok(None)
     }
 }
 

@@ -14,11 +14,10 @@ use clap::Arg;
 use crate::{
     argset,
     color::get_color_stdout,
-    commit::RepositoryCommitExtended,
+    ext::{RepositoryExtended, SignatureExtended},
     patchname::PatchName,
     patchrange,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
-    signature::SignatureExtended,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -358,7 +357,7 @@ fn pick_picks(
         } else {
             commit.message_raw_bytes().to_str_lossy().to_string()
         };
-        let message = &crate::commit::Message::String(message);
+        let message = &crate::wrap::Message::String(message);
         let author = commit.author();
         let default_committer = git2::Signature::default_committer(Some(&config))?;
         let committer = if matches.get_flag("committer-date-is-author-date") {
