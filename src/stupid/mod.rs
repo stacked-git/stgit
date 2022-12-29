@@ -540,9 +540,9 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(output.stdout)
     }
 
-    /// Diff tree with index returning a bool indicating whether they match.
+    /// Diff tree with index returning a bool indicating whether they differ.
     pub(crate) fn diff_index_quiet(&self, tree_id: git2::Oid) -> Result<bool> {
-        Ok(self
+        let no_diff = self
             .git()
             .args(["diff-index", "--quiet", "--cached"])
             .arg(tree_id.to_string())
@@ -550,7 +550,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .stderr(Stdio::null())
             .output_git()?
             .status
-            .success())
+            .success();
+        Ok(!no_diff)
     }
 
     /// Get names of files that differ between two trees.

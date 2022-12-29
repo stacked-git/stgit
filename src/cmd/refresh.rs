@@ -476,7 +476,7 @@ pub(crate) fn assemble_refresh_tree(
 
     let tree_id = if matches.get_flag("no-verify")
         || !run_pre_commit_hook(stack.repo, matches.get_flag("edit"))?
-        || stupid.diff_index_quiet(tree_id)?
+        || !stupid.diff_index_quiet(tree_id)?
     {
         tree_id
     } else {
