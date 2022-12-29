@@ -8,8 +8,6 @@ use anyhow::{anyhow, Context, Result};
 
 use crate::{ext::TimeExtended, patchname::PatchName};
 
-use super::parse::parse_name_email;
-
 #[derive(Clone, PartialEq, Eq)]
 pub(super) struct DiffBuffer(pub(super) Vec<u8>);
 
@@ -249,7 +247,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
         let author = if let Some(maybe_author) = raw_author {
             Some(if let Some(name_email) = maybe_author {
-                let (name, email) = parse_name_email(&name_email)?;
+                let (name, email) = super::parse::parse_name_email(&name_email)?;
                 if let Some(Some(date_str)) = raw_authdate {
                     let when =
                         git2::Time::parse_time(&date_str).context("patch description date")?;

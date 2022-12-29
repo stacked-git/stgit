@@ -23,11 +23,13 @@ use clap::{
     builder::{self, ValueParser},
     Arg, ArgMatches, ValueHint,
 };
-use description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription};
-pub(crate) use interactive::call_editor;
-use interactive::edit_interactive;
-pub(crate) use parse::parse_name_email;
 
+use self::{
+    description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription},
+    interactive::edit_interactive,
+    parse::{parse_email, parse_name, parse_name_email2},
+};
+pub(crate) use self::{interactive::call_editor, parse::parse_name_email};
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended, TimeExtended},
@@ -36,8 +38,6 @@ use crate::{
     stupid::Stupid,
     wrap::Message,
 };
-
-use self::parse::{parse_email, parse_name, parse_name_email2};
 
 /// Add patch editing options to a StGit command.
 pub(crate) fn add_args(
