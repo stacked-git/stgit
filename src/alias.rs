@@ -88,35 +88,39 @@ pub(crate) fn get_default_aliases() -> Aliases {
 ///
 /// The `exclude` closure is intended to prevent names of builtin StGit subcommands from
 /// being shadowed by aliases.
-pub(crate) fn get_aliases<F>(config: &git2::Config, exclude: F) -> Result<Aliases>
+pub(crate) fn get_aliases<F>(
+    config_file: Option<&git_repository::config::File>,
+    exclude: F,
+) -> Result<Aliases>
 where
     F: Fn(&str) -> bool,
 {
     let mut aliases = get_default_aliases();
-    let mut iter = config.entries(None)?;
-    while let Some(entry) = iter.next() {
-        let entry = entry?;
-        if let Some(name) = entry.name_bytes().strip_prefix(b"stgit.alias.") {
-            let name = name.to_str().map_err(|_| {
-                anyhow!(
-                    "Alias name `{}` in {} is not valid UTF-8",
-                    name.to_str_lossy(),
-                    config_level_to_str(entry.level()),
-                )
-            })?;
-            if entry.has_value() {
-                if !exclude(name) {
-                    let command = entry.value().ok_or_else(|| {
-                        anyhow!(
-                            "Alias value for `{name}` in {} is not valid UTF-8",
-                            config_level_to_str(entry.level()),
-                        )
-                    })?;
-                    let alias = Alias::new(name, command);
-                    aliases.insert(name.to_string(), alias);
+
+    if let Some(config_file) = config_file {
+        if let Ok(section) = config_file.section("stgit", Some("alias".into())) {
+            for key in section.keys() {
+                let name = key.to_str().map_err(|_| {
+                    anyhow!(
+                        "Alias name `{}` in {} is not valid UTF-8",
+                        key.to_str_lossy(),
+                        config_source_str(section.meta().source),
+                    )
+                })?;
+                if let Some(value) = section.value(key) {
+                    if !exclude(name) {
+                        let command = value.to_str().map_err(|_| {
+                            anyhow!(
+                                "Alias value for `{name}` in {} is not valid UTF-8",
+                                config_source_str(section.meta().source)
+                            )
+                        })?;
+                        let alias = Alias::new(name, command);
+                        aliases.insert(name.to_string(), alias);
+                    }
+                } else {
+                    aliases.remove(name);
                 }
-            } else {
-                aliases.remove(name);
             }
         }
     }
@@ -172,16 +176,20 @@ fn split_command_line(line: &str) -> Result<Vec<String>, String> {
     }
 }
 
-/// Map [`git2::ConfigLevel`] to user-facing strings.
-fn config_level_to_str(level: git2::ConfigLevel) -> &'static str {
-    match level {
-        git2::ConfigLevel::ProgramData => "program data config",
-        git2::ConfigLevel::System => "system config",
-        git2::ConfigLevel::XDG => "XDG config",
-        git2::ConfigLevel::Global => "global config",
-        git2::ConfigLevel::Local => "local config",
-        git2::ConfigLevel::App => "app config",
-        git2::ConfigLevel::Highest => "highest config",
+/// Map [`git_repository::config::Source`] to user-facing strings.
+fn config_source_str(source: git_repository::config::Source) -> &'static str {
+    use git_repository::config::Source;
+    match source {
+        Source::GitInstallation => "git installed config",
+        Source::System => "system config",
+        Source::Git => "git config",
+        Source::User => "user global config",
+        Source::Local => "repository local config",
+        Source::Worktree => "worktree config",
+        Source::Env => "environment config",
+        Source::Cli => "cli config",
+        Source::Api => "api config",
+        Source::EnvOverride => "environment override config",
     }
 }
 

@@ -2,6 +2,7 @@
 
 //! [`clap::Arg`] definitions common to several StGit commands.
 
+use bstr::ByteSlice;
 use clap::Arg;
 
 /// The `--branch`/`-b` option for selecting an alternative branch.
@@ -97,11 +98,7 @@ pub(crate) fn diff_opts_arg() -> Arg {
 
 /// For use with `clap::Arg::value_parser()` to ensure a branch name is valid.
 pub(crate) fn parse_branch_name(name: &str) -> anyhow::Result<String> {
-    if git2::Branch::name_is_valid(name)? {
-        Ok(name.to_string())
-    } else {
-        Err(anyhow::anyhow!("invalid branch name `{name}`"))
-    }
+    Ok(git_repository::refs::PartialName::try_from(name).map(|_| name.to_string())?)
 }
 
 /// Get a `&str` from a `clap::ArgMatches` instance for the given `id`.
@@ -136,15 +133,17 @@ pub(crate) fn parse_usize(s: &str) -> anyhow::Result<usize> {
 /// line of subordinate `git` commands.
 pub(crate) fn get_diff_opts(
     matches: &clap::ArgMatches,
-    config: &git2::Config,
+    config: &git_repository::config::Snapshot,
     force_full_index: bool,
     force_binary: bool,
 ) -> Vec<String> {
     let mut opts = Vec::new();
 
-    if let Ok(value) = config.get_string("stgit.diff-opts") {
-        for arg in value.split_ascii_whitespace() {
-            opts.push(String::from(arg));
+    if let Some(value) = config.string("stgit.diff-opts") {
+        if let Ok(value) = value.to_str() {
+            for arg in value.split_ascii_whitespace() {
+                opts.push(String::from(arg));
+            }
         }
     }
 
@@ -164,14 +163,10 @@ pub(crate) fn get_diff_opts(
 }
 
 pub(crate) fn resolve_allow_push_conflicts(
-    config: &git2::Config,
+    config: &git_repository::config::Snapshot,
     matches: &clap::ArgMatches,
 ) -> bool {
     get_one_str(matches, "conflicts")
         .map(|s| s == "allow")
-        .unwrap_or_else(|| {
-            config
-                .get_bool("stgit.push.allow-conflicts")
-                .unwrap_or(true)
-        })
+        .unwrap_or_else(|| config.boolean("stgit.push.allow-conflicts").unwrap_or(true))
 }

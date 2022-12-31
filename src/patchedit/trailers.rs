@@ -3,6 +3,7 @@
 //! Add trailers to a commit message.
 
 use anyhow::{anyhow, Result};
+use bstr::ByteSlice;
 use clap::ArgMatches;
 
 use crate::{stupid::Stupid, wrap::Message};
@@ -11,13 +12,14 @@ use crate::{stupid::Stupid, wrap::Message};
 ///
 /// The `matches` provided to this function must be from a [`clap::Command`] that was
 /// setup with [`super::add_args`].
-pub(crate) fn add_trailers<'a>(
-    repo: &git2::Repository,
+pub(crate) fn add_trailers<'a, 'b>(
+    repo: &git_repository::Repository,
     message: Message<'a>,
     matches: &ArgMatches,
-    signature: &git2::Signature,
+    signature: impl Into<git_repository::actor::SignatureRef<'b>>,
     autosign: Option<&str>,
 ) -> Result<Message<'a>> {
+    let signature = signature.into();
     let mut trailers: Vec<(usize, &str, &str)> = vec![];
 
     for (opt_name, old_by_opt, trailer) in &[
@@ -43,12 +45,12 @@ pub(crate) fn add_trailers<'a>(
     if trailers.is_empty() && autosign.is_none() {
         Ok(message)
     } else {
-        let default_value = if let (Some(name), Some(email)) = (signature.name(), signature.email())
-        {
-            format!("{name} <{email}>")
-        } else {
-            return Err(anyhow!("Trailer requires UTF-8 signature"));
-        };
+        let default_value =
+            if let (Ok(name), Ok(email)) = (signature.name.to_str(), signature.email.to_str()) {
+                format!("{name} <{email}>")
+            } else {
+                return Err(anyhow!("Trailer requires UTF-8 signature"));
+            };
 
         if let Some(autosign) = autosign {
             trailers.push((0, autosign, &default_value));

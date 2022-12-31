@@ -155,7 +155,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
@@ -178,17 +178,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
         Ok(None)
     }?;
 
-    let config = repo.config()?;
-
     let is_refreshing = matches.get_flag("refresh") || matches.contains_id("pathspecs");
 
     let tree_id = if is_refreshing {
-        refresh::assemble_refresh_tree(&stack, &config, matches, None)?
+        refresh::assemble_refresh_tree(&stack, matches, None)?
     } else {
-        stack.get_branch_head().tree_id()
+        stack.get_branch_head().tree_id()?.detach()
     };
 
-    let parent_id = stack.get_branch_head().id();
+    let parent_id = stack.get_branch_head().id;
 
     let (patchname, commit_id) = match patchedit::EditBuilder::default()
         .allow_autosign(true)
@@ -196,7 +194,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .allow_implicit_edit(true)
         .allow_template_save(!is_refreshing)
         .original_patchname(patchname.as_ref())
-        .default_author(git2::Signature::make_author(Some(&config), matches)?)
+        .default_author(repo.author_or_default().override_author(matches))
         .override_tree_id(tree_id)
         .override_parent_id(parent_id)
         .edit(&stack, &repo, matches)?
@@ -215,7 +213,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if let Some(template_path) = matches.get_one::<PathBuf>("save-template") {
         let patch_commit = repo.find_commit(commit_id)?;
-        std::fs::write(template_path, patch_commit.message_raw_bytes())?;
+        std::fs::write(template_path, patch_commit.message_raw()?)?;
         return Ok(());
     }
 

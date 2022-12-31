@@ -8,7 +8,11 @@ use anyhow::Result;
 use bstr::ByteSlice;
 use clap::{Arg, ArgMatches};
 
-use crate::{revspec::parse_stgit_revision, stupid::Stupid};
+use crate::{
+    ext::{CommitExtended, RepositoryExtended},
+    revspec::parse_stgit_revision,
+    stupid::Stupid,
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "files",
@@ -51,13 +55,13 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let opt_spec = crate::argset::get_one_str(matches, "stgit-revision");
-    let commit = parse_stgit_revision(&repo, opt_spec, None)?.peel_to_commit()?;
-    let parent = commit.parent(0)?;
+    let commit = parse_stgit_revision(&repo, opt_spec, None)?.try_into_commit()?;
+    let parent = commit.get_parent_commit()?;
     let mut output = repo.stupid().diff_tree_files_status(
-        parent.tree_id(),
-        commit.tree_id(),
+        parent.tree_id()?.detach(),
+        commit.tree_id()?.detach(),
         matches.get_flag("stat"),
         matches.get_flag("bare"),
         crate::color::use_color(matches),

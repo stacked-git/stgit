@@ -4,6 +4,7 @@
 
 use std::{
     path::{Path, PathBuf},
+    rc::Rc,
     str::FromStr,
 };
 
@@ -14,7 +15,7 @@ use indexmap::IndexSet;
 use crate::{
     argset,
     color::get_color_stdout,
-    ext::{RepositoryExtended, SignatureExtended},
+    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
     patchedit,
     patchname::PatchName,
@@ -157,9 +158,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
         ));
     }
 
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
-    let config = repo.config()?;
+    let config = repo.config_snapshot();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 
     stack.check_head_top_mismatch()?;
@@ -178,7 +179,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let tree_id = assemble_refresh_tree(
         &stack,
-        &config,
         matches,
         matches.get_flag("update").then_some(&patchname),
     )?;
@@ -188,11 +188,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // Make temp patch
     let temp_commit_id = stack.repo.commit_ex(
-        &git2::Signature::make_author(Some(&config), matches)?,
-        &git2::Signature::default_committer(Some(&config))?,
+        &repo.author_or_default().override_author(matches),
+        repo.committer_or_default(),
         &Message::from(format!("Refresh of {patchname}")),
         tree_id,
-        [stack.get_branch_head().id()],
+        [stack.get_branch_head().id],
     )?;
 
     let temp_patchname = {
@@ -238,7 +238,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 let (new_patchname, new_commit_id) = match patchedit::EditBuilder::default()
                     .original_patchname(Some(&patchname))
                     .existing_patch_commit(trans.get_patch_commit(&patchname))
-                    .override_tree_id(temp_commit.tree_id())
+                    .override_tree_id(temp_commit.tree_id()?.detach())
                     .allow_diff_edit(false)
                     .allow_implicit_edit(false)
                     .allow_template_save(false)
@@ -282,9 +282,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
                 let patch_commit = trans.get_patch_commit(&patchname);
                 let temp_commit = trans.get_patch_commit(&temp_patchname);
-                let base = temp_commit.parent(0)?.tree_id();
-                let ours = patch_commit.tree_id();
-                let theirs = temp_commit.tree_id();
+                let base = temp_commit.get_parent_commit()?.tree_id()?.detach();
+                let ours = patch_commit.tree_id()?.detach();
+                let theirs = temp_commit.tree_id()?.detach();
 
                 if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
                     stupid_temp.read_tree(ours)?;
@@ -347,13 +347,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
 fn determine_refresh_paths(
     stupid: &StupidContext,
     statuses: &Statuses,
-    patch_commit: Option<&git2::Commit>,
+    patch_commit: Option<&Rc<git_repository::Commit>>,
     force: bool,
 ) -> Result<IndexSet<PathBuf>> {
     let refresh_paths: IndexSet<&Path> = if let Some(patch_commit) = patch_commit {
         // Restrict update to the paths that were already part of the patch.
-        let parent_tree_id = patch_commit.parent(0)?.tree_id();
-        let diff_files = stupid.diff_tree_files(parent_tree_id, patch_commit.tree_id())?;
+        let parent_tree_id = patch_commit.get_parent_commit()?.tree_id()?.detach();
+        let diff_files =
+            stupid.diff_tree_files(parent_tree_id, patch_commit.tree_id()?.detach())?;
         let patch_paths = diff_files.iter().collect::<IndexSet<_>>();
 
         statuses
@@ -412,14 +413,14 @@ fn write_tree(
     stack: &Stack,
     refresh_paths: &IndexSet<PathBuf>,
     is_path_limiting: bool,
-) -> Result<git2::Oid> {
+) -> Result<git_repository::ObjectId> {
     // N.B. using temp index is necessary for the cases where there are conflicts in the
     // default index. I.e. by using a temp index, a subset of paths without conflicts
     // may be formed into a coherent tree while leaving the default index as-is.
     let stupid = stack.repo.stupid();
     if is_path_limiting {
         let tree_id_result = stupid.with_temp_index(|stupid_temp| {
-            stupid_temp.read_tree(stack.get_branch_head().tree_id())?;
+            stupid_temp.read_tree(stack.get_branch_head().tree_id()?.detach())?;
             stupid_temp.update_index(Some(refresh_paths))?;
             stupid_temp.write_tree()
         });
@@ -435,10 +436,9 @@ fn write_tree(
 
 pub(crate) fn assemble_refresh_tree(
     stack: &Stack,
-    config: &git2::Config,
     matches: &ArgMatches,
     limit_to_patchname: Option<&PatchName>,
-) -> Result<git2::Oid> {
+) -> Result<git_repository::ObjectId> {
     let stupid = stack.repo.stupid();
     let opt_pathspecs = matches.get_many::<PathBuf>("pathspecs");
     let is_path_limiting = limit_to_patchname.is_some() || opt_pathspecs.is_some();
@@ -453,7 +453,11 @@ pub(crate) fn assemble_refresh_tree(
         let submodules_flag = matches.get_flag("submodules");
         let nosubmodules_flag = matches.get_flag("no-submodules");
         let use_submodules = if !submodules_flag && !nosubmodules_flag {
-            config.get_bool("stgit.refreshsubmodules").unwrap_or(false)
+            stack
+                .repo
+                .config_snapshot()
+                .boolean("stgit.refreshsubmodules")
+                .unwrap_or(false)
         } else {
             submodules_flag
         };

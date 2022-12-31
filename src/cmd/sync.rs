@@ -15,7 +15,7 @@ use clap::{Arg, ArgGroup};
 use crate::{
     argset,
     color::get_color_stdout,
-    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     patchrange,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
@@ -84,10 +84,9 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
-    let config = repo.config()?;
 
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
     stack.check_head_top_mismatch()?;
@@ -201,7 +200,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
             for pn in pushed.iter().chain(popped.iter()) {
-                let parent_id = trans.top().id();
+                let parent_id = trans.top().id;
 
                 if popped.contains(pn) {
                     trans.push_patches(&[pn], false)?;
@@ -223,11 +222,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
                 if let Some(tree_id) = maybe_tree_id {
                     let author = commit.author_strict()?;
-                    let default_committer = git2::Signature::default_committer(Some(&config))?;
+                    let default_committer = trans.repo().committer_or_default();
                     let committer = if matches.get_flag("committer-date-is-author-date") {
-                        default_committer.override_when(&author.when())
+                        let mut committer = default_committer.to_owned();
+                        committer.time = author.time;
+                        committer
                     } else {
-                        default_committer
+                        default_committer.to_owned()
                     };
                     let commit_id = trans.repo().commit_ex(
                         &author,
@@ -250,27 +251,31 @@ fn branch_merge_patch(
     ref_stack: &Stack,
     trans: &StackTransaction,
     patchname: &PatchName,
-    commit: &git2::Commit,
-) -> Result<Option<git2::Oid>> {
+    commit: &git_repository::Commit,
+) -> Result<Option<git_repository::ObjectId>> {
+    let commit_ref = commit.decode()?;
     let ref_commit = ref_stack.get_patch_commit(patchname);
-    let ref_parent = ref_commit.parent(0)?;
+    let ref_commit_ref = ref_commit.decode()?;
+    let ref_parent = ref_commit.get_parent_commit()?;
+    let ref_parent_ref = ref_parent.decode()?;
     let stupid = trans.repo().stupid();
-    stupid.read_tree_checkout(trans.get_branch_head().tree_id(), commit.tree_id())?;
+    stupid.read_tree_checkout(
+        trans.get_branch_head().tree_id()?.detach(),
+        commit_ref.tree(),
+    )?;
     stupid.update_index_refresh()?;
-    if !stupid.merge_recursive(ref_parent.tree_id(), commit.tree_id(), ref_commit.tree_id())? {
+    if !stupid.merge_recursive(
+        ref_parent_ref.tree(),
+        commit_ref.tree(),
+        ref_commit_ref.tree(),
+    )? {
         return Err(crate::stack::Error::CausedConflicts(format!(
             "Merge conflicts syncing `{patchname}`"
         ))
         .into());
     }
-    let mut diff_opts = git2::DiffOptions::new();
-    diff_opts.force_binary(true);
-    diff_opts.update_index(true);
-    let commit_tree = commit.tree()?;
-    let diff = trans
-        .repo()
-        .diff_tree_to_index(Some(&commit_tree), None, Some(&mut diff_opts))?;
-    if diff.deltas().any(|_| true) {
+
+    if stupid.diff_index_quiet(commit_ref.tree())? {
         let tree_id = stupid.write_tree()?;
         Ok(Some(tree_id))
     } else {
@@ -282,26 +287,29 @@ fn series_merge_patch(
     series_dir: &Path,
     trans: &StackTransaction,
     patchname: &PatchName,
-    commit: &git2::Commit,
-) -> Result<Option<git2::Oid>> {
+    commit: &git_repository::Commit,
+) -> Result<Option<git_repository::ObjectId>> {
     let patch_filename: &str = patchname.as_ref();
     let patch_path = series_dir.join(patch_filename);
     let diff = std::fs::read(&patch_path)
         .with_context(|| format!("reading patch `{}`", patch_path.display()))?;
 
-    let parent = commit.parent(0)?;
+    let parent = commit.get_parent_commit()?;
+    let parent_commit_ref = parent.decode()?;
 
     let stupid = trans.repo().stupid();
 
+    let trans_head_tree_id = trans.get_branch_head().tree_id()?.detach();
+
     stupid.update_index_refresh()?;
-    stupid.read_tree_checkout(trans.get_branch_head().tree_id(), parent.tree_id())?;
+    stupid.read_tree_checkout(trans_head_tree_id, parent_commit_ref.tree())?;
     stupid
         .apply_to_worktree_and_index(&diff, false, false, None, None, None)
         .with_context(|| format!("applying {patchname} from series"))?;
     stupid.update_index_refresh()?;
 
     let pathsbuf = stupid
-        .diff_index_names(parent.tree_id(), None)
+        .diff_index_names(parent_commit_ref.tree(), None)
         .context("finding modified files")?;
     let mut changed_paths: Vec<&OsStr> = Vec::new();
     for path_bytes in pathsbuf.split_str(b"\0") {
@@ -316,22 +324,15 @@ fn series_merge_patch(
     stupid.update_index(Some(changed_paths))?;
     let tree_id = stupid.write_tree()?;
 
-    stupid.read_tree_checkout(tree_id, trans.get_branch_head().tree_id())?;
-    if !stupid.merge_recursive(parent.tree_id(), trans.get_branch_head().tree_id(), tree_id)? {
+    stupid.read_tree_checkout(tree_id, trans_head_tree_id)?;
+    if !stupid.merge_recursive(parent_commit_ref.tree(), trans_head_tree_id, tree_id)? {
         return Err(crate::stack::Error::CausedConflicts(format!(
             "Merge conflicts syncing `{patchname}`"
         ))
         .into());
     }
 
-    let mut diff_opts = git2::DiffOptions::new();
-    diff_opts.force_binary(true);
-    diff_opts.update_index(true);
-    let commit_tree = commit.tree()?;
-    let diff = trans
-        .repo()
-        .diff_tree_to_index(Some(&commit_tree), None, Some(&mut diff_opts))?;
-    if diff.deltas().any(|_| true) {
+    if stupid.diff_index_quiet(commit.tree_id()?.detach())? {
         Ok(Some(tree_id))
     } else {
         Ok(None)

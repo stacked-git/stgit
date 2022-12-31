@@ -35,7 +35,7 @@ static EDIT_FILE_NAME_DIFF: &str = ".stgit-edit.patch";
 /// and the modified description is read-back and parsed.
 pub(super) fn edit_interactive(
     patch_desc: &EditablePatchDescription,
-    config: &git2::Config,
+    config: &git_repository::config::Snapshot,
 ) -> Result<EditedPatchDescription> {
     let filename = if patch_desc.diff.is_some() {
         EDIT_FILE_NAME_DIFF
@@ -68,11 +68,14 @@ fn is_terminal_dumb() -> bool {
 /// Run the user's editor to edit the file at `path`.
 ///
 /// Upon successfully reading back the file's content, the file is deleted.
-pub(crate) fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Result<Vec<u8>> {
-    let editor = get_editor(config);
+pub(crate) fn call_editor<P: AsRef<Path>>(
+    path: P,
+    config: &git_repository::config::Snapshot,
+) -> Result<Vec<u8>> {
+    let editor = get_editor(config)?;
 
     if editor != *":" {
-        let use_advice = config.get_bool("advice.waitingForEditor").unwrap_or(true);
+        let use_advice = config.boolean("advice.waitingForEditor").unwrap_or(true);
         let is_dumb = cfg!(target_os = "windows") || is_terminal_dumb();
 
         if use_advice {
@@ -122,18 +125,27 @@ pub(crate) fn call_editor<P: AsRef<Path>>(path: P, config: &git2::Config) -> Res
 }
 
 /// Determine user's editor of choice based on config and environment.
-fn get_editor(config: &git2::Config) -> OsString {
-    if let Some(editor) = std::env::var_os("GIT_EDITOR") {
+fn get_editor(config: &git_repository::config::Snapshot) -> Result<OsString> {
+    let editor = if let Some(editor) = std::env::var_os("GIT_EDITOR") {
         editor
-    } else if let Ok(editor) = config.get_path("stgit.editor") {
-        editor.into()
-    } else if let Ok(editor) = config.get_path("core.editor") {
-        editor.into()
+    } else if let Some(editor) = config
+        .trusted_path("stgit.editor")
+        .transpose()?
+        .map(|p| p.as_os_str().to_os_string())
+    {
+        editor
+    } else if let Some(editor) = config
+        .trusted_path("core.editor")
+        .transpose()?
+        .map(|p| p.as_os_str().to_os_string())
+    {
+        editor
     } else if let Some(editor) = std::env::var_os("VISUAL") {
         editor
     } else if let Some(editor) = std::env::var_os("EDITOR") {
         editor
     } else {
         OsString::from("vi")
-    }
+    };
+    Ok(editor)
 }

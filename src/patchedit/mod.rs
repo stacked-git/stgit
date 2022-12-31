@@ -19,6 +19,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
+use bstr::{BString, ByteSlice};
 use clap::{
     builder::{self, ValueParser},
     Arg, ArgMatches, ValueHint,
@@ -248,7 +249,7 @@ pub(crate) fn add_args(
                 )
                 .value_name("date")
                 .num_args(1)
-                .value_parser(ValueParser::new(git2::Time::parse_time))
+                .value_parser(ValueParser::new(git_repository::actor::Time::parse_time))
                 .value_hint(ValueHint::Other),
         )
         .arg(argset::committer_date_is_author_date_arg());
@@ -293,17 +294,17 @@ pub(crate) enum EditOutcome {
         /// New commit id of the edited patch.
         ///
         /// This is None if nothing changed during the edit.
-        new_commit_id: Option<git2::Oid>,
+        new_commit_id: Option<git_repository::ObjectId>,
     },
 }
 
 /// Overlay of patch metadata on top of existing/original metadata.
 #[derive(Default)]
 struct Overlay {
-    pub(self) author: Option<git2::Signature<'static>>,
+    pub(self) author: Option<git_repository::actor::Signature>,
     pub(self) message: Option<String>,
-    pub(self) tree_id: Option<git2::Oid>,
-    pub(self) parent_id: Option<git2::Oid>,
+    pub(self) tree_id: Option<git_repository::ObjectId>,
+    pub(self) parent_id: Option<git_repository::ObjectId>,
 }
 
 /// Setup and execute a patch edit session.
@@ -315,7 +316,7 @@ pub(crate) struct EditBuilder<'a, 'repo> {
     original_patchname: Option<PatchName>,
     template_patchname: Option<Option<PatchName>>,
     allowed_patchnames: Vec<PatchName>,
-    patch_commit: Option<&'a git2::Commit<'repo>>,
+    patch_commit: Option<&'a git_repository::Commit<'repo>>,
     allow_autosign: bool,
     allow_diff_edit: bool,
     allow_implicit_edit: bool,
@@ -401,7 +402,10 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     }
 
     /// The commit of the existing patch, if applicable.
-    pub(crate) fn existing_patch_commit(mut self, commit: &'a git2::Commit<'repo>) -> Self {
+    pub(crate) fn existing_patch_commit(
+        mut self,
+        commit: &'a git_repository::Commit<'repo>,
+    ) -> Self {
         self.patch_commit = Some(commit);
         self
     }
@@ -410,7 +414,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// Setting the default author is applicable for new patches. For existing patches,
     /// the existing patch's author is used/preserved.
-    pub(crate) fn default_author(mut self, author: git2::Signature<'static>) -> Self {
+    pub(crate) fn default_author(mut self, author: git_repository::actor::Signature) -> Self {
         self.overlay.author = Some(author);
         self
     }
@@ -428,7 +432,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// This is needed for commands that modify a patch's tree in addition to exposing
     /// patch edit options to the user.
-    pub(crate) fn override_tree_id(mut self, tree_id: git2::Oid) -> Self {
+    pub(crate) fn override_tree_id(mut self, tree_id: git_repository::ObjectId) -> Self {
         self.overlay.tree_id = Some(tree_id);
         self
     }
@@ -437,7 +441,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// This is needed for newly created patches that do not have an existing patch
     /// commit.
-    pub(crate) fn override_parent_id(mut self, parent_id: git2::Oid) -> Self {
+    pub(crate) fn override_parent_id(mut self, parent_id: git_repository::ObjectId) -> Self {
         self.overlay.parent_id = Some(parent_id);
         self
     }
@@ -456,7 +460,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     pub(crate) fn edit(
         self,
         stack_state: &impl StackStateAccess<'repo>,
-        repo: &'repo git2::Repository,
+        repo: &'repo git_repository::Repository,
         matches: &ArgMatches,
     ) -> Result<EditOutcome> {
         let EditBuilder {
@@ -478,8 +482,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         } = self;
 
         let stupid = repo.stupid();
-        let config = repo.config()?;
-        let default_committer = git2::Signature::default_committer(Some(&config))?;
+        let config = repo.config_snapshot();
+        let default_committer = repo.committer_or_default();
 
         let EditedPatchDescription {
             patchname: file_patchname,
@@ -501,7 +505,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         let author = if let Some(Some(author)) = file_author {
             Some(author)
         } else if let Some(overlay_author) = overlay_author {
-            Some(overlay_author.override_author(matches)?)
+            Some(overlay_author.override_author(matches))
         } else {
             // Problem: the patch commit, which may not have been created by StGit,
             // may have mal-encoded author. I.e. the author is not encoded with the
@@ -513,12 +517,11 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
             // existing patch commit's author is broken, but only if the author
             // signature has to be derived from that commit.
             let patch_commit = patch_commit.expect("existing patch or author overlay is required");
-            if let Some(args_author) =
-                author_from_args(matches, Some(patch_commit.author().when()))?
+            if let Some(args_author) = author_from_args(matches, Some(patch_commit.author()?.time))?
             {
                 Some(args_author)
             } else {
-                Some(patch_commit.author_strict()?.override_author(matches)?)
+                Some(patch_commit.author_strict()?.override_author(matches))
             }
         };
 
@@ -580,47 +583,47 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let message = {
+            let autosign_bstr;
             let autosign = if allow_autosign {
-                config.get_string("stgit.autosign").ok()
+                autosign_bstr = config.string("stgit.autosign");
+                autosign_bstr.as_ref().and_then(|bs| bs.to_str().ok())
             } else {
                 None
             };
             // N.B. add_trailers needs to operate on utf-8 data. The user providing
             // trailer-altering options (e.g. --review) will force the message to be
             // decoded. In such cases the returned message will wrap a utf-8 String.
-            trailers::add_trailers(
-                repo,
-                message,
-                matches,
-                &default_committer,
-                autosign.as_deref(),
-            )?
+            trailers::add_trailers(repo, message, matches, default_committer, autosign)?
         };
 
         let tree_id = overlay_tree_id.unwrap_or_else(|| {
             patch_commit
                 .expect("patch_commit or tree_id overlay is required")
                 .tree_id()
+                .expect("patch commit is decodable")
+                .detach()
         });
 
         let parent_id = overlay_parent_id.unwrap_or_else(|| {
             patch_commit
                 .expect("patch_commit or parent_id overlay is required")
-                .parent_id(0)
-                .unwrap()
+                .parent_ids()
+                .next()
+                .expect("patch commit has parent id")
+                .detach()
         });
 
         let (diff, computed_diff) = if file_diff.is_some() {
             (file_diff, None)
         } else if need_interactive_edit
-            && (matches.get_flag("diff") || config.get_bool("stgit.edit.verbose").unwrap_or(false))
+            && (matches.get_flag("diff") || config.boolean("stgit.edit.verbose").unwrap_or(false))
         {
             let old_tree = repo.find_commit(parent_id)?.tree()?;
             let new_tree = repo.find_tree(tree_id)?;
-            let diff_buf = if patch_commit.is_some() || old_tree.id() != new_tree.id() {
+            let diff_buf = if patch_commit.is_some() || old_tree.id != new_tree.id {
                 stupid.diff_tree_patch(
-                    old_tree.id(),
-                    new_tree.id(),
+                    old_tree.id,
+                    new_tree.id,
                     <Option<Vec<OsString>>>::None,
                     false,
                     ["--full-index"],
@@ -636,7 +639,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 // since in all other contexts, the patch description's diff shows the
                 // changes actually being recorded to the patch.
                 stupid.update_index_refresh()?;
-                stupid.diff_index(old_tree.id())?
+                stupid.diff_index(old_tree.id)?
             };
             let computed_diff = DiffBuffer(diff_buf);
             (Some(computed_diff.clone()), Some(computed_diff))
@@ -646,7 +649,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let is_message_modified = || {
             patch_commit.map_or(true, |commit| {
-                commit.message_raw_bytes() != message.raw_bytes()
+                commit.message_raw().expect("commit can be decoded") != message.raw_bytes()
             })
         };
 
@@ -714,7 +717,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 Some(None) => Some(if let Some(commit) = patch_commit {
                     commit.author_strict()?
                 } else {
-                    git2::Signature::default_author(Some(&config))?
+                    repo.author_or_default().to_owned()
                 }),
                 None => patch_description.author.take(),
             };
@@ -784,22 +787,27 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
         };
 
         let committer = if matches.get_flag("committer-date-is-author-date") {
-            default_committer.override_when(&author.when())
+            let mut committer = default_committer.to_owned();
+            committer.time = author.time;
+            committer
         } else {
-            default_committer
+            default_committer.to_owned()
         };
 
-        let new_commit_id = if patch_commit.map_or(false, |patch_commit| {
-            patch_commit.committer().name_bytes() == committer.name_bytes()
-                && patch_commit.committer().email_bytes() == committer.email_bytes()
+        let new_commit_id = if patch_commit.and_then(|commit| commit.decode().ok()).map_or(
+            false,
+            |patch_commit_ref| {
+                patch_commit_ref.committer().name == committer.name
+                && patch_commit_ref.committer().email == committer.email
                 // N.B.: intentionally not comparing commiter.when()
-                && patch_commit.author().name_bytes() == author.name_bytes()
-                && patch_commit.author().email_bytes() == author.email_bytes()
-                && patch_commit.author().when() == author.when()
-                && patch_commit.message_raw_bytes() == message.raw_bytes()
-                && patch_commit.tree_id() == tree_id
-                && patch_commit.parent_id(0) == Ok(parent_id)
-        }) {
+                && patch_commit_ref.author().name == author.name
+                && patch_commit_ref.author().email == author.email
+                && patch_commit_ref.author().time == author.time
+                && patch_commit_ref.message == message.raw_bytes()
+                && patch_commit_ref.tree() == tree_id
+                && patch_commit_ref.parents().next() == Some(parent_id)
+            },
+        ) {
             None
         } else {
             Some(repo.commit_ex(&author, &committer, &message, tree_id, [parent_id])?)
@@ -820,8 +828,8 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
 /// Attempt to create author signature based on command line options.
 ///
-/// The optional `when` value will be used for the author time unless `--authdate`
-/// was used on the command line.
+/// The optional `time` value will be used for the author time unless `--authdate` was
+/// used on the command line.
 ///
 /// The provided `matches` must come from a [`clap::Command`] setup with
 /// [`crate::patchedit::add_args()`].
@@ -829,24 +837,35 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 /// Returns `None` if author information was not provided the command line.
 fn author_from_args(
     matches: &clap::ArgMatches,
-    when: Option<git2::Time>,
-) -> Result<Option<git2::Signature<'static>>> {
-    let when = if let Some(when) = when {
-        when
-    } else if let Some(authdate) = matches.get_one::<git2::Time>("authdate").copied() {
+    time: Option<git_repository::actor::Time>,
+) -> Result<Option<git_repository::actor::Signature>> {
+    let time = if let Some(time) = time {
+        time
+    } else if let Some(authdate) = matches
+        .get_one::<git_repository::actor::Time>("authdate")
+        .copied()
+    {
         authdate
     } else {
         return Ok(None);
     };
 
     if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
-        let author = git2::Signature::new(name, email, &when)?;
+        let author = git_repository::actor::Signature {
+            name: BString::from(name.as_str()),
+            email: BString::from(email.as_str()),
+            time,
+        };
         Ok(Some(author))
     } else if let (Some(name), Some(email)) = (
         matches.get_one::<String>("authname"),
         matches.get_one::<String>("authemail"),
     ) {
-        let author = git2::Signature::new(name, email, &when)?;
+        let author = git_repository::actor::Signature {
+            name: BString::from(name.as_str()),
+            email: BString::from(email.as_str()),
+            time,
+        };
         Ok(Some(author))
     } else {
         Ok(None)
@@ -909,7 +928,6 @@ mod tests {
                  Body 2\n",
             ),
         ] {
-            // assert_eq!(expected, git2::message_prettify(message, None).unwrap(),);
             assert_eq!(expected, prettify(message));
         }
     }

@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
-    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
+    ext::{CommitExtended, RepositoryExtended},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -63,10 +63,9 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
-    let config = repo.config()?;
 
     repo.check_repository_state()?;
     let statuses = stupid.statuses(None)?;
@@ -80,29 +79,33 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .ok_or(Error::NoAppliedPatches)?
         .clone();
     let patch_commit = stack.get_patch_commit(&patchname);
-    let parent = patch_commit.parent(0)?;
+    let patch_commit_ref = patch_commit.decode()?;
+    let parent = patch_commit.get_parent_commit()?;
+    let parent_commit_ref = parent.decode()?;
 
     let tree_id = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         stupid.with_temp_index(|stupid_temp| {
-            stupid_temp.read_tree(patch_commit.tree_id())?;
+            stupid_temp.read_tree(patch_commit_ref.tree())?;
             stupid_temp.apply_pathlimited_treediff_to_index(
-                patch_commit.tree_id(),
-                parent.tree_id(),
+                patch_commit_ref.tree(),
+                parent_commit_ref.tree(),
                 true,
                 pathspecs,
             )?;
             stupid_temp.write_tree()
         })?
     } else {
-        parent.tree_id()
+        parent_commit_ref.tree()
     };
 
     let author = patch_commit.author_strict()?;
-    let default_committer = git2::Signature::default_committer(Some(&config))?;
+    let default_committer = repo.committer_or_default();
     let committer = if matches.get_flag("committer-date-is-author-date") {
-        default_committer.override_when(&author.when())
+        let mut committer = default_committer.to_owned();
+        committer.time = author.time;
+        committer
     } else {
-        default_committer
+        default_committer.to_owned()
     };
 
     let commit_id = repo.commit_ex(
@@ -110,8 +113,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         &committer,
         &patch_commit.message_ex(),
         tree_id,
-        patch_commit.parent_ids(),
+        patch_commit_ref.parents(),
     )?;
+
+    drop(patch_commit_ref);
 
     let reflog_msg = if let Some(annotation) = matches.get_one::<String>("annotate") {
         format!("spill {patchname}\n\n{annotation}")

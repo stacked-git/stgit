@@ -5,7 +5,7 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::{argset, revspec::parse_stgit_revision};
+use crate::{argset, ext::RepositoryExtended, revspec::parse_stgit_revision};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "id",
@@ -39,7 +39,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_branch = argset::get_one_str(matches, "branch");
     let opt_spec = argset::get_one_str(matches, "stgit-revision");
 
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();
     println!("{oid}");
     Ok(())

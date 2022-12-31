@@ -2,15 +2,18 @@
 
 //! `stg uncommit` implementation.
 
+use std::rc::Rc;
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
     argset,
     color::get_color_stdout,
-    ext::CommitExtended,
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    stupid::Stupid,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -85,26 +88,28 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
-    let config = repo.config()?;
+    let config = repo.config_snapshot();
 
     let opt_number = matches.get_one::<usize>("number").copied();
 
     let patchname_len_limit = PatchName::get_length_limit(&config);
 
     let (commits, patchnames) = if let Some(committish) = matches.get_one::<String>("to") {
-        let target_object = repo
-            .revparse_single(committish)
-            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?;
-
-        let mut target_commit = target_object
-            .peel_to_commit()
+        let mut target_commit = repo
+            .rev_parse_single(committish.as_str())
+            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?
+            .object()?
+            .peel_tags_to_end()?
+            .try_into_commit()
             .map_err(|_| anyhow!("Target `{committish}` does not resolve to a commit"))?;
 
-        let bases = repo.merge_bases(target_commit.id(), stack.base().id())?;
+        let bases = repo
+            .stupid()
+            .merge_bases(target_commit.id, stack.base().id)?;
 
-        let exclusive = if bases.contains(&target_commit.id()) {
+        let exclusive = if bases.contains(&target_commit.id) {
             matches.get_flag("exclusive")
         } else {
             target_commit = repo.find_commit(bases[0])?;
@@ -117,20 +122,20 @@ fn run(matches: &ArgMatches) -> Result<()> {
             println!("Uncommitting to {}", target_commit.id());
         }
 
-        let mut commits: Vec<git2::Commit<'_>> = Vec::new();
+        let mut commits: Vec<Rc<git_repository::Commit<'_>>> = Vec::new();
 
         let mut next_commit = stack.base().clone();
         loop {
-            if next_commit.id() == target_commit.id() {
+            if next_commit.id == target_commit.id {
                 if !exclusive {
-                    check_commit(&next_commit)?;
+                    check_commit(next_commit.as_ref())?;
                     commits.push(next_commit);
                 }
                 break;
             } else {
                 check_commit(&next_commit)?;
-                let parent = next_commit.parent(0)?;
-                commits.push(std::mem::replace(&mut next_commit, parent));
+                let parent = next_commit.get_parent_commit()?;
+                commits.push(std::mem::replace(&mut next_commit, Rc::new(parent)));
             }
         }
 
@@ -143,8 +148,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let patchnames = if let Some(number) = opt_number {
             for _ in 0..number {
                 check_commit(&next_commit)?;
-                let parent = next_commit.parent(0)?;
-                commits.push(std::mem::replace(&mut next_commit, parent));
+                let parent = next_commit.get_parent_commit()?;
+                commits.push(std::mem::replace(&mut next_commit, Rc::new(parent)));
             }
 
             if let Some(mut prefixes) = matches.get_many::<PatchName>("patchname") {
@@ -168,8 +173,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             check_patchnames(&stack, &patchnames)?;
             for _ in 0..patchnames.len() {
                 check_commit(&next_commit)?;
-                let parent = next_commit.parent(0)?;
-                commits.push(std::mem::replace(&mut next_commit, parent));
+                let parent = next_commit.get_parent_commit()?;
+                commits.push(std::mem::replace(&mut next_commit, Rc::new(parent)));
             }
             patchnames
         } else {
@@ -192,7 +197,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             trans.uncommit_patches(
                 patchnames
                     .iter()
-                    .zip(commits.iter().map(git2::Commit::id))
+                    .zip(commits.iter().map(|commit| commit.id))
                     .rev(),
             )
         })
@@ -201,8 +206,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn check_commit(commit: &git2::Commit) -> Result<()> {
-    if commit.parent_count() == 1 {
+fn check_commit(commit: &git_repository::Commit) -> Result<()> {
+    if commit.parent_ids().count() == 1 {
         Ok(())
     } else {
         Err(anyhow!(
@@ -214,7 +219,7 @@ fn check_commit(commit: &git2::Commit) -> Result<()> {
 
 fn make_patchnames(
     stack: &Stack,
-    commits: &[git2::Commit<'_>],
+    commits: &[Rc<git_repository::Commit<'_>>],
     patchname_len_limit: Option<usize>,
 ) -> Vec<PatchName> {
     let mut patchnames = Vec::with_capacity(commits.len());

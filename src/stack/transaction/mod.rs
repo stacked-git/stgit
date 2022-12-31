@@ -30,7 +30,7 @@ mod builder;
 mod options;
 mod ui;
 
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, rc::Rc};
 
 use anyhow::{anyhow, Result};
 use indexmap::IndexSet;
@@ -42,10 +42,11 @@ use self::{
 };
 use super::{error::Error, state::StackState, StackAccess};
 use crate::{
-    ext::{CommitExtended, RepositoryExtended, SignatureExtended},
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::{Stupid, StupidContext},
+    wrap::Branch,
 };
 
 /// Stack transaction state.
@@ -58,10 +59,10 @@ pub(crate) struct StackTransaction<'repo> {
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
     updated_patches: BTreeMap<PatchName, Option<PatchState<'repo>>>,
-    updated_head: Option<git2::Commit<'repo>>,
-    updated_base: Option<git2::Commit<'repo>>,
+    updated_head: Option<Rc<git_repository::Commit<'repo>>>,
+    updated_base: Option<Rc<git_repository::Commit<'repo>>>,
 
-    current_tree_id: git2::Oid,
+    current_tree_id: git_repository::ObjectId,
     error: Option<anyhow::Error>,
 }
 
@@ -119,6 +120,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         // Need to cache a few bits of transaction state for later use.
         let trans_head = transaction.head().clone();
+        let trans_head_tree_id = trans_head.tree_id()?.detach();
         let trans_top_patchname = transaction.applied().last().cloned();
 
         let StackTransaction {
@@ -136,7 +138,7 @@ impl<'repo> ExecuteContext<'repo> {
 
         let repo = stack.repo;
         let stack_top_patchname = stack.applied().last().cloned();
-        let rollback_tree_id = stack.get_branch_head().tree_id();
+        let rollback_tree_id = stack.get_branch_head().tree_id()?.detach();
 
         // Only proceed for halt errors
         let has_conflicts = if let Some(err) = &error {
@@ -188,7 +190,7 @@ impl<'repo> ExecuteContext<'repo> {
                 stack_top_patchname.as_ref(),
                 trans_top_patchname.as_ref(),
                 current_tree_id,
-                trans_head.tree_id(),
+                trans_head_tree_id,
             )
             .map_err(|e| rollback(current_tree_id, e))?;
         }
@@ -203,7 +205,11 @@ impl<'repo> ExecuteContext<'repo> {
                 reflog_msg
             };
             let stack_ref = repo.find_reference(stack.get_stack_refname())?;
-            let prev_state_commit = stack_ref.peel_to_commit()?;
+            let branch_ref_name = stack.get_branch_refname().to_owned();
+            let prev_state_commit = stack_ref
+                .into_fully_peeled_id()?
+                .object()?
+                .try_into_commit()?;
             let state = stack.state_mut();
             for (patchname, maybe_patch) in &updated_patches {
                 if let Some(patch) = maybe_patch {
@@ -212,65 +218,84 @@ impl<'repo> ExecuteContext<'repo> {
                     state.patches.remove(patchname);
                 }
             }
-            state.prev = Some(prev_state_commit);
+            state.prev = Some(Rc::new(prev_state_commit));
             state.head = trans_head.clone();
             state.applied = applied;
             state.unapplied = unapplied;
             state.hidden = hidden;
             let state_commit_id = state.commit(repo, None, state_reflog_msg)?;
 
-            let branch_ref_name = stack.get_branch_refname();
-
             // Update various refs as a single transaction. This reference transaction is
             // not quite atomic--it is possible for some, but not all references to be
             // updated--but atomic enough in practice for our purposes.
-            let mut ref_trans = repo.transaction()?;
-
-            if options.set_head {
-                ref_trans.lock_ref(branch_ref_name)?;
-            }
-            ref_trans.lock_ref(stack.get_stack_refname())?;
-            for patchname in updated_patches.keys() {
-                ref_trans.lock_ref(&stack.patch_refname(patchname))?;
-            }
-
+            let mut ref_edits = Vec::new();
+            let log = git_repository::refs::transaction::LogChange {
+                mode: git_repository::refs::transaction::RefLog::AndReference,
+                force_create_reflog: false,
+                message: state_reflog_msg.into(),
+            };
             for (patchname, maybe_patch) in &updated_patches {
-                let patch_refname = stack.patch_refname(patchname);
-                if let Some(patch) = maybe_patch {
-                    ref_trans.set_target(
-                        &patch_refname,
-                        patch.commit.id(),
-                        None,
-                        state_reflog_msg,
-                    )?;
+                let change = if let Some(patch) = maybe_patch {
+                    git_repository::refs::transaction::Change::Update {
+                        log: log.clone(),
+                        expected: git_repository::refs::transaction::PreviousValue::Any, // TODO?
+                        new: git_repository::refs::Target::Peeled(patch.commit.id),
+                    }
                 } else {
-                    ref_trans.remove(&patch_refname)?;
-                }
+                    git_repository::refs::transaction::Change::Delete {
+                        expected: git_repository::refs::transaction::PreviousValue::Any,
+                        log: git_repository::refs::transaction::RefLog::AndReference,
+                    }
+                };
+                ref_edits.push(git_repository::refs::transaction::RefEdit {
+                    change,
+                    name: git_repository::refs::FullName::try_from(stack.patch_refname(patchname))
+                        .expect("patch reference name is valid"),
+                    deref: false,
+                });
             }
 
-            ref_trans.set_target(
-                stack.get_stack_refname(),
-                state_commit_id,
-                None,
-                state_reflog_msg,
-            )?;
+            ref_edits.push(git_repository::refs::transaction::RefEdit {
+                change: git_repository::refs::transaction::Change::Update {
+                    log: log.clone(),
+                    expected: if let Some(prev_state_commit) = stack.state_mut().prev.as_ref() {
+                        git_repository::refs::transaction::PreviousValue::ExistingMustMatch(
+                            git_repository::refs::Target::Peeled(prev_state_commit.id),
+                        )
+                    } else {
+                        git_repository::refs::transaction::PreviousValue::MustNotExist
+                    },
+                    new: git_repository::refs::Target::Peeled(state_commit_id),
+                },
+                name: git_repository::refs::FullName::try_from(stack.get_stack_refname())
+                    .expect("stack reference name is valid"),
+                deref: false,
+            });
 
             if options.set_head {
-                ref_trans.set_target(branch_ref_name, trans_head.id(), None, reflog_msg)?;
+                ref_edits.push(git_repository::refs::transaction::RefEdit {
+                    change: git_repository::refs::transaction::Change::Update {
+                        log,
+                        expected: git_repository::refs::transaction::PreviousValue::Any,
+                        new: git_repository::refs::Target::Peeled(trans_head.id),
+                    },
+                    name: branch_ref_name.clone(),
+                    deref: false,
+                })
             }
 
-            ref_trans.commit()?;
+            repo.edit_references(ref_edits)?;
 
             if options.set_head {
                 stack.update_head(
-                    git2::Branch::wrap(repo.find_reference(branch_ref_name)?),
+                    Branch::wrap(repo.find_reference(&branch_ref_name)?),
                     trans_head.clone(),
                 );
             }
 
             Ok(())
         })
-        .map_err(|e| rollback(trans_head.tree_id(), e))?;
+        .map_err(|e| rollback(trans_head_tree_id, e))?;
 
         if let Some(err) = error {
             Err(err)
@@ -287,12 +312,12 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 fn checkout(
-    repo: &git2::Repository,
+    repo: &git_repository::Repository,
     options: &TransactionOptions,
     stack_top: Option<&PatchName>,
     trans_top: Option<&PatchName>,
-    current_tree_id: git2::Oid,
-    tree_id: git2::Oid,
+    current_tree_id: git_repository::ObjectId,
+    tree_id: git_repository::ObjectId,
 ) -> Result<()> {
     let stupid = repo.stupid();
 
@@ -325,7 +350,7 @@ impl<'repo> StackTransaction<'repo> {
     }
 
     /// Get a reference to the repo.
-    pub(crate) fn repo(&self) -> &'repo git2::Repository {
+    pub(crate) fn repo(&self) -> &'repo git_repository::Repository {
         self.stack.repo
     }
 
@@ -343,7 +368,7 @@ impl<'repo> StackTransaction<'repo> {
             patches,
         } = state;
         self.updated_base = Some(if let Some(pn) = applied.first() {
-            patches[pn].commit.parent(0)?
+            Rc::new(patches[pn].commit.get_parent_commit()?)
         } else {
             head.clone()
         });
@@ -437,7 +462,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn update_patch(
         &mut self,
         patchname: &PatchName,
-        commit_id: git2::Oid,
+        commit_id: git_repository::ObjectId,
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
@@ -445,10 +470,14 @@ impl<'repo> StackTransaction<'repo> {
         self.stack
             .repo
             .stupid()
-            .notes_copy(old_commit.id(), commit_id)
+            .notes_copy(old_commit.id, commit_id)
             .ok();
-        self.updated_patches
-            .insert(patchname.clone(), Some(PatchState { commit }));
+        self.updated_patches.insert(
+            patchname.clone(),
+            Some(PatchState {
+                commit: Rc::new(commit),
+            }),
+        );
         self.ui.print_updated(patchname, self.applied())?;
         Ok(())
     }
@@ -457,12 +486,20 @@ impl<'repo> StackTransaction<'repo> {
     ///
     /// The commit for the new patch must be parented by the former top commit of the
     /// stack.
-    pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: git2::Oid) -> Result<()> {
+    pub(crate) fn new_applied(
+        &mut self,
+        patchname: &PatchName,
+        oid: git_repository::ObjectId,
+    ) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
-        assert_eq!(commit.parent_id(0).unwrap(), self.top().id());
+        assert_eq!(commit.parent_ids().next().unwrap().detach(), self.top().id);
         self.applied.push(patchname.clone());
-        self.updated_patches
-            .insert(patchname.clone(), Some(PatchState { commit }));
+        self.updated_patches.insert(
+            patchname.clone(),
+            Some(PatchState {
+                commit: Rc::new(commit),
+            }),
+        );
         self.ui.print_pushed(patchname, PushStatus::New, true)?;
         Ok(())
     }
@@ -473,13 +510,17 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn new_unapplied(
         &mut self,
         patchname: &PatchName,
-        commit_id: git2::Oid,
+        commit_id: git_repository::ObjectId,
         insert_pos: usize,
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         self.unapplied.insert(insert_pos, patchname.clone());
-        self.updated_patches
-            .insert(patchname.clone(), Some(PatchState { commit }));
+        self.updated_patches.insert(
+            patchname.clone(),
+            Some(PatchState {
+                commit: Rc::new(commit),
+            }),
+        );
         self.ui.print_popped(&[patchname.clone()])?;
         Ok(())
     }
@@ -505,36 +546,41 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn push_tree(&mut self, patchname: &PatchName, is_last: bool) -> Result<()> {
         let patch_commit = self.get_patch_commit(patchname);
         let repo = self.stack.repo;
-        let config = repo.config()?;
-        let parent = patch_commit.parent(0)?;
-        let is_empty = parent.tree_id() == patch_commit.tree_id();
+        let parent = patch_commit.get_parent_commit()?;
+        let is_empty = parent.tree_id()? == patch_commit.tree_id()?;
 
-        let push_status = if patch_commit.parent_id(0)? == self.top().id() {
+        let push_status = if patch_commit.parent_ids().next().unwrap() == self.top().id() {
             PushStatus::Unmodified
         } else {
             let author = patch_commit.author_strict()?;
-            let default_committer = git2::Signature::default_committer(Some(&config))?;
+            let default_committer = repo.committer_or_default();
             let committer = if self.options.committer_date_is_author_date {
-                default_committer.override_when(&author.when())
+                let mut committer = default_committer.to_owned();
+                committer.time = author.time;
+                committer
             } else {
-                default_committer
+                default_committer.to_owned()
             };
             let message = patch_commit.message_ex();
-            let parent_ids = [self.top().id()];
+            let parent_ids = [self.top().id];
             let new_commit_id = repo.commit_ex(
                 &author,
                 &committer,
                 &message,
-                patch_commit.tree_id(),
+                patch_commit.tree_id()?.detach(),
                 parent_ids,
             )?;
 
             let commit = repo.find_commit(new_commit_id)?;
             repo.stupid()
-                .notes_copy(patch_commit.id(), new_commit_id)
+                .notes_copy(patch_commit.id, new_commit_id)
                 .ok();
-            self.updated_patches
-                .insert(patchname.clone(), Some(PatchState { commit }));
+            self.updated_patches.insert(
+                patchname.clone(),
+                Some(PatchState {
+                    commit: Rc::new(commit),
+                }),
+            );
 
             PushStatus::Modified
         };
@@ -679,13 +725,17 @@ impl<'repo> StackTransaction<'repo> {
     /// ancestor of the current base first and the current base last.
     pub(crate) fn uncommit_patches<'a>(
         &mut self,
-        patches: impl IntoIterator<Item = (&'a PatchName, git2::Oid)>,
+        patches: impl IntoIterator<Item = (&'a PatchName, git_repository::ObjectId)>,
     ) -> Result<()> {
         let mut new_applied: Vec<_> = Vec::with_capacity(self.applied.len());
         for (patchname, commit_id) in patches {
             let commit = self.stack.repo.find_commit(commit_id)?;
-            self.updated_patches
-                .insert(patchname.clone(), Some(PatchState { commit }));
+            self.updated_patches.insert(
+                patchname.clone(),
+                Some(PatchState {
+                    commit: Rc::new(commit),
+                }),
+            );
             new_applied.push(patchname.clone());
         }
         new_applied.append(&mut self.applied);
@@ -908,7 +958,7 @@ impl<'repo> StackTransaction<'repo> {
     {
         let stupid = self.stack.repo.stupid();
         stupid.with_temp_index(|stupid_temp| {
-            let mut temp_index_tree_id: Option<git2::Oid> = None;
+            let mut temp_index_tree_id: Option<git_repository::ObjectId> = None;
 
             let merged = if check_merged {
                 Some(self.check_merged(patchnames, stupid_temp, &mut temp_index_tree_id)?)
@@ -941,34 +991,37 @@ impl<'repo> StackTransaction<'repo> {
         already_merged: bool,
         is_last: bool,
         stupid_temp: &StupidContext,
-        temp_index_tree_id: &mut Option<git2::Oid>,
+        temp_index_tree_id: &mut Option<git_repository::ObjectId>,
     ) -> Result<()> {
         let repo = self.stack.repo;
-        let config = repo.config()?;
+        let config = repo.config_snapshot();
         let stupid = repo.stupid();
-        let default_committer = git2::Signature::default_committer(Some(&config))?;
+        let default_committer = repo.committer_or_default();
         let patch_commit = self.get_patch_commit(patchname).clone();
-        let old_parent = patch_commit.parent(0)?;
+        let old_parent = patch_commit.get_parent_commit()?;
         let new_parent = self.top().clone();
+        let patch_commit_ref = patch_commit.decode()?;
+        let old_parent_ref = old_parent.decode()?;
+        let new_parent_ref = new_parent.decode()?;
 
         let mut push_status = PushStatus::Unmodified;
 
         let new_tree_id = if already_merged {
             push_status = PushStatus::AlreadyMerged;
-            new_parent.tree_id()
-        } else if old_parent.tree_id() == new_parent.tree_id() {
-            patch_commit.tree_id()
-        } else if old_parent.tree_id() == patch_commit.tree_id() {
-            new_parent.tree_id()
-        } else if new_parent.tree_id() == patch_commit.tree_id() {
-            patch_commit.tree_id()
+            new_parent_ref.tree()
+        } else if old_parent_ref.tree() == new_parent_ref.tree() {
+            patch_commit_ref.tree()
+        } else if old_parent_ref.tree() == patch_commit_ref.tree() {
+            new_parent_ref.tree()
+        } else if new_parent_ref.tree() == patch_commit_ref.tree() {
+            patch_commit_ref.tree()
         } else {
-            let (ours, theirs) = if temp_index_tree_id == &Some(patch_commit.tree_id()) {
-                (patch_commit.tree_id(), new_parent.tree_id())
+            let (ours, theirs) = if temp_index_tree_id == &Some(patch_commit_ref.tree()) {
+                (patch_commit_ref.tree(), new_parent_ref.tree())
             } else {
-                (new_parent.tree_id(), patch_commit.tree_id())
+                (new_parent_ref.tree(), patch_commit_ref.tree())
             };
-            let base = old_parent.tree_id();
+            let base = old_parent_ref.tree();
 
             if temp_index_tree_id != &Some(ours) {
                 stupid_temp.read_tree(ours)?;
@@ -989,11 +1042,11 @@ impl<'repo> StackTransaction<'repo> {
                     conflicts: false,
                 }
                 .into());
-            } else if !self.options.allow_push_conflicts.unwrap_or_else(|| {
-                config
-                    .get_bool("stgit.push.allow-conflicts")
-                    .unwrap_or(true)
-            }) {
+            } else if !self
+                .options
+                .allow_push_conflicts
+                .unwrap_or_else(|| config.boolean("stgit.push.allow-conflicts").unwrap_or(true))
+            {
                 return Err(Error::TransactionHalt {
                     msg: format!(
                         "Pushing patch `{patchname}` would result in conflicts \
@@ -1015,7 +1068,7 @@ impl<'repo> StackTransaction<'repo> {
                 }
                 self.current_tree_id = ours;
 
-                let use_mergetool = config.get_bool("stgit.autoimerge").unwrap_or(false);
+                let use_mergetool = config.boolean("stgit.autoimerge").unwrap_or(false);
                 match stupid.merge_recursive_or_mergetool(base, ours, theirs, use_mergetool) {
                     Ok(true) => {
                         // Success, no conflicts
@@ -1042,29 +1095,31 @@ impl<'repo> StackTransaction<'repo> {
             }
         };
 
-        if new_tree_id != patch_commit.tree_id() || new_parent.id() != old_parent.id() {
+        if new_tree_id != patch_commit_ref.tree() || new_parent.id != old_parent.id {
             let author = patch_commit.author_strict()?;
             let committer = if self.options.committer_date_is_author_date {
-                default_committer.override_when(&author.when())
+                let mut committer = default_committer.to_owned();
+                committer.time = author.time;
+                committer
             } else {
-                default_committer
+                default_committer.to_owned()
             };
             let commit_id = repo.commit_ex(
                 &author,
                 &committer,
                 &patch_commit.message_ex(),
                 new_tree_id,
-                [new_parent.id()],
+                [new_parent.id],
             )?;
-            let commit = repo.find_commit(commit_id)?;
-            stupid.notes_copy(patch_commit.id(), commit_id).ok();
+            let commit = Rc::new(repo.find_commit(commit_id)?);
+            stupid.notes_copy(patch_commit.id, commit_id).ok();
             if push_status == PushStatus::Conflict {
                 // In the case of a conflict, update() will be called after the
                 // execute() performs the checkout. Setting the transaction head
                 // here ensures that the real stack top will be checked-out.
                 self.updated_head = Some(commit.clone());
             } else if push_status != PushStatus::AlreadyMerged
-                && new_tree_id == new_parent.tree_id()
+                && new_tree_id == new_parent_ref.tree()
             {
                 push_status = PushStatus::Empty;
             }
@@ -1110,12 +1165,12 @@ impl<'repo> StackTransaction<'repo> {
         &self,
         patchnames: &'a [P],
         stupid_temp: &StupidContext,
-        temp_index_tree_id: &mut Option<git2::Oid>,
+        temp_index_tree_id: &mut Option<git_repository::ObjectId>,
     ) -> Result<Vec<&'a PatchName>>
     where
         P: AsRef<PatchName>,
     {
-        let head_tree_id = self.stack.get_branch_head().tree_id();
+        let head_tree_id = self.stack.get_branch_head().tree_id()?.detach();
         let mut merged: Vec<&PatchName> = vec![];
 
         if temp_index_tree_id != &Some(head_tree_id) {
@@ -1131,11 +1186,11 @@ impl<'repo> StackTransaction<'repo> {
                 continue; // No change
             }
 
-            let parent_commit = patch_commit.parent(0)?;
+            let parent_commit = patch_commit.get_parent_commit()?;
 
             if stupid_temp.apply_treediff_to_index(
-                patch_commit.tree_id(),
-                parent_commit.tree_id(),
+                patch_commit.tree_id()?.detach(),
+                parent_commit.tree_id()?.detach(),
                 false,
             )? {
                 merged.push(patchname);
@@ -1154,7 +1209,7 @@ impl<'repo> StackAccess<'repo> for StackTransaction<'repo> {
         self.stack.get_branch_name()
     }
 
-    fn get_branch_refname(&self) -> &str {
+    fn get_branch_refname(&self) -> &git_repository::refs::FullNameRef {
         self.stack.get_branch_refname()
     }
 
@@ -1162,11 +1217,11 @@ impl<'repo> StackAccess<'repo> for StackTransaction<'repo> {
         self.stack.get_stack_refname()
     }
 
-    fn get_branch_head(&self) -> &git2::Commit<'repo> {
+    fn get_branch_head(&self) -> &Rc<git_repository::Commit<'repo>> {
         self.stack.get_branch_head()
     }
 
-    fn base(&self) -> &git2::Commit<'repo> {
+    fn base(&self) -> &Rc<git_repository::Commit<'repo>> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
@@ -1206,7 +1261,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn top(&self) -> &git2::Commit<'repo> {
+    fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
         if let Some(patchname) = self.applied.last() {
             self.get_patch_commit(patchname)
         } else {
@@ -1214,7 +1269,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn head(&self) -> &git2::Commit<'repo> {
+    fn head(&self) -> &Rc<git_repository::Commit<'repo>> {
         if let Some(commit) = self.updated_head.as_ref() {
             commit
         } else {

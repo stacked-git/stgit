@@ -2,12 +2,15 @@
 
 //! `stg repair` implementation.
 
+use std::rc::Rc;
+
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use indexmap::{indexset, IndexSet};
 
 use crate::{
     color::get_color_stdout,
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     print_info_message, print_warning_message,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
@@ -61,9 +64,9 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
-    let config = repo.config()?;
+    let config = repo.config_snapshot();
     if stack.is_protected(&config) {
         return Err(anyhow!(
             "This branch is protected. Modification is not permitted."
@@ -75,20 +78,20 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     // Find commits that are not patches as well as applied patches.
 
     // Commits to definitely patchify
-    let mut patchify: Vec<git2::Commit> = Vec::new();
+    let mut patchify: Vec<Rc<git_repository::Commit>> = Vec::new();
 
     // Commits to patchify if a patch is found below
-    let mut maybe_patchify: Vec<git2::Commit> = Vec::new();
+    let mut maybe_patchify: Vec<Rc<git_repository::Commit>> = Vec::new();
 
     let mut applied: Vec<PatchName> = Vec::new();
 
     let mut commit = stack.get_branch_head().clone();
 
-    while commit.parent_count() == 1 {
-        let parent = commit.parent(0)?;
+    while commit.parent_ids().count() == 1 {
+        let parent = Rc::new(commit.get_parent_commit()?);
         if let Some(patchname) = stack
             .all_patches()
-            .find(|pn| stack.get_patch_commit(pn).id() == commit.id())
+            .find(|pn| stack.get_patch_commit(pn).id == commit.id)
         {
             applied.push(patchname.clone());
             patchify.append(&mut maybe_patchify);
@@ -98,7 +101,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
         commit = parent;
 
-        if stack.base().id() == commit.id() {
+        if stack.base().id == commit.id {
             // Reaching the original stack base can happen if, for example, the first
             // applied patch is amended. In this case, any commits descending from the
             // stack base should be patchified.
@@ -112,7 +115,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     // Find patches unreachable behind a merge.
     if commit.id() != stack.base().id() {
-        let merge_commit_id = commit.id();
+        let merge_commit_id = commit.id;
         let mut todo = indexset! { merge_commit_id };
         let mut seen = indexset! {};
         let mut unreachable = 0;
@@ -121,8 +124,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let todo_commit_id = todo.pop().unwrap();
             seen.insert(todo_commit_id);
             let commit = stack.repo.find_commit(todo_commit_id)?;
-            let parents: IndexSet<git2::Oid> = commit.parent_ids().collect();
-            let unseen_parents: IndexSet<git2::Oid> = parents.difference(&seen).copied().collect();
+            let parents: IndexSet<git_repository::ObjectId> =
+                commit.parent_ids().map(|id| id.detach()).collect();
+            let unseen_parents: IndexSet<git_repository::ObjectId> =
+                parents.difference(&seen).copied().collect();
             todo = todo.union(&unseen_parents).copied().collect();
 
             if stack
@@ -195,12 +200,12 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 );
 
                 for commit in patchify {
-                    let message = commit.message_raw_bytes().to_str_lossy();
+                    let message = commit.message_raw()?.to_str_lossy();
                     let allow = &[];
                     let disallow: Vec<_> = trans.all_patches().collect();
                     let patchname = PatchName::make(&message, true, patchname_len_limit)
                         .uniquify(allow, &disallow);
-                    trans.new_applied(&patchname, commit.id())?;
+                    trans.new_applied(&patchname, commit.id)?;
                 }
             }
             Ok(())

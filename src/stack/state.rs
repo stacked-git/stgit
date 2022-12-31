@@ -5,13 +5,13 @@
 //! This stack state representation is serialized to/from the `stack.json` blob in the
 //! stack state tree.
 
-use std::{collections::BTreeMap, io::Write, str};
+use std::{collections::BTreeMap, io::Write, rc::Rc, str};
 
 use anyhow::{anyhow, Result};
 
 use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
-    ext::{CommitOptions, RepositoryExtended, SignatureExtended, TimeExtended},
+    ext::{CommitExtended, CommitOptions, RepositoryExtended},
     patchname::PatchName,
     wrap::Message,
 };
@@ -25,13 +25,13 @@ pub(crate) struct StackState<'repo> {
     ///
     /// Will be None for a newly initialized stack or when the stack history is cleared
     /// (i.e. with `stg log --clear`).
-    pub prev: Option<git2::Commit<'repo>>,
+    pub prev: Option<Rc<git_repository::Commit<'repo>>>,
 
     /// Head commit of the stack.
     ///
     /// Either the topmost patch if patches are applied, or the stack base if no patches
     /// are applied.
-    pub head: git2::Commit<'repo>,
+    pub head: Rc<git_repository::Commit<'repo>>,
 
     /// List of applied patches.
     pub applied: Vec<PatchName>,
@@ -51,7 +51,7 @@ pub(crate) struct StackState<'repo> {
 /// Currently the only state is a commit object.
 #[derive(Clone, Debug)]
 pub(crate) struct PatchState<'repo> {
-    pub commit: git2::Commit<'repo>,
+    pub commit: Rc<git_repository::Commit<'repo>>,
 }
 
 impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
@@ -75,7 +75,7 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
         self.patches.contains_key(patchname)
     }
 
-    fn top(&self) -> &git2::Commit<'repo> {
+    fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
         if let Some(patchname) = self.applied().last() {
             &self.patches[patchname].commit
         } else {
@@ -83,7 +83,7 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
         }
     }
 
-    fn head(&self) -> &git2::Commit<'repo> {
+    fn head(&self) -> &Rc<git_repository::Commit<'repo>> {
         &self.head
     }
 }
@@ -94,7 +94,7 @@ const MAX_PARENTS: usize = 16;
 
 impl<'repo> StackState<'repo> {
     /// Instantiate new, empty stack state.
-    pub(super) fn new(head: git2::Commit<'repo>) -> Self {
+    pub(super) fn new(head: Rc<git_repository::Commit<'repo>>) -> Self {
         Self {
             prev: None,
             head,
@@ -107,18 +107,23 @@ impl<'repo> StackState<'repo> {
 
     /// Read and parse stack state from given state state commit.
     pub(crate) fn from_commit(
-        repo: &'repo git2::Repository,
-        commit: &git2::Commit,
+        repo: &'repo git_repository::Repository,
+        commit: &git_repository::Commit<'repo>,
     ) -> Result<Self> {
-        Self::from_tree(repo, &commit.tree()?)
+        Self::from_tree(repo, commit.tree()?)
     }
 
     /// Read and parse stack state from given stack state tree.
-    pub(super) fn from_tree(repo: &'repo git2::Repository, tree: &git2::Tree) -> Result<Self> {
-        let stack_json = tree.get_name("stack.json");
+    pub(super) fn from_tree(
+        repo: &'repo git_repository::Repository,
+        tree: git_repository::Tree<'repo>,
+    ) -> Result<Self> {
+        let stack_json = tree.lookup_entry_by_path("stack.json")?;
         if let Some(stack_json) = stack_json {
-            let stack_json_blob = repo.find_object(stack_json.id(), None)?.peel_to_blob()?;
-            let raw_state = RawStackState::from_stack_json(stack_json_blob.content())?;
+            let stack_json_blob = stack_json
+                .object()?
+                .peel_to_kind(git_repository::objs::Kind::Blob)?;
+            let raw_state = RawStackState::from_stack_json(&stack_json_blob.data)?;
             Self::from_raw_state(repo, raw_state)
         } else {
             Err(anyhow!("Stack metadata not found"))
@@ -130,21 +135,26 @@ impl<'repo> StackState<'repo> {
     /// Commit objects are looked-up from commit ids in the raw state. This may fail if
     /// the raw state references commit ids not present in the repository.
     pub(super) fn from_raw_state(
-        repo: &'repo git2::Repository,
+        repo: &'repo git_repository::Repository,
         raw_state: RawStackState,
     ) -> Result<Self> {
         let mut patches = BTreeMap::new();
         for (patchname, raw_state) in raw_state.patches {
-            let commit = repo.find_commit(raw_state.oid)?;
-            patches.insert(patchname, PatchState { commit });
+            let commit = repo.find_object(raw_state.oid)?.try_into_commit()?;
+            patches.insert(
+                patchname,
+                PatchState {
+                    commit: Rc::new(commit),
+                },
+            );
         }
         Ok(Self {
             prev: if let Some(prev_id) = raw_state.prev {
-                Some(repo.find_commit(prev_id)?)
+                Some(Rc::new(repo.find_object(prev_id)?.try_into_commit()?))
             } else {
                 None
             },
-            head: repo.find_commit(raw_state.head)?,
+            head: Rc::new(repo.find_object(raw_state.head)?.try_into_commit()?),
             applied: raw_state.applied,
             unapplied: raw_state.unapplied,
             hidden: raw_state.hidden,
@@ -158,7 +168,7 @@ impl<'repo> StackState<'repo> {
     }
 
     /// Return commit of topmost patch, or stack base if no patches applied.
-    pub(crate) fn top(&self) -> &git2::Commit<'repo> {
+    pub(crate) fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
         if let Some(patchname) = self.applied.last() {
             &self.patches[patchname].commit
         } else {
@@ -169,8 +179,8 @@ impl<'repo> StackState<'repo> {
     /// Create updated state with new head and prev commits.
     pub(crate) fn advance_head(
         self,
-        new_head: git2::Commit<'repo>,
-        prev_state: git2::Commit<'repo>,
+        new_head: Rc<git_repository::Commit<'repo>>,
+        prev_state: Rc<git_repository::Commit<'repo>>,
     ) -> Self {
         Self {
             prev: Some(prev_state),
@@ -188,24 +198,30 @@ impl<'repo> StackState<'repo> {
     /// parent commit from the stack state branch.
     pub(crate) fn commit(
         &self,
-        repo: &'repo git2::Repository,
+        repo: &'repo git_repository::Repository,
         update_ref: Option<&str>,
         message: &str,
-    ) -> Result<git2::Oid> {
-        let prev_state_tree = match &self.prev {
-            Some(prev_commit) => {
-                let prev_tree = prev_commit.tree()?;
-                let prev_state = Self::from_tree(repo, &prev_tree)?;
-                Some((prev_state, prev_tree))
-            }
-            None => None,
+    ) -> Result<git_repository::ObjectId> {
+        let (state_tree_id, prev_state) = if let Some(prev_commit) = self.prev.as_ref() {
+            let prev_state = Self::from_tree(repo, prev_commit.tree()?)?;
+            let state_tree_id = self.make_tree(repo, Some((&prev_state, prev_commit.tree()?)))?;
+            (state_tree_id, Some(prev_state))
+        } else {
+            (self.make_tree(repo, None)?, None)
         };
-        let state_tree_id = self.make_tree(repo, &prev_state_tree)?;
-        let config = repo.config()?; // TODO: wrapped config
-        let sig = git2::Signature::default_committer(Some(&config))?;
+        let config = repo.config_snapshot();
+        let sig = repo.committer_or_default();
+        let todo_author = sig.to_owned();
 
-        let simplified_parents: Vec<git2::Oid> = match &self.prev {
-            Some(prev_commit) => vec![prev_commit.parent_id(0)?],
+        let simplified_parents: Vec<git_repository::ObjectId> = match &self.prev {
+            Some(prev_commit) => {
+                vec![prev_commit
+                    .parent_ids()
+                    .into_iter()
+                    .next()
+                    .expect("prev state commit has a parent")
+                    .detach()]
+            }
             None => vec![],
         };
 
@@ -213,12 +229,12 @@ impl<'repo> StackState<'repo> {
 
         let commit_opts = CommitOptions {
             commit_encoding: None,
-            gpgsign: config.get_bool("stgit.gpgsign").unwrap_or(false),
+            gpgsign: config.boolean("stgit.gpgsign").unwrap_or(false),
         };
 
         let simplified_parent_id = repo.commit_with_options(
-            &sig,
-            &sig,
+            &todo_author,
+            sig,
             &message,
             state_tree_id,
             simplified_parents,
@@ -226,34 +242,31 @@ impl<'repo> StackState<'repo> {
         )?;
 
         let mut parent_set = indexmap::IndexSet::new();
-        parent_set.insert(self.head.id());
-        parent_set.insert(self.top().id());
+        parent_set.insert(self.head.id);
+        parent_set.insert(self.top().id);
         for patchname in &self.unapplied {
-            parent_set.insert(self.patches[patchname].commit.id());
+            parent_set.insert(self.patches[patchname].commit.id);
         }
         for patchname in &self.hidden {
-            parent_set.insert(self.patches[patchname].commit.id());
+            parent_set.insert(self.patches[patchname].commit.id);
         }
 
-        if let Some(prev_commit) = &self.prev {
-            parent_set.insert(prev_commit.id());
-            let (prev_state, _) = prev_state_tree.unwrap();
+        if let Some(prev_commit) = self.prev.as_ref() {
+            parent_set.insert(prev_commit.id);
+            let prev_state = prev_state.as_ref().unwrap();
             for patchname in prev_state.all_patches() {
-                parent_set.remove(&prev_state.patches[patchname].commit.id());
+                parent_set.remove(&prev_state.patches[patchname].commit.id);
             }
         }
 
-        let mut parent_oids: Vec<git2::Oid> = parent_set.iter().copied().collect();
+        let mut parent_oids: Vec<git_repository::ObjectId> = parent_set.iter().copied().collect();
 
         while parent_oids.len() > MAX_PARENTS {
             let parent_group_oids =
                 parent_oids.drain(parent_oids.len() - MAX_PARENTS..parent_oids.len());
-            // let parent_group_oids: Vec<git2::Oid> = parent_oids
-            //     .drain(parent_oids.len() - MAX_PARENTS..parent_oids.len())
-            //     .collect();
             let group_oid = repo.commit_with_options(
-                &sig,
-                &sig,
+                &todo_author,
+                sig,
                 &Message::from("parent grouping"),
                 state_tree_id,
                 parent_group_oids,
@@ -265,8 +278,8 @@ impl<'repo> StackState<'repo> {
         parent_oids.insert(0, simplified_parent_id);
 
         let commit_oid = repo.commit_with_options(
-            &sig,
-            &sig,
+            &todo_author,
+            sig,
             &message,
             state_tree_id,
             parent_oids,
@@ -274,7 +287,12 @@ impl<'repo> StackState<'repo> {
         )?;
 
         if let Some(refname) = update_ref {
-            repo.reference(refname, commit_oid, true, &message.decode()?)?;
+            repo.reference(
+                refname,
+                commit_oid,
+                git_repository::refs::transaction::PreviousValue::Any,
+                message.raw_bytes(),
+            )?;
         }
 
         Ok(commit_oid)
@@ -297,55 +315,67 @@ impl<'repo> StackState<'repo> {
     /// ```
     fn make_tree(
         &self,
-        repo: &'repo git2::Repository,
-        prev_state_and_tree: &Option<(Self, git2::Tree)>,
-    ) -> Result<git2::Oid> {
-        let mut builder = repo.treebuilder(None)?;
-        builder.insert(
-            "stack.json",
-            repo.blob(serde_json::to_string_pretty(self)?.as_bytes())?,
-            i32::from(git2::FileMode::Blob),
-        )?;
+        repo: &'repo git_repository::Repository,
+        prev_state_and_tree: Option<(&Self, git_repository::Tree)>,
+    ) -> Result<git_repository::ObjectId> {
+        let stack_json_id = repo.write_blob(serde_json::to_string_pretty(self)?.as_bytes())?;
+        let stack_json_entry = git_repository::objs::tree::Entry {
+            mode: git_repository::objs::tree::EntryMode::Blob,
+            filename: "stack.json".into(),
+            oid: stack_json_id.detach(),
+        };
 
         let patches_tree_name = "patches";
 
         let (prev_state, prev_patches_tree) =
             if let Some((prev_state, prev_tree)) = prev_state_and_tree {
-                let prev_patches_tree = prev_tree.get_name(patches_tree_name).and_then(|entry| {
-                    entry
-                        .to_object(repo)
-                        .ok()
-                        .and_then(|object| object.as_tree().cloned())
-                });
+                let prev_patches_tree = prev_tree
+                    .lookup_entry_by_path(patches_tree_name)?
+                    .and_then(|entry| entry.object().ok().map(|object| object.into_tree()));
                 (Some(prev_state), prev_patches_tree)
             } else {
                 (None, None)
             };
 
-        builder.insert(
-            patches_tree_name,
-            self.make_patches_tree(repo, prev_state, &prev_patches_tree)?,
-            i32::from(git2::FileMode::Tree),
-        )?;
-        Ok(builder.write()?)
+        let patches_tree_id = self.make_patches_tree(repo, prev_state, &prev_patches_tree)?;
+        let patches_entry = git_repository::objs::tree::Entry {
+            mode: git_repository::objs::tree::EntryMode::Tree,
+            filename: patches_tree_name.into(),
+            oid: patches_tree_id,
+        };
+
+        let state_tree = git_repository::objs::Tree {
+            entries: vec![patches_entry, stack_json_entry],
+        };
+
+        let state_tree_id = repo.write_object(state_tree)?;
+        Ok(state_tree_id.detach())
     }
 
     /// Make the `patches` subtree.
     fn make_patches_tree(
         &self,
-        repo: &git2::Repository,
+        repo: &git_repository::Repository,
         prev_state: Option<&StackState>,
-        prev_patches_tree: &Option<git2::Tree>,
-    ) -> Result<git2::Oid> {
-        let mut builder = repo.treebuilder(None)?;
+        prev_patches_tree: &Option<git_repository::Tree>,
+    ) -> Result<git_repository::ObjectId> {
+        let mut patches_tree = git_repository::objs::Tree {
+            entries: Vec::with_capacity(self.patches.len()),
+        };
         for patchname in self.all_patches() {
-            builder.insert(
-                patchname.to_string(),
-                self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree.as_ref())?,
-                i32::from(git2::FileMode::Blob),
-            )?;
+            patches_tree
+                .entries
+                .push(git_repository::objs::tree::Entry {
+                    mode: git_repository::objs::tree::EntryMode::Blob,
+                    filename: patchname.to_string().into(),
+                    oid: self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree)?,
+                });
         }
-        Ok(builder.write()?)
+        patches_tree
+            .entries
+            .sort_by_key(|entry| entry.filename.clone());
+        let patches_tree_id = repo.write_object(patches_tree)?.detach();
+        Ok(patches_tree_id)
     }
 
     /// Make patch metadata blob.
@@ -355,22 +385,29 @@ impl<'repo> StackState<'repo> {
     /// including its commit message.
     fn make_patch_meta(
         &self,
-        repo: &git2::Repository,
+        repo: &git_repository::Repository,
         patchname: &PatchName,
         prev_state: Option<&StackState>,
-        prev_patches_tree: Option<&git2::Tree>,
-    ) -> Result<git2::Oid> {
+        prev_patches_tree: &Option<git_repository::Tree>,
+    ) -> Result<git_repository::ObjectId> {
         let commit = &self.patches[patchname].commit;
+        let commit_ref = commit.decode()?;
 
         if let Some(prev_state) = prev_state {
             if let Some(prev_patch) = prev_state.patches.get(patchname) {
-                if prev_patch.commit.id() == commit.id() {
+                if prev_patch.commit.id == commit.id {
                     if let Some(prev_patches_tree) = prev_patches_tree {
-                        if let Some(prev_patch_entry) =
-                            prev_patches_tree.get_name(patchname.as_ref())
+                        let patchname_str: &str = patchname.as_ref();
+                        if let Some(prev_patch_entry) = prev_patches_tree
+                            .iter()
+                            .filter_map(Result::ok)
+                            .find(|entry_ref| entry_ref.filename() == patchname_str.as_bytes())
                         {
-                            if let Some(git2::ObjectType::Blob) = prev_patch_entry.kind() {
-                                return Ok(prev_patch_entry.id());
+                            if matches!(
+                                prev_patch_entry.mode(),
+                                git_repository::objs::tree::EntryMode::Blob
+                            ) {
+                                return Ok(prev_patch_entry.oid());
                             }
                         }
                     }
@@ -378,22 +415,32 @@ impl<'repo> StackState<'repo> {
             }
         }
 
-        let parent = commit.parent(0)?;
+        let parent = commit.get_parent_commit()?;
         let mut patch_meta: Vec<u8> = Vec::with_capacity(1024);
+        let patch_meta = &mut patch_meta;
+        let parent_tree_id = parent.tree_id()?;
+        let commit_tree_id = commit_ref.tree();
+        let author = commit_ref.author();
+        let date = commit_ref
+            .time()
+            .format(git_repository::date::time::format::ISO8601);
         write!(
             patch_meta,
-            "Bottom: {}\n\
-             Top:    {}\n\
-             Author: {}\n\
-             Date:   {}\n\
-             \n",
-            parent.tree_id(),
-            commit.tree_id(),
-            commit.author(), // N.B. uses String::from_utf8_lossy()
-            commit.time().datetime().format("%Y-%m-%d %H:%M:%S %z"),
+            "Bottom: {parent_tree_id}\n\
+             Top:    {commit_tree_id}\n\
+             Author: ",
         )?;
-        patch_meta.write_all(commit.message_raw_bytes())?;
 
-        Ok(repo.blob(&patch_meta)?)
+        patch_meta.write_all(author.name)?;
+        write!(patch_meta, " <")?;
+        patch_meta.write_all(author.email)?;
+        writeln!(patch_meta, ">")?;
+        write!(patch_meta, "Date:   {date}\n\n")?;
+
+        patch_meta.write_all(commit.message_raw_sloppy())?;
+
+        let patch_meta_id = repo.write_blob(patch_meta)?;
+
+        Ok(patch_meta_id.detach())
     }
 }

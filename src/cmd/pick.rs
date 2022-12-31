@@ -4,6 +4,7 @@
 
 use std::{
     path::{Path, PathBuf},
+    rc::Rc,
     str::FromStr,
 };
 
@@ -14,7 +15,7 @@ use clap::Arg;
 use crate::{
     argset,
     color::get_color_stdout,
-    ext::{RepositoryExtended, SignatureExtended},
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     patchrange,
     revspec::{parse_branch_and_spec, parse_stgit_revision},
@@ -136,7 +137,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let ref_branchname = argset::get_one_str(matches, "ref-branch");
     let ref_stack = Stack::from_branch(
@@ -180,45 +181,50 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .ok()
     };
 
-    let picks: Vec<(Option<PatchName>, git2::Commit)> = if let Some(patches) = source_patches {
-        patches
-            .iter()
-            .map(|pn| (Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()))
-            .collect()
-    } else {
-        let mut picks = Vec::new();
-        for source in matches
-            .get_many::<String>("stgit-revision")
-            .expect("required argument")
-        {
-            let (branchname, spec_str) = parse_branch_and_spec(None, Some(source));
-            if let Some(branchname) = branchname {
-                if let Some(spec_str) = spec_str {
-                    let ref_stack = Stack::from_branch(
-                        &repo,
-                        Some(branchname),
-                        InitializationPolicy::AllowUninitialized,
-                    )?;
-                    let spec = patchrange::Specification::from_str(spec_str)?;
-                    let patchnames = patchrange::patches_from_specs(
-                        [spec].iter(),
-                        &ref_stack,
-                        patchrange::Allow::VisibleWithAppliedBoundary,
-                    )?;
-                    for pn in &patchnames {
-                        picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));
+    let picks: Vec<(Option<PatchName>, Rc<git_repository::Commit>)> =
+        if let Some(patches) = source_patches {
+            patches
+                .iter()
+                .map(|pn| (Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()))
+                .collect()
+        } else {
+            let mut picks = Vec::new();
+            for source in matches
+                .get_many::<String>("stgit-revision")
+                .expect("required argument")
+            {
+                let (branchname, spec_str) = parse_branch_and_spec(None, Some(source));
+                if let Some(branchname) = branchname {
+                    if let Some(spec_str) = spec_str {
+                        let ref_stack = Stack::from_branch(
+                            &repo,
+                            Some(branchname),
+                            InitializationPolicy::AllowUninitialized,
+                        )?;
+                        let spec = patchrange::Specification::from_str(spec_str)?;
+                        let patchnames = patchrange::patches_from_specs(
+                            [spec].iter(),
+                            &ref_stack,
+                            patchrange::Allow::VisibleWithAppliedBoundary,
+                        )?;
+                        for pn in &patchnames {
+                            picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));
+                        }
+                    } else {
+                        return Err(crate::revspec::Error::InvalidRevision(
+                            source.to_string(),
+                            "expected \"<branch>:<patchname>\"".to_string(),
+                        )
+                        .into());
                     }
                 } else {
-                    return Err(crate::revspec::Error::InvalidRevision(source.to_string()).into());
+                    let commit = parse_stgit_revision(&repo, Some(source), ref_branchname)?
+                        .try_into_commit()?;
+                    picks.push((None, commit.into()));
                 }
-            } else {
-                let commit =
-                    parse_stgit_revision(&repo, Some(source), ref_branchname)?.peel_to_commit()?;
-                picks.push((None, commit));
             }
-        }
-        picks
-    };
+            picks
+        };
 
     if matches.get_flag("fold") || matches.get_flag("update") {
         // Fold into current patch
@@ -239,23 +245,23 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 Some(parent_committish),
                 Some(ref_stack.get_branch_name()),
             )?
-            .peel_to_commit()?;
+            .try_into_commit()?;
             Some(commit)
         } else {
             None
         };
-        pick_picks(stack, matches, &opt_parent, &picks)
+        pick_picks(stack, matches, opt_parent, &picks)
     }
 }
 
 fn fold_picks(
     stack: &Stack,
     matches: &clap::ArgMatches,
-    picks: &[(Option<PatchName>, git2::Commit)],
+    picks: &[(Option<PatchName>, Rc<git_repository::Commit>)],
 ) -> Result<()> {
     let stupid = stack.repo.stupid();
     for (patchname, commit) in picks {
-        let parent = commit.parent(0)?;
+        let parent = commit.get_parent_commit()?.into();
         let (top, bottom) = if matches.get_flag("revert") {
             (&parent, commit)
         } else {
@@ -271,18 +277,24 @@ fn fold_picks(
         } else {
             assert!(matches.get_flag("update"));
             let branch_head = stack.get_branch_head();
-            diff_files =
-                stupid.diff_tree_files(branch_head.parent(0)?.tree_id(), branch_head.tree_id())?;
+            diff_files = stupid.diff_tree_files(
+                branch_head.get_parent_commit()?.tree_id()?.detach(),
+                branch_head.tree_id()?.detach(),
+            )?;
             Some(diff_files.iter().collect())
         };
 
         let conflicts = !stupid
-            .apply_treediff_to_worktree_and_index(bottom.tree_id(), top.tree_id(), pathspecs)
+            .apply_treediff_to_worktree_and_index(
+                bottom.tree_id()?.detach(),
+                top.tree_id()?.detach(),
+                pathspecs,
+            )
             .with_context(|| {
                 if let Some(patchname) = patchname {
                     format!("folding `{patchname}`")
                 } else {
-                    format!("folding `{}`", commit.id())
+                    format!("folding `{}`", commit.id)
                 }
             })?;
 
@@ -291,7 +303,7 @@ fn fold_picks(
                 crate::stack::Error::CausedConflicts(if let Some(patchname) = patchname {
                     format!("`{patchname}` does not apply cleanly")
                 } else {
-                    format!("`{}` does not apply cleanly", commit.id())
+                    format!("`{}` does not apply cleanly", commit.id)
                 })
                 .into(),
             );
@@ -303,15 +315,18 @@ fn fold_picks(
 fn pick_picks(
     stack: Stack,
     matches: &clap::ArgMatches,
-    opt_parent: &Option<git2::Commit>,
-    picks: &[(Option<PatchName>, git2::Commit)],
+    opt_parent: Option<git_repository::Commit>,
+    picks: &[(Option<PatchName>, Rc<git_repository::Commit>)],
 ) -> Result<()> {
+    let opt_parent = opt_parent.map(Rc::new);
     let stupid = stack.repo.stupid();
-    let config = stack.repo.config()?;
+    let config = stack.repo.config_snapshot();
     let patchname_len_limit = PatchName::get_length_limit(&config);
-    let mut new_patches: Vec<(PatchName, git2::Oid)> = Vec::with_capacity(picks.len());
+    let mut new_patches: Vec<(PatchName, git_repository::ObjectId)> =
+        Vec::with_capacity(picks.len());
 
     for (patchname, commit) in picks {
+        let commit_ref = commit.decode()?;
         let mut disallow: Vec<&PatchName> = stack.all_patches().collect();
 
         let patchname = if let Some(name) = matches.get_one::<PatchName>("name") {
@@ -324,16 +339,16 @@ fn pick_picks(
             }
         } else {
             PatchName::make(
-                &commit.message_raw_bytes().to_str_lossy(),
+                &commit_ref.message.to_str_lossy(),
                 false,
                 patchname_len_limit,
             )
         }
         .uniquify(&[], &disallow);
 
-        let commit_id_string = commit.id().to_string();
+        let commit_id_string = commit.id.to_string();
         let message = if matches.get_flag("revert") {
-            let message = commit.message();
+            let message = commit_ref.message.to_str().ok();
             let (subject, body) = if let Some(message) = message {
                 message.split_once('\n').unwrap_or((message, ""))
             } else {
@@ -347,39 +362,50 @@ fn pick_picks(
                  {body}"
             )
         } else if matches.get_flag("expose") {
-            let expose_format = config
-                .get_string("stgit.pick.expose-format")
-                .unwrap_or_else(|_| "format:%B%n(imported from commit %H)%n".to_string());
+            let expose_format =
+                config
+                    .plumbing()
+                    .string("stgit", Some("pick".into()), "expose-format");
+            let expose_format = expose_format
+                .as_ref()
+                .map(|bs| bs.to_str().ok())
+                .unwrap_or(None)
+                .unwrap_or("format:%B%n(imported from commit %H)%n");
             stupid
-                .show_pretty(commit.id(), &expose_format)?
+                .show_pretty(commit.id, expose_format)?
                 .to_str_lossy()
                 .to_string()
         } else {
-            commit.message_raw_bytes().to_str_lossy().to_string()
+            commit_ref.message.to_str_lossy().to_string()
         };
         let message = &crate::wrap::Message::String(message);
-        let author = commit.author();
-        let default_committer = git2::Signature::default_committer(Some(&config))?;
+        let author = commit.author_strict()?;
+        let default_committer = stack.repo.committer_or_default();
         let committer = if matches.get_flag("committer-date-is-author-date") {
-            default_committer.override_when(&author.when())
+            let mut committer = default_committer.to_owned();
+            committer.time = author.time;
+            committer
         } else {
-            default_committer
+            default_committer.to_owned()
         };
         let parent = if let Some(parent) = opt_parent.as_ref() {
             parent.clone()
         } else {
-            commit.parent(0)?
+            Rc::new(commit.get_parent_commit()?)
         };
 
         let (top, bottom) = if matches.get_flag("revert") {
-            (&parent, commit)
+            (parent, commit.clone())
         } else {
-            (commit, &parent)
+            (commit.clone(), parent)
         };
-        let new_commit_id =
-            stack
-                .repo
-                .commit_ex(&author, &committer, message, top.tree_id(), [bottom.id()])?;
+        let new_commit_id = stack.repo.commit_ex(
+            &author,
+            &committer,
+            message,
+            top.tree_id()?.detach(),
+            [bottom.id],
+        )?;
         new_patches.push((patchname, new_commit_id));
         disallow.push(&new_patches[new_patches.len() - 1].0);
     }

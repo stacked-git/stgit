@@ -1,16 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+//! Extension trait for [`git_repository::actor::Time`].
+
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, FixedOffset, NaiveDateTime, TimeZone};
+use chrono::{DateTime, NaiveDateTime};
 
-/// Extend [`git2::Time`] with additional methods.
+/// Extend [`git_repository::actor::Time`] with additional methods.
 pub(crate) trait TimeExtended {
-    /// Convert to [`chrono::DateTime<FixedOffset>`].
-    fn datetime(&self) -> DateTime<FixedOffset>;
-
-    /// Convert to epoch and offset string used internally by git.
-    fn epoch_time_string(&self) -> String;
-
     /// Attempt to parse a time string of one of several well-known formats.
     ///
     /// | Git date format   | Example date                     |
@@ -21,13 +17,11 @@ pub(crate) trait TimeExtended {
     /// | `iso8601-strict`  | `2022-01-06T09:32:07-05:00`      |
     /// | `raw`             | `1641479527 -0500`               |
     /// | `now`             | `now`                            |
-    fn parse_time(time_str: &str) -> Result<git2::Time> {
+    fn parse_time(time_str: &str) -> Result<git_repository::actor::Time> {
         let time_str = time_str.trim();
 
         if time_str == "now" {
-            let dt = chrono::Local::now();
-            let time = git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60);
-            return Ok(time);
+            return Ok(git_repository::actor::Time::now_local_or_utc());
         }
 
         for format_str in [
@@ -38,8 +32,12 @@ pub(crate) trait TimeExtended {
             "%s %#z",             // raw
         ] {
             if let Ok(dt) = DateTime::parse_from_str(time_str, format_str) {
-                let time = git2::Time::new(dt.timestamp(), dt.offset().local_minus_utc() / 60);
-                return Ok(time);
+                return Ok(git_repository::actor::Time::new(
+                    dt.timestamp()
+                        .try_into()
+                        .expect("unix timestamp fits into u32 until 2038"),
+                    dt.offset().local_minus_utc(),
+                ));
             }
         }
 
@@ -52,8 +50,12 @@ pub(crate) trait TimeExtended {
             "%s",              // raw
         ] {
             if let Ok(dt) = NaiveDateTime::parse_from_str(time_str, format_str) {
-                let time = git2::Time::new(dt.timestamp(), 0);
-                return Ok(time);
+                return Ok(git_repository::actor::Time::new(
+                    dt.timestamp()
+                        .try_into()
+                        .expect("unix timestamp fits into u32 until 2038"),
+                    0,
+                ));
             }
         }
 
@@ -61,30 +63,11 @@ pub(crate) trait TimeExtended {
     }
 }
 
-impl TimeExtended for git2::Time {
-    fn datetime(&self) -> DateTime<FixedOffset> {
-        FixedOffset::east_opt(self.offset_minutes() * 60)
-            .expect("tz offset minutes is in bounds")
-            .timestamp_opt(self.seconds(), 0)
-            .unwrap()
-    }
-
-    fn epoch_time_string(&self) -> String {
-        let offset_hours = self.offset_minutes() / 60;
-        let offset_minutes = self.offset_minutes() % 60;
-        format!(
-            "{} {}{:02}{:02}",
-            self.seconds(),
-            self.sign(),
-            offset_hours,
-            offset_minutes
-        )
-    }
-}
+impl TimeExtended for git_repository::actor::Time {}
 
 #[cfg(test)]
 mod tests {
-    use git2::Time;
+    use git_repository::actor::Time;
 
     use super::TimeExtended;
 
@@ -92,8 +75,8 @@ mod tests {
     fn test_parse_time() {
         let time = Time::parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_minutes(), 6 * 60);
-        assert_eq!(time.sign(), '+');
+        assert_eq!(time.offset_in_seconds, 6 * 60 * 60);
+        assert!(matches!(time.sign, git_repository::actor::Sign::Plus));
     }
 
     #[test]
@@ -113,7 +96,12 @@ mod tests {
     fn parse_8601_without_tz() {
         let time_str = "2005-04-07T22:13:09";
         let time = Time::parse_time(time_str).unwrap();
-        assert_eq!(&time.datetime().format("%FT%T").to_string(), time_str);
+        assert_eq!(
+            time.format(git_repository::date::time::format::ISO8601_STRICT)
+                .strip_suffix("+00:00")
+                .unwrap(),
+            time_str,
+        );
     }
 
     #[test]
@@ -125,16 +113,20 @@ mod tests {
     fn test_parse_time_negative_offset() {
         let time = Time::parse_time("123456 -0230").unwrap();
         assert_eq!(time.seconds(), 123456);
-        assert_eq!(time.offset_minutes(), -150);
-        assert_eq!(time.sign(), '-');
+        assert_eq!(time.offset_in_seconds, -150 * 60);
+        assert!(matches!(time.sign, git_repository::actor::Sign::Minus));
     }
 
     #[test]
     fn test_parse_bad_times() {
-        assert!(Time::parse_time("123456 !0600").is_err());
-        assert!(Time::parse_time("123456 +060").is_err());
-        assert!(Time::parse_time("123456 -060").is_err());
-        assert!(Time::parse_time("123456 +06000").is_err());
-        assert!(Time::parse_time("123456 06000").is_err());
+        for bad_str in [
+            "123456 !0600",
+            "123456 +060",
+            "123456 -060",
+            "123456 +06000",
+            "123456 06000",
+        ] {
+            assert!(Time::parse_time(bad_str).is_err());
+        }
     }
 }

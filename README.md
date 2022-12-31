@@ -38,7 +38,6 @@ dynamically links to libc and other non-Rust libraries when they are
 available at build-time. Dynamic link dependencies include these
 libraries along with their transient link dependencies:
 
-- libgit2
 - libcurl (optional)
 - libbz2 (optional)
 

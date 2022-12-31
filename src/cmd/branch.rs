@@ -14,10 +14,10 @@ use crate::{
     ext::RepositoryExtended,
     print_info_message,
     stack::{
-        get_branch_name, state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess,
-        StackStateAccess,
+        state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess, StackStateAccess,
     },
     stupid::Stupid,
+    wrap::Branch,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -231,7 +231,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     if let Some((subname, submatches)) = matches.subcommand() {
         match subname {
             "--list" => list(&repo, submatches),
@@ -247,7 +247,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     } else {
         let current_branch = repo.get_branch(None)?;
-        let current_branchname = get_branch_name(&current_branch)?;
+        let current_branchname = current_branch.get_branch_name()?;
         if let Some(target_branchname) = get_one_str(matches, "branch-any") {
             if target_branchname == current_branchname {
                 Err(anyhow!("{target_branchname} is already the current branch"))
@@ -259,7 +259,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 }
                 statuses.check_conflicts()?;
                 let target_branch = repo.get_branch(Some(target_branchname))?;
-                stupid.checkout(target_branch.name().unwrap().unwrap())
+                stupid.checkout(target_branch.get_branch_name().unwrap())
             }
         } else {
             println!("{current_branchname}");
@@ -268,64 +268,89 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 }
 
-fn get_description(config: &git2::Config, branchname: &str) -> String {
-    config
-        .get_string(&format!("branch.{branchname}.description"))
-        .unwrap_or_default()
-}
-
-fn set_description(config: &mut git2::Config, branchname: &str, description: &str) -> Result<()> {
-    let key = format!("branch.{branchname}.description");
+fn set_description(
+    repo: &git_repository::Repository,
+    branchname: &str,
+    description: &str,
+) -> Result<()> {
+    let mut local_config_file = repo.local_config_file()?;
     if description.is_empty() {
-        match config.remove(&key) {
-            Ok(()) => Ok(()),
-            Err(e)
-                if e.class() == git2::ErrorClass::Config
-                    && e.code() == git2::ErrorCode::NotFound =>
-            {
-                Ok(())
+        if let Ok(mut value) =
+            local_config_file.raw_value_mut("branch", Some(branchname.into()), "description")
+        {
+            value.delete();
+        }
+        if let Ok(section) = local_config_file.section("branch", Some(branchname.into())) {
+            if section.num_values() == 0 {
+                local_config_file.remove_section_by_id(section.id());
             }
-            Err(e) => Err(e.into()),
         }
     } else {
-        Ok(config.set_str(&key, description)?)
+        local_config_file.set_raw_value(
+            "branch",
+            Some(branchname.into()),
+            "description",
+            description,
+        )?;
     }
+
+    repo.write_local_config(local_config_file)?;
+
+    Ok(())
 }
 
-fn get_stgit_parent(config: &git2::Config, branchname: &str) -> Option<String> {
-    let key = format!("branch.{branchname}.stgit.parentbranch");
-    config.get_string(&key).ok()
+fn get_stgit_parent(config: &git_repository::config::Snapshot, branchname: &str) -> Option<String> {
+    config
+        .plumbing()
+        .string(
+            "branch",
+            Some(format!("{branchname}.stgit").as_str().into()),
+            "parentbranch",
+        )
+        .and_then(|bs| bs.to_str().ok().map(str::to_string))
 }
 
 fn set_stgit_parent(
-    config: &mut git2::Config,
+    repo: &git_repository::Repository,
     branchname: &str,
     parent_branchname: Option<&str>,
 ) -> Result<()> {
-    let key = format!("branch.{branchname}.stgit.parentbranch");
+    let subsection = format!("{branchname}.stgit");
+    let mut local_config_file = repo.local_config_file()?;
     if let Some(parent_branchname) = parent_branchname {
-        Ok(config.set_str(&key, parent_branchname)?)
+        local_config_file.set_raw_value(
+            "branch",
+            Some(subsection.as_str().into()),
+            "parentbranch",
+            parent_branchname,
+        )?;
     } else {
-        match config.remove(&key) {
-            Ok(()) => Ok(()),
-            Err(e)
-                if e.class() == git2::ErrorClass::Config
-                    && e.code() == git2::ErrorCode::NotFound =>
-            {
-                Ok(())
+        if let Ok(mut value) = local_config_file.raw_value_mut(
+            "branch",
+            Some(subsection.as_str().into()),
+            "parentbranch",
+        ) {
+            value.delete();
+        }
+        if let Ok(section) = local_config_file.section("branch", Some(subsection.as_str().into())) {
+            if section.num_values() == 0 {
+                local_config_file.remove_section_by_id(section.id());
             }
-            Err(e) => Err(e.into()),
         }
     }
+
+    repo.write_local_config(local_config_file)?;
+
+    Ok(())
 }
 
-fn list(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn list(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let mut branchnames = Vec::new();
-    for branch_result in repo.branches(Some(git2::BranchType::Local))? {
-        let (branch, _branch_type) = branch_result?;
-        if let Some(branchname) = branch.name()? {
+    for local_branch in repo.references()?.local_branches()?.filter_map(Result::ok) {
+        let local_branch = Branch::wrap(local_branch);
+        if let Ok(branchname) = local_branch.get_branch_name() {
             if !branchname.ends_with(".stgit") {
-                branchnames.push(branchname.to_owned());
+                branchnames.push(branchname.to_string());
             }
         }
     }
@@ -333,20 +358,18 @@ fn list(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     branchnames.sort();
     let branchname_width = branchnames.iter().map(String::len).max();
 
-    let current_branchname = repo.get_branch(None).ok().and_then(|branch| {
-        branch
-            .name()
-            .ok()
-            .and_then(|name| name.map(ToString::to_string))
-    });
+    let current_branch = repo.get_branch(None).ok();
+    let current_branchname = current_branch
+        .as_ref()
+        .and_then(|branch| branch.get_branch_name().ok());
 
-    let config = repo.config()?;
+    let config = repo.config_snapshot();
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
 
     for branchname in &branchnames {
-        let is_current = Some(branchname) == current_branchname.as_ref();
+        let is_current = Some(branchname.as_str()) == current_branchname;
 
         if is_current {
             stdout.set_color(color_spec.set_intense(true))?;
@@ -396,20 +419,29 @@ fn list(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         color_spec.clear();
         stdout.set_color(&color_spec)?;
 
-        let description = get_description(&config, branchname);
-
+        let description = config
+            .plumbing()
+            .string("branch", Some(branchname.as_str().into()), "description")
+            .unwrap_or_default();
         if description.is_empty() {
             writeln!(stdout)?;
         } else {
-            writeln!(stdout, " {description}")?;
+            write!(stdout, " ")?;
+            stdout.write_all(description.as_bstr())?;
+            writeln!(stdout)?;
         }
     }
 
     Ok(())
 }
 
-fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn create(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
+    let new_fullname =
+        git_repository::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?;
+    if repo.try_find_reference(&new_fullname)?.is_some() {
+        return Err(anyhow!("Branch `{new_branchname}` already exists"));
+    }
 
     repo.check_repository_state()?;
     let stupid = repo.stupid();
@@ -418,49 +450,66 @@ fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
 
     let parent_branch = if let Some(committish) = get_one_str(matches, "committish") {
         statuses.check_worktree_clean()?;
-        let mut parent_branch = None;
-        if let Ok(local_parent_branch) = repo.find_branch(committish, git2::BranchType::Local) {
-            parent_branch = Some(local_parent_branch);
-        } else if let Ok(remote_parent_branch) =
-            repo.find_branch(committish, git2::BranchType::Remote)
-        {
-            parent_branch = Some(remote_parent_branch);
+
+        if let Some(parent_reference) = repo.try_find_reference(committish)? {
+            let parent_branchname = parent_reference
+                .name()
+                .shorten()
+                .to_str()
+                .expect("reference name is valid UTF-8");
+            print_info_message(
+                matches,
+                &format!("Recording `{parent_branchname}` as parent branch"),
+            );
+            Some(Branch::wrap(parent_reference))
         } else {
             print_info_message(
                 matches,
                 &format!("Do not know how to determine parent branch from `{committish}`"),
             );
+            None
         }
-        if let Some(parent_branch) = parent_branch.as_ref() {
-            let parent_branchname = parent_branch.name_bytes()?.to_str_lossy();
-            print_info_message(
-                matches,
-                &format!("Recording `{parent_branchname}` as parent branch"),
-            );
-        }
-        parent_branch
     } else if let Ok(current_branch) = repo.get_branch(None) {
         Some(current_branch)
     } else {
         None
     };
 
-    let target_commit = if let Some(parent_branch) = parent_branch.as_ref() {
-        parent_branch.get().peel_to_commit()?
+    let (target_commit, target_name) = if let Some(parent_branch) = parent_branch.as_ref() {
+        (
+            parent_branch.get_commit()?,
+            parent_branch.get_branch_name()?,
+        )
     } else if let Some(committish) = get_one_str(matches, "committish") {
-        crate::revspec::parse_stgit_revision(repo, Some(committish), None)?.peel_to_commit()?
+        (
+            crate::revspec::parse_stgit_revision(repo, Some(committish), None)?
+                .try_into_commit()?,
+            committish,
+        )
     } else {
-        repo.head()?.peel_to_commit()?
+        (repo.head_commit()?, "HEAD")
     };
 
-    let parent_branchname = if let Some(parent_branch) = parent_branch.as_ref() {
-        Some(get_branch_name(parent_branch)?)
-    } else {
-        None
-    };
+    let parent_branchname = parent_branch
+        .as_ref()
+        .and_then(|branch| branch.get_branch_name().ok());
 
-    let mut config = repo.config()?;
-    let mut new_branch = repo.branch(new_branchname, &target_commit, false)?;
+    repo.edit_reference(git_repository::refs::transaction::RefEdit {
+        change: git_repository::refs::transaction::Change::Update {
+            log: git_repository::refs::transaction::LogChange {
+                mode: git_repository::refs::transaction::RefLog::AndReference,
+                force_create_reflog: false,
+                message: format!("branch: Created from {target_name}").into(),
+            },
+            expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
+            new: git_repository::refs::Target::Peeled(target_commit.id),
+        },
+        name: git_repository::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?,
+        deref: false,
+    })?;
+
+    let new_branch = Branch::wrap(repo.find_reference(new_branchname)?);
+
     let stack = match Stack::from_branch(
         repo,
         Some(new_branchname),
@@ -474,39 +523,74 @@ fn create(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     };
 
     if let Some(parent_branch) = parent_branch.as_ref() {
-        set_stgit_parent(&mut config, new_branchname, parent_branchname.as_deref())?;
-
-        let mut has_upstream = false;
-        if let Ok(upstream_branch) = parent_branch.upstream() {
-            if let Ok(upstream_name) = get_branch_name(&upstream_branch) {
-                new_branch.set_upstream(Some(&upstream_name))?;
-                has_upstream = true;
-                print_info_message(
-                    matches,
-                    &format!("Using remote `{upstream_name}` to pull parent from"),
-                );
-            }
-        }
-        if !has_upstream {
+        set_stgit_parent(repo, new_branchname, parent_branchname)?;
+        if let Some(upstream_name) = copy_upstream(parent_branch, &new_branch, repo)? {
+            print_info_message(
+                matches,
+                &format!("Using remote `{upstream_name}` to pull parent from"),
+            );
+        } else {
             print_info_message(matches, "Recording as a local branch");
         }
     }
 
-    match stupid.checkout(new_branch.name().unwrap().unwrap()) {
+    match stupid.checkout(new_branch.get_branch_name().unwrap()) {
         Ok(()) => Ok(()),
         Err(e) => {
             new_branch.delete()?;
-            repo.find_reference(stack.get_stack_refname())
-                .and_then(|mut reference| reference.delete())
-                .ok();
+            if let Ok(reference) = repo.find_reference(stack.get_stack_refname()) {
+                reference.delete().ok();
+            }
             Err(e)
         }
     }
 }
 
-fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn copy_upstream(
+    from_branch: &Branch,
+    to_branch: &Branch,
+    repo: &git_repository::Repository,
+) -> Result<Option<String>> {
+    let (category, from_short_name) = from_branch
+        .get_reference_name()
+        .category_and_short_name()
+        .expect("from reference is a local branch");
+    assert!(matches!(
+        category,
+        git_repository::refs::Category::LocalBranch
+    ));
+    let (category, to_short_name) = to_branch
+        .get_reference_name()
+        .category_and_short_name()
+        .expect("to reference is a local branch");
+    assert!(matches!(
+        category,
+        git_repository::refs::Category::LocalBranch
+    ));
+    let config = repo.config_snapshot();
+    let remote = config.string(format!("branch.{from_short_name}.remote").as_str());
+    let merge = config.string(format!("branch.{from_short_name}.merge").as_str());
+    if let (Some(remote), Some(merge)) = (remote, merge) {
+        let merge_name = git_repository::refs::FullName::try_from(merge.as_bstr())?;
+        let merge_short_name = merge_name.shorten().to_str_lossy();
+        let mut local_config_file = repo.local_config_file()?;
+        local_config_file.set_raw_value(
+            "branch",
+            Some(to_short_name),
+            "remote",
+            remote.as_bstr(),
+        )?;
+        local_config_file.set_raw_value("branch", Some(to_short_name), "merge", merge.as_bstr())?;
+        repo.write_local_config(local_config_file)?;
+        Ok(Some(format!("{remote}/{merge_short_name}")))
+    } else {
+        Ok(None)
+    }
+}
+
+fn clone(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let current_branch = repo.get_branch(None)?;
-    let current_branchname = get_branch_name(&current_branch)?;
+    let current_branchname = current_branch.get_branch_name()?;
 
     let new_branchname = if let Some(new_branchname) = get_one_str(matches, "new-branch") {
         new_branchname.to_string()
@@ -526,13 +610,22 @@ fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         let state_ref = repo
             .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference");
-        let state_commit = state_ref.peel_to_commit()?;
-        repo.reference(
-            &state_refname_from_branch_name(&new_branchname),
-            state_commit.id(),
-            false,
-            &format!("clone from {current_branchname}"),
-        )?;
+        let state_commit = state_ref.id().object()?.try_into_commit()?;
+        repo.edit_reference(git_repository::refs::transaction::RefEdit {
+            change: git_repository::refs::transaction::Change::Update {
+                log: git_repository::refs::transaction::LogChange {
+                    mode: git_repository::refs::transaction::RefLog::AndReference,
+                    force_create_reflog: false,
+                    message: format!("clone from {current_branchname}").into(),
+                },
+                expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
+                new: git_repository::refs::Target::Peeled(state_commit.id),
+            },
+            name: git_repository::refs::FullName::try_from(state_refname_from_branch_name(
+                &new_branchname,
+            ))?,
+            deref: false,
+        })?;
         stupid.branch_copy(None, &new_branchname)?;
     } else {
         stupid.branch_copy(None, &new_branchname)?;
@@ -543,39 +636,35 @@ fn clone(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         )?;
     };
 
-    let mut config = repo.config()?;
-
-    set_stgit_parent(&mut config, &new_branchname, Some(&current_branchname))?;
+    set_stgit_parent(repo, &new_branchname, Some(current_branchname))?;
 
     set_description(
-        &mut config,
+        repo,
         &new_branchname,
         &format!("clone of {current_branchname}"),
     )?;
 
     let new_branch = repo.get_branch(Some(&new_branchname))?;
-    stupid.checkout(new_branch.name().unwrap().unwrap())
+    stupid.checkout(new_branch.get_branch_name().unwrap())
 }
 
-fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn rename(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let names: Vec<_> = matches
         .get_many::<String>("branch-any")
         .unwrap()
         .map(String::as_str)
         .collect();
-    let current_branchname;
+    let current_branch;
     let (old_branchname, new_branchname) = if names.len() == 2 {
         repo.get_branch(Some(names[0]))?;
         (names[0], names[1])
     } else {
-        let current_branch = repo.get_branch(None)?;
-        current_branchname = get_branch_name(&current_branch)?;
-        (current_branchname.as_str(), names[0])
+        current_branch = repo.get_branch(None)?;
+        (current_branch.get_branch_name()?, names[0])
     };
 
     let stupid = repo.stupid();
-    let mut config = repo.config()?;
-    let parent_branchname = get_stgit_parent(&config, old_branchname);
+    let parent_branchname = get_stgit_parent(&repo.config_snapshot(), old_branchname);
 
     if let Ok(stack) = Stack::from_branch(
         repo,
@@ -585,13 +674,24 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
         let state_commit = repo
             .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference")
-            .peel_to_commit()?;
-        repo.reference(
-            &state_refname_from_branch_name(new_branchname),
-            state_commit.id(),
-            false,
-            &format!("rename {old_branchname} to {new_branchname}"),
-        )?;
+            .into_fully_peeled_id()?
+            .object()?
+            .try_into_commit()?;
+        repo.edit_reference(git_repository::refs::transaction::RefEdit {
+            change: git_repository::refs::transaction::Change::Update {
+                log: git_repository::refs::transaction::LogChange {
+                    mode: git_repository::refs::transaction::RefLog::AndReference,
+                    force_create_reflog: false,
+                    message: format!("rename {old_branchname} to {new_branchname}").into(),
+                },
+                expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
+                new: git_repository::refs::Target::Peeled(state_commit.id),
+            },
+            name: git_repository::refs::FullName::try_from(state_refname_from_branch_name(
+                new_branchname,
+            ))?,
+            deref: false,
+        })?;
         stupid
             .config_rename_section(
                 &format!("branch.{old_branchname}.stgit"),
@@ -603,47 +703,45 @@ fn rename(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     } else {
         stupid.branch_move(Some(old_branchname), new_branchname)?;
     }
-    set_stgit_parent(&mut config, new_branchname, parent_branchname.as_deref())?;
+    set_stgit_parent(repo, new_branchname, parent_branchname.as_deref())?;
     Ok(())
 }
 
-fn protect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn protect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
         InitializationPolicy::RequireInitialized,
     )?;
-    let mut config = repo.config()?;
-    stack.set_protected(&mut config, true)
+    stack.set_protected(true)
 }
 
-fn unprotect(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn unprotect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
         InitializationPolicy::RequireInitialized,
     )?;
-    let mut config = repo.config()?;
-    stack.set_protected(&mut config, false)
+    stack.set_protected(false)
 }
 
-fn delete(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn delete(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let target_branchname = get_one_str(matches, "branch-any").expect("required argument");
-    let mut target_branch = repo.get_branch(Some(target_branchname))?;
+    let target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
-    let current_branchname = current_branch.and_then(|branch| get_branch_name(&branch).ok());
-    if Some(target_branchname) == current_branchname.as_deref() {
+    let current_branchname = current_branch
+        .as_ref()
+        .and_then(|branch| branch.get_branch_name().ok());
+    if Some(target_branchname) == current_branchname {
         return Err(anyhow!("Cannot delete the current branch"));
     }
-
-    let config = repo.config()?;
 
     if let Ok(stack) = Stack::from_branch(
         repo,
         Some(target_branchname),
         InitializationPolicy::RequireInitialized,
     ) {
-        if stack.is_protected(&config) {
+        if stack.is_protected(&repo.config_snapshot()) {
             return Err(anyhow!("Delete not permitted: this branch is protected"));
         } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
             return Err(anyhow!(
@@ -657,14 +755,13 @@ fn delete(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn cleanup(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn cleanup(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
         InitializationPolicy::RequireInitialized,
     )?;
-    let config = repo.config()?;
-    if stack.is_protected(&config) {
+    if stack.is_protected(&repo.config_snapshot()) {
         return Err(anyhow!("Clean up not permitted: this branch is protected"));
     } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
         return Err(anyhow!(
@@ -675,10 +772,9 @@ fn cleanup(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn describe(repo: &git2::Repository, matches: &ArgMatches) -> Result<()> {
+fn describe(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     let branch = repo.get_branch(get_one_str(matches, "branch-any"))?;
     let description = get_one_str(matches, "description").expect("required argument");
-    let branchname = get_branch_name(&branch)?;
-    let mut config = repo.config()?;
-    set_description(&mut config, &branchname, description)
+    let branchname = branch.get_branch_name()?;
+    set_description(repo, branchname, description)
 }

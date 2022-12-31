@@ -8,6 +8,7 @@ use anyhow::Result;
 use clap::{Arg, ArgGroup};
 
 use crate::{
+    ext::{CommitExtended, RepositoryExtended},
     revspec::parse_stgit_revision,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
@@ -77,7 +78,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
@@ -108,16 +109,16 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stupid.update_index_refresh()?;
 
     let base_commit = if matches.get_flag("three-way") {
-        Some(stack.top().parent(0)?)
+        Some(stack.top().get_parent_commit()?)
     } else if let Some(base_spec) = matches.get_one::<String>("base") {
-        Some(parse_stgit_revision(&repo, Some(base_spec), None)?.peel_to_commit()?)
+        Some(parse_stgit_revision(&repo, Some(base_spec), None)?.try_into_commit()?)
     } else {
         None
     };
 
     if let Some(base_commit) = base_commit {
-        let orig_head_tree_id = stack.get_branch_head().tree_id();
-        let base_tree_id = base_commit.tree_id();
+        let orig_head_tree_id = stack.get_branch_head().tree_id()?.detach();
+        let base_tree_id = base_commit.tree_id()?.detach();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
         if let Err(e) = stupid.apply_to_worktree_and_index(
             &diff,

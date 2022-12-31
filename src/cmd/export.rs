@@ -15,7 +15,7 @@ use clap::Arg;
 
 use crate::{
     argset,
-    ext::{CommitExtended, TimeExtended},
+    ext::{CommitExtended, RepositoryExtended},
     patchrange,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
@@ -119,11 +119,10 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
-    let config = repo.config()?;
 
     if opt_branch.is_none()
         && repo
@@ -174,7 +173,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let numbered_flag = matches.get_flag("numbered");
     let num_width = std::cmp::max(patches.len().to_string().len(), 2);
 
-    let diff_opts = argset::get_diff_opts(matches, &config, false, true);
+    let diff_opts = argset::get_diff_opts(matches, &repo.config_snapshot(), false, true);
 
     let template = if let Some(template_file) = matches.get_one::<PathBuf>("template") {
         Cow::Owned(std::fs::read_to_string(template_file)?)
@@ -210,7 +209,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         series.push('\n');
 
         let patch_commit = stack.get_patch_commit(patchname);
-        let parent_commit = patch_commit.parent(0)?;
+        let parent_commit = patch_commit.get_parent_commit()?;
 
         let mut replacements: HashMap<&str, Cow<'_, [u8]>> = HashMap::new();
         let message = patch_commit.message_ex();
@@ -226,38 +225,34 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         replacements.insert("description", Cow::Borrowed(description.as_bytes()));
         replacements.insert("shortdescr", Cow::Borrowed(shortdescr.as_bytes()));
         replacements.insert("longdescr", Cow::Borrowed(longdescr.as_bytes()));
-        let author = patch_commit.author();
-        replacements.insert("authname", Cow::Borrowed(author.name_bytes()));
-        replacements.insert("authemail", Cow::Borrowed(author.email_bytes()));
+        let author = patch_commit.author()?;
+        replacements.insert("authname", Cow::Borrowed(author.name));
+        replacements.insert("authemail", Cow::Borrowed(author.email));
         replacements.insert(
             "authdate",
             Cow::Owned(
                 author
-                    .when()
-                    .datetime()
-                    .format("%F %T %z")
-                    .to_string()
+                    .time
+                    .format(git_repository::date::time::format::ISO8601)
                     .into_bytes(),
             ),
         );
-        let committer = patch_commit.committer();
-        replacements.insert("commname", Cow::Borrowed(committer.name_bytes()));
-        replacements.insert("commemail", Cow::Borrowed(committer.email_bytes()));
+        let committer = patch_commit.committer()?;
+        replacements.insert("commname", Cow::Borrowed(committer.name));
+        replacements.insert("commemail", Cow::Borrowed(committer.email));
         replacements.insert(
             "commdate",
             Cow::Owned(
                 committer
-                    .when()
-                    .datetime()
-                    .format("%F %T %z")
-                    .to_string()
+                    .time
+                    .format(git_repository::date::time::format::ISO8601)
                     .into_bytes(),
             ),
         );
 
         let diff = stupid.diff_tree_patch(
-            parent_commit.tree_id(),
-            patch_commit.tree_id(),
+            parent_commit.tree_id()?.detach(),
+            patch_commit.tree_id()?.detach(),
             <Option<Vec<OsString>>>::None,
             false,
             diff_opts.iter(),
@@ -266,7 +261,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         if need_diffstat {
             replacements.insert(
                 "diffstat",
-                if parent_commit.tree_id() == patch_commit.tree_id() {
+                if parent_commit.tree_id()? == patch_commit.tree_id()? {
                     Cow::Borrowed(b"")
                 } else {
                     Cow::Owned(stupid.diffstat(&diff)?)

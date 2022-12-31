@@ -149,10 +149,9 @@ impl PatchName {
     }
 
     /// Get the configured patch name length limit.
-    pub(crate) fn get_length_limit(config: &git2::Config) -> Option<usize> {
+    pub(crate) fn get_length_limit(config: &git_repository::config::Snapshot) -> Option<usize> {
         config
-            .get_i32("stgit.namelength")
-            .ok()
+            .integer("stgit.namelength")
             .and_then(|n| usize::try_from(n).ok())
             .or(Some(30))
     }

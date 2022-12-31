@@ -395,7 +395,7 @@ impl<'s> StatusHeaders<'s> {
     ///
     /// Panics if branch headers were not selected in the status options.
     #[allow(unused)]
-    pub(crate) fn branch_oid(&self) -> Option<git2::Oid> {
+    pub(crate) fn branch_oid(&self) -> Option<git_repository::ObjectId> {
         for entry in self.iter() {
             match entry.kind_value() {
                 (HeaderKind::BranchOid, b"(initial)") => return None,
@@ -665,7 +665,10 @@ mod tests {
         let headers = statuses.headers();
         assert_eq!(
             headers.branch_oid(),
-            Some(git2::Oid::from_str("ac9664e17984145e6fc238b8193686a1eef0feb2").unwrap())
+            Some(
+                git_repository::ObjectId::from_hex(b"ac9664e17984145e6fc238b8193686a1eef0feb2")
+                    .unwrap()
+            )
         );
         assert_eq!(headers.branch_head(), Some("main".to_string()));
         assert_eq!(headers.branch_upstream(), Some("origin/master".to_string()));

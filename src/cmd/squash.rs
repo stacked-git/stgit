@@ -71,9 +71,8 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
-    let config = repo.config()?;
     let stupid = repo.stupid();
 
     repo.check_repository_state()?;
@@ -111,7 +110,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .allow_diff_edit(false)
                 .allow_template_save(true)
                 .template_patchname(patchname.as_ref())
-                .default_author(git2::Signature::make_author(Some(&config), matches)?)
+                .default_author(repo.author_or_default().override_author(matches))
                 .default_message(prepare_message(&stack, &squash_patchnames)?)
                 .edit(&stack, &repo, matches)?
         {
@@ -139,7 +138,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .transact(|trans| {
                 squash(
                     trans,
-                    &config,
                     matches,
                     &squash_patchnames,
                     patchname.as_ref(),
@@ -175,14 +173,13 @@ fn prepare_message<'repo>(
 
 pub(super) fn squash(
     trans: &mut StackTransaction,
-    config: &git2::Config,
     matches: &ArgMatches,
     patchnames: &[PatchName],
     patchname: Option<&PatchName>,
     should_push_squashed: bool,
 ) -> Result<PatchName> {
     let (new_patchname, commit_id, to_push) = if let Some((new_patchname, commit_id)) =
-        try_squash(trans, config, matches, patchnames, patchname)?
+        try_squash(trans, matches, patchnames, patchname)?
     {
         // Squashed commit could be created with simple merges, so the
         // constituent patches can just be deleted.
@@ -192,8 +189,7 @@ pub(super) fn squash(
         // Simple approach failed, need to do pops and pushes...
         let to_push = trans.pop_patches(|pn| patchnames.contains(pn))?;
         trans.push_patches(patchnames, false)?;
-        if let Some((new_patchname, commit_id)) =
-            try_squash(trans, config, matches, patchnames, patchname)?
+        if let Some((new_patchname, commit_id)) = try_squash(trans, matches, patchnames, patchname)?
         {
             let popped_extra = trans.delete_patches(|pn| patchnames.contains(pn))?;
             assert!(popped_extra.is_empty());
@@ -221,19 +217,25 @@ pub(super) fn squash(
 
 fn try_squash(
     trans: &StackTransaction,
-    config: &git2::Config,
     matches: &ArgMatches,
     patchnames: &[PatchName],
     patchname: Option<&PatchName>,
-) -> Result<Option<(PatchName, git2::Oid)>> {
+) -> Result<Option<(PatchName, git_repository::ObjectId)>> {
     let repo = trans.repo();
     let base_commit = trans.get_patch_commit(&patchnames[0]);
+    let base_commit_ref = base_commit.decode()?;
     if let Some(tree_id) = repo.stupid().with_temp_index(|stupid_temp| {
-        stupid_temp.read_tree(base_commit.tree_id())?;
+        stupid_temp.read_tree(base_commit_ref.tree())?;
         for commit in patchnames[1..].iter().map(|pn| trans.get_patch_commit(pn)) {
-            let parent = commit.parent(0)?;
-            if parent.tree_id() != commit.tree_id()
-                && !stupid_temp.apply_treediff_to_index(parent.tree_id(), commit.tree_id(), true)?
+            let commit_ref = commit.decode()?;
+            let parent = commit.get_parent_commit()?;
+            let parent_commit_ref = parent.decode()?;
+            if parent_commit_ref.tree() != commit_ref.tree()
+                && !stupid_temp.apply_treediff_to_index(
+                    parent_commit_ref.tree(),
+                    commit_ref.tree(),
+                    true,
+                )?
             {
                 return Ok(None);
             }
@@ -246,14 +248,19 @@ fn try_squash(
             new_patchname,
             new_commit_id,
         } = patchedit::EditBuilder::default()
-            .override_parent_id(base_commit.parent_id(0).expect("first patch has a parent"))
+            .override_parent_id(
+                base_commit_ref
+                    .parents()
+                    .next()
+                    .expect("first patch has a parent"),
+            )
             .override_tree_id(tree_id)
             .allow_implicit_edit(true)
             .allow_diff_edit(false)
             .allow_template_save(false)
             .template_patchname(patchname)
             .extra_allowed_patchnames(patchnames)
-            .default_author(git2::Signature::make_author(Some(config), matches)?)
+            .default_author(repo.author_or_default().override_author(matches))
             .default_message(prepare_message(trans, patchnames)?)
             .edit(trans, repo, matches)?
         {

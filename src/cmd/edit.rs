@@ -7,6 +7,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     color::get_color_stdout,
+    ext::RepositoryExtended,
     patchedit,
     patchname::PatchName,
     patchrange,
@@ -66,7 +67,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     stack.check_head_top_mismatch()?;
 
@@ -81,12 +82,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patch_commit = stack.get_patch_commit(&patchname);
 
     let tree_id = if let Some(treeish) = matches.get_one::<String>("set-tree") {
-        let object = crate::revspec::parse_stgit_revision(&repo, Some(treeish), None)
-            .context("parsing `--set-tree` value")?;
-        let tree = object.peel_to_tree()?;
-        tree.id()
+        crate::revspec::parse_stgit_revision(&repo, Some(treeish), None)
+            .context("parsing `--set-tree` value")?
+            .peel_to_tree()?
+            .id
     } else {
-        patch_commit.tree_id()
+        patch_commit.tree_id()?.detach()
     };
 
     match patchedit::EditBuilder::default()

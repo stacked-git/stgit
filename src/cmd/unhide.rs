@@ -8,6 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
+    ext::RepositoryExtended,
     patchname::PatchName,
     patchrange,
     stack::{InitializationPolicy, Stack},
@@ -40,7 +41,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),

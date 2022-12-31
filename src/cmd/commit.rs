@@ -7,6 +7,7 @@ use clap::{Arg, ArgMatches};
 
 use crate::{
     color::get_color_stdout,
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     patchrange,
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
@@ -74,7 +75,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
 
     let range_specs = matches.get_many::<patchrange::Specification>("patchranges");
@@ -114,8 +115,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let mut empty_patches: Vec<&PatchName> = Vec::new();
         for pn in &patches {
             let patch_commit = stack.get_patch_commit(pn);
-            let parent = patch_commit.parent(0)?;
-            if patch_commit.tree_id() == parent.tree_id() {
+            let parent = patch_commit.get_parent_commit()?;
+            if patch_commit.tree_id()? == parent.tree_id()? {
                 empty_patches.push(pn);
             }
         }

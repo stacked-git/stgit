@@ -9,7 +9,7 @@ use clap::Arg;
 
 use crate::{
     argset,
-    ext::CommitExtended,
+    ext::{CommitExtended, RepositoryExtended},
     patchrange,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
@@ -364,7 +364,7 @@ fn format_options() -> Vec<Arg> {
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
 
     if matches.get_flag("dump-aliases") {
         return repo.stupid().send_email_dump_aliases();
@@ -405,8 +405,13 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                     }
                 }
             }
-            let base = stack.get_patch_commit(&patches[0]).parent_id(0)?;
-            let last = stack.get_patch_commit(patches.last().unwrap()).id();
+            let base = stack
+                .get_patch_commit(&patches[0])
+                .parent_ids()
+                .next()
+                .unwrap()
+                .detach();
+            let last = stack.get_patch_commit(patches.last().unwrap()).id;
             vec![format!("{base}..{last}")]
         }
     } else if matches.get_flag("all") {

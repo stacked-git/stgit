@@ -13,6 +13,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     argset,
+    ext::{CommitExtended, RepositoryExtended},
     stack::{Error, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -52,7 +53,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),
@@ -70,15 +71,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let pathspecs: Vec<&Path> = if let Some(pathspecs) = matches.get_many::<PathBuf>("pathspecs") {
         pathspecs.map(PathBuf::as_path).collect()
     } else {
-        let curdir = std::env::current_dir()?;
-        let workdir = repo.workdir().expect("not a bare repository");
-        let prefix = curdir
-            .strip_prefix(workdir)
-            .context("determining Git prefix")?;
+        let prefix = if let Some(prefix_result) = repo.prefix() {
+            Some(prefix_result.context("determining Git prefix")?)
+        } else {
+            None
+        };
 
         let mut paths: Vec<&Path> = Vec::new();
         pathsbuf = stupid
-            .diff_index_names(stack.get_branch_head().tree_id(), Some(prefix))
+            .diff_index_names(
+                stack.get_branch_head().tree_id()?.detach(),
+                prefix.as_deref(),
+            )
             .context("getting modified files")?;
 
         for path_bytes in pathsbuf.split_str(b"\0") {
@@ -98,29 +102,28 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(anyhow!("No local changes and no paths specified"));
     }
 
-    let revs = stupid.rev_list(stack.base().id(), stack.top().id(), Some(&pathspecs))?;
+    let revs = stupid.rev_list(stack.base().id, stack.top().id, Some(&pathspecs))?;
 
     if diff_flag {
         // TODO: pager?
-        let config = repo.config()?;
         let stdout = std::io::stdout();
         let mut stdout = stdout.lock();
-        let diff_opts = argset::get_diff_opts(matches, &config, false, false);
+        let diff_opts = argset::get_diff_opts(matches, &repo.config_snapshot(), false, false);
         for patchname in stack.applied() {
             let patch_commit = stack.get_patch_commit(patchname);
-            let parent_commit = patch_commit.parent(0)?;
-            if revs.contains(&patch_commit.id()) {
+            let parent_commit = patch_commit.get_parent_commit()?;
+            if revs.contains(&patch_commit.id) {
                 write!(
                     stdout,
                     "--------------------------------------------------\n\
                      {patchname}\n\
                      --------------------------------------------------\n"
                 )?;
-                stdout.write_all(patch_commit.message_raw_bytes())?;
+                stdout.write_all(patch_commit.message_raw()?)?;
                 write!(stdout, "\n---\n")?;
                 let diff = stupid.diff_tree_patch(
-                    parent_commit.tree_id(),
-                    patch_commit.tree_id(),
+                    parent_commit.tree_id()?.detach(),
+                    patch_commit.tree_id()?.detach(),
                     Some(&pathspecs),
                     crate::color::use_color(matches),
                     diff_opts.iter(),
@@ -131,7 +134,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else {
         for patchname in stack.applied() {
             let patch_commit = stack.get_patch_commit(patchname);
-            if revs.contains(&patch_commit.id()) {
+            if revs.contains(&patch_commit.id) {
                 println!("{patchname}");
             }
         }

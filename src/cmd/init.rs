@@ -5,7 +5,10 @@
 use anyhow::Result;
 use clap::ArgMatches;
 
-use crate::stack::{InitializationPolicy, Stack};
+use crate::{
+    ext::RepositoryExtended,
+    stack::{InitializationPolicy, Stack},
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "init",
@@ -34,7 +37,7 @@ fn make() -> clap::Command {
 }
 
 fn run(_: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     Stack::from_branch(&repo, None, InitializationPolicy::MustInitialize)?;
     Ok(())
 }

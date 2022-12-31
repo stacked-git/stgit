@@ -2,7 +2,7 @@
 
 //! `stg rebase` implementation.
 
-use std::{fmt::Write, str::FromStr};
+use std::{fmt::Write, rc::Rc, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
@@ -11,6 +11,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     color::get_color_stdout,
+    ext::RepositoryExtended,
     patchedit,
     patchname::PatchName,
     print_info_message,
@@ -93,16 +94,16 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
-    let config = repo.config()?;
+    let config = repo.config_snapshot();
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
     let target_commit = if let Some(committish) = argset::get_one_str(matches, "committish") {
-        parse_stgit_revision(&repo, Some(committish), None)?.peel_to_commit()?
+        Rc::new(parse_stgit_revision(&repo, Some(committish), None)?.try_into_commit()?)
     } else {
         stack.base().clone()
     };
@@ -118,12 +119,35 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let autostash = if matches.get_flag("autostash") {
         true
-    } else if let Ok(autostash) = config.get_bool("branch.{branch_name}.stgit.autostash") {
-        autostash
-    } else if let Ok(autostash) = config.get_bool("stgit.autostash") {
-        autostash
     } else {
-        false
+        config
+            .plumbing()
+            .boolean(
+                "branch",
+                Some(format!("{branch_name}.stgit").as_str().into()),
+                "autostash",
+            )
+            .transpose()
+            .unwrap_or_else(|e| {
+                crate::print_warning_message(
+                    matches,
+                    &format!("Invalid config value `branch.{branch_name}.stgit.autostash`: {e}"),
+                );
+                Some(false)
+            })
+            .or_else(|| {
+                config
+                    .try_boolean("stgit.autostash")
+                    .transpose()
+                    .unwrap_or_else(|e| {
+                        crate::print_warning_message(
+                            matches,
+                            &format!("Invalid config value `stgit.autostash`: {e}"),
+                        );
+                        Some(false)
+                    })
+            })
+            .unwrap_or(false)
     };
 
     let using_stash = if autostash && clean_result.is_err() {
@@ -148,11 +172,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .execute("rebase (pop)")?;
 
     let rebase_cmd = config
-        .get_string(&format!("branch.{branch_name}.stgit.rebasecmd"))
-        .or_else(|_| config.get_string("stgit.rebasecmd"))
-        .unwrap_or_else(|_| "git reset --hard".to_string());
+        .plumbing()
+        .string(
+            "branch",
+            Some(format!("{branch_name}.stgit").as_str().into()),
+            "rebasecmd",
+        )
+        .or_else(|| config.string("stgit.rebasecmd"))
+        .and_then(|bs| bs.to_str().map(str::to_string).ok())
+        .unwrap_or_else(|| "git reset --hard".to_string());
     print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
-    stupid.user_rebase(&rebase_cmd, target_commit.id())?;
+    stupid.user_rebase(&rebase_cmd, target_commit.id)?;
 
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let stack = if stack.is_head_top() {
@@ -234,8 +264,8 @@ enum Action {
 
 fn interactive_pushback(
     stack: Stack,
-    repo: &git2::Repository,
-    config: &git2::Config,
+    repo: &git_repository::Repository,
+    config: &git_repository::config::Snapshot,
     matches: &ArgMatches,
     previously_applied: &[PatchName],
     allow_push_conflicts: bool,
@@ -399,7 +429,7 @@ fn interactive_pushback(
                     }
                     Action::Fixup => {
                         let commit = stack.get_patch_commit(target_patchname);
-                        let message = commit.message_raw().ok_or_else(|| {
+                        let message = commit.message_raw()?.to_str().map_err(|_| {
                             anyhow!("Fixup target patch `{target_patchname}` has non-UTF-8 message")
                         })?;
                         dummy_squash_command.try_get_matches_from([
@@ -418,7 +448,6 @@ fn interactive_pushback(
                     .transact(|trans| {
                         let new_patchname = super::squash::squash(
                             trans,
-                            config,
                             &squash_matches,
                             &squash_patchnames,
                             Some(target_patchname),
@@ -471,7 +500,10 @@ fn make_instructions_template(stack: &Stack, previously_applied: &[PatchName]) -
             found_apply_boundary = true;
         }
         let commit = stack.get_patch_commit(patchname);
-        let subject = commit.summary().unwrap_or_default();
+        let subject = commit
+            .message()
+            .map(|message_ref| message_ref.title.to_str_lossy())
+            .unwrap_or_default();
         writeln!(template, "keep {patchname:name_width$} # {subject}").unwrap();
     }
     if !found_apply_boundary {

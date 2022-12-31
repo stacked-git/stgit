@@ -7,6 +7,7 @@ use clap::Arg;
 
 use crate::{
     color::get_color_stdout,
+    ext::RepositoryExtended,
     patchrange,
     stack::{InitializationPolicy, Stack, StackState},
     stupid::Stupid,
@@ -56,14 +57,16 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     if let Some(committish) = crate::argset::get_one_str(matches, "committish") {
         let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
-        let commit = repo
-            .revparse_single(committish)
+        let commit_id = repo
+            .rev_parse_single(committish)
             .map_err(|_| anyhow!("Invalid committish `{committish}`"))?
-            .into_commit()
-            .map_err(|_| anyhow!("Target `{committish}` is not a commit"))?;
+            .object()?
+            .try_into_commit()
+            .map_err(|_| anyhow!("Target `{committish}` is not a commit"))?
+            .id;
         stack
             .setup_transaction()
             .use_index_and_worktree(true)
@@ -75,6 +78,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             )
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
+                let commit = trans.repo().find_commit(commit_id)?;
                 let reset_state = StackState::from_commit(trans.repo(), &commit)?;
                 if let Some(range_specs) =
                     matches.get_many::<patchrange::Specification>("patchranges-all")
@@ -92,8 +96,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             .execute("reset")?;
         Ok(())
     } else if matches.get_flag("hard") {
-        let head_tree = repo.head()?.peel_to_tree()?;
-        repo.stupid().read_tree_checkout_hard(head_tree.id())
+        let head_tree_id = repo.head_commit()?.tree_id()?.detach();
+        repo.stupid().read_tree_checkout_hard(head_tree_id)
     } else {
         unreachable!();
     }

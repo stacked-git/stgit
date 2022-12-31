@@ -9,6 +9,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 
 use crate::{
     argset,
+    ext::RepositoryExtended,
     revspec::{parse_stgit_revision, Error as RevError},
     stupid::Stupid,
 };
@@ -62,13 +63,16 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
-    let config = repo.config()?;
+    let repo = git_repository::Repository::open()?;
 
     let revspec = if let Some(range_str) = matches.get_one::<String>("range") {
         if let Some((rev1, rev2)) = range_str.split_once("..") {
             if rev1.is_empty() {
-                return Err(RevError::InvalidRevision(range_str.to_string()).into());
+                return Err(RevError::InvalidRevision(
+                    range_str.to_string(),
+                    "no opening revision supplied".to_string(),
+                )
+                .into());
             }
             let rev1 = parse_stgit_revision(&repo, Some(rev1), None)?;
             if rev2.is_empty() {
@@ -90,6 +94,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.get_many::<PathBuf>("pathspecs"),
         matches.get_flag("stat"),
         crate::color::use_color(matches),
-        argset::get_diff_opts(matches, &config, false, false),
+        argset::get_diff_opts(matches, &repo.config_snapshot(), false, false),
     )
 }

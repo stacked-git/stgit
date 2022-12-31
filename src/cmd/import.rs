@@ -8,12 +8,12 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::{ByteSlice, ByteVec};
+use bstr::{BString, ByteSlice, ByteVec};
 use clap::{Arg, ArgGroup};
 
 use crate::{
     color::get_color_stdout,
-    ext::{SignatureExtended, TimeExtended},
+    ext::{RepositoryExtended, TimeExtended},
     patchedit,
     patchname::PatchName,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
@@ -217,7 +217,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
@@ -229,8 +229,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     } else {
         None
     };
-
-    std::env::set_current_dir(repo.workdir().unwrap())?;
 
     let statuses = stupid.statuses(None)?;
     statuses.check_index_and_worktree_clean()?;
@@ -445,16 +443,15 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
     Err(anyhow!("Series file not found"))
 }
 
-fn use_message_id(matches: &clap::ArgMatches, config: &git2::Config) -> bool {
-    matches.get_flag("message-id") || config.get_bool("stgit.import.message-id").unwrap_or(false)
+fn use_message_id(matches: &clap::ArgMatches, config: &git_repository::config::Snapshot) -> bool {
+    matches.get_flag("message-id") || config.boolean("stgit.import.message-id").unwrap_or(false)
 }
 
 fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Path>) -> Result<()> {
     let out_dir = tempfile::tempdir()?;
     let missing_from_ok = matches.get_flag("mail");
     let keep_cr = matches.get_flag("keep-cr");
-    let config = stack.repo.config()?;
-    let message_id = use_message_id(matches, &config);
+    let message_id = use_message_id(matches, &stack.repo.config_snapshot());
     let stupid = stack.repo.stupid();
     let num_patches = stupid.mailsplit(source_path, out_dir.path(), keep_cr, missing_from_ok)?;
     let mut stack = stack;
@@ -516,8 +513,7 @@ fn import_file<'repo>(
     source_path: Option<&Path>,
     strip_level: Option<usize>,
 ) -> Result<Stack<'repo>> {
-    let config = stack.repo.config()?;
-    let message_id = use_message_id(matches, &config);
+    let message_id = use_message_id(matches, &stack.repo.config_snapshot());
     let stupid = stack.repo.stupid();
 
     let (mailinfo, message, diff) = if let Some(source_path) = source_path {
@@ -569,6 +565,8 @@ fn create_patch<'repo>(
     diff: &[u8],
     strip_level: Option<usize>,
 ) -> Result<Stack<'repo>> {
+    let config = stack.repo.config_snapshot();
+
     let Headers {
         patchname,
         author_name,
@@ -601,7 +599,6 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let config = stack.repo.config()?;
     let name_len_limit = PatchName::get_length_limit(&config);
 
     let patchname = if let Some(patchname) = patchname {
@@ -623,20 +620,27 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let author_date = author_date.and_then(|date| git2::Time::parse_time(&date).ok());
+    let author_date =
+        author_date.and_then(|date| git_repository::actor::Time::parse_time(&date).ok());
     let author = if let (Some(name), Some(email), Some(time)) =
-        (author_name.as_ref(), author_email.as_ref(), author_date)
+        (author_name.as_deref(), author_email.as_deref(), author_date)
     {
-        git2::Signature::new(name, email, &time)?
-    } else if let (Some(name), Some(email)) = (author_name.as_ref(), author_email.as_ref()) {
-        git2::Signature::now(name, email)?
-    } else if let Some(time) = author_date {
-        let default = git2::Signature::default_author(Some(&config))?;
-        let name = default.name().expect("default author name is UTF-8");
-        let email = default.email().expect("default author email is UTF-8");
-        git2::Signature::new(name, email, &time)?
+        git_repository::actor::Signature {
+            name: BString::from(name),
+            email: BString::from(email),
+            time,
+        }
     } else {
-        git2::Signature::default_author(Some(&config))?
+        let default_author = stack.repo.author_or_default();
+        if let (Some(name), Some(email)) = (author_name.as_deref(), author_email.as_deref()) {
+            git_repository::actor::Signature {
+                name: BString::from(name),
+                email: BString::from(email),
+                time: default_author.time,
+            }
+        } else {
+            default_author.to_owned()
+        }
     };
 
     let strip_level = strip_level.or_else(|| matches.get_one::<usize>("strip").copied());
@@ -644,7 +648,7 @@ fn create_patch<'repo>(
     let trimmed_diff = diff.trim_end_with(|c| c.is_ascii_whitespace());
 
     let tree_id = if trimmed_diff.is_empty() || trimmed_diff == b"---" {
-        stack.get_branch_head().tree_id()
+        stack.get_branch_head().tree_id()?.detach()
     } else {
         let stupid = stack.repo.stupid();
         stupid.apply_to_worktree_and_index(
@@ -664,7 +668,7 @@ fn create_patch<'repo>(
     let (new_patchname, commit_id) = match crate::patchedit::EditBuilder::default()
         .original_patchname(Some(&patchname))
         .override_tree_id(tree_id)
-        .override_parent_id(stack.get_branch_head().id())
+        .override_parent_id(stack.get_branch_head().id)
         .default_author(author)
         .default_message(message)
         .allow_autosign(true)

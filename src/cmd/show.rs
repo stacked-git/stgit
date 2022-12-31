@@ -8,7 +8,9 @@ use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
-    argset, patchrange,
+    argset,
+    ext::RepositoryExtended,
+    patchrange,
     revspec::Error as RevError,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
@@ -103,31 +105,30 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
-    let config = repo.config()?;
 
     let stat_flag = matches.get_flag("stat");
     let applied_flag = matches.get_flag("applied");
     let unapplied_flag = matches.get_flag("unapplied");
     let hidden_flag = matches.get_flag("hidden");
 
-    let mut oids: Vec<git2::Oid> = Vec::new();
+    let mut oids: Vec<git_repository::ObjectId> = Vec::new();
 
     if applied_flag {
         for patchname in stack.applied() {
-            oids.push(stack.get_patch(patchname).commit.id());
+            oids.push(stack.get_patch(patchname).commit.id);
         }
     }
     if unapplied_flag {
         for patchname in stack.unapplied() {
-            oids.push(stack.get_patch(patchname).commit.id());
+            oids.push(stack.get_patch(patchname).commit.id);
         }
     }
     if hidden_flag {
         for patchname in stack.hidden() {
-            oids.push(stack.get_patch(patchname).commit.id());
+            oids.push(stack.get_patch(patchname).commit.id);
         }
     }
     if let Some(range_specs) = matches
@@ -142,7 +143,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             ) {
                 Ok(patchnames) => {
                     for patchname in &patchnames {
-                        oids.push(stack.get_patch(patchname).commit.id());
+                        oids.push(stack.get_patch(patchname).commit.id);
                     }
                 }
                 Err(patchrange::Error::PatchNotKnown { patchname: _ }) => {
@@ -150,15 +151,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                                Some(RevError::InvalidRevision(spec)) => {
-                                    anyhow!("Invalid revision spec `{spec}`")
+                                Some(RevError::InvalidRevision(spec, context)) => {
+                                    anyhow!("Invalid revision spec `{spec}`: {context}")
                                 }
                                 Some(RevError::RevisionNotFound(spec)) => {
                                     anyhow!("Patch or revision `{spec}` not found")
                                 }
                                 _ => rev_err,
                             })?
-                            .id();
+                            .id;
                     oids.push(oid);
                 }
                 Err(patchrange::Error::PatchName(_)) => {
@@ -166,15 +167,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     let oid =
                         crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                                Some(RevError::InvalidRevision(spec)) => {
-                                    anyhow!("Invalid patch or revision spec `{spec}`")
+                                Some(RevError::InvalidRevision(spec, context)) => {
+                                    anyhow!("Invalid patch or revision spec `{spec}`: {context}")
                                 }
                                 Some(RevError::RevisionNotFound(spec)) => {
                                     anyhow!("Invalid patch or revision `{spec}` not found",)
                                 }
                                 _ => rev_err,
                             })?
-                            .id();
+                            .id;
                     oids.push(oid);
                 }
                 Err(e) => {
@@ -183,7 +184,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             }
         }
     } else if !applied_flag && !unapplied_flag && !hidden_flag {
-        oids.push(stack.get_branch_head().id());
+        oids.push(stack.get_branch_head().id);
     }
 
     repo.stupid().show(
@@ -191,6 +192,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
         matches.get_many::<PathBuf>("pathspecs"),
         stat_flag,
         crate::color::use_color(matches),
-        argset::get_diff_opts(matches, &config, false, false),
+        argset::get_diff_opts(matches, &repo.config_snapshot(), false, false),
     )
 }

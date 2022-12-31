@@ -3,18 +3,8 @@
 //! Execute commands with git, the stupid content tracker.
 //!
 //! Each function in this module calls-out to a specific git command that is useful to
-//! StGit. This module exists to overcome limitations of libgit2, including:
-//!
-//! - libgit2 behavior is not automatically affected by git configuration. For
-//!   operations where StGit wants to be use/respect git configuration, using git
-//!   directly is a fast-path to correct behavior.
-//! - libgit2 [`does not always apply patches correctly`]. This is essential behavior
-//!   for StGit (but perhaps not so much for other libgit2 applications?).
-//! - libgit2 is missing some behaviors that StGit requires. For example, StGit needs to
-//!   support the full breadth of commit signing. Running `git commit-tree -s` buys all
-//!   this behavior without having to cobble it together with yet more rust dependencies.
-//!
-//! [`does not always apply patches correctly`]: https://github.com/libgit2/libgit2/issues/5717
+//! StGit. This module originally existed to overcome limitations of libgit2, but
+//! remains until gitoxide can replace its behaviors.
 
 mod command;
 pub(crate) mod diff;
@@ -40,18 +30,17 @@ use self::{
     status::{StatusOptions, Statuses},
     version::StupidVersion,
 };
-use crate::ext::TimeExtended;
 
 pub(crate) trait Stupid<'repo, 'index> {
     /// Get StupidContext for running stupid commands.
     fn stupid(&'repo self) -> StupidContext<'repo, 'index>;
 }
 
-impl<'repo, 'index> Stupid<'repo, 'index> for git2::Repository {
+impl<'repo, 'index> Stupid<'repo, 'index> for git_repository::Repository {
     fn stupid(&'repo self) -> StupidContext<'repo, 'index> {
         StupidContext {
-            git_dir: Some(self.path()),
-            work_dir: self.workdir(),
+            git_dir: Some(self.git_dir()),
+            work_dir: self.work_dir(),
             index_path: None,
             git_version: RefCell::new(None::<StupidVersion>),
         }
@@ -104,13 +93,20 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         command
     }
 
-    fn git_in_work_root(&self) -> Command {
-        let mut command = self.git();
-        command.current_dir(
-            self.work_dir
-                .expect("work_dir is required for this command"),
-        );
-        command
+    fn git_in_work_root(&self) -> Result<Command> {
+        let mut command = Command::new("git");
+        let work_dir = self
+            .work_dir
+            .expect("work_dir is required for this command");
+        command.current_dir(work_dir);
+        if let Some(git_dir) = self.git_dir {
+            command.env("GIT_DIR", git_dir.canonicalize()?);
+        }
+        command.env("GIT_WORK_TREE", work_dir.canonicalize()?);
+        if let Some(index_path) = self.index_path {
+            command.env("GIT_INDEX_FILE", index_path.canonicalize()?);
+        }
+        Ok(command)
     }
 
     fn at_least_version(&self, version: &StupidVersion) -> Result<bool> {
@@ -127,7 +123,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     /// Apply a patch (diff) to the specified index using `git apply --cached`.
     pub(crate) fn apply_to_index(&self, diff: &[u8]) -> Result<()> {
-        self.git_in_work_root()
+        self.git_in_work_root()?
             .args(["apply", "--cached"]) // TODO: use --recount?
             .stdout(Stdio::null())
             .in_and_out(diff)?
@@ -144,7 +140,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         directory: Option<&Path>,
         context_lines: Option<usize>,
     ) -> Result<()> {
-        let mut command = self.git_in_work_root();
+        let mut command = self.git_in_work_root()?;
         command.args(["apply", "--index"]);
         if reject {
             command.arg("--reject");
@@ -176,8 +172,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Returns `true` if the patch application is successful, `false` otherwise.
     pub(crate) fn apply_treediff_to_index(
         &self,
-        tree1: git2::Oid,
-        tree2: git2::Oid,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
         want_3way: bool,
     ) -> Result<bool> {
         if tree1 == tree2 {
@@ -193,7 +189,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .stdout(Stdio::piped())
             .spawn_git()?;
 
-        let mut apply_cmd = self.git_in_work_root();
+        let mut apply_cmd = self.git_in_work_root()?;
         apply_cmd.args(["apply", "--cached"]);
         if want_3way && self.at_least_version(&StupidVersion::new(2, 32, 0))? {
             apply_cmd.arg("--3way");
@@ -211,8 +207,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Apply path limited diff between to trees to specified index.
     pub(crate) fn apply_pathlimited_treediff_to_index<SpecIter, SpecArg>(
         &self,
-        tree1: git2::Oid,
-        tree2: git2::Oid,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
         want_3way: bool,
         pathspecs: SpecIter,
     ) -> Result<bool>
@@ -242,7 +238,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             return Ok(true);
         }
 
-        let mut apply_cmd = self.git_in_work_root();
+        let mut apply_cmd = self.git_in_work_root()?;
         apply_cmd.args(["apply", "--cached"]);
         if want_3way && self.at_least_version(&StupidVersion::new(2, 32, 0))? {
             apply_cmd.arg("--3way");
@@ -268,8 +264,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Returns `true` if the patch application is successful, `false` otherwise.
     pub(crate) fn apply_treediff_to_worktree_and_index<SpecIter, SpecArg>(
         &self,
-        tree1: git2::Oid,
-        tree2: git2::Oid,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
         pathspecs: Option<SpecIter>,
     ) -> Result<bool>
     where
@@ -305,7 +301,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
 
         let apply_output = self
-            .git_in_work_root()
+            .git_in_work_root()?
             .args(["apply", "--index", "--3way"])
             .stdin(Stdio::piped())
             .stdout(Stdio::null())
@@ -378,15 +374,17 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Create a commit for the specified tree id using `git commit-tree`.
     ///
     /// The newly created commit id is returned.
-    pub(crate) fn commit_tree(
+    pub(crate) fn commit_tree<'a>(
         &self,
-        author: &git2::Signature,
-        committer: &git2::Signature,
+        author: impl Into<git_repository::actor::SignatureRef<'a>>,
+        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
         message: &[u8],
-        tree_id: git2::Oid,
-        parent_ids: impl IntoIterator<Item = git2::Oid>,
+        tree_id: git_repository::ObjectId,
+        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
         gpgsign: bool,
-    ) -> Result<git2::Oid> {
+    ) -> Result<git_repository::ObjectId> {
+        let author = author.into();
+        let committer = committer.into();
         let mut command = self.git();
         command.arg("commit-tree").arg(tree_id.to_string());
         for parent_id in parent_ids {
@@ -396,19 +394,19 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.arg("-S");
         }
         let author_name = author
-            .name_bytes()
+            .name
             .to_os_str()
             .context("setting GIT_AUTHOR_NAME from author name")?;
         let author_email = author
-            .email_bytes()
+            .email
             .to_os_str()
             .context("setting GIT_AUTHOR_EMAIL from author email")?;
         let committer_name = committer
-            .name_bytes()
+            .name
             .to_os_str()
             .context("setting GIT_COMMITTER_NAME from author name")?;
         let committer_email = committer
-            .email_bytes()
+            .email
             .to_os_str()
             .context("setting GIT_COMMITTER_EMAIL from author email")?;
 
@@ -418,8 +416,16 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .env("GIT_COMMITTER_NAME", committer_name)
             .env("GIT_COMMITTER_EMAIL", committer_email)
             // TODO: re-encode dates?
-            .env("GIT_AUTHOR_DATE", author.when().epoch_time_string())
-            .env("GIT_COMMITTER_DATE", committer.when().epoch_time_string())
+            .env(
+                "GIT_AUTHOR_DATE",
+                author.time.format(git_repository::date::time::format::RAW),
+            )
+            .env(
+                "GIT_COMMITTER_DATE",
+                committer
+                    .time
+                    .format(git_repository::date::time::format::RAW)
+            )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -502,7 +508,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Generate diff between specified tree and the working tree or index with `git diff-index`.
-    pub(crate) fn diff_index(&self, tree_id: git2::Oid) -> Result<Vec<u8>> {
+    pub(crate) fn diff_index(&self, tree_id: git_repository::ObjectId) -> Result<Vec<u8>> {
         let output = self
             .git()
             .args(["diff-index", "-p", "--full-index"])
@@ -515,7 +521,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Get file names that differ between tree and index.
     pub(crate) fn diff_index_names(
         &self,
-        tree_id: git2::Oid,
+        tree_id: git_repository::ObjectId,
         relative: Option<&Path>,
     ) -> Result<Vec<u8>> {
         let mut command = self.git();
@@ -541,7 +547,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Diff tree with index returning a bool indicating whether they differ.
-    pub(crate) fn diff_index_quiet(&self, tree_id: git2::Oid) -> Result<bool> {
+    pub(crate) fn diff_index_quiet(&self, tree_id: git_repository::ObjectId) -> Result<bool> {
         let no_diff = self
             .git()
             .args(["diff-index", "--quiet", "--cached"])
@@ -555,7 +561,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Get names of files that differ between two trees.
-    pub(crate) fn diff_tree_files(&self, tree1: git2::Oid, tree2: git2::Oid) -> Result<DiffFiles> {
+    pub(crate) fn diff_tree_files(
+        &self,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
+    ) -> Result<DiffFiles> {
         self.git()
             .args(["diff-tree", "-r", "--name-only", "-z"])
             .args([tree1.to_string(), tree2.to_string()])
@@ -567,8 +577,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Interactive diff-tree (for 'stg files').
     pub(crate) fn diff_tree_files_status(
         &self,
-        tree1: git2::Oid,
-        tree2: git2::Oid,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
         stat: bool,
         name_only: bool,
         use_color: bool,
@@ -595,8 +605,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Generate diff between two trees using `git diff-tree -p`.
     pub(crate) fn diff_tree_patch<SpecIter, SpecArg, OptIter, OptArg>(
         &self,
-        tree1: git2::Oid,
-        tree2: git2::Oid,
+        tree1: git_repository::ObjectId,
+        tree2: git_repository::ObjectId,
         pathspecs: Option<SpecIter>,
         use_color: bool,
         diff_opts: OptIter,
@@ -664,7 +674,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Show log in gitk
     pub(crate) fn gitk<SpecIter, SpecArg>(
         &self,
-        commit_id: git2::Oid,
+        commit_id: git_repository::ObjectId,
         pathspecs: Option<SpecIter>,
     ) -> Result<()>
     where
@@ -717,7 +727,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Interactively show log
     pub(crate) fn log<SpecIter, SpecArg>(
         &self,
-        commit_id: git2::Oid,
+        commit_id: git_repository::ObjectId,
         pathspecs: Option<SpecIter>,
         num_commits: Option<usize>,
         use_color: bool,
@@ -728,7 +738,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         SpecIter: IntoIterator<Item = SpecArg>,
         SpecArg: AsRef<OsStr>,
     {
-        let mut command = self.git_in_work_root();
+        let mut command = self.git_in_work_root()?;
         command.arg("log");
         if let Some(n) = num_commits {
             command.arg(format!("-{n}"));
@@ -859,14 +869,36 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(num_patches)
     }
 
+    pub(crate) fn merge_bases(
+        &self,
+        id0: git_repository::ObjectId,
+        id1: git_repository::ObjectId,
+    ) -> Result<Vec<git_repository::ObjectId>> {
+        let output = self
+            .git()
+            .args(["merge-base", "--all"])
+            .args([id0.to_string(), id1.to_string()])
+            .output_git()?
+            .require_success("merge-base --all")?;
+        let mut oids: Vec<git_repository::ObjectId> = Vec::new();
+        for line in output
+            .stdout
+            .split_str("\n")
+            .filter(|line| !line.is_empty())
+        {
+            oids.push(parse_oid(line)?);
+        }
+        Ok(oids)
+    }
+
     /// Perform three-way merge with `git merge-recursive`.
     ///
     /// Returns `true` if the merge was successful, `false` otherwise.
     pub(crate) fn merge_recursive(
         &self,
-        base_tree_id: git2::Oid,
-        our_tree_id: git2::Oid,
-        their_tree_id: git2::Oid,
+        base_tree_id: git_repository::ObjectId,
+        our_tree_id: git_repository::ObjectId,
+        their_tree_id: git_repository::ObjectId,
     ) -> Result<bool> {
         let output = self
             .git()
@@ -892,9 +924,9 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Perform three-way merge, with optional auto-resolution of conflicts with `git merge-tool`.
     pub(crate) fn merge_recursive_or_mergetool(
         &self,
-        base_tree_id: git2::Oid,
-        our_tree_id: git2::Oid,
-        their_tree_id: git2::Oid,
+        base_tree_id: git_repository::ObjectId,
+        our_tree_id: git_repository::ObjectId,
+        their_tree_id: git_repository::ObjectId,
         use_mergetool: bool,
     ) -> Result<bool> {
         if self.merge_recursive(base_tree_id, our_tree_id, their_tree_id)? {
@@ -919,7 +951,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Copy notes from one object to another using `git notes copy`.
-    pub(crate) fn notes_copy(&self, from_oid: git2::Oid, to_oid: git2::Oid) -> Result<()> {
+    pub(crate) fn notes_copy(
+        &self,
+        from_oid: git_repository::ObjectId,
+        to_oid: git_repository::ObjectId,
+    ) -> Result<()> {
         self.git()
             .args(["notes", "copy"])
             .arg(from_oid.to_string())
@@ -931,7 +967,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Read content of a tree into specified index using `git read-tree`.
-    pub(crate) fn read_tree(&self, tree_id: git2::Oid) -> Result<()> {
+    pub(crate) fn read_tree(&self, tree_id: git_repository::ObjectId) -> Result<()> {
         self.git()
             .arg("read-tree")
             .arg(tree_id.to_string())
@@ -944,8 +980,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Checkout tree to working tree using `git read-tree`.
     pub(crate) fn read_tree_checkout(
         &self,
-        old_tree_id: git2::Oid,
-        new_tree_id: git2::Oid,
+        old_tree_id: git_repository::ObjectId,
+        new_tree_id: git_repository::ObjectId,
     ) -> Result<()> {
         self.git()
             .args([
@@ -963,7 +999,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Hard checkout tree to working tree using `git read-tree`.
-    pub(crate) fn read_tree_checkout_hard(&self, tree_id: git2::Oid) -> Result<()> {
+    pub(crate) fn read_tree_checkout_hard(&self, tree_id: git_repository::ObjectId) -> Result<()> {
         self.git()
             .args(["read-tree", "--reset", "-u"])
             .arg(tree_id.to_string())
@@ -986,10 +1022,10 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Get list of revisions using `git rev-list`.
     pub(crate) fn rev_list<SpecIter, SpecArg>(
         &self,
-        base: git2::Oid,
-        top: git2::Oid,
+        base: git_repository::ObjectId,
+        top: git_repository::ObjectId,
         pathspecs: Option<SpecIter>,
-    ) -> Result<Vec<git2::Oid>>
+    ) -> Result<Vec<git_repository::ObjectId>>
     where
         SpecIter: IntoIterator<Item = SpecArg>,
         SpecArg: AsRef<OsStr>,
@@ -1003,7 +1039,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
 
         let output = command.output_git()?.require_success("rev-list")?;
-        let mut oids: Vec<git2::Oid> = Vec::new();
+        let mut oids: Vec<git_repository::ObjectId> = Vec::new();
         for line in output
             .stdout
             .split_str("\n")
@@ -1059,7 +1095,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Show objects using `git show`.
     pub(crate) fn show<SpecIter, SpecArg, OptIter, OptArg>(
         &self,
-        oids: impl IntoIterator<Item = git2::Oid>,
+        oids: impl IntoIterator<Item = git_repository::ObjectId>,
         pathspecs: Option<SpecIter>,
         stat: bool,
         use_color: bool,
@@ -1101,7 +1137,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Show object with custom pretty format.
-    pub(crate) fn show_pretty(&self, oid: git2::Oid, pretty_format: &str) -> Result<Vec<u8>> {
+    pub(crate) fn show_pretty(
+        &self,
+        oid: git_repository::ObjectId,
+        pretty_format: &str,
+    ) -> Result<Vec<u8>> {
         let output = self
             .git()
             .args(["show", "--no-patch"])
@@ -1219,7 +1259,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         SpecArg: AsRef<OsStr> + Send,
     {
         let mut child = self
-            .git_in_work_root()
+            .git_in_work_root()?
             .args([
                 "update-index",
                 "--remove",
@@ -1331,7 +1371,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Run user-provided rebase command.
-    pub(crate) fn user_rebase(&self, user_cmd_str: &str, target: git2::Oid) -> Result<()> {
+    pub(crate) fn user_rebase(
+        &self,
+        user_cmd_str: &str,
+        target: git_repository::ObjectId,
+    ) -> Result<()> {
         let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
         if let Some(command_name) = args.next() {
             let mut command = Command::new(command_name);
@@ -1375,7 +1419,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     }
 
     /// Write tree object from content of specified index using `git write-tree`.
-    pub(crate) fn write_tree(&self) -> Result<git2::Oid> {
+    pub(crate) fn write_tree(&self) -> Result<git_repository::ObjectId> {
         let output = self
             .git()
             .arg("write-tree")

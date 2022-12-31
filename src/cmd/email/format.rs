@@ -7,7 +7,7 @@ use clap::Arg;
 
 use crate::{
     argset,
-    ext::CommitExtended,
+    ext::{CommitExtended, RepositoryExtended},
     patchrange,
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
@@ -439,7 +439,7 @@ fn message_options() -> Vec<Arg> {
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),
@@ -516,8 +516,13 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     }
 
     {
-        let base = stack.get_patch_commit(&patches[0]).parent_id(0)?;
-        let last = stack.get_patch_commit(patches.last().unwrap()).id();
+        let base = stack
+            .get_patch_commit(&patches[0])
+            .parent_ids()
+            .next()
+            .unwrap()
+            .detach();
+        let last = stack.get_patch_commit(patches.last().unwrap()).id;
         format_args.push(format!("{base}..{last}"));
     }
 

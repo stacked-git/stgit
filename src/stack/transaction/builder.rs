@@ -141,7 +141,11 @@ impl<'repo> TransactionBuilder<'repo> {
         let ui =
             TransactionUserInterface::new(output.expect("with_output_stream() must be called"));
 
-        let current_tree_id = stack.get_branch_head().tree_id();
+        let current_tree_id = stack
+            .get_branch_head()
+            .tree_id()
+            .expect("branch head commit is decodable")
+            .detach();
         let applied = stack.applied().to_vec();
         let unapplied = stack.unapplied().to_vec();
         let hidden = stack.hidden().to_vec();

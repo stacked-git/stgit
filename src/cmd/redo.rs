@@ -8,6 +8,7 @@ use clap::Arg;
 use super::undo::find_undo_state;
 use crate::{
     color::get_color_stdout,
+    ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack},
 };
 
@@ -55,7 +56,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let redo_steps = matches.get_one::<isize>("number").copied().unwrap_or(1);
 

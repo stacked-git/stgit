@@ -9,6 +9,7 @@ use termcolor::WriteColor;
 
 use crate::{
     argset,
+    ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
@@ -33,7 +34,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),

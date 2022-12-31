@@ -5,12 +5,13 @@
 use std::{io::Write, str::FromStr};
 
 use anyhow::{anyhow, Result};
+use bstr::ByteSlice;
 use clap::{Arg, ArgGroup, ArgMatches, ValueHint};
 use termcolor::WriteColor;
 
 use crate::{
     argset,
-    ext::CommitExtended,
+    ext::{CommitExtended, RepositoryExtended},
     patchname::PatchName,
     patchrange,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
@@ -208,7 +209,7 @@ impl FromStr for CommitIdLength {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let opt_missing = argset::get_one_str(matches, "missing");
 
@@ -237,7 +238,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let unapplied_flag = matches.get_flag("unapplied");
     let hidden_flag = matches.get_flag("hidden");
 
-    let mut patches: Vec<(PatchName, git2::Oid, char)> = vec![];
+    let mut patches: Vec<(PatchName, git_repository::ObjectId, char)> = vec![];
 
     if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
         let top_patchname = stack.applied().last();
@@ -246,7 +247,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,
         )? {
-            let commit_id = stack.get_patch_commit(&patchname).id();
+            let commit_id = stack.get_patch_commit(&patchname).id;
             let sigil = if Some(&patchname) == top_patchname {
                 '>'
             } else if stack.is_applied(&patchname) {
@@ -266,24 +267,24 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if show_applied {
             if let Some((last_patchname, rest)) = stack.applied().split_last() {
                 for patchname in rest {
-                    let commit_id = stack.get_patch_commit(patchname).id();
+                    let commit_id = stack.get_patch_commit(patchname).id;
                     patches.push((patchname.clone(), commit_id, '+'));
                 }
-                let last_oid = stack.get_patch_commit(last_patchname).id();
+                let last_oid = stack.get_patch_commit(last_patchname).id;
                 patches.push((last_patchname.clone(), last_oid, '>'));
             }
         }
 
         if show_unapplied {
             for patchname in stack.unapplied() {
-                let commit_id = stack.get_patch_commit(patchname).id();
+                let commit_id = stack.get_patch_commit(patchname).id;
                 patches.push((patchname.clone(), commit_id, '-'));
             }
         }
 
         if show_hidden {
             for patchname in stack.hidden() {
-                let commit_id = stack.get_patch_commit(patchname).id();
+                let commit_id = stack.get_patch_commit(patchname).id;
                 patches.push((patchname.clone(), commit_id, '!'));
             }
         }
@@ -298,10 +299,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     if matches.get_flag("short") {
-        let shortnr = repo
-            .config()
-            .and_then(|config| config.get_i32("stgit.shortnr"))
-            .unwrap_or(5);
+        let shortnr = repo.config_snapshot().integer("stgit.shortnr").unwrap_or(5);
         let shortnr: usize = if shortnr < 0 { 0 } else { shortnr as usize };
 
         if let Some(top_pos) = patches.iter().position(|(_, _, sigil)| *sigil == '>') {
@@ -343,8 +341,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .iter()
             .map(|(_, commit_id, _)| -> usize {
                 if let Ok(commit) = repo.find_commit(*commit_id) {
-                    let author = commit.author();
-                    author.name().unwrap_or(UNPRINTABLE).len()
+                    commit
+                        .author()
+                        .ok()
+                        .and_then(|author| author.name.to_str().ok())
+                        .unwrap_or(UNPRINTABLE)
+                        .len()
                 } else {
                     0
                 }
@@ -363,6 +365,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     for (patchname, commit_id, sigil) in patches {
         let commit = repo.find_commit(commit_id)?;
+        let commit_ref = commit.decode()?;
 
         if empty_flag {
             if commit.is_no_change()? {
@@ -417,19 +420,21 @@ fn run(matches: &ArgMatches) -> Result<()> {
             write!(stdout, " # ")?;
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Blue)))?;
             if let Ok(author) = commit.author_strict() {
-                write!(stdout, "{:author_width$}", &author.name().unwrap(),)?;
+                write!(stdout, "{:author_width$}", &author.name.to_str().unwrap())?;
             } else {
-                let author = commit.author();
-                let name = String::from_utf8_lossy(author.name_bytes());
+                let name = commit_ref.author().name.to_str_lossy();
                 write!(stdout, "{name:author_width$}")?;
             }
         }
         if description_flag {
             stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Black)))?;
             write!(stdout, " #")?;
-            if let Some(summary) = commit.summary() {
-                stdout.set_color(color_spec.set_fg(None))?;
-                write!(stdout, " {summary}")?;
+            let summary = commit_ref.message_summary();
+            if !summary.is_empty() {
+                if let Ok(summary) = summary.to_str() {
+                    stdout.set_color(color_spec.set_fg(None))?;
+                    write!(stdout, " {summary}")?;
+                }
             }
         }
         color_spec.clear();

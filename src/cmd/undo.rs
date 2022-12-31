@@ -2,12 +2,15 @@
 
 //! `stg undo` implementation.
 
+use std::rc::Rc;
+
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 use clap::Arg;
 
 use crate::{
     color::get_color_stdout,
+    ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack, StackAccess, StackState},
 };
 
@@ -52,7 +55,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let undo_steps = matches.get_one::<isize>("number").copied().unwrap_or(1);
 
@@ -76,16 +79,20 @@ pub(super) fn find_undo_state<'repo>(
     undo_steps: isize,
 ) -> Result<StackState<'repo>> {
     let mut undo_steps = undo_steps;
-    let mut state_commit = stack
-        .repo
-        .find_reference(stack.get_stack_refname())?
-        .peel_to_commit()?;
+    let mut state_commit = Rc::new(
+        stack
+            .repo
+            .find_reference(stack.get_stack_refname())?
+            .into_fully_peeled_id()?
+            .object()?
+            .try_into_commit()?,
+    );
     loop {
         let state = StackState::from_commit(stack.repo, &state_commit)?;
         if undo_steps == 0 {
             break Ok(state);
         }
-        let msg = state_commit.message_raw_bytes();
+        let msg = state_commit.message_raw()?;
         let urstate = parse_undo_redo_message(msg);
         if undo_steps > 0 {
             if let Some(URState::Undo(n)) = urstate {

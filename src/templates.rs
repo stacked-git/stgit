@@ -8,11 +8,14 @@ use anyhow::{anyhow, Result};
 use bstr::{BString, ByteVec};
 
 /// Get named patch template from template file.
-pub(crate) fn get_template(repo: &git2::Repository, name: &str) -> Result<Option<String>> {
+pub(crate) fn get_template(
+    repo: &git_repository::Repository,
+    name: &str,
+) -> Result<Option<String>> {
     let mut template_paths = Vec::with_capacity(4);
 
     // I.e. .git/<name>
-    template_paths.push(repo.path().join(name));
+    template_paths.push(repo.git_dir().join(name));
 
     if let Some(config_home) = std::env::var_os("XDG_CONFIG_HOME") {
         if !config_home.is_empty() {

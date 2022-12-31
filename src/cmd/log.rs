@@ -2,11 +2,13 @@
 
 //! `stg log` implementation.
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
 use crate::{
-    argset, patchrange,
+    argset,
+    ext::RepositoryExtended,
+    patchrange,
     stack::{InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
 };
@@ -86,7 +88,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let mut stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),
@@ -112,8 +114,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let simplified_parent_id = stack
             .repo
             .find_reference(stack.get_stack_refname())?
-            .peel_to_commit()?
-            .parent_id(0)?;
+            .into_fully_peeled_id()?
+            .object()?
+            .to_commit_ref()
+            .parents()
+            .next()
+            .ok_or_else(|| anyhow!("`{}` does not have any parents", stack.get_stack_refname()))?;
 
         let stupid = repo.stupid();
 

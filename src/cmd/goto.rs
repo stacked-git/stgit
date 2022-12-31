@@ -38,15 +38,15 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
-    let config = repo.config()?;
 
     let patch_arg = matches.get_one::<PatchName>("patch").unwrap();
     let keep_flag = matches.get_flag("keep");
     let merged_flag = matches.get_flag("merged");
-    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
+    let allow_push_conflicts =
+        argset::resolve_allow_push_conflicts(&repo.config_snapshot(), matches);
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
     repo.check_repository_state()?;

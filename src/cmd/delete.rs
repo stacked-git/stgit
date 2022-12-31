@@ -64,11 +64,11 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
-    let config = repo.config()?;
-    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
+    let allow_push_conflicts =
+        argset::resolve_allow_push_conflicts(&repo.config_snapshot(), matches);
     let spill_flag = matches.get_flag("spill");
 
     let patches: Vec<PatchName> = if matches.get_flag("top") {

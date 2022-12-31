@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+//! Extended capabilities for commits beyond those provided by [`git_repository`].
+
 use std::borrow::Cow;
 
 use anyhow::{anyhow, Result};
@@ -10,12 +12,12 @@ use anyhow::{anyhow, Result};
 /// typically UTF-8 encoded, git permits any "extended ASCII" encoding. Furthermore,
 /// while commit objects may have an optional encoding header that specifies the commit
 /// message encoding, that header is not always present or correct in commits found in
-/// the wild. And yet another layer of complication emerges due to [`git2`] (and the
-/// underlying `libgit2`) not having any capability of its own to decode, encode, or
-/// re-encode commit messages. With [`git2`], it entirely up to the application to make
-/// sense of the raw commit message bytes when any non-UTF-8 encoding comes into play.
+/// the wild. And yet another layer of complication emerges due to [`git_repository`]
+/// not having any capability of its own to decode, encode, or re-encode commit
+/// messages. With [`git_repository`], it is up to the application to make sense of the
+/// raw commit message bytes when any non-UTF-8 encoding comes into play.
 ///
-/// StGit aims to always create commit objects will correct/correctly-identified
+/// StGit aims to always create commit objects with correct/correctly-identified
 /// encodings. In the easy cases, UTF-8 encoded commit messages map cleanly to/from Rust
 /// `str`s and `String`s. But there remain several edge and otherwise not so easy cases
 /// to accommodate, including:
@@ -39,8 +41,8 @@ pub(crate) enum Message<'a> {
 impl<'a> Message<'a> {
     /// Determine whether the commit message has any content.
     ///
-    /// For the [`Message::Raw`] variant, emptiness is determined simply by
-    /// the presence or absensce of bytes, independent of the nominal encoding.
+    /// For the [`Message::Raw`] variant, emptiness is determined simply by the presence
+    /// or absensce of bytes, independent of the nominal encoding.
     pub(crate) fn is_empty(&self) -> bool {
         match self {
             Message::Str(s) => s.is_empty(),

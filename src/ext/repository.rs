@@ -1,140 +1,216 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Extension trait for [`git2::Repository`].
+use std::borrow::Cow;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
+use bstr::BStr;
 
-use crate::{stupid::Stupid, wrap::Message};
+use crate::{
+    stupid::Stupid,
+    wrap::{Branch, Message},
+};
 
-/// Extends [`git2::Repository`] with additional methods.
+/// Extends [`git_repository::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
+    /// Open git repository based on current directory and any environment overrides.
+    fn open() -> Result<git_repository::Repository> {
+        Ok(git_repository::ThreadSafeRepository::discover_with_environment_overrides(".")?.into())
+    }
+
     /// Determine whether the repository is in a clean state.
     ///
     /// A clean repository is not in the middle of any of a variety of stateful operations such
-    /// as merge, rebase, cherrypick, etc.; see [`git2::RepositoryState`].
+    /// as merge, rebase, cherrypick, etc.; see [`git_repository::state::InProgress`].
     fn check_repository_state(&self) -> Result<()>;
 
-    /// Get [`git2::Branch`], with StGit-specific error messaging.
+    /// Get [`Branch`], with StGit-specific error messaging.
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
-    fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>>;
+    fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>>;
+
+    /// Get repository-local config file which can be used to change local configuration.
+    fn local_config_file(&self) -> Result<git_repository::config::File<'static>>;
+
+    /// Write repository-local config file.
+    fn write_local_config(&self, file: git_repository::config::File) -> Result<()>;
+
+    /// Find [`git_repository::Tree`] by its object id.
+    ///
+    /// The provided object id must point to a tree object. I.e. this will not peel a
+    /// commit to a tree.
+    fn find_tree(
+        &self,
+        id: impl Into<git_repository::ObjectId>,
+    ) -> Result<git_repository::Tree<'_>>;
+
+    /// Find [`git_repository::Commit`] by its object id.
+    ///
+    /// The provided object id must point to a commit object. An id pointing to a tag
+    /// will not be peeled to a commit.
+    fn find_commit(
+        &self,
+        id: impl Into<git_repository::ObjectId>,
+    ) -> Result<git_repository::Commit<'_>>;
 
     /// Create a new commit object in the repository, with extended features.
     ///
-    /// The extended features versus [`git2::Repository::commit()`] include:
+    /// The extended features versus [`git_repository::Repository::commit()`] include:
     ///
     /// - Respecting `i18n.commitEncoding` for commit messages.
     /// - Respecting `commit.gpgSign` and creating signed commits when enabled.
-    fn commit_ex(
+    fn commit_ex<'a>(
         &self,
-        author: &git2::Signature,
-        committer: &git2::Signature,
+        author: impl Into<git_repository::actor::SignatureRef<'a>>,
+        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git2::Oid,
-        parent_ids: impl IntoIterator<Item = git2::Oid>,
-    ) -> Result<git2::Oid>;
+        tree_id: git_repository::ObjectId,
+        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
+    ) -> Result<git_repository::ObjectId>;
 
     /// Create a new commit object in the repository.
     ///
     /// The provided [`CommitOptions`] gives finer-grained control versus
     /// [`RepositoryExtended::commit_ex()`].
-    fn commit_with_options(
+    fn commit_with_options<'a>(
         &self,
-        author: &git2::Signature,
-        committer: &git2::Signature,
+        author: impl Into<git_repository::actor::SignatureRef<'a>>,
+        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git2::Oid,
-        parent_ids: impl IntoIterator<Item = git2::Oid>,
-        options: &CommitOptions,
-    ) -> Result<git2::Oid>;
+        tree_id: git_repository::ObjectId,
+        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
+        options: &CommitOptions<'_>,
+    ) -> Result<git_repository::ObjectId>;
 }
 
 /// Options for creating a git commit object.
 pub(crate) struct CommitOptions<'a> {
     /// The target encoding for the commit message.
-    pub(crate) commit_encoding: Option<&'a str>,
+    pub(crate) commit_encoding: Option<Cow<'a, BStr>>,
 
     /// Determine whether the commit object should be signed with GPG.
     pub(crate) gpgsign: bool,
 }
 
-impl RepositoryExtended for git2::Repository {
+impl RepositoryExtended for git_repository::Repository {
     fn check_repository_state(&self) -> Result<()> {
-        match self.state() {
-            git2::RepositoryState::Clean => Ok(()),
-            state => {
-                let state_str = match state {
-                    git2::RepositoryState::Clean => "clean",
-                    git2::RepositoryState::Merge => "merge",
-                    git2::RepositoryState::Revert | git2::RepositoryState::RevertSequence => {
-                        "revert"
-                    }
-                    git2::RepositoryState::CherryPick
-                    | git2::RepositoryState::CherryPickSequence => "cherry-pick",
-                    git2::RepositoryState::Bisect => "bisect",
-                    git2::RepositoryState::Rebase => "rebase",
-                    git2::RepositoryState::RebaseInteractive => "interactive rebase",
-                    git2::RepositoryState::RebaseMerge => "rebase merge",
-                    git2::RepositoryState::ApplyMailbox => "apply mailbox",
-                    git2::RepositoryState::ApplyMailboxOrRebase => "rebase or apply mailbox",
-                };
-                Err(anyhow!(
-                    "Complete the in-progress `{state_str}` before trying again",
-                ))
-            }
-        }
-    }
-
-    fn get_branch(&self, branch_name: Option<&str>) -> Result<git2::Branch<'_>> {
-        if let Some(name) = branch_name {
-            self.find_branch(name, git2::BranchType::Local)
-                .or_else(|e| match (e.class(), e.code()) {
-                    (git2::ErrorClass::Reference, git2::ErrorCode::NotFound) => {
-                        if let Ok(reference) = self.find_reference(name) {
-                            if reference.is_branch() {
-                                Ok(git2::Branch::wrap(reference))
-                            } else {
-                                Err(anyhow!("Reference `{name}` is not a branch"))
-                            }
-                        } else {
-                            Err(anyhow!("Branch `{name}` not found"))
-                        }
-                    }
-                    (git2::ErrorClass::Reference, git2::ErrorCode::InvalidSpec) => {
-                        Err(anyhow!("Invalid branch name `{name}`"))
-                    }
-                    (git2::ErrorClass::Reference, git2::ErrorCode::UnbornBranch) => {
-                        Err(anyhow!("Unborn branch `{name}`"))
-                    }
-                    _ => Err(e.into()),
-                })
-        } else if self.head_detached()? {
-            Err(anyhow!("Not on branch, HEAD is detached"))
+        use git_repository::state::InProgress;
+        if let Some(state) = self.state() {
+            let state_str = match state {
+                InProgress::ApplyMailbox => "apply mailbox",
+                InProgress::ApplyMailboxRebase => "rebase or apply mailbox",
+                InProgress::Bisect => "bisect",
+                InProgress::CherryPick | InProgress::CherryPickSequence => "cherry-pick",
+                InProgress::Merge => "merge",
+                InProgress::Rebase => "rebase",
+                InProgress::RebaseInteractive => "interactive rebase",
+                InProgress::Revert | InProgress::RevertSequence => "revert",
+            };
+            Err(anyhow!(
+                "Complete the in-progress `{state_str}` before trying again",
+            ))
         } else {
-            let head = self.head().context("getting HEAD reference")?;
-            if head.is_branch() {
-                Ok(git2::Branch::wrap(head))
+            Ok(())
+        }
+    }
+
+    fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>> {
+        use git_repository::{head::Kind, refs::Category};
+
+        if let Some(name) = branch_name {
+            let reference = self.find_reference(name).map_err(|e| match e {
+                git_repository::reference::find::existing::Error::Find(inner) => {
+                    anyhow!("Invalid branch name `{name}`: {inner}")
+                }
+                git_repository::reference::find::existing::Error::NotFound => {
+                    anyhow!("Branch `{name}` not found")
+                }
+            })?;
+
+            if matches!(reference.name().category(), Some(Category::LocalBranch),) {
+                Ok(Branch::wrap(reference))
             } else {
-                Err(anyhow!(
-                    "Not on branch, HEAD points at `{}`",
-                    String::from_utf8_lossy(head.name_bytes())
-                ))
+                Err(anyhow!("Reference `{name}` is not a local branch"))
+            }
+        } else {
+            match self.head()?.kind {
+                Kind::Symbolic(inner_reference) => {
+                    if matches!(inner_reference.name.category(), Some(Category::LocalBranch)) {
+                        let reference = self
+                            .find_reference(inner_reference.name.as_bstr())
+                            .expect("inner reference is known to be valid");
+                        Ok(Branch::wrap(reference))
+                    } else {
+                        Err(anyhow!(
+                            "HEAD points to `{}` which is not a local branch",
+                            inner_reference.name
+                        ))
+                    }
+                }
+                Kind::Unborn(full_name) => Err(anyhow!("branch `{full_name}` is unborn")),
+                Kind::Detached {
+                    target: _,
+                    peeled: _,
+                } => Err(anyhow!("Not on branch, HEAD is detached")),
             }
         }
     }
 
-    fn commit_ex(
+    fn local_config_file(&self) -> Result<git_repository::config::File<'static>> {
+        let source = git_repository::config::Source::Local;
+
+        let local_config_path = self.git_dir().join(
+            source
+                .storage_location(&mut |n| std::env::var_os(n))
+                .expect("know repo-local config path"),
+        );
+
+        Ok(git_repository::config::File::from_path_no_includes(
+            local_config_path,
+            source,
+        )?)
+    }
+
+    fn write_local_config(&self, file: git_repository::config::File) -> Result<()> {
+        let local_config_path = self.git_dir().join(
+            git_repository::config::Source::Local
+                .storage_location(&mut |n| std::env::var_os(n))
+                .expect("know repo-local config path"),
+        );
+
+        file.write_to(
+            std::fs::File::options()
+                .truncate(true)
+                .write(true)
+                .open(local_config_path)?,
+        )?;
+        Ok(())
+    }
+
+    fn find_tree(
         &self,
-        author: &git2::Signature,
-        committer: &git2::Signature,
+        id: impl Into<git_repository::ObjectId>,
+    ) -> Result<git_repository::Tree<'_>> {
+        Ok(self.find_object(id)?.try_into_tree()?)
+    }
+
+    fn find_commit(
+        &self,
+        id: impl Into<git_repository::ObjectId>,
+    ) -> Result<git_repository::Commit<'_>> {
+        Ok(self.find_object(id)?.try_into_commit()?)
+    }
+
+    fn commit_ex<'a>(
+        &self,
+        author: impl Into<git_repository::actor::SignatureRef<'a>>,
+        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git2::Oid,
-        parent_ids: impl IntoIterator<Item = git2::Oid>,
-    ) -> Result<git2::Oid> {
-        let config = self.config()?;
-        let commit_encoding = config.get_string("i18n.commitencoding").ok();
-        let commit_encoding = commit_encoding.as_deref();
-        let gpgsign = config.get_bool("commit.gpgsign").unwrap_or(false);
+        tree_id: git_repository::ObjectId,
+        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
+    ) -> Result<git_repository::ObjectId> {
+        let config = self.config_snapshot();
+        let commit_encoding = config.string("i18n.commitencoding");
+        let gpgsign = config.boolean("commit.gpgsign").unwrap_or(false);
         self.commit_with_options(
             author,
             committer,
@@ -148,18 +224,20 @@ impl RepositoryExtended for git2::Repository {
         )
     }
 
-    fn commit_with_options(
+    fn commit_with_options<'a>(
         &self,
-        author: &git2::Signature,
-        committer: &git2::Signature,
+        author: impl Into<git_repository::actor::SignatureRef<'a>>,
+        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git2::Oid,
-        parent_ids: impl IntoIterator<Item = git2::Oid>,
+        tree_id: git_repository::ObjectId,
+        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
         options: &CommitOptions<'_>,
-    ) -> Result<git2::Oid> {
-        let commit_encoding = match options.commit_encoding {
+    ) -> Result<git_repository::ObjectId> {
+        let author = author.into();
+        let committer = committer.into();
+        let commit_encoding = match &options.commit_encoding {
             Some(s) => {
-                let encoding = encoding_rs::Encoding::for_label(s.as_bytes())
+                let encoding = encoding_rs::Encoding::for_label(s)
                     .ok_or_else(|| anyhow!("Unhandled i18n.commitEncoding `{s}`"))?;
                 Some(encoding)
             }
@@ -179,16 +257,17 @@ impl RepositoryExtended for git2::Repository {
                 options.gpgsign,
             )
         } else {
-            // Use git2 for all other occasions
-            let decoded_message = message.decode()?;
-            let tree = self.find_tree(tree_id)?;
-            let mut parents: Vec<git2::Commit<'_>> = Vec::new();
-            for parent_id in parent_ids {
-                parents.push(self.find_commit(parent_id)?);
-            }
-            let parents: Vec<&git2::Commit<'_>> = parents.iter().collect();
-
-            Ok(self.commit(None, author, committer, &decoded_message, &tree, &parents)?)
+            // Use gitoxide for all other occasions
+            let commit_id = self.write_object(&git_repository::objs::Commit {
+                tree: tree_id,
+                parents: parent_ids.into_iter().collect(),
+                author: author.to_owned(),
+                committer: committer.to_owned(),
+                encoding: commit_encoding.map(|enc| enc.name().into()),
+                message: message.raw_bytes().into(),
+                extra_headers: vec![],
+            })?;
+            Ok(commit_id.detach())
         }
     }
 }

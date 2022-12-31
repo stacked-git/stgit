@@ -27,6 +27,7 @@ use std::{ffi::OsString, io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
+use ext::RepositoryExtended;
 use stupid::StupidContext;
 use termcolor::WriteColor;
 
@@ -167,11 +168,6 @@ fn main() -> ! {
         } else if matches.get_flag("help-option") {
             full_app_help(argv, None, color_choice)
         } else if let Some((sub_name, sub_matches)) = matches.subcommand() {
-            // Initialize git2 library only in case a subcommand is matched. This limits
-            // the cost of libgit2 initialization to code paths that will actually use
-            // libgit2.
-            unsafe { init_libgit2_extensions() }.expect("can set libgit2 extensions");
-
             // If the name matches any known subcommands, then only the Command for that
             // particular command is constructed and the costs of searching for aliases
             // and constructing all subcommands' Command instances are avoided.
@@ -228,34 +224,6 @@ fn main() -> ! {
         // -C options are not processed in this branch. This is okay because clap's
         // error message will not include aliases (which depend on -C).
         full_app_help(argv, None, color_choice)
-    }
-}
-
-/// Initialize [`git2`] library extensions.
-///
-/// By default, [`git2`] fails any operation if it encounters any unknown extensions
-/// configured in a repo. StGit is uses [`git2`] library as an interface to the git
-/// object database and for interrogating the git configuration.
-///
-/// As a workaround until `worktreeconfig` extension is supported upstream, add it to
-/// whitelisted extensions.
-///
-/// # Safety
-/// * Modifying whitelisted extensions in [`git2`] is like modifying a static mut
-///   variable (unsafe).
-/// * This function must be called at initialization time (before git2 library usage)
-///   and should be called only once.
-unsafe fn init_libgit2_extensions() -> Result<()> {
-    git2::opts::set_extensions(&["worktreeconfig"]).context("set `worktreeconfig` extension")
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_libgit2_extensions() {
-        unsafe { init_libgit2_extensions() }.unwrap();
     }
 }
 
@@ -365,7 +333,7 @@ fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
-    repo: Option<&git2::Repository>,
+    repo: Option<&git_repository::Repository>,
 ) -> ! {
     if let Some(first_arg) = user_args.first() {
         if [OsString::from("-h"), OsString::from("--help")].contains(first_arg) {
@@ -397,11 +365,11 @@ fn execute_shell_alias(
     command.args(user_args);
 
     if let Some(repo) = repo {
-        if let Some(workdir) = repo.workdir() {
+        if let Some(workdir) = repo.work_dir() {
             command.current_dir(workdir);
             if let Ok(cur_dir) = std::env::current_dir() {
                 if let Ok(prefix) = cur_dir.strip_prefix(workdir) {
-                    if !cur_dir.starts_with(repo.path()) {
+                    if !cur_dir.starts_with(repo.git_dir()) {
                         let mut prefix = prefix.as_os_str().to_os_string();
                         if !prefix.is_empty() {
                             prefix.push("/");
@@ -410,17 +378,17 @@ fn execute_shell_alias(
                     }
                 }
             }
-            if let Ok(rel_dir) = repo.path().strip_prefix(workdir) {
+            if let Ok(rel_dir) = repo.git_dir().strip_prefix(workdir) {
                 if rel_dir == PathBuf::from(".git") {
                     command.env_remove("GIT_DIR");
                 } else {
                     command.env("GIT_DIR", rel_dir);
                 }
             } else {
-                command.env("GIT_DIR", repo.path());
+                command.env("GIT_DIR", repo.git_dir());
             }
         } else {
-            command.env("GIT_DIR", repo.path());
+            command.env("GIT_DIR", repo.git_dir());
         }
     }
 
@@ -493,20 +461,21 @@ fn execute_stgit_alias(
 ///
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options having been previously processed.
-pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<git2::Repository>)> {
-    let maybe_repo = git2::Repository::open_from_env().ok();
-    maybe_repo
-        .as_ref()
-        .map_or_else(git2::Config::open_default, git2::Repository::config)
-        .map_or_else(
-            |_| Ok(alias::get_default_aliases()),
-            |config| {
-                alias::get_aliases(&config, |name| {
-                    STGIT_COMMANDS.iter().any(|command| command.name == name) || name == "help"
-                })
-            },
-        )
-        .map(|aliases| (aliases, maybe_repo))
+pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<git_repository::Repository>)> {
+    let maybe_repo = git_repository::Repository::open().ok();
+    let maybe_config = maybe_repo.as_ref().map(|repo| repo.config_snapshot());
+    let config_file = maybe_config.as_ref().map(|snapshot| snapshot.plumbing());
+    let global_config_file;
+    let config_file = if let Some(config_file) = config_file {
+        Some(config_file)
+    } else {
+        global_config_file = git_repository::config::File::from_globals().ok();
+        global_config_file.as_ref()
+    };
+    let aliases = alias::get_aliases(config_file, |name| {
+        STGIT_COMMANDS.iter().any(|command| command.name == name) || name == "help"
+    })?;
+    Ok((aliases, maybe_repo))
 }
 
 /// Print user-facing message to stderr.

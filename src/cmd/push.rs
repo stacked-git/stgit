@@ -115,13 +115,13 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git2::Repository::open_from_env()?;
+    let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
-    let config = repo.config()?;
 
     let opt_number = matches.get_one::<isize>("number").copied();
-    let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
+    let allow_push_conflicts =
+        argset::resolve_allow_push_conflicts(&repo.config_snapshot(), matches);
 
     if Some(0) == opt_number {
         return Ok(());
