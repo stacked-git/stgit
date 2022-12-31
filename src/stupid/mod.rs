@@ -424,7 +424,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 "GIT_COMMITTER_DATE",
                 committer
                     .time
-                    .format(git_repository::date::time::format::RAW)
+                    .format(git_repository::date::time::format::RAW),
             )
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
