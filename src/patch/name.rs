@@ -235,12 +235,16 @@ impl PatchName {
         }
 
         if prev == '.' {
-            return Err(Error::invalid(name, "patch name may not end with '.'"));
+            Err(Error::invalid(name, "patch name may not end with '.'"))
         } else if prev == 'k' && name.ends_with(".lock") {
-            return Err(Error::invalid(name, "patch name may not end with '.lock'"));
+            Err(Error::invalid(name, "patch name may not end with '.lock'"))
+        } else if prev == '}' && name == "{base}" {
+            Err(Error::invalid(name, "patch name may not be '{base}'"))
+        } else if name == "@" {
+            Err(Error::invalid(name, "patch name may not be '@'"))
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 }
 
@@ -330,6 +334,7 @@ mod tests {
             "nope*",
             "a^carrot",
             "@{foo}",
+            "name@{foo}",
             "patch.lock",
             "foo~bar",
             "[sauce]",
@@ -337,6 +342,8 @@ mod tests {
             "not-okay?",
             "abc.",
             "\\\\-patch",
+            "{base}",
+            "@",
         ];
         for name in bad_names.iter() {
             assert!(name.parse::<PatchName>().is_err());
