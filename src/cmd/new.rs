@@ -138,7 +138,6 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("submodules")
                 .long("submodules")
-                .short('s')
                 .help("Include submodules in patch content")
                 .action(clap::ArgAction::SetTrue)
                 .requires("refresh"),
