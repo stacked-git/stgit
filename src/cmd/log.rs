@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     ext::RepositoryExtended,
-    patchrange,
+    patch::patchrange,
     stack::{InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
 };

@@ -43,7 +43,7 @@ use self::{
 use super::{error::Error, state::StackState, StackAccess};
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
-    patchname::PatchName,
+    patch::PatchName,
     stack::{PatchState, Stack, StackStateAccess},
     stupid::{Stupid, StupidContext},
     wrap::Branch,

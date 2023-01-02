@@ -11,8 +11,7 @@ use super::refresh;
 use crate::{
     color::get_color_stdout,
     ext::{RepositoryExtended, SignatureExtended},
-    patchedit,
-    patchname::PatchName,
+    patch::{patchedit, PatchName},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };

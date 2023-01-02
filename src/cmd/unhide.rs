@@ -9,8 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patchname::PatchName,
-    patchrange,
+    patch::{patchrange, PatchName},
     stack::{InitializationPolicy, Stack},
 };
 
@@ -57,10 +56,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patches: Vec<PatchName> =
         patchrange::patches_from_specs(specs, &stack, patchrange::Allow::Hidden).map_err(|e| {
             match e {
-                crate::patchrange::Error::BoundaryNotAllowed { patchname, range } => {
+                patchrange::Error::BoundaryNotAllowed { patchname, range } => {
                     anyhow!("Patch `{patchname}` from `{range}` is not hidden")
                 }
-                crate::patchrange::Error::PatchNotAllowed { patchname, .. } => {
+                patchrange::Error::PatchNotAllowed { patchname, .. } => {
                     anyhow!("Patch `{patchname}` is not hidden")
                 }
                 _ => e.into(),

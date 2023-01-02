@@ -6,7 +6,7 @@ use anyhow::Result;
 use termcolor::WriteColor;
 
 use super::PushStatus;
-use crate::patchname::PatchName;
+use crate::patch::PatchName;
 
 /// User output for stack transactions.
 pub(super) struct TransactionUserInterface {

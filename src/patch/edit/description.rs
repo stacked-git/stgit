@@ -7,7 +7,7 @@ use std::io::Write;
 use anyhow::{anyhow, Context, Result};
 use bstr::{BString, ByteSlice};
 
-use crate::{ext::TimeExtended, patchname::PatchName};
+use crate::{ext::TimeExtended, patch::PatchName};
 
 #[derive(Clone, PartialEq, Eq)]
 pub(super) struct DiffBuffer(pub(super) Vec<u8>);

@@ -17,8 +17,7 @@ use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
-    patchedit,
-    patchname::PatchName,
+    patch::{patchedit, PatchName},
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},

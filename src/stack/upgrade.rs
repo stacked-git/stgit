@@ -12,7 +12,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use anyhow::{anyhow, Context, Result};
 
 use super::serde::{RawPatchState, RawStackState};
-use crate::{patchname::PatchName, stack::state::StackState};
+use crate::{patch::PatchName, stack::state::StackState};
 
 /// Upgrade stack state metadata to most recent version.
 pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str) -> Result<()> {

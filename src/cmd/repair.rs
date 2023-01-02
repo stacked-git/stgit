@@ -11,7 +11,7 @@ use indexmap::{indexset, IndexSet};
 use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    patchname::PatchName,
+    patch::PatchName,
     print_info_message, print_warning_message,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
 };

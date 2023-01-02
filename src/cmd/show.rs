@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     ext::RepositoryExtended,
-    patchrange,
+    patch::patchrange,
     revspec::Error as RevError,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,

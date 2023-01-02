@@ -14,8 +14,7 @@ use clap::{Arg, ArgGroup};
 use crate::{
     color::get_color_stdout,
     ext::{RepositoryExtended, TimeExtended},
-    patchedit,
-    patchname::PatchName,
+    patch::{patchedit, PatchName},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{Stupid, StupidContext},
 };
@@ -665,7 +664,7 @@ fn create_patch<'repo>(
         stupid.write_tree()?
     };
 
-    let (new_patchname, commit_id) = match crate::patchedit::EditBuilder::default()
+    let (new_patchname, commit_id) = match crate::patch::edit::EditBuilder::default()
         .original_patchname(Some(&patchname))
         .override_tree_id(tree_id)
         .override_parent_id(stack.get_branch_head().id)

@@ -4,13 +4,14 @@
 
 use std::{fmt::Write, str::FromStr};
 
-use crate::{patchname::PatchName, stack::StackStateAccess};
+use super::PatchName;
+use crate::stack::StackStateAccess;
 
 /// Patch range parsing error variants.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
     #[error(transparent)]
-    PatchName(#[from] crate::patchname::Error),
+    PatchName(#[from] super::name::Error),
 
     #[error("Patch `{patchname}` is used more than once")]
     Duplicate { patchname: PatchName },

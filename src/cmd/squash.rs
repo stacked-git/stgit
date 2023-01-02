@@ -10,9 +10,8 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
-    patchedit,
-    patchname::PatchName,
-    patchrange, print_info_message,
+    patch::{patchedit, patchrange, PatchName},
+    print_info_message,
     stack::{InitializationPolicy, Stack, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };

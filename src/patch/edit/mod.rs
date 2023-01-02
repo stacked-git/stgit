@@ -31,10 +31,10 @@ use self::{
     parse::{parse_email, parse_name, parse_name_email2},
 };
 pub(crate) use self::{interactive::call_editor, parse::parse_name_email};
+use super::PatchName;
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended, TimeExtended},
-    patchname::PatchName,
     stack::StackStateAccess,
     stupid::Stupid,
     wrap::Message,
@@ -832,8 +832,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 /// The optional `time` value will be used for the author time unless `--authdate` was
 /// used on the command line.
 ///
-/// The provided `matches` must come from a [`clap::Command`] setup with
-/// [`crate::patchedit::add_args()`].
+/// The provided `matches` must come from a [`clap::Command`] setup with [`add_args()`].
 ///
 /// Returns `None` if author information was not provided the command line.
 fn author_from_args(

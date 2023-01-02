@@ -8,7 +8,7 @@ use clap::Arg;
 use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patchrange,
+    patch::patchrange,
     stack::{InitializationPolicy, Stack, StackState},
     stupid::Stupid,
 };

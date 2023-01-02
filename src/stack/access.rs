@@ -9,7 +9,7 @@ use super::{
     iter::{AllPatches, BothPatches},
     state::PatchState,
 };
-use crate::patchname::PatchName;
+use crate::patch::PatchName;
 
 /// Trait for accessing information about a stack, including its parent branch.
 ///

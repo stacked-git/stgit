@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
 
-use crate::patchname::PatchName;
+use crate::patch::PatchName;
 
 /// Raw state deserialization representation.
 ///

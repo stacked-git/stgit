@@ -11,7 +11,7 @@ use super::{
     state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
     StackAccess, StackStateAccess,
 };
-use crate::{ext::RepositoryExtended, patchname::PatchName, stupid::Stupid, wrap::Branch};
+use crate::{ext::RepositoryExtended, patch::PatchName, stupid::Stupid, wrap::Branch};
 
 /// StGit stack
 ///

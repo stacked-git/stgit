@@ -11,7 +11,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    patchname::PatchName,
+    patch::PatchName,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };

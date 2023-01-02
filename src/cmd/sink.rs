@@ -9,8 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patchname::PatchName,
-    patchrange,
+    patch::{patchrange, PatchName},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };

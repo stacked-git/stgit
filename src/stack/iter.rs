@@ -4,7 +4,7 @@
 
 use std::{iter::Chain, slice::Iter};
 
-use crate::patchname::PatchName;
+use crate::patch::PatchName;
 
 /// Iterator over all patches (applied, unapplied, and hidden).
 pub(crate) struct AllPatches<'s>(

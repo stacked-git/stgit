@@ -12,7 +12,7 @@ pub(crate) trait SignatureExtended {
     /// replaced based on command line options.
     ///
     /// The provided `matches` must come from a [`clap::Command`] setup with
-    /// [`crate::patchedit::add_args()`].
+    /// [`crate::patch::edit::add_args()`].
     fn override_author(self, matches: &clap::ArgMatches) -> git_repository::actor::Signature;
 }
 

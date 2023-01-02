@@ -12,7 +12,7 @@ use anyhow::{anyhow, Result};
 use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
     ext::{CommitExtended, CommitOptions, RepositoryExtended},
-    patchname::PatchName,
+    patch::PatchName,
     wrap::Message,
 };
 
