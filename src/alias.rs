@@ -98,28 +98,35 @@ where
     let mut aliases = get_default_aliases();
 
     if let Some(config_file) = config_file {
-        if let Ok(section) = config_file.section("stgit", Some("alias".into())) {
-            for key in section.keys() {
-                let name = key.to_str().map_err(|_| {
-                    anyhow!(
-                        "Alias name `{}` in {} is not valid UTF-8",
-                        key.to_str_lossy(),
-                        config_source_str(section.meta().source),
-                    )
-                })?;
-                if let Some(value) = section.value(key) {
-                    if !exclude(name) {
-                        let command = value.to_str().map_err(|_| {
-                            anyhow!(
-                                "Alias value for `{name}` in {} is not valid UTF-8",
-                                config_source_str(section.meta().source)
-                            )
-                        })?;
-                        let alias = Alias::new(name, command);
-                        aliases.insert(name.to_string(), alias);
+        if let Some(sections) = config_file.sections_by_name("stgit") {
+            for section in sections
+                .filter(|section| section.header().subsection_name() == Some("alias".into()))
+            {
+                for key in section.keys() {
+                    let name = key.to_str().map_err(|_| {
+                        anyhow!(
+                            "Alias name `{}` in {} is not valid UTF-8",
+                            key.to_str_lossy(),
+                            config_source_str(section.meta().source),
+                        )
+                    })?;
+                    if let Some(value) = section
+                        .value(key)
+                        .and_then(|v| (!v.is_empty()).then_some(v))
+                    {
+                        if !exclude(name) {
+                            let command = value.to_str().map_err(|_| {
+                                anyhow!(
+                                    "Alias value for `{name}` in {} is not valid UTF-8",
+                                    config_source_str(section.meta().source)
+                                )
+                            })?;
+                            let alias = Alias::new(name, command);
+                            aliases.insert(name.to_string(), alias);
+                        }
+                    } else {
+                        aliases.remove(name);
                     }
-                } else {
-                    aliases.remove(name);
                 }
             }
         }
