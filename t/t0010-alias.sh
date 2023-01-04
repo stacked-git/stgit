@@ -70,4 +70,13 @@ test_expect_success 'Alias expansion with quoted string' '
     grep "Author: Test User <testuser@example.com>" out
 '
 
+test_expect_success 'GIT_PREFIX is setup correctly' '
+    mkdir -p dir0/dir1 &&
+    touch file-at-root &&
+    (
+        cd dir0/dir1 &&
+        stg add ../../file-at-root
+    )
+'
+
 test_done
