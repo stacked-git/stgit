@@ -367,16 +367,12 @@ fn execute_shell_alias(
     if let Some(repo) = repo {
         if let Some(workdir) = repo.work_dir() {
             command.current_dir(workdir);
-            if let Ok(cur_dir) = std::env::current_dir() {
-                if let Ok(prefix) = cur_dir.strip_prefix(workdir) {
-                    if !cur_dir.starts_with(repo.git_dir()) {
-                        let mut prefix = prefix.as_os_str().to_os_string();
-                        if !prefix.is_empty() {
-                            prefix.push("/");
-                        }
-                        command.env("GIT_PREFIX", &prefix);
-                    }
+            if let Some(Ok(prefix)) = repo.prefix() {
+                let mut prefix = prefix.into_os_string();
+                if !prefix.is_empty() {
+                    prefix.push("/");
                 }
+                command.env("GIT_PREFIX", prefix);
             }
             if let Ok(rel_dir) = repo.git_dir().strip_prefix(workdir) {
                 if rel_dir == PathBuf::from(".git") {
