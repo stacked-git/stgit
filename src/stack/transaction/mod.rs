@@ -553,7 +553,7 @@ impl<'repo> StackTransaction<'repo> {
             PushStatus::Unmodified
         } else {
             let author = patch_commit.author_strict()?;
-            let default_committer = repo.committer_or_default();
+            let default_committer = repo.get_committer()?;
             let committer = if self.options.committer_date_is_author_date {
                 let mut committer = default_committer.to_owned();
                 committer.time = author.time;
@@ -996,7 +996,7 @@ impl<'repo> StackTransaction<'repo> {
         let repo = self.stack.repo;
         let config = repo.config_snapshot();
         let stupid = repo.stupid();
-        let default_committer = repo.committer_or_default();
+        let default_committer = repo.get_committer()?;
         let patch_commit = self.get_patch_commit(patchname).clone();
         let old_parent = patch_commit.get_parent_commit()?;
         let new_parent = self.top().clone();

@@ -631,7 +631,7 @@ fn create_patch<'repo>(
             time,
         }
     } else {
-        let default_author = stack.repo.author_or_default();
+        let default_author = stack.repo.get_author()?;
         if let (Some(name), Some(email)) = (author_name.as_deref(), author_email.as_deref()) {
             git_repository::actor::Signature {
                 name: BString::from(name),

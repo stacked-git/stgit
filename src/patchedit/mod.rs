@@ -483,7 +483,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
         let stupid = repo.stupid();
         let config = repo.config_snapshot();
-        let default_committer = repo.committer_or_default();
+        let default_committer = repo.get_committer()?;
 
         let EditedPatchDescription {
             patchname: file_patchname,
@@ -717,7 +717,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                 Some(None) => Some(if let Some(commit) = patch_commit {
                     commit.author_strict()?
                 } else {
-                    repo.author_or_default().to_owned()
+                    repo.get_author()?.to_owned()
                 }),
                 None => patch_description.author.take(),
             };

@@ -210,8 +210,8 @@ impl<'repo> StackState<'repo> {
             (self.make_tree(repo, None)?, None)
         };
         let config = repo.config_snapshot();
-        let sig = repo.committer_or_default();
-        let todo_author = sig.to_owned();
+        let committer = repo.get_committer()?;
+        let author = repo.get_author()?;
 
         let simplified_parents: Vec<git_repository::ObjectId> = match &self.prev {
             Some(prev_commit) => {
@@ -233,8 +233,8 @@ impl<'repo> StackState<'repo> {
         };
 
         let simplified_parent_id = repo.commit_with_options(
-            &todo_author,
-            sig,
+            author,
+            committer,
             &message,
             state_tree_id,
             simplified_parents,
@@ -265,8 +265,8 @@ impl<'repo> StackState<'repo> {
             let parent_group_oids =
                 parent_oids.drain(parent_oids.len() - MAX_PARENTS..parent_oids.len());
             let group_oid = repo.commit_with_options(
-                &todo_author,
-                sig,
+                author,
+                committer,
                 &Message::from("parent grouping"),
                 state_tree_id,
                 parent_group_oids,
@@ -278,8 +278,8 @@ impl<'repo> StackState<'repo> {
         parent_oids.insert(0, simplified_parent_id);
 
         let commit_oid = repo.commit_with_options(
-            &todo_author,
-            sig,
+            author,
+            committer,
             &message,
             state_tree_id,
             parent_oids,

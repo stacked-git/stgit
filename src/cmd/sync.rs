@@ -222,7 +222,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
                 if let Some(tree_id) = maybe_tree_id {
                     let author = commit.author_strict()?;
-                    let default_committer = trans.repo().committer_or_default();
+                    let default_committer = trans.repo().get_committer()?;
                     let committer = if matches.get_flag("committer-date-is-author-date") {
                         let mut committer = default_committer.to_owned();
                         committer.time = author.time;

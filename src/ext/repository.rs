@@ -23,6 +23,12 @@ pub(crate) trait RepositoryExtended {
     /// as merge, rebase, cherrypick, etc.; see [`git_repository::state::InProgress`].
     fn check_repository_state(&self) -> Result<()>;
 
+    /// Get the author signature or error if it is unavailable.
+    fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>>;
+
+    /// Get the committer signature or error if it is unavailable.
+    fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>>;
+
     /// Get [`Branch`], with StGit-specific error messaging.
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
@@ -111,6 +117,18 @@ impl RepositoryExtended for git_repository::Repository {
         } else {
             Ok(())
         }
+    }
+
+    fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
+        self.author().ok_or_else(|| {
+            anyhow!("Author identity unknown. Please configure `user.name` and `user.email`.")
+        })
+    }
+
+    fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
+        self.committer().ok_or_else(|| {
+            anyhow!("Committer identity unknown. Please configure `user.name` and `user.email`.")
+        })
     }
 
     fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>> {

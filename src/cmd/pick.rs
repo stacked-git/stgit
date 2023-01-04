@@ -380,7 +380,7 @@ fn pick_picks(
         };
         let message = &crate::wrap::Message::String(message);
         let author = commit.author_strict()?;
-        let default_committer = stack.repo.committer_or_default();
+        let default_committer = stack.repo.get_committer()?;
         let committer = if matches.get_flag("committer-date-is-author-date") {
             let mut committer = default_committer.to_owned();
             committer.time = author.time;

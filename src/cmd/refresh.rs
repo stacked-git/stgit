@@ -188,8 +188,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // Make temp patch
     let temp_commit_id = stack.repo.commit_ex(
-        &repo.author_or_default().override_author(matches),
-        repo.committer_or_default(),
+        &repo.get_author()?.override_author(matches),
+        repo.get_committer()?,
         &Message::from(format!("Refresh of {patchname}")),
         tree_id,
         [stack.get_branch_head().id],
