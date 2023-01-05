@@ -26,6 +26,7 @@ mod wrap;
 use std::{ffi::OsString, io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
+use bstr::ByteSlice;
 use clap::ArgMatches;
 use ext::RepositoryExtended;
 use stupid::StupidContext;
@@ -343,12 +344,9 @@ fn execute_shell_alias(
 
     // TODO: Git chooses its shell path at compile time based on OS or user override.
     let shell_path = "sh";
-    let shell_chars = &[
-        '|', '&', ';', '<', '>', '(', ')', '$', '`', ' ', '*', '?', '[', '#', '~', '=', '%', '\\',
-        '"', '\'', '\t', '\n',
-    ];
+    let shell_chars = b"|&;<>()$` *?[#~=%'\"\t\n\\";
 
-    let mut command = if alias.command.find(shell_chars).is_some() {
+    let mut command = if alias.command.as_bytes().find_byteset(shell_chars).is_some() {
         // Need to wrap in shell command
         let mut command = std::process::Command::new(shell_path);
         command.arg("-c");
