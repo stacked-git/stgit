@@ -69,7 +69,7 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("series")
                 .long("series")
-                .short('s')
+                .short('S')
                 .help("Synchronize patches with <series>")
                 .value_name("series")
                 .value_parser(clap::value_parser!(PathBuf))

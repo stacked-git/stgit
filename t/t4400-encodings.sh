@@ -37,7 +37,7 @@ test_expect_success 'Add more encodings' '
 test_expect_success 'Test export and import' '
     stg export --dir export-dir &&
     stg delete .. &&
-    stg import -s export-dir/series &&
+    stg import --series export-dir/series &&
     for e in ISO8859-5 KOI8-R UTF-16 UTF-32BE CP866; do
         iconv -f $e -t UTF-8 $e.txt >glass-from-$e.txt &&
         diff -q glass.txt glass-from-$e.txt || return 1

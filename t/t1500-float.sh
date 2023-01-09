@@ -74,13 +74,13 @@ test_expect_success 'Float with series from stdin' '
 	p2
 	p1
 	EOF
-    cat rev-series.txt | stg float -s - &&
+    cat rev-series.txt | stg float -S - &&
     test "$(echo $(stg series --applied --noprefix))" = "p7 p6 p5 p4 p3 p2 p1"
 '
 
 test_expect_success 'Attempt float with empty series' '
     echo "" |
-    command_error stg float -s - 2>&1 |
+    command_error stg float -S - 2>&1 |
     grep -e "error: No patches to float"
 '
 

@@ -61,7 +61,7 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("series")
                 .long("series")
-                .short('s')
+                .short('S')
                 .help("Rearrange according to a series <file>")
                 .value_name("file")
                 .value_hint(clap::ValueHint::FilePath)

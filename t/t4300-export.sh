@@ -37,7 +37,7 @@ test_expect_success 'Export with multiple diff-opts' '
 
 test_expect_success 'Reimport directory export' '
     stg delete $(stg series --noprefix) &&
-    stg import -s export1/series &&
+    stg import -S export1/series &&
     test "$(echo $(stg series --noprefix))" = \
       "patch-1 patch-2 patch-3 patch-4 patch-5" &&
     test "$(echo $(stg series -d --noprefix patch-1))" = "patch-1 # patch-1"
@@ -84,7 +84,7 @@ test_expect_success 'Export series with empty patch' '
     stg export -d export6 &&
     test_path_is_file export6/patch-6 &&
     stg delete $(stg series --noprefix) &&
-    stg import -s export6/series
+    stg import -S export6/series
 '
 
 test_done

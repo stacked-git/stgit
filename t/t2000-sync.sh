@@ -74,7 +74,7 @@ test_expect_success 'Synchronise the first two patches with the master branch' '
 '
 
 test_expect_success 'Synchronise all the patches with the exported series' '
-    stg sync -s patches-master/series -a &&
+    stg sync -S patches-master/series -a &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     test "$(cat foo1.txt)" = "foo1" &&
@@ -125,7 +125,7 @@ test_expect_success 'Restore the stack status after the failed sync' '
 '
 
 test_expect_success 'Synchronise the third patch with the exported series (to fail)' '
-    conflict stg sync -s patches-master/series p3
+    conflict stg sync -S patches-master/series p3
 '
 
 test_expect_success 'Restore the stack status after the failed sync' '

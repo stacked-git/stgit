@@ -41,7 +41,7 @@ fn make() -> clap::Command {
              patch's author details.\n\
              \n\
              Patches may also be imported from a mail file (-m/--mail), an mbox \
-             (-M/--mbox), or a series (-s/--series). Furthermore, the -u/--url option \
+             (-M/--mbox), or a series (-S/--series). Furthermore, the -u/--url option \
              allows the patches source to be fetched from a url instead of from a \
              local file.\n\
              \n\
@@ -54,16 +54,16 @@ fn make() -> clap::Command {
             "stg import [OPTIONS] <diff-path>\n       \
              stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
              stg import [OPTIONS] -M [<mbox-path>]\n       \
-             stg import [OPTIONS] -s [<series-path>]\n       \
+             stg import [OPTIONS] -S [<series-path>]\n       \
              stg import [OPTIONS] -u <diff-url>\n       \
              stg import [OPTIONS] -u -m <mail-url>\n       \
              stg import [OPTIONS] -u -M <mbox-url>\n       \
-             stg import [OPTIONS] -u -s <series-url>"
+             stg import [OPTIONS] -u -S <series-url>"
         } else {
             "stg import [OPTIONS] <diff-path>\n       \
              stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
              stg import [OPTIONS] -M [<mbox-path>]\n       \
-             stg import [OPTIONS] -s [<series-path>]"
+             stg import [OPTIONS] -S [<series-path>]"
         })
         .arg(
             Arg::new("source")
@@ -94,7 +94,7 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("series")
                 .long("series")
-                .short('s')
+                .short('S')
                 .help("Import patch series")
                 .long_help("Import patch series from a series file are tar archive.")
                 .action(clap::ArgAction::SetTrue),

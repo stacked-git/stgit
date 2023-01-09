@@ -18,7 +18,7 @@ after_test () {
 
 check_test () {
     # Test importing quilt series
-     stg import -s patches/series
+     stg import -S patches/series
 }
 
 test_import_quilt_series_should_fail_p_something_ok () {
@@ -190,7 +190,7 @@ test_expect_success QUILT 'Quilt import filename with spaces' '
     echo 2 >"filename with space.txt" &&
     quilt refresh &&
     quilt pop -a &&
-    stg import -s patches/series &&
+    stg import -S patches/series &&
     stg series &&
     stg delete ..
 '
@@ -208,7 +208,7 @@ test_expect_success QUILT 'Quilt import series with subdirs' '
     echo 3 >"filename.txt" &&
     quilt refresh &&
     quilt pop -a &&
-    stg import -s patches/series &&
+    stg import -S patches/series &&
     stg series &&
     stg delete ..
 '
