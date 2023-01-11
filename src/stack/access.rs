@@ -112,4 +112,52 @@ pub(crate) trait StackStateAccess<'repo> {
     fn unapplied_and_hidden(&self) -> BothPatches<'_> {
         BothPatches::new(self.unapplied(), self.hidden())
     }
+
+    /// Return absolute index of patch in stack.
+    fn index_of(&self, patchname: &PatchName) -> usize {
+        self.all_patches()
+            .position(|pn| pn == patchname)
+            .expect("patchname must exist")
+    }
+
+    /// Signed distance from a patch to an optional reference patch in the stack.
+    ///
+    /// When the reference patchname is `None`, the distance is taken from the stack
+    /// base.
+    fn distance_from(&self, patchname: &PatchName, ref_patchname: Option<&PatchName>) -> isize {
+        if Some(patchname) == ref_patchname {
+            return 0;
+        }
+
+        let mut iter = self.all_patches().enumerate();
+        let (index0, is_patchname_first) = iter
+            .find_map(|(i, pn)| {
+                if pn == patchname {
+                    Some((i, true))
+                } else if Some(pn) == ref_patchname {
+                    Some((i, false))
+                } else {
+                    None
+                }
+            })
+            .expect("patchname must be in stack");
+
+        if is_patchname_first {
+            if let Some(ref_patchname) = ref_patchname {
+                let index1 = iter
+                    .find_map(|(i, pn)| (pn == ref_patchname).then_some(i))
+                    .expect("ref_patchname must be in stack");
+                let distance: isize = (index1 - index0).try_into().expect("distance fits isize");
+                -distance
+            } else {
+                // No reference patch, so measuring from stack base.
+                (index0 + 1).try_into().expect("index fits isize")
+            }
+        } else {
+            let index1 = iter
+                .find_map(|(i, pn)| (pn == patchname).then_some(i))
+                .expect("patchname must be in stack");
+            (index1 - index0).try_into().expect("distance fits isize")
+        }
+    }
 }

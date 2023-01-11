@@ -175,6 +175,24 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("indices")
+                .long("indices")
+                .short('I')
+                .help("Display absolute patch indicies")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("offsets")
+                .long("offsets")
+                .short('O')
+                .help("Display relative offsets from topmost patch")
+                .long_help(
+                    "Display relative offsets from topmost patch or from the stack \
+                     base if no patches are applied.",
+                )
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("reverse")
                 .long("reverse")
                 .short('r')
@@ -258,7 +276,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let unapplied_flag = matches.get_flag("unapplied");
     let hidden_flag = matches.get_flag("hidden");
 
-    let mut patches: Vec<(PatchName, gix::ObjectId, char)> = vec![];
+    struct Entry {
+        patchname: PatchName,
+        commit_id: gix::ObjectId,
+        sigil: char,
+        index: usize,
+        offset_from_top: isize,
+    }
+
+    let mut patches: Vec<Entry> = vec![];
 
     if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
         let top_patchname = stack.applied().last();
@@ -277,7 +303,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
             } else {
                 '!'
             };
-            patches.push((patchname, commit_id, sigil));
+            let index = stack.index_of(&patchname);
+            let offset_from_top = stack.distance_from(&patchname, top_patchname);
+            patches.push(Entry {
+                patchname,
+                commit_id,
+                sigil,
+                index,
+                offset_from_top,
+            });
         }
     } else {
         let show_applied = applied_flag || all_flag || !(unapplied_flag || hidden_flag);
@@ -287,31 +321,52 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if show_applied {
             if let Some((last_patchname, rest)) = stack.applied().split_last() {
                 for patchname in rest {
-                    let commit_id = stack.get_patch_commit(patchname).id;
-                    patches.push((patchname.clone(), commit_id, '+'));
+                    patches.push(Entry {
+                        patchname: patchname.clone(),
+                        commit_id: stack.get_patch_commit(patchname).id,
+                        sigil: '+',
+                        index: stack.index_of(patchname),
+                        offset_from_top: stack.distance_from(patchname, Some(last_patchname)),
+                    });
                 }
-                let last_oid = stack.get_patch_commit(last_patchname).id;
-                patches.push((last_patchname.clone(), last_oid, '>'));
+                patches.push(Entry {
+                    patchname: last_patchname.clone(),
+                    commit_id: stack.get_patch_commit(last_patchname).id,
+                    sigil: '>',
+                    index: stack.index_of(last_patchname),
+                    offset_from_top: 0,
+                });
             }
         }
 
         if show_unapplied {
-            for patchname in stack.unapplied() {
-                let commit_id = stack.get_patch_commit(patchname).id;
-                patches.push((patchname.clone(), commit_id, '-'));
+            for (i, patchname) in stack.unapplied().iter().enumerate() {
+                patches.push(Entry {
+                    patchname: patchname.clone(),
+                    commit_id: stack.get_patch_commit(patchname).id,
+                    sigil: '-',
+                    index: stack.index_of(patchname),
+                    offset_from_top: (i + 1) as isize,
+                });
             }
         }
 
         if show_hidden {
+            let top_patchname = stack.applied().last();
             for patchname in stack.hidden() {
-                let commit_id = stack.get_patch_commit(patchname).id;
-                patches.push((patchname.clone(), commit_id, '!'));
+                patches.push(Entry {
+                    patchname: patchname.clone(),
+                    commit_id: stack.get_patch_commit(patchname).id,
+                    sigil: '!',
+                    index: stack.index_of(patchname),
+                    offset_from_top: stack.distance_from(patchname, top_patchname),
+                });
             }
         }
     }
 
     if let Some(ref_stack) = ref_stack {
-        patches.retain(|(patchname, _, _)| {
+        patches.retain(|Entry { patchname, .. }| {
             ref_stack
                 .all_patches()
                 .all(|ref_patchname| patchname != ref_patchname)
@@ -322,7 +377,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         let shortnr = repo.config_snapshot().integer("stgit.shortnr").unwrap_or(5);
         let shortnr: usize = if shortnr < 0 { 0 } else { shortnr as usize };
 
-        if let Some(top_pos) = patches.iter().position(|(_, _, sigil)| *sigil == '>') {
+        if let Some(top_pos) = patches.iter().position(|Entry { sigil, .. }| *sigil == '>') {
             if patches.len() - top_pos > shortnr {
                 patches.drain(top_pos + 1 + shortnr..);
             }
@@ -351,7 +406,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     let patchname_width = if opt_commit_id.is_some() || description_flag || author_flag {
-        patches.iter().map(|(pn, _, _)| pn.len()).max().unwrap_or(0)
+        patches
+            .iter()
+            .map(|Entry { patchname, .. }| patchname.len())
+            .max()
+            .unwrap_or(0)
     } else {
         0
     };
@@ -359,7 +418,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let author_width: usize = if author_flag && description_flag {
         patches
             .iter()
-            .map(|(_, commit_id, _)| -> usize {
+            .map(|Entry { commit_id, .. }| -> usize {
                 if let Ok(commit) = repo.find_commit(*commit_id) {
                     commit
                         .author()
@@ -379,6 +438,22 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let no_prefix_flag = matches.get_flag("no-prefix");
     let empty_flag = matches.get_flag("empty");
+    let indices_flag = matches.get_flag("indices");
+    let offsets_flag = matches.get_flag("offsets");
+
+    let index_width = (indices_flag && !patches.is_empty())
+        .then(|| patches.last().unwrap().index.to_string().len())
+        .unwrap_or_default();
+
+    let offset_width = (offsets_flag && !patches.is_empty())
+        .then(|| {
+            [patches.first().unwrap(), patches.last().unwrap()]
+                .iter()
+                .map(|entry| format!("{:+}", entry.offset_from_top).len())
+                .max()
+                .unwrap()
+        })
+        .unwrap_or_default();
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
@@ -387,7 +462,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
         patches.reverse();
     }
 
-    for (patchname, commit_id, sigil) in patches {
+    for Entry {
+        patchname,
+        commit_id,
+        sigil,
+        index,
+        offset_from_top,
+    } in patches
+    {
         let commit = repo.find_commit(commit_id)?;
         let commit_ref = commit.decode()?;
 
@@ -401,16 +483,29 @@ fn run(matches: &ArgMatches) -> Result<()> {
             }
         }
 
+        let sigil_color = match sigil {
+            '+' => Some(termcolor::Color::Green),
+            '>' => Some(termcolor::Color::Blue),
+            '-' => Some(termcolor::Color::Magenta),
+            '!' => Some(termcolor::Color::Red),
+            _ => None,
+        };
+
         if !no_prefix_flag {
-            let sigil_color = match sigil {
-                '+' => Some(termcolor::Color::Green),
-                '>' => Some(termcolor::Color::Blue),
-                '-' => Some(termcolor::Color::Magenta),
-                '!' => Some(termcolor::Color::Red),
-                _ => None,
-            };
             stdout.set_color(color_spec.set_fg(sigil_color))?;
             write!(stdout, "{sigil} ")?;
+            stdout.set_color(color_spec.set_fg(None))?;
+        }
+
+        if indices_flag {
+            stdout.set_color(color_spec.set_fg(sigil_color))?;
+            write!(stdout, "{index:index_width$} ")?;
+            stdout.set_color(color_spec.set_fg(None))?;
+        }
+
+        if offsets_flag {
+            stdout.set_color(color_spec.set_fg(sigil_color))?;
+            write!(stdout, "{offset_from_top:+offset_width$} ")?;
             stdout.set_color(color_spec.set_fg(None))?;
         }
 
