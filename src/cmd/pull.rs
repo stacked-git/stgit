@@ -78,7 +78,7 @@ impl FromStr for PullPolicy {
             "pull" => Ok(PullPolicy::Pull),
             "rebase" => Ok(PullPolicy::Rebase),
             "fetch-rebase" => Ok(PullPolicy::FetchRebase),
-            _ => Err(anyhow!("Unsupported pull-policy `{s}`")),
+            _ => Err(anyhow!("unsupported pull-policy `{s}`")),
         }
     }
 }
@@ -119,7 +119,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         PullPolicy::Rebase => {
             if matches.get_one::<String>("repository").is_some() {
                 return Err(anyhow!(
-                    "Specifying a repository is meaningless for `{policy}` pull-policy"
+                    "specifying a repository is meaningless for `{policy}` pull-policy"
                 ));
             }
             None
@@ -135,8 +135,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .or_else(|| parent_remote.clone());
             if remote_name.is_none() {
                 return Err(anyhow!(
-                    "No tracking information for the current branch.\n\
-                     Please specify the remote repository to pull from."
+                    "no tracking information for the current branch;\n\
+                     please specify the remote repository to pull from."
                 ));
             }
             remote_name
@@ -144,9 +144,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if stack.is_protected(&config) {
-        return Err(anyhow!(
-            "This branch is protected. Pulls are not permitted."
-        ));
+        return Err(anyhow!("this branch is protected; pulls are not permitted"));
     }
 
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
@@ -180,7 +178,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             print_info_message(matches, &format!("Pulling from `{remote_name}`"));
             if !stupid.user_pull(&pull_cmd, &remote_name)? {
                 return Err(crate::stack::Error::CausedConflicts(
-                    "Pull resulted in conflicts".to_string(),
+                    "pull resulted in conflicts".to_string(),
                 )
                 .into());
             }
@@ -224,7 +222,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 parse_stgit_revision(&repo, parent_branch_name, None)?
             } else {
                 repo.rev_parse_single("heads/origin")
-                    .map_err(|_| anyhow!("Cannot find a parent branch for `{branch_name}`"))?
+                    .map_err(|_| anyhow!("cannot find a parent branch for `{branch_name}`"))?
                     .object()?
             };
             let parent_commit = parent_object

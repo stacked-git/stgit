@@ -126,7 +126,7 @@ impl<'repo> StackState<'repo> {
             let raw_state = RawStackState::from_stack_json(&stack_json_blob.data)?;
             Self::from_raw_state(repo, raw_state)
         } else {
-            Err(anyhow!("Stack metadata not found"))
+            Err(anyhow!("stack metadata not found"))
         }
     }
 

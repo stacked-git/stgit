@@ -51,7 +51,7 @@ test_expect_success 'Invalid --number' '
 
 test_expect_success 'Too many patch names with --number' '
     command_error stg uncommit --number 2 p0 p1 2>err &&
-    grep -e "When using \`--number\`, specify at most one patch name" err
+    grep -e "when using \`--number\`, specify at most one patch name" err
 '
 
 test_expect_success 'Uncommit the patches using names' '
@@ -95,7 +95,7 @@ test_expect_success 'Attempt to reuse patch name' '
     stg uncommit &&
     [ "$(echo $(stg series --applied --noprefix))" = "bar-patch" ] &&
     command_error stg uncommit bar-patch 2>err &&
-    grep -e "Patch \`bar-patch\` already exists" err &&
+    grep -e "patch \`bar-patch\` already exists" err &&
     stg commit --all
 '
 
@@ -122,7 +122,7 @@ test_expect_success 'Uncommit when top != head' '
 
 test_expect_success 'Uncommit to something that does not resolve to a commit' '
     command_error stg uncommit --to HEAD^{tree} 2>err &&
-    grep -e "error: Target \`HEAD^{tree}\` does not resolve to a commit" err
+    grep -e "error: target \`HEAD^{tree}\` does not resolve to a commit" err
 '
 
 test_expect_success 'Uncommit to an annotated tag' '

@@ -8,7 +8,7 @@ test_description='Test "stg goto"'
 
 test_expect_success 'Attempt goto with uninitialized stack' '
     command_error stg goto foo 2>err &&
-    grep "error: Patch \`foo\` does not exist" err &&
+    grep "error: patch \`foo\` does not exist" err &&
     rm err
 '
 
@@ -33,12 +33,12 @@ test_expect_success 'Goto current patch' '
 
 test_expect_success 'Attempt goto invalid patch' '
     command_error stg goto p999 2>err &&
-    grep -e "Patch \`p999\` does not exist" err
+    grep -e "patch \`p999\` does not exist" err
 '
 
 test_expect_success 'Attempt goto invalid hash' '
     command_error stg goto beeff00d 2>err &&
-    grep -e "error: No patch associated with \`beeff00d\`" err
+    grep -e "error: no patch associated with \`beeff00d\`" err
 '
 
 test_expect_success 'Goto a patch' '
@@ -59,7 +59,7 @@ test_expect_success 'Refuse to go to a hidden patch' '
     stg new h0 -m "hidden patch" &&
     stg hide h0 &&
     command_error stg goto h0 2>err &&
-    grep -e "Hidden patch \`h0\` is not allowed" err &&
+    grep -e "hidden patch \`h0\` is not allowed" err &&
     test "$(echo $(stg series --hidden --noprefix))" = "h0" &&
     test "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" &&
     test "$(echo $(stg series --unapplied --noprefix))" = "p4 p5"
@@ -73,9 +73,9 @@ test_expect_success 'Goto with merge check' '
 
 test_expect_success 'Goto with ambiguous patch substring' '
     command_error stg goto 1 2>err &&
-    grep "error: Patch \`1\` does not exist" err &&
+    grep "error: patch \`1\` does not exist" err &&
     command_error stg goto p 2>err &&
-    grep "Patch \`p\` does not exist, but is similar to \`p1\`, \`p2\`" err
+    grep "patch \`p\` does not exist, but is similar to \`p1\`, \`p2\`" err
 '
 
 test_done

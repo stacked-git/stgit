@@ -18,7 +18,7 @@ pub(crate) fn parse_name_email(name_email: &str) -> Result<(&str, &str)> {
             }
         }
     }
-    Err(anyhow!("Invalid name and email `{name_email}`"))
+    Err(anyhow!("invalid name and email `{name_email}`"))
 }
 
 pub(crate) fn parse_name_email2(name_email: &str) -> Result<(String, String)> {
@@ -28,7 +28,7 @@ pub(crate) fn parse_name_email2(name_email: &str) -> Result<(String, String)> {
 /// Check name string for '<' or '>' characters.
 pub(crate) fn check_name(name: &str) -> Result<()> {
     if name.contains('<') || name.contains('>') {
-        Err(anyhow!("Name may not contain `<` or `>`"))
+        Err(anyhow!("name may not contain `<` or `>`"))
     } else {
         Ok(())
     }
@@ -42,7 +42,7 @@ pub(crate) fn parse_name(name: &str) -> Result<String> {
 /// Check emails string for '<' or '>' characters.
 fn check_email(email: &str) -> Result<()> {
     if email.contains('<') || email.contains('>') {
-        Err(anyhow!("Email may not contain `<` or `>`"))
+        Err(anyhow!("email may not contain `<` or `>`"))
     } else {
         Ok(())
     }

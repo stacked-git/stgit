@@ -6,7 +6,7 @@ test_description='Test stg commit'
 
 test_expect_success 'Attempt commit on uninitialized branch' '
     command_error stg commit --all 2>err &&
-    grep "error: No patches applied" err
+    grep "error: no patches applied" err
 '
 
 test_expect_success 'Initialize the StGit repository' '
@@ -19,7 +19,7 @@ test_expect_success 'Initialize the StGit repository' '
 
 test_expect_success 'Attempt to commit an empty patch' '
     command_error stg commit p2 2>err &&
-    grep "Attempt to commit empty patch \`p2\`" err
+    grep "attempt to commit empty patch \`p2\`" err
 '
 
 test_expect_success 'Commit middle patch' '

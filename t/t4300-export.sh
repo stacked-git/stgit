@@ -6,7 +6,7 @@ test_description="Test 'stg export'"
 
 test_expect_success 'Attempt export on uninitialized branch' '
     command_error stg export 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 
@@ -52,7 +52,7 @@ test_expect_success 'Export to stdout' '
 test_expect_success 'Export with none applied' '
     stg pop -a &&
     command_error stg export --dir export3 2>err &&
-    grep -e "No patches applied" err &&
+    grep -e "no patches applied" err &&
     test_path_is_missing export3 &&
     stg push -a
 '

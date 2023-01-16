@@ -36,7 +36,7 @@ test_expect_success 'Create a branch with empty patches' '
 
 test_expect_success 'Attempt sync with current branch' '
     command_error stg sync -B foo 2>err &&
-    grep -e "Cannot synchroni[sz]e with the current branch" err
+    grep -e "cannot synchroni[sz]e with the current branch" err
 '
 
 test_expect_success 'Attempt sync without remote branch or series' '
@@ -55,7 +55,7 @@ test_expect_success 'Attempt to sync patch not in ref branch' '
     stg new -m p4 &&
     test_when_finished "stg delete p4" &&
     command_error stg sync -B master 2>err &&
-    grep -e "No common patches to synchronize" err
+    grep -e "no common patches to synchronize" err
 '
 
 test_expect_success 'Synchronise second patch with the master branch' '

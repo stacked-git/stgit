@@ -26,7 +26,7 @@ test_expect_success 'Invalid arguments' '
 test_expect_success 'Attempt delete --top with none applied' '
     stg pop &&
     command_error stg delete --top 2>err &&
-    grep -e "No patches applied" err &&
+    grep -e "no patches applied" err &&
     stg push
 '
 

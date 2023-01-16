@@ -251,16 +251,16 @@ impl Statuses {
 
                 if index_dirty && worktree_dirty {
                     return Err(anyhow!(
-                        "Index and worktree not clean. Use `refresh` or `reset --hard`"
+                        "index and worktree not clean; use `refresh` or `reset --hard`"
                     ));
                 }
             }
 
             if index_dirty {
-                Err(anyhow!("Index not clean. Use `refresh` or `reset --hard`"))
+                Err(anyhow!("index not clean; use `refresh` or `reset --hard`"))
             } else if worktree_dirty {
                 Err(anyhow!(
-                    "Worktree not clean. Use `refresh` or `reset --hard`"
+                    "worktree not clean; use `refresh` or `reset --hard`"
                 ))
             } else {
                 panic!("expected either/both worktree or index to be dirty")
@@ -274,7 +274,7 @@ impl Statuses {
     pub(crate) fn check_index_clean(&self) -> Result<()> {
         for entry in self.iter() {
             if !matches!(entry.index_status(), Status::Unmodified) {
-                return Err(anyhow!("Index not clean. Use `refresh` or `reset --hard`"));
+                return Err(anyhow!("index not clean; use `refresh` or `reset --hard`"));
             }
         }
         Ok(())
@@ -288,7 +288,7 @@ impl Statuses {
         for entry in self.iter() {
             if !matches!(entry.worktree_status(), Status::Unmodified) {
                 return Err(anyhow!(
-                    "Worktree not clean. Use `refresh` or `reset --hard`"
+                    "worktree not clean; use `refresh` or `reset --hard`"
                 ));
             }
         }

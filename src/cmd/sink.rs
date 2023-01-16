@@ -97,10 +97,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     if let Some(target_patch) = &opt_target {
         if !stack.has_patch(target_patch) {
-            return Err(anyhow!("Target patch `{target_patch}` does not exist"));
+            return Err(anyhow!("target patch `{target_patch}` does not exist"));
         } else if !stack.is_applied(target_patch) {
             return Err(anyhow!(
-                "Cannot sink below `{target_patch}` since it is not applied"
+                "cannot sink below `{target_patch}` since it is not applied"
             ));
         }
     }
@@ -117,7 +117,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if let Some(target_patch) = &opt_target {
         if patches.contains(target_patch) {
             return Err(anyhow!(
-                "Target patch `{target_patch}` may not also be a patch to sink",
+                "target patch `{target_patch}` may not also be a patch to sink",
             ));
         }
     }

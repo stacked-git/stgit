@@ -167,7 +167,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if stack.has_patch(patchname) {
             patchname.clone()
         } else {
-            return Err(anyhow!("Patch `{patchname}` does not exist"));
+            return Err(anyhow!("patch `{patchname}` does not exist"));
         }
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
@@ -393,7 +393,7 @@ fn determine_refresh_paths(
             }
             if !is_index_clean && !is_worktree_clean {
                 return Err(anyhow!(
-                    "The index is dirty; consider using `--index` or `--force`",
+                    "the index is dirty; consider using `--index` or `--force`",
                 ));
             }
         }

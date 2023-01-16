@@ -99,11 +99,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let (commits, patchnames) = if let Some(committish) = matches.get_one::<String>("to") {
         let mut target_commit = repo
             .rev_parse_single(committish.as_str())
-            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?
+            .map_err(|_| anyhow!("invalid committish `{committish}`"))?
             .object()?
             .peel_tags_to_end()?
             .try_into_commit()
-            .map_err(|_| anyhow!("Target `{committish}` does not resolve to a commit"))?;
+            .map_err(|_| anyhow!("target `{committish}` does not resolve to a commit"))?;
 
         let bases = repo
             .stupid()
@@ -155,7 +155,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             if let Some(mut prefixes) = matches.get_many::<PatchName>("patchname") {
                 if prefixes.len() != 1 {
                     return Err(anyhow!(
-                        "When using `--number`, specify at most one patch name"
+                        "when using `--number`, specify at most one patch name"
                     ));
                 }
                 let prefix = prefixes.next().unwrap();
@@ -211,7 +211,7 @@ fn check_commit(commit: &git_repository::Commit) -> Result<()> {
         Ok(())
     } else {
         Err(anyhow!(
-            "Cannot uncommit `{}` which does not have exactly one parent",
+            "cannot uncommit `{}` which does not have exactly one parent",
             commit.id()
         ))
     }
@@ -242,12 +242,12 @@ fn check_patchnames(stack: &Stack, patchnames: &[PatchName]) -> Result<()> {
     let mut taken_names: Vec<&PatchName> = Vec::new();
     for patchname in patchnames {
         if let Some(colliding_patchname) = stack.collides(patchname) {
-            return Err(anyhow!("Patch `{colliding_patchname}` already exists"));
+            return Err(anyhow!("patch `{colliding_patchname}` already exists"));
         } else if let Some(colliding_patchname) =
             taken_names.iter().find(|pn| patchname.collides(pn))
         {
             return Err(anyhow!(
-                "Patch name `{patchname}` collides with `{colliding_patchname}`"
+                "patch name `{patchname}` collides with `{colliding_patchname}`"
             ));
         } else {
             taken_names.push(patchname);

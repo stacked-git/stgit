@@ -134,18 +134,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 patchrange::Error::BoundaryNotAllowed { patchname, range }
                     if stack.is_applied(&patchname) =>
                 {
-                    anyhow!("Patch `{patchname}` from `{range}` is already applied")
+                    anyhow!("patch `{patchname}` from `{range}` is already applied")
                 }
                 patchrange::Error::PatchNotAllowed { patchname, .. }
                     if stack.is_applied(&patchname) =>
                 {
-                    anyhow!("Patch `{patchname}` is already applied")
+                    anyhow!("patch `{patchname}` is already applied")
                 }
                 _ => e.into(),
             },
         )?
     } else if stack.unapplied().is_empty() {
-        return Err(anyhow!("No unapplied patches"));
+        return Err(anyhow!("no unapplied patches"));
     } else if matches.get_flag("all") {
         stack.unapplied().to_vec()
     } else if let Some(number) = opt_number {

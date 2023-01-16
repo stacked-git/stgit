@@ -431,15 +431,15 @@ fn execute_stgit_alias(
             {
                 execute_command(command, argv, color_choice)
             } else if aliases.contains_key(resolved_cmd_name) {
-                Err(anyhow!("Recursive alias `{}`", alias.name))
+                Err(anyhow!("recursive alias `{}`", alias.name))
             } else {
                 Err(anyhow!(
-                    "Bad alias for `{}`: `{resolved_cmd_name}` is not a stg command",
+                    "bad alias for `{}`: `{resolved_cmd_name}` is not a stg command",
                     alias.name,
                 ))
             }
         }
-        Err(reason) => Err(anyhow!("Bad alias for `{}`: {reason}", alias.name)),
+        Err(reason) => Err(anyhow!("bad alias for `{}`: {reason}", alias.name)),
     };
 
     exit_with_result(result, color_choice)

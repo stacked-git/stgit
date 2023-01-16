@@ -454,7 +454,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 patchrange::Allow::VisibleWithAppliedBoundary,
             )?;
             if patches.is_empty() {
-                return Err(anyhow!("No patches to send"));
+                return Err(anyhow!("no patches to format"));
             }
             patches
         } else if matches.get_flag("all") {
@@ -469,7 +469,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     for patchname in &patches {
         if stack.get_patch_commit(patchname).is_no_change()? {
-            return Err(anyhow!("Cannot format empty patch `{patchname}`"));
+            return Err(anyhow!("cannot format empty patch `{patchname}`"));
         }
     }
 

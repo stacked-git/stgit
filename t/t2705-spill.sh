@@ -15,7 +15,7 @@ test_expect_success 'Initialize the StGit repository' '
 
 test_expect_success 'Attempt spill on uninitialized stack' '
     command_error stg spill 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 

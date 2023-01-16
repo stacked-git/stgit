@@ -397,11 +397,11 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 patchrange::Allow::VisibleWithAppliedBoundary,
             )?;
             if patches.is_empty() {
-                return Err(anyhow!("No patches to send"));
+                return Err(anyhow!("no patches to send"));
             } else {
                 for patchname in &patches {
                     if stack.get_patch_commit(patchname).is_no_change()? {
-                        return Err(anyhow!("Cannot send empty patch `{patchname}`"));
+                        return Err(anyhow!("cannot send empty patch `{patchname}`"));
                     }
                 }
             }
@@ -421,7 +421,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
         } else {
             for patchname in applied {
                 if stack.get_patch_commit(patchname).is_no_change()? {
-                    return Err(anyhow!("Cannot send empty patch `{patchname}`"));
+                    return Err(anyhow!("cannot send empty patch `{patchname}`"));
                 }
             }
         }

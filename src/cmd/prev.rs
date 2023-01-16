@@ -54,6 +54,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     } else if stack.applied().is_empty() {
         Err(crate::stack::Error::NoAppliedPatches.into())
     } else {
-        Err(anyhow!("Not enough patches applied"))
+        Err(anyhow!("not enough patches applied"))
     }
 }

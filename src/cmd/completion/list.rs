@@ -51,7 +51,7 @@ impl FromStr for OutputStyle {
             "asciidoc" => Ok(Self::AsciiDoc),
             "fish" => Ok(Self::Fish),
             "zsh" => Ok(Self::Zsh),
-            s => Err(anyhow::anyhow!("Invalid output style `{s}`")),
+            s => Err(anyhow::anyhow!("invalid output style `{s}`")),
         }
     }
 }

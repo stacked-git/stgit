@@ -22,7 +22,7 @@ test_expect_success 'Push an implicitly named hidden patch (should fail)' '
 test_expect_success 'Push an explicitly named hidden patch (should fail)' '
     command_error stg push hidden-patch 2>err &&
     test "$(echo $(stg series --all))" = "! hidden-patch" &&
-    grep "error: Hidden patch \`hidden-patch\` is not allowed" err
+    grep "error: hidden patch \`hidden-patch\` is not allowed" err
 '
 
 test_done

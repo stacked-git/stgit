@@ -166,7 +166,7 @@ test_expect_success 'Import with author options' '
 test_expect_success 'Import with bad author_date option' '
     stg delete --top &&
     general_error stg import --authdate "a long time ago" some.patch 2>err &&
-    grep -e "Invalid date \`a long time ago\`" err
+    grep -e "invalid date \`a long time ago\`" err
 '
 
 test_expect_success 'Import from stdin' '

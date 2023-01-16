@@ -28,7 +28,7 @@ test_expect_success 'Too many arguments' '
 
 test_expect_success 'Invalid patch name' '
     command_error stg files bad-patch-name 2>err &&
-    grep -e "Revision not found \`bad-patch-name\`" err
+    grep -e "revision not found \`bad-patch-name\`" err
 '
 
 test_expect_success 'No patch args' '

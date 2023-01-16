@@ -6,9 +6,9 @@ test_description='Test "stg edit"'
 
 test_expect_success 'Attempt edit on uninitialized branch' '
     command_error stg edit 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     command_error stg edit foo 2>err &&
-    grep "error: Patch \`foo\` does not exist" err
+    grep "error: patch \`foo\` does not exist" err
 '
 
 test_expect_success 'Setup' '
@@ -44,7 +44,7 @@ test_expect_success 'Empty editor aborts edit' '
 	EOF
     test_when_finished "rm -f diffedit" &&
     EDITOR=./diffedit command_error stg edit 2>err &&
-    grep -e "Aborting due to empty patch description" err
+    grep -e "aborting due to empty patch description" err
 '
 
 test_expect_success 'Edit new patch with no diff' '
@@ -219,7 +219,7 @@ test_expect_success 'Edit patch diff which fails to apply' '
 	EOF
     test_when_finished "rm -f diffedit; rm -f .stgit-failed.patch" &&
     EDITOR=./diffedit stg edit -d p2 2>&1 |
-    grep -e "Edited patch did not apply." &&
+    grep -e "edited patch did not apply" &&
     test "$(grep 111 foo)" = "111YY" &&
     test_file_not_empty .stgit-failed.patch
 '

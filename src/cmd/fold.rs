@@ -136,7 +136,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         if stupid.merge_recursive(base_tree_id, orig_head_tree_id, applied_tree_id)? {
             Ok(())
         } else {
-            Err(crate::stack::Error::CausedConflicts("Merge conflicts".to_string()).into())
+            Err(crate::stack::Error::CausedConflicts("merge conflicts".to_string()).into())
         }
     } else {
         stupid.apply_to_worktree_and_index(

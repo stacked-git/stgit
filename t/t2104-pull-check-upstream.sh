@@ -25,7 +25,7 @@ test_expect_success 'Test that pull without upstream setup produces friendly err
         stg branch --create without-upstream &&
         git config --unset branch.without-upstream.remote &&
         command_error stg pull 2>out.txt &&
-        grep "No tracking information for the current branch" out.txt
+        grep "no tracking information for the current branch" out.txt
     )
 '
 

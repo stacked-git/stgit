@@ -6,7 +6,7 @@ test_description='Run "stg refresh"'
 
 test_expect_success 'Attempt refresh on uninitialized stack' '
     command_error stg refresh 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 
@@ -155,13 +155,13 @@ test_expect_success 'Attempt invalid options with --index' '
 test_expect_success 'Attempt refresh with changed index and working tree' '
     echo "more foo" >>foo4.txt &&
     command_error stg refresh 2>err &&
-    grep -e "The index is dirty; consider using \`--index\` or \`--force\`" err
+    grep -e "the index is dirty; consider using \`--index\` or \`--force\`" err
 '
 
 test_expect_success 'Attempt to refresh to invalid patch name' '
     stg add foo4.txt &&
     command_error stg refresh -p bad-patchname 2>err &&
-    grep -e "Patch \`bad-patchname\` does not exist" err
+    grep -e "patch \`bad-patchname\` does not exist" err
 '
 
 test_expect_success 'Attempt to refresh with no applied patches' '
@@ -170,7 +170,7 @@ test_expect_success 'Attempt to refresh with no applied patches' '
     echo foo5 >foo5.txt &&
     git add foo5.txt &&
     command_error stg refresh 2>err &&
-    grep -e "No patches applied" err &&
+    grep -e "no patches applied" err &&
     git rm -f foo5.txt
 '
 
@@ -198,7 +198,7 @@ test_expect_success 'Attempt refresh with open conflict' '
     stg refresh &&
     conflict stg push p6 &&
     command_error stg refresh 2>err &&
-    grep -e "Resolve outstanding conflicts first" err
+    grep -e "resolve outstanding conflicts first" err
 '
 
 test_done

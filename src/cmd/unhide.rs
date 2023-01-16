@@ -57,10 +57,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
         patchrange::patches_from_specs(specs, &stack, patchrange::Allow::Hidden).map_err(|e| {
             match e {
                 patchrange::Error::BoundaryNotAllowed { patchname, range } => {
-                    anyhow!("Patch `{patchname}` from `{range}` is not hidden")
+                    anyhow!("patch `{patchname}` from `{range}` is not hidden")
                 }
                 patchrange::Error::PatchNotAllowed { patchname, .. } => {
-                    anyhow!("Patch `{patchname}` is not hidden")
+                    anyhow!("patch `{patchname}` is not hidden")
                 }
                 _ => e.into(),
             }

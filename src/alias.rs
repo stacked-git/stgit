@@ -105,7 +105,7 @@ where
                 for key in section.keys() {
                     let name = key.to_str().map_err(|_| {
                         anyhow!(
-                            "Alias name `{}` in {} is not valid UTF-8",
+                            "alias name `{}` in {} is not valid UTF-8",
                             key.to_str_lossy(),
                             config_source_str(section.meta().source),
                         )
@@ -117,7 +117,7 @@ where
                         if !exclude(name) {
                             let command = value.to_str().map_err(|_| {
                                 anyhow!(
-                                    "Alias value for `{name}` in {} is not valid UTF-8",
+                                    "alias value for `{name}` in {} is not valid UTF-8",
                                     config_source_str(section.meta().source)
                                 )
                             })?;

@@ -152,10 +152,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
                                 Some(RevError::InvalidRevision(spec, context)) => {
-                                    anyhow!("Invalid revision spec `{spec}`: {context}")
+                                    anyhow!("invalid revision spec `{spec}`: {context}")
                                 }
                                 Some(RevError::RevisionNotFound(spec)) => {
-                                    anyhow!("Patch or revision `{spec}` not found")
+                                    anyhow!("patch or revision `{spec}` not found")
                                 }
                                 _ => rev_err,
                             })?
@@ -168,10 +168,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
                         crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
                             .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
                                 Some(RevError::InvalidRevision(spec, context)) => {
-                                    anyhow!("Invalid patch or revision spec `{spec}`: {context}")
+                                    anyhow!("invalid patch or revision spec `{spec}`: {context}")
                                 }
                                 Some(RevError::RevisionNotFound(spec)) => {
-                                    anyhow!("Invalid patch or revision `{spec}` not found",)
+                                    anyhow!("invalid patch or revision `{spec}` not found",)
                                 }
                                 _ => rev_err,
                             })?

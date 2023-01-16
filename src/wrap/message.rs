@@ -58,12 +58,12 @@ impl<'a> Message<'a> {
             Self::Raw { bytes: _, encoding } => {
                 if let Some(encoding_str) = encoding {
                     let encoding = encoding_rs::Encoding::for_label(encoding_str.as_bytes())
-                        .ok_or_else(|| anyhow!("Unhandled message encoding `{encoding_str}`"))?;
+                        .ok_or_else(|| anyhow!("unhandled message encoding `{encoding_str}`"))?;
                     if encoding.is_single_byte() {
                         Ok(encoding)
                     } else {
                         Err(anyhow!(
-                            "Message encoding `{}` is not single-byte",
+                            "message encoding `{}` is not single-byte",
                             encoding.name()
                         ))
                     }
@@ -91,7 +91,7 @@ impl<'a> Message<'a> {
                     Ok(message)
                 } else {
                     Err(anyhow!(
-                        "Replacements while decoding message with `{}`",
+                        "replacements while decoding message with `{}`",
                         encoding.name()
                     ))
                 }
@@ -125,7 +125,7 @@ impl<'a> Message<'a> {
 
                     if any_replacements {
                         Err(anyhow!(
-                            "Failed to encode commit message with `{}`",
+                            "failed to encode commit message with `{}`",
                             target_encoding.name(),
                         ))
                     } else {
@@ -141,7 +141,7 @@ impl<'a> Message<'a> {
 
                     if any_replacements {
                         Err(anyhow!(
-                            "Failed to encode commit message with `{}`",
+                            "failed to encode commit message with `{}`",
                             target_encoding.name(),
                         ))
                     } else {
@@ -163,7 +163,7 @@ impl<'a> Message<'a> {
                                 target_encoding.encode(&message);
                             if any_replacements {
                                 Err(anyhow!(
-                                    "Failed to re-encode commit message from `{}` to `{}`",
+                                    "failed to re-encode commit message from `{}` to `{}`",
                                     current_encoding.name(),
                                     target_encoding.name(),
                                 ))
@@ -172,13 +172,13 @@ impl<'a> Message<'a> {
                             }
                         } else {
                             Err(anyhow!(
-                                "Failed to decode commit message with `{}`",
+                                "failed to decode commit message with `{}`",
                                 current_encoding.name(),
                             ))
                         }
                     } else {
                         Err(anyhow!(
-                            "Unhandled commit message encoding `{encoding_str}`"
+                            "unhandled commit message encoding `{encoding_str}`"
                         ))
                     }
                 } else if !is_encoding_specified {
@@ -201,7 +201,7 @@ impl<'a> Message<'a> {
                         Ok(Cow::Borrowed(bytes))
                     } else {
                         Err(anyhow!(
-                            "Cannot encode commit message with unknown encoding to `{}`",
+                            "cannot encode commit message with unknown encoding to `{}`",
                             target_encoding.name(),
                         ))
                     }

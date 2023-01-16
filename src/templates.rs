@@ -46,7 +46,7 @@ pub(crate) fn get_template(
         if let Ok(template_bytes) = std::fs::read(template_path) {
             let template = std::str::from_utf8(&template_bytes).map_err(|_| {
                 anyhow!(
-                    "Template file `{}` contains non-UTF-8 data",
+                    "template file `{}` contains non-UTF-8 data",
                     template_path.display()
                 )
             })?;

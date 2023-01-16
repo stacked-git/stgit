@@ -6,7 +6,7 @@ test_description='Test stg patches'
 
 test_expect_success 'Attempt patches on uninitialized branch' '
     command_error stg patches 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 
@@ -29,7 +29,7 @@ test_expect_success 'Create some patches' '
 
 test_expect_success 'No modifications and no file args' '
     command_error stg patches 2>err &&
-    grep -e "No local changes and no paths specified" err
+    grep -e "no local changes and no paths specified" err
 '
 
 test_expect_success 'Modifications and no file args' '
@@ -47,7 +47,7 @@ test_expect_success 'Modifications and no file args' '
 test_expect_success 'No patches applied' '
     stg pop -a &&
     command_error stg patches even.txt 2>err &&
-    grep -e "No patches applied" err
+    grep -e "no patches applied" err
 '
 
 test_expect_success 'Patches relative to dir' '

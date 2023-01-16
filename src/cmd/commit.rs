@@ -97,7 +97,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             return Ok(());
         } else if number > stack.applied().len() {
             return Err(anyhow!(
-                "There are not `{number}` applied patches to commit"
+                "there are not `{number}` applied patches to commit"
             ));
         } else {
             stack.applied()[0..number].to_vec()
@@ -121,12 +121,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
         if empty_patches.len() == 1 {
             return Err(anyhow!(
-                "Attempt to commit empty patch `{}`; use --allow-empty to override",
+                "attempt to commit empty patch `{}`; use --allow-empty to override",
                 empty_patches[0],
             ));
         } else if !empty_patches.is_empty() {
             return Err(anyhow!(
-                "Attempt to commit {} empty patches; use `--allow-empty` to override",
+                "attempt to commit {} empty patches; use `--allow-empty` to override",
                 empty_patches.len(),
             ));
         }

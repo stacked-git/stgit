@@ -59,7 +59,7 @@ pub(crate) trait TimeExtended {
             }
         }
 
-        Err(anyhow!("Invalid date `{time_str}`"))
+        Err(anyhow!("invalid date `{time_str}`"))
     }
 }
 

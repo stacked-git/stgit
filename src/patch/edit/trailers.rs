@@ -49,7 +49,7 @@ pub(crate) fn add_trailers<'a, 'b>(
             if let (Ok(name), Ok(email)) = (signature.name.to_str(), signature.email.to_str()) {
                 format!("{name} <{email}>")
             } else {
-                return Err(anyhow!("Trailer requires UTF-8 signature"));
+                return Err(anyhow!("trailer requires UTF-8 signature"));
             };
 
         if let Some(autosign) = autosign {
@@ -70,7 +70,7 @@ pub(crate) fn add_trailers<'a, 'b>(
             }),
         )?;
         let message = String::from_utf8(message_bytes)
-            .map_err(|_| anyhow!("Could not decode message after adding trailers"))?;
+            .map_err(|_| anyhow!("could not decode message after adding trailers"))?;
         Ok(Message::from(message))
     }
 }

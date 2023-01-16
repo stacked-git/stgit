@@ -409,7 +409,7 @@ fn import_series(
                     Some(0)
                 } else {
                     return Err(anyhow!(
-                        "Patch `{}` has unsupported strip level \"{}\"",
+                        "patch `{}` has unsupported strip level \"{}\"",
                         raw_patchname.to_string_lossy(),
                         extra.to_str_lossy()
                     ));
@@ -439,7 +439,7 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
             return Ok(entry.path());
         }
     }
-    Err(anyhow!("Series file not found"))
+    Err(anyhow!("series file not found"))
 }
 
 fn use_message_id(matches: &clap::ArgMatches, config: &git_repository::config::Snapshot) -> bool {
@@ -784,7 +784,7 @@ impl Headers {
                     headers.patchname = Some(
                         value
                             .to_str()
-                            .map_err(|_| anyhow!("Patch name is not UTF-8"))
+                            .map_err(|_| anyhow!("patch name is not UTF-8"))
                             .context("parsing Patch header")?
                             .to_string(),
                     );
@@ -823,7 +823,7 @@ impl Headers {
             // Once the subject is determined, more contiguous headers may be parsed.
             headers.subject = Some(
                 line.to_str()
-                    .map_err(|_| anyhow!("Message is not UTF-8"))
+                    .map_err(|_| anyhow!("message is not UTF-8"))
                     .context("parsing patch message")?
                     .to_string(),
             );

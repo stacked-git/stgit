@@ -18,17 +18,17 @@ test_expect_success 'Create a named patch' '
 
 test_expect_success 'Invalid patch name: space' '
     general_error stg new "bad name" 2>err &&
-    grep -e "Invalid patch name \`bad name\`" err
+    grep -e "invalid patch name \`bad name\`" err
 '
 
 test_expect_success 'Invalid patch name: carat' '
     general_error stg new "bad^name" 2>err &&
-    grep -e "Invalid patch name \`bad\^name\`" err
+    grep -e "invalid patch name \`bad\^name\`" err
 '
 
 test_expect_success 'Invalid patch name: empty' '
     general_error stg new "" 2>err &&
-    grep -e "Invalid patch name \`\`" err
+    grep -e "invalid patch name \`\`" err
 '
 
 test_expect_success 'Invalid patch name: trailing periods in shortened name' '
@@ -46,7 +46,7 @@ test_expect_success 'Create a patch without giving a name' '
 
 test_expect_success 'Attempt to create patch with duplicate name' '
     command_error stg new foo -m "duplicate foo" 2>err &&
-    grep -e "Patch \`foo\` already exists" err
+    grep -e "patch \`foo\` already exists" err
 '
 
 test_expect_success 'Attempt new with conflicts' '
@@ -63,7 +63,7 @@ test_expect_success 'Attempt new with conflicts' '
     stg refresh &&
     conflict stg push p1 &&
     command_error stg new -m p3 2>err &&
-    grep -e "Resolve outstanding conflicts first" err &&
+    grep -e "resolve outstanding conflicts first" err &&
     stg reset --hard
 '
 

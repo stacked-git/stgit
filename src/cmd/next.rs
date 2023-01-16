@@ -52,6 +52,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         writeln!(stdout)?;
         Ok(())
     } else {
-        Err(anyhow!("No unapplied patches"))
+        Err(anyhow!("no unapplied patches"))
     }
 }

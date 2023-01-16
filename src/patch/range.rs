@@ -13,18 +13,18 @@ pub(crate) enum Error {
     #[error(transparent)]
     PatchName(#[from] super::name::Error),
 
-    #[error("Patch `{patchname}` is used more than once")]
+    #[error("patch `{patchname}` is used more than once")]
     Duplicate { patchname: PatchName },
 
-    #[error("Patch `{patchname}` in `{range}` is not allowed")]
+    #[error("patch `{patchname}` in `{range}` is not allowed")]
     BoundaryNotAllowed { patchname: PatchName, range: String },
 
-    #[error("Patch `{patchname}` in `{range}` does not exist")]
+    #[error("patch `{patchname}` in `{range}` does not exist")]
     BoundaryNotKnown { patchname: PatchName, range: String },
 
     #[error(
-        "Patch `{patchname}` in `{range}` does not exist, \
-             but is similar to {similar_patchnames}"
+        "patch `{patchname}` in `{range}` does not exist, \
+         but is similar to {similar_patchnames}"
     )]
     BoundarySimilar {
         patchname: PatchName,
@@ -38,11 +38,11 @@ pub(crate) enum Error {
         patchname: PatchName,
     },
 
-    #[error("Patch `{patchname}` does not exist")]
+    #[error("patch `{patchname}` does not exist")]
     PatchNotKnown { patchname: PatchName },
 
     #[error(
-        "Patch `{patchname}` does not exist, \
+        "patch `{patchname}` does not exist, \
          but is similar to {similar_patchnames}"
     )]
     PatchSimilar {
@@ -53,7 +53,7 @@ pub(crate) enum Error {
     #[error("`{range}` not contiguous with preceding range `{prev_range}`")]
     NotContiguous { range: String, prev_range: String },
 
-    #[error("End patch `{end_patchname}` is out of order with `{begin_patchname}`")]
+    #[error("end patch `{end_patchname}` is out of order with `{begin_patchname}`")]
     BoundaryOrder {
         begin_patchname: PatchName,
         end_patchname: PatchName,
@@ -518,11 +518,11 @@ fn from_whence<'repo>(
     stack_state: &impl StackStateAccess<'repo>,
 ) -> &'static str {
     if stack_state.hidden().contains(patchname) {
-        "Hidden"
+        "hidden"
     } else if stack_state.unapplied().contains(patchname) {
-        "Unapplied"
+        "unapplied"
     } else if stack_state.applied().contains(patchname) {
-        "Applied"
+        "applied"
     } else {
         panic!("patch {patchname} must be known")
     }

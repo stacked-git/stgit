@@ -62,10 +62,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
         let commit_id = repo
             .rev_parse_single(committish)
-            .map_err(|_| anyhow!("Invalid committish `{committish}`"))?
+            .map_err(|_| anyhow!("invalid committish `{committish}`"))?
             .object()?
             .try_into_commit()
-            .map_err(|_| anyhow!("Target `{committish}` is not a commit"))?
+            .map_err(|_| anyhow!("target `{committish}` is not a commit"))?
             .id;
         stack
             .setup_transaction()

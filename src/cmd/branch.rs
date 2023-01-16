@@ -440,7 +440,7 @@ fn create(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
     let new_fullname =
         git_repository::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?;
     if repo.try_find_reference(&new_fullname)?.is_some() {
-        return Err(anyhow!("Branch `{new_branchname}` already exists"));
+        return Err(anyhow!("branch `{new_branchname}` already exists"));
     }
 
     repo.check_repository_state()?;
@@ -733,7 +733,7 @@ fn delete(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
         .as_ref()
         .and_then(|branch| branch.get_branch_name().ok());
     if Some(target_branchname) == current_branchname {
-        return Err(anyhow!("Cannot delete the current branch"));
+        return Err(anyhow!("cannot delete the current branch"));
     }
 
     if let Ok(stack) = Stack::from_branch(
@@ -742,10 +742,10 @@ fn delete(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
         InitializationPolicy::RequireInitialized,
     ) {
         if stack.is_protected(&repo.config_snapshot()) {
-            return Err(anyhow!("Delete not permitted: this branch is protected"));
+            return Err(anyhow!("delete not permitted: this branch is protected"));
         } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
             return Err(anyhow!(
-                "Delete not permitted: the series still contains patches (override with --force)"
+                "delete not permitted: the series still contains patches (override with --force)"
             ));
         }
         stack.deinitialize()?;
@@ -762,10 +762,10 @@ fn cleanup(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()
         InitializationPolicy::RequireInitialized,
     )?;
     if stack.is_protected(&repo.config_snapshot()) {
-        return Err(anyhow!("Clean up not permitted: this branch is protected"));
+        return Err(anyhow!("clean up not permitted: this branch is protected"));
     } else if !matches.get_flag("force") && stack.all_patches().count() > 0 {
         return Err(anyhow!(
-            "Clean up not permitted: the series still contains patches (override with --force)"
+            "clean up not permitted: the series still contains patches (override with --force)"
         ));
     }
     stack.deinitialize()?;

@@ -92,13 +92,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if let Some(patchname) = patchname.as_ref() {
         if !squash_patchnames.contains(patchname) {
             if let Some(colliding_patchname) = stack.collides(patchname) {
-                return Err(anyhow!("Patch name `{colliding_patchname}` already taken"));
+                return Err(anyhow!("patch name `{colliding_patchname}` already taken"));
             }
         }
     }
 
     if squash_patchnames.len() < 2 {
-        return Err(anyhow!("Need at least two patches"));
+        return Err(anyhow!("need at least two patches"));
     }
 
     if matches.contains_id("save-template") {
@@ -195,7 +195,7 @@ pub(super) fn squash(
             (new_patchname, commit_id, to_push)
         } else {
             return Err(crate::stack::Error::CausedConflicts(
-                "Conflicts while squashing".to_string(),
+                "conflicts while squashing".to_string(),
             )
             .into());
         }

@@ -7,11 +7,11 @@ test_description='Test the push and pop commands'
 . ./test-lib.sh
 
 test_expect_success 'Test behavior on uninitialized repo' '
-    command_error stg prev 2>err && grep -e "error: No patches applied" err &&
-    command_error stg next 2>err && grep -e "error: No unapplied patches" err &&
-    command_error stg top  2>err && grep -e "error: No patches applied" err &&
-    command_error stg pop  2>err && grep -e "error: No patches applied" err &&
-    command_error stg push 2>err && grep -e "error: No unapplied patches" err
+    command_error stg prev 2>err && grep -e "error: no patches applied" err &&
+    command_error stg next 2>err && grep -e "error: no unapplied patches" err &&
+    command_error stg top  2>err && grep -e "error: no patches applied" err &&
+    command_error stg pop  2>err && grep -e "error: no patches applied" err &&
+    command_error stg push 2>err && grep -e "error: no unapplied patches" err
 '
 
 test_expect_success 'Initialize the StGit repository' '
@@ -19,11 +19,11 @@ test_expect_success 'Initialize the StGit repository' '
 '
 
 test_expect_success 'Test behavior on empty repo' '
-    command_error stg prev 2>err && grep -e "No patches applied" err &&
-    command_error stg next 2>err && grep -e "No unapplied patches" err &&
-    command_error stg top  2>err && grep -e "No patches applied" err &&
-    command_error stg pop  2>err && grep -e "No patches applied" err &&
-    command_error stg push 2>err && grep -e "No unapplied patches" err
+    command_error stg prev 2>err && grep -e "no patches applied" err &&
+    command_error stg next 2>err && grep -e "no unapplied patches" err &&
+    command_error stg top  2>err && grep -e "no patches applied" err &&
+    command_error stg pop  2>err && grep -e "no patches applied" err &&
+    command_error stg push 2>err && grep -e "no unapplied patches" err
 '
 
 test_expect_success 'Create ten patches' '
@@ -36,7 +36,7 @@ test_expect_success 'Create ten patches' '
 '
 
 test_expect_success 'Check prev, next, and top with all applied' '
-    command_error stg next 2>err && grep -e "No unapplied patches" err &&
+    command_error stg next 2>err && grep -e "no unapplied patches" err &&
     [ "$(echo $(stg prev))" = "p8" ] &&
     [ "$(echo $(stg top))" = "p9" ]
 '
@@ -63,7 +63,7 @@ test_expect_success 'Pop the remaining patches' '
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p7 p8 p9" ] &&
     command_error stg pop 2>err &&
-    grep -e "No patches applied" err
+    grep -e "no patches applied" err
 '
 
 test_expect_success 'Check prev, next, and top with none applied' '
@@ -77,7 +77,7 @@ test_expect_success 'Push them back' '
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4 p5 p6 p7 p8 p9" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     command_error stg push 2>err &&
-    grep -e "No unapplied patches" err
+    grep -e "no unapplied patches" err
 '
 
 test_expect_success 'Pop all but seven patches' '
@@ -128,9 +128,9 @@ test_expect_success 'Push two patches in reverse' '
 
 test_expect_success 'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err &&
-    grep -e "Patch \`p0\` from \`p0\.\.p2\` is already applied" err &&
+    grep -e "patch \`p0\` from \`p0\.\.p2\` is already applied" err &&
     command_error stg push p99999 2>err &&
-    grep -e "Patch \`p99999\` does not exist" err
+    grep -e "patch \`p99999\` does not exist" err
 '
 
 test_done

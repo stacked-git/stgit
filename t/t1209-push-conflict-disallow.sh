@@ -20,13 +20,13 @@ test_expect_success 'Setup patches' '
 
 test_expect_success 'Default push conflict policy' '
     conflict stg push a-patch b-patch 2>err &&
-    grep "error: Merge conflicts." err &&
+    grep "error: merge conflicts." err &&
     stg undo --hard
 '
 
 test_expect_success 'Disallow push conflict policy' '
     conflict stg push --conflicts=disallow a-patch b-patch 2>err &&
-    grep "error: Pushing patch \`b-patch\` would result in conflicts" err &&
+    grep "error: pushing patch \`b-patch\` would result in conflicts" err &&
     test "$(echo $(stg series --no-prefix --applied))" = "hello goodbye a-patch" &&
     stg undo --hard
 '
@@ -34,7 +34,7 @@ test_expect_success 'Disallow push conflict policy' '
 test_expect_success 'Disallow push conflicts with configuration' '
     test_config stgit.push.allow-conflicts false &&
     conflict stg push --conflicts=disallow a-patch b-patch 2>err &&
-    grep "error: Pushing patch \`b-patch\` would result in conflicts" err &&
+    grep "error: pushing patch \`b-patch\` would result in conflicts" err &&
     test "$(echo $(stg series --no-prefix --applied))" = "hello goodbye a-patch" &&
     stg undo --hard
 '
@@ -42,17 +42,17 @@ test_expect_success 'Disallow push conflicts with configuration' '
 test_expect_success 'Override conflict policy on command line' '
     test_config stgit.push.allow-conflicts false &&
     conflict stg push --conflicts a-patch b-patch 2>err &&
-    grep "error: Merge conflicts." err &&
+    grep "error: merge conflicts." err &&
     stg undo --hard &&
     conflict stg push --conflicts=allow a-patch b-patch 2>err &&
-    grep "error: Merge conflicts." err &&
+    grep "error: merge conflicts." err &&
     stg undo --hard
 '
 
 test_expect_success 'Override on command line to disallow conflicts' '
     test_config stgit.push.allow-conflicts true &&
     conflict stg push --conflicts=disallow a-patch b-patch 2>err &&
-    grep "error: Pushing patch \`b-patch\` would result in conflicts" err &&
+    grep "error: pushing patch \`b-patch\` would result in conflicts" err &&
     test "$(echo $(stg series --no-prefix --applied))" = "hello goodbye a-patch" &&
     stg undo --hard
 '

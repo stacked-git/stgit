@@ -8,7 +8,7 @@ test_description='Test floating a number of patches to the top of the stack'
 
 test_expect_success 'Attempt float on uninitialized stack' '
     command_error stg float foo 2>err &&
-    grep "error: Patch \`foo\` does not exist" err &&
+    grep "error: patch \`foo\` does not exist" err &&
     rm err
 '
 
@@ -81,7 +81,7 @@ test_expect_success 'Float with series from stdin' '
 test_expect_success 'Attempt float with empty series' '
     echo "" |
     command_error stg float -S - 2>&1 |
-    grep -e "error: No patches to float"
+    grep -e "error: no patches to float"
 '
 
 test_expect_success 'Attempt float with series file and arguments' '
@@ -97,7 +97,7 @@ test_expect_success 'Attempt float with no series file and no arguments' '
 test_expect_success 'Series with bogus patch name' '
     printf "p1\np2\np3\nBOGUS\np4\np5\np6\np7\n" |
     command_error stg float --series=- 2>&1 |
-    grep -e "error: <stdin>: Patch \`BOGUS\` does not exist"
+    grep -e "error: <stdin>: patch \`BOGUS\` does not exist"
 '
 
 test_done

@@ -168,7 +168,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         .cloned()
     {
         if let Some(colliding_patchname) = stack.collides(&patchname) {
-            Err(anyhow!("Patch `{colliding_patchname}` already exists"))
+            Err(anyhow!("patch `{colliding_patchname}` already exists"))
         } else {
             Ok(Some(patchname))
         }

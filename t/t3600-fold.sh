@@ -6,7 +6,7 @@ test_description='Test the fold command'
 
 test_expect_success 'Attempt fold on uninitialized stack' '
     command_error stg fold 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 
@@ -38,7 +38,7 @@ test_expect_success 'Attempt fold with local changes' '
     echo "hello dirty" >foo.txt &&
     test_when_finished "stg reset --hard" &&
     command_error stg fold fold1.diff 2>err &&
-    grep -e "Worktree not clean" err
+    grep -e "worktree not clean" err
 '
 
 test_expect_success 'Attempt fold with non-existant patch file' '
@@ -50,7 +50,7 @@ test_expect_success 'Attempt fold with no applied patches' '
     stg pop -a &&
     test_when_finished "stg push -a" &&
     command_error stg fold fold1.diff 2>err &&
-    grep "No patches applied" err
+    grep "no patches applied" err
 '
 
 test_expect_success 'Fold a patch file' '
@@ -81,7 +81,7 @@ test_expect_success 'Attempt to fold conflicting patch' '
     echo "from p2" >>foo.txt &&
     stg refresh &&
     command_error stg fold fold1.diff 2>err &&
-    grep "Patch does not apply cleanly" err &&
+    grep "patch does not apply cleanly" err &&
     test -z "$(echo $(stg status --porcelain foo.txt))"
     test ! -e foo.txt.rej
 '

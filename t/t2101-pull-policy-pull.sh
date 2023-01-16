@@ -30,7 +30,7 @@ test_expect_success 'Check protection' '
         cd clone &&
         stg branch --protect &&
         command_error stg pull 2>err &&
-        grep "This branch is protected" err &&
+        grep "this branch is protected" err &&
         stg branch --unprotect
     )
 '
@@ -60,7 +60,7 @@ test_expect_success 'Test invalid pull policy' '
     (
         cd clone &&
         command_error stg pull 2>err &&
-        grep "Unsupported pull-policy" err
+        grep "unsupported pull-policy" err
     )
 '
 

@@ -50,7 +50,7 @@ test_expect_success 'Push reorded patches b1 b2 b3' '
 
 test_expect_success 'Attempt push --noapply on applied patch' '
     command_error stg push --noapply b1 2>err &&
-    grep -e "error: Patch \`b1\` is already applied" err
+    grep -e "error: patch \`b1\` is already applied" err
 '
 
 test_expect_success 'Reorder patches to cause a latent conflict' '

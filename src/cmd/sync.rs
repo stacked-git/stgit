@@ -121,7 +121,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let ref_patches: Vec<PatchName> = if let Some(ref_stack) = ref_stack.as_ref() {
         if ref_stack.get_branch_name() == stack.get_branch_name() {
-            return Err(anyhow!("Cannot synchronize with the current branch"));
+            return Err(anyhow!("cannot synchronize with the current branch"));
         }
         ref_stack.applied().to_vec()
     } else if let Some(series_path) = matches.get_one::<PathBuf>("series") {
@@ -138,7 +138,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             }
             let name = line.to_str().map_err(|_| {
                 anyhow!(
-                    "Series `{}` contains non-UTF-8 patchname",
+                    "series `{}` contains non-UTF-8 patchname",
                     series_path.to_string_lossy()
                 )
             })?;
@@ -164,7 +164,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let first_patch = if let Some(patchname) = sync_patches.first() {
         patchname
     } else {
-        return Err(anyhow!("No common patches to synchronize"));
+        return Err(anyhow!("no common patches to synchronize"));
     };
 
     let mut stack = stack;
@@ -269,7 +269,7 @@ fn branch_merge_patch(
         ref_commit_ref.tree(),
     )? {
         return Err(crate::stack::Error::CausedConflicts(format!(
-            "Merge conflicts syncing `{patchname}`"
+            "merge conflicts syncing `{patchname}`"
         ))
         .into());
     }
@@ -326,7 +326,7 @@ fn series_merge_patch(
     stupid.read_tree_checkout(tree_id, trans_head_tree_id)?;
     if !stupid.merge_recursive(parent_commit_ref.tree(), trans_head_tree_id, tree_id)? {
         return Err(crate::stack::Error::CausedConflicts(format!(
-            "Merge conflicts syncing `{patchname}`"
+            "merge conflicts syncing `{patchname}`"
         ))
         .into());
     }

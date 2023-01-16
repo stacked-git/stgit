@@ -43,7 +43,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
         let encoding = if let Some(encoding_name) = commit_ref.encoding {
             encoding_rs::Encoding::for_label(encoding_name).ok_or_else(|| {
                 anyhow!(
-                    "Unhandled commit encoding `{}` in commit `{}`",
+                    "unhandled commit encoding `{}` in commit `{}`",
                     encoding_name.to_str_lossy(),
                     self.id,
                 )
@@ -63,14 +63,14 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
                 })
             } else {
                 Err(anyhow!(
-                    "Could not decode author email as `{}` for commit `{}`",
+                    "could not decode author email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id,
                 ))
             }
         } else {
             Err(anyhow!(
-                "Could not decode author name as `{}` for commit `{}`",
+                "could not decode author name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id,
             ))
@@ -83,7 +83,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
         let encoding = if let Some(encoding_name) = commit_ref.encoding {
             encoding_rs::Encoding::for_label(encoding_name).ok_or_else(|| {
                 anyhow!(
-                    "Unhandled commit encoding `{}` in commit `{}`",
+                    "unhandled commit encoding `{}` in commit `{}`",
                     encoding_name.to_str_lossy(),
                     self.id,
                 )
@@ -103,14 +103,14 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
                 })
             } else {
                 Err(anyhow!(
-                    "Could not decode committer email as `{}` for commit `{}`",
+                    "could not decode committer email as `{}` for commit `{}`",
                     encoding.name(),
                     self.id,
                 ))
             }
         } else {
             Err(anyhow!(
-                "Could not decode committer name as `{}` for commit `{}`",
+                "could not decode committer name as `{}` for commit `{}`",
                 encoding.name(),
                 self.id,
             ))

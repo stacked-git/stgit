@@ -15,13 +15,13 @@ test_expect_success 'Initialize branch' '
 
 test_expect_success 'Cannot cleanup with patches' '
     command_error stg branch --cleanup 2>err &&
-    grep "Clean up not permitted: the series still contains patches" err
+    grep "clean up not permitted: the series still contains patches" err
 '
 
 test_expect_success 'Cannot cleanup with unapplied patches' '
     stg pop &&
     command_error stg branch --cleanup 2>err &&
-    grep "Clean up not permitted: the series still contains patches" err
+    grep "clean up not permitted: the series still contains patches" err
 '
 
 test_expect_success 'Clone branch with patches' '

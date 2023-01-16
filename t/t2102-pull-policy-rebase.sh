@@ -18,7 +18,7 @@ test_expect_success 'Fork stack off parent branch, and add patches to the stack'
 
 test_expect_success 'Test invalid remote argument' '
     command_error stg pull origin 2>err &&
-    grep "Specifying a repository is meaningless for \`rebase\` pull-policy" err
+    grep "specifying a repository is meaningless for \`rebase\` pull-policy" err
 '
 
 test_expect_success 'Test invalid arguments' '

@@ -12,12 +12,12 @@ test_expect_success 'Initialize repo' '
 
 test_expect_success 'Attempt to edit with no args and none applied' '
     command_error stg edit 2>err &&
-    grep "error: No patches applied" err
+    grep "error: no patches applied" err
 '
 
 test_expect_success 'Attempt to edit non-existant patch name' '
     command_error stg edit not-a-patch 2>err &&
-    grep "Patch \`not-a-patch\` does not exist" err
+    grep "patch \`not-a-patch\` does not exist" err
 '
 
 test_expect_success 'Attempt to edit multiple patches' '

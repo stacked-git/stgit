@@ -1062,7 +1062,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         assert_eq!(last, Some(b'\n'));
         match stdout.into_os_string() {
             Ok(cdup) => Ok(cdup),
-            Err(_) => Err(anyhow!("Could not convert cdup to path")),
+            Err(_) => Err(anyhow!("could not convert cdup to path")),
         }
     }
 
@@ -1332,7 +1332,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 Err(anyhow!("`{user_cmd_str}` failed"))
             }
         } else {
-            Err(anyhow!("User-provided fetchcmd is empty"))
+            Err(anyhow!("user-provided fetchcmd is empty"))
         }
     }
 
@@ -1366,7 +1366,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 Err(anyhow!("`{user_cmd_str}` failed"))
             }
         } else {
-            Err(anyhow!("User-provided pullcmd is empty"))
+            Err(anyhow!("user-provided pullcmd is empty"))
         }
     }
 
@@ -1399,7 +1399,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
                 Err(anyhow!("`{user_cmd_str}` failed"))
             }
         } else {
-            Err(anyhow!("User-provided rebasecmd is empty"))
+            Err(anyhow!("user-provided rebasecmd is empty"))
         }
     }
 

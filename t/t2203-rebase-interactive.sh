@@ -29,7 +29,7 @@ test_expect_success 'Bad APPLY_LINE throws an error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "Bad APPLY_LINE" err
+    grep -e "bad APPLY_LINE" err
 '
 
 test_expect_success 'Apply patches without APPLY_LINE' '
@@ -50,7 +50,7 @@ test_expect_success 'Bad todo line throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "Bad instruction line: \`keep\`" err
+    grep -e "bad instruction line: \`keep\`" err
 '
 
 test_expect_success 'Bad patch name throws error' '
@@ -60,7 +60,7 @@ test_expect_success 'Bad patch name throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "Unknown patch name \`invalid_patch_name\`" err
+    grep -e "unknown patch name \`invalid_patch_name\`" err
 '
 
 test_expect_success 'Bad instruction throws error' '
@@ -70,7 +70,7 @@ test_expect_success 'Bad instruction throws error' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "Unknown instruction" err
+    grep -e "unknown instruction" err
 '
 
 test_expect_success 'Hide a patch' '
@@ -204,7 +204,7 @@ test_expect_success 'Fix on first patch does not crash' '
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     command_error stg rebase --interactive 2>err &&
-    grep -e "Cannot fixup \`p0\`: no preceding patch" err
+    grep -e "cannot fixup \`p0\`: no preceding patch" err
 '
 
 test_expect_success 'Fix succeeds' '

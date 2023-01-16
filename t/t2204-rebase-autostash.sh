@@ -22,7 +22,7 @@ test_expect_success 'Setup a multi-commit branch and fork an stgit stack' '
 test_expect_success 'dirty workdir aborts rebase' '
     echo foo >>file1 &&
     command_error stg rebase master 2>err &&
-    grep -e "Worktree not clean." err
+    grep -e "worktree not clean." err
 '
 
 test_expect_success 'dirty workdir works with --autostash' '
@@ -53,7 +53,7 @@ test_expect_success 'rebase --autostash throws helpful error message in conflict
     stg rebase master
     echo baz >file2 &&
     conflict stg rebase master~1 --interactive --autostash 2>err &&
-    grep -e "Stash pop resulted in conflicts" err
+    grep -e "stash pop resulted in conflicts" err
 '
 
 test_done

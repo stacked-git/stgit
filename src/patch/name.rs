@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
-    #[error("Invalid patch name `{name}`: {reason}")]
+    #[error("invalid patch name `{name}`: {reason}")]
     InvalidPatchName { name: String, reason: String },
 }
 

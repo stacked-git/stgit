@@ -107,7 +107,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
 
         if !status.success() {
             return Err(anyhow!(
-                "Problem with the editor `{}`",
+                "problem with the editor `{}`",
                 editor.to_string_lossy()
             ));
         }

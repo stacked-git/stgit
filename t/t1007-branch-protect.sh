@@ -32,13 +32,13 @@ test_expect_success 'Protect idempotency' '
 
 test_expect_success 'Attempt cleanup protected' '
     command_error stg branch --cleanup 2>err &&
-    grep "Clean up not permitted: this branch is protected" err
+    grep "clean up not permitted: this branch is protected" err
 '
 
 test_expect_success 'Attempt delete protected' '
     stg branch master &&
     command_error stg branch --delete foo 2>err &&
-    grep "Delete not permitted: this branch is protected" err
+    grep "delete not permitted: this branch is protected" err
 '
 
 test_expect_success 'Invalid num args to unprotect' '

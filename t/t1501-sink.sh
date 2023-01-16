@@ -6,7 +6,7 @@ test_description='Test "stg sink"'
 
 test_expect_success 'Attempt sink with uninitialized stack' '
     command_error stg sink 2>err &&
-    grep "error: No patches applied" err &&
+    grep "error: no patches applied" err &&
     rm err
 '
 
@@ -35,7 +35,7 @@ test_expect_success 'Initialize StGit stack' '
 
 test_expect_success 'sink default without applied patches' '
     command_error stg sink 2>&1 |
-    grep -e "No patches applied"
+    grep -e "no patches applied"
 '
 
 test_expect_success 'sink and reorder specified without applied patches' '
@@ -45,7 +45,7 @@ test_expect_success 'sink and reorder specified without applied patches' '
 
 test_expect_success 'attempt sink below unapplied' '
     command_error stg sink --to=p4 2>&1 |
-    grep -e "Cannot sink below \`p4\` since it is not applied"
+    grep -e "cannot sink below \`p4\` since it is not applied"
 '
 
 test_expect_success 'sink patches to the bottom of the stack' '
@@ -83,7 +83,7 @@ test_expect_success 'sink --nopush with multiple patches' '
 
 test_expect_success 'attempt sink with same to and target' '
     command_error stg sink --to=p3 p3 2>&1 |
-    grep -e "Target patch \`p3\` may not also be a patch to sink"
+    grep -e "target patch \`p3\` may not also be a patch to sink"
 '
 
 test_expect_success 'sink with conflict' '

@@ -178,7 +178,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
 
             // Every line before the diff must be valid utf8
             let line = std::str::from_utf8(line)
-                .map_err(|_| anyhow!("Patch description contains non-UTF-8 data"))?;
+                .map_err(|_| anyhow!("patch description contains non-UTF-8 data"))?;
             let trimmed = line.trim_end();
 
             if consuming_message {
@@ -235,7 +235,7 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             && raw_authdate.is_none()
             && message.trim().is_empty()
         {
-            return Err(anyhow!("Aborting due to empty patch description"));
+            return Err(anyhow!("aborting due to empty patch description"));
         }
 
         let patchname = if let Some(maybe_patchname) = raw_patchname {

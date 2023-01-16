@@ -112,7 +112,7 @@ impl RepositoryExtended for git_repository::Repository {
                 InProgress::Revert | InProgress::RevertSequence => "revert",
             };
             Err(anyhow!(
-                "Complete the in-progress `{state_str}` before trying again",
+                "complete the in-progress `{state_str}` before trying again",
             ))
         } else {
             Ok(())
@@ -121,13 +121,13 @@ impl RepositoryExtended for git_repository::Repository {
 
     fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
         self.author().ok_or_else(|| {
-            anyhow!("Author identity unknown. Please configure `user.name` and `user.email`.")
+            anyhow!("author identity unknown; please configure `user.name` and `user.email`.")
         })
     }
 
     fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
         self.committer().ok_or_else(|| {
-            anyhow!("Committer identity unknown. Please configure `user.name` and `user.email`.")
+            anyhow!("committer identity unknown; please configure `user.name` and `user.email`.")
         })
     }
 
@@ -137,17 +137,17 @@ impl RepositoryExtended for git_repository::Repository {
         if let Some(name) = branch_name {
             let reference = self.find_reference(name).map_err(|e| match e {
                 git_repository::reference::find::existing::Error::Find(inner) => {
-                    anyhow!("Invalid branch name `{name}`: {inner}")
+                    anyhow!("invalid branch name `{name}`: {inner}")
                 }
                 git_repository::reference::find::existing::Error::NotFound => {
-                    anyhow!("Branch `{name}` not found")
+                    anyhow!("branch `{name}` not found")
                 }
             })?;
 
             if matches!(reference.name().category(), Some(Category::LocalBranch),) {
                 Ok(Branch::wrap(reference))
             } else {
-                Err(anyhow!("Reference `{name}` is not a local branch"))
+                Err(anyhow!("reference `{name}` is not a local branch"))
             }
         } else {
             match self.head()?.kind {
@@ -168,7 +168,7 @@ impl RepositoryExtended for git_repository::Repository {
                 Kind::Detached {
                     target: _,
                     peeled: _,
-                } => Err(anyhow!("Not on branch, HEAD is detached")),
+                } => Err(anyhow!("not on branch, HEAD is detached")),
             }
         }
     }
@@ -256,7 +256,7 @@ impl RepositoryExtended for git_repository::Repository {
         let commit_encoding = match &options.commit_encoding {
             Some(s) => {
                 let encoding = encoding_rs::Encoding::for_label(s)
-                    .ok_or_else(|| anyhow!("Unhandled i18n.commitEncoding `{s}`"))?;
+                    .ok_or_else(|| anyhow!("unhandled i18n.commitEncoding `{s}`"))?;
                 Some(encoding)
             }
             None => None,

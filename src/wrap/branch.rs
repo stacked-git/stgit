@@ -25,7 +25,7 @@ impl<'repo> Branch<'repo> {
         let short_name = self.inner.name().shorten();
         short_name.to_str().map_err(|_| {
             anyhow!(
-                "Branch name `{}` is not valid UTF-8",
+                "branch name `{}` is not valid UTF-8",
                 short_name.to_str_lossy()
             )
         })

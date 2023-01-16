@@ -34,7 +34,7 @@ test_expect_success 'Invalid arg with -A' '
 
 test_expect_success 'Invalid patch name' '
     command_error stg show bad-patch-name 2>err &&
-    grep -e "Patch or revision \`bad-patch-name\` not found" err
+    grep -e "patch or revision \`bad-patch-name\` not found" err
 '
 
 test_expect_success 'Show patch' '

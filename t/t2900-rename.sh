@@ -11,13 +11,13 @@ Tests some parts of the stg rename command.'
 
 test_expect_success 'Attempt rename without stack' '
     command_error stg rename foo 2>err &&
-    grep -e "error: No patches applied" err
+    grep -e "error: no patches applied" err
 '
 
 test_expect_success 'Rename in empty' '
    stg init &&
    command_error stg rename foo 2>err &&
-   grep -e "No patches applied" err
+   grep -e "no patches applied" err
 '
 
 test_expect_success 'Rename single top-most' '
@@ -43,12 +43,12 @@ test_expect_success 'Rename with too many arguments' '
 
 test_expect_success 'Rename to existing name' '
    command_error stg rename foo baz 2>err &&
-   grep -e "Patch \`baz\` already exists" err
+   grep -e "patch \`baz\` already exists" err
 '
 
 test_expect_success 'Rename to same name' '
    command_error stg rename foo foo 2>err &&
-   grep -e "Patch \`foo\` already exists" err
+   grep -e "patch \`foo\` already exists" err
 '
 
 test_expect_success 'Rename top-most when others exist' '
@@ -57,12 +57,12 @@ test_expect_success 'Rename top-most when others exist' '
 
 test_expect_success 'Rename to invalid patch name: space' '
    general_error stg rename bar "bar fo" 2>err &&
-   grep -e "Invalid patch name \`bar fo\`" err
+   grep -e "invalid patch name \`bar fo\`" err
 '
 
 test_expect_success 'Rename to invalid patch name: colon' '
    general_error stg rename bar "bar:fo" 2>err &&
-   grep -e "Invalid patch name \`bar:fo\`" err
+   grep -e "invalid patch name \`bar:fo\`" err
 '
 
 test_expect_success 'Rename hidden' '

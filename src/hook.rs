@@ -136,7 +136,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
         let message = encoding
             .decode_without_bom_handling_and_without_replacement(&message_bytes)
             .ok_or_else(|| {
-                anyhow!("Message could not be decoded with `{}`", encoding.name())
+                anyhow!("message could not be decoded with `{}`", encoding.name())
                     .context("`{hook_name}` hook")
             })?;
         Ok(Message::from(message.to_string()))

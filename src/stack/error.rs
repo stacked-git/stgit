@@ -8,10 +8,10 @@ pub(crate) enum Error {
     #[error("{0}")]
     CausedConflicts(String),
 
-    #[error("Resolve outstanding conflicts first")]
+    #[error("resolve outstanding conflicts first")]
     OutstandingConflicts,
 
-    #[error("No patches applied")]
+    #[error("no patches applied")]
     NoAppliedPatches,
 
     #[error("{msg}")]

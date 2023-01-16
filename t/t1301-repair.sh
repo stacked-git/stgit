@@ -35,7 +35,7 @@ test_expect_success 'Attempt repair of protected branch' '
     test_when_finished "stg branch --unprotect" &&
     stg branch --protect &&
     command_error stg repair 2>err &&
-    grep -e "This branch is protected" err
+    grep -e "this branch is protected" err
 '
 
 test_expect_success 'Repair when there is nothing to do' '

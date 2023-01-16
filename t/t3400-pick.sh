@@ -155,7 +155,7 @@ test_expect_success 'Pick --update' '
 test_expect_success 'Pick --update without applied patches' '
     stg pop -a &&
     command_error stg pick --update -B foo E 2>err &&
-    grep "No patches applied" err &&
+    grep "no patches applied" err &&
     rm err
 '
 
@@ -188,7 +188,7 @@ test_expect_success 'Pick with conflict' '
     rm C-id &&
     stg push A &&
     conflict stg pick foo:AAA 2>err &&
-    grep "Merge conflicts" err &&
+    grep "merge conflicts" err &&
     rm err &&
     test "$(stg top)" = "AAA" &&
     test "$(echo $(stg series -A --noprefix))" = "C2 A AAA" &&

@@ -108,9 +108,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     };
 
     if stack.is_protected(&config) {
-        return Err(anyhow!(
-            "This branch is protected. Rebase is not permitted."
-        ));
+        return Err(anyhow!("this branch is protected; rebase is not permitted"));
     }
 
     stack.check_head_top_mismatch()?;
@@ -219,7 +217,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             Ok(())
         } else {
             Err(
-                crate::stack::Error::CausedConflicts("Stash pop resulted in conflicts".to_string())
+                crate::stack::Error::CausedConflicts("stash pop resulted in conflicts".to_string())
                     .into(),
             )
         }
@@ -414,7 +412,7 @@ fn interactive_pushback(
                     patchnames
                 } else {
                     return Err(anyhow!(
-                        "Cannot {action_str} `{patchname}`: no preceding patch"
+                        "cannot {action_str} `{patchname}`: no preceding patch"
                     ));
                 };
 
@@ -429,7 +427,7 @@ fn interactive_pushback(
                     Action::Fixup => {
                         let commit = stack.get_patch_commit(target_patchname);
                         let message = commit.message_raw()?.to_str().map_err(|_| {
-                            anyhow!("Fixup target patch `{target_patchname}` has non-UTF-8 message")
+                            anyhow!("fixup target patch `{target_patchname}` has non-UTF-8 message")
                         })?;
                         dummy_squash_command.try_get_matches_from([
                             "dummy-squash",
@@ -523,7 +521,7 @@ fn parse_instructions(buf: &str) -> Result<Vec<Instruction>> {
             if line == INTERACTIVE_APPLY_LINE {
                 apply = false;
             } else {
-                return Err(anyhow!("Bad APPLY_LINE: `{line}`"));
+                return Err(anyhow!("bad APPLY_LINE: `{line}`"));
             }
         }
 
@@ -548,7 +546,7 @@ fn parse_instructions(buf: &str) -> Result<Vec<Instruction>> {
                 "f" | "fix" | "fixup" => Action::Fixup,
                 "h" | "hide" => Action::Hide,
                 "d" | "delete" => Action::Delete,
-                _ => return Err(anyhow!("Unknown instruction action `{action_str}`")),
+                _ => return Err(anyhow!("unknown instruction action `{action_str}`")),
             };
 
             let patchname = PatchName::from_str(patchname_str)?;
@@ -559,7 +557,7 @@ fn parse_instructions(buf: &str) -> Result<Vec<Instruction>> {
                 apply,
             });
         } else {
-            return Err(anyhow!("Bad instruction line: `{line}`"));
+            return Err(anyhow!("bad instruction line: `{line}`"));
         }
     }
     Ok(instructions)
@@ -570,9 +568,9 @@ fn validate_instructions(stack: &Stack, instructions: &[Instruction]) -> Result<
     for instruction in instructions {
         let patchname = &instruction.patchname;
         if !stack.has_patch(patchname) {
-            return Err(anyhow!("Unknown patch name `{patchname}`"));
+            return Err(anyhow!("unknown patch name `{patchname}`"));
         } else if seen_patchnames.contains(&patchname) {
-            return Err(anyhow!("Duplicated patch name `{patchname}`"));
+            return Err(anyhow!("duplicated patch name `{patchname}`"));
         } else {
             seen_patchnames.push(patchname);
         }

@@ -105,12 +105,12 @@ pub(super) fn find_undo_state<'repo>(
         } else if let Some(URState::Redo(n)) = urstate {
             undo_steps -= n;
         } else {
-            break Err(anyhow!("No more redo information available"));
+            break Err(anyhow!("no more redo information available"));
         }
 
         state_commit = state
             .prev
-            .ok_or_else(|| anyhow!("Not enough undo information available"))?;
+            .ok_or_else(|| anyhow!("not enough undo information available"))?;
     }
 }
 

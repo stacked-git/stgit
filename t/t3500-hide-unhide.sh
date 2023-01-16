@@ -6,9 +6,9 @@ test_description='Test "stg hide" and "stg unhide"'
 
 test_expect_success 'Attempt hide on uninitialized stack' '
     command_error stg hide foo 2>err &&
-    grep "error: Patch \`foo\` does not exist" err &&
+    grep "error: patch \`foo\` does not exist" err &&
     command_error stg unhide foo 2>err &&
-    grep "error: Patch \`foo\` does not exist" err
+    grep "error: patch \`foo\` does not exist" err
 '
 
 test_expect_success 'Attempt too few arguments' '
@@ -31,7 +31,7 @@ test_expect_success 'Hide already hidden patch' '
 
 test_expect_success 'Attempt unhide non-hidden patch' '
     command_error stg unhide p0 2>err &&
-    grep -e "Patch \`p0\` is not hidden" err
+    grep -e "patch \`p0\` is not hidden" err
 '
 
 test_expect_success 'Unhide hidden patch' '

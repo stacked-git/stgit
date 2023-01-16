@@ -175,8 +175,8 @@ impl<'repo> ExecuteContext<'repo> {
                 return print_err;
             }
             anyhow!(
-                "{err:#}\n\
-                 Command aborted (all changes rolled back)"
+                "{err:#};\n\
+                 command aborted (all changes rolled back)"
             )
         };
 
@@ -807,10 +807,10 @@ impl<'repo> StackTransaction<'repo> {
                 .get(colliding_patchname)
                 .map_or(true, Option::is_some)
             {
-                return Err(anyhow!("Patch `{colliding_patchname}` already exists"));
+                return Err(anyhow!("patch `{colliding_patchname}` already exists"));
             }
         } else if !self.stack.has_patch(old_patchname) {
-            return Err(anyhow!("Patch `{old_patchname}` does not exist"));
+            return Err(anyhow!("patch `{old_patchname}` does not exist"));
         }
 
         if let Some(pos) = self.applied.iter().position(|pn| pn == old_patchname) {
@@ -1049,7 +1049,7 @@ impl<'repo> StackTransaction<'repo> {
             {
                 return Err(Error::TransactionHalt {
                     msg: format!(
-                        "Pushing patch `{patchname}` would result in conflicts \
+                        "pushing patch `{patchname}` would result in conflicts \
                          and push conflicts are disallowed"
                     ),
                     conflicts: false,
@@ -1061,7 +1061,7 @@ impl<'repo> StackTransaction<'repo> {
                     .is_err()
                 {
                     return Err(Error::TransactionHalt {
-                        msg: "Index/worktree dirty".to_string(),
+                        msg: "index/worktree dirty".to_string(),
                         conflicts: false,
                     }
                     .into());
@@ -1073,7 +1073,7 @@ impl<'repo> StackTransaction<'repo> {
                     Ok(true) => {
                         // Success, no conflicts
                         let tree_id = stupid.write_tree().map_err(|_| Error::TransactionHalt {
-                            msg: "Conflicting merge".to_string(),
+                            msg: "conflicting merge".to_string(),
                             conflicts: false,
                         })?;
                         self.current_tree_id = tree_id;
@@ -1144,8 +1144,8 @@ impl<'repo> StackTransaction<'repo> {
 
         if push_status == PushStatus::Conflict {
             Err(Error::TransactionHalt {
-                msg: "Merge conflicts. \
-                      Resolve conflicts manually then refresh or \
+                msg: "merge conflicts; \
+                      resolve conflicts manually then refresh or \
                       undo the operation with `stg undo --hard`."
                     .to_string(),
                 conflicts: true,

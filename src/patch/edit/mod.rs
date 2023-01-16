@@ -520,9 +520,9 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
                     };
                     failed_patch_description.write(&mut stream)?;
                     return Err(anyhow!(
-                        "Edited patch did not apply due to:\n\
-                         {e:#}\n\
-                         The patch description has been saved to `{failed_description_path}`."
+                        "edited patch did not apply due to:\n\
+                         {e:#};\n\
+                         the patch description has been saved to `{failed_description_path}`"
                     ));
                 }
             }

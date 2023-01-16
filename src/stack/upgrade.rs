@@ -46,7 +46,7 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
             let mut meta_lines = meta_content.lines();
             let first_line = meta_lines.next();
             if first_line != Some("Version: 4") {
-                return Err(anyhow!("Malformed metadata (expected version 4)"));
+                return Err(anyhow!("malformed metadata (expected version 4)"));
             }
 
             let mut current_key: Option<&str> = None;
@@ -78,7 +78,7 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
                             patches.insert(patchname, RawPatchState { oid: commit_id });
                         }
                     } else {
-                        return Err(anyhow!("Malformed metadata"));
+                        return Err(anyhow!("malformed metadata"));
                     }
                 } else if let Some((key, value)) = line.split_once(':') {
                     let value = value.trim();
@@ -102,16 +102,16 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
                             None
                         }
                         "Applied" | "Unapplied" | "Hidden" => Some(key),
-                        _ => return Err(anyhow!("Unexpected key `{key}` in meta")),
+                        _ => return Err(anyhow!("unexpected key `{key}` in meta")),
                     }
                 }
             }
 
             if prev.is_none() {
-                return Err(anyhow!("Malformed version 4 meta: missing Previous"));
+                return Err(anyhow!("malformed version 4 meta: missing Previous"));
             }
             if head.is_none() {
-                return Err(anyhow!("Malformed version 4 meta: missing Head"));
+                return Err(anyhow!("malformed version 4 meta: missing Head"));
             }
 
             let raw_stack_state = RawStackState {

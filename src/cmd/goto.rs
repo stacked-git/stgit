@@ -76,14 +76,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
                     .collect();
 
                 match oid_matches.len() {
-                    0 => Err(anyhow!("No patch associated with `{oid_prefix}`")),
+                    0 => Err(anyhow!("no patch associated with `{oid_prefix}`")),
                     1 => Ok(oid_matches[0].clone()),
                     _ => {
                         println!("Possible patches:");
                         for pn in oid_matches {
                             println!("  {pn}");
                         }
-                        Err(anyhow!("Ambiguous commit id `{oid_prefix}`"))
+                        Err(anyhow!("ambiguous commit id `{oid_prefix}`"))
                     }
                 }
             } else {

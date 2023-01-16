@@ -69,7 +69,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let config = repo.config_snapshot();
     if stack.is_protected(&config) {
         return Err(anyhow!(
-            "This branch is protected. Modification is not permitted."
+            "this branch is protected; modification is not permitted."
         ));
     }
 
