@@ -242,7 +242,7 @@ test_expect_success 'Attempt url' '
 
 test_expect_success 'Too many arguments' '
     general_error stg import some.patch some.patch 2>err &&
-    grep -e "Found argument .some\.patch. which wasn.t expected" err
+    grep -e "unexpected argument .some\.patch." err
 '
 
 test_done

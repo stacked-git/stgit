@@ -105,7 +105,7 @@ test_expect_success 'Rename the current stgit branch single arg' '
 
 test_expect_success 'Invalid num args to rename' '
     general_error stg branch --rename bar biz bop 2>err &&
-    grep "The value .bop. was provided to .* but it wasn.t expecting any more values" err
+    grep "unexpected value .bop. for .<branch-any>." err
 '
 
 test_expect_success 'Config section is renamed' '

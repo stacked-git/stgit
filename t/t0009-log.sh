@@ -33,19 +33,19 @@ test_expect_success 'Test log of all patches' '
 
 test_expect_success 'Test invalid opts with clear' '
     general_error stg log --diff --clear 2>err >/dev/null &&
-    grep -e "The argument .--diff. cannot be used with .--clear." err &&
+    grep -e "the argument .--diff. cannot be used with .--clear." err &&
     stg log | head -n 1 | grep -e "uncommit"
 '
 
 test_expect_success 'Test invalid args with clear' '
     general_error stg log --clear p0 p1 2>err >/dev/null &&
-    grep -e "The argument .--clear. cannot be used with .\[patch\]\.\.\.." err &&
+    grep -e "the argument .--clear. cannot be used with .\[patch\]\.\.\.." err &&
     stg log | head -n 1 | grep -e "uncommit"
 '
 
 test_expect_success 'Test invalid opts with graphical' '
     general_error stg log --graphical -n 5 p0 p1 2>err >/dev/null &&
-    grep -e "The argument .--graphical. cannot be used with .--number <n>." err
+    grep -e "the argument .--graphical. cannot be used with .--number <n>." err
 '
 
 test_expect_success 'Test log full' '

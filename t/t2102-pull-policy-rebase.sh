@@ -23,7 +23,7 @@ test_expect_success 'Test invalid remote argument' '
 
 test_expect_success 'Test invalid arguments' '
     general_error stg pull origin master 2>err &&
-    grep "Found argument .master. which wasn.t expected" err
+    grep "unexpected argument .master." err
 '
 
 test_expect_success 'Add non-rewinding commit in parent and pull the stack' '

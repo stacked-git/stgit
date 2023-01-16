@@ -36,17 +36,17 @@ test_expect_success 'Commit the patches' '
 
 test_expect_success 'Invalid --to and --number arguments' '
     general_error stg uncommit --to HEAD^ --number 1 2>err &&
-    grep -e "error: The argument .--to <committish>. cannot be used with .--number <number>." err
+    grep -e "error: the argument .--to <committish>. cannot be used with .--number <number>." err
 '
 
 test_expect_success 'Invalid --to with patch args' '
     general_error stg uncommit --to HEAD^ p0 2>err &&
-    grep -e "error: The argument .--to <committish>. cannot be used with .\[patchname\]\.\.\.." err
+    grep -e "error: the argument .--to <committish>. cannot be used with .\[patchname\]\.\.\.." err
 '
 
 test_expect_success 'Invalid --number' '
     general_error stg uncommit --number -1 2>err &&
-    grep -e "Invalid value .-1. for .--number <number>.: .-1. is not a positive integer" err
+    grep -e "invalid value .-1. for .--number <number>.: .-1. is not a positive integer" err
 '
 
 test_expect_success 'Too many patch names with --number' '
@@ -101,7 +101,7 @@ test_expect_success 'Attempt to reuse patch name' '
 
 test_expect_success 'Attempt to use invalid patch name' '
     general_error stg uncommit bad..patchname 2>err &&
-    grep -e "error: Invalid value .bad\.\.patchname. for .\[patchname\]\.\.\.." err
+    grep -e "error: invalid value .bad\.\.patchname. for .\[patchname\]\.\.\.." err
 '
 
 test_expect_success 'Uncommit a commit with not precisely one parent' '

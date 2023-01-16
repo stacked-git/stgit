@@ -53,9 +53,9 @@ test_expect_success 'Check prev, next, and top with some applied' '
 '
 
 test_expect_success 'Check prev, next, and top with invalid arguments' '
-    general_error stg prev bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
-    general_error stg next bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err &&
-    general_error stg top  bogus_arg 2>err && grep -e "error: Found argument .bogus_arg. which wasn.t expected" err
+    general_error stg prev bogus_arg 2>err && grep -e "error: unexpected argument .bogus_arg." err &&
+    general_error stg next bogus_arg 2>err && grep -e "error: unexpected argument .bogus_arg." err &&
+    general_error stg top  bogus_arg 2>err && grep -e "error: unexpected argument .bogus_arg." err
 '
 
 test_expect_success 'Pop the remaining patches' '

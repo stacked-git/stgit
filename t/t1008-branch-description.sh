@@ -43,7 +43,7 @@ test_expect_success 'Describe non-current branch' '
 
 test_expect_success 'Invalid arguments' '
     general_error stg branch -d "a description" bar foo 2>err &&
-    grep -e "Found argument .foo. which wasn.t expected" err
+    grep -e "unexpected argument .foo." err
 '
 
 test_expect_success 'Check descriptions in list' '

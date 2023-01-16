@@ -17,7 +17,7 @@ test_expect_success 'Test help/--help equivalence' '
 
 test_expect_success 'Test help on invalid command' '
     general_error stg help invalidcmd 2>err &&
-    grep -e "error: The subcommand .invalidcmd. wasn.t recognized" err
+    grep -e "error: unrecognized subcommand .invalidcmd." err
 '
 
 test_expect_success 'Test help on regular command' '
@@ -26,9 +26,10 @@ test_expect_success 'Test help on regular command' '
 
 test_expect_success 'Test help on ambiguous command' '
     general_error stg pu 2>err &&
-    grep -e "Did you mean .pu...*.pu..." err &&
+    grep -e "unrecognized subcommand .pu." err &&
+    grep -e "subcommands .pull., .push. exist" err &&
     general_error stg help pu 2>err &&
-    grep -e "The subcommand .pu. wasn.t recognized" err
+    grep -e "unrecognized subcommand .pu." err
 '
 
 test_expect_success 'Test version/--version equivalence' '

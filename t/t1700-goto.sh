@@ -23,7 +23,7 @@ test_expect_success 'Initialize stgit repository' '
 
 test_expect_success 'Test invalid number of arguments' '
     general_error stg goto 2>err &&
-    grep -e "error: The following required arguments were not provided:" err
+    grep -e "error: the following required arguments were not provided:" err
 '
 
 test_expect_success 'Goto current patch' '

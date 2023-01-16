@@ -21,7 +21,7 @@ test_expect_success 'Repair in a repository without patches' '
 
 test_expect_success 'Repair with invalid arguments' '
     general_error stg repair xxx 2>err &&
-    grep -e "Found argument .xxx. which wasn.t expected" err
+    grep -e "unexpected argument .xxx." err
 '
 
 test_expect_success 'Create a patch' '

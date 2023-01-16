@@ -13,9 +13,9 @@ test_expect_success 'Attempt hide on uninitialized stack' '
 
 test_expect_success 'Attempt too few arguments' '
     general_error stg hide   2>err &&
-    grep -e "error: The following required arguments were not provided:" err &&
+    grep -e "error: the following required arguments were not provided:" err &&
     general_error stg unhide 2>err &&
-    grep -e "error: The following required arguments were not provided:" err
+    grep -e "error: the following required arguments were not provided:" err
 '
 
 test_expect_success 'Add some patches' '

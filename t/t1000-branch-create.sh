@@ -68,12 +68,12 @@ test_expect_success 'Attempt switching to current branch' '
 
 test_expect_success 'Attempt no branch command' '
     general_error stg branch foo bar 2>err &&
-    grep "Found argument .bar. which wasn.t expected" err
+    grep "unexpected argument .bar." err
 '
 
 test_expect_success 'Invalid num arguments to branch list' '
     general_error stg branch --list new 2>err &&
-    grep "Found argument .new. which wasn.t expected" err
+    grep "unexpected argument .new." err
 '
 
 test_expect_success 'Create a git branch' '

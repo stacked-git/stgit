@@ -145,11 +145,11 @@ test_expect_success 'Attempt invalid options with --index' '
     echo foo4 >foo4.txt &&
     stg add foo4.txt &&
     general_error stg refresh -i . 2>err &&
-    grep -e "The argument .--index. cannot be used with .\[path\]\.\.\.." err &&
+    grep -e "the argument .--index. cannot be used with .\[path\]\.\.\.." err &&
     general_error stg refresh -i --force 2>err &&
-    grep -e "The argument .--index. cannot be used with .--force." err &&
+    grep -e "the argument .--index. cannot be used with .--force." err &&
     general_error stg refresh -i --submodules 2>err &&
-    grep -e "The argument .--index. cannot be used with .--submodules." err
+    grep -e "the argument .--index. cannot be used with .--submodules." err
 '
 
 test_expect_success 'Attempt refresh with changed index and working tree' '
@@ -178,7 +178,7 @@ test_expect_success 'Attempt update with submodules' '
     stg push -a &&
     echo more >>foo2.txt &&
     general_error stg refresh --update --submodules 2>err &&
-    grep -e "The argument .--update. cannot be used with .--submodules." err
+    grep -e "the argument .--update. cannot be used with .--submodules." err
 '
 
 test_expect_success 'Test annotate' '

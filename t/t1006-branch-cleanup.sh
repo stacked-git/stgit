@@ -48,7 +48,7 @@ test_expect_success 'Commit patches' '
 
 test_expect_success 'Invalid num args to cleanup' '
     general_error stg branch --cleanup foo extra 2>err &&
-    grep "Found argument .extra. which wasn.t expected" err
+    grep "unexpected argument .extra." err
 '
 
 test_expect_success 'Cleanup current branch' '

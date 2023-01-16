@@ -51,7 +51,7 @@ test_expect_success 'Test too many arguments' '
     (
         cd clone &&
         general_error stg pull origin master 2>err &&
-        grep "Found argument .master. which wasn.t expected" err
+        grep "unexpected argument .master." err
     )
 '
 

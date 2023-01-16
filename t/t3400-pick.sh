@@ -38,7 +38,7 @@ test_expect_success 'Initialize the StGit repository' '
 
 test_expect_success 'No pick args' '
     general_error stg pick 2>err &&
-    grep "The following required arguments were not provided" err
+    grep "the following required arguments were not provided" err
 '
 
 test_expect_success 'Pick --name with multiple patches' '
@@ -87,7 +87,7 @@ test_expect_success 'Pick --noapply several patches' '
 
 test_expect_success 'Pick --file without --fold' '
     general_error stg pick --file d D 2>err &&
-    grep "The following required arguments were not provided" err &&
+    grep "the following required arguments were not provided" err &&
     rm err
 '
 

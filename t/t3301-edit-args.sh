@@ -22,7 +22,7 @@ test_expect_success 'Attempt to edit non-existant patch name' '
 
 test_expect_success 'Attempt to edit multiple patches' '
     general_error stg edit p1 p2 2>err &&
-    grep "Found argument .p2. which wasn.t expected" err
+    grep "unexpected argument .p2." err
 '
 
 test_done

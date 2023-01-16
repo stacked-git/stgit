@@ -41,7 +41,7 @@ test_expect_success 'Attempt sync with current branch' '
 
 test_expect_success 'Attempt sync without remote branch or series' '
     general_error stg sync -a 2>err &&
-    grep -e "The following required arguments were not provided" err
+    grep -e "the following required arguments were not provided" err
 '
 
 test_expect_success 'Attempt apply top patch without any applied' '

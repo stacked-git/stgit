@@ -8,7 +8,7 @@ test_description='Test "stg new"'
 
 test_expect_success 'Too many arguments' '
     general_error stg new foo extra_arg 2>err &&
-    grep -e "error: Found argument .extra_arg. which wasn.t expected" err
+    grep -e "error: unexpected argument .extra_arg." err
 '
 
 test_expect_success 'Create a named patch' '

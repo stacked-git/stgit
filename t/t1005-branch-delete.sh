@@ -46,9 +46,9 @@ test_expect_success 'Attempt to delete current branch' '
 
 test_expect_success 'Invalid num args to delete' '
     general_error stg branch --delete 2>err &&
-    grep -e "The following required arguments were not provided" err &&
+    grep -e "the following required arguments were not provided" err &&
     general_error stg branch --delete foo extra 2>err &&
-    grep -e "Found argument .extra. which wasn.t expected" err
+    grep -e "unexpected argument .extra." err
 '
 
 test_expect_success 'Create a non-StGit branch and delete it' '

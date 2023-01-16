@@ -31,7 +31,7 @@ test_expect_success 'Initialize StGit repository' '
 
 test_expect_success 'Attempt fold more than one patch' '
     general_error stg fold fold1.diff fold2.diff 2>err &&
-    grep -e "Found argument .fold2\.diff. which wasn.t expected" err
+    grep -e "unexpected argument .fold2\.diff." err
 '
 
 test_expect_success 'Attempt fold with local changes' '

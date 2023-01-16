@@ -21,7 +21,7 @@ test_expect_success 'Init repo' '
 
 test_expect_success 'Too many arguments' '
     general_error stg id patch-1 patch-2 2>err &&
-    grep -e "Found argument .patch-2. which wasn.t expected" err
+    grep -e "unexpected argument .patch-2." err
 '
 
 test_expect_success 'Provide patch argument' '

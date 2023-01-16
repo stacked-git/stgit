@@ -22,7 +22,7 @@ test_expect_success 'Initialize StGit stack' '
 
 test_expect_success 'Test too many arguments' '
     general_error stg clean p0 2>err &&
-    grep -e "Found argument .p0. which wasn.t expected, or isn.t valid in this context" err
+    grep -e "unexpected argument .p0." err
 '
 
 test_expect_success 'Clean empty patches' '

@@ -38,7 +38,7 @@ test_expect_success 'Rename with two arguments' '
 
 test_expect_success 'Rename with too many arguments' '
    general_error stg rename foo bar baz 2>err &&
-   grep -e "The value .baz. was provided to .<patches>\.\.\.. but it wasn.t expecting any more values" err
+   grep -e "unexpected value .baz. for .<patches>\.\.\.." err
 '
 
 test_expect_success 'Rename to existing name' '

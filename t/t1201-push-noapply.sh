@@ -14,27 +14,27 @@ test_expect_success 'Setup patches' '
 
 test_expect_success 'Check --noapply with --all' '
     general_error stg push --noapply --all 2>err &&
-    grep -e "error: The argument .--noapply. cannot be used with .--all." err
+    grep -e "error: the argument .--noapply. cannot be used with .--all." err
 '
 
 test_expect_success 'Check --noapply with --number' '
     general_error stg push --noapply -n 3 2>err &&
-    grep -e "error: The argument .--noapply. cannot be used with .--number <n>." err
+    grep -e "error: the argument .--noapply. cannot be used with .--number <n>." err
 '
 
 test_expect_success 'Check --noapply without patch names' '
     general_error stg push --noapply 2>err &&
-    grep -e "error: The following required arguments were not provided:" err
+    grep -e "error: the following required arguments were not provided:" err
 '
 
 test_expect_success 'Check --noapply with --set-tree' '
     general_error stg push --noapply --set-tree b1 b2 b3 2>err &&
-    grep -e "error: The argument .--noapply. cannot be used with .--set-tree." err
+    grep -e "error: the argument .--noapply. cannot be used with .--set-tree." err
 '
 
 test_expect_success 'Check --noapply with --merged' '
     general_error stg push --noapply -m b1 b2 b3 2>err &&
-    grep -e "error: The argument .--noapply. cannot be used with .--merged." err
+    grep -e "error: the argument .--noapply. cannot be used with .--merged." err
 '
 
 test_expect_success 'Reorder patches b1 b2 b3' '

@@ -14,7 +14,7 @@ test_expect_success 'Initialize branch' '
 
 test_expect_success 'Invald num args to protect' '
     general_error stg branch --protect foo bar 2>err &&
-    grep "Found argument .bar. which wasn.t expected" err
+    grep "unexpected argument .bar." err
 '
 
 test_expect_success 'Protect branch' '
@@ -41,9 +41,9 @@ test_expect_success 'Attempt delete protected' '
     grep "Delete not permitted: this branch is protected" err
 '
 
-test_expect_success 'Invalid num arts to unprotect' '
+test_expect_success 'Invalid num args to unprotect' '
     general_error stg branch --unprotect foo bar 2>err &&
-    grep "Found argument .bar. which wasn.t expected" err
+    grep "unexpected argument .bar." err
 '
 
 test_expect_success 'Unprotect branch' '

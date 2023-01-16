@@ -20,7 +20,7 @@ test_expect_success 'Create a patch' '
 
 test_expect_success 'Invalid arguments' '
     general_error stg delete --top foo 2>err &&
-    grep -e "error: The argument .--top. cannot be used with .\[patch\]\.\.\.." err
+    grep -e "error: the argument .--top. cannot be used with .\[patch\]\.\.\.." err
 '
 
 test_expect_success 'Attempt delete --top with none applied' '
@@ -32,7 +32,7 @@ test_expect_success 'Attempt delete --top with none applied' '
 
 test_expect_success 'No patches specified' '
     general_error stg delete 2>err &&
-    grep -e "The following required arguments were not provided" err
+    grep -e "the following required arguments were not provided" err
 '
 
 test_expect_success 'Try to delete a non-existing patch' '
