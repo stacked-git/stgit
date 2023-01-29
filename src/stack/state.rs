@@ -25,25 +25,25 @@ pub(crate) struct StackState<'repo> {
     ///
     /// Will be None for a newly initialized stack or when the stack history is cleared
     /// (i.e. with `stg log --clear`).
-    pub prev: Option<Rc<git_repository::Commit<'repo>>>,
+    pub(crate) prev: Option<Rc<git_repository::Commit<'repo>>>,
 
     /// Head commit of the stack.
     ///
     /// Either the topmost patch if patches are applied, or the stack base if no patches
     /// are applied.
-    pub head: Rc<git_repository::Commit<'repo>>,
+    pub(super) head: Rc<git_repository::Commit<'repo>>,
 
     /// List of applied patches.
-    pub applied: Vec<PatchName>,
+    pub(super) applied: Vec<PatchName>,
 
     /// List of unapplied patches.
-    pub unapplied: Vec<PatchName>,
+    pub(super) unapplied: Vec<PatchName>,
 
     /// List of hidden patches.
-    pub hidden: Vec<PatchName>,
+    pub(super) hidden: Vec<PatchName>,
 
     /// Mapping of patch names to their state.
-    pub patches: BTreeMap<PatchName, PatchState<'repo>>,
+    pub(super) patches: BTreeMap<PatchName, PatchState<'repo>>,
 }
 
 /// State associated with a patch.
@@ -51,7 +51,7 @@ pub(crate) struct StackState<'repo> {
 /// Currently the only state is a commit object.
 #[derive(Clone, Debug)]
 pub(crate) struct PatchState<'repo> {
-    pub commit: Rc<git_repository::Commit<'repo>>,
+    pub(crate) commit: Rc<git_repository::Commit<'repo>>,
 }
 
 impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
