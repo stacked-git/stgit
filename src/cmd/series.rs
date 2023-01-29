@@ -29,13 +29,16 @@ fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Display the patch series")
         .long_about(
-            "Show all the patches in the series, or just those in the \
-             given range, ordered from top to bottom.\n\
+            "Show all the patches in the series, or just those in the given range, \
+             ordered from bottom to top.\n\
              \n\
-             The applied patches are prefixed with a '+' (except the \
-             current patch, which is prefixed with a '>'), the \
-             unapplied patches with a '-', and the hidden patches with \
-             a '!'.\n\
+             The topmost applied patch is prefixed with '>'. All other applied patches \
+             are prefixed with '+'. Unapplied patches are prefixed with '-' and hidden \
+             patches with '!'.\n\
+             \n\
+             The --reverse option may be used to reverse the order in which patches \
+             are displayed. The reversed order is more stack-like, with the base of \
+             the stack appearing at the bottom of of the display.\n\
              \n\
              Empty patches are prefixed with a '0'.",
         )
@@ -169,6 +172,24 @@ fn make() -> clap::Command {
                 .alias("noprefix")
                 .short('P')
                 .help("Do not display the patch status prefix")
+                .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("reverse")
+                .long("reverse")
+                .short('r')
+                .help("Display patches in reverse order")
+                .long_help(
+                    "Display patches in reverse order.\n\
+                     \n\
+                     This causes the stack to be displayed \"right-side up\". By \
+                     default, patches are printed in order from bottom to top; i.e. \
+                     the first patch in the stack is printed first and the last patch \
+                     is printed last. Thus with the default ordering, the stack is \
+                     displayed upside down. Reversing the order flips the stack such \
+                     that the bottom of the stack is spatially at the top of the \
+                     display, which may be more intuitive.",
+                )
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
@@ -361,6 +382,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut stdout = crate::color::get_color_stdout(matches);
     let mut color_spec = termcolor::ColorSpec::new();
+
+    if matches.get_flag("reverse") {
+        patches.reverse();
+    }
 
     for (patchname, commit_id, sigil) in patches {
         let commit = repo.find_commit(commit_id)?;
