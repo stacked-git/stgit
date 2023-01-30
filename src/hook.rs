@@ -4,7 +4,7 @@
 
 use std::{
     io::Write,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 use anyhow::{anyhow, Context, Result};
@@ -14,16 +14,29 @@ use crate::wrap::Message;
 /// Find path to hook script given a hook name.
 fn get_hook_path(repo: &git_repository::Repository, hook_name: &str) -> Result<PathBuf> {
     let config = repo.config_snapshot();
-    let hooks_path = config
+    let hooks_root = config
         .trusted_path("core.hookspath")
-        .transpose()?
-        .unwrap_or_else(|| std::borrow::Cow::Borrowed(Path::new("hooks")));
-
-    let hooks_root = if hooks_path.is_absolute() {
-        hooks_path.into()
-    } else {
-        repo.git_dir().join(hooks_path)
-    };
+        .transpose()?.map_or_else(
+        // No core.hookspath, use default .git/hooks location:
+        || Ok(repo.git_dir().join("hooks")),
+        |hooks_path| {
+            if hooks_path.is_absolute() {
+                Ok(hooks_path.into())
+            } else {
+                if repo.is_bare() {
+                    // .git directory is used in case of a bare repo:
+                    Ok(repo.git_dir().join(hooks_path))
+                } else {
+                    // the root of the working tree is used in case of a non-bare repo:
+                    if let Some(work_dir) = repo.work_dir() {
+                        Ok(work_dir.join(hooks_path))
+                    } else {
+                        Err(anyhow!("No workdir found"))
+                    }
+                }
+            }
+        },
+    )?;
     Ok(hooks_root.join(hook_name))
 }
 
