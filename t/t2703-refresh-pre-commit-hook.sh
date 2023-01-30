@@ -17,27 +17,27 @@ HOOK="$HOOKDIR/pre-commit"
 HOOK_OUTPUT_FILE=$TRASH_DIRECTORY/hook-output
 mkdir -p "$HOOKDIR"
 write_script "$HOOK" <<-EOF
-  touch "$HOOK_OUTPUT_FILE"
+	touch "$HOOK_OUTPUT_FILE"
 	exit 0
 EOF
 
 assert_pre_commit_hook_did_run() {
-  if [ -f "$HOOK_OUTPUT_FILE" ]; then
-    # Reset for the next test
-    rm "$HOOK_OUTPUT_FILE"
-  else
-    # Otherwise, fail
-    echo "pre-commit hook did not run"
-    exit 1
-  fi
+    if [ -f "$HOOK_OUTPUT_FILE" ]; then
+        # Reset for the next test
+        rm "$HOOK_OUTPUT_FILE"
+    else
+        # Otherwise, fail
+        echo "pre-commit hook did not run"
+        exit 1
+    fi
 }
 
 assert_pre_commit_hook_did_not_run() {
-  if [ -f "$HOOK_OUTPUT_FILE" ]; then
-    # Otherwise, fail
-    echo "pre-commit hook did run"
-    exit 1
-  fi
+    if [ -f "$HOOK_OUTPUT_FILE" ]; then
+        # Otherwise, fail
+        echo "pre-commit hook did run"
+        exit 1
+    fi
 }
 
 test_expect_success 'refresh --no-verify with succeeding hook' '
@@ -76,7 +76,7 @@ git config --unset core.hooksPath
 
 # now a hook that fails
 write_script "$HOOK" <<-EOF
-  touch "$HOOK_OUTPUT_FILE"
+	touch "$HOOK_OUTPUT_FILE"
 	exit 1
 EOF
 
@@ -125,7 +125,7 @@ test_expect_success 'refresh with non-executable hook' '
 # The hook tests for trailing white spaces
 # If finds files, then fixes them and returns non-zero exit status
 write_script "$HOOK" <<-EOF
-  touch "$HOOK_OUTPUT_FILE"
+	touch "$HOOK_OUTPUT_FILE"
 	git diff-index --check HEAD -- && exit
 	sed -e 's/[[:space:]]*$//' file >file.new
 	mv -- file.new file
@@ -184,7 +184,7 @@ write_script "$HOOK" <<-EOF
 	sed -e 's/[[:space:]]*$//' file >file.new
 	mv -- file.new file
 	git add file
-  touch "$HOOK_OUTPUT_FILE"
+	touch "$HOOK_OUTPUT_FILE"
 EOF
 
 test_expect_success 'refresh with failing hook that modifies file, adds to index' '

@@ -2,10 +2,7 @@
 
 //! Support for using git repository hooks.
 
-use std::{
-    io::Write,
-    path::PathBuf,
-};
+use std::{borrow::Cow, io::Write, path::PathBuf};
 
 use anyhow::{anyhow, Context, Result};
 
@@ -14,30 +11,23 @@ use crate::wrap::Message;
 /// Find path to hook script given a hook name.
 fn get_hook_path(repo: &git_repository::Repository, hook_name: &str) -> Result<PathBuf> {
     let config = repo.config_snapshot();
-    let hooks_root = config
-        .trusted_path("core.hookspath")
-        .transpose()?.map_or_else(
-        // No core.hookspath, use default .git/hooks location:
-        || Ok(repo.git_dir().join("hooks")),
-        |hooks_path| {
-            if hooks_path.is_absolute() {
-                Ok(hooks_path.into())
+    let hooks_path =
+        if let Some(core_hooks_path) = config.trusted_path("core.hookspath").transpose()? {
+            if core_hooks_path.is_absolute() {
+                core_hooks_path
+            } else if repo.is_bare() {
+                // The hooks path is relative to GIT_DIR in the case of a bare repo
+                Cow::Owned(repo.git_dir().join(core_hooks_path))
             } else {
-                if repo.is_bare() {
-                    // .git directory is used in case of a bare repo:
-                    Ok(repo.git_dir().join(hooks_path))
-                } else {
-                    // the root of the working tree is used in case of a non-bare repo:
-                    if let Some(work_dir) = repo.work_dir() {
-                        Ok(work_dir.join(hooks_path))
-                    } else {
-                        Err(anyhow!("No workdir found"))
-                    }
-                }
+                // The hooks path is relative to the root of the working tree otherwise
+                let work_dir = repo.work_dir().expect("non-bare repo must have work dir");
+                Cow::Owned(work_dir.join(core_hooks_path))
             }
-        },
-    )?;
-    Ok(hooks_root.join(hook_name))
+        } else {
+            // No core.hookspath, use default .git/hooks location
+            Cow::Owned(repo.git_dir().join("hooks"))
+        };
+    Ok(hooks_path.join(hook_name))
 }
 
 /// Run the git `pre-commit` hook script.
