@@ -102,7 +102,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]
     } else {
-        return Err(crate::stack::Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     };
 
     let ref_stack = if let Some(ref_branchname) = crate::argset::get_one_str(matches, "ref-branch")
@@ -269,7 +269,7 @@ fn branch_merge_patch(
         commit_ref.tree(),
         ref_commit_ref.tree(),
     )? {
-        return Err(crate::stack::Error::CausedConflicts(format!(
+        return Err(super::Error::CausedConflicts(format!(
             "merge conflicts syncing `{patchname}`"
         ))
         .into());
@@ -326,7 +326,7 @@ fn series_merge_patch(
 
     stupid.read_tree_checkout(tree_id, trans_head_tree_id)?;
     if !stupid.merge_recursive(parent_commit_ref.tree(), trans_head_tree_id, tree_id)? {
-        return Err(crate::stack::Error::CausedConflicts(format!(
+        return Err(super::Error::CausedConflicts(format!(
             "merge conflicts syncing `{patchname}`"
         ))
         .into());

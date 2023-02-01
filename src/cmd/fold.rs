@@ -10,7 +10,7 @@ use clap::{Arg, ArgGroup};
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
     patch::SingleRevisionSpec,
-    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -88,7 +88,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
 
     if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     }
 
     let diff = if let Some(filename) = matches.get_one::<PathBuf>("file") {
@@ -138,7 +138,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         if stupid.merge_recursive(base_tree_id, orig_head_tree_id, applied_tree_id)? {
             Ok(())
         } else {
-            Err(crate::stack::Error::CausedConflicts("merge conflicts".to_string()).into())
+            Err(super::Error::CausedConflicts("merge conflicts".to_string()).into())
         }
     } else {
         stupid.apply_to_worktree_and_index(

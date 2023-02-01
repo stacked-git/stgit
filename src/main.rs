@@ -249,16 +249,24 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
             }
 
             print_error_message(color_choice, &e);
-            match e.downcast_ref::<stack::Error>() {
-                Some(stack::Error::TransactionHalt { conflicts, .. }) => {
-                    if *conflicts {
-                        print_merge_conflicts();
+
+            if let Some(e) = e.downcast_ref::<stack::TransactionError>() {
+                match e {
+                    stack::TransactionError::TransactionHalt { conflicts, .. } => {
+                        if *conflicts {
+                            print_merge_conflicts();
+                        }
+                        CONFLICT_ERROR
                     }
-                    CONFLICT_ERROR
+                    stack::TransactionError::CheckoutConflicts(_) => CONFLICT_ERROR,
                 }
-                Some(stack::Error::CheckoutConflicts(_))
-                | Some(stack::Error::CausedConflicts(_)) => CONFLICT_ERROR,
-                _ => COMMAND_ERROR,
+            } else if let Some(e) = e.downcast_ref::<cmd::Error>() {
+                match e {
+                    cmd::Error::CausedConflicts(_) => CONFLICT_ERROR,
+                    _ => COMMAND_ERROR,
+                }
+            } else {
+                COMMAND_ERROR
             }
         }
     };

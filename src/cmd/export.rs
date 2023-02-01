@@ -17,7 +17,7 @@ use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchRange, RangeConstraint},
-    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -149,7 +149,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     };
 
     if patches.is_empty() {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     }
 
     let default_output_dir;

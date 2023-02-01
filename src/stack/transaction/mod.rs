@@ -40,7 +40,7 @@ use self::{
     options::{ConflictMode, TransactionOptions},
     ui::TransactionUserInterface,
 };
-use super::{error::Error, state::StackState, StackAccess};
+use super::{state::StackState, StackAccess};
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
     patch::PatchName,
@@ -48,6 +48,15 @@ use crate::{
     stupid::{Stupid, StupidContext},
     wrap::Branch,
 };
+
+#[derive(thiserror::Error, Debug)]
+pub(crate) enum Error {
+    #[error("{0}")]
+    CheckoutConflicts(String),
+
+    #[error("{msg}")]
+    TransactionHalt { msg: String, conflicts: bool },
+}
 
 /// Stack transaction state.
 pub(crate) struct StackTransaction<'repo> {

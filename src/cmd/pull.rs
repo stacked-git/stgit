@@ -176,7 +176,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             let remote_name = remote_name.unwrap();
             print_info_message(matches, &format!("Pulling from `{remote_name}`"));
             if !stupid.user_pull(&pull_cmd, &remote_name)? {
-                return Err(crate::stack::Error::CausedConflicts(
+                return Err(super::Error::CausedConflicts(
                     "pull resulted in conflicts".to_string(),
                 )
                 .into());

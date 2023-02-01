@@ -2,7 +2,6 @@
 
 //! The StGit stack data structure.
 mod access;
-mod error;
 mod iter;
 mod serde;
 #[allow(clippy::module_inception)]
@@ -12,7 +11,6 @@ mod transaction;
 mod upgrade;
 
 pub(crate) use access::{StackAccess, StackStateAccess};
-pub(crate) use error::Error;
 pub(crate) use stack::{state_refname_from_branch_name, InitializationPolicy, Stack};
 pub(crate) use state::{PatchState, StackState};
-pub(crate) use transaction::StackTransaction;
+pub(crate) use transaction::{Error as TransactionError, StackTransaction};

@@ -9,7 +9,7 @@ use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
     patch::{patchedit, PatchLocator, SingleRevisionSpec},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -76,7 +76,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     };
 
     let patch_commit = stack.get_patch_commit(&patchname);

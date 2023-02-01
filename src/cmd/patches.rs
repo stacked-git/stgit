@@ -14,7 +14,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
-    stack::{Error, Stack, StackAccess, StackStateAccess},
+    stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -62,7 +62,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let diff_flag = matches.get_flag("diff");
 
     if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     }
 
     let stupid = repo.stupid();

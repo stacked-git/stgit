@@ -147,7 +147,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     )?;
 
     if matches.get_flag("update") && stack.applied().is_empty() {
-        return Err(crate::stack::Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     }
 
     if !matches.get_flag("noapply") {
@@ -233,7 +233,7 @@ fn fold_picks(stack: &Stack, matches: &clap::ArgMatches, picks: &[StGitRevision]
 
         if conflicts {
             return Err(
-                crate::stack::Error::CausedConflicts(if let Some(patchname) = patchname {
+                super::Error::CausedConflicts(if let Some(patchname) = patchname {
                     format!("`{patchname}` does not apply cleanly")
                 } else {
                     format!("`{}` does not apply cleanly", commit.id)

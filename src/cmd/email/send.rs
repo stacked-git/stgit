@@ -11,7 +11,7 @@ use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchRange, RangeConstraint},
-    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -423,7 +423,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     } else if matches.get_flag("all") {
         let applied = stack.applied();
         if applied.is_empty() {
-            return Err(Error::NoAppliedPatches.into());
+            return Err(super::super::Error::NoAppliedPatches.into());
         } else {
             for patchname in applied {
                 if stack.get_patch_commit(patchname).is_no_change()? {

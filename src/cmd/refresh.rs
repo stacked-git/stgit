@@ -17,9 +17,9 @@ use crate::{
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
     patch::{patchedit, LocationConstraint, PatchLocator, PatchName},
-    stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
-        status::{Status, StatusEntryKind, StatusOptions, Statuses},
+        status::{Status, StatusOptions, Statuses},
         Stupid, StupidContext,
     },
     wrap::Message,
@@ -170,7 +170,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     };
 
     let tree_id = assemble_refresh_tree(
@@ -369,11 +369,7 @@ fn determine_refresh_paths(
     };
 
     // Ensure no conflicts in the files to be refreshed.
-    if statuses.iter().any(|entry| {
-        matches!(entry.kind(), StatusEntryKind::Unmerged) && refresh_paths.contains(entry.path())
-    }) {
-        return Err(Error::OutstandingConflicts.into());
-    }
+    statuses.check_conflicts_filter(|entry| refresh_paths.contains(entry.path()))?;
 
     // Ensure worktree and index states are valid for the given options.
     // Forcing means changes will be taken from both the index and worktree.

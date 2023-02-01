@@ -10,7 +10,7 @@ use termcolor::WriteColor;
 use crate::{
     argset,
     ext::RepositoryExtended,
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -51,6 +51,6 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         writeln!(stdout)?;
         Ok(())
     } else {
-        Err(Error::NoAppliedPatches.into())
+        Err(super::Error::NoAppliedPatches.into())
     }
 }

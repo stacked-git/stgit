@@ -9,7 +9,7 @@ use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -103,7 +103,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             stack.applied()[0..number].to_vec()
         }
     } else if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     } else if matches.get_flag("all") {
         stack.applied().to_vec()
     } else {

@@ -224,11 +224,19 @@ impl Statuses {
 
     /// Check whether there are any files with unmerged conflicts.
     pub(crate) fn check_conflicts(&self) -> Result<()> {
+        self.check_conflicts_filter(|_| true)
+    }
+
+    /// Check for unmerged conflicts on files filtered by a predicate.
+    pub(crate) fn check_conflicts_filter<F>(&self, predicate: F) -> Result<()>
+    where
+        F: Fn(&StatusEntry) -> bool,
+    {
         if self
             .iter()
-            .any(|entry| matches!(entry.kind(), StatusEntryKind::Unmerged))
+            .any(|entry| matches!(entry.kind(), StatusEntryKind::Unmerged) && predicate(&entry))
         {
-            Err(crate::stack::Error::OutstandingConflicts.into())
+            Err(anyhow!("resolve outstanding conflicts first"))
         } else {
             Ok(())
         }

@@ -216,10 +216,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if stupid.stash_pop()? {
             Ok(())
         } else {
-            Err(
-                crate::stack::Error::CausedConflicts("stash pop resulted in conflicts".to_string())
-                    .into(),
-            )
+            Err(super::Error::CausedConflicts("stash pop resulted in conflicts".to_string()).into())
         }
     } else {
         Ok(())

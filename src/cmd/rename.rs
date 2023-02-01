@@ -12,7 +12,7 @@ use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
     patch::{PatchLocator, PatchName},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -68,7 +68,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             let old_patchname = if let Some(top_patchname) = stack.applied().last() {
                 top_patchname.clone()
             } else {
-                Err(Error::NoAppliedPatches)?
+                Err(super::Error::NoAppliedPatches)?
             };
             (old_patchname, new_patchname)
         }

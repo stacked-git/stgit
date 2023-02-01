@@ -12,7 +12,7 @@ use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -95,7 +95,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     if stack.applied().is_empty() {
-        return Err(Error::NoAppliedPatches.into());
+        return Err(super::Error::NoAppliedPatches.into());
     }
 
     let mut patches: indexmap::IndexSet<PatchName> = if matches.get_flag("all") {

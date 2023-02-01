@@ -11,7 +11,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -76,7 +76,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patchname = stack
         .applied()
         .last()
-        .ok_or(Error::NoAppliedPatches)?
+        .ok_or(super::Error::NoAppliedPatches)?
         .clone();
     let patch_commit = stack.get_patch_commit(&patchname);
     let patch_commit_ref = patch_commit.decode()?;

@@ -10,7 +10,7 @@ use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
-    stack::{Error, InitializationPolicy, Stack, StackStateAccess},
+    stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
 
@@ -75,7 +75,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {
-            return Err(Error::NoAppliedPatches.into());
+            return Err(super::Error::NoAppliedPatches.into());
         }
     } else {
         let range_specs = matches

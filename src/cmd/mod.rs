@@ -123,3 +123,12 @@ pub(crate) const STGIT_COMMANDS: &[StGitCommand] = &[
     unhide::STGIT_COMMAND,
     version::STGIT_COMMAND,
 ];
+
+#[derive(thiserror::Error, Debug)]
+pub(crate) enum Error {
+    #[error("{0}")]
+    CausedConflicts(String),
+
+    #[error("no patches applied")]
+    NoAppliedPatches,
+}
