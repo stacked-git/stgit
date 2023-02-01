@@ -16,7 +16,7 @@ use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
-    patch::{patchedit, PatchLocator, PatchName},
+    patch::{patchedit, LocationConstraint, PatchLocator, PatchName},
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},
@@ -164,7 +164,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(patch_loc) = matches.get_one::<PatchLocator>("patch") {
-        patch_loc.resolve_name(&stack)?
+        patch_loc
+            .resolve_name(&stack)?
+            .constrain(&stack, LocationConstraint::Visible)?
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
