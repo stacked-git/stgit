@@ -112,6 +112,14 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("no-author")
+                .long("no-author")
+                .help("Do not display patch authors")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("author"),
+        )
+        .arg(
             Arg::new("count")
                 .long("count")
                 .short('c')
@@ -139,6 +147,14 @@ fn make() -> clap::Command {
                 .value_parser(clap::value_parser!(CommitIdLength)),
         )
         .arg(
+            Arg::new("no-commit-id")
+                .long("no-commit-id")
+                .help("Do not display commit ids")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("commit-id"),
+        )
+        .arg(
             Arg::new("description")
                 .long("description")
                 .short('d')
@@ -150,10 +166,10 @@ fn make() -> clap::Command {
             Arg::new("no-description")
                 .long("no-description")
                 .help("Do not display the patch description")
+                .hide(true)
                 .action(clap::ArgAction::SetTrue)
                 .overrides_with("description"),
         )
-        .group(ArgGroup::new("description-group").args(["description", "no-description"]))
         .arg(
             Arg::new("empty")
                 .long("empty")
@@ -165,6 +181,22 @@ fn make() -> clap::Command {
                      patches) or a space (for non-empty patches).",
                 )
                 .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("no-empty")
+                .long("no-empty")
+                .help("Do not display whether patches are empty")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("empty"),
+        )
+        .arg(
+            Arg::new("prefix")
+                .long("prefix")
+                .help("Display patch status prefixes (default)")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("no-prefix"),
         )
         .arg(
             Arg::new("no-prefix")
@@ -182,6 +214,14 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("no-indices")
+                .long("no-indices")
+                .help("Do not display patch indices")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("indices"),
+        )
+        .arg(
             Arg::new("offsets")
                 .long("offsets")
                 .short('O')
@@ -191,6 +231,14 @@ fn make() -> clap::Command {
                      base if no patches are applied.",
                 )
                 .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("no-offsets")
+                .long("no-offsets")
+                .help("Do not display patch offsets")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("offsets"),
         )
         .arg(
             Arg::new("reverse")
@@ -211,10 +259,26 @@ fn make() -> clap::Command {
                 .action(clap::ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("no-reverse")
+                .long("no-reverse")
+                .help("Do not display patches in reverse order")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("reverse"),
+        )
+        .arg(
             Arg::new("show-branch")
                 .long("showbranch")
                 .help("Display the branch name with the listed patches")
                 .action(clap::ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("no-show-branch")
+                .long("no-showbranch")
+                .help("Do not display branch name")
+                .hide(true)
+                .action(clap::ArgAction::SetTrue)
+                .overrides_with("show-branch"),
         )
 }
 
