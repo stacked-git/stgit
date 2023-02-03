@@ -2,7 +2,7 @@
 
 //! `stg squash` implementation.
 
-use std::{fmt::Write, str::FromStr};
+use std::fmt::Write;
 
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
@@ -64,7 +64,7 @@ fn make() -> clap::Command {
                 .help("Use <name> for the squashed patch")
                 .value_name("name")
                 .allow_hyphen_values(true)
-                .value_parser(PatchName::from_str),
+                .value_parser(clap::value_parser!(PatchName)),
         );
     patchedit::add_args(command, true, true)
 }

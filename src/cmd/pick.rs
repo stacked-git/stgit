@@ -97,7 +97,7 @@ fn make() -> clap::Command {
                 .short('n')
                 .help("Use <name> for the patch name")
                 .value_name("name")
-                .value_parser(PatchName::from_str)
+                .value_parser(clap::value_parser!(PatchName))
                 .conflicts_with_all(["fold", "update"]),
         )
         .arg(

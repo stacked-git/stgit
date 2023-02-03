@@ -5,7 +5,6 @@
 use std::{
     path::{Path, PathBuf},
     rc::Rc,
-    str::FromStr,
 };
 
 use anyhow::{anyhow, Result};
@@ -113,7 +112,7 @@ fn make() -> clap::Command {
                 .num_args(1)
                 .value_name("patch")
                 .value_hint(ValueHint::Other)
-                .value_parser(PatchName::from_str),
+                .value_parser(clap::value_parser!(PatchName)),
         )
         .arg(
             Arg::new("annotate")
