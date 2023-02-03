@@ -40,7 +40,7 @@ fn make() -> clap::Command {
              are displayed. The reversed order is more stack-like, with the base of \
              the stack appearing at the bottom of of the display.\n\
              \n\
-             Empty patches are prefixed with a '0'.",
+             Empty patches are prefixed with a '*' when the --empty option is used.",
         )
         .override_usage(
             "stg series [OPTIONS] [-A] [-U] [-H]\n       \
@@ -541,7 +541,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         if empty_flag {
             if commit.is_no_change()? {
                 stdout.set_color(color_spec.set_fg(Some(termcolor::Color::Cyan)))?;
-                write!(stdout, "0")?;
+                write!(stdout, "*")?;
                 stdout.set_color(color_spec.set_fg(None))?;
             } else {
                 write!(stdout, " ")?;

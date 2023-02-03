@@ -122,7 +122,7 @@ test_expect_success 'Test empty' '
     echo " + p0" >expected.txt &&
     echo " + p1" >>expected.txt &&
     echo " > p2" >>expected.txt &&
-    echo "0- p3" >>expected.txt &&
+    echo "*- p3" >>expected.txt &&
     test_cmp expected.txt series.txt
 '
 

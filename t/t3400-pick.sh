@@ -130,7 +130,7 @@ test_expect_success 'Pick --revert' '
 
 test_expect_success 'Pick with empty result' '
     stg pick -B foo A &&
-    stg series -e | grep -E "0> A-1" &&
+    stg series -e | grep -F "*> A-1" &&
     stg delete A-1
 '
 

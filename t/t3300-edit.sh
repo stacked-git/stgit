@@ -343,7 +343,7 @@ test_expect_success 'Set patch tree' '
     test "$(git write-tree)" = "$p2tree" &&
     grep "^333$" foo &&
     stg edit --set-tree $p2tree p1 &&
-    test "$(echo $(stg series --empty --all))" = "+ p1 0> p2 - p3 ! p4" &&
+    test "$(echo $(stg series --empty --all))" = "+ p1 *> p2 - p3 ! p4" &&
     test "$(git notes show $(stg id p1))" = "note1" &&
     test "$(git notes show $(stg id p2))" = "note2" &&
     test "$(git notes show $(stg id p3))" = "note3" &&
