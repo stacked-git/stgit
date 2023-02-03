@@ -71,8 +71,11 @@ fn make() -> clap::Command {
             Arg::new("short")
                 .long("short")
                 .short('s')
-                .help("Select patches around the topmost patch only")
-                .action(clap::ArgAction::SetTrue),
+                .help("Select <n> patches around the topmost patch only")
+                .value_name("n")
+                .num_args(0..=1)
+                .require_equals(true)
+                .value_parser(argset::parse_usize),
         )
         .group(ArgGroup::new("all-short-group").args(["all", "short"]))
         .arg(
@@ -438,9 +441,16 @@ fn run(matches: &ArgMatches) -> Result<()> {
         });
     }
 
-    if matches.get_flag("short") {
-        let shortnr = repo.config_snapshot().integer("stgit.shortnr").unwrap_or(5);
-        let shortnr: usize = if shortnr < 0 { 0 } else { shortnr as usize };
+    if matches.contains_id("short") {
+        let shortnr = matches
+            .get_one::<usize>("short")
+            .copied()
+            .unwrap_or_else(|| {
+                repo.config_snapshot()
+                    .integer("stgit.shortnr")
+                    .map(|i| if i.is_negative() { 0 } else { i as usize })
+                    .unwrap_or(5)
+            });
 
         if let Some(top_pos) = patches.iter().position(|Entry { sigil, .. }| *sigil == '>') {
             if patches.len() - top_pos > shortnr {

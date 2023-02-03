@@ -144,6 +144,16 @@ test_expect_success 'Test short no applied' '
     test_cmp expected.txt series.txt
 '
 
+test_expect_success 'Test short argument' '
+    stg series --short=1 >series.txt &&
+    cat >expected.txt <<-\EOF &&
+	+ p1
+	> p2
+	- p3
+	EOF
+    test_cmp expected.txt series.txt
+'
+
 test_expect_success 'Test effects' '
     test_config stgit.color.applied none &&
     stg series --applied >series.txt &&
