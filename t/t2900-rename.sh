@@ -51,6 +51,15 @@ test_expect_success 'Rename to same name' '
    grep -e "patch \`foo\` already exists" err
 '
 
+test_expect_success 'New and old name collide' '
+   stg rename baz BaZ
+'
+
+test_expect_success 'New collides with other name in stack' '
+   command_error stg rename BaZ Foo 2>err &&
+   grep -e "new name \`Foo\` collides with \`foo\`" err
+'
+
 test_expect_success 'Rename top-most when others exist' '
    stg rename bar
 '

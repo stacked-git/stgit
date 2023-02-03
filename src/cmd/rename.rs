@@ -63,8 +63,14 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Err(Error::NoAppliedPatches.into());
     };
 
-    if old_patchname.collides(&new_patchname) {
-        return Err(anyhow!("patch `{old_patchname}` already exists"));
+    if let Some(colliding_name) = stack.collides(&new_patchname) {
+        if stack.has_patch(&new_patchname) {
+            return Err(anyhow!("patch `{new_patchname}` already exists"));
+        } else if colliding_name != &old_patchname {
+            return Err(anyhow!(
+                "new name `{new_patchname}` collides with `{colliding_name}`"
+            ));
+        }
     }
 
     stack

@@ -802,14 +802,15 @@ impl<'repo> StackTransaction<'repo> {
         if new_patchname == old_patchname {
             return Ok(());
         } else if let Some(colliding_patchname) = self.stack.collides(new_patchname) {
-            if self
-                .updated_patches
-                .get(colliding_patchname)
-                .map_or(true, Option::is_some)
+            if colliding_patchname != old_patchname
+                && self.updated_patches.contains_key(colliding_patchname)
             {
-                return Err(anyhow!("patch `{colliding_patchname}` already exists"));
+                return Err(anyhow!(
+                    "new patch name `{new_patchname}` collides with `{colliding_patchname}`"
+                ));
             }
-        } else if !self.stack.has_patch(old_patchname) {
+        }
+        if !self.stack.has_patch(old_patchname) {
             return Err(anyhow!("patch `{old_patchname}` does not exist"));
         }
 
