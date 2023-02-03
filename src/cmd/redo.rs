@@ -7,6 +7,7 @@ use clap::Arg;
 
 use super::undo::find_undo_state;
 use crate::{
+    argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack},
@@ -35,16 +36,15 @@ fn make() -> clap::Command {
                 .short('n')
                 .help("Undo the last <n> undos")
                 .value_name("n")
+                .allow_negative_numbers(true)
                 .value_parser(|s: &str| {
-                    s.parse::<isize>()
-                        .map_err(|_| format!("'{s}' is not an integer"))
-                        .and_then(|n| {
-                            if n >= 1 {
-                                Ok(n)
-                            } else {
-                                Err("Bad number of commands to redo".to_string())
-                            }
-                        })
+                    argset::parse_usize(s).and_then(|n| {
+                        if n >= 1 {
+                            Ok(n)
+                        } else {
+                            Err(anyhow::anyhow!("Bad number of commands to redo"))
+                        }
+                    })
                 }),
         )
         .arg(
@@ -58,7 +58,7 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = git_repository::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
-    let redo_steps = matches.get_one::<isize>("number").copied().unwrap_or(1);
+    let redo_steps = matches.get_one::<usize>("number").copied().unwrap_or(1);
 
     stack
         .setup_transaction()
@@ -67,7 +67,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         .discard_changes(matches.get_flag("hard"))
         .with_output_stream(get_color_stdout(matches))
         .transact(|trans| {
-            let redo_state = find_undo_state(trans.stack(), -redo_steps)?;
+            let undo_steps = -(redo_steps as isize);
+            let redo_state = find_undo_state(trans.stack(), undo_steps)?;
             trans.reset_to_state(redo_state)
         })
         .execute(&format!("redo {redo_steps}"))?;

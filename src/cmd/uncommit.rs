@@ -66,7 +66,7 @@ fn make() -> clap::Command {
                 .short('n')
                 .help("Uncommit the specified number of commits")
                 .value_name("number")
-                .allow_hyphen_values(true)
+                .allow_negative_numbers(true)
                 .value_parser(argset::parse_usize)
                 .conflicts_with("to"),
         )

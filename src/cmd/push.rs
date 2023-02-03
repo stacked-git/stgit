@@ -69,7 +69,7 @@ fn make() -> clap::Command {
                      of patches",
                 )
                 .num_args(1)
-                .allow_hyphen_values(true) // i.e. for negative ints
+                .allow_negative_numbers(true)
                 .value_name("n")
                 .value_parser(clap::value_parser!(isize)),
         )
