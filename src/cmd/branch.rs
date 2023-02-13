@@ -584,7 +584,9 @@ fn clone(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = if let Some(new_branchname) = get_one_str(matches, "new-branch") {
         new_branchname.to_string()
     } else {
-        let suffix = chrono::Local::now().format("%Y%m%d-%H%M%S");
+        let suffix = gix::actor::Time::now_local_or_utc().format(
+            time::macros::format_description!("[year][month][day]-[hour][minute][second]"),
+        );
         format!("{current_branchname}-{suffix}")
     };
 

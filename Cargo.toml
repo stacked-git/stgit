@@ -19,7 +19,6 @@ name = "stg"
 [dependencies]
 anyhow = "1.0"
 bstr = { version = "1.0", default-features = false, features = ["std"] }
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
 clap = { version = "4.0", default-features = false, features = [
   "color",
   "help",
@@ -40,6 +39,7 @@ strsim = "0.10"
 tempfile = "3"
 termcolor = "1.1"
 thiserror = "~1.0"
+time = { version = "0.3.17", default-features = false, features = ["local-offset", "formatting", "macros", "parsing"] }
 
 bzip2 = { version = "0.4", optional = true }
 curl = { version = "0.4", optional = true }

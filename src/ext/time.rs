@@ -3,7 +3,6 @@
 //! Extension trait for [`gix::actor::Time`].
 
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, NaiveDateTime};
 
 /// Extend [`gix::actor::Time`] with additional methods.
 pub(crate) trait TimeExtended {
@@ -17,6 +16,7 @@ pub(crate) trait TimeExtended {
     /// | `iso8601-strict`  | `2022-01-06T09:32:07-05:00`      |
     /// | `raw`             | `1641479527 -0500`               |
     /// | `now`             | `now`                            |
+    /// | `gitoxide default`| `Thu Jan 6 2022 09:32:07 -0500`  |
     fn parse_time(time_str: &str) -> Result<gix::actor::Time> {
         let time_str = time_str.trim();
 
@@ -24,39 +24,55 @@ pub(crate) trait TimeExtended {
             return Ok(gix::actor::Time::now_local_or_utc());
         }
 
-        for format_str in [
-            "%a %b %e %T %Y %z",  // default
-            "%a, %e %b %Y %T %z", // rfc2822
-            "%F %T %z",           // iso8601
-            "%+",                 // iso8601-strict (rfc3339)
-            "%s %#z",             // raw
+        if let Ok(time) = gix::date::parse(time_str, Some(std::time::SystemTime::now())) {
+            return Ok(time);
+        }
+
+        // Datetime strings without timezone offset
+        for format_desc in [
+            // Git default without tz offset
+            time::macros::format_description!(
+                "[weekday repr:short] [month repr:short] [day padding:none] [hour]:[minute]:[second] [year]"
+            ),
+
+            // RFC-2822 without tz offset
+            time::macros::format_description!(
+                "[weekday repr:short], [day] [month repr:short] [year] [hour]:[minute]:[second]"
+            ),
+
+            // ISO8601 without tz offset
+            time::macros::format_description!(
+                "[year]-[month]-[day] [hour]:[minute]:[second] [offset_hour sign:mandatory][offset_minute]"
+            ),
+
+            // Strict ISO8601 without tz offset
+            time::macros::format_description!(
+                "[year]-[month]-[day]T[hour]:[minute]:[second]"
+            ),
+
+            // Gitoxide default without tz offset
+            time::macros::format_description!(
+                "[weekday repr:short] [month repr:short] [day] [year] [hour]:[minute]:[second]"
+            ),
         ] {
-            if let Ok(dt) = DateTime::parse_from_str(time_str, format_str) {
+            if let Ok(primitive_dt) = time::PrimitiveDateTime::parse(time_str, format_desc) {
+                let offset = time::UtcOffset::from_whole_seconds(
+                    gix::actor::Time::now_local_or_utc().offset_in_seconds,
+                )?;
+                let offset_dt = primitive_dt.assume_offset(offset);
                 return Ok(gix::actor::Time::new(
-                    dt.timestamp()
-                        .try_into()
-                        .expect("unix timestamp fits into u32 until 2038"),
-                    dt.offset().local_minus_utc(),
+                    offset_dt.unix_timestamp().try_into()?,
+                    offset_dt.offset().whole_seconds(),
                 ));
             }
         }
 
-        // Datetime strings without timezone offset
-        for format_str in [
-            "%a %b %e %T %Y",  // default
-            "%a, %e %b %Y %T", // rfc2822
-            "%F %T",           // iso8601
-            "%FT%T",           // iso8601 without tz offset
-            "%s",              // raw
-        ] {
-            if let Ok(dt) = NaiveDateTime::parse_from_str(time_str, format_str) {
-                return Ok(gix::actor::Time::new(
-                    dt.timestamp()
-                        .try_into()
-                        .expect("unix timestamp fits into u32 until 2038"),
-                    0,
-                ));
-            }
+        if let Ok(seconds) = time_str.parse::<u32>() {
+            let offset_dt = time::OffsetDateTime::from_unix_timestamp(seconds.into())?;
+            return Ok(gix::actor::Time::new(
+                offset_dt.unix_timestamp().try_into()?,
+                offset_dt.offset().whole_seconds(),
+            ));
         }
 
         Err(anyhow!("invalid date `{time_str}`"))
@@ -72,10 +88,18 @@ mod tests {
     use super::TimeExtended;
 
     #[test]
-    fn test_parse_time() {
+    fn test_parse_raw() {
         let time = Time::parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, 6 * 60 * 60);
+        assert!(matches!(time.sign, gix::actor::Sign::Plus));
+    }
+
+    #[test]
+    fn test_parse_raw_notz() {
+        let time = Time::parse_time("123456").unwrap();
+        assert_eq!(time.seconds(), 123456);
+        assert_eq!(time.offset_in_seconds, 0);
         assert!(matches!(time.sign, gix::actor::Sign::Plus));
     }
 
