@@ -88,7 +88,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let config = repo.config_snapshot();
 
@@ -122,7 +122,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             println!("Uncommitting to {}", target_commit.id());
         }
 
-        let mut commits: Vec<Rc<git_repository::Commit<'_>>> = Vec::new();
+        let mut commits: Vec<Rc<gix::Commit<'_>>> = Vec::new();
 
         let mut next_commit = stack.base().clone();
         loop {
@@ -206,7 +206,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn check_commit(commit: &git_repository::Commit) -> Result<()> {
+fn check_commit(commit: &gix::Commit) -> Result<()> {
     if commit.parent_ids().count() == 1 {
         Ok(())
     } else {
@@ -219,7 +219,7 @@ fn check_commit(commit: &git_repository::Commit) -> Result<()> {
 
 fn make_patchnames(
     stack: &Stack,
-    commits: &[Rc<git_repository::Commit<'_>>],
+    commits: &[Rc<gix::Commit<'_>>],
     patchname_len_limit: Option<usize>,
 ) -> Vec<PatchName> {
     let mut patchnames = Vec::with_capacity(commits.len());

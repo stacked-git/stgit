@@ -216,7 +216,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
@@ -442,7 +442,7 @@ fn find_series_path(base: &Path) -> Result<PathBuf> {
     Err(anyhow!("series file not found"))
 }
 
-fn use_message_id(matches: &clap::ArgMatches, config: &git_repository::config::Snapshot) -> bool {
+fn use_message_id(matches: &clap::ArgMatches, config: &gix::config::Snapshot) -> bool {
     matches.get_flag("message-id") || config.boolean("stgit.import.message-id").unwrap_or(false)
 }
 
@@ -619,12 +619,11 @@ fn create_patch<'repo>(
         patchname
     };
 
-    let author_date =
-        author_date.and_then(|date| git_repository::actor::Time::parse_time(&date).ok());
+    let author_date = author_date.and_then(|date| gix::actor::Time::parse_time(&date).ok());
     let author = if let (Some(name), Some(email), Some(time)) =
         (author_name.as_deref(), author_email.as_deref(), author_date)
     {
-        git_repository::actor::Signature {
+        gix::actor::Signature {
             name: BString::from(name),
             email: BString::from(email),
             time,
@@ -632,7 +631,7 @@ fn create_patch<'repo>(
     } else {
         let default_author = stack.repo.get_author()?;
         if let (Some(name), Some(email)) = (author_name.as_deref(), author_email.as_deref()) {
-            git_repository::actor::Signature {
+            gix::actor::Signature {
                 name: BString::from(name),
                 email: BString::from(email),
                 time: default_author.time,

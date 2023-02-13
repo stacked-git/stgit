@@ -364,7 +364,7 @@ fn format_options() -> Vec<Arg> {
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
 
     if matches.get_flag("dump-aliases") {
         return repo.stupid().send_email_dump_aliases();

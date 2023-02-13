@@ -231,7 +231,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     if let Some((subname, submatches)) = matches.subcommand() {
         match subname {
             "--list" => list(&repo, submatches),
@@ -268,11 +268,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 }
 
-fn set_description(
-    repo: &git_repository::Repository,
-    branchname: &str,
-    description: &str,
-) -> Result<()> {
+fn set_description(repo: &gix::Repository, branchname: &str, description: &str) -> Result<()> {
     let mut local_config_file = repo.local_config_file()?;
     if description.is_empty() {
         if let Ok(mut value) =
@@ -299,7 +295,7 @@ fn set_description(
     Ok(())
 }
 
-fn get_stgit_parent(config: &git_repository::config::Snapshot, branchname: &str) -> Option<String> {
+fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &str) -> Option<String> {
     config
         .plumbing()
         .string(
@@ -311,7 +307,7 @@ fn get_stgit_parent(config: &git_repository::config::Snapshot, branchname: &str)
 }
 
 fn set_stgit_parent(
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
     branchname: &str,
     parent_branchname: Option<&str>,
 ) -> Result<()> {
@@ -344,7 +340,7 @@ fn set_stgit_parent(
     Ok(())
 }
 
-fn list(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn list(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let mut branchnames = Vec::new();
     for local_branch in repo.references()?.local_branches()?.filter_map(Result::ok) {
         let local_branch = Branch::wrap(local_branch);
@@ -435,10 +431,9 @@ fn list(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
     Ok(())
 }
 
-fn create(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn create(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
-    let new_fullname =
-        git_repository::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?;
+    let new_fullname = gix::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?;
     if repo.try_find_reference(&new_fullname)?.is_some() {
         return Err(anyhow!("branch `{new_branchname}` already exists"));
     }
@@ -494,17 +489,17 @@ fn create(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
         .as_ref()
         .and_then(|branch| branch.get_branch_name().ok());
 
-    repo.edit_reference(git_repository::refs::transaction::RefEdit {
-        change: git_repository::refs::transaction::Change::Update {
-            log: git_repository::refs::transaction::LogChange {
-                mode: git_repository::refs::transaction::RefLog::AndReference,
+    repo.edit_reference(gix::refs::transaction::RefEdit {
+        change: gix::refs::transaction::Change::Update {
+            log: gix::refs::transaction::LogChange {
+                mode: gix::refs::transaction::RefLog::AndReference,
                 force_create_reflog: false,
                 message: format!("branch: Created from {target_name}").into(),
             },
-            expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
-            new: git_repository::refs::Target::Peeled(target_commit.id),
+            expected: gix::refs::transaction::PreviousValue::MustNotExist,
+            new: gix::refs::Target::Peeled(target_commit.id),
         },
-        name: git_repository::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?,
+        name: gix::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?,
         deref: false,
     })?;
 
@@ -549,29 +544,23 @@ fn create(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
 fn copy_upstream(
     from_branch: &Branch,
     to_branch: &Branch,
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
 ) -> Result<Option<String>> {
     let (category, from_short_name) = from_branch
         .get_reference_name()
         .category_and_short_name()
         .expect("from reference is a local branch");
-    assert!(matches!(
-        category,
-        git_repository::refs::Category::LocalBranch
-    ));
+    assert!(matches!(category, gix::refs::Category::LocalBranch));
     let (category, to_short_name) = to_branch
         .get_reference_name()
         .category_and_short_name()
         .expect("to reference is a local branch");
-    assert!(matches!(
-        category,
-        git_repository::refs::Category::LocalBranch
-    ));
+    assert!(matches!(category, gix::refs::Category::LocalBranch));
     let config = repo.config_snapshot();
     let remote = config.string(format!("branch.{from_short_name}.remote").as_str());
     let merge = config.string(format!("branch.{from_short_name}.merge").as_str());
     if let (Some(remote), Some(merge)) = (remote, merge) {
-        let merge_name = git_repository::refs::FullName::try_from(merge.as_bstr())?;
+        let merge_name = gix::refs::FullName::try_from(merge.as_bstr())?;
         let merge_short_name = merge_name.shorten().to_str_lossy();
         let mut local_config_file = repo.local_config_file()?;
         local_config_file.set_raw_value(
@@ -588,7 +577,7 @@ fn copy_upstream(
     }
 }
 
-fn clone(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn clone(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let current_branch = repo.get_branch(None)?;
     let current_branchname = current_branch.get_branch_name()?;
 
@@ -611,19 +600,17 @@ fn clone(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> 
             .find_reference(stack.get_stack_refname())
             .expect("just found this stack state reference");
         let state_commit = state_ref.id().object()?.try_into_commit()?;
-        repo.edit_reference(git_repository::refs::transaction::RefEdit {
-            change: git_repository::refs::transaction::Change::Update {
-                log: git_repository::refs::transaction::LogChange {
-                    mode: git_repository::refs::transaction::RefLog::AndReference,
+        repo.edit_reference(gix::refs::transaction::RefEdit {
+            change: gix::refs::transaction::Change::Update {
+                log: gix::refs::transaction::LogChange {
+                    mode: gix::refs::transaction::RefLog::AndReference,
                     force_create_reflog: false,
                     message: format!("clone from {current_branchname}").into(),
                 },
-                expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
-                new: git_repository::refs::Target::Peeled(state_commit.id),
+                expected: gix::refs::transaction::PreviousValue::MustNotExist,
+                new: gix::refs::Target::Peeled(state_commit.id),
             },
-            name: git_repository::refs::FullName::try_from(state_refname_from_branch_name(
-                &new_branchname,
-            ))?,
+            name: gix::refs::FullName::try_from(state_refname_from_branch_name(&new_branchname))?,
             deref: false,
         })?;
         stupid.branch_copy(None, &new_branchname)?;
@@ -648,7 +635,7 @@ fn clone(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> 
     stupid.checkout(new_branch.get_branch_name().unwrap())
 }
 
-fn rename(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn rename(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let names: Vec<_> = matches
         .get_many::<String>("branch-any")
         .unwrap()
@@ -677,19 +664,17 @@ fn rename(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
             .into_fully_peeled_id()?
             .object()?
             .try_into_commit()?;
-        repo.edit_reference(git_repository::refs::transaction::RefEdit {
-            change: git_repository::refs::transaction::Change::Update {
-                log: git_repository::refs::transaction::LogChange {
-                    mode: git_repository::refs::transaction::RefLog::AndReference,
+        repo.edit_reference(gix::refs::transaction::RefEdit {
+            change: gix::refs::transaction::Change::Update {
+                log: gix::refs::transaction::LogChange {
+                    mode: gix::refs::transaction::RefLog::AndReference,
                     force_create_reflog: false,
                     message: format!("rename {old_branchname} to {new_branchname}").into(),
                 },
-                expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
-                new: git_repository::refs::Target::Peeled(state_commit.id),
+                expected: gix::refs::transaction::PreviousValue::MustNotExist,
+                new: gix::refs::Target::Peeled(state_commit.id),
             },
-            name: git_repository::refs::FullName::try_from(state_refname_from_branch_name(
-                new_branchname,
-            ))?,
+            name: gix::refs::FullName::try_from(state_refname_from_branch_name(new_branchname))?,
             deref: false,
         })?;
         stupid
@@ -707,7 +692,7 @@ fn rename(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
     Ok(())
 }
 
-fn protect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn protect(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
@@ -716,7 +701,7 @@ fn protect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()
     stack.set_protected(true)
 }
 
-fn unprotect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn unprotect(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
@@ -725,7 +710,7 @@ fn unprotect(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<
     stack.set_protected(false)
 }
 
-fn delete(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn delete(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let target_branchname = get_one_str(matches, "branch-any").expect("required argument");
     let target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
@@ -755,7 +740,7 @@ fn delete(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()>
     Ok(())
 }
 
-fn cleanup(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn cleanup(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
         get_one_str(matches, "branch"),
@@ -772,7 +757,7 @@ fn cleanup(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()
     Ok(())
 }
 
-fn describe(repo: &git_repository::Repository, matches: &ArgMatches) -> Result<()> {
+fn describe(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let branch = repo.get_branch(get_one_str(matches, "branch-any"))?;
     let description = get_one_str(matches, "description").expect("required argument");
     let branchname = branch.get_branch_name()?;

@@ -58,10 +58,10 @@ pub(crate) fn parse_branch_and_spec<'a>(
 
 /// Parse and lookup StGit revision specification.
 pub(crate) fn parse_stgit_revision<'repo>(
-    repo: &'repo git_repository::Repository,
+    repo: &'repo gix::Repository,
     spec: Option<&str>,
     branch: Option<&str>,
-) -> Result<git_repository::Object<'repo>> {
+) -> Result<gix::Object<'repo>> {
     let (branch, spec) = parse_branch_and_spec(branch, spec);
 
     if let Some(spec) = spec {
@@ -83,12 +83,9 @@ pub(crate) fn parse_stgit_revision<'repo>(
     }
 }
 
-/// [`git_repository::Repository::rev_parse_single()`] with StGit-specific error mapping.
-fn rev_parse_single<'repo>(
-    repo: &'repo git_repository::Repository,
-    spec: &str,
-) -> Result<git_repository::Object<'repo>> {
-    use git_repository::{
+/// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
+fn rev_parse_single<'repo>(repo: &'repo gix::Repository, spec: &str) -> Result<gix::Object<'repo>> {
+    use gix::{
         refs::file::find::existing::Error as FindError,
         revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},
     };

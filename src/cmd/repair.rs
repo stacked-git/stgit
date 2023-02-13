@@ -64,7 +64,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let config = repo.config_snapshot();
     if stack.is_protected(&config) {
@@ -78,10 +78,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     // Find commits that are not patches as well as applied patches.
 
     // Commits to definitely patchify
-    let mut patchify: Vec<Rc<git_repository::Commit>> = Vec::new();
+    let mut patchify: Vec<Rc<gix::Commit>> = Vec::new();
 
     // Commits to patchify if a patch is found below
-    let mut maybe_patchify: Vec<Rc<git_repository::Commit>> = Vec::new();
+    let mut maybe_patchify: Vec<Rc<gix::Commit>> = Vec::new();
 
     let mut applied: Vec<PatchName> = Vec::new();
 
@@ -124,9 +124,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             let todo_commit_id = todo.pop().unwrap();
             seen.insert(todo_commit_id);
             let commit = stack.repo.find_commit(todo_commit_id)?;
-            let parents: IndexSet<git_repository::ObjectId> =
+            let parents: IndexSet<gix::ObjectId> =
                 commit.parent_ids().map(|id| id.detach()).collect();
-            let unseen_parents: IndexSet<git_repository::ObjectId> =
+            let unseen_parents: IndexSet<gix::ObjectId> =
                 parents.difference(&seen).copied().collect();
             todo = todo.union(&unseen_parents).copied().collect();
 

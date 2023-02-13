@@ -8,10 +8,7 @@ use anyhow::{anyhow, Result};
 use bstr::{BString, ByteVec};
 
 /// Get named patch template from template file.
-pub(crate) fn get_template(
-    repo: &git_repository::Repository,
-    name: &str,
-) -> Result<Option<String>> {
+pub(crate) fn get_template(repo: &gix::Repository, name: &str) -> Result<Option<String>> {
     let mut template_paths = Vec::with_capacity(4);
 
     // I.e. .git/<name>

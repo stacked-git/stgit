@@ -23,7 +23,7 @@ pub(crate) trait StackAccess<'repo>: StackStateAccess<'repo> {
     /// Get full reference name of branch.
     ///
     /// E.g. "refs/heads/main".
-    fn get_branch_refname(&self) -> &git_repository::refs::FullNameRef;
+    fn get_branch_refname(&self) -> &gix::refs::FullNameRef;
 
     /// Get reference name of the stack metadata.
     ///
@@ -34,10 +34,10 @@ pub(crate) trait StackAccess<'repo>: StackStateAccess<'repo> {
     ///
     /// May be different than the stack's base commit if the stack state is out of sync
     /// with the branch due to use of external tools (i.e. `git`).
-    fn get_branch_head(&self) -> &Rc<git_repository::Commit<'repo>>;
+    fn get_branch_head(&self) -> &Rc<gix::Commit<'repo>>;
 
     /// Get stack's base commit.
-    fn base(&self) -> &Rc<git_repository::Commit<'repo>>;
+    fn base(&self) -> &Rc<gix::Commit<'repo>>;
 }
 
 /// Trait for accessing stack state.
@@ -71,15 +71,15 @@ pub(crate) trait StackStateAccess<'repo> {
     }
 
     /// Get stack's top commit, or base if no applied patches.
-    fn top(&self) -> &Rc<git_repository::Commit<'repo>>;
+    fn top(&self) -> &Rc<gix::Commit<'repo>>;
 
     /// Get recorded head of the stack.
     ///
     /// N.B. this is probably not what you want. See also [`crate::stack::Stack::branch_head`].
-    fn head(&self) -> &Rc<git_repository::Commit<'repo>>;
+    fn head(&self) -> &Rc<gix::Commit<'repo>>;
 
     /// Get the commit for the given patch name.
-    fn get_patch_commit(&self, patchname: &PatchName) -> &Rc<git_repository::Commit<'repo>> {
+    fn get_patch_commit(&self, patchname: &PatchName) -> &Rc<gix::Commit<'repo>> {
         &self.get_patch(patchname).commit
     }
 

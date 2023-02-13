@@ -105,7 +105,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
 
@@ -114,7 +114,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let unapplied_flag = matches.get_flag("unapplied");
     let hidden_flag = matches.get_flag("hidden");
 
-    let mut oids: Vec<git_repository::ObjectId> = Vec::new();
+    let mut oids: Vec<gix::ObjectId> = Vec::new();
 
     if applied_flag {
         for patchname in stack.applied() {

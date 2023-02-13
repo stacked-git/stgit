@@ -439,7 +439,7 @@ fn message_options() -> Vec<Arg> {
 }
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
         argset::get_one_str(matches, "branch"),

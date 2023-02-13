@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Extension trait for [`git_repository::actor::Time`].
+//! Extension trait for [`gix::actor::Time`].
 
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, NaiveDateTime};
 
-/// Extend [`git_repository::actor::Time`] with additional methods.
+/// Extend [`gix::actor::Time`] with additional methods.
 pub(crate) trait TimeExtended {
     /// Attempt to parse a time string of one of several well-known formats.
     ///
@@ -17,11 +17,11 @@ pub(crate) trait TimeExtended {
     /// | `iso8601-strict`  | `2022-01-06T09:32:07-05:00`      |
     /// | `raw`             | `1641479527 -0500`               |
     /// | `now`             | `now`                            |
-    fn parse_time(time_str: &str) -> Result<git_repository::actor::Time> {
+    fn parse_time(time_str: &str) -> Result<gix::actor::Time> {
         let time_str = time_str.trim();
 
         if time_str == "now" {
-            return Ok(git_repository::actor::Time::now_local_or_utc());
+            return Ok(gix::actor::Time::now_local_or_utc());
         }
 
         for format_str in [
@@ -32,7 +32,7 @@ pub(crate) trait TimeExtended {
             "%s %#z",             // raw
         ] {
             if let Ok(dt) = DateTime::parse_from_str(time_str, format_str) {
-                return Ok(git_repository::actor::Time::new(
+                return Ok(gix::actor::Time::new(
                     dt.timestamp()
                         .try_into()
                         .expect("unix timestamp fits into u32 until 2038"),
@@ -50,7 +50,7 @@ pub(crate) trait TimeExtended {
             "%s",              // raw
         ] {
             if let Ok(dt) = NaiveDateTime::parse_from_str(time_str, format_str) {
-                return Ok(git_repository::actor::Time::new(
+                return Ok(gix::actor::Time::new(
                     dt.timestamp()
                         .try_into()
                         .expect("unix timestamp fits into u32 until 2038"),
@@ -63,11 +63,11 @@ pub(crate) trait TimeExtended {
     }
 }
 
-impl TimeExtended for git_repository::actor::Time {}
+impl TimeExtended for gix::actor::Time {}
 
 #[cfg(test)]
 mod tests {
-    use git_repository::actor::Time;
+    use gix::actor::Time;
 
     use super::TimeExtended;
 
@@ -76,7 +76,7 @@ mod tests {
         let time = Time::parse_time("123456 +0600").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, 6 * 60 * 60);
-        assert!(matches!(time.sign, git_repository::actor::Sign::Plus));
+        assert!(matches!(time.sign, gix::actor::Sign::Plus));
     }
 
     #[test]
@@ -97,7 +97,7 @@ mod tests {
         let time_str = "2005-04-07T22:13:09";
         let time = Time::parse_time(time_str).unwrap();
         assert_eq!(
-            time.format(git_repository::date::time::format::ISO8601_STRICT)
+            time.format(gix::date::time::format::ISO8601_STRICT)
                 .strip_suffix("+00:00")
                 .unwrap(),
             time_str,
@@ -114,7 +114,7 @@ mod tests {
         let time = Time::parse_time("123456 -0230").unwrap();
         assert_eq!(time.seconds(), 123456);
         assert_eq!(time.offset_in_seconds, -150 * 60);
-        assert!(matches!(time.sign, git_repository::actor::Sign::Minus));
+        assert!(matches!(time.sign, gix::actor::Sign::Minus));
     }
 
     #[test]

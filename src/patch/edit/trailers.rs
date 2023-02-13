@@ -13,10 +13,10 @@ use crate::{stupid::Stupid, wrap::Message};
 /// The `matches` provided to this function must be from a [`clap::Command`] that was
 /// setup with [`super::add_args`].
 pub(crate) fn add_trailers<'a, 'b>(
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
     message: Message<'a>,
     matches: &ArgMatches,
-    signature: impl Into<git_repository::actor::SignatureRef<'b>>,
+    signature: impl Into<gix::actor::SignatureRef<'b>>,
     autosign: Option<&str>,
 ) -> Result<Message<'a>> {
     let signature = signature.into();

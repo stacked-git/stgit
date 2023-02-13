@@ -12,8 +12,8 @@ use crate::patch::PatchName;
 ///
 /// PatchNames and Oids are checked, but Oids are not converted to Commits.
 pub(crate) struct RawStackState {
-    pub prev: Option<git_repository::ObjectId>,
-    pub head: git_repository::ObjectId,
+    pub prev: Option<gix::ObjectId>,
+    pub head: gix::ObjectId,
     pub applied: Vec<PatchName>,
     pub unapplied: Vec<PatchName>,
     pub hidden: Vec<PatchName>,
@@ -23,7 +23,7 @@ pub(crate) struct RawStackState {
 /// Raw patch state representation.
 pub(crate) struct RawPatchState {
     /// The commit id of the patch.
-    pub oid: git_repository::ObjectId,
+    pub oid: gix::ObjectId,
 }
 
 impl RawStackState {
@@ -66,12 +66,12 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             ));
         }
 
-        let prev: Option<git_repository::ObjectId> = match ds.prev.as_ref() {
+        let prev: Option<gix::ObjectId> = match ds.prev.as_ref() {
             Some(oid_str) => {
                 if oid_str == "None" {
                     None
                 } else {
-                    let oid = git_repository::ObjectId::from_hex(oid_str.as_bytes())
+                    let oid = gix::ObjectId::from_hex(oid_str.as_bytes())
                         .map_err(|_| D::Error::custom(format!("invalid `prev` oid `{oid_str}`")))?;
                     Some(oid)
                 }
@@ -79,18 +79,17 @@ impl<'de> serde::Deserialize<'de> for RawStackState {
             None => None,
         };
 
-        let head = git_repository::ObjectId::from_hex(ds.head.as_bytes())
+        let head = gix::ObjectId::from_hex(ds.head.as_bytes())
             .map_err(|_| D::Error::custom(format!("invalid `head` oid '{}'", &ds.head)))?;
 
         let mut patches = BTreeMap::new();
         for (patchname, raw_patch) in ds.patches {
-            let oid =
-                git_repository::ObjectId::from_hex(raw_patch.oid.as_bytes()).map_err(|_| {
-                    D::Error::custom(format!(
-                        "invalid oid for patch `{}`: '{}'",
-                        patchname, &raw_patch.oid
-                    ))
-                })?;
+            let oid = gix::ObjectId::from_hex(raw_patch.oid.as_bytes()).map_err(|_| {
+                D::Error::custom(format!(
+                    "invalid oid for patch `{}`: '{}'",
+                    patchname, &raw_patch.oid
+                ))
+            })?;
             patches.insert(patchname, RawPatchState { oid });
         }
 

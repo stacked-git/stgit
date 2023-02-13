@@ -18,12 +18,12 @@ use crate::{ext::RepositoryExtended, patch::PatchName, stupid::Stupid, wrap::Bra
 /// This struct contains the underlying stack state as recorded in the git repo along
 /// with other relevant branch state.
 pub(crate) struct Stack<'repo> {
-    pub(crate) repo: &'repo git_repository::Repository,
+    pub(crate) repo: &'repo gix::Repository,
     branch_name: String,
     branch: Branch<'repo>,
-    branch_head: Rc<git_repository::Commit<'repo>>,
+    branch_head: Rc<gix::Commit<'repo>>,
     stack_refname: String,
-    base: Rc<git_repository::Commit<'repo>>,
+    base: Rc<gix::Commit<'repo>>,
     state: StackState<'repo>,
     is_initialized: bool,
 }
@@ -93,7 +93,7 @@ impl<'repo> Stack<'repo> {
     ///
     /// An error will be returned if there is no StGit stack associated with the branch.
     pub(crate) fn from_branch(
-        repo: &'repo git_repository::Repository,
+        repo: &'repo gix::Repository,
         branch_name: Option<&str>,
         init_policy: InitializationPolicy,
     ) -> Result<Self> {
@@ -166,7 +166,7 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Check whether the stack is marked as protected in the config.
-    pub(crate) fn is_protected(&self, config: &git_repository::config::Snapshot) -> bool {
+    pub(crate) fn is_protected(&self, config: &gix::config::Snapshot) -> bool {
         config
             .plumbing()
             .boolean(
@@ -252,22 +252,21 @@ impl<'repo> Stack<'repo> {
 
         let state_commit_id = state.commit(self.repo, None, message)?;
 
-        self.repo
-            .edit_reference(git_repository::refs::transaction::RefEdit {
-                change: git_repository::refs::transaction::Change::Update {
-                    log: git_repository::refs::transaction::LogChange {
-                        mode: git_repository::refs::transaction::RefLog::AndReference,
-                        force_create_reflog: false,
-                        message: reflog_msg.into(),
-                    },
-                    expected: git_repository::refs::transaction::PreviousValue::ExistingMustMatch(
-                        git_repository::refs::Target::Peeled(prev_state_commit_id),
-                    ),
-                    new: git_repository::refs::Target::Peeled(state_commit_id),
+        self.repo.edit_reference(gix::refs::transaction::RefEdit {
+            change: gix::refs::transaction::Change::Update {
+                log: gix::refs::transaction::LogChange {
+                    mode: gix::refs::transaction::RefLog::AndReference,
+                    force_create_reflog: false,
+                    message: reflog_msg.into(),
                 },
-                name: git_repository::refs::FullName::try_from(self.stack_refname.as_str())?,
-                deref: false,
-            })?;
+                expected: gix::refs::transaction::PreviousValue::ExistingMustMatch(
+                    gix::refs::Target::Peeled(prev_state_commit_id),
+                ),
+                new: gix::refs::Target::Peeled(state_commit_id),
+            },
+            name: gix::refs::FullName::try_from(self.stack_refname.as_str())?,
+            deref: false,
+        })?;
 
         Ok(Self { state, ..self })
     }
@@ -290,11 +289,7 @@ impl<'repo> Stack<'repo> {
     }
 
     /// Update the branch and branch head commit.
-    pub(super) fn update_head(
-        &mut self,
-        branch: Branch<'repo>,
-        commit: Rc<git_repository::Commit<'repo>>,
-    ) {
+    pub(super) fn update_head(&mut self, branch: Branch<'repo>, commit: Rc<gix::Commit<'repo>>) {
         self.branch = branch;
         self.branch_head = commit;
     }
@@ -322,7 +317,7 @@ impl<'repo> StackAccess<'repo> for Stack<'repo> {
         &self.branch_name
     }
 
-    fn get_branch_refname(&self) -> &git_repository::refs::FullNameRef {
+    fn get_branch_refname(&self) -> &gix::refs::FullNameRef {
         self.branch.get_reference_name()
     }
 
@@ -330,11 +325,11 @@ impl<'repo> StackAccess<'repo> for Stack<'repo> {
         &self.stack_refname
     }
 
-    fn get_branch_head(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn get_branch_head(&self) -> &Rc<gix::Commit<'repo>> {
         &self.branch_head
     }
 
-    fn base(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn base(&self) -> &Rc<gix::Commit<'repo>> {
         &self.base
     }
 }
@@ -360,11 +355,11 @@ impl<'repo> StackStateAccess<'repo> for Stack<'repo> {
         self.state.has_patch(patchname)
     }
 
-    fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn top(&self) -> &Rc<gix::Commit<'repo>> {
         self.state.top()
     }
 
-    fn head(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn head(&self) -> &Rc<gix::Commit<'repo>> {
         self.state.head()
     }
 }
@@ -386,11 +381,7 @@ fn get_patch_refname(branch_name: &str, patch_spec: &str) -> String {
 ///
 /// This is done when instantiating a [`Stack`] to guard against external modifications
 /// to the stack's patch refs.
-fn ensure_patch_refs(
-    repo: &git_repository::Repository,
-    branch_name: &str,
-    state: &StackState,
-) -> Result<()> {
+fn ensure_patch_refs(repo: &gix::Repository, branch_name: &str, state: &StackState) -> Result<()> {
     let patch_ref_prefix = get_patch_refname(branch_name, "");
     let mut state_patches: BTreeMap<&PatchName, &PatchState> = state.patches.iter().collect();
 
@@ -420,23 +411,21 @@ fn ensure_patch_refs(
                         }
                     } else {
                         // Existing ref seems to be symbolic, and not direct.
-                        repo.edit_reference(
-                            git_repository::refs::transaction::RefEdit {
-                                change: git_repository::refs::transaction::Change::Update {
-                                    log: git_repository::refs::transaction::LogChange {
-                                        mode: git_repository::refs::transaction::RefLog::AndReference,
-                                        force_create_reflog: false,
-                                        message: "fixup symbolic patch ref".into(),
-                                    },
-                                    expected: git_repository::refs::transaction::PreviousValue::ExistingMustMatch(
-                                        existing_ref.target().into_owned()
-                                    ),
-                                    new: git_repository::refs::Target::Peeled(patchdesc.commit.id),
+                        repo.edit_reference(gix::refs::transaction::RefEdit {
+                            change: gix::refs::transaction::Change::Update {
+                                log: gix::refs::transaction::LogChange {
+                                    mode: gix::refs::transaction::RefLog::AndReference,
+                                    force_create_reflog: false,
+                                    message: "fixup symbolic patch ref".into(),
                                 },
-                                name: existing_ref.name().into(),
-                                deref: false,
-                            }
-                        )?;
+                                expected: gix::refs::transaction::PreviousValue::ExistingMustMatch(
+                                    existing_ref.target().into_owned(),
+                                ),
+                                new: gix::refs::Target::Peeled(patchdesc.commit.id),
+                            },
+                            name: existing_ref.name().into(),
+                            deref: false,
+                        })?;
                     }
                 } else {
                     // Existing ref does not map to known/current patch.
@@ -455,17 +444,17 @@ fn ensure_patch_refs(
     // At this point state_patches only contains patches that did not overlap with the
     // existing patch refs found in the repository.
     for (patchname, patchdesc) in state_patches {
-        repo.edit_reference(git_repository::refs::transaction::RefEdit {
-            change: git_repository::refs::transaction::Change::Update {
-                log: git_repository::refs::transaction::LogChange {
-                    mode: git_repository::refs::transaction::RefLog::AndReference,
+        repo.edit_reference(gix::refs::transaction::RefEdit {
+            change: gix::refs::transaction::Change::Update {
+                log: gix::refs::transaction::LogChange {
+                    mode: gix::refs::transaction::RefLog::AndReference,
                     force_create_reflog: false,
                     message: "fixup missing patch ref".into(),
                 },
-                expected: git_repository::refs::transaction::PreviousValue::MustNotExist,
-                new: git_repository::refs::Target::Peeled(patchdesc.commit.id),
+                expected: gix::refs::transaction::PreviousValue::MustNotExist,
+                new: gix::refs::Target::Peeled(patchdesc.commit.id),
             },
-            name: git_repository::refs::FullName::try_from(get_patch_refname(
+            name: gix::refs::FullName::try_from(get_patch_refname(
                 branch_name,
                 patchname.as_ref(),
             ))?,

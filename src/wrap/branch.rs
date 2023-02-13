@@ -4,12 +4,12 @@ use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 
 pub(crate) struct Branch<'repo> {
-    inner: git_repository::Reference<'repo>,
+    inner: gix::Reference<'repo>,
 }
 
 impl<'repo> Branch<'repo> {
-    pub(crate) fn wrap(reference: git_repository::Reference<'_>) -> Branch<'_> {
-        use git_repository::refs::Category;
+    pub(crate) fn wrap(reference: gix::Reference<'_>) -> Branch<'_> {
+        use gix::refs::Category;
         assert!(matches!(
             reference.name().category(),
             Some(Category::LocalBranch | Category::RemoteBranch)
@@ -17,7 +17,7 @@ impl<'repo> Branch<'repo> {
         Branch { inner: reference }
     }
 
-    pub(crate) fn get_reference_name(&self) -> &git_repository::refs::FullNameRef {
+    pub(crate) fn get_reference_name(&self) -> &gix::refs::FullNameRef {
         self.inner.name()
     }
 
@@ -31,7 +31,7 @@ impl<'repo> Branch<'repo> {
         })
     }
 
-    pub(crate) fn get_commit(&self) -> Result<git_repository::Commit<'repo>> {
+    pub(crate) fn get_commit(&self) -> Result<gix::Commit<'repo>> {
         Ok(self.inner.id().object()?.try_into_commit()?)
     }
 

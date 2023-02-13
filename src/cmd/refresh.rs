@@ -155,7 +155,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
         ));
     }
 
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let config = repo.config_snapshot();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
@@ -344,7 +344,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 fn determine_refresh_paths(
     stupid: &StupidContext,
     statuses: &Statuses,
-    patch_commit: Option<&Rc<git_repository::Commit>>,
+    patch_commit: Option<&Rc<gix::Commit>>,
     force: bool,
 ) -> Result<IndexSet<PathBuf>> {
     let refresh_paths: IndexSet<&Path> = if let Some(patch_commit) = patch_commit {
@@ -410,7 +410,7 @@ fn write_tree(
     stack: &Stack,
     refresh_paths: &IndexSet<PathBuf>,
     is_path_limiting: bool,
-) -> Result<git_repository::ObjectId> {
+) -> Result<gix::ObjectId> {
     // N.B. using temp index is necessary for the cases where there are conflicts in the
     // default index. I.e. by using a temp index, a subset of paths without conflicts
     // may be formed into a coherent tree while leaving the default index as-is.
@@ -435,7 +435,7 @@ pub(crate) fn assemble_refresh_tree(
     stack: &Stack,
     matches: &ArgMatches,
     limit_to_patchname: Option<&PatchName>,
-) -> Result<git_repository::ObjectId> {
+) -> Result<gix::ObjectId> {
     let stupid = stack.repo.stupid();
     let opt_pathspecs = matches.get_many::<PathBuf>("pathspecs");
     let is_path_limiting = limit_to_patchname.is_some() || opt_pathspecs.is_some();

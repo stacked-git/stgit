@@ -10,68 +10,64 @@ use crate::{
     wrap::{Branch, Message},
 };
 
-/// Extends [`git_repository::Repository`] with additional methods.
+/// Extends [`gix::Repository`] with additional methods.
 pub(crate) trait RepositoryExtended {
     /// Open git repository based on current directory and any environment overrides.
-    fn open() -> Result<git_repository::Repository> {
-        Ok(git_repository::ThreadSafeRepository::discover_with_environment_overrides(".")?.into())
+    fn open() -> Result<gix::Repository> {
+        Ok(gix::ThreadSafeRepository::discover_with_environment_overrides(".")?.into())
     }
 
     /// Determine whether the repository is in a clean state.
     ///
-    /// A clean repository is not in the middle of any of a variety of stateful operations such
-    /// as merge, rebase, cherrypick, etc.; see [`git_repository::state::InProgress`].
+    /// A clean repository is not in the middle of any of a variety of stateful
+    /// operations such as merge, rebase, cherrypick, etc.; see
+    /// [`gix::state::InProgress`].
     fn check_repository_state(&self) -> Result<()>;
 
     /// Get the author signature or error if it is unavailable.
-    fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>>;
+    fn get_author(&self) -> Result<gix::actor::SignatureRef<'_>>;
 
     /// Get the committer signature or error if it is unavailable.
-    fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>>;
+    fn get_committer(&self) -> Result<gix::actor::SignatureRef<'_>>;
 
     /// Get [`Branch`], with StGit-specific error messaging.
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
     fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>>;
 
-    /// Get repository-local config file which can be used to change local configuration.
-    fn local_config_file(&self) -> Result<git_repository::config::File<'static>>;
+    /// Get repository-local config file which can be used to change local
+    /// configuration.
+    fn local_config_file(&self) -> Result<gix::config::File<'static>>;
 
     /// Write repository-local config file.
-    fn write_local_config(&self, file: git_repository::config::File) -> Result<()>;
+    fn write_local_config(&self, file: gix::config::File) -> Result<()>;
 
-    /// Find [`git_repository::Tree`] by its object id.
+    /// Find [`gix::Tree`] by its object id.
     ///
     /// The provided object id must point to a tree object. I.e. this will not peel a
     /// commit to a tree.
-    fn find_tree(
-        &self,
-        id: impl Into<git_repository::ObjectId>,
-    ) -> Result<git_repository::Tree<'_>>;
+    fn find_tree(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Tree<'_>>;
 
-    /// Find [`git_repository::Commit`] by its object id.
+    /// Find [`gix::Commit`] by its object id.
     ///
     /// The provided object id must point to a commit object. An id pointing to a tag
     /// will not be peeled to a commit.
-    fn find_commit(
-        &self,
-        id: impl Into<git_repository::ObjectId>,
-    ) -> Result<git_repository::Commit<'_>>;
+    fn find_commit(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Commit<'_>>;
 
     /// Create a new commit object in the repository, with extended features.
     ///
-    /// The extended features versus [`git_repository::Repository::commit()`] include:
+    /// The extended features versus [`gix::Repository::commit()`] include:
     ///
     /// - Respecting `i18n.commitEncoding` for commit messages.
     /// - Respecting `commit.gpgSign` and creating signed commits when enabled.
     fn commit_ex<'a>(
         &self,
-        author: impl Into<git_repository::actor::SignatureRef<'a>>,
-        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
+        author: impl Into<gix::actor::SignatureRef<'a>>,
+        committer: impl Into<gix::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git_repository::ObjectId,
-        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
-    ) -> Result<git_repository::ObjectId>;
+        tree_id: gix::ObjectId,
+        parent_ids: impl IntoIterator<Item = gix::ObjectId>,
+    ) -> Result<gix::ObjectId>;
 
     /// Create a new commit object in the repository.
     ///
@@ -79,13 +75,13 @@ pub(crate) trait RepositoryExtended {
     /// [`RepositoryExtended::commit_ex()`].
     fn commit_with_options<'a>(
         &self,
-        author: impl Into<git_repository::actor::SignatureRef<'a>>,
-        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
+        author: impl Into<gix::actor::SignatureRef<'a>>,
+        committer: impl Into<gix::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git_repository::ObjectId,
-        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
+        tree_id: gix::ObjectId,
+        parent_ids: impl IntoIterator<Item = gix::ObjectId>,
         options: &CommitOptions<'_>,
-    ) -> Result<git_repository::ObjectId>;
+    ) -> Result<gix::ObjectId>;
 }
 
 /// Options for creating a git commit object.
@@ -97,9 +93,9 @@ pub(crate) struct CommitOptions<'a> {
     pub(crate) gpgsign: bool,
 }
 
-impl RepositoryExtended for git_repository::Repository {
+impl RepositoryExtended for gix::Repository {
     fn check_repository_state(&self) -> Result<()> {
-        use git_repository::state::InProgress;
+        use gix::state::InProgress;
         if let Some(state) = self.state() {
             let state_str = match state {
                 InProgress::ApplyMailbox => "apply mailbox",
@@ -119,27 +115,27 @@ impl RepositoryExtended for git_repository::Repository {
         }
     }
 
-    fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
+    fn get_author(&self) -> Result<gix::actor::SignatureRef<'_>> {
         Ok(self.author().ok_or_else(|| {
             anyhow!("author identity unknown; please configure `user.name` and `user.email`.")
         })??)
     }
 
-    fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
+    fn get_committer(&self) -> Result<gix::actor::SignatureRef<'_>> {
         Ok(self.committer().ok_or_else(|| {
             anyhow!("committer identity unknown; please configure `user.name` and `user.email`.")
         })??)
     }
 
     fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>> {
-        use git_repository::{head::Kind, refs::Category};
+        use gix::{head::Kind, refs::Category};
 
         if let Some(name) = branch_name {
             let reference = self.find_reference(name).map_err(|e| match e {
-                git_repository::reference::find::existing::Error::Find(inner) => {
+                gix::reference::find::existing::Error::Find(inner) => {
                     anyhow!("invalid branch name `{name}`: {inner}")
                 }
-                git_repository::reference::find::existing::Error::NotFound => {
+                gix::reference::find::existing::Error::NotFound => {
                     anyhow!("branch `{name}` not found")
                 }
             })?;
@@ -173,8 +169,8 @@ impl RepositoryExtended for git_repository::Repository {
         }
     }
 
-    fn local_config_file(&self) -> Result<git_repository::config::File<'static>> {
-        let source = git_repository::config::Source::Local;
+    fn local_config_file(&self) -> Result<gix::config::File<'static>> {
+        let source = gix::config::Source::Local;
 
         let local_config_path = self.git_dir().join(
             source
@@ -182,15 +178,15 @@ impl RepositoryExtended for git_repository::Repository {
                 .expect("know repo-local config path"),
         );
 
-        Ok(git_repository::config::File::from_path_no_includes(
+        Ok(gix::config::File::from_path_no_includes(
             local_config_path,
             source,
         )?)
     }
 
-    fn write_local_config(&self, file: git_repository::config::File) -> Result<()> {
+    fn write_local_config(&self, file: gix::config::File) -> Result<()> {
         let local_config_path = self.git_dir().join(
-            git_repository::config::Source::Local
+            gix::config::Source::Local
                 .storage_location(&mut |n| std::env::var_os(n))
                 .expect("know repo-local config path"),
         );
@@ -204,28 +200,22 @@ impl RepositoryExtended for git_repository::Repository {
         Ok(())
     }
 
-    fn find_tree(
-        &self,
-        id: impl Into<git_repository::ObjectId>,
-    ) -> Result<git_repository::Tree<'_>> {
+    fn find_tree(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Tree<'_>> {
         Ok(self.find_object(id)?.try_into_tree()?)
     }
 
-    fn find_commit(
-        &self,
-        id: impl Into<git_repository::ObjectId>,
-    ) -> Result<git_repository::Commit<'_>> {
+    fn find_commit(&self, id: impl Into<gix::ObjectId>) -> Result<gix::Commit<'_>> {
         Ok(self.find_object(id)?.try_into_commit()?)
     }
 
     fn commit_ex<'a>(
         &self,
-        author: impl Into<git_repository::actor::SignatureRef<'a>>,
-        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
+        author: impl Into<gix::actor::SignatureRef<'a>>,
+        committer: impl Into<gix::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git_repository::ObjectId,
-        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
-    ) -> Result<git_repository::ObjectId> {
+        tree_id: gix::ObjectId,
+        parent_ids: impl IntoIterator<Item = gix::ObjectId>,
+    ) -> Result<gix::ObjectId> {
         let config = self.config_snapshot();
         let commit_encoding = config.string("i18n.commitencoding");
         let gpgsign = config.boolean("commit.gpgsign").unwrap_or(false);
@@ -244,13 +234,13 @@ impl RepositoryExtended for git_repository::Repository {
 
     fn commit_with_options<'a>(
         &self,
-        author: impl Into<git_repository::actor::SignatureRef<'a>>,
-        committer: impl Into<git_repository::actor::SignatureRef<'a>>,
+        author: impl Into<gix::actor::SignatureRef<'a>>,
+        committer: impl Into<gix::actor::SignatureRef<'a>>,
         message: &Message,
-        tree_id: git_repository::ObjectId,
-        parent_ids: impl IntoIterator<Item = git_repository::ObjectId>,
+        tree_id: gix::ObjectId,
+        parent_ids: impl IntoIterator<Item = gix::ObjectId>,
         options: &CommitOptions<'_>,
-    ) -> Result<git_repository::ObjectId> {
+    ) -> Result<gix::ObjectId> {
         let author = author.into();
         let committer = committer.into();
         let commit_encoding = match &options.commit_encoding {
@@ -276,7 +266,7 @@ impl RepositoryExtended for git_repository::Repository {
             )
         } else {
             // Use gitoxide for all other occasions
-            let commit_id = self.write_object(&git_repository::objs::Commit {
+            let commit_id = self.write_object(&gix::objs::Commit {
                 tree: tree_id,
                 parents: parent_ids.into_iter().collect(),
                 author: author.to_owned(),

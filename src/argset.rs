@@ -98,7 +98,7 @@ pub(crate) fn diff_opts_arg() -> Arg {
 
 /// For use with `clap::Arg::value_parser()` to ensure a branch name is valid.
 pub(crate) fn parse_branch_name(name: &str) -> anyhow::Result<String> {
-    Ok(git_repository::refs::PartialName::try_from(name).map(|_| name.to_string())?)
+    Ok(gix::refs::PartialName::try_from(name).map(|_| name.to_string())?)
 }
 
 /// Get a `&str` from a `clap::ArgMatches` instance for the given `id`.
@@ -133,7 +133,7 @@ pub(crate) fn parse_usize(s: &str) -> anyhow::Result<usize> {
 /// line of subordinate `git` commands.
 pub(crate) fn get_diff_opts(
     matches: &clap::ArgMatches,
-    config: &git_repository::config::Snapshot,
+    config: &gix::config::Snapshot,
     force_full_index: bool,
     force_binary: bool,
 ) -> Vec<String> {
@@ -163,7 +163,7 @@ pub(crate) fn get_diff_opts(
 }
 
 pub(crate) fn resolve_allow_push_conflicts(
-    config: &git_repository::config::Snapshot,
+    config: &gix::config::Snapshot,
     matches: &clap::ArgMatches,
 ) -> bool {
     get_one_str(matches, "conflicts")

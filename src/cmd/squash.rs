@@ -70,7 +70,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
@@ -219,7 +219,7 @@ fn try_squash(
     matches: &ArgMatches,
     patchnames: &[PatchName],
     patchname: Option<&PatchName>,
-) -> Result<Option<(PatchName, git_repository::ObjectId)>> {
+) -> Result<Option<(PatchName, gix::ObjectId)>> {
     let repo = trans.repo();
     let base_commit = trans.get_patch_commit(&patchnames[0]);
     let base_commit_ref = base_commit.decode()?;

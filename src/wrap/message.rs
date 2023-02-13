@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Extended capabilities for commits beyond those provided by [`git_repository`].
+//! Extended capabilities for commits beyond those provided by [`gix`].
 
 use std::borrow::Cow;
 
@@ -12,9 +12,9 @@ use anyhow::{anyhow, Result};
 /// typically UTF-8 encoded, git permits any "extended ASCII" encoding. Furthermore,
 /// while commit objects may have an optional encoding header that specifies the commit
 /// message encoding, that header is not always present or correct in commits found in
-/// the wild. And yet another layer of complication emerges due to [`git_repository`]
+/// the wild. And yet another layer of complication emerges due to [`gix`]
 /// not having any capability of its own to decode, encode, or re-encode commit
-/// messages. With [`git_repository`], it is up to the application to make sense of the
+/// messages. With [`gix`], it is up to the application to make sense of the
 /// raw commit message bytes when any non-UTF-8 encoding comes into play.
 ///
 /// StGit aims to always create commit objects with correct/correctly-identified

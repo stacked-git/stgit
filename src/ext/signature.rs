@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Extension trait for [`git_repository::actor::Signature`].
+//! Extension trait for [`gix::actor::Signature`].
 
 use bstr::BString;
 
-/// Extend [`git_repository::actor::Signature`] with additional methods.
+/// Extend [`gix::actor::Signature`] with additional methods.
 pub(crate) trait SignatureExtended {
     /// Override signature with author information from the command line.
     ///
@@ -13,13 +13,13 @@ pub(crate) trait SignatureExtended {
     ///
     /// The provided `matches` must come from a [`clap::Command`] setup with
     /// [`crate::patch::edit::add_args()`].
-    fn override_author(self, matches: &clap::ArgMatches) -> git_repository::actor::Signature;
+    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature;
 }
 
-impl SignatureExtended for git_repository::actor::Signature {
-    fn override_author(self, matches: &clap::ArgMatches) -> git_repository::actor::Signature {
+impl SignatureExtended for gix::actor::Signature {
+    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
         let time = matches
-            .get_one::<git_repository::actor::Time>("authdate")
+            .get_one::<gix::actor::Time>("authdate")
             .copied()
             .unwrap_or(self.time);
 
@@ -37,14 +37,14 @@ impl SignatureExtended for git_repository::actor::Signature {
                     .unwrap_or(self.email);
                 (name, email)
             };
-        git_repository::actor::Signature { name, email, time }
+        gix::actor::Signature { name, email, time }
     }
 }
 
-impl SignatureExtended for git_repository::actor::SignatureRef<'_> {
-    fn override_author(self, matches: &clap::ArgMatches) -> git_repository::actor::Signature {
+impl SignatureExtended for gix::actor::SignatureRef<'_> {
+    fn override_author(self, matches: &clap::ArgMatches) -> gix::actor::Signature {
         let time = matches
-            .get_one::<git_repository::actor::Time>("authdate")
+            .get_one::<gix::actor::Time>("authdate")
             .copied()
             .unwrap_or(self.time);
 
@@ -62,6 +62,6 @@ impl SignatureExtended for git_repository::actor::SignatureRef<'_> {
                     .unwrap_or_else(|| self.email.to_owned());
                 (name, email)
             };
-        git_repository::actor::Signature { name, email, time }
+        gix::actor::Signature { name, email, time }
     }
 }

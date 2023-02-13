@@ -59,10 +59,10 @@ pub(crate) struct StackTransaction<'repo> {
     unapplied: Vec<PatchName>,
     hidden: Vec<PatchName>,
     updated_patches: BTreeMap<PatchName, Option<PatchState<'repo>>>,
-    updated_head: Option<Rc<git_repository::Commit<'repo>>>,
-    updated_base: Option<Rc<git_repository::Commit<'repo>>>,
+    updated_head: Option<Rc<gix::Commit<'repo>>>,
+    updated_base: Option<Rc<gix::Commit<'repo>>>,
 
-    current_tree_id: git_repository::ObjectId,
+    current_tree_id: gix::ObjectId,
     error: Option<anyhow::Error>,
 }
 
@@ -229,55 +229,55 @@ impl<'repo> ExecuteContext<'repo> {
             // not quite atomic--it is possible for some, but not all references to be
             // updated--but atomic enough in practice for our purposes.
             let mut ref_edits = Vec::new();
-            let log = git_repository::refs::transaction::LogChange {
-                mode: git_repository::refs::transaction::RefLog::AndReference,
+            let log = gix::refs::transaction::LogChange {
+                mode: gix::refs::transaction::RefLog::AndReference,
                 force_create_reflog: false,
                 message: state_reflog_msg.into(),
             };
             for (patchname, maybe_patch) in &updated_patches {
                 let change = if let Some(patch) = maybe_patch {
-                    git_repository::refs::transaction::Change::Update {
+                    gix::refs::transaction::Change::Update {
                         log: log.clone(),
-                        expected: git_repository::refs::transaction::PreviousValue::Any, // TODO?
-                        new: git_repository::refs::Target::Peeled(patch.commit.id),
+                        expected: gix::refs::transaction::PreviousValue::Any, // TODO?
+                        new: gix::refs::Target::Peeled(patch.commit.id),
                     }
                 } else {
-                    git_repository::refs::transaction::Change::Delete {
-                        expected: git_repository::refs::transaction::PreviousValue::Any,
-                        log: git_repository::refs::transaction::RefLog::AndReference,
+                    gix::refs::transaction::Change::Delete {
+                        expected: gix::refs::transaction::PreviousValue::Any,
+                        log: gix::refs::transaction::RefLog::AndReference,
                     }
                 };
-                ref_edits.push(git_repository::refs::transaction::RefEdit {
+                ref_edits.push(gix::refs::transaction::RefEdit {
                     change,
-                    name: git_repository::refs::FullName::try_from(stack.patch_refname(patchname))
+                    name: gix::refs::FullName::try_from(stack.patch_refname(patchname))
                         .expect("patch reference name is valid"),
                     deref: false,
                 });
             }
 
-            ref_edits.push(git_repository::refs::transaction::RefEdit {
-                change: git_repository::refs::transaction::Change::Update {
+            ref_edits.push(gix::refs::transaction::RefEdit {
+                change: gix::refs::transaction::Change::Update {
                     log: log.clone(),
                     expected: if let Some(prev_state_commit) = stack.state_mut().prev.as_ref() {
-                        git_repository::refs::transaction::PreviousValue::ExistingMustMatch(
-                            git_repository::refs::Target::Peeled(prev_state_commit.id),
+                        gix::refs::transaction::PreviousValue::ExistingMustMatch(
+                            gix::refs::Target::Peeled(prev_state_commit.id),
                         )
                     } else {
-                        git_repository::refs::transaction::PreviousValue::MustNotExist
+                        gix::refs::transaction::PreviousValue::MustNotExist
                     },
-                    new: git_repository::refs::Target::Peeled(state_commit_id),
+                    new: gix::refs::Target::Peeled(state_commit_id),
                 },
-                name: git_repository::refs::FullName::try_from(stack.get_stack_refname())
+                name: gix::refs::FullName::try_from(stack.get_stack_refname())
                     .expect("stack reference name is valid"),
                 deref: false,
             });
 
             if options.set_head {
-                ref_edits.push(git_repository::refs::transaction::RefEdit {
-                    change: git_repository::refs::transaction::Change::Update {
+                ref_edits.push(gix::refs::transaction::RefEdit {
+                    change: gix::refs::transaction::Change::Update {
                         log,
-                        expected: git_repository::refs::transaction::PreviousValue::Any,
-                        new: git_repository::refs::Target::Peeled(trans_head.id),
+                        expected: gix::refs::transaction::PreviousValue::Any,
+                        new: gix::refs::Target::Peeled(trans_head.id),
                     },
                     name: branch_ref_name.clone(),
                     deref: false,
@@ -312,12 +312,12 @@ impl<'repo> ExecuteContext<'repo> {
 }
 
 fn checkout(
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
     options: &TransactionOptions,
     stack_top: Option<&PatchName>,
     trans_top: Option<&PatchName>,
-    current_tree_id: git_repository::ObjectId,
-    tree_id: git_repository::ObjectId,
+    current_tree_id: gix::ObjectId,
+    tree_id: gix::ObjectId,
 ) -> Result<()> {
     let stupid = repo.stupid();
 
@@ -350,7 +350,7 @@ impl<'repo> StackTransaction<'repo> {
     }
 
     /// Get a reference to the repo.
-    pub(crate) fn repo(&self) -> &'repo git_repository::Repository {
+    pub(crate) fn repo(&self) -> &'repo gix::Repository {
         self.stack.repo
     }
 
@@ -462,7 +462,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn update_patch(
         &mut self,
         patchname: &PatchName,
-        commit_id: git_repository::ObjectId,
+        commit_id: gix::ObjectId,
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
         let old_commit = self.get_patch_commit(patchname);
@@ -486,11 +486,7 @@ impl<'repo> StackTransaction<'repo> {
     ///
     /// The commit for the new patch must be parented by the former top commit of the
     /// stack.
-    pub(crate) fn new_applied(
-        &mut self,
-        patchname: &PatchName,
-        oid: git_repository::ObjectId,
-    ) -> Result<()> {
+    pub(crate) fn new_applied(&mut self, patchname: &PatchName, oid: gix::ObjectId) -> Result<()> {
         let commit = self.stack.repo.find_commit(oid)?;
         assert_eq!(commit.parent_ids().next().unwrap().detach(), self.top().id);
         self.applied.push(patchname.clone());
@@ -510,7 +506,7 @@ impl<'repo> StackTransaction<'repo> {
     pub(crate) fn new_unapplied(
         &mut self,
         patchname: &PatchName,
-        commit_id: git_repository::ObjectId,
+        commit_id: gix::ObjectId,
         insert_pos: usize,
     ) -> Result<()> {
         let commit = self.stack.repo.find_commit(commit_id)?;
@@ -725,7 +721,7 @@ impl<'repo> StackTransaction<'repo> {
     /// ancestor of the current base first and the current base last.
     pub(crate) fn uncommit_patches<'a>(
         &mut self,
-        patches: impl IntoIterator<Item = (&'a PatchName, git_repository::ObjectId)>,
+        patches: impl IntoIterator<Item = (&'a PatchName, gix::ObjectId)>,
     ) -> Result<()> {
         let mut new_applied: Vec<_> = Vec::with_capacity(self.applied.len());
         for (patchname, commit_id) in patches {
@@ -959,7 +955,7 @@ impl<'repo> StackTransaction<'repo> {
     {
         let stupid = self.stack.repo.stupid();
         stupid.with_temp_index(|stupid_temp| {
-            let mut temp_index_tree_id: Option<git_repository::ObjectId> = None;
+            let mut temp_index_tree_id: Option<gix::ObjectId> = None;
 
             let merged = if check_merged {
                 Some(self.check_merged(patchnames, stupid_temp, &mut temp_index_tree_id)?)
@@ -992,7 +988,7 @@ impl<'repo> StackTransaction<'repo> {
         already_merged: bool,
         is_last: bool,
         stupid_temp: &StupidContext,
-        temp_index_tree_id: &mut Option<git_repository::ObjectId>,
+        temp_index_tree_id: &mut Option<gix::ObjectId>,
     ) -> Result<()> {
         let repo = self.stack.repo;
         let config = repo.config_snapshot();
@@ -1166,7 +1162,7 @@ impl<'repo> StackTransaction<'repo> {
         &self,
         patchnames: &'a [P],
         stupid_temp: &StupidContext,
-        temp_index_tree_id: &mut Option<git_repository::ObjectId>,
+        temp_index_tree_id: &mut Option<gix::ObjectId>,
     ) -> Result<Vec<&'a PatchName>>
     where
         P: AsRef<PatchName>,
@@ -1210,7 +1206,7 @@ impl<'repo> StackAccess<'repo> for StackTransaction<'repo> {
         self.stack.get_branch_name()
     }
 
-    fn get_branch_refname(&self) -> &git_repository::refs::FullNameRef {
+    fn get_branch_refname(&self) -> &gix::refs::FullNameRef {
         self.stack.get_branch_refname()
     }
 
@@ -1218,11 +1214,11 @@ impl<'repo> StackAccess<'repo> for StackTransaction<'repo> {
         self.stack.get_stack_refname()
     }
 
-    fn get_branch_head(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn get_branch_head(&self) -> &Rc<gix::Commit<'repo>> {
         self.stack.get_branch_head()
     }
 
-    fn base(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn base(&self) -> &Rc<gix::Commit<'repo>> {
         if let Some(commit) = self.updated_base.as_ref() {
             commit
         } else {
@@ -1262,7 +1258,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn top(&self) -> &Rc<gix::Commit<'repo>> {
         if let Some(patchname) = self.applied.last() {
             self.get_patch_commit(patchname)
         } else {
@@ -1270,7 +1266,7 @@ impl<'repo> StackStateAccess<'repo> for StackTransaction<'repo> {
         }
     }
 
-    fn head(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn head(&self) -> &Rc<gix::Commit<'repo>> {
         if let Some(commit) = self.updated_head.as_ref() {
             commit
         } else {

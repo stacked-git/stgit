@@ -9,7 +9,7 @@ use anyhow::{anyhow, Context, Result};
 use crate::wrap::Message;
 
 /// Find path to hook script given a hook name.
-fn get_hook_path(repo: &git_repository::Repository, hook_name: &str) -> Result<PathBuf> {
+fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<PathBuf> {
     let config = repo.config_snapshot();
     let hooks_path =
         if let Some(core_hooks_path) = config.trusted_path("core.hookspath").transpose()? {
@@ -38,10 +38,7 @@ fn get_hook_path(repo: &git_repository::Repository, hook_name: &str) -> Result<P
 /// Returns `Ok(true)` if the hook ran and completed successfully, `Err()` if the hook ran but failed,
 /// and `Ok(false)` if the hook did not run due to the script not existing, not being a file, or not
 /// being executable.
-pub(crate) fn run_pre_commit_hook(
-    repo: &git_repository::Repository,
-    use_editor: bool,
-) -> Result<bool> {
+pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> Result<bool> {
     let hook_name = "pre-commit";
     let hook_path = get_hook_path(repo, hook_name)?;
     let hook_meta = match std::fs::metadata(&hook_path) {
@@ -93,7 +90,7 @@ pub(crate) fn run_pre_commit_hook(
 /// Returns successfully if the hook script does not exist, is not a file, or is not
 /// executable.
 pub(crate) fn run_commit_msg_hook<'repo>(
-    repo: &git_repository::Repository,
+    repo: &gix::Repository,
     message: Message<'repo>,
     use_editor: bool,
 ) -> Result<Message<'repo>> {

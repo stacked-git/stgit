@@ -208,7 +208,7 @@ impl FromStr for CommitIdLength {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let opt_missing = argset::get_one_str(matches, "missing");
 
@@ -237,7 +237,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let unapplied_flag = matches.get_flag("unapplied");
     let hidden_flag = matches.get_flag("hidden");
 
-    let mut patches: Vec<(PatchName, git_repository::ObjectId, char)> = vec![];
+    let mut patches: Vec<(PatchName, gix::ObjectId, char)> = vec![];
 
     if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
         let top_patchname = stack.applied().last();

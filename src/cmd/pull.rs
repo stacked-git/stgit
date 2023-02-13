@@ -94,7 +94,7 @@ impl Display for PullPolicy {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();

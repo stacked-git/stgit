@@ -88,10 +88,7 @@ pub(crate) fn get_default_aliases() -> Aliases {
 ///
 /// The `exclude` closure is intended to prevent names of builtin StGit subcommands from
 /// being shadowed by aliases.
-pub(crate) fn get_aliases<F>(
-    config_file: Option<&git_repository::config::File>,
-    exclude: F,
-) -> Result<Aliases>
+pub(crate) fn get_aliases<F>(config_file: Option<&gix::config::File>, exclude: F) -> Result<Aliases>
 where
     F: Fn(&str) -> bool,
 {
@@ -183,9 +180,9 @@ fn split_command_line(line: &str) -> Result<Vec<String>, String> {
     }
 }
 
-/// Map [`git_repository::config::Source`] to user-facing strings.
-fn config_source_str(source: git_repository::config::Source) -> &'static str {
-    use git_repository::config::Source;
+/// Map [`gix::config::Source`] to user-facing strings.
+fn config_source_str(source: gix::config::Source) -> &'static str {
+    use gix::config::Source;
     match source {
         Source::GitInstallation => "git installed config",
         Source::System => "system config",

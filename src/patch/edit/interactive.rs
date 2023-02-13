@@ -35,7 +35,7 @@ static EDIT_FILE_NAME_DIFF: &str = ".stgit-edit.patch";
 /// and the modified description is read-back and parsed.
 pub(super) fn edit_interactive(
     patch_desc: &EditablePatchDescription,
-    config: &git_repository::config::Snapshot,
+    config: &gix::config::Snapshot,
 ) -> Result<EditedPatchDescription> {
     let filename = if patch_desc.diff.is_some() {
         EDIT_FILE_NAME_DIFF
@@ -70,7 +70,7 @@ fn is_terminal_dumb() -> bool {
 /// Upon successfully reading back the file's content, the file is deleted.
 pub(crate) fn call_editor<P: AsRef<Path>>(
     path: P,
-    config: &git_repository::config::Snapshot,
+    config: &gix::config::Snapshot,
 ) -> Result<Vec<u8>> {
     let editor = get_editor(config)?;
 
@@ -125,7 +125,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
 }
 
 /// Determine user's editor of choice based on config and environment.
-fn get_editor(config: &git_repository::config::Snapshot) -> Result<OsString> {
+fn get_editor(config: &gix::config::Snapshot) -> Result<OsString> {
     let editor = if let Some(editor) = std::env::var_os("GIT_EDITOR") {
         editor
     } else if let Some(editor) = config

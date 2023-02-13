@@ -25,13 +25,13 @@ pub(crate) struct StackState<'repo> {
     ///
     /// Will be None for a newly initialized stack or when the stack history is cleared
     /// (i.e. with `stg log --clear`).
-    pub(crate) prev: Option<Rc<git_repository::Commit<'repo>>>,
+    pub(crate) prev: Option<Rc<gix::Commit<'repo>>>,
 
     /// Head commit of the stack.
     ///
     /// Either the topmost patch if patches are applied, or the stack base if no patches
     /// are applied.
-    pub(super) head: Rc<git_repository::Commit<'repo>>,
+    pub(super) head: Rc<gix::Commit<'repo>>,
 
     /// List of applied patches.
     pub(super) applied: Vec<PatchName>,
@@ -51,7 +51,7 @@ pub(crate) struct StackState<'repo> {
 /// Currently the only state is a commit object.
 #[derive(Clone, Debug)]
 pub(crate) struct PatchState<'repo> {
-    pub(crate) commit: Rc<git_repository::Commit<'repo>>,
+    pub(crate) commit: Rc<gix::Commit<'repo>>,
 }
 
 impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
@@ -75,7 +75,7 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
         self.patches.contains_key(patchname)
     }
 
-    fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn top(&self) -> &Rc<gix::Commit<'repo>> {
         if let Some(patchname) = self.applied().last() {
             &self.patches[patchname].commit
         } else {
@@ -83,7 +83,7 @@ impl<'repo> StackStateAccess<'repo> for StackState<'repo> {
         }
     }
 
-    fn head(&self) -> &Rc<git_repository::Commit<'repo>> {
+    fn head(&self) -> &Rc<gix::Commit<'repo>> {
         &self.head
     }
 }
@@ -94,7 +94,7 @@ const MAX_PARENTS: usize = 16;
 
 impl<'repo> StackState<'repo> {
     /// Instantiate new, empty stack state.
-    pub(super) fn new(head: Rc<git_repository::Commit<'repo>>) -> Self {
+    pub(super) fn new(head: Rc<gix::Commit<'repo>>) -> Self {
         Self {
             prev: None,
             head,
@@ -107,22 +107,17 @@ impl<'repo> StackState<'repo> {
 
     /// Read and parse stack state from given state state commit.
     pub(crate) fn from_commit(
-        repo: &'repo git_repository::Repository,
-        commit: &git_repository::Commit<'repo>,
+        repo: &'repo gix::Repository,
+        commit: &gix::Commit<'repo>,
     ) -> Result<Self> {
         Self::from_tree(repo, commit.tree()?)
     }
 
     /// Read and parse stack state from given stack state tree.
-    pub(super) fn from_tree(
-        repo: &'repo git_repository::Repository,
-        tree: git_repository::Tree<'repo>,
-    ) -> Result<Self> {
+    pub(super) fn from_tree(repo: &'repo gix::Repository, tree: gix::Tree<'repo>) -> Result<Self> {
         let stack_json = tree.lookup_entry_by_path("stack.json")?;
         if let Some(stack_json) = stack_json {
-            let stack_json_blob = stack_json
-                .object()?
-                .peel_to_kind(git_repository::objs::Kind::Blob)?;
+            let stack_json_blob = stack_json.object()?.peel_to_kind(gix::objs::Kind::Blob)?;
             let raw_state = RawStackState::from_stack_json(&stack_json_blob.data)?;
             Self::from_raw_state(repo, raw_state)
         } else {
@@ -135,7 +130,7 @@ impl<'repo> StackState<'repo> {
     /// Commit objects are looked-up from commit ids in the raw state. This may fail if
     /// the raw state references commit ids not present in the repository.
     pub(super) fn from_raw_state(
-        repo: &'repo git_repository::Repository,
+        repo: &'repo gix::Repository,
         raw_state: RawStackState,
     ) -> Result<Self> {
         let mut patches = BTreeMap::new();
@@ -168,7 +163,7 @@ impl<'repo> StackState<'repo> {
     }
 
     /// Return commit of topmost patch, or stack base if no patches applied.
-    pub(crate) fn top(&self) -> &Rc<git_repository::Commit<'repo>> {
+    pub(crate) fn top(&self) -> &Rc<gix::Commit<'repo>> {
         if let Some(patchname) = self.applied.last() {
             &self.patches[patchname].commit
         } else {
@@ -179,8 +174,8 @@ impl<'repo> StackState<'repo> {
     /// Create updated state with new head and prev commits.
     pub(crate) fn advance_head(
         self,
-        new_head: Rc<git_repository::Commit<'repo>>,
-        prev_state: Rc<git_repository::Commit<'repo>>,
+        new_head: Rc<gix::Commit<'repo>>,
+        prev_state: Rc<gix::Commit<'repo>>,
     ) -> Self {
         Self {
             prev: Some(prev_state),
@@ -198,10 +193,10 @@ impl<'repo> StackState<'repo> {
     /// parent commit from the stack state branch.
     pub(crate) fn commit(
         &self,
-        repo: &'repo git_repository::Repository,
+        repo: &'repo gix::Repository,
         update_ref: Option<&str>,
         message: &str,
-    ) -> Result<git_repository::ObjectId> {
+    ) -> Result<gix::ObjectId> {
         let (state_tree_id, prev_state) = if let Some(prev_commit) = self.prev.as_ref() {
             let prev_state = Self::from_tree(repo, prev_commit.tree()?)?;
             let state_tree_id = self.make_tree(repo, Some((&prev_state, prev_commit.tree()?)))?;
@@ -213,7 +208,7 @@ impl<'repo> StackState<'repo> {
         let committer = repo.get_committer()?;
         let author = repo.get_author()?;
 
-        let simplified_parents: Vec<git_repository::ObjectId> = match &self.prev {
+        let simplified_parents: Vec<gix::ObjectId> = match &self.prev {
             Some(prev_commit) => {
                 vec![prev_commit
                     .parent_ids()
@@ -259,7 +254,7 @@ impl<'repo> StackState<'repo> {
             }
         }
 
-        let mut parent_oids: Vec<git_repository::ObjectId> = parent_set.iter().copied().collect();
+        let mut parent_oids: Vec<gix::ObjectId> = parent_set.iter().copied().collect();
 
         while parent_oids.len() > MAX_PARENTS {
             let parent_group_oids =
@@ -290,7 +285,7 @@ impl<'repo> StackState<'repo> {
             repo.reference(
                 refname,
                 commit_oid,
-                git_repository::refs::transaction::PreviousValue::Any,
+                gix::refs::transaction::PreviousValue::Any,
                 message.raw_bytes(),
             )?;
         }
@@ -315,12 +310,12 @@ impl<'repo> StackState<'repo> {
     /// ```
     fn make_tree(
         &self,
-        repo: &'repo git_repository::Repository,
-        prev_state_and_tree: Option<(&Self, git_repository::Tree)>,
-    ) -> Result<git_repository::ObjectId> {
+        repo: &'repo gix::Repository,
+        prev_state_and_tree: Option<(&Self, gix::Tree)>,
+    ) -> Result<gix::ObjectId> {
         let stack_json_id = repo.write_blob(serde_json::to_string_pretty(self)?.as_bytes())?;
-        let stack_json_entry = git_repository::objs::tree::Entry {
-            mode: git_repository::objs::tree::EntryMode::Blob,
+        let stack_json_entry = gix::objs::tree::Entry {
+            mode: gix::objs::tree::EntryMode::Blob,
             filename: "stack.json".into(),
             oid: stack_json_id.detach(),
         };
@@ -338,13 +333,13 @@ impl<'repo> StackState<'repo> {
             };
 
         let patches_tree_id = self.make_patches_tree(repo, prev_state, &prev_patches_tree)?;
-        let patches_entry = git_repository::objs::tree::Entry {
-            mode: git_repository::objs::tree::EntryMode::Tree,
+        let patches_entry = gix::objs::tree::Entry {
+            mode: gix::objs::tree::EntryMode::Tree,
             filename: patches_tree_name.into(),
             oid: patches_tree_id,
         };
 
-        let state_tree = git_repository::objs::Tree {
+        let state_tree = gix::objs::Tree {
             entries: vec![patches_entry, stack_json_entry],
         };
 
@@ -355,21 +350,19 @@ impl<'repo> StackState<'repo> {
     /// Make the `patches` subtree.
     fn make_patches_tree(
         &self,
-        repo: &git_repository::Repository,
+        repo: &gix::Repository,
         prev_state: Option<&StackState>,
-        prev_patches_tree: &Option<git_repository::Tree>,
-    ) -> Result<git_repository::ObjectId> {
-        let mut patches_tree = git_repository::objs::Tree {
+        prev_patches_tree: &Option<gix::Tree>,
+    ) -> Result<gix::ObjectId> {
+        let mut patches_tree = gix::objs::Tree {
             entries: Vec::with_capacity(self.patches.len()),
         };
         for patchname in self.all_patches() {
-            patches_tree
-                .entries
-                .push(git_repository::objs::tree::Entry {
-                    mode: git_repository::objs::tree::EntryMode::Blob,
-                    filename: patchname.to_string().into(),
-                    oid: self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree)?,
-                });
+            patches_tree.entries.push(gix::objs::tree::Entry {
+                mode: gix::objs::tree::EntryMode::Blob,
+                filename: patchname.to_string().into(),
+                oid: self.make_patch_meta(repo, patchname, prev_state, prev_patches_tree)?,
+            });
         }
         patches_tree
             .entries
@@ -385,11 +378,11 @@ impl<'repo> StackState<'repo> {
     /// including its commit message.
     fn make_patch_meta(
         &self,
-        repo: &git_repository::Repository,
+        repo: &gix::Repository,
         patchname: &PatchName,
         prev_state: Option<&StackState>,
-        prev_patches_tree: &Option<git_repository::Tree>,
-    ) -> Result<git_repository::ObjectId> {
+        prev_patches_tree: &Option<gix::Tree>,
+    ) -> Result<gix::ObjectId> {
         let commit = &self.patches[patchname].commit;
         let commit_ref = commit.decode()?;
 
@@ -403,10 +396,7 @@ impl<'repo> StackState<'repo> {
                             .filter_map(Result::ok)
                             .find(|entry_ref| entry_ref.filename() == patchname_str.as_bytes())
                         {
-                            if matches!(
-                                prev_patch_entry.mode(),
-                                git_repository::objs::tree::EntryMode::Blob
-                            ) {
+                            if matches!(prev_patch_entry.mode(), gix::objs::tree::EntryMode::Blob) {
                                 return Ok(prev_patch_entry.oid());
                             }
                         }
@@ -421,9 +411,7 @@ impl<'repo> StackState<'repo> {
         let parent_tree_id = parent.tree_id()?;
         let commit_tree_id = commit_ref.tree();
         let author = commit_ref.author();
-        let date = commit_ref
-            .time()
-            .format(git_repository::date::time::format::ISO8601);
+        let date = commit_ref.time().format(gix::date::time::format::ISO8601);
         write!(
             patch_meta,
             "Bottom: {parent_tree_id}\n\

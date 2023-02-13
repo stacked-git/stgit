@@ -39,7 +39,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let opt_branch = argset::get_one_str(matches, "branch");
     let opt_spec = argset::get_one_str(matches, "stgit-revision");
 
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();
     println!("{oid}");
     Ok(())

@@ -5,27 +5,26 @@ use bstr::{BString, ByteSlice};
 
 use crate::wrap::Message;
 
-/// Extension trait for [`git_repository::Commit`].
+/// Extension trait for [`gix::Commit`].
 pub(crate) trait CommitExtended<'a> {
     /// Get author signature, strictly.
     ///
     /// The author signature, in an arbitrary git commit object, may (should? must?) be
     /// encoded with the commit encoding. However, gitoxide does not perform any
-    /// decoding when it parses commit objects, thus a
-    /// `git_repository::actor::Signature` from a `git_repository::Commit` is not
-    /// decoded in the general case, and thus `git_repository::actor::Signature.name`
-    /// and `email` may only be decoded UTF-8 strs iff the commit happens to be using
-    /// the UTF-8 encoding.
+    /// decoding when it parses commit objects, thus a [`gix::actor::Signature`] from a
+    /// [`gix::Commit`] is not decoded in the general case, and thus
+    /// [`gix::actor::Signature.name`] and [`gix::actor::Signature.email` ] may only be
+    /// decoded UTF-8 strs iff the commit happens to be using the UTF-8 encoding.
     ///
     /// This method takes into account the commit's encoding and attempts to decode the
     /// author name and email into UTF-8. The signature returned by this method is
     /// guaranteed to have valid UTF-8 name and email strs.
-    fn author_strict(&self) -> Result<git_repository::actor::Signature>;
+    fn author_strict(&self) -> Result<gix::actor::Signature>;
 
     /// Get committer signature, strictly.
     ///
     /// See [`CommitExtended::author_strict()`].
-    fn committer_strict(&self) -> Result<git_repository::actor::Signature>;
+    fn committer_strict(&self) -> Result<gix::actor::Signature>;
 
     /// Get commit message with extended capabilities.
     fn message_ex(&self) -> Message;
@@ -33,11 +32,11 @@ pub(crate) trait CommitExtended<'a> {
     /// Determine whether the commit has the same tree as its parent.
     fn is_no_change(&self) -> Result<bool>;
 
-    fn get_parent_commit(&self) -> Result<git_repository::Commit<'a>>;
+    fn get_parent_commit(&self) -> Result<gix::Commit<'a>>;
 }
 
-impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
-    fn author_strict(&self) -> Result<git_repository::actor::Signature> {
+impl<'a> CommitExtended<'a> for gix::Commit<'a> {
+    fn author_strict(&self) -> Result<gix::actor::Signature> {
         let commit_ref = self.decode()?;
         let sig = commit_ref.author();
         let encoding = if let Some(encoding_name) = commit_ref.encoding {
@@ -56,7 +55,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
             if let Some(email) =
                 encoding.decode_without_bom_handling_and_without_replacement(sig.email)
             {
-                Ok(git_repository::actor::Signature {
+                Ok(gix::actor::Signature {
                     name: BString::from(name.as_ref()),
                     email: BString::from(email.as_ref()),
                     time: sig.time,
@@ -77,7 +76,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
         }
     }
 
-    fn committer_strict(&self) -> Result<git_repository::actor::Signature> {
+    fn committer_strict(&self) -> Result<gix::actor::Signature> {
         let commit_ref = self.decode()?;
         let sig = commit_ref.committer();
         let encoding = if let Some(encoding_name) = commit_ref.encoding {
@@ -96,7 +95,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
             if let Some(email) =
                 encoding.decode_without_bom_handling_and_without_replacement(sig.email)
             {
-                Ok(git_repository::actor::Signature {
+                Ok(gix::actor::Signature {
                     name: BString::from(name.as_ref()),
                     email: BString::from(email.as_ref()),
                     time: sig.time,
@@ -146,7 +145,7 @@ impl<'a> CommitExtended<'a> for git_repository::Commit<'a> {
         }
     }
 
-    fn get_parent_commit(&self) -> Result<git_repository::Commit<'a>> {
+    fn get_parent_commit(&self) -> Result<gix::Commit<'a>> {
         Ok(self
             .parent_ids()
             .next()

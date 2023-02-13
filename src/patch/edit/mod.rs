@@ -56,17 +56,17 @@ pub(crate) enum EditOutcome {
         /// New commit id of the edited patch.
         ///
         /// This is None if nothing changed during the edit.
-        new_commit_id: Option<git_repository::ObjectId>,
+        new_commit_id: Option<gix::ObjectId>,
     },
 }
 
 /// Overlay of patch metadata on top of existing/original metadata.
 #[derive(Default)]
 struct Overlay {
-    pub(self) author: Option<git_repository::actor::Signature>,
+    pub(self) author: Option<gix::actor::Signature>,
     pub(self) message: Option<String>,
-    pub(self) tree_id: Option<git_repository::ObjectId>,
-    pub(self) parent_id: Option<git_repository::ObjectId>,
+    pub(self) tree_id: Option<gix::ObjectId>,
+    pub(self) parent_id: Option<gix::ObjectId>,
 }
 
 /// Setup and execute a patch edit session.
@@ -78,7 +78,7 @@ pub(crate) struct EditBuilder<'a, 'repo> {
     original_patchname: Option<PatchName>,
     template_patchname: Option<Option<PatchName>>,
     allowed_patchnames: Vec<PatchName>,
-    patch_commit: Option<&'a git_repository::Commit<'repo>>,
+    patch_commit: Option<&'a gix::Commit<'repo>>,
     allow_autosign: bool,
     allow_diff_edit: bool,
     allow_implicit_edit: bool,
@@ -164,10 +164,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     }
 
     /// The commit of the existing patch, if applicable.
-    pub(crate) fn existing_patch_commit(
-        mut self,
-        commit: &'a git_repository::Commit<'repo>,
-    ) -> Self {
+    pub(crate) fn existing_patch_commit(mut self, commit: &'a gix::Commit<'repo>) -> Self {
         self.patch_commit = Some(commit);
         self
     }
@@ -176,7 +173,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// Setting the default author is applicable for new patches. For existing patches,
     /// the existing patch's author is used/preserved.
-    pub(crate) fn default_author(mut self, author: git_repository::actor::Signature) -> Self {
+    pub(crate) fn default_author(mut self, author: gix::actor::Signature) -> Self {
         self.overlay.author = Some(author);
         self
     }
@@ -194,7 +191,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// This is needed for commands that modify a patch's tree in addition to exposing
     /// patch edit options to the user.
-    pub(crate) fn override_tree_id(mut self, tree_id: git_repository::ObjectId) -> Self {
+    pub(crate) fn override_tree_id(mut self, tree_id: gix::ObjectId) -> Self {
         self.overlay.tree_id = Some(tree_id);
         self
     }
@@ -203,7 +200,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     ///
     /// This is needed for newly created patches that do not have an existing patch
     /// commit.
-    pub(crate) fn override_parent_id(mut self, parent_id: git_repository::ObjectId) -> Self {
+    pub(crate) fn override_parent_id(mut self, parent_id: gix::ObjectId) -> Self {
         self.overlay.parent_id = Some(parent_id);
         self
     }
@@ -222,7 +219,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
     pub(crate) fn edit(
         self,
         stack_state: &impl StackStateAccess<'repo>,
-        repo: &'repo git_repository::Repository,
+        repo: &'repo gix::Repository,
         matches: &ArgMatches,
     ) -> Result<EditOutcome> {
         let EditBuilder {
@@ -598,21 +595,18 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 /// Returns `None` if author information was not provided the command line.
 fn author_from_args(
     matches: &clap::ArgMatches,
-    time: Option<git_repository::actor::Time>,
-) -> Result<Option<git_repository::actor::Signature>> {
+    time: Option<gix::actor::Time>,
+) -> Result<Option<gix::actor::Signature>> {
     let time = if let Some(time) = time {
         time
-    } else if let Some(authdate) = matches
-        .get_one::<git_repository::actor::Time>("authdate")
-        .copied()
-    {
+    } else if let Some(authdate) = matches.get_one::<gix::actor::Time>("authdate").copied() {
         authdate
     } else {
         return Ok(None);
     };
 
     if let Some((name, email)) = matches.get_one::<(String, String)>("author") {
-        let author = git_repository::actor::Signature {
+        let author = gix::actor::Signature {
             name: BString::from(name.as_str()),
             email: BString::from(email.as_str()),
             time,
@@ -622,7 +616,7 @@ fn author_from_args(
         matches.get_one::<String>("authname"),
         matches.get_one::<String>("authemail"),
     ) {
-        let author = git_repository::actor::Signature {
+        let author = gix::actor::Signature {
             name: BString::from(name.as_str()),
             email: BString::from(email.as_str()),
             time,

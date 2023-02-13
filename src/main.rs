@@ -332,7 +332,7 @@ fn execute_shell_alias(
     alias: &alias::Alias,
     user_args: Vec<OsString>,
     color_choice: Option<termcolor::ColorChoice>,
-    repo: Option<&git_repository::Repository>,
+    repo: Option<&gix::Repository>,
 ) -> ! {
     if let Some(first_arg) = user_args.first() {
         if [OsString::from("-h"), OsString::from("--help")].contains(first_arg) {
@@ -453,15 +453,15 @@ fn execute_stgit_alias(
 ///
 /// N.B. the outcome of this alias search depends on the current directory and thus
 /// depends on -C options having been previously processed.
-pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<git_repository::Repository>)> {
-    let maybe_repo = git_repository::Repository::open().ok();
+pub(crate) fn get_aliases() -> Result<(alias::Aliases, Option<gix::Repository>)> {
+    let maybe_repo = gix::Repository::open().ok();
     let maybe_config = maybe_repo.as_ref().map(|repo| repo.config_snapshot());
     let config_file = maybe_config.as_ref().map(|snapshot| snapshot.plumbing());
     let global_config_file;
     let config_file = if let Some(config_file) = config_file {
         Some(config_file)
     } else {
-        global_config_file = git_repository::config::File::from_globals().ok();
+        global_config_file = gix::config::File::from_globals().ok();
         global_config_file.as_ref()
     };
     let aliases = alias::get_aliases(config_file, |name| {

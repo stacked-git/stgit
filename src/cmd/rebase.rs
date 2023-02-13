@@ -93,7 +93,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
     let config = repo.config_snapshot();
     let stupid = repo.stupid();
@@ -261,8 +261,8 @@ enum Action {
 
 fn interactive_pushback(
     stack: Stack,
-    repo: &git_repository::Repository,
-    config: &git_repository::config::Snapshot,
+    repo: &gix::Repository,
+    config: &gix::config::Snapshot,
     matches: &ArgMatches,
     previously_applied: &[PatchName],
     allow_push_conflicts: bool,

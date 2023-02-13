@@ -35,7 +35,7 @@ pub(super) struct EditablePatchDescription {
     ///
     /// Should be setup with the existing or default author. May be `None` after
     /// interactive edit if the user removes the `Author:` header.
-    pub author: Option<git_repository::actor::Signature>,
+    pub author: Option<gix::actor::Signature>,
 
     /// Patch commit message.
     ///
@@ -71,9 +71,7 @@ impl EditablePatchDescription {
         };
         writeln!(stream, "Patch:  {patchname}")?;
         if let Some(author) = self.author.as_ref() {
-            let authdate = author
-                .time
-                .format(git_repository::date::time::format::ISO8601);
+            let authdate = author.time.format(gix::date::time::format::ISO8601);
             write!(stream, "Author: ")?;
             stream.write_all(author.name.as_bstr())?;
             write!(stream, " <")?;
@@ -127,7 +125,7 @@ pub(super) struct EditedPatchDescription {
     /// | `Author: name <mail>` | `Some(Some(signature))` |
     /// | `Author: `            | `Some(None)`            |
     /// | absent                | `None`                  |
-    pub author: Option<Option<git_repository::actor::Signature>>,
+    pub author: Option<Option<gix::actor::Signature>>,
 
     /// Patch commit message.
     ///
@@ -252,12 +250,11 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             Some(if let Some(name_email) = maybe_author {
                 let (name, email) = super::parse::parse_name_email(&name_email)?;
                 let time = if let Some(Some(date_str)) = raw_authdate {
-                    git_repository::actor::Time::parse_time(&date_str)
-                        .context("patch description date")?
+                    gix::actor::Time::parse_time(&date_str).context("patch description date")?
                 } else {
-                    git_repository::actor::Time::now_local_or_utc()
+                    gix::actor::Time::now_local_or_utc()
                 };
-                Some(git_repository::actor::Signature {
+                Some(gix::actor::Signature {
                     name: BString::from(name),
                     email: BString::from(email),
                     time,
@@ -400,10 +397,10 @@ mod tests {
     fn round_trip_no_message_no_diff() {
         let editable = EditablePatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Some(git_repository::actor::Signature {
+            author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, -3600),
+                time: gix::actor::Time::new(987654321, -3600),
             }),
             message: "".to_string(),
             instruction: Some("# Instruction\n"),
@@ -434,10 +431,10 @@ mod tests {
     fn round_trip_one_line_message() {
         let patch_desc = EditablePatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Some(git_repository::actor::Signature {
+            author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, 21600),
+                time: gix::actor::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
             instruction: Some("# Instruction\n"),
@@ -468,10 +465,10 @@ mod tests {
     fn round_trip_multi_line_message() {
         let patch_desc = EditablePatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Some(git_repository::actor::Signature {
+            author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, 21600),
+                time: gix::actor::Time::new(987654321, 21600),
             }),
             message: "Subject\n\
                       \n\
@@ -514,10 +511,10 @@ mod tests {
     fn with_diff() {
         let pd = EditablePatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Some(git_repository::actor::Signature {
+            author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, 21600),
+                time: gix::actor::Time::new(987654321, 21600),
             }),
             message: "Subject\n".to_string(),
             instruction: Some("# Instruction\n"),
@@ -575,10 +572,10 @@ mod tests {
     fn with_extra_comments() {
         let patch_desc = EditablePatchDescription {
             patchname: Some("patch".parse::<PatchName>().unwrap()),
-            author: Some(git_repository::actor::Signature {
+            author: Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, 21600),
+                time: gix::actor::Time::new(987654321, 21600),
             }),
             message: "Subject\n\
                       \n\
@@ -646,10 +643,10 @@ mod tests {
 
         let expected = EditedPatchDescription {
             patchname: None,
-            author: Some(Some(git_repository::actor::Signature {
+            author: Some(Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
-                time: git_repository::actor::Time::new(987654321, 21600),
+                time: gix::actor::Time::new(987654321, 21600),
             })),
             message: "Subject\n".to_string(),
             diff: None,
@@ -671,7 +668,7 @@ mod tests {
 
         let edited_desc = EditedPatchDescription::try_from(description.as_slice()).unwrap();
 
-        let commented_time = git_repository::actor::Time::new(987654321, 21600);
+        let commented_time = gix::actor::Time::new(987654321, 21600);
         assert!(edited_desc.author.is_some());
         assert!(edited_desc.author.as_ref().unwrap().is_some());
         // Author date should be "now" if Author is present and Date is missing.
@@ -683,7 +680,7 @@ mod tests {
 
         let expected = EditedPatchDescription {
             patchname: Some(Some("patch".parse::<PatchName>().unwrap())),
-            author: Some(Some(git_repository::actor::Signature {
+            author: Some(Some(gix::actor::Signature {
                 name: BString::from("The Author"),
                 email: BString::from("author@example.com"),
                 time: edited_desc.author.as_ref().unwrap().as_ref().unwrap().time,

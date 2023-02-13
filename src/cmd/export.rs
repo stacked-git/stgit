@@ -119,7 +119,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let opt_branch = argset::get_one_str(matches, "branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
@@ -233,7 +233,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Cow::Owned(
                 author
                     .time
-                    .format(git_repository::date::time::format::ISO8601)
+                    .format(gix::date::time::format::ISO8601)
                     .into_bytes(),
             ),
         );
@@ -245,7 +245,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             Cow::Owned(
                 committer
                     .time
-                    .format(git_repository::date::time::format::ISO8601)
+                    .format(gix::date::time::format::ISO8601)
                     .into_bytes(),
             ),
         );

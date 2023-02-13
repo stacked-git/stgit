@@ -37,7 +37,7 @@ fn make() -> clap::Command {
 }
 
 fn run(_: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     Stack::from_branch(&repo, None, InitializationPolicy::MustInitialize)?;
     Ok(())
 }

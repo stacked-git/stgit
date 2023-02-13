@@ -83,7 +83,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
@@ -250,8 +250,8 @@ fn branch_merge_patch(
     ref_stack: &Stack,
     trans: &StackTransaction,
     patchname: &PatchName,
-    commit: &git_repository::Commit,
-) -> Result<Option<git_repository::ObjectId>> {
+    commit: &gix::Commit,
+) -> Result<Option<gix::ObjectId>> {
     let commit_ref = commit.decode()?;
     let ref_commit = ref_stack.get_patch_commit(patchname);
     let ref_commit_ref = ref_commit.decode()?;
@@ -286,8 +286,8 @@ fn series_merge_patch(
     series_dir: &Path,
     trans: &StackTransaction,
     patchname: &PatchName,
-    commit: &git_repository::Commit,
-) -> Result<Option<git_repository::ObjectId>> {
+    commit: &gix::Commit,
+) -> Result<Option<gix::ObjectId>> {
     let patch_filename: &str = patchname.as_ref();
     let patch_path = series_dir.join(patch_filename);
     let diff = std::fs::read(&patch_path)

@@ -15,7 +15,7 @@ use super::serde::{RawPatchState, RawStackState};
 use crate::{patch::PatchName, stack::state::StackState};
 
 /// Upgrade stack state metadata to most recent version.
-pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str) -> Result<()> {
+pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result<()> {
     let refname_v4 = state_refname_from_branch_name_v4(branch_name);
 
     if let Ok(mut stack_ref_v4) = repo.find_reference(refname_v4.as_str()) {
@@ -32,7 +32,7 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
                 .object()
                 .context("finding old stack `meta` blob")
                 .and_then(|obj| {
-                    if matches!(obj.kind, git_repository::objs::Kind::Blob) {
+                    if matches!(obj.kind, gix::objs::Kind::Blob) {
                         Ok(obj)
                     } else {
                         Err(anyhow!(
@@ -50,8 +50,8 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
             }
 
             let mut current_key: Option<&str> = None;
-            let mut prev: Option<Option<git_repository::ObjectId>> = None;
-            let mut head: Option<git_repository::ObjectId> = None;
+            let mut prev: Option<Option<gix::ObjectId>> = None;
+            let mut head: Option<gix::ObjectId> = None;
             let mut applied: Vec<PatchName> = Vec::new();
             let mut unapplied: Vec<PatchName> = Vec::new();
             let mut hidden: Vec<PatchName> = Vec::new();
@@ -70,7 +70,7 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
                             let oid_str = oid_str.trim();
                             let patchname = PatchName::from_str(name_str)
                                 .with_context(|| format!("converting `{name_str}` to patchname"))?;
-                            let commit_id = git_repository::ObjectId::from_hex(oid_str.as_bytes())
+                            let commit_id = gix::ObjectId::from_hex(oid_str.as_bytes())
                                 .with_context(|| {
                                     format!("converting `{oid_str}` for `{patchname}`")
                                 })?;
@@ -86,17 +86,15 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
                         "Previous" => {
                             prev = match value {
                                 "None" | "none" => None,
-                                _ => Some(Some(
-                                    git_repository::ObjectId::from_str(value).with_context(
-                                        || format!("converting `{value}` for `Prev`"),
-                                    )?,
-                                )),
+                                _ => Some(Some(gix::ObjectId::from_str(value).with_context(
+                                    || format!("converting `{value}` for `Prev`"),
+                                )?)),
                             };
                             None
                         }
                         "Head" => {
                             head = Some(
-                                git_repository::ObjectId::from_str(value)
+                                gix::ObjectId::from_str(value)
                                     .with_context(|| format!("converting `{value}` for `Head`"))?,
                             );
                             None
@@ -129,7 +127,7 @@ pub(crate) fn stack_upgrade(repo: &git_repository::Repository, branch_name: &str
             repo.reference(
                 refname.as_str(),
                 new_state_commit_id,
-                git_repository::refs::transaction::PreviousValue::MustNotExist,
+                gix::refs::transaction::PreviousValue::MustNotExist,
                 "stack upgrade to version 5",
             )
             .with_context(|| format!("creating `{refname}`"))?;

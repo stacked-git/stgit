@@ -63,7 +63,7 @@ fn make() -> clap::Command {
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let repo = git_repository::Repository::open()?;
+    let repo = gix::Repository::open()?;
 
     let revspec = if let Some(range_str) = matches.get_one::<String>("range") {
         if let Some((rev1, rev2)) = range_str.split_once("..") {
