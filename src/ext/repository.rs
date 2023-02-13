@@ -120,15 +120,15 @@ impl RepositoryExtended for git_repository::Repository {
     }
 
     fn get_author(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
-        self.author().ok_or_else(|| {
+        Ok(self.author().ok_or_else(|| {
             anyhow!("author identity unknown; please configure `user.name` and `user.email`.")
-        })
+        })??)
     }
 
     fn get_committer(&self) -> Result<git_repository::actor::SignatureRef<'_>> {
-        self.committer().ok_or_else(|| {
+        Ok(self.committer().ok_or_else(|| {
             anyhow!("committer identity unknown; please configure `user.name` and `user.email`.")
-        })
+        })??)
     }
 
     fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>> {
