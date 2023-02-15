@@ -14,7 +14,10 @@
 
 use anyhow::{anyhow, Result};
 
-use crate::stack::{InitializationPolicy, Stack, StackAccess};
+use crate::{
+    ext::RepositoryExtended,
+    stack::{InitializationPolicy, Stack, StackAccess},
+};
 
 /// StGit revision specification error variants.
 #[derive(thiserror::Error, Debug)]
@@ -68,81 +71,20 @@ pub(crate) fn parse_stgit_revision<'repo>(
         let stack = Stack::from_branch(repo, branch, InitializationPolicy::AllowUninitialized)?;
         if let Some((_, spec)) = spec.split_once("{base}") {
             let revspec = format!("{}{spec}", stack.base().id);
-            rev_parse_single(repo, &revspec)
+            Ok(repo.rev_parse_single_ex(&revspec)?.object()?)
         } else {
             let patch_revspec = stack.patch_revspec(spec);
-            rev_parse_single(repo, &patch_revspec).or_else(|_| rev_parse_single(repo, spec))
+            Ok(repo
+                .rev_parse_single_ex(&patch_revspec)
+                .or_else(|_| repo.rev_parse_single_ex(spec))?
+                .object()?)
         }
     } else if let Some(branch) = branch {
-        rev_parse_single(repo, branch)
+        Ok(repo.rev_parse_single_ex(branch)?.object()?)
     } else if let Some(id_result) = repo.head()?.into_fully_peeled_id() {
         let id = id_result?;
         Ok(id.object()?)
     } else {
         Err(anyhow!("HEAD is unborn"))
     }
-}
-
-/// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
-fn rev_parse_single<'repo>(repo: &'repo gix::Repository, spec: &str) -> Result<gix::Object<'repo>> {
-    use gix::{
-        refs::file::find::existing::Error as FindError,
-        revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},
-    };
-
-    // Catch revspec ranges early because gitoxide will only flag this as an error if
-    // both specs in the range are valid.
-    if spec.contains("..") {
-        return Err(Error::InvalidRevision(
-            spec.to_string(),
-            "revspec must resolve to a single object".to_string(),
-        )
-        .into());
-    }
-
-    let object = repo
-        .rev_parse_single(spec)
-        .map_err(|single_err| -> anyhow::Error {
-            match single_err {
-                SingleError::Parse(inner) => {
-                    let mut spec_parse_err = &inner;
-                    loop {
-                        match spec_parse_err {
-                            SpecParseError::FindReference(find_err) => match find_err {
-                                e @ FindError::Find(_) => {
-                                    break Error::InvalidRevision(spec.to_string(), e.to_string())
-                                        .into()
-                                }
-                                FindError::NotFound { name: _ } => {
-                                    break Error::RevisionNotFound(spec.to_string()).into()
-                                }
-                            },
-                            SpecParseError::Multi { current, next } => {
-                                if let Some(next) = next {
-                                    spec_parse_err = next
-                                        .downcast_ref::<SpecParseError>()
-                                        .expect("next error is SpecParseError");
-                                } else {
-                                    spec_parse_err = current
-                                        .downcast_ref::<SpecParseError>()
-                                        .expect("current error is SpecParseError");
-                                }
-                            }
-                            SpecParseError::SingleNotFound => {
-                                break Error::RevisionNotFound(spec.to_string()).into()
-                            }
-                            e => {
-                                break Error::InvalidRevision(spec.to_string(), e.to_string())
-                                    .into()
-                            }
-                        }
-                    }
-                }
-                e @ SingleError::RangedRev { spec: _ } => {
-                    Error::InvalidRevision(spec.to_string(), e.to_string()).into()
-                }
-            }
-        })?
-        .object()?;
-    Ok(object)
 }

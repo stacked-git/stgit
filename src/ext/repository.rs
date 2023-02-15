@@ -82,6 +82,9 @@ pub(crate) trait RepositoryExtended {
         parent_ids: impl IntoIterator<Item = gix::ObjectId>,
         options: &CommitOptions<'_>,
     ) -> Result<gix::ObjectId>;
+
+    /// [`gix::Repository::rev_parse_single()`] with StGit-specific error mapping.
+    fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>>;
 }
 
 /// Options for creating a git commit object.
@@ -277,5 +280,69 @@ impl RepositoryExtended for gix::Repository {
             })?;
             Ok(commit_id.detach())
         }
+    }
+
+    fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>> {
+        use crate::revspec::Error;
+        use gix::{
+            refs::file::find::existing::Error as FindError,
+            revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},
+        };
+
+        // Catch revspec ranges early because gitoxide will only flag this as an error if
+        // both specs in the range are valid.
+        if spec.contains("..") {
+            return Err(Error::InvalidRevision(
+                spec.to_string(),
+                "revspec must resolve to a single object".to_string(),
+            )
+            .into());
+        }
+
+        self.rev_parse_single(spec)
+            .map_err(|single_err| -> anyhow::Error {
+                match single_err {
+                    SingleError::Parse(inner) => {
+                        let mut spec_parse_err = &inner;
+                        loop {
+                            match spec_parse_err {
+                                SpecParseError::FindReference(find_err) => match find_err {
+                                    e @ FindError::Find(_) => {
+                                        break Error::InvalidRevision(
+                                            spec.to_string(),
+                                            e.to_string(),
+                                        )
+                                        .into()
+                                    }
+                                    FindError::NotFound { name: _ } => {
+                                        break Error::RevisionNotFound(spec.to_string()).into()
+                                    }
+                                },
+                                SpecParseError::Multi { current, next } => {
+                                    if let Some(next) = next {
+                                        spec_parse_err = next
+                                            .downcast_ref::<SpecParseError>()
+                                            .expect("next error is SpecParseError");
+                                    } else {
+                                        spec_parse_err = current
+                                            .downcast_ref::<SpecParseError>()
+                                            .expect("current error is SpecParseError");
+                                    }
+                                }
+                                SpecParseError::SingleNotFound => {
+                                    break Error::RevisionNotFound(spec.to_string()).into()
+                                }
+                                e => {
+                                    break Error::InvalidRevision(spec.to_string(), e.to_string())
+                                        .into()
+                                }
+                            }
+                        }
+                    }
+                    e @ SingleError::RangedRev { spec: _ } => {
+                        Error::InvalidRevision(spec.to_string(), e.to_string()).into()
+                    }
+                }
+            })
     }
 }
