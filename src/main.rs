@@ -14,7 +14,6 @@ mod color;
 mod ext;
 mod hook;
 mod patch;
-mod revspec;
 mod signal;
 mod stack;
 mod stupid;
@@ -238,6 +237,17 @@ fn exit_with_result(result: Result<()>, color_choice: Option<termcolor::ColorCho
     let code = match result {
         Ok(()) => 0,
         Err(e) => {
+            // A command may use a custom clap error when doing argument validation after
+            // calling Command::try_get_matches_from().
+            if let Some(clap_err) = e.downcast_ref::<clap::Error>() {
+                clap_err.print().expect("clap can print its error message");
+                std::process::exit(if clap_err.use_stderr() {
+                    GENERAL_ERROR
+                } else {
+                    0
+                })
+            }
+
             print_error_message(color_choice, &e);
             match e.downcast_ref::<stack::Error>() {
                 Some(stack::Error::TransactionHalt { conflicts, .. }) => {
