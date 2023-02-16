@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches, ValueHint};
 use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchedit, patchrange, PatchName},
+    patch::{patchedit, PatchLocator, SingleRevisionSpec},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
@@ -43,7 +43,8 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("patch")
                 .help("Patch to edit")
-                .value_parser(clap::value_parser!(PatchName))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchLocator))
                 .value_hint(ValueHint::Other),
         );
     patchedit::add_args(app, true, true).arg(
@@ -59,7 +60,8 @@ fn make() -> clap::Command {
                  such as the Emacs mode. See also the '--set-tree' flag of 'stg \
                  push'.",
             )
-            .num_args(1)
+            .allow_hyphen_values(true)
+            .value_parser(clap::value_parser!(SingleRevisionSpec))
             .value_name("treeish"),
     )
 }
@@ -69,8 +71,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patch") {
-        patchrange::parse_single(patchname, &stack, patchrange::Allow::All)?
+    let patchname = if let Some(patch_loc) = matches.get_one::<PatchLocator>("patch") {
+        patch_loc.resolve_name(&stack)?
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {
@@ -79,10 +81,9 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let patch_commit = stack.get_patch_commit(&patchname);
 
-    let tree_id = if let Some(treeish) = matches.get_one::<String>("set-tree") {
-        crate::revspec::parse_stgit_revision(&repo, Some(treeish), None)
-            .context("parsing `--set-tree` value")?
-            .peel_to_tree()?
+    let tree_id = if let Some(spec) = matches.get_one::<SingleRevisionSpec>("set-tree") {
+        spec.resolve_tree(&repo, &stack)
+            .context("resolving `--set-tree` value")?
             .id
     } else {
         patch_commit.tree_id()?.detach()

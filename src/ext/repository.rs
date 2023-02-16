@@ -283,7 +283,7 @@ impl RepositoryExtended for gix::Repository {
     }
 
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>> {
-        use crate::revspec::Error;
+        use crate::patch::revspec::Error;
         use gix::{
             refs::file::find::existing::Error as FindError,
             revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},

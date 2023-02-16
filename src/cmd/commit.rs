@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
@@ -46,7 +46,7 @@ fn make() -> clap::Command {
                 .help("Patches to commit")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with_all(["all", "number"]),
         )
         .arg(
@@ -77,13 +77,13 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
 
-    let range_specs = matches.get_many::<patchrange::Specification>("patchranges");
+    let range_specs = matches.get_many::<PatchRange>("patchranges");
     let patches: Vec<PatchName> = if let Some(range_specs) = range_specs {
         let applied_and_unapplied = stack.applied_and_unapplied().collect::<Vec<&PatchName>>();
-        let mut requested_patches = patchrange::patches_from_specs(
-            range_specs,
+        let mut requested_patches = patchrange::resolve_names(
             &stack,
-            patchrange::Allow::VisibleWithAppliedBoundary,
+            range_specs,
+            RangeConstraint::VisibleWithAppliedBoundary,
         )?;
         requested_patches.sort_unstable_by_key(|pn0| {
             applied_and_unapplied

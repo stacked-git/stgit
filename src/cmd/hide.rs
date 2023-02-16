@@ -9,7 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackStateAccess},
 };
 
@@ -33,7 +33,8 @@ fn make() -> clap::Command {
                 .help("Patches to hide")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange))
                 .required(true),
         )
         .arg(argset::branch_arg())
@@ -49,12 +50,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let patches: Vec<PatchName> = patchrange::patches_from_specs(
-        matches
-            .get_many::<patchrange::Specification>("patchranges")
-            .expect("clap ensures at least one range is provided"),
+    let patches: Vec<PatchName> = patchrange::resolve_names(
         &stack,
-        patchrange::Allow::All,
+        matches
+            .get_many::<PatchRange>("patchranges")
+            .expect("clap ensures at least one range is provided"),
+        RangeConstraint::All,
     )?;
 
     // Already hidden patches are silent no-ops.

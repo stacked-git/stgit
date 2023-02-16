@@ -2,7 +2,7 @@
 
 //! `stg rebase` implementation.
 
-use std::{fmt::Write, rc::Rc, str::FromStr};
+use std::{fmt::Write, str::FromStr};
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
@@ -12,9 +12,8 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchedit, PatchName},
+    patch::{patchedit, PatchName, SingleRevisionSpec},
     print_info_message,
-    revspec::parse_stgit_revision,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -50,7 +49,7 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("committish")
                 .help("New base commit for the stack")
-                .value_parser(clap::builder::NonEmptyStringValueParser::new())
+                .value_parser(clap::value_parser!(SingleRevisionSpec))
                 .required_unless_present("interactive"),
         )
         .arg(
@@ -101,15 +100,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
-    let target_commit = if let Some(committish) = argset::get_one_str(matches, "committish") {
-        Rc::new(
-            parse_stgit_revision(&repo, Some(committish), None)?
-                .peel_tags_to_end()?
-                .try_into_commit()?,
-        )
-    } else {
-        stack.base().clone()
-    };
+    let target_commit =
+        if let Some(committish) = matches.get_one::<SingleRevisionSpec>("committish") {
+            committish.resolve(&repo, Some(&stack))?.commit
+        } else {
+            stack.base().clone()
+        };
 
     if stack.is_protected(&config) {
         return Err(anyhow!("this branch is protected; rebase is not permitted"));

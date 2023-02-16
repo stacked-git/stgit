@@ -4,14 +4,13 @@
 
 use std::path::PathBuf;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
 use crate::{
     argset,
     ext::RepositoryExtended,
-    patch::patchrange,
-    revspec::Error as RevError,
+    patch::{RangeConstraint, RangeRevisionSpec},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -49,7 +48,7 @@ fn make() -> clap::Command {
                 )
                 .value_name("patch-or-rev")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(RangeRevisionSpec))
                 .conflicts_with_all(["applied", "unapplied", "hidden"]),
         )
         .arg(
@@ -67,7 +66,7 @@ fn make() -> clap::Command {
                 .help("Patch or revision to show")
                 .action(clap::ArgAction::Append)
                 .value_name("patch-or-rev")
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(RangeRevisionSpec))
                 .allow_hyphen_values(true)
                 .conflicts_with("patchranges-all"),
         )
@@ -132,56 +131,18 @@ fn run(matches: &ArgMatches) -> Result<()> {
         }
     }
     if let Some(range_specs) = matches
-        .get_many::<patchrange::Specification>("patchranges-all")
-        .or_else(|| matches.get_many::<patchrange::Specification>("patchranges"))
+        .get_many::<RangeRevisionSpec>("patchranges-all")
+        .or_else(|| matches.get_many::<RangeRevisionSpec>("patchranges"))
     {
         for spec in range_specs {
-            match patchrange::patches_from_specs(
+            crate::patch::revspec::resolve(
+                &repo,
+                Some(&stack),
                 [spec],
-                &stack,
-                patchrange::Allow::AllWithAppliedBoundary,
-            ) {
-                Ok(patchnames) => {
-                    for patchname in &patchnames {
-                        oids.push(stack.get_patch(patchname).commit.id);
-                    }
-                }
-                Err(patchrange::Error::PatchNotKnown { patchname: _ }) => {
-                    let spec_str = spec.to_string();
-                    let oid =
-                        crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
-                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                                Some(RevError::InvalidRevision(spec, context)) => {
-                                    anyhow!("invalid revision spec `{spec}`: {context}")
-                                }
-                                Some(RevError::RevisionNotFound(spec)) => {
-                                    anyhow!("patch or revision `{spec}` not found")
-                                }
-                                _ => rev_err,
-                            })?
-                            .id;
-                    oids.push(oid);
-                }
-                Err(patchrange::Error::PatchName(_)) => {
-                    let spec_str = spec.to_string();
-                    let oid =
-                        crate::revspec::parse_stgit_revision(&repo, Some(&spec_str), opt_branch)
-                            .map_err(|rev_err| match rev_err.downcast_ref::<RevError>() {
-                                Some(RevError::InvalidRevision(spec, context)) => {
-                                    anyhow!("invalid patch or revision spec `{spec}`: {context}")
-                                }
-                                Some(RevError::RevisionNotFound(spec)) => {
-                                    anyhow!("invalid patch or revision `{spec}` not found",)
-                                }
-                                _ => rev_err,
-                            })?
-                            .id;
-                    oids.push(oid);
-                }
-                Err(e) => {
-                    return Err(e.into());
-                }
-            }
+                RangeConstraint::AllWithAppliedBoundary,
+            )?
+            .iter()
+            .for_each(|rev| oids.push(rev.commit.id));
         }
     } else if !applied_flag && !unapplied_flag && !hidden_flag {
         oids.push(stack.get_branch_head().id);

@@ -10,7 +10,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
-    patch::{patchedit, patchrange, PatchName},
+    patch::{patchedit, patchrange, PatchName, PatchRange, RangeConstraint},
     print_info_message,
     stack::{InitializationPolicy, Stack, StackStateAccess, StackTransaction},
     stupid::Stupid,
@@ -54,7 +54,8 @@ fn make() -> clap::Command {
                 .help("Patches to squash")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange))
                 .required(true),
         )
         .arg(
@@ -79,12 +80,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
     statuses.check_conflicts()?;
     stack.check_head_top_mismatch()?;
 
-    let squash_patchnames: Vec<PatchName> = patchrange::patches_from_specs(
-        matches
-            .get_many::<patchrange::Specification>("patchranges")
-            .expect("clap ensures two or more patches"),
+    let squash_patchnames: Vec<PatchName> = patchrange::resolve_names(
         &stack,
-        patchrange::Allow::All,
+        matches
+            .get_many::<PatchRange>("patchranges")
+            .expect("clap ensures two or more patches"),
+        RangeConstraint::All,
     )?;
 
     let patchname: Option<PatchName> = matches.get_one::<PatchName>("name").cloned();

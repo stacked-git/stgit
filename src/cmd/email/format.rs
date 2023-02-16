@@ -8,7 +8,7 @@ use clap::Arg;
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
-    patch::patchrange,
+    patch::{patchrange, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -55,7 +55,7 @@ pub(super) fn command() -> clap::Command {
                 .help("Patches to format")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with("all")
                 .required_unless_present_any(["all"]),
         )
@@ -446,26 +446,25 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
         InitializationPolicy::AllowUninitialized,
     )?;
 
-    let patches =
-        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
-            let patches = patchrange::contiguous_patches_from_specs(
-                range_specs,
-                &stack,
-                patchrange::Allow::VisibleWithAppliedBoundary,
-            )?;
-            if patches.is_empty() {
-                return Err(anyhow!("no patches to format"));
-            }
-            patches
-        } else if matches.get_flag("all") {
-            let applied = stack.applied();
-            if applied.is_empty() {
-                return Err(Error::NoAppliedPatches.into());
-            }
-            applied.to_vec()
-        } else {
-            panic!("expect either patchranges or -a/--all")
-        };
+    let patches = if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges") {
+        let patches = patchrange::resolve_names_contiguous(
+            &stack,
+            range_specs,
+            RangeConstraint::VisibleWithAppliedBoundary,
+        )?;
+        if patches.is_empty() {
+            return Err(anyhow!("no patches to format"));
+        }
+        patches
+    } else if matches.get_flag("all") {
+        let applied = stack.applied();
+        if applied.is_empty() {
+            return Err(Error::NoAppliedPatches.into());
+        }
+        applied.to_vec()
+    } else {
+        panic!("expect either patchranges or -a/--all")
+    };
 
     for patchname in &patches {
         if stack.get_patch_commit(patchname).is_no_change()? {

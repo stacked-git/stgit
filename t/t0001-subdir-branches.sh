@@ -37,7 +37,7 @@ test_expect_success 'Try new id with slashy branch' '
 '
 
 test_expect_success 'Try old id with slashy branch' '
-    command_error stg id foo/ &&
+    general_error stg id foo/ &&
     command_error stg id foo/top &&
     command_error stg id foo@x/y/z/top
 '

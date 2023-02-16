@@ -10,7 +10,7 @@ use clap::Arg;
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
-    patch::patchrange,
+    patch::{patchrange, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -387,14 +387,20 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 .map(ToString::to_string)
                 .collect::<Vec<_>>()
         } else {
-            let mut specs = Vec::new();
+            let mut ranges = Vec::new();
             for arg in patchranges_or_paths {
-                specs.push(patchrange::Specification::from_str(arg)?);
+                let range = PatchRange::from_str(arg).map_err(|e| {
+                    command().error(
+                        clap::error::ErrorKind::ValueValidation,
+                        format!("invalid value '{arg}' for '<patch>...': {e}"),
+                    )
+                })?;
+                ranges.push(range);
             }
-            let patches = patchrange::contiguous_patches_from_specs(
-                &specs,
+            let patches = patchrange::resolve_names_contiguous(
                 &stack,
-                patchrange::Allow::VisibleWithAppliedBoundary,
+                &ranges,
+                RangeConstraint::VisibleWithAppliedBoundary,
             )?;
             if patches.is_empty() {
                 return Err(anyhow!("no patches to send"));

@@ -4,12 +4,20 @@
 
 use std::str::FromStr;
 
-use serde::{Deserialize, Serialize};
+use crate::stack::StackStateAccess;
+
+use super::{LocationConstraint, LocationGroup, PatchName};
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
     #[error("invalid patch name `{name}`: {reason}")]
     InvalidPatchName { name: String, reason: String },
+
+    #[error("{loc_group} patch `{patchname}` is not allowed")]
+    PatchNotAllowed {
+        patchname: PatchName,
+        loc_group: LocationGroup,
+    },
 }
 
 impl Error {
@@ -20,12 +28,6 @@ impl Error {
         }
     }
 }
-
-/// A [`String`] that follows the patch naming rules.
-///
-/// A valid patch name must meet all the rules of a git reference name.
-#[derive(Clone, Hash, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub(crate) struct PatchName(String);
 
 impl std::fmt::Debug for PatchName {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -197,22 +199,44 @@ impl PatchName {
         self.0.eq_ignore_ascii_case(&other.0)
     }
 
+    pub(crate) fn constrain<'repo>(
+        self,
+        stack: &impl StackStateAccess<'repo>,
+        constraint: LocationConstraint,
+    ) -> Result<Self, Error> {
+        match (constraint, stack.location_group(&self)) {
+            (LocationConstraint::All, _)
+            | (LocationConstraint::Visible, LocationGroup::Applied | LocationGroup::Unapplied)
+            | (LocationConstraint::Applied, LocationGroup::Applied)
+            | (LocationConstraint::Unapplied, LocationGroup::Unapplied)
+            | (LocationConstraint::Hidden, LocationGroup::Hidden) => Ok(self),
+            (_, loc_group) => Err(Error::PatchNotAllowed {
+                patchname: self,
+                loc_group,
+            }),
+        }
+    }
+
     /// Validate a patch name `str`.
-    fn validate(name: &str) -> Result<(), Error> {
+    pub(super) fn validate(name: &str) -> Result<(), Error> {
         if name.is_empty() {
             return Err(Error::invalid(name, "patch name may not be empty"));
         }
 
-        let mut prev = '\0';
+        let mut iter = name.chars().peekable();
 
-        for (i, c) in name.chars().enumerate() {
+        if iter.peek() == Some(&'.') {
+            return Err(Error::invalid(name, "patch name may not start with '.'"));
+        }
+
+        while let Some(c) = iter.next() {
             if c == '.' {
-                if i == 0 {
-                    return Err(Error::invalid(name, "patch name may not start with '.'"));
-                } else if prev == '.' {
+                if iter.peek() == Some(&'.') {
                     return Err(Error::invalid(name, "patch name may not contain '..'"));
+                } else if iter.peek().is_none() {
+                    return Err(Error::invalid(name, "patch name may not end with '.'"));
                 }
-            } else if prev == '@' && c == '{' {
+            } else if c == '@' && iter.peek() == Some(&'{') {
                 return Err(Error::invalid(name, "patch name may not contain '@{'"));
             } else if c.is_ascii_whitespace() {
                 return Err(Error::invalid(
@@ -230,15 +254,11 @@ impl PatchName {
                     &format!("patch name may not contain '{c}'"),
                 ));
             }
-
-            prev = c;
         }
 
-        if prev == '.' {
-            Err(Error::invalid(name, "patch name may not end with '.'"))
-        } else if prev == 'k' && name.ends_with(".lock") {
+        if name.ends_with(".lock") {
             Err(Error::invalid(name, "patch name may not end with '.lock'"))
-        } else if prev == '}' && name == "{base}" {
+        } else if name == "{base}" {
             Err(Error::invalid(name, "patch name may not be '{base}'"))
         } else if name == "@" {
             Err(Error::invalid(name, "patch name may not be '@'"))

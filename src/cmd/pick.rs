@@ -16,8 +16,9 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    patch::{patchrange, PatchName},
-    revspec::{parse_branch_and_spec, parse_stgit_revision},
+    patch::{
+        revspec, PatchName, RangeConstraint, RangeRevisionSpec, SingleRevisionSpec, StGitRevision,
+    },
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -59,7 +60,7 @@ fn make() -> clap::Command {
                 .value_name("source")
                 .required(true)
                 .num_args(1..)
-                .value_parser(clap::builder::NonEmptyStringValueParser::new()),
+                .value_parser(clap::value_parser!(RangeRevisionSpec)),
         )
         .arg(
             Arg::new("ref-branch")
@@ -106,7 +107,7 @@ fn make() -> clap::Command {
                 .short('p')
                 .help("Use <committish> as parent")
                 .value_name("committish")
-                .value_parser(clap::value_parser!(PathBuf))
+                .value_parser(clap::value_parser!(SingleRevisionSpec))
                 .conflicts_with_all(["fold", "update"]),
         )
         .arg(argset::committer_date_is_author_date_arg())
@@ -156,73 +157,14 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         stack.check_head_top_mismatch()?;
     }
 
-    let mut patchranges: Vec<patchrange::Specification> = Vec::new();
-    for source in matches
-        .get_many::<String>("stgit-revision")
-        .expect("required argument")
-    {
-        if let Ok(spec) = patchrange::Specification::from_str(source) {
-            patchranges.push(spec);
-        } else {
-            patchranges.clear();
-            break;
-        }
-    }
-
-    let source_patches = if patchranges.is_empty() {
-        None
-    } else {
-        patchrange::patches_from_specs(
-            patchranges.iter(),
-            &ref_stack,
-            patchrange::Allow::VisibleWithAppliedBoundary,
-        )
-        .ok()
-    };
-
-    let picks: Vec<(Option<PatchName>, Rc<gix::Commit>)> = if let Some(patches) = source_patches {
-        patches
-            .iter()
-            .map(|pn| (Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()))
-            .collect()
-    } else {
-        let mut picks = Vec::new();
-        for source in matches
-            .get_many::<String>("stgit-revision")
-            .expect("required argument")
-        {
-            let (branchname, spec_str) = parse_branch_and_spec(None, Some(source));
-            if let Some(branchname) = branchname {
-                if let Some(spec_str) = spec_str {
-                    let ref_stack = Stack::from_branch(
-                        &repo,
-                        Some(branchname),
-                        InitializationPolicy::AllowUninitialized,
-                    )?;
-                    let spec = patchrange::Specification::from_str(spec_str)?;
-                    let patchnames = patchrange::patches_from_specs(
-                        [spec].iter(),
-                        &ref_stack,
-                        patchrange::Allow::VisibleWithAppliedBoundary,
-                    )?;
-                    for pn in &patchnames {
-                        picks.push((Some(pn.clone()), ref_stack.get_patch_commit(pn).clone()));
-                    }
-                } else {
-                    return Err(crate::revspec::Error::InvalidRevision(
-                        source.to_string(),
-                        "expected \"<branch>:<patchname>\"".to_string(),
-                    )
-                    .into());
-                }
-            } else {
-                let commit =
-                    parse_stgit_revision(&repo, Some(source), ref_branchname)?.try_into_commit()?;
-                picks.push((None, commit.into()));
-            }
-        }
-        picks
-    };
+    let picks = revspec::resolve(
+        &repo,
+        Some(&ref_stack),
+        matches
+            .get_many::<RangeRevisionSpec>("stgit-revision")
+            .expect("required argument"),
+        RangeConstraint::VisibleWithAppliedBoundary,
+    )?;
 
     if matches.get_flag("fold") || matches.get_flag("update") {
         // Fold into current patch
@@ -237,28 +179,21 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 return Err(anyhow!("--parent can only be specified with one patch"));
             }
         }
-        let opt_parent = if let Some(parent_committish) = matches.get_one::<String>("parent") {
-            let commit = parse_stgit_revision(
-                stack.repo,
-                Some(parent_committish),
-                Some(ref_stack.get_branch_name()),
-            )?
-            .try_into_commit()?;
-            Some(commit)
-        } else {
-            None
-        };
+        let opt_parent = matches
+            .get_one::<SingleRevisionSpec>("parent")
+            .map(|parent_spec| {
+                parent_spec
+                    .resolve(&repo, Some(&ref_stack))
+                    .map(|rev| rev.commit)
+            })
+            .transpose()?;
         pick_picks(stack, matches, opt_parent, &picks)
     }
 }
 
-fn fold_picks(
-    stack: &Stack,
-    matches: &clap::ArgMatches,
-    picks: &[(Option<PatchName>, Rc<gix::Commit>)],
-) -> Result<()> {
+fn fold_picks(stack: &Stack, matches: &clap::ArgMatches, picks: &[StGitRevision]) -> Result<()> {
     let stupid = stack.repo.stupid();
-    for (patchname, commit) in picks {
+    for StGitRevision { patchname, commit } in picks {
         let parent = commit.get_parent_commit()?.into();
         let (top, bottom) = if matches.get_flag("revert") {
             (&parent, commit)
@@ -313,16 +248,15 @@ fn fold_picks(
 fn pick_picks(
     stack: Stack,
     matches: &clap::ArgMatches,
-    opt_parent: Option<gix::Commit>,
-    picks: &[(Option<PatchName>, Rc<gix::Commit>)],
+    opt_parent: Option<Rc<gix::Commit>>,
+    picks: &[StGitRevision],
 ) -> Result<()> {
-    let opt_parent = opt_parent.map(Rc::new);
     let stupid = stack.repo.stupid();
     let config = stack.repo.config_snapshot();
     let patchname_len_limit = PatchName::get_length_limit(&config);
     let mut new_patches: Vec<(PatchName, gix::ObjectId)> = Vec::with_capacity(picks.len());
 
-    for (patchname, commit) in picks {
+    for StGitRevision { patchname, commit } in picks {
         let commit_ref = commit.decode()?;
         let mut disallow: Vec<&PatchName> = stack.all_patches().collect();
 

@@ -128,7 +128,7 @@ test_expect_success 'Push two patches in reverse' '
 
 test_expect_success 'Attempt to push already applied patches' '
     command_error stg push p0..p2 2>err &&
-    grep -e "patch \`p0\` from \`p0\.\.p2\` is already applied" err &&
+    grep -e "patch \`p0\` is already applied" err &&
     command_error stg push p99999 2>err &&
     grep -e "patch \`p99999\` does not exist" err
 '

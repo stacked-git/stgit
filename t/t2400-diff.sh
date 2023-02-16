@@ -88,17 +88,21 @@ test_expect_success 'Diff revs parent-child' '
 
 test_expect_success 'Diff invalid rev patch name' '
     command_error stg diff -r foo..bad-name 2>err &&
-    grep -e "revision not found \`bad-name\`" err
+    grep -e "patch \`bad-name\` does not exist" err
 '
 
 test_expect_success 'Diff invalid rev too many ..' '
-    command_error stg diff -r foo..bar..baz 2>err &&
-    grep -e "invalid StGit revision \`bar\.\.baz\`" err
+    general_error stg diff -r foo..bar..baz 2>err &&
+    grep -e "invalid value .foo\.\.bar\.\.baz." err
 '
 
-test_expect_success 'Diff invalid rev no rev1' '
-    command_error stg diff -r ..baz 2>err &&
-    grep -e "invalid StGit revision \`\.\.baz\`" err
+test_expect_success 'Diff open rev1' '
+    stg diff -r ..baz >open-baz.diff &&
+    stg diff -r foo..baz >foo-baz.diff &&
+    test_cmp open-baz.diff foo-baz.diff &&
+    stg diff -r ..baz --stat >open-baz-stat.diff &&
+    stg diff -r foo..baz --stat >foo-baz-stat.diff &&
+    test_cmp open-baz-stat.diff foo-baz-stat.diff
 '
 
 test_expect_success 'Diff range just rev1' '

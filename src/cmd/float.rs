@@ -14,7 +14,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -47,7 +47,8 @@ fn make() -> clap::Command {
                 .help("Patches to float")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with("series")
                 .required_unless_present("series"),
         )
@@ -87,10 +88,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let patches: Vec<PatchName> = if let Some(series_path) = opt_series {
         parse_series(series_path, &stack)?
     } else {
-        let patchranges = matches
-            .get_many::<patchrange::Specification>("patchranges")
+        let range_specs = matches
+            .get_many::<PatchRange>("patchranges")
             .expect("clap ensures either patches or series");
-        patchrange::patches_from_specs(patchranges, &stack, patchrange::Allow::Visible)?
+        patchrange::resolve_names(&stack, range_specs, RangeConstraint::Visible)?
     };
 
     if patches.is_empty() {
@@ -154,7 +155,7 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
         std::fs::read_to_string(path)?
     };
 
-    let mut series: Vec<patchrange::Specification> = Vec::new();
+    let mut series: Vec<PatchRange> = Vec::new();
     for s in contents
         .lines()
         .map(|line| {
@@ -167,16 +168,14 @@ fn parse_series(path: &Path, stack: &Stack) -> Result<Vec<PatchName>> {
         })
         .filter(|s| !s.is_empty())
     {
-        series.push(patchrange::Specification::from_str(s)?);
+        series.push(PatchRange::from_str(s)?);
     }
 
-    patchrange::patches_from_specs(series.iter(), stack, patchrange::Allow::Visible).with_context(
-        || {
-            if use_stdin {
-                "<stdin>".to_string()
-            } else {
-                path.to_string_lossy().to_string()
-            }
-        },
-    )
+    patchrange::resolve_names(stack, series.iter(), RangeConstraint::Visible).with_context(|| {
+        if use_stdin {
+            "<stdin>".to_string()
+        } else {
+            path.to_string_lossy().to_string()
+        }
+    })
 }

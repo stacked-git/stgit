@@ -9,7 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, LocationConstraint, PatchLocator, PatchName, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -47,7 +47,8 @@ fn make() -> clap::Command {
                 .help("Patches to sink")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange)),
         )
         .arg(
             Arg::new("nopush")
@@ -72,7 +73,8 @@ fn make() -> clap::Command {
                      bottom of the stack.",
                 )
                 .value_name("target")
-                .value_parser(clap::value_parser!(PatchName)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchLocator)),
         )
         .arg(argset::keep_arg())
         .arg(argset::committer_date_is_author_date_arg())
@@ -83,7 +85,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
-    let opt_target: Option<PatchName> = matches.get_one::<PatchName>("target").cloned();
     let nopush_flag = matches.get_flag("nopush");
     let keep_flag = matches.contains_id("keep");
 
@@ -95,19 +96,23 @@ fn run(matches: &ArgMatches) -> Result<()> {
         statuses.check_index_and_worktree_clean()?;
     }
 
-    if let Some(target_patch) = &opt_target {
-        if !stack.has_patch(target_patch) {
-            return Err(anyhow!("target patch `{target_patch}` does not exist"));
-        } else if !stack.is_applied(target_patch) {
-            return Err(anyhow!(
-                "cannot sink below `{target_patch}` since it is not applied"
-            ));
-        }
-    }
+    let opt_target: Option<PatchName> = matches
+        .get_one::<PatchLocator>("target")
+        .map(|loc| loc.resolve_name(&stack))
+        .transpose()
+        .map_err(|e| anyhow!("target: {e}"))?
+        .map(|name| name.constrain(&stack, LocationConstraint::Applied))
+        .transpose()
+        .map_err(|e| match e {
+            crate::patch::name::Error::PatchNotAllowed { patchname, .. } => {
+                anyhow!("cannot sink below `{patchname}` since it is not applied")
+            }
+            _ => e.into(),
+        })?;
 
     let patches: Vec<PatchName> =
-        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
-            patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::All)?
+        if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges") {
+            patchrange::resolve_names(&stack, range_specs, RangeConstraint::All)?
         } else if let Some(patchname) = stack.applied().last() {
             vec![patchname.clone()]
         } else {

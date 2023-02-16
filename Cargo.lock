@@ -1368,6 +1368,7 @@ dependencies = [
  "gix",
  "indexmap",
  "is-terminal",
+ "nom",
  "serde",
  "serde_json",
  "strsim",

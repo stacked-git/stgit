@@ -2,4 +2,3 @@
 - Multiple heads in a patch - useful for forking a patch,
   synchronising with other patches (diff format or in other
   repositories)
-- Numeric shortcuts for naming patches near top (eg. +1, -2)

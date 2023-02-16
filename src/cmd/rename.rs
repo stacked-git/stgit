@@ -2,6 +2,8 @@
 
 //! `stg rename` implementation.
 
+use std::str::FromStr;
+
 use anyhow::{anyhow, Result};
 use clap::{Arg, ArgMatches};
 
@@ -9,7 +11,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::PatchName,
+    patch::{PatchLocator, PatchName},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
 };
 
@@ -24,8 +26,8 @@ fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Rename a patch")
         .long_about(
-            "Rename [oldpatch] to <newpatch>. If [oldpatch] is not given, \
-             the topmost patch will be renamed.",
+            "Rename [old-patch] to <new-patch>. If [old-patch] is not given, the \
+             topmost patch will be renamed.",
         )
         .override_usage("stg rename [OPTIONS] [old-patch] <new-patch>")
         .arg(argset::branch_arg())
@@ -33,8 +35,9 @@ fn make() -> clap::Command {
             Arg::new("patches")
                 .help("Optional old patch and the new patch name")
                 .required(true)
+                .allow_hyphen_values(true)
                 .num_args(1..=2)
-                .value_parser(clap::value_parser!(PatchName)),
+                .value_parser(clap::builder::NonEmptyStringValueParser::new()),
         )
 }
 
@@ -46,21 +49,48 @@ fn run(matches: &ArgMatches) -> Result<()> {
         InitializationPolicy::AllowUninitialized,
     )?;
 
-    let mut patches: Vec<PatchName> = matches
-        .get_many::<PatchName>("patches")
+    let patch_args: Vec<&String> = matches
+        .get_many::<String>("patches")
         .expect("clap ensures one or two names are provided")
-        .cloned()
         .collect();
 
-    let (old_patchname, new_patchname) = if patches.len() == 2 {
-        let new_patchname = patches.remove(1);
-        let old_patchname = patches.remove(0);
-        (old_patchname, new_patchname)
-    } else if let Some(top_patchname) = stack.applied().last() {
-        assert_eq!(patches.len(), 1);
-        (top_patchname.clone(), patches.remove(0))
-    } else {
-        return Err(Error::NoAppliedPatches.into());
+    let (old_patchname, new_patchname) = match patch_args.len() {
+        1 => {
+            let new_patch_str = patch_args[0];
+            let new_patchname = PatchName::from_str(patch_args[0]).map_err(|e| {
+                // TODO: if/when clap exposes its styled string interface, these error
+                // strings can be updated to get proper colorization.
+                make().error(
+                    clap::error::ErrorKind::InvalidValue,
+                    format!("invalid value '{new_patch_str}' for '<new-patch>': {e}"),
+                )
+            })?;
+            let old_patchname = if let Some(top_patchname) = stack.applied().last() {
+                top_patchname.clone()
+            } else {
+                Err(Error::NoAppliedPatches)?
+            };
+            (old_patchname, new_patchname)
+        }
+        2 => {
+            let (old_patch_str, new_patch_str) = (patch_args[0], patch_args[1]);
+            let old_patchname = PatchLocator::from_str(old_patch_str)
+                .map_err(|e| {
+                    make().error(
+                        clap::error::ErrorKind::InvalidValue,
+                        format!("invalid value '{old_patch_str}' for '[<old-patch>]': {e}"),
+                    )
+                })?
+                .resolve_name(&stack)?;
+            let new_patchname = PatchName::from_str(new_patch_str).map_err(|e| {
+                make().error(
+                    clap::error::ErrorKind::InvalidValue,
+                    format!("invalid value '{new_patch_str}' for '<new-patch>': {e}"),
+                )
+            })?;
+            (old_patchname, new_patchname)
+        }
+        _ => unreachable!(),
     };
 
     if let Some(colliding_name) = stack.collides(&new_patchname) {

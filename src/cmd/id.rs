@@ -5,7 +5,12 @@
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
-use crate::{argset, ext::RepositoryExtended, revspec::parse_stgit_revision};
+use crate::{
+    argset,
+    ext::RepositoryExtended,
+    patch::SingleRevisionSpec,
+    stack::{InitializationPolicy, Stack, StackAccess},
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "id",
@@ -30,17 +35,23 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("stgit-revision")
                 .value_name("revision")
-                .value_parser(clap::value_parser!(String))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(SingleRevisionSpec))
                 .help("StGit revision"),
         )
 }
 
 fn run(matches: &ArgMatches) -> Result<()> {
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let opt_spec = argset::get_one_str(matches, "stgit-revision");
-
     let repo = gix::Repository::open()?;
-    let oid = parse_stgit_revision(&repo, opt_spec, opt_branch)?.id();
+    let opt_branch = argset::get_one_str(matches, "branch");
+    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
+
+    let oid = matches
+        .get_one::<SingleRevisionSpec>("stgit-revision")
+        .map(|spec| spec.resolve_object(&repo, &stack).map(|object| object.id))
+        .transpose()?
+        .unwrap_or_else(|| stack.get_branch_head().id);
+
     println!("{oid}");
     Ok(())
 }

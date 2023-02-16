@@ -12,7 +12,7 @@ use termcolor::WriteColor;
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
 };
 
@@ -53,7 +53,8 @@ fn make() -> clap::Command {
                 .help("Patches to display")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with_all(["all", "applied", "unapplied", "hidden", "short"]),
         )
         .arg(argset::branch_arg())
@@ -350,12 +351,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     let mut patches: Vec<Entry> = vec![];
 
-    if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges-all") {
+    if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-all") {
         let top_patchname = stack.applied().last();
-        for patchname in patchrange::contiguous_patches_from_specs(
-            range_specs,
+        for patchname in patchrange::resolve_names_contiguous(
             &stack,
-            patchrange::Allow::AllWithAppliedBoundary,
+            range_specs,
+            RangeConstraint::AllWithAppliedBoundary,
         )? {
             let commit_id = stack.get_patch_commit_id(&patchname);
             let sigil = if Some(&patchname) == top_patchname {

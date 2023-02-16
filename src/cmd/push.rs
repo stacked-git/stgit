@@ -9,7 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -46,7 +46,7 @@ fn make() -> clap::Command {
                 .help("Patches to push")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with_all(["all", "number"]),
         )
         .arg(
@@ -126,48 +126,43 @@ fn run(matches: &ArgMatches) -> Result<()> {
         return Ok(());
     }
 
-    let mut patches: Vec<PatchName> = if let Some(range_specs) =
-        matches.get_many::<patchrange::Specification>("patchranges-unapplied")
-    {
-        patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::Unapplied).map_err(
-            |e| match e {
-                patchrange::Error::BoundaryNotAllowed { patchname, range }
-                    if stack.is_applied(&patchname) =>
-                {
-                    anyhow!("patch `{patchname}` from `{range}` is already applied")
+    let mut patches: Vec<PatchName> =
+        if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-unapplied") {
+            patchrange::resolve_names(&stack, range_specs, RangeConstraint::Unapplied).map_err(
+                |e| match e {
+                    patchrange::Error::Name(crate::patch::name::Error::PatchNotAllowed {
+                        patchname,
+                        ..
+                    }) if stack.is_applied(&patchname) => {
+                        anyhow!("patch `{patchname}` is already applied")
+                    }
+                    _ => e.into(),
+                },
+            )?
+        } else if stack.unapplied().is_empty() {
+            return Err(anyhow!("no unapplied patches"));
+        } else if matches.get_flag("all") {
+            stack.unapplied().to_vec()
+        } else if let Some(number) = opt_number {
+            let num_unapplied = stack.unapplied().len();
+            let num_to_take: usize = {
+                if number >= 0 {
+                    std::cmp::min(number as usize, num_unapplied)
+                } else if number.unsigned_abs() < num_unapplied {
+                    num_unapplied - number.unsigned_abs()
+                } else {
+                    0
                 }
-                patchrange::Error::PatchNotAllowed { patchname, .. }
-                    if stack.is_applied(&patchname) =>
-                {
-                    anyhow!("patch `{patchname}` is already applied")
-                }
-                _ => e.into(),
-            },
-        )?
-    } else if stack.unapplied().is_empty() {
-        return Err(anyhow!("no unapplied patches"));
-    } else if matches.get_flag("all") {
-        stack.unapplied().to_vec()
-    } else if let Some(number) = opt_number {
-        let num_unapplied = stack.unapplied().len();
-        let num_to_take: usize = {
-            if number >= 0 {
-                std::cmp::min(number as usize, num_unapplied)
-            } else if number.unsigned_abs() < num_unapplied {
-                num_unapplied - number.unsigned_abs()
-            } else {
-                0
-            }
+            };
+            stack
+                .unapplied()
+                .iter()
+                .take(num_to_take)
+                .cloned()
+                .collect()
+        } else {
+            stack.unapplied().iter().take(1).cloned().collect()
         };
-        stack
-            .unapplied()
-            .iter()
-            .take(num_to_take)
-            .cloned()
-            .collect()
-    } else {
-        stack.unapplied().iter().take(1).cloned().collect()
-    };
 
     assert!(!patches.is_empty());
 

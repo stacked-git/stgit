@@ -2,14 +2,14 @@
 
 //! `stg goto` implementation.
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
 use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{LocationConstraint, PatchLocator, PatchName},
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -32,7 +32,8 @@ fn make() -> clap::Command {
             Arg::new("patch")
                 .help("Patch to go to")
                 .required(true)
-                .value_parser(clap::value_parser!(PatchName)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchLocator)),
         )
 }
 
@@ -41,7 +42,6 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
-    let patch_arg = matches.get_one::<PatchName>("patch").unwrap();
     let keep_flag = matches.get_flag("keep");
     let merged_flag = matches.get_flag("merged");
     let allow_push_conflicts =
@@ -56,42 +56,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         statuses.check_index_and_worktree_clean()?;
     }
 
-    let patchname = match patchrange::parse_single(patch_arg, &stack, patchrange::Allow::Visible) {
-        Ok(patchname) => Ok(patchname),
-        Err(e @ patchrange::Error::PatchNotKnown { .. }) => {
-            let oid_prefix: &str = patch_arg.as_ref();
-            if oid_prefix.len() >= 4 && oid_prefix.chars().all(|c| c.is_ascii_hexdigit()) {
-                let oid_matches: Vec<&PatchName> = stack
-                    .all_patches()
-                    .filter(|pn| {
-                        stack
-                            .get_patch(pn)
-                            .commit
-                            .id()
-                            .to_string()
-                            .chars()
-                            .zip(oid_prefix.chars())
-                            .all(|(a, b)| a.eq_ignore_ascii_case(&b))
-                    })
-                    .collect();
-
-                match oid_matches.len() {
-                    0 => Err(anyhow!("no patch associated with `{oid_prefix}`")),
-                    1 => Ok(oid_matches[0].clone()),
-                    _ => {
-                        println!("Possible patches:");
-                        for pn in oid_matches {
-                            println!("  {pn}");
-                        }
-                        Err(anyhow!("ambiguous commit id `{oid_prefix}`"))
-                    }
-                }
-            } else {
-                Err(e.into())
-            }
-        }
-        Err(e) => Err(e.into()),
-    }?;
+    let patchname = matches
+        .get_one::<PatchLocator>("patch")
+        .expect("required argument")
+        .resolve_name(&stack)?
+        .constrain(&stack, LocationConstraint::Visible)?;
 
     stack
         .setup_transaction()

@@ -2,7 +2,7 @@
 
 //! `stg files` implementation.
 
-use std::io::Write;
+use std::{io::Write, rc::Rc};
 
 use anyhow::Result;
 use bstr::ByteSlice;
@@ -10,7 +10,8 @@ use clap::{Arg, ArgMatches};
 
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
-    revspec::parse_stgit_revision,
+    patch::SingleRevisionSpec,
+    stack::Stack,
     stupid::Stupid,
 };
 
@@ -35,6 +36,8 @@ fn make() -> clap::Command {
         .arg(
             Arg::new("stgit-revision")
                 .value_name("revision")
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(SingleRevisionSpec))
                 .help("StGit revision"),
         )
         .arg(
@@ -56,8 +59,15 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_spec = crate::argset::get_one_str(matches, "stgit-revision");
-    let commit = parse_stgit_revision(&repo, opt_spec, None)?.try_into_commit()?;
+    let commit = if let Some(commit) = matches
+        .get_one::<SingleRevisionSpec>("stgit-revision")
+        .map(|spec| spec.resolve(&repo, None::<&Stack>).map(|rev| rev.commit))
+        .transpose()?
+    {
+        commit
+    } else {
+        Rc::new(repo.head_commit()?)
+    };
     let parent = commit.get_parent_commit()?;
     let mut output = repo.stupid().diff_tree_files_status(
         parent.tree_id()?.detach(),

@@ -16,7 +16,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
 };
@@ -44,7 +44,8 @@ fn make() -> clap::Command {
                 .help("Patches to synchronize")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange)),
         )
         .arg(
             Arg::new("all")
@@ -92,11 +93,11 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
     let patches: Vec<PatchName> = if matches.get_flag("all") {
         stack.applied().to_vec()
-    } else if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
-        patchrange::contiguous_patches_from_specs(
-            range_specs,
+    } else if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges") {
+        patchrange::resolve_names_contiguous(
             &stack,
-            patchrange::Allow::VisibleWithAppliedBoundary,
+            range_specs,
+            RangeConstraint::VisibleWithAppliedBoundary,
         )?
     } else if let Some(patchname) = stack.applied().last() {
         vec![patchname.clone()]

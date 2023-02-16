@@ -9,7 +9,7 @@ use super::{
     iter::{AllPatches, BothPatches},
     state::PatchState,
 };
-use crate::patch::PatchName;
+use crate::patch::{LocationConstraint, LocationGroup, PatchName};
 
 /// Trait for accessing information about a stack, including its parent branch.
 ///
@@ -163,6 +163,28 @@ pub(crate) trait StackStateAccess<'repo> {
                 .find_map(|(i, pn)| (pn == patchname).then_some(i))
                 .expect("patchname must be in stack");
             (index1 - index0).try_into().expect("distance fits isize")
+        }
+    }
+
+    fn location_group(&self, patchname: &PatchName) -> LocationGroup {
+        if self.applied().contains(patchname) {
+            LocationGroup::Applied
+        } else if self.unapplied().contains(patchname) {
+            LocationGroup::Unapplied
+        } else if self.hidden().contains(patchname) {
+            LocationGroup::Hidden
+        } else {
+            panic!("BUG: location_group() must be called with known patch name")
+        }
+    }
+
+    fn get_allowed(&self, constraint: LocationConstraint) -> Vec<&PatchName> {
+        match constraint {
+            LocationConstraint::All => self.all_patches().collect(),
+            LocationConstraint::Visible => self.applied_and_unapplied().collect(),
+            LocationConstraint::Applied => self.applied().iter().collect(),
+            LocationConstraint::Unapplied => self.unapplied().iter().collect(),
+            LocationConstraint::Hidden => self.hidden().iter().collect(),
         }
     }
 }

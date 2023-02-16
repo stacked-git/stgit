@@ -9,7 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack},
 };
 
@@ -33,7 +33,7 @@ fn make() -> clap::Command {
                 .help("Patches to unhide")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(PatchRange))
                 .required(true),
         )
         .arg(argset::branch_arg())
@@ -49,22 +49,22 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let specs = matches
-        .get_many::<patchrange::Specification>("patchranges-hidden")
+    let range_specs = matches
+        .get_many::<PatchRange>("patchranges-hidden")
         .expect("clap ensures at least one range is provided");
 
     let patches: Vec<PatchName> =
-        patchrange::patches_from_specs(specs, &stack, patchrange::Allow::Hidden).map_err(|e| {
-            match e {
-                patchrange::Error::BoundaryNotAllowed { patchname, range } => {
-                    anyhow!("patch `{patchname}` from `{range}` is not hidden")
-                }
-                patchrange::Error::PatchNotAllowed { patchname, .. } => {
+        patchrange::resolve_names(&stack, range_specs, RangeConstraint::Hidden).map_err(
+            |e| match e {
+                patchrange::Error::Name(crate::patch::name::Error::PatchNotAllowed {
+                    patchname,
+                    ..
+                }) => {
                     anyhow!("patch `{patchname}` is not hidden")
                 }
                 _ => e.into(),
-            }
-        })?;
+            },
+        )?;
 
     stack
         .setup_transaction()

@@ -179,9 +179,9 @@ test_expect_success 'Pick commit with expose' '
 
 test_expect_success 'Pick too many commits' '
     stg pick --ref-branch foo $(cat C-id) D-foo &&
-    test "$(echo $(stg series --applied --noprefix))" = "C2 c-1 d-1" &&
+    test "$(echo $(stg series --applied --noprefix))" = "C2 c-1 D-foo" &&
     test "$(echo $(stg series --unapplied --noprefix))" = "A B C D" &&
-    stg delete c-1 d-1
+    stg delete c-1 D-foo
 '
 
 test_expect_success 'Pick with conflict' '

@@ -8,7 +8,7 @@ use clap::Arg;
 use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::patchrange,
+    patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackState},
     stupid::Stupid,
 };
@@ -46,7 +46,8 @@ fn make() -> clap::Command {
                 .help("Only reset these patches")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange)),
         )
         .arg(
             Arg::new("hard")
@@ -72,23 +73,14 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             .setup_transaction()
             .use_index_and_worktree(true)
             .discard_changes(matches.get_flag("hard"))
-            .allow_bad_head(
-                matches
-                    .get_many::<patchrange::Specification>("patchranges-all")
-                    .is_none(),
-            )
+            .allow_bad_head(matches.get_many::<PatchRange>("patchranges-all").is_none())
             .with_output_stream(get_color_stdout(matches))
             .transact(|trans| {
                 let commit = trans.repo().find_commit(commit_id)?;
                 let reset_state = StackState::from_commit(trans.repo(), &commit)?;
-                if let Some(range_specs) =
-                    matches.get_many::<patchrange::Specification>("patchranges-all")
-                {
-                    let patchnames = patchrange::patches_from_specs(
-                        range_specs,
-                        &reset_state,
-                        patchrange::Allow::All,
-                    )?;
+                if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-all") {
+                    let patchnames =
+                        patchrange::resolve_names(&reset_state, range_specs, RangeConstraint::All)?;
                     trans.reset_to_state_partially(&reset_state, &patchnames)
                 } else {
                     trans.reset_to_state(reset_state)

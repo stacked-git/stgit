@@ -11,7 +11,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -47,7 +47,7 @@ fn make() -> clap::Command {
                 .help("Patches to pop")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with_all(["all", "number"]),
         )
         .arg(
@@ -119,24 +119,19 @@ fn run(matches: &ArgMatches) -> Result<()> {
             .take(num_to_take)
             .cloned()
             .collect()
-    } else if let Some(range_specs) =
-        matches.get_many::<patchrange::Specification>("patchranges-applied")
-    {
+    } else if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-applied") {
         indexmap::IndexSet::from_iter(
-            patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::Applied)
-                .map_err(|e| match e {
-                    patchrange::Error::BoundaryNotAllowed { patchname, range }
-                        if stack.is_unapplied(&patchname) =>
-                    {
-                        anyhow!("patch `{patchname}` from `{range}` is already unapplied")
-                    }
-                    patchrange::Error::PatchNotAllowed { patchname, .. }
-                        if stack.is_unapplied(&patchname) =>
-                    {
+            patchrange::resolve_names(&stack, range_specs, RangeConstraint::Applied).map_err(
+                |e| match e {
+                    patchrange::Error::Name(crate::patch::name::Error::PatchNotAllowed {
+                        patchname,
+                        ..
+                    }) if stack.is_unapplied(&patchname) => {
                         anyhow!("patch `{patchname}` is already unapplied")
                     }
                     _ => e.into(),
-                })?,
+                },
+            )?,
         )
     } else {
         stack.applied().iter().rev().take(1).cloned().collect()

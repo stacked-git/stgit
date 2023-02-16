@@ -16,7 +16,7 @@ use crate::{
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     hook::run_pre_commit_hook,
-    patch::{patchedit, PatchName},
+    patch::{patchedit, PatchLocator, PatchName},
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::{
         status::{Status, StatusEntryKind, StatusOptions, Statuses},
@@ -112,7 +112,8 @@ fn make() -> clap::Command {
                 .num_args(1)
                 .value_name("patch")
                 .value_hint(ValueHint::Other)
-                .value_parser(clap::value_parser!(PatchName)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchLocator)),
         )
         .arg(
             Arg::new("annotate")
@@ -162,12 +163,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     stack.check_head_top_mismatch()?;
 
-    let patchname = if let Some(patchname) = matches.get_one::<PatchName>("patch") {
-        if stack.has_patch(patchname) {
-            patchname.clone()
-        } else {
-            return Err(anyhow!("patch `{patchname}` does not exist"));
-        }
+    let patchname = if let Some(patch_loc) = matches.get_one::<PatchLocator>("patch") {
+        patch_loc.resolve_name(&stack)?
     } else if let Some(top_patchname) = stack.applied().last() {
         top_patchname.clone()
     } else {

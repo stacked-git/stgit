@@ -38,7 +38,7 @@ test_expect_success 'Attempt goto invalid patch' '
 
 test_expect_success 'Attempt goto invalid hash' '
     command_error stg goto beeff00d 2>err &&
-    grep -e "error: no patch associated with \`beeff00d\`" err
+    grep -e "error: patch \`beeff00d\` does not exist" err
 '
 
 test_expect_success 'Goto a patch' '
@@ -72,8 +72,8 @@ test_expect_success 'Goto with merge check' '
 '
 
 test_expect_success 'Goto with ambiguous patch substring' '
-    command_error stg goto 1 2>err &&
-    grep "error: patch \`1\` does not exist" err &&
+    command_error stg goto q1 2>err &&
+    grep "error: patch \`q1\` does not exist" err &&
     command_error stg goto p 2>err &&
     grep "patch \`p\` does not exist, but is similar to \`p1\`, \`p2\`" err
 '

@@ -9,7 +9,7 @@ use crate::{
     argset,
     color::get_color_stdout,
     ext::RepositoryExtended,
-    patch::{patchrange, PatchName},
+    patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
 };
@@ -33,7 +33,8 @@ fn make() -> clap::Command {
                 .help("Patches to delete")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification))
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange))
                 .conflicts_with("top")
                 .required_unless_present("top"),
         )
@@ -77,14 +78,10 @@ fn run(matches: &ArgMatches) -> Result<()> {
             return Err(Error::NoAppliedPatches.into());
         }
     } else {
-        let patchranges = matches
-            .get_many::<patchrange::Specification>("patchranges-all")
+        let range_specs = matches
+            .get_many::<PatchRange>("patchranges-all")
             .expect("clap will ensure either patches or --top");
-        patchrange::patches_from_specs(
-            patchranges,
-            &stack,
-            patchrange::Allow::AllWithAppliedBoundary,
-        )?
+        patchrange::resolve_names(&stack, range_specs, RangeConstraint::AllWithAppliedBoundary)?
     };
 
     if spill_flag

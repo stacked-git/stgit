@@ -2,14 +2,14 @@
 
 //! `stg fold` implementation.
 
-use std::{io::Read, path::PathBuf};
+use std::{io::Read, path::PathBuf, rc::Rc};
 
 use anyhow::Result;
 use clap::{Arg, ArgGroup};
 
 use crate::{
     ext::{CommitExtended, RepositoryExtended},
-    revspec::parse_stgit_revision,
+    patch::SingleRevisionSpec,
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -51,7 +51,8 @@ fn make() -> clap::Command {
                 .long("base")
                 .short('b')
                 .help("Use <committish> instead of HEAD when applying the patch")
-                .value_name("committish"),
+                .value_name("committish")
+                .value_parser(clap::value_parser!(SingleRevisionSpec)),
         )
         .group(ArgGroup::new("merge-style").args(["three-way", "base"]))
         .arg(
@@ -109,9 +110,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     stupid.update_index_refresh()?;
 
     let base_commit = if matches.get_flag("three-way") {
-        Some(stack.top().get_parent_commit()?)
-    } else if let Some(base_spec) = matches.get_one::<String>("base") {
-        Some(parse_stgit_revision(&repo, Some(base_spec), None)?.try_into_commit()?)
+        Some(Rc::new(stack.top().get_parent_commit()?))
+    } else if let Some(base_spec) = matches.get_one::<SingleRevisionSpec>("base") {
+        let rev = base_spec.resolve(&repo, Some(&stack))?;
+        Some(rev.commit)
     } else {
         None
     };

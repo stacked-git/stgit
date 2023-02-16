@@ -1,54 +1,28 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-//! Parse user-provided patch ranges.
+//! Implementations for [`PatchRange`] and [`PatchRangeBounds`].
 
-use std::{fmt::Write, str::FromStr};
+use std::str::FromStr;
 
-use super::PatchName;
-use crate::stack::StackStateAccess;
+use super::{
+    PatchName, PatchRange, PatchRangeBounds, RangeConstraint, StGitBoundaryRevisions, StGitRevision,
+};
+use crate::stack::{StackAccess, StackStateAccess};
 
 /// Patch range parsing error variants.
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {
     #[error(transparent)]
-    PatchName(#[from] super::name::Error),
+    Name(#[from] super::name::Error),
+
+    #[error(transparent)]
+    Locator(#[from] super::locator::Error),
+
+    #[error("invalid patch range `{0}`")]
+    InvalidPatchRange(String),
 
     #[error("patch `{patchname}` is used more than once")]
     Duplicate { patchname: PatchName },
-
-    #[error("patch `{patchname}` in `{range}` is not allowed")]
-    BoundaryNotAllowed { patchname: PatchName, range: String },
-
-    #[error("patch `{patchname}` in `{range}` does not exist")]
-    BoundaryNotKnown { patchname: PatchName, range: String },
-
-    #[error(
-        "patch `{patchname}` in `{range}` does not exist, \
-         but is similar to {similar_patchnames}"
-    )]
-    BoundarySimilar {
-        patchname: PatchName,
-        range: String,
-        similar_patchnames: String,
-    },
-
-    #[error("{whence} patch `{patchname}` is not allowed")]
-    PatchNotAllowed {
-        whence: &'static str,
-        patchname: PatchName,
-    },
-
-    #[error("patch `{patchname}` does not exist")]
-    PatchNotKnown { patchname: PatchName },
-
-    #[error(
-        "patch `{patchname}` does not exist, \
-         but is similar to {similar_patchnames}"
-    )]
-    PatchSimilar {
-        patchname: PatchName,
-        similar_patchnames: String,
-    },
 
     #[error("`{range}` not contiguous with preceding range `{prev_range}`")]
     NotContiguous { range: String, prev_range: String },
@@ -60,195 +34,153 @@ pub(crate) enum Error {
     },
 }
 
-/// Indicates which patches are allowed in user-supplied patch ranges.
-///
-/// The `AllWithAppliedBoundary` and `VisibleWithAppliedBoundary` variants allow all and
-/// visible (applied + unapplied), respectively, but constrain open-ended patch ranges
-/// to the last applied patch when the beginning of the open range is an applied patch.
-#[derive(Clone, Copy)]
-pub(crate) enum Allow {
-    All,
-    AllWithAppliedBoundary,
-    Visible,
-    VisibleWithAppliedBoundary,
-    Applied,
-    Unapplied,
-    Hidden,
-}
-
-impl Allow {
-    fn use_applied_boundary(self) -> bool {
-        matches!(
-            self,
-            Allow::AllWithAppliedBoundary | Allow::VisibleWithAppliedBoundary
-        )
-    }
-
-    fn get_allowed<'repo, 'a>(
-        self,
-        stack_state: &'a impl StackStateAccess<'repo>,
-    ) -> Vec<&'a PatchName> {
-        match self {
-            Allow::All | Allow::AllWithAppliedBoundary => stack_state.all_patches().collect(),
-            Allow::Visible | Allow::VisibleWithAppliedBoundary => {
-                stack_state.applied_and_unapplied().collect()
-            }
-            Allow::Applied => stack_state.applied().iter().collect(),
-            Allow::Unapplied => stack_state.unapplied().iter().collect(),
-            Allow::Hidden => stack_state.hidden().iter().collect(),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub(crate) enum Specification {
-    Single(PatchName),
-    Range(PatchRange),
-}
-
-#[derive(Clone)]
-pub(crate) struct PatchRange {
-    pub begin: Option<PatchName>,
-    pub end: Option<PatchName>,
-}
-
-impl std::fmt::Display for Specification {
+impl std::fmt::Display for PatchRange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Specification::Single(patchname) => write!(f, "{patchname}"),
-            Specification::Range(PatchRange {
-                begin: Some(begin),
-                end: Some(end),
-            }) => write!(f, "{begin}..{end}"),
-            Specification::Range(PatchRange {
-                begin: None,
-                end: Some(end),
-            }) => write!(f, "..{end}"),
-            Specification::Range(PatchRange {
-                begin: Some(begin),
-                end: None,
-            }) => write!(f, "{begin}.."),
-            Specification::Range(PatchRange {
-                begin: None,
-                end: None,
-            }) => write!(f, ".."),
+            PatchRange::Single(patch_loc) => write!(f, "{patch_loc}"),
+            PatchRange::Range(bounds) => write!(f, "{bounds}"),
         }
     }
 }
 
-impl FromStr for Specification {
+impl FromStr for PatchRange {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let spec = if let Some((begin_name, end_name)) = s.split_once("..") {
-            Specification::Range(PatchRange {
-                begin: if begin_name.is_empty() {
-                    None
-                } else {
-                    Some(PatchName::from_str(begin_name)?)
-                },
-                end: if end_name.is_empty() {
-                    None
-                } else {
-                    Some(PatchName::from_str(end_name)?)
-                },
-            })
-        } else {
-            Specification::Single(PatchName::from_str(s)?)
-        };
-
-        Ok(spec)
+        use nom::combinator::{all_consuming, complete};
+        complete(all_consuming(super::parse::patch_range))(s)
+            .map(|(_, range)| range)
+            .map_err(|_| Error::InvalidPatchRange(s.to_string()))
     }
 }
 
-/// Parse user-provided patch range strings.
+impl From<&PatchRangeBounds> for PatchRange {
+    fn from(bounds: &PatchRangeBounds) -> Self {
+        PatchRange::Range(bounds.clone())
+    }
+}
+
+impl std::fmt::Display for PatchRangeBounds {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match (self.begin.as_ref(), self.end.as_ref()) {
+            (None, None) => write!(f, ".."),
+            (None, Some(end)) => write!(f, "..{end}"),
+            (Some(begin), None) => write!(f, "{begin}.."),
+            (Some(begin), Some(end)) => write!(f, "{begin}..{end}"),
+        }
+    }
+}
+
+impl PatchRangeBounds {
+    /// Resolve patchname and commit object based on patch location and offsets.
+    ///
+    /// Unlike [`resolve_names()`], the offsets are allowed to land on commits outside
+    /// of the stack.
+    pub(crate) fn resolve_revisions<'repo>(
+        &self,
+        stack: &impl StackAccess<'repo>,
+        use_applied_boundary: bool,
+    ) -> Result<StGitBoundaryRevisions<'repo>, Error> {
+        let Self { begin, end } = self;
+        let rev0 = if let Some(patch_loc) = begin {
+            patch_loc.resolve_revision(stack)?
+        } else if let Some(first_patchname) = stack.applied().first() {
+            StGitRevision {
+                patchname: Some(first_patchname.clone()),
+                commit: stack.get_patch_commit(first_patchname).clone(),
+            }
+        } else {
+            StGitRevision {
+                patchname: None,
+                commit: stack.base().clone(),
+            }
+        };
+        let rev1 = if let Some(patch_loc) = end {
+            patch_loc.resolve_revision(stack)?
+        } else if use_applied_boundary {
+            if let Some(top_patchname) = stack.applied().last() {
+                StGitRevision {
+                    patchname: Some(top_patchname.clone()),
+                    commit: stack.get_patch_commit(top_patchname).clone(),
+                }
+            } else {
+                StGitRevision {
+                    patchname: None,
+                    commit: stack.base().clone(),
+                }
+            }
+        } else if let Some(last_patchname) = stack.applied_and_unapplied().last() {
+            StGitRevision {
+                patchname: Some(last_patchname.clone()),
+                commit: stack.get_patch_commit(last_patchname).clone(),
+            }
+        } else {
+            StGitRevision {
+                patchname: None,
+                commit: stack.base().clone(),
+            }
+        };
+
+        Ok(StGitBoundaryRevisions::Bounds((rev0, rev1)))
+    }
+}
+
+/// Resolve user-provided patch ranges into patch names.
 ///
-/// A patch range names one or more patches. A patch range may be one of the following
-/// forms:
+/// The subset of known patches allowed in the patch ranges is indicated by the `allow`
+/// parameter.
 ///
-/// - A single (valid) patch name.
-/// - An open ended patch range, e.g. `patch..`.
-/// - An open beginning patch range, e.g. `..patch`
-/// - Or a closed range, e.g. `patch0..patchN`
+/// It is an error for the same patch to be duplicated in any of the provided ranges.
 ///
-/// The subset of known patches allowed in user-provided patch ranges is indicated by
-/// the `allow` parameter.
-///
-/// It is an error for the same patch to be duplicated in any of the `range_args`.
-///
-/// The ordering of patches as found in `range_args` does not have to match the ordering
-/// found in the stack. See [`contiguous_patches_from_specs()`] for a similar function
-/// which does impose this ordering constraint.
-pub(crate) fn patches_from_specs<'repo, 'a>(
-    range_specs: impl IntoIterator<Item = &'a Specification>,
-    stack_state: &impl StackStateAccess<'repo>,
-    allow: Allow,
+/// The ordering of patches as found in `ranges` does not have to match the ordering
+/// found in the stack. See [`resolve_names_contiguous()`] for a similar function which
+/// does impose this ordering constraint.
+pub(crate) fn resolve_names<'a, 'repo>(
+    stack: &'a impl StackStateAccess<'repo>,
+    ranges: impl IntoIterator<Item = &'a PatchRange>,
+    allow: RangeConstraint,
 ) -> Result<Vec<PatchName>, Error> {
-    let allowed_patches: Vec<&PatchName> = allow.get_allowed(stack_state);
+    let allowed_patches: Vec<&PatchName> = stack.get_allowed(allow.into());
     let mut patches: Vec<PatchName> = Vec::new();
 
-    for spec in range_specs {
-        match spec {
-            Specification::Range(patchrange) => {
-                let begin_pos = if let Some(patchname) = patchrange.begin.as_ref() {
-                    allowed_patches
-                        .iter()
-                        .position(|&pn| pn == patchname)
-                        .ok_or_else(|| {
-                            if stack_state.has_patch(patchname) {
-                                Error::BoundaryNotAllowed {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            } else if let Some(similar_patchnames) =
-                                similar_patchnames(patchname, &allowed_patches)
-                            {
-                                Error::BoundarySimilar {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                    similar_patchnames,
-                                }
-                            } else {
-                                Error::BoundaryNotKnown {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            }
-                        })?
-                } else {
-                    0
-                };
+    for range in ranges {
+        match range {
+            PatchRange::Range(PatchRangeBounds { begin, end }) => {
+                let begin = begin
+                    .as_ref()
+                    .map(|loc| loc.resolve_name(stack))
+                    .transpose()?
+                    .map_or_else(
+                        || Ok(None),
+                        |pn| Some(pn.constrain(stack, allow.into())).transpose(),
+                    )?;
 
-                let end_pos = if let Some(patchname) = patchrange.end.as_ref() {
+                let end = end
+                    .as_ref()
+                    .map(|loc| loc.resolve_name(stack))
+                    .transpose()?
+                    .map_or_else(
+                        || Ok(None),
+                        |pn| Some(pn.constrain(stack, allow.into())).transpose(),
+                    )?;
+
+                let begin_pos = begin.map_or(0, |patchname| {
                     allowed_patches
                         .iter()
-                        .position(|&pn| pn == patchname)
-                        .ok_or_else(|| {
-                            if stack_state.has_patch(patchname) {
-                                Error::BoundaryNotAllowed {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            } else if let Some(similar_patchnames) =
-                                similar_patchnames(patchname, &allowed_patches)
-                            {
-                                Error::BoundarySimilar {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                    similar_patchnames,
-                                }
-                            } else {
-                                Error::BoundaryNotKnown {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            }
-                        })?
+                        .position(|&pn| pn == &patchname)
+                        .expect("begin patchname already constrained to the allowed patches")
+                });
+
+                let end_pos = if let Some(patchname) = end {
+                    allowed_patches
+                        .iter()
+                        .position(|&pn| pn == &patchname)
+                        .expect("end patchname already constrained to allowed patches")
                 } else if allow.use_applied_boundary()
-                    && !stack_state.applied().is_empty()
-                    && begin_pos < stack_state.applied().len()
+                    && !stack.applied().is_empty()
+                    && begin_pos < stack.applied().len()
                 {
-                    stack_state.applied().len() - 1
+                    stack.applied().len() - 1
                 } else if !allowed_patches.is_empty() {
                     allowed_patches.len() - 1
                 } else {
@@ -274,26 +206,12 @@ pub(crate) fn patches_from_specs<'repo, 'a>(
                 }
             }
 
-            Specification::Single(patchname) => {
-                let patchname = patchname.clone();
+            PatchRange::Single(patch_loc) => {
+                let patchname = patch_loc
+                    .resolve_name(stack)?
+                    .constrain(stack, allow.into())?;
                 if patches.contains(&patchname) {
                     return Err(Error::Duplicate { patchname });
-                } else if !allowed_patches.contains(&&patchname) {
-                    return Err(if stack_state.has_patch(&patchname) {
-                        Error::PatchNotAllowed {
-                            whence: from_whence(&patchname, stack_state),
-                            patchname,
-                        }
-                    } else if let Some(similar_patchnames) =
-                        similar_patchnames(&patchname, &allowed_patches)
-                    {
-                        Error::PatchSimilar {
-                            patchname,
-                            similar_patchnames,
-                        }
-                    } else {
-                        Error::PatchNotKnown { patchname }
-                    });
                 }
                 patches.push(patchname);
             }
@@ -303,98 +221,70 @@ pub(crate) fn patches_from_specs<'repo, 'a>(
     Ok(patches)
 }
 
-pub(crate) fn contiguous_patches_from_specs<'repo, 'a>(
-    range_specs: impl IntoIterator<Item = &'a Specification>,
-    stack_state: &impl StackStateAccess<'repo>,
-    allow: Allow,
+/// Resolve user-provided patch ranges into contiguous patch names.
+///
+/// It is an error if any of the ranges provided in `ranges` are discontiguous.
+pub(crate) fn resolve_names_contiguous<'a>(
+    stack: &'a impl StackStateAccess<'a>,
+    ranges: impl IntoIterator<Item = &'a PatchRange>,
+    allow: RangeConstraint,
 ) -> Result<Vec<PatchName>, Error> {
-    let allowed_patches: Vec<&PatchName> = allow.get_allowed(stack_state);
+    let allowed_patches: Vec<&PatchName> = stack.get_allowed(allow.into());
     let mut patches: Vec<PatchName> = Vec::new();
     let mut next_pos: Option<usize> = None;
-    let mut prev_range: Option<&Specification> = None;
+    let mut prev_range: Option<&PatchRange> = None;
 
-    for spec in range_specs {
-        match spec {
-            Specification::Range(patchrange) => {
-                let begin_pos = if let Some(patchname) = patchrange.begin.as_ref() {
+    for range in ranges {
+        match range {
+            PatchRange::Range(PatchRangeBounds { begin, end }) => {
+                let begin = begin
+                    .as_ref()
+                    .map(|loc| loc.resolve_name(stack))
+                    .transpose()?
+                    .map_or_else(
+                        || Ok(None),
+                        |pn| Some(pn.constrain(stack, allow.into())).transpose(),
+                    )?;
+
+                let end = end
+                    .as_ref()
+                    .map(|loc| loc.resolve_name(stack))
+                    .transpose()?
+                    .map_or_else(
+                        || Ok(None),
+                        |pn| Some(pn.constrain(stack, allow.into())).transpose(),
+                    )?;
+
+                let begin_pos = begin.map_or(0, |patchname| {
                     allowed_patches
                         .iter()
-                        .position(|&pn| pn == patchname)
-                        .ok_or_else(|| {
-                            if stack_state.has_patch(patchname) {
-                                Error::BoundaryNotAllowed {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            } else if let Some(similar_patchnames) =
-                                similar_patchnames(patchname, &allowed_patches)
-                            {
-                                Error::BoundarySimilar {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                    similar_patchnames,
-                                }
-                            } else {
-                                Error::BoundaryNotKnown {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            }
-                        })
-                        .and_then(|begin_pos| {
-                            if next_pos.is_some() && Some(begin_pos) != next_pos {
-                                Err(Error::NotContiguous {
-                                    range: spec.to_string(),
-                                    prev_range: prev_range.unwrap().to_string(),
-                                })
-                            } else {
-                                Ok(begin_pos)
-                            }
-                        })?
-                } else {
-                    0
-                };
+                        .position(|&pn| pn == &patchname)
+                        .expect("begin patchname already constrained to the allowed patches")
+                });
+                if next_pos.is_some() && Some(begin_pos) != next_pos {
+                    return Err(Error::NotContiguous {
+                        range: range.to_string(),
+                        prev_range: prev_range.unwrap().to_string(),
+                    });
+                }
 
-                let end_pos = if let Some(patchname) = patchrange.end.as_ref() {
-                    allowed_patches
+                let end_pos = if let Some(patchname) = end {
+                    let end_pos = allowed_patches
                         .iter()
-                        .position(|&pn| pn == patchname)
-                        .ok_or_else(|| {
-                            if stack_state.has_patch(patchname) {
-                                Error::BoundaryNotAllowed {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            } else if let Some(similar_patchnames) =
-                                similar_patchnames(patchname, &allowed_patches)
-                            {
-                                Error::BoundarySimilar {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                    similar_patchnames,
-                                }
-                            } else {
-                                Error::BoundaryNotKnown {
-                                    patchname: patchname.clone(),
-                                    range: spec.to_string(),
-                                }
-                            }
-                        })
-                        .and_then(|end_pos| {
-                            if end_pos < begin_pos {
-                                Err(Error::BoundaryOrder {
-                                    begin_patchname: allowed_patches[begin_pos].clone(),
-                                    end_patchname: patchname.clone(),
-                                })
-                            } else {
-                                Ok(end_pos)
-                            }
-                        })?
+                        .position(|&pn| pn == &patchname)
+                        .expect("end patchname already constrained to allowed patches");
+                    if end_pos < begin_pos {
+                        return Err(Error::BoundaryOrder {
+                            begin_patchname: allowed_patches[begin_pos].clone(),
+                            end_patchname: patchname,
+                        });
+                    }
+                    end_pos
                 } else if allow.use_applied_boundary()
-                    && !stack_state.applied().is_empty()
-                    && begin_pos < stack_state.applied().len()
+                    && !stack.applied().is_empty()
+                    && begin_pos < stack.applied().len()
                 {
-                    stack_state.applied().len() - 1
+                    stack.applied().len() - 1
                 } else if !allowed_patches.is_empty() {
                     allowed_patches.len() - 1
                 } else {
@@ -413,117 +303,31 @@ pub(crate) fn contiguous_patches_from_specs<'repo, 'a>(
 
                 next_pos = Some(end_pos + 1);
             }
-            Specification::Single(patchname) => {
-                let patchname = patchname.clone();
+            PatchRange::Single(patch_loc) => {
+                let patchname = patch_loc
+                    .resolve_name(stack)?
+                    .constrain(stack, allow.into())?;
                 if patches.contains(&patchname) {
                     return Err(Error::Duplicate { patchname });
                 } else {
                     let pos = allowed_patches
                         .iter()
                         .position(|&pn| pn == &patchname)
-                        .ok_or_else(|| {
-                            if stack_state.has_patch(&patchname) {
-                                Error::PatchNotAllowed {
-                                    whence: from_whence(&patchname, stack_state),
-                                    patchname: patchname.clone(),
-                                }
-                            } else if let Some(similar_patchnames) =
-                                similar_patchnames(&patchname, &allowed_patches)
-                            {
-                                Error::PatchSimilar {
-                                    patchname: patchname.clone(),
-                                    similar_patchnames,
-                                }
-                            } else {
-                                Error::PatchNotKnown {
-                                    patchname: patchname.clone(),
-                                }
-                            }
-                        })
-                        .and_then(|pos| {
-                            if next_pos.is_some() && Some(pos) != next_pos {
-                                Err(Error::NotContiguous {
-                                    range: spec.to_string(),
-                                    prev_range: prev_range.unwrap().to_string(),
-                                })
-                            } else {
-                                Ok(pos)
-                            }
-                        })?;
+                        .expect("patchname already constrained to allowed patches");
+                    if next_pos.is_some() && Some(pos) != next_pos {
+                        return Err(Error::NotContiguous {
+                            range: range.to_string(),
+                            prev_range: prev_range.unwrap().to_string(),
+                        });
+                    }
                     patches.push(patchname);
                     next_pos = Some(pos + 1);
                 }
             }
         }
 
-        prev_range = Some(spec);
+        prev_range = Some(range);
     }
 
     Ok(patches)
-}
-
-/// Parse a single (non-range) patch argument.
-pub(crate) fn parse_single<'repo>(
-    patchname: &PatchName,
-    stack_state: &impl StackStateAccess<'repo>,
-    allow: Allow,
-) -> Result<PatchName, Error> {
-    let allowed_patches: Vec<&PatchName> = allow.get_allowed(stack_state);
-    let allowed_patches = allowed_patches.as_slice();
-    let patchname = patchname.clone();
-    if allowed_patches.contains(&&patchname) {
-        Ok(patchname)
-    } else if stack_state.has_patch(&patchname) {
-        Err(Error::PatchNotAllowed {
-            whence: from_whence(&patchname, stack_state),
-            patchname,
-        })
-    } else if let Some(similar_patchnames) = similar_patchnames(&patchname, allowed_patches) {
-        Err(Error::PatchSimilar {
-            patchname,
-            similar_patchnames,
-        })
-    } else {
-        Err(Error::PatchNotKnown { patchname })
-    }
-}
-
-/// Find similar patch names from a list of allowed patch names.
-fn similar_patchnames(patchname: &PatchName, allowed_patchnames: &[&PatchName]) -> Option<String> {
-    let similar: Vec<&PatchName> = allowed_patchnames
-        .iter()
-        .filter(|pn| strsim::jaro_winkler(pn.as_ref(), patchname.as_ref()) > 0.75)
-        .copied()
-        .collect();
-
-    if similar.is_empty() {
-        None
-    } else if similar.len() == 1 {
-        Some(format!("`{}`", similar[0]))
-    } else if similar.len() == 2 {
-        Some(format!("`{}` and `{}`", similar[0], similar[1]))
-    } else {
-        let mut similar_str = String::new();
-        for pn in similar[..similar.len() - 1].iter() {
-            write!(&mut similar_str, "`{pn}`, ").unwrap();
-        }
-        write!(&mut similar_str, "and `{}`", similar[similar.len() - 1]).unwrap();
-        Some(similar_str)
-    }
-}
-
-/// Determine whether a patch is applied, unapplied, or hidden.
-fn from_whence<'repo>(
-    patchname: &PatchName,
-    stack_state: &impl StackStateAccess<'repo>,
-) -> &'static str {
-    if stack_state.hidden().contains(patchname) {
-        "hidden"
-    } else if stack_state.unapplied().contains(patchname) {
-        "unapplied"
-    } else if stack_state.applied().contains(patchname) {
-        "applied"
-    } else {
-        panic!("patch {patchname} must be known")
-    }
 }

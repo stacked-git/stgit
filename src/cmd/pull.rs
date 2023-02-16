@@ -13,7 +13,6 @@ use crate::{
     color::get_color_stdout,
     ext::RepositoryExtended,
     print_info_message,
-    revspec::parse_stgit_revision,
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -219,8 +218,8 @@ fn run(matches: &ArgMatches) -> Result<()> {
             );
             let parent_branch_name = parent_branch_name.as_ref().and_then(|bs| bs.to_str().ok());
 
-            let parent_object = if parent_branch_name.is_some() {
-                parse_stgit_revision(&repo, parent_branch_name, None)?
+            let parent_object = if let Some(name) = parent_branch_name {
+                repo.rev_parse_single_ex(name)?.object()?
             } else {
                 repo.rev_parse_single("heads/origin")
                     .map_err(|_| anyhow!("cannot find a parent branch for `{branch_name}`"))?

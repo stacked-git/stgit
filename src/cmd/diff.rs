@@ -10,7 +10,8 @@ use clap::{Arg, ArgMatches, ValueHint};
 use crate::{
     argset,
     ext::RepositoryExtended,
-    revspec::{parse_stgit_revision, Error as RevError},
+    patch::{RangeRevisionSpec, StGitBoundaryRevisions},
+    stack::Stack,
     stupid::Stupid,
 };
 
@@ -50,6 +51,7 @@ fn make() -> clap::Command {
                      patches.",
                 )
                 .value_name("revspec")
+                .value_parser(clap::value_parser!(RangeRevisionSpec))
                 .allow_hyphen_values(true),
         )
         .arg(
@@ -65,25 +67,12 @@ fn make() -> clap::Command {
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
 
-    let revspec = if let Some(range_str) = matches.get_one::<String>("range") {
-        if let Some((rev1, rev2)) = range_str.split_once("..") {
-            if rev1.is_empty() {
-                return Err(RevError::InvalidRevision(
-                    range_str.to_string(),
-                    "no opening revision supplied".to_string(),
-                )
-                .into());
+    let revspec = if let Some(range_spec) = matches.get_one::<RangeRevisionSpec>("range") {
+        match range_spec.resolve_revisions(&repo, None::<&Stack>, true)? {
+            StGitBoundaryRevisions::Single(rev) => rev.commit.id.to_string(),
+            StGitBoundaryRevisions::Bounds((rev0, rev1)) => {
+                format!("{}..{}", rev0.commit.id, rev1.commit.id)
             }
-            let rev1 = parse_stgit_revision(&repo, Some(rev1), None)?;
-            if rev2.is_empty() {
-                format!("{}..", rev1.id())
-            } else {
-                let rev2 = parse_stgit_revision(&repo, Some(rev2), None)?;
-                format!("{}..{}", rev1.id(), rev2.id())
-            }
-        } else {
-            let rev1 = parse_stgit_revision(&repo, Some(range_str), None)?;
-            rev1.id().to_string()
         }
     } else {
         "HEAD".to_string()

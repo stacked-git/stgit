@@ -16,7 +16,7 @@ use clap::Arg;
 use crate::{
     argset,
     ext::{CommitExtended, RepositoryExtended},
-    patch::patchrange,
+    patch::{patchrange, PatchRange, RangeConstraint},
     stack::{Error, InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
 };
@@ -63,7 +63,8 @@ fn make() -> clap::Command {
                 )
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification)),
+                .allow_hyphen_values(true)
+                .value_parser(clap::value_parser!(PatchRange)),
         )
         .arg(argset::branch_arg())
         .arg(
@@ -137,16 +138,15 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         );
     }
 
-    let patches =
-        if let Some(range_specs) = matches.get_many::<patchrange::Specification>("patchranges") {
-            patchrange::patches_from_specs(
-                range_specs,
-                &stack,
-                patchrange::Allow::VisibleWithAppliedBoundary,
-            )?
-        } else {
-            stack.applied().to_vec()
-        };
+    let patches = if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges") {
+        patchrange::resolve_names(
+            &stack,
+            range_specs,
+            RangeConstraint::VisibleWithAppliedBoundary,
+        )?
+    } else {
+        stack.applied().to_vec()
+    };
 
     if patches.is_empty() {
         return Err(Error::NoAppliedPatches.into());

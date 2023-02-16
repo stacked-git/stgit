@@ -8,7 +8,7 @@ use clap::{Arg, ArgMatches};
 use crate::{
     argset,
     ext::RepositoryExtended,
-    patch::patchrange,
+    patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
 };
@@ -44,7 +44,8 @@ fn make() -> clap::Command {
                 .help("Only show history for these patches")
                 .value_name("patch")
                 .num_args(1..)
-                .value_parser(clap::value_parser!(patchrange::Specification)),
+                // .allow_hyphen_values() breaks parsing of options such as "-n1"
+                .value_parser(clap::value_parser!(PatchRange)),
         )
         .arg(argset::branch_arg())
         .arg(
@@ -98,18 +99,17 @@ fn run(matches: &ArgMatches) -> Result<()> {
     if matches.get_flag("clear") {
         stack.clear_state_log("clear log")
     } else {
-        let pathspecs: Option<Vec<String>> = if let Some(range_specs) =
-            matches.get_many::<patchrange::Specification>("patchranges-all")
-        {
-            Some(
-                patchrange::patches_from_specs(range_specs, &stack, patchrange::Allow::All)?
-                    .iter()
-                    .map(|pn| format!("patches/{pn}"))
-                    .collect(),
-            )
-        } else {
-            None
-        };
+        let pathspecs: Option<Vec<String>> =
+            if let Some(range_specs) = matches.get_many::<PatchRange>("patchranges-all") {
+                Some(
+                    patchrange::resolve_names(&stack, range_specs, RangeConstraint::All)?
+                        .iter()
+                        .map(|pn| format!("patches/{pn}"))
+                        .collect(),
+                )
+            } else {
+                None
+            };
 
         let simplified_parent_id = stack
             .repo

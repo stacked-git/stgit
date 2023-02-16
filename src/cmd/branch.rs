@@ -2,7 +2,7 @@
 
 //! `stg branch` implementation.
 
-use std::io::Write;
+use std::{io::Write, rc::Rc};
 
 use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
@@ -12,6 +12,7 @@ use termcolor::WriteColor;
 use crate::{
     argset::{self, get_one_str},
     ext::RepositoryExtended,
+    patch::SingleRevisionSpec,
     print_info_message,
     stack::{
         state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess, StackStateAccess,
@@ -87,7 +88,7 @@ fn make() -> clap::Command {
                 .arg(
                     Arg::new("committish")
                         .help("Base commit for new branch")
-                        .value_parser(clap::builder::NonEmptyStringValueParser::new()),
+                        .value_parser(clap::value_parser!(SingleRevisionSpec)),
                 ),
         )
         .subcommand(
@@ -443,10 +444,15 @@ fn create(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let statuses = stupid.statuses(None)?;
     statuses.check_conflicts()?;
 
-    let parent_branch = if let Some(committish) = get_one_str(matches, "committish") {
+    let maybe_committish = matches.get_one::<SingleRevisionSpec>("committish");
+    let maybe_committish_str = matches
+        .get_raw("committish")
+        .map(|raw_values| raw_values.into_iter().next().unwrap().to_str().unwrap());
+
+    let parent_branch = if let Some(committish_str) = maybe_committish_str {
         statuses.check_worktree_clean()?;
 
-        if let Some(parent_reference) = repo.try_find_reference(committish)? {
+        if let Ok(parent_reference) = repo.find_reference(committish_str) {
             let parent_branchname = parent_reference
                 .name()
                 .shorten()
@@ -460,7 +466,7 @@ fn create(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
         } else {
             print_info_message(
                 matches,
-                &format!("Do not know how to determine parent branch from `{committish}`"),
+                &format!("Do not know how to determine parent branch from `{committish_str}`"),
             );
             None
         }
@@ -472,17 +478,16 @@ fn create(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
 
     let (target_commit, target_name) = if let Some(parent_branch) = parent_branch.as_ref() {
         (
-            parent_branch.get_commit()?,
+            Rc::new(parent_branch.get_commit()?),
             parent_branch.get_branch_name()?,
         )
-    } else if let Some(committish) = get_one_str(matches, "committish") {
+    } else if let Some(committish) = maybe_committish {
         (
-            crate::revspec::parse_stgit_revision(repo, Some(committish), None)?
-                .try_into_commit()?,
-            committish,
+            committish.resolve(repo, None::<&Stack>)?.commit,
+            maybe_committish_str.unwrap(),
         )
     } else {
-        (repo.head_commit()?, "HEAD")
+        (Rc::new(repo.head_commit()?), "HEAD")
     };
 
     let parent_branchname = parent_branch

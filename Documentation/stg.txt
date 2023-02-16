@@ -88,11 +88,13 @@ https://stacked-git.github.io/guides/tutorial[tutorial].
 Specifying patches
 ~~~~~~~~~~~~~~~~~~
 
-Many StGit commands take references to StGit patches as arguments.
-Patches in the stack are identified with short names, each of which
-must be unique in the stack.
+Most StGit commands have patch arguments. Patches in the stack may
+be specified in a variety of ways. A patch in the current branch may
+simply referred to by its name, or, alternatively, be located by a
+relative offset from the topmost patch (e.g. +{plus}3+), as an
+absolute index into the stack (e.g. +7+), or as an offset from the
+last visible patch (e.g. +{caret}1+).
 
-Patches in the current branch are simply referred to by their name.
 Some commands allow you to specify a patch in another branch of the
 repository; this is done by prefixing the patch name with the branch
 name and a colon (e.g. +otherbranch:thatpatch+).
@@ -107,19 +109,66 @@ the first applied patch up to and including patch `p2`. Alternatively,
 topmost applied patch. And `stg delete ..` would delete all applied
 patches.
 
+The complete syntax for locating patches follows:
+
+'<patchname>', e.g. 'patch'::
+  The name of a patch.
+
+'@'::
+  Refers to the topmost applied patch, or the base of the stack if no
+  patches are applied.
+
+'<patchname>{tilde}[<n>]', e.g. 'patch{tilde}', 'patch{tilde}3'::
+  The <n>th previous patch from the named patch. A single '{tilde}'
+  represents the first previous patch. Multiple '{tilde}' may be
+  specified, e.g. 'patch{tilde}{tilde}{tilde}' is the same as
+  'patch{tilde}3'. This is similar to git's revision syntax where
+  '<rev>^[<n>]' means the <n>th ancestor commit from <rev> following
+  first parents.
+
+'[<patchname>]{plus}[<n>]', e.g. '{plus}', '{plus}3', 'patch{plus}', 'patch{plus}3'::
+  The <n>th next patch from the named patch. If <patchname> is not
+  supplied, '@' is implied. A single '{plus}' represents the next
+  patch in the series. Multiple '{plus}' may be specified, e.g.
+  'patch{plus}{plus}{plus}' is the same as 'patch{plus}3'.
+
+'-[<n>]', e.g. '-3', '-'::
+  References the <n>th previously applied patch. This is similar to
+  '~<n>', except it is only valid without a patch name prefix. Note
+  that certain commands with other options taking numeric values may
+  require escaping '-' with '\-', e.g. '\-10'.
+
+'<n>', e.g. '3'::
+  The patch at absolute index <n> in the stack. This is a zero-based
+  index, so '0' refers to the bottommost patch in the stack.
+
+'{caret}[<n>]', e.g. '{caret}', '{caret}3'::
+  The patch at offset <n> from the last unapplied patch in the stack.
+  This is a zero-based offset, so '{caret}0' refers to the last
+  unapplied patch in the stack, which is equivalent to just
+  '{caret}'. Negative values of <n> are allowed and refer to hidden
+  patches which are after the last visible patch in the stack.
+
+'\{base}+[<n>]', e.g. '\{base}+', '\{base}+3'::
+  The patch at offset <n> from the stack's base commit. Since the
+  stack base is not a commit, a positive offset is required.
+
+Take note that numeric patch locations of the form '<n>', '-<n>', and
+'+<n>', e.g. '3', '-3', or '+3' are also valid patch names. I.e. it is
+possible (but not recommended) to name a patch, for example, "-3". In
+the case where a patch name could also be interpreted as a numeric
+index or offset, the literal patch name will take precidence when
+resolving the patch location.
+
 Specifying commits
 ~~~~~~~~~~~~~~~~~~
 
 Some StGit commands take Git commits as arguments. StGit accepts all
-commit expressions that Git does; and in addition, a patch name
-(optionally prefixed by a branch name and a colon) is allowed in this
-context. The usual Git modifiers $$^$$ and $$~$$ are also allowed;
-e.g., +abranch:apatch~2+ is the grandparent of the commit that is the
-patch +apatch+ on branch +abranch+.
-
-Instead of a patch name, you can say +$${base}$$+ to refer to the
-stack base (the commit just below the bottommost patch); so,
-+abranch:$${base}$$+ is the base of the stack in branch +abranch+.
+revision specifications that Git does (see linkgit:gitrevisions[7]);
+and additionally, the patch specifiers from above. The usual Git
+modifiers, including $$^$$, are also allowed; e.g.
++some-branch:a-patch^^+ refers to the grandparent of the commit that
+is patch +a-patch+ on branch +some-branch+.
 
 If you need to pass a given StGit reference to a Git command,
 linkstg:id[] will convert it to a Git commit id for you.
