@@ -522,7 +522,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
             .next()
             .unwrap()
             .detach();
-        let last = stack.get_patch_commit(patches.last().unwrap()).id;
+        let last = stack.get_patch_commit_id(patches.last().unwrap());
         format_args.push(format!("{base}..{last}"));
     }
 

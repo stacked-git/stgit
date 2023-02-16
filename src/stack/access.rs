@@ -83,6 +83,11 @@ pub(crate) trait StackStateAccess<'repo> {
         &self.get_patch(patchname).commit
     }
 
+    /// Get the commit id for the given patch name.
+    fn get_patch_commit_id(&self, patchname: &PatchName) -> gix::ObjectId {
+        self.get_patch_commit(patchname).id
+    }
+
     /// Test whether given patch name is applied.
     fn is_applied(&self, patchname: &PatchName) -> bool {
         self.applied().contains(patchname)

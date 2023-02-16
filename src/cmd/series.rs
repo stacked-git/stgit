@@ -357,7 +357,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             &stack,
             patchrange::Allow::AllWithAppliedBoundary,
         )? {
-            let commit_id = stack.get_patch_commit(&patchname).id;
+            let commit_id = stack.get_patch_commit_id(&patchname);
             let sigil = if Some(&patchname) == top_patchname {
                 '>'
             } else if stack.is_applied(&patchname) {
@@ -387,7 +387,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 for patchname in rest {
                     patches.push(Entry {
                         patchname: patchname.clone(),
-                        commit_id: stack.get_patch_commit(patchname).id,
+                        commit_id: stack.get_patch_commit_id(patchname),
                         sigil: '+',
                         index: stack.index_of(patchname),
                         offset_from_top: stack.distance_from(patchname, Some(last_patchname)),
@@ -395,7 +395,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 }
                 patches.push(Entry {
                     patchname: last_patchname.clone(),
-                    commit_id: stack.get_patch_commit(last_patchname).id,
+                    commit_id: stack.get_patch_commit_id(last_patchname),
                     sigil: '>',
                     index: stack.index_of(last_patchname),
                     offset_from_top: 0,
@@ -407,7 +407,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             for (i, patchname) in stack.unapplied().iter().enumerate() {
                 patches.push(Entry {
                     patchname: patchname.clone(),
-                    commit_id: stack.get_patch_commit(patchname).id,
+                    commit_id: stack.get_patch_commit_id(patchname),
                     sigil: '-',
                     index: stack.index_of(patchname),
                     offset_from_top: (i + 1) as isize,
@@ -420,7 +420,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
             for patchname in stack.hidden() {
                 patches.push(Entry {
                     patchname: patchname.clone(),
-                    commit_id: stack.get_patch_commit(patchname).id,
+                    commit_id: stack.get_patch_commit_id(patchname),
                     sigil: '!',
                     index: stack.index_of(patchname),
                     offset_from_top: stack.distance_from(patchname, top_patchname),

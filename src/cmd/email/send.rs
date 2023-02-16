@@ -411,7 +411,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 .next()
                 .unwrap()
                 .detach();
-            let last = stack.get_patch_commit(patches.last().unwrap()).id;
+            let last = stack.get_patch_commit_id(patches.last().unwrap());
             vec![format!("{base}..{last}")]
         }
     } else if matches.get_flag("all") {
@@ -425,8 +425,8 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
                 }
             }
         }
-        let base = stack.base().id();
-        let last = stack.get_patch_commit(applied.last().unwrap()).id();
+        let base = stack.base().id;
+        let last = stack.get_patch_commit_id(applied.last().unwrap());
         vec![format!("{base}..{last}")]
     } else {
         panic!("expect either patchranges or -a/--all")

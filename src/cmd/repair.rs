@@ -91,7 +91,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let parent = Rc::new(commit.get_parent_commit()?);
         if let Some(patchname) = stack
             .all_patches()
-            .find(|pn| stack.get_patch_commit(pn).id == commit.id)
+            .find(|pn| stack.get_patch_commit_id(pn) == commit.id)
         {
             applied.push(patchname.clone());
             patchify.append(&mut maybe_patchify);
@@ -132,7 +132,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 
             if stack
                 .all_patches()
-                .any(|pn| stack.get_patch_commit(pn).id() == todo_commit_id)
+                .any(|pn| stack.get_patch_commit_id(pn) == todo_commit_id)
             {
                 unreachable += 1;
             }

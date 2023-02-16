@@ -410,7 +410,7 @@ impl<'repo> StackTransaction<'repo> {
             .patches
             .iter()
             .filter_map(|(pn, patch_state)| {
-                if self.has_patch(pn) && self.get_patch_commit(pn).id() == patch_state.commit.id() {
+                if self.has_patch(pn) && self.get_patch_commit_id(pn) == patch_state.commit.id {
                     Some(pn)
                 } else {
                     None
