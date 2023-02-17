@@ -138,6 +138,10 @@ pub(crate) fn get_full_command(
 /// quickly as possible.
 fn main() -> ! {
     let argv: Vec<OsString> = std::env::args_os().collect();
+    unsafe {
+        // SAFETY: It's sound as we don't manipulate environment variables while querying local offsets.
+        time::util::local_offset::set_soundness(time::util::local_offset::Soundness::Unsound);
+    }
 
     // Chicken and egg: the --color option must be parsed from argv in order to setup
     // clap with the desired color choice. So a simple pre-parse is performed just to
