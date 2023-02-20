@@ -102,7 +102,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let committer_date_is_author_date = matches.get_flag("committer-date-is-author-date");
 
     let target_commit = if let Some(committish) = argset::get_one_str(matches, "committish") {
-        Rc::new(parse_stgit_revision(&repo, Some(committish), None)?.try_into_commit()?)
+        Rc::new(
+            parse_stgit_revision(&repo, Some(committish), None)?
+                .peel_tags_to_end()?
+                .try_into_commit()?,
+        )
     } else {
         stack.base().clone()
     };

@@ -64,6 +64,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             .rev_parse_single(committish)
             .map_err(|_| anyhow!("invalid committish `{committish}`"))?
             .object()?
+            .peel_tags_to_end()?
             .try_into_commit()
             .map_err(|_| anyhow!("target `{committish}` is not a commit"))?
             .id;

@@ -205,6 +205,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .into_fully_peeled_id()
                 .map_err(anyhow::Error::from)
                 .and_then(|id| id.object().map_err(anyhow::Error::from))
+                .and_then(|object| object.peel_tags_to_end().map_err(anyhow::Error::from))
                 .and_then(|object| object.try_into_commit().map_err(anyhow::Error::from))
                 .context("peeling `FETCH_HEAD` to commit")?
                 .id;
