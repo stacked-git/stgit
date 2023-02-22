@@ -247,10 +247,12 @@ fn run(matches: &ArgMatches) -> Result<()> {
             s => panic!("unhandled branch subcommand {s}"),
         }
     } else {
-        let current_branch = repo.get_branch(None)?;
-        let current_branchname = current_branch.get_branch_name()?;
+        let current_branch = repo.get_branch(None).ok();
+        let current_branchname = current_branch
+            .as_ref()
+            .and_then(|branch| branch.get_branch_name().ok());
         if let Some(target_branchname) = get_one_str(matches, "branch-any") {
-            if target_branchname == current_branchname {
+            if Some(target_branchname) == current_branchname {
                 Err(anyhow!("{target_branchname} is already the current branch"))
             } else {
                 let stupid = repo.stupid();
@@ -262,8 +264,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 let target_branch = repo.get_branch(Some(target_branchname))?;
                 stupid.checkout(target_branch.get_branch_name().unwrap())
             }
+        } else if let Some(name) = current_branchname {
+            println!("{name}");
+            Ok(())
         } else {
-            println!("{current_branchname}");
+            // Print nothing if HEAD is detached; same as `git branch --show-current`.
             Ok(())
         }
     }
