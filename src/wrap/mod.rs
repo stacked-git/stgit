@@ -2,6 +2,10 @@
 
 mod branch;
 mod message;
+mod partialrefname;
 
-pub(crate) use branch::Branch;
-pub(crate) use message::Message;
+pub(crate) use self::{
+    branch::Branch,
+    message::Message,
+    partialrefname::{partial_ref_name, PartialRefName},
+};

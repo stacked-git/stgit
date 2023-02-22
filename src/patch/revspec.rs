@@ -17,8 +17,8 @@ use std::{rc::Rc, str::FromStr};
 use anyhow::{Context, Result};
 
 use super::{
-    patchrange, GitRevisionSuffix, PartialRefName, PatchLikeSpec, PatchRange, RangeConstraint,
-    RangeRevisionSpec, SingleRevisionSpec, StGitBoundaryRevisions, StGitRevision,
+    patchrange, GitRevisionSuffix, PatchLikeSpec, PatchRange, RangeConstraint, RangeRevisionSpec,
+    SingleRevisionSpec, StGitBoundaryRevisions, StGitRevision,
 };
 use crate::{
     ext::RepositoryExtended,
@@ -45,13 +45,6 @@ pub(crate) enum Error {
 }
 
 impl AsRef<str> for GitRevisionSuffix {
-    #[inline]
-    fn as_ref(&self) -> &str {
-        self.0.as_str()
-    }
-}
-
-impl AsRef<str> for PartialRefName {
     #[inline]
     fn as_ref(&self) -> &str {
         self.0.as_str()
@@ -115,12 +108,6 @@ impl std::fmt::Display for SingleRevisionSpec {
 impl std::fmt::Display for PatchLikeSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}{}", self.patch_loc, self.suffix)
-    }
-}
-
-impl std::fmt::Display for PartialRefName {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_ref())
     }
 }
 

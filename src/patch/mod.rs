@@ -20,6 +20,7 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 pub(crate) use self::{edit as patchedit, range as patchrange};
+use crate::wrap::PartialRefName;
 
 /// A range of patches in the stack.
 ///
@@ -252,12 +253,3 @@ pub(crate) struct PatchLikeSpec {
 /// outside of StGit, in either [`gix`] or `git` itself.
 #[derive(Clone, Debug, PartialEq)]
 struct GitRevisionSuffix(pub(crate) String);
-
-/// A partial git reference name.
-///
-/// A partial reference name does not have to include the "refs/" prefix which a
-/// complete reference name would require. A partial ref name may thus be used to, for
-/// example, capture a short branch name such as "main" (which is short for
-/// "refs/heads/main").
-#[derive(Clone, Debug, PartialEq)]
-pub(crate) struct PartialRefName(pub(crate) String);

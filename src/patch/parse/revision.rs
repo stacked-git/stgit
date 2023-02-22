@@ -15,14 +15,12 @@ use nom::{
 };
 
 use super::{
-    super::{
-        GitRevisionSuffix, PartialRefName, PatchLikeSpec, RangeRevisionSpec, SingleRevisionSpec,
-    },
-    name::partial_ref_name,
+    super::{GitRevisionSuffix, PatchLikeSpec, RangeRevisionSpec, SingleRevisionSpec},
     numbers::unsigned_int,
     patch_locator,
     range::patch_range_bounds,
 };
+use crate::wrap::{partial_ref_name, PartialRefName};
 
 pub(in super::super) fn range_revision_spec(input: &str) -> nom::IResult<&str, RangeRevisionSpec> {
     alt((
