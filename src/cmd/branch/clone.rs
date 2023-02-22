@@ -2,14 +2,16 @@
 
 //! `stg branch --clone` implementation.
 
+use std::str::FromStr;
+
 use anyhow::Result;
 use clap::{Arg, ArgMatches};
 
 use crate::{
-    argset::{self, get_one_str},
     ext::RepositoryExtended,
     stack::{state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -27,21 +29,24 @@ pub(super) fn command() -> clap::Command {
         .arg(
             Arg::new("new-branch")
                 .help("New branch name")
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
     let current_branch = repo.get_branch(None)?;
-    let current_branchname = current_branch.get_branch_name()?;
+    let current_branchname = current_branch.get_branch_partial_name()?;
 
-    let new_branchname = if let Some(new_branchname) = get_one_str(matches, "new-branch") {
-        new_branchname.to_string()
+    let generated_branchname;
+    let new_branchname = if let Some(name) = matches.get_one::<PartialRefName>("new-branch") {
+        name
     } else {
         let suffix = gix::actor::Time::now_local_or_utc().format(
             time::macros::format_description!("[year][month][day]-[hour][minute][second]"),
         );
-        format!("{current_branchname}-{suffix}")
+        generated_branchname = PartialRefName::from_str(&format!("{current_branchname}-{suffix}"))
+            .expect("valid partial reference name");
+        &generated_branchname
     };
 
     let stupid = repo.stupid();
@@ -66,27 +71,29 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
                 expected: gix::refs::transaction::PreviousValue::MustNotExist,
                 new: gix::refs::Target::Peeled(state_commit.id),
             },
-            name: gix::refs::FullName::try_from(state_refname_from_branch_name(&new_branchname))?,
+            name: gix::refs::FullName::try_from(state_refname_from_branch_name(
+                new_branchname.as_ref(),
+            ))?,
             deref: false,
         })?;
-        stupid.branch_copy(None, &new_branchname)?;
+        stupid.branch_copy(None, new_branchname.as_ref())?;
     } else {
-        stupid.branch_copy(None, &new_branchname)?;
+        stupid.branch_copy(None, new_branchname.as_ref())?;
         Stack::from_branch(
             repo,
-            Some(&new_branchname),
+            Some(new_branchname),
             InitializationPolicy::MustInitialize,
         )?;
     };
 
-    super::set_stgit_parent(repo, &new_branchname, Some(current_branchname))?;
+    super::set_stgit_parent(repo, new_branchname, Some(&current_branchname))?;
 
     super::set_description(
         repo,
-        &new_branchname,
+        new_branchname,
         &format!("clone of {current_branchname}"),
     )?;
 
-    let new_branch = repo.get_branch(Some(&new_branchname))?;
+    let new_branch = repo.get_branch(Some(new_branchname))?;
     stupid.checkout(new_branch.get_branch_name().unwrap())
 }

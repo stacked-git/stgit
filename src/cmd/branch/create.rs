@@ -8,13 +8,12 @@ use anyhow::{anyhow, Result};
 use bstr::ByteSlice;
 
 use crate::{
-    argset::{self, get_one_str},
     ext::RepositoryExtended,
     patch::SingleRevisionSpec,
     print_info_message,
     stack::{InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
-    wrap::Branch,
+    wrap::{Branch, PartialRefName},
 };
 
 pub(super) fn command() -> clap::Command {
@@ -36,7 +35,7 @@ pub(super) fn command() -> clap::Command {
             clap::Arg::new("new-branch")
                 .help("New branch name")
                 .required(true)
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
         .arg(
             clap::Arg::new("committish")
@@ -46,8 +45,18 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let new_branchname = get_one_str(matches, "new-branch").expect("required argument");
-    let new_fullname = gix::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?;
+    let new_branchname = matches
+        .get_one::<PartialRefName>("new-branch")
+        .expect("required argument");
+    let new_fullname = if new_branchname.as_ref().starts_with("refs/heads/") {
+        gix::refs::FullName::try_from(new_branchname.as_ref())?
+    } else if new_branchname.as_ref().starts_with("refs/") {
+        return Err(anyhow!(
+            "invalid reference name for local branch `{new_branchname}`"
+        ));
+    } else {
+        gix::refs::FullName::try_from(format!("refs/heads/{new_branchname}"))?
+    };
     if repo.try_find_reference(&new_fullname)?.is_some() {
         return Err(anyhow!("branch `{new_branchname}` already exists"));
     }
@@ -105,7 +114,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
 
     let parent_branchname = parent_branch
         .as_ref()
-        .and_then(|branch| branch.get_branch_name().ok());
+        .and_then(|branch| branch.get_branch_partial_name().ok());
 
     repo.edit_reference(gix::refs::transaction::RefEdit {
         change: gix::refs::transaction::Change::Update {
@@ -121,7 +130,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
         deref: false,
     })?;
 
-    let new_branch = Branch::wrap(repo.find_reference(new_branchname)?);
+    let new_branch = Branch::wrap(repo.find_reference(&new_fullname)?);
 
     let stack = match Stack::from_branch(
         repo,
@@ -136,7 +145,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     };
 
     if let Some(parent_branch) = parent_branch.as_ref() {
-        super::set_stgit_parent(repo, new_branchname, parent_branchname)?;
+        super::set_stgit_parent(repo, new_branchname, parent_branchname.as_ref())?;
         if let Some(upstream_name) = copy_upstream(parent_branch, &new_branch, repo)? {
             print_info_message(
                 matches,

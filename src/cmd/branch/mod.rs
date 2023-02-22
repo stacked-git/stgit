@@ -15,11 +15,7 @@ mod unprotect;
 use anyhow::Result;
 use bstr::ByteSlice;
 
-use crate::{
-    argset::{self, get_one_str},
-    ext::RepositoryExtended,
-    stupid::Stupid,
-};
+use crate::{ext::RepositoryExtended, stupid::Stupid, wrap::PartialRefName};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "branch",
@@ -72,7 +68,7 @@ fn make() -> clap::Command {
             clap::Arg::new("branch-any")
                 .help("Branch to switch to")
                 .value_name("branch")
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
 }
 
@@ -91,7 +87,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "--describe" => self::describe::dispatch(&repo, submatches),
             s => panic!("unhandled branch subcommand {s}"),
         }
-    } else if let Some(target_branchname) = get_one_str(matches, "branch-any") {
+    } else if let Some(target_branchname) = matches.get_one::<PartialRefName>("branch-any") {
         switch(&repo, matches, target_branchname)
     } else if let Ok(branch) = repo.get_branch(None) {
         println!("{}", branch.get_branch_name()?);
@@ -105,13 +101,13 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 fn switch(
     repo: &gix::Repository,
     matches: &clap::ArgMatches,
-    target_branchname: &str,
+    target_branchname: &PartialRefName,
 ) -> Result<()> {
     let current_branch = repo.get_branch(None).ok();
     let current_branchname = current_branch
         .as_ref()
-        .and_then(|branch| branch.get_branch_name().ok());
-    if Some(target_branchname) == current_branchname {
+        .and_then(|branch| branch.get_branch_partial_name().ok());
+    if Some(target_branchname) == current_branchname.as_ref() {
         return Err(anyhow::anyhow!(
             "{target_branchname} is already the current branch"
         ));
@@ -127,7 +123,11 @@ fn switch(
     stupid.checkout(target_branch.get_branch_name().unwrap())
 }
 
-fn set_description(repo: &gix::Repository, branchname: &str, description: &str) -> Result<()> {
+fn set_description(
+    repo: &gix::Repository,
+    branchname: &PartialRefName,
+    description: &str,
+) -> Result<()> {
     let mut local_config_file = repo.local_config_file()?;
     if description.is_empty() {
         if let Ok(mut value) =
@@ -154,7 +154,7 @@ fn set_description(repo: &gix::Repository, branchname: &str, description: &str) 
     Ok(())
 }
 
-fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &str) -> Option<String> {
+fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &PartialRefName) -> Option<String> {
     config
         .plumbing()
         .string(
@@ -167,8 +167,8 @@ fn get_stgit_parent(config: &gix::config::Snapshot, branchname: &str) -> Option<
 
 fn set_stgit_parent(
     repo: &gix::Repository,
-    branchname: &str,
-    parent_branchname: Option<&str>,
+    branchname: &PartialRefName,
+    parent_branchname: Option<&PartialRefName>,
 ) -> Result<()> {
     let subsection = format!("{branchname}.stgit");
     let mut local_config_file = repo.local_config_file()?;
@@ -177,7 +177,7 @@ fn set_stgit_parent(
             "branch",
             Some(subsection.as_str().into()),
             "parentbranch",
-            parent_branchname,
+            parent_branchname.as_ref(),
         )?;
     } else {
         if let Ok(mut value) = local_config_file.raw_value_mut(

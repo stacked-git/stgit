@@ -31,20 +31,20 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     let mut branchnames = Vec::new();
     for local_branch in repo.references()?.local_branches()?.filter_map(Result::ok) {
         let local_branch = Branch::wrap(local_branch);
-        if let Ok(branchname) = local_branch.get_branch_name() {
-            if !branchname.ends_with(".stgit") {
-                branchnames.push(branchname.to_string());
+        if let Ok(branchname) = local_branch.get_branch_partial_name() {
+            if !branchname.as_ref().ends_with(".stgit") {
+                branchnames.push(branchname);
             }
         }
     }
 
     branchnames.sort();
-    let branchname_width = branchnames.iter().map(String::len).max();
+    let branchname_width = branchnames.iter().map(|name| name.as_ref().len()).max();
 
     let current_branch = repo.get_branch(None).ok();
     let current_branchname = current_branch
         .as_ref()
-        .and_then(|branch| branch.get_branch_name().ok());
+        .and_then(|branch| branch.get_branch_partial_name().ok());
 
     let config = repo.config_snapshot();
 
@@ -52,7 +52,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     let mut color_spec = termcolor::ColorSpec::new();
 
     for branchname in &branchnames {
-        let is_current = Some(branchname.as_str()) == current_branchname;
+        let is_current = Some(branchname) == current_branchname.as_ref();
 
         if is_current {
             stdout.set_color(color_spec.set_intense(true))?;
@@ -104,7 +104,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
 
         let description = config
             .plumbing()
-            .string("branch", Some(branchname.as_str().into()), "description")
+            .string("branch", Some(branchname.into()), "description")
             .unwrap_or_default();
         if description.is_empty() {
             writeln!(stdout)?;

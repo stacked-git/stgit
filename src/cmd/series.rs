@@ -14,6 +14,7 @@ use crate::{
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
+    wrap::PartialRefName,
 };
 
 const UNPRINTABLE: &str = "???";
@@ -106,6 +107,7 @@ fn make() -> clap::Command {
                 .help("Select patches in <branch> not present in current branch")
                 .num_args(1)
                 .value_name("branch")
+                .value_parser(clap::value_parser!(PartialRefName))
                 .value_hint(ValueHint::Other),
         )
         .next_help_heading("Display Options")
@@ -316,8 +318,8 @@ impl FromStr for CommitIdLength {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let opt_missing = argset::get_one_str(matches, "missing");
+    let opt_branch = matches.get_one::<PartialRefName>("branch");
+    let opt_missing = matches.get_one::<PartialRefName>("missing");
 
     let (stack, ref_stack) = if let Some(ref_branch) = opt_missing {
         (

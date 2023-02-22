@@ -5,6 +5,8 @@
 use bstr::ByteSlice;
 use clap::Arg;
 
+use crate::wrap::PartialRefName;
+
 /// The `--branch`/`-b` option for selecting an alternative branch.
 pub(crate) fn branch_arg() -> Arg {
     Arg::new("branch")
@@ -14,7 +16,7 @@ pub(crate) fn branch_arg() -> Arg {
         .num_args(1)
         .value_name("branch")
         .value_hint(clap::ValueHint::Other)
-        .value_parser(parse_branch_name)
+        .value_parser(clap::value_parser!(PartialRefName))
 }
 
 /// The `--keep/-k` option.
@@ -94,11 +96,6 @@ pub(crate) fn diff_opts_arg() -> Arg {
         .action(clap::ArgAction::Append)
         .value_name("option")
         .value_hint(clap::ValueHint::Other)
-}
-
-/// For use with `clap::Arg::value_parser()` to ensure a branch name is valid.
-pub(crate) fn parse_branch_name(name: &str) -> anyhow::Result<String> {
-    Ok(gix::refs::PartialName::try_from(name).map(|_| name.to_string())?)
 }
 
 /// Get a `&str` from a `clap::ArgMatches` instance for the given `id`.

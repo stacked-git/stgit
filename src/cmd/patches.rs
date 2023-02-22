@@ -16,6 +16,7 @@ use crate::{
     ext::{CommitExtended, RepositoryExtended},
     stack::{Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -56,7 +57,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
-        argset::get_one_str(matches, "branch"),
+        matches.get_one::<PartialRefName>("branch"),
         crate::stack::InitializationPolicy::AllowUninitialized,
     )?;
     let diff_flag = matches.get_flag("diff");

@@ -12,6 +12,7 @@ use crate::{
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -65,7 +66,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
+    let opt_branch = matches.get_one::<PartialRefName>("branch");
     let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let allow_push_conflicts =
         argset::resolve_allow_push_conflicts(&repo.config_snapshot(), matches);

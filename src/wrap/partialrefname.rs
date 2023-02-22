@@ -8,13 +8,19 @@ use std::str::FromStr;
 /// complete reference name would require. A partial ref name may thus be used to, for
 /// example, capture a short branch name such as "main" (which is short for
 /// "refs/heads/main").
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub(crate) struct PartialRefName(pub(crate) String);
 
 impl From<&PartialRefName> for gix::refs::PartialName {
     fn from(value: &PartialRefName) -> Self {
         gix::refs::PartialName::try_from(value.0.as_str())
             .expect("PartialRefName was already validated")
+    }
+}
+
+impl<'a> From<&'a PartialRefName> for &'a bstr::BStr {
+    fn from(value: &'a PartialRefName) -> Self {
+        bstr::BStr::new(value.0.as_str())
     }
 }
 

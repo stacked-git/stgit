@@ -4,10 +4,7 @@
 
 use anyhow::Result;
 
-use crate::{
-    argset::{self, get_one_str},
-    ext::RepositoryExtended,
-};
+use crate::{argset::get_one_str, ext::RepositoryExtended, wrap::PartialRefName};
 
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--describe")
@@ -24,13 +21,13 @@ pub(super) fn command() -> clap::Command {
             clap::Arg::new("branch-any")
                 .help("Branch to describe")
                 .value_name("branch")
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let branch = repo.get_branch(get_one_str(matches, "branch-any"))?;
+    let branch = repo.get_branch(matches.get_one::<PartialRefName>("branch-any"))?;
     let description = get_one_str(matches, "description").expect("required argument");
-    let branchname = branch.get_branch_name()?;
-    super::set_description(repo, branchname, description)
+    let branchname = branch.get_branch_partial_name()?;
+    super::set_description(repo, &branchname, description)
 }

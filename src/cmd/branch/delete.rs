@@ -5,9 +5,9 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    argset::{self, get_one_str},
     ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack, StackStateAccess},
+    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -27,7 +27,7 @@ pub(super) fn command() -> clap::Command {
                 .help("Branch to delete")
                 .value_name("branch")
                 .required(true)
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
         .arg(
             clap::Arg::new("force")
@@ -38,13 +38,15 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let target_branchname = get_one_str(matches, "branch-any").expect("required argument");
+    let target_branchname = matches
+        .get_one::<PartialRefName>("branch-any")
+        .expect("required argument");
     let target_branch = repo.get_branch(Some(target_branchname))?;
     let current_branch = repo.get_branch(None).ok();
     let current_branchname = current_branch
         .as_ref()
-        .and_then(|branch| branch.get_branch_name().ok());
-    if Some(target_branchname) == current_branchname {
+        .and_then(|branch| branch.get_branch_partial_name().ok());
+    if Some(target_branchname) == current_branchname.as_ref() {
         return Err(anyhow!("cannot delete the current branch"));
     }
 

@@ -11,6 +11,7 @@ use crate::{
     ext::RepositoryExtended,
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack},
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -43,7 +44,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(
         &repo,
-        argset::get_one_str(matches, "branch"),
+        matches.get_one::<PartialRefName>("branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

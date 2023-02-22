@@ -5,8 +5,8 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
-    argset::{self, get_one_str},
     stack::{InitializationPolicy, Stack, StackStateAccess},
+    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -26,7 +26,7 @@ pub(super) fn command() -> clap::Command {
             clap::Arg::new("branch")
                 .help("Branch to clean up")
                 .value_name("branch")
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
         .arg(
             clap::Arg::new("force")
@@ -39,7 +39,7 @@ pub(super) fn command() -> clap::Command {
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
     let stack = Stack::from_branch(
         repo,
-        get_one_str(matches, "branch"),
+        matches.get_one::<PartialRefName>("branch"),
         InitializationPolicy::RequireInitialized,
     )?;
     if stack.is_protected(&repo.config_snapshot()) {

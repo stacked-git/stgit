@@ -2,13 +2,15 @@
 
 //! `stg branch --rename` implementation.
 
+use std::str::FromStr;
+
 use anyhow::Result;
 
 use crate::{
-    argset,
     ext::RepositoryExtended,
     stack::{state_refname_from_branch_name, InitializationPolicy, Stack, StackAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -22,27 +24,29 @@ pub(super) fn command() -> clap::Command {
                 .hide_short_help(true)
                 .required(true)
                 .num_args(1..=2)
-                .value_parser(argset::parse_branch_name),
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
     let names: Vec<_> = matches
-        .get_many::<String>("branch-any")
+        .get_many::<PartialRefName>("branch-any")
         .unwrap()
-        .map(String::as_str)
         .collect();
-    let current_branch;
+    let current_branch_name;
     let (old_branchname, new_branchname) = if names.len() == 2 {
         repo.get_branch(Some(names[0]))?;
         (names[0], names[1])
     } else {
-        current_branch = repo.get_branch(None)?;
-        (current_branch.get_branch_name()?, names[0])
+        current_branch_name = repo.get_branch(None)?.get_branch_partial_name()?;
+        (&current_branch_name, names[0])
     };
 
     let stupid = repo.stupid();
     let parent_branchname = super::get_stgit_parent(&repo.config_snapshot(), old_branchname);
+    let parent_branchname = parent_branchname
+        .map(|name| PartialRefName::from_str(name.as_str()))
+        .transpose()?;
 
     if let Ok(stack) = Stack::from_branch(
         repo,
@@ -65,7 +69,9 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
                 expected: gix::refs::transaction::PreviousValue::MustNotExist,
                 new: gix::refs::Target::Peeled(state_commit.id),
             },
-            name: gix::refs::FullName::try_from(state_refname_from_branch_name(new_branchname))?,
+            name: gix::refs::FullName::try_from(state_refname_from_branch_name(
+                new_branchname.as_ref(),
+            ))?,
             deref: false,
         })?;
         stupid
@@ -74,11 +80,11 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
                 &format!("branch.{new_branchname}.stgit"),
             )
             .ok();
-        stupid.branch_move(Some(old_branchname), new_branchname)?;
+        stupid.branch_move(Some(old_branchname.as_ref()), new_branchname.as_ref())?;
         stack.deinitialize()?;
     } else {
-        stupid.branch_move(Some(old_branchname), new_branchname)?;
+        stupid.branch_move(Some(old_branchname.as_ref()), new_branchname.as_ref())?;
     }
-    super::set_stgit_parent(repo, new_branchname, parent_branchname.as_deref())?;
+    super::set_stgit_parent(repo, new_branchname, parent_branchname.as_ref())?;
     Ok(())
 }

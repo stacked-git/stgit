@@ -7,7 +7,7 @@ use bstr::BStr;
 
 use crate::{
     stupid::Stupid,
-    wrap::{Branch, Message},
+    wrap::{Branch, Message, PartialRefName},
 };
 
 /// Extends [`gix::Repository`] with additional methods.
@@ -33,7 +33,7 @@ pub(crate) trait RepositoryExtended {
     /// Get [`Branch`], with StGit-specific error messaging.
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
-    fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>>;
+    fn get_branch(&self, branch_name: Option<&PartialRefName>) -> Result<Branch<'_>>;
 
     /// Get repository-local config file which can be used to change local
     /// configuration.
@@ -130,11 +130,12 @@ impl RepositoryExtended for gix::Repository {
         })??)
     }
 
-    fn get_branch(&self, branch_name: Option<&str>) -> Result<Branch<'_>> {
+    fn get_branch(&self, branch_name: Option<&PartialRefName>) -> Result<Branch<'_>> {
         use gix::{head::Kind, refs::Category};
 
         if let Some(name) = branch_name {
-            let reference = self.find_reference(name).map_err(|e| match e {
+            let gix_name: gix::refs::PartialName = name.into();
+            let reference = self.find_reference(&gix_name).map_err(|e| match e {
                 gix::reference::find::existing::Error::Find(inner) => {
                     anyhow!("invalid branch name `{name}`: {inner}")
                 }
@@ -153,7 +154,7 @@ impl RepositoryExtended for gix::Repository {
                 Kind::Symbolic(inner_reference) => {
                     if matches!(inner_reference.name.category(), Some(Category::LocalBranch)) {
                         let reference = self
-                            .find_reference(inner_reference.name.as_bstr())
+                            .find_reference(&inner_reference.name)
                             .expect("inner reference is known to be valid");
                         Ok(Branch::wrap(reference))
                     } else {

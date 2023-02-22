@@ -19,6 +19,7 @@ use crate::{
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -64,7 +65,8 @@ fn make() -> clap::Command {
                 .long("ref-branch")
                 .short('B')
                 .help("Synchronize patches with <branch>")
-                .value_name("branch"),
+                .value_name("branch")
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
         .arg(
             Arg::new("series")
@@ -105,16 +107,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         return Err(super::Error::NoAppliedPatches.into());
     };
 
-    let ref_stack = if let Some(ref_branchname) = crate::argset::get_one_str(matches, "ref-branch")
-    {
-        Some(Stack::from_branch(
-            &repo,
-            Some(ref_branchname),
-            InitializationPolicy::AllowUninitialized,
-        )?)
-    } else {
-        None
-    };
+    let ref_stack = matches
+        .get_one::<PartialRefName>("ref-branch")
+        .map(|name| Stack::from_branch(&repo, Some(name), InitializationPolicy::AllowUninitialized))
+        .transpose()?;
 
     let series_dir = matches
         .get_one::<PathBuf>("series")

@@ -10,6 +10,7 @@ use crate::{
     ext::RepositoryExtended,
     patch::SingleRevisionSpec,
     stack::{InitializationPolicy, Stack, StackAccess},
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -43,8 +44,11 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_branch = argset::get_one_str(matches, "branch");
-    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::from_branch(
+        &repo,
+        matches.get_one::<PartialRefName>("branch"),
+        InitializationPolicy::AllowUninitialized,
+    )?;
 
     let oid = matches
         .get_one::<SingleRevisionSpec>("stgit-revision")

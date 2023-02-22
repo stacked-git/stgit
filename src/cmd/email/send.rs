@@ -13,6 +13,7 @@ use crate::{
     patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -372,7 +373,7 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
 
     let stack = Stack::from_branch(
         &repo,
-        argset::get_one_str(matches, "branch"),
+        matches.get_one::<PartialRefName>("branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

@@ -129,7 +129,7 @@ impl RangeRevisionSpec {
             RangeRevisionSpec::BranchRange { branch, bounds } => {
                 let stack = Stack::from_branch(
                     repo,
-                    Some(branch.as_ref()),
+                    Some(branch),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 bounds
@@ -170,7 +170,7 @@ pub(crate) fn resolve<'a, 'repo>(
             RangeRevisionSpec::BranchRange { branch, bounds } => {
                 let stack = Stack::from_branch(
                     repo,
-                    Some(branch.as_ref()),
+                    Some(branch),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 let range = PatchRange::from(bounds);
@@ -269,7 +269,7 @@ impl SingleRevisionSpec {
             SingleRevisionSpec::Branch { branch, patch_like } => {
                 let stack = Stack::from_branch(
                     repo,
-                    Some(branch.as_ref()),
+                    Some(branch),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 patch_like.resolve(repo, &stack)
@@ -315,7 +315,7 @@ impl SingleRevisionSpec {
             SingleRevisionSpec::Branch { branch, patch_like } => {
                 let stack = Stack::from_branch(
                     repo,
-                    Some(branch.as_ref()),
+                    Some(branch),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 patch_like.resolve_object(repo, &stack)?

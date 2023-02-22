@@ -21,6 +21,7 @@ use crate::{
     },
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
+    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -67,7 +68,8 @@ fn make() -> clap::Command {
                 .long("ref-branch")
                 .short('B')
                 .help("Pick patches from <branch>")
-                .value_name("branch"),
+                .value_name("branch")
+                .value_parser(clap::value_parser!(PartialRefName)),
         )
         .arg(
             Arg::new("revert")
@@ -139,10 +141,9 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
-    let ref_branchname = argset::get_one_str(matches, "ref-branch");
     let ref_stack = Stack::from_branch(
         &repo,
-        ref_branchname,
+        matches.get_one::<PartialRefName>("ref-branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

@@ -11,7 +11,12 @@ use super::{
     state::StackState, transaction::TransactionBuilder, upgrade::stack_upgrade, PatchState,
     StackAccess, StackStateAccess,
 };
-use crate::{ext::RepositoryExtended, patch::PatchName, stupid::Stupid, wrap::Branch};
+use crate::{
+    ext::RepositoryExtended,
+    patch::PatchName,
+    stupid::Stupid,
+    wrap::{Branch, PartialRefName},
+};
 
 /// StGit stack
 ///
@@ -94,7 +99,7 @@ impl<'repo> Stack<'repo> {
     /// An error will be returned if there is no StGit stack associated with the branch.
     pub(crate) fn from_branch(
         repo: &'repo gix::Repository,
-        branch_name: Option<&str>,
+        branch_name: Option<&PartialRefName>,
         init_policy: InitializationPolicy,
     ) -> Result<Self> {
         let branch = repo.get_branch(branch_name)?;
