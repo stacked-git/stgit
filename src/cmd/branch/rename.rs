@@ -35,10 +35,10 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
         .collect();
     let current_branch_name;
     let (old_branchname, new_branchname) = if names.len() == 2 {
-        repo.get_branch(Some(names[0]))?;
+        repo.get_branch(names[0])?;
         (names[0], names[1])
     } else {
-        current_branch_name = repo.get_branch(None)?.get_branch_partial_name()?;
+        current_branch_name = repo.get_current_branch()?.get_branch_partial_name()?;
         (&current_branch_name, names[0])
     };
 
@@ -48,9 +48,9 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
         .map(|name| PartialRefName::from_str(name.as_str()))
         .transpose()?;
 
-    if let Ok(stack) = Stack::from_branch(
+    if let Ok(stack) = Stack::from_branch_name(
         repo,
-        Some(old_branchname),
+        old_branchname,
         InitializationPolicy::RequireInitialized,
     ) {
         let state_commit = repo

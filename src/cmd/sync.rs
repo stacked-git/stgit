@@ -14,12 +14,12 @@ use clap::{Arg, ArgGroup};
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess, StackTransaction},
     stupid::Stupid,
-    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -66,7 +66,7 @@ fn make() -> clap::Command {
                 .short('B')
                 .help("Synchronize patches with <branch>")
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
         .arg(
             Arg::new("series")
@@ -87,7 +87,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     stupid.statuses(None)?.check_index_and_worktree_clean()?;
@@ -108,8 +108,10 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     };
 
     let ref_stack = matches
-        .get_one::<PartialRefName>("ref-branch")
-        .map(|name| Stack::from_branch(&repo, Some(name), InitializationPolicy::AllowUninitialized))
+        .get_one::<BranchLocator>("ref-branch")
+        .map(|loc| {
+            Stack::from_branch_locator(&repo, Some(loc), InitializationPolicy::AllowUninitialized)
+        })
         .transpose()?;
 
     let series_dir = matches

@@ -15,7 +15,9 @@ mod unprotect;
 use anyhow::Result;
 use bstr::ByteSlice;
 
-use crate::{ext::RepositoryExtended, stupid::Stupid, wrap::PartialRefName};
+use crate::{
+    branchloc::BranchLocator, ext::RepositoryExtended, stupid::Stupid, wrap::PartialRefName,
+};
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
     name: "branch",
@@ -32,7 +34,14 @@ fn make() -> clap::Command {
              \n\
              With no arguments, the current branch is printed to stdout.\n\
              \n\
-             With a single argument, switch to the named branch.",
+             With a single argument, switch to the named branch.\n\
+             \n\
+             StGit supports specifying a branch using the `@{-<n>}` syntax supported \
+             by git, including `-` as a synonym for `@{-1}`. Thus `stg branch -` may \
+             be used to switch to the last checked-out HEAD. Note that `@{-<n>}` \
+             refers to the <n>th last HEAD, which is not necessarily a local branch. \
+             Using an `@{-<n>}` value that refers to anything but a local branch will \
+             result in an error.",
         )
         .disable_help_subcommand(true)
         .override_usage(
@@ -68,7 +77,7 @@ fn make() -> clap::Command {
             clap::Arg::new("branch-any")
                 .help("Branch to switch to")
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
 }
 
@@ -87,9 +96,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             "--describe" => self::describe::dispatch(&repo, submatches),
             s => panic!("unhandled branch subcommand {s}"),
         }
-    } else if let Some(target_branchname) = matches.get_one::<PartialRefName>("branch-any") {
-        switch(&repo, matches, target_branchname)
-    } else if let Ok(branch) = repo.get_branch(None) {
+    } else if let Some(target_branch_loc) = matches.get_one::<BranchLocator>("branch-any") {
+        switch(&repo, matches, target_branch_loc)
+    } else if let Ok(branch) = repo.get_current_branch() {
         println!("{}", branch.get_branch_name()?);
         Ok(())
     } else {
@@ -101,13 +110,16 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
 fn switch(
     repo: &gix::Repository,
     matches: &clap::ArgMatches,
-    target_branchname: &PartialRefName,
+    target_branch_loc: &BranchLocator,
 ) -> Result<()> {
-    let current_branch = repo.get_branch(None).ok();
+    let current_branch = repo.get_current_branch().ok();
     let current_branchname = current_branch
         .as_ref()
         .and_then(|branch| branch.get_branch_partial_name().ok());
-    if Some(target_branchname) == current_branchname.as_ref() {
+    let target_branch = target_branch_loc.resolve(repo)?;
+    let target_branchname = target_branch.get_branch_partial_name()?;
+
+    if Some(&target_branchname) == current_branchname.as_ref() {
         return Err(anyhow::anyhow!(
             "{target_branchname} is already the current branch"
         ));
@@ -119,8 +131,7 @@ fn switch(
         statuses.check_worktree_clean()?;
     }
     statuses.check_conflicts()?;
-    let target_branch = repo.get_branch(Some(target_branchname))?;
-    stupid.checkout(target_branch.get_branch_name().unwrap())
+    stupid.checkout(target_branchname.as_ref())
 }
 
 fn set_description(

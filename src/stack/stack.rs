@@ -12,6 +12,7 @@ use super::{
     StackAccess, StackStateAccess,
 };
 use crate::{
+    branchloc::BranchLocator,
     ext::RepositoryExtended,
     patch::PatchName,
     stupid::Stupid,
@@ -92,6 +93,36 @@ impl<'repo> Stack<'repo> {
         Ok(())
     }
 
+    pub(crate) fn current(
+        repo: &'repo gix::Repository,
+        init_policy: InitializationPolicy,
+    ) -> Result<Self> {
+        let branch = repo.get_current_branch()?;
+        Stack::from_branch(repo, branch, init_policy)
+    }
+
+    pub(crate) fn from_branch_name(
+        repo: &'repo gix::Repository,
+        branch_name: &PartialRefName,
+        init_policy: InitializationPolicy,
+    ) -> Result<Self> {
+        let branch = repo.get_branch(branch_name)?;
+        Stack::from_branch(repo, branch, init_policy)
+    }
+
+    pub(crate) fn from_branch_locator(
+        repo: &'repo gix::Repository,
+        branch_loc: Option<&BranchLocator>,
+        init_policy: InitializationPolicy,
+    ) -> Result<Self> {
+        let branch = if let Some(loc) = branch_loc {
+            loc.resolve(repo)?
+        } else {
+            repo.get_current_branch()?
+        };
+        Stack::from_branch(repo, branch, init_policy)
+    }
+
     /// Get a stack from an existing branch.
     ///
     /// The current branch is used if the optional branch name is not provided.
@@ -99,10 +130,9 @@ impl<'repo> Stack<'repo> {
     /// An error will be returned if there is no StGit stack associated with the branch.
     pub(crate) fn from_branch(
         repo: &'repo gix::Repository,
-        branch_name: Option<&PartialRefName>,
+        branch: Branch<'repo>,
         init_policy: InitializationPolicy,
     ) -> Result<Self> {
-        let branch = repo.get_branch(branch_name)?;
         let branch_name = branch.get_branch_name()?.to_string();
         let branch_head = Rc::new(branch.get_commit()?);
         let stack_refname = state_refname_from_branch_name(&branch_name);

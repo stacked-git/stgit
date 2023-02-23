@@ -41,7 +41,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     branchnames.sort();
     let branchname_width = branchnames.iter().map(|name| name.as_ref().len()).max();
 
-    let current_branch = repo.get_branch(None).ok();
+    let current_branch = repo.get_current_branch().ok();
     let current_branchname = current_branch
         .as_ref()
         .and_then(|branch| branch.get_branch_partial_name().ok());
@@ -63,11 +63,9 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
             write!(stdout, "  ")?;
         };
 
-        if let Ok(stack) = Stack::from_branch(
-            repo,
-            Some(branchname),
-            InitializationPolicy::RequireInitialized,
-        ) {
+        if let Ok(stack) =
+            Stack::from_branch_name(repo, branchname, InitializationPolicy::RequireInitialized)
+        {
             color_spec.set_fg(Some(termcolor::Color::Cyan));
             stdout.set_color(&color_spec)?;
             write!(stdout, "s")?;

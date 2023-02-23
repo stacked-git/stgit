@@ -154,7 +154,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
     repo.check_repository_state()?;

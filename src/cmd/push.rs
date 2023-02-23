@@ -115,7 +115,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     let opt_number = matches.get_one::<isize>("number").copied();

@@ -5,9 +5,9 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
+    branchloc::BranchLocator,
     ext::RepositoryExtended,
     stack::{InitializationPolicy, Stack, StackStateAccess},
-    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -27,7 +27,7 @@ pub(super) fn command() -> clap::Command {
                 .help("Branch to delete")
                 .value_name("branch")
                 .required(true)
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
         .arg(
             clap::Arg::new("force")
@@ -38,21 +38,22 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let target_branchname = matches
-        .get_one::<PartialRefName>("branch-any")
-        .expect("required argument");
-    let target_branch = repo.get_branch(Some(target_branchname))?;
-    let current_branch = repo.get_branch(None).ok();
+    let target_branch = matches
+        .get_one::<BranchLocator>("branch-any")
+        .expect("required argument")
+        .resolve(repo)?;
+    let target_branchname = target_branch.get_branch_partial_name()?;
+    let current_branch = repo.get_current_branch().ok();
     let current_branchname = current_branch
         .as_ref()
         .and_then(|branch| branch.get_branch_partial_name().ok());
-    if Some(target_branchname) == current_branchname.as_ref() {
+    if Some(target_branchname) == current_branchname {
         return Err(anyhow!("cannot delete the current branch"));
     }
 
     if let Ok(stack) = Stack::from_branch(
         repo,
-        Some(target_branchname),
+        target_branch.clone(),
         InitializationPolicy::RequireInitialized,
     ) {
         if stack.is_protected(&repo.config_snapshot()) {

@@ -80,7 +80,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     let statuses = stupid.statuses(None)?;

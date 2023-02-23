@@ -60,7 +60,7 @@ fn make() -> clap::Command {
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
     if let Some(committish) = crate::argset::get_one_str(matches, "committish") {
-        let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+        let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
         let commit_id = repo
             .rev_parse_single(committish)
             .map_err(|_| anyhow!("invalid committish `{committish}`"))?

@@ -104,6 +104,11 @@ pub(crate) fn partial_ref_name(input: &str) -> nom::IResult<&str, PartialRefName
             input,
             code: ErrorKind::Eof,
         }))
+    } else if name == "-" {
+        Err(nom::Err::Error(Error {
+            input,
+            code: ErrorKind::Verify,
+        }))
     } else if name.ends_with(".lock") {
         // Names ending with ".lock" are invalid and there is no recovery.
         Err(nom::Err::Failure(Error {

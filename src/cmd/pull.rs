@@ -94,7 +94,7 @@ impl Display for PullPolicy {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
     let config = repo.config_snapshot();
@@ -250,7 +250,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
 
     // The above pull and rebase action may have moved the stack's branch reference,
     // so we initialize the stack afresh.
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
     let stack = if stack.is_head_top() {
         stack
     } else {

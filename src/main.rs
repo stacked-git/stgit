@@ -9,6 +9,7 @@
 
 mod alias;
 mod argset;
+mod branchloc;
 mod cmd;
 mod color;
 mod ext;

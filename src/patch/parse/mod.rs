@@ -11,6 +11,7 @@ mod revision;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use self::revision::branch_locator;
 pub(super) use self::{locator::*, range::*, revision::*};
 
 /// The sign of a number.

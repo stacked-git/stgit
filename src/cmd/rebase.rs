@@ -93,7 +93,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
     let config = repo.config_snapshot();
     let stupid = repo.stupid();
     let branch_name = stack.get_branch_name().to_string();
@@ -181,7 +181,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     print_info_message(matches, &format!("Rebasing to `{}`", target_commit.id()));
     stupid.user_rebase(&rebase_cmd, target_commit.id)?;
 
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
     let stack = if stack.is_head_top() {
         stack
     } else {

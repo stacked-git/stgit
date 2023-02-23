@@ -14,6 +14,7 @@ use clap::Arg;
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     color::get_color_stdout,
     ext::{CommitExtended, RepositoryExtended},
     patch::{
@@ -21,7 +22,6 @@ use crate::{
     },
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
-    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -69,7 +69,7 @@ fn make() -> clap::Command {
                 .short('B')
                 .help("Pick patches from <branch>")
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
         .arg(
             Arg::new("revert")
@@ -140,10 +140,10 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
-    let ref_stack = Stack::from_branch(
+    let stack = Stack::current(&repo, InitializationPolicy::AutoInitialize)?;
+    let ref_stack = Stack::from_branch_locator(
         &repo,
-        matches.get_one::<PartialRefName>("ref-branch"),
+        matches.get_one::<BranchLocator>("ref-branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

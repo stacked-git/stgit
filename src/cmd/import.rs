@@ -217,7 +217,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AutoInitialize)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
     let source_path = if matches.get_flag("url") {

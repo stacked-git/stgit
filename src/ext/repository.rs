@@ -33,7 +33,12 @@ pub(crate) trait RepositoryExtended {
     /// Get [`Branch`], with StGit-specific error messaging.
     ///
     /// Gets the current branch if the provided `branch_name` is `None`,
-    fn get_branch(&self, branch_name: Option<&PartialRefName>) -> Result<Branch<'_>>;
+    fn get_branch(&self, branch_name: &PartialRefName) -> Result<Branch<'_>>;
+
+    /// Get the current branch.
+    ///
+    /// Returns an error if the head is detached or unborn.
+    fn get_current_branch(&self) -> Result<Branch<'_>>;
 
     /// Get repository-local config file which can be used to change local
     /// configuration.
@@ -130,46 +135,44 @@ impl RepositoryExtended for gix::Repository {
         })??)
     }
 
-    fn get_branch(&self, branch_name: Option<&PartialRefName>) -> Result<Branch<'_>> {
-        use gix::{head::Kind, refs::Category};
+    fn get_branch(&self, branch_name: &PartialRefName) -> Result<Branch<'_>> {
+        use gix::refs::Category;
 
-        if let Some(name) = branch_name {
-            let gix_name: gix::refs::PartialName = name.into();
-            let reference = self.find_reference(&gix_name).map_err(|e| match e {
-                gix::reference::find::existing::Error::Find(inner) => {
-                    anyhow!("invalid branch name `{name}`: {inner}")
-                }
-                gix::reference::find::existing::Error::NotFound => {
-                    anyhow!("branch `{name}` not found")
-                }
-            })?;
-
-            if matches!(reference.name().category(), Some(Category::LocalBranch),) {
-                Ok(Branch::wrap(reference))
-            } else {
-                Err(anyhow!("reference `{name}` is not a local branch"))
+        let gix_name: gix::refs::PartialName = branch_name.into();
+        let reference = self.find_reference(&gix_name).map_err(|e| match e {
+            gix::reference::find::existing::Error::Find(inner) => {
+                anyhow!("invalid branch name `{branch_name}`: {inner}")
             }
+            gix::reference::find::existing::Error::NotFound => {
+                anyhow!("branch `{branch_name}` not found")
+            }
+        })?;
+
+        if matches!(reference.name().category(), Some(Category::LocalBranch),) {
+            Ok(Branch::wrap(reference))
         } else {
-            match self.head()?.kind {
-                Kind::Symbolic(inner_reference) => {
-                    if matches!(inner_reference.name.category(), Some(Category::LocalBranch)) {
-                        let reference = self
-                            .find_reference(&inner_reference.name)
-                            .expect("inner reference is known to be valid");
-                        Ok(Branch::wrap(reference))
-                    } else {
-                        Err(anyhow!(
-                            "HEAD points to `{}` which is not a local branch",
-                            inner_reference.name
-                        ))
-                    }
+            Err(anyhow!("reference `{branch_name}` is not a local branch"))
+        }
+    }
+
+    fn get_current_branch(&self) -> Result<Branch<'_>> {
+        use gix::{head::Kind, refs::Category};
+        match self.head()?.kind {
+            Kind::Symbolic(inner_reference) => {
+                if matches!(inner_reference.name.category(), Some(Category::LocalBranch)) {
+                    let reference = self
+                        .find_reference(&inner_reference.name)
+                        .expect("inner reference is known to be valid");
+                    Ok(Branch::wrap(reference))
+                } else {
+                    Err(anyhow!(
+                        "HEAD points to `{}` which is not a local branch",
+                        inner_reference.name
+                    ))
                 }
-                Kind::Unborn(full_name) => Err(anyhow!("branch `{full_name}` is unborn")),
-                Kind::Detached {
-                    target: _,
-                    peeled: _,
-                } => Err(anyhow!("not on branch, HEAD is detached")),
             }
+            Kind::Unborn(full_name) => Err(anyhow!("branch `{full_name}` is unborn")),
+            Kind::Detached { .. } => Err(anyhow!("not on branch, HEAD is detached")),
         }
     }
 

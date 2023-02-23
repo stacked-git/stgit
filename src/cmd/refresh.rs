@@ -157,7 +157,7 @@ fn run(matches: &ArgMatches) -> Result<()> {
     }
 
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
     let config = repo.config_snapshot();
     let allow_push_conflicts = argset::resolve_allow_push_conflicts(&config, matches);
 

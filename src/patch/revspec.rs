@@ -87,7 +87,9 @@ impl FromStr for PatchLikeSpec {
 impl std::fmt::Display for RangeRevisionSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RangeRevisionSpec::BranchRange { branch, bounds } => write!(f, "{branch}:{bounds}"),
+            RangeRevisionSpec::BranchRange { branch_loc, bounds } => {
+                write!(f, "{branch_loc}:{bounds}")
+            }
             RangeRevisionSpec::Range(bounds) => write!(f, "{bounds}"),
             RangeRevisionSpec::Single(spec) => write!(f, "{spec}"),
         }
@@ -97,7 +99,10 @@ impl std::fmt::Display for RangeRevisionSpec {
 impl std::fmt::Display for SingleRevisionSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SingleRevisionSpec::Branch { branch, patch_like } => write!(f, "{branch}:{patch_like}"),
+            SingleRevisionSpec::Branch {
+                branch_loc,
+                patch_like,
+            } => write!(f, "{branch_loc}:{patch_like}"),
             SingleRevisionSpec::PatchAndGitLike(_, git_like) => f.write_str(git_like),
             SingleRevisionSpec::GitLike(git_like) => f.write_str(git_like),
             SingleRevisionSpec::PatchLike(patch_like) => write!(f, "{patch_like}"),
@@ -126,10 +131,10 @@ impl RangeRevisionSpec {
         use_applied_boundary: bool,
     ) -> Result<StGitBoundaryRevisions<'repo>> {
         match self {
-            RangeRevisionSpec::BranchRange { branch, bounds } => {
-                let stack = Stack::from_branch(
+            RangeRevisionSpec::BranchRange { branch_loc, bounds } => {
+                let stack = Stack::from_branch_locator(
                     repo,
-                    Some(branch),
+                    Some(branch_loc),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 bounds
@@ -142,8 +147,7 @@ impl RangeRevisionSpec {
                         .resolve_revisions(stack, use_applied_boundary)
                         .map_err(anyhow::Error::from)
                 } else {
-                    let stack =
-                        Stack::from_branch(repo, None, InitializationPolicy::AllowUninitialized)?;
+                    let stack = Stack::current(repo, InitializationPolicy::AllowUninitialized)?;
                     bounds
                         .resolve_revisions(&stack, use_applied_boundary)
                         .map_err(anyhow::Error::from)
@@ -167,10 +171,10 @@ pub(crate) fn resolve<'a, 'repo>(
     let mut revs = Vec::new();
     for spec in specs {
         match spec {
-            RangeRevisionSpec::BranchRange { branch, bounds } => {
-                let stack = Stack::from_branch(
+            RangeRevisionSpec::BranchRange { branch_loc, bounds } => {
+                let stack = Stack::from_branch_locator(
                     repo,
-                    Some(branch),
+                    Some(branch_loc),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 let range = PatchRange::from(bounds);
@@ -189,8 +193,7 @@ pub(crate) fn resolve<'a, 'repo>(
                         revs.push(StGitRevision { patchname, commit });
                     }
                 } else {
-                    let stack =
-                        Stack::from_branch(repo, None, InitializationPolicy::AllowUninitialized)?;
+                    let stack = Stack::current(repo, InitializationPolicy::AllowUninitialized)?;
                     for patchname in patchrange::resolve_names(&stack, [&range], allow)? {
                         let commit = stack.get_patch_commit(&patchname).clone();
                         let patchname = Some(patchname);
@@ -266,10 +269,13 @@ impl SingleRevisionSpec {
         stack: Option<&impl StackAccess<'repo>>,
     ) -> Result<StGitRevision<'repo>> {
         match self {
-            SingleRevisionSpec::Branch { branch, patch_like } => {
-                let stack = Stack::from_branch(
+            SingleRevisionSpec::Branch {
+                branch_loc,
+                patch_like,
+            } => {
+                let stack = Stack::from_branch_locator(
                     repo,
-                    Some(branch),
+                    Some(branch_loc),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 patch_like.resolve(repo, &stack)
@@ -280,7 +286,7 @@ impl SingleRevisionSpec {
                         .resolve(repo, stack)
                         .or_else(|e| resolve_git_like(repo, git_like).map_err(|_| e))
                 } else if let Ok(stack) =
-                    Stack::from_branch(repo, None, InitializationPolicy::AllowUninitialized)
+                    Stack::current(repo, InitializationPolicy::AllowUninitialized)
                 {
                     patch_like
                         .resolve(repo, &stack)
@@ -295,7 +301,7 @@ impl SingleRevisionSpec {
                     patch_like.resolve(repo, stack)
                 } else {
                     let stack =
-                        Stack::from_branch(repo, None, InitializationPolicy::AllowUninitialized)
+                        Stack::current(repo, InitializationPolicy::AllowUninitialized)
                             .with_context(|| format!(
                                 "initializing stack from current branch for patch-like revision {patch_like}"
                             ))?;
@@ -311,11 +317,14 @@ impl SingleRevisionSpec {
         repo: &'repo gix::Repository,
         stack: &impl StackAccess<'repo>,
     ) -> Result<gix::Object<'repo>> {
-        let object = match self {
-            SingleRevisionSpec::Branch { branch, patch_like } => {
-                let stack = Stack::from_branch(
+        Ok(match self {
+            SingleRevisionSpec::Branch {
+                branch_loc,
+                patch_like,
+            } => {
+                let stack = Stack::from_branch_locator(
                     repo,
-                    Some(branch),
+                    Some(branch_loc),
                     InitializationPolicy::AllowUninitialized,
                 )?;
                 patch_like.resolve_object(repo, &stack)?
@@ -332,8 +341,7 @@ impl SingleRevisionSpec {
                 repo.rev_parse_single_ex(name_suffix)?.object()?
             }
             SingleRevisionSpec::PatchLike(patch_like) => patch_like.resolve_object(repo, stack)?,
-        };
-        Ok(object)
+        })
     }
 
     /// Resolve single revision specification into a [`gix::Tree`].

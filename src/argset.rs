@@ -5,7 +5,7 @@
 use bstr::ByteSlice;
 use clap::Arg;
 
-use crate::wrap::PartialRefName;
+use crate::branchloc::BranchLocator;
 
 /// The `--branch`/`-b` option for selecting an alternative branch.
 pub(crate) fn branch_arg() -> Arg {
@@ -16,7 +16,7 @@ pub(crate) fn branch_arg() -> Arg {
         .num_args(1)
         .value_name("branch")
         .value_hint(clap::ValueHint::Other)
-        .value_parser(clap::value_parser!(PartialRefName))
+        .value_parser(clap::value_parser!(BranchLocator))
 }
 
 /// The `--keep/-k` option.

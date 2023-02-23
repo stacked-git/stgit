@@ -7,8 +7,8 @@
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag},
-    character::complete::char as the_char,
-    combinator::{map, opt, recognize},
+    character::complete::{char as the_char, digit1},
+    combinator::{map, map_res, opt, recognize},
     multi::{many0, many0_count},
     sequence::{delimited, preceded, terminated, tuple},
     Parser,
@@ -20,12 +20,12 @@ use super::{
     patch_locator,
     range::patch_range_bounds,
 };
-use crate::wrap::{partial_ref_name, PartialRefName};
+use crate::{branchloc::BranchLocator, wrap::partial_ref_name};
 
 pub(in super::super) fn range_revision_spec(input: &str) -> nom::IResult<&str, RangeRevisionSpec> {
     alt((
         tuple((branch_prefix, patch_range_bounds))
-            .map(|(branch, bounds)| RangeRevisionSpec::BranchRange { branch, bounds }),
+            .map(|(branch_loc, bounds)| RangeRevisionSpec::BranchRange { branch_loc, bounds }),
         patch_range_bounds.map(RangeRevisionSpec::Range),
         single_revision_spec.map(RangeRevisionSpec::Single),
     ))(input)
@@ -35,14 +35,39 @@ pub(in super::super) fn single_revision_spec(
     input: &str,
 ) -> nom::IResult<&str, SingleRevisionSpec> {
     alt((
-        tuple((branch_prefix, patch_like_spec))
-            .map(|(branch, patch_like)| SingleRevisionSpec::Branch { branch, patch_like }),
+        tuple((branch_prefix, patch_like_spec)).map(|(branch_loc, patch_like)| {
+            SingleRevisionSpec::Branch {
+                branch_loc,
+                patch_like,
+            }
+        }),
         patch_and_or_git_like_spec,
     ))(input)
 }
 
-fn branch_prefix(input: &str) -> nom::IResult<&str, PartialRefName> {
-    terminated(partial_ref_name, the_char(':'))(input)
+fn branch_prefix(input: &str) -> nom::IResult<&str, BranchLocator> {
+    terminated(branch_locator, the_char(':'))(input)
+}
+
+pub(crate) fn branch_locator(input: &str) -> nom::IResult<&str, BranchLocator> {
+    alt((
+        map_res(delimited(tag("@{-"), digit1, the_char('}')), |s: &str| {
+            s.parse::<usize>()
+                .map_err(anyhow::Error::from)
+                .and_then(|n| {
+                    if n > 0 {
+                        Ok(n)
+                    } else {
+                        Err(anyhow::anyhow!(
+                            "`0` is invalid reference to previous checkout"
+                        ))
+                    }
+                })
+                .map(BranchLocator::PrevCheckout)
+        }),
+        map(partial_ref_name, BranchLocator::Name),
+        map(tag("-"), |_| BranchLocator::PrevCheckout(1)),
+    ))(input)
 }
 
 fn patch_and_or_git_like_spec(input: &str) -> nom::IResult<&str, SingleRevisionSpec> {

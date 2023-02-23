@@ -9,11 +9,11 @@ use clap::Arg;
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
-    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -371,9 +371,9 @@ pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
         return repo.stupid().send_email_dump_aliases();
     }
 
-    let stack = Stack::from_branch(
+    let stack = Stack::from_branch_locator(
         &repo,
-        matches.get_one::<PartialRefName>("branch"),
+        matches.get_one::<BranchLocator>("branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

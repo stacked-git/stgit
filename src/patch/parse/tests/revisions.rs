@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use std::str::FromStr;
+
 use super::{name, offsets};
-use crate::patch::{
-    parse::{single_revision_spec, tilde_number},
-    GitRevisionSuffix, PartialRefName, PatchId, PatchLikeSpec, PatchLocator, SingleRevisionSpec,
+use crate::{
+    branchloc::BranchLocator,
+    patch::{
+        parse::{branch_locator, single_revision_spec, tilde_number},
+        GitRevisionSuffix, PatchId, PatchLikeSpec, PatchLocator, SingleRevisionSpec,
+    },
+    wrap::PartialRefName,
 };
 
 #[test]
@@ -95,7 +101,7 @@ fn single_specs() {
         (
             "",
             SingleRevisionSpec::Branch {
-                branch: PartialRefName("foo/bar".to_string()),
+                branch_loc: BranchLocator::Name(PartialRefName("foo/bar".to_string())),
                 patch_like: PatchLikeSpec {
                     patch_loc: PatchLocator {
                         id: PatchId::Name(name("baz")),
@@ -111,7 +117,7 @@ fn single_specs() {
         (
             "",
             SingleRevisionSpec::Branch {
-                branch: PartialRefName("foo/bar".to_string()),
+                branch_loc: BranchLocator::Name(PartialRefName("foo/bar".to_string())),
                 patch_like: PatchLikeSpec {
                     patch_loc: PatchLocator {
                         id: PatchId::Name(name("baz")),
@@ -127,7 +133,7 @@ fn single_specs() {
         (
             "",
             SingleRevisionSpec::Branch {
-                branch: PartialRefName("foo/bar".to_string()),
+                branch_loc: BranchLocator::Name(PartialRefName("foo/bar".to_string())),
                 patch_like: PatchLikeSpec {
                     patch_loc: PatchLocator {
                         id: PatchId::BelowLast(None),
@@ -143,7 +149,7 @@ fn single_specs() {
         (
             "",
             SingleRevisionSpec::Branch {
-                branch: PartialRefName(String::from("foo")),
+                branch_loc: BranchLocator::Name(PartialRefName(String::from("foo"))),
                 patch_like: PatchLikeSpec {
                     patch_loc: PatchLocator {
                         id: PatchId::Name(name("baz")),
@@ -168,6 +174,56 @@ fn single_specs() {
                 },
                 String::from("baz^{/search}")
             )
+        )
+    );
+}
+
+#[test]
+fn branch_locators() {
+    assert_eq!(
+        branch_locator("name").unwrap(),
+        (
+            "",
+            BranchLocator::Name(PartialRefName::from_str("name").unwrap())
+        )
+    );
+
+    assert_eq!(
+        branch_locator("dir/name").unwrap(),
+        (
+            "",
+            BranchLocator::Name(PartialRefName::from_str("dir/name").unwrap())
+        )
+    );
+
+    assert_eq!(
+        branch_locator("refs/heads/dir/name").unwrap(),
+        (
+            "",
+            BranchLocator::Name(PartialRefName::from_str("refs/heads/dir/name").unwrap())
+        )
+    );
+
+    assert_eq!(
+        branch_locator("@{-1}").unwrap(),
+        ("", BranchLocator::PrevCheckout(1),)
+    );
+
+    assert_eq!(
+        branch_locator("@{-3}").unwrap(),
+        ("", BranchLocator::PrevCheckout(3),)
+    );
+
+    assert_eq!(
+        branch_locator("-").unwrap(),
+        ("", BranchLocator::PrevCheckout(1),)
+    );
+
+    assert_eq!(
+        branch_locator("-123").unwrap(),
+        (
+            "",
+            BranchLocator::Name(PartialRefName::from_str("-123").unwrap())
         )
     );
 }

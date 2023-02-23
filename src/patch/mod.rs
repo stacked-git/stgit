@@ -20,7 +20,7 @@ use std::rc::Rc;
 use serde::{Deserialize, Serialize};
 
 pub(crate) use self::{edit as patchedit, range as patchrange};
-use crate::wrap::PartialRefName;
+use crate::branchloc::BranchLocator;
 
 /// A range of patches in the stack.
 ///
@@ -195,7 +195,7 @@ pub(crate) enum LocationGroup {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum RangeRevisionSpec {
     BranchRange {
-        branch: PartialRefName,
+        branch_loc: BranchLocator,
         bounds: PatchRangeBounds,
     },
     Range(PatchRangeBounds),
@@ -215,7 +215,7 @@ pub(crate) enum RangeRevisionSpec {
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) enum SingleRevisionSpec {
     Branch {
-        branch: PartialRefName,
+        branch_loc: BranchLocator,
         patch_like: PatchLikeSpec,
     },
     PatchAndGitLike(PatchLikeSpec, String),

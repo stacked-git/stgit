@@ -65,7 +65,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::RequireInitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::RequireInitialized)?;
     let config = repo.config_snapshot();
     if stack.is_protected(&config) {
         return Err(anyhow!(

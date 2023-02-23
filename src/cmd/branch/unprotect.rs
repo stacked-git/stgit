@@ -5,8 +5,8 @@
 use anyhow::Result;
 
 use crate::{
+    branchloc::BranchLocator,
     stack::{InitializationPolicy, Stack},
-    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -18,14 +18,14 @@ pub(super) fn command() -> clap::Command {
             clap::Arg::new("branch")
                 .help("Branch to unprotect")
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(
+    let stack = Stack::from_branch_locator(
         repo,
-        matches.get_one::<PartialRefName>("branch"),
+        matches.get_one::<BranchLocator>("branch"),
         InitializationPolicy::RequireInitialized,
     )?;
     stack.set_protected(false)

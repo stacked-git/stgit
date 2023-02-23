@@ -11,10 +11,10 @@ use termcolor::WriteColor;
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchName, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
-    wrap::PartialRefName,
 };
 
 const UNPRINTABLE: &str = "???";
@@ -107,7 +107,7 @@ fn make() -> clap::Command {
                 .help("Select patches in <branch> not present in current branch")
                 .num_args(1)
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName))
+                .value_parser(clap::value_parser!(BranchLocator))
                 .value_hint(ValueHint::Other),
         )
         .next_help_heading("Display Options")
@@ -318,17 +318,17 @@ impl FromStr for CommitIdLength {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_branch = matches.get_one::<PartialRefName>("branch");
-    let opt_missing = matches.get_one::<PartialRefName>("missing");
+    let opt_branch = matches.get_one::<BranchLocator>("branch");
+    let opt_missing = matches.get_one::<BranchLocator>("missing");
 
     let (stack, ref_stack) = if let Some(ref_branch) = opt_missing {
         (
-            Stack::from_branch(
+            Stack::from_branch_locator(
                 &repo,
                 Some(ref_branch),
                 InitializationPolicy::AllowUninitialized,
             )?,
-            Some(Stack::from_branch(
+            Some(Stack::from_branch_locator(
                 &repo,
                 opt_branch,
                 InitializationPolicy::RequireInitialized,
@@ -336,7 +336,11 @@ fn run(matches: &ArgMatches) -> Result<()> {
         )
     } else {
         (
-            Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?,
+            Stack::from_branch_locator(
+                &repo,
+                opt_branch,
+                InitializationPolicy::AllowUninitialized,
+            )?,
             None,
         )
     };

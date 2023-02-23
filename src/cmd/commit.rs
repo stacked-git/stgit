@@ -75,7 +75,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
 
     let range_specs = matches.get_many::<PatchRange>("patchranges");
     let patches: Vec<PatchName> = if let Some(range_specs) = range_specs {

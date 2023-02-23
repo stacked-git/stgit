@@ -68,7 +68,7 @@ fn make() -> clap::Command {
 
 fn run(matches: &ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(&repo, None, InitializationPolicy::AllowUninitialized)?;
+    let stack = Stack::current(&repo, InitializationPolicy::AllowUninitialized)?;
     stack.check_head_top_mismatch()?;
 
     let patchname = if let Some(patch_loc) = matches.get_one::<PatchLocator>("patch") {

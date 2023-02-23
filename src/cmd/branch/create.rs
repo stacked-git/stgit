@@ -92,7 +92,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
             );
             None
         }
-    } else if let Ok(current_branch) = repo.get_branch(None) {
+    } else if let Ok(current_branch) = repo.get_current_branch() {
         Some(current_branch)
     } else {
         None
@@ -132,17 +132,14 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
 
     let new_branch = Branch::wrap(repo.find_reference(&new_fullname)?);
 
-    let stack = match Stack::from_branch(
-        repo,
-        Some(new_branchname),
-        InitializationPolicy::MustInitialize,
-    ) {
-        Ok(stack) => stack,
-        Err(e) => {
-            new_branch.delete()?;
-            return Err(e);
-        }
-    };
+    let stack =
+        match Stack::from_branch_name(repo, new_branchname, InitializationPolicy::MustInitialize) {
+            Ok(stack) => stack,
+            Err(e) => {
+                new_branch.delete()?;
+                return Err(e);
+            }
+        };
 
     if let Some(parent_branch) = parent_branch.as_ref() {
         super::set_stgit_parent(repo, new_branchname, parent_branchname.as_ref())?;

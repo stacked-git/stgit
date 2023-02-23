@@ -34,7 +34,7 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<()> {
-    let current_branch = repo.get_branch(None)?;
+    let current_branch = repo.get_current_branch()?;
     let current_branchname = current_branch.get_branch_partial_name()?;
 
     let generated_branchname;
@@ -55,7 +55,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
     repo.check_repository_state()?;
     statuses.check_conflicts()?;
 
-    if let Ok(stack) = Stack::from_branch(repo, None, InitializationPolicy::RequireInitialized) {
+    if let Ok(stack) = Stack::current(repo, InitializationPolicy::RequireInitialized) {
         stack.check_head_top_mismatch()?;
         let state_ref = repo
             .find_reference(stack.get_stack_refname())
@@ -79,11 +79,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
         stupid.branch_copy(None, new_branchname.as_ref())?;
     } else {
         stupid.branch_copy(None, new_branchname.as_ref())?;
-        Stack::from_branch(
-            repo,
-            Some(new_branchname),
-            InitializationPolicy::MustInitialize,
-        )?;
+        Stack::from_branch_name(repo, new_branchname, InitializationPolicy::MustInitialize)?;
     };
 
     super::set_stgit_parent(repo, new_branchname, Some(&current_branchname))?;
@@ -94,6 +90,6 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
         &format!("clone of {current_branchname}"),
     )?;
 
-    let new_branch = repo.get_branch(Some(new_branchname))?;
+    let new_branch = repo.get_branch(new_branchname)?;
     stupid.checkout(new_branch.get_branch_name().unwrap())
 }

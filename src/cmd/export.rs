@@ -15,11 +15,11 @@ use clap::Arg;
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
     stupid::Stupid,
-    wrap::PartialRefName,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -122,8 +122,9 @@ fn make() -> clap::Command {
 
 fn run(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let opt_branch = matches.get_one::<PartialRefName>("branch");
-    let stack = Stack::from_branch(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
+    let opt_branch = matches.get_one::<BranchLocator>("branch");
+    let stack =
+        Stack::from_branch_locator(&repo, opt_branch, InitializationPolicy::AllowUninitialized)?;
     let stupid = repo.stupid();
 
     if opt_branch.is_none()

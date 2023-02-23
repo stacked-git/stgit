@@ -1060,6 +1060,26 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         }
     }
 
+    pub(crate) fn rev_parse_symbolic_full_name(&self, name: &str) -> Result<Option<String>> {
+        let output = self
+            .git()
+            .args([
+                "rev-parse",
+                "--symbolic-full-name",
+                "--verify",
+                "--end-of-options",
+                name,
+            ])
+            .output_git()?
+            .require_success("rev-parse --symbolic-full-name")?;
+        let full_name = output.stdout.to_str()?.trim_end();
+        if full_name.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(full_name.to_string()))
+        }
+    }
+
     pub(crate) fn send_email<OptIter, OptArg>(&self, args: OptIter) -> Result<()>
     where
         OptIter: IntoIterator<Item = OptArg>,

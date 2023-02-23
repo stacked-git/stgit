@@ -7,11 +7,11 @@ use clap::Arg;
 
 use crate::{
     argset,
+    branchloc::BranchLocator,
     ext::{CommitExtended, RepositoryExtended},
     patch::{patchrange, PatchRange, RangeConstraint},
     stack::{InitializationPolicy, Stack, StackStateAccess},
     stupid::Stupid,
-    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -441,9 +441,9 @@ fn message_options() -> Vec<Arg> {
 
 pub(super) fn dispatch(matches: &clap::ArgMatches) -> Result<()> {
     let repo = gix::Repository::open()?;
-    let stack = Stack::from_branch(
+    let stack = Stack::from_branch_locator(
         &repo,
-        matches.get_one::<PartialRefName>("branch"),
+        matches.get_one::<BranchLocator>("branch"),
         InitializationPolicy::AllowUninitialized,
     )?;
 

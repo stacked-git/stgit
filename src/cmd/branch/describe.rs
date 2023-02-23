@@ -26,7 +26,11 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let branch = repo.get_branch(matches.get_one::<PartialRefName>("branch-any"))?;
+    let branch = if let Some(name) = matches.get_one::<PartialRefName>("branch-any") {
+        repo.get_branch(name)?
+    } else {
+        repo.get_current_branch()?
+    };
     let description = get_one_str(matches, "description").expect("required argument");
     let branchname = branch.get_branch_partial_name()?;
     super::set_description(repo, &branchname, description)

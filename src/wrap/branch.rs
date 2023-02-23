@@ -7,6 +7,7 @@ use bstr::ByteSlice;
 
 use crate::wrap::PartialRefName;
 
+#[derive(Clone, Debug)]
 pub(crate) struct Branch<'repo> {
     inner: gix::Reference<'repo>,
 }

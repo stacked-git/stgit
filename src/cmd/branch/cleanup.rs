@@ -5,8 +5,8 @@
 use anyhow::{anyhow, Result};
 
 use crate::{
+    branchloc::BranchLocator,
     stack::{InitializationPolicy, Stack, StackStateAccess},
-    wrap::PartialRefName,
 };
 
 pub(super) fn command() -> clap::Command {
@@ -26,7 +26,7 @@ pub(super) fn command() -> clap::Command {
             clap::Arg::new("branch")
                 .help("Branch to clean up")
                 .value_name("branch")
-                .value_parser(clap::value_parser!(PartialRefName)),
+                .value_parser(clap::value_parser!(BranchLocator)),
         )
         .arg(
             clap::Arg::new("force")
@@ -37,9 +37,9 @@ pub(super) fn command() -> clap::Command {
 }
 
 pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Result<()> {
-    let stack = Stack::from_branch(
+    let stack = Stack::from_branch_locator(
         repo,
-        matches.get_one::<PartialRefName>("branch"),
+        matches.get_one::<BranchLocator>("branch"),
         InitializationPolicy::RequireInitialized,
     )?;
     if stack.is_protected(&repo.config_snapshot()) {
