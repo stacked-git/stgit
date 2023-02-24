@@ -212,7 +212,6 @@ impl<'repo> StackState<'repo> {
             Some(prev_commit) => {
                 vec![prev_commit
                     .parent_ids()
-                    .into_iter()
                     .next()
                     .expect("prev state commit has a parent")
                     .detach()]
