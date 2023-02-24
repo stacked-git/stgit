@@ -16,14 +16,13 @@ use std::{rc::Rc, str::FromStr};
 
 use anyhow::{Context, Result};
 
-use crate::{
-    ext::RepositoryExtended,
-    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
-};
-
 use super::{
     patchrange, GitRevisionSuffix, PartialRefName, PatchLikeSpec, PatchRange, RangeConstraint,
     RangeRevisionSpec, SingleRevisionSpec, StGitBoundaryRevisions, StGitRevision,
+};
+use crate::{
+    ext::RepositoryExtended,
+    stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
 };
 
 /// StGit revision specification error variants.

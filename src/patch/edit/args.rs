@@ -7,9 +7,8 @@ use clap::{
     Arg, ValueHint,
 };
 
-use crate::{argset, ext::TimeExtended};
-
 use super::parse::{parse_email, parse_name, parse_name_email2};
+use crate::{argset, ext::TimeExtended};
 
 /// Add patch editing options to a StGit command.
 pub(crate) fn add_args(

@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::{super::patch_range, name, offsets};
 use crate::patch::{PatchId, PatchLocator, PatchRange, PatchRangeBounds};
-
-use super::super::patch_range;
-use super::{name, offsets};
 
 #[test]
 fn range_parsing() {

@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
-
 use super::{
     super::{
         oid_prefix_offsets, patch_locator, patch_offset_atom, patch_offset_atoms, patch_offsets,
     },
     name, offsets,
 };
+use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
 
 fn good_locator(s: &str) -> (&str, PatchLocator) {
     patch_locator(s).expect("valid patch locator")

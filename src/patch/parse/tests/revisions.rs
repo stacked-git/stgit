@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::{name, offsets};
 use crate::patch::{
     parse::{single_revision_spec, tilde_number},
     GitRevisionSuffix, PartialRefName, PatchId, PatchLikeSpec, PatchLocator, SingleRevisionSpec,
 };
-
-use super::{name, offsets};
 
 #[test]
 fn tilde_stuff() {

@@ -23,15 +23,12 @@ use anyhow::{anyhow, Result};
 use bstr::{BString, ByteSlice};
 use clap::ArgMatches;
 
+pub(crate) use self::{args::add_args, interactive::call_editor, parse::parse_name_email};
 use self::{
     description::{DiffBuffer, EditablePatchDescription, EditedPatchDescription},
     interactive::edit_interactive,
 };
-
-pub(crate) use self::{args::add_args, interactive::call_editor, parse::parse_name_email};
-
 use super::PatchName;
-
 use crate::{
     ext::{CommitExtended, RepositoryExtended, SignatureExtended},
     stack::StackStateAccess,

@@ -9,9 +9,8 @@ use nom::{
     sequence::separated_pair,
 };
 
-use crate::patch::{PatchRange, PatchRangeBounds};
-
 use super::patch_locator;
+use crate::patch::{PatchRange, PatchRangeBounds};
 
 pub(in super::super) fn patch_range(input: &str) -> nom::IResult<&str, PatchRange> {
     alt((

@@ -2,9 +2,9 @@
 
 //! Parsing support for [`PatchName`] and [`PartialRefName`].
 
-use crate::patch::{PartialRefName, PatchName};
-
 use nom::error::{Error, ErrorKind};
+
+use crate::patch::{PartialRefName, PatchName};
 
 pub(super) fn patch_name(input: &str) -> nom::IResult<&str, PatchName> {
     let mut iter = input.char_indices().peekable();

@@ -5,13 +5,12 @@ mod names;
 mod ranges;
 mod revisions;
 
-use nom::combinator::opt;
-
 use std::str::FromStr;
 
-use crate::patch::{PatchName, PatchOffsets};
+use nom::combinator::opt;
 
 use super::numbers::unsigned_int;
+use crate::patch::{PatchName, PatchOffsets};
 
 fn name(s: &str) -> PatchName {
     PatchName::from_str(s).expect("valid patch name")

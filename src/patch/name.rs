@@ -4,9 +4,8 @@
 
 use std::str::FromStr;
 
-use crate::stack::StackStateAccess;
-
 use super::{LocationConstraint, LocationGroup, PatchName};
+use crate::stack::StackStateAccess;
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {

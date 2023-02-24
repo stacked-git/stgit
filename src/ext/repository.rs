@@ -283,11 +283,12 @@ impl RepositoryExtended for gix::Repository {
     }
 
     fn rev_parse_single_ex(&self, spec: &str) -> Result<gix::Id<'_>> {
-        use crate::patch::revspec::Error;
         use gix::{
             refs::file::find::existing::Error as FindError,
             revision::spec::parse::{single::Error as SingleError, Error as SpecParseError},
         };
+
+        use crate::patch::revspec::Error;
 
         // Catch revspec ranges early because gitoxide will only flag this as an error if
         // both specs in the range are valid.

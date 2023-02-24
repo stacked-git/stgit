@@ -11,13 +11,12 @@ use nom::{
     sequence::tuple,
 };
 
-use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
-
 use super::{
     name::patch_name,
     numbers::{negative_int, nonplussed_int, plusative_int, sign, unsigned_int},
     Sign,
 };
+use crate::patch::{PatchId, PatchLocator, PatchOffsetAtom, PatchOffsets};
 
 pub(in super::super) fn patch_locator(input: &str) -> nom::IResult<&str, PatchLocator> {
     alt((

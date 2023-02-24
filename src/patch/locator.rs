@@ -4,9 +4,8 @@
 
 use std::{cmp::Ordering, fmt::Write, rc::Rc, str::FromStr};
 
-use crate::stack::{StackAccess, StackStateAccess};
-
 use super::{PatchId, PatchLocator, PatchName, PatchOffsetAtom, PatchOffsets, StGitRevision};
+use crate::stack::{StackAccess, StackStateAccess};
 
 #[derive(thiserror::Error, Debug)]
 pub(crate) enum Error {

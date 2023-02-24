@@ -2,9 +2,8 @@
 
 use std::{collections::BTreeMap, rc::Rc, str::FromStr};
 
-use crate::stack::{PatchState, StackStateAccess};
-
 use super::super::*;
+use crate::stack::{PatchState, StackStateAccess};
 
 #[derive(Debug, Default)]
 struct DummyStack {

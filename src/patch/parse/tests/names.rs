@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-use crate::patch::parse::name::patch_name;
-
 use super::name;
+use crate::patch::parse::name::patch_name;
 
 #[test]
 fn name_parsing() {
