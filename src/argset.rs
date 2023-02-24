@@ -12,7 +12,7 @@ pub(crate) fn branch_arg() -> Arg {
     Arg::new("branch")
         .long("branch")
         .short('b')
-        .help("Use BRANCH instead of current branch")
+        .help("Use <branch> instead of current branch")
         .num_args(1)
         .value_name("branch")
         .value_hint(clap::ValueHint::Other)
