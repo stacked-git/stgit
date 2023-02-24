@@ -1,5 +1,41 @@
 # Changelog
 
+## [2.2.0] 2023-02-24
+
+### Removed
+- feat!: remove short -s option for --submodules
+- fix!: patch name cannot be {base} or @
+
+### Added
+- feat: patch locator syntax
+- feat: locate branches using @{-N} syntax
+- feat(series): Add --reverse option
+- feat(series): options for patch offsets and indices
+- feat(series): --no-xxx options to override display options
+- feat(series): optional value for --short
+- feat!: short -s option for --signoff (#245)
+- feat(init): add -b/--branch option
+
+### Changed
+- fix!: use -S as short opt for --series
+- feat!: constrain refresh -p to visible patches
+- feat(series)!: empty patch prefix changed to *
+- feat!: spell errors in lowercase
+- refactor: use gitoxide instead of git2
+- refactor: use time crate instead of chrono
+- feat!: update to clap 4.1
+- chore: update to latest dependencies
+
+### Fixed
+- fix: Error if author or committer is not configured
+- fix: Use correct base directory for core.hooksPaths
+- fix(rename): colliding patch names
+- fix(rebase): repair rebasing to a tag (#265)
+- fix(branch): switch branch with detached head
+- docs: Repair docstrings being confused as html
+- docs: normalized spelling for --branch value
+
+
 ## [2.1.0] 2022-12-12
 
 ### Added
