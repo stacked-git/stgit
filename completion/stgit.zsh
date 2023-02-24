@@ -732,6 +732,7 @@ _stg-import() {
 _stg-init() {
     local -a subcmd_args
     __stg_add_args_help
+    __stg_add_args_branch
     _arguments -s $subcmd_args
 }
 
