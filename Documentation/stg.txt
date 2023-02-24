@@ -118,13 +118,13 @@ The complete syntax for locating patches follows:
   Refers to the topmost applied patch, or the base of the stack if no
   patches are applied.
 
-'<patchname>{tilde}[<n>]', e.g. 'patch{tilde}', 'patch{tilde}3'::
-  The <n>th previous patch from the named patch. A single '{tilde}'
-  represents the first previous patch. Multiple '{tilde}' may be
-  specified, e.g. 'patch{tilde}{tilde}{tilde}' is the same as
-  'patch{tilde}3'. This is similar to git's revision syntax where
-  '<rev>^[<n>]' means the <n>th ancestor commit from <rev> following
-  first parents.
+'[<patchname>]{tilde}[<n>]', e.g. '{tilde}2', 'patch{tilde}', 'patch{tilde}3'::
+  The <n>th previous patch from the named patch. If <patchname> is not
+  supplied, '@' is implied. A single '{tilde}' represents the first
+  previous patch. Multiple '{tilde}' may be specified, e.g.
+  'patch{tilde}{tilde}{tilde}' is the same as 'patch{tilde}3'. This is
+  similar to git's revision syntax where '<rev>~[<n>]' means the <n>th
+  ancestor commit from <rev> following first parents.
 
 '[<patchname>]{plus}[<n>]', e.g. '{plus}', '{plus}3', 'patch{plus}', 'patch{plus}3'::
   The <n>th next patch from the named patch. If <patchname> is not
@@ -143,9 +143,9 @@ The complete syntax for locating patches follows:
   index, so '0' refers to the bottommost patch in the stack.
 
 '{caret}[<n>]', e.g. '{caret}', '{caret}3'::
-  The patch at offset <n> from the last unapplied patch in the stack.
+  The patch at offset <n> from the last visible patch in the stack.
   This is a zero-based offset, so '{caret}0' refers to the last
-  unapplied patch in the stack, which is equivalent to just
+  visible patch in the stack, which is equivalent to just
   '{caret}'. Negative values of <n> are allowed and refer to hidden
   patches which are after the last visible patch in the stack.
 
