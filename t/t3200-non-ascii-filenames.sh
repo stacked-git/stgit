@@ -19,7 +19,7 @@ test_expect_success 'Setup' '
     stg new p0 -m "Unrelated file" &&
     stg refresh &&
     stg pop &&
-    rm skärgårdsö.txt &&
+    git rm skärgårdsö.txt &&
     git commit -a -m "Remove island" &&
     git tag upstream &&
     git reset --hard HEAD^ &&
