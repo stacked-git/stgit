@@ -152,4 +152,10 @@ test_expect_success 'Switch branch from detached head' '
     stg branch new
 '
 
+test_expect_success 'Reuse name of partially removed StGit branch' '
+    stg branch master &&
+    git branch -D new &&
+    stg branch --create new
+'
+
 test_done

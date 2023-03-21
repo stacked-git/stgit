@@ -36,4 +36,12 @@ test_expect_success 'Invalid clone args' '
     general_error stg branch --clone bname extra
 '
 
+test_expect_success 'Reuse name of partially removed StGit branch' '
+    stg branch foo &&
+    git branch -D bar &&
+    stg branch --clone bar &&
+    test "$(stg series --applied -c)" -eq 1 &&
+    stg new -m p2
+'
+
 test_done

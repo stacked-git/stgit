@@ -42,6 +42,10 @@ pub(crate) enum InitializationPolicy {
     /// The stack must be initialized and thus must *not* already be initialized.
     MustInitialize,
 
+    /// The stack will be re-initialized even if the branch has an existing stack
+    /// metadata reference.
+    ForceInitialize,
+
     /// The stack must already be initialized.
     RequireInitialized,
 
@@ -140,51 +144,77 @@ impl<'repo> Stack<'repo> {
 
         stack_upgrade(repo, &branch_name)?;
 
-        let (state, base) = if let Ok(state_ref) = repo.find_reference(&stack_refname) {
-            if matches!(init_policy, InitializationPolicy::MustInitialize) {
-                return Err(anyhow!(
-                    "StGit stack already initialized for branch `{branch_name}`"
-                ));
-            }
-            is_initialized = true;
-            let stack_tree = state_ref.id().object()?.try_into_commit()?.tree()?;
-            let state = StackState::from_tree(repo, stack_tree)?;
-            let base = if let Some(first_patchname) = state.applied.first() {
-                Rc::new(
-                    repo.find_object(
-                        state.patches[first_patchname]
-                            .commit
-                            .parent_ids()
-                            .next()
-                            .unwrap(),
-                    )?
-                    .try_into_commit()?,
-                )
-            } else {
-                branch_head.clone()
+        let maybe_state_ref = repo.find_reference(&stack_refname).ok();
+
+        let state_and_base_from_ref =
+            |state_ref: gix::Reference<'repo>| -> Result<(StackState<'repo>, Rc<gix::Commit<'repo>>)> {
+                let stack_tree = state_ref.id().object()?.try_into_commit()?.tree()?;
+                let state = StackState::from_tree(repo, stack_tree)?;
+                let base = if let Some(first_patchname) = state.applied.first() {
+                    Rc::new(
+                        repo.find_object(
+                            state.patches[first_patchname]
+                                .commit
+                                .parent_ids()
+                                .next()
+                                .unwrap(),
+                        )?
+                        .try_into_commit()?,
+                    )
+                } else {
+                    branch_head.clone()
+                };
+                Ok((state, base))
             };
-            (state, base)
-        } else if matches!(init_policy, InitializationPolicy::RequireInitialized) {
-            return Err(anyhow!(
-                "StGit stack not initialized for branch `{branch_name}`"
-            ));
-        } else {
-            let state = StackState::new(branch_head.clone());
-            let base = branch_head.clone();
-            if matches!(
-                init_policy,
-                InitializationPolicy::AutoInitialize | InitializationPolicy::MustInitialize
-            ) {
+
+        let initialize_state_and_base =
+            || -> Result<(StackState<'repo>, Rc<gix::Commit<'repo>>)> {
+                let state = StackState::new(branch_head.clone());
+                let base = branch_head.clone();
                 state.commit(repo, Some(&stack_refname), "initialize")?;
+                Ok((state, base))
+            };
+
+        let (state, base) = match init_policy {
+            InitializationPolicy::AutoInitialize => {
                 is_initialized = true;
-            } else {
-                debug_assert!(matches!(
-                    init_policy,
-                    InitializationPolicy::AllowUninitialized
-                ));
-                is_initialized = false;
+                if let Some(state_ref) = maybe_state_ref {
+                    state_and_base_from_ref(state_ref)?
+                } else {
+                    initialize_state_and_base()?
+                }
             }
-            (state, base)
+            InitializationPolicy::MustInitialize => {
+                if maybe_state_ref.is_some() {
+                    return Err(anyhow!(
+                        "StGit stack already initialized for branch `{branch_name}`"
+                    ));
+                }
+                is_initialized = true;
+                initialize_state_and_base()?
+            }
+            InitializationPolicy::ForceInitialize => {
+                is_initialized = true;
+                initialize_state_and_base()?
+            }
+            InitializationPolicy::RequireInitialized => {
+                let state_ref = maybe_state_ref.ok_or_else(|| {
+                    anyhow!("StGit stack not initialized for branch `{branch_name}`")
+                })?;
+                is_initialized = true;
+                state_and_base_from_ref(state_ref)?
+            }
+            InitializationPolicy::AllowUninitialized => {
+                if let Some(state_ref) = maybe_state_ref {
+                    is_initialized = true;
+                    state_and_base_from_ref(state_ref)?
+                } else {
+                    is_initialized = false;
+                    let state = StackState::new(branch_head.clone());
+                    let base = branch_head.clone();
+                    (state, base)
+                }
+            }
         };
 
         ensure_patch_refs(repo, &branch_name, &state)?;

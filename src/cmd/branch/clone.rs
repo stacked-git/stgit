@@ -68,7 +68,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &ArgMatches) -> Result<(
                     force_create_reflog: false,
                     message: format!("clone from {current_branchname}").into(),
                 },
-                expected: gix::refs::transaction::PreviousValue::MustNotExist,
+                expected: gix::refs::transaction::PreviousValue::Any,
                 new: gix::refs::Target::Peeled(state_commit.id),
             },
             name: gix::refs::FullName::try_from(state_refname_from_branch_name(

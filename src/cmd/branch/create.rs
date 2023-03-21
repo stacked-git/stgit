@@ -133,7 +133,7 @@ pub(super) fn dispatch(repo: &gix::Repository, matches: &clap::ArgMatches) -> Re
     let new_branch = Branch::wrap(repo.find_reference(&new_fullname)?);
 
     let stack =
-        match Stack::from_branch_name(repo, new_branchname, InitializationPolicy::MustInitialize) {
+        match Stack::from_branch_name(repo, new_branchname, InitializationPolicy::ForceInitialize) {
             Ok(stack) => stack,
             Err(e) => {
                 new_branch.delete()?;
