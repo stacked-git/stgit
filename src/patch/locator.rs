@@ -353,8 +353,7 @@ impl PatchLocator {
                 .ancestors()
                 .first_parent_only()
                 .all()
-                .map_err(|e| Error::Ancestors(e.to_string()))?
-                .error_on_missing_commit();
+                .map_err(|e| Error::Ancestors(e.to_string()))?;
 
             let n = index.unsigned_abs().checked_sub(1).unwrap();
 
