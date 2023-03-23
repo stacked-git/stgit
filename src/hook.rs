@@ -35,9 +35,9 @@ fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<PathBuf> {
 /// The `use_editor` flag determines whether the hook should be allowed to invoke an
 /// interactive editor.
 ///
-/// Returns `Ok(true)` if the hook ran and completed successfully, `Err()` if the hook ran but failed,
-/// and `Ok(false)` if the hook did not run due to the script not existing, not being a file, or not
-/// being executable.
+/// Returns `Ok(true)` if the hook ran and completed successfully, `Err()` if the hook
+/// ran but failed, and `Ok(false)` if the hook did not run due to the script not
+/// existing, not being a file, or not being executable.
 pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> Result<bool> {
     let hook_name = "pre-commit";
     let hook_path = get_hook_path(repo, hook_name)?;
@@ -55,7 +55,7 @@ pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> R
         return Ok(false);
     }
 
-    let mut hook_command = std::process::Command::new(hook_path);
+    let mut hook_command = std::process::Command::new(hook_path.canonicalize()?);
     let workdir = repo
         .work_dir()
         .expect("should not get this far with a bare repo");
@@ -118,7 +118,7 @@ pub(crate) fn run_commit_msg_hook<'repo>(
 
     // TODO: when git runs this hook, it only sets GIT_INDEX_FILE and sometimes
     // GIT_EDITOR. So author and committer vars are not clearly required.
-    let mut hook_command = std::process::Command::new(&hook_path);
+    let mut hook_command = std::process::Command::new(hook_path.canonicalize()?);
     hook_command.env("GIT_INDEX_FILE", &index_path);
     if !use_editor {
         hook_command.env("GIT_EDITOR", ":");

@@ -58,6 +58,17 @@ test_expect_success 'refresh with succeeding hook' '
     assert_pre_commit_hook_did_run
 '
 
+test_expect_success 'refresh from subdir with succeeding hook' '
+   mkdir -p dir0/dir1 &&
+   (
+       cd dir0/dir1 &&
+       echo "pre-commit-hook-success-from-subdir" >another-file &&
+       stg add another-file &&
+       stg refresh
+   ) &&
+   assert_pre_commit_hook_did_run
+'
+
 test_expect_success 'refresh with path limiting, succeeding hook' '
     echo "pre-commit-hook-path-limiting-success" >>file &&
     stg refresh file
