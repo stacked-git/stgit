@@ -17,7 +17,7 @@ fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<PathBuf> {
                 core_hooks_path
             } else if repo.is_bare() {
                 // The hooks path is relative to GIT_DIR in the case of a bare repo
-                Cow::Owned(repo.git_dir().join(core_hooks_path))
+                Cow::Owned(repo.common_dir().join(core_hooks_path))
             } else {
                 // The hooks path is relative to the root of the working tree otherwise
                 let work_dir = repo.work_dir().expect("non-bare repo must have work dir");
@@ -25,7 +25,7 @@ fn get_hook_path(repo: &gix::Repository, hook_name: &str) -> Result<PathBuf> {
             }
         } else {
             // No core.hookspath, use default .git/hooks location
-            Cow::Owned(repo.git_dir().join("hooks"))
+            Cow::Owned(repo.common_dir().join("hooks"))
         };
     Ok(hooks_path.join(hook_name))
 }
