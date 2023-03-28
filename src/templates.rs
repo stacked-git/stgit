@@ -12,7 +12,7 @@ pub(crate) fn get_template(repo: &gix::Repository, name: &str) -> Result<Option<
     let mut template_paths = Vec::with_capacity(4);
 
     // I.e. .git/<name>
-    template_paths.push(repo.git_dir().join(name));
+    template_paths.push(repo.common_dir().join(name));
 
     if let Some(config_home) = std::env::var_os("XDG_CONFIG_HOME") {
         if !config_home.is_empty() {
