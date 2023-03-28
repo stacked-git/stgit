@@ -179,7 +179,7 @@ impl RepositoryExtended for gix::Repository {
     fn local_config_file(&self) -> Result<gix::config::File<'static>> {
         let source = gix::config::Source::Local;
 
-        let local_config_path = self.git_dir().join(
+        let local_config_path = self.common_dir().join(
             source
                 .storage_location(&mut |n| std::env::var_os(n))
                 .expect("know repo-local config path"),
@@ -192,7 +192,7 @@ impl RepositoryExtended for gix::Repository {
     }
 
     fn write_local_config(&self, file: gix::config::File) -> Result<()> {
-        let local_config_path = self.git_dir().join(
+        let local_config_path = self.common_dir().join(
             gix::config::Source::Local
                 .storage_location(&mut |n| std::env::var_os(n))
                 .expect("know repo-local config path"),
