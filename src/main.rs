@@ -384,8 +384,8 @@ fn execute_shell_alias(
     command.args(user_args);
 
     if let Some(repo) = repo {
-        if let Some(workdir) = repo.work_dir() {
-            command.current_dir(workdir);
+        if let Some(work_dir) = repo.work_dir() {
+            command.current_dir(work_dir);
             if let Some(Ok(prefix)) = repo.prefix() {
                 let mut prefix = prefix.into_os_string();
                 if !prefix.is_empty() {
@@ -393,17 +393,6 @@ fn execute_shell_alias(
                 }
                 command.env("GIT_PREFIX", prefix);
             }
-            if let Ok(rel_dir) = repo.git_dir().strip_prefix(workdir) {
-                if rel_dir == PathBuf::from(".git") {
-                    command.env_remove("GIT_DIR");
-                } else {
-                    command.env("GIT_DIR", rel_dir);
-                }
-            } else {
-                command.env("GIT_DIR", repo.git_dir());
-            }
-        } else {
-            command.env("GIT_DIR", repo.git_dir());
         }
     }
 
