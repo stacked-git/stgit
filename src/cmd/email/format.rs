@@ -47,10 +47,10 @@ pub(super) fn command() -> clap::Command {
              configuration values. Refer to the git-config(1) and git-format-patch(1) \
              man pages for more details.",
         )
-        .override_usage(
-            "stg email format [OPTIONS] <patch>...\n       \
-             stg email format [OPTIONS] --all",
-        )
+        .override_usage(super::super::make_usage(
+            "stg email format",
+            &["[OPTIONS] <patch>...", "[OPTIONS] --all"],
+        ))
         .arg(
             Arg::new("patchranges")
                 .help("Patches to format")

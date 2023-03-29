@@ -49,21 +49,28 @@ fn make() -> clap::Command {
              \n\
              The patch description must be separated from the diff with a \"---\" line.",
         )
-        .override_usage(if cfg!(feature = "import-url") {
-            "stg import [OPTIONS] <diff-path>\n       \
-             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
-             stg import [OPTIONS] -M [<mbox-path>]\n       \
-             stg import [OPTIONS] -S [<series-path>]\n       \
-             stg import [OPTIONS] -u <diff-url>\n       \
-             stg import [OPTIONS] -u -m <mail-url>\n       \
-             stg import [OPTIONS] -u -M <mbox-url>\n       \
-             stg import [OPTIONS] -u -S <series-url>"
-        } else {
-            "stg import [OPTIONS] <diff-path>\n       \
-             stg import [OPTIONS] -m [<mail-path>|<Maildir-path>]\n       \
-             stg import [OPTIONS] -M [<mbox-path>]\n       \
-             stg import [OPTIONS] -S [<series-path>]"
-        })
+        .override_usage(super::make_usage(
+            "stg import",
+            if cfg!(feature = "import-url") {
+                &[
+                    "[OPTIONS] <diff-path>",
+                    "[OPTIONS] -m [<mail-path>|<Maildir-path>]",
+                    "[OPTIONS] -M [<mbox-path>]",
+                    "[OPTIONS] -S [<series-path>]",
+                    "[OPTIONS] -u <diff-url>",
+                    "[OPTIONS] -u -m <mail-url>",
+                    "[OPTIONS] -u -M <mbox-url>",
+                    "[OPTIONS] -u -S <series-url>",
+                ]
+            } else {
+                &[
+                    "[OPTIONS] <diff-path>",
+                    "[OPTIONS] -m [<mail-path>|<Maildir-path>]",
+                    "[OPTIONS] -M [<mbox-path>]",
+                    "[OPTIONS] -S [<series-path>]",
+                ]
+            },
+        ))
         .arg(
             Arg::new("source")
                 .help("Source of patches to import")

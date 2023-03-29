@@ -9,7 +9,10 @@ use crate::{argset::get_one_str, ext::RepositoryExtended, wrap::PartialRefName};
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--describe")
         .short_flag('d')
-        .override_usage("stg branch {--describe,-d} <description> [branch]")
+        .override_usage(super::super::make_usage(
+            "stg branch --describe",
+            &["<description> [branch]"],
+        ))
         .alias("--description")
         .about("Set the branch description")
         .arg(

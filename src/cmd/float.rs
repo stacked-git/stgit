@@ -38,10 +38,10 @@ fn make() -> clap::Command {
              Patches not specified will remain applied or unapplied as they were prior \
              to the float operation.",
         )
-        .override_usage(
-            "stg float [OPTIONS] <patch>...\n       \
-             stg float [OPTIONS] <-S|--series> <file>",
-        )
+        .override_usage(super::make_usage(
+            "stg float",
+            &["[OPTIONS] <patch>...", "[OPTIONS] <-S|--series> <file>"],
+        ))
         .arg(
             Arg::new("patchranges")
                 .help("Patches to float")

@@ -5,6 +5,8 @@
 //! Each subcommand is in its own module. The [`STGIT_COMMANDS`] slice constant contains
 //! a [`StGitCommand`] instance for each subcommand.
 
+use clap::builder::StyledStr;
+
 pub(crate) mod branch;
 pub(crate) mod clean;
 pub(crate) mod commit;
@@ -131,4 +133,22 @@ pub(crate) enum Error {
 
     #[error("no patches applied")]
     NoAppliedPatches,
+}
+
+pub(crate) fn make_usage(command_name: &str, usages: &[&str]) -> clap::builder::StyledStr {
+    use std::fmt::Write as _;
+    let mut s = StyledStr::new();
+    let bold = anstyle::Style::new().bold();
+    for (i, &usage) in usages.iter().enumerate() {
+        let indent = if i == 0 { "" } else { "       " };
+        let end = if i + 1 == usages.len() { "" } else { "\n" };
+        write!(
+            s,
+            "{indent}{}{command_name}{} {usage}{end}",
+            bold.render(),
+            bold.render_reset()
+        )
+        .unwrap();
+    }
+    s
 }

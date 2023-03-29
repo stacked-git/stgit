@@ -40,12 +40,15 @@ pub(super) fn command() -> clap::Command {
              `sendemail.smtpUser`, etc. Refer to git-config(1) and git-send-email(1) \
              man pages for more detail on all the available configuration options.",
         )
-        .override_usage(
-            "stg email send [OPTIONS] <file|directory>...\n       \
-             stg email send [OPTIONS] <patch>...\n       \
-             stg email send [OPTIONS] --all\n       \
-             stg email send --dump-aliases",
-        )
+        .override_usage(super::super::make_usage(
+            "stg email send",
+            &[
+                "[OPTIONS] <file|directory>...",
+                "[OPTIONS] <patch>...",
+                "[OPTIONS] --all",
+                "--dump-aliases",
+            ],
+        ))
         .arg(
             Arg::new("patchranges-or-paths")
                 .help("Patch files, directory of patch files, or patch names to send")

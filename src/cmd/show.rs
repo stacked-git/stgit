@@ -32,11 +32,14 @@ fn make() -> clap::Command {
              applied.\n\
              The output is similar to 'git show'.",
         )
-        .override_usage(
-            "stg show [OPTIONS] [patch-or-rev]... [-- <path>...]\n       \
-             stg show [OPTIONS] [--patch <patch-or-rev>]... [-- <path>...]\n       \
-             stg show [OPTIONS] [-A] [-U] [-H] [-- <path>...]",
-        )
+        .override_usage(super::make_usage(
+            "stg show",
+            &[
+                "[OPTIONS] [patch-or-rev]... [-- <path>...]",
+                "[OPTIONS] [--patch <patch-or-rev>]... [-- <path>...]",
+                "[OPTIONS] [-A] [-U] [-H] [-- <path>...]",
+            ],
+        ))
         .arg(
             Arg::new("patchranges-all")
                 .help("Patches or revisions to show")

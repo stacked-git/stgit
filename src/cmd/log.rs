@@ -36,10 +36,10 @@ fn make() -> clap::Command {
              Undo and redo are unavailable on a stack without change history. Clearing \
              the stack state history cannot be undone.",
         )
-        .override_usage(
-            "stg log [OPTIONS] [--] [patch]...\n       \
-             stg log --clear",
-        )
+        .override_usage(super::make_usage(
+            "stg log",
+            &["[OPTIONS] [--] [patch]...", "--clear"],
+        ))
         .arg(
             Arg::new("patchranges-all")
                 .help("Only show history for these patches")

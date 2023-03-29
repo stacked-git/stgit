@@ -49,12 +49,15 @@ fn make() -> clap::Command {
              which appends the commit hash of the picked commit to the patch's commit \
              message.",
         )
-        .override_usage(
-            "stg pick [OPTIONS] <source>...\n       \
-             stg pick [OPTIONS] [--name NAME] [--parent COMMITTISH] <source>\n       \
-             stg pick [OPTIONS] --fold [--file PATH]... <source>...\n       \
-             stg pick [OPTIONS] --update <source>...",
-        )
+        .override_usage(super::make_usage(
+            "stg pick",
+            &[
+                "[OPTIONS] <source>...",
+                "[OPTIONS] [--name NAME] [--parent COMMITTISH] <source>",
+                "[OPTIONS] --fold [--file PATH]... <source>...",
+                "[OPTIONS] --update <source>...",
+            ],
+        ))
         .arg(
             Arg::new("stgit-revision")
                 .help("Patch name or committish to import")

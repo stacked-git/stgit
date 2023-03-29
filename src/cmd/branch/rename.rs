@@ -16,7 +16,10 @@ use crate::{
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--rename")
         .short_flag('r')
-        .override_usage("stg branch {--rename,-r} [old-name] <new-name>")
+        .override_usage(super::super::make_usage(
+            "stg branch --rename",
+            &["[old-name] <new-name>"],
+        ))
         .about("Rename an existing branch")
         .arg(
             clap::Arg::new("branch-any")

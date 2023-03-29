@@ -36,11 +36,14 @@ fn make() -> clap::Command {
              the normal Git methods, or alternatively the push may be undone \
              using 'stg undo'.",
         )
-        .override_usage(
-            "stg push [OPTIONS] [patch]...\n       \
-             stg push [OPTIONS] -n <number>\n       \
-             stg push [OPTIONS] --all",
-        )
+        .override_usage(super::make_usage(
+            "stg push",
+            &[
+                "[OPTIONS] [patch]...",
+                "[OPTIONS] -n <number>",
+                "[OPTIONS] --all",
+            ],
+        ))
         .arg(
             Arg::new("patchranges-unapplied")
                 .help("Patches to push")

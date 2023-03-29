@@ -52,11 +52,14 @@ const CONFLICT_ERROR: i32 = 3;
 fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
     let command = clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
-        .override_usage(
-            "stg [OPTIONS] <command> [...]\n       \
-             stg [OPTIONS] <-h|--help>\n       \
-             stg --version",
-        )
+        .override_usage(cmd::make_usage(
+            "stg",
+            &[
+                "[OPTIONS] <command> [...]",
+                "[OPTIONS] <-h|--help>",
+                "--version",
+            ],
+        ))
         .help_expected(true)
         .max_term_width(88)
         .disable_version_flag(true)

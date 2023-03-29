@@ -12,7 +12,10 @@ use crate::{
 
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--delete")
-        .override_usage("stg branch --delete [--force] <branch>")
+        .override_usage(super::super::make_usage(
+            "stg branch --delete",
+            &["[--force] <branch>"],
+        ))
         .about("Delete a branch")
         .long_about(
             "Delete a branch.\n\

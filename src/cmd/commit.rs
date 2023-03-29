@@ -36,11 +36,14 @@ fn make() -> clap::Command {
              commit (counting from the bottom of the stack). If -a/--all is given, \
              all applied patches are committed.",
         )
-        .override_usage(
-            "stg commit [OPTIONS] [patch]...\n       \
-             stg commit [OPTIONS] -n <number>\n       \
-             stg commit [OPTIONS] --all",
-        )
+        .override_usage(super::make_usage(
+            "std commit",
+            &[
+                "[OPTIONS] [patch]...",
+                "[OPTIONS] -n <number>",
+                "[OPTIONS] --all",
+            ],
+        ))
         .arg(
             Arg::new("patchranges")
                 .help("Patches to commit")

@@ -49,10 +49,13 @@ fn make() -> clap::Command {
              'patchdescr.tmpl' template file (if available) is used to pre-fill the \
              editor.",
         )
-        .override_usage(
-            "stg new [OPTIONS] [patchname] [-- <path>...]\n       \
-             stg new [OPTIONS] [--name <patchname>] [-- <path>...]",
-        )
+        .override_usage(super::make_usage(
+            "stg new",
+            &[
+                "[OPTIONS] [patchname] [-- <path>...]",
+                "[OPTIONS] [--name <patchname>] [-- <path>...]",
+            ],
+        ))
         .arg(
             Arg::new("patchname")
                 .help("Name for new patch")

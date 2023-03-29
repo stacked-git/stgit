@@ -49,11 +49,14 @@ fn make() -> clap::Command {
              Only commits with exactly one parent can be uncommitted; in other words, \
              merge commits may not be uncommitted.",
         )
-        .override_usage(
-            "stg uncommit <patchname-1> [<patchname-2> ...]\n       \
-             stg uncommit -n number [<patchname-prefix>]\n       \
-             stg uncommit -t <committish> [-x]",
-        )
+        .override_usage(super::make_usage(
+            "stg uncommit",
+            &[
+                "<patchname-1> [<patchname-2> ...]",
+                "-n number [<patchname-prefix>]",
+                "-t <committish> [-x]",
+            ],
+        ))
         .arg(
             Arg::new("patchname")
                 .help("Patch names for the uncommitted commits")

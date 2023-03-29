@@ -37,11 +37,14 @@ fn make() -> clap::Command {
              of these intermediate push operations to fail due to conflicts if \
              patches are popped out of last-pushed first-popped order.",
         )
-        .override_usage(
-            "stg pop [OPTIONS] [patch]...\n       \
-             stg pop [OPTIONS] --all\n       \
-             stg pop [OPTIONS] -n <number>",
-        )
+        .override_usage(super::make_usage(
+            "stg pop",
+            &[
+                "[OPTIONS] [patch]...",
+                "[OPTIONS] --all",
+                "[OPTIONS] -n <number>",
+            ],
+        ))
         .arg(
             Arg::new("patchranges-applied")
                 .help("Patches to pop")

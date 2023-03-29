@@ -30,7 +30,10 @@ fn make() -> clap::Command {
             "Rename [old-patch] to <new-patch>. If [old-patch] is not given, the \
              topmost patch will be renamed.",
         )
-        .override_usage("stg rename [OPTIONS] [old-patch] <new-patch>")
+        .override_usage(super::make_usage(
+            "stg rename",
+            &["[OPTIONS] [old-patch] <new-patch>"],
+        ))
         .arg(argset::branch_arg())
         .arg(
             Arg::new("patches")
@@ -59,11 +62,15 @@ fn run(matches: &ArgMatches) -> Result<()> {
         1 => {
             let new_patch_str = patch_args[0];
             let new_patchname = PatchName::from_str(patch_args[0]).map_err(|e| {
-                // TODO: if/when clap exposes its styled string interface, these error
-                // strings can be updated to get proper colorization.
                 make().error(
                     clap::error::ErrorKind::InvalidValue,
-                    format!("invalid value '{new_patch_str}' for '<new-patch>': {e}"),
+                    format!(
+                        "invalid value '{}{new_patch_str}{}' for '{}<new-patch>{}': {e}",
+                        anstyle::AnsiColor::Yellow.on_default().render(),
+                        anstyle::Reset.render(),
+                        anstyle::AnsiColor::Yellow.on_default().render(),
+                        anstyle::Reset.render(),
+                    ),
                 )
             })?;
             let old_patchname = if let Some(top_patchname) = stack.applied().last() {
@@ -79,14 +86,26 @@ fn run(matches: &ArgMatches) -> Result<()> {
                 .map_err(|e| {
                     make().error(
                         clap::error::ErrorKind::InvalidValue,
-                        format!("invalid value '{old_patch_str}' for '[<old-patch>]': {e}"),
+                        format!(
+                            "invalid value '{}{old_patch_str}{}' for '{}[<old-patch>]{}': {e}",
+                            anstyle::AnsiColor::Yellow.on_default().render(),
+                            anstyle::Reset.render(),
+                            anstyle::AnsiColor::Yellow.on_default().render(),
+                            anstyle::Reset.render(),
+                        ),
                     )
                 })?
                 .resolve_name(&stack)?;
             let new_patchname = PatchName::from_str(new_patch_str).map_err(|e| {
                 make().error(
                     clap::error::ErrorKind::InvalidValue,
-                    format!("invalid value '{new_patch_str}' for '<new-patch>': {e}"),
+                    format!(
+                        "invalid value '{}{new_patch_str}{}' for '{}<new-patch>{}': {e}",
+                        anstyle::AnsiColor::Yellow.on_default().render(),
+                        anstyle::Reset.render(),
+                        anstyle::AnsiColor::Yellow.on_default().render(),
+                        anstyle::Reset.render(),
+                    ),
                 )
             })?;
             (old_patchname, new_patchname)

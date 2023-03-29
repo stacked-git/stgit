@@ -25,10 +25,10 @@ pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
 fn make() -> clap::Command {
     clap::Command::new(STGIT_COMMAND.name)
         .about("Delete patches")
-        .override_usage(
-            "stg delete [OPTIONS] <patch>...\n       \
-             stg delete [OPTIONS] --top",
-        )
+        .override_usage(super::make_usage(
+            "stg delete",
+            &["[OPTIONS] <patch>...", "[OPTIONS] --top"],
+        ))
         .arg(
             Arg::new("patchranges-all")
                 .help("Patches to delete")

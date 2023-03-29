@@ -39,7 +39,10 @@ fn make() -> clap::Command {
              fail for some patches because of conflicts. The patches in the series \
              must apply cleanly.",
         )
-        .override_usage("stg sync <--ref-branch=BRANCH|--series=SERIES> [<patch>...|--all]")
+        .override_usage(super::make_usage(
+            "stg sync",
+            &["<--ref-branch=BRANCH|--series=SERIES> [<patch>...|--all]"],
+        ))
         .arg(
             Arg::new("patchranges")
                 .help("Patches to synchronize")

@@ -43,12 +43,15 @@ fn make() -> clap::Command {
              \n\
              Empty patches are prefixed with a '*' when the --empty option is used.",
         )
-        .override_usage(
-            "stg series [OPTIONS] [-A] [-U] [-H]\n       \
-             stg series [OPTIONS] --all\n       \
-             stg series [OPTIONS] --short\n       \
-             stg series [OPTIONS] [patch]...",
-        )
+        .override_usage(super::make_usage(
+            "stg series",
+            &[
+                "[OPTIONS] [-A] [-U] [-H]",
+                "[OPTIONS] --all",
+                "[OPTIONS] --short",
+                "[OPTIONS] [patch]...",
+            ],
+        ))
         .arg(
             Arg::new("patchranges-all")
                 .help("Patches to display")

@@ -16,7 +16,10 @@ use crate::{
 
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--clone")
-        .override_usage("stg branch --clone [new-branch]")
+        .override_usage(super::super::make_usage(
+            "stg branch --clone",
+            &["[new-branch]"],
+        ))
         .about("Clone the contents of the current branch")
         .long_about(
             "Clone the current branch as <new-branch>, if specified, or using the \

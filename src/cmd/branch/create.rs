@@ -19,7 +19,10 @@ use crate::{
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--create")
         .short_flag('c')
-        .override_usage("stg branch {--create,-c} <new-branch> [committish]")
+        .override_usage(super::super::make_usage(
+            "stg branch --create",
+            &["<new-branch> [committish]"],
+        ))
         .about("Create and switch to a new branch")
         .long_about(
             "Create and switch to a new branch. The new branch is initialized as a \

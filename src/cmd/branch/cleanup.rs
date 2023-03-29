@@ -11,7 +11,10 @@ use crate::{
 
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--cleanup")
-        .override_usage("stg branch --cleanup [--force] [branch]")
+        .override_usage(super::super::make_usage(
+            "stg branch --cleanup",
+            &["[--force] [branch]"],
+        ))
         .about("Remove StGit patch stack from branch")
         .long_about(
             "Remove StGit patch stack from branch. The operation will be refused if \

@@ -44,19 +44,22 @@ fn make() -> clap::Command {
              result in an error.",
         )
         .disable_help_subcommand(true)
-        .override_usage(
-            "stg branch\
-             \n       stg branch [--merge] <branch>\
-             \n       stg branch {--list,-l}\
-             \n       stg branch {--create,-c} <new-branch> [committish]\
-             \n       stg branch --clone [new-branch]\
-             \n       stg branch {--rename,-r} [old-name] <new-name>\
-             \n       stg branch {--protect,-p} [branch]\
-             \n       stg branch {--unprotect,-u} [branch]\
-             \n       stg branch --delete [--force] <branch>\
-             \n       stg branch --cleanup [--force] [branch]\
-             \n       stg branch {--describe,-d} <description> [branch]",
-        )
+        .override_usage(super::make_usage(
+            "stg branch",
+            &[
+                "",
+                "[--merge] <branch>",
+                "{--list,-l}",
+                "{--create,-c} <new-branch> [committish]",
+                "--clone [new-branch]",
+                "{--rename,-r} [old-name] <new-name>",
+                "{--protect,-p} [branch]",
+                "{--unprotect,-u} [branch]",
+                "--delete [--force] <branch>",
+                "--cleanup [--force] [branch]",
+                "{--describe,-d} <description> [branch]",
+            ],
+        ))
         .subcommand(self::list::command())
         .subcommand(self::create::command())
         .subcommand(self::clone::command())

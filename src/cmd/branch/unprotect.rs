@@ -12,7 +12,10 @@ use crate::{
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--unprotect")
         .short_flag('u')
-        .override_usage("stg branch {--unprotect,-u} [branch]")
+        .override_usage(super::super::make_usage(
+            "stg branch --unprotect",
+            &["[branch]"],
+        ))
         .about("Allow StGit to modify a previously protected branch")
         .arg(
             clap::Arg::new("branch")

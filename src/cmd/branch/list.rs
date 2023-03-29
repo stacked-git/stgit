@@ -17,7 +17,7 @@ use crate::{
 pub(super) fn command() -> clap::Command {
     clap::Command::new("--list")
         .short_flag('l')
-        .override_usage("stg branch {--list,-l}")
+        .override_usage(super::super::make_usage("stg branch --list", &[""]))
         .about("List branches in this repository")
         .long_about(
             "List each branch in the current repository along with its description, if \

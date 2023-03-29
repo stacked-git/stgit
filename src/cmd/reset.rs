@@ -31,10 +31,10 @@ fn make() -> clap::Command {
              viewed with 'stg log'. Patch name arguments may optionally be provided to \
              limit which patches are reset.",
         )
-        .override_usage(
-            "stg reset [--hard] [<committish> [<patchname>...]]\n       \
-             stg reset --hard",
-        )
+        .override_usage(super::make_usage(
+            "stg reset",
+            &["[--hard] [<committish> [<patchname>...]]", "--hard"],
+        ))
         .trailing_var_arg(true)
         .arg(
             Arg::new("committish")
