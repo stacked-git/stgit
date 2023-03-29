@@ -37,8 +37,8 @@ pub(crate) enum Error {
 impl std::fmt::Display for PatchRange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            PatchRange::Single(patch_loc) => write!(f, "{patch_loc}"),
-            PatchRange::Range(bounds) => write!(f, "{bounds}"),
+            PatchRange::Single(patch_loc) => patch_loc.fmt(f),
+            PatchRange::Range(bounds) => bounds.fmt(f),
         }
     }
 }

@@ -84,11 +84,12 @@ impl FromStr for PullPolicy {
 
 impl Display for PullPolicy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
+        match self {
             PullPolicy::Pull => "pull",
             PullPolicy::Rebase => "rebase",
             PullPolicy::FetchRebase => "fetch-rebase",
-        })
+        }
+        .fmt(f)
     }
 }
 

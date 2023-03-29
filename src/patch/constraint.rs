@@ -6,11 +6,12 @@ use super::{LocationConstraint, LocationGroup, RangeConstraint};
 
 impl std::fmt::Display for LocationGroup {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
+        match self {
             LocationGroup::Applied => "applied",
             LocationGroup::Unapplied => "unapplied",
             LocationGroup::Hidden => "hidden",
-        })
+        }
+        .fmt(f)
     }
 }
 

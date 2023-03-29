@@ -90,8 +90,8 @@ impl std::fmt::Display for RangeRevisionSpec {
             RangeRevisionSpec::BranchRange { branch_loc, bounds } => {
                 write!(f, "{branch_loc}:{bounds}")
             }
-            RangeRevisionSpec::Range(bounds) => write!(f, "{bounds}"),
-            RangeRevisionSpec::Single(spec) => write!(f, "{spec}"),
+            RangeRevisionSpec::Range(bounds) => bounds.fmt(f),
+            RangeRevisionSpec::Single(spec) => spec.fmt(f),
         }
     }
 }
@@ -103,9 +103,9 @@ impl std::fmt::Display for SingleRevisionSpec {
                 branch_loc,
                 patch_like,
             } => write!(f, "{branch_loc}:{patch_like}"),
-            SingleRevisionSpec::PatchAndGitLike(_, git_like) => f.write_str(git_like),
-            SingleRevisionSpec::GitLike(git_like) => f.write_str(git_like),
-            SingleRevisionSpec::PatchLike(patch_like) => write!(f, "{patch_like}"),
+            SingleRevisionSpec::PatchAndGitLike(_, git_like) => git_like.fmt(f),
+            SingleRevisionSpec::GitLike(git_like) => git_like.fmt(f),
+            SingleRevisionSpec::PatchLike(patch_like) => patch_like.fmt(f),
         }
     }
 }
@@ -118,7 +118,7 @@ impl std::fmt::Display for PatchLikeSpec {
 
 impl std::fmt::Display for GitRevisionSuffix {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_ref())
+        self.as_ref().fmt(f)
     }
 }
 
