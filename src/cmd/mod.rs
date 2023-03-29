@@ -142,9 +142,10 @@ pub(crate) fn make_usage(command_name: &str, usages: &[&str]) -> clap::builder::
     for (i, &usage) in usages.iter().enumerate() {
         let indent = if i == 0 { "" } else { "       " };
         let end = if i + 1 == usages.len() { "" } else { "\n" };
+        let sep = if usage.is_empty() { "" } else { " " };
         write!(
             s,
-            "{indent}{}{command_name}{} {usage}{end}",
+            "{indent}{}{command_name}{}{sep}{usage}{end}",
             bold.render(),
             bold.render_reset()
         )
