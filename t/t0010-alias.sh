@@ -15,7 +15,7 @@ test_expect_success 'Test ambiguous alias' '
     stg init &&
     stg show &&
     general_error stg sho 2>err &&
-    grep -e "note: subcommands .show-stat., .show. exist" err
+    grep -e "tip: some similar subcommands exist: .show-stat., .show." err
 '
 
 test_expect_success 'Setup top-level and nested aliases' '

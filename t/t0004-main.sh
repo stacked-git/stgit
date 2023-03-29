@@ -27,7 +27,7 @@ test_expect_success 'Test help on regular command' '
 test_expect_success 'Test help on ambiguous command' '
     general_error stg pu 2>err &&
     grep -e "unrecognized subcommand .pu." err &&
-    grep -e "subcommands .pull., .push. exist" err &&
+    grep -e "some similar subcommands exist: .pull., .push." err &&
     general_error stg help pu 2>err &&
     grep -e "unrecognized subcommand .pu." err
 '
