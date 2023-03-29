@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.2.1] 2023-03-29
+
+### Changed
+- chore: update to clap 4.2.0
+- chore: update to gix 0.43.0
+- chore: pin clap minor version
+
+### Fixed
+- fix(branch): allow reuse of partially deleted branch names (#290)
+- fix(branch): branch list alignment
+- fix: running hooks from worktree subdir (#295)
+- fix: running from linked worktree (#297)
+- fix(float): correct -S in usage string
+- fix: correctly show bold command/subcommand in overidden usage
+
+
 ## [2.2.0] 2023-02-24
 
 ### Removed
