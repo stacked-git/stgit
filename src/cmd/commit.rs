@@ -37,7 +37,7 @@ fn make() -> clap::Command {
              all applied patches are committed.",
         )
         .override_usage(super::make_usage(
-            "std commit",
+            "stg commit",
             &[
                 "[OPTIONS] [patch]...",
                 "[OPTIONS] -n <number>",
