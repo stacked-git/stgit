@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.2] 2023-04-01
+
+### Fixed
+- fix: rebase with '@' in ref names (#306)
+- fix: improved error messages for unrecognized commands
+
+
 ## [2.2.1] 2023-03-29
 
 ### Changed
