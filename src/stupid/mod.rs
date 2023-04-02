@@ -99,12 +99,15 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .work_dir
             .expect("work_dir is required for this command");
         command.current_dir(work_dir);
+        let cwd = std::env::current_dir()?;
+        let realpath =
+            |path| gix::path::realpath_opts(path, cwd.as_path(), gix::path::realpath::MAX_SYMLINKS);
         if let Some(git_dir) = self.git_dir {
-            command.env("GIT_DIR", git_dir.canonicalize()?);
+            command.env("GIT_DIR", realpath(git_dir)?);
         }
-        command.env("GIT_WORK_TREE", work_dir.canonicalize()?);
+        command.env("GIT_WORK_TREE", realpath(work_dir)?);
         if let Some(index_path) = self.index_path {
-            command.env("GIT_INDEX_FILE", index_path.canonicalize()?);
+            command.env("GIT_INDEX_FILE", realpath(index_path)?);
         }
         Ok(command)
     }

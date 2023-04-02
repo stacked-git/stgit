@@ -230,7 +230,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let source_path = if matches.get_flag("url") {
         None
     } else if let Some(path) = matches.get_one::<PathBuf>("source") {
-        let abs_path = path.canonicalize()?;
+        let abs_path = gix::path::realpath(path)?;
         Some(abs_path)
     } else {
         None
