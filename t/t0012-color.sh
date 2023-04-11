@@ -12,7 +12,7 @@ test_expect_success TTY 'Color help' '
 
 test_expect_success TTY 'Help with --color=never' '
     test_terminal stg -h --color=never | test_decode_color >output &&
-    head -n1 output | grep -v "<RESET>"
+    cat output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Help with NO_COLOR' '
@@ -21,7 +21,7 @@ test_expect_success TTY 'Help with NO_COLOR' '
         export NO_COLOR &&
         test_terminal stg -h | test_decode_color >output
     ) &&
-    head -n1 output | grep -v "<RESET>"
+    cat output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Help with NO_COLOR and --color' '
@@ -30,7 +30,7 @@ test_expect_success TTY 'Help with NO_COLOR and --color' '
         export NO_COLOR &&
         test_terminal stg -h --color=always | test_decode_color >output
     ) &&
-    head -n1 output | grep "<RESET>"
+    grep "<RESET>" output
 '
 
 test_expect_success TTY 'Command line parsing failure color' '
@@ -40,32 +40,32 @@ test_expect_success TTY 'Command line parsing failure color' '
 
 test_expect_success TTY 'Parsing failure with --color==never' '
     general_error test_terminal stg barf --color never 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>" &&
+    cat output | grep -v "<RED>" &&
     general_error test_terminal stg --color never barf 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>"
+    cat output | grep -v "<RED>"
 '
 
 test_expect_success TTY 'Parsing failure with NO_COLOR' '
     NO_COLOR=1 general_error test_terminal stg barf 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>"
+    cat output | grep -v "<RED>"
 '
 
 test_expect_success TTY 'Subcommand color help' '
     test_terminal stg branch -h | test_decode_color >output &&
-    head -n1 output | grep "<RESET>"
+    cat output | grep "<RESET>"
 '
 
 test_expect_success TTY 'Subcommand help without color' '
     test_terminal stg --color=never branch -h | test_decode_color >output &&
-    head -n1 output | grep -v "<RESET>" &&
+    cat output | grep -v "<RESET>" &&
     test_terminal stg branch -h --color=never | test_decode_color >output &&
-    head -n1 output | grep -v "<RESET>" &&
+    cat output | grep -v "<RESET>" &&
     (
         NO_COLOR="" &&
         export NO_COLOR &&
         test_terminal stg branch -h | test_decode_color >output
     ) &&
-    head -n1 output | grep -v "<RESET>"
+    cat output | grep -v "<RESET>"
 '
 
 test_expect_success TTY 'Subcommand parsing error color' '
@@ -75,11 +75,11 @@ test_expect_success TTY 'Subcommand parsing error color' '
 
 test_expect_success TTY 'Subcommand parsing error without color' '
     general_error test_terminal stg branch --barf --color never 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>" &&
+    cat output | grep -v "<RED>" &&
     general_error test_terminal stg --color never branch --barf 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>" &&
+    cat output | grep -v "<RED>" &&
     NO_COLOR=true general_error test_terminal stg branch --barf 2>&1 1>/dev/null | test_decode_color >output &&
-    head -n1 output | grep -v "<RED>"
+    cat output | grep -v "<RED>"
 '
 
 test_expect_success TTY 'Subcommand color' '
@@ -109,15 +109,15 @@ test_expect_success TTY 'Subcommand failure color' '
 
 test_expect_success TTY 'Subcommand failure without color' '
    command_error test_terminal stg --color=never branch --delete master 2>&1 1>/dev/null | test_decode_color >output &&
-   head -n1 output | grep -v "<RED>" &&
+   cat output | grep -v "<RED>" &&
    command_error test_terminal stg branch --color=never --delete master 2>&1 1>/dev/null | test_decode_color >output &&
-   head -n1 output | grep -v "<RED>" &&
+   cat output | grep -v "<RED>" &&
    command_error test_terminal stg branch --delete --color=never master 2>&1 1>/dev/null | test_decode_color >output &&
-   head -n1 output | grep -v "<RED>" &&
+   cat output | grep -v "<RED>" &&
    (
        NO_COLOR=1 command_error test_terminal stg branch --delete --color=never master 2>&1 1>/dev/null | test_decode_color >output
    ) &&
-   head -n1 output | grep -v "<RED>"
+   cat output | grep -v "<RED>"
 '
 
 test_done
