@@ -43,7 +43,7 @@ test_expect_success 'Commit all patches' '
 test_expect_success 'Commit when top != head (should fail)' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
-    h=$(git rev-parse HEAD)
+    h=$(git rev-parse HEAD) &&
     command_error stg commit --allow-empty &&
     test "$(git rev-parse HEAD)" = "$h" &&
     test "$(echo $(stg series))" = "> foo"

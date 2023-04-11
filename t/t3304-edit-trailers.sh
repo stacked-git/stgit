@@ -44,7 +44,7 @@ test_expect_success 'Sign a patch with custom email address' '
 test_expect_success 'Sign patch and tack on a custom ack and review' '
     m=$(msg refs/patches/master/p5) &&
     stg edit --sign-by "Someone <someone@example.com>" p5 &&
-    test "$(msg refs/patches/master/p5)" = "$m//Signed-off-by: Someone <someone@example.com>"
+    test "$(msg refs/patches/master/p5)" = "$m//Signed-off-by: Someone <someone@example.com>" &&
     stg edit --ack-by "ACKKER" --review-by="best friend" p5 &&
     test "$(msg refs/patches/master/p5)" = "$m//Signed-off-by: Someone <someone@example.com>/Acked-by: ACKKER/Reviewed-by: best friend"
 '

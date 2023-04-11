@@ -8,7 +8,7 @@ test_expect_success 'Initialize StGit stack' '
     test_commit_bulk --start=0 --filename=foo.txt --contents="foo %s" --message="p%s" 6 &&
     stg uncommit -n 6 &&
     for i in 0 1 2 3 4 5; do
-        git notes add -m "note$i" $(stg id p$i)
+        git notes add -m "note$i" $(stg id p$i) || return 1
     done
 '
 
@@ -72,7 +72,7 @@ test_expect_success 'Squash at stack top' '
 '
 
 test_expect_success 'Empty commit message aborts the squash' '
-    write_script fake-editor <<-\EOF
+    write_script fake-editor <<-\EOF &&
 	echo "" >"$1"
 	EOF
     test_set_editor "$(pwd)/fake-editor" &&

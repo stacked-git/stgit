@@ -82,8 +82,8 @@ test_expect_success 'With diff output' '
 '
 
 test_expect_success 'With diff output and diff-opt' '
-    stg patches --diff-opt=--abbrev -O --name-only --diff even.txt >even-diff2.log
-    test $(cat even-diff2.log | grep -c -E "even.txt") = "3"
+    stg patches --diff-opt=--abbrev -O --name-only --diff even.txt >even-diff2.log &&
+    test $(cat even-diff2.log | grep -c -E "even.txt") = "3" &&
     test $(cat even-diff2.log | grep -c -E "p(0|1|3) message") = "3"
 '
 

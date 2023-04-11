@@ -79,7 +79,7 @@ test_expect_success 'Pick with expose commit with multi-empty message' '
 '
 
 test_expect_success 'Pick with expose custom format commit with empty message' '
-    test_config stgit.pick.expose-format %s%n%nPREFIX%n%bSUFFIX
+    test_config stgit.pick.expose-format %s%n%nPREFIX%n%bSUFFIX &&
     stg pick --expose "$(cat empty-msg-hash.txt)" &&
     test "$(echo $(stg series --applied --noprefix))" = "patch" &&
     test_when_finished rm -f pick-expected.txt pick-message.txt &&

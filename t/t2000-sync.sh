@@ -119,7 +119,7 @@ test_expect_success 'Restore the stack status after the failed sync' '
     [ "$(echo $(stg series --unapplied --noprefix))" = "p2 p3" ] &&
     stg add --update &&
     stg refresh &&
-    stg goto p3
+    stg goto p3 &&
     [ "$(echo $(stg series --applied --noprefix))" = "p1 p2 p3" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
 '

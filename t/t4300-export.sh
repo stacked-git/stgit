@@ -17,21 +17,21 @@ test_expect_success 'Initialize repo with patches' '
     for i in 1 2 3 4 5; do
       echo "line $i" >>foo.txt &&
       stg new -m "patch-$i" &&
-      stg refresh
+      stg refresh || return 1
     done
 '
 
 test_expect_success 'Export to directory' '
     stg export -d export1 &&
     for i in 1 2 3 4 5; do
-      test_path_is_file export1/patch-$i
+      test_path_is_file export1/patch-$i || return 1
     done
 '
 
 test_expect_success 'Export with multiple diff-opts' '
     stg export -d export2 -O --minimal -O --no-indent-heuristic &&
     for i in 1 2 3 4 5; do
-      test_path_is_file export2/patch-$i
+      test_path_is_file export2/patch-$i || return 1
     done
 '
 

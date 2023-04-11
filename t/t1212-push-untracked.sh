@@ -8,7 +8,7 @@ test_expect_success 'Use pop --spill' '
     echo aaa >a.txt &&
     echo bbb >b.txt &&
     stg add a.txt b.txt &&
-    stg new -rm patch
+    stg new -rm patch &&
     stg pop --spill &&
     git reset &&
     stg add b.txt &&

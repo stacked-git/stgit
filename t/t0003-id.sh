@@ -15,7 +15,7 @@ test_expect_success 'Init repo' '
     for i in 1 2; do
         echo "line $i" >>foo.txt &&
         stg new -m "patch-$i" &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 

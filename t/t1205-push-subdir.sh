@@ -5,13 +5,13 @@ test_description='Test the push command from a subdirectory'
 . ./test-lib.sh
 
 test_expect_success 'Create some patches' '
-    mkdir foo
+    mkdir foo &&
     for i in 0 1 2; do
         stg new p$i -m p$i &&
         echo x$i >>x.txt &&
         echo y$i >>foo/y.txt &&
         stg add x.txt foo/y.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]

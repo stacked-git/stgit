@@ -14,7 +14,7 @@ test_expect_success 'Create some git-only history' '
 
 test_expect_success 'Create five patches' '
     for i in 0 1 2 3 4; do
-        stg new p$i -m p$i;
+        stg new p$i -m p$i || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2 p3 p4" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]

@@ -114,7 +114,7 @@ test_expect_success 'Uncommit a commit with not precisely one parent' '
 test_expect_success 'Uncommit when top != head' '
     stg new -m foo &&
     git reset --hard HEAD^ &&
-    h=$(git rev-parse HEAD)
+    h=$(git rev-parse HEAD) &&
     stg uncommit bar &&
     test "$(git rev-parse HEAD)" = "$h" &&
     test "$(echo $(stg series))" = "+ bar > foo"

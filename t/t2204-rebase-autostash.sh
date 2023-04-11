@@ -50,7 +50,7 @@ test_expect_success 'rebase --autostash throws helpful error message in conflict
     test_set_editor "$(pwd)/fake-editor" &&
     test_when_finished test_set_editor false &&
     git checkout --force &&
-    stg rebase master
+    stg rebase master &&
     echo baz >file2 &&
     conflict stg rebase master~1 --interactive --autostash 2>err &&
     grep -e "stash pop resulted in conflicts" err

@@ -15,7 +15,7 @@ test_expect_success 'Initialize StGit stack' '
         echo x >$i.txt &&
         stg add $i.txt &&
         stg new p$i -m "Patch $i" &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 

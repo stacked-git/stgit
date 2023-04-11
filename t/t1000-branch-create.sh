@@ -105,7 +105,7 @@ test_expect_success 'Check that no part of the branch was created' '
     # Workaround for the test failure to make the rest of the subtests
     # succeed. (HEAD was erroneously overwritten with the bad foo3 ref, so
     # we need to reset it.)
-    test_when_finished git symbolic-ref HEAD refs/heads/master
+    test_when_finished git symbolic-ref HEAD refs/heads/master &&
     test $(find .git -name foo3 \
         | tee /dev/stderr \
         | grep -v ^\\.git/refs/heads/foo3$ \

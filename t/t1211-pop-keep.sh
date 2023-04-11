@@ -9,7 +9,7 @@ test_expect_success 'Create a few patches' '
         stg new p$i -m p$i &&
         echo "patch$i" >>patch$i.txt &&
         stg add patch$i.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]

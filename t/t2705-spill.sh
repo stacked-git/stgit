@@ -28,7 +28,7 @@ test_expect_success 'Create a patch' '
 
 test_expect_success 'Check file status' '
     stg status >status.txt &&
-    cat >expected.txt <<-\EOF
+    cat >expected.txt <<-\EOF &&
 	A  patch0.txt
 	EOF
     test_cmp expected.txt status.txt &&
@@ -59,7 +59,7 @@ test_expect_success 'Patch description did not change' '
 
 test_expect_success 'Changes are now in index' '
     stg status >status.txt &&
-    cat >expected.txt <<EOF
+    cat >expected.txt <<-\EOF &&
 	A  patch0.txt
 	EOF
     test_cmp expected.txt status.txt

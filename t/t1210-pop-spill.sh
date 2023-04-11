@@ -14,7 +14,7 @@ test_expect_success 'Create a few patches' '
         stg new p$i -m p$i &&
         echo "patch$i" >>p.txt &&
         stg add p.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
@@ -114,7 +114,7 @@ test_expect_success 'Create a few patches that touch separate files' '
         stg new p$i -m p$i &&
         echo "patch$i" >>p$i.txt &&
         stg add p$i.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
@@ -142,7 +142,7 @@ test_expect_success 'Create a few patches that touch the same lines in a file' '
         stg new p$i -m p$i &&
         echo "patch$i" >p.txt &&
         stg add p.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
     [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
@@ -187,15 +187,15 @@ test_expect_success 'Create a few patches & make some non-conflicting local chan
     git reset --hard &&
     stg delete .. &&
     [ "$(echo $(stg series --applied --noprefix))" = "" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     for i in 0 1 2; do
         stg new p$i -m p$i &&
         echo "patch$i" >>patch$i.txt &&
         stg add patch$i.txt &&
-        stg refresh
+        stg refresh || return 1
     done &&
     [ "$(echo $(stg series --applied --noprefix))" = "p0 p1 p2" ] &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "" ] &&
     echo "local" >>patch0.txt
 '
 

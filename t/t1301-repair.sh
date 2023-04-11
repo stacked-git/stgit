@@ -49,9 +49,9 @@ test_expect_success 'Create a Git commit' '
 '
 
 test_expect_success 'Turn one Git commit into a patch' '
-    [ "$(echo $(stg series --applied --noprefix))" = "foo" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo" ] &&
     stg repair &&
-    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ] &&
     [ $(stg series --unapplied -c) -eq 0 ]
 '
 
@@ -66,9 +66,9 @@ test_expect_success 'Create three more Git commits' '
 '
 
 test_expect_success 'Turn three Git commits into patches' '
-    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar" ] &&
     stg repair &&
-    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ] &&
     [ $(stg series --unapplied -c) -eq 0 ]
 '
 
@@ -83,9 +83,9 @@ test_expect_success 'Create a merge commit' '
 '
 
 test_expect_success 'Repair in the presence of a merge commit' '
-    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ]
+    [ "$(echo $(stg series --applied --noprefix))" = "foo bar one two three" ] &&
     stg repair &&
-    [ "$(echo $(stg series --unapplied --noprefix))" = "foo bar one two three" ]
+    [ "$(echo $(stg series --unapplied --noprefix))" = "foo bar one two three" ] &&
     [ $(stg series --applied -c) -eq 0 ]
 '
 

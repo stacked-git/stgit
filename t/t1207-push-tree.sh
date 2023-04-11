@@ -10,7 +10,7 @@ test_expect_success 'Create initial patches' '
     stg new A -m A &&
     echo hello world >a &&
     stg add a &&
-    stg refresh
+    stg refresh &&
     stg new B -m B &&
     echo HELLO WORLD >a &&
     stg refresh

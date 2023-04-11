@@ -5,6 +5,15 @@ test_description='Test gpg signatures'
 . ./test-lib.sh
 . "$TEST_DIRECTORY/lib-gpg.sh"
 
+# Run command and dump exit code to path specified by $1.
+dump_code () {
+    path=$1
+    shift
+    "$@" 2>&7
+    echo $? >$path
+    return 0
+} 7>&2 2>&4
+
 test_expect_success GPG 'Stack metadata is signed' '
     git config commit.gpgsign true &&
     git config stgit.gpgsign true &&
@@ -48,8 +57,8 @@ test_expect_success GPG 'changes rolled back when gpg killed' '
 	EOF
     test_config stgit.gpgsign true &&
     test_config gpg.program "$PWD/kill-grandparent" &&
-    stg pop 2>err
-    exit_code=$? &&
+    dump_code exit_code stg pop 2>err &&
+    exit_code=$(cat exit_code) &&
     if test $exit_code = 2
     then
         grep "interrupted by user" err &&

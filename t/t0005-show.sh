@@ -15,7 +15,7 @@ test_expect_success 'Create some patches' '
         stg new -m patch-$x &&
         echo "$x" >>foo.txt &&
         stg add foo.txt &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 
@@ -78,16 +78,16 @@ test_expect_success 'Show unapplied' '
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-unapplied.txt) = "2" &&
     test $(grep -c -E "\+(aaa|bbb)" show-unapplied.txt) = "0" &&
     for pn in $(stg series --unapplied --noprefix); do
-        grep -e "$pn" show-unapplied.txt
+        grep -e "$pn" show-unapplied.txt || return 1
     done
 '
 
 test_expect_success 'Show applied' '
     stg show --applied >show-applied.txt &&
     test $(grep -c -E "\+(aaa|bbb|ccc|ddd)" show-applied.txt) = "2" &&
-    test $(grep -c -E "\+(ccc|ddd)" show-applied.txt) = "0"
+    test $(grep -c -E "\+(ccc|ddd)" show-applied.txt) = "0" &&
     for pn in $(stg series --applied --noprefix); do
-        grep -e "$pn" show-applied.txt
+        grep -e "$pn" show-applied.txt || return 1
     done
 '
 

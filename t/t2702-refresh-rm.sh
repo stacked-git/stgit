@@ -18,7 +18,7 @@ test_expect_success 'Initialize StGit stack' '
 '
 
 test_expect_success 'stg rm a file' '
-    test_when_finished "stg pop -a; git reset --hard"
+    test_when_finished "stg pop -a; git reset --hard" &&
     stg new -m p0 &&
     stg rm y.txt &&
     stg status >status0.txt &&
@@ -37,7 +37,7 @@ test_expect_success 'stg rm a file' '
 '
 
 test_expect_success 'stg rm a file together with other changes' '
-    test_when_finished "stg pop -a; git reset --hard"
+    test_when_finished "stg pop -a; git reset --hard" &&
     stg new -m p1 &&
     echo x2 >>x.txt &&
     stg rm y.txt &&
@@ -59,7 +59,7 @@ test_expect_success 'stg rm a file together with other changes' '
 '
 
 test_expect_success 'rm a file' '
-    test_when_finished "stg pop -a; git reset --hard"
+    test_when_finished "stg pop -a; git reset --hard" &&
     stg new -m p2 &&
     rm y.txt &&
     stg status >status0.txt &&
@@ -78,7 +78,7 @@ test_expect_success 'rm a file' '
 '
 
 test_expect_success 'rm a file together with other changes' '
-    test_when_finished "stg pop -a; git reset --hard"
+    test_when_finished "stg pop -a; git reset --hard" &&
     stg new -m p3 &&
     echo x2 >>x.txt &&
     rm y.txt &&

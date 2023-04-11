@@ -49,12 +49,12 @@ test_expect_success 'Test invalid opts with graphical' '
 '
 
 test_expect_success 'Test log full' '
-    stg log --full >log.txt &&
+    stg log -n1 --full >log.txt &&
     test_line_count = 5 log.txt &&
-    head -n 1 log.txt | tail -n 1 | grep -e "commit"
-    head -n 2 log.txt | tail -n 1 | grep -e "Author: A Ú Thor"
-    head -n 3 log.txt | tail -n 1 | grep -e "Date: "
-    head -n 4 log.txt | tail -n 1 | grep -E "^$"
+    head -n 1 log.txt | tail -n 1 | grep -e "commit" &&
+    head -n 2 log.txt | tail -n 1 | grep -e "Author: A Ú Thor" &&
+    head -n 3 log.txt | tail -n 1 | grep -e "Date: " &&
+    head -n 4 log.txt | tail -n 1 | grep -E "^$" &&
     head -n 5 log.txt | tail -n 1 | grep -E "^    uncommit"
 '
 

@@ -68,7 +68,7 @@ test_expect_success 'Add more patches' '
     stg refresh &&
     mkdir -p dir0/dir1 &&
     echo baz >>dir0/dir1/baz.txt &&
-    echo baz >>bar.txt
+    echo baz >>bar.txt &&
     stg add bar.txt dir0/dir1/baz.txt &&
     stg new -m baz &&
     stg refresh &&

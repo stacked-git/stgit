@@ -5,7 +5,7 @@ test_description='Test stg files'
 . ./test-lib.sh
 
 test_expect_success 'Create some patches' '
-    echo "*.log" >>.git/info/exclude
+    echo "*.log" >>.git/info/exclude &&
     echo aaa >a.txt &&
     echo bbb >b.txt &&
     stg add a.txt b.txt &&
@@ -14,7 +14,7 @@ test_expect_success 'Create some patches' '
     echo bbb >>b.txt &&
     echo ccc >c.txt &&
     stg add b.txt c.txt &&
-    stg new -m "patch-b-c"
+    stg new -m "patch-b-c" &&
     stg refresh
 '
 

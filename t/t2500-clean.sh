@@ -64,7 +64,7 @@ test_expect_success 'Create a conflict' '
     echo bar >foo.txt &&
     stg refresh &&
     stg pop &&
-    stg new p2 -m p2
+    stg new p2 -m p2 &&
     echo quux >foo.txt &&
     stg refresh &&
     conflict stg push

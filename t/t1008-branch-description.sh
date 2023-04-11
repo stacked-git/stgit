@@ -23,7 +23,7 @@ test_expect_success 'Remove description of non-stgit branch' '
 
 test_expect_success 'Describe stgit branch' '
     stg branch --create foo &&
-    test_must_fail git config --get branch.foo.description
+    test_must_fail git config --get branch.foo.description &&
     stg branch --describe "foo branch description" &&
     test "$(git config --get branch.foo.description)" = "foo branch description"
 '

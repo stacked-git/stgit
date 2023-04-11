@@ -42,7 +42,7 @@ test_expect_success 'Create an stgit branch from scratch' '
     touch "h0.txt" && stg refresh &&
     stg pop h0 && stg hide h0 &&
 
-    stg new p1 -m "p1" # create a patch that will be left applied
+    stg new p1 -m "p1" && # create a patch that will be left applied
     touch "p1.txt" && stg refresh
 '
 
@@ -109,7 +109,7 @@ test_expect_success 'Invalid num args to rename' '
 '
 
 test_expect_success 'Config section is renamed' '
-    _assert_current_branch_name "xxx"
+    _assert_current_branch_name "xxx" &&
     git config --local branch.xxx.stgit.autostash true &&
     stg branch --rename yyy &&
     _assert_branch_exists yyy &&

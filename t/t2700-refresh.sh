@@ -19,14 +19,14 @@ test_expect_success 'Initialize StGit stack' '
     git notes add -m note0 &&
     for i in 1 2 3; do
         echo base >>foo$i.txt &&
-        stg add foo$i.txt
-    done
+        stg add foo$i.txt || return 1
+    done &&
     stg refresh &&
     for i in 1 2 3; do
         stg new p$i -m "foo $i" &&
         git notes add -m note$i &&
         echo "foo $i" >>foo$i.txt &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 
@@ -80,7 +80,7 @@ test_expect_success 'Refresh bottom patch' '
 test_expect_success 'Refresh --index' '
     stg status &&
     stg new p4 -m "refresh_index" &&
-    git notes add -m note4
+    git notes add -m note4 &&
     echo baz 1 >>foo1.txt &&
     stg add foo1.txt &&
     echo blah 1 >>foo1.txt &&

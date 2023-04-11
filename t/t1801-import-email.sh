@@ -196,11 +196,11 @@ test_expect_success 'Import from git format-patch output' '
         cd upstream &&
         echo "something" >some.txt &&
         git add some.txt &&
-        git commit -m "Add something"
+        git commit -m "Add something" &&
         stg init
     ) &&
     (
-        git clone upstream downstream
+        git clone upstream downstream &&
         cd downstream &&
         echo "else µ" >>some.txt &&
         git commit -a --author "Éd <ed@example.com>" -m "something else" &&

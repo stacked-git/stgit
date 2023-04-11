@@ -14,7 +14,7 @@ test_expect_success 'Create five applied and five unapplied patches' '
     for i in 1 2 3 4 5 6 7 8 9; do
         stg new p$i -m p$i &&
         echo p$i >>foo.txt &&
-        stg refresh;
+        stg refresh || return 1
     done &&
     stg pop -n 5
 '
@@ -46,7 +46,7 @@ test_expect_success 'Delete a range of patches' '
 test_expect_success 'Delete leading to conflict when re-pushing' '
     echo "stuff" >foo.txt &&
     stg new -m p-stuff &&
-    stg refresh
+    stg refresh &&
     echo "other stuff" >foo.txt &&
     stg new -m p-other &&
     stg refresh &&

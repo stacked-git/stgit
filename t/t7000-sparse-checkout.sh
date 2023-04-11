@@ -67,7 +67,7 @@ test_expect_success 'Create a patch' '
 test_expect_success 'Edit a patch' '
     stg edit --sign -d --save-template edit-out &&
     sed -e "s/^\+change/+CHANGE/g" edit-out >edited-out &&
-    stg edit -f edited-out
+    stg edit -f edited-out &&
     stg show >out &&
     grep "Signed-off-by:" out &&
     grep "CHANGE" out &&

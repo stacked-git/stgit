@@ -13,7 +13,7 @@ test_expect_success 'Initialize StGit stack' '
         echo foo$i >>foo/bar &&
         stg new p$i -m p$i &&
         stg add foo/bar &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 
@@ -36,8 +36,10 @@ test_expect_success 'Prepare conflicting goto' '
 '
 
 test_expect_success 'Goto in subdirectory (conflicting push)' '
-    (cd foo && stg goto --keep p3) ;
-    [ $? -eq 3 ] &&
+    (
+        cd foo &&
+        conflict stg goto --keep p3
+    ) &&
     cat foo/bar >actual.txt &&
     cat >expected1a.txt <<-\EOF &&
 	foo1
@@ -56,8 +58,10 @@ test_expect_success 'Goto in subdirectory (conflicting push)' '
 	foo3
 	>>>>>>> patched
 	EOF
-    ( test_cmp expected1a.txt actual.txt \
-      || test_cmp expected1b.txt actual.txt ) &&
+    (
+      test_cmp expected1a.txt actual.txt ||
+      test_cmp expected1b.txt actual.txt
+    ) &&
     ls foo >actual.txt &&
     cat >expected2.txt <<-\EOF &&
 	bar

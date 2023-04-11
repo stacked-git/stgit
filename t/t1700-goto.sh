@@ -17,7 +17,7 @@ test_expect_success 'Initialize stgit repository' '
         stg new p$i -m "patch $i" &&
         echo $i >file$i &&
         stg add file$i &&
-        stg refresh
+        stg refresh || return 1
     done
 '
 
