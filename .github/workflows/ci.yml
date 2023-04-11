@@ -43,15 +43,16 @@ jobs:
       if: matrix.os == 'ubuntu-latest'
       run: |
         sudo apt-get update
-        sudo apt-get install quilt gnupg2
+        sudo apt-get install quilt gnupg2 libio-pty-perl
     - name: Install Test Dependencies (MacOS)
       if: matrix.os == 'macos-latest'
       run: |
         # coreutils provides the `timeout` command used to wrap `make` below.
         # gnu-sed is needed by some tests (e.g. t3400-pick.sh).
-        brew install coreutils gnu-sed
+        brew install coreutils cpanminus gnu-sed
         echo "$(brew --prefix)/opt/gnu-sed/libexec/gnubin" >> $GITHUB_PATH
         echo "$(brew --prefix)/opt/coreutils/libexec/gnubin" >> $GITHUB_PATH
+        sudo cpanm IO::Pty
     - name: Test
       env:
         STG_PROVE_OPTS: "--jobs=2"
