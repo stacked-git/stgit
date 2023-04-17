@@ -26,7 +26,7 @@ version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "342258dd14006105c2b75ab1bd7543a03bdf0cfc94383303ac212a04939dff6f"
 dependencies = [
- "anstyle",
+ "anstyle 0.3.5",
  "anstyle-parse",
  "anstyle-wincon",
  "concolor-override",
@@ -40,6 +40,12 @@ name = "anstyle"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23ea9e81bd02e310c216d080f6223c179012256e5151c41db88d12c88a1684d2"
+
+[[package]]
+name = "anstyle"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "41ed9a86bf92ae6580e0a31281f65a1b1d867c0cc68d5346e2ae128dddfa6a7d"
 
 [[package]]
 name = "anstyle-parse"
@@ -56,7 +62,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3127af6145b149f3287bb9a0d10ad9c5692dba8c53ad48285e5bec4063834fa"
 dependencies = [
- "anstyle",
+ "anstyle 0.3.5",
  "windows-sys 0.45.0",
 ]
 
@@ -154,7 +160,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "223163f58c9a40c3b0a43e1c4b50a9ce09f007ea2cb1ec258a687945b4b7929f"
 dependencies = [
  "anstream",
- "anstyle",
+ "anstyle 0.3.5",
  "bitflags",
  "clap_lex",
  "strsim",
@@ -1313,7 +1319,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "stgit"
 version = "2.2.2"
 dependencies = [
- "anstyle",
+ "anstyle 1.0.0",
  "anyhow",
  "bstr",
  "bzip2",

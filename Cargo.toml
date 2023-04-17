@@ -18,7 +18,7 @@ name = "stg"
 
 [dependencies]
 anyhow = "1.0"
-anstyle = { version = "0.3", features = ["std"] }
+anstyle = { version = "1.0", features = ["std"] }
 bstr = { version = "1.0", default-features = false, features = ["std"] }
 clap = { version = "~4.2", default-features = false, features = [
   "color",
