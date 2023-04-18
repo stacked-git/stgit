@@ -53,6 +53,19 @@ export STG_ROOT
 PERL_PATH=${PERL:-perl}
 SHELL_PATH=${SHELL_PATH:-/bin/sh}
 TEST_SHELL_PATH=${TEST_SHELL_PATH:-$SHELL_PATH}
+
+# Prepend a string to a VAR using an arbitrary ":" delimiter, not
+# adding the delimiter if VAR or VALUE is empty. I.e. a generalized:
+#
+#	VAR=$1${VAR:+${1:+$2}$VAR}
+#
+# Usage (using ":" as the $2 delimiter):
+#
+#	prepend_var VAR : VALUE
+prepend_var () {
+	eval "$1=\"$3\${$1:+${3:+$2}\$$1}\""
+}
+
 export PERL_PATH SHELL_PATH
 
 # In t0000, we need to override test directories of nested testcases. In case
@@ -122,6 +135,10 @@ parse_option () {
 		tee=t ;;
 	--root=*)
 		root=${opt#--*=} ;;
+	--chain-lint)
+		GIT_TEST_CHAIN_LINT=1 ;;
+	--no-chain-lint)
+		GIT_TEST_CHAIN_LINT=0 ;;
 	-x)
 		trace=t ;;
 	-V|--verbose-log)
@@ -164,6 +181,9 @@ parse_option () {
 		*)	# Good.
 			;;
 		esac
+		;;
+	--invert-exit-code)
+		invert_exit_code=t
 		;;
 	*)
 		echo "error: unknown test option '$opt'" >&2; exit 1 ;;
@@ -472,12 +492,6 @@ u200c=$(printf '\342\200\214')
 
 export _x05 _x35 LF u200c EMPTY_TREE EMPTY_BLOB ZERO_OID OID_REGEX
 
-# Each test should start with something like this, after copyright notices:
-#
-# test_description='Description of this test...
-# This test checks if command xyzzy does the right thing...
-# '
-# . ./test-lib.sh
 test "x$TERM" != "xdumb" && (
 		test -t 1 &&
 		tput bold >/dev/null 2>&1 &&
@@ -650,16 +664,31 @@ test_ok_ () {
 	finalize_test_case_output ok "$@"
 }
 
+_invert_exit_code_failure_end_blurb () {
+	say_color warn "# faked up failures as TODO & now exiting with 0 due to --invert-exit-code"
+}
+
 test_failure_ () {
 	failure_label=$1
 	test_failure=$(($test_failure + 1))
 	local pfx=""
+	if test -n "$invert_exit_code" # && test -n "$HARNESS_ACTIVE"
+	then
+		pfx="# TODO induced breakage (--invert-exit-code):"
+	fi
 	say_color error "not ok $test_count - ${pfx:+$pfx }$1"
 	shift
 	printf '%s\n' "$*" | sed -e 's/^/#	/'
 	if test -n "$immediate"
 	then
 		say_color error "1..$test_count"
+		if test -n "$invert_exit_code"
+		then
+			finalize_test_output
+			_invert_exit_code_failure_end_blurb
+			GIT_EXIT_OK=t
+			exit 0
+		fi
 		_error_exit
 	fi
 	finalize_test_case_output failure "$failure_label" "$@"
@@ -840,10 +869,7 @@ want_trace () {
 # (and we want to make sure we run any cleanup like
 # "set +x").
 test_eval_inner_ () {
-	# Do not add anything extra (including LF) after '$*'
-	eval "
-		want_trace && trace_level_=$(($trace_level_+1)) && set -x
-		$*"
+	eval "$*"
 }
 
 test_eval_ () {
@@ -868,7 +894,10 @@ test_eval_ () {
 	#     be _inside_ the block to avoid polluting the "set -x" output
 	#
 
-	test_eval_inner_ "$@" </dev/null >&3 2>&4
+	# Do not add anything extra (including LF) after '$*'
+	test_eval_inner_ </dev/null >&3 2>&4 "
+		want_trace && trace_level_=$(($trace_level_+1)) && set -x
+		$*"
 	{
 		test_eval_ret_=$?
 		if want_trace
@@ -885,9 +914,23 @@ test_eval_ () {
 	return $test_eval_ret_
 }
 
+fail_117 () {
+	return 117
+}
+
 test_run_ () {
 	test_cleanup=:
 	expecting_failure=$2
+
+	if test "${GIT_TEST_CHAIN_LINT:-1}" != 0; then
+		# 117 is magic because it is unlikely to match the exit
+		# code of other programs
+		test_eval_inner_ "fail_117 && $1" </dev/null >&3 2>&4
+		if test $? != 117
+		then
+			BUG "broken &&-chain: $1"
+		fi
+	fi
 
 	test_eval_ "$1"
 	eval_ret=$?
@@ -1045,7 +1088,14 @@ test_done () {
 			;;
 		esac
 
-		if test -z "$debug" && test -n "$remove_trash"
+		if test -n "$stress" && test -n "$invert_exit_code"
+		then
+			# We're about to move our "$TRASH_DIRECTORY"
+			# to "$TRASH_DIRECTORY.stress-failed" if
+			# --stress is combined with
+			# --invert-exit-code.
+			say "with --stress and --invert-exit-code we're not removing '$TRASH_DIRECTORY'"
+		elif test -z "$debug" && test -n "$remove_trash"
 		then
 			test -d "$TRASH_DIRECTORY" ||
 			error "Tests passed but trash directory already removed before test cleanup; aborting"
@@ -1058,6 +1108,14 @@ test_done () {
 			} ||
 			error "Tests passed but test cleanup failed; aborting"
 		fi
+
+		if test -z "$skip_all" && test -n "$invert_exit_code"
+		then
+			say_color warn "# faking up non-zero exit with --invert-exit-code"
+			GIT_EXIT_OK=t
+			exit 1
+		fi
+
 		test_at_end_hook_
 
 		GIT_EXIT_OK=t
@@ -1066,6 +1124,13 @@ test_done () {
 	*)
 		say_color error "# failed $test_failure among $msg"
 		say "1..$test_count"
+
+		if test -n "$invert_exit_code"
+		then
+			_invert_exit_code_failure_end_blurb
+			GIT_EXIT_OK=t
+			exit 0
+		fi
 
 		GIT_EXIT_OK=t
 		exit 1 ;;
@@ -1108,6 +1173,13 @@ then
 	test_done
 fi
 
+
+if test "${GIT_TEST_CHAIN_LINT:-1}" != 0 &&
+   test "${GIT_TEST_EXT_CHAIN_LINT:-1}" != 0
+then
+	"$PERL_PATH" "$TEST_DIRECTORY/chainlint.pl" "$0" ||
+		BUG "lint error (see '?!...!? annotations above)"
+fi
 
 # Last-minute variable setup
 USER_HOME="$HOME"
@@ -1227,7 +1299,7 @@ case $uname_s in
 	test_set_prereq SED_STRIPS_CR
 	test_set_prereq GREP_STRIPS_CR
 	test_set_prereq WINDOWS
-	GIT_TEST_CMP=mingw_test_cmp
+	GIT_TEST_CMP="GIT_DIR=/dev/null git diff --no-index --ignore-cr-at-eol --"
 	;;
 *CYGWIN*)
 	test_set_prereq POSIXPERM
