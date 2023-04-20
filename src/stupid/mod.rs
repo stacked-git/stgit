@@ -10,6 +10,7 @@ mod command;
 pub(crate) mod diff;
 mod oid;
 pub(crate) mod status;
+mod tempindex;
 mod version;
 
 use std::{
@@ -41,7 +42,7 @@ impl<'repo, 'index> Stupid<'repo, 'index> for gix::Repository {
         StupidContext {
             git_dir: Some(self.git_dir()),
             work_dir: self.work_dir(),
-            index_path: None,
+            index_filename: None,
             git_version: RefCell::new(None::<StupidVersion>),
         }
     }
@@ -52,7 +53,7 @@ impl<'repo, 'index> Stupid<'repo, 'index> for gix::Repository {
 pub(crate) struct StupidContext<'repo, 'index> {
     git_dir: Option<&'repo Path>,
     work_dir: Option<&'repo Path>,
-    index_path: Option<&'index Path>,
+    index_filename: Option<&'index Path>,
     git_version: RefCell<Option<StupidVersion>>,
 }
 
@@ -64,21 +65,14 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     where
         F: FnOnce(&StupidContext) -> Result<T>,
     {
-        let temp_index_root = if let Some(git_dir) = self.git_dir {
-            git_dir
-        } else {
-            self.index_path
-                .expect("StupidContext has either a git_dir or an index_path")
-                .parent()
-                .expect("git index path has parent")
-        };
-        let index_tempfile = tempfile::Builder::new()
-            .prefix("index-temp-stg")
-            .tempfile_in(temp_index_root)?;
+        let git_dir = self
+            .git_dir
+            .expect("git_dir required to use with_temp_index");
+        let temp_index = tempindex::TempIndex::new(git_dir)?;
         let stupid_temp = StupidContext {
             git_dir: self.git_dir,
             work_dir: self.work_dir,
-            index_path: Some(index_tempfile.path()),
+            index_filename: Some(temp_index.filename()),
             git_version: RefCell::new(None),
         };
 
@@ -101,12 +95,13 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let realpath =
             |path| gix::path::realpath_opts(path, cwd.as_path(), gix::path::realpath::MAX_SYMLINKS);
         if let Some(git_dir) = self.git_dir {
-            command.env("GIT_DIR", realpath(git_dir)?);
+            let git_dir = realpath(git_dir)?;
+            if let Some(index_filename) = self.index_filename {
+                command.env("GIT_INDEX_FILE", git_dir.join(index_filename));
+            }
+            command.env("GIT_DIR", git_dir);
         }
         command.env("GIT_WORK_TREE", ".");
-        if let Some(index_path) = self.index_path {
-            command.env("GIT_INDEX_FILE", realpath(index_path)?);
-        }
         Ok(command)
     }
 
@@ -114,8 +109,14 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         self.git_dir.map(|git_dir| command.env("GIT_DIR", git_dir));
         self.work_dir
             .map(|work_dir| command.env("GIT_WORK_TREE", work_dir));
-        self.index_path
-            .map(|index_path| command.env("GIT_INDEX_FILE", index_path));
+        self.index_filename.map(|filename| {
+            command.env(
+                "GIT_INDEX_FILE",
+                self.git_dir
+                    .expect("git_dir must be set when index_filename is used")
+                    .join(filename),
+            )
+        });
     }
 
     fn at_least_version(&self, version: &StupidVersion) -> Result<bool> {
