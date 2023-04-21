@@ -50,9 +50,9 @@ impl<'repo, 'index> Stupid<'repo, 'index> for gix::Repository {
 /// Context for running stupid commands.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct StupidContext<'repo, 'index> {
-    pub git_dir: Option<&'repo Path>,
-    pub index_path: Option<&'index Path>,
-    pub work_dir: Option<&'repo Path>,
+    git_dir: Option<&'repo Path>,
+    work_dir: Option<&'repo Path>,
+    index_path: Option<&'index Path>,
     git_version: RefCell<Option<StupidVersion>>,
 }
 
@@ -77,8 +77,8 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             .tempfile_in(temp_index_root)?;
         let stupid_temp = StupidContext {
             git_dir: self.git_dir,
-            index_path: Some(index_tempfile.path()),
             work_dir: self.work_dir,
+            index_path: Some(index_tempfile.path()),
             git_version: RefCell::new(None),
         };
 
