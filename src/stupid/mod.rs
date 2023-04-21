@@ -965,7 +965,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     /// Read content of a tree into specified index using `git read-tree`.
     pub(crate) fn read_tree(&self, tree_id: gix::ObjectId) -> Result<()> {
-        self.git()
+        self.git_in_work_root()?
             .arg("read-tree")
             .arg(tree_id.to_string())
             .stdout(Stdio::null())
@@ -1430,7 +1430,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Write tree object from content of specified index using `git write-tree`.
     pub(crate) fn write_tree(&self) -> Result<gix::ObjectId> {
         let output = self
-            .git()
+            .git_in_work_root()?
             .arg("write-tree")
             .output_git()?
             .require_success("write-tree")?;
