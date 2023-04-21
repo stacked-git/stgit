@@ -105,7 +105,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         if let Some(git_dir) = self.git_dir {
             command.env("GIT_DIR", realpath(git_dir)?);
         }
-        command.env("GIT_WORK_TREE", realpath(work_dir)?);
+        command.env("GIT_WORK_TREE", ".");
         if let Some(index_path) = self.index_path {
             command.env("GIT_INDEX_FILE", realpath(index_path)?);
         }
