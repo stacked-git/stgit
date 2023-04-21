@@ -50,7 +50,7 @@ const CONFLICT_ERROR: i32 = 3;
 /// [`clap::Command`] graph as needed to execute the target subcommand; avoiding the
 /// cost of instantiating [`clap::Command`] instances for every StGit subcommand.
 fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Command {
-    let command = clap::Command::new("stg")
+    let mut command = clap::Command::new("stg")
         .about("Maintain a stack of patches on top of a Git branch.")
         .override_usage(cmd::make_usage(
             "stg",
@@ -90,6 +90,10 @@ fn get_base_command(color_choice: Option<termcolor::ColorChoice>) -> clap::Comma
                 .value_hint(clap::ValueHint::AnyPath),
         )
         .arg(color::get_color_arg().global(true).display_order(998));
+
+    // Ensure "stg" and not "stg.exe" shows up in usage on Windows.
+    command.set_bin_name("stg");
+
     if let Some(color_choice) = color_choice {
         command.color(color::termcolor_choice_to_clap(color_choice))
     } else {
