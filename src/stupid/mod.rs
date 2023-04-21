@@ -87,9 +87,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     fn git(&self) -> Command {
         let mut command = Command::new("git");
-        self.git_dir.map(|p| command.env("GIT_DIR", p));
-        self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
-        self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+        self.setup_git_env(&mut command);
         command
     }
 
@@ -110,6 +108,14 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.env("GIT_INDEX_FILE", realpath(index_path)?);
         }
         Ok(command)
+    }
+
+    fn setup_git_env(&self, command: &mut Command) {
+        self.git_dir.map(|git_dir| command.env("GIT_DIR", git_dir));
+        self.work_dir
+            .map(|work_dir| command.env("GIT_WORK_TREE", work_dir));
+        self.index_path
+            .map(|index_path| command.env("GIT_INDEX_FILE", index_path));
     }
 
     fn at_least_version(&self, version: &StupidVersion) -> Result<bool> {
@@ -683,9 +689,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         SpecArg: AsRef<OsStr>,
     {
         let mut command = Command::new("gitk");
-        self.git_dir.map(|p| command.env("GIT_DIR", p));
-        self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
-        self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+        self.setup_git_env(&mut command);
         command.arg(commit_id.to_string());
         if let Some(pathspecs) = pathspecs {
             command.arg("--");
@@ -1325,9 +1329,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
         if let Some(command_name) = args.next() {
             let mut command = Command::new(command_name);
-            self.git_dir.map(|p| command.env("GIT_DIR", p));
-            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
-            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            self.setup_git_env(&mut command);
             let status = command
                 .args(args)
                 .arg(remote_name)
@@ -1357,9 +1359,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
         if let Some(command_name) = args.next() {
             let mut command = Command::new(command_name);
-            self.git_dir.map(|p| command.env("GIT_DIR", p));
-            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
-            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            self.setup_git_env(&mut command);
             let status = command
                 .args(args)
                 .arg(remote_name)
@@ -1388,9 +1388,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let mut args = user_cmd_str.split(|c: char| c.is_ascii_whitespace());
         if let Some(command_name) = args.next() {
             let mut command = Command::new(command_name);
-            self.git_dir.map(|p| command.env("GIT_DIR", p));
-            self.work_dir.map(|p| command.env("GIT_WORK_TREE", p));
-            self.index_path.map(|p| command.env("GIT_INDEX_FILE", p));
+            self.setup_git_env(&mut command);
             let status = command
                 .args(args)
                 .arg(target.to_string())
