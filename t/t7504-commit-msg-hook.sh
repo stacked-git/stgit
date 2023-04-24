@@ -270,13 +270,27 @@ test_expect_success 'refresh --no-verify with non-executable hook (editor)' '
 
 # now a hook that edits the commit message
 write_script "$HOOK" <<-'EOF'
-	echo "new message" >"$1"
+	if test -d .git; then
+	    echo "new message" >"$1"
+	else
+	    echo "not in work root" >"$1"
+	fi
 	exit 0
 	EOF
 
 test_expect_success 'new hook edits commit message' '
     stg new -m "additional" additional &&
     commit_msg_is "new message"
+'
+
+test_expect_success 'commit-msg run from subdir' '
+    mkdir -p dir0/dir1 &&
+    (
+        cd dir0/dir1 &&
+        stg new -m from-subdir
+    ) &&
+    commit_msg_is "new message" &&
+    stg delete from-subdir
 '
 
 test_expect_success "new hook doesn't edit commit message" '
