@@ -49,7 +49,7 @@ test_expect_success GPG 'changes rolled back when gpg fails' '
     grep "all changes rolled back" err
 '
 
-test_expect_success GPG 'changes rolled back when gpg killed' '
+test_expect_success !MINGW,GPG 'changes rolled back when gpg killed' '
     write_script kill-grandparent <<-\EOF &&
 	# Kill the grandparent of this faux gpg process, i.e.
 	# the stg process (stg -> git -> gpg)
