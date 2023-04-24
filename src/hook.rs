@@ -2,7 +2,11 @@
 
 //! Support for using git repository hooks.
 
-use std::{borrow::Cow, io::Write, path::PathBuf};
+use std::{
+    borrow::Cow,
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::{anyhow, Context, Result};
 
@@ -108,28 +112,28 @@ pub(crate) fn run_commit_msg_hook<'repo>(
         return Ok(message);
     };
 
-    let mut msg_file = tempfile::NamedTempFile::new()?;
-    msg_file.write_all(message.raw_bytes())?;
-    let msg_file_path = msg_file.into_temp_path();
+    let work_dir = repo.work_dir().expect("not a bare repo");
+    let temp_msg = TemporaryMessage::new(work_dir, &message)?;
 
     let index_path = repo.index_path();
 
     // TODO: when git runs this hook, it only sets GIT_INDEX_FILE and sometimes
     // GIT_EDITOR. So author and committer vars are not clearly required.
     let mut hook_command = std::process::Command::new(hook_path);
+    hook_command.current_dir(work_dir);
     hook_command.env("GIT_INDEX_FILE", &index_path);
     if !use_editor {
         hook_command.env("GIT_EDITOR", ":");
     }
 
-    hook_command.arg(&msg_file_path);
+    hook_command.arg(temp_msg.filename());
 
     let status = hook_command
         .status()
         .with_context(|| format!("`{hook_name}` hook"))?;
 
     if status.success() {
-        let message_bytes = std::fs::read(&msg_file_path)?;
+        let message_bytes = temp_msg.read()?;
         let encoding = message.encoding()?;
         let message = encoding
             .decode_without_bom_handling_and_without_replacement(&message_bytes)
@@ -143,6 +147,53 @@ pub(crate) fn run_commit_msg_hook<'repo>(
             "`{hook_name}` hook returned {}",
             status.code().unwrap_or(-1)
         ))
+    }
+}
+
+/// Temporary commit message file for commit-msg hook.
+///
+/// The temporary file is created relative to the work dir using the StGit process id to
+/// avoid collisions with other StGit processes.
+struct TemporaryMessage<'repo> {
+    work_dir: &'repo Path,
+    filename: PathBuf,
+}
+
+impl<'repo> TemporaryMessage<'repo> {
+    /// Create new temporary file containing commit message.
+    fn new(work_dir: &'repo Path, message: &Message<'repo>) -> Result<Self> {
+        let pid = std::process::id();
+        let filename = PathBuf::from(format!(".stgit-msg-temp-{pid}"));
+        let msg_path = work_dir.join(&filename);
+        let mut msg_file = std::fs::OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(msg_path)?;
+        msg_file.write_all(message.raw_bytes())?;
+        Ok(Self { work_dir, filename })
+    }
+
+    /// Get name of temporary message file.
+    ///
+    /// This is not a complete path. The temporary file is relative to the work_dir.
+    fn filename(&self) -> &Path {
+        self.filename.as_ref()
+    }
+
+    /// Read contents of temporary message file.
+    fn read(&self) -> Result<Vec<u8>> {
+        Ok(std::fs::read(self.work_dir.join(&self.filename))?)
+    }
+}
+
+impl<'repo> Drop for TemporaryMessage<'repo> {
+    fn drop(&mut self) {
+        let msg_path = self.work_dir.join(&self.filename);
+        if msg_path.is_file() {
+            if let Err(e) = std::fs::remove_file(&msg_path) {
+                panic!("failed to remove temp message {msg_path:?}: {e}");
+            }
+        }
     }
 }
 
