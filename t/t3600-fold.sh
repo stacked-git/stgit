@@ -43,7 +43,7 @@ test_expect_success 'Attempt fold with local changes' '
 
 test_expect_success 'Attempt fold with non-existant patch file' '
     command_error stg fold non-existant.diff 2>err &&
-    grep "No such file" err
+    grep -E "No such file|cannot find the file specified" err
 '
 
 test_expect_success 'Attempt fold with no applied patches' '
