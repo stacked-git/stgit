@@ -33,11 +33,11 @@ test_expect_success 'Check patch name is utf-8' '
     test "$(stg series --applied --noprefix)" = "äëñïö"
 '
 
-test_expect_success 'Check show is utf-8' '
+test_expect_success !WINDOWS 'Check show is utf-8' '
     stg show | grep -e "Author: Áéí óú <author@example.com>"
 '
 
-test_expect_success 'Check underlying commit is ISO8859-1' '
+test_expect_success !WINDOWS 'Check underlying commit is ISO8859-1' '
     git cat-file -p HEAD >"$HOME"/commit-data.txt &&
     cat "$HOME"/commit-data.txt |
     grep -e "^encoding ISO8859-1" &&
