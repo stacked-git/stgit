@@ -65,17 +65,17 @@ pub(crate) fn run_pre_commit_hook(repo: &gix::Repository, use_editor: bool) -> R
         return Ok(false);
     };
 
-    let workdir = repo
-        .work_dir()
-        .expect("should not get this far with a bare repo");
+    let work_dir = repo.work_dir().expect("not a bare repo");
 
     let mut hook_command = std::process::Command::new(hook_path);
+    hook_command.current_dir(work_dir);
     if !use_editor {
         hook_command.env("GIT_EDITOR", ":");
     }
 
+    let mut hook_command = make_sh_command_on_windows(hook_command);
+
     let status = hook_command
-        .current_dir(workdir)
         .stdin(std::process::Stdio::null())
         .status()
         .with_context(|| format!("`{hook_name}` hook"))?;
@@ -127,6 +127,8 @@ pub(crate) fn run_commit_msg_hook<'repo>(
     }
 
     hook_command.arg(temp_msg.filename());
+
+    let mut hook_command = make_sh_command_on_windows(hook_command);
 
     let status = hook_command
         .status()
@@ -206,4 +208,51 @@ fn is_executable(meta: &std::fs::Metadata) -> bool {
 #[cfg(not(unix))]
 fn is_executable(_meta: &std::fs::Metadata) -> bool {
     true
+}
+
+#[cfg(not(windows))]
+fn make_sh_command_on_windows(command: std::process::Command) -> std::process::Command {
+    command
+}
+
+#[cfg(windows)]
+fn make_sh_command_on_windows(command: std::process::Command) -> std::process::Command {
+    let hook_path = command
+        .get_program()
+        .to_str()
+        .expect("path to hook is valid UTF-8");
+    assert!(!hook_path.contains('"'));
+    assert!(!hook_path.contains('\''));
+
+    let mut command_str = String::new();
+    command_str.push('"');
+    command_str.push_str(hook_path);
+    command_str.push('"');
+    for arg in command.get_args() {
+        let arg = arg.to_str().expect("hook args are valid UTF-8");
+        assert!(!arg.contains('"'));
+        assert!(!arg.contains('\''));
+        command_str.push(' ');
+        command_str.push('"');
+        command_str.push_str(arg);
+        command_str.push('"');
+    }
+
+    let mut sh_command = std::process::Command::new("sh");
+    sh_command.arg("-c");
+    sh_command.arg(command_str);
+
+    for (k, opt_v) in command.get_envs() {
+        if let Some(v) = opt_v {
+            sh_command.env(k, v);
+        } else {
+            sh_command.env_remove(k);
+        }
+    }
+
+    if let Some(cur_dir) = command.get_current_dir() {
+        sh_command.current_dir(cur_dir);
+    }
+
+    sh_command
 }
