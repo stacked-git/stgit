@@ -18,10 +18,7 @@ use crate::{
     hook::run_pre_commit_hook,
     patch::{patchedit, LocationConstraint, PatchLocator, PatchName},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
-    stupid::{
-        status::{Status, StatusOptions, Statuses},
-        Stupid, StupidContext,
-    },
+    stupid::{Status, StatusOptions, Statuses, Stupid, StupidContext},
     wrap::Message,
 };
 
