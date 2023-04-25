@@ -696,14 +696,13 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         message: &[u8],
         trailers: impl IntoIterator<Item = (&'a str, &'a str)>,
     ) -> Result<Vec<u8>> {
-        let output = self
-            .git()
-            .arg("interpret-trailers")
-            .args(
-                trailers
-                    .into_iter()
-                    .map(|(trailer, by)| format!("--trailer={trailer}={by}")),
-            )
+        let mut command = self.git();
+        command.arg("interpret-trailers");
+        for (trailer, by) in trailers {
+            command.arg("--trailer");
+            command.arg(format!("{trailer}={by}"));
+        }
+        let output = command
             .stdout(Stdio::piped())
             .in_and_out(message)?
             .require_success("interpret-trailers")?;
