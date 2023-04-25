@@ -1325,5 +1325,5 @@ test_lazy_prereq QUILT '
 
 test_lazy_prereq GITSENDEMAIL '
 	# test whether git send-email is available
-	git send-email --help 2>/dev/null >/dev/null
+	git send-email --dump-aliases 2>/dev/null >/dev/null
 '
