@@ -1187,6 +1187,13 @@ HOME="$TRASH_DIRECTORY"
 GNUPGHOME="$HOME/gnupg-home-not-used"
 export HOME GNUPGHOME USER_HOME
 
+# Workaround for gix-config looking for global config in USERPROFILE.
+if test -n "$USERPROFILE"
+then
+	GIT_CONFIG_GLOBAL="$HOME/.gitconfig"
+	export GIT_CONFIG_GLOBAL
+fi
+
 # "rm -rf" existing trash directory, even if a previous run left it
 # with bad permissions.
 remove_trash_directory () {
