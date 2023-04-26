@@ -140,7 +140,7 @@ mkeditor ()
 	EOF
 }
 
-test_expect_success 'Edit commit message interactively (vi)' '
+test_expect_success !MINGW 'Edit commit message interactively (vi)' '
     mkeditor vi &&
     test_when_finished "rm -f vi" &&
     unset EDITOR &&
