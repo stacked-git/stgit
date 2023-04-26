@@ -244,24 +244,24 @@ test_expect_success 'squash --no-verify with failing hook (editor)' '
 '
 
 chmod -x "$HOOK"
-test_expect_success 'refresh with non-executable hook' '
+test_expect_success !MINGW 'refresh with non-executable hook' '
     echo "content" >>file &&
     stg refresh -m "content"
 '
 
-test_expect_success 'refresh with non-executable hook (editor)' '
+test_expect_success !MINGW 'refresh with non-executable hook (editor)' '
     echo "content again" >>file &&
     echo "content again" >FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e &&
     commit_msg_is "content again"
 '
 
-test_expect_success 'refresh --no-verify with non-executable hook' '
+test_expect_success !MINGW 'refresh --no-verify with non-executable hook' '
     echo "more content" >>file &&
     stg refresh --no-verify -m "more content"
 '
 
-test_expect_success 'refresh --no-verify with non-executable hook (editor)' '
+test_expect_success !MINGW 'refresh --no-verify with non-executable hook (editor)' '
     echo "even more content" >>file &&
     echo "even more content" >FAKE_MSG &&
     GIT_EDITOR="\"\$FAKE_EDITOR2\"" stg refresh -e --no-verify &&
