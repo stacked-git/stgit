@@ -165,14 +165,23 @@ jobs:
     - name: Build
       run: |
         cargo --locked build --all-features --profile release
-    # - name: Setup MSYS2
-    #   uses: msys2/setup-msys2@v2
-    #   with:
-    #     install: base-devel git
-    # - name: Test
-    #   shell: msys2 {0}
-    #   env:
-    #     STG_TEST_OPTS: "-v -i"
-    #     STG_PROFILE: "release"
-    #   run: |
-    #     timeout 900s make -C t test
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: diffutils make
+        path-type: inherit
+    - name: Test
+      shell: msys2 {0}
+      env:
+        STG_PROVE_OPTS: "--jobs=2"
+        STG_TEST_OPTS: "--verbose-log"
+        STG_PROFILE: "release"
+      run: |
+        timeout 900s make -C t prove
+    - name: Show Failures
+      if: ${{ failure() }}
+      shell: msys2 {0}
+      run: |
+        make -C t show-failure-results
