@@ -126,7 +126,7 @@ test_expect_success 'refresh --no-verify with non-executable hook' '
     assert_pre_commit_hook_did_not_run
 '
 
-test_expect_success 'refresh with non-executable hook' '
+test_expect_success !MINGW 'refresh with non-executable hook' '
     echo "pre-commit-hook-non-executable" >>file &&
     stg refresh &&
     assert_pre_commit_hook_did_not_run
