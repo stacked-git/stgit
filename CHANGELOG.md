@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.2.3] 2023-04-26
+
+### Fixed
+- fix: error using on Windows (#273)
+- fix: path handling for Windows compatibility
+- fix: commit-msg hook run from work root
+- fix: avoid "stg.exe" in usage on Windows
+- fix: use gitattributes to force LF endings on Windows
+- fix: wrap hooks with sh on Windows
+
+### Changed
+- chore: update to gix 0.44.0
+- chore: update other dependencies
+
+
 ## [2.2.2] 2023-04-01
 
 ### Fixed
