@@ -4,8 +4,11 @@
 //!
 //! The current stack state format is version 5, introduced in StGit v1.2.
 //!
-//! This module is capable of upgrading stack state version 4 to version 5. Stack state
-//! version 4 was introduced in StGit v1.0.
+//! This module is capable of upgrading stack state version 4 to version 5.
+//! Stack state version 5 was introduced in StGit v1.2.
+//! Stack state version 4 was introduced in StGit v1.0.
+//! Stack state version 3 was introduced in StGit v0.20.
+//! Stack state version 2 was introduced in StGit v0.13.
 
 use std::{collections::BTreeMap, str::FromStr};
 
@@ -16,6 +19,73 @@ use crate::{patch::PatchName, stack::state::StackState};
 
 /// Upgrade stack state metadata to most recent version.
 pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result<()> {
+    let version = get_format_version(repo, branch_name)?;
+    match version {
+        5 => Ok(()),
+        4 => stack_upgrade_from_4(repo, branch_name),
+        3 => Err(anyhow!("meta data version 3 not handled yet")),
+        2 => Err(anyhow!("meta data version 2 not handled yet")),
+        1 => Err(anyhow!("meta data version 1 not handled yet")),
+        -1 => Ok(()), // not initialized yet
+        _ => Err(anyhow!("unknown meta data version")),
+    }
+}
+
+/// Get current format version
+fn get_format_version(repo: &gix::Repository, branch_name: &str) -> Result<i64> {
+    let refname_v5 = state_refname_from_branch_name_v5(branch_name);
+
+    if repo.find_reference(refname_v5.as_str()).is_ok() {
+        return Ok(5);
+    }
+
+    let refname_v4 = state_refname_from_branch_name_v4(branch_name);
+
+    if let Ok(mut stack_ref_v4) = repo.find_reference(refname_v4.as_str()) {
+        let state_commit = stack_ref_v4
+            .peel_to_id_in_place()
+            .context("finding version 4 state commit")?
+            .object()?
+            .try_into_commit()?;
+        let state_tree = state_commit
+            .tree()
+            .context("finding version 4 state tree")?;
+        if let Some(meta_entry) = state_tree.lookup_entry_by_path("meta")? {
+            let meta_blob = meta_entry
+                .object()
+                .context("finding old stack `meta` blob")
+                .and_then(|obj| {
+                    if matches!(obj.kind, gix::objs::Kind::Blob) {
+                        Ok(obj)
+                    } else {
+                        Err(anyhow!(
+                            "`meta` object `{}` in stack state is not a blob",
+                            obj.id
+                        ))
+                    }
+                })?;
+            let meta_content =
+                std::str::from_utf8(&meta_blob.data).context("decoding version 4 meta")?;
+            let mut meta_lines = meta_content.lines();
+            let first_line = meta_lines.next();
+            if first_line == Some("Version: 4") {
+                return Ok(4);
+            }
+        }
+    }
+
+    let config = repo.config_snapshot();
+    if let Some(old_version) = config.integer(config_version_from_branch_name(branch_name).as_str())
+    {
+        return Ok(old_version);
+    }
+
+    // not initialized yet
+    Ok(-1)
+}
+
+/// Upgrade from 4 to 5
+fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()> {
     let refname_v4 = state_refname_from_branch_name_v4(branch_name);
 
     if let Ok(mut stack_ref_v4) = repo.find_reference(refname_v4.as_str()) {
@@ -123,7 +193,7 @@ pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result
 
             let state = StackState::from_raw_state(repo, raw_stack_state)?;
             let new_state_commit_id = state.commit(repo, None, "stack upgrade to version 5")?;
-            let refname = format!("refs/stacks/{branch_name}");
+            let refname = state_refname_from_branch_name_v5(branch_name);
             repo.reference(
                 refname.as_str(),
                 new_state_commit_id,
@@ -142,7 +212,17 @@ pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result
     Ok(())
 }
 
+/// Get config version path for versions 1, 2 and 3.
+fn config_version_from_branch_name(branch_name: &str) -> String {
+    format!("branch.{branch_name}.stgit.stackformatversion")
+}
+
 /// Get stack state version 4 stack state reference.
 fn state_refname_from_branch_name_v4(branch_name: &str) -> String {
     format!("refs/heads/{branch_name}.stgit")
+}
+
+/// Get stack state version 5 stack state reference.
+fn state_refname_from_branch_name_v5(branch_name: &str) -> String {
+    format!("refs/stacks/{branch_name}")
 }
