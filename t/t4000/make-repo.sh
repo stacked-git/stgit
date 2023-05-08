@@ -30,7 +30,7 @@ export GIT_COMMITTER_EMAIL GIT_COMMITTER_NAME
 
 set -e
 
-for ver in 1.1 1.0 0.19 0.12 0.8; do
+for ver in 1.1 1.0 0.23 0.19 0.12 0.8; do
     if [ -e $ver.tar.gz ]; then continue; fi
 
     # Get the required stgit version.
