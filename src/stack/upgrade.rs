@@ -10,12 +10,17 @@
 //! Stack state version 3 was introduced in StGit v0.20.
 //! Stack state version 2 was introduced in StGit v0.13.
 
-use std::{collections::BTreeMap, str::FromStr};
+use std::{
+    collections::BTreeMap,
+    fs::{remove_dir, remove_dir_all, File, OpenOptions},
+    io::{BufRead, BufReader},
+    str::FromStr,
+};
 
 use anyhow::{anyhow, Context, Result};
 
 use super::serde::{RawPatchState, RawStackState};
-use crate::{patch::PatchName, stack::state::StackState};
+use crate::{ext::RepositoryExtended, patch::PatchName, stack::state::StackState};
 
 /// Upgrade stack state metadata to most recent version.
 pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result<()> {
@@ -23,7 +28,7 @@ pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result
     match version {
         5 => Ok(()),
         4 => stack_upgrade_from_4(repo, branch_name),
-        3 => Err(anyhow!("meta data version 3 not handled yet")),
+        3 => stack_upgrade_from_3(repo, branch_name),
         2 => Err(anyhow!("meta data version 2 not handled yet")),
         1 => Err(anyhow!("meta data version 1 not handled yet")),
         -1 => Ok(()), // not initialized yet
@@ -209,6 +214,125 @@ fn stack_upgrade_from_4(repo: &gix::Repository, branch_name: &str) -> Result<()>
         };
     }
 
+    Ok(())
+}
+
+/// Upgrade from 3 to 5
+fn stack_upgrade_from_3(repo: &gix::Repository, branch_name: &str) -> Result<()> {
+    let branch_dir = repo.git_dir().join("patches").join(branch_name);
+    let applied_file = branch_dir.join("applied");
+    let unapplied_file = branch_dir.join("unapplied");
+    let hidden_file = branch_dir.join("hidden");
+
+    // hidden file might be missing
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&hidden_file)
+        .ok();
+
+    let mut head: Option<gix::ObjectId> = None;
+    let mut applied: Vec<PatchName> = Vec::new();
+    let mut unapplied: Vec<PatchName> = Vec::new();
+    let mut hidden: Vec<PatchName> = Vec::new();
+    let mut cleanup: Vec<String> = Vec::new();
+    let mut patches: BTreeMap<PatchName, RawPatchState> = BTreeMap::new();
+
+    if let Ok(mut head_ref) = repo.find_reference(format!("refs/heads/{branch_name}").as_str()) {
+        let commit_id: gix::ObjectId = head_ref.peel_to_id_in_place()?.into();
+        head = Some(commit_id);
+    }
+
+    if head.is_none() {
+        return Err(anyhow!("malformed version 3 meta: missing Head"));
+    }
+
+    cleanup.push(format!("refs/heads/{branch_name}.stgit"));
+
+    let lists = [
+        (applied_file, &mut applied),
+        (unapplied_file, &mut unapplied),
+        (hidden_file, &mut hidden),
+    ];
+    for (file_list, patch_list) in lists {
+        let list_reader = BufReader::new(File::open(file_list)?);
+        for line in list_reader.lines() {
+            let pn = line?;
+            if let Ok(mut reference) =
+                repo.find_reference(format!("refs/patches/{branch_name}/{pn}").as_str())
+            {
+                let commit_id: gix::ObjectId = reference.peel_to_id_in_place()?.into();
+                let patchname = PatchName::from_str(&pn)
+                    .with_context(|| format!("converting `{}` to patchname", &pn))?;
+                patch_list.push(patchname.clone());
+                cleanup.push(format!("refs/patches/{branch_name}/{pn}.log"));
+                patches.insert(patchname, RawPatchState { oid: commit_id });
+            }
+        }
+    }
+
+    let raw_stack_state = RawStackState {
+        prev: None,
+        head: head.unwrap(),
+        applied,
+        unapplied,
+        hidden,
+        patches,
+    };
+
+    let state = StackState::from_raw_state(repo, raw_stack_state)?;
+    let new_state_commit_id = state.commit(repo, None, "stack upgrade to version 5")?;
+    let refname = state_refname_from_branch_name_v5(branch_name);
+    repo.reference(
+        refname.as_str(),
+        new_state_commit_id,
+        gix::refs::transaction::PreviousValue::MustNotExist,
+        "stack upgrade to version 5",
+    )
+    .with_context(|| format!("creating `{refname}`"))?;
+
+    for cu in cleanup {
+        if let Ok(log_ref) = repo.find_reference(cu.as_str()) {
+            log_ref
+                .delete()
+                .with_context(|| format!("deleting old `{cu}` ref"))?;
+        }
+    }
+
+    rm_stackformatversion(repo, branch_name)?;
+
+    remove_dir_all(branch_dir)?;
+
+    // .git/patches will be removed after the last stack is converted
+    remove_dir(repo.git_dir().join("patches")).ok();
+
+    eprintln!("Upgraded {branch_name} to stack format version 5");
+
+    Ok(())
+}
+
+/// Remove the stack's format version from the config.
+fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()> {
+    let section = "branch";
+    let subsection = format!("{}.stgit", branch_name);
+    let subsection = subsection.as_str();
+
+    let mut local_config_file = repo.local_config_file()?;
+
+    if let Ok(mut value) =
+        local_config_file.raw_value_mut(section, Some(subsection.into()), "stackformatversion")
+    {
+        value.delete();
+    }
+    if let Ok(section) =
+        local_config_file.section_by_key(format!("{section}.{subsection}").as_str())
+    {
+        if section.num_values() == 0 {
+            local_config_file.remove_section_by_id(section.id());
+        }
+    }
+
+    repo.write_local_config(local_config_file)?;
     Ok(())
 }
 
