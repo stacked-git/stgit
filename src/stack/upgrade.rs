@@ -12,7 +12,7 @@
 
 use std::{
     collections::BTreeMap,
-    fs::{remove_dir, remove_dir_all, File, OpenOptions},
+    fs::{remove_dir, remove_dir_all, remove_file, File, OpenOptions},
     io::{BufRead, BufReader},
     str::FromStr,
 };
@@ -29,7 +29,7 @@ pub(crate) fn stack_upgrade(repo: &gix::Repository, branch_name: &str) -> Result
         5 => Ok(()),
         4 => stack_upgrade_from_4(repo, branch_name),
         3 => stack_upgrade_from_3(repo, branch_name),
-        2 => Err(anyhow!("meta data version 2 not handled yet")),
+        2 => stack_upgrade_from_2(repo, branch_name),
         1 => Err(anyhow!("meta data version 1 not handled yet")),
         -1 => Ok(()), // not initialized yet
         _ => Err(anyhow!("unknown meta data version")),
@@ -311,6 +311,17 @@ fn stack_upgrade_from_3(repo: &gix::Repository, branch_name: &str) -> Result<()>
     Ok(())
 }
 
+/// Upgrade from 2 to 5
+fn stack_upgrade_from_2(repo: &gix::Repository, branch_name: &str) -> Result<()> {
+    let branch_dir = repo.git_dir().join("patches").join(branch_name);
+    let protect_file = branch_dir.join("protected");
+    if protect_file.exists() {
+        set_protected(repo, branch_name)?;
+        remove_file(protect_file)?;
+    }
+    stack_upgrade_from_3(repo, branch_name)
+}
+
 /// Remove the stack's format version from the config.
 fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()> {
     let section = "branch";
@@ -331,6 +342,20 @@ fn rm_stackformatversion(repo: &gix::Repository, branch_name: &str) -> Result<()
             local_config_file.remove_section_by_id(section.id());
         }
     }
+
+    repo.write_local_config(local_config_file)?;
+    Ok(())
+}
+
+/// Set the stack's protected state in the config.
+fn set_protected(repo: &gix::Repository, branch_name: &str) -> Result<()> {
+    let section = "branch";
+    let subsection = format!("{}.stgit", branch_name);
+    let subsection = subsection.as_str();
+
+    let mut local_config_file = repo.local_config_file()?;
+
+    local_config_file.set_raw_value(section, Some(subsection.into()), "protect", "true")?;
 
     repo.write_local_config(local_config_file)?;
     Ok(())
