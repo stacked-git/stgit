@@ -5,6 +5,7 @@
 use std::{io::Read, path::PathBuf, rc::Rc};
 
 use anyhow::Result;
+use bstr::BString;
 use clap::{Arg, ArgGroup};
 
 use crate::{
@@ -91,7 +92,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         return Err(super::Error::NoAppliedPatches.into());
     }
 
-    let diff = if let Some(filename) = matches.get_one::<PathBuf>("file") {
+    let diff: BString = if let Some(filename) = matches.get_one::<PathBuf>("file") {
         std::fs::read(filename)?
     } else {
         let stdin = std::io::stdin();
@@ -99,7 +100,8 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let mut diff = Vec::new();
         stdin.read_to_end(&mut diff)?;
         diff
-    };
+    }
+    .into();
 
     let reject_flag = matches.get_flag("reject");
     let strip_level = matches.get_one::<usize>("strip").copied();
@@ -123,7 +125,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let base_tree_id = base_commit.tree_id()?.detach();
         stupid.read_tree_checkout(orig_head_tree_id, base_tree_id)?;
         if let Err(e) = stupid.apply_to_worktree_and_index(
-            &diff,
+            diff.as_ref(),
             reject_flag,
             false,
             strip_level,
@@ -142,7 +144,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         }
     } else {
         stupid.apply_to_worktree_and_index(
-            &diff,
+            diff.as_ref(),
             reject_flag,
             false,
             strip_level,

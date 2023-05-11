@@ -5,7 +5,7 @@
 use std::{borrow::Cow, collections::HashMap, path::Path};
 
 use anyhow::{anyhow, Result};
-use bstr::{BString, ByteVec};
+use bstr::{BStr, BString, ByteVec};
 
 /// Get named patch template from template file.
 pub(crate) fn get_template(repo: &gix::Repository, name: &str) -> Result<Option<String>> {
@@ -69,7 +69,7 @@ pub(crate) fn get_template(repo: &gix::Repository, name: &str) -> Result<Option<
 /// replacements should be UTF-8 encoded.
 pub(crate) fn specialize_template(
     template: &str,
-    replacements: &HashMap<&str, Cow<'_, [u8]>>,
+    replacements: &HashMap<&str, Cow<'_, BStr>>,
 ) -> Vec<u8> {
     enum State {
         Start,

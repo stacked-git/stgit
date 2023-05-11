@@ -496,7 +496,7 @@ impl<'a, 'repo> EditBuilder<'a, 'repo> {
 
             match stupid.with_temp_index(|stupid_temp| {
                 stupid_temp.read_tree(parent_id)?;
-                stupid_temp.apply_to_index(&diff)?;
+                stupid_temp.apply_to_index(diff.as_ref())?;
                 stupid_temp.write_tree()
             }) {
                 Ok(tree_id) => tree_id,

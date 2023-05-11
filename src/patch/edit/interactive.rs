@@ -10,6 +10,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Result};
+use bstr::BString;
 
 use super::description::{EditablePatchDescription, EditedPatchDescription};
 
@@ -71,7 +72,7 @@ fn is_terminal_dumb() -> bool {
 pub(crate) fn call_editor<P: AsRef<Path>>(
     path: P,
     config: &gix::config::Snapshot,
-) -> Result<Vec<u8>> {
+) -> Result<BString> {
     let editor = get_editor(config)?;
 
     if editor != *":" {
@@ -119,7 +120,7 @@ pub(crate) fn call_editor<P: AsRef<Path>>(
         }
     }
 
-    let buf = std::fs::read(&path)?;
+    let buf = std::fs::read(&path)?.into();
     std::fs::remove_file(&path)?;
     Ok(buf)
 }

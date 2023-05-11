@@ -9,7 +9,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::ByteSlice;
+use bstr::{BString, ByteSlice};
 use clap::{Arg, ArgGroup};
 
 use crate::{
@@ -292,8 +292,9 @@ fn series_merge_patch(
 ) -> Result<Option<gix::ObjectId>> {
     let patch_filename: &str = patchname.as_ref();
     let patch_path = series_dir.join(patch_filename);
-    let diff = std::fs::read(&patch_path)
-        .with_context(|| format!("reading patch `{}`", patch_path.display()))?;
+    let diff: BString = std::fs::read(&patch_path)
+        .with_context(|| format!("reading patch `{}`", patch_path.display()))?
+        .into();
 
     let parent = commit.get_parent_commit()?;
     let parent_commit_ref = parent.decode()?;
@@ -305,7 +306,7 @@ fn series_merge_patch(
     stupid.update_index_refresh()?;
     stupid.read_tree_checkout(trans_head_tree_id, parent_commit_ref.tree())?;
     stupid
-        .apply_to_worktree_and_index(&diff, false, false, None, None, None)
+        .apply_to_worktree_and_index(diff.as_ref(), false, false, None, None, None)
         .with_context(|| format!("applying {patchname} from series"))?;
     stupid.update_index_refresh()?;
 

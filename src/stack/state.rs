@@ -5,9 +5,10 @@
 //! This stack state representation is serialized to/from the `stack.json` blob in the
 //! stack state tree.
 
-use std::{collections::BTreeMap, io::Write, rc::Rc, str};
+use std::{collections::BTreeMap, rc::Rc, str};
 
 use anyhow::{anyhow, Result};
+use bstr::{BString, ByteVec};
 
 use super::{access::StackStateAccess, iter::AllPatches, serde::RawStackState};
 use crate::{
@@ -405,26 +406,25 @@ impl<'repo> StackState<'repo> {
         }
 
         let parent = commit.get_parent_commit()?;
-        let mut patch_meta: Vec<u8> = Vec::with_capacity(1024);
-        let patch_meta = &mut patch_meta;
         let parent_tree_id = parent.tree_id()?;
         let commit_tree_id = commit_ref.tree();
         let author = commit_ref.author();
         let date = commit_ref.time().format(gix::date::time::format::ISO8601);
-        write!(
-            patch_meta,
+
+        let mut patch_meta: BString = Vec::with_capacity(1024).into();
+        patch_meta.push_str(format!(
             "Bottom: {parent_tree_id}\n\
              Top:    {commit_tree_id}\n\
-             Author: ",
-        )?;
-
-        patch_meta.write_all(author.name)?;
-        write!(patch_meta, " <")?;
-        patch_meta.write_all(author.email)?;
-        writeln!(patch_meta, ">")?;
-        write!(patch_meta, "Date:   {date}\n\n")?;
-
-        patch_meta.write_all(commit.message_raw_sloppy())?;
+             Author: "
+        ));
+        patch_meta.push_str(author.name);
+        patch_meta.push_str(" <");
+        patch_meta.push_str(author.email);
+        patch_meta.push_str(">\n");
+        patch_meta.push_str("Date:   ");
+        patch_meta.push_str(date);
+        patch_meta.push_str("\n\n");
+        patch_meta.push_str(commit.message_raw_sloppy());
 
         let patch_meta_id = repo.write_blob(patch_meta)?;
 

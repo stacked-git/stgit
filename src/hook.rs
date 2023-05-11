@@ -9,6 +9,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
+use bstr::BString;
 
 use crate::wrap::Message;
 
@@ -183,8 +184,8 @@ impl<'repo> TemporaryMessage<'repo> {
     }
 
     /// Read contents of temporary message file.
-    fn read(&self) -> Result<Vec<u8>> {
-        Ok(std::fs::read(self.work_dir.join(&self.filename))?)
+    fn read(&self) -> Result<BString> {
+        Ok(std::fs::read(self.work_dir.join(&self.filename))?.into())
     }
 }
 

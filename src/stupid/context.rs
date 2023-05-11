@@ -13,7 +13,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::{BString, ByteSlice, ByteVec};
+use bstr::{BStr, BString, ByteSlice, ByteVec};
 
 use super::{
     command::{git_command_error, StupidCommand, StupidExitStatus, StupidOutput},
@@ -112,7 +112,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
 impl<'repo, 'index> StupidContext<'repo, 'index> {
     /// Apply a patch (diff) to the specified index using `git apply --cached`.
-    pub(crate) fn apply_to_index(&self, diff: &[u8]) -> Result<()> {
+    pub(crate) fn apply_to_index(&self, diff: &BStr) -> Result<()> {
         self.git_in_work_root()?
             .args(["apply", "--cached"]) // TODO: use --recount?
             .stdout(Stdio::null())
@@ -123,7 +123,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
 
     pub(crate) fn apply_to_worktree_and_index(
         &self,
-        diff: &[u8],
+        diff: &BStr,
         reject: bool,
         threeway: bool,
         strip_level: Option<usize>,
@@ -485,25 +485,25 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         Ok(())
     }
 
-    pub(crate) fn diffstat(&self, diff: &[u8]) -> Result<Vec<u8>> {
+    pub(crate) fn diffstat(&self, diff: &BStr) -> Result<BString> {
         let output = self
             .git()
             .args(["apply", "--stat", "--summary"])
             .stdout(Stdio::piped())
             .in_and_out(diff)?
             .require_success("apply --stat --summary")?;
-        Ok(output.stdout)
+        Ok(BString::from(output.stdout))
     }
 
     /// Generate diff between specified tree and the working tree or index with `git diff-index`.
-    pub(crate) fn diff_index(&self, tree_id: gix::ObjectId) -> Result<Vec<u8>> {
+    pub(crate) fn diff_index(&self, tree_id: gix::ObjectId) -> Result<BString> {
         let output = self
             .git()
             .args(["diff-index", "-p", "--full-index"])
             .arg(tree_id.to_string())
             .output_git()?
             .require_success("diff-index")?;
-        Ok(output.stdout)
+        Ok(BString::from(output.stdout))
     }
 
     /// Get file names that differ between tree and index.
@@ -570,7 +570,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         stat: bool,
         name_only: bool,
         use_color: bool,
-    ) -> Result<Vec<u8>> {
+    ) -> Result<BString> {
         let mut command = self.git();
         command.args(["diff-tree", "-r"]);
         if stat {
@@ -587,7 +587,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         });
         command.args([tree1.to_string(), tree2.to_string()]);
         let output = command.output_git()?.require_success("diff-tree")?;
-        Ok(output.stdout)
+        Ok(BString::from(output.stdout))
     }
 
     /// Generate diff between two trees using `git diff-tree -p`.
@@ -598,7 +598,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         pathspecs: Option<SpecIter>,
         use_color: bool,
         diff_opts: OptIter,
-    ) -> Result<Vec<u8>>
+    ) -> Result<BString>
     where
         SpecIter: IntoIterator<Item = SpecArg>,
         SpecArg: AsRef<OsStr>,
@@ -619,7 +619,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
             command.args(pathspecs);
         }
         let output = command.output_git()?.require_success("diff-tree")?;
-        Ok(output.stdout)
+        Ok(BString::from(output.stdout))
     }
 
     /// Get unmerged path list using `git diff --name-only --diff-filter=U`.
@@ -758,7 +758,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         input: Option<std::fs::File>,
         copy_message_id: bool,
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    ) -> Result<(BString, BString, BString)> {
         let mut command = self.git();
         command.args(["mailinfo", "--scissors", "--encoding=UTF-8"]);
         if copy_message_id {
@@ -780,7 +780,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let mailinfo = output.stdout;
         let message = std::fs::read(message_path)?;
         let diff = std::fs::read(patch_path)?;
-        Ok((mailinfo, message, diff))
+        Ok((
+            BString::from(mailinfo),
+            BString::from(message),
+            BString::from(diff),
+        ))
     }
 
     #[cfg(feature = "import-compressed")]
@@ -788,7 +792,7 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         &self,
         mut input: impl std::io::Read + Send + 'static,
         copy_message_id: bool,
-    ) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+    ) -> Result<(BString, BString, BString)> {
         let mut command = self.git();
         command.args(["mailinfo", "--scissors", "--encoding=UTF-8"]);
         if copy_message_id {
@@ -821,7 +825,11 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         let headers = output.stdout;
         let message = std::fs::read(message_path)?;
         let diff = std::fs::read(patch_path)?;
-        Ok((headers, message, diff))
+        Ok((
+            BString::from(headers),
+            BString::from(message),
+            BString::from(diff),
+        ))
     }
 
     pub(crate) fn mailsplit(

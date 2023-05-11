@@ -8,7 +8,7 @@ use std::{
 };
 
 use anyhow::{anyhow, Context, Result};
-use bstr::{BString, ByteSlice, ByteVec};
+use bstr::{BStr, BString, ByteSlice, ByteVec};
 use clap::{Arg, ArgGroup};
 
 use crate::{
@@ -465,8 +465,16 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
         let patch_path = out_dir.path().join(format!("{i:04}"));
         let patch_file = std::fs::File::open(patch_path)?;
         let (mailinfo, message, diff) = stupid.mailinfo(Some(patch_file), message_id)?;
-        let headers = Headers::parse_mailinfo(&mailinfo).unwrap_or_default();
-        stack = create_patch(stack, matches, None, headers, &message, &diff, None)?;
+        let headers = Headers::parse_mailinfo(mailinfo.as_bstr()).unwrap_or_default();
+        stack = create_patch(
+            stack,
+            matches,
+            None,
+            headers,
+            message.as_bstr(),
+            diff.as_bstr(),
+            None,
+        )?;
     }
     Ok(())
 }
@@ -476,7 +484,7 @@ fn get_gz_mailinfo(
     stupid: &StupidContext,
     source_file: std::fs::File,
     message_id: bool,
-) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+) -> Result<(BString, BString, BString)> {
     let stream = flate2::read::GzDecoder::new(source_file);
     stupid.mailinfo_stream(stream, message_id)
 }
@@ -486,7 +494,7 @@ fn get_bz2_mailinfo(
     stupid: &StupidContext,
     source_file: std::fs::File,
     message_id: bool,
-) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+) -> Result<(BString, BString, BString)> {
     let stream = bzip2::read::BzDecoder::new(source_file);
     stupid.mailinfo_stream(stream, message_id)
 }
@@ -496,7 +504,7 @@ fn get_gz_mailinfo(
     _: &StupidContext,
     _: std::fs::File,
     _: bool,
-) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+) -> Result<(BString, BString, BString)> {
     Err(anyhow!(
         "StGit not built with support for compressed patches"
     ))
@@ -507,7 +515,7 @@ fn get_bz2_mailinfo(
     _: &StupidContext,
     _: std::fs::File,
     _: bool,
-) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+) -> Result<(BString, BString, BString)> {
     Err(anyhow!(
         "StGit not built with support for compressed patches"
     ))
@@ -539,16 +547,20 @@ fn import_file<'repo>(
             .to_string()
             .contains("error: empty patch")
         {
-            Ok((vec![], vec![], vec![]))
+            Ok((
+                BString::from(vec![]),
+                BString::from(vec![]),
+                BString::from(vec![]),
+            ))
         } else {
             Err(e)
         }
     })?;
 
-    let (headers, message) = if let Some(headers) = Headers::parse_mailinfo(&mailinfo) {
+    let (headers, message) = if let Some(headers) = Headers::parse_mailinfo(mailinfo.as_bstr()) {
         (headers, message)
     } else {
-        Headers::parse_message(&message)?
+        Headers::parse_message(message.as_bstr())?
     };
 
     create_patch(
@@ -556,8 +568,8 @@ fn import_file<'repo>(
         matches,
         source_path,
         headers,
-        &message,
-        &diff,
+        message.as_bstr(),
+        diff.as_bstr(),
         strip_level,
     )
 }
@@ -567,8 +579,8 @@ fn create_patch<'repo>(
     matches: &clap::ArgMatches,
     source_path: Option<&Path>,
     headers: Headers,
-    message: &[u8],
-    diff: &[u8],
+    message: &BStr,
+    diff: &BStr,
     strip_level: Option<usize>,
 ) -> Result<Stack<'repo>> {
     let config = stack.repo.config_snapshot();
@@ -725,7 +737,7 @@ struct Headers {
 }
 
 impl Headers {
-    fn parse_mailinfo(headers: &[u8]) -> Option<Headers> {
+    fn parse_mailinfo(headers: &BStr) -> Option<Headers> {
         let mut author_name = None;
         let mut author_email = None;
         let mut author_date = None;
@@ -768,21 +780,20 @@ impl Headers {
         }
     }
 
-    fn parse_message(message: &[u8]) -> Result<(Headers, Vec<u8>)> {
+    fn parse_message(message: &BStr) -> Result<(Headers, BString)> {
         let mut headers = Headers::default();
         let mut dedent = "";
-        let mut split_message = Vec::with_capacity(message.len());
+        let mut split_message = BString::from(Vec::with_capacity(message.len()));
         let mut lines = message.lines_with_terminator();
 
         while let Some(line) = lines
             .next()
-            .map(|line| line.trim_with(|c| c.is_ascii_whitespace()))
+            .map(|line| line.trim_with(|c| c.is_ascii_whitespace()).as_bstr())
         {
             if line.is_empty() {
                 continue;
             }
-
-            let parts: Vec<_> = line.splitn_str(2, b":").collect();
+            let parts: Vec<_> = line.splitn_str(2, b":").map(BStr::new).collect();
             if parts.len() == 2 {
                 let header = parts[0];
                 let value = parts[1].trim_start_with(|c| c.is_ascii_whitespace());

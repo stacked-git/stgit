@@ -5,7 +5,7 @@
 use std::rc::Rc;
 
 use anyhow::{anyhow, Result};
-use bstr::ByteSlice;
+use bstr::{BStr, ByteSlice};
 use clap::Arg;
 
 use crate::{
@@ -121,7 +121,7 @@ enum URState {
     Redo(isize),
 }
 
-fn parse_undo_redo_message(msg: &[u8]) -> Option<URState> {
+fn parse_undo_redo_message(msg: &BStr) -> Option<URState> {
     let fields: Vec<_> = msg.fields_with(|c| c.is_ascii_whitespace()).collect();
     if fields.len() == 2 {
         if let Some(n) = fields[1]

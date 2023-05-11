@@ -5,12 +5,12 @@
 use std::io::Write;
 
 use anyhow::{anyhow, Context, Result};
-use bstr::{BString, ByteSlice};
+use bstr::{BStr, BString, ByteSlice};
 
 use crate::{ext::TimeExtended, patch::PatchName};
 
 #[derive(Clone, PartialEq, Eq)]
-pub(super) struct DiffBuffer(pub(super) Vec<u8>);
+pub(super) struct DiffBuffer(pub(super) BString);
 
 impl AsRef<[u8]> for DiffBuffer {
     fn as_ref(&self) -> &[u8] {
@@ -165,7 +165,11 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
         let mut message = String::new();
         let mut pos: usize = 0;
 
-        for (line_num, line) in buf.split_inclusive(|&b| b == b'\n').enumerate() {
+        for (line_num, line) in buf
+            .split_inclusive(|&b| b == b'\n')
+            .map(BStr::new)
+            .enumerate()
+        {
             pos += line.len();
             if line.starts_with(CUT_LINE.as_bytes()) {
                 consume_diff = true;
@@ -175,7 +179,8 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
             }
 
             // Every line before the diff must be valid utf8
-            let line = std::str::from_utf8(line)
+            let line = line
+                .to_str()
                 .map_err(|_| anyhow!("patch description contains non-UTF-8 data"))?;
             let trimmed = line.trim_end();
 
@@ -284,11 +289,11 @@ impl TryFrom<&[u8]> for EditedPatchDescription {
                 }
             }
 
-            let diff_slice = &buf[pos..];
+            let diff_slice = buf[pos..].as_bstr();
             if diff_slice.iter().all(u8::is_ascii_whitespace) {
                 None
             } else {
-                Some(DiffBuffer(diff_slice.to_vec()))
+                Some(DiffBuffer(diff_slice.to_owned()))
             }
         } else {
             None
@@ -335,10 +340,7 @@ mod tests {
 
         assert_eq!(edited.message, editable.message);
         if let (Some(diff0), Some(diff1)) = (&edited.diff, &editable.diff) {
-            assert_eq!(
-                std::str::from_utf8(diff0.0.as_slice()).unwrap(),
-                std::str::from_utf8(diff1.0.as_slice()).unwrap(),
-            )
+            assert_eq!(diff0.0.to_str().unwrap(), diff1.0.to_str().unwrap(),);
         } else {
             assert!(
                 edited.diff == editable.diff,
@@ -412,7 +414,7 @@ mod tests {
         editable.write(&mut buf).unwrap();
 
         assert_eq!(
-            std::str::from_utf8(buf.as_slice()).unwrap(),
+            buf.to_str().unwrap(),
             "Patch:  patch\n\
              Author: The Author <author@example.com>\n\
              Date:   2001-04-19 03:25:21 -0100\n\
@@ -446,7 +448,7 @@ mod tests {
         patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
-            std::str::from_utf8(buf.as_slice()).unwrap(),
+            buf.to_str().unwrap(),
             "Patch:  patch\n\
              Author: The Author <author@example.com>\n\
              Date:   2001-04-19 10:25:21 +0600\n\
@@ -487,7 +489,7 @@ mod tests {
         patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
-            std::str::from_utf8(buf.as_slice()).unwrap(),
+            buf.to_str().unwrap(),
             "Patch:  patch\n\
              Author: The Author <author@example.com>\n\
              Date:   2001-04-19 10:25:21 +0600\n\
@@ -519,27 +521,26 @@ mod tests {
             message: "Subject\n".to_string(),
             instruction: Some("# Instruction\n"),
             diff_instruction: Some("# Diff instruction\n"),
-            diff: Some(DiffBuffer(
-                b"\n\
-                  Some stuff before first diff --git\n\
-                  \n\
-                  diff --git a/foo.txt b/foo.txt\n\
-                  index ce01362..a21e91b 100644\n\
-                  --- a/foo.txt\n\
-                  +++ b/foo.txt\n\
-                  @@ -1 +1 @@\n\
-                  -hello\n\
-                  +goodbye\n\
-                  \\ No newline at end of file\n"
-                    .to_vec(),
-            )),
+            diff: Some(DiffBuffer(BString::from(
+                "\n\
+                 Some stuff before first diff --git\n\
+                 \n\
+                 diff --git a/foo.txt b/foo.txt\n\
+                 index ce01362..a21e91b 100644\n\
+                 --- a/foo.txt\n\
+                 +++ b/foo.txt\n\
+                 @@ -1 +1 @@\n\
+                 -hello\n\
+                 +goodbye\n\
+                 \\ No newline at end of file\n",
+            ))),
         };
 
         let mut buf: Vec<u8> = vec![];
         pd.write(&mut buf).unwrap();
 
         assert_eq!(
-            std::str::from_utf8(buf.as_slice()).unwrap(),
+            buf.to_str().unwrap(),
             "Patch:  patch\n\
              Author: The Author <author@example.com>\n\
              Date:   2001-04-19 10:25:21 +0600\n\
@@ -593,7 +594,7 @@ mod tests {
         patch_desc.write(&mut buf).unwrap();
 
         assert_eq!(
-            std::str::from_utf8(buf.as_slice()).unwrap(),
+            buf.to_str().unwrap(),
             "Patch:  patch\n\
              Author: The Author <author@example.com>\n\
              Date:   2001-04-19 10:25:21 +0600\n\

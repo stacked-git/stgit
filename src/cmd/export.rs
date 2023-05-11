@@ -11,6 +11,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use bstr::BStr;
 use clap::Arg;
 
 use crate::{
@@ -213,7 +214,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         let patch_commit = stack.get_patch_commit(patchname);
         let parent_commit = patch_commit.get_parent_commit()?;
 
-        let mut replacements: HashMap<&str, Cow<'_, [u8]>> = HashMap::new();
+        let mut replacements: HashMap<&str, Cow<'_, BStr>> = HashMap::new();
         let message = patch_commit.message_ex();
         let description = message.decode()?;
         let description = description.as_ref();
@@ -224,20 +225,15 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
         } else {
             (description, "")
         };
-        replacements.insert("description", Cow::Borrowed(description.as_bytes()));
-        replacements.insert("shortdescr", Cow::Borrowed(shortdescr.as_bytes()));
-        replacements.insert("longdescr", Cow::Borrowed(longdescr.as_bytes()));
+        replacements.insert("description", Cow::Borrowed(description.into()));
+        replacements.insert("shortdescr", Cow::Borrowed(shortdescr.into()));
+        replacements.insert("longdescr", Cow::Borrowed(longdescr.into()));
         let author = patch_commit.author()?;
         replacements.insert("authname", Cow::Borrowed(author.name));
         replacements.insert("authemail", Cow::Borrowed(author.email));
         replacements.insert(
             "authdate",
-            Cow::Owned(
-                author
-                    .time
-                    .format(gix::date::time::format::ISO8601)
-                    .into_bytes(),
-            ),
+            Cow::Owned(author.time.format(gix::date::time::format::ISO8601).into()),
         );
         let committer = patch_commit.committer()?;
         replacements.insert("commname", Cow::Borrowed(committer.name));
@@ -248,7 +244,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
                 committer
                     .time
                     .format(gix::date::time::format::ISO8601)
-                    .into_bytes(),
+                    .into(),
             ),
         );
 
@@ -264,9 +260,9 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
             replacements.insert(
                 "diffstat",
                 if parent_commit.tree_id()? == patch_commit.tree_id()? {
-                    Cow::Borrowed(b"")
+                    Cow::Borrowed("".into())
                 } else {
-                    Cow::Owned(stupid.diffstat(&diff)?)
+                    Cow::Owned(stupid.diffstat(diff.as_ref())?)
                 },
             );
         }
