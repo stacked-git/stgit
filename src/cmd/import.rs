@@ -16,7 +16,7 @@ use crate::{
     ext::{RepositoryExtended, TimeExtended},
     patch::{patchedit, PatchName},
     stack::{InitializationPolicy, Stack, StackAccess, StackStateAccess},
-    stupid::{Stupid, StupidContext},
+    stupid::Stupid,
 };
 
 pub(super) const STGIT_COMMAND: super::StGitCommand = super::StGitCommand {
@@ -480,42 +480,26 @@ fn import_mail(stack: Stack, matches: &clap::ArgMatches, source_path: Option<&Pa
 }
 
 #[cfg(feature = "import-compressed")]
-fn get_gz_mailinfo(
-    stupid: &StupidContext,
-    source_file: std::fs::File,
-    message_id: bool,
-) -> Result<(BString, BString, BString)> {
-    let stream = flate2::read::GzDecoder::new(source_file);
-    stupid.mailinfo_stream(stream, message_id)
-}
-
-#[cfg(feature = "import-compressed")]
-fn get_bz2_mailinfo(
-    stupid: &StupidContext,
-    source_file: std::fs::File,
-    message_id: bool,
-) -> Result<(BString, BString, BString)> {
-    let stream = bzip2::read::BzDecoder::new(source_file);
-    stupid.mailinfo_stream(stream, message_id)
+fn read_gz(source_file: std::fs::File, content: &mut Vec<u8>) -> Result<()> {
+    flate2::read::GzDecoder::new(source_file).read_to_end(content)?;
+    Ok(())
 }
 
 #[cfg(not(feature = "import-compressed"))]
-fn get_gz_mailinfo(
-    _: &StupidContext,
-    _: std::fs::File,
-    _: bool,
-) -> Result<(BString, BString, BString)> {
+fn read_gz(_source_file: std::fs::File, _content: &mut Vec<u8>) -> Result<()> {
     Err(anyhow!(
         "StGit not built with support for compressed patches"
     ))
 }
 
+#[cfg(feature = "import-compressed")]
+fn read_bz2(source_file: std::fs::File, content: &mut Vec<u8>) -> Result<()> {
+    bzip2::read::BzDecoder::new(source_file).read_to_end(content)?;
+    Ok(())
+}
+
 #[cfg(not(feature = "import-compressed"))]
-fn get_bz2_mailinfo(
-    _: &StupidContext,
-    _: std::fs::File,
-    _: bool,
-) -> Result<(BString, BString, BString)> {
+fn read_bz2(_source_file: std::fs::File, _content: &mut Vec<u8>) -> Result<()> {
     Err(anyhow!(
         "StGit not built with support for compressed patches"
     ))
@@ -527,41 +511,40 @@ fn import_file<'repo>(
     source_path: Option<&Path>,
     strip_level: Option<usize>,
 ) -> Result<Stack<'repo>> {
-    let message_id = use_message_id(matches, &stack.repo.config_snapshot());
-    let stupid = stack.repo.stupid();
-
-    let (mailinfo, message, diff) = if let Some(source_path) = source_path {
+    let mut content = Vec::with_capacity(4096);
+    if let Some(source_path) = source_path {
         let source_file = std::fs::File::open(source_path)?;
         match source_path.extension().and_then(std::ffi::OsStr::to_str) {
-            Some("gz") => get_gz_mailinfo(&stupid, source_file, message_id),
-            Some("bz2") => get_bz2_mailinfo(&stupid, source_file, message_id),
-            _ => stupid.mailinfo(Some(source_file), message_id),
+            Some("gz") => read_gz(source_file, &mut content)?,
+            Some("bz2") => read_bz2(source_file, &mut content)?,
+            _ => {
+                let mut source_file = source_file;
+                source_file.read_to_end(&mut content)?;
+            }
         }
     } else {
-        stupid.mailinfo(None, message_id)
-    }
-    .or_else(|e| {
-        if e.chain()
-            .last()
-            .unwrap()
-            .to_string()
-            .contains("error: empty patch")
-        {
-            Ok((
-                BString::from(vec![]),
-                BString::from(vec![]),
-                BString::from(vec![]),
-            ))
-        } else {
-            Err(e)
-        }
-    })?;
-
-    let (headers, message) = if let Some(headers) = Headers::parse_mailinfo(mailinfo.as_bstr()) {
-        (headers, message)
-    } else {
-        Headers::parse_message(message.as_bstr())?
+        let stdin = std::io::stdin();
+        stdin.lock().read_to_end(&mut content)?;
     };
+
+    let (message, diff) = split_patch(content)?;
+    let (headers, mut message) = Headers::parse_message(message.as_ref())?;
+
+    if let Some(message_id) = headers
+        .message_id
+        .as_ref()
+        .filter(|_| use_message_id(matches, &stack.repo.config_snapshot()))
+    {
+        if message.last() != Some(&b'\n') {
+            message.push(b'\n');
+        }
+        if message.len() > 1 && &message[message.len() - 2..] != b"\n\n" {
+            message.push(b'\n');
+        }
+        message.push_str("Message-Id: ");
+        message.push_str(message_id);
+        message.push(b'\n');
+    }
 
     create_patch(
         stack,
@@ -591,6 +574,7 @@ fn create_patch<'repo>(
         author_email,
         author_date,
         subject,
+        message_id: _message_id,
     } = headers;
 
     let message = if let Some(mut subject) = subject {
@@ -727,6 +711,115 @@ fn stripname(name: &str) -> &str {
         )
 }
 
+fn split_patch(content: Vec<u8>) -> Result<(BString, BString)> {
+    let mut content = content;
+    let mut pos = 0;
+    for line in content.lines_with_terminator() {
+        if line.starts_with(b"diff -") || line.starts_with(b"Index: ") {
+            break;
+        } else if let Some(rem) = line.strip_prefix(b"---") {
+            if rem.trim_with(|c| c.is_ascii_whitespace()).is_empty()
+                || (rem.len() >= 2 && rem[0] == b' ' && !rem[1].is_ascii_whitespace())
+            {
+                break;
+            }
+        }
+
+        pos += line.len();
+    }
+
+    let diff = content.split_off(pos).into();
+    let message = content.into();
+
+    Ok((message, diff))
+}
+
+#[cfg(test)]
+mod test {
+    use bstr::B;
+
+    use super::split_patch;
+
+    #[test]
+    fn patch_without_message() {
+        let patch = B(b"\
+        diff --git a/bar.txt b/bar.txt\n\
+        new file mode 100644\n\
+        index 0000000..ce01362\n\
+        --- /dev/null\n\
+        +++ b/bar.txt\n\
+        @@ -0,0 +1 @@\n\
+        +hello\n");
+
+        let content = Vec::from(patch);
+        let (message, diff) = split_patch(content).unwrap();
+        assert!(message.is_empty());
+        assert_eq!(diff, patch);
+    }
+
+    #[test]
+    fn patch_with_message() {
+        let patch = B(b"\
+        subject\n\
+        \n\
+        body\n\
+        \n\
+        ---  \n\
+        \n\
+        diff --git a/bar.txt b/bar.txt\n\
+        new file mode 100644\n\
+        index 0000000..ce01362\n\
+        --- /dev/null\n\
+        +++ b/bar.txt\n\
+        @@ -0,0 +1 @@\n\
+        +hello\n");
+
+        let content = Vec::from(patch);
+        let (message, diff) = split_patch(content).unwrap();
+        assert_eq!(message, "subject\n\nbody\n\n");
+        assert!(diff.starts_with(b"---"));
+    }
+
+    #[test]
+    fn patch_no_diff_separator() {
+        let patch = B(b"\
+        subject\n\
+        \n\
+        body\n\
+        \n\
+        diff --git a/bar.txt b/bar.txt\n\
+        new file mode 100644\n\
+        index 0000000..ce01362\n\
+        --- /dev/null\n\
+        +++ b/bar.txt\n\
+        @@ -0,0 +1 @@\n\
+        +hello\n");
+
+        let content = Vec::from(patch);
+        let (message, diff) = split_patch(content).unwrap();
+        assert_eq!(message, "subject\n\nbody\n\n");
+        assert!(diff.starts_with(b"diff --git"));
+    }
+
+    #[test]
+    fn just_separator() {
+        let patch = B(b"\
+        --- filename.txt\n\
+        diff --git a/bar.txt b/bar.txt\n\
+        new file mode 100644\n\
+        index 0000000..ce01362\n\
+        --- /dev/null\n\
+        +++ b/bar.txt\n\
+        @@ -0,0 +1 @@\n\
+        +hello\n");
+
+        let content = Vec::from(patch);
+        let (message, diff) = split_patch(content).unwrap();
+        assert_eq!(message, "");
+        assert!(diff.starts_with(b"--- filename.txt"));
+    }
+}
+
 #[derive(Default, Debug)]
 struct Headers {
     patchname: Option<String>,
@@ -734,6 +827,7 @@ struct Headers {
     author_email: Option<String>,
     author_date: Option<String>,
     subject: Option<String>,
+    message_id: Option<String>,
 }
 
 impl Headers {
@@ -774,6 +868,7 @@ impl Headers {
                 author_email,
                 author_date,
                 subject,
+                message_id: None,
             })
         } else {
             None
@@ -806,9 +901,9 @@ impl Headers {
                             .to_string(),
                     );
                     continue;
-                } else if header.eq_ignore_ascii_case(b"from")
-                    || header.eq_ignore_ascii_case(b"author")
-                {
+                }
+
+                if header.eq_ignore_ascii_case(b"from") || header.eq_ignore_ascii_case(b"author") {
                     let (name, email) = value
                         .to_str()
                         .map_err(|_| anyhow!("From/Author is not UTF-8"))
@@ -817,8 +912,20 @@ impl Headers {
                     headers.author_name = Some(name.to_string());
                     headers.author_email = Some(email.to_string());
                     continue;
-                } else if header.eq_ignore_ascii_case(b"date") {
+                }
+
+                if header.eq_ignore_ascii_case(b"date") {
                     headers.author_date = value.to_str().map(ToString::to_string).ok();
+                    continue;
+                }
+
+                if header.eq_ignore_ascii_case(b"subject") {
+                    headers.subject = value.to_str().map(ToString::to_string).ok();
+                    continue;
+                }
+
+                if header.eq_ignore_ascii_case(b"message-id") {
+                    headers.message_id = value.to_str().map(ToString::to_string).ok();
                     continue;
                 }
             }

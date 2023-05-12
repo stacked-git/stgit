@@ -787,51 +787,6 @@ impl<'repo, 'index> StupidContext<'repo, 'index> {
         ))
     }
 
-    #[cfg(feature = "import-compressed")]
-    pub(crate) fn mailinfo_stream(
-        &self,
-        mut input: impl std::io::Read + Send + 'static,
-        copy_message_id: bool,
-    ) -> Result<(BString, BString, BString)> {
-        let mut command = self.git();
-        command.args(["mailinfo", "--scissors", "--encoding=UTF-8"]);
-        if copy_message_id {
-            command.arg("--message-id");
-        }
-        let dir = tempfile::tempdir()?;
-        let message_path = dir.path().join("message.txt");
-        let patch_path = dir.path().join("patch.diff");
-        command.args([message_path.as_path(), patch_path.as_path()]);
-        let mut child = command
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn_git()?;
-
-        let mut stdin = child.stdin.take().unwrap();
-
-        std::thread::spawn(move || -> Result<()> {
-            let mut buf = [0; 8192];
-            loop {
-                let n = input.read(&mut buf[..])?;
-                if n > 0 {
-                    stdin.write_all(&buf[..n])?;
-                } else {
-                    break Ok(());
-                }
-            }
-        });
-
-        let output = child.require_success("mailinfo")?;
-        let headers = output.stdout;
-        let message = std::fs::read(message_path)?;
-        let diff = std::fs::read(patch_path)?;
-        Ok((
-            BString::from(headers),
-            BString::from(message),
-            BString::from(diff),
-        ))
-    }
-
     pub(crate) fn mailsplit(
         &self,
         source_path: Option<&Path>,
