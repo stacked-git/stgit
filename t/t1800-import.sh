@@ -13,6 +13,47 @@ test_expect_success 'Initialize the StGit repository' '
     stg init
 '
 
+test_expect_success 'Import patch with email headers' '
+    cat >patch <<-\EOF &&
+	From: Joe Example <joe@example.com>
+	Subject: Hey: the subject
+	Message-ID: abc123
+
+	body
+
+	---
+
+	diff --git a/bar.txt b/bar.txt
+	new file mode 100644
+	index 0000000..ce01362
+	--- /dev/null
+	+++ b/bar.txt
+	@@ -0,0 +1 @@
+	+hello
+	EOF
+    test_when_finished "rm patch" &&
+    stg import --message-id patch &&
+    git log -1 --pretty=format:%s%n >subject &&
+    git log -1 --pretty=format:%b%n >body &&
+    cat >expected <<-\EOF &&
+	Hey: the subject
+	EOF
+    test_when_finished "rm subject body expected" &&
+    test_cmp expected subject &&
+    cat >expected <<-\EOF &&
+	body
+
+	Message-Id: abc123
+
+	EOF
+    test_cmp expected body &&
+    cat >expected <<-\EOF &&
+	hello
+	EOF
+    test_cmp bar.txt expected &&
+    stg delete ..
+'
+
 test_expect_success 'setup fake editor' '
     write_script fake-editor <<-\EOF
 	echo "fake edit" >"$1"
