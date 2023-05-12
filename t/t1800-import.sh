@@ -54,6 +54,43 @@ test_expect_success 'Import patch with email headers' '
     stg delete ..
 '
 
+test_expect_success 'Import patch without email headers' '
+    cat >patch <<-\EOF &&
+	test subject
+
+	body
+
+	---
+
+	diff --git a/bar.txt b/bar.txt
+	new file mode 100644
+	index 0000000..ce01362
+	--- /dev/null
+	+++ b/bar.txt
+	@@ -0,0 +1 @@
+	+hello
+	EOF
+    test_when_finished "rm patch" &&
+    stg import patch &&
+    git log -1 --pretty=format:%s%n >subject &&
+    git log -1 --pretty=format:%b%n >body &&
+    cat >expected <<-\EOF &&
+	test subject
+	EOF
+    test_when_finished "rm subject body expected" &&
+    test_cmp expected subject &&
+    cat >expected <<-\EOF &&
+	body
+
+	EOF
+    test_cmp expected body &&
+    cat >expected <<-\EOF &&
+	hello
+	EOF
+    test_cmp bar.txt expected &&
+    stg delete ..
+'
+
 test_expect_success 'setup fake editor' '
     write_script fake-editor <<-\EOF
 	echo "fake edit" >"$1"

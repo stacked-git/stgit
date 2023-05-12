@@ -824,6 +824,7 @@ impl Headers {
             }
 
             if headers.subject.is_some() {
+                split_message.push_str(line.strip_prefix(dedent.as_bytes()).unwrap_or(line));
                 break;
             }
 
