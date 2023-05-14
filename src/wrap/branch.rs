@@ -29,6 +29,7 @@ impl<'repo> Branch<'repo> {
     pub(crate) fn get_branch_partial_name(&self) -> Result<PartialRefName> {
         Ok(PartialRefName::from_str(self.get_branch_name()?).expect("valid short branch name"))
     }
+
     pub(crate) fn get_branch_name(&self) -> Result<&str> {
         let short_name = self.inner.name().shorten();
         short_name.to_str().map_err(|_| {

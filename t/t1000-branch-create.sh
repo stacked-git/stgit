@@ -20,6 +20,16 @@ test_expect_success 'Create upstream repo' '
     test "$(git config --get branch.master.remote)" = "origin"
 '
 
+test_expect_success 'Create branch based on remote ref' '
+    stg branch --create foo origin/master &&
+    test "$(stg branch)" = "foo" &&
+    test "$(git config --get branch.foo.remote)" = "origin" &&
+    test "$(git config --get branch.foo.merge)" = "master" &&
+    test "$(git config --get branch.foo.stgit.parentbranch)" = "origin/master" &&
+    stg branch master &&
+    stg branch --delete foo
+'
+
 test_expect_success 'Create a branch when the current one is not an StGit stack' '
     git branch regular-branch &&
     git branch --set-upstream-to=origin/master regular-branch &&
