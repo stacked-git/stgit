@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.4] 2023-05-15
+
+### Added
+- feat: Upgrade from ancient stack state formats (#235)
+
+### Fixed
+- fix(branch): create based on remote branch (#317)
+- fix(import): lost subject lines resembling header (#321)
+- fix(import): subject line may be discarded
+
+### Changed
+- chore: update dependencies
+
+
 ## [2.2.3] 2023-04-26
 
 ### Fixed
