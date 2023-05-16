@@ -63,7 +63,10 @@ install-contrib:
 deb: completion doc build-no-features
 	$(CARGO_OFFLINE) deb
 
-.PHONY: deb
+rpm: completion doc build-no-features
+	$(CARGO_OFFLINE) generate-rpm
+
+.PHONY: deb rpm
 
 
 lint: lint-format lint-clippy lint-api-doc lint-t unit-test
