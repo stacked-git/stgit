@@ -21,6 +21,9 @@ TEST_PATCHES ?= ..
 build:
 	$(CARGO) build --profile=$(STG_PROFILE)
 
+build-no-features:
+	$(CARGO) build --profile=$(STG_PROFILE) --no-default-features
+
 all: build doc completion contrib
 
 completion: build
@@ -32,7 +35,7 @@ contrib:
 doc: build
 	$(MAKE) -C Documentation all
 
-.PHONY: all build completion contrib doc
+.PHONY: all build build-no-features completion contrib doc
 
 
 install: install-bin
@@ -55,6 +58,12 @@ install-contrib:
 	$(MAKE) -C contrib install
 
 .PHONY: install install-all install-bin install-completion install-contrib install-man install-html
+
+
+deb: completion doc build-no-features
+	$(CARGO_OFFLINE) deb
+
+.PHONY: deb
 
 
 lint: lint-format lint-clippy lint-api-doc lint-t unit-test

@@ -53,3 +53,22 @@ tar = { version = "0.4", optional = true }
 default = ["import-compressed", "import-url"]
 import-compressed = ["dep:bzip2", "dep:flate2", "dep:tar"]
 import-url = ["dep:curl"]
+
+[package.metadata.deb]
+maintainer = "Peter Grayson <pete@jpgrayson.net>"
+section = "vcs"
+priority = "optional"
+depends = "git"
+recommends = "git-email"
+extended-description = ""
+assets = [
+  ["target/release/stg", "usr/bin/", "755"],
+  ["README.md", "usr/share/doc/stgit/", "644"],
+  ["COPYING", "usr/share/doc/stgit/copyright", "644"],
+  ["Documentation/*.1", "usr/share/man/man1/", "644"],
+  ["completion/stgit.zsh", "usr/share/zsh/vendor-completions/_stg", "644"],
+  ["completion/stg.fish", "usr/share/fish/vendor-completions.d/", "644"],
+  ["completion/stgit.bash", "usr/share/bash-completion/completions/stg", "644"],
+  ["contrib/vim/ftdetect/stg.vim", "usr/share/vim/addons/ftdetect/", "644"],
+  ["contrib/vim/syntax/*.vim", "usr/share/vim/addons/syntax/", "644"],
+]
