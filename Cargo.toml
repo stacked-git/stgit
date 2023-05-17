@@ -1,6 +1,7 @@
 [package]
 name = "stgit"
 version = "2.2.4"
+description = "Stack-based patch management for Git"
 edition = "2021"
 rust-version = "1.64"
 authors = [
