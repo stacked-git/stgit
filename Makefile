@@ -21,8 +21,8 @@ TEST_PATCHES ?= ..
 build:
 	$(CARGO) build --profile=$(STG_PROFILE)
 
-build-no-features:
-	$(CARGO) build --profile=$(STG_PROFILE) --no-default-features
+build-for-pkg:
+	$(CARGO) build --profile=for-pkg --no-default-features
 
 all: build doc completion contrib
 
@@ -35,7 +35,7 @@ contrib:
 doc: build
 	$(MAKE) -C Documentation all
 
-.PHONY: all build build-no-features completion contrib doc
+.PHONY: all build build-for-pkg completion contrib doc
 
 
 install: install-bin
@@ -60,10 +60,10 @@ install-contrib:
 .PHONY: install install-all install-bin install-completion install-contrib install-man install-html
 
 
-deb: completion doc build-no-features
+deb: completion doc build-for-pkg
 	$(CARGO_OFFLINE) deb
 
-rpm: completion doc build-no-features
+rpm: completion doc build-for-pkg
 	$(CARGO_OFFLINE) generate-rpm
 
 .PHONY: deb rpm

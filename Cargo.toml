@@ -54,6 +54,11 @@ default = ["import-compressed", "import-url"]
 import-compressed = ["dep:bzip2", "dep:flate2", "dep:tar"]
 import-url = ["dep:curl"]
 
+[profile.for-pkg]
+inherits = "release"
+lto = true
+strip = "none"
+
 [package.metadata.deb]
 maintainer = "Peter Grayson <pete@jpgrayson.net>"
 section = "vcs"
@@ -62,7 +67,7 @@ depends = "git"
 recommends = "git-email"
 extended-description = ""
 assets = [
-  ["target/release/stg", "usr/bin/", "755"],
+  ["target/for-pkg/stg", "usr/bin/", "755"],
   ["README.md", "usr/share/doc/stgit/", "644"],
   ["COPYING", "usr/share/doc/stgit/copyright", "644"],
   ["Documentation/*.1", "usr/share/man/man1/", "644"],
@@ -75,7 +80,7 @@ assets = [
 
 [package.metadata.generate-rpm]
 assets = [
-  { source = "target/release/stg", dest = "/usr/bin/", mode = "755" },
+  { source = "target/for-pkg/stg", dest = "/usr/bin/", mode = "755" },
   { source = "README.md", dest = "/usr/share/doc/stgit/", mode = "644" },
   { source = "COPYING", dest = "/usr/share/licenses/stgit/", mode = "644" },
   { source = "Documentation/*.1", dest = "/usr/share/man/man1/", mode = "644", doc = true },
