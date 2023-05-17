@@ -227,7 +227,7 @@ fn run(matches: &clap::ArgMatches) -> Result<()> {
     let stack = Stack::current(&repo, InitializationPolicy::AutoInitialize)?;
     let stupid = repo.stupid();
 
-    let source_path = if matches.get_flag("url") {
+    let source_path = if cfg!(feature = "import-url") && matches.get_flag("url") {
         None
     } else if let Some(path) = matches.get_one::<PathBuf>("source") {
         let abs_path = gix::path::realpath(path)?;
