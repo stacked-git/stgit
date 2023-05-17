@@ -152,6 +152,34 @@ jobs:
         name: html-doc
         path: ${{ github.workspace }}/stgit-html
 
+  packages:
+    name: Pre-built deb and rpm packages
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+    - name: Install cargo-deb
+      run: |
+        cargo install cargo-deb
+    - name: Install cargo-generate-rpm
+      run: |
+        cargo install cargo-generate-rpm
+    - name: Build Packages
+      run: |
+        make deb rpm
+    - name: Upload deb
+      uses: actions/upload-artifact@v3
+      with:
+        name: stgit-deb
+        path: target/debian/stgit_*.deb
+    - name: Upload rpm
+      uses: actions/upload-artifact@v3
+      with:
+        name: stgit-rpm
+        path: target/generate-rpm/stgit-*.rpm
+
   windows-build:
     name: Windows Build
     runs-on: windows-latest
