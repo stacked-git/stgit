@@ -10,15 +10,80 @@ on:
   - cron: '30 1 * * 0'
 
 jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: stable
+        components: clippy, rustfmt
+    - name: Build
+      run: |
+        cargo --locked build --profile release
+    - name: Install Test Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install quilt gnupg2 libio-pty-perl
+    - name: Test
+      env:
+        STG_PROVE_OPTS: "--jobs=2"
+        STG_TEST_OPTS: "--verbose-log"
+        STG_PROFILE: "release"
+      run: |
+        timeout 900s make -C t prove
+    - name: Show Failures
+      if: ${{ failure() }}
+      run: |
+        make -C t show-failure-results
+    - name: Install Doc Dependencies
+      run: |
+        sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
+    - name: Build Docs Asciidoc
+      run: |
+        make -j2 doc
+    - name: Build Docs Asciidoctor
+      run: |
+        make -j2 USE_ASCIIDOCTOR=1 doc
+    - name: Install HTML Docs
+      run: |
+        make -j2 USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
+    - name: Upload HTML Docs
+      uses: actions/upload-artifact@v3
+      with:
+        name: html-doc
+        path: ${{ github.workspace }}/stgit-html
+    - name: Install cargo-deb
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: cargo-deb
+    - name: Install cargo-generate-rpm
+      uses: baptiste0928/cargo-install@v2
+      with:
+        crate: cargo-generate-rpm
+    - name: Build Packages
+      run: |
+        make USE_ASCIIDOCTOR=1 deb rpm
+    - name: Upload deb
+      uses: actions/upload-artifact@v3
+      with:
+        name: stgit-deb
+        path: target/debian/stgit_*.deb
+    - name: Upload rpm
+      uses: actions/upload-artifact@v3
+      with:
+        name: stgit-rpm
+        path: target/generate-rpm/stgit-*.rpm
+
   build-and-test:
     name: Build and Test
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
-            profile: release
-            toolchain: stable
           - os: ubuntu-latest
             profile: dev
             toolchain: stable
@@ -38,7 +103,7 @@ jobs:
         toolchain: ${{ matrix.toolchain }}
     - name: Build
       run: |
-        cargo --locked build --all-features --profile ${{ matrix.profile }}
+        cargo --locked build --profile ${{ matrix.profile }}
     - name: Install Test Dependencies (Ubuntu)
       if: matrix.os == 'ubuntu-latest'
       run: |
@@ -123,65 +188,6 @@ jobs:
       run: |
         cargo rustdoc -- --deny warnings
 
-  docs:
-    name: User Documentation
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install asciidoc asciidoctor docbook-xsl-ns xmlto
-    - name: Build Docs Asciidoc
-      run: |
-        make -j2 doc
-    - name: Build Docs Asciidoctor
-      run: |
-        make -j2 USE_ASCIIDOCTOR=1 doc
-    - name: Install HTML Docs
-      run: |
-        make -j2 USE_ASCIIDOCTOR=1 htmldir="$GITHUB_WORKSPACE"/stgit-html install-html
-    - name: Upload HTML Docs
-      uses: actions/upload-artifact@v3
-      with:
-        name: html-doc
-        path: ${{ github.workspace }}/stgit-html
-
-  packages:
-    name: Prebuilt Packages
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v3
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-    - name: Install cargo-deb
-      run: |
-        cargo install cargo-deb
-    - name: Install cargo-generate-rpm
-      run: |
-        cargo install cargo-generate-rpm
-    - name: Build Packages
-      run: |
-        make deb rpm
-    - name: Upload deb
-      uses: actions/upload-artifact@v3
-      with:
-        name: stgit-deb
-        path: target/debian/stgit_*.deb
-    - name: Upload rpm
-      uses: actions/upload-artifact@v3
-      with:
-        name: stgit-rpm
-        path: target/generate-rpm/stgit-*.rpm
-
   windows-build:
     name: Windows Build
     runs-on: windows-latest
@@ -194,7 +200,7 @@ jobs:
         toolchain: stable
     - name: Build
       run: |
-        cargo --locked build --all-features --profile release
+        cargo --locked build --profile release
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
