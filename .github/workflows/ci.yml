@@ -156,6 +156,8 @@ jobs:
     name: Prebuilt Packages
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
