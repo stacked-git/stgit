@@ -153,7 +153,7 @@ jobs:
         path: ${{ github.workspace }}/stgit-html
 
   packages:
-    name: Pre-built deb and rpm packages
+    name: Prebuilt Packages
     runs-on: ubuntu-latest
     steps:
     - name: Install Rust
