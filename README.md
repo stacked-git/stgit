@@ -39,7 +39,6 @@ available at build-time. Dynamic link dependencies include these
 libraries along with their transient link dependencies:
 
 - libcurl (optional)
-- libbz2 (optional)
 
 StGit works within the context of a Git repository and performs many
 operations by running subordinate `git` commands.
