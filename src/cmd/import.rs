@@ -703,8 +703,8 @@ fn create_patch<'repo>(
 }
 
 fn stripname(name: &str) -> &str {
-    name.trim_start_matches(|c: char| c.is_ascii_digit() || c == '-')
-        .rsplit_once(".diff")
+    let name = name.trim_start_matches(|c: char| c.is_ascii_digit() || c == '-');
+        name.rsplit_once(".diff")
         .map_or_else(
             || name.rsplit_once(".patch").map_or(name, |(name, _)| name),
             |(name, _)| name,
@@ -739,6 +739,7 @@ mod test {
     use bstr::B;
 
     use super::split_patch;
+    use super::stripname;
 
     #[test]
     fn patch_without_message() {
@@ -817,6 +818,24 @@ mod test {
         let (message, diff) = split_patch(content).unwrap();
         assert_eq!(message, "");
         assert!(diff.starts_with(b"--- filename.txt"));
+    }
+
+    #[test]
+    fn patch_name_with_numbered_order_and_patch_extension(){
+        let name = String::from("01-patch-name.patch");
+        assert_eq!(stripname(&name), "patch-name");
+    }
+
+    #[test]
+    fn patch_name_with_numbered_order_and_diff_extension(){
+        let name = String::from("01-patch-name.diff");
+        assert_eq!(stripname(&name), "patch-name");
+    }
+
+    #[test]
+    fn patch_name_with_numbered_order_and_diff_patch_extension(){
+        let name = String::from("01-patch-name.diff.patch");
+        assert_eq!(stripname(&name), "patch-name");
     }
 }
 
