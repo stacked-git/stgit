@@ -325,7 +325,7 @@ fn import_tgz_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Pat
 #[cfg(feature = "import-compressed")]
 fn import_tbz2_series(stack: Stack, matches: &clap::ArgMatches, source_path: &Path) -> Result<()> {
     let source_file = std::fs::File::open(source_path)?;
-    let mut archive = tar::Archive::new(bzip2::read::BzDecoder::new(source_file));
+    let mut archive = tar::Archive::new(bzip2_rs::DecoderReader::new(source_file));
     let temp_dir = tempfile::tempdir()?;
     archive.unpack(temp_dir.path())?;
     let series_path = find_series_path(temp_dir.path())?;
@@ -494,7 +494,7 @@ fn read_gz(_source_file: std::fs::File, _content: &mut Vec<u8>) -> Result<()> {
 
 #[cfg(feature = "import-compressed")]
 fn read_bz2(source_file: std::fs::File, content: &mut Vec<u8>) -> Result<()> {
-    bzip2::read::BzDecoder::new(source_file).read_to_end(content)?;
+    bzip2_rs::DecoderReader::new(source_file).read_to_end(content)?;
     Ok(())
 }
 

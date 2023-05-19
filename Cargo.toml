@@ -44,14 +44,14 @@ termcolor = "1.1"
 thiserror = "~1.0"
 time = { version = "0.3.21", default-features = false, features = ["local-offset", "formatting", "macros", "parsing"] }
 
-bzip2 = { version = "0.4", optional = true }
+bzip2-rs = { version = "0.1", optional = true }
 curl = { version = "0.4", optional = true }
 flate2 = { version = "1", optional = true }
 tar = { version = "0.4", optional = true }
 
 [features]
 default = ["import-compressed", "import-url"]
-import-compressed = ["dep:bzip2", "dep:flate2", "dep:tar"]
+import-compressed = ["dep:bzip2-rs", "dep:flate2", "dep:tar"]
 import-url = ["dep:curl"]
 
 [profile.for-pkg]
