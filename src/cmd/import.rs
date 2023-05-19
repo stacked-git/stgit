@@ -704,10 +704,9 @@ fn create_patch<'repo>(
 
 fn stripname(name: &str) -> &str {
     let name = name.trim_start_matches(|c: char| c.is_ascii_digit() || c == '-');
-    name.rsplit_once(".diff").map_or_else(
-        || name.rsplit_once(".patch").map_or(name, |(name, _)| name),
-        |(name, _)| name,
-    )
+    name.strip_suffix(".diff")
+        .or_else(|| name.strip_suffix(".patch"))
+        .unwrap_or(name)
 }
 
 fn split_patch(content: Vec<u8>) -> Result<(BString, BString)> {
@@ -833,7 +832,13 @@ mod test {
     #[test]
     fn patch_name_with_numbered_order_and_diff_patch_extension() {
         let name = String::from("01-patch-name.diff.patch");
-        assert_eq!(stripname(&name), "patch-name");
+        assert_eq!(stripname(&name), "patch-name.diff");
+    }
+
+    #[test]
+    fn patch_name_with_numbered_order_and_patch_diff_extension() {
+        let name = String::from("01-patch-name.patch.diff");
+        assert_eq!(stripname(&name), "patch-name.patch");
     }
 }
 
