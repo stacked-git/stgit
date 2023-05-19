@@ -1334,3 +1334,8 @@ test_lazy_prereq GITSENDEMAIL '
 	# test whether git send-email is available
 	git send-email --dump-aliases 2>/dev/null >/dev/null
 '
+
+test_lazy_prereq STG_IMPORT_URL '
+    # test whether stg import --url is available
+    stg import -h | grep "\--url"
+'
